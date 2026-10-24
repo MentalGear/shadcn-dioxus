@@ -631,13 +631,13 @@ pub fn NavbarTrigger(props: NavbarTriggerProps) -> Element {
     // relative to *this* trigger once promoted to the top layer -- keyed on
     // `nav_ctx.content_id`, not this nav's own index, for the same reason
     // `MenubarTrigger` keys off `menu_ctx.content_id` (see that doc).
-    // Previously a bare `style: anchor_name_style(..)` literal directly on
+    // Not a bare `style: anchor_name_style(..)` literal directly on
     // this element, beside `..attributes` below: a caller supplying their
-    // own `style` then produced two `style` attributes on this same tag
+    // own `style` would then produce two `style` attributes on this same tag
     // (`dev-docs/conformance-harness.md` hydration-parity Rule 4;
     // `scripts/check-attr-spread-collision.sh`). Folding it into
-    // `attributes` here instead, via `top_layer::anchored_trigger_attributes`,
-    // fixes that and (unlike plain `merge_attributes`, which folds a plain
+    // `attributes` here, via `top_layer::anchored_trigger_attributes`,
+    // avoids that and (unlike plain `merge_attributes`, which folds a plain
     // `style` attribute but leaves shorthand style props -- `padding:
     // ".."`, namespace `Some("style")` -- as separate attributes) renders
     // exactly one `style` carrying the anchor binding plus whatever the
@@ -841,21 +841,18 @@ pub fn NavbarContent(props: NavbarContentProps) -> Element {
     }
 }
 
-/// Web arm (2026-09-03, finding C): promote each nav's content to the top
+/// Web arm: promote each nav's content to the top
 /// layer via `popover="auto"`, anchored to its own trigger -- the same
 /// mechanism `MenubarContentRendered`/`DropdownMenuContentRendered` use
 /// (`menubar.rs`/`dropdown_menu.rs`), which see for the general
-/// `popover`/CSS-anchor wiring this mirrors. Before this fix, `NavbarNav`
-/// never migrated onto the top-layer engine at all (dev-docs/plan.md Phase
-/// 4.4/Migration A never reached it) -- its content stayed a plain `div`,
+/// `popover`/CSS-anchor wiring this mirrors. A content left a plain `div`
 /// positioned by ordinary CSS (`position: absolute; top: 100%; left: 0`
 /// inside `.dx-navbar-nav`'s `position: relative` wrapper,
-/// `preview/src/components/navbar/style.css`), with no viewport-edge
+/// `preview/src/components/navbar/style.css`) would have no viewport-edge
 /// collision handling of any kind -- unlike `DropdownMenu`/`Menubar`/
-/// `Select`, whose menus all flip when they would run off-viewport. User
-/// report: "why does the Navbar menu not auto-flip when it gets cut off at
-/// the bottom/top like the other menus?" -- this migration is the fix:
-/// once anchored the same way, the same shared, engine-injected
+/// `Select`, whose menus all flip when they would run off-viewport. So the
+/// Navbar menu auto-flips when it gets cut off at the bottom/top like the
+/// other menus: anchored the same way, the same shared, engine-injected
 /// anchor-positioning stylesheet (`top_layer::ensure_anchor_positioning_
 /// styles`) and `use_anchor_position_fallback`'s JS fallback both apply
 /// `position-try-fallbacks: flip-block, flip-inline` (or its JS-measured
@@ -928,7 +925,7 @@ fn NavbarContentRendered(
     );
     // JS-measured static positioning fallback for engines without CSS
     // Anchor Positioning -- see `top_layer::use_anchor_position_fallback`'s
-    // doc. `side`/`align`/gap match this component's pre-migration CSS
+    // doc. `side`/`align`/gap match this component's themed CSS
     // (`../../preview/src/components/navbar/style.css`'s `top: 100%; left:
     // 0; margin-top: 0.5rem` -- 0.5rem == 8px at the default root font
     // size): anchored below the trigger, left-aligned with it, the same
@@ -953,8 +950,7 @@ fn NavbarContentRendered(
     // dev-docs/backlog.md row 41: an APG menu requires an accessible name from
     // either aria-labelledby or aria-label -- labelled by this nav's own
     // trigger, mirroring `MenubarContent`'s identical row-25 pattern
-    // (`menubar.rs`), which `NavbarContent` never picked up when it
-    // migrated onto the top-layer engine. Only contributed when the caller
+    // (`menubar.rs`). Only contributed when the caller
     // hasn't already named this content some other way
     // (`has_own_accessible_name`'s own doc), and as its own
     // `merge_attributes` input -- present only when applicable -- rather
@@ -996,8 +992,9 @@ fn NavbarContentRendered(
     // alongside `..attributes` is the duplicate-`style` hazard
     // (`dev-docs/conformance-harness.md` hydration-parity Rule 4). The
     // `top_layer` fixture's `NavbarContent { style: "min-height: 100px;" }`
-    // is the exerciser: pre-fix it emitted two `style` attributes (SSR kept
-    // the anchor binding, the client kept the caller's).
+    // is the exerciser: a bare literal beside the spread would emit two
+    // `style` attributes (SSR keeps the anchor binding, the client the
+    // caller's).
     let attributes = crate::top_layer::anchored_content_attributes(&id, attributes);
 
     rsx! {
@@ -1009,12 +1006,12 @@ fn NavbarContentRendered(
     }
 }
 
-/// Native (Blitz) arm: the pre-migration `div` -- Blitz has no popover-API
-/// support at all, so this stays the functional floor, matching
-/// `MenubarContentRendered`'s identical native arm. Now also carries the
-/// row-41 `aria-labelledby` below, the one piece of the web arm's
-/// migration that applies here too (unlike `popover`/anchor positioning,
-/// which are web-only).
+/// Native (Blitz) arm: a plain `div` -- Blitz has no popover-API
+/// support at all, so this is the functional floor, matching
+/// `MenubarContentRendered`'s identical native arm. It carries the
+/// row-41 `aria-labelledby` below, the one piece of the web arm that
+/// applies here too (unlike `popover`/anchor positioning, which are
+/// web-only).
 #[cfg(not(feature = "web"))]
 #[component]
 fn NavbarContentRendered(

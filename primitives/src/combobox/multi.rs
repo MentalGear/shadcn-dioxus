@@ -96,7 +96,7 @@ pub struct ComboboxMultiProps<T: Clone + PartialEq + ToString + 'static> {
     #[props(default)]
     pub on_open_change: Callback<bool>,
 
-    /// The controlled text query used to filter options.
+    /// The controlled text query that filters options.
     #[props(default)]
     pub query: ReadSignal<Option<String>>,
 

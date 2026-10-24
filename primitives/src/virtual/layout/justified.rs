@@ -728,7 +728,7 @@ mod tests {
         fn regression_a_trailing_single_tile_row_created_by_backoff_still_clears_the_floor() {
             // Three items just barely reach the threshold together; backing the first row off to
             // two tiles leaves one leftover item as its own trailing (genuinely last) row, which
-            // used to be re-capped at the target height, landing at 105px against a 140px floor.
+            // must not be re-capped at the target height (105px against a 140px floor).
             let r = run(&[0.5; 3], &floored(140.0));
             for t in &r.tiles {
                 assert!(t.width >= 140.0, "tile {} is {}px wide", t.index, t.width);
@@ -737,7 +737,7 @@ mod tests {
 
         #[test]
         fn regression_a_degenerate_aspect_with_a_floor_does_not_explode_row_height() {
-            // A degenerate item (floored to the 1:20 sliver) at the start of a row used to make
+            // A degenerate item (floored to the 1:20 sliver) at the start of a row must not make
             // every backoff candidate look sub-floor, cascading to a one tile row and dividing by
             // about 0.05: a 375px container exploded to 7500px tall. Such a row is exempt from
             // the floor entirely, matching the no-floor baseline exactly.

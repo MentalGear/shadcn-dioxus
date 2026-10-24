@@ -14,8 +14,8 @@ use std::rc::Rc;
 /// physically mirrored for RTL. Only ever true when `horizontal` -- a
 /// vertical slider never consults direction at all, matching Radix
 /// (`SliderVertical` in `slider.tsx` takes no `dir` prop; only
-/// `SliderHorizontal` does -- `radix-ui/primitives` commit
-/// `f7ecd5ab16f5e1e820eb5786a1419a98a2d594ae`, lines 318, 400).
+/// `SliderHorizontal` does -- radix-ui/primitives
+/// @ f7ecd5ab16f5e1e820eb5786a1419a98a2d594ae, lines 318, 400).
 fn mirror_horizontal(horizontal: bool, direction: Direction) -> bool {
     horizontal && direction == Direction::Rtl
 }
@@ -26,8 +26,7 @@ fn mirror_horizontal(horizontal: bool, direction: Direction) -> bool {
 /// value formula reproduces Radix's own RTL output exactly: scaling
 /// `offset` through `[0,size] -> [min,max]` gives the same result as
 /// scaling `(size - offset)` through `[0,size] -> [max,min]`, since both
-/// reduce to `max - offset/size*(max-min)` -- see this lane's own
-/// `$S/batch3/rtl-rust/reference.md` §4 for the full derivation. A
+/// reduce to `max - offset/size*(max-min)`. A
 /// mirrored *delta* (used by drag and keyboard) is simply its negation:
 /// for two offsets `a`, `b`, `mirror(b) - mirror(a) == a - b == -(b - a)`.
 fn mirror_offset(offset: f64, size: f64) -> f64 {

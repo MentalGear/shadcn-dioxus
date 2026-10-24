@@ -53,7 +53,7 @@ pub(crate) struct Plan {
     pub(crate) items: Vec<VirtualItem>,
     pub(crate) top_offset: u32,
     /// The extent of the items alone, never `max`ed with the viewport: the viewport is `0` on the
-    /// server and measured on the client, so a canvas that depended on it drew a short list
+    /// server and measured on the client, so a canvas that depends on it draws a short list
     /// differently in the server's markup and the first client frame (backlog row 368). A consumer
     /// that fills its box does it in CSS (`min-width: 100%` on the columns axis); on the rows
     /// axis the space below the last row is the scroll container's own.
@@ -286,7 +286,7 @@ impl Engine {
         let count = self.index.count();
         let slack = self.buffer / 2;
         // The row after the last visible one is mounted too (it is the half-visible neighbour
-        // of the old walk and part of the established range arithmetic).
+        // and part of the established range arithmetic).
         let last = (last + 1).min(count - 1);
 
         let keep = self.rendered.is_some_and(|(lo, hi)| {
@@ -824,8 +824,7 @@ mod tests {
         assert_eq!(engine.index.start(3), 150);
     }
 
-    /// The key-off twin of the test above (`playwright/item-key.spec.ts` no longer toggles it in the
-    /// Virtual List demo): without keys the engine keys by index, so a measured size belongs to the
+    /// The key-off twin of the test above: without keys the engine keys by index, so a measured size belongs to the
     /// slot and a reorder moves nothing.
     #[test]
     fn without_keys_a_measured_size_stays_on_its_slot() {

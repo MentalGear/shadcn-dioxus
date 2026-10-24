@@ -9,7 +9,7 @@
 //!
 //! # What an unmeasured item weighs
 //!
-//! Exactly what the old `compute_measurements` did, so the numbers on screen do not change:
+//! The numbers match the original `compute_measurements` walk, so the sizes on screen do not change:
 //!
 //! - with a per-item estimate (`estimate_size` given): the estimate, until the item is measured;
 //! - without one ("adaptive"): the integer average of every measured size so far, or
@@ -108,8 +108,7 @@ pub(crate) struct SizeIndex {
     source: SizeEstimates,
     /// Measured sizes by item key (the index without an `item_key`). Entries of items that are
     /// not in the list now are kept, so a list that shrinks and grows back, or an item that
-    /// leaves a filter and returns, remembers them (the old `item_size_cache` never evicted
-    /// either).
+    /// leaves a filter and returns, remembers them (entries are never evicted).
     measured: HashMap<u64, u32>,
     measured_sum: u64,
     /// 1-based Fenwick array of length `count + 1`.
@@ -409,8 +408,8 @@ mod tests {
             return;
         }
         let total = items.last().unwrap().end();
-        // Unique starts only: with a zero-sized item the old binary search picked an arbitrary
-        // one of several equal starts, the index picks the last. Real sizes are >= 1.
+        // Unique starts only: with a zero-sized item a binary search may pick any one of several
+        // equal starts, while the index picks the last. Real sizes are >= 1.
         let unique = items.windows(2).all(|w| w[0].start() < w[1].start());
         for _ in 0..200 {
             let offset = rng.below(total as u64 + 50) as u32;
@@ -524,8 +523,8 @@ mod tests {
         assert_eq!(index.index_at_or_before(at - 1), 499_999);
     }
 
-    /// Cost of one row measurement: the old engine rebuilt and cloned the whole geometry, the
-    /// index updates one tree path. Run with
+    /// Cost of one row measurement: a full rebuild clones the whole geometry, the index updates
+    /// one tree path. Run with
     /// `cargo test --release -p dioxus-primitives size_index -- --ignored --nocapture`.
     #[test]
     #[ignore = "benchmark, run by hand"]

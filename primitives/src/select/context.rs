@@ -80,10 +80,8 @@ pub(super) struct SelectContext {
     /// the listbox content. Neither this crate's trigger nor its listbox
     /// has an `ArrowLeft`/`ArrowRight`-driven navigation to flip (both are
     /// vertical-only, matching the APG select-only combobox pattern) --
-    /// see this lane's own `$S/batch3/rtl-rust/reference.md`'s Select row
-    /// for why Radix's own RTL-specific positioning math does not apply
-    /// here either (this crate's `SelectList` always uses anchor
-    /// positioning, never Radix's "item-aligned" mode that math is for).
+    /// Radix's own RTL-specific positioning math is for its "item-aligned"
+    /// mode and does not apply to this crate's anchor-positioned popper.
     pub direction: ReadSignal<Direction>,
 
     /// Where the listbox is placed: see [`SelectPosition`].
@@ -99,9 +97,8 @@ impl SelectContext {
     /// the popup and request focus on the currently-selected option, or the
     /// first available one if nothing is selected yet. APG select-only
     /// combobox: "focus the listbox with the current option active" --
-    /// unlike a plain click open (unchanged; leaves DOM focus on the
-    /// listbox container itself, matching this component's pre-existing,
-    /// still-green `select.spec.ts` expectation), keyboard activation must
+    /// unlike a plain click open (which leaves DOM focus on the
+    /// listbox container itself, per `select.spec.ts`), keyboard activation must
     /// land real DOM focus on an option, same as ArrowDown/ArrowUp already
     /// do just below this in `trigger.rs`.
     pub fn open_with_selected_or_first_focus(&mut self) {

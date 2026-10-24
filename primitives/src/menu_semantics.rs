@@ -24,14 +24,13 @@
 //! Rather than fix `dropdown_menu.rs`'s three literals in place -- which
 //! would leave the *next* menu-pattern component free to hand-write a
 //! fourth, possibly-different set -- this module gives the whole pattern
-//! class one shared definition. That risk was not hypothetical: `navbar.rs`
-//! was exactly that fourth set, added after this module existed and still
+//! class one shared definition. That risk is not hypothetical: a `navbar.rs`
 //! hand-writing its own `role="menubar"`/`role="menu"`/`role="menuitem"`
-//! literals instead of reading them from here -- found and fixed in the same
-//! stage-1 pass that added this doc paragraph (dev-docs/backlog.md rows 24, 25,
-//! 41). `dropdown_menu.rs`, `context_menu.rs`, `menubar.rs`, and `navbar.rs`
-//! all read their menu/menuitem/haspopup literals from here now, so a role
-//! can only drift if this module itself is edited.
+//! literals instead of reading them from here would be exactly that fourth
+//! set (dev-docs/backlog.md rows 24, 25, 41). `dropdown_menu.rs`,
+//! `context_menu.rs`, `menubar.rs`, and `navbar.rs` all read their
+//! menu/menuitem/haspopup literals from here, so a role can only drift if
+//! this module itself is edited.
 //!
 //! # Scope
 //!
@@ -43,9 +42,8 @@
 //!   pattern, not shared with a menu-button's popup. `Navbar`'s top-level
 //!   `div` is the same element in the same pattern as `Menubar`'s (a
 //!   roving-tabindex row of triggers, not a popup this module governs), not
-//!   a coincidental lookalike -- confirmed by reading both components in
-//!   full during the stage-1 pass that added `navbar.rs` to this module's
-//!   consumers, rather than assumed from the matching literal alone.
+//!   a coincidental lookalike (checked by reading both components in
+//!   full, not assumed from the matching literal alone).
 //! - `navbar`'s items. `Navbar` is a *navigation* menu: its items are links
 //!   (`NavbarItem`), never checkable, so [`MENU_ITEM_CHECKBOX_ROLE`] /
 //!   [`MENU_ITEM_RADIO_ROLE`] are not offered to it.

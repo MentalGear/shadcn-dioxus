@@ -67,15 +67,14 @@
 //! one of them) -- even though Tab alone already reaches every one of
 //! those same targets, exactly as this section's own citation above
 //! describes. Not implemented: Home/End *within* an open panel (the
-//! reference table's own Home/End rows cover this too, but this round's
-//! own brief scoped Home/End to top-level items only) and treating
+//! reference table's own Home/End rows cover this too, but Home/End is
+//! scoped to top-level items only) and treating
 //! ArrowUp/ArrowDown on a top-level item as aliases for Left/Right (the
 //! reference table conflates them one row apiece; kept separate here so
 //! ArrowDown on a top-level trigger unambiguously means "open/enter this
 //! panel," never "also move to the next item" -- see
 //! [`NavigationMenuTrigger`]'s own doc for that choice). Both are cheap,
-//! cited, backward-compatible follow-ups for a future round or a user
-//! report, not implemented this round.
+//! cited, backward-compatible follow-ups, not implemented.
 //!
 //! # Hover intent and the pointer contract
 //!
@@ -300,10 +299,9 @@ pub fn NavigationMenu(props: NavigationMenuProps) -> Element {
     // `use_signal`, `menu_sub.rs`), so -- like `open`/`focus` above -- it
     // must run directly in this component's own body, never nested inside
     // another hook's closure. Calling it inline inside
-    // `use_context_provider`'s initializer below produced a `BorrowMutError`
+    // `use_context_provider`'s initializer below panics with a `BorrowMutError`
     // ("The hook list is already borrowed ... hook inside a hook") on every
-    // real render, confirmed by live reproduction against a running dev
-    // server (the wasm panic never surfaced in `cargo check`/`clippy`/
+    // real render (the wasm panic never surfaces in `cargo check`/`clippy`/
     // `cargo test`, since Dioxus's Rules of Hooks are enforced at runtime,
     // not by the type system).
     let blur_close = use_delayed_action();
@@ -516,8 +514,8 @@ pub fn NavigationMenuItem(props: NavigationMenuItemProps) -> Element {
     // reachable that way, only as this struct's own field, and this item's
     // panel content is unmounted/remounted far more often than this
     // component itself, so the collection's identity must survive that
-    // (`use_hook`, exactly like `NavigationMenuLink`'s own pre-existing
-    // per-instance collection construction below).
+    // (`use_hook`, exactly like `NavigationMenuLink`'s own per-instance
+    // collection construction below).
     let content_focus = use_hook(|| {
         CollectionState::new(
             ReadSignal::new(Signal::new(false)),
@@ -619,14 +617,14 @@ pub fn NavigationMenuTrigger(props: NavigationMenuTriggerProps) -> Element {
     ]);
     // Ties this trigger to the web-arm content's `position-anchor` once
     // promoted to the top layer -- see `crate::top_layer::anchor_name_style`
-    // (inert off the web arm). Previously a bare `style: anchor_name_style(
+    // (inert off the web arm). Not a bare `style: anchor_name_style(
     // ..)` literal directly on this element, beside `..attributes` below: a
-    // caller supplying their own `style` then produced two `style`
+    // caller supplying their own `style` would then produce two `style`
     // attributes on this same tag (`dev-docs/conformance-harness.md`
-    // hydration-parity Rule 4; caught live by
-    // `playwright/oracle/attr-synth`'s `navigation_menu:trigger:style`
-    // case). Folding it into `attributes` here instead, via
-    // `top_layer::anchored_trigger_attributes`, fixes that and (unlike
+    // hydration-parity Rule 4; `playwright/oracle/attr-synth`'s
+    // `navigation_menu:trigger:style` case covers it). Folding it into
+    // `attributes` here, via
+    // `top_layer::anchored_trigger_attributes`, avoids that and (unlike
     // plain `merge_attributes`, which folds a plain `style` attribute but
     // leaves shorthand style props -- `padding: ".."`, namespace
     // `Some("style")` -- as separate attributes) renders exactly one
@@ -695,8 +693,8 @@ pub fn NavigationMenuTrigger(props: NavigationMenuTriggerProps) -> Element {
                 // `focus_prev()` compute their "current position" from
                 // whatever this collection last *itself* set focus to,
                 // which can go stale the moment focus arrives some other
-                // way -- confirmed by execution: Tab into a top-level item,
-                // then Left/Right, and the first press was silently a
+                // way -- for example Tab into a top-level item,
+                // then Left/Right, where the first press would silently be a
                 // same-spot no-op (`next_index_after`/`prev_index_before`
                 // treat an unknown/`None` current position as "before the
                 // first item", so the first press only catches the
@@ -816,17 +814,12 @@ pub fn NavigationMenuContent(props: NavigationMenuContentProps) -> Element {
     // through `content_focus.set_focus`, the exact mechanism Home/Left/
     // Right already use to move focus on the top-level collection
     // (`use_item`'s own `control_mount_focus`), not a hand-rolled
-    // `MountedData` tracker -- an earlier version of this used exactly
-    // that (`first_content_link`/`register_first_link`, "whichever content
-    // link mounts first, tracked via a `Signal::peek()`-then-`set()`
-    // guard") and found by execution that it was not reliable: a real,
-    // multi-link panel opened via ArrowDown always focused its *last*
-    // link, never its first. Root-caused to an assumption, not a race:
-    // that guard's "first-write-wins" logic implicitly assumed a content
-    // panel's children mount in source order, and confirmed by execution
-    // (a diagnostic build exposing each link's own assigned position) that
-    // they do not, for this shape -- reproducibly the exact *reverse* of
-    // source order, not a one-off flake. `content_focus`'s own
+    // `MountedData` tracker ("whichever content link mounts first",
+    // tracked via a `Signal::peek()`-then-`set()` guard). That tracker is
+    // unreliable: it assumes a content panel's children mount in source
+    // order, and for this shape they do not -- they mount in the exact
+    // *reverse* of source order, reproducibly, so a multi-link panel
+    // opened via ArrowDown would focus its *last* link. `content_focus`'s own
     // `first_available_index()` sidesteps this entirely: it sorts by each
     // registered item's own `index`, and `NavigationMenuLink`'s `index`
     // for a content link is `props.content_index` -- a plain value fixed
@@ -924,25 +917,23 @@ fn NavigationMenuOutsidePressDismiss() -> Element {
 /// settle hold) before actually unmounting it -- exactly the shape
 /// `crate::top_layer::use_popover_shown_while_mounted`'s own doc describes
 /// for `SelectList`/`ComboboxList`/`Toast`/`Popover`/`HoverCard`/`Tooltip`.
-/// An earlier version of this function used the plain
-/// `crate::top_layer::use_popover_sync` instead (mirroring `NavbarContent`'s
-/// own call, which does not need the animated-exit variant... except
-/// `NavbarContent` *also* renders through `use_animated_open` and has the
-/// same latent gap -- out of this module's scope to fix, see the module doc)
-/// -- that hook's "signal -> browser" effect calls `hidePopover()` the
+/// The plain `crate::top_layer::use_popover_sync` does not fit this shape:
+/// its "signal -> browser" effect calls `hidePopover()` the
 /// instant `open` goes `false`, which (per the UA popover stylesheet's
 /// `[popover]:not(:popover-open) { display: none }`) sets `display: none`
 /// on the content *before* `use_animated_open`'s own rAF-deferred
-/// `getAnimations()` check ever ran, so that check always observed zero
-/// running animations and finished the close cycle immediately -- the exit
-/// fade/scale was skipped outright, confirmed by execution (a live
-/// `dx serve` instance: the panel vanished within one 40ms sample of its
-/// `data-state` flipping to `"closed"`, instead of playing the ~150ms
-/// fade-and-scale-down this file's stylesheet declares, plus its ~250ms
-/// settle hold). This is `top_layer.rs`'s own documented "Bug 1 (animation
-/// race)" on `use_popover_shown_while_mounted`'s doc -- the exact bug class
-/// that hook exists to close. Switching to it here fixes the same way it
-/// already does for every other `use_animated_open`-rendered, `popover`-
+/// `getAnimations()` check ever runs, so that check observes zero
+/// running animations and finishes the close cycle immediately -- the exit
+/// fade/scale would be skipped outright: the panel would vanish within one
+/// 40ms sample of its `data-state` flipping to `"closed"`, instead of
+/// playing the ~150ms fade-and-scale-down this file's stylesheet declares,
+/// plus its ~250ms settle hold. This is `top_layer.rs`'s own documented
+/// "Bug 1 (animation race)" on `use_popover_shown_while_mounted`'s doc --
+/// the exact bug class that hook exists to close. (`NavbarContent` also
+/// renders through `use_animated_open`; its use of the plain hook is out
+/// of this module's scope, see the module doc.) Using the animated-exit
+/// variant here closes it the same way it
+/// does for every other `use_animated_open`-rendered, `popover`-
 /// promoted consumer: `hidePopover()` is never called on this component's
 /// own closing path at all, only a real DOM removal (once
 /// `use_animated_open` itself has decided the animation and its hold are
@@ -1051,10 +1042,9 @@ fn NavigationMenuContentRendered(
                     // *changes* (its own doc: "A redundant clear ... must
                     // not wake effects"). Setting the same already-current
                     // value is therefore a silent no-op that leaves real
-                    // DOM focus exactly where it was -- confirmed by
-                    // execution: with real DOM focus on a link inside the
+                    // DOM focus exactly where it was: with real DOM focus on a link inside the
                     // panel, `ctx.focus.set_focus(Some(trigger_index))`
-                    // alone never re-focused the trigger at all (focus fell
+                    // alone would never re-focus the trigger (focus would fall
                     // through to `<body>` once the closing content was
                     // actually removed from the DOM, several hundred ms
                     // later, past this animated exit's own hold). Clearing
@@ -1156,11 +1146,11 @@ pub struct NavigationMenuLinkProps {
     /// enforces it) for a link nested inside [`NavigationMenuContent`]: set
     /// it to that link's own position among its panel's siblings, `0`-based
     /// in reading order. Deliberately not inferred from mount order --
-    /// confirmed by execution that Dioxus does not mount a content panel's
+    /// Dioxus does not mount a content panel's
     /// children in source order for this shape (a `use_hook`-assigned,
-    /// monotonic-counter version of this index was tried first; every
-    /// panel's links came back numbered in the exact *reverse* of their
-    /// visual order, reproducibly, not as a one-off race), so nothing
+    /// monotonic-counter index numbers every
+    /// panel's links in the exact *reverse* of their
+    /// visual order, reproducibly), so nothing
     /// computed at a content link's own mount time can be trusted for this
     /// -- only a value fixed by the caller, before any rendering happens,
     /// the same way the top-level collection's own indices already are.

@@ -34,7 +34,7 @@ impl AccordionChevron {
 /// Internal accordion context.
 #[derive(Clone, Copy)]
 struct AccordionContext {
-    /// Used to track the next runtime-generated id.
+    /// Tracks the next runtime-generated id.
     next_id: Signal<usize>,
 
     /// The runtime generated ids of the open items.

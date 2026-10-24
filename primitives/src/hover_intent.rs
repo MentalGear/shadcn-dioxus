@@ -4,11 +4,11 @@
 //! [`crate::navbar::Navbar`] and [`crate::navigation_menu::NavigationMenu`] both open a
 //! panel when the pointer rests on a trigger, switch panels when it moves to a sibling
 //! trigger, and must close the panel once the pointer is over neither the trigger nor
-//! the panel. Each used to wire that by hand from `onmouseenter`/`onmouseleave`, and the
-//! hand-wiring diverged: the navigation menu scheduled a close timer on leave, while the
-//! navbar opened by writing its open index directly and "closed" on leave by clearing a
-//! focus state that a hover-open had never set -- so a hover-opened navbar dropdown stayed
-//! open for ever once the pointer left it. [`HoverIntent`] owns the whole decision, so a
+//! the panel. Wired by hand per host from `onmouseenter`/`onmouseleave`, the two would
+//! diverge: one schedules a close timer on leave, while the other opens by writing its open
+//! index directly and "closes" on leave by clearing a focus state that a hover-open never
+//! set -- so a hover-opened dropdown would stay open for ever once the pointer left it.
+//! [`HoverIntent`] owns the whole decision, so a
 //! host cannot have the opening half without the closing half:
 //!
 //! - **the open index** and its ONE write path ([`HoverIntent::set_open`]), which also

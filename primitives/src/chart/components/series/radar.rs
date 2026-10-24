@@ -1,7 +1,7 @@
 //! The [`ChartKind::Radar`](crate::chart::ChartKind::Radar) family: a
 //! closed polygon per series across N radial (per-datum) axes -- shadcn's
 //! `RadarChart`/`Radar`/`PolarGrid`/`PolarAngleAxis`
-//! (`$S/refs/ui/apps/v4/registry/new-york-v4/charts/chart-radar-*.tsx`,
+//! (shadcn-ui/ui `apps/v4/registry/new-york-v4/charts/chart-radar-*.tsx`,
 //! all 14 demos), on top of [`crate::chart::engine::radar`]'s pure
 //! geometry (angles, the radial scale, polygon/sector path builders -- see
 //! that module's own doc for the d3-shape/Recharts citations).
@@ -24,7 +24,7 @@
 //! `SeriesRenderContext::active_index` is a plain, **read-only**
 //! `Option<usize>` (`components::layout`'s own doc: "only `Chart`'s own
 //! hit-bands ... write it") -- correct for the three Cartesian families,
-//! whose hit-bands `chart.rs` itself still renders, but no help to a
+//! whose hit-bands `chart.rs` itself renders, but no help to a
 //! family that must render its *own* hit-target shape (an angular wedge,
 //! not a rectangular band). This file calls [`use_chart`] itself, exactly
 //! as `components::tooltip`/`components::legend` already do, to reach the
@@ -36,24 +36,19 @@
 //! is (`Chart`'s body calls it directly and synchronously, never deferred).
 //! No `SeriesRenderContext`/`components::layout` change needed for this.
 //!
-//! ## Known, flagged limitations (both orthogonal to this file, see
-//! `$S/stage2-lanes.md`'s own `s2-radar` entries)
+//! ## Tooltip position and data table (orthogonal to this file)
 //!
 //! 1. **Tooltip position.** Solved in the shared layer: this family
 //!    publishes [`anchors`] (each spoke's vertex of the largest value, used
 //!    when the keyboard opens the tooltip) and `Chart` registers it with
 //!    `Follow::Pointer`, so on hover the tooltip follows the pointer, with
 //!    the active spoke picked by this file's own wedge hit-targets.
-//! 2. **Hidden data table.** `components::chart::Chart`'s own body still
-//!    picks `engine::table::table_rows_single_series` (category + first
-//!    series only) for every `!is_cartesian` kind unconditionally --
-//!    correct forever for Pie/RadialBar (one value per category, by
-//!    construction), but not for Radar, which genuinely overlays N series
-//!    per category the same way Area/Bar/Line do (see this family's own
-//!    multi-series gallery variants). A ledger request proposes decoupling
-//!    that choice from `is_cartesian()`; until it lands, `ChartKind::Radar`
-//!    renders the reduced table end-to-end even though this file's own
-//!    geometry is already fully multi-series-correct.
+//! 2. **Hidden data table.** Radar genuinely overlays N series per
+//!    category the same way Area/Bar/Line do, so `components::chart::Chart`
+//!    picks the full per-category-per-series `engine::table::table_rows`
+//!    for it (`ChartKind::has_full_table`), not the single-series
+//!    reduction Pie/RadialBar use (one value per category, by
+//!    construction).
 
 use dioxus::prelude::*;
 

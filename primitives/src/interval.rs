@@ -1,12 +1,12 @@
 //! `use_interval`: the one sanctioned repeating timer.
 //!
 //! A repeating timer must belong to the component that asked for it: it starts when the
-//! component mounts, runs exactly once, and is gone when the component is. The previous shape
-//! of this code was a JS `setInterval` started from a `use_effect` through `document::eval`,
-//! which nothing could ever clear (a JS interval is owned by the page, not by the Dioxus scope
-//! that evaluated the script). Every re-run of that effect, and every visit to the page,
-//! stacked another interval on top of the old ones, so the page's idle main-thread cost grew
-//! with its age (dev-docs/archive/research/scroll-jank-2026-10-04.md, Cause 1: 128 live intervals after
+//! component mounts, runs exactly once, and is gone when the component is. A JS `setInterval`
+//! started from a `use_effect` through `document::eval` could not be cleared (a JS interval is
+//! owned by the page, not by the Dioxus scope that evaluated the script), and every re-run of
+//! that effect, and every visit to the page, would stack another interval on top of the
+//! others, so the page's idle main-thread cost would grow with its age
+//! (dev-docs/archive/research/scroll-jank-2026-10-04.md, Cause 1: 128 live intervals after
 //! ~100 s, 1,326 timer wakeups per second at 155 s).
 //!
 //! This hook has no JS interval at all. The tick loop is a Dioxus task spawned in the calling

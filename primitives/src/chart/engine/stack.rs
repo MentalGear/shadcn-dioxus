@@ -3,7 +3,7 @@
 
 /// Stack each row's series values into per-series `(y0, y1)` spans.
 ///
-/// **Scope, stated plainly (per `$S/chart-api.md`):** this implements only
+/// **Scope, stated plainly (per `dev-docs/archive/research/chart-2026-09-19.md`):** this implements only
 /// non-negative stacking, with negative values kept on their own baseline
 /// -- not Recharts'/d3's full `"sign"` stack-offset family. Concretely, per
 /// row, independently of every other row: a running *positive* baseline
@@ -19,7 +19,7 @@
 ///   baseline down to `v`'s bottom.
 ///
 /// This is enough for a stacked bar/area whose series are all one sign (the
-/// common case, and the only one `$S/chart-api.md`'s MVP demos need); a
+/// common case, and the only one `dev-docs/archive/research/chart-2026-09-19.md`'s MVP demos need); a
 /// diverging stack (some positive, some negative, in the same row) renders
 /// as two independent towers meeting at zero, which is a reasonable and
 /// common reading but not Recharts' own (its default also does exactly
@@ -78,16 +78,14 @@ pub fn stack(rows: &[Vec<Option<f64>>]) -> Vec<Vec<(f64, f64)>> {
 /// this row is each series", not "how much is each series".
 ///
 /// `#[non_exhaustive]`-free and `Default` (defaulting to `Normal`, i.e. a
-/// caller who never mentions this type gets today's existing [`stack`]
-/// behavior unchanged) so a family's own per-chart options struct (e.g.
-/// the `area` family's `AreaOptions`) can hold a plain `stack_mode:
-/// StackMode` field with `..Default::default()` support, per this stage's
-/// own construction: `ChartProps` itself never grows a `stack_mode` field
-/// -- every family that wants percent stacking (area today; bar via the
-/// stage-2 ledger's own cross-lane request, since both already share this
-/// module's plain [`stack`]) reads the *same* [`stack_with_mode`], from
-/// its own family-specific options struct, rather than each duplicating
-/// this normalization.
+/// caller who never mentions this type gets plain [`stack`] behavior) so a
+/// family's own per-chart options struct (e.g. the `area` family's
+/// `AreaOptions`) can hold a plain `stack_mode: StackMode` field with
+/// `..Default::default()` support: `ChartProps` itself has no `stack_mode`
+/// field -- a family that wants percent stacking (area today; bar could,
+/// since both share this module's plain [`stack`]) reads the *same*
+/// [`stack_with_mode`], from its own family-specific options struct, rather
+/// than each duplicating this normalization.
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
 pub enum StackMode {
     /// [`stack`]'s own behavior: raw cumulative spans.

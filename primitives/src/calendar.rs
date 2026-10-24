@@ -243,9 +243,8 @@ fn nth_month_previous(date: Date, n: u8) -> Option<Date> {
 /// this crate does (`Direction::resolve_horizontal`): the day "to the
 /// right" is always `+1` day in LTR and `-1` day in RTL, since a calendar's
 /// week row is itself a horizontal, direction-mirrored layout (the same
-/// spatial-arrow-key convention this lane found unanimous across every
-/// Radix source it read for roving focus, Slider, and the menu family --
-/// see `$S/batch3/rtl-rust/reference.md`; no Radix/shadcn Calendar exists
+/// spatial-arrow-key convention every Radix source uses for roving focus,
+/// Slider, and the menu family; no Radix/shadcn Calendar exists
 /// to cite directly, since shadcn's own Calendar wraps `react-day-picker`,
 /// not a Radix primitive). `ArrowUp`/`ArrowDown` (`±7 days`, a full week
 /// row) are never direction-dependent and stay outside this function,
@@ -3054,9 +3053,9 @@ fn SingleCalendarDay(props: CalendarDayProps) -> Element {
     // `type` is an overridable default; the roving-focus `tabindex` and
     // `calendar_day_attributes`'s aria/data state are owned, so they merge
     // in last -- same precedence (owned wins) production already had via
-    // the old first-literal-wins SSR/last-wins CSR split (backlog row 93),
-    // just without the duplicate attribute a caller override used to
-    // silently collide with after hydration.
+    // the first-literal-wins SSR / last-wins CSR split (backlog row 93),
+    // with no duplicate attribute for a caller override to collide with
+    // after hydration.
     let defaults = attributes!(button { r#type: "button" });
     let owned = merge_attributes(vec![
         calendar_day_attributes(&state),

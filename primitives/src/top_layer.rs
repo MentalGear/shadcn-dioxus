@@ -1,7 +1,7 @@
 //! Top-layer wiring for non-modal overlays — the `popover` attribute.
 //!
 //! Concept ported from `dignifiedquire/dx-components` (MIT OR Apache-2.0),
-//! `primitives/src/top_layer.rs` @ `5af3cc292559a0e8d73c7b9a827c4ca08ef34d99`
+//! `primitives/src/top_layer.rs` @ 5af3cc292559a0e8d73c7b9a827c4ca08ef34d99
 //! (`use_top_layer`, `TopLayerKind`). Adapted: rewritten against this
 //! crate's `document::eval` house pattern (see `use_form_reset_listener`,
 //! `lib.rs`) instead of `wasm_bindgen`/`web_sys` — this crate has neither as
@@ -61,35 +61,33 @@ thread_local! {
 /// hot-reload resetting Rust statics but leaving the already-injected tag in
 /// the live DOM).
 ///
-/// ## The bug class this closes (dev-docs/backlog.md item 1, 2026-09-01)
+/// ## The bug class this closes (dev-docs/backlog.md item 1)
 ///
-/// Before this function existed, the `@supports (anchor-name: --a)` block
+/// The `@supports (anchor-name: --a)` block
 /// (per-`[data-side]`/`[data-align]` `anchor()` rules, `position-try-
 /// fallbacks: flip-block, flip-inline`) and the `[popover]` UA-stylesheet
 /// reset (`margin: 0; inset: auto;` -- undoing `[popover] { inset: 0; margin:
 /// auto; }`, which otherwise invokes CSS's auto-margin centering algorithm
 /// and lands content far from its trigger; see `use_anchor_position_fallback`'s
-/// doc above) had to be hand-copied into *every* consuming page's own
+/// doc above) are not hand-copied into *every* consuming page's own
 /// `#[css_module]` stylesheet, because `manganis-core`'s `css_module_parser`
 /// does not scope classes referenced only inside `@supports`
-/// (`dev-docs/issues/css-module-supports-scoping.md`) -- so each copy had to be a
-/// plain, unhashed `dx-anchor-*` marker class rather than a `Styles::`-routed
-/// one. Two consuming pages (`color_picker`, `date_picker`) shipped without
-/// their copy and silently fell back to un-anchored positioning until the
-/// gap was noticed and hand-patched (see the "Wiring-gap fix" comments this
-/// change removes from both files' `style.css`) -- a bug class, not a
-/// one-off: every *future* `dx-anchor-*`-marked overlay would have to
+/// (`dev-docs/issues/css-module-supports-scoping.md`) -- so each copy would
+/// have to be a plain, unhashed `dx-anchor-*` marker class rather than a
+/// `Styles::`-routed one. A consuming page that lacked its copy
+/// (`color_picker` and `date_picker` did) silently fell back to un-anchored
+/// positioning -- a bug class, not a one-off: every *future*
+/// `dx-anchor-*`-marked overlay would have to
 /// remember to duplicate this same block into its own page's stylesheet, or
 /// fail the identical way. Injecting this once, engine-side, from the same
 /// Rust module that defines the marker-class contract
-/// (`anchor_name_style`/`position_anchor_style` below) instead makes anchor
+/// (`anchor_name_style`/`position_anchor_style` below) makes anchor
 /// positioning "just work" for `dx-anchor-tooltip`/`dx-anchor-hover-card`/
 /// `dx-anchor-popover`/`dx-anchor-dropdown-menu`/`dx-anchor-menubar`/
 /// `dx-anchor-navbar`/`dx-anchor-navigation-menu`/`dx-anchor-select`/
-/// `dx-anchor-combobox` (Migration A
-/// slice 3/3, `select/components/list.rs`'s `SelectListRendered` and
-/// `combobox/components/list.rs`'s `ComboboxListRendered`; `dx-anchor-navbar`
-/// added 2026-09-03, finding C -- `navbar.rs`'s `NavbarContentRendered`)
+/// `dx-anchor-combobox` (`select/components/list.rs`'s `SelectListRendered` and
+/// `combobox/components/list.rs`'s `ComboboxListRendered`; `dx-anchor-navbar`:
+/// `navbar.rs`'s `NavbarContentRendered`)
 /// content everywhere in the app, with no per-page CSS to remember.
 ///
 /// Call this once per overlay content mount -- [`use_anchor_position_fallback`]
@@ -137,19 +135,18 @@ pub(crate) fn ensure_anchor_positioning_styles() {
 /// That prepending matters, and is not merely a convenience: this function's
 /// statement and a measurement's `getBoundingClientRect()` call dispatched
 /// from two *separate* `document::eval()` calls have no guaranteed relative
-/// ordering against each other from Rust's point of view (confirmed by
-/// execution: an earlier version of this fix called
+/// ordering against each other from Rust's point of view (calling
 /// `ensure_anchor_positioning_styles()` from a `use_effect` declared just
 /// before `use_anchor_position_fallback`'s own measurement effect in the
 /// same function, relying on Dioxus's normal same-component effect-ordering
-/// guarantee -- and on a fresh page load, before this stylesheet had ever
-/// been injected, the measurement's `reposition()` still ran before the
-/// browser had applied the freshly-appended `<style>` tag's rules, so its
-/// `matches()` check saw the *pre-anchor* position and wrongly concluded
-/// this engine's CSS Anchor Positioning integration had failed, taking over
+/// guarantee, fails: on a fresh page load, before this stylesheet has ever
+/// been injected, the measurement's `reposition()` can still run before the
+/// browser has applied the freshly-appended `<style>` tag's rules, so its
+/// `matches()` check sees the *pre-anchor* position and wrongly concludes
+/// this engine's CSS Anchor Positioning integration has failed, taking over
 /// with an inline-style override it never needed to make --
 /// `playwright/oracle/tier2-html/top-layer.spec.ts`'s Rule 8 ColorPicker
-/// case caught this on the very first cold load of that page). Two
+/// case covers the very first cold load of that page). Two
 /// statements inside *one* `document::eval()` call, by contrast, are one
 /// synchronous JS script as far as the browser's engine is concerned:
 /// `appendChild`ing the `<style>` tag synchronously invalidates style for
@@ -213,14 +210,13 @@ const ANCHOR_POSITIONING_CSS_JS_LITERAL: &str = r#"`
     inset: auto;
     transform: none;
     position-try-fallbacks: flip-block, flip-inline;
-    /* Anchor width contract (docs/backlog.md row 47, 2026-09-04): publish
+    /* Anchor width contract (docs/backlog.md row 47): publish
        the trigger's width as the same --dx-anchor-width custom property
        use_anchor_position_fallback's JS measurement writes on every
        engine (see that function's doc, "Anchor width contract") -- a CSS-
        native belt on a conforming engine, alongside that JS suspenders
-       everywhere else. Confirmed by execution (a throwaway Chromium probe,
-       this session) that anchor-size() substitutes correctly when only
-       referenced from inside a custom-property declaration and then read
+       everywhere else. In Chromium, anchor-size() substitutes correctly
+       when only referenced from inside a custom-property declaration and then read
        back through var() at a sizing property's use site -- so this is
        safe to declare generically here, on the marker classes every
        anchored overlay already carries, without knowing anything about a
@@ -237,11 +233,10 @@ const ANCHOR_POSITIONING_CSS_JS_LITERAL: &str = r#"`
        contain a backtick character -- this whole stylesheet is embedded
        as one JS template-literal string in
        ANCHOR_POSITIONING_CSS_JS_LITERAL below, and a stray backtick here
-       would terminate that literal early, producing broken JS (confirmed
-       by execution: an earlier draft of this exact comment did this and
-       threw "Invalid left-hand side expression in postfix operation" at
-       runtime, from "--dx-anchor-width" being parsed as JS code instead
-       of string content once the literal closed early). */
+       would terminate that literal early, producing broken JS (a runtime
+       "Invalid left-hand side expression in postfix operation", from
+       "--dx-anchor-width" being parsed as JS code instead of string
+       content once the literal closed early). */
     --dx-anchor-width: anchor-size(width);
   }
 
@@ -587,8 +582,8 @@ const ANCHOR_POSITIONING_CSS_JS_LITERAL: &str = r#"`
 /// `<input>`/`<select>`/`<textarea>` each carry their *own* direct UA
 /// `color` declaration too (`buttontext`/`fieldtext`, never inherited by
 /// default), so the wrapper rule's `color: inherit` cannot reach a form
-/// control nested inside promoted content -- confirmed by execution against
-/// `DatePicker`'s calendar day-grid buttons.
+/// control nested inside promoted content (`DatePicker`'s calendar
+/// day-grid buttons are the concrete case).
 ///
 /// ## Coverage: every top-layer consumer reaches this, by construction
 ///
@@ -678,7 +673,7 @@ pub(crate) fn ensure_top_layer_ink_styles() {
 /// reason [`anchor_positioning_inject_js`]'s own doc gives (see
 /// [`ensure_top_layer_ink_styles`]'s doc, "First-paint window," for the
 /// full account). `pub(crate)`, not private to this module, so `lib.rs`'s
-/// `use_dialog_open_driver` -- the third of this fix's three exhaustive
+/// `use_dialog_open_driver` -- the third of the three exhaustive
 /// call sites, and the only one outside this file -- can prepend it too.
 #[cfg(feature = "web")]
 pub(crate) const TOP_LAYER_INK_STYLES_INJECT_JS: &str = r#"
@@ -699,21 +694,20 @@ if (!document.getElementById('dx-top-layer-ink-styles')) {
          setting color directly on the element (buttontext / fieldtext), and
          a directly-cascaded value beats an inherited one just as it does for
          [popover]/dialog -- so an ancestor's \`color: inherit\` can never
-         reach them. Caught by execution: DatePicker's calendar day-grid
-         cells (\`.dx-calendar-grid-cell\`, real <button>s) stayed black even
-         after the wrapper-only rule above -- \`Calendar\`'s own stylesheet
-         turns out not to be loaded on the DatePicker route at all
-         (a separate, pre-existing, unrelated composition defect -- see
-         docs/backlog.md/this session's report), so those buttons had no
+         reach them. Example: DatePicker's calendar day-grid
+         cells (\`.dx-calendar-grid-cell\`, real <button>s) stay black with
+         only the wrapper rule above -- \`Calendar\`'s own stylesheet
+         is not guaranteed to be loaded on the DatePicker route
+         (an unrelated composition concern), so those buttons can have no
          author \`color\` of any kind to fall back to, only their own UA
          default. This rule gives every top-layer-descendant form control
          the same DOM-tree-inherited inbox this file's whole construction is
          about, independent of whether that control's own stylesheet
          happens to be wired up. (Select/Combobox's listboxes are plain
          <div> options, not form controls -- unaffected by this rule either
-         way; both already carry their own explicit, intentionally different
+         way; both carry their own explicit, intentionally different
          \`color: var(--dx-popover-foreground)\` declared directly on the list,
-         which already won outright before this rule existed.) Scoped to
+         which wins outright regardless of this rule.) Scoped to
          top-layer descendants rather than applied app-wide: this closes the
          class where it actually bites without silently restyling every
          ordinary button on the page. Still :where(), so any component that
@@ -744,7 +738,7 @@ pub(crate) enum PopoverKind {
     /// [`crate::popover`] arm, whose existing `use_outside_dismiss`/
     /// `use_global_escape_listener` wiring this replaces on the web arm;
     /// also `dropdown_menu.rs`, `menubar.rs`, and `select/components/
-    /// list.rs`'s `SelectListRendered` (Migration A slices 1-3), each of
+    /// list.rs`'s `SelectListRendered`, each of
     /// which layers light dismiss on top of -- not instead of -- their own
     /// existing blur-driven dismissal as a backstop; see each's own doc for
     /// why `auto` is safe there specifically.
@@ -767,9 +761,8 @@ pub(crate) enum PopoverKind {
     /// otherwise be an outside click if `auto` briefly closed it first);
     /// also `context_menu.rs` (a point-opened menu with no persistent
     /// trigger for `auto` to reason about) and `combobox/components/
-    /// list.rs`'s `ComboboxListRendered` (Migration A slice 3/3, reversed
-    /// from an initial `auto` attempt by execution -- see that component's
-    /// doc for the concrete regression that decision caught).
+    /// list.rs`'s `ComboboxListRendered` (`auto` fails there -- see that
+    /// component's doc for the concrete regression).
     Manual,
 }
 
@@ -819,13 +812,11 @@ impl PopoverKind {
 /// already defines), not `target_family = "wasm"` — `dioxus-desktop` is a
 /// non-wasm binary with a real, working webview `eval`, and belongs on this
 /// same web-style arm, not on the native/no-op one `target_family = "wasm"`
-/// would wrongly exclude it from. `target_family = "wasm"` was the original
-/// gate here; it was corrected to `feature = "web"` after a 2026-09-01
-/// production incident (`dev-docs/reference/platform-rationale.md` Caveat 1)
-/// showed the fullstack SSG prerender — a host (non-wasm) binary built with
-/// this feature on — rendered the native-arm markup instead, because the
-/// old gate excluded it. See `dev-docs/reference/platform-rationale.md` Caveat 1
-/// for the corrected rule: markup/attribute choice keys off this renderer
+/// would wrongly exclude it from. A `target_family = "wasm"` gate would
+/// also have the fullstack SSG prerender — a host (non-wasm) binary built with
+/// this feature on — render the native-arm markup instead
+/// (`dev-docs/reference/platform-rationale.md` Caveat 1). See that caveat
+/// for the rule: markup/attribute choice keys off this renderer
 /// feature; only genuinely wasm-only *execution* internals (none exist in
 /// this hook's body — `document::eval` itself compiles and runs inertly on
 /// any renderer with no document context) would still key off
@@ -891,14 +882,13 @@ pub(crate) fn use_popover_sync(
 /// own exit animation settles) ever takes this content out of the top
 /// layer.
 ///
-/// ## Why this exists (Migration A slice 3/3): two execution-confirmed bugs
+/// ## Why this exists: two bugs the plain sync hook cannot avoid
 ///
 /// [`use_popover_sync`]'s own "signal -> browser" effect calls
 /// `hidePopover()` the instant `open` goes `false`. That is exactly right
-/// for content with no exit animation (every `use_popover_sync` call site
-/// before this slice: `Tooltip`/`HoverCard`/`Popover`/`DropdownMenu`/
-/// `ContextMenu`/`Menubar`, none of which keep their content mounted
-/// through a CSS animate-out -- Radix-style `data-state="closed"`
+/// for content with no exit animation (`Tooltip`/`HoverCard`/`Popover`/
+/// `DropdownMenu`/`ContextMenu`/`Menubar`, none of which keep their content
+/// mounted through a CSS animate-out -- Radix-style `data-state="closed"`
 /// animations on those are cosmetic fades that finish well after the
 /// element would already be gone). `SelectList`/`ComboboxList` are
 /// different: both render through `use_animated_open`, which
@@ -908,34 +898,32 @@ pub(crate) fn use_popover_sync(
 /// keyboard close animation" test asserts exactly this, that the
 /// `data-state="closed"` element is still visible mid-animation.
 ///
-/// **Bug 1 (animation race).** Confirmed by execution: an earlier version
-/// of this migration called [`use_popover_sync`] directly with the raw
-/// `open` signal (the same shape every prior `dx-anchor-*` consumer uses),
-/// and that test went red -- `hidePopover()` fired on the same tick `open`
-/// went `false`, which (per the UA popover stylesheet's
+/// **Bug 1 (animation race).** Calling [`use_popover_sync`] directly with the
+/// raw `open` signal fails that test: `hidePopover()` fires on the same
+/// tick `open` goes `false`, which (per the UA popover stylesheet's
 /// `[popover]:not(:popover-open) { display: none }`) sets `display: none`
 /// on the content *before* `use_animated_open`'s own rAF-deferred
-/// `getAnimations()` check ever ran, so it always observed zero running
-/// animations and finished the close cycle immediately -- the exit
-/// animation was skipped outright, and Playwright's `toBeVisible()` on the
-/// still-should-be-animating `data-state="closed"` element failed. Never
+/// `getAnimations()` check ever runs, so it observes zero running
+/// animations and finishes the close cycle immediately -- the exit
+/// animation is skipped outright, and Playwright's `toBeVisible()` on the
+/// still-should-be-animating `data-state="closed"` element fails. Never
 /// calling `hidePopover()` from the closing path at all -- only from a real
 /// unmount, once `use_animated_open` itself has already decided the
 /// animation (and its settle hold) is done -- sidesteps this entirely: the
 /// exit animation plays out undisturbed on an element that is still very
 /// much `:popover-open` the whole time.
 ///
-/// **Bug 2 (reopen-while-still-mounted, `auto` only).** Confirmed by
-/// execution against `combobox.spec.ts`'s "filters and selects with the
-/// keyboard" test (intermittently red -- see this session's report):
+/// **Bug 2 (reopen-while-still-mounted, `auto` only).** Seen in
+/// `combobox.spec.ts`'s "filters and selects with the keyboard" test
+/// (intermittently red without the fix):
 /// `auto`'s native light dismiss has no notion of "this input is the
 /// trigger that owns me" (`ComboboxInput`/`SelectTrigger` are never
-/// declared as this popover's invoker -- confirmed by execution that
-/// neither a `popovertarget` attribute nor `preventDefault()` on the
+/// declared as this popover's invoker, and neither a `popovertarget`
+/// attribute nor `preventDefault()` on the
 /// trigger's own `pointerdown`/`click` stops it; WHATWG light dismiss
 /// treats *any* pointerdown outside the popover's own DOM subtree as
 /// "outside," full stop). So: select an option (closes, `open` -> `false`,
-/// content stays mounted mid-exit-animation per Bug 1's fix above):, then
+/// content stays mounted mid-exit-animation per Bug 1 above), then
 /// -- while that same instance is *still* mounted, `:popover-open` still
 /// `true` -- click the trigger again to reopen. The trigger's own
 /// `pointerdown` is classified as "outside" by native light dismiss, which
@@ -944,14 +932,13 @@ pub(crate) fn use_popover_sync(
 /// forwarded correctly back into `on_native_close`, setting `open` to
 /// `false` -- **immediately followed**, same gesture, by the trigger's own
 /// `onclick` reading `open` and calling `set_open(true)` to reopen it. A
-/// one-time, mount-only `showPopover()` call (this function's first,
-/// insufficient version) never re-fires for this already-mounted instance,
-/// so `open` becomes `true` again in Rust/`data-state` while the actual
-/// DOM element stays hidden (`:not(:popover-open)`) -- a real, user-visible
-/// "second click does nothing" defect. Reacting to `open` on every
-/// transition (not just the first) fixes it the same way
-/// [`use_popover_sync`]'s own show effect already always has: whenever
-/// `open` is `true` and the element is not yet `:popover-open`,
+/// one-time, mount-only `showPopover()` call never re-fires for this
+/// already-mounted instance, so `open` becomes `true` again in
+/// Rust/`data-state` while the actual DOM element stays hidden
+/// (`:not(:popover-open)`) -- a user-visible "second click does nothing"
+/// defect. Reacting to `open` on every transition (not just the first)
+/// avoids it the same way [`use_popover_sync`]'s own show effect does:
+/// whenever `open` is `true` and the element is not yet `:popover-open`,
 /// `showPopover()` runs again, regardless of *why* it had stopped being
 /// shown.
 ///
@@ -960,9 +947,9 @@ pub(crate) fn use_popover_sync(
 /// algorithm sets `display: none` synchronously, before Rust ever learns
 /// about it -- but that is an accepted, well-known limit of the plain
 /// Popover API without `@starting-style`/`transition-behavior:
-/// allow-discrete` (out of scope here), not something this slice's oracle
-/// requires animated; the test Bug 1's fix targets only exercises a
-/// script-driven (Enter-key) close, exactly the path that fix keeps
+/// allow-discrete` (out of scope here), not something the oracle
+/// requires animated; the test Bug 1 targets only exercises a
+/// script-driven (Enter-key) close, exactly the path this hook keeps
 /// animatable.
 #[cfg(feature = "web")]
 pub(crate) fn use_popover_shown_while_mounted(
@@ -1053,9 +1040,8 @@ pub(crate) fn use_popover_shown_while_mounted(
 /// Deliberately does *not* gate on `CSS.supports('anchor-name: --a')` alone,
 /// unlike the CSS `@supports` blocks this pairs with (those stay -- they're
 /// what makes Chromium's positioning correct from the very first layout,
-/// before this effect's synchronous correction below even runs). Confirmed
-/// by execution against a real, current-at-time-of-writing Firefox build:
-/// `CSS.supports('anchor-name: --a')` reports `true` there (the property
+/// before this effect's synchronous correction below even runs). On Firefox,
+/// `CSS.supports('anchor-name: --a')` reports `true` (the property
 /// parses), yet a popover-promoted element's `anchor()`-based `top`/`left`
 /// still failed to resolve against its trigger -- a real, engine-specific
 /// popover/anchor-positioning integration gap that a syntax-support check
@@ -1064,15 +1050,15 @@ pub(crate) fn use_popover_shown_while_mounted(
 /// component's own `[data-side]`/`[data-align]` contract promises, and
 /// only overrides with inline styles when they disagree by more than a
 /// couple of pixels (rounding/subpixel noise). On an engine where `anchor()`
-/// already resolved correctly (this repo's Chromium, confirmed by
-/// execution), the computed and actual positions match and nothing is
+/// already resolves correctly (this repo's Chromium),
+/// the computed and actual positions match and nothing is
 /// touched -- no extra reflow, no risk of fighting a working anchor
 /// resolution.
 ///
 /// ## The flip contract (dev-docs/backlog.md row 10)
 ///
 /// The stylesheets this pairs with (`tooltip`/`hover_card`/`popover`
-/// `style.css`, `@supports` blocks) now declare
+/// `style.css`, `@supports` blocks) declare
 /// `position-try-fallbacks: flip-block, flip-inline` on the anchored
 /// `[popover]` rule -- the CSS Anchor Positioning spec's own collision-
 /// avoidance primitive
@@ -1080,110 +1066,92 @@ pub(crate) fn use_popover_shown_while_mounted(
 /// engine that implements it, a preferred placement that doesn't fit the
 /// viewport can legitimately paint at the *opposite* side on the relevant
 /// axis instead -- e.g. `[data-side="bottom"]` rendering physically above
-/// its trigger. That is intentional disagreement with the naive "actual
-/// equals `[data-side]`'s own formula" check this function used to make
-/// unconditionally, and this function runs after that flip has already
-/// painted (see the mount-order/timing note further down) -- so this
-/// function computes **both** candidate positions (the primary side's own
-/// formula, and the same formula with only the relevant axis's side
-/// swapped -- top/bottom sides flip on the block axis, left/right sides on
-/// the inline axis, matching `flip-block`/`flip-inline` exactly) and
-/// accepts the painted position if it matches *either* one. Only when it
-/// matches **neither** -- meaning this engine's anchor-positioning
-/// integration failed outright, the pre-existing case this function was
-/// written for -- does it override with inline styles at all. This is the
-/// one load-bearing rule change here: naively re-checking only the primary
-/// formula would see a legitimate CSS flip as "wrong" and stomp it back to
-/// the off-viewport primary position, fighting the platform's own fix.
+/// its trigger. That is intentional disagreement with a naive "actual
+/// equals `[data-side]`'s own formula" check, and this function runs after
+/// that flip has already painted (see the mount-order/timing note further
+/// down) -- so this function computes **both** candidate positions (the
+/// primary side's own formula, and the same formula with only the relevant
+/// axis's side swapped -- top/bottom sides flip on the block axis,
+/// left/right sides on the inline axis, matching `flip-block`/`flip-inline`
+/// exactly) and accepts the painted position if it matches *either* one.
+/// Only when it matches **neither** -- meaning this engine's
+/// anchor-positioning integration failed outright, the case this function
+/// was written for -- does it override with inline styles at all. This is
+/// the one load-bearing rule here: re-checking only the primary formula
+/// would see a legitimate CSS flip as "wrong" and stomp it back to the
+/// off-viewport primary position, fighting the platform's own fix.
 ///
 /// When it does override (no working anchor-positioning engine at all), it
-/// now makes the *same* flip decision itself, from plain
+/// makes the *same* flip decision itself, from plain
 /// `getBoundingClientRect()`/`window.inner{Width,Height}` viewport math:
 /// if the primary placement would overflow the relevant viewport edge, it
-/// uses the flipped placement instead. This closes the "legacy engines get
-/// no flip at all" gap dev-docs/backlog.md row 10 notes alongside the CSS
-/// addition. Resizing WIDTH to fit stays out of scope (a too-wide overlay
-/// is rare, and this crate's own themed listboxes/menus already cap their
-/// own width independently, e.g. `select/style.css`'s `max-width:
-/// calc(100vw - 2rem)`) -- but see "Inline-axis shift (2026-09-03)" below
-/// for the one piece of horizontal shift this function *does* now do, and
-/// "Vertical shift + size clamp (2026-09-04)" further below for the same
-/// treatment on the other axis, HEIGHT included this time: unlike width, a
-/// too-*tall* overlay is the ordinary case for this crate's own listboxes/
-/// menus (more options than a short viewport can hold), so resizing --
-/// capping height, with the content scrolling inside that cap -- is in
-/// scope there.
+/// uses the flipped placement instead, so legacy engines get the flip too
+/// (dev-docs/backlog.md row 10). Resizing WIDTH to fit stays out of scope
+/// (a too-wide overlay is rare, and this crate's own themed listboxes/menus
+/// already cap their own width independently, e.g. `select/style.css`'s
+/// `max-width: calc(100vw - 2rem)`) -- but see "Inline-axis shift" below
+/// for the one piece of horizontal shift this function *does* do, and
+/// "Vertical shift + size clamp" further below for the same treatment on
+/// the other axis, HEIGHT included: unlike width, a too-*tall* overlay is
+/// the ordinary case for this crate's own listboxes/menus (more options
+/// than a short viewport can hold), so resizing -- capping height, with
+/// the content scrolling inside that cap -- is in scope there.
 ///
-/// ## Inline-axis shift (2026-09-03, user device report)
+/// ## Inline-axis shift
 ///
-/// User report (iOS 18 Safari, no CSS Anchor Positioning there at all --
-/// confirmed by the report itself, and the exact engine this whole function
-/// exists for): the `ColorPicker` popup on the home page's widget masonry
-/// clips against the viewport's edge on a small screen, with no attempt to
-/// reposition it. Reproduced in this sandbox's Chromium via the same
-/// no-anchor-engine simulation `top-layer.spec.ts` Rule 11 already uses
-/// (`stripAnchorSupportsBlock`, `MOBILE_VIEWPORT`) -- confirmed by
-/// execution: the masonry `ColorPicker`'s content landed at
-/// `left: -2.97px` (a few pixels past the *left* edge in this sandbox's
-/// exact layout -- the reported direction depends only on which side of a
-/// narrow viewport the trigger happens to sit on, not on anything specific
-/// to "right"), and two of this file's own `edge-bottom-*` fixture cases
-/// (`Tooltip`, non-modal `Popover`) landed at `left: -192px`/`-194px` --
-/// far enough that `flip-block` (the only fallback this contract declared
-/// before this fix) could never have been the cause: `side="bottom"` only
-/// ever flips to `side="top"`, which changes `top`, never `left`.
+/// Flip (both the CSS `position-try-fallbacks` primitive this function
+/// mirrors, and its own viewport-math equivalent just above) only swaps
+/// `side` to its axis opposite -- block for top/bottom, inline for
+/// left/right (the `opposite` map above). For a `side="top"`/`side="bottom"`
+/// placement, the horizontal position comes entirely from `align`
+/// (start/center/end, computed once against the trigger's own rect in
+/// `place()` above); neither CSS (this crate's `@supports` block declares
+/// no shift primitive) nor flip checks it against the viewport. A
+/// center-aligned overlay wider than the room its trigger has on one side
+/// would clip against the viewport's edge on a small screen (iOS Safari has
+/// no CSS Anchor Positioning at all, the engine this whole function exists
+/// for; the `top-layer.spec.ts` `edge-bottom-*` fixture cases of `Tooltip`
+/// and non-modal `Popover` land at `left: -192px`/`-194px` without it) --
+/// and `flip-block` could never be the remedy: `side="bottom"` only ever
+/// flips to `side="top"`, which changes `top`, never `left`.
 ///
-/// Root cause: flip (both the CSS `position-try-fallbacks` primitive this
-/// function mirrors, and its own pre-existing viewport-math equivalent just
-/// above) only ever swaps `side` to its axis opposite -- block for
-/// top/bottom, inline for left/right (the `opposite` map above). For a
-/// `side="top"`/`side="bottom"` placement, the horizontal position comes
-/// entirely from `align` (start/center/end, computed once against the
-/// trigger's own rect in `place()` above) and was never once checked
-/// against the viewport at all -- not by CSS (this crate's `@supports`
-/// block declares no shift primitive), and not by this function. A
-/// center-aligned overlay wider than the room its trigger happens to have
-/// on one side had no correction of any kind, on either engine.
-///
-/// Fixed *only* on this JS-fallback path (below, in the "neither matches"
-/// branch): after the existing flip decision, `target.left` is clamped into
+/// So on this JS-fallback path (below, in the "neither matches" branch),
+/// after the flip decision, `target.left` is clamped into
 /// `[EDGE_MARGIN, vw - EDGE_MARGIN - cw]` (falling back to flush against the
 /// left edge if the content is wider than the viewport has room for at
 /// all -- resizing to fit stays out of scope, matching the flip-only note
-/// above). Deliberately not mirrored into the CSS `@supports` contract in
-/// this round: no `position-try-fallbacks` keyword shifts along an axis the
+/// above). It is deliberately not mirrored into the CSS `@supports`
+/// contract: no `position-try-fallbacks` keyword shifts along an axis the
 /// way this function's clamp does (CSS's own analogous primitive,
 /// `position-area`/`margin: auto`-driven "shift", is a materially larger
-/// change this fix does not need to make in order to close the reported
-/// device's gap) -- so a genuinely CSS-Anchor-Positioning-conforming engine
-/// (this sandbox's Chromium among them) is untouched by this fix, exactly
-/// as the existing `matches()` early-return above already keeps it for
-/// flip. That is not a gap for the *reported* device, though: iOS Safari
-/// (per the report) has no CSS Anchor Positioning support at all, so it
-/// always takes this exact fallback path regardless. `top-layer.spec.ts`
-/// Rule 12 is the regression oracle, reusing Rule 11's own no-anchor-engine
-/// simulation.
+/// change that is not needed to close the gap on the devices concerned) --
+/// so a genuinely CSS-Anchor-Positioning-conforming engine (Chromium among
+/// them) is untouched by the clamp, exactly as the `matches()` early-return
+/// above keeps it for flip. iOS Safari has no CSS Anchor Positioning
+/// support at all, so it always takes this exact fallback path regardless.
+/// `top-layer.spec.ts` Rule 12 is the regression oracle, reusing Rule 11's
+/// own no-anchor-engine simulation (`stripAnchorSupportsBlock`,
+/// `MOBILE_VIEWPORT`).
 ///
-/// ## Vertical shift + size clamp (2026-09-04, `dev-docs/backlog.md` row 10
-/// residual scope: "shift/size clamping")
+/// ## Vertical shift + size clamp (`dev-docs/backlog.md` row 10 residual
+/// scope: "shift/size clamping")
 ///
-/// The 2026-09-03 fix directly above closed the horizontal half of this gap
-/// only -- deliberately, matching the one user report that motivated it
-/// (iOS Safari, no CSS Anchor Positioning at all). Two related gaps remain
-/// on the other axis, closed together here, still mirroring this function's
-/// existing construction rather than adding a second positioning path:
+/// The inline-axis shift directly above covers the horizontal half of the
+/// gap only. Two related gaps exist on the other axis, closed together
+/// here, still mirroring this function's existing construction rather than
+/// adding a second positioning path:
 ///
-/// 1. **Vertical position shift.** The identical bug class the 2026-09-03
-///    fix closed for the inline axis, mirrored onto the block axis: flip
+/// 1. **Vertical position shift.** The identical bug class as the inline
+///    axis, mirrored onto the block axis: flip
 ///    only ever swaps `side` to its own axis's opposite (the `opposite` map
 ///    above), so a `side="left"`/`side="right"` placement's *vertical*
 ///    position -- like a `side="top"`/`side="bottom"` placement's
 ///    *horizontal* one -- comes entirely from `align`, computed once
-///    against the trigger in `place()` above, and was never checked against
-///    the viewport either. It also backstops a `side="top"`/`side="bottom"`
+///    against the trigger in `place()` above, and is not otherwise checked
+///    against the viewport. It also backstops a `side="top"`/`side="bottom"`
 ///    placement itself: flip picks whichever of `primary`/`flipped` the
-///    existing `if`/`else if` ladder judges to fit *the axis it swaps*, but
-///    neither branch ever confirmed the *chosen* one actually lands
+///    `if`/`else if` ladder judges to fit *the axis it swaps*, but
+///    neither branch confirms the *chosen* one actually lands
 ///    on-screen -- only possible to miss when the content is taller than
 ///    the room on both sides of the trigger, i.e. gap 2's own condition.
 ///    Clamped into `[EDGE_MARGIN, vh - EDGE_MARGIN - ch]`, the same
@@ -1203,10 +1171,10 @@ pub(crate) fn use_popover_shown_while_mounted(
 ///    does would mean losing access to every option below the fold with no
 ///    way to reach it. So: when the content's own natural height (`ch`,
 ///    already reflecting whatever `max-height` a component's own
-///    stylesheet already applies -- `combobox/style.css`'s
+///    stylesheet applies -- `combobox/style.css`'s
 ///    `.dx-combobox-list` declares `max-height: 300px; overflow: hidden
-///    auto;` today, and `content.offsetHeight` is read *after* that CSS has
-///    already taken effect) exceeds the room gap 1's clamp just settled for
+///    auto;`, and `content.offsetHeight` is read *after* that CSS has
+///    taken effect) exceeds the room gap 1's clamp settles for
 ///    (`vh - 2 * EDGE_MARGIN`, `Math.max(0, ...)`-floored for a viewport
 ///    shorter than `2 * EDGE_MARGIN` itself), this caps `content.style.
 ///    maxHeight` there and sets `overflowY: 'auto'` so the overlay's own
@@ -1214,23 +1182,21 @@ pub(crate) fn use_popover_shown_while_mounted(
 ///
 ///    Never fights a component's own sizing (this module's own governing
 ///    rule -- see [`ensure_anchor_positioning_styles`]'s doc): `ch` already
-///    reflects any smaller cap a component's own stylesheet imposed, so
+///    reflects any smaller cap a component's own stylesheet imposes, so
 ///    this branch only ever engages -- and only ever shrinks further --
 ///    when even that self-imposed cap still doesn't fit the room this
 ///    specific open actually has; a component whose own sizing already fits
 ///    never takes this branch at all. `box-sizing: border-box` is forced
-///    alongside `maxHeight`, for a reason confirmed by execution against
-///    `top-layer.spec.ts` Rule 15's own fixture content (which, it turned
-///    out, carries no `.dx-popover-content` styling at all on that page --
-///    a raw, unthemed `primitives::popover::PopoverContent`): `ch` is
-///    `content.offsetHeight`, always the *border-box* height regardless of
-///    the element's own `box-sizing`, but `max-height` the CSS property is
-///    defined relative to `box-sizing` -- under the initial `content-box`
-///    value, a `max-height` caps only the content box, and padding/border
-///    then add back on *top* of that for the rendered `offsetHeight`,
-///    silently under-clamping by however much padding/border the element
-///    happens to carry (measured: ~14px past `availableHeight` on the
-///    unstyled Rule 15 fixture, from the UA `[popover]` stylesheet's own
+///    alongside `maxHeight`: `ch` is `content.offsetHeight`, always the
+///    *border-box* height regardless of the element's own `box-sizing`,
+///    but `max-height` the CSS property is defined relative to `box-sizing`
+///    -- under the initial `content-box` value, a `max-height` caps only
+///    the content box, and padding/border then add back on *top* of that
+///    for the rendered `offsetHeight`, silently under-clamping by however
+///    much padding/border the element carries (the raw, unthemed
+///    `primitives::popover::PopoverContent` of `top-layer.spec.ts` Rule 15's
+///    fixture, which has no `.dx-popover-content` styling, overshoots
+///    `availableHeight` by ~14px from the UA `[popover]` stylesheet's
 ///    default padding/border). See the `reposition()` code's own comment on
 ///    this line for the full account, including why this is a real gap for
 ///    any themed consumer that doesn't independently declare `border-box`
@@ -1242,51 +1208,52 @@ pub(crate) fn use_popover_shown_while_mounted(
 ///    author-stylesheet declaration regardless of specificity (CSS
 ///    Cascading and Inheritance's origin/importance ordering), which is
 ///    required here and not merely convenient. `select/style.css`'s
-///    `.dx-select-list` declares `overflow: visible` today, by its own
+///    `.dx-select-list` declares `overflow: visible`, by its own
 ///    comment "never scrolls (no max-height here) ... collision-aware ...
 ///    positioning belongs upstream" -- this *is* that upstream, and a real
 ///    class selector this crate's zero-specificity `:where(...)` engine
 ///    convention (`ensure_anchor_positioning_styles`'s doc) could never
 ///    out-specificity-fight without abandoning that convention for every
 ///    anchored overlay, not just this one -- exactly why the width
-///    contract's own opt-in-via-`var()` approach was not reused here: this
+///    contract's own opt-in-via-`var()` approach is not reused here: this
 ///    clamp must apply whether or not a component asked for it, so it needs
 ///    the one thing in the cascade nothing but `!important` can beat.
 ///    Cleared, not merely left alone, once no longer needed: this function
 ///    re-runs on every tracked scroll/resize/`visualViewport` event for the
-///    life of the open overlay ("Scroll/resize tracking" above), and a
+///    life of the open overlay ("Scroll/resize tracking" below), and a
 ///    viewport that grows back (an iOS keyboard closing, a window
 ///    un-shrinking) must let a component's own sizing govern again rather
 ///    than staying pinned to a stale cap from a smaller moment.
 ///
 /// Both gaps stay JS-fallback-only, deliberately, for the same reason the
-/// 2026-09-03 horizontal fix does (see that section's own reasoning): a
-/// genuinely CSS-Anchor-Positioning-conforming engine (this sandbox's
-/// Chromium among them) has the identical latent gap for *position* --
+/// inline-axis shift does (see that section's own reasoning): a
+/// genuinely CSS-Anchor-Positioning-conforming engine (Chromium
+/// among them) has the identical latent gap for *position* --
 /// `position-try-fallbacks` declares no shift-along-an-axis primitive
 /// either engine could use, nothing here is Firefox/WebKit-specific -- and
 /// its `@supports` block gains no size-clamp coverage from CSS at all
 /// either (no W3C-shipped primitive shrinks an anchored box to fit the way
 /// Floating UI's `size()` middleware does in userland JS). That is a real,
-/// acknowledged residual on the conforming engine, not something this round
-/// closes: it stays scoped to the JS-fallback gap `dev-docs/backlog.md` row 10
-/// explicitly names, matching gap 1's own horizontal precedent rather than
-/// an unrequested rewrite of a working engine's untouched code path.
-/// Regression oracle: `top-layer.spec.ts` Rule 15.
+/// acknowledged residual on the conforming engine: the clamps are scoped to
+/// the JS-fallback gap `dev-docs/backlog.md` row 10 explicitly names,
+/// matching the horizontal precedent rather than rewriting a working
+/// engine's untouched code path. Regression oracle: `top-layer.spec.ts`
+/// Rule 15.
 ///
-/// ## Exclusion zone (2026-10-14, `dev-docs/backlog.md` row 210 -- supersedes the
+/// ## Exclusion zone (`dev-docs/backlog.md` row 210 -- supersedes the
 /// main-axis parts of "Vertical shift + size clamp" above)
 ///
-/// User report (iPhone): the open Combobox list covered its own input. The class
-/// was "the panel is clamped into the viewport along the axis `side` names",
-/// which is the axis the anchor sits on: with the keyboard up the visual
-/// viewport is short, the flip picked a side without checking it fit, and the
-/// vertical clamp (`top >= EDGE_MARGIN`) then dragged the list ONTO the input;
-/// the size clamp measured against the WHOLE viewport rather than the room beside
-/// the anchor, so it could never shrink the list far enough to avoid it. The CSS
-/// Anchor Positioning arm was not safer: its early return trusted any placement
-/// that landed on a contract spot (judged against the LAYOUT viewport, which a
-/// keyboard does not shrink) and capped nothing.
+/// The open Combobox list must never cover its own input (seen on an
+/// iPhone). The class is "the panel is clamped into the viewport along the
+/// axis `side` names", which is the axis the anchor sits on: with the
+/// keyboard up the visual viewport is short, a flip that picks a side
+/// without checking it fit, and a vertical clamp (`top >= EDGE_MARGIN`)
+/// then drags the list ONTO the input; a size clamp measured against the
+/// WHOLE viewport rather than the room beside the anchor could never shrink
+/// the list far enough to avoid it. The CSS Anchor Positioning arm is not
+/// safer on its own: trusting any placement that lands on a contract spot
+/// (judged against the LAYOUT viewport, which a keyboard does not shrink)
+/// caps nothing.
 ///
 /// The construction, for every caller: **the anchor's box is an exclusion zone on
 /// the main axis**, in visual-viewport coordinates.
@@ -1316,45 +1283,41 @@ pub(crate) fn use_popover_shown_while_mounted(
 /// Regression oracle: `playwright/combobox-placement.spec.ts` (geometry sweep over
 /// viewports, input positions, schemes, typing and the list's own scroll).
 ///
-/// ## Anchor width contract (2026-09-04, `dev-docs/backlog.md` row 47)
+/// ## Anchor width contract (`dev-docs/backlog.md` row 47)
 ///
-/// User report: the styled `Select` ("Choose a fruit"/"Select an option")
-/// on the home page gallery opens a listbox the full width of the
-/// viewport, on every engine and every width tested. Root cause was CSS,
-/// not this function -- `preview/src/components/select/style.css`'s
-/// `.dx-select-list` declares `min-width: 100%`, written back when this
-/// listbox was `position: absolute` inside a `position: relative` `Select`
-/// root (100% of *that* box, i.e. the trigger's own width); once promoted
-/// to the top layer via `popover` its containing block became the
-/// viewport (see [`position_anchor_style`]'s doc), so the same percentage
-/// silently started meaning 100% of the *viewport*. A later
+/// A styled listbox whose stylesheet says `min-width: 100%` (as
+/// `preview/src/components/select/style.css`'s `.dx-select-list` does) means
+/// 100% of the *trigger* only while the list is `position: absolute` inside a
+/// `position: relative` `Select` root; once promoted to the top layer via
+/// `popover` its containing block is the viewport (see
+/// [`position_anchor_style`]'s doc), so the same percentage means 100% of the
+/// *viewport* and the listbox opens the full width of the viewport. A rule
 /// `@supports (anchor-name: --a) { .dx-select-list[popover] { min-width:
-/// anchor-size(width); } }` rule was added to restore trigger-relative
-/// sizing on the CSS Anchor Positioning path, but is dead in the actually-
-/// served stylesheet: this crate's `#[css_module]` class-hashing does not
-/// scope selectors written only inside an `@supports` body
+/// anchor-size(width); } }` cannot restore trigger-relative sizing on the CSS
+/// Anchor Positioning path: this crate's `#[css_module]` class-hashing does
+/// not scope selectors written only inside an `@supports` body
 /// (`dev-docs/issues/css-module-supports-scoping.md`; the same gap
 /// [`ensure_anchor_positioning_styles`]'s doc describes for the shared
 /// engine stylesheet -- this is a second instance of it, this time in a
 /// *component's own* stylesheet rather than a hand-copied engine snippet),
 /// so the rule that ships targets the unhashed `.dx-select-list` while the
-/// live element carries `.dx-select-list-<hash>`. And even on an engine
-/// where the `@supports` route did apply, it would only ever have covered
-/// the CSS-Anchor-Positioning path -- this function's own fallback
+/// live element carries `.dx-select-list-<hash>`. And even where the
+/// `@supports` route applied, it would only cover the
+/// CSS-Anchor-Positioning path -- this function's own fallback
 /// override above corrects *position* on every other engine, but never
-/// touched `width` at all, so Firefox/WebKit (wherever this fallback
-/// engages) had no width fix regardless of the dead-CSS bug.
+/// touches `width`, so Firefox/WebKit (wherever this fallback
+/// engages) would have no width fix regardless.
 ///
-/// The fix is engine-level, not a one-off CSS patch: this function's own
-/// `reposition()` (the measurement step above, which -- unlike the
-/// inline-position override -- already runs unconditionally on *every*
+/// So the contract is engine-level, not a one-off CSS patch: this function's
+/// own `reposition()` (the measurement step above, which -- unlike the
+/// inline-position override -- runs unconditionally on *every*
 /// engine, conforming or not) publishes the trigger's live width as the
 /// custom property `--dx-anchor-width` on the content element, every time
 /// it measures -- see the `content.style.setProperty('--dx-anchor-width',
 /// ...)` call right after `t` is computed, deliberately placed *before*
 /// the `matches()` early return so a conforming engine gets it too, and
 /// kept fresh by the same scroll/resize/`visualViewport` tracking that
-/// already re-invokes this function for position. A themed stylesheet then
+/// re-invokes this function for position. A themed stylesheet then
 /// opts in with `min-width: var(--dx-anchor-width, 100%)` (`100%` fallback
 /// keeps the native/non-web arm, where the list is still DOM-relative,
 /// correct) -- a plain custom property, not a class the engine has any
@@ -1364,37 +1327,28 @@ pub(crate) fn use_popover_shown_while_mounted(
 /// `@supports` stylesheet (`ANCHOR_POSITIONING_CSS_JS_LITERAL` below) also
 /// declares `--dx-anchor-width: anchor-size(width)` on the same marker
 /// classes, as a CSS-native belt alongside this JS write's suspenders --
-/// confirmed by execution (a throwaway Chromium probe, this session) that
-/// `anchor-size()` *does* substitute correctly when only referenced from
-/// inside a custom-property declaration and then read back through
-/// `var()` at a sizing property's use site, so this was worth keeping
-/// rather than skipping. It is still only a belt, not the whole fix: this
-/// JS write is what actually covers Firefox/WebKit and any engine that
+/// Chromium substitutes `anchor-size()` correctly when it is only
+/// referenced from inside a custom-property declaration and then read back
+/// through `var()` at a sizing property's use site, so it is worth keeping.
+/// It is still only a belt, not the whole contract: this
+/// JS write is what covers Firefox/WebKit and any engine that
 /// reaches this fallback at all, and is authoritative regardless of what
-/// the CSS path already set. Regression oracle: `select.spec.ts`, a new
+/// the CSS path already set. Regression oracle: `select.spec.ts`'s
 /// listbox-width assertion; `top-layer.spec.ts` Rule 13 (fit-content
 /// width) runs on this file's own *unstyled* fixture and cannot see a
-/// themed component's CSS, so it does not cover this bug -- see that
+/// themed component's CSS, so it does not cover this contract -- see that
 /// rule's own header doc.
 ///
-/// ## Scroll/resize tracking (decision 2026-09-01, revised 2026-09-02)
+/// ## Scroll/resize tracking
 ///
-/// Originally a one-shot measurement taken when `open` becomes true, not a
-/// live-tracking listener -- reasoned at the time as static positioning
-/// parity with the pre-4.4 behavior, with scroll-following deliberately
-/// deferred to `dev-docs/plan.md` Phase 5. The repository owner reported, from
-/// live-site testing, an anchored overlay (`ColorPicker`'s popup) floating
-/// viewport-fixed while the page scrolled underneath it -- detached from its
-/// trigger -- and explicitly decided scroll-following is now in scope,
-/// superseding that deferral. As first built (2026-09-01), tracking was
-/// installed **only** while an overlay was open **and** this function's own
-/// measurement had judged CSS Anchor Positioning non-conforming at open time
-/// and taken over with inline styles (the "neither matches" branch below);
-/// see "iOS keyboard (2026-09-02)" further down for why that condition was
-/// removed the very next day -- tracking listeners now install
-/// unconditionally for the life of every open overlay, not gated on whether
-/// the very first measurement happened to need the fallback. The function
-/// still tracks its own outcome in the `usingFallback` flag closed over by
+/// Tracking listeners install unconditionally for the life of every open
+/// overlay: an anchored overlay (`ColorPicker`'s popup) would otherwise
+/// float viewport-fixed while the page scrolls underneath it, detached from
+/// its trigger. It is not gated on this function's own measurement having
+/// judged CSS Anchor Positioning non-conforming at open time and taken over
+/// with inline styles (the "neither matches" branch below) -- see "iOS
+/// keyboard" further down for why. The function
+/// tracks its own outcome in the `usingFallback` flag closed over by
 /// `reposition()`; once a call sets it, every subsequent call -- including
 /// ones driven by the listeners added below -- skips the `matches()` check
 /// and unconditionally recomputes and re-applies the inline position. When
@@ -1404,12 +1358,11 @@ pub(crate) fn use_popover_shown_while_mounted(
 /// platform's own `anchor()` re-resolution does the real work there, this
 /// is just confirming it still is.
 ///
-/// When tracking is active (now: always, for the reason above), capture-
-/// phase (so scroll inside a nested scroll container is seen too -- `scroll`
-/// does not bubble, only capture reaches it from `window`), passive
-/// `scroll` and a plain `resize` listener on `window` re-run the same
-/// `reposition()` function, rAF-throttled (a `rafScheduled` flag drops any
-/// additional event that fires before the next paint) so a fast scroll
+/// Capture-phase (so scroll inside a nested scroll container is seen too --
+/// `scroll` does not bubble, only capture reaches it from `window`),
+/// passive `scroll` and a plain `resize` listener on `window` re-run the
+/// same `reposition()` function, rAF-throttled (a `rafScheduled` flag drops
+/// any additional event that fires before the next paint) so a fast scroll
 /// gesture doesn't queue up more synchronous layout work than one
 /// measurement per frame. The flip decision is re-evaluated on every
 /// re-measure (`reposition()` always recomputes `primary`/`flipped` from
@@ -1419,65 +1372,61 @@ pub(crate) fn use_popover_shown_while_mounted(
 /// `dioxus.recv()`-gated teardown every other eval-channel hook in this
 /// crate uses (see `use_popover_sync` above) -- when `open` goes false or
 /// this component unmounts; nothing is left listening on `window` (or
-/// `visualViewport`, added 2026-09-02) past the overlay's own lifetime.
+/// `visualViewport`) past the overlay's own lifetime.
 /// Deliberately narrow: no `ResizeObserver` on the trigger or content
-/// elements -- only `window` (and, since 2026-09-02, `visualViewport`)
+/// elements for *position* -- only `window` (and `visualViewport`)
 /// `scroll`/`resize`, which is all a *position* (not size) correction
 /// needs. Re-running `reposition()` on every tracked event re-applies the
-/// inline-axis shift (2026-09-03, see that section below) exactly as it
+/// inline-axis shift (see that section above) exactly as it
 /// re-applies flip -- both live inside the same function, so a scroll or
 /// resize that changes how much room the trigger has re-clamps the same way
 /// the initial placement does, with no separate wiring needed.
 ///
-/// ## iOS keyboard (2026-09-02)
+/// ## iOS keyboard
 ///
-/// User report (main page, iOS Safari): the `Combobox` options list renders
-/// on top of its own search input after focusing/typing. Investigation
-/// (this session) found two gaps in the 2026-09-01 construction above, both
-/// closed together here:
+/// On iOS Safari the `Combobox` options list would render on top of its own
+/// search input after focusing/typing, from two gaps, both closed here:
 ///
-/// 1. **No visual-viewport awareness.** `reposition()` read only
-///    `window.innerWidth`/`innerHeight` plus `getBoundingClientRect()`. iOS
-///    Safari's on-screen keyboard shrinks and offsets
+/// 1. **Visual-viewport awareness.** `reposition()` reading only
+///    `window.innerWidth`/`innerHeight` plus `getBoundingClientRect()` would
+///    miss that iOS Safari's on-screen keyboard shrinks and offsets
 ///    `window.visualViewport` while leaving `window.inner{Width,Height}`
-///    completely unchanged -- so a keyboard-driven layout change was
+///    completely unchanged -- so a keyboard-driven layout change would be
 ///    invisible to every fit/flip computation in this function, regardless
-///    of whether anything re-ran it. Fixed by `viewportMetrics()` below:
+///    of whether anything re-ran it. `viewportMetrics()` below handles it:
 ///    every `vw`/`vh` read, and the trigger/content rects compared against
-///    them, now go through `window.visualViewport` (falling back to
-///    `documentElement.client*` when absent, i.e. unchanged behavior on an
-///    engine without it) -- see that function's own doc for the
+///    them, go through `window.visualViewport` (falling back to
+///    `documentElement.client*` when absent, i.e. the plain layout viewport
+///    on an engine without it) -- see that function's own doc for the
 ///    coordinate-space bookkeeping this requires (`position: fixed` stays
 ///    relative to the *layout* viewport even once the *visual* one is what
-///    the fit decision needs to reason about). Since 2026-10-11 the size is
+///    the fit decision needs to reason about). The size is
 ///    `min(visualViewport, documentElement.client*)` so a classic
 ///    scrollbar is never counted as room -- see [`VIEWPORT_METRICS_JS`].
-/// 2. **Tracking installed only when already conforming-fallback at open.**
-///    The 2026-09-01 construction attached the scroll/resize listeners only
-///    inside the `if (usingFallback)` branch, i.e. only when the very first
-///    `reposition()` call had already judged CSS Anchor Positioning
-///    non-conforming. An overlay that CSS Anchor Positioning placed
-///    correctly at *open* time got no listener at all for the rest of that
-///    open -- reasoned at the time as "an engine that gets here already
-///    re-resolves `anchor()` on scroll for free," true for scroll, but
-///    silently assuming the set of contract-legal positions itself could
-///    never change again for the life of that one open. It can: an iOS
-///    keyboard appearing is exactly such a change, and Combobox is the one
-///    anchored overlay whose opening reliably summons one (a focused text
-///    input) -- consistent with only it being reported. Fixed by moving the
-///    listener installation out of that `if` entirely (see below): tracking
-///    is now unconditional for the life of every open overlay, and
-///    `reposition()`'s own `matches()` check (unchanged) is what keeps a
+/// 2. **Tracking regardless of how the open was placed.** Attaching the
+///    scroll/resize listeners only inside the `if (usingFallback)` branch,
+///    i.e. only when the very first `reposition()` call had already judged
+///    CSS Anchor Positioning non-conforming, would give an overlay that CSS
+///    Anchor Positioning placed correctly at *open* time no listener at all
+///    for the rest of that open -- "an engine that gets here already
+///    re-resolves `anchor()` on scroll for free" is true for scroll, but
+///    silently assumes the set of contract-legal positions itself can never
+///    change again for the life of that one open. It can: an iOS keyboard
+///    appearing is exactly such a change, and Combobox is the one anchored
+///    overlay whose opening reliably summons one (a focused text input).
+///    So the listener installation sits outside that `if` entirely (see
+///    below): tracking is unconditional for the life of every open overlay,
+///    and `reposition()`'s own `matches()` check is what keeps a
 ///    still-conforming engine's re-checks a no-op.
 ///
-/// Falsified along the way, so as not to be re-tried: neither gap is a
+/// Ruled out, so as not to be re-tried: neither gap is a
 /// "plain no anchor support" problem -- `use_anchor_position_fallback`
-/// already self-corrects fully and immediately for an overlay with no
+/// self-corrects fully and immediately for an overlay with no
 /// CSS-anchor support *from open*, byte-identical to native placement (see
 /// "The flip contract" above); and a failed trigger lookup (the
 /// `document.querySelector` returning `null`) lands the content off-screen
-/// entirely, not on top of its own trigger -- neither symptom matches the
-/// report. `playwright/oracle/tier2-html/top-layer.spec.ts` Rule 11 is the
+/// entirely, not on top of its own trigger -- neither symptom matches.
+/// `playwright/oracle/tier2-html/top-layer.spec.ts` Rule 11 is the
 /// regression oracle for both gaps, including the specific "conforming at
 /// open, CSS Anchor Positioning support removed mid-open" shape gap 2 is
 /// about (that file's own header doc records which of the seven
@@ -1497,18 +1446,18 @@ pub(crate) fn use_popover_shown_while_mounted(
 ///
 /// The query includes the closing `;` [`anchor_name_style`] always ends
 /// with (`anchor-name: --dxa-{id};`), not just `--dxa-{id}` bare --
-/// confirmed by execution to be required, not cosmetic: this repo's
+/// required, not cosmetic: this repo's
 /// `use_unique_id` ids are plain incrementing integers rendered as decimal
 /// strings, so an id like `dxc-4` is a literal string *prefix* of `dxc-40`,
-/// `dxc-41`, etc. Migration A slice 3/3's `Combobox` page is the first
+/// `dxc-41`, etc. The `Combobox` page is the first
 /// consumer of this fallback with enough sibling anchored instances on one
 /// page (several demo variants, each contributing its own `ComboboxInput`)
 /// to actually hit this: without the trailing `;`, `document.querySelector`
-/// for anchor id `dxc-4`'s substring pattern matched a *different* input's
+/// for anchor id `dxc-4`'s substring pattern matches a *different* input's
 /// `anchor-name: --dxa-dxc-40;` first in DOM order, measuring the wrong
 /// trigger's position entirely and landing the listbox hundreds of pixels
 /// off-screen (`combobox.spec.ts`'s "controlled value and controlled open
-/// stay in sync" test timing out clicking an option it could never reach).
+/// stay in sync" test could never reach an option).
 /// The `;` is never itself ambiguous across ids: it is not part of any
 /// digit sequence, so `dxc-4;` cannot appear inside `dxc-40;`.
 #[cfg(feature = "web")]
@@ -1552,9 +1501,8 @@ pub(crate) fn use_anchor_position_fallback(
         // call site, so `showPopover()` has already been dispatched -- and
         // `getBoundingClientRect()`/`offsetWidth` force a synchronous layout
         // in every engine regardless of paint timing, so there is nothing to
-        // wait a frame for. Confirmed by execution to matter, not just
-        // simpler: an earlier version of this function wrapped its body in
-        // `requestAnimationFrame(() => {{ ... }})` and it silently never ran
+        // wait a frame for. This matters, not just simpler: wrapping the body
+        // in `requestAnimationFrame(() => {{ ... }})` silently never runs
         // at all on a real Firefox build -- an eval's `document::eval` call
         // is a bare, uncaptured expression whose returned handle can be
         // dropped at the end of a synchronous closure with no ill effect
@@ -1564,8 +1512,8 @@ pub(crate) fn use_anchor_position_fallback(
         // fires appears to tear down the JS side before that callback runs.
         // A synchronous body has no such window -- which is exactly why,
         // below, the script *is* kept alive (a `JsListeners`, not a dropped
-        // eval handle) for as long as tracking might need it: unlike the
-        // one-shot original, its listeners are real pending callbacks.
+        // eval handle) for as long as tracking might need it: its
+        // listeners are real pending callbacks.
         Some(crate::js_listener::JsListeners::install(&format!(
             r#"
             {inject}
@@ -1593,8 +1541,8 @@ pub(crate) fn use_anchor_position_fallback(
             // whether CSS anchoring "started working" mid-overlay.
             let usingFallback = false;
 
-            // 2026-09-02 iOS keyboard fix (see this function's doc, "iOS
-            // keyboard (2026-09-02)"): visual-viewport-aware metrics.
+            // iOS keyboard handling (see this function's doc, "iOS
+            // keyboard"): visual-viewport-aware metrics.
             // `window.innerWidth`/`innerHeight` do NOT shrink when iOS
             // Safari's on-screen keyboard appears; `window.visualViewport`'s
             // `width`/`height` do -- so every fit/flip decision below reads
@@ -1621,7 +1569,7 @@ pub(crate) fn use_anchor_position_fallback(
             {viewport_metrics_js}
             {measure_js}
 
-            // Exclusion-zone placement (2026-10-14, backlog row 210, see this
+            // Exclusion-zone placement (backlog row 210, see this
             // function's doc, "Exclusion zone"): the anchor's box is a no-go
             // area for the panel on the MAIN axis (the one `side` names), in
             // visual-viewport coordinates, for every caller. EDGE_MARGIN is
@@ -1650,7 +1598,7 @@ pub(crate) fn use_anchor_position_fallback(
             function reposition() {{
                 if (!content || !trigger) return;
                 const t = trigger.getBoundingClientRect();
-                // Engine contract (dev-docs/backlog.md row 47, 2026-09-04):
+                // Engine contract (dev-docs/backlog.md row 47):
                 // every anchored content's trigger width is published as
                 // `--dx-anchor-width`, unconditionally -- not gated on
                 // `usingFallback` below -- since this write needs to reach
@@ -1909,17 +1857,16 @@ pub(crate) fn use_anchor_position_fallback(
 
             // Settle loop, deferred across animation frames, *only* once the
             // synchronous call just above has already committed to the
-            // fallback (`usingFallback`): confirmed by execution (this
-            // session's diagnosis, `date-picker.spec.ts`'s "anchors the
-            // popup" case) that the synchronous call above can run *before*
-            // this content's own children have finished growing into their
-            // final size -- `DatePickerPopover`'s calendar grid, populated
-            // by a nested component's own reactive render, was still
-            // measuring an intermediate 352x178px box (narrower-grid/
+            // fallback (`usingFallback`): the synchronous call above can run
+            // *before* this content's own children have finished growing into
+            // their final size (`date-picker.spec.ts`'s "anchors the popup"
+            // case) -- `DatePickerPopover`'s calendar grid, populated
+            // by a nested component's own reactive render, still
+            // measures an intermediate 352x178px box (narrower-grid/
             // shorter-before-rows placeholder shape) at the exact tick this
-            // effect ran, rather than its final 276x278px, throwing off
+            // effect runs, rather than its final 276x278px, throwing off
             // `place()`'s `cw`/`ch`-dependent math (here, the align="center"
-            // horizontal centering) by however much the box still had left
+            // horizontal centering) by however much the box still has left
             // to grow -- 38px off center on that box's ~76px of subsequent
             // width growth. A **content-size** race, not a scroll/layout-
             // timing one: `getBoundingClientRect()`/`offsetWidth` already
@@ -1927,12 +1874,11 @@ pub(crate) fn use_anchor_position_fallback(
             // above), so the geometry read back is never stale relative to
             // the DOM as it stood at that instant -- the DOM itself just
             // wasn't finished changing shape yet. A single extra
-            // `requestAnimationFrame` call was tried first and confirmed by
-            // execution (console-instrumented) to still observe the
-            // pre-grow 352px box even several real frames and 300ms later:
-            // whatever later render pass grows the grid does not land
-            // within one, or even a handful of, animation frames of this
-            // effect's own -- so instead of guessing a frame count, this
+            // `requestAnimationFrame` call is not enough: it still observes
+            // the pre-grow 352px box even several real frames and 300ms
+            // later, since whatever later render pass grows the grid does
+            // not land within one, or even a handful of, animation frames of
+            // this effect's own -- so instead of guessing a frame count, this
             // polls `content.offsetWidth`/`offsetHeight` once per frame and
             // keeps re-running `reposition()` until two consecutive frames
             // read the *same* box size (the settle signal: nothing is still
@@ -1940,9 +1886,8 @@ pub(crate) fn use_anchor_position_fallback(
             // against a pathological page that never stabilizes.
             //
             // Gated on `usingFallback` -- *not* run unconditionally -- for a
-            // reason confirmed by execution the hard way (`top-layer.spec.ts`
-            // Rule 8's ColorPicker case, a real regression this exact
-            // unconditional shape caused first): once the first call has
+            // reason `top-layer.spec.ts` Rule 8's ColorPicker case pins (an
+            // unconditional loop regresses it): once the first call has
             // judged CSS Anchor Positioning conforming, every extra
             // `reposition()` call in a naive unconditional loop re-runs the
             // *same* `matches()` decision from scratch, and each of those
@@ -1961,8 +1906,7 @@ pub(crate) fn use_anchor_position_fallback(
             // decision to accept the fallback's placement is never
             // relitigated, only its geometry is refined. A CSS-Anchor-
             // Positioning engine that placed this correctly on the first
-            // call is instead left completely alone, exactly as before this
-            // loop existed.
+            // call is instead left completely alone by this loop.
             if (usingFallback) {{
                 const MAX_SETTLE_FRAMES = 30; // ~0.5s at 60fps
                 let lastW = content.offsetWidth;
@@ -1984,29 +1928,27 @@ pub(crate) fn use_anchor_position_fallback(
                 requestAnimationFrame(settle);
             }}
 
-            // 2026-09-02 iOS keyboard fix, gap 2 -- see this function's doc,
-            // "iOS keyboard (2026-09-02)": tracking listeners now install
+            // iOS keyboard, gap 2 -- see this function's doc,
+            // "iOS keyboard": tracking listeners install
             // UNCONDITIONALLY, for the life of every open overlay, not only
             // once `usingFallback` is already `true` at this point in the
-            // script. Before this fix, an overlay that CSS Anchor
-            // Positioning placed correctly at open time got no listener at
-            // all -- reasoned at the time (see the removed comment this
-            // replaces, preserved in this function's git history) as "an
+            // script. An overlay that CSS Anchor Positioning placed
+            // correctly at open time still needs them: "an
             // engine that gets here already re-resolves `anchor()` on
-            // scroll for free" -- which is true for scroll, but silently
-            // assumed the *set of contract-legal positions* itself never
+            // scroll for free" is true for scroll, but silently
+            // assumes the *set of contract-legal positions* itself never
             // changes for the rest of that open. An iOS Safari on-screen
             // keyboard breaks exactly that assumption mid-open (shrinking
             // `visualViewport` out from under an already-placed overlay),
             // and Combobox is the one anchored overlay whose opening
-            // reliably summons a keyboard (a focused text input) --
-            // consistent with only it being reported. `reposition()` itself
+            // reliably summons a keyboard (a focused text input).
+            // `reposition()` itself
             // still only overrides when `matches()` fails (or `usingFallback`
             // is already sticky-true), so a still-conforming CSS-anchor
             // engine re-running `reposition()` on every scroll/resize costs
             // one extra `getBoundingClientRect()` pair and returns
-            // immediately -- not a behavior change for the common case,
-            // only for the one this fix exists to close.
+            // immediately -- no behavior change for the common case,
+            // only for the one this tracking exists to close.
             //
             // `scroll` is added on `window` with `capture: true` because
             // the event does not bubble -- capture on `window` is the only
@@ -2108,11 +2050,11 @@ pub(crate) fn use_anchor_position_fallback(
 ///
 /// **Why still `visualViewport`.** It is what shrinks when iOS Safari's
 /// on-screen keyboard appears (while `clientHeight` and `innerHeight` do not)
-/// and under pinch-zoom (`width = clientWidth / scale`) -- the 2026-09-02
-/// keyboard fix (`dev-docs/backlog.md` row 28) depends on that. So the
+/// and under pinch-zoom (`width = clientWidth / scale`) -- the iOS keyboard
+/// handling (`dev-docs/backlog.md` row 28) depends on that. So the
 /// usable size is the *smaller* of the two on each axis:
 /// `min(visualViewport.size, documentElement.client size)`. Keyboard or
-/// zoom: the visual viewport is smaller and wins, exactly as before.
+/// zoom: the visual viewport is smaller and wins.
 /// Scrollbar on an engine whose `visualViewport` ignores it: `client*` is
 /// smaller and wins. Where both already agree (this Chromium): unchanged.
 /// `offsetLeft`/`offsetTop` stay purely `visualViewport`'s (the pan origin
@@ -2380,8 +2322,8 @@ pub(crate) const MEASURE_AT_FULL_WIDTH_JS: &str = r#"
 /// the same `EDGE_MARGIN` (4px) convention, the same `Math.max` viewport-
 /// too-small-to-fit-at-all fallback, the same `border-box`-forced max-height
 /// clamp -- as its own small, independent script, mirroring
-/// [`use_anchor_position_fallback`]'s "Vertical shift + size clamp
-/// (2026-09-04)" doc section's construction rather than its code.
+/// [`use_anchor_position_fallback`]'s "Vertical shift + size clamp"
+/// doc section's construction rather than its code.
 ///
 /// `x`/`y` are `ContextMenuTrigger`'s own already visual-viewport-corrected
 /// click coordinates (see that file's `visual_viewport_offset` doc) --
@@ -2470,8 +2412,8 @@ pub(crate) fn use_point_anchor_clamp(
                 }}
 
                 // Size clamp: same construction as `use_anchor_position_
-                // fallback`'s own gap 2 ("Vertical shift + size clamp
-                // (2026-09-04)") -- once even a fully top-clamped position
+                // fallback`'s own gap 2 ("Vertical shift + size clamp")
+                // -- once even a fully top-clamped position
                 // still can't fit the content in the viewport's remaining
                 // height, shrink instead of shifting further, and let the
                 // menu's own items scroll instead of running off the
@@ -2506,7 +2448,7 @@ pub(crate) fn use_point_anchor_clamp(
 
 // No native (Blitz) counterpart: `ContextMenuContentRendered`'s native
 // (Blitz) arm (`context_menu.rs`) renders the raw click point with no
-// clamping at all, unchanged from before this fix -- the same functional
+// clamping at all -- the same functional
 // floor every other web-only construction in this file leaves that arm at
 // (see the identical note just above, for `use_anchor_position_fallback`).
 // Blitz has no popover-API/top-layer support to promote the content into in
@@ -2514,20 +2456,18 @@ pub(crate) fn use_point_anchor_clamp(
 // than a new gap.
 
 /// CSS Anchor Positioning wiring — *not* part of the Popover API itself, but
-/// required for it to be usable at all here, and included in this slice for
-/// that reason rather than as extra scope.
+/// required for it to be usable at all here.
 ///
 /// Moving an element into the top layer changes its containing block to the
 /// initial containing block (viewport) regardless of its own `position`
-/// value — confirmed by execution against this repo's actual preview build
-/// (see this slice's PR/session notes): a `Tooltip` given `popover="manual"`
-/// with no other change kept `position: absolute` but its rendered box
-/// jumped hundreds of pixels from its trigger, because "absolute, relative
+/// value: a `Tooltip` given `popover="manual"`
+/// with no other change keeps `position: absolute` but its rendered box
+/// jumps hundreds of pixels from its trigger, because "absolute, relative
 /// to the nearest positioned ancestor" no longer applies once the element
-/// is promoted. Every existing `[data-side]` rule in the preview
-/// stylesheets (`tooltip`/`hover_card`/`popover` `style.css`) assumes the
-/// old, DOM-relative containing block, so without a fix every non-modal
-/// overlay this slice touches would render detached from its trigger.
+/// is promoted. The `[data-side]` rules in the preview
+/// stylesheets (`tooltip`/`hover_card`/`popover` `style.css`) assume a
+/// DOM-relative containing block, so without anchoring every non-modal
+/// overlay promoted to the top layer would render detached from its trigger.
 ///
 /// CSS Anchor Positioning is the platform's own, still-CSS answer (no
 /// `floating-ui`, no JS-computed geometry — that stays out of scope; see
@@ -2535,12 +2475,11 @@ pub(crate) fn use_point_anchor_clamp(
 /// `anchor-name` declared on the trigger and referenced from the content
 /// via `position-anchor` lets `top`/`left`/etc. in the *stylesheet* use
 /// `anchor()` to mean "relative to that named anchor" even from the top
-/// layer. Verified working in this environment's Chromium
-/// (`CSS.supports('anchor-name: --x')` true) — see this slice's stylesheet
-/// changes for the `anchor()`-based rules this pairs with, `@supports`-
-/// gated so an engine without Anchor Positioning (not yet Firefox/WebKit as
-/// of this writing) falls back to the pre-existing rules rather than an
-/// invalid declaration.
+/// layer. Works in this repo's Chromium
+/// (`CSS.supports('anchor-name: --x')` true) — see the preview
+/// stylesheets for the `anchor()`-based rules this pairs with, `@supports`-
+/// gated so an engine without Anchor Positioning falls back to the plain
+/// (non-anchored) rules rather than an invalid declaration.
 ///
 /// Each overlay instance gets its own anchor name, built from its own
 /// unique id (already threaded through every one of these components for
@@ -2569,11 +2508,11 @@ pub(crate) fn position_anchor_style(id: &str) -> String {
 /// Every anchored-content leaf (`TooltipContentRendered`,
 /// `HoverCardContentRendered`, `DropdownMenuContentRendered`,
 /// `MenubarContentRendered`, `PopoverModalContent`/`PopoverNonModalContent`,
-/// `SelectListRendered`, `ComboboxListRendered`) used to set
+/// `SelectListRendered`, `ComboboxListRendered`) must not set
 /// `style: position_anchor_style(&id)` as a bare literal on the element
-/// while *also* spreading `..attributes` -- and a caller passing its own
+/// while *also* spreading `..attributes` -- a caller passing its own
 /// `style` (shorthand or plain, e.g. the `top_layer` preview fixture's
-/// `MenubarContent { style: "min-height: 100px;", .. }`) then produced two
+/// `MenubarContent { style: "min-height: 100px;", .. }`) would then produce two
 /// `style` attributes on one tag: the exact duplicate-attribute hazard
 /// `dev-docs/conformance-harness.md` hydration-parity Rule 4 documents.
 /// `dioxus-ssr` keeps the *first* `style` it renders (`position-anchor` for
@@ -2638,22 +2577,21 @@ pub(crate) fn anchor_name_style(_id: &str) -> String {
 /// `DropdownMenuSubTrigger`, `HoverCardTrigger`, `MenubarTrigger`,
 /// `NavbarTrigger`, `NavigationMenuTrigger`, `PopoverTrigger`,
 /// `TooltipTrigger`) ties itself to its content's `position-anchor` via
-/// [`anchor_name_style`]. Some of them used to set it as a bare literal
-/// directly alongside a raw `..attributes` spread on the same element --
-/// the exact duplicate-`style` hazard `anchored_content_attributes`'s own
+/// [`anchor_name_style`]. A bare literal
+/// directly alongside a raw `..attributes` spread on the same element
+/// would be the exact duplicate-`style` hazard `anchored_content_attributes`'s own
 /// doc describes (`dev-docs/conformance-harness.md` hydration-parity Rule 4;
 /// `scripts/check-attr-spread-collision.sh` ratchets against it, and
-/// `playwright/oracle/attr-synth` synthesizes it directly). The rest
-/// already ran their own literal through `merge_attributes` before the
-/// `rsx!` spread (`TooltipTrigger` in particular), which *does* avoid that
-/// literal HTML duplicate. `merge_attributes` itself now folds a plain
+/// `playwright/oracle/attr-synth` synthesizes it directly). A trigger can
+/// instead run its own literal through `merge_attributes` before the
+/// `rsx!` spread (`TooltipTrigger` does), which *does* avoid that
+/// literal HTML duplicate. `merge_attributes` itself folds a plain
 /// `style` the way it folds `class` (earlier declarations first), so a
-/// caller's `style` no longer replaces the anchor-name binding through it.
-/// (It used to overwrite outright -- see the history in `lib.rs`'s
-/// `style_attribute_is_folded_not_overwritten` -- and CSS Anchor Positioning
-/// silently stopped working the moment any caller set `style` on the
-/// trigger.) This function stays for what `merge_attributes` still cannot
-/// do: absorb style set the *shorthand* way (`padding: ".."`, namespace
+/// caller's `style` does not replace the anchor-name binding through it
+/// (an overwrite would silently stop CSS Anchor Positioning the moment any
+/// caller set `style` on the trigger; see `lib.rs`'s
+/// `style_attribute_is_folded_not_overwritten`). This function exists for
+/// what `merge_attributes` cannot do: absorb style set the *shorthand* way (`padding: ".."`, namespace
 /// `Some("style")`, a different attribute name to `merge_attributes`), so
 /// exactly one `style` reaches the element, and guarantee the anchor binding
 /// comes first regardless of which list a call site put it in. So: pull every
@@ -2790,7 +2728,7 @@ mod tests {
 
     #[test]
     fn shorthand_and_plain_caller_style_both_fold_into_the_one_attribute() {
-        // The exact shape that used to break: a caller mixing a plain
+        // The shape that breaks without folding: a caller mixing a plain
         // `style` literal with shorthand style props (or a themed wrapper
         // contributing one of each), on top of this component's own
         // `position-anchor` literal -- three style-contributing values that
@@ -2856,7 +2794,7 @@ mod tests {
         // Anchor binding first, so the caller's own declaration -- listed
         // after -- can override any property it names without ever being
         // able to drop the anchor binding itself (the silent-loss failure
-        // mode `merge_attributes` used to have -- see this function's own
+        // mode of an overwriting merge -- see this function's own
         // doc and `style_attribute_is_folded_not_overwritten` in
         // `primitives/src/lib.rs`).
         assert!(style.find("anchor-name").unwrap() < style.find("color").unwrap());

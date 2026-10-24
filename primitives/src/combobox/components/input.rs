@@ -108,7 +108,7 @@ pub fn ComboboxInput(props: ComboboxInputProps) -> Element {
             // No wasm carve-out here, unlike `Select`/`DropdownMenu`:
             // `ComboboxListRendered`'s web arm renders `popover="manual"`
             // (`list.rs`), not `auto` -- see that component's doc for why
-            // (confirmed by execution: `auto`'s light dismiss closed this
+            // (`auto`'s light dismiss closes this
             // popup on *any* external click, including ones this
             // component's own demos/tests rely on leaving it open across,
             // e.g. `combobox.spec.ts`'s "dynamic option removal" case).

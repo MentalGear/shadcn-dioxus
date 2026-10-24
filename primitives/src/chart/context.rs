@@ -15,7 +15,7 @@ use super::engine::{ChartDatum, ChartKind};
 
 /// The pixel-space layout `Chart` computed for its own SVG, shared so
 /// `ChartTooltip` can position itself "from the same scales" (per
-/// `$S/chart-api.md`) with no DOM measurement of its own. `Chart` is the
+/// `dev-docs/archive/research/chart-2026-09-19.md`) with no DOM measurement of its own. `Chart` is the
 /// only writer (a plain assignment during its own render, not inside an
 /// effect -- its width/height/axis-visibility props are the only inputs
 /// this depends on, so it's cheap and correct to just recompute and
@@ -27,18 +27,17 @@ use super::engine::{ChartDatum, ChartKind};
 /// nothing can set `active_index` to `Some` before `Chart` -- the thing
 /// that owns the hit bands that set it -- has rendered.
 ///
-/// Family-agnostic by construction (stage-2 chart round, §4(d) of the
-/// handoff): this used to store the raw `x_scale: BandScale`/`y_scale:
-/// LinearScale`/`top_value: Vec<f64>` `ChartTooltip` combined into a
-/// percent position itself, which only works for a Cartesian
-/// (Area/Bar/Line) layout -- `BandScale::center(i)` is an affine function
-/// of the datum index `i`, but a polar family's vertex position (e.g.
-/// Radar's `center + point_radial(angle(i), radius(value))`) is a
-/// sinusoidal function of `i` that no `BandScale` can reproduce. Storing
-/// the already-resolved `(left%, top%)` per datum instead moves that
-/// family-specific math to whichever side computed the layout in the
-/// first place (`Chart`'s own Cartesian dispatch today; a family like
-/// Radar's own `render`, once it needs an open tooltip, tomorrow), so
+/// Family-agnostic by construction: it does not store raw scales
+/// (`x_scale: BandScale`/`y_scale: LinearScale`/`top_value: Vec<f64>`) for
+/// `ChartTooltip` to combine into a percent position itself, which only
+/// works for a Cartesian (Area/Bar/Line) layout -- `BandScale::center(i)`
+/// is an affine function of the datum index `i`, but a polar family's
+/// vertex position (e.g. Radar's `center + point_radial(angle(i),
+/// radius(value))`) is a sinusoidal function of `i` that no `BandScale`
+/// can reproduce. Storing the already-resolved `(left%, top%)` per datum
+/// instead puts that family-specific math on whichever side computed the
+/// layout in the first place (`Chart`'s own Cartesian dispatch; a family
+/// like Radar's own `render` when it needs an open tooltip), so
 /// `ChartTooltip` itself indexes this uniformly with no per-`ChartKind`
 /// branch of its own.
 #[derive(Clone, PartialEq, Debug)]
@@ -196,9 +195,8 @@ pub struct ChartContext {
     /// `Chart`'s own computed pixel layout, shared for `ChartTooltip`'s
     /// benefit -- see [`ChartLayout`]'s own doc. Not part of this crate's
     /// public API surface (`pub(crate)`, unlike every other field here):
-    /// an internal wiring detail this design needed, not a contract this
-    /// lane commits to keeping stable for outside callers of
-    /// [`use_chart`].
+    /// an internal wiring detail, not a contract kept stable for outside
+    /// callers of [`use_chart`].
     pub(crate) layout: Signal<Option<ChartLayout>>,
     /// The pointer, relative to the chart box -- see [`Cursor`]. Written by
     /// `Chart`'s pointer/keyboard handlers, read by `ChartTooltip`.
@@ -311,7 +309,7 @@ pub fn use_chart() -> ChartContext {
 // `unwrap_or_else(|| panic!(...))`, and isn't independently unit-tested
 // here: Dioxus's `VirtualDom` catches a panic raised from inside a
 // component body at the component boundary (so the rest of a page doesn't
-// go down with it -- confirmed empirically this lane, not assumed), which
+// go down with it), which
 // makes `#[should_panic]` unable to observe it through `rebuild_in_place`.
 // The success path (`use_chart` returning the provided context) is
 // exercised by every other test in this module tree that renders a

@@ -8,9 +8,9 @@ use super::scale::fmt_decimal;
 
 /// One row of the chart's visually-hidden data table: the x-category label
 /// and one pre-formatted cell per series, in
-/// [`crate::chart::ChartConfig::series`] order (moved out of this `engine`
-/// tree in the stage-2 chart round -- see `chart::config`'s own module
-/// doc).
+/// [`crate::chart::ChartConfig::series`] order (`ChartConfig` lives in
+/// `chart::config`, outside this dioxus-free `engine` tree -- see its own
+/// module doc).
 #[derive(Clone, PartialEq, Debug)]
 pub struct TableRow {
     /// The row header (`th[scope=row]`) -- the datum's x-category label.
@@ -42,12 +42,9 @@ pub fn table_rows(data: &[ChartDatum]) -> Vec<TableRow> {
 
 /// Build one [`TableRow`] per datum, same as [`table_rows`], but with only
 /// the *first* configured series' value as its one cell. Used by `Chart`
-/// for the polar-family stub kinds (`ChartKind::Pie`/`Radar`/`RadialBar` --
-/// `components::chart`'s own module doc), whose real per-datum/per-category
-/// data table shape is each owning lane's own job (`s2-polar`/`s2-radar`);
-/// this MVP stand-in at least avoids either an empty table or a misleading
-/// one that repeats every series' column for a family that doesn't draw
-/// per-series marks per datum the way Area/Bar/Line do.
+/// for `ChartKind::RadialBar` (`ChartKind::has_full_table`): a family
+/// that doesn't draw per-series marks per datum the way Area/Bar/Line do,
+/// so repeating every series' column would be misleading.
 ///
 /// ```
 /// use dioxus_primitives::chart::{engine::table::table_rows_single_series, ChartDatum};
@@ -69,7 +66,7 @@ pub fn table_rows_single_series(data: &[ChartDatum]) -> Vec<TableRow> {
 /// (one value cell, from `values[0]`) plus a second cell: that datum's
 /// share of every datum's `values[0]` summed, as a percentage. Used by
 /// `Chart` for [`crate::chart::ChartKind::Pie`] specifically -- unlike
-/// [`table_rows_single_series`] (still used for `Radar`/`RadialBar`,
+/// [`table_rows_single_series`] (used for `RadialBar`,
 /// where "percent of the total" isn't a meaningful reading of a radial
 /// bar's own value), a pie slice's percentage of the whole is exactly
 /// the visual information its wedge angle encodes, so the hidden table

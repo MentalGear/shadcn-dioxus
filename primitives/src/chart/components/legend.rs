@@ -9,8 +9,7 @@ use crate::dioxus_attributes::attributes;
 use crate::merge_attributes;
 
 /// Where a [`ChartLegend`] sits relative to the chart it's paired with.
-/// Rendered as this element's own `data-align` attribute (not named in the
-/// original `$S/chart-api.md` sketch -- see "API changes": without some
+/// Rendered as this element's own `data-align` attribute (without some
 /// attribute reflecting it, this prop would have no observable effect at
 /// all, since `ChartLegend` is a plain sibling of `Chart` with no layout
 /// authority over it) for a themed stylesheet to act on (e.g. flexbox

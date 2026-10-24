@@ -482,7 +482,7 @@ mod tests {
     }
 
     /// Base UI: the fallback is shown in every status but `loaded`, so there is no blank frame while the
-    /// picture loads (the old rule removed it as soon as the status became `loading`).
+    /// picture loads (it is not removed when the status becomes `loading`).
     #[test]
     fn the_fallback_shows_in_every_state_but_loaded() {
         assert!(rendered_in(AvatarState::Empty));

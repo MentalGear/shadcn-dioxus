@@ -12,10 +12,10 @@
 // `message-scroller` (`use-message-scroller-controller.ts`,
 // `use-message-scroller-commands.ts`, `geometry.ts`), shadcn/ui, MIT
 // licence. Ported from shadcn-ui/ui@295a1f114a138f23b5dfee0e0c6812394dfeb90c;
-// re-checked 2026-10-19 against shadcn-ui/ui@e31626978fe8e3804fe2e792e11e32dc560e40a8
-// (no change under packages/react/src/message-scroller since the port). The mode machine, the tail spacer, the anchoring maths, prepend
-// preservation and the opening-position rules are theirs; what changed is
-// the host: React refs and `useSyncExternalStore` are replaced by DOM
+// the upstream `packages/react/src/message-scroller` is unchanged since that
+// revision. The mode machine, the tail spacer, the anchoring maths, prepend
+// preservation and the opening-position rules are theirs; the host differs:
+// React refs and `useSyncExternalStore` are replaced by DOM
 // discovery (`data-message-*` attributes), and state is written back as
 // `data-*` attributes. The visibility store (`useMessageScrollerVisibility`)
 // is an IntersectionObserver that runs only while Rust has a subscriber

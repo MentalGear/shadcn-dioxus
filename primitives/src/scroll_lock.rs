@@ -31,109 +31,91 @@
 //!    incremented the counter, and releases based on that -- independent of
 //!    `active`'s value at unmount.
 //!
-//! ## How this hook actually blocks scrolling: three generations, two
-//! ## execution-falsified along the way
-//! Every generation below was verified (or falsified) by running real
-//! assertions against a real Chromium, not assumed from reading Radix's or
-//! `react-remove-scroll`'s source. The history matters because the failure
-//! modes are non-obvious and a future change to this file risks silently
-//! reintroducing one of them.
+//! ## How this hook blocks scrolling: event interception, `<html>` and `<body>` untouched
+//! The lock blocks the scroll *input*, not the scroll *capability*. Every
+//! claim below was verified (or falsified) by running real assertions
+//! against a real Chromium, not assumed from reading Radix's or
+//! `react-remove-scroll`'s source. The constraints rule out every simpler
+//! alternative, and they are non-obvious, so a change to this file must not
+//! silently reintroduce one of them.
 //!
-//! **Generation 1 (the dq port): `overflow: hidden` on `<html>` and
-//! `<body>`.** Reliably blocks wheel/keyboard scroll (confirmed by
-//! execution, `dev-docs/archive/research/phase4-spike-findings.md` "Round 2"), but never
-//! compensates for a classic (non-overlay) scrollbar's width: removing the
-//! scrollbar without reserving its space shifts the whole page horizontally
-//! by that width the instant the lock engages. [`ensure_scrollbar_gutter_baseline`]
-//! (below) exists to fix exactly that, independently of which generation
-//! actually blocks scrolling.
+//! **Why not `overflow: hidden`** (on `<html>` and `<body>`, or on `<html>`'s
+//! `overflow-y` alone). It reliably blocks wheel/keyboard scroll
+//! (`dev-docs/archive/research/phase4-spike-findings.md` "Round 2"), but
+//! removing a classic (non-overlay) scrollbar without reserving its space
+//! shifts the whole page horizontally by that width the instant the lock
+//! engages. [`ensure_scrollbar_gutter_baseline`] (below) reserves it, but
+//! `scrollbar-gutter`'s reservation on `<html>`, in this environment's
+//! Chromium (`chromium-1194`), requires `overflow-y` to remain **exactly**
+//! `auto` (or `scroll`) at every instant -- switching it to `hidden`, even
+//! momentarily, drops the reservation for as long as it stays `hidden`
+//! (an isolated repro page with `scrollbar-gutter: stable` alone and
+//! `overflow-y: hidden` from the very start, no toggle involved:
+//! `clientWidth` still comes back as the full, unreserved viewport width).
+//! `playwright/oracle/tier3-radix/scroll-lock.spec.ts`'s "scrollbar-gutter
+//! reservation survives the lock itself" test pins this.
 //!
-//! **Generation 2: same `overflow: hidden`, narrowed to `<html>`'s
-//! `overflow-y` only** (once the gutter fix made touching `<body>`
-//! unnecessary). This reintroduced the exact shift the gutter baseline was
-//! built to prevent, for a different reason: `scrollbar-gutter`'s
-//! reservation on `<html>`, in this environment's Chromium
-//! (`chromium-1194`), requires `overflow-y` to remain **exactly** `auto`
-//! (or `scroll`) at every instant -- switching it to `hidden`, even
-//! momentarily, drops the reservation for as long as it stays `hidden`,
-//! confirmed by execution with an isolated repro page (`scrollbar-gutter:
-//! stable` alone, `overflow-y: hidden` from the very start, no toggle
-//! involved at all: `clientWidth` still comes back as the full,
-//! unreserved viewport width). `playwright/oracle/tier3-radix/scroll-lock.spec.ts`'s
-//! "scrollbar-gutter reservation survives the lock itself" test was written
-//! red against precisely this.
-//!
-//! **Generation 3 (tried, execution-falsified, not shipped): a compensated
-//! `<body>` freeze** -- `position: fixed; top: -{scrollY}px; left: 0;
-//! right: 0;` on `<body>`, `<html>`'s `overflow` left completely untouched.
-//! Ported by construction from `dev-docs/archive/research/phase4-spike-findings.md` "Round 2",
-//! Construction A / `spike_native_dialog.rs`'s `use_compensated_scroll_lock`
-//! (spike branch `spike/native-dialog`, never merged), going further than
-//! that spike by never touching `overflow-y` at all (the spike's own version
-//! still toggled it, which generation 2 above shows is itself sufficient to
-//! reproduce the defeat). Blocking scroll this way relies on a real,
-//! confirmed mechanism -- taking `<body>` out of flow via `position: fixed`
-//! collapses `<html>`'s own scrollable content to nothing, and `<html>`'s
-//! `scrollTop` clamps to `0` immediately as a structural consequence, not
-//! an event-interception race.
-//!
-//! **This was verified against the live app under a forced classic
-//! scrollbar (`playwright/xvfb.local.config.ts`) and found to *still*
-//! reproduce the exact same defeat** (`clientWidth` 1265 -> 1280 unlocked
-//! -> locked, byte-for-byte the same numbers as generation 2's defect), even
-//! though `overflow-y` never changed. Isolated further with a minimal
+//! **Why not a compensated `<body>` freeze** (`position: fixed; top:
+//! -{scrollY}px; left: 0; right: 0;` on `<body>`, `<html>`'s `overflow`
+//! untouched -- Construction A of
+//! `dev-docs/archive/research/phase4-spike-findings.md` "Round 2",
+//! `spike_native_dialog.rs`'s `use_compensated_scroll_lock`, spike branch
+//! `spike/native-dialog`, never merged). It blocks scroll through a real
+//! mechanism -- taking `<body>` out of flow via `position: fixed` collapses
+//! `<html>`'s own scrollable content to nothing, and `<html>`'s `scrollTop`
+//! clamps to `0` immediately as a structural consequence, not an
+//! event-interception race -- and never touches `overflow-y`. Under a
+//! forced classic scrollbar (`playwright/xvfb.local.config.ts`) it still
+//! defeats the gutter (`clientWidth` 1265 -> 1280 unlocked -> locked, the
+//! same numbers as the `overflow-y` case). Isolated further with a minimal
 //! repro page, independent of this codebase entirely: `scrollbar-gutter:
-//! stable` plus `overflow-y: auto` (never touched) on `<html>`, with `<body>`
-//! shrunk so it no longer overflows `<html>` at all -- whether via
-//! `position: fixed` or by simply reducing its `height` in normal flow, no
-//! position trick needed -- *also* drops the gutter reservation in this
-//! Chromium version. Confirmed by contrast: the identical `scrollbar-gutter:
-//! stable` on an ordinary (non-root) scrolling `<div>` correctly keeps its
-//! reservation even after its content shrinks below its own height. So this
-//! Chromium version's `scrollbar-gutter: stable` support for the *root*
-//! scroller specifically requires the root to keep genuinely overflowing --
-//! `overflow-y: auto` alone is necessary but not sufficient -- which a
-//! `<body>` freeze (by design) prevents, by removing all of `<body>`'s
-//! contribution to `<html>`'s scrollable content. **Generation 3 solves
-//! generation 2's specific defect (touching `overflow-y`) while
-//! reintroducing the same observable bug through a different mechanism the
-//! spike's own test suite did not catch** (their probe measured a
-//! `position: fixed` marker's on-screen edge, which a `scrollbar-gutter`
-//! regression on the *root* also happens to move, but they never asserted
-//! `document.documentElement.clientWidth` directly against the *root*
-//! scroller in isolation the way this repo's oracle does).
+//! stable` plus `overflow-y: auto` (never touched) on `<html>`, with
+//! `<body>` shrunk so it no longer overflows `<html>` at all -- whether via
+//! `position: fixed` or by simply reducing its `height` in normal flow --
+//! *also* drops the gutter reservation in this Chromium version. By
+//! contrast, the identical `scrollbar-gutter: stable` on an ordinary
+//! (non-root) scrolling `<div>` keeps its reservation even after its
+//! content shrinks below its own height. So this Chromium version's
+//! `scrollbar-gutter: stable` support for the *root* scroller specifically
+//! requires the root to keep genuinely overflowing -- `overflow-y: auto`
+//! alone is necessary but not sufficient -- which a `<body>` freeze (by
+//! design) prevents, by removing all of `<body>`'s contribution to
+//! `<html>`'s scrollable content. (A probe that measures a
+//! `position: fixed` marker's on-screen edge would miss it, because a
+//! `scrollbar-gutter` regression on the *root* also moves that edge; only
+//! asserting `document.documentElement.clientWidth` against the *root*
+//! scroller in isolation, the way this repo's oracle does, catches it.)
 //!
-//! **Generation 4 (this version): pure event interception, `<html>` and
-//! `<body>` never touched in any way.** If the actual defect is "anything
-//! that changes `<html>`'s computed `overflow` *or* reduces its genuine
-//! overflow amount defeats `scrollbar-gutter: stable` on this engine," the
-//! only remaining lever that cannot trip either failure mode is to never
-//! pull it at all -- block the scroll *input* instead of the scroll
-//! *capability*. A set of `window`-level, capturing (`{ capture: true,
-//! passive: false }`) `wheel`, `keydown` and `touchmove` listeners (plus a
-//! passive `touchstart` that remembers where the gesture began) call
-//! `preventDefault()` on an event that would otherwise reach the document
-//! root -- and nothing else. They exist **only while a lock is held**: the
-//! outermost lock installs them through [`crate::js_listener::JsListeners`]
-//! and the last release drops that value, which removes every one of them
-//! (`window.__dxScrollLocked` mirrors "held" for tests). Confirmed by execution
-//! (both an isolated repro and the real app under `xvfb.local.config.ts`):
-//! `clientWidth` stays bit-for-bit constant through a full lock/unlock cycle,
-//! because nothing about `<html>`/`<body>`'s style ever changes; wheel and the
-//! keyboard's Page/Home/End/Arrow scroll keys are fully blocked while locked and
-//! fully restored on unlock.
+//! **What the lock does instead.** If anything that changes `<html>`'s
+//! computed `overflow` *or* reduces its genuine overflow amount defeats
+//! `scrollbar-gutter: stable` on this engine, the only lever that cannot
+//! trip either failure mode is to never pull it at all -- block the scroll
+//! *input* instead of the scroll *capability*. A set of `window`-level,
+//! capturing (`{ capture: true, passive: false }`) `wheel`, `keydown` and
+//! `touchmove` listeners (plus a passive `touchstart` that remembers where
+//! the gesture began) call `preventDefault()` on an event that would
+//! otherwise reach the document root -- and nothing else. They exist
+//! **only while a lock is held**: the outermost lock installs them through
+//! [`crate::js_listener::JsListeners`] and the last release drops that
+//! value, which removes every one of them (`window.__dxScrollLocked`
+//! mirrors "held" for tests). Verified (both an isolated repro and the real
+//! app under `xvfb.local.config.ts`): `clientWidth` stays bit-for-bit
+//! constant through a full lock/unlock cycle, because nothing about
+//! `<html>`/`<body>`'s style ever changes; wheel and the keyboard's
+//! Page/Home/End/Arrow scroll keys are fully blocked while locked and fully
+//! restored on unlock.
 //!
-//! **Why they must not outlive the lock (backlog rows 149 and 159).** An earlier
-//! version of this generation installed the listeners once, at the first lock
-//! ever taken on the page, and kept them for the rest of the visit behind a
-//! boolean. A non-passive `wheel`/`touchmove` listener on `window` makes the
-//! compositor wait for the main thread before it may scroll, so after the first
-//! Dialog, Popover or menu had opened once, *every* wheel tick on the page paid
-//! that wait again (Chromium `DidHandleInputEventSentToMain` 40/40 ticks versus 0;
-//! wheel latency max 388 ms versus 143 ms with a busy main thread,
+//! **Why they must not outlive the lock (backlog rows 149 and 159).**
+//! Installed once, at the first lock ever taken on the page, and kept for
+//! the rest of the visit behind a boolean, a non-passive `wheel`/`touchmove`
+//! listener on `window` makes the compositor wait for the main thread
+//! before it may scroll, so after the first Dialog, Popover or menu had
+//! opened once, *every* wheel tick on the page would pay that wait again
+//! (Chromium `DidHandleInputEventSentToMain` 40/40 ticks versus 0; wheel
+//! latency max 388 ms versus 143 ms with a busy main thread,
 //! `dev-docs/archive/research/scroll-jank-2026-10-04.md` section 7.3).
-//! `DOMDebugger.getEventListeners(window)` after one open-and-close showed
-//! `wheel` and `touchmove` still there, non-passive.
+//! `DOMDebugger.getEventListeners(window)` after one open-and-close must
+//! show no `wheel`/`touchmove` left.
 //!
 //! **When the lock releases.** At the real close of the surface, never at the
 //! state flip: a modal `<dialog>` keeps playing its exit animation, still in the
@@ -147,17 +129,13 @@
 //! (a surface that is not a `<dialog>`, a dialog removed while open), and both
 //! paths are idempotent.
 //!
-//! This is closer to Radix's own reference implementation than any earlier
-//! generation here: `@radix-ui/react-dialog` et al. delegate to
-//! `react-remove-scroll`, which itself blocks scroll via wheel/touch/key
-//! *event interception*, not `overflow: hidden` -- this crate's earlier
-//! generations were a simplification of that, not a faithful port, and it
-//! took this engine-specific `scrollbar-gutter` defeat to make the
-//! simplification's cost (an unfixable-on-this-engine layout regression)
-//! outweigh its simplicity.
+//! This follows Radix's own reference implementation:
+//! `@radix-ui/react-dialog` et al. delegate to `react-remove-scroll`, which
+//! itself blocks scroll via wheel/touch/key *event interception*, not
+//! `overflow: hidden`.
 //!
-//! **Not blocked unconditionally -- and deliberately so, confirmed
-//! necessary by reading this crate's own components, not assumed:**
+//! **Not blocked unconditionally -- deliberately, as this crate's own
+//! components require:**
 //! - **A scroll/key event whose target has a scrollable ancestor that can
 //!   still consume it** (walked from `event.target` up to, but not
 //!   including, `<body>`/`<html>`, checking `overflow-y` computes to
@@ -165,10 +143,10 @@
 //!   relevant edge hasn't already been reached) is let through untouched.
 //!   The axis follows the gesture's dominant delta (`deltaX` vs `deltaY`
 //!   for wheel, the touch's dx vs dy), checking `overflow-x`/`scrollLeft`
-//!   for a horizontal one -- a vertical-only check blocked every purely
+//!   for a horizontal one -- a vertical-only check would block every purely
 //!   horizontal wheel/touch scroll (a code block or wide table inside a
 //!   locked dialog/sheet/drawer).
-//!   Confirmed by execution: wheeling over an unrelated `position: fixed`,
+//!   Wheeling over an unrelated `position: fixed`,
 //!   independently `overflow-y: auto` scrollable box (the shape every
 //!   `popover`-attributed element in this crate's web arm has by the
 //!   WHATWG UA popover stylesheet -- `Tooltip`/`HoverCard`/non-modal
@@ -182,7 +160,7 @@
 //!   which must keep working inside any locked surface's own form fields.
 //! - **A key event whose target (or an ancestor, via the scrollable-ancestor
 //!   walk stopping short) carries an ARIA `role` attribute is never
-//!   touched.** Confirmed necessary by reading, not assumed: every
+//!   touched.** Every
 //!   keyboard-navigable widget in this crate that could plausibly sit
 //!   inside a locked surface -- `RadioGroup` (`role="radio"`), `Tabs`
 //!   (`role="tab"`), `Slider` (`role="slider"`), `Menubar`/`DropdownMenu`/
@@ -204,11 +182,11 @@
 //!   similar. Every surface that calls this hook holds a focus trap while
 //!   open, so focus inside a locked surface is essentially never on `<body>`
 //!   -- meaning Space's only realistic default action while locked is
-//!   activation, which must never be suppressed. Confirmed as a real hazard
-//!   by reading `dev-docs/archive/research/phase4-spike-findings.md` (Round 1, experiment 4's
-//!   note on a dialog's own focused Close button), not by hitting it here.
+//!   activation, which must never be suppressed (a real hazard: see
+//!   `dev-docs/archive/research/phase4-spike-findings.md`, Round 1,
+//!   experiment 4's note on a dialog's own focused Close button).
 //!
-//! **What this generation does not attempt:** no `padding-right`
+//! **What it does not attempt:** no `padding-right`
 //! compensation (falsified in `dev-docs/archive/research/phase4-spike-findings.md`, Round 2, for
 //! exactly the `position: fixed` marker shape this crate's own overlays and
 //! a realistic right-aligned navbar action both have); no iOS
@@ -219,30 +197,30 @@
 //! `preventDefault()` placement reaches once the gesture has already ended,
 //! same limitation `react-remove-scroll` documents for itself.
 //!
-//! ## Permanent `scrollbar-gutter: stable` baseline (scrollbar-gap fix)
-//! Backported from `dev-docs/archive/research/phase4-spike-findings.md`, "Round 2 -- solved by
-//! construction", Construction A/C. The defect: naively removing scroll
+//! ## Permanent `scrollbar-gutter: stable` baseline
+//! From `dev-docs/archive/research/phase4-spike-findings.md`, "Round 2 -- solved by
+//! construction", Construction A/C. The defect it prevents: naively removing scroll
 //! capability never compensates for a classic (non-overlay) scrollbar's
 //! width on its own, so doing so shifts everything horizontally by that
-//! width the instant a lock engages -- confirmed 15px under a forced real
+//! width the instant a lock engages -- 15px under a forced real
 //! scrollbar (`playwright/xvfb.local.config.ts`), invisible under this
 //! repo's default headless Chromium, which renders 0-width overlay
 //! scrollbars regardless of how tall the page is. Most users' actual
 //! browsers (Windows/Linux Chrome and Firefox defaults, and other engines)
-//! render classic, space-reserving scrollbars, so this is a real, live
-//! regression despite being silent in the default test run -- see
+//! render classic, space-reserving scrollbars, so this is a real
+//! regression that is silent in the default test run -- see
 //! `playwright/oracle/tier3-radix/scroll-lock.spec.ts`'s
 //! `assertNoHorizontalShift`.
 //!
 //! [`ensure_scrollbar_gutter_baseline`] installs `scrollbar-gutter: stable`
 //! on `<html>` **permanently** -- once, idempotently, the first time any
 //! scroll-lock-capable primitive mounts on the page -- and never toggles it
-//! again, in either direction, for any reason. Generation 4 above (the
-//! actual lock/unlock mechanism) never touches `<html>`/`<body>` at all, so
-//! there is no longer any moment in the lock's lifecycle where this
+//! again, in either direction, for any reason. The lock mechanism above
+//! never touches `<html>`/`<body>` at all, so
+//! there is no moment in the lock's lifecycle where this
 //! baseline's own precondition (`overflow-y` computing to `auto`/`scroll`
 //! on `<html>`, *and* `<html>` genuinely still overflowing -- both
-//! confirmed necessary above) could stop holding. That call is made from
+//! required, as above) could stop holding. That call is made from
 //! each primitive's *root* component (`DialogRoot`, `AlertDialogRoot`,
 //! `PopoverRoot`, `DropdownMenu`, `ContextMenu`), not only from
 //! [`use_scroll_lock`] here: those roots mount as soon as the primitive
@@ -250,10 +228,10 @@
 //! call `use_scroll_lock` mount lazily, only once the surface first opens --
 //! installing the baseline that late would make the very first open on a
 //! page double as the moment the gutter reservation appears, i.e. exactly
-//! the one-time shift a *permanent* baseline exists to avoid (confirmed by
-//! execution: measuring before that first open, then after, shows precisely
-//! this). Two constructions were tried and falsified by execution before
-//! landing on this one (full detail and measurements in the findings doc):
+//! the one-time shift a *permanent* baseline exists to avoid (measuring
+//! before that first open, then after, shows precisely this). Two
+//! constructions are rejected (full detail and measurements in the findings
+//! doc):
 //! 1. **The textbook `padding-right` recipe** (`react-remove-scroll` and
 //!    similar: measure `innerWidth - documentElement.clientWidth`, add it as
 //!    `padding-right` on `<body>`). Falsified for `position: fixed`
@@ -276,10 +254,9 @@
 //!
 //! Applying it *permanently* rather than transiently means overlay-scrollbar
 //! platforms pay the same fixed one-time gutter reservation classic-scrollbar
-//! platforms always paid anyway (this is `scrollbar-gutter: stable`'s
-//! documented, unconditional behavior, not specific to this fix), instead of
-//! oscillating on every lock cycle -- confirmed by execution in both regimes
-//! in the findings doc.
+//! platforms always pay anyway (this is `scrollbar-gutter: stable`'s
+//! documented, unconditional behavior), instead of oscillating on every
+//! lock cycle (measured in both regimes in the findings doc).
 //!
 //! The baseline is installed via a plain (non-`!important`) `:where(html) {
 //! scrollbar-gutter: stable; overflow-y: auto; }` rule in an injected
@@ -291,13 +268,12 @@
 //!
 //! **Old-engine note:** `scrollbar-gutter` is unsupported on older
 //! WebKit/Safari. There, the injected rule is inert (an unrecognized
-//! property is dropped), so those engines simply keep today's shipped
-//! behavior -- no scrollbar-gap compensation, exactly as before this fix --
-//! never worse. Generation 4's scroll-blocking mechanism does not depend on
-//! `scrollbar-gutter` at all, so scroll blocking keeps working there
-//! regardless.
+//! property is dropped), so those engines get no scrollbar-gap
+//! compensation -- never worse than without the baseline. The
+//! scroll-blocking mechanism does not depend on `scrollbar-gutter` at all,
+//! so scroll blocking keeps working there regardless.
 //!
-//! ## Known limitation (carried over from the dq base)
+//! ## Known limitation
 //! No iOS momentum-scroll handling: this hook can block the touch drag that
 //! *initiates* a scroll gesture, but a fling's post-release inertial
 //! scrolling on iOS Safari is a platform behavior no event listener reaches
@@ -306,17 +282,16 @@
 //! dev-docs/reference/platform-rationale.md §5.
 //!
 //! ## Scroll-position capture and restore, and `use_early_scroll_capture`
-//! This hook has always captured `window.scrollX`/`scrollY` before locking
-//! and restored them on unlock -- this is unrelated to *how* scrolling is
-//! blocked (every generation above has kept it) and exists for a separate,
-//! real reason: opening a native `<dialog>` (`DialogContent`/
-//! `AlertDialogContent`'s modal arm, `crate::dialog`) reliably shifts
-//! `window.scrollY` by several hundred pixels the instant `showModal()`
-//! runs -- confirmed by execution under a forced classic scrollbar
-//! (`playwright/xvfb.local.config.ts`) on this repo's own dialog demo page,
-//! both in headless-adjacent Chromium and in a real Firefox build --
-//! almost certainly the browser's own default scroll-into-view-on-focus
-//! behavior for the dialog's autofocus target. Because this hook's own
+//! This hook captures `window.scrollX`/`scrollY` before locking and
+//! restores them on unlock. That is independent of *how* scrolling is
+//! blocked, and exists for a separate reason: opening a native `<dialog>`
+//! (`DialogContent`/`AlertDialogContent`'s modal arm, `crate::dialog`)
+//! reliably shifts `window.scrollY` by several hundred pixels the instant
+//! `showModal()` runs. It reproduces under a forced classic scrollbar
+//! (`playwright/xvfb.local.config.ts`) on the dialog demo page, in both
+//! Chromium and Firefox, and is almost certainly the browser's default
+//! scroll-into-view-on-focus behavior for the dialog's autofocus target.
+//! Because this hook's own
 //! lock-acquisition effect and the dialog's `showModal()`-driving effect
 //! (`crate::use_dialog_open_driver`) are two separate effects that, per
 //! Dioxus's normal same-commit effect ordering, may run in either order
@@ -529,7 +504,7 @@ fn use_scroll_lock_state() -> ScrollLockState {
 /// (see the module docs, "Scroll-position capture and restore") to have a
 /// pre-jump baseline to restore in the one case that most needs it: a native
 /// `<dialog>`'s `showModal()` call, which reliably scrolls the page on its
-/// own (confirmed by execution) before `use_scroll_lock`'s *own* capture --
+/// own before `use_scroll_lock`'s *own* capture --
 /// which runs from `DialogContent`, mounted and effects-run only as a
 /// consequence of the same `open` flip -- would otherwise get a chance to.
 ///
@@ -616,7 +591,7 @@ pub(crate) fn use_scroll_lock(active: Memo<bool>) {
     // Whether *this* hook instance is the one that incremented the shared
     // counter -- tracked separately from `active` because by the time this
     // component unmounts, `active` has typically already flipped to false
-    // (see adaptation note 2 above), so it can't be used to decide whether
+    // (which is what releases the lock), so it can't be used to decide whether
     // the matching decrement is still owed. A plain `Rc<Cell>`, not a signal: it
     // is read from the close-event task and from the unmount cleanup, never reactively,
     // and must stay readable after this component's own signals are gone.
@@ -761,8 +736,8 @@ fn finish_release(state: &ScrollLockState, epoch: u64) {
     if let Some((x, y)) = restore.filter(|(x, y)| x.is_finite() && y.is_finite()) {
         // Restores whatever page position was in effect just before the lock engaged --
         // see the module docs ("Scroll-position capture and restore") for why this
-        // exists: a real, measured page-scroll jump (confirmed on both Chromium and
-        // Firefox, most visibly a native `<dialog>`'s own `showModal()` autofocus/
+        // exists: a page-scroll jump (seen on both Chromium and Firefox, most
+        // visibly a native `<dialog>`'s own `showModal()` autofocus/
         // scroll-into-view behavior) otherwise persists silently through the lock and
         // is never undone once it releases, leaving the page permanently scrolled away
         // from where the user left it -- e.g. its sticky top nav rendering off-screen.

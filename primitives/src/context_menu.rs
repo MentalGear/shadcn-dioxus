@@ -94,8 +94,8 @@ struct ContextMenuCtx {
     // Reset to `false` whenever the menu opens.
     interacted_outside: Signal<bool>,
 
-    // Set briefly after a touch long-press opens the menu. Used to (a) swallow
-    // Android Chrome's spurious `contextmenu` ~500ms later, and (b) ignore the
+    // Set briefly after a touch long-press opens the menu. It (a) swallows
+    // Android Chrome's spurious `contextmenu` ~500ms later, and (b) ignores the
     // pointer re-dispatch Android sends to whatever element is now under the
     // still-held finger — that would otherwise look like an instant tap on the
     // menu item the menu just rendered over.
@@ -272,10 +272,8 @@ pub fn ContextMenu(props: ContextMenuProps) -> Element {
     // (the thing a `prevent_default()` here would otherwise race) only
     // ever applies to `auto`/`hint` popovers -- a `manual` popover has no
     // Escape-triggered close of its own to suppress, so `prevent_default()`
-    // unconditionally closing it here, on every target, is exactly the
-    // pre-migration behavior with nothing new to conflict with (verified
-    // against the WHATWG spec text for `manual` during this migration's
-    // design pass, not assumed).
+    // unconditionally closing it here, on every target, has nothing to
+    // conflict with (checked against the WHATWG spec text for `manual`).
     let handle_keydown = move |event: Event<KeyboardData>| {
         if open() && event.key() == Key::Escape {
             event.prevent_default();
@@ -298,7 +296,7 @@ pub fn ContextMenu(props: ContextMenuProps) -> Element {
     // own `document.getElementById(root_id)` lookup against a *fixed*
     // expectation of winning -- `use_outside_dismiss`'s lookup already
     // silently no-ops if a caller's override id makes it miss, on both
-    // lanes, unchanged by this fix.
+    // render paths (server and client).
     let attributes = merge_attributes(vec![
         attributes!(div {
             id: root_id,
@@ -480,8 +478,8 @@ pub fn ContextMenuTrigger(props: ContextMenuTriggerProps) -> Element {
 
     // Merged (caller-wins, deduped) for the same reason as `ContextMenuRoot`
     // above -- the fixture's `id: "clip-context-menu-trigger"`/
-    // `id: "scroll-context-menu-trigger"` duplicated `id` in the SSR'd
-    // HTML pre-fix. `style` needs the extra `fold_style_attributes` step
+    // `id: "scroll-context-menu-trigger"` would duplicate `id` in the SSR'd
+    // HTML without it. `style` needs the extra `fold_style_attributes` step
     // first: this element's own fixed touch-suppression CSS is one literal
     // `style: "..."` string, and the preview app's themed wrapper
     // (`preview/src/components/context_menu/component.rs`) sets its
@@ -626,7 +624,7 @@ pub fn ContextMenuContent(props: ContextMenuContentProps) -> Element {
     }
 }
 
-/// Web arm (Migration A, slice 2/3): promote the point-opened menu to the
+/// Web arm: promote the point-opened menu to the
 /// top layer via `popover="manual"` so its `position: fixed; left/top`
 /// coordinates escape clipping/transformed ancestors the same way
 /// `DropdownMenuContentRendered` already does for the anchored menu case
@@ -636,17 +634,17 @@ pub fn ContextMenuContent(props: ContextMenuContentProps) -> Element {
 /// point, not next to a persistent trigger element, so there is no
 /// `anchor-name` to key positioning off of -- `position_anchor_style`/
 /// `anchor_name_style` (`top_layer.rs`) are not used here at all, and the
-/// existing `left`/`top` inline styles (computed from the click's client
-/// coordinates, unrelated to CSS Anchor Positioning) need no change: once
+/// `left`/`top` inline styles (computed from the click's client
+/// coordinates, unrelated to CSS Anchor Positioning) are all it needs: once
 /// promoted to the top layer, `position: fixed` is relative to the
 /// viewport regardless of any transformed ancestor -- which is exactly the
-/// clipping bug this migration fixes (a `transform`-ed ancestor otherwise
+/// clipping bug the top layer avoids (a `transform`-ed ancestor otherwise
 /// becomes the containing block for a `position: fixed` descendant, per
 /// CSS's own rules, clipping/mispositioning it inside `overflow: hidden`
 /// ancestors like this file's `#clip-box` oracle fixture).
 ///
-/// `manual` (not `auto`) is also the dismissal decision this slice's task
-/// called out for justification: `auto`'s native light dismiss (Escape,
+/// `manual` (not `auto`) is also the dismissal decision: `auto`'s native
+/// light dismiss (Escape,
 /// outside pointerdown) would race this component's own `use_outside_dismiss`
 /// and root-level Escape handling below, which already implement APG's
 /// exact close-and-refocus semantics (Radix's `onCloseAutoFocus`,
@@ -657,15 +655,14 @@ pub fn ContextMenuContent(props: ContextMenuContentProps) -> Element {
 /// "native close also sets `interacted_outside`" callback shape here would
 /// wrongly mark every close -- including Escape and item-select -- as an
 /// outside interaction, silently breaking `use_refocus_on_close_unless`'s
-/// Escape/select refocus for this component (confirmed a real risk during
-/// execution's design pass, not just a hypothetical: see the file's own
+/// Escape/select refocus for this component (a real risk, not a
+/// hypothetical: see the file's own
 /// oracle-focus-restore "ContextMenu returns focus to its trigger on
-/// Escape" case, which this migration must keep green). `manual` sidesteps
+/// Escape" case). `manual` sidesteps
 /// the whole question: WHATWG HTML never light-dismisses a manual popover
 /// (Escape and outside pointerdown are no-ops to the platform for it), so
 /// `use_outside_dismiss`/the root `Escape` handler below stay the *only*
-/// dismissal path, unchanged from pre-migration -- exactly per this
-/// slice's instruction to keep them.
+/// dismissal path.
 ///
 /// ## Viewport clamping (`dev-docs/backlog.md` row 10, item 5.2)
 ///
@@ -880,9 +877,9 @@ fn ContextMenuContentRendered(
     }
 }
 
-/// Native (Blitz) arm: unchanged from before this slice -- Blitz has no
-/// popover-API support at all, so this stays the functional floor, a plain
-/// `position: fixed` div with no `popover` attribute.
+/// Native (Blitz) arm: Blitz has no popover-API support at all, so this is
+/// the functional floor, a plain `position: fixed` div with no `popover`
+/// attribute.
 #[cfg(not(feature = "web"))]
 #[component]
 fn ContextMenuContentRendered(
@@ -1662,7 +1659,7 @@ pub fn ContextMenuSub(props: ContextMenuSubProps) -> Element {
 #[derive(Props, Clone, PartialEq)]
 pub struct ContextMenuSubTriggerProps {
     /// The index of this sub-trigger within the enclosing
-    /// [`ContextMenuContent`]. Used to order it for keyboard navigation,
+    /// [`ContextMenuContent`]. Orders it for keyboard navigation,
     /// the same as [`ContextMenuItemProps::index`].
     pub index: ReadSignal<usize>,
 
@@ -1792,13 +1789,13 @@ pub fn ContextMenuSubTrigger(props: ContextMenuSubTriggerProps) -> Element {
             event.stop_propagation();
         },
 
-        // `dev-docs/backlog.md` row 85: see `DropdownMenuSubTrigger`'s
-        // identical removal (`dropdown_menu.rs`) for the full root-cause
-        // writeup -- this handler used to close the submenu whenever
-        // `focused() && !sub.focus.any_focused()`, a synchronous read of a
+        // No `onblur` here (`dev-docs/backlog.md` row 85): see
+        // `DropdownMenuSubTrigger`'s comment (`dropdown_menu.rs`) for the
+        // root cause -- closing the submenu whenever
+        // `focused() && !sub.focus.any_focused()` is a synchronous read of a
         // Rust-tracked signal a raw external `.focus()` call never
         // updates. `ContextMenuSubContentRendered`'s own
-        // `crate::menu_sub::use_sub_outside_dismiss` call now gives this
+        // `crate::menu_sub::use_sub_outside_dismiss` call gives this
         // submenu the DOM-truth-based construction instead.
     });
     let merged = merge_attributes(vec![
@@ -1949,8 +1946,8 @@ fn ContextMenuSubContentRendered(
     // `DropdownMenuSubContentRendered`'s identical choice for why: this
     // host has no `dx-anchor-context-menu` entry in `top_layer.rs`'s
     // hand-enumerated marker-class list at all (its own root content is
-    // never anchored, so it never needed one), and this lane cannot add
-    // one (`top_layer.rs` is out of scope). A submenu here is positioned by
+    // never anchored, so it never needed one), and a submenu needs none of
+    // its own. A submenu here is positioned by
     // exactly the same `anchor()`/`position-try-fallbacks` rules as a
     // `DropdownMenuContent`, so reusing that existing class is a correct
     // fit.
@@ -2043,16 +2040,14 @@ fn ContextMenuSubContentRendered(
             // rather than in CSS. `ContextMenuSubContentRendered`'s own
             // rendered `div` carries this SAME class
             // (`dx-context-menu-content dx-context-menu-sub-content`,
-            // `preview/src/components/context_menu/component.rs`) but,
-            // before this fix, never set this override -- so a genuinely
-            // open submenu was invisible to pointer hit-testing the entire
-            // time: not just "closes on hover" (`SubMenuState::hover_close`
-            // above fixes that half), but non-interactive outright, motion
-            // and all events (hover, click) passing straight through it to
-            // whatever page content sits behind. Confirmed live: before
-            // this fix, `document.elementFromPoint()` over a fully open,
-            // `:popover-open`, `opacity:1` submenu resolved to unrelated
-            // page content behind it, not the submenu itself.
+            // `preview/src/components/context_menu/component.rs`), so it
+            // must set this override too: without it a genuinely open
+            // submenu is invisible to pointer hit-testing -- not just
+            // "closes on hover" (`SubMenuState::hover_close` above covers
+            // that half), but non-interactive outright, with every event
+            // (hover, click) passing straight through it to whatever page
+            // content sits behind, and `document.elementFromPoint()` over
+            // an open `:popover-open` submenu resolving to that content.
             pointer_events: open().then_some("auto"),
             onkeydown,
             // See `SubMenuState::hover_close`'s doc: mirrors

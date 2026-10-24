@@ -832,8 +832,8 @@ mod tests {
 
     #[test]
     fn hidden_table_still_lists_every_datum_regardless_of_orientation() {
-        // The hidden data table is `chart.rs`'s own job, untouched by this
-        // lane -- pinning here only that this family's own rendering
+        // The hidden data table is `chart.rs`'s own job -- pinning here
+        // only that this family's own rendering
         // doesn't somehow interfere with it (e.g. by consuming `ctx.data`
         // in a way that would panic on an edge case).
         let rows = table_rows(&sample_data());

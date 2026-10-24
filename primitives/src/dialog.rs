@@ -21,7 +21,7 @@
 //! slice on both targets, per dev-docs/plan.md Phase 4.2's scope.
 //! `DialogContentModal` (`is_modal: true`) is cfg-split
 //! (`dev-docs/archive/research/phase4-spike-findings.md` Construction B):
-//! - `#[cfg(not(feature = "web"))]`: byte-for-byte the pre-existing
+//! - `#[cfg(not(feature = "web"))]`: the plain
 //!   `div` + vendored `FocusTrap` path.
 //! - `#[cfg(feature = "web")]`: a real `<dialog>` element, `open`
 //!   never bound as an attribute (Construction B's central finding: binding
@@ -578,7 +578,7 @@ fn DialogContentModal(
             aria_describedby: describedby,
             // The dialog's own state, not just the root wrapper's: closing keeps the
             // `<dialog>` open (and modal) while it animates out
-            // (`crate::use_dialog_open_driver`), so `[open]` no longer says "closing" and a
+            // (`crate::use_dialog_open_driver`), so `[open]` does not say "closing" and a
             // stylesheet keys the exit on `[data-state="closed"]` instead.
             "data-state": if open() { "open" } else { "closed" },
             "data-dx-overlay": overlay_off(ctx.overlay),

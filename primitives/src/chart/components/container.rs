@@ -245,7 +245,7 @@ mod tests {
 
     /// Render in pre-render (SSG/hydration) mode -- the mode that emits
     /// `<!--node-id..-->` markers before dynamic text, which is what
-    /// corrupted the old `<style>` rule.
+    /// would corrupt an interpolated `<style>` rule.
     fn render_prerender(caller_style: bool) -> String {
         let mut dom = VirtualDom::new_with_props(Harness, HarnessProps { caller_style });
         dom.rebuild_in_place();

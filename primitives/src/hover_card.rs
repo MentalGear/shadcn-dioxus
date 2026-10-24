@@ -386,8 +386,8 @@ pub fn HoverCardTrigger(props: HoverCardTriggerProps) -> Element {
 
     // Tooltip pattern: "Escape: Dismisses the Tooltip." HoverCard shares
     // Tooltip's role and show-on-focus/hide-on-blur contract (see
-    // `tooltip.rs`'s identical `handle_keydown`) but previously had no
-    // `onkeydown` at all, so this same-class control didn't match it.
+    // `tooltip.rs`'s identical `handle_keydown`), so it needs the same
+    // `onkeydown`.
     let handle_keydown = move |event: Event<KeyboardData>| {
         if event.key() == Key::Escape && (ctx.open)() {
             event.prevent_default();
@@ -399,12 +399,12 @@ pub fn HoverCardTrigger(props: HoverCardTriggerProps) -> Element {
     // `[data-side]` CSS still resolves relative to this trigger once the
     // content is promoted to the top layer -- see
     // `crate::top_layer::anchor_name_style`/`anchored_trigger_attributes`.
-    // Previously a bare `style: anchor_name_style(..)` literal directly
+    // Not a bare `style: anchor_name_style(..)` literal directly
     // alongside the `..props.attributes` spread below: a caller supplying
-    // their own `style` then produced two `style` attributes on this same
-    // element (`dev-docs/conformance-harness.md` hydration-parity Rule 4;
-    // `scripts/check-attr-spread-collision.sh`). Folding it here first,
-    // like every other anchored trigger, fixes that and (unlike plain
+    // their own `style` would then produce two `style` attributes on this
+    // same element (`dev-docs/conformance-harness.md` hydration-parity
+    // Rule 4; `scripts/check-attr-spread-collision.sh`). Folding it here
+    // first, like every other anchored trigger, avoids that and (unlike plain
     // `merge_attributes`, which folds a plain `style` attribute but leaves
     // shorthand style props -- `padding: ".."`, namespace `Some("style")`
     // -- as separate attributes) renders exactly one `style` carrying the
@@ -528,8 +528,8 @@ pub fn HoverCardContent(props: HoverCardContentProps) -> Element {
     let render = use_animated_open(id, ctx.open);
 
     // `HoverCardContentRendered` is a real component (not a plain fn) so it
-    // -- and the hooks it calls internally (this slice's
-    // `use_popover_shown_while_mounted` on the web arm) -- get a fresh
+    // -- and the hooks it calls internally (`use_popover_shown_while_mounted`
+    // on the web arm) -- get a fresh
     // scope each time `render()` mounts/unmounts it, matching this
     // element's actual DOM lifetime. See
     // `tooltip.rs`'s identical `TooltipContentRendered` comment for why a
@@ -652,7 +652,7 @@ fn HoverCardContentRendered(
     }
 }
 
-/// Native (Blitz) arm: unchanged from before this slice — see
+/// Native (Blitz) arm -- see
 /// `dev-docs/reference/platform-rationale.md` Caveat 2.
 #[cfg(not(feature = "web"))]
 #[component]
