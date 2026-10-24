@@ -23,42 +23,40 @@ M
 
 ## Detail
 
-**Found by** the computed-style snapshot review: the natural-language date picker's calendar cells were 24px instead of 28px and the chevrons 16px, because `input_group`'s addon `button` and `svg` descendant rules reached into the calendar popup. **Class:** a popover or dialog renders in the top layer but remains a DOM descendant of its trigger, so an ancestor component's descendant selector on a bare element (`button`, `svg`) restyles it. **Fixed:** the `svg` rule bounded with `:not(:where([popover], dialog) *)`, the `button` rule deleted, 7 more free-content rules hardened, a new gate `scripts/check-popup-boundary.sh` and `popup-style-isolation.spec.ts`. The gate also needed integration fixes after the p9parts merge: `alert/style.css` rules bounded (526b51d) and the avatar and toggle leaf `svg` rules given reasons in the allowlist (526b51d, beaf3b0; the tabs docs h2 was renamed). **Sibling class (same-component nesting), fixed for Tabs by `lane/p5tabs`:** the docs page's DEMO/CODE line Tabs' `[data-variant="line"] .dx-tabs-*` descendant selectors restyled every Tabs demo inside it; fixed by every Tabs root re-declaring all variant slots, with a spec. `check-popup-boundary.sh` does not cover `dx-` class subjects. **Still open:** (1) generalise the rule: variant rules must target the component's own root through slot variables, never descendants of an ancestor variant (gate candidate beside `check-cross-component-overrides.sh`); (2) ~~popup panel roots inherit the host's `font-size`~~ -- DONE, split out as row 259 (see below). The remaining open item is (1) only.
+**Found by** the computed-style snapshot review: the natural-language date picker's calendar cells were 24 px instead of 28 px and the
+chevrons 16 px, because `input_group`'s addon `button` and `svg` descendant rules reached into the calendar popup. **Class:** a popover
+or dialog renders in the top layer but remains a DOM descendant of its trigger, so an ancestor component's descendant selector on a bare
+element restyles it.
 
-RECURRED 2026-10-20 (verify6): popup-style-isolation site-home -- the docs home cards became `.dx-card` (14px, 6be1887d) and the toast region, color-picker, combobox list and alert-dialog inside them inherit it (14 vs 16 px), the same class as the spec's ALLOWED font-size entries; the theme's typography reset at the popup boundary would close it and let those ALLOWED entries go.
+**Landed in four pieces.**
 
-## Split 2026-10-21 (row 259)
+1. *2026-10-15 (lane `ancestorleak` `900f394`, main loop `526b51d`, `beaf3b0`).* The `svg` rule bounded with
+   `:not(:where([popover], dialog) *)`, the `button` rule deleted, 7 more free-content rules hardened, new gate
+   `scripts/check-popup-boundary.sh` and `popup-style-isolation.spec.ts`; the gate needed integration fixes after the p9parts merge
+   (`alert/style.css` bounded, avatar and toggle leaf `svg` rules allowlisted with reasons).
+2. *Same-component nesting, Tabs (`lane/p5tabs`).* The docs page's DEMO/CODE line Tabs' `[data-variant="line"] .dx-tabs-*` descendant
+   selectors restyled every Tabs demo inside it; fixed by every Tabs root re-declaring all variant slots, with a spec.
+3. *Typography half, 2026-10-21: row 259.* One zero-specificity theme rule resets every inherited property at the popup root, a gate
+   keeps it complete (`check-popup-root-reset.sh`), and the spec dropped its `ALLOWED` font-size entries (this also closed the
+   2026-10-20 "site-home" recurrence, where the docs home cards became 14 px `.dx-card` and the popups inside them inherited it).
+4. *The variant-slot gate, 2026-10-23 (branch `claude/variant-scope`).* `scripts/check-variant-scope.sh` (in `run-gates.sh` after
+   `check-popup-boundary`) flags, in every component `style.css`, a variant attribute (`data-variant`, `data-size`,
+   `data-orientation`, `data-spacing`, `data-align`, `:not()` included) on a compound followed by a DESCENDANT combinator, a `:has()`
+   reaching one through a descendant, or a bare `[data-variant=...]` compound. Red on main with 68 sites in 16 components; fixed by the
+   Tabs construction (the root declares a slot variable for every variant, the default included; the variant rule re-declares it on
+   the root; the part reads it) or, where the component renders the part as a direct child, a `>`; the 2 remaining sites
+   (`.dx-item-media[data-variant=icon|image] svg|img`, a user's leaf) are allowlisted with the reason. The browser half is
+   `playwright/variant-nesting.spec.ts`: on the page of every component whose sheet styles by a variant attribute (derived from the
+   CSS, 31 pages), each other-signature instance is cloned into a neutral `all: initial` host inside and beside each variant instance
+   and every computed property must agree. It was red on main on 14 pages and also found leaks with no descendant selector at all,
+   fixed here: Button's `--dx-button-radius`, Toggle's and ToggleGroup's `--dx-toggle-*` slots (not re-declared by a default root),
+   ButtonGroup's seam corners (a nested group's end controls inherited the outer seam's flat corners; the `nested` demo's inner groups
+   now round their outer corners), and Item's `:has(description) .dx-item-media`.
 
-The typography-reset half (item 2 above and the 2026-10-20 "RECURRED ... site-home" note) is row 259, FIXED: one zero-specificity
-theme rule resets every inherited property at the popup root, a gate keeps it complete, and the spec dropped its `ALLOWED`
-font-size entries. Row 218 stays open for the variant-slot gate only (item 1), which another session owns; nothing in row 259
-touches `check-cross-component-overrides.sh` or the Tabs-style variant rules.
+**Verified** on a debug SSG build: the spec 32/32; a before/after computed-style snapshot of every page in both schemes (checked
+against a main-versus-main control that came out identical) differs only in the ButtonGroup `nested` demo (intended), the email
+client's row avatars 2 px up (which `email_client.css` asks for and lost on main only by sheet order against the old (0,3,0) Item
+rule), and one `/charts/` open-state coverage difference seen in both directions; fast gates 70/70; `test:changed` (94 specs) had no
+red the branch caused.
 
-## Fix 2026-10-23 (item 1: the variant-slot gate)
-
-**Gate** `scripts/check-variant-scope.sh` (in `run-gates.sh` after `check-popup-boundary`): in every component
-`style.css`, a variant attribute (`data-variant`, `data-size`, `data-orientation`, `data-spacing`, `data-align`,
-`:not()` included) on a compound followed by a DESCENDANT combinator, a `:has()` that reaches one through a
-descendant, or a bare `[data-variant=...]` compound. Red on main with 68 sites in 16 components. Fixed by the Tabs
-construction (the root declares a slot variable for every variant, the default included; the variant rule
-re-declares it on the root; the part reads it) or, where the component itself renders the part as a direct
-child, a `>`; the 2 remaining sites (`.dx-item-media[data-variant=icon|image] svg|img`, a user's leaf) are
-allowlisted with the reason.
-
-**Spec** `playwright/variant-nesting.spec.ts` (the browser half, and what the gate cannot see: slot variables
-INHERITED from an outer variant root): on the page of every component whose sheet styles by a variant attribute
-(derived from the CSS, 31 pages), each other-signature instance is cloned into a neutral `all: initial` host inside
-and beside each variant instance and every computed property must agree. Red on main on 14 pages; it also found
-leaks with no descendant selector at all, fixed here: Button's `--dx-button-radius`, Toggle's and ToggleGroup's
-`--dx-toggle-*` slots (not re-declared by a default root), ButtonGroup's seam corners (a nested group's own end
-controls inherited the outer seam's flat corners through the inner root; the `nested` demo's inner groups now
-round their outer corners), and Item's `:has(description) .dx-item-media`.
-
-**Verified** on a debug SSG build: the spec 32/32; a full before/after computed-style snapshot of every page in
-both schemes (then the differing pages again, quiet, against a main-vs-main control that came out identical)
-differs in: the ButtonGroup `nested` demo (intended, above); the email client's row avatars, 2px up (`transform`
-`translateY(0.125rem)` -> `none`), which is what `email_client.css` asks for (`.ec-row:has(description) > media
-{ transform: none }`) and lost on main only by sheet order against the old (0,3,0) Item rule; and the `/charts/`
-open-state pass reaching a trigger in one run and not the other (coverage, "only in A/B", seen in both directions);
-fast gates 70/70; `test:changed` (94 specs) had no red the branch caused (11 reds, each red on main too or green
-alone).
+*Trimmed in row 266 (repo cleanup). The full dated narrative of this row is in git: `git show 3c584cc2:dev-docs/backlog/done/218-popup-style-isolation-top-layer-popups-stay-dom.md`.*
