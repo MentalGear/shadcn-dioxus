@@ -50,7 +50,9 @@ JS or CSS held in a Rust string literal, whose own comments are read, below). Bo
   `re-test is still required`, `version 4 plus`, `landed silently/in main`), the round 7 forms (how a rule or a number came to be:
   `when the gate was adopted`, `known to exist when`, `the audit measured`, `seen under load`, `happened to be hit/exercised`,
   the header words `NARROWED`/`WIDENED`, `once also applied`, `its first spec only`, `2/2 clean runs`, `reproduced the
-  identical`, a tuning trial `0.12 gave 4.48:1`), plus a month-only date `2026-08`). The counts are in
+  identical`, a tuning trial `0.12 gave 4.48:1`), the round 8 forms (an observation's frequency beside an observation or
+  failure word: `seen once in 340 runs`, `measured: 1 in 3 releases stuck`; an investigation's steps: `is not the
+  variable`, `was ruled out`), plus a month-only date `2026-08`). The counts are in
   `scripts/check-history-comments.baseline.tsv` (`path<TAB>count`). The gate **fails** when a file's count rises, when a
   new file has a non-zero count, and when a count **fell** while the baseline still allows the old number (run
   `scripts/check-history-comments.sh --update-baseline` to lock the drop in). Shrink-only: `--update-baseline` refuses
@@ -97,6 +99,11 @@ Skipped: `dev-docs/archive/` (history belongs there; code files elsewhere under 
 - **"no longer" as a state.** `Duplicate no longer matches`, `no longer applies once the element ...`, `(no longer
   `exists`)`, `whose titles no longer match`, `an API its primitive no longer has` describe what the code handles.
   Instrument `used to exclude/filter/skip ...` stays unless `that/which used to`.
+- Not adopted, on purpose (round 8): a bare frequency (`passes when 2 in 3 runs succeed` is a retry policy, `one in
+  three tiles is wide` is a layout), bare `measured:` (a figure the code depends on is data), the present-tense `rules
+  out` (`this rules out the cascade tie` says what a check does). Two finds of the round 8 cold read have no pattern and
+  were fixed by hand: an incident retold in a parenthetical (`(X's effect read raw_offset())`), and a paragraph that
+  narrates the investigation. Each kept form has a must-not-flag sentence in the self-test.
 - Not adopted, on purpose (round 7): bare `adopted` (a pattern a component adopts is a design), bare `audit` (the audit
   docs are links), bare `under load` ("would be flaky under load" is a reason), bare `happened to` ("whichever item
   happened to be focused" is a state), bare `gave` (`the size the caller gave`), `today` ("no component sets this today" is a

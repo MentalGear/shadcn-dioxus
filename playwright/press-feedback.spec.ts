@@ -56,7 +56,7 @@ async function press(page: Page, el: Locator) {
     await page.waitForTimeout(Math.max(0, 60 - (Date.now() - down)));
     await client.send("Input.emulateTouchFromMouseEvent", { type: "mouseReleased", x, y, button: "left", clickCount: 1 });
     // No `client.detach()` here: detaching straight after the up event drops it and leaves `:active` set
-    // (measured: 1 in 3 releases stuck). The session dies with the test's context.
+    // on some releases. The session dies with the test's context.
   };
 }
 
