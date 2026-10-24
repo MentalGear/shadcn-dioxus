@@ -37,7 +37,7 @@
 /* ---------------------------------------------------------------------- *
  * Indicator shapes (`ChartTooltipProps::indicator`, `TooltipIndicator`).
  * `Dot` (the default) already matches `chart/style.css`'s existing base
- * `[data-slot="chart-swatch"]` rule (10x10, `--dx-radius-xs`) unchanged --
+ * `[data-slot="chart-swatch"]` rule (10x10, `--dx-radius-xs`) --
  * only `Line` and `Dashed` need an override; `None`/`hide_indicator`
  * render no swatch element at all, so neither needs a rule here.
  * ---------------------------------------------------------------------- */
@@ -76,7 +76,7 @@
 
 /* ---------------------------------------------------------------------- *
  * Per-series icons (`ChartSeries.icon`) -- rendered in place of the swatch
- * in a tooltip row (and, once a demo needs it, a legend item), sized to
+ * in a tooltip row (and in a legend item), sized to
  * match the swatch/indicator they replace.
  * ---------------------------------------------------------------------- */
 

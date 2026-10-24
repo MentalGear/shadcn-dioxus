@@ -2,7 +2,7 @@
  * `.cn-select-*`): a 32px trigger (`rounded-lg`, `input` border, transparent
  * in light / `input/30` in dark, `pl-2.5 pr-2`, gap-1.5, text-sm), content on
  * `popover` with a 1px `foreground/10` edge and `shadow-md`, items `rounded-md`
- * with `py-1 pl-1.5`. The trigger's border is an inset box-shadow, as before. */
+ * with `py-1 pl-1.5`. The trigger's border is an inset box-shadow. */
 .dx-select {
   position: relative;
 }
@@ -145,8 +145,8 @@
 }
 
 /*
- * `min-width: var(--dx-anchor-width, 100%)` above (dev-docs/backlog.md row 47, the "Select listbox
- * renders full viewport width" report):
+ * `min-width: var(--dx-anchor-width, 100%)` above (dev-docs/backlog.md row 47; without it the listbox
+ * would span the full viewport width):
  *
  * `min-width: 100%` alone resolves against this element's containing block. On the native/non-web
  * arm that is `.dx-select` (the trigger+list wrapper, `position: relative` above, so 100% means "as

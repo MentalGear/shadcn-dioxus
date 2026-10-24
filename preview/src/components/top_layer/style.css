@@ -2,8 +2,8 @@
   display: flex;
 
   /* Also never wider than the (flex-centred, 341px on a 390px viewport)
-     preview frame: a fixed 42rem max-width alone let this fixture overflow
-     the frame on BOTH sides (x = -149 .. 524), which put its clip-box
+     preview frame: a fixed 42rem max-width alone would let this fixture overflow
+     the frame on BOTH sides (x = -149 .. 524), which would put its clip-box
      triggers off-screen and unreachable under `body { overflow-x: clip }`
      (oracle/tier2-html/global-stylesheet.spec.ts). */
   width: 100%;
@@ -54,8 +54,7 @@
   position: relative;
 
   /* 160px of room below the 90px padding-top: border-box (theme) counts the
-     padding, so it is spelled out to keep the fixture exactly as tall as
-     before. */
+     padding, so it is spelled out: 250px in all, the fixture's one height. */
   min-height: 250px;
   padding-top: 90px;
 }

@@ -14,11 +14,11 @@ use dioxus_primitives::{dioxus_attributes::attributes, merge_attributes};
 /// concatenate (space-joined) instead, which is what every caller here
 /// actually wants: their own class alongside `"dx-input"`, never instead
 /// of it. See `preview/src/components/input_group/component.rs` for the
-/// consumer this was found through: without this, `InputGroupInput`'s
-/// wrapped `<input>` rendered with *only* `"dx-input-group-control"`
+/// consumer that depends on it: without the merge, `InputGroupInput`'s
+/// wrapped `<input>` would render with *only* `"dx-input-group-control"`
 /// (`"dx-input"` silently dropped), so none of `"dx-input"`'s own
-/// border/background reset applied and the browser's native default
-/// input chrome showed through inside `InputGroup`'s own border --  a
+/// border/background reset would apply and the browser's native default
+/// input chrome would show through inside `InputGroup`'s own border --  a
 /// visible double-border/"pill within a pill" seam.
 #[component]
 pub fn Input(

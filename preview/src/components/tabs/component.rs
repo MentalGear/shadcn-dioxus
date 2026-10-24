@@ -66,7 +66,7 @@ pub enum TabsVariant {
     /// No pill: a transparent list, and the active tab carries a 2px bar (an underline
     /// when horizontal, a bar on the panel side when vertical): shadcn's `line` variant.
     Line,
-    /// The former name of [`TabsVariant::Line`], kept as an alias: it renders identically
+    /// An alias of [`TabsVariant::Line`]: it renders identically
     /// (`data-variant="line"`).
     Ghost,
 }

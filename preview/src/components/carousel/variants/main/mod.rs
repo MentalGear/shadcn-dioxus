@@ -37,7 +37,7 @@ pub fn Demo() -> Element {
         // adding on top of it -- so the wrapper must be widened by exactly
         // the reservation's own size, or the visible card shrinks by it
         // (measured: 320px -> 224px without this).
-        // Keep these two numbers paired: do not "tidy" 26rem back toward
+        // Keep these two numbers paired: do not "tidy" 26rem toward
         // 20rem without also revisiting the reservation in style.css.
         //
         // `width: 100%` is load-bearing next to `max-width`, not redundant.

@@ -287,7 +287,7 @@ pub fn DataTablePagination(props: DataTablePaginationProps) -> Element {
                         default_value: page_size,
                         item_to_label: |size: usize| size.to_string(),
                         // Static trigger text: the default `SelectValue` prints "Select an option" until the options
-                        // register, then "5" (~18 px narrower), which re-flowed the footer (CLS 0.0131 > 0.01).
+                        // register, then "5" (~18 px narrower), which would re-flow the footer (CLS 0.0131 > 0.01).
                         trigger: rsx! {
                             span { "{page_size}" }
                         },

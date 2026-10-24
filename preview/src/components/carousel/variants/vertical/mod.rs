@@ -3,9 +3,8 @@ use crate::components::card::{Card, CardContent};
 use dioxus::prelude::*;
 use dioxus_icons::lucide::{ChevronDown, ChevronUp};
 
-/// `CarouselOrientation::Vertical` fell out of the horizontal
-/// construction for free (see `primitives/src/carousel.rs`'s module
-/// doc), so it ships in v1 rather than being deferred. A vertical
+/// `CarouselOrientation::Vertical` is the horizontal construction on the
+/// other axis (see `primitives/src/carousel.rs`'s module doc). A vertical
 /// carousel needs an explicit height on `CarouselContent` -- there is
 /// nothing else to derive one from, the same way `ScrollArea` needs one.
 ///
@@ -52,9 +51,7 @@ use dioxus_icons::lucide::{ChevronDown, ChevronUp};
 /// remaining height with `flex: 1` (the Card is a flex column) instead of a
 /// second, again-overflowing `height: 100%`. The gap is the default
 /// spacing (`--dx-space-4`, 16px), the same as the horizontal demos, so the
-/// space between the two visible cards reads the same on both axes (an
-/// earlier 4px gap, copied from shadcn's `-mt-1`/`pt-1`, was filled by the
-/// Card's own shadow and looked like no gap at all).
+/// space between the two visible cards reads the same on both axes.
 #[component]
 pub fn Demo() -> Element {
     rsx! {

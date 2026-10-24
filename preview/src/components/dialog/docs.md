@@ -32,7 +32,7 @@ The button is the **last** child of the panel, in shadcn's DOM order. A dialog o
 
 ## Header and footer
 
-`DialogHeader` is a column with a `0.5rem` gap. `DialogFooter` cancels the panel's padding (`-mx-4 -mb-4`) to draw a `muted/50` band with a top border and the panel's bottom corners; it is a reversed column below `sm` (the primary action on top) and a row aligned to the end from `sm` up. A title and description placed directly in the panel (no header) keep the tighter pull-back of the previous release.
+`DialogHeader` is a column with a `0.5rem` gap. `DialogFooter` cancels the panel's padding (`-mx-4 -mb-4`) to draw a `muted/50` band with a top border and the panel's bottom corners; it is a reversed column below `sm` (the primary action on top) and a row aligned to the end from `sm` up. A title and description placed directly in the panel (no header) keep their own, tighter pull-back.
 
 ## Overlay
 

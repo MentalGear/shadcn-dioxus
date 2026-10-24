@@ -24,7 +24,7 @@ Collapsible {
 }
 ```
 
-`hidden_until_found` overrides `keep_mounted`. Closed content that stays mounted with plain `keep_mounted` now carries the `hidden` attribute, so it is not displayed, not searchable and not in the accessibility tree.
+`hidden_until_found` overrides `keep_mounted`. Closed content that stays mounted with plain `keep_mounted` carries the `hidden` attribute, so it is not displayed, not searchable and not in the accessibility tree.
 
 Cost: the content is mounted (and, on a server-rendered page, hydrated) while closed, and it is in the server-rendered HTML. That is why it is opt-in.
 

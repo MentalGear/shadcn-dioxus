@@ -15,7 +15,7 @@ fn site_href(path: &str) -> String {
 /// One entry of a panel's link list -- shadcn's demo `ListItem`: a title
 /// (`text-sm leading-none font-medium`) over a muted description clamped to
 /// two lines. Every list link in this demo goes through it, so a link can
-/// never render as bare text next to titled siblings (the bug that made
+/// never render as bare text next to titled siblings (which would make
 /// "Button"/"Input" larger and lighter than "Introduction").
 #[component]
 fn ListItem(href: String, index: usize, title: String, description: String) -> Element {
@@ -54,9 +54,8 @@ pub fn Demo() -> Element {
                                     // (both this demo's own oracle/smoke
                                     // specs and any real screen-reader user's
                                     // link-by-name navigation) would
-                                    // otherwise hit two matches -- confirmed
-                                    // by live reproduction against a running
-                                    // dev server. Same class of fix as this
+                                    // otherwise hit two matches.
+                                    // Same class of fix as this
                                     // component's own `aria_label` above.
                                     div { class: "dx-navigation-menu-link-title", "Component Library" }
                                     div { class: "dx-navigation-menu-link-description",

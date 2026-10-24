@@ -1,5 +1,5 @@
 // shadcn's base-nova `button-demo`: one outline button and an icon-only one
-// (ui.shadcn.com/docs/components/base/button). The six variants moved to the
+// (ui.shadcn.com/docs/components/base/button). The six variants are in the
 // `all_variants` demo below it.
 use super::super::component::*;
 use dioxus::prelude::*;

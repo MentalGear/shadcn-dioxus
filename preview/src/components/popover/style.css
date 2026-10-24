@@ -161,7 +161,7 @@
 /* Header, title and description: Nova's `cn-popover-header` (flex column,
  * gap-0.5, text-sm), `cn-popover-title` (font-medium) and
  * `cn-popover-description` (muted). `.dx-popover-content-title`/`-description`
- * are the previous names, kept so a copied-out page that still uses them
+ * are aliases of those, kept so a copied-out page that uses them
  * renders the same. */
 .dx-popover-header {
   display: flex;

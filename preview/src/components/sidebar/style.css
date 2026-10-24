@@ -422,7 +422,7 @@
   font-weight: 500;
 
   /* gap: matches `.dx-sidebar-menu-button[data-sidebar="menu-button"]`'s own
-     icon+label spacing (this file, ~line 568), so a leading icon (e.g.
+     icon+label spacing (this file), so a leading icon (e.g.
      `Docs`'s "Start"/each `ComponentCategory` group) pairs with the text
      the same way that button does. */
   gap: var(--dx-space-2);
@@ -430,7 +430,7 @@
   transition: margin var(--dx-motion-duration-slow) var(--dx-sidebar-ease), opacity var(--dx-motion-duration-slow) var(--dx-sidebar-ease);
 }
 
-/* Nova: `ring-sidebar-ring focus-visible:ring-2` (`outline: none` above hid it). */
+/* Nova: `ring-sidebar-ring focus-visible:ring-2` (`outline: none` above would hide it). */
 .dx-sidebar-group-label:focus-visible {
   box-shadow: 0 0 0 2px var(--dx-sidebar-ring);
 }
@@ -471,7 +471,7 @@
   }
 }
 
-/* `outline: none` above left this button with no focus indicator at all: ring it like its siblings. */
+/* `outline: none` above would leave this button with no focus indicator at all: ring it like its siblings. */
 .dx-sidebar-group-action:focus-visible {
   box-shadow: 0 0 0 2px var(--dx-sidebar-ring);
 }
@@ -748,7 +748,7 @@
   }
 }
 
-/* `outline: none` above left this button with no focus indicator at all: ring it like its siblings. */
+/* `outline: none` above would leave this button with no focus indicator at all: ring it like its siblings. */
 .dx-sidebar-menu-action[data-sidebar="menu-action"]:focus-visible {
   box-shadow: 0 0 0 2px var(--dx-sidebar-ring);
 }

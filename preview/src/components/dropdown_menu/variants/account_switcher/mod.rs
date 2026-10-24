@@ -14,9 +14,8 @@ const AVERY_LIN: Asset = asset!("/assets/avatars/avery-lin.svg");
 /// items, each with a leading icon.
 ///
 /// The header is a `DropdownMenuLabel`. shadcn also draws a `Separator` between
-/// the header, the "Upgrade" group and the account group; the component has no
-/// separator or group part yet (backlog row 155 group 2), so the items simply
-/// follow the header in one list.
+/// the header, the "Upgrade" group and the account group; this demo keeps the items
+/// in one list after the header.
 #[component]
 pub fn Demo() -> Element {
     let mut chosen = use_signal(|| None::<String>);

@@ -9,7 +9,7 @@ use dioxus_icons::lucide::{ChevronLeft, ChevronRight};
 /// own wrapper class. There is no per-instance prop for this -- it is a
 /// CSS decision at the call site (docs.md's own "Sizes" section) -- so
 /// this uses the same "demo-local `<style>` block" construction `button`'s
-/// own `size` variant already established for responsive demo layout.
+/// own `size` variant uses for responsive demo layout.
 ///
 /// A bare `flex-basis: 40%` override would not be `1/n` for any small
 /// whole `n` and would overflow the track (`dev-docs/research/shadcn-carousel-parity.md`'s

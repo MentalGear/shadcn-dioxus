@@ -31,7 +31,7 @@
 /*
  * Not inside the popover panel: the calendar's day cells are `data-disabled="true"` too when a day is
  * unavailable, and that state is already drawn by calendar/style.css (the muted-foreground token +
- * line-through, at full opacity). Fading it a second time here washed unavailable days out to ~2:1
+ * line-through, at full opacity). Fading it a second time here would wash unavailable days out to ~2:1
  * contrast instead of the designed look.
  */
 .dx-date-picker[data-disabled="true"],

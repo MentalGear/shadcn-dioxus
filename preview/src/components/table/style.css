@@ -7,7 +7,7 @@
  * border); a head cell `h-10 px-2 text-left align-middle font-medium`, a cell
  * `p-2 align-middle whitespace-nowrap`, the checkbox cell `pr-0`; the footer
  * `bg-muted/50 border-t font-medium`; the caption `text-muted-foreground mt-4
- * text-sm`. Already matched value for value; nothing to change but this note. In
+ * text-sm`. Matched value for value. In
  * dark the hover (muted at 50%) and the selected row (muted) differ by
  * construction, so the muted == accent tie does not touch this sheet. Classes
  * namespaced `dx-table*` (scripts/check-dx-class-prefix.sh). */
@@ -59,8 +59,8 @@
 
 /* A checkbox is block-level (checkbox/style.css), and the primitive follows it
  * with a hidden mirror <input> (`position: absolute`, no offsets): it sits at
- * its static position, i.e. BELOW the 1rem box -- 13px that overflowed the
- * last row's cell and gave the table container a 4px vertical scroll range.
+ * its static position, i.e. BELOW the 1rem box -- 13px that would overflow the
+ * last row's cell and give the table container a 4px vertical scroll range.
  * `overflow: hidden` on a cell does not clip an absolutely positioned
  * descendant whose containing block is an ancestor, so make the cell that
  * hosts a checkbox the containing block: the mirror is then clipped by the

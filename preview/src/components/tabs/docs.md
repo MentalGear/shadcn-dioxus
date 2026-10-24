@@ -31,7 +31,7 @@ Tabs {
 
 ## Styles (default and line)
 
-`Tabs` takes `variant: TabsVariant`. `Default` is the muted pill with a raised active tab inside a bordered card. `Line` is shadcn's `line` variant: a transparent list with a 4px gap, no card around the panel, and the active tab carries a 2px bar that fades in (an underline when horizontal, a bar on the panel side when vertical; the docs site's DEMO/CODE tabs use it). `Ghost` is the former name of `Line` and renders identically (`data-variant="line"`). See the `line` variant.
+`Tabs` takes `variant: TabsVariant`. `Default` is the muted pill with a raised active tab inside a bordered card. `Line` is shadcn's `line` variant: a transparent list with a 4px gap, no card around the panel, and the active tab carries a 2px bar that fades in (an underline when horizontal, a bar on the panel side when vertical; the docs site's DEMO/CODE tabs use it). `Ghost` is an alias of `Line` and renders identically (`data-variant="line"`). See the `line` variant.
 
 (shadcn puts `variant` on `TabsList`; here it is on `Tabs`, because the panel's frame follows it too.)
 
@@ -49,7 +49,7 @@ Tabs { horizontal: false, variant: TabsVariant::Line, default_value: "a".to_stri
 
 ## Sizes
 
-`Tabs` takes `size: TabsSize` (`Sm`, `Default`, `Lg`), emitted as `data-size` on the root. The list height follows the theme's shared control-height scale (`--dx-control-height-sm` / `-default` / `-lg` = 28 / 32 / 36px, the same ladder as `Button`, `Input` and `Select`), so a `Sm` tab list lines up with a `Sm` button. `Default` is shadcn's 32px list and is unchanged. `Sm` sets the triggers in `text-xs` with a 14px icon; `Lg` keeps `text-sm` and widens the trigger padding. Both variants (`Default` and `Line`) take every size, and a Tabs nested in another Tabs' panel keeps its own size. See the `sizes` variant.
+`Tabs` takes `size: TabsSize` (`Sm`, `Default`, `Lg`), emitted as `data-size` on the root. The list height follows the theme's shared control-height scale (`--dx-control-height-sm` / `-default` / `-lg` = 28 / 32 / 36px, the same ladder as `Button`, `Input` and `Select`), so a `Sm` tab list lines up with a `Sm` button. `Default` is shadcn's 32px list. `Sm` sets the triggers in `text-xs` with a 14px icon; `Lg` keeps `text-sm` and widens the trigger padding. Both variants (`Default` and `Line`) take every size, and a Tabs nested in another Tabs' panel keeps its own size. See the `sizes` variant.
 
 ```rust
 Tabs { size: TabsSize::Sm, default_value: "a".to_string(), /* ... */ }
@@ -57,7 +57,7 @@ Tabs { size: TabsSize::Sm, default_value: "a".to_string(), /* ... */ }
 
 ## Panel padding
 
-`TabContent` has no padding of its own (shadcn's Nova `TabsContent` is `text-sm` and nothing else; the padding that used to be 2rem was this library's). Put padding on the content, or on the panel with `padding`, or let a `Card` inside it bring its own. The default (bordered) variant still draws a 1px card-coloured frame around the panel, so text placed straight in it wants about `var(--dx-space-4)` of padding; the `line` variant has no frame.
+`TabContent` has no padding of its own (shadcn's Nova `TabsContent` is `text-sm` and nothing else; the 2rem padding of earlier releases was this library's). Put padding on the content, or on the panel with `padding`, or let a `Card` inside it bring its own. The default (bordered) variant still draws a 1px card-coloured frame around the panel, so text placed straight in it wants about `var(--dx-space-4)` of padding; the `line` variant has no frame.
 
 **Breaking change:** a `TabContent` that relied on the 2rem padding now sits flush against its frame. Add `padding: "var(--dx-space-8)"` to restore the old look.
 

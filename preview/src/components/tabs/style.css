@@ -221,9 +221,9 @@
 
 /* Zero specificity, on purpose. The panel's frame is a DEFAULT: the docs site's demo frame is itself a
    `TabContent` (`.dx-component-preview-frame.dx-tabs-content`) inside a `line` Tabs, whose slots say
-   "no border, transparent". At (0,1,0) this rule out-ranked the frame's own border, radius and
-   `background` (shorthand, so it also wiped the frame's dot grid) purely by stylesheet order, because
-   this sheet loads after `main.css`; every demo frame lost its chrome. `:where()` lets any
+   "no border, transparent". At (0,1,0) this rule would out-rank the frame's own border, radius and
+   `background` (shorthand, so it also wipes the frame's dot grid) purely by stylesheet order, because
+   this sheet loads after `main.css`; every demo frame would lose its chrome. `:where()` lets any
    rule that names the panel win, whatever the order. */
 :where(.dx-tabs-content-themed) {
     border: var(--dx-tabs-panel-border);

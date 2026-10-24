@@ -175,10 +175,10 @@
 /* dev-docs/backlog.md row 89: same construction as `toggle/style.css`'s
    identical fix -- see that file's own comment for the full writeup.
    `:hover` and `[data-state="on"]` tie at (0,2,0) on top of
-   `.dx-toggle-group-item`, broken only by source order today (an ON item
+   `.dx-toggle-group-item`, broken only by source order (an ON item
    keeps its `on` background while hovered, in both themes).
    `:where(:hover)` makes that unconditional instead of order-dependent.
-   `:focus-visible` is untouched, same (0,2,0) it already has. A focused item
+   `:focus-visible` keeps its own (0,2,0). A focused item
    rises above its neighbours (`focus-visible:z-10`) so the ring and the
    ring-coloured edge are not covered by the next item's background. */
 .dx-toggle-group-item:focus-visible {

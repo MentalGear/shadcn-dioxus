@@ -116,7 +116,7 @@ a.dx-item {
 }
 
 /* An Item with a description tops its media. Set on the Item's own root as slots (row 218), never as
-   `.dx-item:has(..) .dx-item-media`: that also moved the media of every Item nested inside one, and the
+   `.dx-item:has(..) .dx-item-media`: that would also move the media of every Item nested inside one, and the
    description sits at no fixed depth (the email client wraps ItemContent in a button). */
 .dx-item:has([data-slot="item-description"]) {
   --dx-item-media-align-self: flex-start;

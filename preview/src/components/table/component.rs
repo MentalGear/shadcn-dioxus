@@ -179,7 +179,7 @@ pub fn TableRow(props: TableRowProps) -> Element {
 }
 
 /// `<th>`. Defaults to `scope="col"` (this crate's `TableHead` is always
-/// used as a column header in every demo/consumer so far -- a row-header
+/// used as a column header in every demo/consumer -- a row-header
 /// `<th scope="row">` remains reachable by passing `scope: "row"`
 /// explicitly, which overrides the default; see this file's header doc for
 /// the override mechanism).

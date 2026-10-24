@@ -396,7 +396,7 @@ pub fn DateRangePicker(props: DateRangePickerProps) -> Element {
                 attributes: merged,
                 date_picker::DatePickerPopover {
                     // See the comment on `DatePicker`'s own
-                    // `date_picker::DatePickerPopover` above -- identical fix.
+                    // `date_picker::DatePickerPopover` above -- identical reasoning.
                     popover_root: PopoverRoot,
                     is_modal: false,
                     DateRangePickerInput {

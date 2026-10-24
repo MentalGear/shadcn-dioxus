@@ -33,7 +33,7 @@ Focus an item, then Space or Enter lifts it, the arrow keys move it (Up and Down
 
 While an item is dragged it stays in the list as a **ghost** (dashed outline, see-through background) and the other items part at the slot where it would land, with a line marking the slot.
 
-- `ghost_opacity` sets how opaque the ghost is. The default, `0.9`, keeps the item's text readable while the dashed outline and see-through background still mark it as lifted: on a white page primary text stays at about 14.6:1 and muted text at about 4:1, where the previous `0.5` left them at 3.5:1 and 2:1. Muted text needs `0.96` or more to reach 4.5:1, so raise it for a stricter theme. Values outside `0.0..=1.0` are clamped.
+- `ghost_opacity` sets how opaque the ghost is. The default, `0.9`, keeps the item's text readable while the dashed outline and see-through background still mark it as lifted: on a white page primary text stays at about 14.6:1 and muted text at about 4:1, where `0.5` would leave them at 3.5:1 and 2:1. Muted text needs `0.96` or more to reach 4.5:1, so raise it for a stricter theme. Values outside `0.0..=1.0` are clamped.
 - `drop_gap` sets how much room the other items make: every item after the slot moves by this much, so the space between the slot's two neighbours grows by exactly this length. The default is `25px`. It takes any non-negative CSS length (`"1.5rem"`, `"var(--dx-space-6)"`); a bare number is read as pixels. The items move with a `transform`, so the list's own box does not grow: leave this much room below the list.
 
 Both are written as CSS custom properties on the list's root element, so they can be themed from a stylesheet instead of a prop:

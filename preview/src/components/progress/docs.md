@@ -24,7 +24,7 @@ Progress { value: 56.0,
 }
 ```
 
-The track is its own element (`.dx-progress-track`, 4px, rounded) inside the root, so a `Progress` without a label or value looks as it did.
+The track is its own element (`.dx-progress-track`, 4px, rounded) inside the root, so a `Progress` without a label or value is just the bar.
 
 ## Motion
 

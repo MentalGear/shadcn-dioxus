@@ -22,7 +22,7 @@
  * A month is ONE size, set by `--dx-calendar-cell-size` (seven fixed day columns), wherever it lands:
  * it never grows to fill the row. The container wraps and centres its rows, so a month that wrapped
  * onto a row of its own keeps the compact grid of the others and sits centred under them, instead of
- * stretching across the whole card (what `flex: 1 1 auto` plus `1fr`-style day columns did). */
+ * stretching across the whole card (what `flex: 1 1 auto` plus `1fr`-style day columns would do). */
 .dx-calendar {
     --dx-calendar-cell-size: var(--dx-space-7);
     --dx-calendar-cell-radius: var(--dx-radius-md);
@@ -224,7 +224,7 @@
 
 /* The cell's own fill reset (the UA gives a `<button>` a face colour) is zero-specificity too, and sits
    BEFORE the hover rule below: with `background: none` on the plain `.dx-calendar-grid-cell` (one class)
-   the :where() hover rule (zero) could never win, so a plain day showed no hover at all. Equal
+   the :where() hover rule (zero) could never win, so a plain day would show no hover at all. Equal
    specificity, later source order, wins; every state rule still outranks both. */
 :where(.dx-calendar-grid-cell) {
     background: none;

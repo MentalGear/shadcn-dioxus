@@ -8,7 +8,7 @@
 // wrapper the same way `components/slider/variants/dynamic_range/mod.rs`
 // imports `crate::components::switch::Switch` or `components/card/variants/
 // main/mod.rs` imports `crate::components::{button, input, label}`. This
-// file being itself a `component.rs` does not exempt it: unlike the ~45
+// file being itself a `component.rs` does not exempt it: unlike the
 // wrapper files, there is no `dioxus_primitives::form` primitive for it to
 // wrap -- it is a fixture composing *other* components, so the rule applies
 // to it exactly as it does to a variant demo. `scripts/check-preview-
@@ -32,14 +32,14 @@
 // `dioxus_primitives::radio_group::RadioItem` never gets without that class,
 // so its `<button>` collapses to whatever a bare, empty `<button>` renders as
 // in every state (the themed `/component/?name=checkbox` and
-// `/component/?name=radio_group` are stable-sized in every state). The fix
-// belongs in the fixture, not in
+// `/component/?name=radio_group` are stable-sized in every state). The theme
+// layer belongs in the fixture, not in
 // `primitives/src/checkbox.rs` or `radio_group.rs`: the *conditional-children*
 // behavior of `CheckboxIndicator` is correct, documented API (a consumer's
 // indicator content need not be a fixed-size glyph), and `RadioItem`'s
 // primitive renders no built-in visual by design (it is a headless
-// primitive) -- the defect is a fixture skipping the theme
-// layer every sibling fixture applies.
+// primitive) -- a fixture that skips the theme
+// layer every sibling fixture applies is what collapses.
 //
 // 2. The "Notifications (library switch)" and "Opt-in, required (library
 // switch)" fields render visually collapsed, the same way, if the fixture
@@ -197,7 +197,7 @@ fn read_form_data_js(form_id: &str, result_id: &str) -> String {
 /// invalid hidden control is a UI-layer decision each consumer's markup is
 /// best placed to make (which element counts as "the visible one," how to
 /// style it) -- a primitives-level validity bridge would need a public API
-/// for a library-wide default that this one fixture's fix does not have to
+/// for a library-wide default that this one fixture does not need to
 /// invent.
 ///
 /// The mapping from an invalid hidden control to its visible counterpart is

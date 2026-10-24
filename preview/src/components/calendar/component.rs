@@ -287,8 +287,8 @@ pub fn RangeCalendar(props: RangeCalendarProps) -> Element {
 // module's own `Calendar`/`RangeCalendar`, and any other themed component
 // that composes `CalendarRoot`/`RangeCalendarRoot` the way `date_picker`
 // does) gets the stylesheet for free, by construction; `document::Link`'s
-// `(href, rel)` dedup makes the now-redundant render from `Calendar`'s own
-// `document::Link` (removed above) unnecessary rather than merely harmless.
+// `(href, rel)` dedup would make a second `document::Link` on `Calendar`
+// redundant, so `Calendar` carries none.
 #[component]
 pub(crate) fn CalendarRoot(props: calendar::CalendarProps) -> Element {
     let base = attributes!(div {
