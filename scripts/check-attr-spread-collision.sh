@@ -44,14 +44,14 @@
 #   - Anything that isn't literally "one element, one spread, one same-named literal" --
 #     e.g. two DIFFERENT elements each independently receiving half of a caller's intent.
 #
-# Why a gate: sweeping this class one incident at a time only ever caught the sites some demo
-# page happened to exercise (dev-docs/backlog.md rows 85/93). This is the fix-by-construction
+# Why a gate: a per-incident sweep sees only the sites a demo page exercises (dev-docs/backlog.md
+# rows 85/93); the gate covers every site. This is the fix-by-construction
 # CLAUDE.md's "stop patching instances" principle calls for.
 #
 # THE RATCHET, NOT A WALL (read this before touching the baseline file):
 # `scripts/check-attr-spread-collision.baseline.tsv` (this check) and
 # `scripts/check-attr-spread-collision.component-forward.baseline.tsv` (the second check,
-# below) each list the sites known to exist when the gate was adopted --
+# below) each list the sites that exist and are not yet fixed --
 # hundreds of them, across most of this codebase's themed wrapper components. This gate
 # does NOT fail on any of those: it fails only when a site appears that ISN'T already in
 # the relevant baseline file. Each baseline entry is `file<TAB>enclosing-fn<TAB>name`, one
@@ -184,7 +184,7 @@ baseline_header() {
 # live "$label" instance of the duplicate-attribute defect this gate looks for (see
 # check-attr-spread-collision.sh's own header, and
 # dev-docs/issues/duplicate-attribute-findings.md for the full breakdown), listed here
-# only because fixing every pre-existing site was out of scope when the gate was adopted.
+# so the gate can require no new site without requiring every old one fixed at once.
 # Format: file<TAB>enclosing-fn<TAB>attribute-name, one line per finding
 # (duplicates meaningful -- a multiset, not a set; see the .sh header for why). Do not
 # hand-edit: adding a line here to silence a real new finding defeats the gate: fix the

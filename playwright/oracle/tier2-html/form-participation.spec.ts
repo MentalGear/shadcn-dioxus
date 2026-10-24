@@ -73,7 +73,7 @@
  * element, a reset listener).
  *
  * How assertions are graded:
- *   - Rule 1 (`RadioGroup`, `Select`): each assertion states
+ *   - Rule 1 (`RadioGroup`, `Select`, `SelectMulti`): each assertion states
  *     the spec-driven behaviour ("contributes name=value").
  *   - Rule 4 (`Switch`, `RadioGroup`) and rule 6 (`Checkbox`, `RadioGroup`,
  *     `Select`): "required blocks submission and fires invalid", following
@@ -150,6 +150,25 @@ async function submitRequiredAndRead(page: Page): Promise<{
 
 const formResult = (page: Page) => page.locator("#form-result");
 
+/** All values a key contributes, in entry-list order. */
+function valuesOf(entries: string[], key: string): string[] {
+  return entries.filter((l) => l.slice(0, l.indexOf("=")) === key).map((l) => l.slice(key.length + 1));
+}
+
+/** Toggles each named option of the library multi-select, then closes its
+ * list with Escape (the list stays open across selections). */
+async function toggleFruits(page: Page, names: string[]) {
+  const trigger = page.getByRole("combobox", { name: "Fruits (library)" });
+  await trigger.click();
+  const list = page.getByLabel("Fruits options (library)");
+  for (const name of names) {
+    await list.getByRole("option", { name }).click();
+  }
+  await page.keyboard.press("Escape");
+  await expect(trigger).toHaveAttribute("aria-expanded", "false");
+  return trigger;
+}
+
 test.describe("Rule 1 — a named control contributes name=value to FormData on submit", () => {
   test("CALIBRATION: native checkbox, checked by default, contributes its value", async ({ page }) => {
     await gotoForm(page);
@@ -210,6 +229,30 @@ test.describe("Rule 1 — a named control contributes name=value to FormData on 
         "(no <select>, no hidden input) — see dev-docs/archive/fork-research/capability-gaps.md.",
     ).toBe(true);
   });
+
+  test("CALIBRATION: native multi-select contributes one entry per selected option", async ({ page }) => {
+    await gotoForm(page);
+    const entries = await submitAndRead(page, "#entries-submit", formResult(page));
+    expect(valuesOf(entries, "fruits-native")).toEqual(["apple", "cherry"]);
+    await page.locator("#fruits-native").selectOption(["apple", "banana", "cherry"]);
+    const entries2 = await submitAndRead(page, "#entries-submit", formResult(page));
+    expect(valuesOf(entries2, "fruits-native")).toEqual(["apple", "banana", "cherry"]);
+  });
+
+  test("SelectMulti: contributes one entry per selected value", async ({ page }) => {
+    // `name` reaches a hidden <select multiple> mirror.
+    await gotoForm(page);
+    const entries = await submitAndRead(page, "#entries-submit", formResult(page));
+    expect(valuesOf(entries, "fruits-lib")).toEqual(["apple", "cherry"]);
+    await toggleFruits(page, ["Banana"]);
+    const entries2 = await submitAndRead(page, "#entries-submit", formResult(page));
+    // Option order, like the native reference: the mirror's options follow the list.
+    expect(valuesOf(entries2, "fruits-lib"), "the form submits values, never labels").toEqual([
+      "apple",
+      "banana",
+      "cherry",
+    ]);
+  });
 });
 
 test.describe("Rule 2 — an unchecked/unselected control contributes nothing (not an empty string)", () => {
@@ -259,6 +302,20 @@ test.describe("Rule 2 — an unchecked/unselected control contributes nothing (n
     // above is this one's counterpart: this one guards that an unselected
     // item does not leak a stray entry.
     expect(hasKey(entries, "plan-lib")).toBe(false);
+  });
+
+  test("CALIBRATION: native multi-select with nothing selected contributes nothing", async ({ page }) => {
+    await gotoForm(page);
+    await page.locator("#fruits-native").selectOption([]);
+    const entries = await submitAndRead(page, "#entries-submit", formResult(page));
+    expect(hasKey(entries, "fruits-native")).toBe(false);
+  });
+
+  test("SelectMulti: nothing selected contributes nothing", async ({ page }) => {
+    await gotoForm(page);
+    await toggleFruits(page, ["Apple", "Cherry"]);
+    const entries = await submitAndRead(page, "#entries-submit", formResult(page));
+    expect(hasKey(entries, "fruits-lib")).toBe(false);
   });
 });
 
@@ -591,5 +648,26 @@ test.describe("Rule 6 — form reset restores the initial value", () => {
     await expect(trigger).toHaveText("Apple");
     const entries = await submitAndRead(page, "#entries-submit", formResult(page));
     expect(hasEntry(entries, "fruit-lib", "apple")).toBe(true);
+  });
+
+  test("CALIBRATION: native multi-select reset restores the default options", async ({ page }) => {
+    await gotoForm(page);
+    await page.locator("#fruits-native").selectOption(["banana"]);
+    await page.locator("#entries-reset").click();
+    const entries = await submitAndRead(page, "#entries-submit", formResult(page));
+    expect(valuesOf(entries, "fruits-native")).toEqual(["apple", "cherry"]);
+  });
+
+  test("SelectMulti: reset restores the default values", async ({ page }) => {
+    // The hidden <select multiple> marks the default values' options
+    // `initial_selected`, and SelectMulti's form `reset` listener resyncs
+    // its own selection to `default_values`.
+    await gotoForm(page);
+    const trigger = await toggleFruits(page, ["Apple", "Banana"]);
+    await expect(trigger).toHaveText("Cherry, Banana");
+    await page.locator("#entries-reset").click();
+    await expect(trigger).toHaveText("Apple, Cherry");
+    const entries = await submitAndRead(page, "#entries-submit", formResult(page));
+    expect(valuesOf(entries, "fruits-lib")).toEqual(["apple", "cherry"]);
   });
 });

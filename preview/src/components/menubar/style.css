@@ -30,7 +30,7 @@
 }
 
 .dx-menubar-menu[data-state="open"] .dx-menubar-trigger {
-  background-color: var(--dx-muted);
+  background-color: var(--dx-accent-tint);
 }
 
 .dx-menubar-trigger[data-disabled="true"] {

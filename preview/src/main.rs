@@ -536,7 +536,7 @@ impl Route {
 
 /// The outermost layout, applied to EVERY route (never popped by an
 /// `#[end_layout]` anywhere in `Route`) -- this is deliberately where
-/// `GlobalHead` renders (dev-docs/backlog.md row 46 finding, below), not
+/// `GlobalHead` renders (dev-docs/backlog.md row 46, below), not
 /// `NavigationLayout`, precisely because it stays mounted across a
 /// client-side transition between ANY two routes in the app, including two
 /// routes that both sit outside `NavigationLayout`
@@ -1542,12 +1542,6 @@ fn DocsLayout(
                         // A-Z by default or by category: see `docs_nav`.
                         docs_nav::DocsComponentNav { active }
                     }
-                    // The theme picker's phone entry: a "Theme" button pinned under the
-                    // scrolling nav that opens the picker as a bottom `Drawer`. Always
-                    // rendered; `main.css` shows it only at the header's phone breakpoint
-                    // (the header's own popover trigger is hidden there) -- see
-                    // `theme::ThemePicker`'s doc for why that is CSS and not a Rust check.
-                    theme::ThemePickerSidebarFooter {}
                 }
                 SidebarInset { id: MAIN_ID, tabindex: "-1", {children} }
             }
@@ -2973,7 +2967,7 @@ fn BlockProfile() -> Element {
                     span { style: "font-weight: 600; color: var(--dx-foreground);", "Avery Lin" }
                     Badge {
                         variant: BadgeVariant::Secondary,
-                        style: "padding: 0.15rem 0.3rem; background-color: var(--dx-ring-color); color: white;",
+                        style: "padding: 0.15rem 0.3rem; background-color: var(--dx-ring-color); color: var(--dx-accent-ring-ink, white);",
                         VerifiedIcon {}
                     }
                 }
@@ -3596,7 +3590,7 @@ fn ComponentGalleryPreview(component: ComponentDemoData) -> Element {
     // is the sole provider of this context -- see `HomeSidebarControls`'s
     // own doc comment), gets live controls instead of the plain
     // "Open full preview" link every other `ComponentType::Block` entry
-    // still falls back to. `try_consume_context` (not `consume_context`)
+    // falls back to. `try_consume_context` (not `consume_context`)
     // is what makes that fallback safe rather than a panic: this same
     // component would otherwise need every future caller to remember to
     // provide the context, for a card that doesn't use it.

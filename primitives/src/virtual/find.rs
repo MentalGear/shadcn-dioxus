@@ -26,7 +26,17 @@
 //!   its item's estimated position, not on the item's own text;
 //! - **no pointer, no accessibility tree**: the layer is `aria-hidden` and ignores the pointer.
 //!
-//! What stays per component is the layout ([`FindLayout`]) and what a match does.
+//! - **a match lands on the real item, not on its estimate**: a placeholder sits at its item's
+//!   estimated position and the engine's reveal scrolls to the estimate too, but the rows that
+//!   mount around the target are measured, and each one above it moves it by the difference between
+//!   its real height and its estimate (a wrapping grid whose rows are 72 px against a 64 px
+//!   estimate: 16 measured rows pushed the item 129 px past where the browser had scrolled, half
+//!   out of a 256 px viewport, and the match showed other photos). [`use_find_in_page`] therefore
+//!   finishes every match by scrolling the mounted item's own box into the middle of the container
+//!   (`SETTLE_MATCH_JS`), which follows the item while rows measure around it.
+//!
+//! What stays per component is the layout ([`FindLayout`]), the selector of an item and what a
+//! match does.
 
 use dioxus::prelude::*;
 
@@ -75,11 +85,16 @@ impl FindLayout {
 
 /// Installs the `beforematch` listener on the container `container_id` when `enabled`, and calls
 /// `on_match` with the `data-find-index` of every placeholder the browser is about to reveal.
-/// Returns whether the layer may mount: after hydration, so the server's HTML carries no layer
-/// and the client's first frame matches it.
+/// `item` maps that index to a CSS selector of the real item inside the container (a list's
+/// `[data-virtual-index="7"]`); once `on_match` has moved the window, the match is settled on that
+/// item (see the module doc). `None` only for a consumer that scrolls the real item itself, beside
+/// edges of its own (`VirtualGrid`'s pinned columns and header). Returns whether the layer may
+/// mount: after hydration, so the server's HTML carries no layer and the client's first frame
+/// matches it.
 pub(crate) fn use_find_in_page(
     container_id: Signal<String>,
     enabled: bool,
+    item: Option<fn(&str) -> String>,
     on_match: impl FnMut(String) + Clone + 'static,
 ) -> ReadSignal<bool> {
     let mut hydrated = use_signal(|| false);
@@ -88,14 +103,61 @@ pub(crate) fn use_find_in_page(
         if !enabled {
             return None;
         }
+        let mut on_match = on_match.clone();
         Some(
             JsListeners::install(BEFOREMATCH_BRIDGE_JS)
                 .arg(container_id.cloned())
-                .on_message(on_match.clone()),
+                .on_message(move |index: String| {
+                    let selector = item.map(|item| item(&index));
+                    on_match(index);
+                    if let Some(selector) = selector {
+                        settle_match(container_id.peek().clone(), selector);
+                    }
+                }),
         )
     });
     hydrated.into()
 }
+
+/// Scrolls the real item `selector` names into the middle of the container `container_id`, once
+/// it is mounted (see `SETTLE_MATCH_JS`).
+fn settle_match(container_id: String, selector: String) {
+    let eval = document::eval(SETTLE_MATCH_JS);
+    let _ = eval.send((container_id, selector));
+}
+
+/// Finishes a find-in-page match: waits for the item `selector` names to be mounted, then, for as
+/// long as its box is not inside the container's scrollport, scrolls the container to centre it,
+/// until it has stayed in view for four frames (rows measured around it shift it) or sixty frames
+/// have passed. It reads the item's real position, so estimates that are off do not matter. A
+/// newer match takes over (`container.__dxFindSettle`), and the reader's wheel, touch, pointer or
+/// key input on the container ends it (the listeners of `BEFOREMATCH_BRIDGE_JS`).
+const SETTLE_MATCH_JS: &str = r#"
+    const [id, selector] = await dioxus.recv();
+    const container = document.getElementById(id);
+    if (!container) return;
+    const token = {};
+    container.__dxFindSettle = token;
+    let frames = 0;
+    let steady = 0;
+    const go = () => {
+        if (container.__dxFindSettle !== token || !container.isConnected) return;
+        const item = container.querySelector(selector);
+        if (item) {
+            const box = container.getBoundingClientRect();
+            const rect = item.getBoundingClientRect();
+            const top = box.top + container.clientTop;
+            if (rect.top >= top - 1 && rect.bottom <= top + container.clientHeight + 1) {
+                if (++steady >= 4) return;
+            } else {
+                steady = 0;
+                container.scrollTop += rect.top + rect.height / 2 - (top + container.clientHeight / 2);
+            }
+        }
+        if (frames++ < 60) requestAnimationFrame(go);
+    };
+    requestAnimationFrame(go);
+"#;
 
 /// The find layer: `rows` rows of placeholders, row `r` `row_height(r)` px tall, holding
 /// `text((r, slot))` for each cell [`FindLayout`] gives it (an empty text has no placeholder).
@@ -226,6 +288,10 @@ const BEFOREMATCH_BRIDGE_JS: &str = r#"
         dioxus.send(holder.dataset.findIndex);
         requestAnimationFrame(() => holder.setAttribute("hidden", "until-found"));
     }, true);
+    // The reader taking over ends a running settle (`SETTLE_MATCH_JS`).
+    for (const type of ["wheel", "touchstart", "pointerdown", "keydown"]) {
+        listen(container, type, () => { container.__dxFindSettle = null; }, true);
+    }
 "#;
 
 /// A `data-find-index` of [`FindLayout::Columns`], `"{row}:{column}"`, as a cell.

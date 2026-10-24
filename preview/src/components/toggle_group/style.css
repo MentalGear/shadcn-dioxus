@@ -197,7 +197,7 @@
 /* Pressed: the hover surface pushed 15% toward the ink, so it follows a preset
  * and always differs from hover -- see `toggle/style.css` for why. */
 .dx-toggle-group-item[data-state="on"] {
-  background-color: color-mix(in var(--dx-hover-mix-space), var(--dx-accent), var(--dx-foreground) 15%);
+  background-color: color-mix(in var(--dx-hover-mix-space), var(--dx-accent-tint), var(--dx-tint-step-ink) 15%);
   color: var(--dx-foreground);
 }
 

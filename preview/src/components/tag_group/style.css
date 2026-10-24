@@ -35,9 +35,13 @@
   padding-inline: var(--dx-space-3);
 }
 
+/* The fill is the ring colour, which is the accent's hue once one is picked (row 385), so the ink follows the
+ * fill: the theme's `--dx-ring-ink` (near-white at or below L 0.575, near-black above it), >= 4.5:1 on every
+ * base x accent (playwright/accent-states.spec.ts). */
 .dx-tag-group-tag[data-selected="true"] {
   border-color: var(--dx-ring-color);
   background-color: var(--dx-ring-color);
+  color: var(--dx-ring-ink);
 }
 
 .dx-tag-group-tag[data-disabled="true"] {

@@ -173,15 +173,20 @@ html[data-theme="light"] [class~="dxc-system"] {
   /* Actions */
 
   /* Nova: `--primary` is shadcn's `oklch(0.205)` = #171717 in light (row 373) and
-   * `oklch(0.922)` = #e5e5e5 in dark (shadcn globals.css). */
-  --dx-primary: var(--primary, var(--light, oklch(20.5% 0 0deg)) var(--dark, oklch(92.2% 0 0deg)));
-  --dx-primary-foreground: var(--primary-foreground, var(--light, #fafafa) var(--dark, #171717));
+   * `oklch(0.922)` = #e5e5e5 in dark (shadcn globals.css).
+   *
+   * Primary has two owners (row 390): the accent preset writes the bare `--primary(-foreground)`, the base
+   * preset writes its neutral primary to the slots `--dx-base-primary(-foreground)` (`theme-presets.css`), so
+   * the two axes never write one variable. Reading order: a bare `--primary` (an accent, or a host's own
+   * shadcn paste) wins, then the base's slot, then the ramp. The sidebar's primary pair below reads the same way. */
+  --dx-primary: var(--primary, var(--dx-base-primary, var(--light, oklch(20.5% 0 0deg)) var(--dark, oklch(92.2% 0 0deg))));
+  --dx-primary-foreground: var(--primary-foreground, var(--dx-base-primary-foreground, var(--light, #fafafa) var(--dark, #171717)));
 
   /* Drop indicator: the line or highlight that marks where a dragged row or item will land (Drag and Drop
    * List, Data Table and Table reorder, the Virtual List reorder demo). It is the accent colour, so it
-   * follows the accent preset through `--dx-primary`, NOT the focus ring (which is grey by default and
-   * calibrated for contrast). Every drop indicator reads this one token; a host may retune it. */
-  --dx-drop-indicator: var(--dx-primary);
+   * follows the accent preset through `--dx-primary-mark` (`--dx-primary` clamped to 3:1 on every surface, row 389), NOT
+   * the focus ring (which is grey by default and calibrated for contrast). Every drop indicator reads this one token; a host may retune it. */
+  --dx-drop-indicator: var(--dx-primary-mark);
   --dx-secondary: var(--secondary, var(--light, #f5f5f5) var(--dark, #262626));
   --dx-secondary-foreground: var(--secondary-foreground, var(--light, #171717) var(--dark, #fafafa));
   --dx-muted: var(--muted, var(--light, #f5f5f5) var(--dark, #262626));
@@ -251,6 +256,36 @@ html[data-theme="light"] [class~="dxc-system"] {
   --dx-primary-ink: var(--light, oklch(from var(--dx-primary) min(l, 0.5) c h))
     var(--dark, oklch(from var(--dx-primary) max(l, 0.75) c h));
 
+  /* The picked accent on ACTIVE and SELECTED states (row 385's sibling, row 389). With no accent picked every
+   * slot below is the colour its state paints, to the byte; the `:root[data-theme-accent]` rule after this
+   * block replaces them with accent-derived values, so a component reads a slot and never `--dx-primary` raw.
+   *
+   * - `--dx-primary-mark`: the accent as a non-text MARK (a dot, a drop line, a range or progress fill). No accent:
+   *   `--dx-primary` itself.
+   * - `--dx-active-mark`: the same for a mark that is `--dx-foreground` (the Tabs bar). No accent: foreground.
+   * - `--dx-active-ink`: the accent as TEXT on a plain surface (an active label). No accent: foreground.
+   * - `--dx-accent-tint`: a SURFACE for a highlighted, open or current state that carries the accent's hue. No
+   *   accent: `--dx-accent`, the neutral hover surface (shadcn's `--accent`, NOT the picked accent).
+   * - `--dx-accent-tint-selected`: the selected step on top of it, `--dx-accent-selected`'s relation to
+   *   `--dx-accent`. No accent: `--dx-accent-selected`.
+   * - `--dx-tint-step-ink`: the ink a pressed or selected step mixes toward (Toggle, Toggle Group, the selected
+   *   tint). `--dx-foreground` with no accent. With an accent it is the same colour with its hue MISSING: the
+   *   foreground's explicit `0deg` hue would otherwise pull the oklch mix's hue toward red (blue 265 -> 279,
+   *   emerald 166 -> 143 at 15%), and a pressed state must keep the accent's hue.
+   * - `--dx-sidebar-accent-tint`: the sidebar's twin of `--dx-accent-tint` (`--dx-sidebar-accent` by default).
+   * - `--dx-ring-ink`: text on a fill that is the ring colour (the selected Tag): near-white at or below OKLCH L
+   *   0.575, near-black above it (the `--dx-sidebar-primary-foreground` rule of the "Contrast mode" block, where
+   *   black and white tie at 4.58:1). `--dx-accent-ring-ink` (declared only with an accent) is the same value for
+   *   a fill that keeps another ink without one. */
+  --dx-primary-mark: var(--dx-accent-mark, var(--dx-primary));
+  --dx-active-mark: var(--dx-accent-mark, var(--dx-foreground));
+  --dx-active-ink: var(--dx-accent-ink, var(--dx-foreground));
+  --dx-accent-tint: var(--dx-accent);
+  --dx-accent-tint-selected: var(--dx-accent-selected);
+  --dx-tint-step-ink: var(--dx-foreground);
+  --dx-sidebar-accent-tint: var(--dx-sidebar-accent);
+  --dx-ring-ink: oklch(from var(--dx-ring-color) clamp(0.05, calc((0.575 - l) * 1000 + 0.05), 0.99) min(c, 0.014) h);
+
   /* Lines and focus. shadcn's `--ring` is a colour, so it is `--dx-ring-color`
    * here: `--dx-ring` (below) already means the focus-ring box-shadow.
    *
@@ -268,8 +303,12 @@ html[data-theme="light"] [class~="dxc-system"] {
    * oklch(0.708 0 0) and dark oklch(0.556 0 0). The library's default look is shadcn neutral, so the default
    * ring is grey. The calibrated, contrast-clamped
    * value is one entry of the contrast-mode block at the end of this file ("Contrast mode"); this plain
-   * definition is what the ring is without it. */
-  --dx-ring-source: var(--ring, var(--light, oklch(70.8% 0 0deg)) var(--dark, oklch(55.6% 0 0deg)));
+   * definition is what the ring is without it.
+   *
+   * A picked accent recolours it (row 385): `--dx-accent-ring`, provided by the `:root[data-theme-accent]` rule
+   * after this block, is read first and wins over a preset's or a host's `--ring`; with no accent it is
+   * undeclared and the chain above is exactly shadcn's. */
+  --dx-ring-source: var(--dx-accent-ring, var(--ring, var(--light, oklch(70.8% 0 0deg)) var(--dark, oklch(55.6% 0 0deg))));
   --dx-ring-color: var(--dx-ring-source);
 
   /* Non-shadcn role: a stronger line than `--dx-border` (hover borders,
@@ -311,8 +350,8 @@ html[data-theme="light"] [class~="dxc-system"] {
    * stays #000; the calibrated branch of the contrast block picks that ink by the fill. */
   --dx-sidebar-background: var(--sidebar, var(--light, oklch(98.5% 0 0deg)) var(--dark, oklch(20.5% 0 0deg)));
   --dx-sidebar-foreground: var(--sidebar-foreground, var(--light, oklch(14.5% 0 0deg)) var(--dark, oklch(98.5% 0 0deg)));
-  --dx-sidebar-primary: var(--sidebar-primary, var(--light, oklch(20.5% 0 0deg)) var(--dark, #fafafa));
-  --dx-sidebar-primary-foreground-source: var(--sidebar-primary-foreground, var(--light, oklch(98.5% 0 0deg)) var(--dark, #000));
+  --dx-sidebar-primary: var(--sidebar-primary, var(--dx-base-sidebar-primary, var(--light, oklch(20.5% 0 0deg)) var(--dark, #fafafa)));
+  --dx-sidebar-primary-foreground-source: var(--sidebar-primary-foreground, var(--dx-base-sidebar-primary-foreground, var(--light, oklch(98.5% 0 0deg)) var(--dark, #000)));
   --dx-sidebar-primary-foreground: var(--dx-sidebar-primary-foreground-source);
   --dx-sidebar-accent: var(--sidebar-accent, var(--light, oklch(97% 0 0deg)) var(--dark, oklch(26.9% 0 0deg)));
   --dx-sidebar-accent-foreground: var(--sidebar-accent-foreground, var(--light, oklch(20.5% 0 0deg)) var(--dark, oklch(98.5% 0 0deg)));
@@ -545,7 +584,10 @@ html[data-theme="light"] [class~="dxc-system"] {
    *     contrast all >= 3:1).
    * `--dx-chart-grid`/`--dx-chart-axis-text` reuse existing grayscale
    * tokens rather than inventing new ones -- grid lines and axis labels are
-   * chrome, not data, and already have a home on this theme's neutral scale. */
+   * chrome, not data, and already have a home on this theme's neutral scale.
+   *
+   * Charts belong to the accent axis (row 390): the base presets write no `--chart-N`, so with no accent
+   * picked this palette shows under every base, and an accent preset's `--chart-1..5` ramp replaces slots 1-5. */
   --dx-chart-1: var(--chart-1, var(--dark, #3987e5) var(--light, #2a78d6));
   --dx-chart-2: var(--chart-2, var(--dark, #d95926) var(--light, #eb6834));
   --dx-chart-3: var(--chart-3, var(--dark, #199e70) var(--light, #1baf7a));
@@ -670,7 +712,62 @@ html[data-theme="light"] [class~="dxc-system"] {
   --dx-table-head-height: 2.5rem;
   --dx-table-head-weight: 500;
   --dx-table-hover-background: color-mix(in oklab, var(--dx-muted) 50%, transparent);
-  --dx-table-selected-background: var(--dx-muted);
+  --dx-table-selected-background: var(--dx-accent-tint);
+}
+
+/* The accent focus ring (row 385): with an accent picked (`data-theme-accent` on <html>) the ring takes the
+ * accent's hue and chroma, `--dx-primary`'s own, with its OKLCH lightness clamped per mode so every accent
+ * clears the 3:1 non-text minimum (WCAG 1.4.11) on the page, card and popover of every base colour: at most
+ * `--dx-accent-ring-l-max` (0.62) in light (the pale lime and yellow fills are 1.5:1 as they are), at least
+ * `--dx-accent-ring-l-min` (0.6) in dark (fifteen of the seventeen dark fills are 2-2.8:1). Measured over
+ * every base x accent x mode, the lowest ring edge is 3.37:1 in light (lime on white, the bound's limit: L 0.62
+ * is Y 0.238 for a grey and a saturated yellow-green sits above that) and 3.84:1 in dark (fuchsia on the olive
+ * card, a blue-purple hue needing the higher L). The dark floor is also the least that keeps the selected Tag's
+ * near-black ink (`tag_group/style.css`, the ring colour is its fill) at 4.5:1 on every accent (4.75:1 worst).
+ * The clamp is the `--dx-primary-ink` construction, a bound
+ * that moves only a value that fails, so a mid accent passes through.
+ * It does not read the contrast mode: an accent ring is not a shadcn look, so it is accessible in both
+ * settings, and the wcag light clamp of the "Contrast mode" block (0.65) then finds it already under its bound.
+ * No accent leaves `--dx-accent-ring` undeclared, so `--dx-ring-source` is shadcn's grey, or a preset's or a
+ * host's `--ring`, untouched. `docs` (main.css) is an accent like the others: its fill is the same input. */
+:root[data-theme-accent] {
+  --dx-accent-ring-l-max: 0.62;
+  --dx-accent-ring-l-min: 0.6;
+  --dx-accent-ring: var(--light, oklch(from var(--dx-primary) min(l, var(--dx-accent-ring-l-max)) c h))
+    var(--dark, oklch(from var(--dx-primary) max(l, var(--dx-accent-ring-l-min)) c h));
+
+  /* The picked accent on active and selected states (row 389). Declared with the accent only, so with none the
+   * `:root` defaults above (foreground, `--dx-primary`, `--dx-accent`, `--dx-accent-selected`) stand untouched.
+   *
+   * `--dx-accent-mark` clamps `--dx-primary`'s OKLCH lightness like the ring does, with bounds that also clear the
+   * muted track a Slider or Progress fill sits on: at most `--dx-accent-mark-l-max` (0.58) in light, at least
+   * `--dx-accent-mark-l-min` (0.62) in dark. Hue and chroma are kept; a value already inside passes through.
+   * `--dx-accent-ink` is `--dx-primary-ink` (text on a plain surface). Never put it on a tint: light ink on a
+   * 10-15% accent tint is 4.16 to 4.45:1; the text on a tint is `--dx-foreground` or
+   * `--dx-accent-foreground`.
+   *
+   * `--dx-accent-tint` is the accent's hue and a fraction of its chroma (`--dx-accent-tint-chroma-light` 0.10,
+   * `-dark` 0.25) at shadcn's own hover-surface lightness (light 0.97, dark 0.269), so it sits the same step from the
+   * popover, card and page as the neutral `--dx-accent` does, hued (1.08 / 1.16 at the weakest accent
+   * against 1.09 / 1.19 for the neutral). A neutral primary (chroma 0) gives that neutral accent. The light fraction is
+   * small because an sRGB-clipped pale blue or indigo at L 0.97 drifts toward cyan (0.07 of chroma lands at hue 221 for
+   * blue 264) and a hued band lowers the muted foreground's 4.5:1 in the `wcag` contrast setting (0.12 gives 4.48:1).
+   * `--dx-foreground` is >= 15:1 on it. `--dx-accent-tint-selected` is the dark step (the tint pushed 15% toward the ink in the theme's
+   * mix space) and, in light, the tint itself, as `--dx-accent-selected` is. */
+  --dx-accent-mark-l-max: 0.58;
+  --dx-accent-mark-l-min: 0.62;
+  --dx-accent-tint-chroma-light: 0.10;
+  --dx-accent-tint-chroma-dark: 0.25;
+  --dx-accent-mark: var(--light, oklch(from var(--dx-primary) min(l, var(--dx-accent-mark-l-max)) c h))
+    var(--dark, oklch(from var(--dx-primary) max(l, var(--dx-accent-mark-l-min)) c h));
+  --dx-accent-ink: var(--dx-primary-ink);
+  --dx-accent-tint: var(--light, oklch(from var(--dx-primary) 97% calc(c * var(--dx-accent-tint-chroma-light)) h))
+    var(--dark, oklch(from var(--dx-primary) 26.9% calc(c * var(--dx-accent-tint-chroma-dark)) h));
+  --dx-tint-step-ink: oklch(from var(--dx-foreground) l c none);
+  --dx-accent-tint-selected: var(--light, var(--dx-accent-tint))
+    var(--dark, color-mix(in var(--dx-hover-mix-space), var(--dx-accent-tint), var(--dx-tint-step-ink) 15%));
+  --dx-sidebar-accent-tint: var(--dx-accent-tint);
+  --dx-accent-ring-ink: var(--dx-ring-ink);
 }
 
 /* ============================================================================
@@ -1701,13 +1798,13 @@ html:not([data-dx-press-feedback="off"]) [role="radio"][class*=" dx-"]:not([disa
 
 :where([data-dx-menu-item]:focus-visible),
 :where([data-dx-menu-item][data-state="open"]) {
-  background: var(--dx-accent);
+  background: var(--dx-accent-tint);
   color: var(--dx-accent-foreground);
 }
 
 @media (hover: hover) and (pointer: fine) {
   :where([data-dx-menu-item]:hover:not([data-disabled="true"])) {
-    background: var(--dx-accent);
+    background: var(--dx-accent-tint);
     color: var(--dx-accent-foreground);
   }
 }
@@ -1717,6 +1814,7 @@ html:not([data-dx-press-feedback="off"]) [role="radio"][class*=" dx-"]:not([disa
   position: absolute;
   width: var(--dx-menu-item-indicator-size);
   height: var(--dx-menu-item-indicator-size);
+  color: var(--dx-accent-ink, inherit);
   inset-block: 0;
   margin-block: auto;
   pointer-events: none;
@@ -1787,6 +1885,11 @@ html:not([data-dx-press-feedback="off"]) [role="radio"][class*=" dx-"]:not([disa
  * popup boundary. One attribute pair (not `:where`) so it out-ranks the zero-specificity highlight ink. */
 [data-dx-menu-item][data-variant="destructive"] {
   color: var(--dx-destructive-text);
+}
+
+/* A destructive item keeps its own ink on a checked item's mark: the accent ink is for ordinary items. */
+[data-dx-menu-item][data-variant="destructive"] > [data-dx-menu-item-indicator] {
+  color: inherit;
 }
 
 [data-dx-menu-item][data-variant="destructive"]:focus-visible {
@@ -2382,6 +2485,10 @@ html:not([data-dx-press-feedback="off"]) [role="radio"][class*=" dx-"]:not([disa
  *    (L 0.05) above it, hue of the fill and chroma <= 0.014. Pure black and white tie at Y 0.179 (4.58:1);
  *    L 0.575 is the OKLab lightness of the mid-tones that sit there (indigo L 0.585, Y 0.179; docs blue L 0.56,
  *    Y 0.167), and measured over every base x accent (171 fills) the worst is >= 4.5:1.
+ *
+ * The accent ring (`--dx-accent-ring`, the `:root[data-theme-accent]` rule after the role tokens, row 385) is
+ * outside this switch: it is clamped to 3:1 in both settings and feeds `--dx-ring-source`, which this block
+ * then treats like any other source.
  *
  * Not calibrated, by decision: selected fills (`--dx-accent-selected`), Slider / Progress tracks and the
  * Tabs active pill (each carries a second cue: a check, a filled range, a label), and every hover or

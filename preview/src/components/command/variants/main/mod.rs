@@ -49,9 +49,12 @@ pub fn Demo() -> Element {
             // heading above its search input, so this one is visually
             // hidden instead of omitted, the same "real title element, not
             // a sighted heading" shape Sidebar's mobile `Sheet` already
-            // uses for its own `SheetTitle` (see `style.css`'s
-            // `.dx-command-sr-only`).
-            DialogTitle { class: "dx-command-sr-only", "Command Palette" }
+            // uses for its own `SheetTitle`. The title sits in a `div`
+            // wearing `.dx-command-sr-only` (see `style.css`), so the hiding
+            // rule styles an element this component owns, not the title.
+            div { class: "dx-command-sr-only",
+                DialogTitle { "Command Palette" }
+            }
             Command::<String> {
                 query: Some(query()),
                 on_query_change: move |next| query.set(next),

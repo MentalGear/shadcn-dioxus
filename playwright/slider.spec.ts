@@ -117,7 +117,7 @@ test('drag ignores pageX/clientX mismatch (iPad pinch-zoom analog)', async ({ pa
   // viewport offset. The pointerdown and the window pointermove listener must record the same
   // kind of coordinate: a slider that stored client coords on pointerdown but wrote pageX on
   // pointermove would produce a first-move delta equal to that offset and
-  // jam the value at 100%. Reproduced by forging pageX on synthetic events.
+  // jam the value at 100%. The spec forges pageX on synthetic events.
   await gotoHydrated(page, `${BASE_URL}/component/slider/`, { timeout: 20 * 60 * 1000 });
 
   const slider = sliderGroup(page, 'Demo Slider');

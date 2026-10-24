@@ -5,7 +5,7 @@
 //! elements with `aria-pressed`.
 
 use super::super::component::*;
-use crate::components::card::{Card, CardContent, CardDescription, CardHeader, CardTitle};
+use crate::components::card::{Card, CardDescription, CardTitle};
 use dioxus::prelude::*;
 
 /// Which of the two series the chart currently draws.
@@ -220,7 +220,7 @@ pub fn Demo() -> Element {
 
     rsx! {
         Card { class: "dx-chart-interactive",
-            CardHeader { class: "dx-chart-interactive-header",
+            div { class: "dx-chart-interactive-header",
                 div { class: "dx-chart-interactive-heading",
                     CardTitle { "Line Chart - Interactive" }
                     CardDescription { "Showing total visitors for the last 3 months" }
@@ -242,7 +242,7 @@ pub fn Demo() -> Element {
                     }
                 }
             }
-            CardContent { class: "dx-chart-interactive-content",
+            div { class: "dx-chart-interactive-content",
                 ChartContainer { config, data: visible, kind: ChartKind::Line,
                     Chart {
                         aria_label: "Visitors by day, {current.label()}",

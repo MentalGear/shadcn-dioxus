@@ -45,19 +45,62 @@ mkroot() { # a throwaway repo root: a copy of playwright/ (specs + tools), every
   return 0
 }
 
-mutate() { # name file sed-expr [quick]  -- runs in the background; the verdict goes to $tmp/<name>.verdict
-  local name="$1" file="$2" expr="$3" quick="${4:-0}" d="$tmp/$1"
-  (
-    mkroot "$d"
-    sed -i -E "$expr" "$d/playwright/tools/$file"
-    if cmp -s "$repo_root/playwright/tools/$file" "$d/playwright/tools/$file"; then
-      echo "FAIL -- mutation '$name' did not change $file (the sed pattern is stale)"
-    elif (cd "$d" && SELECT_SELFTEST_QUICK="$quick" node playwright/tools/select.mjs --self-test >/dev/null 2>&1); then
-      echo "FAIL -- mutation '$name' stayed GREEN: the self-test does not guard that promise"
-    else
-      echo "ok -- mutation '$name' is red, as it must be"
-    fi
-  ) >"$tmp/$name.verdict" 2>&1 &
+# Each mutation runs as a background job and leaves THREE files: `<name>.verdict` (one line, written by the job),
+# `<name>.err` (its stderr) and `<name>.status` (the job's exit status, written by a wrapper around it, so a job that is
+# killed from outside, as memory pressure beside a full `run-gates.sh` can do, still has a status). `settle` turns those into a line: a job that exits without a verdict is reported as
+# `FAIL -- mutation X produced no verdict (exit N): <stderr tail>`, never as a blank line.
+# At most MUTATION_JOBS (default 2) run at once: each is a copy of playwright/ plus a node process, and four of them
+# beside the gates' own load is the likely memory spike. A job that died without a verdict is retried once, alone, with
+# a note, because losing a child to the machine says nothing about the promise under test; a second death is the FAIL.
+MUTATION_JOBS="${MUTATION_JOBS:-2}"
+case "$MUTATION_JOBS" in ''|*[!0-9]*|0) MUTATION_JOBS=2 ;; esac
+names=()
+
+mutation_job() { # name file sed-expr quick -- the body of one mutation; prints the verdict line
+  local name="$1" file="$2" expr="$3" quick="$4" d="$tmp/$1"
+  rm -rf "$d"
+  mkroot "$d"
+  sed -i -E "$expr" "$d/playwright/tools/$file"
+  if cmp -s "$repo_root/playwright/tools/$file" "$d/playwright/tools/$file"; then
+    echo "FAIL -- mutation '$name' did not change $file (the sed pattern is stale)"
+  elif (cd "$d" && SELECT_SELFTEST_QUICK="$quick" node playwright/tools/select.mjs --self-test >/dev/null 2>&1); then
+    echo "FAIL -- mutation '$name' stayed GREEN: the self-test does not guard that promise"
+  else
+    echo "ok -- mutation '$name' is red, as it must be"
+  fi
+}
+
+launch() { # name file sed-expr quick -- starts the job in the background; the wrapper records its exit status
+  local name="$1"
+  rm -f "$tmp/$name.verdict" "$tmp/$name.err" "$tmp/$name.status"
+  ( set +e; ( set -e; mutation_job "$@" ) >"$tmp/$name.verdict" 2>"$tmp/$name.err"; echo $? >"$tmp/$name.status" ) &
+}
+
+q_file=(); q_expr=(); q_quick=()
+mutate() { # name file sed-expr [quick] -- queued; `run_mutations` starts them MUTATION_JOBS at a time
+  names+=("$1"); q_file+=("$2"); q_expr+=("$3"); q_quick+=("${4:-0}")
+}
+
+run_mutations() {
+  local i
+  for i in "${!names[@]}"; do
+    while [ "$(jobs -rp | wc -l)" -ge "$MUTATION_JOBS" ]; do wait -n 2>/dev/null || true; done
+    launch "${names[$i]}" "${q_file[$i]}" "${q_expr[$i]}" "${q_quick[$i]}"
+  done
+  wait
+}
+
+settle() { # name -> prints the verdict line, or the reason there is none
+  local name="$1" v="$tmp/$1.verdict" status tail
+  status="$(cat "$tmp/$name.status" 2>/dev/null || true)"
+  if [ -s "$v" ]; then cat "$v"; return; fi
+  tail="$(tail -c 400 "$tmp/$name.err" 2>/dev/null | tr '\n' ' ')"
+  case "$status" in
+    "") status="unknown, the wrapper died too" ;;
+    137) status="137 = SIGKILL, typically the OOM killer" ;;
+    143) status="143 = SIGTERM" ;;
+  esac
+  echo "FAIL -- mutation '$name' produced no verdict (exit $status): ${tail:-no stderr}"
 }
 
 # the differ calls every edit "no change" -> a rule edit would select nothing
@@ -68,13 +111,20 @@ mutate selector-blind css-rules.mjs 's|^const IDENT = .*|const IDENT = String.ra
 mutate token-blind css-impact.mjs 's/const reads = r.decls.some\(/const reads = false \&\& r.decls.some(/' 1
 # every title that names no page is dropped -> an unknown title shape would lose tests
 mutate drop-unscoped select.mjs 's/return !ks \|\| ks.length === 0 \|\| ks.some/return ks \&\& ks.some/'
-wait
+run_mutations
 bad=0
-for v in "$tmp"/*.verdict; do
-  line="$(cat "$v")"
+for i in "${!names[@]}"; do
+  n="${names[$i]}"
+  line="$(settle "$n")"
+  case "$line" in
+    "FAIL -- mutation '$n' produced no verdict"*)
+      echo "check-select-css: note -- $line; retrying '$n' once, alone"
+      launch "$n" "${q_file[$i]}" "${q_expr[$i]}" "${q_quick[$i]}"; wait
+      line="$(settle "$n")" ;;
+  esac
   echo "check-select-css: $line"
   case "$line" in ok*) ;; *) bad=1 ;; esac
 done
 [ "$bad" = 0 ] || exit 1
 
-echo "check-select-css: OK -- self-test green, 4 mutations red"
+echo "check-select-css: OK -- self-test green, ${#names[@]} mutations red"

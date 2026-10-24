@@ -12,7 +12,7 @@
  * re-declares a slot variable for EVERY variant and the part reads it, so a nested root re-declares its own value;
  * `scripts/check-variant-scope.sh` keeps the descendant form out of the sheets statically.
  *
- * The test, by construction rather than by listing the rules that happened to leak. On the page of every component
+ * The test is by construction, not from a list of known leaks. On the page of every component
  * whose sheet has a variant-attribute selector, for each of the component's own `dx-` classes that appears with
  * more than one variant signature (the four attributes' values, missing included): take one element per
  * signature as the OUTER instance and, for every OTHER signature, clone an element of it twice -- once into a

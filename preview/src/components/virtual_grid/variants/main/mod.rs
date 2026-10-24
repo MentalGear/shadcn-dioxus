@@ -22,7 +22,7 @@ pub fn Demo() -> Element {
                 column_count: COLUMNS,
                 row_height: |_| 36,
                 column_width: |column: usize| if column == 0 { 80 } else { 112 },
-                sticky_first_column: true,
+                pinned_columns_start: 1usize,
                 render_header: |column: usize| {
                     if column == 0 {
                         rsx! { "Row" }

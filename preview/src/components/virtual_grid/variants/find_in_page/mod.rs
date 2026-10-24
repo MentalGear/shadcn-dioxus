@@ -35,7 +35,7 @@ pub fn Demo() -> Element {
                 virtualize: VirtualizeMode::Windowed,
                 row_height: |_| 36,
                 column_width: |column: usize| if column == 0 { 120 } else { 112 },
-                sticky_first_column: true,
+                pinned_columns_start: 1usize,
                 render_header: |column: usize| match column {
                     0 => rsx! { "Order" },
                     1 => rsx! { "City" },
@@ -50,6 +50,8 @@ pub fn Demo() -> Element {
                 count: ITEMS,
                 columns: 5usize,
                 virtualize: VirtualizeMode::Windowed,
+                // Deliberately below the real row (72: the item's 56 + 8 margin, plus the grid's own 8px
+                // of row padding): a match must land on the real item, not on its estimate.
                 estimate_row_height: |_| 64,
                 render_item: |index: usize| rsx! {
                     div { style: "box-sizing: border-box; height: 56px; margin-block-end: 8px; padding: var(--dx-space-2); border: 1px solid var(--dx-border); border-radius: var(--dx-radius-md); font-size: var(--dx-text-sm);",

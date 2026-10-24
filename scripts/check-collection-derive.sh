@@ -13,7 +13,7 @@
 #     - `HashSet<usize>` / `Vec<bool>` / `[bool; N]` as a selection -> a `HashSet<String>` of row keys
 #     - `.sort_by(`, `.sort_by_key(`, `.sort_unstable_by*(` -> a `Field::sortable` + `derive`
 #   The stages themselves live in `primitives/src/data_view/`, which is out of scope: the data_table folder
-#   only re-exports them.
+#   holds the table's own view (state, model, reorder) over those stages.
 #
 # EXCEPTIONS are in ALLOW below, each with a reason; an entry that matches nothing is itself an
 # error (a fixed site must leave the list). ToggleGroup's pressed set is a `HashSet<String>` of item values

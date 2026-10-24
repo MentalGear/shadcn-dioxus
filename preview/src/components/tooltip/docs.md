@@ -52,3 +52,12 @@ something. For a panel opened by a click, use [Popover](/component/popover/).
 ## Motion
 
 The tooltip fades in and out over `--dx-motion-duration-slow` (`opacity` only, so the anchor's `transform` centring is untouched). Retune with that token. Reduced motion swaps in `--dx-motion-duration-reduced`. Nothing loops. See [Motion](/docs#motion) for the tokens, reduced motion and the per-component table.
+
+## Slot variables
+
+A component that composes `Tooltip` (such as `SidebarMenuButton`) lays out the tooltip's root by setting a custom property on the root's element, never by declaring `display` or `width` on its own class: two stylesheets declaring the same property on one element are decided by which sheet loads last, and that order differs from route to route. `.dx-tooltip` reads each of these with its own default, so a variable that is not set changes nothing. The variables inherit, so set them on the root only; a `Tooltip` nested inside it reads them too.
+
+| Variable | Default | Property |
+| --- | --- | --- |
+| `--dx-tooltip-display` | `inline-block` | `display` |
+| `--dx-tooltip-width` | `auto` | `width` |

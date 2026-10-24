@@ -65,6 +65,14 @@
   }
 }
 
+/* The current page (`data-active`, the primitive's `NavigationMenuLink { active }`; shadcn's
+ * `data-[active=true]:bg-muted/50`): the theme's selected tint, hued by a picked accent (row 389). Hover and
+ * focus below paint over it, as they do over any link. `background-color`, not the shorthand: the featured
+ * card keeps its gradient. */
+.dx-navigation-menu-link[data-active="true"] {
+  background-color: var(--dx-accent-tint-selected);
+}
+
 /* Hover and focus are `--dx-muted` at full strength, also while open (`data-open:hover:bg-muted`).
  *
  * `focus-visible:ring-3 focus-visible:ring-ring/50`. */

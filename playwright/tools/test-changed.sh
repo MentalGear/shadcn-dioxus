@@ -8,7 +8,9 @@
 #
 # The spec list comes from tools/select.mjs (the cover relation documented at its top: a component's own specs, a
 # primitive's consumer components' specs, the broad set for shared plumbing, every spec for a config change). Uses
-# ssg.local.config.ts, so PLAYWRIGHT_BASE_URL must point at a served build of the tree under test (scripts/lane-ssg.sh).
+# ssg.local.config.ts, so PLAYWRIGHT_BASE_URL must point at a served build of the tree under test (scripts/lane-ssg.sh),
+# or SSG_SITE_DIR names the build's public dir and this script serves it; either way the server must answer unknown URLs
+# as the site does (tools/site-server.sh, row 407).
 # This is the lane's, the small PR's and the merge batch's run; the full suite runs once per deploy (row 322,
 # scripts/deploy-preview.sh; dev-docs/lane-rules.md).
 #
@@ -32,10 +34,13 @@ if [ "${#specs[@]}" -eq 0 ]; then
   echo "test-changed: no spec covers the diff (docs, gates or tooling only) -- nothing to run"
   exit 0
 fi
+source tools/site-server.sh
+site_server_ready test-changed || exit 2
 echo "test-changed: ${#specs[@]} spec file(s) cover the diff: ${specs[*]}" >&2
 [ -n "$narrowed" ] && echo "test-changed: tests kept of the page-scoped matrix specs (CSS reaches only some pages): $narrowed" >&2
 # hydration-parity.spec.ts only RUNS attr-synth; building it is this pre-step, through the build lock (row 338).
 if printf '%s\n' "${specs[@]}" | grep -q 'hydration-parity\.spec\.ts$'; then tools/ensure-attr-synth.sh; fi
 extra=()
 [ -n "$grep_invert" ] && extra+=(--grep-invert "$grep_invert")
-exec pnpm exec playwright test -c ssg.local.config.ts "${specs[@]}" ${extra[@]+"${extra[@]}"} "$@"
+# Not `exec`: a server site_server_ready started is stopped by this shell's EXIT trap.
+pnpm exec playwright test -c ssg.local.config.ts "${specs[@]}" ${extra[@]+"${extra[@]}"} "$@"

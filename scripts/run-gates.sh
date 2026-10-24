@@ -111,6 +111,7 @@ gates=(
   "check-anchored-keyframes|scripts/check-anchored-keyframes.sh"
   "check-duplicate-keyframes|scripts/check-duplicate-keyframes.sh"
   "check-theme-baseline|scripts/check-theme-baseline.sh"
+  "check-theme-preset-axes|scripts/check-theme-preset-axes.sh"
   "check-cursor-baseline|scripts/check-cursor-baseline.sh"
   "check-popup-boundary|scripts/check-popup-boundary.sh"
   "check-variant-scope|scripts/check-variant-scope.sh"
@@ -147,6 +148,7 @@ gates=(
   "check-playwright-fixture-import|scripts/check-playwright-fixture-import.sh"
   "check-spec-viewport-bound|scripts/check-spec-viewport-bound.sh"
   "check-spec-at-rest|scripts/check-spec-at-rest.sh"
+  "check-timing-relative|scripts/check-timing-relative.sh"
   "check-spec-goto-hydrated|scripts/check-spec-goto-hydrated.sh"
   "check-demo-text-locators|scripts/check-demo-text-locators.sh"
   "check-slow-spec-budget|scripts/check-slow-spec-budget.sh"
@@ -161,6 +163,7 @@ gates=(
   "check-lane-lock|scripts/check-lane-lock.sh"
   "check-gate-reuse|scripts/check-gate-reuse.sh"
   "check-lane-target|scripts/check-lane-target.sh"
+  "check-merge-drivers|scripts/check-merge-drivers.sh"
 
   # group: Rust build, lint, test and style
   # Every Rust file is rustfmt-formatted (`cargo fmt --all -- --check`). Never reused from the store: it takes under a second.

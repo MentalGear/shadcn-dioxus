@@ -26,14 +26,11 @@
  * allowlist). A floating sidebar's `ring-1` is drawn as a 1px border so
  * it can sit beside `--dx-shadow-sm` (which is `none` in dark and cannot share a `box-shadow`). */
 
-/* dev-docs/backlog.md row 32: `.dx-sidebar-sr-only`, namespaced like
- * everything else here, because `pagination/style.css` defines a
- * byte-identical rule and a bare `.dx-sr-only` would be declared by both.
- * TODO(row 31a): the better long-term home is one shared `dx-sr-only`
- * utility class in `preview/assets/dx-utilities.css` (a GENERATED file, not
- * hand-edited -- see `scripts/generate-dx-utilities.js`) so this duplication
- * with `pagination/style.css` collapses into a single definition; until then
- * both components keep their own namespaced copy. */
+/* Screen-reader-only text, namespaced like everything else here: `pagination/style.css` keeps its own
+ * byte-identical copy as `.dx-pagination-sr-only`. TODO(row 31a): one shared `dx-sr-only` utility class in
+ * `preview/assets/dx-utilities.css` (a GENERATED file, see `scripts/generate-dx-utilities.js`) would collapse
+ * the two. The class sits on elements the sidebar renders itself: the trigger's label and the wrapper around
+ * the mobile sheet's title and description. */
 .dx-sidebar-sr-only {
   position: absolute;
   overflow: hidden;
@@ -205,31 +202,29 @@
  * side. It gives `SidebarRail` the same containing block the collapsible
  * desktop branch gets from `.dx-sidebar-container`'s `position: fixed`. */
 
+/* The mobile panel is a Sheet: its width and fill are the Sheet's slot variables, its padding the edge
+ * recipe's default of 0. */
 .dx-sidebar-sheet {
-  width: var(--dx-sidebar-width-mobile) !important;
-  padding: 0 !important;
-  background: var(--dx-sidebar-background);
-}
-
-.dx-sidebar-sheet-close {
-  display: none;
+  --dx-sheet-width: var(--dx-sidebar-width-mobile);
+  --dx-sheet-background: var(--dx-sidebar-background);
 }
 
 .dx-sidebar-mobile-inner {
+  /* The slots inherit: a Sheet opened from inside the sidebar keeps its own width and fill. */
+  --dx-sheet-width: initial;
+  --dx-sheet-background: initial;
+
   display: flex;
   width: 100%;
   height: 100%;
   flex-direction: column;
 }
 
-.dx-sidebar-trigger {
-  display: inline-flex;
-  width: 1.75rem;
-  height: 1.75rem;
-  align-items: center;
-  justify-content: center;
-  padding: 0 !important;
-  line-height: 0;
+/* The trigger is a ghost icon-sm Button (28px square, centred icon, no padding). Its corner radius stays
+ * the default size's `--dx-radius-lg`: three attributes put this above Button's
+ * `.dx-button[data-size="icon-sm"]` rule, which also sets the slot. */
+.dx-sidebar-trigger[data-slot="sidebar-trigger"][data-size] {
+  --dx-button-radius: var(--dx-radius-lg);
 }
 
 .dx-sidebar-trigger-icon {
@@ -398,9 +393,8 @@
 }
 
 .dx-sidebar-separator {
-  width: auto;
-  margin: 0 var(--dx-space-2);
-  background: var(--dx-sidebar-border);
+  --dx-separator-margin: 0 var(--dx-space-2);
+  --dx-separator-background: var(--dx-sidebar-border);
 }
 
 .dx-sidebar-group {
@@ -521,14 +515,18 @@
   list-style: none;
 }
 
-.dx-sidebar-menu .dx-sidebar-dropdown-menu,
+.dx-sidebar-menu .dx-sidebar-dropdown-menu {
+  --dx-dropdown-menu-display: block;
+  --dx-dropdown-menu-width: 100%;
+}
+
 .dx-sidebar-menu .dx-sidebar-tooltip {
-  display: block;
-  width: 100%;
+  --dx-tooltip-display: block;
+  --dx-tooltip-width: 100%;
 }
 
 .dx-sidebar-dropdown-menu-content .dx-sidebar-dropdown-separator[data-orientation="horizontal"] {
-  margin: var(--dx-space-1) 0;
+  --dx-separator-margin: var(--dx-space-1) 0;
 }
 
 .dx-sidebar-menu-item {
@@ -536,7 +534,7 @@
 }
 
 .dx-sidebar-menu-item > .dx-sidebar-dropdown-menu:has(.dx-sidebar-menu-action) {
-  position: static;
+  --dx-dropdown-menu-position: static;
 }
 
 .dx-sidebar-sheet .dx-sidebar-header .dx-sidebar-dropdown-menu-content {
@@ -628,8 +626,9 @@
   pointer-events: none;
 }
 
+/* The current row: the sidebar's hover surface, hued by a picked accent (`--dx-sidebar-accent-tint`, row 389). */
 .dx-sidebar-menu-button[data-sidebar="menu-button"][data-active="true"] {
-  background: var(--dx-sidebar-accent);
+  background: var(--dx-sidebar-accent-tint);
   color: var(--dx-sidebar-accent-foreground);
   font-weight: 500;
 }
@@ -870,14 +869,13 @@
 }
 
 .dx-sidebar-menu-skeleton-icon {
-  width: 1rem;
-  height: 1rem;
-  border-radius: var(--dx-radius-md);
+  --dx-skeleton-width: 1rem;
+  --dx-skeleton-height: 1rem;
 }
 
 .dx-sidebar-menu-skeleton-text {
-  height: 1rem;
-  flex: 1;
+  --dx-skeleton-height: 1rem;
+  --dx-skeleton-flex: 1;
 }
 
 .dx-sidebar-menu-sub {
@@ -958,7 +956,7 @@
 }
 
 .dx-sidebar-menu-sub-button[data-active="true"] {
-  background: var(--dx-sidebar-accent);
+  background: var(--dx-sidebar-accent-tint);
   color: var(--dx-sidebar-accent-foreground);
 }
 

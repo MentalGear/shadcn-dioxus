@@ -21,7 +21,10 @@ use crate::{
         MenuShortcutProps,
     },
     merge_attributes,
-    selectable::{pointer_select_cancel, pointer_select_commit, pointer_select_start},
+    selectable::{
+        pointer_select_cancel, pointer_select_click, pointer_select_commit, pointer_select_start,
+        ItemPress,
+    },
     use_animated_open, use_controlled, use_id_or, use_outside_dismiss, use_unique_id,
 };
 use dioxus::prelude::*;
@@ -1121,7 +1124,7 @@ pub fn ContextMenuItem(props: ContextMenuItemProps) -> Element {
     // count as selecting an item. Recording on pointerdown and committing on
     // pointerup means a pointerup without a matching pointerdown on this
     // item is ignored — exactly the long-press-then-lift case.
-    let down_pos: Signal<Option<(f64, f64)>> = use_signal(|| None);
+    let down_pos: Signal<Option<ItemPress>> = use_signal(|| None);
     let value = props.value;
     let mut select = move || {
         if !disabled() {
@@ -1159,6 +1162,13 @@ pub fn ContextMenuItem(props: ContextMenuItemProps) -> Element {
             },
             onpointerup: move |event| {
                 if pointer_select_commit(&event, disabled(), down_pos) {
+                    select();
+                    event.prevent_default();
+                    event.stop_propagation();
+                }
+            },
+            onclick: move |event| {
+                if pointer_select_click(disabled(), down_pos) {
                     select();
                     event.prevent_default();
                     event.stop_propagation();
@@ -1440,7 +1450,7 @@ fn context_checkable_item(state: CheckableState, common: CheckableCommon) -> Ele
     let focused = move || item.focused();
     let onmounted = item.onmounted();
 
-    let down_pos: Signal<Option<(f64, f64)>> = use_signal(|| None);
+    let down_pos: Signal<Option<ItemPress>> = use_signal(|| None);
     let mut select = move || {
         if disabled() {
             return;
@@ -1470,6 +1480,13 @@ fn context_checkable_item(state: CheckableState, common: CheckableCommon) -> Ele
             },
             onpointerup: move |event| {
                 if pointer_select_commit(&event, disabled(), down_pos) {
+                    select();
+                    event.prevent_default();
+                    event.stop_propagation();
+                }
+            },
+            onclick: move |event| {
+                if pointer_select_click(disabled(), down_pos) {
                     select();
                     event.prevent_default();
                     event.stop_propagation();
@@ -2261,7 +2278,7 @@ pub fn ContextMenuSubItem(props: ContextMenuSubItemProps) -> Element {
     // long-press-then-lift on the root menu that happens to land on a
     // sub-item doesn't register as a selection -- see that component's
     // identical fields for the full rationale.
-    let down_pos: Signal<Option<(f64, f64)>> = use_signal(|| None);
+    let down_pos: Signal<Option<ItemPress>> = use_signal(|| None);
     let value = props.value;
     let mut select = move || {
         if !disabled() {
@@ -2307,6 +2324,13 @@ pub fn ContextMenuSubItem(props: ContextMenuSubItemProps) -> Element {
             },
             onpointerup: move |event| {
                 if pointer_select_commit(&event, disabled(), down_pos) {
+                    select();
+                    event.prevent_default();
+                    event.stop_propagation();
+                }
+            },
+            onclick: move |event| {
+                if pointer_select_click(disabled(), down_pos) {
                     select();
                     event.prevent_default();
                     event.stop_propagation();

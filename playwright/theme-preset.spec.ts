@@ -318,14 +318,11 @@ const SHOTS = process.env.THEME_SHOTS_DIR; // opt-in: THEME_SHOTS_DIR=/some/dir 
 const navSheet = (page: Page) => page.locator(".dx-sidebar-sheet");
 const drawer = (page: Page) => page.locator(".dx-drawer");
 
-/** Opens the mobile navigation sheet and returns its "Theme" entry. */
-async function openNavSheet(page: Page, tap = true): Promise<Locator> {
-  const toggle = page.getByRole("button", { name: "Toggle Sidebar" });
-  if (tap) await toggle.tap();
-  else await toggle.click();
-  await expect(navSheet(page)).toBeVisible();
-  const entry = navSheet(page).getByRole("button", { name: "Theme", exact: true });
+/** The header's phone entry: the one "Theme" button at phone width. */
+async function phoneEntry(page: Page): Promise<Locator> {
+  const entry = page.locator(".dx-preview-navbar").getByRole("button", { name: "Theme", exact: true });
   await expect(entry).toBeVisible();
+  await expect(entry).toHaveClass(/dx-theme-phone-trigger/);
   return entry;
 }
 
@@ -360,33 +357,35 @@ for (const { width, height } of PHONES) {
       test.use({ viewport: { width, height }, hasTouch: true, isMobile: true, colorScheme: scheme });
       test.skip(({ browserName }) => browserName === "firefox", "Firefox has no mobile emulation");
 
-      test("the picker is not in the header; 'Theme' is in the nav sheet, on screen and tappable", async ({ page }) => {
-        // The header keeps light/dark but has no picker button (hidden, so not in the a11y tree either).
-        await expect(page.getByRole("button", { name: "Theme", exact: true })).toHaveCount(0);
+      test("'Theme' is the header's phone entry, on screen and tappable; the nav sheet has none", async ({ page }) => {
+        await expect(page.getByRole("button", { name: "Theme", exact: true })).toHaveCount(1);
         await expect(page.getByRole("button", { name: /Enable (dark|light) mode/ })).toBeVisible();
+        await expect(page.locator(".dx-theme-picker-trigger")).toBeHidden();
 
-        const entry = await openNavSheet(page);
+        const entry = await phoneEntry(page);
         await expect(entry).toHaveAttribute("aria-haspopup", "dialog");
-        // The sheet slides in from the left: wait for it to land before measuring.
-        await expect.poll(async () => (await entry.boundingBox())!.x).toBeGreaterThanOrEqual(0);
         const box = (await entry.boundingBox())!;
         expect(box.x).toBeGreaterThanOrEqual(0);
         expect(box.y).toBeGreaterThanOrEqual(0);
         expect(box.x + box.width).toBeLessThanOrEqual(width);
-        expect(box.y + box.height).toBeLessThanOrEqual(height);
-        expect(box.height).toBeGreaterThanOrEqual(32);
+        expect(Math.min(box.width, box.height)).toBeGreaterThanOrEqual(24);
         // Nothing paints over it: the point a finger would land on resolves to the entry itself.
         const hit = await entry.evaluate((el) => {
           const r = el.getBoundingClientRect();
           return el.contains(document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2));
         });
         expect(hit).toBe(true);
-        if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `mobile-${width}x${height}-${scheme}-menu.png`) });
+        if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `mobile-${width}x${height}-${scheme}-header.png`) });
+
+        // The navigation sheet carries navigation only.
+        await page.getByRole("button", { name: "Toggle Sidebar" }).tap();
+        await expect(navSheet(page)).toBeVisible();
+        await expect(navSheet(page).getByRole("button", { name: "Theme", exact: true })).toHaveCount(0);
       });
 
       test("the drawer applies a preset at once, persists it, and returns focus to the trigger", async ({ page }) => {
         const mode = scheme;
-        const entry = await openNavSheet(page);
+        const entry = await phoneEntry(page);
         await entry.tap();
         const panel = drawer(page);
         await expect(panel).toBeVisible();
@@ -420,10 +419,9 @@ for (const { width, height } of PHONES) {
           await page.screenshot({ path: path.join(SHOTS, `mobile-${width}x${height}-${scheme}-drawer.png`) });
         }
 
-        // Closing it: gone from the DOM, the sheet underneath is untouched, focus is back on the trigger.
+        // Closing it: gone from the DOM, focus is back on the trigger.
         await panel.getByRole("button", { name: "Done" }).tap();
         await expect(drawer(page)).toHaveCount(0);
-        await expect(navSheet(page)).toBeVisible();
         await expect(entry).toBeFocused();
 
         // It persisted: a hard reload re-applies it from the cookies, and the reopened panel reads it back.
@@ -431,7 +429,7 @@ for (const { width, height } of PHONES) {
         await expect(primaryButton(page)).toBeVisible();
         await expectBackground(page, primaryButton(page), blue[mode]);
         expect(await attr(page, "data-theme-radius")).toBe("0.3");
-        await (await openNavSheet(page)).tap();
+        await (await phoneEntry(page)).tap();
         await expect(drawer(page).getByRole("button", { name: "Blue", exact: true })).toHaveAttribute("aria-pressed", "true");
         await expect(drawer(page).getByRole("button", { name: "Zinc", exact: true })).toHaveAttribute("aria-pressed", "true");
         await expect(drawer(page).getByRole("button", { name: "0.3", exact: true })).toHaveAttribute("aria-pressed", "true");
@@ -447,25 +445,22 @@ for (const { width, height } of PHONES) {
   }
 }
 
-test.describe("phone modal stacking (390x844)", () => {
+test.describe("phone drawer modality (390x844)", () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, colorScheme: "light" });
   test.skip(({ browserName }) => browserName === "firefox", "Firefox has no mobile emulation");
 
-  test("the drawer opens on top of the nav sheet: one Escape, one focus trap, one scroll lock", async ({ page }) => {
+  test("the drawer is the one modal: focus trap, Escape, scrim tap and one scroll lock", async ({ page }) => {
     expect(await openDialogs(page)).toEqual([]);
     expect(await scrollLocked(page)).toBe(false);
 
-    const entry = await openNavSheet(page);
-    expect(await openDialogs(page)).toEqual(["sheet:modal"]);
-    expect(await scrollLocked(page)).toBe(true);
-
+    const entry = await phoneEntry(page);
     await entry.tap();
     await expect(drawer(page)).toBeVisible();
-    expect(await openDialogs(page)).toEqual(["sheet:modal", "drawer:modal"]);
+    expect(await openDialogs(page)).toEqual(["drawer:modal"]);
     expect(await scrollLocked(page)).toBe(true);
-    // Focus moved into the top dialog, and Tab never reaches the sheet's links or the page underneath
-    // (the first Tab past the last control leaves the document, as in any native modal dialog, and the
-    // next one is back at the top of the drawer): two full cycles.
+    // Focus moved into the dialog, and Tab never reaches the page underneath (the first Tab past the
+    // last control leaves the document, as in any native modal dialog, and the next one is back at the
+    // top of the drawer): two full cycles.
     expect(await focusIn(page, ".dx-drawer")).toBe(true);
     let reentered = false;
     for (let i = 0; i < 80; i++) {
@@ -479,39 +474,31 @@ test.describe("phone modal stacking (390x844)", () => {
     // Put focus back inside for the Escape below (headless has no browser chrome to hold it).
     await page.getByRole("dialog", { name: "Theme" }).getByRole("button", { name: "Reset" }).focus();
 
-    // Escape closes only the topmost modal: the sheet stays open, locked, and focus is back on the entry.
+    // Escape closes it, releases the lock, and focus is back on the entry.
     await page.keyboard.press("Escape");
     await expect(drawer(page)).toHaveCount(0);
-    expect(await openDialogs(page)).toEqual(["sheet:modal"]);
-    expect(await scrollLocked(page)).toBe(true);
-    await expect(navSheet(page)).toBeVisible();
-    await expect(entry).toBeFocused();
-
-    // A tap on the drawer's own scrim (far above the panel) closes the drawer, not the sheet beneath it.
-    await entry.tap();
-    await expect(drawer(page)).toBeVisible();
-    await page.touchscreen.tap(340, 40);
-    await expect(drawer(page)).toHaveCount(0);
-    expect(await openDialogs(page)).toEqual(["sheet:modal"]);
-    await expect(entry).toBeFocused();
-    expect(await scrollLocked(page)).toBe(true);
-
-    // The second Escape closes the sheet and releases the one lock.
-    await page.keyboard.press("Escape");
-    await expect(navSheet(page)).toHaveCount(0);
     expect(await openDialogs(page)).toEqual([]);
     expect(await scrollLocked(page)).toBe(false);
-    await expect(page.getByRole("button", { name: "Toggle Sidebar" })).toBeFocused();
+    await expect(entry).toBeFocused();
+
+    // A tap on the drawer's own scrim (far above the panel) closes it.
+    await entry.tap();
+    await expect(drawer(page)).toBeVisible();
+    await page.touchscreen.tap(340, 120);
+    await expect(drawer(page)).toHaveCount(0);
+    expect(await openDialogs(page)).toEqual([]);
+    expect(await scrollLocked(page)).toBe(false);
+    await expect(entry).toBeFocused();
   });
 
-  test("dragging the drawer down dismisses it and leaves the nav sheet open", async ({ page }) => {
-    const entry = await openNavSheet(page);
+  test("dragging the drawer down dismisses it", async ({ page }) => {
+    const entry = await phoneEntry(page);
     await entry.tap();
     const panel = drawer(page);
     await expect(panel).toBeVisible();
     // The gesture itself is drawer.spec.ts's business (same recipe: slow steps, a pause before release,
-    // so the DISTANCE path decides, not the velocity one). What is checked here is only that it works
-    // from inside the nav sheet and ends the drawer alone. Start once the slide-in has settled.
+    // so the DISTANCE path decides, not the velocity one). What is checked here is only that it ends the
+    // picker's drawer. Start once the slide-in has settled.
     const handle = panel.locator(".dx-drawer-handle");
     let last = -1;
     await expect
@@ -535,37 +522,16 @@ test.describe("phone modal stacking (390x844)", () => {
     await page.waitForTimeout(200);
     await page.mouse.up();
     await expect(drawer(page)).toHaveCount(0);
-    expect(await openDialogs(page)).toEqual(["sheet:modal"]);
+    expect(await openDialogs(page)).toEqual([]);
     await expect(entry).toBeFocused();
   });
-});
-
-test.describe("phone entry on every page that has a nav sheet (390x844)", () => {
-  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, colorScheme: "light" });
-  test.skip(({ browserName }) => browserName === "firefox", "Firefox has no mobile emulation");
-
-  // Home, the docs overview and a component page all render `DocsLayout`, so all three carry the entry.
-  for (const route of ["/", "/docs/", "/component/calendar/"]) {
-    test(`${route} has 'Theme' in its nav sheet and it opens the drawer`, async ({ page }) => {
-      await gotoHydrated(page, `${BASE_URL}${route}`);
-      const entry = await openNavSheet(page);
-      await entry.tap();
-      await expect(page.getByRole("dialog", { name: "Theme" })).toBeVisible();
-      await page.keyboard.press("Escape");
-      await expect(drawer(page)).toHaveCount(0);
-      await expect(entry).toBeFocused();
-    });
-  }
 });
 
 test.describe("phone keyboard (390x844, no touch)", () => {
   test.use({ viewport: { width: 390, height: 844 }, colorScheme: "light" });
 
   test("Enter on 'Theme' opens the drawer; the swatches are labelled groups; Escape returns focus", async ({ page }) => {
-    await page.getByRole("button", { name: "Toggle Sidebar" }).focus();
-    await page.keyboard.press("Enter");
-    await expect(navSheet(page)).toBeVisible();
-    const entry = navSheet(page).getByRole("button", { name: "Theme", exact: true });
+    const entry = await phoneEntry(page);
     await entry.focus();
     await page.keyboard.press("Enter");
 
@@ -592,43 +558,295 @@ test.describe("phone keyboard (390x844, no touch)", () => {
     await page.keyboard.press("Escape");
     await expect(drawer(page)).toHaveCount(0);
     await expect(entry).toBeFocused();
-    await expect(navSheet(page)).toBeVisible();
   });
 });
 
 test.describe("the breakpoint between the two presentations", () => {
-  test("desktop 1280: header trigger + popover, and no phone entry anywhere in the page", async ({ page }) => {
+  test("desktop 1280: header trigger + popover; the phone entry is rendered but hidden", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     const trigger = page.getByRole("button", { name: "Theme", exact: true });
     await expect(trigger).toHaveCount(1);
     await expect(trigger).toBeVisible();
+    await expect(trigger).toHaveClass(/dx-theme-picker-trigger/);
     expect(await trigger.evaluate((el) => !!el.closest(".dx-navbar-utilities"))).toBe(true);
-    // The phone entry exists in the sidebar's markup but is `display: none`: no box, not in the a11y tree.
-    await expect(page.locator(".dx-theme-sidebar-footer")).toBeHidden();
+    // The phone entry exists in the header's markup but is `display: none`: no box, not in the a11y tree.
+    await expect(page.locator(".dx-theme-phone-trigger")).toHaveCount(1);
+    await expect(page.locator(".dx-theme-phone-trigger")).toBeHidden();
     await trigger.click();
     await expect(page.locator(".dx-theme-picker")).toBeVisible();
     await expect(page.locator('.dx-theme-picker-panel[data-presentation="popover"]')).toBeVisible();
     await expect(page.locator(".dx-drawer")).toHaveCount(0);
   });
 
-  test("760px is a phone, 761px is not: exactly one 'Theme' button at each", async ({ page }) => {
+  test("760px is a phone, 761px is not: exactly one 'Theme' button at each, always in the header", async ({ page }) => {
     const header = page.locator(".dx-preview-navbar").getByRole("button", { name: "Theme", exact: true });
 
     await page.setViewportSize({ width: 761, height: 800 });
-    await expect(header).toBeVisible();
-    // The sidebar is already a sheet below 768px (its own switch, in Rust), but it must not add a second entry.
-    await page.getByRole("button", { name: "Toggle Sidebar" }).click();
-    await expect(navSheet(page)).toBeVisible();
-    await expect(page.locator(".dx-theme-sidebar-footer")).toBeHidden();
     await expect(page.getByRole("button", { name: "Theme", exact: true })).toHaveCount(1);
-    await page.keyboard.press("Escape");
-    await expect(navSheet(page)).toHaveCount(0);
+    await expect(header).toHaveClass(/dx-theme-picker-trigger/);
+    await expect(page.locator(".dx-theme-phone-trigger")).toBeHidden();
 
     await page.setViewportSize({ width: 760, height: 800 });
-    await expect(header).toBeHidden();
-    await page.getByRole("button", { name: "Toggle Sidebar" }).click();
-    await expect(navSheet(page)).toBeVisible();
-    await expect(page.locator(".dx-theme-sidebar-footer")).toBeVisible();
     await expect(page.getByRole("button", { name: "Theme", exact: true })).toHaveCount(1);
+    await expect(header).toHaveClass(/dx-theme-phone-trigger/);
+    await expect(page.locator(".dx-theme-picker-trigger")).toBeHidden();
+  });
+});
+
+/**
+ * The two colour axes own disjoint variables (backlog row 390, `OWNERSHIP` in `scripts/gen-theme-presets.mjs`): the base
+ * is the neutral palette, the accent is the hue. Charts and primary follow the accent, secondary the base. Each test applies
+ * attributes through `window.__dxTheme` (what the picker does) and resolves colours through the role tokens a component reads.
+ */
+test.describe("base and accent axes", () => {
+  const THEME_CSS = fs.readFileSync(path.join(__dirname, "..", "preview", "assets", "dx-components-theme.css"), "utf8");
+
+  /** `{ light, dark }` of a variable in a preset block, whether the block writes a mode pair or one value. */
+  function presetPair(axis: "base" | "accent", name: string, variable: string) {
+    const open = PRESETS_CSS.indexOf(`[data-theme-${axis}="${name}"] {`);
+    if (open < 0) throw new Error(`no ${axis} block "${name}" in theme-presets.css`);
+    const block = PRESETS_CSS.slice(open, PRESETS_CSS.indexOf("}", open));
+    const pair = block.match(new RegExp(`--${variable}: var\\(--dark, ([^;]*?)\\) var\\(--light, ([^;]*?)\\);`));
+    if (pair) return { dark: pair[1], light: pair[2] };
+    const one = block.match(new RegExp(`--${variable}: ([^;]*);`));
+    if (!one) throw new Error(`--${variable} is not written by ${axis} "${name}"`);
+    return { dark: one[1], light: one[1] };
+  }
+
+  const baseNames = [...PRESETS_CSS.matchAll(/\[data-theme-base="([a-z]+)"\] \{/g)].map((m) => m[1]);
+  const accentNames = [...PRESETS_CSS.matchAll(/\[data-theme-accent="([a-z]+)"\] \{/g)].map((m) => m[1]);
+  const CHARTS = [1, 2, 3, 4, 5].map((n) => `chart-${n}`);
+
+  /** The library's own chart palette: `--dx-chart-N: var(--chart-N, var(--dark, X) var(--light, Y))` in the theme sheet. */
+  const libraryChart = (name: string) => {
+    const m = THEME_CSS.match(new RegExp(`--dx-${name}: var\\(--${name}, var\\(--dark, ([^)]*)\\) var\\(--light, ([^)]*)\\)\\);`));
+    if (!m) throw new Error(`--dx-${name} is not a library palette pair in dx-components-theme.css`);
+    return { dark: m[1], light: m[2] };
+  };
+
+  type Sweep = { mode: "light" | "dark"; base: string | null; accent: string | null };
+
+  /**
+   * Applies `base` / `accent` / mode, then returns each role token resolved to sRGB. A token is read by painting an element
+   * with `color: var(--token)`, the way a component does, and every colour goes through one canvas, so two spellings of
+   * one colour (oklch, lab, hex) compare equal.
+   */
+  async function resolve(page: Page, sweeps: Sweep[], tokens: string[]) {
+    return page.evaluate(
+      ({ sweeps, tokens }) => {
+        const w = window as unknown as { __dxApplyMode: (m: string) => void; __dxTheme: (k: string, v: string | null) => void };
+        const cv = document.createElement("canvas");
+        cv.width = cv.height = 1;
+        const cx = cv.getContext("2d", { willReadFrequently: true })!;
+        const rgb = (css: string) => {
+          cx.clearRect(0, 0, 1, 1);
+          cx.fillStyle = "#000";
+          cx.fillStyle = css;
+          cx.fillRect(0, 0, 1, 1);
+          return Array.from(cx.getImageData(0, 0, 1, 1).data.slice(0, 3)).join(",");
+        };
+        const probe = document.createElement("div");
+        document.body.appendChild(probe);
+        const out: Record<string, Record<string, string>> = {};
+        for (const s of sweeps) {
+          w.__dxApplyMode(s.mode);
+          w.__dxTheme("theme-base", s.base);
+          w.__dxTheme("theme-accent", s.accent);
+          const row: Record<string, string> = {};
+          for (const t of tokens) {
+            probe.style.color = "";
+            probe.style.color = `var(${t})`;
+            row[t] = rgb(getComputedStyle(probe).color);
+          }
+          out[`${s.mode}|${s.base ?? "none"}|${s.accent ?? "none"}`] = row;
+        }
+        probe.remove();
+        w.__dxTheme("theme-base", null);
+        w.__dxTheme("theme-accent", null);
+        return out;
+      },
+      { sweeps, tokens },
+    );
+  }
+
+  /** `rgb(css)` of a colour string, in the same canvas path `resolve` uses. */
+  const expectedRgb = async (page: Page, css: string) => (await rgbOf(page, css)).join(",");
+
+  /** Two `r,g,b` strings within 2/255 per channel: the shipped stylesheet may carry a colour as `lab()`, the data as `oklch()`. */
+  const close = (a: string, b: string) => {
+    const [x, y] = [a, b].map((v) => v.split(",").map(Number));
+    return x.every((v, i) => Math.abs(v - y[i]) <= 2);
+  };
+
+  const MODES = ["light", "dark"] as const;
+  const bases: (string | null)[] = [null, ...baseNames];
+
+  test("no accent: every base shows the library's chart palette", async ({ page }) => {
+    const tokens = CHARTS.map((c) => `--dx-${c}`);
+    const sweeps = MODES.flatMap((mode) => bases.map((base) => ({ mode, base, accent: null })));
+    const got = await resolve(page, sweeps, tokens);
+    const wrong: string[] = [];
+    for (const mode of MODES) {
+      for (const c of CHARTS) {
+        const want = await expectedRgb(page, libraryChart(c)[mode]);
+        for (const base of bases) {
+          const have = got[`${mode}|${base ?? "none"}|none`][`--dx-${c}`];
+          if (!close(have, want)) wrong.push(`${mode} base=${base ?? "none"} --dx-${c}: ${have} (library ${want})`);
+        }
+      }
+    }
+    expect(wrong).toEqual([]);
+  });
+
+  test("an accent's chart ramp shows under every base", async ({ page }) => {
+    const tokens = CHARTS.map((c) => `--dx-${c}`);
+    const sweeps = MODES.flatMap((mode) => bases.flatMap((base) => accentNames.map((accent) => ({ mode, base, accent }))));
+    const got = await resolve(page, sweeps, tokens);
+    const wrong: string[] = [];
+    for (const mode of MODES) {
+      for (const accent of accentNames) {
+        for (const c of CHARTS) {
+          const want = await expectedRgb(page, presetPair("accent", accent, c)[mode]);
+          for (const base of bases) {
+            const have = got[`${mode}|${base ?? "none"}|${accent}`][`--dx-${c}`];
+            if (!close(have, want)) wrong.push(`${mode} base=${base ?? "none"} accent=${accent} --dx-${c}: ${have} (ramp ${want})`);
+          }
+        }
+      }
+    }
+    expect(wrong).toEqual([]);
+  });
+
+  test("an accent leaves the base's secondary alone", async ({ page }) => {
+    const tokens = ["--dx-secondary", "--dx-secondary-foreground"];
+    const sweeps = MODES.flatMap((mode) => bases.flatMap((base) => [null, ...accentNames].map((accent) => ({ mode, base, accent }))));
+    const got = await resolve(page, sweeps, tokens);
+    const wrong: string[] = [];
+    for (const mode of MODES) {
+      for (const base of bases) {
+        const rest = got[`${mode}|${base ?? "none"}|none`];
+        for (const accent of accentNames) {
+          for (const t of tokens) {
+            const have = got[`${mode}|${base ?? "none"}|${accent}`][t];
+            if (have !== rest[t]) wrong.push(`${mode} base=${base ?? "none"} accent=${accent} ${t}: ${have} (base alone ${rest[t]})`);
+          }
+        }
+      }
+    }
+    expect(wrong).toEqual([]);
+    // A tinted base shows its own tinted secondary under an accent, not a fixed grey.
+    const stone = presetPair("base", "stone", "secondary");
+    expect(close(got["light|stone|amber"]["--dx-secondary"], await expectedRgb(page, stone.light))).toBe(true);
+    expect(close(got["dark|stone|amber"]["--dx-secondary"], await expectedRgb(page, stone.dark))).toBe(true);
+  });
+
+  // What shadcn's base data gives each base as its primary with no accent picked, written down here so a change to the
+  // generator or to the slot wiring cannot move a base's primary unnoticed. `--dx-sidebar-primary-foreground-source` is the
+  // pre-clamp value of the sidebar's ink.
+  const NO_ACCENT_PRIMARY: Record<string, Record<string, [string, string]>> = {
+    neutral: { primary: ["oklch(0.205 0 0)", "oklch(0.922 0 0)"], "primary-foreground": ["oklch(0.985 0 0)", "oklch(0.205 0 0)"], "sidebar-primary": ["oklch(0.205 0 0)", "oklch(0.488 0.243 264.376)"], "sidebar-primary-foreground": ["oklch(0.985 0 0)", "oklch(0.985 0 0)"] },
+    stone: { primary: ["oklch(0.216 0.006 56.043)", "oklch(0.923 0.003 48.717)"], "primary-foreground": ["oklch(0.985 0.001 106.423)", "oklch(0.216 0.006 56.043)"], "sidebar-primary": ["oklch(0.216 0.006 56.043)", "oklch(0.488 0.243 264.376)"], "sidebar-primary-foreground": ["oklch(0.985 0.001 106.423)", "oklch(0.985 0.001 106.423)"] },
+    zinc: { primary: ["oklch(0.21 0.006 285.885)", "oklch(0.92 0.004 286.32)"], "primary-foreground": ["oklch(0.985 0 0)", "oklch(0.21 0.006 285.885)"], "sidebar-primary": ["oklch(0.21 0.006 285.885)", "oklch(0.488 0.243 264.376)"], "sidebar-primary-foreground": ["oklch(0.985 0 0)", "oklch(0.985 0 0)"] },
+    gray: { primary: ["oklch(0.21 0.034 264.665)", "oklch(0.928 0.006 264.531)"], "primary-foreground": ["oklch(0.985 0.002 247.839)", "oklch(0.21 0.034 264.665)"], "sidebar-primary": ["oklch(0.21 0.034 264.665)", "oklch(0.488 0.243 264.376)"], "sidebar-primary-foreground": ["oklch(0.985 0.002 247.839)", "oklch(0.985 0.002 247.839)"] },
+    slate: { primary: ["oklch(0.208 0.042 265.755)", "oklch(0.929 0.013 255.508)"], "primary-foreground": ["oklch(0.984 0.003 247.858)", "oklch(0.208 0.042 265.755)"], "sidebar-primary": ["oklch(0.208 0.042 265.755)", "oklch(0.488 0.243 264.376)"], "sidebar-primary-foreground": ["oklch(0.984 0.003 247.858)", "oklch(0.984 0.003 247.858)"] },
+    mauve: { primary: ["oklch(0.212 0.019 322.12)", "oklch(0.922 0.005 325.62)"], "primary-foreground": ["oklch(0.985 0 0)", "oklch(0.212 0.019 322.12)"], "sidebar-primary": ["oklch(0.212 0.019 322.12)", "oklch(0.488 0.243 264.376)"], "sidebar-primary-foreground": ["oklch(0.985 0 0)", "oklch(0.985 0 0)"] },
+    olive: { primary: ["oklch(0.228 0.013 107.4)", "oklch(0.93 0.007 106.5)"], "primary-foreground": ["oklch(0.988 0.003 106.5)", "oklch(0.228 0.013 107.4)"], "sidebar-primary": ["oklch(0.228 0.013 107.4)", "oklch(0.488 0.243 264.376)"], "sidebar-primary-foreground": ["oklch(0.988 0.003 106.5)", "oklch(0.988 0.003 106.5)"] },
+    mist: { primary: ["oklch(0.218 0.008 223.9)", "oklch(0.925 0.005 214.3)"], "primary-foreground": ["oklch(0.987 0.002 197.1)", "oklch(0.218 0.008 223.9)"], "sidebar-primary": ["oklch(0.218 0.008 223.9)", "oklch(0.488 0.243 264.376)"], "sidebar-primary-foreground": ["oklch(0.987 0.002 197.1)", "oklch(0.987 0.002 197.1)"] },
+    taupe: { primary: ["oklch(0.214 0.009 43.1)", "oklch(0.922 0.005 34.3)"], "primary-foreground": ["oklch(0.986 0.002 67.8)", "oklch(0.214 0.009 43.1)"], "sidebar-primary": ["oklch(0.214 0.009 43.1)", "oklch(0.488 0.243 264.376)"], "sidebar-primary-foreground": ["oklch(0.986 0.002 67.8)", "oklch(0.986 0.002 67.8)"] },
+  };
+
+  test("no accent: each base's primary is its own neutral primary", async ({ page }) => {
+    expect(Object.keys(NO_ACCENT_PRIMARY).sort()).toEqual([...baseNames].sort());
+    const tokens = ["--dx-primary", "--dx-primary-foreground", "--dx-sidebar-primary", "--dx-sidebar-primary-foreground-source"];
+    const sweeps = MODES.flatMap((mode) => baseNames.map((base) => ({ mode, base, accent: null })));
+    const got = await resolve(page, sweeps, tokens);
+    const wrong: string[] = [];
+    for (const mode of MODES) {
+      const at = mode === "light" ? 0 : 1;
+      for (const base of baseNames) {
+        const want = NO_ACCENT_PRIMARY[base];
+        const row = got[`${mode}|${base}|none`];
+        for (const [token, key] of [
+          ["--dx-primary", "primary"],
+          ["--dx-primary-foreground", "primary-foreground"],
+          ["--dx-sidebar-primary", "sidebar-primary"],
+          ["--dx-sidebar-primary-foreground-source", "sidebar-primary-foreground"],
+        ] as const) {
+          const w = await expectedRgb(page, want[key][at]);
+          if (!close(row[token], w)) wrong.push(`${mode} base=${base} ${token}: ${row[token]} (data ${w})`);
+        }
+      }
+    }
+    expect(wrong).toEqual([]);
+  });
+
+  test("an accent's primary overrides the base's, and a host's own --primary overrides both", async ({ page }) => {
+    const tokens = ["--dx-primary", "--dx-primary-foreground"];
+    const sweeps = MODES.flatMap((mode) => bases.map((base) => ({ mode, base, accent: "orange" })));
+    const got = await resolve(page, sweeps, tokens);
+    const orange = presetPair("accent", "orange", "primary");
+    const orangeInk = presetPair("accent", "orange", "primary-foreground");
+    for (const mode of MODES) {
+      for (const base of bases) {
+        const row = got[`${mode}|${base ?? "none"}|orange`];
+        expect(close(row["--dx-primary"], await expectedRgb(page, orange[mode])), `${mode} ${base} primary`).toBe(true);
+        expect(close(row["--dx-primary-foreground"], await expectedRgb(page, orangeInk[mode])), `${mode} ${base} ink`).toBe(true);
+      }
+    }
+    // A host that pastes shadcn's `--primary` without picking an accent keeps it over the base's slot.
+    await page.evaluate(() => {
+      const w = window as unknown as { __dxApplyMode: (m: string) => void; __dxTheme: (k: string, v: string | null) => void };
+      w.__dxApplyMode("light");
+      w.__dxTheme("theme-base", "zinc");
+      document.documentElement.style.setProperty("--primary", "rgb(1, 2, 3)");
+    });
+    const host = await primaryButton(page).evaluate((n) => getComputedStyle(n).getPropertyValue("--dx-primary").trim());
+    expect(host.replace(/\s/g, "")).toMatch(/^rgb\(1,2,3\)$/);
+    await page.evaluate(() => {
+      document.documentElement.style.removeProperty("--primary");
+      (window as unknown as { __dxTheme: (k: string, v: string | null) => void }).__dxTheme("theme-base", null);
+    });
+  });
+
+  test("each axis writes only its own variables on <html>", async ({ page }) => {
+    const own = await page.evaluate(
+      ({ baseNames, accentNames }) => {
+        const w = window as unknown as { __dxApplyMode: (m: string) => void; __dxTheme: (k: string, v: string | null) => void };
+        const root = document.documentElement;
+        const names = [
+          "primary", "primary-foreground", "chart-1", "chart-2", "chart-3", "chart-4", "chart-5", "sidebar-primary", "sidebar-primary-foreground",
+          "secondary", "secondary-foreground", "background", "foreground", "card", "popover", "muted", "muted-foreground", "accent",
+          "accent-foreground", "destructive", "border", "input", "ring", "sidebar", "sidebar-accent", "sidebar-border", "sidebar-ring",
+        ];
+        const set = (axis: "theme-base" | "theme-accent", value: string | null) => w.__dxTheme(axis, value);
+        const present = () => names.filter((n) => getComputedStyle(root).getPropertyValue(`--${n}`).trim() !== "");
+        const out: Record<string, string[]> = {};
+        w.__dxApplyMode("light");
+        for (const b of baseNames) {
+          set("theme-base", b);
+          out[`base:${b}`] = present();
+        }
+        set("theme-base", null);
+        for (const a of accentNames) {
+          set("theme-accent", a);
+          out[`accent:${a}`] = present();
+        }
+        set("theme-accent", null);
+        return out;
+      },
+      { baseNames, accentNames },
+    );
+    const accentOwned = ["primary", "primary-foreground", ...CHARTS, "sidebar-primary", "sidebar-primary-foreground"];
+    for (const [key, vars] of Object.entries(own)) {
+      if (key.startsWith("base:")) {
+        expect(vars.filter((v) => accentOwned.includes(v)), `${key} writes an accent-owned variable`).toEqual([]);
+        expect(vars).toContain("background");
+        expect(vars).toContain("secondary");
+      } else {
+        expect(vars.filter((v) => !accentOwned.includes(v)), `${key} writes a base-owned variable`).toEqual([]);
+        expect(vars).toContain("primary");
+        expect(vars).toContain("chart-1");
+      }
+    }
   });
 });

@@ -47,6 +47,7 @@
  * interaction, and this oracle is about interactions.
  */
 import { test, type Page } from "@playwright/test";
+import { calibrationMs } from "./frame-cost";
 
 /** https://www.w3.org/TR/longtasks-1/#sec-TaskAttributionTiming */
 export interface LongTaskAttribution {
@@ -86,6 +87,14 @@ export interface GestureReport {
  * Thread Is Expensive"): "any single task over 50 ms is a 'long task'".
  * This is a reference value from that article, not a tuning knob -- never
  * lower it to make a test pass; see main-thread.spec.ts's header.
+ *
+ * timing-absolute-ok: the promise here IS an absolute budget (the Long Tasks
+ * definition and the 200 ms interaction rule are properties of the platform,
+ * not of this machine), so it is not a ratio against a same-run reference
+ * like the per-frame cost specs (`frame-cost.ts`, backlog row 402). What load
+ * does to it is handled by the retry policy of `assertResponsive`, and each
+ * result carries `calibrationMs`, how long a fixed workload took on the page
+ * at that moment, so a near-miss can be read against the box's load.
  */
 export const LONG_TASK_THRESHOLD_MS = 50;
 
@@ -311,10 +320,11 @@ export async function assertResponsive(
   }
 
   const finalReport = best;
+  const calibration = await calibrationMs(page).catch(() => NaN);
   const summary =
     `${label}: maxTask=${finalReport.maxTaskMs.toFixed(1)}ms (threshold ${LONG_TASK_THRESHOLD_MS}ms), ` +
     `maxInteraction=${finalReport.maxInteractionMs.toFixed(1)}ms (threshold ${INTERACTION_THRESHOLD_MS}ms) ` +
-    `-- best of ${all.length} measured attempt(s)`;
+    `-- best of ${all.length} measured attempt(s); box calibration ${calibration.toFixed(0)}ms`;
 
   try {
     test.info().annotations.push({ type: "main-thread", description: summary });

@@ -109,7 +109,7 @@ pub struct VirtualListProps {
     /// in the DOM inside a `hidden="until-found"` placeholder, so the browser's find-in-page (and a
     /// `#:~:text=` link) can match items that are not mounted; when the browser reveals a match it
     /// fires `beforematch` on that placeholder, and the component scrolls the real item into view
-    /// and marks it `data-find-match="true"` (the find bar highlights the hidden placeholder, not
+    /// (by the item's own box, so row estimates that are off do not matter) and marks it `data-find-match="true"` (the find bar highlights the hidden placeholder, not
     /// the item, so style the attribute to show which item matched). Costs about two DOM nodes
     /// per item (an empty text gets no placeholder), mounted after hydration (not
     /// server-rendered), and a mounted item's match counts twice. Engines without `until-found`
@@ -129,7 +129,7 @@ pub struct VirtualListProps {
     /// classes of `dx-effects.css`; see [`ScrollFade`]). Defaults to [`ScrollFade::None`]. It follows
     /// the container's own scroll offset, whatever rows or cells are mounted, and a container whose
     /// content fits has no fade. The fade is a mask, so it also fades a border or background on the
-    /// container (put those on a wrapper) and a `VirtualGrid`'s sticky header (prefer
+    /// container (put those on a wrapper) and a `VirtualGrid`'s pinned header (prefer
     /// [`ScrollFade::Bottom`] / [`ScrollFade::End`] with `render_header`); [`ScrollFade::Both`] masks
     /// all four edges of a two-axis scroller.
     #[props(default)]
@@ -296,6 +296,11 @@ fn VirtualListContentVisibility(props: ListBodyProps) -> Element {
     }
 }
 
+/// The selector of the mounted row a find match names (`data-find-index` is the row index).
+fn list_item_selector(index: &str) -> String {
+    format!(r#"[data-virtual-index="{index}"]"#)
+}
+
 /// Only the rows in view (plus a buffer) mounted over a full-height canvas.
 #[component]
 fn VirtualListWindowed(props: ListBodyProps) -> Element {
@@ -343,12 +348,17 @@ fn VirtualListWindowed(props: ListBodyProps) -> Element {
     // marks it as the match (`data-find-match`), because the find bar's own highlight is on the
     // placeholder, not on the row.
     let mut find_match = use_signal(|| None::<usize>);
-    let hydrated = use_find_in_page(container_id, text_value.is_some(), move |index: String| {
-        if let Ok(index) = index.parse() {
-            find_match.set(Some(index));
-            bridge.reveal(index);
-        }
-    });
+    let hydrated = use_find_in_page(
+        container_id,
+        text_value.is_some(),
+        Some(list_item_selector),
+        move |index: String| {
+            if let Ok(index) = index.parse() {
+                find_match.set(Some(index));
+                bridge.reveal(index);
+            }
+        },
+    );
 
     let onresize = move |idx| {
         move |event: Event<ResizeData>| {

@@ -5,6 +5,9 @@
 # cheap no-op.
 #
 # Installs / seeds:
+#   0. the git merge drivers `.gitattributes` names, in the repo config every worktree
+#      shares (scripts/setup-merge-drivers.sh, backlog row 400); first, because it
+#      needs no network and a later failure must not leave a clone without them
 #   1. rustup target wasm32-unknown-unknown
 #   2. dx (dioxus-cli) at the version pinned below -- prebuilt GitHub release
 #      binary first (seconds), `cargo install --locked` (~20 min) as fallback
@@ -34,6 +37,10 @@ export PATH="${HOME}/.cargo/bin:${PATH}"
 log() { printf '[session-setup] %s\n' "$*" >&2; }
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
+
+# --- 0. git merge drivers (row 400) -----------------------------------------------
+# Git reads a driver only from config, never from the tree, so each clone registers them once; idempotent.
+"$repo_root/scripts/setup-merge-drivers.sh" || log "setup-merge-drivers failed (non-fatal; merges fall back to git's text merge)"
 
 # Prefer the proxy CA bundle when present (curl already honours it via
 # CURL_CA_BUNDLE/SSL_CERT_FILE in this sandbox; this is just a belt-and-braces).

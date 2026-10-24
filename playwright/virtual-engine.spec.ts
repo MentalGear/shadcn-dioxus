@@ -195,6 +195,35 @@ test.describe("VirtualGrid fade (shared with VirtualList and ScrollArea)", () =>
     await expectFour(grid, { t: "faded", b: "crisp", s: "faded", e: "crisp" });
   });
 
+  test("data grid: a rubber-band offset past the start (iOS) leaves the window following the scroll", async ({ page }) => {
+    const grid = gridIn(page, "fade-grid");
+    await expect(grid.locator('[data-grid-cell="0:0"]')).toBeVisible({ timeout: 60_000 });
+    // iOS Safari reports negative offsets while the scroller bounces past its start. Chromium never does, so the
+    // bounce is replayed: the offsets read negative for one scroll event, then the real ones come back.
+    await grid.evaluate((n) => {
+      Object.defineProperty(n, "scrollTop", { configurable: true, get: () => -60, set: () => {} });
+      Object.defineProperty(n, "scrollLeft", { configurable: true, get: () => -40, set: () => {} });
+      n.dispatchEvent(new Event("scroll"));
+    });
+    await grid.evaluate((n) => {
+      delete (n as { scrollTop?: number }).scrollTop;
+      delete (n as { scrollLeft?: number }).scrollLeft;
+    });
+    // Scrolled well past the first window on both axes: the cell under the viewport's centre is mounted.
+    await scrollBothTo(grid, "middle", "middle");
+    await expect
+      .poll(
+        () =>
+          grid.evaluate((n) => {
+            const rect = n.getBoundingClientRect();
+            const hit = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+            return hit?.closest("[data-grid-cell]")?.getAttribute("data-grid-cell") ?? null;
+          }),
+        { timeout: 10_000, message: "a cell under the centre of the scrolled grid" },
+      )
+      .not.toBeNull();
+  });
+
   test("fade Both follows the reading direction: RTL mirrors the inline gradient", async ({ page }) => {
     const grid = gridIn(page, "fade-grid");
     await expect(grid.locator('[data-grid-cell="0:0"]')).toBeVisible({ timeout: 60_000 });

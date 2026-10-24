@@ -636,9 +636,9 @@ thread_local! {
 /// whatever box the *engine's own* UA popover-stylesheet defaults
 /// (`[popover] { inset: 0; margin: auto; border: solid; padding: 0.25em;
 /// overflow: auto; background-color: Canvas; }`) plus `fit-content` sizing
-/// happened to produce -- a gap between engines (dev-docs/backlog.md row
-/// 44): Chromium's default gives it a small (~105x40px) on-screen box
-/// (measured on a real build), and WebKit's is the plausible but
+/// produces -- a gap between engines (dev-docs/backlog.md row
+/// 44): Chromium's default gives it a small (~105x40px) on-screen box,
+/// and WebKit's is the plausible but
 /// unverified cause of an "Add toast" that looks dead on iOS 18 (this
 /// crate has no WebKit build to confirm that half against directly).
 /// Rather than tie the fixture's deliberately-raw composition to the

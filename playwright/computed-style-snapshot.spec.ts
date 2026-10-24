@@ -55,7 +55,7 @@ import type { StateCoverage } from "./computed-style-states";
  * not part of the snapshot, so the byte-identical gate never depends on it; read it to see what a green
  * diff actually covers. The last lines of the run print the same totals.
  *
- * OUTPUT FORMAT (version 4, rows 135/246: version 3 plus `user-select`, the `focusK` section and `open:<k>/kbd`
+ * OUTPUT FORMAT (version 4, rows 135/246: carries `user-select`, the `focusK` section and `open:<k>/kbd`
  * records; `compare` of files with different property sets compares the common ones and says so):
  *
  *   { "meta": { format, modes, properties, focusProperties, sections, ... },

@@ -1,4 +1,4 @@
-import { test, expect } from "./fixtures";
+import { test, expect, devices } from "./fixtures";
 import { type Page } from "@playwright/test";
 import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { BASE_URL } from "./base-url";
@@ -378,7 +378,9 @@ test.describe("Listbox width tracks the trigger width (dev-docs/backlog.md row 4
         await gotoHydrated(page, `${BASE_URL}/`);
         const trigger = page.getByRole("combobox").filter({ hasText: /^(Select an option|Choose a fruit)$/ }).first();
         await trigger.click();
-        const listbox = page.getByRole("listbox");
+        // An explicit role only: the gallery's form card also renders a native
+        // <select multiple>, whose implicit role is listbox too.
+        const listbox = page.locator('[role="listbox"]');
         await expect(listbox).toHaveAttribute("data-state", "open");
         await assertListboxTracksTriggerWidth(page, trigger, listbox);
     });
@@ -499,4 +501,43 @@ test.describe("trigger size (row 155 group 7)", () => {
         await page.getByRole("option", { name: "Grapes" }).first().click();
         await expect(sm).toContainText("Grapes");
     });
+});
+
+// A touch selection that closes the list commits on the tap's `click`, not on `pointerup`, so
+// the `click` the browser fires after the release lands on the option itself. A `pointerup`
+// commit closes the list before that `click` is hit-tested, so the tap falls through to whatever
+// lies under the option (on iOS, a native `<select>` below opens its picker).
+test("touch: a single-select tap is consumed by the option, never the page under it", async ({ browser, browserName }) => {
+    test.skip(browserName === "firefox", "Firefox does not support mobile contexts");
+    const { defaultBrowserType: _defaultBrowserType, ...iphone } = devices["iPhone 13"];
+    const context = await browser.newContext(iphone);
+    try {
+        const page = await context.newPage();
+        await gotoHydrated(page, `${BASE_URL}/component/select/`, { timeout: 20 * 60 * 1000 });
+        const selectTrigger = singleSelectTrigger(page).first();
+        await selectTrigger.tap();
+        const selectMenu = page.getByRole("listbox");
+        await expect(selectMenu).toHaveAttribute("data-state", "open");
+
+        await page.evaluate(() => {
+            const w = window as unknown as { __tapClicks: string[] };
+            w.__tapClicks = [];
+            document.addEventListener(
+                "click",
+                (e) => {
+                    const t = e.target as Element;
+                    w.__tapClicks.push(t.closest("[role='option']")?.textContent?.trim() ?? t.tagName);
+                },
+                { capture: true },
+            );
+        });
+        await selectMenu.getByRole("option", { name: "Banana" }).tap();
+
+        await expect(selectMenu).toHaveCount(0);
+        await expect(selectTrigger).toContainText("Banana");
+        const clicks = await page.evaluate(() => (window as unknown as { __tapClicks: string[] }).__tapClicks);
+        expect(clicks, "the tap's click lands on the tapped option").toEqual([expect.stringContaining("Banana")]);
+    } finally {
+        await context.close();
+    }
 });

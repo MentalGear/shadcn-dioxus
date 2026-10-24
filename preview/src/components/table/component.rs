@@ -5,9 +5,8 @@
 //! `dioxus_primitives::table` module to wrap: shadcn/ui's own `table.tsx`
 //! is plain, unstyled semantic HTML (`<table>`/`<thead>`/`<tbody>`/
 //! `<tfoot>`/`<tr>`/`<th>`/`<td>`/`<caption>`) with no Radix primitive and
-//! no ARIA widget role underneath -- confirmed against shadcn's own source
-//! and recorded in dev-docs/archive/rounds/component-backlog.md row 68 ("none -- plain
-//! semantic `<table>` markup, no ARIA engineering needed"). So this file
+//! no ARIA widget role underneath, so there is no ARIA engineering to do
+//! (dev-docs/archive/rounds/component-backlog.md row 68). So this file
 //! *is* both the "primitive" and the theme layer: every element below is
 //! the plain HTML tag plus this crate's `dx-table-*` class, nothing more.
 //!

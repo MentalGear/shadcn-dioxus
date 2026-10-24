@@ -39,7 +39,7 @@
 .dx-progress-indicator {
     width: var(--progress-value, 0%);
     height: 100%;
-    background-color: var(--dx-primary);
+    background-color: var(--dx-primary-mark);
     transition: width 250ms var(--dx-motion-ease);
 }
 

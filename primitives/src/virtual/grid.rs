@@ -7,10 +7,12 @@
 //! the product of the two ranges. Nothing here is grid-specific arithmetic on top of the axes
 //! except three things:
 //!
-//! - **sticky edges**: a sticky header row and a sticky first column cover part of the
-//!   viewport, so the rows axis sees `height - header` and the columns axis sees
-//!   `width - sticky_width`, and the sticky column is not part of the scrolling axis at all
-//!   (column `c` of the data is item `c - sticky_columns` of the columns engine);
+//! - **pinned edges** (row 388): a pinned header row and pinned columns at both inline edges
+//!   cover part of the viewport, so the rows axis sees `height - header` and the columns axis
+//!   sees `width - covered inline width`; the pinned columns are not part of the scrolling axis
+//!   at all (column `c` of the data is item `c - start_columns` of the columns engine, and the
+//!   end columns are past its last item). A header that is not pinned covers nothing but
+//!   precedes the body, so the rows axis starts that much later;
 //! - **the pinned cell**: the cell that holds keyboard focus is always rendered, even far
 //!   outside the window (a `Ctrl+End` jump, or a reader who scrolled away), see
 //!   [`with_pinned`](super::pin::with_pinned). A cell that is unmounted while it has focus loses it, and the grid pattern
@@ -140,24 +142,33 @@ pub(crate) struct GridPlan {
     /// Mounted rows (with the pinned row), `start` relative to the top of the body.
     pub(crate) rows: Vec<VirtualItem>,
     /// Mounted scrolling columns (with the pinned column). `index` is the DATA column, `start`
-    /// is relative to the inline start of the scrolling pane (after the sticky column).
+    /// is relative to the inline start of the scrolling pane (after the pinned start columns).
     pub(crate) columns: Vec<VirtualItem>,
     /// The height of the body (below the header).
     pub(crate) body_height: u32,
-    /// The width of the scrolling pane (beside the sticky column).
+    /// The width of the scrolling pane (between the pinned columns).
     pub(crate) pane_width: u32,
+}
+
+/// What the grid pins, as the engine needs it (row 388).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub(crate) struct Pins {
+    /// How many leading data columns are pinned at the inline start; they are not in the
+    /// columns engine (the end columns are simply past its last item).
+    pub(crate) start_columns: usize,
+    /// The px the pinned header covers at the top of the viewport (0 for an unpinned header).
+    pub(crate) top: u32,
+    /// The px of header that sit above the body but scroll away with it (0 for a pinned one).
+    pub(crate) lead: u32,
+    /// The px the pinned columns cover at both inline edges together.
+    pub(crate) inline: u32,
 }
 
 /// The 2-D windowing engine: one [`Engine`] per axis. See the module doc.
 pub(crate) struct GridEngine {
     rows: Engine,
     columns: Engine,
-    /// How many leading columns are sticky (0 or 1); they are not in the columns engine.
-    sticky_columns: usize,
-    /// The px the sticky header covers at the top of the viewport.
-    header: u32,
-    /// The px the sticky column(s) cover at the inline start of the viewport.
-    sticky_width: u32,
+    pins: Pins,
 }
 
 impl GridEngine {
@@ -165,41 +176,35 @@ impl GridEngine {
         Self {
             rows: Engine::new(),
             columns: Engine::new(),
-            sticky_columns: 0,
-            header: 0,
-            sticky_width: 0,
+            pins: Pins::default(),
         }
     }
 
-    /// Adopt the current geometry: row heights, column widths (of ALL columns, the sticky ones
-    /// first), the header height and how many leading columns are sticky. `O(1)` when nothing
-    /// changed (the estimates are compared by identity, as the list engine does).
+    /// Adopt the current geometry: row heights, the sizes of the SCROLLING columns only (the
+    /// pinned ones are not in the engine) and what is pinned. `O(1)` when nothing changed (the
+    /// estimates are compared by identity, as the list engine does).
     pub(crate) fn sync(
         &mut self,
         rows: &SizeEstimates,
         scrolling_columns: &SizeEstimates,
-        sticky_columns: usize,
-        sticky_width: u32,
-        header: u32,
+        pins: Pins,
     ) {
         self.rows.sync(rows);
         self.columns.sync(scrolling_columns);
-        self.sticky_columns = sticky_columns;
-        self.sticky_width = sticky_width;
-        self.header = header;
+        self.pins = pins;
     }
 
-    /// Handle a scroll report. Both axes see only the part of the viewport the sticky edges do
-    /// not cover.
+    /// Handle a scroll report. Both axes see only the part of the viewport the pinned edges do
+    /// not cover, and the rows axis starts where the body does.
     pub(crate) fn scroll(&mut self, scroll: ScrollReport) {
         self.rows.scroll(
-            scroll.top,
-            scroll.height.saturating_sub(self.header),
+            scroll.top.saturating_sub(self.pins.lead),
+            scroll.height.saturating_sub(self.pins.top),
             scroll.is_scrolling,
         );
         self.columns.scroll(
             scroll.left,
-            scroll.width.saturating_sub(self.sticky_width),
+            scroll.width.saturating_sub(self.pins.inline),
             scroll.is_scrolling,
         );
     }
@@ -218,7 +223,8 @@ impl GridEngine {
     }
 
     /// The window to draw, with the `pinned` cell (data row, data column) added on each axis
-    /// where it is outside the window. A pinned column that is sticky is always drawn anyway.
+    /// where it is outside the window. A pinned column is always drawn anyway (it is no item of
+    /// the columns engine, so a pinned active cell adds nothing to the scrolling columns).
     pub(crate) fn plan(
         &mut self,
         row_buffer: usize,
@@ -227,15 +233,15 @@ impl GridEngine {
     ) -> GridPlan {
         let rows = self.rows.plan(row_buffer);
         let columns = self.columns.plan(column_buffer);
-        let sticky = self.sticky_columns;
+        let start = self.pins.start_columns;
         let pinned_row = pinned.and_then(|(row, _)| self.rows.item(row));
         let pinned_column = pinned
-            .and_then(|(_, column)| column.checked_sub(sticky))
+            .and_then(|(_, column)| column.checked_sub(start))
             .and_then(|scrolling| self.columns.item(scrolling));
         let to_data = |item: VirtualItem| {
             VirtualItem::new(
-                item.key() + sticky,
-                item.index() + sticky,
+                item.key() + start,
+                item.index() + start,
                 item.start(),
                 item.size(),
             )
@@ -265,15 +271,24 @@ mod tests {
         items.iter().map(VirtualItem::index).collect()
     }
 
-    /// The demo's data grid: 10,000 rows of 36px, 50 columns of 120px, a 40px sticky header.
-    fn data_grid(sticky: usize) -> GridEngine {
+    /// The demo's data grid: 10,000 rows of 36px, 50 columns of 120px, a 40px pinned header and
+    /// `start` pinned columns at the inline start.
+    fn data_grid(start: usize) -> GridEngine {
+        pinned_grid(start, 0)
+    }
+
+    /// The same grid with `start` and `end` pinned columns.
+    fn pinned_grid(start: usize, end: usize) -> GridEngine {
         let mut grid = GridEngine::new();
         grid.sync(
             &uniform(10_000, 36),
-            &uniform(50 - sticky, 120),
-            sticky,
-            120 * sticky as u32,
-            40,
+            &uniform(50 - start - end, 120),
+            Pins {
+                start_columns: start,
+                top: 40,
+                lead: 0,
+                inline: 120 * (start + end) as u32,
+            },
         );
         grid
     }
@@ -333,7 +348,7 @@ mod tests {
     }
 
     #[test]
-    fn the_sticky_column_is_not_windowed_and_the_pane_starts_after_it() {
+    fn the_pinned_column_is_not_windowed_and_the_pane_starts_after_it() {
         let mut grid = data_grid(1);
         at(&mut grid, 0, 0);
         let plan = grid.plan(6, 3, None);
@@ -350,10 +365,46 @@ mod tests {
     }
 
     #[test]
-    fn the_sticky_header_shrinks_the_rows_viewport() {
+    fn end_pinned_columns_leave_the_pane_and_shrink_the_columns_viewport() {
+        let mut grid = pinned_grid(1, 2);
+        at(&mut grid, 0, 0);
+        let plan = grid.plan(6, 3, None);
+        // The pane holds data columns 1..=47; it sees 800 - 3 * 120 = 440px (4 columns).
+        assert_eq!(plan.columns[0].index(), 1);
+        assert_eq!(plan.pane_width, 47 * 120);
+        assert_eq!(indices(&plan.columns), (1..=8).collect::<Vec<_>>());
+        // Scrolled to the pane's end, the last scrolling column is data column 47, not 49.
+        at(&mut grid, 0, 47 * 120 - 440);
+        let plan = grid.plan(6, 3, None);
+        assert_eq!(*indices(&plan.columns).last().unwrap(), 47);
+        // An active cell in an end column adds nothing to the scrolling columns.
+        let plan = grid.plan(6, 3, Some((3, 49)));
+        assert_eq!(*indices(&plan.columns).last().unwrap(), 47);
+    }
+
+    #[test]
+    fn a_header_that_scrolls_away_moves_the_rows_start_and_covers_nothing() {
+        let mut grid = GridEngine::new();
+        grid.sync(
+            &uniform(10_000, 36),
+            &uniform(50, 120),
+            Pins {
+                lead: 40,
+                ..Pins::default()
+            },
+        );
+        // 400px down, the body is 360px down; the viewport is all body (no cover).
+        at(&mut grid, 400, 0);
+        let plan = grid.plan(0, 0, None);
+        assert_eq!(plan.rows[0].index(), 10);
+        assert_eq!(grid.page_rows(), 18);
+    }
+
+    #[test]
+    fn the_pinned_header_shrinks_the_rows_viewport() {
         let mut with = data_grid(0);
         let mut without = GridEngine::new();
-        without.sync(&uniform(10_000, 36), &uniform(50, 120), 0, 0, 0);
+        without.sync(&uniform(10_000, 36), &uniform(50, 120), Pins::default());
         at(&mut with, 0, 0);
         at(&mut without, 0, 0);
         assert_eq!(with.page_rows(), 17); // 600px of body: rows 0..=16
@@ -375,7 +426,7 @@ mod tests {
         let plan = grid.plan(6, 3, Some((3, 2)));
         assert_eq!(indices(&plan.rows), (0..=23).collect::<Vec<_>>());
         assert_eq!(indices(&plan.columns), (1..=10).collect::<Vec<_>>());
-        // A pinned sticky column adds nothing to the scrolling columns.
+        // A pinned start column adds nothing to the scrolling columns.
         let plan = grid.plan(6, 3, Some((3, 0)));
         assert_eq!(indices(&plan.columns), (1..=10).collect::<Vec<_>>());
     }

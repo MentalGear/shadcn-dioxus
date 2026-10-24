@@ -40,7 +40,11 @@ EXT_KIND = {
     ".ts": "js", ".tsx": "js", ".js": "js", ".mjs": "js", ".cjs": "js",
     ".sh": "shell",
     ".py": "python",
+    ".txt": "txt",
 }
+# A `.txt` is read only where it is a data file with `#` comments that ships with the code (a component's
+# `variants/order.txt`); a licence text (`preview/assets/fonts/OFL.txt`) or an ident list under dev-docs/ is not.
+TXT_PREFIXES = ("preview/src/components/", "primitives/src/", "templates/", "cli/")
 SKIP_PREFIXES = (
     "dev-docs/archive/",
     "docs/",
@@ -71,7 +75,10 @@ def tracked_files(root):
             continue
         if p.startswith(SKIP_PREFIXES) or any(s in "/" + p for s in SKIP_PARTS) or p.endswith(SKIP_SUFFIXES):
             continue
-        if os.path.splitext(p)[1] in EXT_KIND and os.path.isfile(os.path.join(root, p)):
+        ext = os.path.splitext(p)[1]
+        if ext == ".txt" and not p.startswith(TXT_PREFIXES):
+            continue
+        if ext in EXT_KIND and os.path.isfile(os.path.join(root, p)):
             files.append(p)
     return sorted(files)
 
@@ -423,7 +430,15 @@ def extract_html(text):
             yield base + ln - 1, body
 
 
-EXTRACTORS = {"rust": extract_rust, "html": extract_html, "css": extract_css, "js": extract_js, "shell": extract_shell, "python": extract_python}
+def extract_txt(text):
+    """A data file whose comments are the lines starting with `#` (a component's `variants/order.txt`)."""
+    for lineno, ln in enumerate(text.split("\n"), 1):
+        s = ln.lstrip()
+        if s.startswith("#"):
+            yield lineno, s.lstrip("#")
+
+
+EXTRACTORS = {"txt": extract_txt, "rust": extract_rust, "html": extract_html, "css": extract_css, "js": extract_js, "shell": extract_shell, "python": extract_python}
 
 
 def comments_of(root, path):
@@ -465,6 +480,10 @@ def _month_dated(body):
 
 
 _AUX = r"(?:the|a|an|its|their|any|whichever|whatever|other|of|to|from|with|by|for|on|in|at|as|is|are|be|been|being|and|or|not|only|also|already)"
+_NUM = r"(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten)"
+# "once in 340 runs", "1 in 3 releases", "two out of five attempts"
+_FREQ = (r"(?:once|twice|" + _NUM + r") (?:in|out of) " + _NUM + r" (?:\w+ )?"
+         r"(?:runs?|attempts?|trials?|releases?|repeats?|tries|builds?|passes|iterations?)\b")
 PHRASES = [
     (re.compile(r"\b(?:(?:before|after) (?:the|this|that|a) (?:fix|change|refactor|migration|rename|revert|patch|bug ?fix|port)|before (?:the|this|that|a) rewrite)\b", re.I), "before the fix"),
     (re.compile(r"\bformerly\b", re.I), "formerly"),
@@ -543,6 +562,41 @@ PHRASES = [
                 r"\bowner(?:'s)?(?: real)?[- ](?:[\w-]+ )?(?:report|session)\b|\bowner's (?:bench|lab)\b|\blab session\b|"
                 r"\bincident behind\b|\bthe incident (?:itself|that|which)\b|\bproduction incident\b|"
                 r"(?<!upstream )(?<!upstream Dioxus )\bPR #\d+|\bmotivated PR #\d+", re.I), "report"),
+    # round 6 (row 384): who asked and how a finding was made, told in the code: "owner asked for X", "requested by
+    # the owner", "(issue #262)" as a credit (not `upstream issue #N`), "the product bug behind this test", "surveyed
+    # ... and found", "the scroll re-profile", "a re-test is still required", "version 4: version 3 plus ...", and
+    # "landed" in the merged sense ("landed silently", "landed in main"); a click or a focus that "landed on" an element
+    # is geometry and stays
+    (re.compile(r"\bowner (?:asked|wanted|requested|reported)\b|\b(?:requested|asked for|reported|filed) by (?:the )?(?:owner|user|reviewer|maintainer)\b|"
+                r"(?<!upstream )(?<!upstream: )(?<!upstream Dioxus )\bissues? #\d+|\bthe (?:product |real |underlying )?bug behind\b|"
+                r"\bsurveyed\b[^.;]{0,100}\bfound\b|\bthe survey (?:found|showed|measured)\b|\bre-?profil(?:e|ed|ing)\b|"
+                r"\bre-?test is still (?:required|needed|pending|open)\b|\bversion \d+ plus\b|"
+                r"\blanded (?:silently|in main|on main|in row|with row|as part of|via)\b|\blanded in (?:the )?(?:session|queue) branch\b", re.I), "who asked"),
+    # round 7 (row 384): how a rule or a number came to be, told in the code. "when the gate was adopted", "the sites
+    # known to exist when ...", "the audit measured", "(seen under load ...)", "the sites a demo happened to exercise",
+    # a header word NARROWED/WIDENED (upper case: the prose verb "narrowed" is a state), "once also applied", "its first
+    # spec only bounded it", "2/2 clean runs against 2/2 failures", "reproduced the identical failure", and a tuning
+    # trial ("0.07 of chroma gave hue 221", "0.12 gave 4.48:1"). Not adopted: bare `adopted` (a pattern a component
+    # adopts is a design), bare `audit` (the a11y audit is a real tool), bare `under load` ("would flake under load" is
+    # a reason), bare `happened to` ("whichever happened to be focused" is a state), bare `gave`.
+    (re.compile(r"\bwhen (?:the|this) (?:gate|check|ratchet|baseline|spec|test|rule) was (?:adopted|written|added|introduced|created)\b|"
+                r"\bknown to exist when\b|\bthe audit(?:'s)? (?:measured|found|showed|reported|flagged)\b|"
+                r"\b(?:seen|observed|hit|reproduced) under load\b|"
+                r"\bhappened to (?:be )?(?:hit|exercised?|exercised|caught|touched|reported|broken)\b|"
+                r"\bonce also (?:applied|moved|matched|styled|wrote|hit)\b|"
+                r"\b(?:its|the|their|this) first (?:specs?|tests?) (?:only|just|merely|asserted|bounded|checked)\b|"
+                r"\b\d+/\d+ clean runs\b|\bclean runs against\b|\b\d+/\d+ failures\b|"
+                r"\breproduced the (?:identical|same|failure|bug|defect)\b|"
+                r"(?:\b0?\.\d+|\b\d+\.\d+) (?:of \w+ )?gave\b|\bgave (?:a )?hue \d+|\bgave \d+(?:\.\d+)?:1", re.I), "how it came to be"),
+    (re.compile(r"\b(?:NARROWED|WIDENED)\b"), "how it came to be"),
+    # round 8 (row 410): an observation's frequency told as its reason -- "(seen once in 340 runs at --workers=4)",
+    # "(measured: 1 in 3 releases stuck)" -- and an investigation's steps: "so cache warmth is not the variable",
+    # "the cause was ruled out". A frequency counts only beside an observation word before it or a failure word after
+    # it. Not adopted: a bare frequency ("passes when 2 in 3 runs succeed" is a retry policy), bare `measured:` (a
+    # figure the code depends on is data), the present-tense `rules out` ("this rules out the cascade tie").
+    (re.compile(r"\b(?:seen|observed|measured|reproduced|happened|occurred|hit)\b[^.;]{0,40}?\b" + _FREQ + r"|"
+                + _FREQ + r"[^.;]{0,30}?\b(?:stuck|failed|fail(?:ure)?s?|red|flaked|flaky|hung|timed out)\b|"
+                r"\bis not the variable\b|\bwas ruled out\b", re.I), "how it came to be"),
     # a pointer into a dead session's scratchpad
     (re.compile(r"\$S/"), "scratchpad path"),
 ]
@@ -1107,6 +1161,39 @@ MUST_FLAG = [
     "see that module's own doc for why it moved out of here",
     "It replaces a call per route",
     "this now lives in the theme",
+    # round 6: who asked and how it was found
+    "(backlog row 311: owner asked for `multiple` higher on the page)",
+    "the owner wanted it above the fold",
+    "a change requested by the owner",
+    "open from a held touch instead (issue #262).",
+    "row 115 -- the product bug behind this file's load-only flake",
+    "(row 31a surveyed them and found no clean clusters)",
+    "The scroll re-profile measured the infinite animations alone",
+    "a real iPhone re-test is still required.",
+    "OUTPUT FORMAT (version 4: version 3 plus `user-select`)",
+    "a planned control that landed silently is documentation drift",
+    "the helper landed in main with its own test",
+    # round 7: how a rule or a number came to be
+    "the sites known to exist when the gate was adopted",
+    "Why a gate: it was only written when the check was added.",
+    "the audit measured 4.16 to 4.45:1 for light ink on a tint",
+    "can already reach the bottom (seen under load, scrollY 577 = max)",
+    "only caught the sites some demo page happened to exercise",
+    "NARROWED (row 329): the every-route sweep is cargo test's",
+    "WIDENED: now covers every route",
+    "an anchor rule once also applied to this list",
+    "its first spec only bounded it",
+    "(2/2 clean runs against 2/2 failures without it, row 116)",
+    "two cold rebuilds reproduced the identical 5-of-6 failure",
+    "(0.07 of chroma gave hue 221 for blue 264)",
+    "(0.12 gave 4.48:1)",
+    # round 8: an observation's frequency, an investigation's steps
+    "shut (seen once in 340 runs at --workers=4: aria-expanded stayed false for 5s)",
+    "leaves `:active` set (measured: 1 in 3 releases stuck)",
+    "the panel stayed closed 2 out of 5 runs failed at --workers=4",
+    "it reproduced twice in ten attempts",
+    "A cold cargo cache does not change it, so compile-cache warmth is not the variable.",
+    "the cascade was ruled out first",
 ]
 # ... and present-tense sentences that must NOT be (the false positives to keep out).
 MUST_NOT_FLAG = [
@@ -1206,6 +1293,36 @@ MUST_NOT_FLAG = [
     "a bug the user had to type around",
     "the node is exposed to assistive technology",
     "a regression test covers it",
+    # round 6: the same words in their present-tense or provenance senses
+    "the owner applies the move; the menu keeps the order",
+    "a controlled list changes only when the owner writes a new one",
+    "tracked upstream: issue #199 of DioxusLabs/components",
+    "upstream issue #199 asks for the same API",
+    "a click that landed on a sibling is ignored",
+    "focus would not have landed on it",
+    "the survey of the stylesheets lives in the token table",
+    "a profile of the page is taken once, not re-fetched",
+    "every plus sign in version 4 is escaped",
+    # round 7: the same words in their present-tense senses
+    "the range is narrowed to the visible rows",
+    "a scroll container adopted by the router keeps its offset",
+    "the a11y audit tool reports the contrast of each pair",
+    "the list would be flaky under load, so it waits for the animation",
+    "whichever item happened to be focused keeps its ring",
+    "a handler that once applied, stays applied until reset",
+    "the first test that fails stops the run",
+    "the first spec in the file opens the page",
+    "retries 2 clean runs in a row before it passes",
+    "an input of 0.07 gives hue 221 for blue 264",
+    "the engine gave up after three tries",
+    "a cold cache does not change the result",
+    "(row 303 gave `/demos` and the `/charts/` gallery the docs shell)",
+    # round 8: frequencies and the same verbs in their present-tense senses
+    "the retry passes when 2 in 3 runs succeed",
+    "one in three tiles is wide",
+    "measured: 4.52:1 for the muted ink on the card",
+    "this rules out the cascade tie",
+    "a check that runs once in 3 builds on CI",
 ]
 
 
@@ -1256,6 +1373,9 @@ EXTRACTION_CASES = [
     ("rust string JS: // inside a JS string is not a comment", "a.rs", 'let u = "const m = \'// used to be\'; function f() { return m; }";\n', 0),
     ("rust string with no code shape is data", "a.rs", 'let u = "see /* used to be */ above";\n', 0),
     ("rust byte string is skipped", "a.rs", 'let u = b"const a = 1; // used to be";\n', 1),
+    ("a variants/order.txt `#` comment is read", "preview/src/components/x/variants/order.txt", "# owner asked for `multiple` first (backlog row 311)\nmultiple\n", 1),
+    ("a clean order.txt `#` comment passes", "preview/src/components/x/variants/order.txt", "# The multiple demos come first (backlog row 311).\nmultiple\n", 0),
+    ("an order.txt line that is not a comment is data", "preview/src/components/x/variants/order.txt", "owner asked\n", 0),
     ("rust string JS with a clean comment", "a.rs", 'const J: &str = r#"\n  // the panel is positioned from the trigger\n  const a = 1;\n"#;\n', 0),
 ]
 

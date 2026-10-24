@@ -625,7 +625,7 @@ fn carousel_key_intent(
 /// function literal, `dxIsTrueEnd(el, horizontal, side)`, that `concat!`
 /// splices into both scripts, so there is no second copy to drift (a
 /// scroller-attached helper like `__dxWhenIdle` would instead depend on which
-/// bridge's eval happened to run first).
+/// bridge's eval runs first).
 ///
 /// Read from rendered markup, never a Rust signal: `data-loop` and
 /// `data-slide-count` on the scroller, and the `data-index` of the slide at

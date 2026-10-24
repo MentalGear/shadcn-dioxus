@@ -8,9 +8,10 @@
 //!   `row_height(row)` px tall and every column `column_width(column)` px wide (both known up
 //!   front, as in a spreadsheet). Only the cells in view plus `row_buffer` rows and
 //!   `column_buffer` columns each side are mounted, so a 10,000 x 50 grid keeps a few hundred
-//!   cells in the DOM. An optional header row (`render_header`) sticks to the top and an
-//!   optional first column (`sticky_first_column`) sticks to the inline start; both stay out of
-//!   the windowing of their axis.
+//!   cells in the DOM. An optional header row (`render_header`, pinned to the top unless
+//!   `pin_header` is false) and the first `pinned_columns_start` / last `pinned_columns_end`
+//!   columns are pinned to the grid's edges while the rest scrolls; pinned columns stay out of
+//!   the column windowing, and the module's "Pinning" section lists what that means.
 //! - [`VirtualWrapGrid`] is a gallery: `count` items in rows of `columns` equal tracks (CSS grid),
 //!   only the rows axis windowed. Rows are measured as they render (an image tile's height
 //!   follows its width), with `estimate_row_height` as the first guess.
@@ -47,7 +48,22 @@
 //! inline-end neighbour. **The active cell is always rendered**, even when it is far outside
 //! the window (after `Ctrl+End`, or when the reader scrolls away from it), so focus is never
 //! lost to an unmount and Tab always finds the grid's stop; moving it scrolls it into view
-//! past the sticky header and column.
+//! past the pinned header and the pinned columns on both sides.
+//!
+//! # Pinning rows and columns (row 388)
+//!
+//! [`VirtualGridProps::pin_header`] (default true) keeps the header row at the top while the body
+//! scrolls; false lets it scroll away with the body. [`VirtualGridProps::pinned_columns_start`]
+//! and [`VirtualGridProps::pinned_columns_end`] (default 0 each) pin that many columns at the
+//! inline start and the inline end; the start columns stack from the edge in column order and the
+//! end columns from the opposite edge, each at the cumulative width of the pinned columns
+//! between it and its edge. Both sides follow the reading direction through logical properties.
+//! A pinned column is always mounted, outside the column window (the windowed body never renders
+//! it twice), and is opaque so the cells that scroll under it never show through. The two counts
+//! are clamped to the column count (the start side first). The first column's cells are
+//! `role="rowheader"` when at least one start column is pinned; no other pinned column is a row
+//! header. Pinned cells carry `data-grid-pinned="start|end"`, and the one next to the scrolling
+//! pane `data-grid-pin-edge="true"`.
 //!
 //! # Header sort, row selection and controls in cells
 //!
@@ -80,7 +96,7 @@ use crate::direction::{use_direction, Direction, HorizontalNav};
 use crate::r#virtual::{
     cv_chunks, engine_row_keys, justified_navigate, parse_cell, render_key, resolve_index,
     use_find_in_page, use_virtual_bridge, with_pinned, Bridge, ChunkSkip, Engine, FindLayer,
-    FindLayout, GridEngine, GridKey, GridShape, JustifiedEngine, JustifiedOptions, RowPlan,
+    FindLayout, GridEngine, GridKey, GridShape, JustifiedEngine, JustifiedOptions, Pins, RowPlan,
     ScrollReport, SizeEstimates, DEFAULT_SIZE,
 };
 pub use crate::r#virtual::{VirtualizeMode, DEFAULT_AUTO_THRESHOLD};
@@ -120,7 +136,7 @@ pub struct VirtualGridProps {
     /// in the DOM inside a `hidden="until-found"` placeholder, so the browser's find-in-page (and a
     /// `#:~:text=` link) can match items that are not mounted; when the browser reveals a match it
     /// fires `beforematch` on that placeholder, and the component scrolls the real item into view
-    /// and marks it `data-find-match="true"` (the find bar highlights the hidden placeholder, not
+    /// (by the item's own box, so row estimates that are off do not matter) and marks it `data-find-match="true"` (the find bar highlights the hidden placeholder, not
     /// the item, so style the attribute to show which item matched). Costs about two DOM nodes
     /// per item (an empty text gets no placeholder), mounted after hydration (not
     /// server-rendered), and a mounted item's match counts twice. Engines without `until-found`
@@ -129,7 +145,8 @@ pub struct VirtualGridProps {
     /// all in the DOM already.
     pub text_value: Option<Callback<(usize, usize), String>>,
     /// Renders the header of a column. When given, a header row of `role="columnheader"` cells
-    /// sticks to the top of the grid while it scrolls.
+    /// is drawn above the body, pinned to the top of the grid while it scrolls unless
+    /// [`pin_header`](Self::pin_header) is false.
     pub render_header: Option<Callback<usize, Element>>,
     /// Which way column `column` is sorted, for its header's `aria-sort` (`ascending` or
     /// `descending`). Return `None` for a column that is not the sort column: it gets no
@@ -147,10 +164,22 @@ pub struct VirtualGridProps {
     /// The height of the header row, in px. Ignored without `render_header`.
     #[props(default = 40)]
     pub header_height: u32,
-    /// Keep the first column at the inline start while the grid scrolls horizontally. Its
-    /// cells are `role="rowheader"`.
+    /// Whether the header row stays at the top of the grid while the body scrolls. Defaults to
+    /// true; false lets the header scroll away with the body (a keyboard move then reveals a cell
+    /// against the top edge of the grid, not below the header). Ignored without `render_header`.
+    #[props(default = ReadSignal::new(Signal::new(true)))]
+    pub pin_header: ReadSignal<bool>,
+    /// How many columns, from the first, stay at the inline start while the grid scrolls
+    /// horizontally. They stack in column order, are always mounted and are not part of the
+    /// column window. Defaults to 0; clamped to the column count. With at least one, the first
+    /// column's cells are `role="rowheader"` (the others stay `gridcell`).
     #[props(default)]
-    pub sticky_first_column: ReadSignal<bool>,
+    pub pinned_columns_start: ReadSignal<usize>,
+    /// How many columns, from the last, stay at the inline end while the grid scrolls
+    /// horizontally. They stack from the end edge inward, are always mounted and are not part of
+    /// the column window. Defaults to 0; clamped to what the start columns leave.
+    #[props(default)]
+    pub pinned_columns_end: ReadSignal<usize>,
     /// How many rows to mount beyond each edge of the viewport (the window is re-centred once
     /// fewer than half of them remain).
     #[props(default = ReadSignal::new(Signal::new(6)))]
@@ -176,7 +205,7 @@ pub struct VirtualGridProps {
     /// classes of `dx-effects.css`; see [`ScrollFade`]). Defaults to [`ScrollFade::None`]. It follows
     /// the container's own scroll offset, whatever rows or cells are mounted, and a container whose
     /// content fits has no fade. The fade is a mask, so it also fades a border or background on the
-    /// container (put those on a wrapper) and a `VirtualGrid`'s sticky header (prefer
+    /// container (put those on a wrapper) and a `VirtualGrid`'s pinned header (prefer
     /// [`ScrollFade::Bottom`] / [`ScrollFade::End`] with `render_header`); [`ScrollFade::Both`] masks
     /// all four edges of a two-axis scroller.
     #[props(default)]
@@ -207,7 +236,8 @@ pub struct VirtualGridProps {
 ///             column_width: |column: usize| if column == 0 { 80 } else { 120 },
 ///             render_header: |column: usize| rsx! { "Column {column}" },
 ///             render_cell: |(row, column): (usize, usize)| rsx! { "R{row} C{column}" },
-///             sticky_first_column: true,
+///             pinned_columns_start: 1usize,
+///             pinned_columns_end: 1usize,
 ///             style: "height: 24rem; overflow: auto;",
 ///             "aria-label": "Measurements",
 ///         }
@@ -221,8 +251,9 @@ pub struct VirtualGridProps {
 /// `max-height`) and `overflow: auto`. It owns `id` and `role`; every other attribute is
 /// spread onto it. Rows are `[role=row]`, cells `[role=gridcell]` / `[role=rowheader]` /
 /// `[role=columnheader]`, each with `data-grid-cell="row:column"` (the header row's is
-/// `"header:column"`); the sticky ones carry `data-grid-sticky`. Positions and sizes are
-/// inline styles; give the sticky header and column a background.
+/// `"header:column"`); the pinned ones carry `data-grid-pinned="start|end"` (and the one beside
+/// the scrolling columns `data-grid-pin-edge="true"`). Positions and sizes are inline styles;
+/// give the pinned header and columns an opaque background.
 #[component]
 pub fn VirtualGrid(props: VirtualGridProps) -> Element {
     let mut props = props;
@@ -318,11 +349,122 @@ impl GridFocus {
     }
 }
 
-/// One data or sticky cell of a [`VirtualGrid`], positioned by `style`.
+/// Which edge of the grid a pinned column sits at.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum PinSide {
+    /// Pinned at the inline start (the left in LTR, the right in RTL).
+    Start,
+    /// Pinned at the inline end.
+    End,
+}
+
+impl PinSide {
+    /// The `data-grid-pinned` value.
+    fn token(self) -> &'static str {
+        match self {
+            PinSide::Start => "start",
+            PinSide::End => "end",
+        }
+    }
+}
+
+/// One pinned column: its side, the distance from its edge, its width, and whether it is the
+/// one next to the scrolling columns.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct PinnedColumn {
+    side: PinSide,
+    /// The px between the grid's edge and this column: the widths of the pinned columns of the
+    /// same side that lie between them.
+    offset: u32,
+    width: u32,
+    /// The innermost pinned column of its side (the one that gets the separating edge).
+    edge: bool,
+}
+
+/// How a [`VirtualGrid`]'s columns divide into the pinned start columns, the scrolling columns
+/// and the pinned end columns, with the widths of the pinned ones (row 388).
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct Pinning {
+    /// The number of data columns.
+    columns: usize,
+    /// The widths of the pinned start columns, in column order.
+    start: Vec<u32>,
+    /// The widths of the pinned end columns, in column order.
+    end: Vec<u32>,
+}
+
+impl Pinning {
+    /// The division of `columns` columns into `start` leading and `end` trailing pinned columns:
+    /// the start side is clamped to the column count first, the end side to what is left.
+    /// `width` is a column's width in px.
+    fn new(columns: usize, start: usize, end: usize, width: impl Fn(usize) -> u32) -> Self {
+        let start = start.min(columns);
+        let end = end.min(columns - start);
+        Self {
+            columns,
+            start: (0..start).map(&width).collect(),
+            end: (columns - end..columns).map(&width).collect(),
+        }
+    }
+
+    /// How many leading columns are pinned.
+    fn start_count(&self) -> usize {
+        self.start.len()
+    }
+
+    /// How many trailing columns are pinned.
+    fn end_count(&self) -> usize {
+        self.end.len()
+    }
+
+    /// How many columns scroll (those between the two pinned sides).
+    fn scrolling_count(&self) -> usize {
+        self.columns - self.start.len() - self.end.len()
+    }
+
+    /// The px the pinned start columns take at the inline start.
+    fn start_width(&self) -> u32 {
+        self.start.iter().fold(0, |sum, w| sum.saturating_add(*w))
+    }
+
+    /// The px the pinned end columns take at the inline end.
+    fn end_width(&self) -> u32 {
+        self.end.iter().fold(0, |sum, w| sum.saturating_add(*w))
+    }
+
+    /// The pinned column `column` is, or `None` for a scrolling one.
+    fn at(&self, column: usize) -> Option<PinnedColumn> {
+        let end_from = self.columns - self.end.len();
+        if column < self.start.len() {
+            let offset = self.start[..column].iter().sum();
+            Some(PinnedColumn {
+                side: PinSide::Start,
+                offset,
+                width: self.start[column],
+                edge: column + 1 == self.start.len(),
+            })
+        } else if column >= end_from && column < self.columns {
+            let index = column - end_from;
+            let offset = self.end[index + 1..].iter().sum();
+            Some(PinnedColumn {
+                side: PinSide::End,
+                offset,
+                width: self.end[index],
+                edge: index == 0,
+            })
+        } else {
+            None
+        }
+    }
+}
+
+/// One data or pinned cell of a [`VirtualGrid`], positioned by `style`. `row_header` makes it a
+/// `role="rowheader"` (the first column, when a start column is pinned).
 #[allow(clippy::too_many_arguments)]
 fn grid_cell(
     cell: (usize, usize),
-    is_sticky: bool,
+    pin: Option<PinnedColumn>,
+    row_header: bool,
     focusable: bool,
     find_match: bool,
     style: String,
@@ -334,10 +476,11 @@ fn grid_cell(
         div {
             // key-ok: a column is a position of the grid, not an item (`row_key` names rows)
             key: "{column}",
-            role: if is_sticky { "rowheader" } else { "gridcell" },
+            role: if row_header { "rowheader" } else { "gridcell" },
             "aria-colindex": column + 1,
             "data-grid-cell": "{row}:{column}",
-            "data-grid-sticky": is_sticky.then_some("true"),
+            "data-grid-pinned": pin.map(|pin| pin.side.token()),
+            "data-grid-pin-edge": pin.filter(|pin| pin.edge).map(|_| "true"),
             "data-grid-active": focusable.then_some("true"),
             "data-find-match": find_match.then_some("true"),
             tabindex: if focusable { "0" } else { "-1" },
@@ -353,7 +496,7 @@ fn grid_cell(
 /// One column header of a [`VirtualGrid`], positioned by `style`.
 fn header_cell(
     column: usize,
-    is_sticky: bool,
+    pin: Option<PinnedColumn>,
     style: String,
     render_header: Callback<usize, Element>,
     column_sort: Option<Callback<usize, Option<SortDirection>>>,
@@ -366,33 +509,81 @@ fn header_cell(
             "aria-colindex": column + 1,
             "data-grid-cell": "header:{column}",
             "aria-sort": sort_token(column_sort, column),
-            "data-grid-sticky": is_sticky.then_some("true"),
+            "data-grid-pinned": pin.map(|pin| pin.side.token()),
+            "data-grid-pin-edge": pin.filter(|pin| pin.edge).map(|_| "true"),
             style,
             {render_header(column)}
         }
     }
 }
 
-/// The style of a sticky first-column cell: in flow at the row's inline start.
-fn sticky_cell_style(width: u32) -> String {
-    format!("position: sticky; inset-inline-start: 0; z-index: 1; flex: none; box-sizing: border-box; width: {width}px; height: 100%;")
+/// The style of a pinned cell: in flow, sticky at `offset` px from its edge. The innermost end
+/// column also takes the free space before it, so the end columns reach the inline end of a grid
+/// whose columns are narrower than its container.
+fn pinned_cell_style(pin: PinnedColumn) -> String {
+    let PinnedColumn {
+        side,
+        offset,
+        width,
+        edge,
+    } = pin;
+    let place = match side {
+        PinSide::Start => format!("inset-inline-start: {offset}px;"),
+        PinSide::End if edge => format!("inset-inline-end: {offset}px; margin-inline-start: auto;"),
+        PinSide::End => format!("inset-inline-end: {offset}px;"),
+    };
+    format!("position: sticky; {place} z-index: 1; flex: none; box-sizing: border-box; width: {width}px; height: 100%;")
 }
 
-/// The column widths of a [`VirtualGrid`] and the sticky first column's width (0 without one).
-fn column_widths(
-    column_count: usize,
-    column_width: Option<Callback<usize, u32>>,
-    sticky_first_column: bool,
-) -> (Vec<u32>, u32) {
-    let widths: Vec<u32> = (0..column_count)
-        .map(|column| column_width.map_or(DEFAULT_COLUMN_WIDTH, |f| f(column)))
-        .collect();
-    let sticky = if sticky_first_column {
-        widths.first().copied().unwrap_or(0)
+/// The style of the header row: pinned to the top, or scrolling with the body.
+fn header_row_style(pinned: bool, width: u32, header: u32) -> String {
+    let position = if pinned {
+        "position: sticky; top: 0;"
     } else {
-        0
+        "position: relative;"
     };
-    (widths, sticky)
+    format!("{position} z-index: 2; display: flex; width: {width}px; min-width: 100%; height: {header}px;")
+}
+
+/// The column widths of a [`VirtualGrid`], in px.
+fn column_widths(column_count: usize, column_width: Option<Callback<usize, u32>>) -> Vec<u32> {
+    (0..column_count)
+        .map(|column| column_width.map_or(DEFAULT_COLUMN_WIDTH, |f| f(column)))
+        .collect()
+}
+
+/// The px the grid's pinned edges cover, for scrolling a cell into view clear of them.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize)]
+struct Cover {
+    /// The header row's height (the body starts below it, pinned or not).
+    header: u32,
+    /// The px the pinned header covers at the top: `header`, or 0 when it scrolls away.
+    top: u32,
+    /// The px the pinned start columns cover at the inline start.
+    start: u32,
+    /// The px the pinned end columns cover at the inline end.
+    end: u32,
+}
+
+impl Cover {
+    fn new(header: u32, pin_header: bool, pinning: &Pinning) -> Self {
+        Self {
+            header,
+            top: if pin_header { header } else { 0 },
+            start: pinning.start_width(),
+            end: pinning.end_width(),
+        }
+    }
+
+    /// What the windowing engine needs of it.
+    fn pins(self, pinning: &Pinning) -> Pins {
+        Pins {
+            start_columns: pinning.start_count(),
+            top: self.top,
+            lead: self.header - self.top,
+            inline: self.start.saturating_add(self.end),
+        }
+    }
 }
 
 /// Every cell mounted, every column in flow, chunks of rows skipped by the browser while
@@ -414,7 +605,9 @@ fn VirtualGridContentVisibility(
         column_sort,
         row_selected,
         header_height,
-        sticky_first_column,
+        pin_header,
+        pinned_columns_start,
+        pinned_columns_end,
         dir,
         on_active_change,
         attributes,
@@ -430,16 +623,26 @@ fn VirtualGridContentVisibility(
     } else {
         0
     };
-    let geometry =
-        use_memo(move || column_widths(column_count(), column_width, sticky_first_column()));
-    let sticky_width = geometry.read().1;
+    let geometry = use_memo(move || {
+        let widths = column_widths(column_count(), column_width);
+        let pinning = Pinning::new(
+            widths.len(),
+            pinned_columns_start(),
+            pinned_columns_end(),
+            |column| widths[column],
+        );
+        (widths, pinning)
+    });
+    let cover = Cover::new(header, pin_header(), &geometry.read().1);
+    // Read when the focus effect runs, so it sees this render's cover, not the first one's.
+    let mut cover_cell = use_hook(|| CopyValue::new(Cover::default()));
+    cover_cell.set(cover);
     use_focus_active_cell(
         container_id,
         focus.active,
         focus.focus_request,
         true,
-        header,
-        sticky_width,
+        cover_cell,
     );
     // The viewport's height, for PageUp/PageDown (a viewport of rows).
     let mut viewport = use_signal(|| 0u32);
@@ -456,8 +659,8 @@ fn VirtualGridContentVisibility(
 
     let header_rows = usize::from(render_header.is_some());
     let geometry = geometry.read();
-    let widths = &geometry.0;
-    let sticky = usize::from(sticky_first_column() && !widths.is_empty());
+    let (widths, pinning) = (&geometry.0, &geometry.1);
+    let row_header = pinning.start_count() > 0;
     let width: u32 = widths.iter().copied().fold(0, u32::saturating_add);
 
     let owned = attributes!(div {
@@ -489,10 +692,11 @@ fn VirtualGridContentVisibility(
                         role: "row",
                         "aria-rowindex": 1,
                         "data-grid-header": "true",
-                        style: "position: sticky; top: 0; z-index: 2; display: flex; width: {width}px; min-width: 100%; height: {header}px;",
+                        style: header_row_style(pin_header(), width, header),
                         {widths.iter().enumerate().map(|(column, &size)| {
-                            let style = if column < sticky { sticky_cell_style(size) } else { in_flow(size) };
-                            header_cell(column, column < sticky, style, render_header, column_sort)
+                            let pin = pinning.at(column);
+                            let style = pin.map_or_else(|| in_flow(size), pinned_cell_style);
+                            header_cell(column, pin, style, render_header, column_sort)
                         })}
                     }
                 }
@@ -507,9 +711,10 @@ fn VirtualGridContentVisibility(
                             "data-state": selected_state(row_selected, row_key, row),
                             style: "display: flex; width: {width}px; min-width: 100%; height: {height}px;",
                             {widths.iter().enumerate().map(|(column, &size)| {
-                                let style = if column < sticky { sticky_cell_style(size) } else { in_flow(size) };
+                                let pin = pinning.at(column);
+                                let style = pin.map_or_else(|| in_flow(size), pinned_cell_style);
                                 let focusable = tab_stop == Some((row, column));
-                                grid_cell((row, column), column < sticky, focusable, false, style, render_cell, focus)
+                                grid_cell((row, column), pin, row_header && column == 0, focusable, false, style, render_cell, focus)
                             })}
                         }
                     }
@@ -537,7 +742,9 @@ fn VirtualGridWindowed(
         column_sort,
         row_selected,
         header_height,
-        sticky_first_column,
+        pin_header,
+        pinned_columns_start,
+        pinned_columns_end,
         row_buffer,
         column_buffer,
         dir,
@@ -566,18 +773,21 @@ fn VirtualGridWindowed(
         let height = move |row: usize| row_height.map_or(DEFAULT_ROW_HEIGHT, |f| f(row));
         SizeEstimates::evaluate(row_count(), Some(&height))
     });
-    // The sticky column is not part of the scrolling axis: the columns engine indexes the
-    // columns after it.
+    // The pinned columns are not part of the scrolling axis: the columns engine indexes the
+    // columns between them (item `i` is data column `i + pinned start columns`).
     let column_geometry = use_memo(move || {
         let width = move |column: usize| column_width.map_or(DEFAULT_COLUMN_WIDTH, |f| f(column));
-        let columns = column_count();
-        let sticky = usize::from(sticky_first_column() && columns > 0);
-        let sticky_width = if sticky == 1 { width(0) } else { 0 };
-        let scrolling = move |i: usize| width(i + sticky);
+        let pinning = Pinning::new(
+            column_count(),
+            pinned_columns_start(),
+            pinned_columns_end(),
+            width,
+        );
+        let start = pinning.start_count();
+        let scrolling = move |i: usize| width(i + start);
         (
-            SizeEstimates::evaluate(columns - sticky, Some(&scrolling)),
-            sticky,
-            sticky_width,
+            SizeEstimates::evaluate(pinning.scrolling_count(), Some(&scrolling)),
+            pinning,
         )
     });
     let header = if render_header.is_some() {
@@ -586,26 +796,25 @@ fn VirtualGridWindowed(
         0
     };
 
-    let (sticky_width, sticky) = {
-        let geometry = column_geometry.read();
-        (geometry.2, geometry.1)
-    };
+    let cover = Cover::new(header, pin_header(), &column_geometry.read().1);
+    // Read when the focus and reveal effects run, so they see this render's cover.
+    let mut cover_cell = use_hook(|| CopyValue::new(Cover::default()));
+    cover_cell.set(cover);
     use_focus_active_cell(
         container_id,
         focus.active,
         focus.focus_request,
         true,
-        header,
-        sticky_width,
+        cover_cell,
     );
 
     // Find-in-page placeholders (opt-in, `virtual/find.rs`): a placeholder sits exactly where its
     // cell would (rows and columns have known sizes), so the browser's own scroll to a match
-    // mounts the real cell; the grid marks it and scrolls it clear of the sticky edges (or to
+    // mounts the real cell; the grid marks it and scrolls it clear of the pinned edges (or to
     // its place first, when a reveal did not scroll there).
-    // Every column's `(start, width)` on the canvas, the sticky one included.
+    // Every column's `(start, width)` on the canvas, the pinned ones included.
     let find_columns = use_memo(move || {
-        let (widths, _) = column_widths(column_count(), column_width, false);
+        let widths = column_widths(column_count(), column_width);
         let mut start = 0u32;
         widths
             .into_iter()
@@ -617,11 +826,16 @@ fn VirtualGridWindowed(
             .collect::<Vec<_>>()
     });
     let mut find_match = use_signal(|| None::<(usize, usize)>);
-    let hydrated = use_find_in_page(container_id, text_value.is_some(), move |index: String| {
-        if let Some(cell) = parse_cell(&index) {
-            find_match.set(Some(cell));
-        }
-    });
+    let hydrated = use_find_in_page(
+        container_id,
+        text_value.is_some(),
+        None,
+        move |index: String| {
+            if let Some(cell) = parse_cell(&index) {
+                find_match.set(Some(cell));
+            }
+        },
+    );
     use_effect(move || {
         if let Some((row, column)) = find_match() {
             let top = (0..row)
@@ -634,8 +848,7 @@ fn VirtualGridWindowed(
             reveal_cell(
                 container_id.peek().clone(),
                 format!(r#"[data-grid-cell="{row}:{column}"]"#),
-                header,
-                column_geometry.peek().2,
+                *cover_cell.read(),
                 (top, start),
             );
         }
@@ -655,13 +868,18 @@ fn VirtualGridWindowed(
         let geometry = column_geometry.read();
         let mut engine = engine;
         engine.with_mut(|engine| {
-            engine.sync(&rows, &geometry.0, geometry.1, geometry.2, header);
+            engine.sync(&rows, &geometry.0, cover.pins(&geometry.1));
             engine.plan(row_buffer(), column_buffer(), tab_stop)
         })
     };
 
     let header_rows = usize::from(render_header.is_some());
-    let width = sticky_width + plan.pane_width;
+    let pinning = column_geometry.read().1.clone();
+    let (start_count, end_count) = (pinning.start_count(), pinning.end_count());
+    let width = cover
+        .start
+        .saturating_add(plan.pane_width)
+        .saturating_add(cover.end);
     let columns = plan.columns;
     let find_match = find_match();
 
@@ -675,20 +893,22 @@ fn VirtualGridWindowed(
     });
     let merged = merge_attributes(vec![attributes, owned]);
 
-    // A cell: the sticky one sits in flow at the row's inline start, the others are placed
-    // absolutely in the scrolling pane.
+    // A cell: a pinned one sits in flow beside the pane (sticky at its edge), the others are
+    // placed absolutely in the scrolling pane.
+    let cell_pinning = pinning.clone();
     let cell = move |row: usize, column: usize, start: u32, size: u32| {
-        let is_sticky = column < sticky;
-        let style = if is_sticky {
-            sticky_cell_style(size)
-        } else {
-            format!("position: absolute; inset-block: 0; inset-inline-start: {start}px; box-sizing: border-box; width: {size}px;")
+        let pin = cell_pinning.at(column);
+        let style = match pin {
+            Some(pin) => pinned_cell_style(pin),
+            None => format!("position: absolute; inset-block: 0; inset-inline-start: {start}px; box-sizing: border-box; width: {size}px;"),
         };
         let focusable = tab_stop == Some((row, column));
         let matched = find_match == Some((row, column));
+        let row_header = column == 0 && cell_pinning.start_count() > 0;
         grid_cell(
             (row, column),
-            is_sticky,
+            pin,
+            row_header,
             focusable,
             matched,
             style,
@@ -696,7 +916,17 @@ fn VirtualGridWindowed(
             focus,
         )
     };
-    let sticky_column_width = sticky_width;
+    let pinned_header = |render_header: Callback<usize, Element>, column: usize| {
+        let pin = pinning.at(column);
+        header_cell(
+            column,
+            pin,
+            pin.map(pinned_cell_style).unwrap_or_default(),
+            render_header,
+            column_sort,
+        )
+    };
+    let total_columns = column_count();
     let pane_width = plan.pane_width;
     let header_cells = columns.clone();
     let body_rows = shape.rows();
@@ -709,19 +939,18 @@ fn VirtualGridWindowed(
                         role: "row",
                         "aria-rowindex": 1,
                         "data-grid-header": "true",
-                        style: "position: sticky; top: 0; z-index: 2; display: flex; width: {width}px; min-width: 100%; height: {header}px;",
-                        if sticky == 1 {
-                            {header_cell(0, true, sticky_cell_style(sticky_column_width), render_header, column_sort)}
-                        }
+                        style: header_row_style(pin_header(), width, header),
+                        {(0..start_count).map(|column| pinned_header(render_header, column))}
                         div { style: "position: relative; flex: none; width: {pane_width}px;",
                             {header_cells.iter().map(|column| header_cell(
                                 column.index(),
-                                false,
+                                None,
                                 format!("position: absolute; inset-block: 0; inset-inline-start: {}px; box-sizing: border-box; width: {}px;", column.start(), column.size()),
                                 render_header,
                                 column_sort,
                             ))}
                         }
+                        {(total_columns - end_count..total_columns).map(|column| pinned_header(render_header, column))}
                     }
                 }
                 div { style: "position: relative; width: {width}px; min-width: 100%; height: {plan.body_height}px;",
@@ -741,15 +970,14 @@ fn VirtualGridWindowed(
                             "aria-selected": selected_token(row_selected, row_key, row.index()),
                             "data-state": selected_state(row_selected, row_key, row.index()),
                             style: "position: absolute; inset-inline-start: 0; top: {row.start()}px; display: flex; width: {width}px; min-width: 100%; height: {row.size()}px;",
-                            if sticky == 1 {
-                                {cell(row.index(), 0, 0, sticky_column_width)}
-                            }
+                            {(0..start_count).map(|column| cell(row.index(), column, 0, 0))}
                             div { style: "position: relative; flex: none; width: {pane_width}px;",
                                 // An iterator of keyed elements, not a `for` around an
                                 // expression: the key must be on each list item's root, or a
                                 // window move re-creates every cell (and drops focus).
                                 {columns.iter().map(|column| cell(row.index(), column.index(), column.start(), column.size()))}
                             }
+                            {(total_columns - end_count..total_columns).map(|column| cell(row.index(), column, 0, 0))}
                         }
                     }
                 }
@@ -783,7 +1011,7 @@ pub struct VirtualWrapGridProps {
     /// in the DOM inside a `hidden="until-found"` placeholder, so the browser's find-in-page (and a
     /// `#:~:text=` link) can match items that are not mounted; when the browser reveals a match it
     /// fires `beforematch` on that placeholder, and the component scrolls the real item into view
-    /// and marks it `data-find-match="true"` (the find bar highlights the hidden placeholder, not
+    /// (by the item's own box, so row estimates that are off do not matter) and marks it `data-find-match="true"` (the find bar highlights the hidden placeholder, not
     /// the item, so style the attribute to show which item matched). Costs about two DOM nodes
     /// per item (an empty text gets no placeholder), mounted after hydration (not
     /// server-rendered), and a mounted item's match counts twice. Engines without `until-found`
@@ -815,7 +1043,7 @@ pub struct VirtualWrapGridProps {
     /// classes of `dx-effects.css`; see [`ScrollFade`]). Defaults to [`ScrollFade::None`]. It follows
     /// the container's own scroll offset, whatever rows or cells are mounted, and a container whose
     /// content fits has no fade. The fade is a mask, so it also fades a border or background on the
-    /// container (put those on a wrapper) and a `VirtualGrid`'s sticky header (prefer
+    /// container (put those on a wrapper) and a `VirtualGrid`'s pinned header (prefer
     /// [`ScrollFade::Bottom`] / [`ScrollFade::End`] with `render_header`); [`ScrollFade::Both`] masks
     /// all four edges of a two-axis scroller.
     #[props(default)]
@@ -959,6 +1187,11 @@ impl WrapFocus {
     }
 }
 
+/// The selector of the mounted item a find match names (`data-find-index` is the item index).
+fn wrap_item_selector(index: &str) -> String {
+    format!(r#"[data-grid-index="{index}"]"#)
+}
+
 /// The cells of row `row` of a [`VirtualWrapGrid`].
 #[allow(clippy::too_many_arguments)]
 fn wrap_row_cells(
@@ -1016,7 +1249,14 @@ fn VirtualWrapGridContentVisibility(
     let container_id = use_unique_id();
     let focus = WrapFocus::use_new(item_key, count, on_active_change);
     let active_cell = use_active_cell(focus.active, columns);
-    use_focus_active_cell(container_id, active_cell, focus.focus_request, false, 0, 0);
+    let no_cover = use_hook(|| CopyValue::new(Cover::default()));
+    use_focus_active_cell(
+        container_id,
+        active_cell,
+        focus.focus_request,
+        false,
+        no_cover,
+    );
     // The viewport's height, for PageUp/PageDown (a viewport of rows).
     let mut viewport = use_signal(|| 0u32);
 
@@ -1108,18 +1348,30 @@ fn VirtualWrapGridWindowed(
     });
 
     let active_cell = use_active_cell(focus.active, columns);
-    use_focus_active_cell(container_id, active_cell, focus.focus_request, false, 0, 0);
+    let no_cover = use_hook(|| CopyValue::new(Cover::default()));
+    use_focus_active_cell(
+        container_id,
+        active_cell,
+        focus.focus_request,
+        false,
+        no_cover,
+    );
 
     // Find-in-page placeholders (opt-in, `virtual/find.rs`): rows of placeholders at the
     // estimated row heights; a match names the item, and the grid centres its row (which mounts
     // it) and marks it.
     let mut find_match = use_signal(|| None::<usize>);
-    let hydrated = use_find_in_page(container_id, text_value.is_some(), move |index: String| {
-        if let Ok(index) = index.parse::<usize>() {
-            find_match.set(Some(index));
-            bridge.reveal(index / columns.peek().max(1));
-        }
-    });
+    let hydrated = use_find_in_page(
+        container_id,
+        text_value.is_some(),
+        Some(wrap_item_selector),
+        move |index: String| {
+            if let Ok(index) = index.parse::<usize>() {
+                find_match.set(Some(index));
+                bridge.reveal(index / columns.peek().max(1));
+            }
+        },
+    );
 
     let columns_now = columns().max(1);
     let shape = GridShape::wrapping(count(), columns_now);
@@ -1268,7 +1520,7 @@ pub struct VirtualJustifiedGridProps {
     /// classes of `dx-effects.css`; see [`ScrollFade`]). Defaults to [`ScrollFade::None`]. It follows
     /// the container's own scroll offset, whatever rows or cells are mounted, and a container whose
     /// content fits has no fade. The fade is a mask, so it also fades a border or background on the
-    /// container (put those on a wrapper) and a `VirtualGrid`'s sticky header (prefer
+    /// container (put those on a wrapper) and a `VirtualGrid`'s pinned header (prefer
     /// [`ScrollFade::Bottom`] / [`ScrollFade::End`] with `render_header`); [`ScrollFade::Both`] masks
     /// all four edges of a two-axis scroller.
     #[props(default)]
@@ -1670,14 +1922,13 @@ fn key_to_grid_key(key: Key, ctrl: bool, direction: Direction) -> Option<GridKey
 }
 
 /// After a keyboard move has rendered, focus the active cell and scroll it into view, clear of
-/// the sticky header (`header` px) and sticky column (`sticky_width` px).
+/// the pinned header and the pinned columns on both sides (`cover`, read when the effect runs).
 fn use_focus_active_cell(
     container_id: Signal<String>,
     active: impl Readable<Target = (usize, usize)> + Copy + 'static,
     focus_request: Signal<u64>,
     controls: bool,
-    header: u32,
-    sticky_width: u32,
+    cover: CopyValue<Cover>,
 ) {
     use_effect(move || {
         if focus_request() == 0 {
@@ -1688,8 +1939,7 @@ fn use_focus_active_cell(
             container_id.peek().clone(),
             format!(r#"[data-grid-cell="{row}:{column}"]"#),
             if controls { CONTROL_SELECTOR } else { "" },
-            header,
-            sticky_width,
+            *cover.read(),
         );
     });
 }
@@ -1710,8 +1960,7 @@ fn use_focus_active_tile(
             container_id.peek().clone(),
             format!(r#"[data-grid-index="{index}"]"#),
             "",
-            0,
-            0,
+            Cover::default(),
         );
     });
 }
@@ -1720,44 +1969,32 @@ fn use_focus_active_tile(
 ///
 /// With a non-empty `control_selector` (the data grid's [`CONTROL_SELECTOR`]) focus goes to the
 /// cell's control when it holds one, else to the cell.
-fn focus_and_reveal(
-    container_id: String,
-    selector: String,
-    control_selector: &str,
-    header: u32,
-    sticky_width: u32,
-) {
+fn focus_and_reveal(container_id: String, selector: String, control_selector: &str, cover: Cover) {
     let eval = document::eval(FOCUS_CELL_JS);
     let _ = eval.send((
         container_id,
         selector,
         control_selector,
-        header,
-        sticky_width,
+        cover,
         true,
         None::<(u32, u32)>,
     ));
 }
 
-/// Scrolls the cell `selector` names into view beside the sticky edges, without moving focus:
+/// Scrolls the cell `selector` names into view beside the pinned edges, without moving focus:
 /// where a find-in-page match landed (the find bar keeps focus). `at` is the cell's place on the
 /// canvas (its row's top, its column's start), for a cell the window does not hold yet.
-fn reveal_cell(
-    container_id: String,
-    selector: String,
-    header: u32,
-    sticky_width: u32,
-    at: (u32, u32),
-) {
+fn reveal_cell(container_id: String, selector: String, cover: Cover, at: (u32, u32)) {
     let eval = document::eval(FOCUS_CELL_JS);
-    let _ = eval.send((container_id, selector, "", header, sticky_width, false, at));
+    let _ = eval.send((container_id, selector, "", cover, false, at));
 }
 
 /// Focuses the active cell once it is in the DOM (it is pinned, so the render that made it
 /// active mounts it; with `focus` false it only waits for it) and scrolls the container just
-/// enough to show it beside the sticky edges.
+/// enough to show it beside the pinned edges (`cover`: the header's height, the px the pinned
+/// header covers, and the px the start and end columns cover).
 const FOCUS_CELL_JS: &str = r#"
-    const [id, selector, controlSelector, header, stickyWidth, focus, at] = await dioxus.recv();
+    const [id, selector, controlSelector, cover, focus, at] = await dioxus.recv();
     let tries = 0;
     const go = () => {
         const grid = document.getElementById(id);
@@ -1768,8 +2005,10 @@ const FOCUS_CELL_JS: &str = r#"
             // column's start on the canvas): scroll there once, which moves the window onto it.
             if (at && tries === 0) {
                 const [y, x] = at;
-                grid.scrollTop = Math.max(0, y - (grid.clientHeight - header) / 2);
-                const inline = Math.max(0, x - stickyWidth - (grid.clientWidth - stickyWidth) / 2);
+                const open = grid.clientHeight - cover.top;
+                grid.scrollTop = Math.max(0, cover.header + y - cover.top - open / 2);
+                const pane = grid.clientWidth - cover.start - cover.end;
+                const inline = Math.max(0, x - cover.start - pane / 2);
                 grid.scrollLeft = getComputedStyle(grid).direction === "rtl" ? -inline : inline;
             }
             if (tries++ < 30) requestAnimationFrame(go);
@@ -1779,14 +2018,14 @@ const FOCUS_CELL_JS: &str = r#"
         if (focus) (controlSelector && cell.querySelector(controlSelector) || cell).focus({ preventScroll: true });
         const box = grid.getBoundingClientRect();
         const rect = cell.getBoundingClientRect();
-        const top = box.top + grid.clientTop + header;
+        const top = box.top + grid.clientTop + cover.top;
         const bottom = box.top + grid.clientTop + grid.clientHeight;
         if (rect.top < top) grid.scrollTop -= top - rect.top;
         else if (rect.bottom > bottom) grid.scrollTop += rect.bottom - bottom;
-        if (cell.hasAttribute("data-grid-sticky")) return;
+        if (cell.hasAttribute("data-grid-pinned")) return;
         const rtl = getComputedStyle(grid).direction === "rtl";
-        const left = box.left + grid.clientLeft + (rtl ? 0 : stickyWidth);
-        const right = box.left + grid.clientLeft + grid.clientWidth - (rtl ? stickyWidth : 0);
+        const left = box.left + grid.clientLeft + (rtl ? cover.end : cover.start);
+        const right = box.left + grid.clientLeft + grid.clientWidth - (rtl ? cover.start : cover.end);
         if (rect.left < left) grid.scrollLeft -= left - rect.left;
         else if (rect.right > right) grid.scrollLeft += rect.right - right;
     };
@@ -1828,6 +2067,129 @@ mod tests {
         assert_eq!(map(Key::Home, true, Direction::Ltr), Some(GridKey::First));
         assert_eq!(map(Key::End, true, Direction::Rtl), Some(GridKey::Last));
         assert_eq!(map(Key::Enter, false, Direction::Ltr), None);
+    }
+
+    fn pinning(columns: usize, start: usize, end: usize) -> Pinning {
+        // Column `c` is `10 * (c + 1)` px wide, so every offset is a distinct sum.
+        Pinning::new(columns, start, end, |column| 10 * (column as u32 + 1))
+    }
+
+    #[test]
+    fn start_columns_stack_from_the_inline_start_by_cumulative_width() {
+        let pins = pinning(8, 3, 0);
+        assert_eq!((pins.start_count(), pins.end_count()), (3, 0));
+        assert_eq!(pins.scrolling_count(), 5);
+        assert_eq!(pins.start_width(), 10 + 20 + 30);
+        let at = |column| pins.at(column).unwrap();
+        assert_eq!((at(0).offset, at(0).width), (0, 10));
+        assert_eq!((at(1).offset, at(1).width), (10, 20));
+        assert_eq!((at(2).offset, at(2).width), (30, 30));
+        assert!(!at(0).edge && !at(1).edge && at(2).edge);
+        assert!(pins.at(0).is_some_and(|pin| pin.side == PinSide::Start));
+        assert_eq!(pins.at(3), None);
+    }
+
+    #[test]
+    fn end_columns_stack_from_the_inline_end_by_cumulative_width() {
+        let pins = pinning(8, 0, 3);
+        assert_eq!(pins.scrolling_count(), 5);
+        assert_eq!(pins.end_width(), 60 + 70 + 80);
+        let at = |column| pins.at(column).unwrap();
+        // The last column hugs the edge; the one before it sits one column further in.
+        assert_eq!((at(7).offset, at(7).width), (0, 80));
+        assert_eq!((at(6).offset, at(6).width), (80, 70));
+        assert_eq!((at(5).offset, at(5).width), (150, 60));
+        assert!(at(5).edge && !at(6).edge && !at(7).edge);
+        assert!(pins.at(7).is_some_and(|pin| pin.side == PinSide::End));
+        assert_eq!(pins.at(4), None);
+        assert_eq!(pins.at(8), None);
+    }
+
+    #[test]
+    fn both_sides_leave_the_columns_between_them_scrolling() {
+        let pins = pinning(10, 2, 1);
+        assert_eq!(pins.scrolling_count(), 7);
+        assert_eq!((pins.start_width(), pins.end_width()), (30, 100));
+        let pinned: Vec<usize> = (0..10).filter(|c| pins.at(*c).is_some()).collect();
+        assert_eq!(pinned, vec![0, 1, 9]);
+    }
+
+    #[test]
+    fn the_counts_clamp_to_the_column_count_start_side_first() {
+        let pins = pinning(4, 3, 5);
+        assert_eq!((pins.start_count(), pins.end_count()), (3, 1));
+        assert_eq!(pins.scrolling_count(), 0);
+        let pins = pinning(2, 9, 9);
+        assert_eq!((pins.start_count(), pins.end_count()), (2, 0));
+        let pins = pinning(0, 1, 1);
+        assert_eq!(pins.scrolling_count(), 0);
+        assert_eq!(pins.at(0), None);
+    }
+
+    #[test]
+    fn a_pinned_edge_cell_of_each_side_carries_the_separator() {
+        let pins = pinning(6, 2, 2);
+        let edges: Vec<usize> = (0..6)
+            .filter(|c| pins.at(*c).is_some_and(|pin| pin.edge))
+            .collect();
+        assert_eq!(edges, vec![1, 4]);
+    }
+
+    #[test]
+    fn pinned_cells_are_sticky_at_logical_offsets() {
+        let pins = pinning(6, 2, 2);
+        let style = |column| pinned_cell_style(pins.at(column).unwrap());
+        assert!(style(1).contains("inset-inline-start: 10px;"));
+        assert!(!style(1).contains("margin-inline-start"));
+        // The innermost end column takes the free space, so the end columns reach the edge.
+        assert!(style(4).contains("inset-inline-end: 60px; margin-inline-start: auto;"));
+        assert!(style(5).contains("inset-inline-end: 0px;") && !style(5).contains("margin"));
+        for column in [0, 1, 4, 5] {
+            assert!(style(column).starts_with("position: sticky;"));
+            assert!(!style(column).contains("left") && !style(column).contains("right"));
+        }
+    }
+
+    #[test]
+    fn the_cover_is_what_the_pinned_edges_take() {
+        let pins = pinning(10, 2, 1);
+        let pinned = Cover::new(40, true, &pins);
+        assert_eq!(
+            pinned,
+            Cover {
+                header: 40,
+                top: 40,
+                start: 30,
+                end: 100
+            }
+        );
+        assert_eq!(
+            pinned.pins(&pins),
+            Pins {
+                start_columns: 2,
+                top: 40,
+                lead: 0,
+                inline: 130
+            }
+        );
+        // A header that scrolls away covers nothing and shifts the body down instead.
+        let scrolling = Cover::new(40, false, &pins);
+        assert_eq!(scrolling.top, 0);
+        assert_eq!(
+            scrolling.pins(&pins),
+            Pins {
+                start_columns: 2,
+                top: 0,
+                lead: 40,
+                inline: 130
+            }
+        );
+    }
+
+    #[test]
+    fn the_header_row_is_sticky_only_when_pinned() {
+        assert!(header_row_style(true, 500, 40).starts_with("position: sticky; top: 0;"));
+        assert!(header_row_style(false, 500, 40).starts_with("position: relative;"));
     }
 
     #[test]

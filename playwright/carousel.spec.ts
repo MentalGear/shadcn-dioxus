@@ -112,22 +112,15 @@ async function scrollIntoViewInstant(locator: Locator): Promise<void> {
  * The poll loop runs INSIDE the page (one `evaluate` call, a `requestAnimationFrame`
  * loop), not as repeated Node-side `expect().toPass()` round trips
  * (dev-docs/backlog.md row 112's construction: "sample in-page ... never
- * via separate round trips"). Root-caused for the vertical variant's
- * "ArrowDown/ArrowUp page the vertical carousel" test (row 112 instance 2,
- * ~1/5 red under `--workers=2`, 5/5 green under `--workers=1`, never
- * reproduced in an isolated repro of that one test): the *previous*
- * version's `toPass({ timeout: 3000 })` re-issued a fresh CDP round trip
- * (`content.boundingBox()` + `item.boundingBox()`) on every poll attempt,
- * so the 3000ms budget had to cover both the scroll-snap settle itself AND
- * however long each Node<->browser round trip took that attempt -- under
- * two workers' worth of concurrent Chromium/CPU contention specifically
- * (never under one), a slower round trip eats into the same fixed budget
- * as a slower settle, coupling a real UI wait to Node-process/IPC
- * scheduling latency that has nothing to do with whether the carousel
- * actually settled in time. Driving the whole wait from a single
- * `requestAnimationFrame` loop already running in the page removes that
- * coupling entirely: the 3000ms deadline is measured against
- * `performance.now()` in the SAME realm as the animation, with zero
+ * via separate round trips", row 112 instance 2). A Node-side `toPass({ timeout: 3000 })` would
+ * re-issue a fresh CDP round trip (`content.boundingBox()` + `item.boundingBox()`) on every
+ * poll attempt, so the 3000ms budget would have to cover both the scroll-snap settle itself AND
+ * however long each Node<->browser round trip takes -- under two workers' concurrent
+ * Chromium/CPU contention a slower round trip eats into the same fixed budget as a slower
+ * settle, coupling a real UI wait to Node-process/IPC scheduling latency that has nothing to do
+ * with whether the carousel settled in time. Driving the whole wait from a single
+ * `requestAnimationFrame` loop in the page removes that coupling: the 3000ms deadline is
+ * measured against `performance.now()` in the SAME realm as the animation, with zero
  * per-attempt IPC cost, so it reflects only genuine settle time.
  */
 async function expectSnappedToBoundary(content: Locator, item: Locator, orientation: "horizontal" | "vertical" = "horizontal") {
@@ -1394,9 +1387,17 @@ test.describe("Carousel: edge rubber-band, pointer (mode B3)", () => {
  * - only this carousel's own axis counts.
  *
  * SAMPLING (backlog row 112's construction): every sequence is dispatched
- * IN-PAGE with real inter-event timing (`playWheel`), and the transform is
- * sampled in-page on every animation frame and right after every event --
- * an animated value is never read across a CDP round trip. Synthetic
+ * IN-PAGE (`playWheel`), and the transform is sampled in-page right after
+ * every event and on every animation frame of the silence that follows --
+ * an animated value is never read across a CDP round trip.
+ * TIMING (backlog row 407): a sequence is ONE continuous stream, dispatched
+ * in a single task. D's rules read time only as silence (GAP_MS, the
+ * notched / slow-push windows, the backstop), so every one of them must see
+ * "no silence" inside the stream and exactly the test's `tailMs` after it.
+ * A stream spaced by timers is not that input on a loaded box: one late
+ * timer is a >100ms gap, which D rightly reads as a new gesture, and a tail
+ * split off that way is a short slow push released by "slow-silence".
+ * Dispatched in one task, no wall-clock gap can open inside the stream. Synthetic
  * `WheelEvent`s are untrusted, so they never scroll the scroller itself;
  * where a test needs the platform's own scroll (a fling arriving at slide 1)
  * it moves the scroller in-page, instantly, standing in for the compositor.
@@ -1429,8 +1430,6 @@ type WheelPlay = {
   axis?: "x" | "y";
   deltaMode?: number;
   shiftKey?: boolean;
-  /** Real time between events (ms). */
-  dtMs?: number;
   /** Keep sampling this long after the last event (ms). */
   tailMs?: number;
   /** After this many events, move the scroller (instantly) so its first
@@ -1494,7 +1493,6 @@ async function playWheel(content: Locator, play: WheelPlay): Promise<WheelRun> {
         const delta = lo - (horizontal ? c.left : c.top);
         el.scrollBy({ left: horizontal ? delta : 0, top: horizontal ? 0 : delta, behavior: "instant" });
       }
-      if (i < p.deltas.length - 1) await sleep(p.dtMs ?? 16);
     }
     await sleep(p.tailMs ?? 0);
     running = false;
@@ -1707,9 +1705,9 @@ test.describe("Carousel: wheel/trackpad edge band (mode D, platform-aware)", () 
     const deltas = neg([...WHEEL.momentum, ...WHEEL.repush]);
     const run = await playWheel(content, { deltas, arriveAtStartAfter: 4, tailMs: 50 });
     const nMomentum = WHEEL.momentum.length;
-    const tRepush = run.eventTimes[nMomentum];
-    const before = run.samples.filter((s) => s.t < tRepush);
-    expect(Math.max(0, ...before.map((s) => Math.abs(s.v))), "no band during the platform's own arrival").toBe(0);
+    // The stream is one task, so the arrival's samples are its events' own (by index, not by time).
+    const before = run.afterEvent.slice(0, nMomentum);
+    expect(Math.max(0, ...before.map((v) => Math.abs(v))), "no band during the platform's own arrival").toBe(0);
     expect(Math.max(...run.afterEvent.slice(nMomentum)), "the re-push is owned: D draws its band").toBeGreaterThan(5);
 
     const recs = await wheelRecords(content);
@@ -1747,8 +1745,8 @@ test.describe("Carousel: wheel/trackpad edge band (mode D, platform-aware)", () 
   });
 
   for (const [label, play] of [
-    ["deltaMode 1 (lines)", { deltas: [-3, -3, -3, -3], deltaMode: 1, dtMs: 40 }],
-    ["deltaMode 0, repeated identical 120px steps", { deltas: [-120, -120, -120, -120], dtMs: 40 }],
+    ["deltaMode 1 (lines)", { deltas: [-3, -3, -3, -3], deltaMode: 1 }],
+    ["deltaMode 0, repeated identical 120px steps", { deltas: [-120, -120, -120, -120] }],
   ] as const) {
     test(`a notched mouse wheel -- ${label} -- releases fast, not after the 1500ms backstop`, async ({ page }) => {
       await enableWheelDebug(page);

@@ -135,7 +135,9 @@ pub fn MessageScrollerRows(props: MessageScrollerRowsProps) -> Element {
 
 /// The jump control: scrolls to the end (or start) of the transcript. Renders
 /// the themed `Button` (a secondary icon button by default) with an arrow and a
-/// screen-reader label unless `children` are given.
+/// screen-reader label unless `children` are given. The button sits in a `dx-message-scroller-jump`
+/// wrapper that places it on the frame's edge and slides and fades it; the button's own look is
+/// tuned through Button's slot variables.
 #[component]
 pub fn MessageScrollerButton(
     #[props(default)] direction: MessageScrollerDirection,
@@ -153,6 +155,10 @@ pub fn MessageScrollerButton(
         "data-slot": "message-scroller-button",
     });
     let merged = merge_attributes(vec![base, attributes]);
+    let jump_edge = match direction {
+        MessageScrollerDirection::End => "end",
+        MessageScrollerDirection::Start => "start",
+    };
     let label = match direction {
         MessageScrollerDirection::End => "Scroll to end",
         MessageScrollerDirection::Start => "Scroll to start",
@@ -167,12 +173,14 @@ pub fn MessageScrollerButton(
             attributes: merged,
             r#as: move |attributes: Vec<Attribute>| {
                 rsx! {
-                    Button { variant, size, attributes,
-                        if let Some(children) = children.clone() {
-                            {children}
-                        } else {
-                            ArrowDown { size: "16px", "aria-hidden": "true" }
-                            span { class: "dx-message-scroller-sr-only", "{label}" }
+                    span { class: "dx-message-scroller-jump", "data-direction": jump_edge,
+                        Button { variant, size, attributes,
+                            if let Some(children) = children.clone() {
+                                {children}
+                            } else {
+                                ArrowDown { size: "16px", "aria-hidden": "true" }
+                                span { class: "dx-message-scroller-sr-only", "{label}" }
+                            }
                         }
                     }
                 }

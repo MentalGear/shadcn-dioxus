@@ -7,8 +7,13 @@
    own styling must win, not compete. Same exclusion signal as
    `drawer/style.css`'s close button. */
 .dx-dropdown-menu {
-  position: relative;
-  display: inline-block;
+  position: var(--dx-dropdown-menu-position, relative);
+  display: var(--dx-dropdown-menu-display, inline-block);
+}
+
+/* Zero specificity: a class on the root that sets a width still wins. */
+:where(.dx-dropdown-menu) {
+  width: var(--dx-dropdown-menu-width, auto);
 }
 
 /* The default trigger is Nova's outline Button at the default size (shadcn-ui/ui@295a1f1

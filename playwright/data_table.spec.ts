@@ -123,7 +123,7 @@ test("Next/Previous move pages and disable at the ends", async ({ page }) => {
 //
 // Backlog row 340: the demo is one `DataTable<Payment>` (columns, row key, features) and the
 // component owns sort/filter/page/selection, so these assert what the model guarantees, not
-// what hand-written markup happened to do.
+// an accident of hand-written markup.
 
 const header = (page: Page, name: string) => table(page).locator("th", { hasText: name });
 const sortButton = (page: Page, name: string) => header(page, name).getByRole("button");
