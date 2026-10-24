@@ -11,7 +11,7 @@ stdin) independently of the splitter and checks against dev-docs/backlog/:
      as many times as in the original (multiset containment); the lines that notes add are listed.
 Exit 0 and a summary line when nothing is missing; exit 1 listing every missing cell / line otherwise.
 
-Run: python3 -I scripts/backlog-split-verify.py [original-backlog.md | -]
+Run: python3 -I dev-docs/archive/scripts/backlog-split-verify.py [original-backlog.md | -]
 """
 import re
 import subprocess
@@ -19,7 +19,7 @@ import sys
 from collections import Counter
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parents[3]
 BACKLOG = ROOT / "dev-docs" / "backlog"
 BASE_COMMIT = "de7059ba"
 SECTION_OF = ["Item", "Status / trigger", "Size", "Detail"]  # old columns: Item, Trigger, Effort, Notes

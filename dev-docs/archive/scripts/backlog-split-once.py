@@ -5,10 +5,10 @@ Input: the original table file (default: `git show de7059ba:dev-docs/backlog.md`
 Output (under dev-docs/backlog/): <NNN>-<slug>.md per open row, done/<NNN>-<slug>.md per done row,
 notes/<slug>.md per narrative section. It does NOT write dev-docs/backlog.md (scripts/backlog-index.py does).
 
-Kept for provenance and so the proof in scripts/backlog-split-verify.py can be re-run against the same input.
+Kept for provenance and so the proof in dev-docs/archive/scripts/backlog-split-verify.py can be re-run against the same input.
 After the split the row files are the source of truth; do not re-run this over edited files.
 
-Run: python3 -I scripts/backlog-split-once.py [original-backlog.md]
+Run: python3 -I dev-docs/archive/scripts/backlog-split-once.py [original-backlog.md]
 """
 import json
 import re
@@ -16,7 +16,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parents[3]
 OUT = ROOT / "dev-docs" / "backlog"
 BASE_COMMIT = "de7059ba"
 
