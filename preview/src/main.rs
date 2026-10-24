@@ -1318,6 +1318,9 @@ fn Docs(dark_mode: Option<bool>) -> Element {
                         li { "Customize the generated Rust and CSS to fit your app." }
                         li { "Run the update command now and then; it keeps your edits." }
                     }
+                    // The header and the first four sections fill the first screens at every width: the top group.
+                    // Inside the section, so `.dx-docs-section + .dx-docs-section` still matches the next one.
+                    FirstPaintGate {}
                 }
                 section { class: "dx-docs-section",
                     h2 { id: "{docs_section_slug(DOCS_SECTIONS[4])}", "{DOCS_SECTIONS[4]}" }
@@ -1610,6 +1613,8 @@ fn Demos(dark_mode: Option<bool>) -> Element {
                             }
                         }
                     }
+                    // The header and the card grid are the page's top group.
+                    FirstPaintGate {}
                 }
             }
         }
@@ -2178,14 +2183,7 @@ fn ComponentVariantHighlight(
         format!("component-preview-frame-{name}")
     };
     rsx! {
-        // The page's first paint waits until the main demo frame has been parsed (a render-blocking `expect` link
-        // in the SSR head; Chromium 124+, ignored elsewhere). Painted earlier, the half-parsed top of the page is on
-        // screen and every later sibling re-lays it out: a centred demo row re-centres as its items arrive, a
-        // right-aligned control slides as its text does (backlog row 407, `layout-stability.spec.ts`). After a
-        // client-side navigation the link is inert: render-blocking only applies before the first paint.
-        if main_variant {
-            document::Link { rel: "expect", href: "#component-preview-frame", blocking: "render" }
-        } else {
+        if !main_variant {
             h3 { class: "dx-component-variant-title", "{variant_title(name)}" }
         }
         Tabs {
@@ -2230,7 +2228,28 @@ fn ComponentVariantHighlight(
                 }
             }
         }
+        // The main demo is the end of a component page's top group.
+        if main_variant {
+            FirstPaintGate {}
+        }
         VariantNotes { owner, name }
+    }
+}
+
+/// The id of [`FirstPaintGate`]'s marker.
+pub(crate) const FIRST_PAINT_ID: &str = "dx-first-paint";
+
+/// Placed where a page's top group ends: the page's first paint waits until the parser has reached this point (a
+/// render-blocking `expect` link in the SSR head for the empty marker after it; Chromium 124+, ignored elsewhere).
+/// Painted earlier, the half-parsed top of the page is on screen and every later sibling re-lays it out: a centred
+/// demo row re-centres as its items arrive, a right-aligned control slides as its label does, a sticky sidebar drops
+/// once the column beside it is tall enough (backlog row 407, `layout-stability.spec.ts`). One per page. After a
+/// client-side navigation the link is inert: render-blocking only applies before a document's first paint.
+#[component]
+fn FirstPaintGate() -> Element {
+    rsx! {
+        document::Link { rel: "expect", href: "#{FIRST_PAINT_ID}", blocking: "render" }
+        span { id: FIRST_PAINT_ID, hidden: true }
     }
 }
 
@@ -2860,6 +2879,8 @@ fn WidgetMasonry(heading_id: String) -> Element {
                     MasonryColumn { slot: MasonrySlot::RightLower }
                 }
             }
+            // The hero and the whole masonry are the home page's top group.
+            FirstPaintGate {}
         }
     }
 }

@@ -47,10 +47,13 @@
  * painted from a half-parsed document counts like any other. The one thing a half-parsed document may do is grow --
  * an element whose end tag has not arrived is still being filled, so while `document.readyState` is "loading" a pure
  * height change (same x, y and width) is not an event, nor is any growth of an element that was open in the parser
- * (an ancestor of the document's last node) on the previous frame and kept its x and y: a paragraph or an inline
- * `code` whose text is still arriving widens too (row 407). Anything else that MOVES, SHRINKS or RESIZES sideways is. The row 204 sweep
- * delays only the wasm, so on a fast machine its parse ends before the first paint and this clause is idle there; the
- * second group of tests ("progressive paint") is what makes the parse slow: Chrome's own network and CPU throttling
+ * (an ancestor of the document's last node) on the previous frame and only grew from its left or right edge, or had
+ * no area yet: a paragraph or an inline `code` whose text is still arriving widens too (row 407). Anything else that
+ * MOVES, SHRINKS or RESIZES sideways is. The row 204 sweep loads every width through `slowDocServer` (below): the head
+ * at once, then the first `LS_SWEEP_BYTES` of the body in `LS_SWEEP_CHUNK`-byte pieces `LS_SWEEP_DELAY` ms apart, so a
+ * page that paints before its top group has been parsed fails on every run, not only on a loaded box (row 407; the
+ * pages hold their first paint until then, `FirstPaintGate` in `preview/src/main.rs`). The second group of tests
+ * ("progressive paint") makes the parse slow as well, with Chrome's own network and CPU throttling
  * (CDP `Network.emulateNetworkConditions` + `Emulation.setCPUThrottlingRate`), so the document really arrives in
  * chunks and is painted between them, and it records every widget card's position from the first frame in which the
  * card exists. A card must stay in its column and at its place: a card's column is its DOM position
@@ -165,6 +168,10 @@ const POOL = Math.max(1, Number(process.env.LS_POOL ?? 2));
 const ONLY = (process.env.LS_WIDTHS ?? "").split(",").filter(Boolean).map(Number);
 /** CPU slowdown of the sweep's pages (CDP `Emulation.setCPUThrottlingRate`); `LS_CPU=4` makes the parse and the hydration land in different frames the way a loaded box does. 1 = none. */
 const CPU = Math.max(1, Number(process.env.LS_CPU ?? 1));
+/** The sweep's document stream (see "Progressive rendering" in the header): `LS_SWEEP_CHUNK` bytes every `LS_SWEEP_DELAY` ms for the first `LS_SWEEP_BYTES` of the body. */
+const SWEEP_CHUNK = Number(process.env.LS_SWEEP_CHUNK ?? 8000);
+const SWEEP_DELAY = Number(process.env.LS_SWEEP_DELAY ?? 20);
+const SWEEP_BYTES = Number(process.env.LS_SWEEP_BYTES ?? 250_000);
 
 const GROUPS: { route: string; scheme: "light" | "dark"; widths: number[]; pool?: number }[] = [
   // The home page keeps ONE page at a time: it is the long, progressively parsed page, and with two pages (four browsers
@@ -193,12 +200,18 @@ for (const { route, scheme, widths, pool = POOL } of GROUPS) {
     test.skip(browser.browserType().name() !== "chromium", "frame-by-frame box recording is measured in Chromium");
     test.setTimeout(45 * 60 * 1000);
     const contexts: BrowserContext[] = [];
+    // Every width loads the page through the slow front, so its first paint can come while the document is still
+    // arriving on every run, not only on a loaded box.
+    const front = await slowDocServer(SWEEP_CHUNK, SWEEP_DELAY, 150, {
+      path: route,
+      slowEnd: (body, bodyStart) => Math.min(body.length, bodyStart + SWEEP_BYTES),
+    });
 
     /** One width: load, hydrate, record 1.5 s of box movement, and describe what moved after the first paint ("" = nothing). */
     async function measure(page: Page, width: number): Promise<string> {
       await page.setViewportSize({ width, height: HEIGHT });
       // goto-ok: measures layout from the first committed byte through hydration; waiting for hydration first would hide the shift
-      await page.goto(`${BASE_URL}${route}`, { waitUntil: "commit" });
+      await page.goto(`${front.url}${route}`, { waitUntil: "commit" });
       await page.waitForSelector('html[data-hydrated="true"]', { state: "attached", timeout: 120_000 });
       await page.evaluate(() => document.fonts.ready.then(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))));
       await page.waitForTimeout(1500); // no input: whatever still moves by itself shows up in this window
@@ -234,7 +247,7 @@ for (const { route, scheme, widths, pool = POOL } of GROUPS) {
     async function worker() {
       const context = await browser.newContext({ viewport: { width: widths[0], height: HEIGHT }, colorScheme: scheme });
       contexts.push(context);
-      await context.addCookies([{ name: "dx_theme", value: scheme, url: BASE_URL }]);
+      await context.addCookies([{ name: "dx_theme", value: scheme, url: front.url }]);
       const page = await context.newPage();
       if (CPU > 1) await (await context.newCDPSession(page)).send("Emulation.setCPUThrottlingRate", { rate: CPU });
       await page.addInitScript(RECORDER);
@@ -255,6 +268,7 @@ for (const { route, scheme, widths, pool = POOL } of GROUPS) {
       await Promise.all(Array.from({ length: Math.min(pool, todo.length) }, worker));
     } finally {
       for (const c of contexts) await c.close();
+      await front.close();
     }
     const failures = order.filter((w) => failureAt.has(w)).map((w) => failureAt.get(w)!);
     expect(failures, `${route} (${scheme}): the top group changed by itself after its first paint at ${failures.length} of ${widths.length} widths`).toEqual([]);
@@ -288,7 +302,12 @@ for (const { route, scheme, widths, pool = POOL } of GROUPS) {
  * section (the hero and the whole widget masonry, ~130 KB) is then written `chunk` bytes at a time, `delay` ms
  * apart, and the rest of the page goes out at full speed.
  */
-async function slowDocServer(chunk: number, delay: number, headWait: number): Promise<{ url: string; close: () => Promise<void> }> {
+async function slowDocServer(
+  chunk: number,
+  delay: number,
+  headWait: number,
+  doc: { path: string; slowEnd: (body: Buffer, bodyStart: number) => number } = { path: "/", slowEnd: (body) => body.indexOf("dx-catalog-section") },
+): Promise<{ url: string; close: () => Promise<void> }> {
   const server = http.createServer(async (req, res) => {
     try {
       const upstream = await fetch(`${BASE_URL}${req.url}`);
@@ -296,9 +315,9 @@ async function slowDocServer(chunk: number, delay: number, headWait: number): Pr
       const headers: Record<string, string> = {};
       upstream.headers.forEach((v, k) => { if (!/^(content-length|content-encoding|transfer-encoding|connection)$/i.test(k)) headers[k] = v; });
       res.writeHead(upstream.status, headers);
-      const slowEnd = body.indexOf("dx-catalog-section");
-      if (req.url === "/" && /text\/html/.test(headers["content-type"] ?? "") && slowEnd > 0) {
-        const bodyStart = body.indexOf("<body");
+      const bodyStart = body.indexOf("<body");
+      const slowEnd = doc.slowEnd(body, bodyStart);
+      if (req.url === doc.path && /text\/html/.test(headers["content-type"] ?? "") && bodyStart > 0 && slowEnd > bodyStart) {
         res.write(body.subarray(0, bodyStart));
         await new Promise((r) => setTimeout(r, headWait));
         for (let i = bodyStart; i < slowEnd; i += chunk) {
