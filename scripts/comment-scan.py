@@ -10,8 +10,9 @@ TS/JS (`//`, `/* */`, regex literals skipped so `/[/*]/` opens nothing), Python 
 `tokenize`/`ast`; a triple-quoted string that is not a docstring is data) and shell (`#`, not in a string, not
 `$#`/`${#x}`). A heredoc body is data (a generated file's text) unless the command line names an interpreter
 (`python3 - <<'PY'`, `node <<`, `bash <<`), in which case it is read as that language. A comment marker inside a
-string literal is not a comment. Not covered (known gap, ratchet-neutral): CSS or JS that lives inside a Rust
-string literal.
+string literal is not a comment, except in Rust: a string literal that reads as code (JS with a statement shape and a
+JS word, CSS with a `{ prop: value }` rule and a `/* */`) is scanned for the `//` and `/* */` comments inside it
+(`extract_rust`, `_embedded_comments`), reported at their Rust source line; the string text around them is data.
 
 Scanned: `git ls-files` with the extensions above, minus SKIP_PREFIXES (dev-docs/archive/ is where history belongs, the
 prose under dev-docs/ is not code so no extension picks it up, but its code files are scanned;
@@ -79,6 +80,72 @@ def _block_lines(start_line, raw):
         yield start_line + k, re.sub(r"^\s*\*+ ?", "", ln)
 
 
+def _rust_unescape(raw, first_line):
+    """A normal Rust string's value with the source line of every value character: `\\n`, `\\"` and the like become
+    one character, a `\\` + newline continuation drops the newline and the next line's indent."""
+    out, lines = [], []
+    i, n, line = 0, len(raw), first_line
+    simple = {"n": "\n", "r": "\r", "t": "\t", "0": "\0", "\\": "\\", '"': '"', "'": "'"}
+    while i < n:
+        c = raw[i]
+        if c == "\\" and i + 1 < n:
+            d = raw[i + 1]
+            if d in simple:
+                out.append(simple[d])
+                lines.append(line)
+                i += 2
+            elif d == "\n":
+                line += 1
+                i += 2
+                while i < n and raw[i] in " \t\r\n":
+                    line += raw[i] == "\n"
+                    i += 1
+            else:  # \x41, \u{..}: one placeholder character
+                m = re.match(r"x[0-9a-fA-F]{2}|u\{[0-9a-fA-F_]+\}", raw[i + 1:i + 12])
+                out.append("?")
+                lines.append(line)
+                i += 1 + (m.end() if m else 1)
+        else:
+            out.append(c)
+            lines.append(line)
+            if c == "\n":
+                line += 1
+            i += 1
+    return "".join(out), lines
+
+
+# A Rust string literal can hold the page's JS or CSS (eval scripts, `style { r#"..."# }`), and a comment in that code
+# is a comment: it retells history like any other. Only a string that reads as code is scanned (a prose string with
+# a `//` in it is data): JS needs a statement or block shape plus a JS word, CSS needs a `{ prop: value }` rule and a
+# `/* */`. A CSS-only string yields only its block comments.
+_EMBED_JS = re.compile(r"=>|\)\s*\{|\b(?:function|const|let|var|return|typeof|document|window|addEventListener|querySelector"
+                       r"|getElementById|setTimeout|requestAnimationFrame|classList|dataset|new [A-Z]\w+)\b")
+_EMBED_CSS = re.compile(r"\{[^{}]*:[^{}]*\}")
+
+
+def _embedded_kind(content):
+    if "/*" not in content and "//" not in content:
+        return None
+    if re.search(r"[;{}]", content) and _EMBED_JS.search(content):
+        return "js"
+    if "/*" in content and _EMBED_CSS.search(content):
+        return "css"
+    return None
+
+
+def _embedded_comments(content, char_lines):
+    kind = _embedded_kind(content)
+    if not kind:
+        return
+    if kind == "js":
+        for off, body in extract_js(content, True):
+            yield char_lines[min(off, len(char_lines) - 1)], body
+    else:  # CSS: line numbers relative to the string, mapped through the start of that content line
+        starts = [0] + [k + 1 for k, ch in enumerate(content) if ch == "\n"]
+        for rel, body in extract_css(content):
+            yield char_lines[min(starts[min(rel, len(starts)) - 1], len(char_lines) - 1)], body
+
+
 def extract_rust(text):
     i, n, line = 0, len(text), 1
     while i < n:
@@ -112,11 +179,20 @@ def extract_rust(text):
                 end = '"' + m.group(1)
                 j = text.find(end, i + m.end())
                 j = n if j < 0 else j + len(end)
+                body_start, body_end = i + m.end(), max(i + m.end(), j - len(end))
+                content = text[body_start:body_end]
+                char_lines, ln = [], line
+                for ch in content:
+                    char_lines.append(ln)
+                    ln += ch == "\n"
             else:
                 j = i + 1
                 while j < n and text[j] != '"':
                     j += 2 if text[j] == "\\" else 1
                 j += 1
+                content, char_lines = _rust_unescape(text[i + 1:max(i + 1, j - 1)], line)
+            if len(content) > 8:
+                yield from _embedded_comments(content, char_lines)
             line += text.count("\n", i, j)
             i = j
         elif c == "'":
@@ -184,22 +260,33 @@ def _js_regex_end(text, i, n):
     return -1
 
 
-def extract_js(text):
+def extract_js(text, embedded=False):
+    """`embedded`: the text is JS held in a Rust string, so a `//` only opens a comment at a line start or after a
+    code character (`https://x` and `a//b` are data); it then yields each comment line's character OFFSET in `text`
+    instead of a line number, so the caller can map it back to the Rust source line."""
     i, n, line = 0, len(text), 1
     while i < n:
         c = text[i]
         if c == "\n":
             line += 1
             i += 1
+        elif embedded and text.startswith("//", i) and i and text[i - 1] not in " \t\n;{}),":
+            i += 2
         elif text.startswith("//", i):
             j = text.find("\n", i)
             j = n if j < 0 else j
-            yield line, text[i + 2:j]
+            yield (i if embedded else line), text[i + 2:j]
             i = j
         elif text.startswith("/*", i):
             j = text.find("*/", i + 2)
             j = n if j < 0 else j
-            yield from _block_lines(line, text[i + 2:j])
+            if embedded:
+                off = i + 2
+                for k, b in _block_lines(0, text[i + 2:j]):
+                    yield off, b
+                    off += len(text[i + 2:j].split("\n")[k]) + 1
+            else:
+                yield from _block_lines(line, text[i + 2:j])
             line += text.count("\n", i, j + 2)
             i = j + 2
         elif c == "/":
@@ -328,6 +415,8 @@ def comments_of(root, path):
 # The repo's first commit is 2026-08-29, so only a date from 2026-08 on is a retelling; a 2024 or 2026-05 date in a
 # comment is test data (a calendar fixture), not history. The same floor applies to numeric and month-name dates.
 DATE = re.compile(r"(?<![\w.-])(?:2026-(?:0[89]|1[0-2])|20(?:2[7-9]|[3-9]\d)-(?:0[1-9]|1[0-2]))-(?:0[1-9]|[12]\d|3[01])(?![\w-])")
+# "(2026-08)": a month alone dates a sentence as well as a day does.
+MONTH_ISO = re.compile(r"(?<![\w.-])(?:2026-(?:0[89]|1[0-2])|20(?:2[7-9]|[3-9]\d)-(?:0[1-9]|1[0-2]))(?![\w-]|\.\d)")
 # 02/03/2026, 2.3.2027 (day/month order is unknowable, so any month): the year alone decides.
 NUMERIC_DATE = re.compile(r"(?<![\w./-])\d{1,2}([/.])\d{1,2}\1(?:2026|20(?:2[7-9]|[3-9]\d))(?![\w/-])")
 HEX = re.compile(r"(?<![\w#.\-/$@])(?:[0-9a-f]{7,40})(?![\w\-/])")
@@ -372,7 +461,7 @@ PHRASES = [
                 r"carries|wraps|handles|follows|emits|renders|needs|does|sets|ships)\b", re.I), "now uses"),
     (re.compile(r"\bno longer (?:uses|reads|writes|carries|ships|sets|renders|needs|does|do|owns|"
                 r"holds|lives|calls|emits|paints|draws|returns|takes)", re.I), "no longer"),
-    (re.compile(r"\bsince (?:been )?(?:removed|replaced|renamed|dropped|fixed)\b|\bhas since\b|\buntil recently\b|\bback when\b", re.I), "since removed"),
+    (re.compile(r"\bsince (?:been )?(?:removed|replaced|renamed|dropped|fixed)\b|\bhas since (?:been )?(?:removed|replaced|renamed|dropped|fixed|wired|landed|changed|added|moved|become|gained|lost)\b|\buntil recently\b|\bback when\b", re.I), "since removed"),
     # a backlog row as a point in time: "before row 169 flipped", "since row 303", "row 8 landed"
     (re.compile(r"\b(?:before|after|until|since|once) (?:backlog )?rows? \d+|\brows? \d+ (?:\w+ )?(?:landed|lands|merged|shipped)\b", re.I), "before row N"),
     # a lane, batch or round told as history: "batch 13", "batch-2 integration", "round 1's migration", "lane/p5tabs",
@@ -386,6 +475,42 @@ PHRASES = [
                 r"\bearlier (?:note|version|comment|draft|text|revision|fix|report|claim)s?\b", re.I), "first version"),
     # a work round as a point in time: "this round", "the previous round's", "(round5)"; not "round trip"/"round robin"
     (re.compile(r"\b(?:this|last|next|previous|earlier|prior) round(?![-\w]|\s+(?:trip|robin|up|down|off))|\bround\d+\b", re.I), "this round"),
+    # the work stream that wrote the code, told in the code: "this lane" (not "against this lane": the SSG lane is a test
+    # target), "another lane owns it", "the lane's own report", "lane T", "s2-polar", "Migration A slice 3/3", "this
+    # session", "this fix", "this port", "the task brief"; a bare "slice", "lane" or "fix" is a data or infra word
+    (re.compile(r"(?<!against )(?<!on )\bthis lane\b|\b(?:another|other) lanes? (?:owns?|edits?|is editing|touch(?:es)?|may)\b|"
+                r"\b(?:owned|edited|touched) by (?:another|other) lanes?\b|\blane(?:'s)?(?: own)? (?:brief|report|agent|prompt)\b|"
+                r"(?<![\w$-])s\d-[a-z]+\b|\bslice \d+/\d+|\bthis session\b|\bsession's (?:report|brief|diagnosis)\b|"
+                r"\bthis fix\b|\bthis port\b(?! (?:is|number|serves|listens|binds|to|from|for|on|in|must|can|may|and|or|will|so|before|until|after|if)\b)(?![,.;)])|\b(?:task|per[- ]file|agent) brief\b|\bfetched fresh\b|(?:before|after|until|since) this (?:slice|lane|session|task|PR|commit|batch)\b", re.I), "lane/session"),
+    # how a finding was made, told as a story: "confirmed live", "found by execution", "verified at write time",
+    # "red-then-green", "RED on the unmodified tree", "pre-fix", "STATUS AT WRITE TIME", "dated addendum"
+    (re.compile(r"\b(?:confirmed|verified|found|reproduced|observed|proven|seen) (?:live|empirically|by execution(?!')|in this session)\b|"
+                r"\bverified at write time\b|\bat write time\b|\bdated addendum\b|\bred[- ](?:then|before)[- ]green\b|\bgreen-after\b|"
+                r"\b(?:pre|post)-(?:fix|migration|rewrite|port|refactor|stage-?\d\w*|phase-?[\d.]*|axis-fix)\b|"
+                r"\bconfirmed (?:\w+ )?(?:there )?by execution\b(?!')|\bunmodified tree\b|\bhas been observed to\b|\bhave been observed to\b|"
+                r"\bwithout the fix\b|\bintermittently red\b|\bwent red\b|\bturned red\b", re.I), "evidence"),
+    # a status header, an upper-case marker (case matters: `RED` and `UPDATE` are shouted when they narrate)
+    (re.compile(r"\bSTATUS AT\b|\blane [TFS]\b|\bMigration [A-Z] slice\b|\bHISTORY[,:]|\bUPDATE\s*[(:]|\bRED[- ](?:FIRST|BEFORE|ON|AGAINST)\b|\bWritten RED\b|\bAt HEAD\b|\bhad NO\b|\bCorrection, filed\b"), "status header"),
+    # past framing: "tried first", "the hard way", "renamed from X", "not the previous 2.5", "every generation above"
+    (re.compile(r"\btried first\b|\bthe hard way\b|\bthe original v\d|\bevery generation\b|\brenamed (?:from|to)\b|"
+                r"\bnot the previous \d|\bthe previous \d[\d.]*(?:px|ms|rem|em|%)|\b(?:exactly|just|same|unchanged|works?|closes|behaves?|stays?) as before\b|"
+                r"\bunchanged from before\b|"
+                # the code's own earlier shape: "the original asserted N", "the previous engine kept", "pre-shadcn-parity", "historical
+                # defect", "Phase 4.4 solved", "before Phase 1.1", "as it did before", "before this prop existed", "not clamped any more"
+                r"\bthe original (?:asserted|asserts|assertion|defect|report|draft|implementation|engine|walk|construction|hazard|bug|v\d)\b|"
+                r"\bthe original \w+ (?:walk|engine|loop|pass)\b|\bprevious (?:engine|implementation|design|approach|algorithm|construction|walk)\b|"
+                r"\b(?:pre|post)-(?:this-[\w-]+|shadcn[\w-]*)|\bhistorical (?:[\w-]+ )?(?:defect|hazard|bug|incident|regression|shape|cascade|behaviou?r|context|failure|class)\b|"
+                r"\b(?:Phase|Stage) [\d.]+[a-z]? (?:removed|dropped|replaced|landed|migrated|introduced|added|flipped|solved|hit|adds)\b|"
+                r"\b(?:before|after|until|since|once|when) (?:PATH )?(?:Phase|Stage) [\d.]+|\b(?:as|like|way) (?:it|they) did before\b|"
+                r"\bbefore (?:this|that|the) (?:prop|feature|option|attribute|variant|rule|construction|wait|call|type|page|component|check|gate) existed\b|"
+                r"\bnot (?:\w+ )?\w+ed any ?more\b", re.I), "past framing"),
+    # who asked: "owner report", "the user report", "live-site report", "bug report"
+    (re.compile(r"\b(?:owner|user|bug|live-site|incident)[- ](?:user )?reports?\b|\blive-site\b|\bowner-report\b|"
+                r"\bowner(?:'s)?(?: real)?[- ](?:[\w-]+ )?(?:report|session)\b|\bowner's (?:bench|lab)\b|\blab session\b|"
+                r"\bincident behind\b|\bthe incident (?:itself|that|which)\b|\bproduction incident\b|"
+                r"(?<!upstream )(?<!upstream Dioxus )\bPR #\d+|\bmotivated PR #\d+", re.I), "report"),
+    # a pointer into a dead session's scratchpad
+    (re.compile(r"\$S/"), "scratchpad path"),
 ]
 USED_TO = re.compile(r"(?:\b([\w']+)\s+)?\bused to\b", re.I)
 # "is used to X", "can be used to X", "used to" after these is the passive/instrument sense, not history. "that" and
@@ -397,7 +522,10 @@ INSTRUMENT_VERBS = {"prove", "compute", "size", "measure", "check", "verify", "t
                     "compare", "identify", "distinguish", "tell", "mark", "signal", "pin", "anchor", "position", "place", "locate",
                     "find", "pick", "select", "build", "make", "create", "seed", "drive", "simulate", "emulate", "mimic",
                     "represent", "express", "indicate", "avoid", "prevent", "ensure", "force", "hold", "store", "track", "record",
-                    "key", "name", "label", "scope", "calculate", "show", "pass", "feed", "fill", "generate", "assert", "count"}
+                    "key", "name", "label", "scope", "calculate", "show", "pass", "feed", "fill", "generate", "assert", "count",
+                    "exclude", "include", "filter", "skip", "ignore", "group", "sort", "split", "join", "parse", "resolve", "hide",
+                    "reveal", "trigger", "wrap", "capture", "bound", "limit", "cap", "gate", "mock", "stub", "tag", "flag", "cache",
+                    "carry", "encode", "decode", "dispatch", "reach", "address", "index", "order", "match", "separate", "lift"}
 PREVIOUSLY = re.compile(r"\bpreviously\b(?!-)(?:\s+(\w+))?", re.I)
 ORIGINALLY = re.compile(r"\boriginally\b(?!-)", re.I)
 # Upstream revisions the repo pins on purpose (provenance, not history): a comment naming one stays unflagged.
@@ -412,10 +540,14 @@ _WAS_ED = re.compile(r"\b(?:(?:was|were|got) (?:removed|deleted|added|introduced
 # "no longer X" is mostly a state the code handles ("an entry that no longer matches", "once it is no longer open"),
 # so the generic form is history only when no condition word precedes it in the clause, or what follows is a role
 # word for the code itself ("no longer used/needed/supported").
-NO_LONGER = re.compile(r"\bno longer\b\s*(\w*)", re.I)
-_SUBORD_BEFORE = re.compile(r"\b(?:that|which|who|once|when|until|if|while|whenever|whether|unless|after|because|where|so) +(?:[\w'`-]+ +){0,5}$", re.I)
+NO_LONGER = re.compile(r"\bno longer\b\s*`?(\w*)", re.I)
+_SUBORD_BEFORE = re.compile(r"(?:\(|\b(?:that|which|who|whose|once|when|until|if|while|whenever|whether|unless|after|because|where|so)\b) *(?:[\w'`-]+ +){0,5}$", re.I)
 _AUX_BEFORE = re.compile(r"\b(?:can|could|would|will|may|might|must|should|cannot|is|are|was|were|be|been|being|has|have|does|do|did) +(?:[\w'`-]+ +){0,2}$", re.I)
 _STATE_AFTER = re.compile(r"^(?:in|at|on|over|against|under|inside|within|visible|open|present|connected|there|the|a|an|any)$", re.I)
+# a state verb about the subject under test ("Duplicate no longer matches", "an API its primitive no longer has")
+_STATE_VERB = re.compile(r"^(?:matches|match|has|have|exists|exist|applies|apply|intersects|overlaps|fits|resolves|resolve|contains|"
+                         r"contain|equals|counts|count|appears|appear|hits|hit|fires|fire|reaches|reach|covers|cover)$", re.I)
+_CONDITION_AFTER = re.compile(r"\b(?:once|when|whenever|while|if|after|because|unless)\b")
 _ROLE_WORD = re.compile(r"^(?:used|needed|required|supported|referenced|called|imported|emitted|generated|wired|loaded|shipped|"
                         r"exposed|necessary|part|retries|relies|depends|applies|applicable|calls|supports)$", re.I)
 
@@ -432,16 +564,34 @@ def _adjective_use(body, m):
     return False
 
 
+# A path is a link, which the rule wants: `dev-docs/research/round3-2026-10-05.md` is not "this round" or a date.
+_PATH = re.compile(r"(?<![\w$])(?:[\w.@~-]+/)+[\w.@~\[\]*{}$-]*\.[A-Za-z][A-Za-z0-9]{0,5}\b|"
+                   r"\b(?:%s)/[\w./@~\[\]*{}$-]+" % "|".join(re.escape(t) for t in ("dev-docs", "scripts", "primitives", "preview", "playwright",
+                                                                                 "templates", "labs", "cli", "test-harness")))
+
+
+def _provenance(body, m):
+    """A pinned upstream revision names where code was ported from: `<repo> commit <sha>`, `<sha> of <repo>`,
+    `pinned/upstream ... <sha>`; the gate leaves those alone (a `history-ok` marker is not needed)."""
+    before, after = body[:m.start()], body[m.end():]
+    if re.search(r"[\w.-]+/[\w.-]+`?\)?\s*(?:@|commit|rev(?:ision)?|at)\s*`?$", before, re.I):
+        return True  # `radix-ui/primitives` commit <sha>, recharts/recharts @ <sha>
+    if re.match(r"`?\s+of\s+`?[\w.-]+/[\w.-]+", after):
+        return True  # <sha> of `w3c/aria-practices`
+    return bool(len(m.group(0)) >= 12 and re.search(r"\b(?:pinned|upstream|vendored)\b", before, re.I))
+
+
 def history_reason(body):
     """Why a comment line retells history, or None. One reason per line is enough: the unit is the line."""
     if "history-ok:" in body:
         return None
-    if DATE.search(body) or NUMERIC_DATE.search(body) or _month_dated(body):
+    body = _PATH.sub("PATH", body)
+    if DATE.search(body) or MONTH_ISO.search(body) or NUMERIC_DATE.search(body) or _month_dated(body):
         return "date"
     for m in HEX.finditer(body):
         tok = m.group(0)
         if re.search(r"\d", tok) and len(re.findall(r"[a-f]", tok)) >= 2 and not re.fullmatch(r"\d+e\d+", tok):
-            if any(rev.startswith(tok) for rev in PINNED_REVS) or body[:m.start()].endswith("@ "):
+            if any(rev.startswith(tok) for rev in PINNED_REVS) or body[:m.start()].endswith("@ ") or _provenance(body, m):
                 continue  # a pinned upstream revision, or the provenance form `<path> @ <sha>`
             return "sha"
     for rx, why in PHRASES:
@@ -472,6 +622,8 @@ def history_reason(body):
         before = body[:m.start()]
         if _SUBORD_BEFORE.search(before):
             continue  # "an entry that no longer matches", "once it is no longer needed": a condition the code handles
+        if _STATE_VERB.match(m.group(1)) or _CONDITION_AFTER.search(re.split(r"[.;:]", body[m.end():], maxsplit=1)[0]):
+            continue  # "Duplicate no longer matches", "no longer applies once the element ...": a state, not a story
         if _ROLE_WORD.match(m.group(1)) or not (_AUX_BEFORE.search(before) or _STATE_AFTER.match(m.group(1))):
             return "no longer"
     return None
@@ -734,6 +886,10 @@ def self_test_history():
         ("`is used to` is not history", {"src/h.rs": "// is used to size the panel; can be used to anchor it\nfn a(){}\n"}, [], 0),
         ("skipped dir is ignored", {"dev-docs/archive/x.rs": "// 2026-10-19 used to\n", "docs/y.js": "// 2026-10-19\n"}, [], 0),
         ("a code file under dev-docs/ is scanned", {"dev-docs/supply-chain/z.sh": "# used to be 3px\n"}, [], 1),
+        ("a dated comment inside JS in a rust string is counted", {"src/j.rs": 'const J: &str = r#"\n// 2026-10-19 fix\nconst a = 1;\n"#;\n'}, [], 1),
+        ("a clean comment inside JS in a rust string passes", {"src/j.rs": 'const J: &str = r#"\n// anchors to the trigger\nconst a = 1;\n"#;\n'}, [], 0),
+        ("history-ok exempts a comment inside a rust string", {"src/j.rs": 'const J: &str = r#"\n// 2026-10-19 fix history-ok: quoted\nconst a = 1;\n"#;\n'}, [], 0),
+        ("a path with a date is not a date", {"src/p.sh": "# see dev-docs/research/round3-2026-10-05.md\n"}, [], 0),
     ]
     fails = 0
     for name, files, bl, want in cases:
@@ -745,6 +901,7 @@ def self_test_history():
             print("    " + out.replace("\n", "\n    "))
     fails += _self_test_lines()
     fails += _self_test_extraction()
+    fails += _self_test_embedded_lines()
     # a real file, mutated: copy this very script's neighbour with a dated comment appended (must turn red)
     real = os.path.join(ROOT, "scripts/lane-touch.sh")
     if os.path.exists(real):
@@ -816,6 +973,78 @@ MUST_FLAG = [
     "the old calendar rule used a hand-written ring",
     "the `5fc1439`-shaped collision shape",
     "a stub used to call this before",
+    # round 2: month-only dates, work-stream words, evidence narration, status headers, past framing, reports
+    "(2026-08) the ring was 3px",
+    "the audit of 2027-01 moved it",
+    "see dev-docs/research/a.md; this round's regression guard",
+    "assertion for the bug this lane fixed",
+    "another lane owns it, so this file only reads",
+    "see this lane's own report for the table",
+    "(`virtual/window.rs`, read-only to this lane)",
+    "Viewports: the six the lane brief itself named",
+    "phase C lane F moved it to the theme",
+    "RadialBar is still `s2-refactor`'s placeholder",
+    "Rule 10 (Migration A slice 3/3, final) stacks toasts",
+    "see this session's report for the full ledger",
+    "roving-tabstop design this fix deliberately preserves",
+    "the thing this port needs to match for the angle",
+    "per the task brief, dark is where this is worst",
+    "from that pinned commit's own file (fetched fresh for this task)",
+    "demo (`$S/refs/ui/apps/v4/registry/charts/chart-bar-*.tsx`)",
+    "the contract (`$S/chart-api.md`)",
+    "confirmed live: 3 page-wide vs. 1 once scoped",
+    "Found live: the mount measured 0px",
+    "found by execution: main's own content sat low",
+    "Verified live: FocusNext from the day segment",
+    "this was verified at write time against the page",
+    "confirmed empirically, not assumed",
+    "Confirmed by execution: before this the anchor never resolved",
+    "a small box (confirmed there by execution",
+    "also confirmed necessary by execution, and the rest follows",
+    "a live RED-then-GREEN result on the Playwright side",
+    "the pre-fix code could still have passed by coincidence",
+    "byte-for-byte the pre-Phase-4.2 path",
+    "the pre-migration contract this asserts",
+    "matching the pre-refactor flat argument list",
+    "this pipeline has been observed to silently drop a rule",
+    "went red 3 times in 20 under --workers=4",
+    "(intermittently red without the fix):",
+    "so the pressed background already survived hover on the unmodified tree",
+    "STATUS AT WRITE TIME: RED. No scroll lock exists",
+    "**UPDATE (row 46, construction landed):**",
+    "HISTORY, AND WHY the gate exists",
+    "RED-FIRST: every test below was run against the old file",
+    "Written RED first, then fixed",
+    "At HEAD a fresh 100 ms interval was installed per call",
+    "30 controls on 23 components had NO focus indicator",
+    "had NO hover companion at all",
+    "Correction, filed 2026-10-19, to the paragraph above",
+    "row 91's dated addendum has the report",
+    "found live, the hard way: every variant shares the host",
+    "an index counter was tried first; it drifted",
+    "the original v1 construction kept a Vec",
+    "every generation above has kept it",
+    "One dot inside an indicators list. Renamed from `CarouselTab`.",
+    "the farthest distance (not the previous 2.5) is the one",
+    "keeps winning exactly as before, with no change to this rule",
+    "is unchanged from before this slice",
+    "threshold (the original asserted N=3)",
+    "The previous engine kept a Vec of items",
+    "the pre-shadcn-parity `multiple` variant",
+    "a pre-this-feature hardcoded value",
+    "the fix for the historical stranded-signal defect",
+    "given when Phase 4.4 landed",
+    "Before Phase 1.1 this test passed by accident",
+    "renders exactly the markup it did before this prop existed",
+    "deliberately NOT clamped any more",
+    "the owner report: vertical slider css is messed up",
+    "Live-site user report: opening the palette by click",
+    "the owner's real-trackpad report (MacBook, Firefox)",
+    "the owner's lab session: pinned for a minute",
+    "the incident behind that choice",
+    "(the upstream regression that motivated PR #47)",
+    "scrolled) from PR #107. A comment-only sheet is exempt",
+    "the literal case the bug report names",
 ]
 # ... and present-tense sentences that must NOT be (the false positives to keep out).
 MUST_NOT_FLAG = [
@@ -852,6 +1081,56 @@ MUST_NOT_FLAG = [
     "a batch size of 13 and a round of 3 samples",
     "the old year, the old element and the old index",
     "history-ok: used to be 3px since March, 2026-10-19 (a quoted changelog)",
+    # round 2: a path is a link, pinned upstream revisions are provenance, "no longer" can be a condition
+    "see dev-docs/research/round3-2026-10-05.md for the numbers",
+    "THE DEFECT (dev-docs/research/2026-10-05.md section 2): a sheet",
+    "`radix-ui/primitives` commit `f7ecd5ab16f5e1e820eb5786a1419a98a2d594ae`",
+    "`recharts/recharts` commit 86ad3632ff3f83a742001ae6fc079dd27961a2a4",
+    "`primitives/src/scroll_lock.rs` @ 5af3cc292559a0e8d73c7b9a827c4ca08ef34d99,",
+    "7e4034b262bc0d25332e330d8a582aaf34113829 of w3c/aria-practices -- see that",
+    "pinned to the upstream tree at a82254af78f08799c71d7ab25df557c4872a3c51",
+    "buffer \"de\" -- Duplicate no longer matches, Delete does",
+    "whether the element was unmounted (no longer `exists`) before the cap",
+    "a spec whose titles no longer match fails",
+    "a file that no longer has a hit fails (stale)",
+    "a component calling an API its primitive no longer has",
+    "once it is no longer referenced it is dropped",
+    "the constraint no longer applies once the element is out of flow",
+    "a closing toast no longer counts toward the pile",
+    "used to exclude `.use_something(` method calls",
+    "a regex used to filter the rows and to skip the header",
+    "when running against this lane, also serve the fixtures",
+    "Queued debug SSG build for a lane worktree",
+    "other lanes are compiling on the same box; the report prints both",
+    "Draw this slice active: 10px further out",
+    "the server listens on this port, the dev proxy forwards to it",
+    "Confirmed necessary by execution's design: the trace shows it",
+    "This is checked by execution, not by hand math",
+    "measured live from a rendered slide's own box rather than assumed",
+    "RED/GREEN: tests 1 and 3 are red on a build without the bundle and green with it",
+    "Press left arrow to move focus back to the original day",
+    "the original touch coordinates are restored after the drag",
+    "Upstream PR #293 ever got a chance to play",
+    "upstream Dioxus PR #255 (the lifted input)",
+    "Files that are not in the registry any more but that you edited; kept.",
+    "nothing is animating on it any more",
+    "Nothing is hovered or focused any more: close the tooltip",
+    "scroll back to where it did before the click",
+    "files created before this file existed have no baseline",
+    "remains the owner's real-device check",
+    "sweeping this class one incident at a time only catches the sites",
+    "(row 374 has the incident)",
+    "historical data in the chart is clipped to the window",
+    "the previous version of the file is kept as .orig",
+    "pre-existing baseline entries do not fail the gate",
+    "the dialog is gone (unmounted) or has no scrim left",
+    "`:popover-open` is gone once Escape closes it",
+    "state carried over from the previous render",
+    "a drag that started as a touch keeps the touch id",
+    "the handler was never attached, so the click is dropped",
+    "see Phase 1.3 and the form page for the fixture",
+    "the previous attempt's own gesture is cancelled",
+    "the first digit of the previous point is kept",
 ]
 
 
@@ -885,6 +1164,20 @@ EXTRACTION_CASES = [
     ("shell heredoc written to a .py file is code", "a.sh", "cat > check.py <<'EOF'\n# used to be 3px\nEOF\n", 1),
     ("shell comment after a heredoc is read", "a.sh", "cat <<EOF\nx\nEOF\n# used to be 3px\n", 1),
     ("shell here-string is not a heredoc", "a.sh", "cat <<<EOF\n# used to be 3px\n", 1),
+    # JS and CSS held in Rust string literals: a comment in the code is a comment, the string text around it is data
+    ("rust raw-string JS: a // comment is read", "a.rs", 'const J: &str = r#"\n  // used to be 3\n  const a = 1;\n"#;\n', 1),
+    ("rust raw-string JS: a trailing // comment is read", "a.rs", 'const J: &str = r#"const a = 1; // 2026-09-02 iOS fix\nfoo();"#;\n', 1),
+    ("rust raw-string JS: a /* */ comment is read", "a.rs", 'const J: &str = r#"function f() { /* no longer uses it */ return 1; }"#;\n', 1),
+    ("rust normal-string JS: \\n and \\\" are unescaped", "a.rs", 'let s = "const a = \\"x\\";\\n// previously x\\nfoo();";\n', 1),
+    ("rust string JS with a line continuation", "a.rs", 'let w = "const a = 1; \\\n        // previously x";\n', 1),
+    ("rust string CSS: a /* */ comment is read", "a.rs", 'let c = "a { color: red; } /* filed 2026-09-03 */";\n', 1),
+    ("rust string CSS: // is not a comment", "a.rs", 'let c = "a { background: url(//cdn/used to.png); color: red; }";\n', 0),
+    ("rust prose string with // is data", "a.rs", 'let p = "2026-10-19 // used to be 3px";\n', 0),
+    ("rust string JS: a URL is not a comment", "a.rs", 'let u = "const u = \'https://x.dev/used to be\'; if (a) { b(); }";\n', 0),
+    ("rust string JS: // inside a JS string is not a comment", "a.rs", 'let u = "const m = \'// used to be\'; function f() { return m; }";\n', 0),
+    ("rust string with no code shape is data", "a.rs", 'let u = "see /* used to be */ above";\n', 0),
+    ("rust byte string is skipped", "a.rs", 'let u = b"const a = 1; // used to be";\n', 1),
+    ("rust string JS with a clean comment", "a.rs", 'const J: &str = r#"\n  // the panel is positioned from the trigger\n  const a = 1;\n"#;\n', 0),
 ]
 
 
@@ -898,6 +1191,27 @@ def _self_test_extraction():
             print(f"  FAIL extraction {name}: {got} flagged, want {want}")
     print(f"  {'ok  ' if not fails else 'FAIL'} {len(EXTRACTION_CASES)} extraction cases (regex literals, python strings, heredocs)")
     return fails
+
+
+def _self_test_embedded_lines():
+    """A comment in a Rust string is reported at its source line: raw, escaped (`\\n`) and continued strings."""
+    src = ('fn a() {\n'                                   # 1
+           '    let r = r#"\n'                               # 2
+           '        const a = 1;\n'                         # 3
+           '        // raw comment\n'                       # 4
+           '    "#;\n'                                      # 5
+           '    let e = "const b = 2;\\n// escaped comment\\nfoo();";\n'  # 6
+           '    let w = "const c = 3; \\\n'                # 7
+           '        // continued comment";\n'               # 8
+           '    // plain comment\n'                         # 9
+           '}\n')
+    got = {(ln, b.strip()) for ln, b in extract_rust(src)}
+    want = {(4, "raw comment"), (6, "escaped comment"), (8, "continued comment"), (9, "plain comment")}
+    ok = got == want
+    if not ok:
+        print(f"  FAIL embedded line numbers: got {sorted(got)}, want {sorted(want)}")
+    print(f"  {'ok  ' if ok else 'FAIL'} embedded comment line numbers (raw, escaped, continued)")
+    return 0 if ok else 1
 
 
 def scan_history_text(path, text):

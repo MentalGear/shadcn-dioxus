@@ -29,7 +29,8 @@ upstream changelog marked `history-ok: <reason>`.
 Two gates, one comment extractor (`scripts/comment-scan.py`: Rust `//` `///` `//!` `/* */`, CSS `/* */`, TS/JS (regex
 literals skipped), Python `#` and docstrings, shell `#`; a marker inside a string is not a comment, a Python triple-quoted
 string that is not a docstring is data, and a shell heredoc body is data unless it is code: an interpreter on the command
-line, a `PY`/`JS` delimiter or a `> file.py` target). Both are in `scripts/run-gates.sh` and run their own `--self-test`.
+line, a `PY`/`JS` delimiter or a `> file.py` target; the one exception to "a marker inside a string is not a comment" is
+JS or CSS held in a Rust string literal, whose own comments are read, below). Both are in `scripts/run-gates.sh` and run their own `--self-test`.
 
 - **`scripts/check-history-comments.sh`** counts, per file, the comment lines that carry a 2026-08+ date (ISO,
   numeric `02/03/2026`, or a month name in a dating frame: `since March`, `as of October`, `in October 2026`; a bare
@@ -38,7 +39,11 @@ line, a `PY`/`JS` delimiter or a `> file.py` target). Both are in `scripts/run-g
   `before/after the fix`, `formerly`, `the old engine/test/way`, `was changed/renamed/removed/added` unless a `by <agent>`
   follows, `we now`, `now uses/reads`, `no longer X` unless a condition word (`that`, `once`, `when`, `is`) precedes it,
   `since removed`, `back when`, `before/since/until row N`, `row N landed`, `this round`, `round5`, `batch 13`,
-  `lane/p5tabs`, `the STYLE-DELIVERY lane`, `found twice`, `the first version`, `an earlier note`). The counts are in
+  `lane/p5tabs`, `the STYLE-DELIVERY lane`, `found twice`, `the first version`, `an earlier note`, and the retold-work forms of round 2: a lane or session told in the code (`this
+  lane`, `this session`, `this fix`, `the task brief`, `$S/...`), how a finding was made (`confirmed live`, `found by
+  execution`, `red-then-green`, `pre-fix`, `without the fix`), a status header (`STATUS AT WRITE TIME`, `UPDATE (`), past
+  framing (`exactly as before`, `renamed from`, `the original asserted`, `historical defect`, `before Phase 1.1`) and who
+  asked (`owner report`, `bug report`, `PR #47`), plus a month-only date `2026-08`). The counts are in
   `scripts/check-history-comments.baseline.tsv` (`path<TAB>count`). The gate **fails** when a file's count rises, when a
   new file has a non-zero count, and when a count **fell** while the baseline still allows the old number (run
   `scripts/check-history-comments.sh --update-baseline` to lock the drop in). Shrink-only: `--update-baseline` refuses
@@ -48,8 +53,27 @@ line, a `PY`/`JS` delimiter or a `> file.py` target). Both are in `scripts/run-g
   prefix, which is the deployed site now; the project docs are `dev-docs/`) are in
   `scripts/check-comment-refs.baseline.tsv` (`file<TAB>kind<TAB>ref`), shrink-only the same way.
 
-Skipped: `dev-docs/archive/` (history belongs there; code files elsewhere under `dev-docs/` are scanned), `docs/`, `*.md`, the vendored APG reference tree, generated
-`primitives/src/js/*.js`, lock files, and the gates' own sources. Not seen: CSS or JS that sits inside a Rust string.
+Skipped: `dev-docs/archive/` (history belongs there; code files elsewhere under `dev-docs/` are scanned), `docs/`,
+`*.md`, the vendored APG reference tree, generated `primitives/src/js/*.js`, lock files, and the gates' own sources.
+
+### What the scanner reads and what it leaves alone
+
+- **JS and CSS in Rust strings.** A raw or normal string literal that reads as code is scanned for the `//` and `/* */`
+  comments inside it (an `eval!` script, a `style { r#"..."# }` sheet) and reported at its Rust line; `\n`, `\"` and a
+  `\` line continuation are unescaped first. "Reads as code" is a statement or block shape plus a JS word (`const`,
+  `function`, `=>`, `document` ...) for JS, a `{ prop: value }` rule plus a `/* */` for CSS (a CSS-only string yields only
+  its block comments). A URL (`https://x`) or a prose string with a `//` in it is data, and so is the text around a comment.
+- **A path is a link.** `dev-docs/research/round3-2026-10-05.md` is masked before the rules run: it is neither "this
+  round" nor a date. A `$S/...` pointer is not a path, it is a dead scratchpad reference, and is flagged.
+- **Provenance is not history.** A full SHA in a pinned-upstream frame (`radix-ui/primitives` commit `<sha>`, `<sha>` of
+  `w3c/aria-practices`, `<path> @ <sha>`, `pinned`/`upstream` before it) needs no `history-ok` marker.
+- **"no longer" as a state.** `Duplicate no longer matches`, `no longer applies once the element ...`, `(no longer
+  `exists`)`, `whose titles no longer match`, `an API its primitive no longer has` describe what the code handles.
+  Instrument `used to exclude/filter/skip ...` stays unless `that/which used to`.
+- Not adopted, on purpose: bare `pre-existing` (a baseline's entries are pre-existing by design), `is gone` (a state: "the
+  dialog is gone"), `carried over from`, `started as`, `was never ...`, a bare `this slice` (a pie slice), `measured live`,
+  a bare `lane` (the SSG lane is a test target), `PR #N` after `upstream` (provenance). Each has a must-not-flag sentence in
+  the self-test.
 
 ## Day to day
 
