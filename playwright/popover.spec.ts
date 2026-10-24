@@ -349,7 +349,7 @@ test.describe("Axe automated scan", () => {
 // all -- only this trigger's own `onclick` handler
 // (`ctx.set_open.call(!(ctx.open)())`, `primitives/src/popover.rs`) runs,
 // a genuinely script-driven toggle, exactly the path row 19 fixes.
-test.describe("Close-fade animation, non-modal arm (docs/backlog.md rows 19, 7)", () => {
+test.describe("Close-fade animation, non-modal arm (dev-docs/backlog.md rows 19, 7)", () => {
   test("content fades out (opacity -> 0, still popover-open) before unmounting", async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/popover/`, {
       timeout: 20 * 60 * 1000,

@@ -331,7 +331,7 @@ test.describe("axe: nested dialogs open", () => {
  * dialog too (6e is the regression guard for that placement).
  */
 
-test.describe("Rule 6 — modal Popover (two-engine completion)", () => {
+test.describe("Rule 6 — modal Popover", () => {
   test("6a. clipping escape: modal Popover content escapes an overflow:hidden ancestor", async ({ page }) => {
     await gotoTopLayer(page);
     await page.locator("#popover-modal-clip-trigger").click();
@@ -420,7 +420,7 @@ test.describe("Rule 6 — modal Popover (two-engine completion)", () => {
     await expect(trigger).toBeFocused();
   });
 
-  test("6e. trigger-anchored placement: a modal Popover renders next to its trigger, not viewport-centered (regression guard -- must stay green through the native-dialog swap)", async ({
+  test("6e. trigger-anchored placement: a modal Popover renders next to its trigger, not viewport-centered", async ({
     page,
   }) => {
     await gotoTopLayer(page);
@@ -540,7 +540,7 @@ for (const key of ["Enter", "Space"] as const) {
   });
 }
 
-test.describe("Rule 7c — regression guard: a real pointer click on the backdrop still dismisses", () => {
+test.describe("Rule 7c — a real pointer click on the backdrop dismisses", () => {
   test("opening the dialog by keyboard, a real mouse click far outside it still dismisses", async ({ page }) => {
     await gotoDialog(page);
     const trigger = demoRole(page, "button");

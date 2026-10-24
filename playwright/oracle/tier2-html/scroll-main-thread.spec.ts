@@ -228,7 +228,7 @@ test.describe("scroll smoothness of / (counts)", () => {
     await page.waitForTimeout(4000);
     const m1 = await metrics(cdp);
     const idleLayouts = m1.layouts - m0.layouts;
-    expect(idleLayouts, `layouts over 4 s idle at the top (${idleLayouts}); HEAD ~110`).toBeLessThanOrEqual(24);
+    expect(idleLayouts, `layouts over 4 s idle at the top (${idleLayouts})`).toBeLessThanOrEqual(24);
 
     // A scripted top-to-bottom scroll (real wheel input). Counts are reported, not capped: on any build the
     // scroll window still holds ~1 layout per card entering/leaving view and the on-screen Progress demo's

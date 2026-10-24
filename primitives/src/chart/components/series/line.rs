@@ -641,7 +641,7 @@ mod tests {
     }
 
     #[test]
-    fn line_options_default_matches_pre_stage_2_hardcoded_values() {
+    fn line_options_default_is_a_plain_line() {
         // Pins the plain-line constants (`r="3"`, `stroke-width: 2`
         // from `chart/style.css`) as this struct's own defaults, so a
         // caller who never touches `LineOptions` gets exactly a plain

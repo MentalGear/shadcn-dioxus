@@ -725,7 +725,7 @@ mod tests {
         }
 
         #[test]
-        fn regression_a_trailing_single_tile_row_created_by_backoff_still_clears_the_floor() {
+        fn a_trailing_single_tile_row_created_by_backoff_still_clears_the_floor() {
             // Three items just barely reach the threshold together; backing the first row off to
             // two tiles leaves one leftover item as its own trailing (genuinely last) row, which
             // must not be re-capped at the target height (105px against a 140px floor).
@@ -736,7 +736,7 @@ mod tests {
         }
 
         #[test]
-        fn regression_a_degenerate_aspect_with_a_floor_does_not_explode_row_height() {
+        fn a_degenerate_aspect_with_a_floor_does_not_explode_row_height() {
             // A degenerate item (floored to the 1:20 sliver) at the start of a row must not make
             // every backoff candidate look sub-floor, cascading to a one tile row and dividing by
             // about 0.05: a 375px container exploded to 7500px tall. Such a row is exempt from
@@ -779,7 +779,7 @@ mod tests {
         }
 
         #[test]
-        fn regression_a_valid_but_very_narrow_aspect_does_not_explode_row_height_either() {
+        fn a_valid_but_very_narrow_aspect_does_not_explode_row_height_either() {
             // A real, valid aspect that is just very small (0.01) is not exempted as degenerate,
             // so backoff could isolate it in its own row: 375 / 0.01 = 37500px tall, uncapped.
             // Clamping the height alone broke edge to edge fill instead (width shrinks with the

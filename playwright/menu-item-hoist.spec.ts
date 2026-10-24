@@ -110,7 +110,7 @@ for (const host of HOSTS) {
       await expect(hint).toHaveAttribute("data-dx-menu-shortcut", "true");
     });
 
-    test("item, separator and shortcut computed style match the old per-sheet values", async ({ page }) => {
+    test("item, separator and shortcut computed style match shadcn's menu values", async ({ page }) => {
       await host.open(page, "parts");
       const menu = host.menu(page);
       const muted = await resolveColor(page, "var(--dx-muted-foreground)");

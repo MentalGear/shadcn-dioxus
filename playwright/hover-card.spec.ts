@@ -72,7 +72,7 @@ test.describe("Axe automated scan", () => {
 // `primitives/src/top_layer.rs`'s `use_popover_shown_while_mounted`
 // (row 19) keeps the popover shown through the animation that CSS defines
 // (row 7).
-test.describe("Close-fade animation (docs/backlog.md rows 19, 7)", () => {
+test.describe("Close-fade animation (dev-docs/backlog.md rows 19, 7)", () => {
   test("content fades out (opacity -> 0, still popover-open) before unmounting", async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/hover_card/`, { timeout: 20 * 60 * 1000 });
     const trigger = page.getByRole("button", { name: "Dioxus" });

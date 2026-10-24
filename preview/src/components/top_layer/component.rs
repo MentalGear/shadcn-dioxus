@@ -339,7 +339,7 @@ pub fn TopLayerFixture() -> Element {
             }
 
             section { class: Styles::dx_top_layer_section,
-                h2 { "Toast top-layer stacking (Migration A slice 3/3, final)" }
+                h2 { "Toast top-layer stacking" }
                 p { class: Styles::dx_top_layer_hint,
                     "The small red panel is a high-"
                     code { "z-index" }
@@ -426,7 +426,7 @@ pub fn TopLayerFixture() -> Element {
             }
 
             section { class: Styles::dx_top_layer_section,
-                h2 { "Point-positioned vs. anchored scroll behavior (Migration A slice 2/3)" }
+                h2 { "Point-positioned vs. anchored scroll behavior" }
                 p { class: Styles::dx_top_layer_hint,
                     "Both controls below sit normally in-flow (no clip ancestor, plenty of "
                     "room on every side) so a modest scroll cannot itself cross a "
@@ -434,9 +434,8 @@ pub fn TopLayerFixture() -> Element {
                     "flipping (Rules 5-7 already cover that), they're about what "
                     "happens to already-open content while the page scrolls. "
                     code { "ContextMenu" }
-                    " opens at a raw click point with no anchor -- pre-migration "
-                    "behavior (measured, then preserved by this migration) is "
-                    "that its content stays at the click's "
+                    " opens at a raw click point with no anchor -- its content "
+                    "stays at the click's "
                     code { "viewport" }
                     "-relative position, i.e. it does not move on screen as the "
                     "page scrolls underneath it (same as a native OS context "
@@ -654,7 +653,7 @@ pub fn TopLayerFixture() -> Element {
             }
 
             section { class: Styles::dx_top_layer_section,
-                h2 { "Native <dialog> clipping escape (Phase 4.2)" }
+                h2 { "Native <dialog> clipping escape" }
                 p { class: Styles::dx_top_layer_hint,
                     "The modal "
                     code { "Dialog" }
@@ -717,7 +716,7 @@ pub fn TopLayerFixture() -> Element {
             }
 
             section { class: Styles::dx_top_layer_section,
-                h2 { "Native <dialog> background inertness (Phase 4.2)" }
+                h2 { "Native <dialog> background inertness" }
                 p { class: Styles::dx_top_layer_hint,
                     "While the alert dialog below is open, the background "
                     "button/input here must be behaviourally inert: a real "
@@ -729,7 +728,7 @@ pub fn TopLayerFixture() -> Element {
                     code { "Element.inert" }
                     " for "
                     code { "<body>" }
-                    " -- docs/phase4-spike-findings.md -- so this fixture is measured "
+                    " -- dev-docs/archive/research/phase4-spike-findings.md -- so this fixture is measured "
                     "behaviourally, not via that property.) Uses "
                     code { "AlertDialog" }
                     ", not "
@@ -774,13 +773,13 @@ pub fn TopLayerFixture() -> Element {
             }
 
             section { class: Styles::dx_top_layer_section,
-                h2 { "Native <dialog> modal Popover (two-engine completion)" }
+                h2 { "Native <dialog> modal Popover" }
                 p { class: Styles::dx_top_layer_hint,
                     "The modal "
                     code { "Popover" }
                     " below (explicit "
                     code { "is_modal: true" }
-                    "; the primitive's default is non-modal) now renders a real "
+                    "; the primitive's default is non-modal) renders a real "
                     code { "<dialog>" }
                     " opened with "
                     code { "showModal()" }
@@ -804,7 +803,7 @@ pub fn TopLayerFixture() -> Element {
                     "corner, far from the viewport center, so a "
                     "viewport-centered "
                     code { "showModal()" }
-                    " (the UA default this migration must override) would "
+                    " (the UA default) would "
                     "measurably disagree with a trigger-anchored one."
                 }
                 div { id: "popover-modal-clip-box", class: Styles::dx_top_layer_clip_box,
@@ -917,9 +916,9 @@ pub fn TopLayerFixture() -> Element {
             }
 
             section { class: Styles::dx_top_layer_section,
-                h2 { "Select scroll_lock opt-out (docs/backlog.md rows 9/72)" }
+                h2 { "Select scroll_lock opt-out (dev-docs/backlog.md rows 9/72)" }
                 p { class: Styles::dx_top_layer_hint,
-                    "Row 9 landed an opt-out "
+                    "The "
                     code { "scroll_lock: ReadSignal<bool>" }
                     " prop (default "
                     code { "true" }
@@ -927,16 +926,16 @@ pub fn TopLayerFixture() -> Element {
                     code { "Select" }
                     "/"
                     code { "SelectMulti" }
-                    ", but no fixture exercised "
+                    " opts out of the page scroll lock. The trigger below sets "
                     code { "scroll_lock=false" }
-                    " -- the trigger below sets it explicitly, so opening its "
+                    " explicitly, so opening its "
                     "listbox must leave page scroll unlocked (a wheel event "
                     "still scrolls the page), unlike every other overlay on "
                     "this page and unlike Select's own default-"
                     code { "true" }
                     " instance ("
                     code { "playwright/oracle/tier3-radix/scroll-lock.spec.ts" }
-                    "'s pre-existing case, on Select's own gallery page)."
+                    "'s default case, on Select's own gallery page)."
                 }
                 Select::<String> {
                     id: "scroll-lock-select-root",

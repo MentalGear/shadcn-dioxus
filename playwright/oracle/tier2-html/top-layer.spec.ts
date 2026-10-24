@@ -1427,7 +1427,7 @@ async function assertNoSelfOverlapWithinViewport(page: Page, overlay: AnchoredOv
   expect(content.bottom, debug).toBeLessThanOrEqual(viewport.height + EDGE_TOLERANCE);
 }
 
-test.describe("Rule 11 — anchored-overlay self-overlap contract (2026-09-02 iOS keyboard bug)", () => {
+test.describe("Rule 11 — anchored-overlay self-overlap contract", () => {
   test.describe("(a) no self-overlap once open", () => {
     for (const overlay of ANCHORED_OVERLAYS) {
       test(`${overlay.name}: content never overlaps its own anchor`, async ({ page }) => {
@@ -1578,8 +1578,8 @@ test.describe("Rule 11 — anchored-overlay self-overlap contract (2026-09-02 iO
         reason:
           "conforms at open (edge-bottom-tooltip-*) but is hover-driven: the keyboard-simulation resize " +
           "moves the trigger out from under the real (unmoved) cursor, and this Chromium genuinely closes " +
-          "the tooltip via a real pointerleave before this fix's logic runs -- not the same-open " +
-          "'diverges mid-open' case this test targets, and not the reported bug's shape (a focused text " +
+          "the tooltip via a real pointerleave before the tracking logic runs -- not the same-open " +
+          "'diverges mid-open' case this test targets, and not the keyboard-overlap shape (a focused text " +
           "input, not a hover surface, is what keeps an overlay open while a keyboard appears).",
       },
       {
@@ -1593,7 +1593,7 @@ test.describe("Rule 11 — anchored-overlay self-overlap contract (2026-09-02 iO
         reason:
           "no naturally CSS-anchor-conforming context found for DropdownMenu in this Chromium sandbox " +
           "(checked its own gallery page's demo instance and every clip-* pair on the top_layer fixture -- " +
-          "all land on the JS fallback path at open already; docs/backlog.md item 21 records this sandbox's " +
+          "all land on the JS fallback path at open already; dev-docs/backlog.md item 21 records this sandbox's " +
           "broader CSS-Anchor-Positioning unevenness). Verify on a real device instead.",
       },
       {
@@ -1619,8 +1619,8 @@ test.describe("Rule 11 — anchored-overlay self-overlap contract (2026-09-02 iO
           "no naturally CSS-anchor-conforming context found for Combobox in this Chromium sandbox (checked " +
           "its own gallery page's demo instances and every clip-* pair on the top_layer fixture -- all land " +
           "on the JS fallback path at open already, which is itself the correctly-handled case, not this " +
-          "gap). This is the reported bug's own component -- see this session's report for why real-device " +
-          "iOS Safari verification is still needed for the exact 'conforming at open' shape.",
+          "gap). Combobox is the component the keyboard-overlap contract is about; real-device iOS Safari " +
+          "verification is still needed for the exact 'conforming at open' shape (dev-docs/backlog.md row 28).",
       },
       {
         // dev-docs/backlog.md row 41(b). See this section's header doc's own
@@ -1635,8 +1635,8 @@ test.describe("Rule 11 — anchored-overlay self-overlap contract (2026-09-02 iO
           "same as Tooltip/HoverCard above -- ANCHORED_OVERLAYS opens Navbar via .hover() with a reengage " +
           "step after the keyboard-simulation resize, the same hover-driven shape that makes Tooltip/HoverCard " +
           "genuinely close via a real pointerleave when the resize moves the trigger out from under the " +
-          "stationary synthetic cursor, before this fix's logic ever runs. Not independently confirmed by " +
-          "execution for Navbar in this environment (docs/backlog.md rows 36/41's own report) -- a future " +
+          "stationary synthetic cursor, before the tracking logic ever runs. Not independently confirmed by " +
+          "execution for Navbar in this environment (dev-docs/backlog.md rows 36/41's own report) -- a future " +
           "execution pass should confirm or correct this.",
       },
       {
@@ -1656,7 +1656,7 @@ test.describe("Rule 11 — anchored-overlay self-overlap contract (2026-09-02 iO
           "same as Tooltip/HoverCard/Navbar above -- ANCHORED_OVERLAYS opens NavigationMenu via .hover() with " +
           "a reengage step after the keyboard-simulation resize, the same hover-driven shape that makes those " +
           "three genuinely close via a real pointerleave when the resize moves the trigger out from under the " +
-          "stationary synthetic cursor, before this fix's logic ever runs. This is the same structural " +
+          "stationary synthetic cursor, before the tracking logic ever runs. This is the same structural " +
           "inference the Navbar bullet above draws, not an independent execution run against the specific " +
           "'conforming at open' shape this test needs for NavigationMenu (it is skipped, like Navbar, by " +
           "test.skip(!kase.supported, ...) below, so this reason itself is never exercised by a normal run) " +

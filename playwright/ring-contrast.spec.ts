@@ -172,7 +172,7 @@ test.describe("focus ring contrast", () => {
     });
 
     for (const contrast of [null, "wcag"] as const) {
-      test(`${mode}, ${contrast ?? "default"}: with no preset the ring is neutral grey, not the old blue`, async ({ page }) => {
+      test(`${mode}, ${contrast ?? "default"}: with no preset the ring is neutral grey`, async ({ page }) => {
         const rows = (await measure(page, mode, undefined, contrast)).filter((r) => r.base === "none");
         expect(rows.length).toBeGreaterThan(0);
         for (const r of rows) {

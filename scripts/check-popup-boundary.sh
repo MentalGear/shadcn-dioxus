@@ -71,7 +71,7 @@ LEAF = "the ancestor is a leaf part of the component (a label, icon holder or co
 OWN = "the ancestor is the component's own control and the subject its own icon/internal; the component renders no popup inside it"
 DIRECT = "a direct-child (`>`) rule: the matched child is one of the component's own items, and a popup panel is never a direct child of this host (it sits one wrapper deeper)"
 SVGINNER = "the subject is an SVG-internal element (`text`, `line`, `path`, `tspan`, ...) of the chart's own <svg>; HTML cannot be nested in it, so no popup is reachable"
-PENDING = "a free-content slot a user can put a link (and so a HoverCard/Popover trigger) in; sheet owned by a batch-2 lane, so the boundary is not added here -- add `:not(:where([popover], dialog) *)` to the subject when that lane merges and delete this entry"
+PENDING = "a free-content slot a user can put a link (and so a HoverCard/Popover trigger) in; the boundary is not on this selector yet -- add `:not(:where([popover], dialog) *)` to the subject and delete this entry"
 ALLOW = [
     ("alert", r"^\.dx-alert > svg$", DIRECT),
     ("attachment", r"\.dx-attachment-media", "the ancestor is the attachment's media tile, which holds one icon or one image"),

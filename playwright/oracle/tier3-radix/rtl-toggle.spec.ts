@@ -61,7 +61,7 @@ test.describe("the toggle makes the provider live", () => {
   });
 });
 
-test.describe("the five primitives that ignored the direction now mirror", () => {
+test.describe("the five direction-aware primitives mirror under RTL", () => {
   test("tag_group: ArrowLeft moves to the NEXT tag under RTL", async ({ page }) => {
     await open(page, "tag_group");
     await setDirection(page, "rtl");

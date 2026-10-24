@@ -24,7 +24,7 @@ async function open(page: Page, name: string, variant: string, mode: "light" | "
 const css = (el: Locator, prop: string) => el.evaluate((e, p) => getComputedStyle(e).getPropertyValue(p), prop);
 
 for (const mode of ["light", "dark"] as const) {
-  test.describe(`row 188 leftovers, ${mode}`, () => {
+  test.describe(`input group textarea and breadcrumb link demos, ${mode}`, () => {
     test.use({ colorScheme: mode });
 
     test(`input_group/textarea: bare control, footer below it, live count, group ring`, async ({ page }) => {

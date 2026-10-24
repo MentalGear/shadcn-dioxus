@@ -43,11 +43,11 @@ from pathlib import Path
 # (path-glob::name-glob, reason). Each covers the DUPLICATE side of a cluster; the canonical one stays out.
 ALLOW = [
     ("preview/src/components/alert_dialog/style.css::dx-alert-animate-*",
-     "pure opacity fade, identical to the theme's dx-fade-in/out; owned by the modal-panel lane (row 145 / audit row 2), which moves it to the shared pair"),
+     "pure opacity fade, identical to the theme's dx-fade-in/out; moves to the shared pair with the modal panels (row 145)"),
     ("preview/src/components/command/style.css::dx-command-dialog-backdrop-*",
-     "pure opacity fade, identical to the theme's dx-fade-in/out; modal-panel lane"),
+     "pure opacity fade, identical to the theme's dx-fade-in/out; moves to the shared pair with the modal panels (row 145)"),
     ("preview/src/components/dialog/style.css::dx-dialog-backdrop-animate-*",
-     "pure opacity fade, identical to the theme's dx-fade-in/out; modal-panel lane"),
+     "pure opacity fade, identical to the theme's dx-fade-in/out; moves to the shared pair with the modal panels (row 145)"),
 ]
 
 explicit = sys.argv[1:]

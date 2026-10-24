@@ -50,7 +50,7 @@ test('test', async ({ page }) => {
  * either page's own markup, so both pages are worth covering independently
  * rather than trusting one to stand in for the other.
  */
-test.describe('Toast bounding box (docs/backlog.md row 44)', () => {
+test.describe('Toast bounding box (dev-docs/backlog.md row 44)', () => {
   async function assertToastOnScreen(page: Page) {
     const toast = page.getByRole('alertdialog').first();
     await expect(toast).toBeVisible();
