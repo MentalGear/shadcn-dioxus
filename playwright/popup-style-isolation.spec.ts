@@ -24,7 +24,7 @@
  *     natural nesting that class shows up in (a popup hosted in an input group addon, a card, a toolbar...),
  *     compared against the same popup alone.
  *
- * The test, by construction rather than by listing the components that happened to be hit. For each popup
+ * The test is by construction, not from a list of known components. For each popup
  * component (and the site pages that compose several), the first trigger that opens each popup KIND (the
  * root's `dx-` classes) is opened twice:
  *   - ALONE-vs-NESTED: as the page renders it, then
@@ -306,7 +306,7 @@ async function reset(page: Page, url: string) {
   await page.keyboard.press("Escape").catch(() => undefined);
   await page.waitForTimeout(80);
   // The toast region is a manual popover that stays open for as long as a toast is up: Escape does not close it and
-  // it is not a stuck popup (reloading for it cost a hydration per trigger on the home page).
+  // it is not a stuck popup, so it does not call for a reload.
   const stuck = await page.evaluate(() =>
     [...document.querySelectorAll("[popover], dialog")].some(
       (e) => !e.classList.contains("dx-toast-base-region") && (e.matches(":popover-open") || (e.tagName === "DIALOG" && (e as HTMLDialogElement).open)),

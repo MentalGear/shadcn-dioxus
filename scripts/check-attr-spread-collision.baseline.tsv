@@ -3,8 +3,8 @@
 # live "spread" instance of the duplicate-attribute defect this gate looks for (see
 # check-attr-spread-collision.sh's own header, and
 # dev-docs/issues/duplicate-attribute-findings.md for the full breakdown), listed here
-# only because fixing every pre-existing site was out of scope for the lane that added
-# this gate. Format: file<TAB>enclosing-fn<TAB>attribute-name, one line per finding
+# so the gate can require no new site without requiring every old one fixed at once.
+# Format: file<TAB>enclosing-fn<TAB>attribute-name, one line per finding
 # (duplicates meaningful -- a multiset, not a set; see the .sh header for why). Do not
 # hand-edit: adding a line here to silence a real new finding defeats the gate: fix the
 # site instead, or re-run with --update-baseline and explain why in the commit.

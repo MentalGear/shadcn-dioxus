@@ -247,8 +247,8 @@ test.describe("position=item-aligned", () => {
       else expect(l.y, "list starts below the trigger").toBeGreaterThanOrEqual(t.y + t.height - 0.5);
       // Placed by the select's own script and by nothing else: the list sits 4px off the trigger's edge
       // and on its left edge. The engine's `anchor()` rules for `data-side` (an 8px margin, a
-      // `translateX(-50%)`, a scroll-compensated `bottom: anchor(top)`) once also applied to this list
-      // (which writes `data-side` too) and moved it by those amounts; its first spec only bounded it.
+      // `translateX(-50%)`, a scroll-compensated `bottom: anchor(top)`) must not apply to this list, which
+      // writes `data-side` too; the exact 4px offset below is what shows they do not.
       if (side === "top") expect(t.y - (l.y + l.height), "4px above the trigger").toBeCloseTo(4, 0);
       else expect(l.y - (t.y + t.height), "4px below the trigger").toBeCloseTo(4, 0);
       expect(l.x, "on the trigger's left edge").toBeCloseTo(t.x, 0);

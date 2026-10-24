@@ -536,7 +536,7 @@ impl Route {
 
 /// The outermost layout, applied to EVERY route (never popped by an
 /// `#[end_layout]` anywhere in `Route`) -- this is deliberately where
-/// `GlobalHead` renders (dev-docs/backlog.md row 46 finding, below), not
+/// `GlobalHead` renders (dev-docs/backlog.md row 46, below), not
 /// `NavigationLayout`, precisely because it stays mounted across a
 /// client-side transition between ANY two routes in the app, including two
 /// routes that both sit outside `NavigationLayout`
@@ -3596,7 +3596,7 @@ fn ComponentGalleryPreview(component: ComponentDemoData) -> Element {
     // is the sole provider of this context -- see `HomeSidebarControls`'s
     // own doc comment), gets live controls instead of the plain
     // "Open full preview" link every other `ComponentType::Block` entry
-    // still falls back to. `try_consume_context` (not `consume_context`)
+    // falls back to. `try_consume_context` (not `consume_context`)
     // is what makes that fallback safe rather than a panic: this same
     // component would otherwise need every future caller to remember to
     // provide the context, for a card that doesn't use it.

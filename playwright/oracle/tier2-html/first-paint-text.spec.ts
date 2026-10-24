@@ -13,11 +13,11 @@
  * oracle's business). Differences that are the demo's own client state, not delivery, are listed in `ALLOW` with a reason;
  * a stale entry fails.
  *
- * NARROWED (row 329): the every-route sweep is `cargo test`'s. `preview/src/ssr_parity.rs` renders every demo and
+ * Scope (row 329): the every-route sweep is `cargo test`'s. `preview/src/ssr_parity.rs` renders every demo and
  * every component page natively, once as the server frame and once after the first client tick (effects run), and fails on
  * any difference in text, `value`, `aria-label`, `class`, `style` or `data-*`; it is a superset of what this spec reads,
  * covers tag_group (row 332) and row 306. What it cannot see is a real
- * browser hydrating the shipped wasm, so this spec keeps that half on the routes the class has hit (`ROUTES`):
+ * browser hydrating the shipped wasm, so this spec keeps that half on the routes where this class can occur (`ROUTES`):
  * Select and Combobox (row 306) and Tag Group (row 332). `FIRST_PAINT_ROUTES=all` runs every component route again,
  * `FIRST_PAINT_ROUTES=select,field` any list.
  *
@@ -38,7 +38,7 @@ const ALL_COMPONENTS: string[] = fs
   .filter((d) => d.isDirectory() && fs.existsSync(path.join(PREVIEW, "src", "components", d.name, "docs.md")))
   .map((d) => d.name)
   .sort();
-/** The routes the class has hit; every other route is the native parity test's (`preview/src/ssr_parity.rs`, row 329). */
+/** The routes where this class can occur; every other route is the native parity test's (`preview/src/ssr_parity.rs`, row 329). */
 const ROUTES = ["select", "combobox", "tag_group"];
 const COMPONENTS: string[] = (() => {
   const only = (process.env.FIRST_PAINT_ROUTES ?? "").split(",").map((s) => s.trim()).filter(Boolean);

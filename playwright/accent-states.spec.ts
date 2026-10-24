@@ -516,7 +516,7 @@ test.describe("accent on active and selected states (row 389)", () => {
         label: "panel link data-active",
         find: `document.querySelector('.dx-navigation-menu-content .dx-navigation-menu-link[data-active="true"]')`,
         prop: "background-color",
-        // A state that had no rule: with no accent it is the neutral selected fill (`--dx-accent-selected`).
+        // A state with no rule of its own: with no accent it is the neutral selected fill (`--dx-accent-selected`).
         plain: "var(--dx-accent-selected)",
         next: "var(--dx-accent-tint-selected)",
       },

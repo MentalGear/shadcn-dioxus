@@ -92,7 +92,7 @@
 //!   proportional to the row count on every scroll frame (20 ms per frame for
 //!   2,000 rows in the long demo), so a long transcript should render its rows
 //!   through [`MessageScrollerRows`], which groups them in chunks of 20 and
-//!   skips each chunk as a unit (3.7 ms per frame, measured under load). Rows written directly as
+//!   skips each chunk as a unit (3.7 ms per frame under load). Rows written directly as
 //!   children of the content still work and keep the per-row behaviour.
 //!
 //! Mounting only a window of rows (so unmounted rows would be unreachable by

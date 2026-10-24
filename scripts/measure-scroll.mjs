@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-// measure-scroll.mjs -- reproduce and quantify "scrolling the overview page
-// feels janky" in a real (headless) Chromium, with Chrome DevTools Protocol
-// tracing, and bisect suspects by switching them off.
+// measure-scroll.mjs -- quantify how smoothly the overview page scrolls in a
+// real (headless) Chromium, with Chrome DevTools Protocol tracing, and bisect
+// suspects by switching them off.
 //
 // What it does, for one URL (default: the home route `/`):
 //   1. loads the page, waits for hydration (`.dx-component-card`), settles;

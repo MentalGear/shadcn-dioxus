@@ -224,7 +224,7 @@ test.describe("non-modal Popover (the default): the page keeps scrolling and hol
     await page.keyboard.press("PageDown");
     await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
     // End must reach the bottom. Not "further than after PageDown": on a short page PageDown alone
-    // can already reach the bottom (seen under load, scrollY 577 = max).
+    // can already reach the bottom.
     await page.keyboard.press("End");
     const maxY = await page.evaluate(
       () => document.documentElement.scrollHeight - document.documentElement.clientHeight,

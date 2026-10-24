@@ -252,12 +252,12 @@ html[data-theme="light"] [class~="dxc-system"] {
     var(--dark, oklch(from var(--dx-primary) max(l, 0.75) c h));
 
   /* The picked accent on ACTIVE and SELECTED states (row 385's sibling, row 389). With no accent picked every
-   * slot below is the colour its state paints today, to the byte; the `:root[data-theme-accent]` rule after this
+   * slot below is the colour its state paints, to the byte; the `:root[data-theme-accent]` rule after this
    * block replaces them with accent-derived values, so a component reads a slot and never `--dx-primary` raw.
    *
    * - `--dx-primary-mark`: the accent as a non-text MARK (a dot, a drop line, a range or progress fill). No accent:
    *   `--dx-primary` itself.
-   * - `--dx-active-mark`: the same for a mark that is `--dx-foreground` today (the Tabs bar). No accent: foreground.
+   * - `--dx-active-mark`: the same for a mark that is `--dx-foreground` (the Tabs bar). No accent: foreground.
    * - `--dx-active-ink`: the accent as TEXT on a plain surface (an active label). No accent: foreground.
    * - `--dx-accent-tint`: a SURFACE for a highlighted, open or current state that carries the accent's hue. No
    *   accent: `--dx-accent`, the neutral hover surface (shadcn's `--accent`, NOT the picked accent).
@@ -734,16 +734,16 @@ html[data-theme="light"] [class~="dxc-system"] {
    * `--dx-accent-mark` clamps `--dx-primary`'s OKLCH lightness like the ring does, with bounds that also clear the
    * muted track a Slider or Progress fill sits on: at most `--dx-accent-mark-l-max` (0.58) in light, at least
    * `--dx-accent-mark-l-min` (0.62) in dark. Hue and chroma are kept; a value already inside passes through.
-   * `--dx-accent-ink` is `--dx-primary-ink` (text on a plain surface). Never put it on a tint: the audit measured
-   * 4.16 to 4.45:1 for light ink on a 10-15% accent tint; the text on a tint is `--dx-foreground` or
+   * `--dx-accent-ink` is `--dx-primary-ink` (text on a plain surface). Never put it on a tint: light ink on a
+   * 10-15% accent tint is 4.16 to 4.45:1; the text on a tint is `--dx-foreground` or
    * `--dx-accent-foreground`.
    *
    * `--dx-accent-tint` is the accent's hue and a fraction of its chroma (`--dx-accent-tint-chroma-light` 0.10,
    * `-dark` 0.25) at shadcn's own hover-surface lightness (light 0.97, dark 0.269), so it sits the same step from the
-   * popover, card and page as the neutral `--dx-accent` does, now hued (measured 1.08 / 1.16 at the weakest accent
+   * popover, card and page as the neutral `--dx-accent` does, hued (1.08 / 1.16 at the weakest accent
    * against 1.09 / 1.19 for the neutral). A neutral primary (chroma 0) gives that neutral accent. The light fraction is
-   * small because an sRGB-clipped pale blue or indigo at L 0.97 drifts toward cyan (0.07 of chroma gave hue 221 for
-   * blue 264) and a hued band lowers the muted foreground's 4.5:1 in the `wcag` contrast setting (0.12 gave 4.48:1).
+   * small because an sRGB-clipped pale blue or indigo at L 0.97 drifts toward cyan (0.07 of chroma lands at hue 221 for
+   * blue 264) and a hued band lowers the muted foreground's 4.5:1 in the `wcag` contrast setting (0.12 gives 4.48:1).
    * `--dx-foreground` is >= 15:1 on it. `--dx-accent-tint-selected` is the dark step (the tint pushed 15% toward the ink in the theme's
    * mix space) and, in light, the tint itself, as `--dx-accent-selected` is. */
   --dx-accent-mark-l-max: 0.58;

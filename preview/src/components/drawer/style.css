@@ -375,7 +375,7 @@
  * actually unreadable. Values below
  * mirror `.dx-button[data-style="outline"]`
  * (preview/src/components/button/style.css) exactly -- the same
- * already-audited light/dark recipe, not a new one-off pair.
+ * light/dark recipe, not a new one-off pair.
  *
  * `:not([data-style])`: `merge_attributes`/`join_class`
  * (primitives/src/lib.rs) CONCATENATES `class`, it doesn't replace it, so
@@ -383,7 +383,7 @@
  * "Cancel" action in this component's own `main` demo variant) still
  * carries `dx-drawer-close` alongside `dx-button` on the same element --
  * this rule must not compete with that button's own, separately themed
- * and already-audited styling. `[data-style]` (not a literal
+ * styling. `[data-style]` (not a literal
  * `:not(.dx-button)`) is the exclusion signal: `Button` always sets its
  * own `data-style="<variant>"` (preview/src/components/button/
  * component.rs) and the plain default `<button>` this rule actually

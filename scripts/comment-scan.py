@@ -568,6 +568,23 @@ PHRASES = [
                 r"\bsurveyed\b[^.;]{0,100}\bfound\b|\bthe survey (?:found|showed|measured)\b|\bre-?profil(?:e|ed|ing)\b|"
                 r"\bre-?test is still (?:required|needed|pending|open)\b|\bversion \d+ plus\b|"
                 r"\blanded (?:silently|in main|on main|in row|with row|as part of|via)\b|\blanded in (?:the )?(?:session|queue) branch\b", re.I), "who asked"),
+    # round 7 (row 384): how a rule or a number came to be, told in the code. "when the gate was adopted", "the sites
+    # known to exist when ...", "the audit measured", "(seen under load ...)", "the sites a demo happened to exercise",
+    # a header word NARROWED/WIDENED (upper case: the prose verb "narrowed" is a state), "once also applied", "its first
+    # spec only bounded it", "2/2 clean runs against 2/2 failures", "reproduced the identical failure", and a tuning
+    # trial ("0.07 of chroma gave hue 221", "0.12 gave 4.48:1"). Not adopted: bare `adopted` (a pattern a component
+    # adopts is a design), bare `audit` (the a11y audit is a real tool), bare `under load` ("would flake under load" is
+    # a reason), bare `happened to` ("whichever happened to be focused" is a state), bare `gave`.
+    (re.compile(r"\bwhen (?:the|this) (?:gate|check|ratchet|baseline|spec|test|rule) was (?:adopted|written|added|introduced|created)\b|"
+                r"\bknown to exist when\b|\bthe audit(?:'s)? (?:measured|found|showed|reported|flagged)\b|"
+                r"\b(?:seen|observed|hit|reproduced) under load\b|"
+                r"\bhappened to (?:be )?(?:hit|exercised?|exercised|caught|touched|reported|broken)\b|"
+                r"\bonce also (?:applied|moved|matched|styled|wrote|hit)\b|"
+                r"\b(?:its|the|their|this) first (?:specs?|tests?) (?:only|just|merely|asserted|bounded|checked)\b|"
+                r"\b\d+/\d+ clean runs\b|\bclean runs against\b|\b\d+/\d+ failures\b|"
+                r"\breproduced the (?:identical|same|failure|bug|defect)\b|"
+                r"(?:\b0?\.\d+|\b\d+\.\d+) (?:of \w+ )?gave\b|\bgave (?:a )?hue \d+|\bgave \d+(?:\.\d+)?:1", re.I), "how it came to be"),
+    (re.compile(r"\b(?:NARROWED|WIDENED)\b"), "how it came to be"),
     # a pointer into a dead session's scratchpad
     (re.compile(r"\$S/"), "scratchpad path"),
 ]
@@ -1144,6 +1161,20 @@ MUST_FLAG = [
     "OUTPUT FORMAT (version 4: version 3 plus `user-select`)",
     "a planned control that landed silently is documentation drift",
     "the helper landed in main with its own test",
+    # round 7: how a rule or a number came to be
+    "the sites known to exist when the gate was adopted",
+    "Why a gate: it was only written when the check was added.",
+    "the audit measured 4.16 to 4.45:1 for light ink on a tint",
+    "can already reach the bottom (seen under load, scrollY 577 = max)",
+    "only caught the sites some demo page happened to exercise",
+    "NARROWED (row 329): the every-route sweep is cargo test's",
+    "WIDENED: now covers every route",
+    "an anchor rule once also applied to this list",
+    "its first spec only bounded it",
+    "(2/2 clean runs against 2/2 failures without it, row 116)",
+    "two cold rebuilds reproduced the identical 5-of-6 failure",
+    "(0.07 of chroma gave hue 221 for blue 264)",
+    "(0.12 gave 4.48:1)",
 ]
 # ... and present-tense sentences that must NOT be (the false positives to keep out).
 MUST_NOT_FLAG = [
@@ -1253,6 +1284,20 @@ MUST_NOT_FLAG = [
     "the survey of the stylesheets lives in the token table",
     "a profile of the page is taken once, not re-fetched",
     "every plus sign in version 4 is escaped",
+    # round 7: the same words in their present-tense senses
+    "the range is narrowed to the visible rows",
+    "a scroll container adopted by the router keeps its offset",
+    "the a11y audit tool reports the contrast of each pair",
+    "the list would be flaky under load, so it waits for the animation",
+    "whichever item happened to be focused keeps its ring",
+    "a handler that once applied, stays applied until reset",
+    "the first test that fails stops the run",
+    "the first spec in the file opens the page",
+    "retries 2 clean runs in a row before it passes",
+    "an input of 0.07 gives hue 221 for blue 264",
+    "the engine gave up after three tries",
+    "a cold cache does not change the result",
+    "(row 303 gave `/demos` and the `/charts/` gallery the docs shell)",
 ]
 
 

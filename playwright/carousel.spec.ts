@@ -112,22 +112,15 @@ async function scrollIntoViewInstant(locator: Locator): Promise<void> {
  * The poll loop runs INSIDE the page (one `evaluate` call, a `requestAnimationFrame`
  * loop), not as repeated Node-side `expect().toPass()` round trips
  * (dev-docs/backlog.md row 112's construction: "sample in-page ... never
- * via separate round trips"). Root-caused for the vertical variant's
- * "ArrowDown/ArrowUp page the vertical carousel" test (row 112 instance 2,
- * ~1/5 red under `--workers=2`, 5/5 green under `--workers=1`, never
- * reproduced in an isolated repro of that one test): the *previous*
- * version's `toPass({ timeout: 3000 })` re-issued a fresh CDP round trip
- * (`content.boundingBox()` + `item.boundingBox()`) on every poll attempt,
- * so the 3000ms budget had to cover both the scroll-snap settle itself AND
- * however long each Node<->browser round trip took that attempt -- under
- * two workers' worth of concurrent Chromium/CPU contention specifically
- * (never under one), a slower round trip eats into the same fixed budget
- * as a slower settle, coupling a real UI wait to Node-process/IPC
- * scheduling latency that has nothing to do with whether the carousel
- * actually settled in time. Driving the whole wait from a single
- * `requestAnimationFrame` loop already running in the page removes that
- * coupling entirely: the 3000ms deadline is measured against
- * `performance.now()` in the SAME realm as the animation, with zero
+ * via separate round trips", row 112 instance 2). A Node-side `toPass({ timeout: 3000 })` would
+ * re-issue a fresh CDP round trip (`content.boundingBox()` + `item.boundingBox()`) on every
+ * poll attempt, so the 3000ms budget would have to cover both the scroll-snap settle itself AND
+ * however long each Node<->browser round trip takes -- under two workers' concurrent
+ * Chromium/CPU contention a slower round trip eats into the same fixed budget as a slower
+ * settle, coupling a real UI wait to Node-process/IPC scheduling latency that has nothing to do
+ * with whether the carousel settled in time. Driving the whole wait from a single
+ * `requestAnimationFrame` loop in the page removes that coupling: the 3000ms deadline is
+ * measured against `performance.now()` in the SAME realm as the animation, with zero
  * per-attempt IPC cost, so it reflects only genuine settle time.
  */
 async function expectSnappedToBoundary(content: Locator, item: Locator, orientation: "horizontal" | "vertical" = "horizontal") {
