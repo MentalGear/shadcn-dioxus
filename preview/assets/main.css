@@ -320,6 +320,13 @@ summary,
       scrollbar-color: var(--dx-foreground) rgb(0 0 0 / 0%);
     }
   }
+
+  /* `ScrollArea { always_show_scrollbars: true }` keeps its thumb painted without hover, so the box reads as
+     scrollable at rest. Same specificity as the two rules above; source order wins. An overlay scrollbar
+     (macOS, iOS) is still drawn by the OS only while scrolling. */
+  .dx-scroll-area-always-show {
+    scrollbar-color: var(--dx-foreground) rgb(0 0 0 / 0%);
+  }
 }
 
 /* Legacy browsers with `::-webkit-scrollbar-*` support */
