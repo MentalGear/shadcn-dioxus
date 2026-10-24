@@ -8,9 +8,10 @@ import { sandboxLaunchOptions } from "./sandbox-chromium.cjs";
 // built without `--release`), NOT the `dx serve` dev server
 // baseline.local.config.ts/playwright.config.ts depend on -- no webServer
 // entry here, so this config never tries to start (or wait on) a dx dev
-// server. Start the static server yourself first, e.g.:
+// server. Start the static server yourself first, the way the site is served (unknown URLs answer with the app's
+// 404.html; `pnpm run test:changed` and tools/run-suite.sh refuse a server that does not, tools/site-server.sh):
 //
-//   python3 -m http.server 8090 -d <site-dir>
+//   scripts/emit-404.sh <site-dir> && python3 scripts/serve-spa.py <site-dir> 8090
 //
 // Specs default to `http://127.0.0.1:8080` as their base URL (base-url.ts), so when running any of *those*
 // against this lane, also serve the same SSG site dir on port 8080 (two static-server processes over the
