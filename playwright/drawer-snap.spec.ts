@@ -228,7 +228,7 @@ test("Escape closes a snap drawer opened at a partial point", async ({ page }) =
 });
 
 test.describe("reduced motion", () => {
-  test("a settle still lands on the snap point, with the reduced duration", async ({ page }) => {
+  test("a settle lands on the snap point, with the reduced duration", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await open(page);
     const reduced = await page.evaluate(() => {

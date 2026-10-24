@@ -5,14 +5,14 @@
  * `<dialog>`), but top-layer promotion changes PAINTING, not the DOM: the panel stays a descendant of its
  * trigger's wrapper. Two things reach it from the host:
  *   1. a DESCENDANT SELECTOR (`.dx-input-group-addon button`, `.dx-alert-description a`, ...): the Date
- *      Picker's "natural language" demo hangs its calendar inside `.dx-input-group-addon`, whose
- *      `button { height; padding }` and `svg { width/height: 1rem }` shrank every calendar day cell to 28x24
- *      and the chevrons to 16px, and nothing flagged it because the popover looks right on its own page;
- *   2. plain INHERITANCE (`font-size`, `color`, `text-align`, `line-height`, `white-space`, `cursor`, ...): a
- *      Select inside a 14px card footer drew its scroll buttons at 14px and alone at 16px, the toast region
- *      inside a demo card took the card's 14px.
+ * Picker's "natural language" demo hangs its calendar inside `.dx-input-group-addon`, whose
+ *      `button { height; padding }` and `svg { width/height: 1rem }` would shrink every calendar day cell to 28x24
+ *      and the chevrons to 16px, and nothing else flags it because the popover looks right on its own page;
+ * 2. plain INHERITANCE (`font-size`, `color`, `text-align`, `line-height`, `white-space`, `cursor`, ...): a
+ *      Select inside a 14px card footer would draw its scroll buttons at 14px (alone: 16px), and the toast region
+ *      inside a demo card would take the card's 14px.
  *
- * What the construction now guarantees, and what this spec proves of it:
+ * What the construction guarantees, and what this spec proves of it:
  *   - Inheritance is cut ONCE, at the popup root: `preview/assets/dx-components-theme.css` "Popup root" is
  *     one zero-specificity rule over `[popover]`/`dialog` with a `dx-` class that gives the root the theme's
  *     root value of EVERY inherited property (`scripts/check-popup-root-reset.sh` keeps that list complete
@@ -20,7 +20,7 @@
  *     cannot matter for inheritance, and a representative popup per component in one hostile host proves
  *     the cut, instead of every popup on every page.
  *   - Descendant selectors are closed statically by `scripts/check-popup-boundary.sh` (a generic-subject
- *     descendant rule must end with `:not(:where([popover], dialog) *)`); the browser half kept here is the
+ *     descendant rule must end with `:not(:where([popover], dialog) *)`); the browser half here is the
  *     natural nesting that class shows up in (a popup hosted in an input group addon, a card, a toolbar...),
  *     compared against the same popup alone.
  *
@@ -41,7 +41,7 @@
  * lists the kinds it must open; a kind it never opens is a failure (a trigger that stopped working would
  * otherwise pass for "nothing to compare").
  *
- * It also asserts the premise the fix relies on: every popup that opens is a top-layer element, i.e. matches
+ * It also asserts the premise the construction relies on: every popup that opens is a top-layer element, i.e. matches
  * `[popover], dialog` (`POPUP_BOUNDARY` in `scripts/check-popup-boundary.sh`). A role=menu/listbox/tooltip/
  * dialog panel that opens WITHOUT one has no boundary a stylesheet can stop at.
  *
@@ -82,8 +82,8 @@ const PAGES: Array<{ id: string; path: string; kinds: string[] }> = [
   { id: "date_picker", path: "/component/date_picker/", kinds: ["dx-date-picker-popover-content"] },
   { id: "color_picker", path: "/component/color_picker/", kinds: ["dx-color-picker-popover"] },
   { id: "toast", path: "/component/toast/", kinds: ["dx-toast-container"] },
-  // The site pages compose several components inside 14px cards (the host that once made a Select's scroll buttons
-  // and the toast region 14px): the kinds their cards hold.
+  // The site pages compose several components inside 14px cards (the host that makes a Select's scroll buttons
+  // and the toast region 14px without the root reset): the kinds their cards hold.
   {
     id: "site-home",
     path: "/",
@@ -390,8 +390,8 @@ test.describe("popup style isolation: a popup nested in a component looks like t
     expect(missing, "PAGES names components the catalog does not have").toEqual([]);
   });
 
-  // The nesting this spec was written for: a popup whose trigger sits in an Input Group addon, where
-  // `.dx-input-group-addon button` / `svg` once shrank the Date Picker's calendar. Every popup the addons hold.
+  // The nesting this class shows up in: a popup whose trigger sits in an Input Group addon, where
+  // `.dx-input-group-addon button` / `svg` would shrink the Date Picker's calendar. Every popup the addons hold.
   for (const { id, path, min } of [
     { id: "date_picker", path: "/component/date_picker/", min: 1 },
     { id: "input_group", path: "/component/input_group/", min: 0 },

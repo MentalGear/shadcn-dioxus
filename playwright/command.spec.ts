@@ -3,19 +3,16 @@
  *
  * Oracle choice, per dev-docs/plan.md's definition of done: primarily a
  * smoke + axe suite, the same shape row-27's nine styled-only components
- * use, rather than a bespoke tier-1 APG-cited file. Two reasons, both
- * checked before writing this file rather than assumed:
+ * use, rather than a bespoke tier-1 APG-cited file. Two reasons:
  *
  * - `Command`'s underlying keyboard/filtering machinery is this repo's own
  *   `Combobox` infrastructure (`primitives/src/command.rs`'s module doc),
  *   and `combobox.spec.ts` -- the oracle for that infrastructure's actual
- *   consumer -- is itself a smoke + axe suite, not a tier-1
- *   `keyboard-matrix.spec.ts`-cited one (grep confirms zero "Combobox" rows
- *   there). There is no existing APG-cited row for this repo's own
- *   `Combobox` to "re-run against Command's inline-list subject" the way
- *   the plan doc's oracle section anticipated -- so this spec follows the
- *   precedent that actually exists (`combobox.spec.ts`'s own structure)
- *   rather than inventing a first tier-1 citation for either component.
+ *   consumer -- is itself a smoke + axe suite. `keyboard-matrix.spec.ts`
+ *   holds only light matrix rows for `Combobox`, so there is no APG-cited
+ *   row to "re-run against Command's inline-list subject"; this spec
+ *   follows `combobox.spec.ts`'s own structure rather than citing a first
+ *   tier-1 row for either component.
  * - `Command`'s list is never a popup (it has no open/closed state of its
  *   own -- see `primitives/src/command.rs`'s module doc), so the APG
  *   "Combobox (Editable, List Autocomplete)" pattern's own keyboard rows
@@ -77,7 +74,7 @@ test("opens via CommandDialog with the input focused", async ({ page }) => {
     await expect(list(page).getByRole("option")).toHaveCount(6);
 });
 
-test("first mouse-click open focuses the command input, and a second open still does", async ({ page }) => {
+test("first mouse-click open focuses the command input, and a second open does too", async ({ page }) => {
     // Opening the command palette by mouse click the *first* time must focus
     // the input (backlog row 77); focus is set once, explicitly, by the
     // dialog driver's open-focus policy.
@@ -85,7 +82,7 @@ test("first mouse-click open focuses the command input, and a second open still 
     await page.waitForLoadState("networkidle");
 
     // First open: a real mouse click (not keyboard) on a fresh page load --
-    // this is the exact scenario the report describes.
+    // this is the scenario of backlog row 77.
     await openButton(page).click();
     await expect(dialog(page)).toBeVisible();
     const expectedId = await input(page).getAttribute("id");
@@ -111,7 +108,7 @@ test("first mouse-click open focuses the command input, and a second open still 
 });
 
 test("first mouse-click open focuses the command input on the overview page", async ({ page }) => {
-    // Same claim, on the page the user reported it on: the
+    // Same claim, on the home page: the
     // overview/home page's demo gallery (`preview/src/main.rs`'s
     // `ComponentGallery`), which mounts every demo -- including this one --
     // alongside dozens of others, unlike the isolated component page above.
@@ -143,9 +140,9 @@ test("first mouse-click open focuses the command input on the overview page", as
     expect(await activeElementId(page)).toBe(await cardInput.getAttribute("id"));
 });
 
-test("keyboard-activated open (Enter on the trigger) still focuses the command input", async ({ page }) => {
-    // The fix for the mouse-click focus bug (see the test above) must not
-    // regress the keyboard-open path, which already worked.
+test("keyboard-activated open (Enter on the trigger) focuses the command input", async ({ page }) => {
+    // The mouse-click focus rule (see the test above) must not
+    // break the keyboard-open path.
     await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
     await page.waitForLoadState("networkidle");
 
@@ -228,9 +225,9 @@ test("Escape closes CommandDialog", async ({ page }) => {
 // The scrim every modal overlay shares (assert-backdrop-fade.ts has the full claim;
 // popover/dialog/alert-dialog/sheet/drawer run the identical assertion): the dialog's own
 // `::backdrop` is the only painter, black/10 with a 4px blur, and it fades in and out for
-// the same length. Before this CommandDialog was the sixth, un-unified painter: its own 30%
-// wrapper sat on top of the UA's default 10% `::backdrop` (40% stacked, no blur) and faded
-// over 150ms while every other overlay took 200ms.
+// the same length. CommandDialog's wrapper paints no scrim of its own:
+// a 30% wrapper would stack on the UA's default 10% `::backdrop` (40%, no blur) and fade
+// over 150ms while every other overlay takes 200ms.
 test.describe("Scrim", () => {
     test("CommandDialog paints the shared scrim and fades it in and out", async ({ page }) => {
         await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });

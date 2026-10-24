@@ -1,6 +1,6 @@
 /**
- * Backlog row 305: scrolling a drawer's content also dragged the drawer sideways (iOS). The drag now
- * decides its axis first (`GESTURE_JS`'s axis lock, vaul / Base UI): a press is pending until it has
+ * Backlog row 305 (iOS): scrolling a drawer's content must not drag the drawer sideways. The drag
+ * decides its axis first
  * travelled `AXIS_LOCK_PX`, commits only when that movement is predominantly along the dismiss axis
  * (and no scrollable ancestor can scroll that way), and is otherwise abandoned for that pointer, so
  * `start`/`move` are never sent and the panel never shifts while content scrolls.
@@ -121,7 +121,7 @@ for (const side of ['bottom', 'top', 'left', 'right'] as const) {
       await expect(page.locator(ROOT)).toHaveAttribute('data-state', 'open');
     });
 
-    test('a clear swipe toward the closing edge still dismisses it', async ({ page }) => {
+    test('a clear swipe toward the closing edge dismisses it', async ({ page }) => {
       await open(page, side);
       const [ux, uy] = TOWARD_CLOSE[side];
       // A little cross-axis wobble is fine as long as the dismiss axis wins.

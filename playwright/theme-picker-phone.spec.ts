@@ -19,7 +19,7 @@ import { gotoHydrated } from "./hydration";
  *
  * The preset/cookie plumbing itself (every swatch, persistence across reloads, focus return from a drawer
  * stacked on the nav sheet) is `theme-preset.spec.ts`'s job; this spec only proves the routes that spec
- * does not visit reach it too, and that desktop is unchanged on them.
+ * does not visit reach it too, and that desktop is unaffected on them.
  *
  *   PLAYWRIGHT_BASE_URL=http://127.0.0.1:8083 npx playwright test --config=baseline.local.config.ts ./theme-picker-phone.spec.ts
  */
@@ -33,7 +33,7 @@ const HEADER_ENTRY_ROUTES = [
   { name: "component not found", url: "/component/no-such-component/" },
 ];
 
-/** Routes with the docs sidebar: the entry is the "Theme" footer of the navigation sheet (unchanged). */
+/** Routes with the docs sidebar: the entry is the "Theme" footer of the navigation sheet. */
 const SHEET_ENTRY_ROUTES = [
   { name: "home", url: "/" },
   { name: "docs", url: "/docs" },
@@ -76,7 +76,7 @@ async function expectNoHorizontalOverflow(page: Page, width: number) {
 
 /**
  * Every visible control in the header sits inside the viewport and none paints over another (the failure
- * the picker's first phone attempt had: one more 24px icon drew over "Charts" and the GitHub link).
+ * to rule out: one more 24px icon drawing over "Charts" and the GitHub link).
  * Items nested in another item (the language select's flag inside its trigger) are not "another item".
  */
 async function expectHeaderItemsClear(page: Page, width: number, tolerance = 1) {
@@ -192,7 +192,7 @@ for (const { width, height } of PHONES) {
     }
 
     for (const route of SHEET_ENTRY_ROUTES) {
-      test(`${route.name} (${route.url}): unchanged, the entry is the navigation sheet's "Theme", not the header's`, async ({ page }) => {
+      test(`${route.name} (${route.url}): the entry is the navigation sheet's "Theme", not the header's`, async ({ page }) => {
         await gotoHydrated(page, `${BASE_URL}${route.url}`);
         await expect(themeButtons(page)).toHaveCount(0);
         await expect(page.locator(".dx-theme-phone-trigger")).toHaveCount(0); // not even rendered
@@ -207,7 +207,7 @@ for (const { width, height } of PHONES) {
     test("a no-sidebar page: a preset and the light/dark toggle both apply to the page, from the header's entry", async ({ page }) => {
       await gotoHydrated(page, `${BASE_URL}/charts/no-such-chart/`);
 
-      // Light/dark: still in the header beside the new entry, still switches the page.
+      // Light/dark: in the header beside the new entry, and switches the page.
       expect(await attr(page, "data-theme")).toBeNull();
       const toDark = page.getByRole("button", { name: "Enable dark mode" });
       await expect(toDark).toBeVisible();
@@ -265,7 +265,7 @@ for (const { width, height } of PHONES) {
   });
 }
 
-test.describe("desktop is unchanged on the routes that had no phone entry", () => {
+test.describe("desktop keeps the popover trigger on the routes whose header has no sheet", () => {
   for (const route of HEADER_ENTRY_ROUTES.slice(0, 2)) {
     test(`1280 ${route.url}: the popover trigger is the one "Theme" button; the phone entry is rendered but hidden`, async ({ page }) => {
       await page.setViewportSize({ width: 1280, height: 800 });
@@ -307,8 +307,8 @@ test.describe("desktop is unchanged on the routes that had no phone entry", () =
 /**
  * The header is one `nowrap` row at phone width, so every page's row has to fit its own items: a docs page
  * spends room on the sidebar trigger, a page without a sheet on the picker's own button, and at 390px a docs
- * page's "Charts" link drew ~4px over the GitHub mark (~16px at 320px) while this spec only swept the
- * header-entry routes at 390/360. Every route type x every phone width, down to 320px (the narrowest phone), with
+ * page's "Charts" link would draw ~4px over the GitHub mark (~16px at 320px) if its row did not fit. So this spec
+ * sweeps every route type x every phone width, down to 320px (the narrowest phone), with
  * ZERO tolerance: items may touch their neighbours' gaps but never their boxes.
  */
 const ALL_ROUTES = [...SHEET_ENTRY_ROUTES];

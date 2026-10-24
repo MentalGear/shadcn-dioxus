@@ -24,7 +24,7 @@ test.describe("toast: loading type (row 138 step 1)", () => {
     // The default duration is 5 s; a loading toast outlives it.
     await page.waitForTimeout(6000);
     await expect(t).toHaveCount(1);
-    // It is still closable by hand.
+    // It is closable by hand.
     await t.getByRole("button", { name: "close", exact: true }).click();
     await expect(t).toHaveCount(0);
   });

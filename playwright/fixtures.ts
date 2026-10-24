@@ -28,7 +28,7 @@
  * (`carousel.spec.ts`'s hover-stops-rotation test and `top-layer.spec.ts`'s `pinNearTop`)
  * can flake: that is the ambient-smooth bug showing, not a harness problem.
  *
- * The module stays as the one import point (141 specs import it) so a future
+ * The module stays as the one import point so a future
  * suite-wide fixture has a single place to live.
  */
 import { test, expect, devices } from "@playwright/test";

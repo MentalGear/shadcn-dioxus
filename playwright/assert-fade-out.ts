@@ -10,7 +10,7 @@
  * `hidePopover()` the instant `open` goes `false`, or the UA rule
  * `[popover]:not(:popover-open) { display: none }` hides the element before
  * the close animation this file's stylesheets define (row 7) ever gets a
- * chance to play. This file provides the regression check for both: it
+ * chance to play. This file provides the check for both: it
  * samples the closing content every animation frame while it is still in
  * the DOM and asserts it (a) stays displayed with decreasing opacity for a
  * few frames, (b) reaches ~0 opacity before unmount, and (c) unmounts
@@ -243,10 +243,10 @@ export function analyzeFadeSamples(capture: FadeCapture): FadeOutReport {
     );
   }
 
-  // Row 19's defect, restated as an invariant: while still mounted,
+  // Row 19's invariant: while still mounted,
   // the content must never be display:none (a `hidePopover()`-on-
   // `open`-false) nor lose `:popover-open` on the web arm (the same
-  // bug, restated in Popover-API terms -- losing `:popover-open` is what
+  // condition in Popover-API terms -- losing `:popover-open` is what
   // *makes* the UA's `display: none` rule apply in the first place).
   for (const s of mountedSamples) {
     if (s.display === "none") {

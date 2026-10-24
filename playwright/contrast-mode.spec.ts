@@ -149,7 +149,7 @@ test.describe("muted-foreground (P1)", () => {
     expect(fmt(bad).slice(0, 12), `${bad.length}/${rows.length} pairs under ${AA}:1`).toEqual([]);
   });
 
-  test("wcag, dark: unchanged, still >= 4.5:1 everywhere", async ({ page }) => {
+  test("wcag, dark: >= 4.5:1 everywhere", async ({ page }) => {
     const rows = await sweep(page, "dark", "wcag");
     const bad = rows.filter((r) => r.ratio < AA);
     expect(fmt(bad).slice(0, 12)).toEqual([]);

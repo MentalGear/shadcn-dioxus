@@ -1,9 +1,9 @@
 /**
- * Backlog row 294 leftovers: `kbd`, `.dx-label` and the input-group addon are not text (shadcn new-york-v4 gives
+ * Backlog row 294: `kbd`, `.dx-label` and the input-group addon are not text (shadcn new-york-v4 gives
  * all three `select-none`). None is a button or widget role, so the theme's shared control rule does not reach
  * them; each sheet declares it with a reasoned `USER_SELECT_ALLOW` entry in `scripts/check-theme-baseline.sh`.
  *
- * The other side stays true: a text field inside an input group keeps its selectable value.
+ * The other side holds: a text field inside an input group keeps its selectable value.
  *
  *   PLAYWRIGHT_BASE_URL=http://127.0.0.1:8150 npx playwright test --config=ssg.local.config.ts user-select-kbd-label-addon.spec.ts
  */

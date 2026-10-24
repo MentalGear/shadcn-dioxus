@@ -23,12 +23,9 @@ test('test', async ({ page }) => {
   await expect(toggleElement).toHaveAttribute('data-state', 'off');
 });
 
-// HARDENING (dev-docs/backlog.md row 89), not a reproduced defect: `.dx-toggle:hover`
-// and `.dx-toggle[data-state="on"]` tie at specificity (0,2,0) -- unlike
-// calendar/tabs's own row 89 fix (an accidental extra-specificity bump from
-// a stray `:not(...)`), this was a genuine tie broken only by source order,
-// and `[data-state="on"]` already happened to be declared after `:hover` --
-// so the pressed background survives hover even without it
+// HARDENING (dev-docs/backlog.md row 89): `.dx-toggle:hover`
+// and `.dx-toggle[data-state="on"]` tie at specificity (0,2,0), broken only by source order
+// (`[data-state="on"]` is declared after `:hover`), so the pressed background survives hover
 // (both themes, exact values below). `:where(:hover)` makes that
 // unconditional (specificity, not source order) so reordering the rules --
 // or `:hover` gaining an extra clause the way calendar/tabs's did --
@@ -53,7 +50,7 @@ for (const dark of [false, true]) {
     expect(await toggle.evaluate((el) => el.matches(':hover'))).toBe(true);
     const onAndHovered = await toggle.evaluate((el) => getComputedStyle(el).backgroundColor);
 
-    // This asserts the invariant the `:where()` fix makes durable (pressed
+    // This asserts the invariant the `:where()` construction makes durable (pressed
     // keeps its own background under the pointer), not a particular colour --
     // the pressed colour is derived from the preset-aware role tokens.
     expect(onAndHovered, `onAtRest=${onAtRest} onAndHovered=${onAndHovered}`).toBe(onAtRest);

@@ -161,7 +161,7 @@ for (const consumer of CONSUMERS) {
       expect(ring.focusVisible, "a pointer-opened panel is not :focus-visible").toBe(false);
       expect(ring.outlineStyle === "none" || ring.outlineWidth === "0px", "no UA outline on the panel").toBe(true);
 
-      // The trap still works from the panel: Tab lands on the first control inside.
+      // The trap works from the panel: Tab lands on the first control inside.
       await page.keyboard.press("Tab");
       await expect.poll(() => whereIsFocus(page, consumer.dialogSelector)).toMatchObject({
         inDialog: true,

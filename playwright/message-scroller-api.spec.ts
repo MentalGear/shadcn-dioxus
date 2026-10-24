@@ -214,7 +214,7 @@ test.describe("input_group: block addons", () => {
     const startAddon = await box(start.locator('[data-align="block-start"]'));
     expect(startAddon.y + startAddon.height).toBeLessThanOrEqual(startInput.y + 1);
 
-    // An inline-only group is unchanged: its input and addon share a row.
+    // An inline-only group keeps its input and addon on one row.
     await expect(end.locator('[data-align="block-end"]')).toHaveCSS("order", "1");
     await expect(start.locator('[data-align="block-start"]')).toHaveCSS("order", "-1");
   });

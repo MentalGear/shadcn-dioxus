@@ -30,12 +30,9 @@ test('test', async ({ page }) => {
 });
 
 /**
- * dev-docs/backlog.md row 44 -- "top_layer fixture's 'Add toast' appears dead
- * on iOS 18" (a device report), traced to an unstyled toast
- * getting whatever box the engine's own popover UA-stylesheet defaults
- * happened to produce, which differs enough between engines to matter
- * (Chromium ~105x40px on-screen; WebKit's default was the unverified
- * suspect for the device report). `toBeVisible()` alone -- the only check
+ * dev-docs/backlog.md row 44: an unstyled toast gets whatever box the engine's own popover UA-stylesheet
+ * defaults produce, which differs enough between engines to matter (Chromium ~105x40px on-screen), so a
+ * toast could appear dead on iOS. `toBeVisible()` alone -- the only check
  * the tests above and `oracle/tier2-html/top-layer.spec.ts`'s Rule 10 make --
  * does not catch that: it only checks that an element has
  * *some* box and no `visibility: hidden`/`display: none`, never that the
@@ -44,7 +41,7 @@ test('test', async ({ page }) => {
  * oracle row 44 specifies, run on both the themed demo (this file's own
  * subject) and the `top_layer` fixture
  * (`preview/src/components/top_layer/component.rs`,
- * `#toast-stack-trigger`/"Add toast") -- the fix lives at the primitive
+ * `#toast-stack-trigger`/"Add toast") -- the protection lives at the primitive
  * level (`primitives/src/toast.rs`'s `ensure_toast_base_styles`, a
  * minimal, always-injected fallback stylesheet -- see its own doc), not in
  * either page's own markup, so both pages are worth covering independently
@@ -58,11 +55,10 @@ test.describe('Toast bounding box (dev-docs/backlog.md row 44)', () => {
     // toast slides in via `@keyframes dx-toast-slide-in`
     // (`preview/src/components/toast/style.css`), `translateY(100%)` -> `0`
     // over 0.2s, plus a `transform: scale()` transition. Measuring during
-    // that window reports a real but still-travelling box: caught by
-    // execution, where this assertion first read
+    // that window reports a real but still-travelling box (e.g.
     // `y=680.98 height=68.73` against a 720px-tall viewport -- ~50px below
     // the bottom edge, and a height above the settled `4rem`, both explained
-    // entirely by the in-flight transform. That is a test-timing artifact,
+    // entirely by the in-flight transform). That is a test-timing artifact,
     // not the off-screen defect this rule is for, and waiting on the
     // animations rather than on a fixed timeout keeps the distinction sharp.
     // `{ subtree: true }` because the animation is declared on the toast
@@ -113,7 +109,7 @@ test.describe('Toast bounding box (dev-docs/backlog.md row 44)', () => {
     await assertToastOnScreen(page);
   });
 
-  // Bug 2 (dev-docs/backlog.md row 44), separate from the bounding-box checks
+  // Row 44, second check (dev-docs/backlog.md), separate from the bounding-box checks
   // above: the fixture's own `ToastProvider { style: "position: fixed;
   // ..." }` must not replace the primitive's own `style: "--toast-count:
   // {length}"` outright (`merge_attributes`'s plain-`style` rule is

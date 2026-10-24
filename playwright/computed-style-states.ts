@@ -97,8 +97,8 @@ export function emptyCoverage(): StateCoverage {
 /**
  * Navigate and wait until the page is the page: the legacy `/component/?name=x&` route renders a
  * "Loading component..." stub and redirects client-side once wasm has hydrated (preview/src/main.rs
- * `ComponentDemo`), which on a loaded machine takes longer than any fixed wait (a capture of the stub is 66
- * records instead of ~400). So wait for the stub to be gone, for every `<img>` to have settled (an avatar shows
+ * `ComponentDemo`), which on a loaded machine takes longer than any fixed wait (a capture of the stub has a
+ * fraction of the page's records). So wait for the stub to be gone, for every `<img>` to have settled (an avatar shows
  * its fallback until `load`), then for the DOM to be quiet.
  */
 export async function gotoSettled(page: Page, url: string) {
@@ -143,7 +143,7 @@ export function installStateLib(a: StateArgs) {
 
   // TIMER-DRAIN RULE (row 245). A tooltip / hover card / submenu opens only after the pointer RESTED for the
   // component's configured `delay` (600 ms default, a demo may set any other), and no fixed wait can know it:
-  // a tooltip chain rendered in 1 of 4 captures because the read raced the timer. The delay IS a `setTimeout`,
+  // a tooltip chain would render in only some captures, because the read races the timer. The delay IS a `setTimeout`,
   // so instead of guessing it the harness watches it: between `arm()` (just before a pointer move) and the end
   // of `drain()`, every timeout the page schedules (delays up to DRAIN_MAX_DELAY_MS) is remembered, and
   // `drain()` resolves only once all of them have fired. Whatever delay a popup is configured with, the opener
@@ -507,7 +507,7 @@ export function installStateLib(a: StateArgs) {
   /** KEYBOARD-INSET pass (row 246). On a phone the on-screen keyboard makes `keyboard_inset.rs` publish
    *  `data-dx-keyboard="open"`, `--dx-keyboard-inset` and `--dx-keyboard-top` on the open modal panel, and the
    *  dialog / sheet / drawer sheets answer with `top`/`bottom`/`max-height` rules. A desktop capture never has a
-   *  keyboard, so those rules were invisible to the harness. The CONTRACT is a stylesheet's input, so it can be
+   *  keyboard, so those rules would be invisible to the harness. The CONTRACT is a stylesheet's input, so it can be
    *  supplied by hand: for each open `<dialog>` panel set the three exactly as the script does (a 280px keyboard,
    *  no pan), record every element whose style changed (with the two variables included), then undo. Run
    *  right after the open delta, while `lastDelta` is still the open delta. */
@@ -1041,7 +1041,7 @@ export async function openPass(
       else if (strat === "hover") await movePointer(page, t.x!, t.y!);
       else await page.evaluate((j) => (window as any).__snap.cands[j].focus({ focusVisible: true }), i);
       // The overlay opens UNDER the pointer, and which of its nodes is `:hover` then depends on when the
-      // renderer next hit-tests (a calendar cell was hovered in one run and not in the next). Only a hover
+      // renderer next hit-tests (a calendar cell is hovered in one run and not in the next). Only a hover
       // strategy needs the pointer to stay; for the others put it on the inert spot straight away.
       if (strat !== "hover") await park(page);
       const changed = await page.evaluate(([b, ms]) => (window as any).__snap.waitOpen(b, ms), [before, WAIT_PROBE_MS[strat]] as const);

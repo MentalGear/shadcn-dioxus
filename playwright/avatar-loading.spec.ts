@@ -125,8 +125,8 @@ test("delay: the fallback is held back that long, and a picture that loads withi
   // ... and it appears once the 600 ms are up (not instantly, not never).
   await expect(avatar.locator(".dx-avatar-fallback")).toHaveText("DF", { timeout: 10_000 });
   // The delay runs from the component's client mount, which is not observable from the DOM and happens during
-  // hydration, up to a machine-dependent gap BEFORE the `data-hydrated` flag (row 247: waited 445 ms against an
-  // anchor of `hydratedAt`, a 450 ms floor that this box's gap exceeded in three runs). So anchor on something that
+  // hydration, up to a machine-dependent gap BEFORE the `data-hydrated` flag (row 247: anchoring on `hydratedAt` fails when the gap exceeds its 450 ms
+  // floor). So anchor on something that
   // strictly precedes the mount: the wasm module's last byte (the app cannot mount before it is downloaded). Then
   // the delay itself is the floor, with no slack to tune: shown >= wasmEnd + 600 on every machine.
   const wasmEnd = await page.evaluate(() => {

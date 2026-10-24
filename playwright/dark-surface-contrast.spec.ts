@@ -5,11 +5,11 @@ import { gotoHydrated } from "./hydration";
 
 /**
  * Contrast and distinctness of the HIGHLIGHTED, HOVERED and SELECTED rows on the surfaces of the dark ladder
- * (backlog row 111, phase C, option C: page #0a0a0a, card and popover #171717, accent / muted / secondary
- * #262626). axe reads the settled state, so it cannot see a hovered menu row, a keyboard-highlighted option or
- * a pressed page number; this spec measures them from COMPUTED colours, in light and dark.
+ * (backlog row 111: page #0a0a0a, card and popover #171717, accent / muted / secondary #262626). axe reads the settled
+ * state, so it cannot see a hovered menu row, a keyboard-highlighted option or a pressed page number; this spec
+ * measures them from COMPUTED colours, in light and dark.
  *
- * Option C ties dark muted, secondary and accent. An element whose rest fill is `--dx-muted` and whose hover or
+ * The dark ladder ties muted, secondary and accent. An element whose rest fill is `--dx-muted` and whose hover or
  * selected fill is `--dx-accent` (or a popover row highlighted with `--dx-accent` on `--dx-popover`) must still
  * move, and the failure mode is silent: the state paints the same colour as its surroundings (1.00:1). For each
  * probe below the spec asserts, in both modes:
@@ -56,7 +56,7 @@ type Probe = {
   /**
    * Modes in which the target must differ from its SURFACE (check 2). Default: both. A state that is Nova's own
    * faint light-mode step (an outline page number on a white page, `muted/50` on white) names its dark-only
-   * reason here; phase C moves no light colour, so light has nothing new to guard.
+   * reason here; the tie exists only in dark, so light has nothing to guard.
    */
   distinctFromSurfaceIn?: Mode[];
   /**
@@ -261,7 +261,7 @@ const SCENES: Record<string, Scene> = {
         icon: true, // the chevron is the whole button: no text, so its glyph is held to 3:1 (WCAG 1.4.11)
       },
       {
-        // Today's cell is the muted fill and its hover is the accent fill: the dark tie option C creates.
+        // Today's cell is the muted fill and its hover is the accent fill: the dark muted/accent tie.
         name: "calendar today cell hovered",
         target: (page) => preview(page).locator('.dx-calendar-grid-cell[data-month="current"][data-today="true"]').first(),
         surface: (page) => preview(page).locator(".dx-calendar").first(),

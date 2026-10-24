@@ -3,7 +3,7 @@
 // Built from the SSG HTML of the build under test: every `class="..."` and `id="..."` token of every prerendered
 // page. The build is found, in order, from an explicit directory (--ssg-dir / SELECT_SSG_DIR, the lane's
 // `$LANE_TGT/pub-<lane>`), or by crawling the served site at PLAYWRIGHT_BASE_URL (the build `test:changed` is about to
-// run against). With neither, there is no index and the selector keeps the broad set (the pre-row-323 behaviour).
+// run against). With neither, there is no index and the selector keeps the broad set.
 //
 // Why HTML and not the rsx sources: the pages that contain a class are exactly what the SSG rendered (the home page
 // shows the first demo of every component; the docs shell wraps every component page; a `format!`-built class name is

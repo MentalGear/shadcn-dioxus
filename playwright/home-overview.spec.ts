@@ -36,7 +36,7 @@ test.describe("sidebar card controls (row 297)", () => {
     await expect(page.getByRole("button", { name: "None", exact: true })).toHaveCount(0);
   });
 
-  test("the remaining choices still drive the live sidebar", async ({ page }) => {
+  test("the remaining choices drive the live sidebar", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await gotoHydrated(page, `${BASE}/`);
     const sidebar = page.locator('[data-slot="sidebar"]:not([data-mobile="true"])').first();

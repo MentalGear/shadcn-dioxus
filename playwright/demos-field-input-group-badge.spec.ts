@@ -7,7 +7,7 @@
  *   `rounded-[calc(var(--radius)-3px)]`; icon-xs `size-6`; icon-sm `size-8`), ghost and `type="button"` by default.
  * - A Spinner inside a Badge is the Badge's 12px icon (`.cn-badge [&>svg]:size-3!`), in every stylesheet order:
  *   the Badge sizes only its direct icons and reaches the spinner through `--dx-spinner-size`, so there is no
- *   equal-specificity `svg` rule left whose winner depends on which sheet loaded last.
+ *   equal-specificity `svg` rule whose winner depends on which sheet loaded last.
  *
  * Controls are located by role inside the demo frame; geometry is read at rest; axe runs in light and dark.
  */
@@ -85,7 +85,7 @@ for (const mode of ["light", "dark"] as const) {
       const reveal = root.getByRole("button", { name: /Show password|Hide password/ });
       expect(await size(reveal)).toEqual([32, 32]);
 
-      // Still a working button: the copy button confirms.
+      // A working button: the copy button confirms.
       await root.getByRole("button", { name: "Copy link" }).click();
       await expect(root.getByRole("button", { name: "Link copied" })).toBeVisible();
       await expectNoAxeViolations(page, `input_group/button ${mode}`);

@@ -46,8 +46,8 @@ async function goto(page: Page, variant: string) {
   if (variant === "autoplay" || variant === "virtual_loop" || variant === "virtual_loop_rtl") {
     // Autoplay only runs while the carousel can be seen (`primitives/src/activity.rs`: off-screen or
     // hidden-tab autoplay is stopped and restarts with a fresh countdown), and this variant sits
-    // below the fold of the stacked page. Bring it into view -- instantly, the site's global
-    // `scroll-behavior: smooth` (backlog row 110) would otherwise animate it.
+    // below the fold of the stacked page. Bring it into view -- instantly, so the
+    // position is settled before the next read.
     await page.evaluate((id) => {
       document.getElementById(id)?.scrollIntoView({ block: "center", behavior: "instant" });
     }, `component-preview-frame-${variant}`);
@@ -278,14 +278,13 @@ function parseTranslatePx(transform: string): number | null {
  * `locator.ariaSnapshot()`. This installed
  * Playwright build's own ARIA-role engine does not treat `inert` as
  * excluding a node at all -- a minimal `<div role="group" inert>` still
- * matched `getByRole("group")` and appeared in `ariaSnapshot()`, while the
- * *same* CDP call this helper uses omitted it entirely from the very first
- * query (not merely "present but ignored"). `inert`'s actual, spec-defined
+ * matches `getByRole("group")` and appears in `ariaSnapshot()`, while the
+ * *same* CDP call this helper uses omits it entirely from the very first
+ * query (not merely "present but ignored").
  * effect (removal from the accessibility tree) is a platform-level
  * property, so the platform's own tree -- not Playwright's separate,
  * DOM-based ARIA approximation -- is the correct oracle for this
- * component's own "only visible slides are exposed" contract. A resolved
- * discrepancy, not a shortcut: `getByRole`/`ariaSnapshot` remain the right
+ * component's own "only visible slides are exposed" contract. `getByRole`/`ariaSnapshot` remain the right
  * tool everywhere else in this file (they already correctly reflect
  * `aria-*`/native semantics for everything that isn't `inert`), and this
  * helper is reached for *only* the a11y-tree-exposure assertions below.
@@ -351,8 +350,7 @@ async function slidePitch(item: Locator, orientation: "horizontal" | "vertical" 
  * passes, but against a statically-served release SSG build the wasm
  * `document::eval` round trip alone can exceed it -- every sample then reads
  * the pre-scroll value, reporting a false "instant jump" on a transition
- * that (re-sampled with a longer window) demonstrably animates through
- * dozens of distinct intermediate values. A settle-condition stop is honest
+ * that animates through dozens of distinct intermediate values. A settle-condition stop is honest
  * regardless of how long the round trip actually takes on a given
  * build/server, or how long the transition itself runs -- unlike a fixed
  * window, it cannot silently start under-sampling a slower environment or
@@ -487,7 +485,7 @@ for (const variant of ["main", "sizes", "peek", "vertical", "rtl"] as const) {
  * `padding-inline`/`padding-block` RESERVATION inside `.dx-carousel`
  * (not a negative `inset-inline-*`/`inset-block-*` outset past its edge), so
  * the buttons sit fully inside `.dx-carousel`'s own box (that containment is
- * what the next describe block regression-tests) -- `region`'s box does not
+ * what the next describe block tests) -- `region`'s box does not
  * mark the track's edge, only the track itself does.
  */
 test.describe("Carousel: shadcn-parity geometry (size, shadow, outside placement)", () => {
@@ -548,10 +546,10 @@ test.describe("Carousel: shadcn-parity geometry (size, shadow, outside placement
 });
 
 /**
- * carousel-narrow regression: Previous/Next must never extend beyond
+ * carousel-narrow: Previous/Next must never extend beyond
  * their own demo frame's box, at any viewport a real consumer's container
  * could actually be, in either theme. This is the direct, black-box
- * assertion for the `rtl` variant's failure (both arrows clipped at the
+ * assertion for the failure of the `rtl` variant (both arrows clipped at the
  * frame edge on a narrow viewport) -- see
  * `preview/src/components/carousel/style.css`'s own comment on the
  * horizontal/vertical placement rules for the construction and the
@@ -583,7 +581,7 @@ test.describe("Carousel: arrows never overflow their frame", () => {
         await page.setViewportSize({ width, height: 900 });
         // `gotoHydrated`, not a bare `page.goto`: the frames' buttons only exist once the
         // page has hydrated, and the 3 s `toPass` below would race that under load (the
-        // debug build with 4 workers, 4-10 of 12 red; row 109's class).
+        // debug build with 4 workers; row 109's class).
         await gotoHydrated(
           page,
           `${BASE_URL}/component/carousel/${dark ? "?dark_mode=true" : ""}`,
@@ -604,13 +602,10 @@ test.describe("Carousel: arrows never overflow their frame", () => {
           // parallel workers sharing one plain `http.server` (slower to
           // answer four workers' concurrent requests than one), a read
           // racing that settle can catch the frame and a button mid-shift,
-          // tens of pixels apart, even at the roomiest viewport -- confirmed
-          // by construction: standalone re-measurement (fresh browser
-          // context, no other worker contention) of the exact same variant/
-          // viewport never reproduced a mismatch, and this repo's own
-          // dev-docs already name "grepping/measuring before the page has
-          // actually settled" as a proven false-alarm source for this
-          // component. A real overflow does not self-correct on retry, so
+          // tens of pixels apart, even at the roomiest viewport (this repo's own
+          // dev-docs name "grepping/measuring before the page has
+          // actually settled" as a false-alarm source for this
+          // component). A real overflow does not self-correct on retry, so
           // this still fails (after 3s) if the buttons are genuinely
           // outside their frame.
           await expect(async () => {
@@ -878,7 +873,7 @@ test.describe("Carousel: pointer drag (mouse/pen)", () => {
     await expect(frame.getByRole("button", { name: "Previous slide" })).toBeEnabled();
   });
 
-  test("a click inside a slide still works when the pointer never crosses the drag threshold", async ({ page }) => {
+  test("a click inside a slide works when the pointer never crosses the drag threshold", async ({ page }) => {
     await goto(page, "main");
     const frame = demoFrame(page, "main");
     const button = frame.getByTestId("carousel-slide-button");
@@ -1363,7 +1358,7 @@ test.describe("Carousel: edge rubber-band, pointer (mode B3)", () => {
     await expect(slide(1)).toHaveAttribute("data-selected", "true");
   });
 
-  test("a mid-range pointer drag produces no transform and still pages correctly", async ({
+  test("a mid-range pointer drag produces no transform and pages correctly", async ({
     page,
   }) => {
     await goto(page, "main");
@@ -1389,7 +1384,7 @@ test.describe("Carousel: edge rubber-band, pointer (mode B3)", () => {
  * D's contract, which every test below holds it to:
  * - the band is a `transform` on `.dx-carousel-content` (the scroller) and
  *   `""` at rest -- the same element and reader (`readContentTransform`)
- *   the B3 tests used, never a scroll-position write;
+ *   the B3 tests use, never a scroll-position write;
  * - ownership is decided once per gesture from where the scroller RESTS
  *   when the gesture starts: only a gesture that starts at rest at an edge
  *   and pushes into it gets a band (bounded by `LIMIT` = 0.5 x the axis);
@@ -1407,11 +1402,11 @@ test.describe("Carousel: edge rubber-band, pointer (mode B3)", () => {
  * it moves the scroller in-page, instantly, standing in for the compositor.
  * The telemetry this reads (`window.__dxCarouselWheel`) is D's own
  * debug-flag output (`localStorage["dx-carousel-debug"] === "1"`), enabled
- * per test by `enableWheelDebug`. Real-hardware feel remains the owner's
- * own check; these pin the logic with recorded-shape sequences.
+ * per test by `enableWheelDebug`. Real-hardware feel remains
+ * a real-device check; these pin the logic with recorded-shape sequences.
  */
 
-/** Delta magnitudes (px) shaped like the owner's recordings; each test
+/** Delta magnitudes (px) shaped like recorded trackpad data; each test
  * applies the sign that pushes into the edge under test. */
 const WHEEL = {
   // A trackpad push: a ramp, then fingers lift and momentum decays.
@@ -1421,10 +1416,10 @@ const WHEEL = {
   hold: [10, 25, 45, 60, 70, 75, 78, 80, 83],
   // A native fling's momentum tail (~0.93 per event: "coasting").
   momentum: [95, 88, 82, 76, 70, 65, 61, 57, 53, 49],
-  // The owner's recorded re-push after coasting into slide 1 (bench rev 40
+  // A recorded re-push after coasting into slide 1 (bench rev 40
   // note): a dip, then a rise.
   repush: [13, 28, 67, 112, 133, 160],
-  // A slow push: every step under 40px (the owner's were 5-16px).
+  // A slow push: every step under 40px (the recorded ones are 5-16px).
   slow: [5, 8, 12, 14, 12, 13, 12, 14, 12],
 };
 
@@ -1642,8 +1637,8 @@ test.describe("Carousel: wheel/trackpad edge band (mode D, platform-aware)", () 
    * curve properties are checked on a sustained push whose steps vary the
    * way a real hand's do: the band stays under the asymptote (`LIMIT` x the
    * axis -- 0.5, tighter than B3's 1.0), and doubling the input less
-   * than doubles the depth (WebKit's concave curve). Assertions unchanged
-   * in kind; the bound is tighter, not looser.
+   * than doubles the depth (WebKit's concave curve). Same two properties as
+   * B3, with a tighter bound.
    */
   test("a sustained hard push stays within 0.5 x the axis and grows sub-linearly", async ({ page }) => {
     await enableWheelDebug(page);
@@ -1663,7 +1658,7 @@ test.describe("Carousel: wheel/trackpad edge band (mode D, platform-aware)", () 
     const depth10 = Math.abs(run.afterEvent[9]);
     const depth20 = Math.abs(run.afterEvent[19]);
     expect(depth10).toBeGreaterThan(0);
-    expect(depth20, "still pushing should still grow the depth").toBeGreaterThan(depth10);
+    expect(depth20, "continued pushing should grow the depth").toBeGreaterThan(depth10);
     expect(depth20, "doubling the input should not double the depth (sub-linear curve)").toBeLessThan(depth10 * 2);
     expect(maxAbsBand(run)).toBeLessThanOrEqual(run.axisSize * 0.5 + 0.5);
     expect(run.finalTransform).toBe("");
@@ -1792,7 +1787,7 @@ test.describe("Carousel: wheel/trackpad edge band (mode D, platform-aware)", () 
     expect(rec.releasedBy).toBe("cursor-moved");
   });
 
-  test("vertical wheel input over a horizontal carousel at slide 1 draws no band, and still scrolls the page", async ({
+  test("vertical wheel input over a horizontal carousel at slide 1 draws no band, and scrolls the page", async ({
     page,
   }) => {
     await enableWheelDebug(page);
@@ -1872,7 +1867,7 @@ test.describe("Carousel: wheel/trackpad edge band (mode D, platform-aware)", () 
   });
 
   /**
-   * The owner's approved rule: the band only engages at a TRUE end of the
+   * The band only engages at a TRUE end of the
    * data (`isTrueEnd` in `CAROUSEL_WHEEL_BAND_JS`), and a looping carousel
    * has none -- including `LoopMode::Rewind`, whose ends are physical but
    * wrap, so Rewind does not band like a physical edge.
@@ -2005,7 +2000,7 @@ test.describe("Carousel: wheel/trackpad edge band (mode D, platform-aware)", () 
     await expect(slide(5)).toHaveAttribute("data-selected", "true");
   });
 
-  test("a mid-range wheel scroll produces no lingering transform and still pages correctly", async ({
+  test("a mid-range wheel scroll produces no lingering transform and pages correctly", async ({
     page,
   }) => {
     await goto(page, "main");
@@ -2257,7 +2252,7 @@ test.describe("Carousel: clipping viewport (edge overdrag never paints outside t
  * `loop_mode: LoopMode::Rewind` -- the explicit opt-in (backlog row 91's
  * shadcn-parity addendum); `r#loop: true` alone (the default
  * `LoopMode::Seamless`) does nothing for the plain children API,
- * see the "library-only v1" describe block above and
+ * see
  * `primitives/src/carousel.rs`'s own `LoopMode` doc. One `rewind` demo, two rows
  * (LTR/RTL), shows the opt-in -- see
  * `preview/src/components/carousel/variants/rewind/mod.rs`.
@@ -2321,7 +2316,7 @@ test.describe("Carousel: loop_mode Rewind (explicit opt-in wraparound)", () => {
     await expect(slide(1)).toHaveAttribute("data-selected", "true");
   });
 
-  test("under RTL, loop_mode Rewind still wraps both directions with the swapped arrow keys", async ({ page }) => {
+  test("under RTL, loop_mode Rewind wraps both directions with the swapped arrow keys", async ({ page }) => {
     await goto(page, "rewind");
     const frame = demoFrame(page, "rewind");
     const region = frame.getByRole("region", { name: "Rewind-loop gallery (RTL)", exact: true });
@@ -2353,7 +2348,7 @@ test.describe("Carousel: loop_mode Rewind (explicit opt-in wraparound)", () => {
   });
 
   /**
-   * The owner's true-end rule (the drag band follows the wheel band's shared
+   * The true-end rule (the drag band follows the wheel band's shared
    * `dxIsTrueEnd` predicate): a looping carousel has no true end, so the drag
    * clamps at the physical edge with no band at all, and still never wraps.
    */
@@ -2452,9 +2447,8 @@ test.describe("Carousel: autoplay + rotation control", () => {
     const frame = demoFrame(page, "autoplay");
     // Relative, not absolute: under parallel load, hydration can take longer
     // than one autoplay interval, so the carousel may already have left
-    // slide 1 by the time the page is ready (2 of 10 runs at --workers=4
-    // failed an up-front "slide 1 is selected" check). Whatever slide is
-    // selected now, a different one must become selected on its own.
+    // slide 1 by the time the page is ready. Whatever slide is
+    //     // selected now, a different one must become selected on its own.
     const selectedLabel = () =>
       frame.locator('[role="group"][aria-roledescription="slide"][data-selected="true"]').first().getAttribute("aria-label");
     await expect.poll(selectedLabel).not.toBeNull();
@@ -2729,7 +2723,7 @@ test.describe("Carousel: indicators (tablist/dot-picker) variant", () => {
  *
  * Methodology notes specific to this describe block:
  * - The demo page has its own "jump to the requested `variant=`" scroll
- *   on load (an unrelated, expected feature, not this bug), which is
+ *   on load (an unrelated, expected feature), which
  *   may be `smooth` (`html[data-anchor-scroll] { scroll-behavior: smooth }`,
  *   `preview/assets/main.css`, backlog row 228) -- so every test below
  *   waits for `window.scrollY` to stop changing (`waitForScrollStable`)
@@ -2952,8 +2946,7 @@ test.describe("Carousel: only visible slides are reachable (inert)", () => {
     expect(namesAfter).not.toContain("1 of 5");
   });
 
-  // `looping`/`looping_rtl` (retired -- see the `LoopMode` describe block
-  // above) is not replaced with `rewind` here: `rewind` renders TWO
+  // The `rewind` demo is not used here: it renders TWO
   // independent `Carousel` regions on one page, so a single flat
   // `.dx-carousel-item` locator across both would see the RTL row's own
   // non-inert current slide land at an index this loop's "everything past
@@ -3009,12 +3002,10 @@ test.describe("Carousel: only visible slides are reachable (inert)", () => {
   });
 
   test("whole-slide geometry: each visible item's width is the viewport divided by --dx-carousel-per-view, within 1px, and slides land on boundaries (sizes variant)", async ({ page }) => {
-    // Root-cause regression test for the "~2.3 slides visible" incident
-    // (`dev-docs/research/shadcn-carousel-parity.md`) this construction
-    // closes: a real flex `gap` was additive to a percentage `flex-basis`,
-    // so N items never summed to exactly the viewport width. Pinned here
-    // against the live-rendered geometry, not just the CSS source, so a
-    // future regression in the calc (or in the gap model it depends on)
+    // Pins the whole-slide construction (backlog row 91): a real flex `gap` is additive to a
+    // percentage `flex-basis`, so without the gap model N items would not sum to exactly the
+    // viewport width (~2.3 slides visible). Checked against the live-rendered geometry, not just
+    // the CSS source, so a change in the calc (or in the gap model it depends on)
     // is caught by measurement.
     await goto(page, "sizes");
     const frame = demoFrame(page, "sizes");
@@ -3190,7 +3181,7 @@ test.describe("Carousel: only visible slides are reachable (inert)", () => {
     expect(stillInside).toBe(false);
   });
 
-  test("autoplay does not advance while focus is inside a slide (pause-on-focus invariant, still holds with inert)", async ({ page }) => {
+  test("autoplay does not advance while focus is inside a slide (pause-on-focus invariant, holds with inert)", async ({ page }) => {
     // None of the shipped demo variants happen to put a focusable element
     // inside an autoplay carousel's own slide content, so a plain
     // `tabindex` is added to the CURRENT slide's own element for this test
@@ -3219,7 +3210,7 @@ test.describe("Carousel: only visible slides are reachable (inert)", () => {
     expect(await selectedAt()).toBe(before);
   });
 
-  test("a drag starting on a partially-visible neighbour slide still pages the carousel (inert content is not a hit-test target)", async ({ page }) => {
+  test("a drag starting on a partially-visible neighbour slide pages the carousel (inert content is not a hit-test target)", async ({ page }) => {
     // `peek` is the explicitly opt-in home for a genuinely partially-visible
     // neighbour slide (`--dx-carousel-peek: 20%`); the `sizes` variant shows
     // only WHOLE slides by design (the shadcn-parity rule), so it has no
@@ -3280,7 +3271,7 @@ test.describe("Carousel: only visible slides are reachable (inert)", () => {
     }).toPass({ timeout: 3000 });
   });
 
-  test("axe: still clean with non-visible slides inert (main variant)", async ({ page }) => {
+  test("axe: clean with non-visible slides inert (main variant)", async ({ page }) => {
     await goto(page, "main");
     await expectNoAxeViolations(page, "carousel: main variant with inert slides", {
       include: "#component-preview-frame",
@@ -3359,8 +3350,8 @@ test.describe("CarouselVirtualContent: seamless loop (virtual_loop)", () => {
       await next.dispatchEvent("click");
       await expect.poll(label).toBe(`${i} of 12`);
       // Structurally impossible to have "rewound" through every
-      // intervening slide the way the CarouselItem-based `looping`
-      // variant does: the scroller only ever holds 11 DOM slides.
+      // intervening slide the way a CarouselItem-based loop would:
+      // the scroller only ever holds 11 DOM slides.
       await expect(frame.locator("[data-position]")).toHaveCount(VLOOP_WINDOW);
     }
     // The 13th Next wraps physically forward (12 -> 1), not a rewind.
@@ -3609,9 +3600,9 @@ test.describe("CarouselVirtualContent: a11y", () => {
     // just not adversarially so. The explicit wait matters more here than
     // in the shorter loop/wrap tests above: at 200 iterations even a rare
     // (~1-in-200) settle-latency race is likely to surface at least once,
-    // measured live against the SSG lane specifically (a plain
-    // `expect.poll` alone, with no wait, missed exactly one step around
-    // i=176 in that environment).
+    // on the SSG lane specifically (a plain
+    // `expect.poll` alone, with no wait, can miss a step around
+    // i=176 there).
     for (let i = 2; i <= 200; i++) {
       await next.dispatchEvent("click");
       await page.waitForTimeout(40);
@@ -3642,8 +3633,7 @@ test.describe("CarouselVirtualContent: a11y", () => {
   });
 
   test("virtual_loop_rtl: seamless loop wraps under RTL with the swapped arrow keys too", async ({ page }) => {
-    // Cheap RTL coverage of the identical seamless-loop path (per-lane
-    // instruction: "add an RTL variant if cheap") -- not a full duplicate
+    // Cheap RTL coverage of the identical seamless-loop path -- not a full duplicate
     // of every `virtual_loop` test above, just the one thing RTL could
     // plausibly break: the key-swap composed with physical wraparound.
     await goto(page, "virtual_loop_rtl");

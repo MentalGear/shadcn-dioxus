@@ -2,15 +2,15 @@
  * Rule sources (dev-docs/conformance-harness.md tiers):
  *
  * - WHATWG `<dialog>` modal semantics (focus trap, `showModal()`/`close()`
- *   focus restore, inertness, top layer) are inherited unchanged from
- *   `primitives/src/dialog.rs` and already covered by
- *   `oracle/tier2-html/native-dialog.spec.ts` against the unmodified
+ *   focus restore, inertness, top layer) are inherited from
+ *   `primitives/src/dialog.rs` and covered by
+ *   `oracle/tier2-html/native-dialog.spec.ts` against the
  *   `Dialog` primitive `Drawer` composes -- not re-covered here.
  * - APG "Dialog (Modal)" Pattern (tier 2): Escape closes the dialog and
  *   focus returns to the element that invoked it. Exercised here because
  *   it's the *drawer's own* integration (the trigger button, the specific
  *   first-focusable content) that needs checking, not the primitive's own
- *   escape-key/focus-restore mechanics again.
+ *   escape-key/focus-restore mechanics.
  * - shadcn/ui Drawer (Vaul)'s drag-to-dismiss gesture -- distance ratio
  *   and release-velocity thresholds, rubber-band overdrag -- is tier 3
  *   "opinion": there is no APG/WHATWG rule for a pointer drag gesture,
@@ -404,7 +404,7 @@ async function openTop(page: import('@playwright/test').Page) {
   await awaitAnimationsSettled(page.locator(CONTENT));
 }
 
-/** The drawer is still open, still modal, and back at rest -- after a gesture that must not dismiss it. */
+/** The drawer is open, modal, and at rest -- after a gesture that must not dismiss it. */
 async function expectStillOpenAtRest(page: import('@playwright/test').Page) {
   // Longer than the exit (200ms) plus the driver's wait, so a dismissal that was merely slow cannot pass.
   await page.waitForTimeout(900);
@@ -455,7 +455,7 @@ test('a text selection or drag that starts inside a dialog and ends on its backd
   await page.mouse.up();
   await expectStillOpenAtRest(page);
 
-  // A real backdrop click (press and release both on it) still dismisses.
+  // A real backdrop click (press and release both on it) dismisses.
   await page.mouse.click(2, 2);
   await expect(page.locator(ROOT)).toHaveCount(0);
 });

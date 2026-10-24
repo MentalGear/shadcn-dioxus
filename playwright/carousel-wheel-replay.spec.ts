@@ -2,7 +2,7 @@
  * Carousel trackpad edge-band: replay of REAL trackpad recordings.
  *
  * Source data: `fixtures/carousel-wheel-recordings.json` -- wheel bursts the
- * owner recorded on a MacBook trackpad in Firefox 156 while tuning the
+ * recorded on a MacBook trackpad in Firefox 156 while tuning the
  * overscroll bench (`fixtures/carousel-overscroll-bench-rev40.html`), plus
  * two clearly-marked SYNTHETIC ones (a notched mouse wheel and vertical page
  * scrolling) for which no real data exists. The JSON's top-level `timing`
@@ -14,7 +14,7 @@
  *  (a) REFERENCE -- the bench's own mode D ("onewriter", rev 40, copied to
  *      `fixtures/carousel-overscroll-bench-rev40.html`). It is the
  *      known-good engine the recordings were tuned against, so this block
- *      proves the replay harness reproduces what the owner saw (a band on an
+ *      proves the replay harness reproduces what the bench draws (a band on an
  *      owned push, none on a native arrival, a band after a re-push).
  *
  *  (b) COMPONENT -- the shipped carousel's `.dx-carousel-content` transform,
@@ -217,7 +217,7 @@ test.describe("Carousel wheel replay: reference (the bench's own mode D, rev 40)
   }
 
   /*
-   * DOCUMENTED DIFFERENCES -- NOT ASSERTED. The bench predates the notched
+   * DOCUMENTED DIFFERENCES -- NOT ASSERTED. The bench has none of the notched
    * and axis rules the component deliberately adds: it converts deltaMode 1
    * lines to px (x16) and treats any wheel event as horizontal input
    * (`raw = deltaX !== 0 ? deltaX : deltaY`), so it neither releases a
@@ -368,8 +368,8 @@ test.describe("Carousel wheel replay: component (intended contract)", () => {
       expect(peakAbs(r), summary).toBeLessThanOrEqual(0.5 * width);
       // "Releases" = the spring-back STARTS (the port's NOTCH_IDLE_MS is 140);
       // being fully home also includes the 340ms spring-back animation itself,
-      // so that is bounded separately. The failure this guards against is the
-      // old 1.5s hold, not the animation's own length.
+      // so that is bounded separately. The failure this guards against is a
+      // 1.5s hold, not the animation's own length.
       const start = releaseStartAfter(r);
       expect(start, `release started (${summary})`).not.toBeNull();
       expect(start!, summary).toBeLessThanOrEqual(300);

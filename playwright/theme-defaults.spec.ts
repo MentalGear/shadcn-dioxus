@@ -10,7 +10,7 @@ import { gotoHydrated } from "./hydration";
  *
  *  - every role named below resolves to shadcn's value (1/255 of rounding allowed);
  *  - a user-supplied shadcn variable (`--foreground`, `--sidebar-primary`, ...) still wins over every default;
- *  - the upstream numbered ramp and `--focused-border-color` are gone (nothing resolves them).
+ *  - the upstream numbered ramp and `--focused-border-color` are not defined (nothing resolves them).
  *
  * Not in scope here (kept on purpose, asserted elsewhere): `--dx-muted-foreground`, the chart colours, the docs
  * blue, dark `--dx-destructive` / `--dx-sidebar-primary` / `--dx-sidebar-primary-foreground`, the calibrated

@@ -306,12 +306,10 @@ test("left arrow key navigates through all days of the month in reverse", async 
 });
 
 test.describe("selected/range state outranks :hover", () => {
-  // Dark mode specifically: the bug this guards against (line255's old
-  // `[data-selected="true"]:hover` re-declaring background-color/color
-  // instead of leaving the plain [data-selected="true"] rule in place) only
-  // showed up in dark mode -- its light-mode branch happened to match the
-  // plain selected color already. Light mode alone would stay green on the
-  // unfixed code and not actually guard against a regression.
+  // Dark mode specifically: a `[data-selected="true"]:hover` rule that re-declares
+  // background-color/color instead of leaving the plain [data-selected="true"] rule in place
+  // shows up only in dark mode -- its light-mode branch happens to match the plain selected
+  // color already, so light mode alone would not guard it.
   test("a selected day keeps its selected background while the pointer is still over it (dark mode)", async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/calendar/?dark_mode=true`, {
       timeout: 20 * 60 * 1000,
@@ -327,16 +325,15 @@ test.describe("selected/range state outranks :hover", () => {
       .nth(1);
 
     // Read the plain (unselected) hover color first, from a day that will
-    // never be selected in this test -- this is the "wrong answer" the bug
-    // produces on the day that WAS just selected.
+    // never be selected in this test -- this is the wrong answer a hover rule
+    // that overrides selection would give the day that WAS just selected.
     await otherDay.hover();
     const plainHoverBg = await otherDay.evaluate((el) => getComputedStyle(el).backgroundColor);
 
     // Click a day: Playwright's .click() leaves the pointer resting on the
-    // element afterwards, exactly the "clicked it, mouse hasn't moved" case
-    // the user asked for ("date picker: active state on selected date must
-    // be over hover state, otherwise active states are not visible after
-    // click").
+    // element afterwards, the "clicked it, mouse hasn't moved" case: the active
+    // state of a selected date must win over hover, or it is not visible after
+    // the click.
     await day.click();
     await expect(day).toHaveAttribute("data-selected", "true");
     expect(await day.evaluate((el) => el.matches(":hover"))).toBe(true);
@@ -349,7 +346,7 @@ test.describe("selected/range state outranks :hover", () => {
 
     expect(selectedAndHoveredBg).toBe(selectedAtRestBg); // selected look survives hover
     expect(selectedAndHoveredBg).not.toBe(plainHoverBg); // and isn't just the plain hover color
-    // Still visually selected once the pointer has moved on, in the
+    // Visually selected once the pointer has moved on, in the
     // strongest sense: the data-selected attribute AND its rendered color.
     await expect(day).toHaveAttribute("data-selected", "true");
   });
@@ -360,20 +357,18 @@ test.describe("selected/range state outranks :hover", () => {
   // /component/block/... isolates one variant per page, avoiding the multi-panel ambiguity every other test
   // in this file works around with #component-preview-frame.first().
   //
-  // dev-docs/backlog.md row 113 -- the locator below ("waiting for
-  // locator(...:not([data-disabled="true"])).nth(4)") must resolve on every lane and on every
-  // day. It does not depend on today's date: the `range` demo fixes its own `view_date` to
-  // 2026-05-15 and its min/max (1995-2035) leave May 2026 entirely available, so the locator
-  // resolves to all 31 May cells whatever day this runs on. What makes it wait out the whole
-  // test timeout, deterministically, is the URL: `/component/block/calendar/range/` (the
-  // path-segment form) is only ever served by the dev server's SPA fallback; the static SSG
-  // server has no prerendered file for it and answers 404, so on that lane the calendar is
-  // never rendered and the first `.click()` waits out the timeout. Two measures keep both
-  // causes out:
+  // dev-docs/backlog.md row 113 -- the locator below must resolve on every lane and on every
+  // day. Two measures guarantee it:
   //  1. the legacy query form `/component/block/?name=calendar&variant=range&`,
-  //     which both lanes serve (every other block-page spec here uses it);
+  //     which both lanes serve (every other block-page spec here uses it); the
+  //     path-segment form `/component/block/calendar/range/` is served only by the dev
+  //     server's SPA fallback, while the static SSG server has no prerendered file for it and
+  //     answers 404, so on that lane the calendar is never rendered and the first `.click()`
+  //     waits out the timeout;
   //  2. the date is pinned with Playwright's clock (`Date`/`new Date()` only --
-  //     timers keep running) to a day OUTSIDE the demo's May 2026 view, so
+  //     timers keep running) to a day OUTSIDE the demo's May 2026 view (the `range` demo
+  //     fixes its own `view_date` to 2026-05-15 and its min/max (1995-2035) leave May 2026
+  //     entirely available, so the locator resolves to all 31 May cells), so
   //     `data-today` can never land on one of the cells below whatever day this
   //     runs on, and a precondition (31 cells) fails in seconds, with a clear
   //     message, instead of burning the timeout.
@@ -407,7 +402,7 @@ test.describe("selected/range state outranks :hover", () => {
 });
 
 test.describe("aria-disabled on unavailable/disabled days -- backlog row 84 finding 1", () => {
-  test("a day inside a disabled range carries aria-disabled=true; an available day still carries an explicit aria-disabled=false", async ({ page }) => {
+  test("a day inside a disabled range carries aria-disabled=true; an available day carries an explicit aria-disabled=false", async ({ page }) => {
     // Unavailable days have no native `disabled` attribute (deliberately, so
     // the grid keeps a single roving tabstop -- `handle_day_select`
     // early-returns instead); with only `data-disabled`/`data-unavailable`
@@ -423,7 +418,7 @@ test.describe("aria-disabled on unavailable/disabled days -- backlog row 84 find
     // variants/unavailable_dates/mod.rs) opens directly on May 2026 with
     // 2026-05-15..2026-05-18 disabled, so no navigation is needed and
     // "Friday, May 15, 2026" is a fixed, known-unavailable date (matches
-    // date-picker.spec.ts's own already-verified value for the same date).
+    // the value date-picker.spec.ts uses for the same date).
     await gotoHydrated(page, `${BASE_URL}/component/calendar/`, { timeout: 20 * 60 * 1000 });
     await page.waitForLoadState("networkidle");
 
@@ -467,7 +462,7 @@ test.describe("caption layouts (captionLayout)", () => {
     await expect(title).toHaveText("May 2026");
     await expect(title).toHaveAttribute("role", "status");
     await expect(title).toHaveAttribute("aria-live", "polite");
-    // The arrows still page it, and the label follows.
+    // The arrows page it, and the label follows.
     await calendar.locator(".dx-calendar-nav-next").click();
     await expect(title).toHaveText("June 2026");
     await calendar.locator(".dx-calendar-nav-prev").click();
@@ -528,7 +523,7 @@ test.describe("caption layouts (captionLayout)", () => {
     await expect(months.getByRole("combobox", { name: "Month" })).toHaveValue("3");
   });
 
-  test("keyboard: Tab reaches Month then Year; a day key still moves within the grid", async ({ page }) => {
+  test("keyboard: Tab reaches Month then Year; a day key moves within the grid", async ({ page }) => {
     await gotoCaptionVariant(page);
     const calendar = caption(page, "Dropdown");
     await calendar.locator(".dx-calendar-nav-prev").focus();
@@ -596,7 +591,7 @@ test.describe("week numbers (showWeekNumber)", () => {
     expect(firstDay.left, "days start after the week-number column").toBeGreaterThanOrEqual(number.right - 0.5);
     const overflow = await page.locator(".dx-calendar-view").first().evaluate((el) => el.scrollWidth - el.clientWidth);
     expect(overflow).toBeLessThanOrEqual(0);
-    // The seven weekday headers still line up over the seven day columns.
+    // The seven weekday headers line up over the seven day columns.
     const headers = page.locator(".dx-calendar-grid-day-header");
     await expect(headers).toHaveCount(7);
     const h0 = await headers.first().evaluate((el) => el.getBoundingClientRect().left);
@@ -632,8 +627,8 @@ test.describe("week numbers (showWeekNumber)", () => {
 });
 
 // dev-docs/backlog.md row 380: the page is prerendered on the build day. A calendar that read the clock
-// while rendering kept the build day's "today" mark and the build year after hydration; both now come
-// from the visitor's clock, read after mount. The clock is pinned (`Date` only, timers keep running).
+// while rendering would keep the build day's "today" mark and the build year after hydration; both
+// come from the visitor's clock, read after mount. The clock is pinned (`Date` only, timers keep running).
 test.describe("today is the visitor's date, not the build day", () => {
   // The prerendered page itself (the `?name=` block form renders on the client and would hide the bug).
   async function gotoFrozen(page: any, now: string) {

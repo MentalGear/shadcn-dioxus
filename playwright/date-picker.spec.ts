@@ -107,16 +107,11 @@ test("anchors the popup next to its trigger, not viewport-centered or offset", a
   const triggerCenterX = (t.left + t.right) / 2;
   const contentCenterX = (c.left + c.right) / 2;
   expect(Math.abs(contentCenterX - triggerCenterX), debug).toBeLessThan(2);
-  // And not the viewport-centered placement the broken modal arm fell
-  // back to for content wider than its positioning ancestor: the
-  // viewport's own horizontal center would coincide with the trigger's
-  // only by accident on this fixture's layout, so assert against it
-  // directly using a page-specific fixed offset would be fragile --
-  // instead this is covered by the anchor-to-trigger assertion above,
-  // which a viewport-centered box could only satisfy if the trigger
-  // itself happened to sit at viewport center (it does not, on this
-  // fixture's layout: trigger center vs. viewport center differ by well
-  // over the 2px tolerance used above).
+  // And not a viewport-centered placement (what the modal arm falls back to for content wider than its
+  // positioning ancestor): the viewport's own horizontal center coincides with the trigger's only by accident
+  // of this fixture's layout, so the anchor-to-trigger assertion above is what discriminates -- a
+  // viewport-centered box could satisfy it only if the trigger itself sat at viewport center (it does not:
+  // trigger center vs. viewport center differ by well over the 2px tolerance used above).
   expect(Math.abs(triggerCenterX - viewport.width / 2)).toBeGreaterThan(20);
 });
 
@@ -153,7 +148,7 @@ test("uses the CSS-anchor path, not the JS-measured fallback (no inline top/left
   expect(marker).toBe(true);
 });
 
-test("offset to trigger is unchanged after scrolling (CSS anchor tracks scroll natively)", async ({ page }) => {
+test("offset to trigger holds after scrolling (CSS anchor tracks scroll natively)", async ({ page }) => {
   await page.setViewportSize(ROOMY_VIEWPORT); // see ROOMY_VIEWPORT: at 720px tall the panel flips above, then back below
   await gotoDatePicker(page);
   // Raw DOM click, scrollY kept at 0 for the open -- see the identical
@@ -168,9 +163,9 @@ test("offset to trigger is unchanged after scrolling (CSS anchor tracks scroll n
   await expect(content(page)).toBeVisible();
   await page.waitForTimeout(200);
 
-  // The date picker's own trigger and panel -- NOT `document.querySelector('[style*="anchor-name"]')`: since the
-  // header's theme picker button (`.dx-theme-picker-trigger`, inline `anchor-name`) came first in the DOM, that
-  // selector measured the sticky header button, whose offset to the panel drifts by exactly the scroll delta.
+  // The date picker's own trigger and panel -- NOT `document.querySelector('[style*="anchor-name"]')`: the
+  // header's theme picker button (`.dx-theme-picker-trigger`, inline `anchor-name`) comes first in the DOM, and
+  // that selector would measure the sticky header button, whose offset to the panel drifts by exactly the scroll delta.
   const offsetOf = async () => {
     const t = await rectOf(page, trigger(page));
     const c = await rectOf(page, content(page));
@@ -219,10 +214,10 @@ test.describe("Axe automated scan", () => {
  * -----------------------------------------------------------------------
  * Everything below is the rest of `dev-docs/backlog.md` row 20's coverage: segment
  * typing, arrow keys, backspace, and the range picker, derived deliberately from
- * the source and the APG. Row 21 (the two anchoring tests above can fail in a
+ * the source and the APG. (The two anchoring tests above can fail in a
  * sandbox -- a Chromium anchor-position engine freeze after scroll,
- * environment-only) is a separate matter: nothing below weakens, skips, or
- * resembles those two tests.
+ * environment-only, row 21 -- which is a separate matter: nothing below weakens, skips, or
+ * resembles those two tests.)
  *
  * Reference basis (derive-then-cite, not "assert whatever the crate does"):
  * `primitives/src/date_picker.rs`'s `DateSegment` renders `role="spinbutton"`
@@ -259,10 +254,9 @@ test.describe("Axe automated scan", () => {
 
 /**
  * Every variant of this ("Normal"-type) component renders together on the
- * SAME page -- confirmed by reading `preview/src/main.rs`'s
- * `ComponentVariantHighlight` (the "Variants" section loops over every
- * variant unconditionally) and `preview/src/components/mod.rs`'s
- * `component_page!` macro (`name: stringify!($variant)`) -- there is no
+ * SAME page (`preview/src/main.rs`'s `ComponentVariantHighlight` loops over every
+ * variant unconditionally, and `preview/src/components/mod.rs`'s
+ * `component_page!` macro sets `name: stringify!($variant)`) -- there is no
  * `?variant=` query-string switch for this component's route (unlike, e.g.,
  * `select`/`combobox`/`popover`, `variant=range` and
  * `variant=main` render byte-identical pages here). Each demo is scoped by
@@ -272,7 +266,7 @@ test.describe("Axe automated scan", () => {
  * `multi_month`, `unavailable_dates`), so every test below scopes into the
  * right one explicitly instead of relying on `.first()`/page-wide role
  * queries the way the smoke tests above do (those only ever touch the
- * "main" instance via one trigger, so `.first()` was sufficient there).
+ * "main" instance via one trigger, so `.first()` is sufficient there).
  */
 function frame(page: Page, variant?: string) {
   return page.locator(variant ? `#component-preview-frame-${variant}` : "#component-preview-frame");
@@ -460,10 +454,9 @@ test.describe("Segment typing (digit entry, spinbutton-pattern.html #keyboard_in
     await month.click();
     await page.keyboard.press("x");
 
-    // `valueBefore` is `null` on this fresh page as of backlog row 84
-    // finding 3's fix (an untouched segment now omits `aria-valuenow`
-    // entirely instead of defaulting it) -- `toHaveAttribute` has no way to
-    // assert "still absent" from a `null` expected value, so branch
+    // `valueBefore` is `null` on this fresh page (backlog row 84 finding 3: an untouched segment omits
+    // `aria-valuenow` entirely instead of defaulting it) -- `toHaveAttribute` has no way to
+    // assert "absent" from a `null` expected value, so branch
     // explicitly instead of assuming it's always a string.
     if (valueBefore === null) {
       expect(await month.getAttribute("aria-valuenow")).toBeNull();
@@ -471,7 +464,7 @@ test.describe("Segment typing (digit entry, spinbutton-pattern.html #keyboard_in
       await expect(month).toHaveAttribute("aria-valuenow", valueBefore);
     }
     await expect(month).toHaveText(textBefore!);
-    // `Key::Character` still calls `prevent_default`/`stop_propagation` for
+    // `Key::Character` calls `prevent_default`/`stop_propagation` for
     // a non-digit (matches `key_effects_non_digit_character_still_blocks_
     // default_but_does_not_edit` in date_picker.rs's own unit tests) but
     // pushes no focus-moving effect, so focus stays put.
@@ -547,7 +540,7 @@ test.describe("Arrow keys: Up/Down step the value; Home/End jump to the bounds",
     // "(Optional)" there (unlike Page Up/Down, which this crate does not
     // implement and this suite does not require). `aria-valuemin`/
     // `aria-valuemax` are unconditionally present on every segment here, so
-    // the rule always applies. Regression guard: Home/End must not fall
+    // the rule always applies. Guard: Home/End must not fall
     // through `date_segment_key_effects`'s wildcard arm and do nothing at
     // all (month's aria-valuenow would be unchanged by either key).
     await gotoDatePicker(page);
@@ -569,7 +562,7 @@ test.describe("Arrow keys: Up/Down step the value; Home/End jump to the bounds",
   });
 
   test("Up wraps from the maximum to the minimum and Down wraps from the minimum to the maximum on month (a cyclical unit)", async ({ page }) => {
-    // Month and day are cyclical -- backlog row 84 finding 4's calibration
+    // Month and day are cyclical -- backlog row 84 finding 4
     // (`date_segment_key_effects`'s own doc): matches native Chromium
     // `<input type="date">`'s month/day sub-fields.
     await gotoDatePicker(page);
@@ -699,7 +692,7 @@ test.describe("aria-valuenow / aria-valuetext, and no dangling aria-labelledby",
     // value, omitted while it doesn't (the ARIA-wide convention for "no
     // value yet", matching how other range-like roles represent an
     // indeterminate value) -- see `DateSegment`'s `now_value` doc for the
-    // full account, including why this also fixes finding 6 (tested below).
+    // full account, including how this also settles finding 6 (tested below).
     await gotoDatePicker(page);
     const year = segment(page, "year");
     const month = segment(page, "month");
@@ -814,7 +807,7 @@ test.describe("aria-valuenow / aria-valuetext, and no dangling aria-labelledby",
     });
     expect(danglingCount).toBe(0);
 
-    // And the accessible name is still exactly "year"/"month"/"day" via
+    // And the accessible name is exactly "year"/"month"/"day" via
     // `aria-label` alone -- every `segment()` locator throughout this file
     // already depends on this resolving correctly, but this asserts it
     // directly for the main demo's three segments.
@@ -906,9 +899,9 @@ test.describe("Range picker (DateRangePicker, variant=range)", () => {
     await page.keyboard.press("Home");
     await startDay.click();
     // `page.keyboard.press()` has no `timeout` option of its own (unlike a
-    // locator action), so a regression here would hang the whole test file
+    // locator action), so a hang here would hold the whole test file
     // for the 5-minute *test* timeout instead of failing fast -- race it
-    // against a manual timeout so a reintroduction of the bug still fails
+    // against a manual timeout so a reintroduction of the bug fails
     // in 5s.
     await Promise.race([
       page.keyboard.press("Home"),
@@ -922,7 +915,7 @@ test.describe("Range picker (DateRangePicker, variant=range)", () => {
     await expect(startDay).toHaveText("01");
     // The end side was never touched.
     await expect(endYear).toHaveText("YYYY");
-    // The page as a whole is still responsive, not just this one action.
+    // The page as a whole is responsive, not just this one action.
     expect(await page.evaluate(() => 1 + 1)).toBe(2);
   });
 });
@@ -937,7 +930,7 @@ test.describe("Internationalized variant (variant=internationalized)", () => {
     // mod.rs`) only swaps in `tid!(...)`-sourced placeholder text, never a
     // different child order. A French or Japanese date field would
     // conventionally reorder these; this documents that this crate does
-    // not do so today, rather than silently assuming order is locale-
+    // not do so, rather than silently assuming order is locale-
     // sensitive because the variant is named "internationalized".
     await gotoDatePicker(page);
     const labels = await frame(page, "internationalized")
@@ -1142,7 +1135,7 @@ test.describe("Completing a range selection via the calendar", () => {
 
 /**
  * -----------------------------------------------------------------------
- * Completing SEVERAL ranges in a row (dev-docs/backlog.md row 83's follow-up).
+ * Completing SEVERAL ranges in a row (dev-docs/backlog.md row 83).
  *
  * The test above completes ONE range; a second range must not hang the tab for a different reason
  * than the first: `DateRangePickerContext::set_range` compares against the controlled value with
@@ -1247,7 +1240,7 @@ test.describe("Calendar stylesheet before the first open", () => {
 async function monthGeometry(dialog: Locator) {
   // The box a `position: fixed` panel is placed in (see viewport-box.ts): NOT `documentElement.clientWidth`
   // -- under `html { scrollbar-gutter: stable }` that reads the gutter-inclusive 390 while the containing
-  // block is 375, which hid a panel landing 11-15px past the right edge (it passed against clientWidth).
+  // block is 375, so a panel landing 11-15px past the right edge would pass against clientWidth.
   const fixedBox = await fixedViewportBox(dialog.page());
   return readAtRest(dialog, (d, vp) => {
     const rect = (e: Element) => {
@@ -1292,7 +1285,7 @@ test.describe("Multi-month popover panel (variant=multi_month)", () => {
       const g = await monthGeometry(dialog);
       const debug = JSON.stringify(g);
       expect(g.views, debug).toHaveLength(2);
-      // Both months are INSIDE the panel (this was the bug: the 2nd one sat outside it).
+      // Both months are INSIDE the panel.
       for (const v of g.views) {
         expect(v.left, debug).toBeGreaterThanOrEqual(g.dialog.left - 0.5);
         expect(v.right, debug).toBeLessThanOrEqual(g.dialog.right + 0.5);
@@ -1489,7 +1482,7 @@ test.describe("Closing after a selection: dwell, then close", () => {
     await expect(dialog).toHaveAttribute("data-state", "open");
     await expect(dayCell(dialog, 12)).toHaveAttribute("data-selected", "true");
 
-    // Escape still closes it.
+    // Escape closes it.
     await page.keyboard.press("Escape");
     await expect(dialog).toBeHidden({ timeout: 15000 });
   });
@@ -1504,7 +1497,7 @@ test.describe("Closing after a selection: dwell, then close", () => {
     await expect(dayCell(dialog, 17)).toHaveAttribute("data-selected", "true");
     await expect(segment(page, "day", CLOSING)).toHaveText("17");
     await expect(dialog).toBeHidden({ timeout: 15000 });
-    await expect(segment(page, "day", CLOSING)).toHaveText("17"); // and still set once it has closed
+    await expect(segment(page, "day", CLOSING)).toHaveText("17"); // and set once it has closed
   });
 
   test("range picker: starting a NEW range during the dwell of the previous one cancels the close", async ({ page }) => {
@@ -1815,7 +1808,7 @@ test.describe("Apply / Cancel footer (confirm, the default) -- range picker (var
     await dayCell(dialog, 12).click();
     await expect(footerButton(dialog, "Apply")).toBeEnabled();
     await page.waitForTimeout(DWELL_MIN_MS * 3);
-    await expect(dialog).toHaveAttribute("data-state", "open"); // complete, but still staged
+    await expect(dialog).toHaveAttribute("data-state", "open"); // complete, but staged
     // The input keeps the committed (empty) range.
     await expect(rangeSegment(page, "start", "day", "range")).not.toHaveText("06");
 
@@ -1862,7 +1855,7 @@ test.describe("Apply / Cancel footer (confirm, the default) -- range picker (var
 
 /**
  * The demos that mirror a shadcn date-picker demo switch the footer off (`confirm: false`) and copy
- * that demo's open/close behaviour (research table: uncontrolled popover demos STAY OPEN on select;
+ * that demo's open/close behaviour (uncontrolled popover demos STAY OPEN on select;
  * controlled-`open` demos CLOSE). See docs.md's table.
  */
 test.describe("confirm: false demos follow their shadcn twin", () => {
@@ -1916,8 +1909,7 @@ test.describe("confirm: false demos follow their shadcn twin", () => {
 
 /**
  * -----------------------------------------------------------------------
- * Natural language (variant=natural_language) -- shadcn's `date-picker-natural-language` (research:
- * /home/user/tgt/research-shadcn-209-210.md part A1): label "Schedule Date", placeholder "Tomorrow or
+ * Natural language (variant=natural_language) -- shadcn's `date-picker-natural-language`: label "Schedule Date", placeholder "Tomorrow or
  * next week", initial value "In 2 days", parse on input (a miss KEEPS the previous date), ArrowDown opens
  * the popover, the calendar button is an icon button INSIDE the input group (aria-label "Select date",
  * popover aligned to the end), selecting writes the formatted date into the input and closes, and the
@@ -1930,7 +1922,7 @@ test.describe("Natural language picker (variant=natural_language)", () => {
   /**
    * The page's clock, frozen at a fixed instant far from the day the site was built: the prerendered markup carries the
    * BUILD day, so a test that compares the page with "today" passes only while the build and the run share a UTC day
-   * (a deploy that built before midnight and tested after it failed, backlog row 377). Frozen, the demo has to read the
+   * (backlog row 377). Frozen, the demo has to read the
    * clock after hydration to show this date, and the expectation below is pure arithmetic on the same instant.
    */
   const FROZEN_NOW = Date.UTC(2031, 2, 31, 23, 30); // 31 March 2031, 23:30 UTC: one more day crosses a month

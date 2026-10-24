@@ -14,10 +14,10 @@
  * the panel; the Drawer included. Each overlay has a mouse
  * counterpart below.
  *
- * The emulation is what reproduced the report in plain Chromium: an iPhone 13 context (`hasTouch`,
+ * The emulation reproduces the iOS case in plain Chromium: an iPhone 13 context (`hasTouch`,
  * `isMobile`) plus an "iOS-like" capture `mousedown` `preventDefault` on every target that is not a
  * text field. Safari does not focus a tapped button, so `document.activeElement` stays `<body>`
- * after a tap, and THAT is what made the script-focused panel match `:focus-visible`; a plain
+ * after a tap, and THAT is what makes the script-focused panel match `:focus-visible`; a plain
  * Chromium tap focuses the button first and hides the whole class. What no Chromium run can prove
  * is Safari's own `:focus-visible` heuristic and the real software keyboard: see the manual iPhone
  * checklist in backlog row 226.
@@ -89,7 +89,7 @@ const POPUPS: Overlay[] = [
 
 const OVERLAYS = [...MODALS, ...POPUPS];
 
-/** iPhone 13 emulation plus Safari's "a tapped button takes no focus" (the setup that reproduced the report). */
+/** iPhone 13 emulation plus Safari's "a tapped button takes no focus" (the iOS setup). */
 async function iosLikeContext(browser: Browser): Promise<BrowserContext> {
   const { defaultBrowserType: _unused, ...iphone } = devices["iPhone 13"];
   const context = await browser.newContext({ ...iphone });
@@ -281,7 +281,7 @@ for (const o of OVERLAYS) {
       }
     });
 
-    test("the keyboard counterpart is unchanged", async ({ page }) => {
+    test("the keyboard counterpart opens the panel", async ({ page }) => {
       await open(page, o);
       const trigger = triggerOf(page, o);
       await trigger.scrollIntoViewIfNeeded();

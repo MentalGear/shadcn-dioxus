@@ -6,7 +6,7 @@ export type RestBox = { x: number; y: number; width: number; height: number };
 /**
  * Resolves once `locator`'s element has been mounted AND every
  * animation/transition running on it (or its descendants) has finished --
- * the load-independent replacement for `page.waitForTimeout(<animation
+ * the load-independent alternative to `page.waitForTimeout(<animation
  * duration * safety factor>)` before reading an animated value
  * (dev-docs/backlog.md row 115; same class as row 112's "asserting on an
  * animated value").
@@ -20,7 +20,7 @@ export type RestBox = { x: number; y: number; width: number; height: number };
  *
  * Two rAFs first: the animation object does not exist until the style
  * recalc of the next frame, and "no running animations" is trivially true
- * before it does -- the very false-settled reading this exists to prevent.
+ * before it does -- the false-settled reading this wait prevents.
  */
 export async function awaitAnimationsSettled(locator: Locator): Promise<void> {
   await locator.waitFor({ state: "attached" });

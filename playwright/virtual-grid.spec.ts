@@ -265,9 +265,8 @@ test.describe("gallery (items wrap into rows)", () => {
   });
 });
 
-// Row 369: a row's measured height keeps its fraction. The canvas once summed whole px, so rows of
-// 66.1875px ended up to a px below it (a short grid's box then overflowed by 1px); now it holds the
-// remainders, rounded up.
+// Row 369: a row's measured height keeps its fraction. The canvas holds the remainders, rounded up; summing
+// whole px would leave rows of 66.1875px up to a px below it (a short grid's box then overflows by 1px).
 test("gallery: rows with a fractional height end inside the canvas", async ({ page }) => {
   await gotoHydrated(page, PAGE_URL);
   const grid = gallery(page);
@@ -303,8 +302,8 @@ test("gallery: rows with a fractional height end inside the canvas", async ({ pa
   }).toPass({ timeout: 15000 });
 });
 
-// Scroll chaining: at a grid's top or bottom edge the wheel must scroll the page (the grid once set
-// `overscroll-behavior: contain` and trapped it); only the inline axis stays contained.
+// Scroll chaining: at a grid's top or bottom edge the wheel must scroll the page (`overscroll-behavior: contain`
+// would trap it); only the inline axis stays contained.
 for (const [name, pick] of [["data grid", dataGrid], ["gallery", gallery]] as const) {
   test.describe(`${name} scroll chaining`, () => {
     test.use({ viewport: { width: 1280, height: 600 } });

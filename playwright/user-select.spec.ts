@@ -1,7 +1,7 @@
 /**
  * Controls are not text (dev-docs/backlog.md row 229; gate `scripts/check-theme-baseline.sh`, arm 4).
  *
- * The owner: "interactive elements like btns etc. should not allow user text selection". The theme has ONE
+ * The theme has ONE
  * zero-specificity rule (`dx-components-theme.css`, "Controls are not text") giving every `dx-` button,
  * `[role=button]`, `summary` and menu-item/option/tab/switch/checkbox/radio/slider role
  * `-webkit-user-select: none; user-select: none`. It deliberately does NOT reach text fields, `spinbutton`

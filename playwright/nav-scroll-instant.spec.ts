@@ -2,11 +2,10 @@
  * Smooth scrolling is opt-in per interaction, never ambient (dev-docs/backlog.md row 228; gate
  * `scripts/check-scroll-behavior.sh`).
  *
- * The owner: "clicking a demo link (header) from the main overview navigates to the component page, but to
- * its bottom". `html { scroll-behavior: smooth }` made the router's `scrollTo(0, 0)` after a push a SMOOTH
- * scroll started on the long overview page; the short component page replaced it mid-animation, the browser
- * clamped the offset to the new page's bottom, and the visitor saw the bottom and then watched it glide up.
- * Back is the mirror (the overview rendered at 0 and glided to the saved offset).
+ * The failure it guards: with an ambient `html { scroll-behavior: smooth }` the router's `scrollTo(0, 0)` after a push is a SMOOTH
+ * scroll started on the long overview page; the short component page replaces it mid-animation, the browser
+ * clamps the offset to the new page's bottom, and the visitor sees the bottom and then watches it glide up.
+ * Back is the mirror (the overview renders at 0 and glides to the saved offset).
  *
  * This spec records `scrollY` and `location.pathname` on EVERY animation frame across the navigation and
  * asserts what the visitor can see:
@@ -144,7 +143,7 @@ for (const [label, use] of [
 
       const home = frames.filter((f) => f.path === "/");
       const finalY = home[home.length - 1].y;
-      expect(finalY, "Back restored the scroll position").toBeGreaterThan(5000);
+      expect(finalY, "Back restores the scroll position").toBeGreaterThan(5000);
       // A glide shows a run of distinct offsets (dozens of frames over the ~500 ms a smooth scroll takes). The
       // overview's `content-visibility: auto` cards are laid out at their `contain-intrinsic-block-size` estimate until
       // they are rendered, so on a phone viewport the restored offset can be corrected ONCE (43161 -> 43006, 155 px):
@@ -159,7 +158,7 @@ for (const [label, use] of [
   });
 }
 
-test.describe("same-page anchors still scroll smoothly (1280x800)", () => {
+test.describe("same-page anchors scroll smoothly (1280x800)", () => {
   test.use({ viewport: { width: 1280, height: 800 } });
 
   test("a /docs sidebar anchor glides, then the opt-in clears", async ({ page }) => {

@@ -5,12 +5,11 @@ import { gotoHydrated } from "./hydration";
 
 // Class guard: a listener that reaches a Button (or any element built through `merge_attributes`)
 // from TWO sources -- the component's own prop AND a caller's `attributes` spread -- must never
-// be dropped. Row 155 group 6 (`r#as` on Button) once merged Button's own always-present
-// onclick/onmousedown/onmouseup/onkeydown LAST, so a `DialogClose`/`SheetClose`/`DrawerClose`
-// rendered `as` a Button, or a menu trigger rendered `as` a Button, lost its listener: dialogs
-// would not close and menus would not open (34 Playwright failures on the merged tree, each
-// group green alone). `merge_attributes` now chains same-named listeners
-// (primitives/src/lib.rs unit tests); these specs assert the user-visible outcomes.
+// be dropped. Row 155 group 6 (`r#as` on Button): merging Button's own always-present
+// onclick/onmousedown/onmouseup/onkeydown AFTER the caller's would drop the caller's listener, so a
+// `DialogClose`/`SheetClose`/`DrawerClose` rendered `as` a Button, or a menu trigger rendered `as` a Button,
+// would not close its dialog or open its menu. `merge_attributes` chains same-named listeners
+// (primitives/src/lib.rs unit tests)
 
 const GOTO = { timeout: 20 * 60 * 1000 };
 const page_of = (name: string) => `${BASE_URL}/component/${name}/`;

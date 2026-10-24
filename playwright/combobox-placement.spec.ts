@@ -1,6 +1,6 @@
 /**
- * Combobox list placement is a GEOMETRY contract, not a visual one (backlog row 210, item 8 of
- * `dev-docs/research/next-round-plan-2026-10-14.md`): on iOS the open list covered its own input.
+ * Combobox list placement is a GEOMETRY contract, not a visual one (backlog row 210): on iOS an open list could
+ * cover its own input.
  *
  * The contract, checked at rest after every step below:
  *   1. the list box never intersects the input box (the anchor is an exclusion zone);

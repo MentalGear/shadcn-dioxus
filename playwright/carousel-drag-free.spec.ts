@@ -130,7 +130,7 @@ for (const variant of ["drag_free", "drag_free_rtl"] as const) {
       expect((await slideOffsets(page, variant)).selected).toBeGreaterThan(0);
     });
 
-    test("Next still lands exactly on a slide edge, from a free position", async ({ page }) => {
+    test("Next lands exactly on a slide edge, from a free position", async ({ page }) => {
       await goto(page, variant);
       await fling(page, variant, 140, toward as 1 | -1);
       await settled(page, variant);
@@ -163,7 +163,7 @@ for (const variant of ["drag_free", "drag_free_rtl"] as const) {
   });
 }
 
-test("a normal carousel still snaps (control: drag_free is off by default)", async ({ page }) => {
+test("a normal carousel snaps (control: drag_free is off by default)", async ({ page }) => {
   await gotoHydrated(page, `${BASE_URL}/component/carousel/`, GOTO_OPTS);
   const track = page.locator("#component-preview-frame-sizes .dx-carousel-content");
   await expect(track).toHaveAttribute("data-drag-free", "false");

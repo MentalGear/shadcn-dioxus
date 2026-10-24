@@ -457,12 +457,10 @@ test.describe("computed style snapshot", () => {
       },
     };
 
-    // Two demos advance their own state from a `setInterval(() => dioxus.send(...))`
-    // ticker (progress: `Math.random() * 30` every 1s; the home music player:
-    // elapsed wall-clock every 100ms), so `.dx-progress-indicator` and
-    // the player's `.dx-slider-range` would differ between two
-    // captures of an unchanged build. Their value depends on how many ticks ran
-    // demos stay at their initial value); no other preview code uses setInterval.
+    // Timers must not advance a demo between two captures of an unchanged build, or a value that depends on how
+    // many ticks ran (the progress indicator, the home music player's `.dx-slider-range`) would differ: gated
+    // timers are stopped by reporting the document hidden (below), and a JS `setInterval` whose handler calls
+    // `dioxus.send(` is replaced by a no-op.
     const freezeTickers = () => {
       // Gated motion (use_motion / use_interval_while / use_timeout_while, primitives/src/activity.rs) runs only
       // while the document is visible and the element on screen -- the home page's music player ticks once a

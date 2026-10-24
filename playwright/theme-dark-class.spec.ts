@@ -65,7 +65,7 @@ test.describe("host page, theme sheet only (no script)", () => {
     expect(await probe(page)).toEqual({ bg: DARK_BG, scheme: "dark" });
   });
 
-  test("`.dark` among other classes still counts, a look-alike class does not", async ({ page }) => {
+  test("`.dark` among other classes counts, a look-alike class does not", async ({ page }) => {
     await openHost(page, 'class="antialiased dark font-sans"');
     expect((await probe(page)).bg).toBe(DARK_BG);
     for (const cls of ["darkish", "not-dark", "dark-mode"]) {
@@ -79,14 +79,14 @@ test.describe("host page, theme sheet only (no script)", () => {
     expect(await probe(page)).toEqual({ bg: LIGHT_BG, scheme: "light" });
   });
 
-  test('`class="dark"` + data-theme="dark" is dark; data-theme="dark" alone is unchanged', async ({ page }) => {
+  test('`class="dark"` + data-theme="dark" is dark; data-theme="dark" alone is dark', async ({ page }) => {
     await openHost(page, 'class="dark" data-theme="dark"');
     expect(await probe(page)).toEqual({ bg: DARK_BG, scheme: "dark" });
     await openHost(page, 'data-theme="dark"');
     expect(await probe(page)).toEqual({ bg: DARK_BG, scheme: "dark" });
   });
 
-  test("neither: prefers-color-scheme decides (unchanged)", async ({ page }) => {
+  test("neither: prefers-color-scheme decides", async ({ page }) => {
     await openHost(page, "");
     expect((await probe(page)).bg).toBe(LIGHT_BG);
     await page.emulateMedia({ colorScheme: "dark" });

@@ -1,6 +1,6 @@
 /**
- * Row 188 leftovers: `InputGroupTextarea` (textarea footer) and the group's custom control, and
- * `BreadcrumbLink { r#as }` (router link). Tabs and ToggleGroup vertical already have their specs
+ * Row 188: `InputGroupTextarea` (textarea footer) and the group's custom control, and
+ * `BreadcrumbLink { r#as }` (router link). Tabs and ToggleGroup vertical have their own specs
  * (`tabs.spec.ts`, `toggle_group.spec.ts`). Controls are located by role inside the demo frame; axe runs
  * in light and dark.
  */

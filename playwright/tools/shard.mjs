@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Duration-balanced shards (backlog row 152a). Playwright's own --shard=i/n balances by test COUNT, so a shard that
-// draws the carousel family takes several times longer than one that draws the 400 one-second specs. This sorts the
+// draws the carousel family takes several times longer than one that draws the many one-second specs. This sorts the
 // spec files by the measured seconds in playwright/durations.json and deals them greedily (longest first) onto the
 // currently lightest shard (LPT), so the shards finish within a few percent of each other.
 //

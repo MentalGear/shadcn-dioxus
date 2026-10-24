@@ -49,7 +49,7 @@ test.describe("active tab keeps its color under the pointer", () => {
       const tab2Button = page.getByRole("tab", { name: "Tab 2" });
       const tab3Button = page.getByRole("tab", { name: "Tab 3" });
 
-      // Tab colours now transition (Nova tabs, row 111), so every read waits for the
+      // Tab colours transition (Nova tabs, row 111), so every read waits for the
       // trigger's running animations to finish: a read taken mid-fade is an interpolated
       // colour, not either end state.
       const settledColor = (tab: typeof tab2Button) =>
@@ -208,7 +208,7 @@ test.describe("hidden_until_found", () => {
     await expectActive(tab, panelOf, "Overview");
   });
 
-  test("clicking tabs afterwards still swaps panels and restores hidden=until-found", async ({ page }) => {
+  test("clicking tabs afterwards swaps panels and restores hidden=until-found", async ({ page }) => {
     const { tab, panelOf } = await load(page);
     await panelOf("Specs").dispatchEvent("beforematch");
     await expectActive(tab, panelOf, "Specs");
@@ -421,7 +421,7 @@ test.describe("the docs demo frame keeps its own chrome", () => {
     expect((await frame.boundingBox())!.height).toBeGreaterThanOrEqual(288);
   });
 
-  test("a default Tabs panel is still framed by the zero-specificity default", async ({ page }) => {
+  test("a default Tabs panel is framed by the zero-specificity default", async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/tabs/`);
     const panel = page.locator('.dx-tabs[data-variant="default"] .dx-tabs-content-themed[data-state="active"]').first();
     await expect(panel).toBeVisible();

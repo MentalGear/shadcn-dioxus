@@ -22,11 +22,11 @@ test('test', async ({ page }) => {
   // The focus trap's tab cycle has two stops: Tab moves to the close button, and the next Tab
   // wraps back round to the first control.
   //
-  // Phase 4.2 (dev-docs/plan.md): the modal `Dialog` is a native `<dialog>` on the web arm, so this
+  // The modal `Dialog` is a native `<dialog>` on the web arm, so this
   // cycle goes through Chromium's own focus trap. Chromium's native trap parks focus on `<body>`
   // for exactly one Tab stop after the last focusable element before wrapping to the first
   // (dev-docs/archive/research/phase4-spike-findings.md experiment 4a) -- invisible to the user and it does not let
-  // focus escape the dialog, so this is a harness correction for the new trap's documented shape.
+  // focus escape the dialog, so the test steps over that stop.
   await page.keyboard.press('Tab');
   await expect(closeButton).toBeFocused();
   await page.keyboard.press('Tab');
@@ -37,12 +37,12 @@ test('test', async ({ page }) => {
   await expect(dialog.getByRole('button', { name: 'Open Nested Dialog' })).toBeFocused();
   // Hitting escape should close the dialog
   await page.keyboard.press('Escape');
-  // Assert the dialog can no longer be found
+  // Assert the dialog is gone
   await expect(dialog).toHaveCount(0);
 
   // Reopen the dialog
   await page.getByRole('button', { name: 'Show Dialog' }).click();
-  // Assert the dialog is open again
+  // Assert the dialog is open
   await expect(dialog).toBeVisible();
   // Click the close button
   await closeButton.click();
@@ -61,7 +61,7 @@ test('a press inside the dialog released over its backdrop does not dismiss it (
   // A press inside the panel and a release over the `::backdrop` produce a `click` whose target is
   // the dialog itself, outside its box -- identical, by target and coordinates, to a backdrop click.
   // `use_dialog_backdrop_dismiss` (primitives/src/lib.rs) also requires the PRESS to have begun
-  // on the backdrop (the Drawer's "drag up on the handle closes it" report was this).
+  // on the backdrop (so a drag up on the Drawer's handle, which ends over the backdrop, does not dismiss).
   await gotoHydrated(page, `${BASE_URL}/component/dialog/`, { timeout: 20 * 60 * 1000 });
   await page.getByRole('button', { name: 'Show Dialog', exact: true }).click();
   const dialog = page.getByRole('dialog');
@@ -84,12 +84,11 @@ test('a press inside the dialog released over its backdrop does not dismiss it (
 });
 
 test('dialog stays open when clicking non-focusable content inside it', async ({ page }) => {
-  // Regression: `use_outside_dismiss` (shared with Popover) served pointerdown
-  // and focusin with one handler. Clicking a non-focusable region inside the
+  // `use_outside_dismiss` (shared with Popover) tells pointerdown from focusin. Clicking a non-focusable region inside the
   // dialog (e.g. this demo's "Item information" title) blurs the currently
   // focused control, and the browser moves focus to the nearest focusable
-  // *ancestor* -- outside the dialog's root while still containing it. The
-  // shared handler read that as focus leaving and closed the dialog.
+  // *ancestor* -- outside the dialog's root while still containing it. That is not
+  // focus leaving, so the dialog stays open.
   await gotoHydrated(page, `${BASE_URL}/component/dialog/`, { timeout: 20 * 60 * 1000 });
   await page.getByRole('button', { name: 'Show Dialog' }).click();
   const dialog = page.getByRole('dialog');
@@ -112,9 +111,7 @@ test.describe('Axe automated scan', () => {
 // The scrim every modal overlay shares (assert-backdrop-fade.ts has the full
 // claim; popover/dialog/alert-dialog/sheet/drawer specs all run the identical
 // assertion): the dialog's own `::backdrop` is the only painter, black/10 with a
-// 4px blur, and it fades in and out for the same length. Before this, Dialog
-// stacked its own animated wrapper scrim on the UA's un-animated one and the
-// exit snapped.
+// 4px blur, and it fades in and out for the same length.
 test.describe("Scrim", () => {
   test("Dialog paints the shared scrim and fades it in and out", async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/dialog/`, { timeout: 20 * 60 * 1000 });

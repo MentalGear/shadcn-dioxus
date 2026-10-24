@@ -12,7 +12,7 @@
  * `scale` the test sets, and which dispatches a real `resize`/`scroll` event on every change. The
  * layout viewport is the real, untouched one -- the same shape as iOS -- so the CSS under test is
  * the shipped CSS acting on a real layout; what is NOT exercised is a real keyboard's own focus
- * scrolling, which is the manual iPhone checklist in the report.
+ * scrolling, which needs the manual iPhone checklist of row 227.
  *
  * Bounds are the stub's visual viewport (`[offsetTop, offsetTop + height]`), never
  * `documentElement.clientHeight`/`innerHeight` (`scripts/check-spec-viewport-bound.sh`).
@@ -160,7 +160,7 @@ async function expectAtRest(panel: Locator, rest: Awaited<ReturnType<typeof pane
   expect(s.inset).toBe("");
   expect(s.top).toBe("");
   expect(s.paddingBottomInline).toBe(rest.paddingBottomInline);
-  // Geometry is unchanged too (at rest, no animation in flight).
+  // Geometry equals the baseline too (at rest, no animation in flight).
   expect(Math.abs(s.rect.top - rest.rect.top)).toBeLessThan(1);
   expect(Math.abs(s.rect.bottom - rest.rect.bottom)).toBeLessThan(1);
 }

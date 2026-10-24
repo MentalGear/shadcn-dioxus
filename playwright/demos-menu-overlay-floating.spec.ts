@@ -1,5 +1,5 @@
 /**
- * Row 188 demo coverage, menus, overlays and floating: the demos of the research doc's section 5 (A-C):
+ * Row 188 demo coverage, menus, overlays and floating: the demos of the parity audit (groups A-C):
  * tooltip/sides, drawer/scrollable_content, command/scrollable. Each is opened in its demo frame, its key
  * interaction is checked, and axe runs in light and dark. Controls are located by role inside the
  * frame, never by demo copy elsewhere on the page.

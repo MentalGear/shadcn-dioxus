@@ -1,7 +1,7 @@
 /**
  * Row 188 / 187, the component "parts", each a typed prop with a demo:
  * AlertDialog `size` / `AlertDialogMedia` / `AlertDialogActionVariant`, Card `size`, Spinner `size`,
- * Button `radius`. Also pins the demos for parts that already existed (InputGroup block addons, Button
+ * Button `radius`. Also pins the demos for existing parts (InputGroup block addons, Button
  * `as`, Dialog built-in close, Sheet `side`). Controls are located by role inside the demo frame;
  * axe runs in light and dark.
  */
@@ -129,7 +129,7 @@ for (const mode of ["light", "dark"] as const) {
       await expectNoAxeViolations(page, `button/radius ${mode}`);
     });
 
-    test(`button/as_link: renders an anchor that still takes the click handler`, async ({ page }) => {
+    test(`button/as_link: renders an anchor that takes the click handler`, async ({ page }) => {
       const root = await open(page, "button", "as_link", mode);
       const link = root.getByRole("link", { name: "Login" });
       await expect(link).toBeVisible({ timeout: 60_000 });

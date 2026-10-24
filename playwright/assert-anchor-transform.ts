@@ -4,13 +4,13 @@
  * THE CLASS: an anchored overlay centres itself on its anchor with `transform: translateX(-50%)`
  * (`primitives/src/top_layer.rs`'s engine stylesheet, keyed on `[data-side]`/`[data-align]`). A
  * `@keyframes` that sets `transform` REPLACES that value for as long as the animation runs, so the
- * panel plays its fade at its un-centred spot (the date picker 144px off, the colour picker 133px)
+ * panel plays its fade at its un-centred spot (far off its anchor)
  * and snaps to the centre on the last frame. The fade animates `translate`/`scale` instead, which are
  * separate properties and compose with `transform`. `scripts/check-anchored-keyframes.sh` bans the
  * source pattern; this proves the rendered result, per component.
  *
  * WHY A PROBE, not a position sample: the menus (dropdown, menubar, navbar, navigation menu, context
- * menu) set no `data-side` today, so they carry no centring transform to lose and a frame-sampled
+ * menu) set no `data-side`, so they carry no centring transform to lose and a frame-sampled
  * centre-x would pass on the broken keyframes too. So the probe supplies the centring itself: it sets an
  * inline `transform: translateX(-37px)` on the content (an inline declaration sits BELOW animations in
  * the cascade, exactly as the engine's rule does), seeks the element's own CSS keyframes to their start,
@@ -49,8 +49,8 @@ export interface AnimationProbe {
 export async function probeAnimations(content: Locator, attrs: Record<string, string> = {}): Promise<AnimationProbe[]> {
   return content.evaluate(async (el, { probe, attrs }) => {
     // Two frames first: on an element that mounted a moment ago, flipping `data-state` before its first
-    // style resolution finds no CSS animation to probe (observed: a close-state probe straight after
-    // `toBeVisible()` failed ~6 runs in 8). Everything after this line is synchronous -- the attributes go on
+    // style resolution finds no CSS animation to probe (a close-state probe straight after
+    // `toBeVisible()` would find none). Everything after this line is synchronous -- the attributes go on
     // and come off inside one task, so the component never sees them.
     await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
     const html = el as HTMLElement;
@@ -104,7 +104,7 @@ export async function probeAnimations(content: Locator, attrs: Record<string, st
  * Asserts the content's open/close fade (the animation that animates `opacity`) never sets `transform`
  * -- its keyframes carry no `transform`, and the probed centring survives at the start, midpoint and end
  * -- and that it really does move something (`scale` or `translate` differs between start and end), so a
- * fade that lost its motion cannot pass as "composes fine".
+ * fade without motion cannot pass as "composes fine".
  */
 export async function expectFadeKeepsTransform(content: Locator, label: string, attrs: Record<string, string> = {}): Promise<void> {
   const fades = (await probeAnimations(content, attrs)).filter((a) => a.keyframeProps.includes("opacity"));

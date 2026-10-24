@@ -68,7 +68,7 @@ for (const mode of ["light", "dark"] as const) {
         const got = await paint(page, label);
         expect.soft(got.color, `${label} text`).toBe(want.color);
         if (want.bg !== null) expect.soft(got.bg, `${label} fill`).toBe(want.bg);
-        // Geometry was already shadcn's: radius 10px, default height 32px.
+        // Geometry is shadcn's: radius 10px, default height 32px.
         expect.soft(got.radius, `${label} radius`).toBe("10px");
         expect.soft(got.height, `${label} height`).toBe("32px");
       }

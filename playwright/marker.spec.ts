@@ -134,7 +134,7 @@ test("the shimmer is off under prefers-reduced-motion", async ({ page }) => {
   });
   expect(s.name).toBe("none");
   expect(s.image).toBe("none");
-  expect(s.fill).toBe(s.color); // plain text again
+  expect(s.fill).toBe(s.color); // plain text
 });
 
 for (const scheme of ["light", "dark"] as const) {

@@ -134,8 +134,8 @@ export async function installMainThreadObserver(page: Page): Promise<void> {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
         }).observe({ type: "longtask", buffered: true } as any);
       } catch {
-        // Long Tasks API unsupported in this engine (Firefox/WebKit as of
-        // this writing) -- leave the array empty rather than throwing out
+        // Long Tasks API unsupported in this engine (Firefox/WebKit)
+        // -- leave the array empty rather than throwing out
         // of an init script, which would break every page load in the
         // test. main-thread.spec.ts skips non-Chromium projects outright;
         // this try/catch is the second line of defense for any other
@@ -180,8 +180,7 @@ export async function readMainThreadReport(
 
 /** Clears the buffered entries in the page. Used by `withGesture` right
  * before each gesture so first-load/earlier-test noise never counts
- * toward the gesture being measured; exposed standalone too, per this
- * file's design brief. */
+ * toward the gesture being measured; exposed standalone too. */
 export async function resetMainThreadReport(page: Page): Promise<void> {
   await page.evaluate((key) => {
     const w = window as any;

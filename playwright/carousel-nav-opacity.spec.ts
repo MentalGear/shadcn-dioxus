@@ -4,12 +4,10 @@
  * `--dx-carousel-nav-disabled-visibility`), and where keyboard focus goes
  * when the arrow that holds it becomes disabled.
  *
- * Owner ask: "carousel option to set opacity of deactivated arrow btns, e.g.
- * 0 to fade it all out if not usable e.g. at the last slide". The construction
- * under test (preview/src/components/carousel/style.css, primitives/src/carousel.rs):
+ * The construction under test (preview/src/components/carousel/style.css, primitives/src/carousel.rs):
  *
  *  - one CSS custom property sets the disabled opacity for BOTH arrows, with
- *    today's look (the theme's 0.5 disabled opacity) as the default;
+ *    the theme's 0.5 disabled opacity as the default;
  *  - at opacity 0 the prop also sets `--dx-carousel-nav-disabled-visibility:
  *    hidden`, and the arrow turns `visibility: hidden` only AFTER its fade
  *    (a zero-length visibility transition delayed by the fade duration), and
@@ -183,7 +181,7 @@ async function clickToEnd(root: Locator, steps: number) {
   }
 }
 
-test.describe("Carousel: disabled arrow opacity -- the default look is unchanged", () => {
+test.describe("Carousel: disabled arrow opacity -- the default look", () => {
   test("with no prop, the disabled arrow keeps the theme's 0.5 and stays visible", async ({ page }) => {
     await goto(page, "main");
     const root = frame(page, "main").locator(".dx-carousel");
@@ -208,7 +206,7 @@ test.describe("Carousel: disabled arrow opacity -- the default look is unchanged
     expect(vars).toEqual(["", "", null]);
   });
 
-  test("the disabled arrow at the last slide is also still 0.5 and visible", async ({ page }) => {
+  test("the disabled arrow at the last slide is also 0.5 and visible", async ({ page }) => {
     await goto(page, "main");
     const root = frame(page, "main").locator(".dx-carousel");
     await clickToEnd(root, 4);

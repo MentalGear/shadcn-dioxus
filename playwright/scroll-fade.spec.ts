@@ -250,7 +250,7 @@ test.describe("VirtualList fade", () => {
     await expectEdges(list, "block", { start: "crisp", end: "faded" });
   });
 
-  test("content-visibility: every row is in the DOM and the fade still follows the scroll", async ({ page }) => {
+  test("content-visibility: every row is in the DOM and the fade follows the scroll", async ({ page }) => {
     const list = frame(page).locator('[data-demo="fade-content-visibility"] [role="list"]');
     await expect(list).toHaveAttribute("data-virtualize", "content-visibility");
     await expect(list).toHaveClass(/dx-scroll-fade-y/);
@@ -302,7 +302,7 @@ test.describe("MessageScroller fade", () => {
     await expectEdges(vp, "block", { start: "crisp", end: "crisp" });
   });
 
-  test("after prepending history the fade still follows the scroll position", async ({ page }) => {
+  test("after prepending history the fade follows the scroll position", async ({ page }) => {
     const vp = viewportOf(page);
     await scrollBlockTo(vp, "start");
     await expectEdges(vp, "block", { start: "crisp", end: "crisp" });

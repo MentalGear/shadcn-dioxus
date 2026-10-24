@@ -103,7 +103,7 @@ test.describe("indicator_line: a line-shaped swatch on every row", () => {
 });
 
 test.describe("indicator_none: no swatch at all", () => {
-  test("no chart-swatch element renders, but the row's name and value still do", async ({ page }) => {
+  test("no chart-swatch element renders, but the row's name and value do", async ({ page }) => {
     await goto(page);
     const frame = frameOf(page, "indicator_none");
     await openTooltip(frame);

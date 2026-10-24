@@ -247,7 +247,7 @@ for (const scheme of ["light", "dark"] as const) {
     test("destructive text keeps >= 4.5:1 on its tinted fill (deliberately not raw --dx-destructive)", async ({ page }) => {
       const c = await read(page);
       expect(c.destructive.contrast).toBeGreaterThanOrEqual(4.5);
-      // Still reads as red: the fill leans to red over the blue/green channels.
+      // Reads as red: the fill leans to red over the blue/green channels.
       const [r, g, b] = c.destructive.fg;
       expect(r).toBeGreaterThan(g);
       expect(r).toBeGreaterThan(b);
