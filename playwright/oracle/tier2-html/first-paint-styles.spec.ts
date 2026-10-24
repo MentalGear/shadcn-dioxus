@@ -74,7 +74,7 @@ const ALL_COMPONENTS: string[] = fs
   .map((d) => d.name)
   .sort();
 /**
- * The per-route subjects every run hydrates in a real browser: Field (the page of the original report), Select and
+ * The per-route subjects every run hydrates in a real browser: Field, Select and
  * Combobox (row 306) and Tag Group (row 332), the markup class's own subjects.
  */
 const SUBJECTS = ["field", "select", "combobox", "tag_group"];

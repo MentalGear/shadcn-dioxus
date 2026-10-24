@@ -58,7 +58,7 @@ test.describe("Pie chart: renders every variant as an accessible image", () => {
       const slices = f.locator('[data-slot="chart-arc"]');
       await expect(slices.first()).toBeAttached();
 
-      // The a11y contract every chart family shares (`$S/chart-api.md`):
+      // The a11y contract every chart family shares (`preview/src/components/chart/docs.md`):
       // a real, visually-hidden <table> lists every datum, never just the
       // SVG -- category + value + percent for a polar chart. One row per CATEGORY (`table_rows`/
       // `table_rows_pie`'s own shape), not per slice -- for every

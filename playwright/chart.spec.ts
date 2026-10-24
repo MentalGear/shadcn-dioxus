@@ -120,9 +120,8 @@ test.describe("Legend never overlaps the chart's axis labels, svg box, or open t
           // page's initial (pre-scroll) position while `tooltipBox` was
           // measured after `.hover()` had already scrolled the page --
           // two boxes in two different scroll states are not comparable,
-          // and this produced a real, confirmed false pass in this exact
-          // test (`$S/chart-legend-overlap/spec-before-fix-buggy-test.log`)
-          // even against the unfixed CSS.
+          // and that gives a false pass in this exact test, even against
+          // CSS that lets the tooltip overlap the legend.
           const legendBox = await legend.boundingBox();
           const tooltipBox = await tooltip.boundingBox();
           expect(intersects(tooltipBox, legendBox), `chart ${i}, hit-band ${b}: tooltip vs legend`).toBe(

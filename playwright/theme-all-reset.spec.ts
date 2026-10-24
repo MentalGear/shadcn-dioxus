@@ -9,20 +9,19 @@ import { gotoHydrated } from "./hydration";
 // exactly what `all: unset` produced (captured on the pre-change build, light scheme).
 const GOTO = { timeout: 20 * 60 * 1000 };
 
-// Computed values of the pre-change build (light). `rect` is the border box, rounded to 2 decimals.
+// Computed values of the theme baseline (light). `rect` is the border box, rounded to 2 decimals.
 //
 // `cursor` is `default`: the interactive-element cursor is the theme's one rule (`data-dx-interactive-element-cursor`,
 // cursor-option.spec.ts, backlog row 381), and shadcn v4's arrow is its default.
 //
-// Row 331 verdict: KEPT. All four records equal the values from before the theme-baseline change, so no
-// re-baseline is needed. What only this snapshot catches: a probe that appended
-// `cursor: default`, `text-indent`, `appearance: auto`, `transition-property: none`, `letter-spacing`, `border-width`
-// and `text-shadow`/`word-spacing` declarations (appended to the shipped sheet) to the four controls went red
+// Row 331: the four records are the theme baseline's values. What only this snapshot catches: a sheet-level
+// change that adds `cursor: default`, `text-indent`, `appearance: auto`, `transition-property: none`,
+// `letter-spacing`, `border-width` or `text-shadow`/`word-spacing` declarations to the four controls goes red
 // here (4 of 4) while this file's per-control tests, `switch.spec`, `slider.spec`, `slider-thumb-clip.spec`,
-// `color-picker*.spec` and `overlay-switch.spec` stayed green. The gates `check-theme-baseline.sh` (bans `all:`,
+// `color-picker*.spec` and `overlay-switch.spec` stay green. The gates `check-theme-baseline.sh` (bans `all:`,
 // checks the two theme rules) and `check-popup-root-reset.sh` (checks the popup-root rule) scan sources for those
 // shapes and read no computed value, and `popup-style-isolation` compares a popup with its own clone, so a
-// sheet-level change reaches both sides: by their construction, not by a run on the probe.
+// sheet-level change reaches both sides: by their construction.
 const BEFORE: Record<string, Record<string, string>> = {
   "switch": {
     "display": "flex",

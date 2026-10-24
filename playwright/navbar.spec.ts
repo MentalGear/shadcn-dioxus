@@ -141,8 +141,8 @@ test.describe('Close animation is not skipped (dev-docs/backlog.md row 77 follow
     // runs) -- a separate, pre-existing limit of `PopoverKind::Auto` that
     // no hook swap on the `open` signal can reach (`use_popover_shown_
     // while_mounted`'s own doc calls this an accepted limit of the plain
-    // Popover API). Escape isolates the exact class row 77 flagged and
-    // this fix closes: `use_popover_sync`'s own synchronous `hidePopover()`
+    // Popover API). Escape isolates the class row 77 describes:
+    // `use_popover_sync`'s own synchronous `hidePopover()`
     // racing `use_animated_open`'s exit animation.
     await page.locator('[role="menubar"]').first().focus();
 

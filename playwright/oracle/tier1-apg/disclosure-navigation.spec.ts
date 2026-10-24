@@ -107,7 +107,7 @@ const LIBRARY_GOTO = { timeout: 20 * 60 * 1000 };
  * than querying the whole page. The docs site's own persistent chrome
  * (header navbar, footer) renders its own "Docs" links on every route, so
  * an unscoped `page.getByRole('link', { name: 'Docs' })` resolves to more
- * than one element (confirmed live: 3 page-wide vs. 1 once scoped here).
+ * than one element (3 page-wide vs. 1 once scoped here).
  */
 function libraryNav(page: Page) {
   return demoFrame(page).getByRole("navigation").first();

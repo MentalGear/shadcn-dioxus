@@ -55,7 +55,7 @@ test.describe("Line chart", () => {
 
       // The a11y contract every chart carries regardless of curve/dots/
       // series count: a real, always-present hidden table mirroring the
-      // same data (`$S/chart-api.md`).
+      // same data (`preview/src/components/chart/docs.md`).
       await expect(scope.locator('table[data-slot="chart-data"]')).toBeAttached();
     });
   }

@@ -504,9 +504,8 @@ test.describe("Carousel: shadcn-parity geometry (size, shadow, outside placement
       // (`--dx-carousel-gap`'s own compensation), which deliberately
       // widens and shifts `.dx-carousel-content`'s own layout box by the
       // gap's width -- clipped by this wrapper, so nothing about it looks
-      // different, but a raw `boundingBox()` of the scroller itself no
-      // longer marks the track's own VISUAL edge the way it did before
-      // that construction existed. The viewport wrapper's own box is
+      // different, but a raw `boundingBox()` of the scroller itself does
+      // not mark the track's own VISUAL edge. The viewport wrapper's own box is
       // exactly the clipped, visual track edge, unaffected by the gap
       // model either way.
       const content = frame.locator('[data-slot="carousel-viewport"]');
@@ -1384,8 +1383,8 @@ test.describe("Carousel: edge rubber-band, pointer (mode B3)", () => {
 /**
  * Wheel/trackpad edge band (mode D, the "platform-aware band") --
  * `primitives/src/carousel.rs`'s `CAROUSEL_WHEEL_BAND_JS`, ported from the
- * owner's bench (`bench-rev40.html`, `mode === "onewriter"`). It replaced
- * B3's wheel path; the pointer half above is still B3.
+ * carousel lab's bench (`bench-rev40.html`, `mode === "onewriter"`). It is
+ * the wheel path; the pointer half above is B3.
  *
  * D's contract, which every test below holds it to:
  * - the band is a `transform` on `.dx-carousel-content` (the scroller) and
@@ -2717,7 +2716,7 @@ test.describe("Carousel: indicators (tablist/dot-picker) variant", () => {
 });
 
 /**
- * Paging never scrolls the page (live-site report: "autoplay scrolls the main page."). Every
+ * Paging never scrolls the page (autoplay must not scroll the main page). Every
  * paging path calls `scroller.scrollBy({ left | top: delta })` directly on the carousel's own
  * scroller element -- `scrollBy` only ever writes the element it is called on, so there is no
  * ancestor for it to reach. `target.scrollIntoView()` on the newly-selected slide would walk and
@@ -3016,8 +3015,7 @@ test.describe("Carousel: only visible slides are reachable (inert)", () => {
     // so N items never summed to exactly the viewport width. Pinned here
     // against the live-rendered geometry, not just the CSS source, so a
     // future regression in the calc (or in the gap model it depends on)
-    // is caught the same way the incident itself was found -- by
-    // measurement.
+    // is caught by measurement.
     await goto(page, "sizes");
     const frame = demoFrame(page, "sizes");
     const viewport = frame.locator('[data-slot="carousel-viewport"]');

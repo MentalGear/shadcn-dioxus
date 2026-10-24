@@ -330,9 +330,9 @@ const OVERLAY_SUBJECTS: OverlaySubject[] = [
     },
   },
   {
-    // menubar's own page also carries other (closed) role=menu nodes --
-    // confirmed live (baseline count 2, 3 with File open, 2 again after
-    // Escape) -- so this scopes by content the way menubar.spec.ts's own
+    // menubar's own page also carries other (closed) role=menu nodes
+    // (baseline count 2, 3 with File open, 2 again after
+    // Escape), so this scopes by content the way menubar.spec.ts's own
     // `fileMenuContent` does, rather than counting `role=menu` directly.
     name: "menubar",
     goto: (page) => goto(page, "menubar"),

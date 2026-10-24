@@ -432,7 +432,7 @@ test.describe("aria-disabled on unavailable/disabled days -- backlog row 84 find
     await expect(may15).toHaveAttribute("aria-label", "Friday, May 15, 2026");
     await expect(may15).toHaveAttribute("aria-disabled", "true");
     // Not a native disabled control -- still focusable/tabbable, per the
-    // roving-tabstop design this fix deliberately preserves.
+    // roving-tabstop design the calendar keeps for unavailable dates.
     await expect(may15).toHaveJSProperty("disabled", false);
 
     const may20 = frame

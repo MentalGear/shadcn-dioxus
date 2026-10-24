@@ -1,7 +1,7 @@
 /**
  * RadarChart -- shadcn parity gallery (14 variants:
- * $S/refs/ui/apps/v4/registry/new-york-v4/charts/chart-radar-*.tsx), built
- * on the shared `chart` primitive/engine ($S/chart-api.md,
+ * shadcn/ui's apps/v4/registry/new-york-v4/charts/chart-radar-*.tsx), built
+ * on the shared `chart` primitive/engine (preview/src/components/chart/docs.md,
  * primitives/src/chart/engine/radar.rs, primitives/src/chart/components/
  * series/radar.rs). Render + axe per variant, plus one behavioural
  * assertion per feature:

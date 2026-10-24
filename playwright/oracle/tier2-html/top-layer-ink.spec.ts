@@ -77,7 +77,7 @@
  * *painted*; CSS inheritance follows the DOM tree, not paint order. So
  * `color: inherit` on a promoted element resolves through its real DOM
  * ancestors back to `body`'s declaration regardless of which visual layer
- * it paints in -- which is also why this fix applies equally to a fully
+ * it paints in -- which is also why the rule holds equally for a fully
  * themed component (`.dx-menubar-content`) and to a bare, unthemed
  * primitive (the `top_layer` fixture's raw `PopoverContent`, used below for
  * the non-modal `Popover` arm): neither declares `color` itself, both climb
@@ -218,7 +218,7 @@ const SURFACES: Surface[] = [
     // Non-modal `Popover` arm (`popover="auto"`, not a modal `<dialog>`).
     // The `top_layer` fixture's `clip-popover-*` instance is a real,
     // deliberately *unthemed* `is_modal: false` `PopoverRoot`/`PopoverContent`,
-    // which doubles as proof this fix works with zero component-authored CSS
+    // which doubles as proof the rule holds with zero component-authored CSS
     // in play at all, relying only on the DOM-tree inheritance chain up to
     // `body`. The themed default demo is the next entry.
     name: "popover (non-modal arm, unthemed)",
