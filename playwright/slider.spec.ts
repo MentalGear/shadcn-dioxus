@@ -181,7 +181,7 @@ test('drag ignores pageX/clientX mismatch (iPad pinch-zoom analog)', async ({ pa
     window.dispatchEvent(evt);
   }, { x, y, pageOffset, pointerId });
 
-  // Without the fix the value jumps to ~100. With consistent coords it stays.
+  // With inconsistent coords the value jumps to ~100; with consistent coords it stays.
   const after = await thumb.getAttribute('aria-valuenow');
   expect(parseInt(after!, 10)).toBeLessThan(50);
 });

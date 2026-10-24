@@ -140,9 +140,9 @@ test('the plain top-level link is a real link', async ({ page }) => {
 });
 
 test.describe('Open animation never reflows the content', () => {
-  // The user report: "hovering to show menus -- the menu
-  // items' text reflows, which indicates the width is animated in a way
-  // that is wrong; it should not be width." shadcn/Radix's own
+  // The invariant (backlog row 77): hovering to show menus must not reflow
+  // the menu items' text, which means the width is never animated.
+  // shadcn/Radix's own
   // NavigationMenuContent animates only opacity/transform (scale/
   // translate) -- the content keeps a stable, intrinsic width
   // (`max-content`, clamped by `min-width`/`max-width`) from the moment it

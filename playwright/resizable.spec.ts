@@ -112,7 +112,7 @@ async function dragFromPoint(page: Page, x: number, y: number, dx: number, dy: n
 }
 
 test.describe('Hit area: the whole handle drags, not just the 1px line', () => {
-  // Owner report: "the handle must be draggable, not just the line". The 1px `.dx-resizable-handle`
+  // The handle must be draggable, not just the line (backlog row 77). The 1px `.dx-resizable-handle`
   // div owns the drag listener; its grip (Nova's 4x24 pill) is not `pointer-events: none` with only a 4px
   // `::after` strip behind it, which would let ~4px either side of the grip -- and the same few px beside the
   // bare line -- fall through to the panels and start nothing. shadcn's grip is a plain child

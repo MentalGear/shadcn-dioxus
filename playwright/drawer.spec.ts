@@ -211,8 +211,8 @@ test('dragging over the handle or the drawer content does not select text', asyn
 
   // Drag #1: directly over DrawerHandle itself. The handle has no text of
   // its own, so this alone can't prove much (there's nothing there TO
-  // select) -- included because it's the literal case the bug report
-  // named, not because it's the strongest reproduction.
+  // select) -- included because it's the literal case of a text
+  // selection starting on the handle (backlog row 77), not because it's the strongest reproduction.
   const handleBox = await measureAtRest(page.locator('[data-slot="drawer-handle"]'));
   if (!handleBox) throw new Error('drawer handle has no bounding box');
   await page.mouse.move(handleBox.x + 2, handleBox.y + handleBox.height / 2);

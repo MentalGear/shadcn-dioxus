@@ -68,8 +68,8 @@ async function inGridView(grid: Locator, row: number, column: number) {
 
 /**
  * The grid's own sheet reached the page: the scroll container IS a scroll container. Without `style.css`
- * the grid is `overflow: visible`, nothing scrolls and the windowing never advances (the 2026-10 preview:
- * a release build embeds a component's CSS source instead of linking it, so only a `document::Link` in the
+ * the grid is `overflow: visible`, nothing scrolls and the windowing never advances (a
+ * release build embeds a component's CSS source instead of linking it, so only a `document::Link` in the
  * wrapper ships it -- a debug build masks the omission, so `check-component-catalog.sh` rule 2b guards the
  * source and this guards a release build the spec is run against).
  */

@@ -28,8 +28,8 @@ test('test', async ({ page }) => {
 // calendar/tabs's own row 89 fix (an accidental extra-specificity bump from
 // a stray `:not(...)`), this was a genuine tie broken only by source order,
 // and `[data-state="on"]` already happened to be declared after `:hover` --
-// so the pressed background already survived hover on the unmodified tree
-// (verified, both themes, exact values below). `:where(:hover)` makes that
+// so the pressed background survives hover even without it
+// (both themes, exact values below). `:where(:hover)` makes that
 // unconditional (specificity, not source order) so reordering the rules --
 // or `:hover` gaining an extra clause the way calendar/tabs's did --
 // cannot silently flip the winner. Runs in both themes since the

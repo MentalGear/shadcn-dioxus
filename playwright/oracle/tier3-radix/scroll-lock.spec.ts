@@ -108,7 +108,7 @@ async function assertPageIsScrollable(page: Page) {
  * `react-remove-scroll` -- set) blocks wheel-, touch-, and
  * keyboard-initiated scrolling, but does not clamp a direct, scripted
  * `scrollTo()`/`scrollTop =` call, which every browser still honors
- * regardless of overflow. Verified empirically against this page: with
+ * regardless of overflow. On this page, with
  * `overflow: hidden` applied, `page.mouse.wheel()` leaves `scrollY` at 0,
  * while `window.scrollTo()` still moves it. Radix's own lock has the same
  * property (`react-remove-scroll` intercepts wheel/touch/key events; it does

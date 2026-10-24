@@ -5,7 +5,7 @@ import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 
 // `chart_tooltip`'s nine gallery variants -- one per shadcn
-// `chart-tooltip-*.tsx` demo (`$S/refs/ui/apps/v4/registry/new-york-v4/
+// `chart-tooltip-*.tsx` demo (shadcn/ui's `apps/v4/registry/new-york-v4/
 // charts/chart-tooltip-*.tsx`; `preview/src/components/chart_tooltip/
 // docs.md` table). "main" is the un-suffixed default variant every
 // component page renders first; every other name below is a named variant

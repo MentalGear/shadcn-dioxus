@@ -23,8 +23,7 @@
  *     (no pointing-device button was pressed):
  *     https://www.w3.org/TR/uievents/#event-type-click
  *
- * Rule 7's bug (live-site report, independent of the hydration fix that
- * preceded it): `use_dialog_backdrop_dismiss` (primitives/src/lib.rs)
+ * Rule 7's bug: `use_dialog_backdrop_dismiss` (primitives/src/lib.rs)
  * distinguishes a backdrop click from a content click with a bounding-rect
  * test against `event.clientX`/`clientY`. A keyboard activation (Enter or
  * Space) of a button dispatches a `click` with `detail === 0` and, in
@@ -230,7 +229,7 @@ test.describe("Rule 3 — Escape closes the dialog, the Rust `open` signal syncs
       await page.keyboard.press("Escape");
       await expect(dialogEl, `cycle ${cycle}: Escape must close the dialog`).toHaveCount(0);
 
-      // The historical defect (dev-docs/reference/platform-rationale.md Caveat
+      // The defect this guards (dev-docs/reference/platform-rationale.md Caveat
       // 1): if the `open` signal stranded at `true`, the *next* trigger
       // click would compute `!true` and the dialog would never reopen. A
       // clean re-open on every cycle is itself the sync proof.
@@ -320,7 +319,7 @@ test.describe("axe: nested dialogs open", () => {
  * programmatic-focus inertness), clipping escape (6a), Escape+resync (6c),
  * focus restore (6d) and trigger-anchored placement (6e). The modal arm's
  * `<dialog>` is promoted straight into the top layer by `showModal()`,
- * which is the containing-block problem `dev-docs/plan.md` Phase 4.4 solved
+ * which is the containing-block problem backlog row 2 solves
  * for `popover="auto"` content (see `top_layer.rs`'s module doc) -- so the
  * web modal arm carries the same `dx-anchor-popover`/`position-anchor`
  * wiring the non-modal arm uses, and `top_layer.rs`'s shared,
@@ -521,9 +520,9 @@ for (const key of ["Enter", "Space"] as const) {
       await page.keyboard.press(key);
 
       // 7a: both dialogs must still be open a moment later -- long enough
-      // for the historical top-layer-forced-removal cascade (outer closes
-      // -> nested's own `close` fires) to have played out if the bug were
-      // still present.
+      // for the top-layer-forced-removal cascade (outer closes
+      // -> nested's own `close` fires) to play out if the bug were
+      // present.
       await page.waitForTimeout(250);
       await expect(page.getByRole("dialog"), `${key}: both dialogs must remain open`).toHaveCount(2);
       await expect(outer, `${key}: the outer dialog must still be open`).toBeVisible();

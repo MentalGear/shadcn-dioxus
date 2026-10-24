@@ -232,9 +232,8 @@ test.describe("Axe automated scan", () => {
  * non-deprecated pattern doc -- not its own linked example,
  * `examples/datepicker-spinbuttons.html`, which is itself marked
  * "(Deprecated)" by APG and predates that pattern doc's Home/End rule), in
- * the pinned APG checkout `$S/aria-practices` (commit 7e4034b, the commit
- * `playwright/oracle/reference/README.md` cites -- not vendored
- * under `playwright/oracle/reference/`, since nothing here
+ * the APG checkout pinned by `playwright/oracle/reference/README.md` (not
+ * vendored under `playwright/oracle/reference/`, since nothing here
  * needs the page rendered, only its text). Moving focus *among* several
  * spinbuttons with Left/Right (this crate's `ArrowLeft`/`ArrowRight`) is
  * outside the lone `spinbutton` role's own contract; the closest named APG
@@ -424,10 +423,8 @@ test.describe("Segment typing (digit entry, spinbutton-pattern.html #keyboard_in
     // range, but a probed third-digit overflow check ("90" > 12) already
     // fails after this one keystroke -- `push_commit_text_effects` in
     // `date_picker.rs` advances focus immediately rather than waiting for a
-    // second digit. Verified red/green isn't applicable here (this is
-    // pre-existing, unchanged behavior) but was verified live before
-    // writing this assertion (flipping the expected focus target to "month"
-    // fails the test, confirming it actually exercises the advance).
+    // second digit. Flipping the expected focus target to "month" fails
+    // the test, so it does exercise the advance.
     await gotoDatePicker(page);
     const month = segment(page, "month");
     await month.click();
@@ -484,7 +481,7 @@ test.describe("Segment typing (digit entry, spinbutton-pattern.html #keyboard_in
   test("digits that would exceed the maximum are clamped to it; the day segment (no next segment registered) keeps focus rather than losing it", async ({ page }) => {
     // Fresh page, day segment: year/month haven't been touched yet, so
     // `day_bounds_for_year_month(None, None, ...)` falls through to the
-    // generic `(1, 31)` bounds (verified live) regardless of the sandbox's
+    // generic `(1, 31)` bounds regardless of the sandbox's
     // real date -- read `aria-valuemax` rather than hardcoding 31, so this
     // stays correct even if that fallback ever changes.
     await gotoDatePicker(page);
@@ -495,7 +492,7 @@ test.describe("Segment typing (digit entry, spinbutton-pattern.html #keyboard_in
 
     await expect(day).toHaveText(max!.padStart(2, "0"));
     await expect(day).toHaveAttribute("aria-valuenow", max!);
-    // Verified live: `FocusNext` from the day segment (this input's last
+    // `FocusNext` from the day segment (this input's last
     // registered collection item, `roving_loop: false`) resolves to no
     // available index, so `CollectionState::set_focus` clears the internal
     // pointer but nothing ever calls `.blur()` -- real DOM focus is
@@ -516,10 +513,9 @@ test.describe("Arrow keys: Up/Down step the value; Home/End jump to the bounds",
     // is still `None`, so the very first Up/Down press takes the `None =>
     // default` branch -- it commits `default` as the real value rather
     // than stepping from it, which is invisible here specifically because
-    // `default` already equals what was displayed. Verified live (this is
-    // what this test's own first draft got wrong, caught by the assertion
-    // failing red: pressing ArrowDown once on a fresh segment left
-    // aria-valuenow unchanged instead of decrementing). `Home` first makes
+    // `default` already equals what was displayed, so pressing ArrowDown
+    // once on a fresh segment leaves aria-valuenow unchanged instead of
+    // decrementing. `Home` first makes
     // this deterministic and gives `current_value` a real `Some(...)`, so
     // Up/Down genuinely step from there -- matching how a user who has
     // already interacted with the segment experiences it.

@@ -363,8 +363,8 @@ test.describe("APG Menu and Menubar pattern — DropdownMenu.Sub", () => {
     ).toHaveAttribute("aria-expanded", "false");
   });
 
-  // INVARIANT (bug report: "on sub-menu mouse hover, the sub-menu
-  // disappears / submenus not selectable/usable"). The close-grace timer
+  // INVARIANT (backlog row 57: a submenu must not disappear
+  // on mouse hover, and its items stay selectable). The close-grace timer
   // that `*SubTrigger`'s `onmouseleave` schedules must be cancellable from
   // the submenu's own content, not only from the trigger's `onmouseenter`:
   // a pointer that leaves the trigger and moves into the submenu's own

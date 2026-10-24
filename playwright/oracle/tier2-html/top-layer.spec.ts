@@ -197,7 +197,7 @@ const gotoFixture = (page: Page) =>
  * coordinate inside the content's own box but outside the clip ancestor's
  * box resolves to whatever is actually *painted* there: the content itself
  * if it escaped (top layer), or whatever sits behind/around the clip box
- * if it did not (the pre-Phase-4.4 behaviour this rule was written to
+ * if it did not (the clipped behaviour this rule exists to
  * catch).
  *
  * Candidate probe points are the content box's four corners (inset 2px, or by
@@ -1479,8 +1479,8 @@ test.describe("Rule 11 — anchored-overlay self-overlap contract", () => {
     /**
      * The gap this whole rule exists for (gap 2 in this section's header
      * doc): CSS Anchor Positioning is fully intact and correct at *open*
-     * time -- `usingFallback` stays false, so without the fix no tracking
-     * listener is ever attached -- and only THEN does anchor-positioning
+     * time -- `usingFallback` stays false, so a listener attached only on the
+     * fallback path would never exist -- and only THEN does anchor-positioning
      * support disappear, mid-open, the same moment an iOS keyboard would
      * appear over a focused Combobox input.
      *
@@ -1687,7 +1687,7 @@ test.describe("Rule 11 — anchored-overlay self-overlap contract", () => {
         await simulateOnScreenKeyboard(page);
 
         // The direct, mechanism-level assertion: did anything re-measure at
-        // all? Without the fix, gap 2 means the answer is no -- no listener
+        // all? If gap 2 were open the answer would be no -- no listener
         // is ever attached, since this content conformed (via CSS) at open --
         // so `style.top` stays exactly `""` forever, regardless of whether
         // this fixture's particular geometry also happens to overlap or

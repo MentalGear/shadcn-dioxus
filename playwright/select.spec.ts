@@ -350,8 +350,8 @@ test.describe("Listbox width tracks the trigger width (dev-docs/backlog.md row 4
         }
         const debug = `trigger=${JSON.stringify(triggerBox)} listbox=${JSON.stringify(listboxBox)} viewport=${JSON.stringify(viewport)}`;
 
-        // At least as wide as the trigger (the pre-migration contract this
-        // fix restores) -- 1px slack for subpixel rounding.
+        // At least as wide as the trigger (the Select listbox contract,
+        // backlog row 47) -- 1px slack for subpixel rounding.
         expect(listboxBox.width, debug).toBeGreaterThanOrEqual(triggerBox.width - 1);
         // Not dramatically wider than the trigger (rules out "grew to fill
         // the viewport" while still tolerating a listbox whose own option
@@ -376,7 +376,7 @@ test.describe("Listbox width tracks the trigger width (dev-docs/backlog.md row 4
     });
 
     test("home gallery: listbox tracks trigger width, not viewport width", async ({ page }) => {
-        // The original report: desktop width, home page, the styled Select
+        // The home page gallery (backlog row 47): desktop width, the styled Select
         // cards ("Choose a fruit" / "Select an option").
         await page.setViewportSize({ width: 1280, height: 800 });
         await gotoHydrated(page, `${BASE_URL}/`);

@@ -54,8 +54,8 @@ test('test', async ({ page }) => {
   await expect(menuElement).toHaveAttribute('data-state', 'closed');
 });
 
-// Regression guard for the user report "dropdown menu has full
-// page width": `DropdownMenuContent` is a fit-content popover positioned
+// Regression guard: a dropdown menu is not full page width (backlog row 47).
+// `DropdownMenuContent` is a fit-content popover positioned
 // under its trigger, not a full-viewport-width one. See
 // `oracle/tier2-html/top-layer.spec.ts`'s "Rule 13" for the full mechanism
 // this guards against (a duplicated/un-folded `style` attribute letting the

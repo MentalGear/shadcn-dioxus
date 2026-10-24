@@ -574,7 +574,7 @@ fn combobox_list_style() -> Element {
 // through the REAL, unmodified `dioxus_primitives::merge_attributes` --
 // not a reimplementation -- so this is a genuine exercise of the library's
 // own construction, just on a hand-written element instead of a shipped
-// component. The pair gives a live RED-then-GREEN result on the Playwright
+// component. The pair gives a RED arm and a GREEN arm on the Playwright
 // side (Rule 4c).
 // ---------------------------------------------------------------------
 
