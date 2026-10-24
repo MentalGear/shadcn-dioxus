@@ -730,14 +730,13 @@ if (!document.getElementById('dx-toast-base-styles')) {
 }
 "#;
 
-/// Web arm (Migration A slice 3/3, final): promote the toast region to the
+/// Web arm: promote the toast region to the
 /// top layer via `popover="manual"` so toasts are never clipped by an
 /// `overflow: hidden` ancestor and always paint above everything else on
-/// the page (WHATWG HTML's top layer), the same fix already shipped for
-/// every other non-modal overlay in this crate (dev-docs/plan.md Phase 4.4,
-/// Migration A slices 1-3).
+/// the page (WHATWG HTML's top layer), the same construction as
+/// every other non-modal overlay in this crate (dev-docs/plan.md Phase 4.4).
 ///
-/// `manual`, not `auto` -- deliberately, and unlike every other migrated
+/// `manual`, not `auto` -- deliberately, and unlike every other top-layer
 /// component in this crate: this region has no open/close lifecycle at
 /// all. It is mounted once, for the lifetime of the `ToastProvider`, and
 /// its own visibility never depends on whether it currently holds any
@@ -755,7 +754,7 @@ if (!document.getElementById('dx-toast-base-styles')) {
 /// identical reasoning for its own `manual` round trip
 /// (`context_menu.rs`).
 ///
-/// No anchoring: unlike every other migrated overlay, toasts are not
+/// No anchoring: unlike every other top-layer overlay, toasts are not
 /// positioned relative to a trigger at all -- `.dx-toast-container` in the
 /// consuming page's stylesheet fixes them to a viewport corner
 /// (`position: fixed; right: 20px; bottom: 20px`) via plain CSS, with no
@@ -766,7 +765,7 @@ if (!document.getElementById('dx-toast-base-styles')) {
 /// engine-injected `@supports (anchor-name: --a)` block, which has nothing
 /// to contribute here).
 ///
-/// ## The UA popover reset this needed (found by execution)
+/// ## The UA popover reset this needs
 ///
 /// The WHATWG popover UA stylesheet's `[popover] { inset: 0; margin: auto;
 /// border: solid; padding: 0.25em; overflow: auto; background-color:
@@ -775,16 +774,15 @@ if (!document.getElementById('dx-toast-base-styles')) {
 /// (not `top`/`left`), so the UA's `inset: 0` still supplies `top: 0; left:
 /// 0` (author origin only overrides the *properties it actually
 /// declares*), and `margin: auto` (which the pre-popover initial value of
-/// `0` never triggered) combines with those to invoke the CSS
-/// auto-margin/over-constrained sizing algorithm -- confirmed by execution,
-/// this stretched the region across nearly the entire viewport instead of
+/// `0` never triggers) combines with those to invoke the CSS
+/// auto-margin/over-constrained sizing algorithm, which stretches the
+/// region across nearly the entire viewport instead of
 /// shrink-wrapping the toast list in its corner. `border`/`padding`/
 /// `background-color`/`color` also all apply for the same reason (the
 /// region declares none of them itself, only its child `.dx-toast`s do),
-/// painting a visible boxed panel behind the toasts that was never there
-/// before. The consuming page's own stylesheet
+/// painting a visible boxed panel behind the toasts. The consuming page's own stylesheet
 /// (`preview/src/components/toast/style.css`'s `.dx-toast-container[popover]`)
-/// resets all of these back to their pre-popover values -- the same
+/// resets all of these back to the values of a non-popover element -- the same
 /// `margin: 0; inset: auto;` idiom the shared anchor-positioning engine
 /// uses for anchored overlays (`top_layer.rs`'s
 /// `ensure_anchor_positioning_styles` doc), applied here directly in the
@@ -842,10 +840,9 @@ fn ToastRegionRendered(
     // catch-all would land in `attributes` and, spread via `..attributes`
     // below (after this `id: id.clone()`), silently win and override it,
     // stranding `showPopover()`'s `document.getElementById(id)` above on a
-    // dead id that matches no element (confirmed by execution against this
-    // exact mistake in an earlier version of the top-layer oracle fixture,
-    // `preview/src/components/top_layer/component.rs` -- see its own
-    // comment on this).
+    // dead id that matches no element (the top-layer oracle fixture,
+    // `preview/src/components/top_layer/component.rs`, has its own comment
+    // on this).
 
     // Installs `ensure_toast_base_styles`'s engine-injected fallback
     // stylesheet -- see its own doc for the bug this closes (dev-docs/backlog.md
@@ -866,8 +863,8 @@ fn ToastRegionRendered(
     // overridable) and merge everything else with caller-wins semantics so
     // neither lane ever emits a duplicate attribute.
     //
-    // `style` needs its own pass first, though (dev-docs/backlog.md row 44,
-    // found by execution): a caller's own plain `style` attribute (e.g. the
+    // `style` needs its own pass first, though (dev-docs/backlog.md row 44):
+    // a caller's own plain `style` attribute (e.g. the
     // `top_layer` preview fixture's `ToastProvider { style: "position:
     // fixed; ..." }`) is the *same* `(name, namespace)` key --
     // `("style", None)` -- as this element's own `style: "--toast-count:
@@ -917,9 +914,9 @@ fn ToastRegionRendered(
     }
 }
 
-/// Native (Blitz) arm: unchanged from before this slice -- Blitz has no
-/// popover-API support at all, so this stays the functional floor, a
-/// plain, always-in-flow `div`. Blitz has no SSR/hydration lane for the
+/// Native (Blitz) arm: Blitz has no popover-API support at all, so this is
+/// the functional floor, a plain, always-in-flow `div`. Blitz has no
+/// SSR/hydration lane for the
 /// "duplicate attribute" divergence in the web arm's doc above to ever
 /// bite, but the caller-wins-except-`id` merge is applied here too for the
 /// same reason: keep both arms' semantics identical rather than have one
@@ -1236,12 +1233,11 @@ pub fn Toast(props: ToastProps) -> Element {
     // makes `merge_attributes` treat them as a single collision and keep
     // only the caller's -- silently dropping the index the themed
     // stylesheet's `z-index: calc(var(--toast-count) - var(--toast-index))`
-    // reads. No caller in this repo passes a per-toast `style` today, so
-    // this is prevention rather than a live defect; it is fixed here anyway
-    // because leaving the identical clobber on the sibling element of the
-    // one row 44 fixes is exactly how that bug got two independent
-    // instances in the first place. `--toast-index` goes first so a caller
-    // can override any property but never drop the counter.
+    // reads. No caller in this repo passes a per-toast `style`, so this is
+    // prevention rather than a live defect; the identical clobber on the
+    // sibling element of the one row 44 covers would otherwise be a second
+    // independent instance of the same bug. `--toast-index` goes first so a
+    // caller can override any property but never drop the counter.
     let (caller_style, props_attributes) = crate::fold_style_attributes(props.attributes);
     let item_style = match caller_style {
         Some(caller_style) => format!(

@@ -17,8 +17,7 @@ pub struct ScrollAreaProps {
     /// The text direction. This crate wraps the browser's own native
     /// scrollbar (no custom-drawn thumb, unlike Radix's `ScrollArea`), so
     /// the CSS Overflow spec's own `dir`-relative behavior repositions the
-    /// scrollbar to the correct physical side for free -- see this lane's
-    /// own `$S/batch3/rtl-rust/reference.md`'s ScrollArea row. Defaults to
+    /// scrollbar to the correct physical side for free. Defaults to
     /// the nearest [`crate::direction::DirectionProvider`], or LTR if
     /// there is none.
     #[props(default)]

@@ -495,7 +495,7 @@ fn use_form_reset_listener(
 /// `close()` drops the `<dialog>` out of the top layer *synchronously*, and
 /// everything that made the panel a modal panel goes with it in that one frame: the
 /// `::backdrop` scrim, the viewport as the containing block of its `position: fixed`
-/// box, the `:modal` rules, an ancestor's `opacity` no longer being ignored. A
+/// box, the `:modal` rules, an ancestor's `opacity` ceasing to be ignored. A
 /// closing panel is still animating out, so each of those showed as a glitch --
 /// worst on the home page, where every demo sits in a `.dx-component-card`
 /// (`content-visibility: auto`, so layout + paint containment): out of the top
@@ -802,14 +802,15 @@ fn use_dialog_close_sync(
 ///
 /// ## The opening-gesture false positive
 ///
-/// On iOS Safari (touch), opening a default (modal, `is_modal` defaults to
-/// `true`) `Popover` could show only its `::backdrop`, the popover itself
-/// flashing and disappearing.
+/// On iOS Safari (touch), a default (modal, `is_modal` defaults to
+/// `true`) `Popover` would show only its `::backdrop`, the popover itself
+/// flashing and disappearing, if the opening tap also dismissed it.
 /// This hook is a modal `Popover`/`Dialog`'s only dismissal path -- the web
 /// arm calls neither `use_global_escape_listener` nor `use_outside_dismiss`
 /// (the browser's own `showModal()` already supplies focus trap/restore and
 /// inertness; this hook is what supplies backdrop-click dismiss) -- so a
-/// dismiss firing on the *opening* tap itself matches the report exactly.
+/// dismiss firing on the *opening* tap itself is exactly the
+/// flash-and-disappear symptom described above.
 ///
 /// Touch-emulated (`hasTouch`, `locator.tap()`) opens of this exact
 /// popover in the sandbox's Chromium keep it open, with no self-dismiss.
@@ -1194,7 +1195,7 @@ fn chain_listeners(
 /// only accumulates and combines attributes with `namespace == Some("style")`
 /// into the single served `style="..."` -- a plain `name == "style"`,
 /// `namespace == None` attribute is a completely separate code path and is
-/// written out as its own, second `style="..."` (confirmed by execution:
+/// written out as its own, second `style="..."` (observed:
 /// `ContextMenuTrigger`'s fixed touch-suppression CSS alongside the preview
 /// app's themed wrapper's shorthand `padding`/`background`/etc. produced
 /// exactly this — two `style` attributes on one tag, WHATWG HTML's
@@ -1253,7 +1254,7 @@ pub(crate) fn fold_style_attributes(attrs: Vec<Attribute>) -> (Option<String>, V
 /// through unconditionally (`Some("")`/absent or not), so an attribute
 /// named `aria-label` can be *present* in `attributes` with an
 /// empty/`dioxus_core::AttributeValue::None` value even when no real caller ever
-/// supplied one (confirmed by execution: this crate's own themed `Select`
+/// supplied one (for example this crate's own themed `Select`
 /// wrapper, `preview/src/components/select/component.rs`, does exactly
 /// this). Only a genuinely non-empty text value counts as caller-supplied.
 pub(crate) fn has_own_accessible_name(attributes: &[Attribute]) -> bool {

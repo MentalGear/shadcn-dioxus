@@ -1531,7 +1531,7 @@ mod tests {
 
     #[test]
     fn should_close_on_release_never_closes_a_drag_toward_the_open_side() {
-        // The owner's bug: dragging a bottom drawer UP (negative, oriented) --
+        // Regression guard: dragging a bottom drawer UP (negative, oriented) --
         // however far, however fast -- is never a dismissal.
         assert!(!should_close_on_release(-300.0, Some(400.0), 2.0));
         assert!(!should_close_on_release(-300.0, Some(400.0), -2.0));

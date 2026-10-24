@@ -51,8 +51,8 @@ struct BaseDatePickerContext {
 /// only then does the normal exit animation (150-200 ms) run. 300 ms is the shortest value that
 /// reliably clears both: a visual change needs roughly 100-150 ms to be noticed at all, and the
 /// day's own transition has to finish inside it; anything past ~400 ms starts to read as lag
-/// instead of confirmation (the popover looks stuck). Pass `Duration::ZERO` for the old
-/// behaviour of closing immediately.
+/// instead of confirmation (the popover looks stuck). Pass `Duration::ZERO` to close
+/// immediately.
 pub const DEFAULT_CLOSE_DELAY: Duration = Duration::from_millis(300);
 
 /// Hand keyboard focus back to the trigger that opened the popover, if focus is still inside it.
@@ -2217,7 +2217,7 @@ pub struct DatePickerInputProps {
     /// See `DateElementProps::on_format_month` (backlog row 84 finding 2).
     /// Only applies to the default children (a caller-supplied `children`
     /// renders its own segments directly and must thread this itself, the
-    /// same pre-existing limitation the placeholder callbacks above have).
+    /// same limitation the placeholder callbacks above have).
     #[props(default = Callback::new(|month: Month| month.to_string()))]
     pub on_format_month: Callback<Month, String>,
 
@@ -2428,9 +2428,9 @@ mod tests {
         // must report it, and the month segment's `aria-valuetext` must be
         // the default formatter's locale-aware month name (backlog row 84
         // finding 2 -- `Month::to_string()` by default, "May" for month 5),
-        // not merely "some non-empty string". RED on the unmodified tree:
-        // `aria-valuetext` never rendered at all (no such attribute
-        // existed), so `html.contains(r#"aria-valuetext="May""#)` failed.
+        // not merely "some non-empty string": the test fails if
+        // `aria-valuetext` is not rendered at all, since
+        // `html.contains(r#"aria-valuetext="May""#)` is then false.
         let mut dom = VirtualDom::new(ControlledDatePicker);
         dom.rebuild_in_place();
         let html = dioxus_ssr::render(&dom);
@@ -2465,14 +2465,10 @@ mod tests {
 
     #[test]
     fn date_segment_renders_aria_label_and_no_dangling_aria_labelledby() {
-        // Regression guard for the `aria-labelledby` fix -- SSR-level rather
-        // than the browser-level `playwright/date-picker.spec.ts` check, so
-        // this runs (and was run, red-then-green) without needing a `dx
-        // serve --web` build: this repo's own sandbox hit severe, batch-
-        // wide disk pressure while this lane worked (see this lane's
-        // report), so this cargo-only check is the primary evidence for the
-        // RSX shape here, with the browser-level test as the fuller
-        // (still-current-code, not yet server-verified) companion.
+        // Regression guard for the `aria-labelledby` shape -- SSR-level
+        // rather than the browser-level `playwright/date-picker.spec.ts`
+        // check, so it runs without needing a `dx serve --web` build; the
+        // browser-level test is the fuller companion.
         let mut dom = VirtualDom::new(ControlledDatePicker);
         dom.rebuild_in_place();
         let html = dioxus_ssr::render(&dom);
@@ -2526,10 +2522,9 @@ mod tests {
         min: i32,
         max: i32,
     ) -> Vec<DateSegmentEffect<i32>> {
-        // `wrap: true` for every pre-existing call site below: all of them
-        // predate the wrap-vs-clamp split (backlog row 84 finding 4) and
-        // exercise the month/day-shaped ("cyclical") behavior, which is
-        // unchanged by that fix -- see `key_effects_clamped` for the new,
+        // `wrap: true` for every call site below: they exercise the
+        // month/day-shaped ("cyclical") behavior of the wrap-vs-clamp split
+        // (backlog row 84 finding 4) -- see `key_effects_clamped` for the
         // year-shaped (`wrap: false`) cases.
         date_segment_key_effects(
             key,

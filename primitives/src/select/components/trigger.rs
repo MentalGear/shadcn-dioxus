@@ -113,8 +113,8 @@ pub fn SelectTrigger(props: SelectTriggerProps) -> Element {
     // all fail axe's `button-name` (critical) without it -- three
     // independent call sites, not one,
     // which is why this is a primitive-level default rather than a
-    // per-call-site `aria_label` patch (CLAUDE.md: two or more occurrences
-    // of the same defect are a class, fixed by construction). Checked
+    // per-call-site `aria_label` patch (the defect is a class, fixed by
+    // construction). Checked
     // before `props.attributes` is moved into the merge below.
     let has_caller_name = has_own_accessible_name(&props.attributes);
 
@@ -162,17 +162,17 @@ pub fn SelectTrigger(props: SelectTriggerProps) -> Element {
             // change based on typed characters (combobox-pattern.html,
             // "WAI-ARIA Roles, States, and Properties" /
             // "aria-autocomplete"). NOTE: the vendored reference example
-            // above does not itself set this attribute (confirmed by reading
-            // both its static markup and select-only.js) -- it is not part
+            // above does not itself set this attribute (neither its static
+            // markup nor select-only.js does) -- it is not part
             // of the tier-1 dual-subject calibration in
             // select-only-combobox.spec.ts's R1 for exactly that reason.
             // Matches Radix's trigger regardless, which does set it.
             aria_autocomplete: "none",
             // "Comboboxes and listboxes can be marked as required with
             // aria-required=true" (combobox-pattern.html, "About This
-            // Pattern") -- now valid because of the role="combobox" above.
-            // Requiredness was already enforced functionally by the hidden
-            // native <select required> mirror (select.rs); this restores it
+            // Pattern") -- valid because of the role="combobox" above.
+            // Requiredness is enforced functionally by the hidden
+            // native <select required> mirror (select.rs); this exposes it
             // to assistive technology too. `SelectMulti` has no `required`
             // prop (see `SelectContext::required`'s doc) -- its context
             // always carries a constant `false` here, so this reads
@@ -184,18 +184,16 @@ pub fn SelectTrigger(props: SelectTriggerProps) -> Element {
         props.attributes,
         // A self-referencing `aria-labelledby` (pointing this button's
         // `aria-labelledby` at its own `id`, so the accname computation
-        // would recurse into this element's own rendered content) was
-        // tried first, on the theory that "name from content" restrictions
-        // apply only to a role's *direct* computation, not to a node
-        // reached via `aria-labelledby` traversal. Confirmed by execution
-        // (re-running `select.spec.ts`'s Axe scan after adding it) that
-        // real Chromium/axe-core does not special-case that self-reference
-        // for `role="combobox"`: the referenced node's own role still
-        // suppresses name-from-content, so it resolved to an empty name --
-        // axe kept reporting the identical `button-name` violation, now
-        // against a target that also carries a (useless) `aria-labelledby`
-        // attribute. Left as a negative result here rather than silently
-        // discarded, so a future reader does not re-attempt the same idea
+        // would recurse into this element's own rendered content) does not
+        // work, though it looks plausible: the idea is that "name from
+        // content" restrictions apply only to a role's *direct*
+        // computation, not to a node reached via `aria-labelledby`
+        // traversal. Real Chromium/axe-core does not special-case that
+        // self-reference for `role="combobox"`: the referenced node's own
+        // role still suppresses name-from-content, so it resolves to an
+        // empty name and axe keeps reporting the identical `button-name`
+        // violation (`select.spec.ts`'s Axe scan). Recorded as a negative
+        // result so a future reader does not re-attempt the same idea
         // -- an `aria-label` with a concrete string is the only mechanism
         // that unconditionally works, since it needs no further
         // computation at all.
@@ -211,8 +209,8 @@ pub fn SelectTrigger(props: SelectTriggerProps) -> Element {
         // both customizes the placeholder and never sets their own
         // `aria_label` gets a fallback name that is generic rather than
         // exactly its visible text; still strictly better than no name at
-        // all, and every concrete instance this round's regression was
-        // found against (`select.spec.ts`'s demo, the homepage gallery,
+        // all, and every concrete instance of the missing-name defect
+        // (`select.spec.ts`'s demo, the homepage gallery,
         // `select-only-combobox.spec.ts`'s R3, the `top_layer` fixture's
         // `#clip-select-trigger`) is in the unselected/default-placeholder
         // state, where this fallback matches the visible text exactly).

@@ -386,8 +386,8 @@ pub fn HoverCardTrigger(props: HoverCardTriggerProps) -> Element {
 
     // Tooltip pattern: "Escape: Dismisses the Tooltip." HoverCard shares
     // Tooltip's role and show-on-focus/hide-on-blur contract (see
-    // `tooltip.rs`'s identical `handle_keydown`) but previously had no
-    // `onkeydown` at all, so this same-class control didn't match it.
+    // `tooltip.rs`'s identical `handle_keydown`), so it needs the same
+    // `onkeydown`.
     let handle_keydown = move |event: Event<KeyboardData>| {
         if event.key() == Key::Escape && (ctx.open)() {
             event.prevent_default();
@@ -528,8 +528,8 @@ pub fn HoverCardContent(props: HoverCardContentProps) -> Element {
     let render = use_animated_open(id, ctx.open);
 
     // `HoverCardContentRendered` is a real component (not a plain fn) so it
-    // -- and the hooks it calls internally (this slice's
-    // `use_popover_shown_while_mounted` on the web arm) -- get a fresh
+    // -- and the hooks it calls internally (`use_popover_shown_while_mounted`
+    // on the web arm) -- get a fresh
     // scope each time `render()` mounts/unmounts it, matching this
     // element's actual DOM lifetime. See
     // `tooltip.rs`'s identical `TooltipContentRendered` comment for why a
@@ -652,7 +652,7 @@ fn HoverCardContentRendered(
     }
 }
 
-/// Native (Blitz) arm: unchanged from before this slice — see
+/// Native (Blitz) arm -- see
 /// `dev-docs/reference/platform-rationale.md` Caveat 2.
 #[cfg(not(feature = "web"))]
 #[component]

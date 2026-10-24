@@ -925,7 +925,7 @@ fn NavbarContentRendered(
     );
     // JS-measured static positioning fallback for engines without CSS
     // Anchor Positioning -- see `top_layer::use_anchor_position_fallback`'s
-    // doc. `side`/`align`/gap match this component's pre-migration CSS
+    // doc. `side`/`align`/gap match this component's themed CSS
     // (`../../preview/src/components/navbar/style.css`'s `top: 100%; left:
     // 0; margin-top: 0.5rem` -- 0.5rem == 8px at the default root font
     // size): anchored below the trigger, left-aligned with it, the same
@@ -950,8 +950,7 @@ fn NavbarContentRendered(
     // dev-docs/backlog.md row 41: an APG menu requires an accessible name from
     // either aria-labelledby or aria-label -- labelled by this nav's own
     // trigger, mirroring `MenubarContent`'s identical row-25 pattern
-    // (`menubar.rs`), which `NavbarContent` never picked up when it
-    // migrated onto the top-layer engine. Only contributed when the caller
+    // (`menubar.rs`). Only contributed when the caller
     // hasn't already named this content some other way
     // (`has_own_accessible_name`'s own doc), and as its own
     // `merge_attributes` input -- present only when applicable -- rather
@@ -993,8 +992,9 @@ fn NavbarContentRendered(
     // alongside `..attributes` is the duplicate-`style` hazard
     // (`dev-docs/conformance-harness.md` hydration-parity Rule 4). The
     // `top_layer` fixture's `NavbarContent { style: "min-height: 100px;" }`
-    // is the exerciser: pre-fix it emitted two `style` attributes (SSR kept
-    // the anchor binding, the client kept the caller's).
+    // is the exerciser: a bare literal beside the spread would emit two
+    // `style` attributes (SSR keeps the anchor binding, the client the
+    // caller's).
     let attributes = crate::top_layer::anchored_content_attributes(&id, attributes);
 
     rsx! {
@@ -1006,12 +1006,12 @@ fn NavbarContentRendered(
     }
 }
 
-/// Native (Blitz) arm: the pre-migration `div` -- Blitz has no popover-API
-/// support at all, so this stays the functional floor, matching
-/// `MenubarContentRendered`'s identical native arm. Now also carries the
-/// row-41 `aria-labelledby` below, the one piece of the web arm's
-/// migration that applies here too (unlike `popover`/anchor positioning,
-/// which are web-only).
+/// Native (Blitz) arm: a plain `div` -- Blitz has no popover-API
+/// support at all, so this is the functional floor, matching
+/// `MenubarContentRendered`'s identical native arm. It carries the
+/// row-41 `aria-labelledby` below, the one piece of the web arm that
+/// applies here too (unlike `popover`/anchor positioning, which are
+/// web-only).
 #[cfg(not(feature = "web"))]
 #[component]
 fn NavbarContentRendered(

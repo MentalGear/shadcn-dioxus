@@ -328,8 +328,7 @@ pub fn DropdownMenu(props: DropdownMenuProps) -> Element {
                 // algorithm) -- returning here before `event.prevent_default()`
                 // below leaves the key's default action alone so the browser's
                 // own dismissal still runs. Calling both `set_open` *and*
-                // `prevent_default` unconditionally here (the pre-migration
-                // shape) would race that native algorithm, and the
+                // `prevent_default` unconditionally here would race that native algorithm, and the
                 // `prevent_default` specifically would suppress the
                 // browser's default action for the key outright -- the same
                 // "unconditional keydown-suppressor must never run on the
@@ -866,9 +865,9 @@ fn DropdownMenuContentRendered(
     }
 }
 
-/// Native (Blitz) arm: unchanged from before this slice -- Blitz has no
-/// popover-API support at all (`dev-docs/reference/platform-rationale.md`
-/// Caveat 2), so light dismiss / Escape still need this crate's own
+/// Native (Blitz) arm: Blitz has no popover-API support at all
+/// (`dev-docs/reference/platform-rationale.md` Caveat 2), so light dismiss /
+/// Escape need this crate's own
 /// blur-driven dismissal, and this is the functional floor: a plain,
 /// always-in-flow `div`, visible exactly when `render()` (`DropdownMenuContent`)
 /// mounts it.
@@ -1946,9 +1945,8 @@ fn DropdownMenuSubContentRendered(
     // `dx-anchor-dropdown-menu-sub` one: `top_layer.rs`'s shared
     // anchor-positioning stylesheet (`ensure_anchor_positioning_styles`)
     // keys its `[data-side]` rules off a fixed, hand-enumerated list of
-    // `dx-anchor-*` marker classes, and this lane cannot add an entry to
-    // that list (`top_layer.rs` is out of scope -- another lane owns it,
-    // per this task's own constraints). A submenu is positioned by exactly
+    // `dx-anchor-*` marker classes, and a submenu needs no entry of its own
+    // in that list. A submenu is positioned by exactly
     // the same `anchor()`/`position-try-fallbacks` rules as a top-level
     // `DropdownMenuContent` -- both are plain `popover="auto"` menus
     // anchored to a trigger, side/align/gap are the only per-call-site
@@ -2013,8 +2011,7 @@ fn DropdownMenuSubContentRendered(
         // The close key is direction-aware (`ArrowRight` in RTL) -- see
         // `crate::menu_sub::is_submenu_close_arrow_key`'s doc for why
         // `Escape` stays a plain, direction-independent literal here
-        // (folded into the same arm as a pre-existing, unrelated design
-        // choice this lane preserves rather than changes).
+        // (folded into the same arm as an unrelated design choice).
         let closes = matches!(key, Key::Escape)
             || crate::menu_sub::is_submenu_close_arrow_key(&key, (ctx.direction)());
         if closes {
@@ -2324,10 +2321,10 @@ pub fn DropdownMenuSubItem<T: Clone + PartialEq + 'static>(
 /// `dev-docs/backlog.md` row 85 / hydration-parity Rule 4 regression coverage:
 /// proves `DropdownMenu`'s root `div` renders a caller-supplied `id`
 /// exactly once, with no second, internally-generated `dxc-N` id also
-/// present. Confirmed RED on the pre-fix tree (both `id="dxc-0"` and
-/// `id="my-menu-root"` were present, 2 total `id="` occurrences) and GREEN
-/// after routing the root's attributes through `merge_attributes`, the
-/// same construction `context_menu.rs`'s identical fixture already proves.
+/// present. Without routing the root's attributes through `merge_attributes`
+/// both `id="dxc-0"` and `id="my-menu-root"` would be present (2 total
+/// `id="` occurrences); this is the same construction `context_menu.rs`'s
+/// identical fixture proves.
 #[cfg(test)]
 mod ssr_tests {
     use super::*;

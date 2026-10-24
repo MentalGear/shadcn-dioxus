@@ -100,8 +100,7 @@ pub fn Progress(props: ProgressProps) -> Element {
     // application) resolves to the *last* -- server and client then
     // disagree about which value is in effect
     // (`dev-docs/conformance-harness.md` hydration-parity Rule 4; see
-    // `toast.rs`'s `ToastRegionRendered` doc for the first component this
-    // was found and fixed in).
+    // `toast.rs`'s `ToastRegionRendered` doc for the same rule).
     let attributes = merge_attributes(vec![
         attributes!(div {
             role: "progressbar",

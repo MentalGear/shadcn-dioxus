@@ -141,14 +141,14 @@ pub fn Tooltip(props: TooltipProps) -> Element {
     // Install the shared anchor-positioning stylesheet (`top_layer.rs`'s
     // `ensure_anchor_positioning_styles`) as early as possible -- from this
     // always-mounted root, not only from `use_anchor_position_fallback`
-    // (called only once `TooltipContent` first opens). Confirmed necessary
-    // by execution, not just tidier: CSS Anchor Positioning's `anchor()`
+    // (called only once `TooltipContent` first opens). Necessary, not just
+    // tidier: CSS Anchor Positioning's `anchor()`
     // resolution needs the stylesheet to have been part of the document for
     // at least one full rendering lifecycle before the *very first* anchored
     // element ever measures against it -- installing it only in the same
-    // script as that first measurement (tried first) left a real, if
-    // narrow, window where `anchor()` had not yet resolved by the time
-    // `getBoundingClientRect()` ran, wrongly tripping the JS fallback on a
+    // script as that first measurement leaves a real, if
+    // narrow, window where `anchor()` has not yet resolved by the time
+    // `getBoundingClientRect()` runs, wrongly tripping the JS fallback on a
     // cold first open. Mounting `Tooltip` happens well before hover/focus
     // can ever open its content, so by the time a real user (or a test)
     // triggers the first open, the browser has had many rendering
@@ -466,8 +466,8 @@ fn TooltipContentRendered(
     // `@supports (anchor-name: --a)` block for why this is required: that
     // macro's parser (`manganis-core`'s `css_module_parser`) only recurses
     // into `@media`/`@layer`/`@container`/`@include` bodies when rewriting
-    // class selectors to their per-module hashed form (confirmed by
-    // inspecting `css_module_parser.rs`'s `at_rule` match arm) -- `@supports`
+    // class selectors to their per-module hashed form (see
+    // `css_module_parser.rs`'s `at_rule` match arm) -- `@supports`
     // is not in that list, so a selector like `.dx-tooltip-content[popover]`
     // written inside one is left completely unscoped in the compiled
     // stylesheet and can never match the real (hashed-class) element the
@@ -515,7 +515,7 @@ fn TooltipContentRendered(
     }
 }
 
-/// Native (Blitz) arm: unchanged from before this slice. Blitz implements
+/// Native (Blitz) arm: Blitz implements
 /// neither the `popover` attribute nor `document::eval`
 /// (`dev-docs/reference/platform-rationale.md` Caveat 2), so this is the
 /// functional floor — a plain, always-in-flow div, visible exactly when
@@ -610,7 +610,7 @@ mod anchor_style_hydration_parity {
         dom.render_immediate(&mut NoOpMutations);
         let html = dioxus_ssr::render(&dom);
 
-        // Backlog row 108: found via an order-independent attribute-map
+        // Backlog row 108: read through an order-independent attribute-map
         // lookup, not by slicing forward from the `id="..."` match's own
         // position to the next `>` -- `TooltipContent`'s attributes go
         // through `merge_attributes` (this module's own `attributes`

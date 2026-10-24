@@ -790,7 +790,7 @@ pub fn MenubarContent(props: MenubarContentProps) -> Element {
     }
 }
 
-/// Web arm (Migration A, slice 2/3): promote each menu's content to the top
+/// Web arm: promote each menu's content to the top
 /// layer via `popover="auto"`, anchored to its own trigger -- the same
 /// mechanism `DropdownMenuContentRendered` uses (`dropdown_menu.rs`), which
 /// see for the general `popover`/CSS-anchor wiring this mirrors.
@@ -808,12 +808,11 @@ pub fn MenubarContent(props: MenubarContentProps) -> Element {
 /// `onblur`-driven close-and-focus-clear logic still fires and still owns
 /// what happens next; native light dismiss only ever supplies the same
 /// "something outside happened" signal blur already does, for the rare
-/// outside interaction that would not otherwise cause a blur (verified
-/// during this migration's design pass; see the `use_popover_sync`
-/// callback below).
+/// outside interaction that would not otherwise cause a blur (see the
+/// `use_popover_sync` callback below).
 ///
-/// Escape is still handled entirely by `MenubarMenu`'s own `onkeydown`
-/// (unchanged, still calls `prevent_default()` unconditionally): APG
+/// Escape is handled entirely by `MenubarMenu`'s own `onkeydown`
+/// (which calls `prevent_default()` unconditionally): APG
 /// requires Escape to move focus to *this specific menu's own trigger*
 /// (`ctx.focus.set_focus(Some(props.index))`), which native light dismiss
 /// has no way to know how to do (it has no notion of "which trigger opened
@@ -884,7 +883,7 @@ fn MenubarContentRendered(id: String, attributes: Vec<Attribute>, children: Elem
     });
     // JS-measured static positioning fallback for engines without CSS
     // Anchor Positioning -- see `top_layer::use_anchor_position_fallback`'s
-    // doc. `side`/`align` and the 8px gap match this menu's pre-migration
+    // doc. `side`/`align` and the 8px gap match this menu's themed
     // CSS (`../menubar/style.css`'s `top: 100%; left: 0; margin-top:
     // 0.5rem` -- 0.5rem == 8px at the default root font size): anchored
     // below the trigger, left-aligned with it, matching
@@ -974,9 +973,8 @@ fn MenubarContentRendered(id: String, attributes: Vec<Attribute>, children: Elem
     }
 }
 
-/// Native (Blitz) arm: unchanged from before this slice -- Blitz has no
-/// popover-API support at all, so this stays the functional floor, a plain,
-/// always-in-flow `div`.
+/// Native (Blitz) arm: Blitz has no popover-API support at all, so this is
+/// the functional floor, a plain, always-in-flow `div`.
 #[cfg(not(feature = "web"))]
 #[component]
 fn MenubarContentRendered(id: String, attributes: Vec<Attribute>, children: Element) -> Element {
@@ -1536,10 +1534,9 @@ fn menubar_checkable_item(state: CheckableState, common: CheckableCommon) -> Ele
 /// `id` exactly once, with no second, internally-generated `dxc-N` id
 /// also present -- the identical regression `dropdown_menu.rs`'s own
 /// `ssr_tests::callers_own_id_on_the_root_is_not_duplicated` proves for
-/// `DropdownMenu`'s root. Confirmed RED on the pre-fix tree (both the
-/// generated id and `id="my-menu-root"` were present, 2 total `id="`
-/// occurrences) and GREEN after routing this element's attributes through
-/// `merge_attributes`.
+/// `DropdownMenu`'s root. Without routing this element's attributes through
+/// `merge_attributes` both the generated id and `id="my-menu-root"` would be
+/// present (2 total `id="` occurrences).
 #[cfg(test)]
 mod ssr_tests {
     use super::*;

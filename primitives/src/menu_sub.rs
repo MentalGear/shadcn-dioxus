@@ -19,8 +19,8 @@
 //! content does -- so that positioning call is identical for both and does
 //! belong here in spirit, but the actual `use_anchor_position_fallback`
 //! call still has to live in each file's own `#[cfg(feature = "web")]`
-//! leaf render function, because `top_layer.rs` (out of scope for this
-//! lane -- another lane owns it) hard-codes a fixed list of `dx-anchor-*`
+//! leaf render function, because `top_layer.rs` hard-codes a fixed list
+//! of `dx-anchor-*`
 //! marker classes for its shared stylesheet, and both hosts' submenus reuse
 //! the existing `dx-anchor-dropdown-menu` entry rather than a class that
 //! doesn't exist in that list -- see each `*SubContentRendered`'s own doc
@@ -126,8 +126,7 @@ pub(crate) const SUBMENU_CLOSE_GRACE_DELAY: Duration = Duration::from_millis(200
 /// lines 41-43) with `SELECTION_KEYS` (`['Enter', ' ']`) split out: that
 /// union equals `SELECTION_KEYS` plus exactly the arrow
 /// [`Direction::resolve_horizontal`] maps to [`HorizontalNav::Next`] for
-/// `dir` (`ArrowRight` under LTR, `ArrowLeft` under RTL) -- see this
-/// crate's own `$S/batch3/rtl-rust/reference.md` §5 for the equivalence.
+/// `dir` (`ArrowRight` under LTR, `ArrowLeft` under RTL).
 pub(crate) fn is_submenu_open_arrow_key(key: &Key, direction: Direction) -> bool {
     direction.resolve_horizontal(key) == Some(HorizontalNav::Next)
 }
@@ -139,8 +138,8 @@ pub(crate) fn is_submenu_open_arrow_key(key: &Key, direction: Direction) -> bool
 /// [`Direction::resolve_horizontal`] maps to [`HorizontalNav::Prev`].
 ///
 /// Unlike upstream, this crate's `*SubContentRendered` folds `Escape` into
-/// the *same* handler as this arrow key (a pre-existing design choice, not
-/// changed by this function) -- callers `matches!(key, Key::Escape) ||
+/// the *same* handler as this arrow key (a design choice of those
+/// components, not of this function) -- callers `matches!(key, Key::Escape) ||
 /// is_submenu_close_arrow_key(key, direction)`, rather than this function
 /// covering `Escape` itself, so it stays a precise, direction-only
 /// predicate a caller can also use standalone.
@@ -243,22 +242,21 @@ pub(crate) struct SubMenuState {
     /// its trigger and its own content -- can cancel and reschedule the
     /// *same* timer from their own `onmouseenter`/`onmouseleave`.
     ///
-    /// This is the fix for the "hovering the submenu closes it" defect: the
+    /// This prevents the "hovering the submenu closes it" defect: the
     /// trigger's `onmouseleave` schedules this close, on the assumption
     /// that the pointer either lands back on the trigger or inside this
     /// submenu's own content before the grace delay elapses -- but if the
-    /// timer is private to the trigger, only the trigger's own
-    /// `onmouseenter` can cancel it, and `*SubContent`/`*SubContentRendered`
-    /// never called anything of the kind. A pointer that leaves the trigger
+    /// timer were private to the trigger, only the trigger's own
+    /// `onmouseenter` could cancel it. A pointer that leaves the trigger
     /// and moves into the submenu content (the *expected* path to select an
-    /// item) never touched the trigger again, so the close the trigger
-    /// scheduled on its way out fired unconditionally ~200ms later and
-    /// closed the submenu out from under a pointer legitimately hovering
+    /// item) never touches the trigger again, so the close the trigger
+    /// scheduled on its way out would fire unconditionally ~200ms later and
+    /// close the submenu out from under a pointer legitimately hovering
     /// it, making its items unselectable by mouse. Sharing this one
     /// `DelayedAction` and having `*SubContentRendered` cancel it on its
     /// own `onmouseenter` (and reschedule it on its own `onmouseleave`, the
-    /// same contract the trigger already has) closes that gap: the submenu
-    /// now only closes once the pointer has left *both* the trigger and its
+    /// same contract the trigger has) closes that gap: the submenu
+    /// only closes once the pointer has left *both* the trigger and its
     /// content without re-entering either within the grace window.
     hover_close: DelayedAction,
     /// Whether a pointer *hovering* (rather than clicking) opens this
@@ -404,7 +402,7 @@ pub(crate) fn use_sub_menu_state(
 /// full root-cause writeup this reuses. It cannot be called as-is for a
 /// `Sub`, though: it takes exactly *one* container id, and a `Sub`'s own
 /// trigger and content are never wrapped by a common element the way a
-/// top-level host's trigger+content pair now are (`DropdownMenuSub`/
+/// top-level host's trigger+content pair are (`DropdownMenuSub`/
 /// `ContextMenuSub` render no wrapper of their own -- see this module's
 /// own doc, "Why this module exists"). This is the same construction with
 /// two ids instead of one: "inside" means a descendant of *either*.

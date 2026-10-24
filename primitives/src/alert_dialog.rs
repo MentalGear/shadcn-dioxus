@@ -6,7 +6,7 @@
 //! `dialog.rs` there is no `is_modal` branch here -- [`AlertDialogContent`]
 //! is cfg-split directly, the same two arms as `dialog.rs`'s
 //! `DialogContentModal` (`dev-docs/archive/research/phase4-spike-findings.md` Construction B):
-//! - `#[cfg(not(feature = "web"))]`: byte-for-byte the pre-existing
+//! - `#[cfg(not(feature = "web"))]`: the plain
 //!   `div` + vendored `FocusTrap` path.
 //! - `#[cfg(feature = "web")]`: a real `<dialog role="alertdialog">`
 //!   (the explicit `role` stays -- unlike a plain modal `Dialog`, this is a
@@ -16,9 +16,9 @@
 //!   `dialog.rs` uses. Closing waits for the exit animation (the driver
 //!   defers `close()`; see `dialog.rs`), so the `<dialog>` carries its own
 //!   `data-state`. No backdrop-click dismiss: unlike `Dialog`,
-//!   `AlertDialogContent` has never called `use_outside_dismiss` (APG
-//!   discourages light-dismissing an alert dialog), and this slice does not
-//!   add an equivalent for the web arm either.
+//!   `AlertDialogContent` does not call `use_outside_dismiss` (APG
+//!   discourages light-dismissing an alert dialog), and the web arm has no
+//!   equivalent either.
 
 #[cfg(not(feature = "web"))]
 use crate::use_global_escape_listener;

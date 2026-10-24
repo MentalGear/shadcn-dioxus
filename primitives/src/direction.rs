@@ -30,8 +30,7 @@
 //! instead, so every one of those handlers (plus the menu family's
 //! submenu-open/close keys, plus `slider.rs`'s keyboard mapping) calls it
 //! rather than each hand-writing its own `Key::ArrowLeft`/`Key::ArrowRight`
-//! swap. See `$S/batch3/rtl-rust/reference.md` (this lane's own report) for
-//! the full per-component table this was derived from.
+//! swap.
 //!
 //! **Reactive**: [`DirectionProvider`] provides a `Signal<Direction>` and
 //! writes its `direction` prop into it on every render, and

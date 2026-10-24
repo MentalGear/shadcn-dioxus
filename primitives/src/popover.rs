@@ -6,7 +6,7 @@
 //! `PopoverModalContent` is cfg-split the same way `dialog.rs`'s
 //! `DialogContentModal`/`alert_dialog.rs`'s `AlertDialogContent` are
 //! (`dev-docs/archive/research/phase4-spike-findings.md` Construction B):
-//! - `#[cfg(not(feature = "web"))]`: byte-for-byte the pre-existing
+//! - `#[cfg(not(feature = "web"))]`: the plain
 //!   `div` + vendored `FocusTrap` path (unchanged).
 //! - `#[cfg(feature = "web")]`: a real `<dialog>` opened with
 //!   `showModal()`, driven by the exact same
@@ -18,11 +18,11 @@
 //!   layer.
 //!
 //! Unlike [`crate::dialog`]'s modal `Dialog`, a modal `Popover` stays
-//! **anchored to its trigger** rather than viewport-centered -- that is the
-//! one genuinely novel wrinkle of this migration. Before this slice, the
-//! (native-arm-shaped) `div` positioned itself the old DOM-relative way:
-//! plain `position: absolute` inside `PopoverRoot`'s `position: relative`
-//! wrapper, no top-layer promotion involved. A `<dialog>` shown via
+//! **anchored to its trigger** rather than viewport-centered -- the one
+//! genuinely novel wrinkle of the native-dialog arm. The native-arm-shaped
+//! `div` positions itself DOM-relative: plain `position: absolute` inside
+//! `PopoverRoot`'s `position: relative` wrapper, no top-layer promotion
+//! involved. A `<dialog>` shown via
 //! `showModal()` is promoted straight into the top layer regardless (its
 //! containing block becomes the viewport, same class of problem
 //! `dev-docs/plan.md` Phase 4.4 hit for `popover="auto"` content -- see
@@ -31,14 +31,13 @@
 //! the web modal arm below carries the exact same `dx-anchor-popover`
 //! marker class and `position-anchor` style the non-modal arm already uses
 //! (`PopoverTrigger`'s `anchor-name` is keyed off `ctx.content_id`
-//! regardless of `is_modal`, so it was already correct for this arm too,
-//! unused until now) -- `top_layer.rs`'s shared, engine-injected
-//! anchor-positioning stylesheet now matches `:modal` alongside `[popover]`
+//! regardless of `is_modal`, so it is correct for this arm too) --
+//! `top_layer.rs`'s shared, engine-injected
+//! anchor-positioning stylesheet matches `:modal` alongside `[popover]`
 //! in every selector so the same `anchor()`/`position-try-fallbacks` rules
 //! (and the `margin: 0; inset: auto;` UA reset) apply to a `showModal()`
-//! dialog too. Confirmed by measurement (this slice's session) that this
-//! keeps the modal arm trigger-anchored rather than falling back to the
-//! UA's viewport-centered default.
+//! dialog too, which keeps the modal arm trigger-anchored rather than
+//! falling back to the UA's viewport-centered default.
 
 // Only the native (Blitz) modal arm still evaluates script itself (its focus trap); the web arm's
 // open driver is the shared `crate::use_dialog_open_driver`.
@@ -47,8 +46,8 @@ use dioxus::document;
 use dioxus::prelude::*;
 
 // `use_global_escape_listener`/`use_outside_dismiss` are only called from
-// native (Blitz) arms now -- `PopoverModalContent`'s native arm (its own
-// dismissal wiring, unchanged) and `PopoverNonModalContent`'s native arm
+// native (Blitz) arms -- `PopoverModalContent`'s native arm (its own
+// dismissal wiring) and `PopoverNonModalContent`'s native arm
 // (Blitz has no Popover API, `dev-docs/reference/platform-rationale.md` Caveat
 // 2). Both web arms get dismissal from the browser instead (`showModal()`'s
 // `cancel`/`close` events for modal, `popover="auto"` light dismiss for
@@ -458,10 +457,9 @@ pub fn PopoverContentRendered(
     //    Rust callback decides to do -- so merely having the non-modal web
     //    arm call it (even with a callback that declines to act) would
     //    suppress the browser's own `popover="auto"` Escape-dismissal
-    //    algorithm before it ever runs. Confirmed by execution: an earlier
-    //    version of this fix kept the hook called unconditionally and
-    //    gated only the Rust-side callback, and Escape silently stopped
-    //    closing the non-modal web popover at all. The non-modal web arm
+    //    algorithm before it ever runs (keeping the hook called
+    //    unconditionally and gating only the Rust-side callback stops
+    //    Escape from closing the non-modal web popover at all). The non-modal web arm
     //    below simply never calls `use_global_escape_listener`/
     //    `use_outside_dismiss`, so it never installs that
     //    `preventDefault()`.
@@ -696,19 +694,19 @@ fn PopoverModalContent(
 /// doc describes for `SelectList` (`top_layer.rs`), which is `auto` like
 /// this content and already proves the construction holds for `auto`'s own
 /// light dismiss (Bug 2 there). `use_popover_shown_while_mounted`'s
-/// browser -> signal side still forwards *every* native `toggle` --
+/// browser -> signal side forwards *every* native `toggle` --
 /// light dismiss and Escape included -- back into `set_open`
-/// unconditionally, exactly like `use_popover_sync` did, so the Rust
-/// signal still can never strand the way `docs/
-/// dev-docs/reference/platform-rationale.md` Caveat 1 documents for `<dialog>`'s old
+/// unconditionally, like `use_popover_sync`, so the Rust
+/// signal can never strand the way
+/// `dev-docs/reference/platform-rationale.md` Caveat 1 documents for `<dialog>`'s
 /// one-way `showModal()`/`close()` binding; only the signal -> browser
-/// *hide* path changed -- `hidePopover()` is never called from our own
+/// *hide* path differs -- `hidePopover()` is never called from our own
 /// closing path at all, only a real DOM removal (once `render()` drops to
 /// `false`) ever takes this content out of the top layer. A native close
-/// still bypasses the exit animation on its own path (the browser's hide
+/// bypasses the exit animation on its own path (the browser's hide
 /// algorithm applies `display: none` synchronously, before Rust learns
-/// about it) -- an accepted limit of the plain Popover API, unchanged by
-/// this fix and matching `oracle/tier2-html/top-layer.spec.ts` Rules 2/3.
+/// about it) -- an accepted limit of the plain Popover API, matching
+/// `oracle/tier2-html/top-layer.spec.ts` Rules 2/3.
 #[cfg(feature = "web")]
 #[component]
 fn PopoverNonModalContent(
@@ -763,9 +761,9 @@ fn PopoverNonModalContent(
     // into `attributes` instead would add a second, later `class` attribute
     // that silently overwrites this one rather than combining with it (only
     // `merge_attributes` itself concatenates same-named `class` attributes;
-    // plain rsx attribute lists do not) -- confirmed by execution: doing it
-    // that way rendered `class="dx-anchor-popover"` alone, with
-    // `dx-popover-content`/its hashed preview variant dropped entirely.
+    // plain rsx attribute lists do not): doing it that way renders
+    // `class="dx-anchor-popover"` alone, with `dx-popover-content`/its
+    // hashed preview variant dropped entirely.
     let class = format!(
         "{} dx-anchor-popover",
         class.unwrap_or_else(|| "dx-popover-content".to_string())
@@ -801,10 +799,9 @@ fn PopoverNonModalContent(
     }
 }
 
-/// Native (Blitz) arm: unchanged from before this slice -- Blitz has no
-/// popover-API support at all (`dev-docs/reference/platform-rationale.md`
-/// Caveat 2), so light dismiss / Escape still need this crate's own
-/// JS-driven listeners.
+/// Native (Blitz) arm: Blitz has no popover-API support at all
+/// (`dev-docs/reference/platform-rationale.md` Caveat 2), so light dismiss /
+/// Escape need this crate's own JS-driven listeners.
 #[cfg(not(feature = "web"))]
 #[component]
 fn PopoverNonModalContent(

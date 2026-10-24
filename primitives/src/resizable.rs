@@ -195,8 +195,7 @@ struct ResizableGroupContext {
     /// `Horizontal`; a vertical group's handle never flips, matching every
     /// other RTL-aware component in this crate that has an orientation
     /// (Slider's `SliderVertical` never consults direction either). See
-    /// `ResizableHandle`'s own `onkeydown` and this lane's
-    /// `$S/batch3/rtl-rust/reference.md`'s Resizable row for the
+    /// `ResizableHandle`'s own `onkeydown` for the
     /// extrapolation this is based on (no Radix/shadcn original exists to
     /// cite directly).
     text_direction: ReadSignal<Direction>,
@@ -453,7 +452,7 @@ pub fn ResizablePanelGroup(props: ResizablePanelGroupProps) -> Element {
     // them with `fold_style_attributes` first avoids dioxus-ssr rendering two
     // separate `style="..."` attributes on the same tag (WHATWG's duplicate-
     // attribute parse error) -- see that helper's own doc in `lib.rs` and
-    // `context_menu.rs`'s identical fix for the live-site incident it names.
+    // `context_menu.rs`'s identical handling.
     let (caller_style, attributes) = crate::fold_style_attributes(props.attributes);
     let style = use_memo(move || {
         let base = format!("display: flex; flex-direction: {};", flex_direction());

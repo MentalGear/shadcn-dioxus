@@ -407,7 +407,7 @@ pub fn CommandInput(props: CommandInputProps) -> Element {
     let in_dialog = try_use_context::<CommandDialogContext>().is_some();
     let autofocus = props.autofocus.unwrap_or(in_dialog);
     // On the web arm a dialog's open driver chooses the initial focus from the opening modality
-    // (`data-dx-autofocus`); everywhere else the input focuses itself the old way.
+    // (`data-dx-autofocus`); everywhere else the input focuses itself.
     let driver_autofocus = autofocus && in_dialog && cfg!(feature = "web");
     let self_autofocus = autofocus && !driver_autofocus;
 
