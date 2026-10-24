@@ -97,8 +97,6 @@
  * (every test below goes through `BASE_URL`, imported, not a local literal).
  */
 
- */
-
 import { test, expect } from "../../fixtures";
 import { type Page, type Locator } from "@playwright/test";
 import { BASE_URL } from "./../../base-url";
