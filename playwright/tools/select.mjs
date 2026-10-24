@@ -46,7 +46,8 @@
 //     rarely spelled custom property by name.
 // Anything the argument does not cover (a selector with no class or id, @font-face, a token read by script, a class
 // that cannot be placed, no SSG build to read, --no-css-narrow) keeps the BROAD set; `--explain` says which and why.
-// --pages c:calendar,site:home is a diagnostic: pretend the changed rules reach exactly those pages.
+// --pages c:calendar,site:home is a diagnostic: pretend the changed rules reach exactly those pages (the git diff is ignored
+// unless --files / --range name one).
 // --self-test runs the node-only test of all this (scripts/check-select-css.sh).
 import fs from "node:fs";
 import path from "node:path";
@@ -98,6 +99,7 @@ const oldTextOf = (f) => gitText("show", `${oldRef}:${f}`) ?? "";
 const newTextOf = (f) => endIsWorktree ? (fs.existsSync(path.join(ROOT, f)) ? fs.readFileSync(path.join(ROOT, f), "utf8") : "") : (gitText("show", `${rangeB}:${f}`) ?? "");
 let changed;
 if (opt.files) changed = opt.files;
+else if (opt.pages && !opt.range) changed = []; // --pages pretends the changed rules: the branch's own diff (and its at-rest component tests) would leak in
 else {
   const range = opt.range ?? "origin/main...HEAD";
   changed = [...new Set([...git("diff", "--name-only", range), ...git("diff", "--name-only", "HEAD"), ...git("ls-files", "--others", "--exclude-standard")])];
