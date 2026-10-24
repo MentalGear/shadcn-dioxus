@@ -12,13 +12,18 @@
 }
 
 .dx-date-picker-group .dx-date-picker-popover-trigger {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    border: none;
-    background-color: transparent;
-    transition: rotate var(--dx-motion-duration-base) var(--dx-motion-ease-standard);
+    /* A bare, borderless chevron button inside the field: the popover trigger's slot variables
+       (popover/docs.md, "Slot variables"), set on the trigger's own element. */
+    --dx-popover-trigger-padding: 0;
+    --dx-popover-trigger-border: none;
+    --dx-popover-trigger-border-color: currentcolor;
+    --dx-popover-trigger-background-color: transparent;
+    --dx-popover-trigger-active-background-color: transparent;
+    --dx-popover-trigger-transition-property: rotate;
+
+    /* The keyboard focus ring, the same `--dx-ring-field` the group draws (below). */
+    --dx-popover-trigger-focus-radius: var(--dx-radius-sm);
+    --dx-popover-trigger-focus-shadow: var(--dx-ring-field);
 
     /* The chevron is 20px, through the popover trigger's icon slot. */
     --dx-popover-trigger-icon-size: 1.25rem;
@@ -65,17 +70,11 @@
  * (`../input/style.css`'s `.dx-input:focus-visible`). The group is the field -- it draws the chrome and
  * its segments are bare `contenteditable` spans -- so, as `InputGroup` does, the ring goes on the group
  * while a segment has focus; the focused segment keeps its own highlight (below). The calendar trigger is
- * a button inside the field and takes the same ring on its own box (it reset nothing, so the UA's
- * outline used to be the only mark). `playwright/focus-ring.spec.ts` holds both to Input's.
+ * a button inside the field and takes the same ring on its own box, through the popover trigger's focus
+ * slots (above). `playwright/focus-ring.spec.ts` holds both to Input's.
  */
 .dx-date-picker-group:has(.dx-date-picker-segment:focus-visible) {
     box-shadow: var(--dx-ring-field);
-}
-
-.dx-date-picker-group .dx-date-picker-popover-trigger:focus-visible {
-    border-radius: var(--dx-radius-sm);
-    box-shadow: var(--dx-ring-field);
-    outline: none;
 }
 
 /* Invalid (the state recipe, after the focus rule so a focused invalid field stays red): the group is the
@@ -88,13 +87,12 @@
 
 /*
  * The panel is sized by what it holds. `.dx-popover-content` (popover/style.css) gives every
- * popover a fixed one-month width (`width: 18rem`), which is why a second month used to render
- * OUTSIDE the panel: the calendar's months overflowed a box sized for one. `max-content` makes
- * the panel as wide as its months side by side (and, for one month, hugs the calendar instead of
- * leaving a dead strip beside it); `max-width` is the same one-gutter-each-side viewport cap
- * `.dx-popover-content` has (it used to be dropped here with `unset`), so on a phone the panel
- * stops growing, the months wrap onto their own rows (calendar/style.css) and the panel stays
- * inside the viewport -- where `top_layer.rs`'s clamp can place it.
+ * popover a fixed one-month width (`18rem`), which a second month would overflow. The
+ * `--dx-popover-content-width` slot is `max-content` here: the panel is as wide as its months side by
+ * side (and, for one month, hugs the calendar instead of leaving a dead strip beside it); the
+ * `--dx-popover-content-max-width` slot is the same one-gutter-each-side viewport cap
+ * `.dx-popover-content` has, so on a phone the panel stops growing, the months wrap onto their own
+ * rows (calendar/style.css) and the panel stays inside the viewport -- where `top_layer.rs`'s clamp can place it.
  */
 .dx-date-picker-group .dx-date-picker-popover-content {
     /* Slots of the theme's floating-surface recipe. This panel is a Popover panel (`dx-popover-content`
@@ -104,8 +102,9 @@
     --dx-floating-exit: dx-drop-out;
     --dx-floating-padding: 0;
 
-    width: max-content;
-    max-width: calc(100% - 2 * var(--dx-space-4));
+    /* The panel's width slots (popover/docs.md, "Slot variables"). */
+    --dx-popover-content-width: max-content;
+    --dx-popover-content-max-width: calc(100% - 2 * var(--dx-space-4));
 }
 
 /* One surface: the popover panel is the card, so the calendar inside it carries no second border or
@@ -116,18 +115,15 @@
 }
 
 /*
- * Historical wiring-gap fix (2026-09-01, live-site report; backlog row
- * 20/item 3): this page used to carry its own hand-copied `[popover]`
- * UA-stylesheet reset and `@supports (anchor-name: --a)` block -- both now
- * live in a single, engine-injected stylesheet shared by every
- * `dx-anchor-*`-marked overlay in the app instead (`primitives/src/top_layer.rs`'s
- * `ensure_anchor_positioning_styles` doc, docs/backlog.md item 1).
+ * The popover's `[popover]` UA-stylesheet reset and its `@supports (anchor-name: --a)` block live in the
+ * single, engine-injected stylesheet shared by every `dx-anchor-*`-marked overlay
+ * (`primitives/src/top_layer.rs`'s `ensure_anchor_positioning_styles`), not in this sheet.
  *
  * The open/close motion is the theme's floating-surface recipe with the 4px drop (`dx-drop-in` /
  * `dx-drop-out`, set through the slots above). It animates `translate`, NOT `transform`: the anchored
  * panel centres itself on its trigger with `transform: translateX(-50%)` (top_layer.rs's engine
  * stylesheet), and a keyframe that sets `transform` replaces that for as long as the animation runs,
- * so the panel used to play its whole fade 144px off-centre (more for two months) and snap back on
+ * so the panel would play its whole fade 144px off-centre (more for two months) and snap back on
  * the last frame. `translate` composes with `transform`, so the centring survives.
  */
 

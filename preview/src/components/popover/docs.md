@@ -50,6 +50,31 @@ PopoverTrigger {
 
 The Button stylesheet must be on the page (any `Button` loads it). A composite that keeps the themed trigger but wants another icon size sets `--dx-popover-trigger-icon-size` on it, as DatePicker does for its 20px chevron.
 
+## Slot variables
+
+A component that composes `PopoverTrigger` or `PopoverContent` (such as `DatePicker`) retunes it by setting a custom property on that element, never by declaring the property on its own class: two stylesheets declaring the same property on one element are decided by which sheet loads last, and that order differs from route to route. The popover's rules read each of these with their own default, so a variable that is not set changes nothing.
+
+| Variable | Default | Property |
+| --- | --- | --- |
+| `--dx-popover-trigger-padding` | `0.3125rem var(--dx-space-2-5)` | trigger `padding` |
+| `--dx-popover-trigger-border` | `1px solid transparent` | trigger `border` |
+| `--dx-popover-trigger-border-color` | outline Button edge (`--dx-border` light, `--dx-input` dark) | trigger `border-color` |
+| `--dx-popover-trigger-background-color` | outline Button fill | trigger `background-color` |
+| `--dx-popover-trigger-active-background-color` | outline Button hover fill | trigger `background-color` while hovered or `aria-expanded="true"` |
+| `--dx-popover-trigger-transition-property` | `all` | trigger `transition-property` |
+| `--dx-popover-trigger-focus-radius` | the trigger's own corner radii | trigger corner radii under `:focus-visible` |
+| `--dx-popover-trigger-focus-shadow` | `var(--dx-ring-focus)` | trigger `box-shadow` under `:focus-visible` |
+| `--dx-popover-content-width` | `18rem` | panel `width` |
+| `--dx-popover-content-max-width` | `calc(100% - 2rem)` | panel `max-width` |
+
+```css
+/* In the composing component's own stylesheet, on the trigger's or panel's element: */
+.dx-date-picker-popover-trigger { --dx-popover-trigger-padding: 0; }
+.dx-date-picker-popover-content { --dx-popover-content-width: max-content; }
+```
+
+Set the variable on the exact element rather than an ancestor: custom properties inherit, so an ancestor's value would reach every nested trigger or panel too.
+
 ## Motion
 
 The panel fades in and out over `--dx-overlay-duration` (default `--dx-motion-duration-slow`) with `--dx-overlay-ease`. A modal popover uses the shared dialog exit driver, staying open until its exit settles (at most 1500 ms) before it closes. The keyframes animate `opacity` only, so the anchor's own `transform` centring is never replaced. Reduced motion swaps in `--dx-motion-duration-reduced`. Nothing loops. See [Motion](/docs#motion) for the tokens, reduced motion and the per-component table.
