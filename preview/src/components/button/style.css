@@ -18,7 +18,7 @@
   font-size: var(--dx-text-sm);
   font-weight: 500;
   gap: var(--dx-space-1-5);
-  line-height: 1.25rem;
+  line-height: var(--dx-button-line-height, 1.25rem);
   outline: none;
   text-decoration: none;
   transition-duration: var(--dx-motion-duration-base);
@@ -59,7 +59,7 @@
 
   font-size: var(--dx-text-xs);
   gap: var(--dx-space-1);
-  line-height: 1rem;
+  line-height: var(--dx-button-line-height, 1rem);
 }
 
 .dx-button[data-size="xs"]:has(> svg) {
@@ -133,7 +133,7 @@
 .dx-button[data-addon][data-size] {
   font-size: var(--dx-text-sm);
   gap: var(--dx-space-2);
-  line-height: 1.25rem;
+  line-height: var(--dx-button-line-height, 1.25rem);
 }
 
 .dx-button[data-addon][data-size="xs"] {

@@ -41,6 +41,7 @@ A component that composes `Button` retunes it by setting a custom property on th
 | `--dx-button-color` | the variant's foreground | `color` at rest |
 | `--dx-button-border-color` | `transparent` (the Outline variant's edge colour) | `border-color` at rest (the focus and invalid rings still win) |
 | `--dx-button-transition-property` | `all` | `transition-property` |
+| `--dx-button-line-height` | `1.25rem` (`1rem` in the `xs` size) | `line-height` |
 
 ```css
 /* In the composing component's own stylesheet, on the button's element: */
