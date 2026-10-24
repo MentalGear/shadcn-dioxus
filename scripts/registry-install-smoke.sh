@@ -24,6 +24,8 @@
 #      `BIN add <names> --path <repo>`;
 #   4. checks every component directory and its `pub mod` line landed, then
 #      `cargo check` with CARGO_INCREMENTAL=0 and an absolute scratch CARGO_TARGET_DIR (never the repo's).
+#   On exit it removes the scratch dir (kept with --keep) and the cargo git cache entries this run created
+#   (`dx-smoke-registry-*` under CARGO_HOME's git/db and git/checkouts, newer than the run's `.started` stamp).
 #
 # Usage: scripts/registry-install-smoke.sh [--cli BIN] [--only a,b,c] [--target TRIPLE] [--keep]
 #   --cli BIN        install with this `shadcn-dioxus` binary instead of `dx components`
@@ -70,7 +72,15 @@ if [ "${avail_kb:-0}" -lt 6000000 ]; then
 fi
 
 work="$(mktemp -d "$tmp_parent/registry-smoke.XXXXXX")" || exit 2
+# Stamps the run's start: cleanup removes only the cargo git cache entries newer than it.
+: > "$work/.started"
 cleanup() {
+  # Cargo keys a git dependency's cache entry on the registry's path, which is unique to this run's $work, so the
+  # entries are useless once $work is gone: they are removed here, with or without --keep.
+  local cargo_home="${CARGO_HOME:-$HOME/.cargo}" d
+  for d in "$cargo_home"/git/db/dx-smoke-registry-* "$cargo_home"/git/checkouts/dx-smoke-registry-*; do
+    if [ -e "$d" ] && [ "$d" -nt "$work/.started" ]; then rm -rf "$d"; fi
+  done
   if [ "$keep" = 1 ]; then
     echo "registry-install-smoke: kept $work (delete it when done: it holds the cargo target dir)"
   else
@@ -88,7 +98,7 @@ if [ -z "$url" ]; then
 fi
 
 # 1. The registry: a throwaway git repo of the working tree.
-reg="$work/registry"
+reg="$work/dx-smoke-registry"
 mkdir -p "$reg"
 git ls-files -z --cached --others --exclude-standard \
   | while IFS= read -r -d '' f; do [ -e "$f" ] && printf '%s\0' "$f"; done \
