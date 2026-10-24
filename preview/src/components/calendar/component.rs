@@ -9,7 +9,7 @@ use dioxus_primitives::calendar::{
     CalendarViewProps,
 };
 use dioxus_primitives::{dioxus_attributes::attributes, merge_attributes};
-use time::{Date, Month, UtcDateTime, Weekday};
+use time::{Date, Month, Weekday};
 
 fn fixed_date(year: i32, month: Month, day: u8) -> Date {
     Date::from_calendar_date(year, month, day).expect("valid fixed date")
@@ -79,13 +79,14 @@ pub struct CalendarProps {
     #[props(default)]
     pub on_format_month_short: Option<Callback<Month, String>>,
 
-    /// The month being viewed
-    #[props(default = ReadSignal::new(Signal::new(UtcDateTime::now().date())))]
-    pub view_date: ReadSignal<Date>,
+    /// The month being viewed; `None` (the default) shows the month of `today`
+    #[props(default)]
+    pub view_date: ReadSignal<Option<Date>>,
 
-    /// The current date (used for highlighting today)
-    #[props(default = UtcDateTime::now().date())]
-    pub today: Date,
+    /// The current date (used for highlighting today); `None` (the default) is the visitor's local
+    /// date, read after mount
+    #[props(default)]
+    pub today: Option<Date>,
 
     /// Callback when view date changes
     #[props(default)]
@@ -152,13 +153,14 @@ pub struct RangeCalendarProps {
     #[props(default)]
     pub on_format_month_short: Option<Callback<Month, String>>,
 
-    /// The month being viewed
-    #[props(default = ReadSignal::new(Signal::new(UtcDateTime::now().date())))]
-    pub view_date: ReadSignal<Date>,
+    /// The month being viewed; `None` (the default) shows the month of `today`
+    #[props(default)]
+    pub view_date: ReadSignal<Option<Date>>,
 
-    /// The current date (used for highlighting today)
-    #[props(default = UtcDateTime::now().date())]
-    pub today: Date,
+    /// The current date (used for highlighting today); `None` (the default) is the visitor's local
+    /// date, read after mount
+    #[props(default)]
+    pub today: Option<Date>,
 
     /// Callback when view date changes
     #[props(default)]

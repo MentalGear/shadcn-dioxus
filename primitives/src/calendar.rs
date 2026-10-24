@@ -17,7 +17,7 @@ use time::{ext::NumericalDuration, macros::date, Date, Month, OffsetDateTime, We
 use crate::{
     date_picker::DefaultCalendarProps,
     direction::{use_direction, use_direction_signal, Direction, HorizontalNav},
-    merge_attributes, use_effect_cleanup, LocalDateExt as _,
+    merge_attributes, use_effect_cleanup,
 };
 
 // A collection of [`Weekday`]s stored as a single byte
@@ -403,7 +403,7 @@ pub struct BaseCalendarContext {
 
     // Configuration
     disabled: ReadSignal<bool>,
-    today: Date,
+    today: ReadSignal<Date>,
     first_day_of_week: Weekday,
     show_week_number: bool,
     enabled_date_range: DateRange,
@@ -561,6 +561,62 @@ impl CalendarContext {
     }
 }
 
+/// Today's local date, read so that a prerendered page and the hydrating client agree on it.
+///
+/// The first render (the server's, and the client's hydration render) uses the date the server
+/// rendered with, carried to the client through `use_server_cached`, so hydration finds the markup
+/// it expects. An effect then reads the visitor's clock once the component is mounted. A page
+/// prerendered at build time therefore shows the build day only until hydration, then today
+/// (backlog row 380). A component mounted after hydration, a pure client build and plain SSR read
+/// the clock directly on their first render.
+///
+/// This is the one place a component reads the clock; `scripts/check-render-clock.sh` rejects a
+/// clock read anywhere else in a component file.
+pub fn use_today() -> ReadSignal<Date> {
+    #[allow(unused_mut, unused_assignments)]
+    let mut rendered: Option<i32> = None;
+    fullstack! {
+        // A Julian day number, because `Date` has no serde impl without `time`'s `serde` feature.
+        rendered = Some(use_server_cached(|| {
+            clock_local_date().to_julian_day()
+        }));
+    }
+    let mut today = use_signal(move || {
+        rendered
+            .and_then(|day| Date::from_julian_day(day).ok())
+            .unwrap_or_else(clock_local_date)
+    });
+    use_effect(move || {
+        let now = clock_local_date();
+        if *today.peek() != now {
+            today.set(now);
+        }
+    });
+    today.into()
+}
+
+/// The visitor's local date, or the UTC date where the local offset is unknown. Called only by
+/// [`use_today`], on the first render where no server render came before it and after mount.
+fn clock_local_date() -> Date {
+    OffsetDateTime::now_local() // render-clock: allowed
+        .map(|now| now.date())
+        .unwrap_or_else(|_| time::UtcDateTime::now().date()) // render-clock: allowed
+}
+
+/// The `today` and `view_date` a calendar root puts in its context: the caller's values, or the
+/// clock read after mount ([`use_today`]) and that day's month.
+fn use_today_and_view(
+    today: Option<Date>,
+    view_date: ReadSignal<Option<Date>>,
+) -> (ReadSignal<Date>, ReadSignal<Date>) {
+    let clock = use_today();
+    let today = use_memo(use_reactive((&today,), move |(today,)| {
+        today.unwrap_or_else(|| clock())
+    }));
+    let view_date = use_memo(move || view_date().unwrap_or_else(|| today()));
+    (today.into(), view_date.into())
+}
+
 /// The props for the [`Calendar`] component.
 #[derive(Props, Clone, PartialEq)]
 pub struct CalendarProps {
@@ -587,13 +643,14 @@ pub struct CalendarProps {
     #[props(default)]
     pub on_format_month_short: Option<Callback<Month, String>>,
 
-    /// The month being viewed
-    #[props(default = ReadSignal::new(Signal::new(OffsetDateTime::now_local_date())))]
-    pub view_date: ReadSignal<Date>,
+    /// The month being viewed. `None` (the default) shows the month of `today`.
+    #[props(default)]
+    pub view_date: ReadSignal<Option<Date>>,
 
-    /// The current date (used for highlighting today)
-    #[props(default = OffsetDateTime::now_local_date())]
-    pub today: Date,
+    /// The current date (used for highlighting today). `None` (the default) is the visitor's
+    /// local date, read after mount ([`use_today`]).
+    #[props(default)]
+    pub today: Option<Date>,
 
     /// Callback when view date changes
     #[props(default)]
@@ -700,18 +757,19 @@ pub fn Calendar(props: CalendarProps) -> Element {
     let view_registrations = use_signal(Vec::new);
     let direction = use_direction(props.dir);
     let direction_signal = use_direction_signal(direction);
+    let (today, view_date) = use_today_and_view(props.today, props.view_date);
 
     // Create base context provider for child components
     let mut base_ctx = use_context_provider(|| BaseCalendarContext {
         focused_date: Signal::new(None),
-        view_date: props.view_date,
+        view_date,
         set_view_date: props.on_view_change,
         available_ranges,
         format_weekday: props.on_format_weekday,
         format_month: props.on_format_month,
         format_month_short: props.on_format_month_short,
         disabled: props.disabled,
-        today: props.today,
+        today,
         first_day_of_week: props.first_day_of_week,
         show_week_number: props.show_week_number,
         enabled_date_range: DateRange::new(props.min_date, props.max_date),
@@ -884,13 +942,14 @@ pub struct RangeCalendarProps {
     #[props(default)]
     pub on_format_month_short: Option<Callback<Month, String>>,
 
-    /// The month being viewed
-    #[props(default = ReadSignal::new(Signal::new(OffsetDateTime::now_local_date())))]
-    pub view_date: ReadSignal<Date>,
+    /// The month being viewed. `None` (the default) shows the month of `today`.
+    #[props(default)]
+    pub view_date: ReadSignal<Option<Date>>,
 
-    /// The current date (used for highlighting today)
-    #[props(default = OffsetDateTime::now_local_date())]
-    pub today: Date,
+    /// The current date (used for highlighting today). `None` (the default) is the visitor's
+    /// local date, read after mount ([`use_today`]).
+    #[props(default)]
+    pub today: Option<Date>,
 
     /// Callback when view date changes
     #[props(default)]
@@ -999,18 +1058,19 @@ pub fn RangeCalendar(props: RangeCalendarProps) -> Element {
     let view_registrations = use_signal(Vec::new);
     let direction = use_direction(props.dir);
     let direction_signal = use_direction_signal(direction);
+    let (today, view_date) = use_today_and_view(props.today, props.view_date);
 
     // Create base context provider for child components
     let mut base_ctx = use_context_provider(|| BaseCalendarContext {
         focused_date,
-        view_date: props.view_date,
+        view_date,
         set_view_date: props.on_view_change,
         available_ranges,
         format_weekday: props.on_format_weekday,
         format_month: props.on_format_month,
         format_month_short: props.on_format_month_short,
         disabled: props.disabled,
-        today: props.today,
+        today,
         first_day_of_week: props.first_day_of_week,
         show_week_number: props.show_week_number,
         enabled_date_range: DateRange::new(props.min_date, props.max_date),
@@ -2875,7 +2935,7 @@ fn day_state(
         range_end: selection.range_end,
         in_range: selection.in_range,
         focused,
-        today: date == base_ctx.today,
+        today: date == (base_ctx.today)(),
         disabled,
         unavailable,
         outside_month: !relative_month.current_month(),
@@ -4253,7 +4313,7 @@ mod tests {
             format_month: Callback::new(|m: Month| m.to_string()),
             format_month_short: None,
             disabled: use_signal(|| false).into(),
-            today: date!(2024 - 06 - 15),
+            today: use_signal(|| date!(2024 - 06 - 15)).into(),
             first_day_of_week: Weekday::Monday,
             show_week_number: false,
             enabled_date_range,
@@ -4278,7 +4338,7 @@ mod tests {
             format_month: Callback::new(|m: Month| m.to_string()),
             format_month_short: None,
             disabled: use_signal(|| false).into(),
-            today: enabled_date_range.start(),
+            today: use_signal(move || enabled_date_range.start()).into(),
             first_day_of_week: Weekday::Monday,
             show_week_number: false,
             enabled_date_range,

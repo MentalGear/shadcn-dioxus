@@ -2,19 +2,20 @@
 
 use crate::{
     calendar::{
-        weekday_abbreviation, AvailableRanges, CalendarProps, DateRange, RangeCalendarProps,
+        use_today, weekday_abbreviation, AvailableRanges, CalendarProps, DateRange,
+        RangeCalendarProps,
     },
     collection::{collection_item, use_collection_provider, use_item, CollectionState},
     dioxus_core::{current_scope_id, Properties, Runtime, Task},
     popover::*,
-    use_unique_id, LocalDateExt as _,
+    use_unique_id,
 };
 
 use crate::sleep::sleep;
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
 use std::{fmt::Display, str::FromStr, time::Duration};
-use time::{macros::date, Date, Month, OffsetDateTime, Weekday};
+use time::{macros::date, Date, Month, Weekday};
 
 use crate::direction::use_direction;
 use crate::merge_attributes;
@@ -840,13 +841,14 @@ pub struct DatePickerCalendarProps<T: DefaultCalendarProps + Properties + Partia
     #[props(default = Callback::new(|month: Month| month.to_string()))]
     pub on_format_month: Callback<Month, String>,
 
-    /// The month being viewed
-    #[props(default = ReadSignal::new(Signal::new(OffsetDateTime::now_local_date())))]
-    pub view_date: ReadSignal<Date>,
+    /// The month being viewed. `None` (the default) shows the month of `today`.
+    #[props(default)]
+    pub view_date: ReadSignal<Option<Date>>,
 
-    /// The current date (used for highlighting today)
-    #[props(default = OffsetDateTime::now_local_date())]
-    pub today: Date,
+    /// The current date (used for highlighting today). `None` (the default) is the visitor's
+    /// local date, read after mount ([`crate::calendar::use_today`]).
+    #[props(default)]
+    pub today: Option<Date>,
 
     /// Callback when view date changes
     #[props(default)]
@@ -928,13 +930,14 @@ pub fn DatePickerCalendar(props: DatePickerCalendarProps<CalendarProps>) -> Elem
 
     #[allow(non_snake_case)]
     let Calendar = props.calendar;
-    let mut view_date = use_signal(|| props.today);
+    // `None` until something picks a month: the calendar then shows the month of `today`.
+    let mut view_date = use_signal(|| (props.view_date)());
     // The calendar follows what it displays: the staged selection while one is pending, the
     // committed date otherwise.
     let displayed = ctx.staging.displayed;
     use_effect(move || {
         if let Some(date) = displayed() {
-            view_date.set(date);
+            view_date.set(Some(date));
         }
     });
 
@@ -969,7 +972,7 @@ pub fn DatePickerCalendar(props: DatePickerCalendarProps<CalendarProps>) -> Elem
             view_date: view_date(),
             on_view_change: move |date| {
                 base_ctx.dwell.cancel();
-                view_date.set(date);
+                view_date.set(Some(date));
             },
             today: props.today,
             disabled: props.disabled,
@@ -1025,11 +1028,11 @@ pub fn DateRangePickerCalendar(props: DatePickerCalendarProps<RangeCalendarProps
 
     #[allow(non_snake_case)]
     let RangeCalendar = props.calendar;
-    let mut view_date = use_signal(|| props.today);
+    let mut view_date = use_signal(|| (props.view_date)());
     let displayed = ctx.staging.displayed;
     use_effect(move || {
         if let Some(r) = displayed() {
-            view_date.set(r.start());
+            view_date.set(Some(r.start()));
         }
     });
 
@@ -1055,7 +1058,7 @@ pub fn DateRangePickerCalendar(props: DatePickerCalendarProps<RangeCalendarProps
             view_date: view_date(),
             on_view_change: move |date| {
                 base_ctx.dwell.cancel();
-                view_date.set(date);
+                view_date.set(Some(date));
             },
             today: props.today,
             disabled: props.disabled,
@@ -1631,7 +1634,7 @@ pub struct DatePickerSeparatorProps {
 pub fn DatePickerYearSegment(props: DatePickerYearSegmentProps) -> Element {
     let mut ctx = use_context::<DateElementContext>();
     let base_ctx = use_context::<BaseDatePickerContext>();
-    let today = OffsetDateTime::now_local_date();
+    let today = use_today();
     let min_year = base_ctx.enabled_date_range.start().year();
     let max_year = base_ctx.enabled_date_range.end().year();
 
@@ -1650,7 +1653,7 @@ pub fn DatePickerYearSegment(props: DatePickerYearSegmentProps) -> Element {
         DateSegment {
             index: ctx.start_index,
             value: ctx.year_value,
-            default: today.year(),
+            default: today().year(),
             on_value_change: move |value: Option<i32>| ctx.year_value.set(value),
             min: min_year,
             max: max_year,
@@ -1692,7 +1695,7 @@ fn month_bounds_for_year(
 pub fn DatePickerMonthSegment(props: DatePickerMonthSegmentProps) -> Element {
     let mut ctx = use_context::<DateElementContext>();
     let base_ctx = use_context::<BaseDatePickerContext>();
-    let today = OffsetDateTime::now_local_date();
+    let today = use_today();
     let min_date = base_ctx.enabled_date_range.start();
     let max_date = base_ctx.enabled_date_range.end();
     let min_year = min_date.year();
@@ -1725,7 +1728,7 @@ pub fn DatePickerMonthSegment(props: DatePickerMonthSegmentProps) -> Element {
         DateSegment {
             index: ctx.start_index + 1usize,
             value: ctx.month_value,
-            default: today.month() as u8,
+            default: today().month() as u8,
             on_value_change: move |value: Option<u8>| ctx.month_value.set(value),
             min: min_month,
             max: max_month,
@@ -1783,7 +1786,7 @@ fn day_bounds_for_year_month(
 pub fn DatePickerDaySegment(props: DatePickerDaySegmentProps) -> Element {
     let mut ctx = use_context::<DateElementContext>();
     let base_ctx = use_context::<BaseDatePickerContext>();
-    let today = OffsetDateTime::now_local_date();
+    let today = use_today();
     let min_date = base_ctx.enabled_date_range.start();
     let max_date = base_ctx.enabled_date_range.end();
     let min_year = min_date.year();
@@ -1805,7 +1808,7 @@ pub fn DatePickerDaySegment(props: DatePickerDaySegmentProps) -> Element {
         DateSegment {
             index: ctx.start_index + 2usize,
             value: ctx.day_value,
-            default: today.day(),
+            default: today().day(),
             on_value_change: move |value: Option<u8>| ctx.day_value.set(value),
             min: min_day,
             max: max_day,

@@ -138,6 +138,7 @@ gates=(
   "check-markdown-parser|scripts/check-markdown-parser.sh"
   "check-demo-text-locators|scripts/check-demo-text-locators.sh"
   "check-spec-at-rest|scripts/check-spec-at-rest.sh"
+  "check-render-clock|scripts/check-render-clock.sh"
   "check-spec-goto-hydrated|scripts/check-spec-goto-hydrated.sh"
   "check-dynamic-style-shorthand|scripts/check-dynamic-style-shorthand.sh"
   "check-virtual-docs-parity|scripts/check-virtual-docs-parity.sh"

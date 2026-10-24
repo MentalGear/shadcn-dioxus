@@ -11,6 +11,7 @@ Calendar {
         // The date parameter contains the selected date.
     },
     // The current view date of the calendar, which determines the month and year displayed.
+    // Leave it out to show the month of today.
     view_date,
     on_view_change: |date: CalendarDate| {
         // This callback is triggered when the view date changes.
@@ -26,6 +27,13 @@ Calendar {
 ```
 
 The styled `Calendar` and `RangeCalendar` render a complete month view by default, including the header, navigation, caption (see `caption_layout`), and date grid.
+
+## Today
+
+`today` (the day marked `data-today`) defaults to the visitor's local date, and an uncontrolled
+`view_date` to its month. Both are read after the calendar mounts (`dioxus_primitives::calendar::use_today`),
+so a page prerendered at build time shows the build day only until it hydrates, never after. Read the
+date the same way in your own code that renders it.
 
 ## Direction / RTL
 

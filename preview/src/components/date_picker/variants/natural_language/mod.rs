@@ -4,8 +4,10 @@ use crate::components::input_group::{InputGroup, InputGroupAddon, InputGroupAlig
 use crate::components::popover::{PopoverContent, PopoverRoot};
 use dioxus::prelude::*;
 use dioxus_icons::lucide::CalendarDays;
-use dioxus_primitives::{dioxus_attributes::attributes, popover::PopoverTrigger, ContentAlign};
-use time::{Date, Duration, Month, UtcDateTime, Weekday};
+use dioxus_primitives::{
+    calendar::use_today, dioxus_attributes::attributes, popover::PopoverTrigger, ContentAlign,
+};
+use time::{Date, Duration, Month, Weekday};
 
 /// shadcn's "Natural Language Picker" (`date-picker-natural-language`): a text field that
 /// understands phrases, with the calendar button INSIDE the field.
@@ -23,10 +25,20 @@ use time::{Date, Duration, Month, UtcDateTime, Weekday};
 /// `Popover`, exactly as in shadcn, which closes on select.
 #[component]
 pub fn Demo() -> Element {
-    let today = UtcDateTime::now().date();
+    // The visitor's date, read after mount (backlog row 380): the phrase in the field is parsed
+    // again when it arrives, so a prerendered page does not keep "in 2 days" from the build day.
+    let today = use_today();
     let mut text = use_signal(|| "In 2 days".to_string());
-    let mut date = use_signal(move || parse_phrase("In 2 days", today));
-    let mut view_date = use_signal(move || date().unwrap_or(today));
+    let mut date = use_signal(move || parse_phrase("In 2 days", today()));
+    let mut view_date = use_signal(move || date().unwrap_or(today()));
+    use_effect(move || {
+        if let Some(parsed) = parse_phrase(&text.peek(), today()) {
+            if *date.peek() != Some(parsed) {
+                view_date.set(parsed);
+                date.set(Some(parsed));
+            }
+        }
+    });
     let mut open = use_signal(|| false);
 
     // The trigger is the popover primitive's bare button wearing the real `Button` recipe
@@ -61,7 +73,7 @@ pub fn Demo() -> Element {
                 InputGroupInput {
                     oninput: move |e: FormEvent| {
                         let value = e.value();
-                        if let Some(parsed) = parse_phrase(&value, today) {
+                        if let Some(parsed) = parse_phrase(&value, *today.peek()) {
                             view_date.set(parsed);
                             date.set(Some(parsed));
                         }
