@@ -43,8 +43,8 @@
  *      "Keyboard Support"
  *
  *   (R6) The optional arrow-key/Home/End rows this library's own
- *   `navigation_menu.rs` cites and now implements, quoted verbatim from a
- *   session-local read of the pinned aria-practices checkout's *hybrid*
+ *   `navigation_menu.rs` cites and implements, quoted verbatim from the
+ *   pinned aria-practices checkout's *hybrid*
  *   example page (`content/patterns/disclosure/examples/
  *   disclosure-navigation-hybrid.html` -- not vendored under this file's
  *   own `playwright/oracle/reference/7e4034b/` checkout, which only carries

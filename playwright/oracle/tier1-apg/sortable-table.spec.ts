@@ -116,10 +116,9 @@ async function assertExactlyOneActiveSort(sortableHeaders: Locator, label: strin
   // `expect(...).toBeVisible()`-style call always being the first thing
   // a test does after navigating; `gotoDataTable` above has no such
   // call before this helper's `.all()`, so this is the first place in
-  // this file that actually needs one. Found by execution: two of three
-  // isolated re-runs of the DataTable "R1" case failed with "expected
-  // at least one sortable column header, Received: 0" -- not a sorting
-  // defect, a page that had not finished its first render yet.
+  // this file that actually needs one: without it the DataTable "R1" case can
+  // fail with "expected at least one sortable column header, Received: 0" --
+  // not a sorting defect, a page that has not finished its first render yet.
   await expect(sortableHeaders.first()).toBeAttached();
   const headers = await sortableHeaders.all();
   expect(headers.length, `${label}: expected at least one sortable column header`).toBeGreaterThan(0);
