@@ -225,12 +225,8 @@
   flex-direction: column;
 }
 
-/* The trigger is a ghost icon-sm Button (28px square, centred icon, no padding). */
-.dx-sidebar-trigger {
-  --dx-button-line-height: 0;
-}
-
-/* The corner radius stays the default size's `--dx-radius-lg`: three attributes put this above Button's
+/* The trigger is a ghost icon-sm Button (28px square, centred icon, no padding). Its corner radius stays
+ * the default size's `--dx-radius-lg`: three attributes put this above Button's
  * `.dx-button[data-size="icon-sm"]` rule, which also sets the slot. */
 .dx-sidebar-trigger[data-slot="sidebar-trigger"][data-size] {
   --dx-button-radius: var(--dx-radius-lg);
