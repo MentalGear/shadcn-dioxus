@@ -21,7 +21,7 @@ resolves here by id.
 | [11](backlog/done/011-phase-6-typeahead-for-menus-dq-typeahead-rs-not.md) | Phase 6 — typeahead for menus (dq typeahead.rs, not select/) | 2026-09-18 |
 | [12](backlog/done/012-phase-6-pub-mod-portal-toggle-class-prop-public.md) | Phase 6 — pub mod portal, Toggle class prop, public CalendarDayState (upstream #199) | 2026-09-18 |
 | [13](backlog/done/013-phase-6-rtl-dq-direction-rs-key-flip-concept.md) | Phase 6 — RTL (dq direction.rs + key-flip concept) | 2026-10-05 |
-| [14](backlog/done/014-nudge-dioxus-framework-issues-2962-onclose-4319.md) | Nudge Dioxus framework issues: #2962 (onclose), #4319 (dialog methods), ancestor-traversal gap (complaints.md) | 2026-10-22 |
+| [14](backlog/done/014-nudge-dioxus-framework-issues-2962-onclose-4319.md) | Nudge Dioxus framework issues: #2962 (onclose), #4319 (dialog methods), ancestor-traversal gap (the friction list) | 2026-10-22 |
 | [15](backlog/done/015-scrollbar-gutter-on-older-webkit-ios-momentum.md) | scrollbar-gutter on older WebKit + iOS momentum scroll | 2026-10-23 |
 | [16](backlog/done/016-component-candidates-new-components-from.md) | Component candidates — new components from upstream PRs, the fork network, and catalog gaps | 2026-10-19 |
 | [17](backlog/done/017-mutation-testing-cargo-mutants-scoped-to-the.md) | Mutation testing (cargo-mutants), scoped to the algorithmic modules that already carry unit tests (slider… | 2026-08-31 |

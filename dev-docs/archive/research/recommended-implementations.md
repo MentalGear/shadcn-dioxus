@@ -114,7 +114,7 @@ Not novel work: the pattern is in-tree and simply was never extended.
 
 It looks like a style preference. It isn't: **it is a documented framework limitation**, and upstream wrote it down.
 
-`complaints.md` in this repository, under *"No way to know a component or element's parent, siblings, or children"*, cites **the exact Radix line** this decision turns on:
+the friction list in `dev-docs/issues/drafts/dioxus-issue-nudges.md`, under *"No way to know a component or element's parent, siblings, or children"*, cites **the exact Radix line** this decision turns on:
 
 > Take [radix-primitives' switch](https://github.com/radix-ui/primitives/blob/6e75e117977c9e6ffa939e6951a707f16ba0f95e/packages/react/switch/src/switch.tsx#L51) as an example. It detects when the switch is in a form and creates an input so that the switch's value bubbles with the form submit event.
 
@@ -129,7 +129,7 @@ Radix's gate is `control.closest('form')` — a synchronous ancestor query avail
 
 Two things to carry over from Radix regardless: forward the **`form` attribute**, which gives users an explicit way to associate a control rendered outside its `<form>` — the deliberate escape hatch that makes the missing gate a non-issue — and forward **`required`**, which `Switch` currently drops.
 
-Revisit only if Dioxus gains ancestor awareness. That `complaints.md` entry is still open: `DioxusLabs/dioxus@main` (0.8.0-alpha.1) has no parent-traversal API, so this is a framework gap worth filing upstream rather than a decision to keep relitigating.
+Revisit only if Dioxus gains ancestor awareness. That friction-list entry is still open: `DioxusLabs/dioxus@main` (0.8.0-alpha.1) has no parent-traversal API, so this is a framework gap worth filing upstream rather than a decision to keep relitigating.
 
 ### 2. Modal dialogs — focus trap, focus restore, inertness, top layer
 
