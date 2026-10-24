@@ -363,10 +363,12 @@ test.describe("1. every prerendered page's head carries the complete stylesheet 
  * markdown: its streaming demo composes a MessageScroller, which stays `visibility: hidden` until the client reveals it.
  * table (row 343): the virtualized demo's windowed body is rendered with no rows on the server and its bottom spacer
  * shrinks once the first rows mount (740000 px -> 739334 px), like virtual_list.
+ * virtual_grid (row 309): the find-in-page variant's server markup carries the whole text layer (every cell, 3600 px
+ * tall, so find-in-page works with JavaScript off); the hydrated grid windows it like its rows.
  */
 const CLIENT_MEASURED = new Set([
   "area_chart", "avatar", "bar_chart", "carousel", "chart", "chart_tooltip", "data_table", "drag_and_drop_list", "form", "item",
-  "line_chart", "markdown", "message_scroller", "pie_chart", "progress", "resizable", "select", "table", "toast", "top_layer", "virtual_list",
+  "line_chart", "markdown", "message_scroller", "pie_chart", "progress", "resizable", "select", "table", "toast", "top_layer", "virtual_grid", "virtual_list",
 ]);
 
 /**
