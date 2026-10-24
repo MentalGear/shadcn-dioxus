@@ -1,0 +1,1 @@
+.dx-skeleton{border-radius:var(--dx-skeleton-radius,var(--dx-radius-md));background-color:var(--dx-muted);animation:2s cubic-bezier(.4,0,.6,1) infinite dx-skeleton-pulse}:where(.dx-skeleton){width:var(--dx-skeleton-width,auto);height:var(--dx-skeleton-height,auto);flex:var(--dx-skeleton-flex,0 1 auto)}@keyframes dx-skeleton-pulse{0%,to{opacity:1}50%{opacity:.5}}
