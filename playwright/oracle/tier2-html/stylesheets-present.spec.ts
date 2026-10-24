@@ -5,7 +5,7 @@
  * `document.styleSheets` -- a stylesheet only participates in the cascade once its `<link>` is in the
  * document and loaded, and a rule that is not in `document.styleSheets` styles nothing.
  *
- * WHAT THIS GUARDS (found by execution, 2026-10-04): every component wrapper in `preview/src/components`
+ * WHAT THIS GUARDS: every component wrapper in `preview/src/components`
  * ships its own CSS with a `document::Link { rel: "stylesheet", href: asset!(..) }`. Dioxus 0.7.9
  * (`dioxus-document/src/elements/link.rs:123-137`) records the href in a de-duplication set while the
  * component RENDERS, but the web document only appends the `<link>` from an effect queued on the Link's
@@ -14,9 +14,9 @@
  * in the same turn it first rendered (the legacy `/component/?name=X` shell renders `Navbar`, then its
  * own `use_effect` redirects to `/component/X/`), its links are NEVER inserted, yet the set still says
  * "present" -- and every later `Popover`/`Button`/`LanguageSelect` on that page is silently skipped. The
- * page then renders the component with no CSS (the theme picker's popover panel computed `border 3px /
- * radius 0` instead of `1px / 10px`; `language-select-*.css` never loaded). Row 46's lost
- * `main.css`/`dx-components-theme.css` after a redirect was the same defect.
+ * page then renders the component with no CSS (the theme picker's popover panel computes `border 3px /
+ * radius 0` instead of `1px / 10px`; `language-select-*.css` never loads). Row 46's `main.css`/
+ * `dx-components-theme.css` lost after a redirect is the same defect.
  *
  * THE ORACLE, by property rather than by instance: on a fresh load of a sample of every route type, and
  * again with the theme picker's popover open (it mounts `Popover`/`Button` inside the header), every
@@ -196,7 +196,7 @@ const ROUTES: { url: string; settled?: RegExp }[] = [
   { url: "/component/popover/" },
   { url: "/component/button/" },
   // The legacy query-string routes: they render the shell, then redirect, which is the teardown that
-  // used to lose the header's stylesheets.
+  // loses the header's stylesheets when nothing guards it.
   { url: "/component/?name=popover&", settled: /\/component\/popover\// }, // legacy-route-ok: this test IS the legacy redirect
   { url: "/component/?name=select&", settled: /\/component\/select\// }, // legacy-route-ok: this test IS the legacy redirect
   // The block demos render inside the docs page's iframe, outside the docs layout: their own document,
@@ -212,7 +212,7 @@ test("the class -> stylesheet map is not empty (the sources were found)", () => 
   expect(DEFS["dx-popover-content"], "popover's panel class is owned by popover/style.css").toEqual([
     path.join("src", "components", "popover", "style.css"),
   ]);
-  // Not button: `main.css` leads two rules with `.dx-button` (the dark-mode toggle, c7a52a9c), so no class tells button/style.css apart.
+  // Not button: `main.css` leads two rules with `.dx-button` (the dark-mode toggle), so no class tells button/style.css apart.
   for (const sheet of ["src/components/popover/style.css", "src/components/tabs/style.css"]) {
     const { marks, leads } = FINGERPRINTS[path.normalize(sheet)];
     expect(marks.length + leads.length, `${sheet} can be told apart from every other sheet`).toBeGreaterThan(0);
@@ -292,7 +292,7 @@ test("the oracle is not vacuous: a component stylesheet missing from the page is
 });
 
 test("the theme picker's popover panel is styled on the legacy component route", async ({ page }) => {
-  // The symptom the popover lane saw: on `/component/?name=...` the panel computed border 3px /
+  // The symptom: on `/component/?name=...` the panel computed border 3px /
   // radius 0 (the UA `<dialog>`-ish default) instead of the themed 1px / 10px it has on `/`.
   const panel = async (url: string, settled?: RegExp) => {
     // goto-ok: stylesheet-presence oracle samples at domcontentloaded and across the redirect; no interaction

@@ -28,7 +28,7 @@
  * library's demos against the prose, not to re-run the calibration that file
  * already owns.
  *
- * Design (task brief, "keyboard matrix oracle"): assert behaviour (open
+ * Design ("keyboard matrix oracle"): assert behaviour (open
  * state via data-state/aria-expanded/visibility, focus via
  * document.activeElement comparisons, aria-activedescendant), not
  * implementation details. Every test is titled
@@ -97,11 +97,11 @@ test.describe("APG Menu Button pattern — DropdownMenu trigger", () => {
     await page.keyboard.press("Enter");
 
     // Split assertion on purpose -- the two halves of the APG requirement
-    // diverge here (see file header + report): the menu DOES open...
+    // diverge here (see file header): the menu DOES open...
     await expect(trigger, "Enter must open the menu").toHaveAttribute("data-state", "open");
     // ...but focus does not move to the first item as APG requires. Asserting
     // the APG requirement directly (not the observed behaviour) so the gap
-    // shows up as a red, per this file's brief ("reds are the deliverable").
+    // shows up as a red ("reds are the deliverable").
     // Source: primitives/src/dropdown_menu.rs DropdownMenu::handle_keydown's
     // Key::Enter arm only toggles `open`; it never calls
     // `ctx.focus.focus_first()` the way the ArrowDown arm does.
@@ -486,9 +486,8 @@ test.describe("APG Menu and Menubar pattern — Menubar", () => {
 // keyboard-driven opening (ArrowDown/ArrowUp move focus into the open
 // content exactly the way Menubar's do), so a keyboard user who arrows into
 // an open nav and presses Escape faces exactly the same "where does focus
-// go" question Menubar already answers -- and no test asserted either
-// behavior before this fix (checked: no Escape case existed in this file or
-// in navbar.spec.ts).
+// go" question Menubar already answers -- and the Escape cases below, with
+// navbar.spec.ts, assert it.
 // ============================================================================
 test.describe("APG Menu and Menubar pattern — Navbar nav dropdowns", () => {
   test.beforeEach(async ({ page }) => {
@@ -527,21 +526,20 @@ test.describe("APG Menu and Menubar pattern — Navbar nav dropdowns", () => {
 // focus-restore-reference.spec.ts, which documents that page's DOM-focus-
 // stays-on-combobox/aria-activedescendant technique).
 //
-// UPDATED ROLE CAVEAT (dev-docs/backlog.md row 8, was "IMPORTANT ROLE CAVEAT"):
-// this library's SelectTrigger now carries role="combobox" with
+// ROLE CAVEAT (dev-docs/backlog.md row 8):
+// this library's SelectTrigger carries role="combobox" with
 // aria-haspopup="listbox"/aria-expanded/aria-controls/aria-autocomplete=none
 // (and aria-required when the Select is required) -- see
 // select-only-combobox.spec.ts's R1/R2 for the dual-subject-calibrated
-// conformance rules this restores. What remains a DELIBERATE divergence from
-// the pattern (kept intentionally, per that row's own brief -- "keep this
-// repo's existing focus model, do NOT switch to aria-activedescendant"):
+// conformance rules for the roles. The DELIBERATE divergence from
+// the pattern (row 8's rule: "keep this repo's existing focus model, do NOT
+// switch to aria-activedescendant"):
 // SelectList still uses real roving DOM focus on role="option" children,
 // not the reference example's aria-activedescendant technique
 // (focus-restore-reference.spec.ts documents that page's own technique).
-// So "Select" carries the combobox pattern's *roles* now, but not its
-// activedescendant focus-management technique -- graded here (as before)
-// because the task and the live bug report both name it as this library's
-// stand-in for the pattern.
+// So "Select" carries the combobox pattern's *roles*, but not its
+// activedescendant focus-management technique -- graded here because it is
+// this library's stand-in for the pattern.
 // ============================================================================
 test.describe("APG Combobox pattern (select-only) — Select trigger", () => {
   const trigger = (page: Page) =>
@@ -690,8 +688,8 @@ test.describe("APG Combobox pattern (select-only) — Select trigger", () => {
 // This component IS built with role="combobox" + aria-activedescendant
 // (input.rs) -- the correct APG technique -- unlike Select above. Rows below
 // are lighter-weight than Select's because combobox.spec.ts already covers
-// this component in depth; this file adds only the matrix rows the task
-// asks for, titled per this file's convention.
+// this component in depth; this file adds only the matrix rows, titled per
+// this file's convention.
 // ============================================================================
 test.describe("APG Combobox pattern (editable) — Combobox", () => {
   const input = (page: Page) => demoRole(page, "combobox");
@@ -888,7 +886,7 @@ test.describe("APG Alert Dialog pattern — AlertDialog", () => {
 // The pattern permits either automatic activation (arrow moves = activates)
 // or manual ("Space or Enter: Activates the tab if it was not activated
 // automatically on focus"). Which mode a component implements must be
-// recorded, per the task brief.
+// recorded.
 // ============================================================================
 test.describe("APG Tabs pattern — Tabs", () => {
   const activeTabPanel = (page: Page) =>
@@ -1173,7 +1171,7 @@ test.describe("APG Slider pattern — Slider", () => {
 // this library models it as a hover/focus-triggered popup sharing role
 // "tooltip" with Tooltip and an almost identical show-on-focus/hide-on-blur
 // mechanism (hover_card.rs), so it is graded against the same pattern class
-// the task brief names it under.
+// the matrix names it under.
 // ============================================================================
 test.describe("APG Tooltip pattern — Tooltip", () => {
   test("Tooltip trigger — focus: tooltip becomes visible", async ({ page }) => {
@@ -1211,36 +1209,23 @@ test.describe("Tooltip-class pattern — HoverCard (no dedicated APG pattern; gr
 
     await page.keyboard.press("Escape");
 
-    // UPDATED (dev-docs/backlog.md rows 19/7 integration round): this row's
-    // title/this comment used to say HoverCard has no keydown handler at
-    // all -- stale even before rows 19/7. `HoverCardTrigger`'s own
-    // `handle_keydown` (primitives/src/hover_card.rs) already closes on
-    // Key::Escape, matching `tooltip.rs`'s `handle_keydown` exactly (a
-    // separate, earlier fix; not this round's). Graded against Tooltip's
-    // own APG citation ("Escape: Dismisses the Tooltip"), which this
-    // same-class control does match.
+    // `HoverCardTrigger`'s own `handle_keydown` (primitives/src/hover_card.rs)
+    // closes on Key::Escape, matching `tooltip.rs`'s `handle_keydown`
+    // exactly. Graded against Tooltip's own APG citation ("Escape:
+    // Dismisses the Tooltip"), which this same-class control matches.
     //
-    // No fixed `waitForTimeout` before this assertion (there used to be
-    // one, 200ms): `toHaveCount` already polls up to its own timeout below,
-    // and a fixed pre-wait was never anything but an extra, now-actively-
-    // misleading delay tuned to the PRE-row-19 bug -- `use_popover_sync`
-    // used to call `hidePopover()` the instant `open` went false, hiding
-    // this content via the UA's `display: none` rule before
-    // `use_animated_open`'s close animation ever got a chance to play, so
-    // the card unmounted in ~1 animation frame regardless of any real
-    // animation duration. `use_popover_shown_while_mounted` (row 19) fixed
-    // that: this Escape now correctly holds the card mounted through its
-    // real CSS close animation (`--dx-motion-duration-fast`, 100ms) plus a
-    // 250ms settle hold (`use_animated_open`'s own doc, primitives/src/
-    // lib.rs) before it actually unmounts -- correct, intended behaviour,
-    // not a regression, but real wall-clock time `toHaveCount`'s poll must
-    // be given room for. An explicit, generous timeout here (not just the
-    // default 5000ms) documents that intent rather than leaving it
-    // implicit; measured at ~350ms unloaded and ~750ms even under 20x CPU
-    // throttling (CDP `Emulation.setCPUThrottlingRate`) in this session's
-    // own reproduction, so 3000ms is comfortable margin, not a loosened
-    // requirement -- the row still requires genuine dismissal, same as
-    // before.
+    // No fixed `waitForTimeout` before this assertion: `toHaveCount` polls
+    // up to its own timeout below. `use_popover_shown_while_mounted` (row 19)
+    // keeps the card mounted through its real CSS close animation
+    // (`--dx-motion-duration-fast`, 100ms) plus a 250ms settle hold
+    // (`use_animated_open`'s own doc, primitives/src/lib.rs) before it
+    // unmounts -- real wall-clock time `toHaveCount`'s poll must be given
+    // room for. An explicit, generous timeout here (not just the default
+    // 5000ms) documents that intent rather than leaving it implicit; the
+    // close takes ~350ms unloaded and ~750ms even under 20x CPU throttling
+    // (CDP `Emulation.setCPUThrottlingRate`), so 3000ms is comfortable
+    // margin, not a loosened requirement -- the row still requires genuine
+    // dismissal.
     await expect(
       card,
       "Graded against Tooltip's own APG citation (\"Escape: Dismisses the " +
@@ -1270,9 +1255,8 @@ test.describe("APG Menu pattern (context-menu invocation) — ContextMenu", () =
     // is no Shift+F10/keydown handling anywhere in the primitive. This
     // passes only because Chromium itself synthesizes a native
     // `contextmenu` DOM event for Shift+F10 (and the keyboard "Menu" key),
-    // which `oncontextmenu` then picks up for free -- confirmed empirically,
-    // not inferred from the source, since the source alone would predict a
-    // fail here.
+    // which `oncontextmenu` then picks up for free (observed in the
+    // browser; the source alone would predict a fail here).
     await expect(page.getByRole("menu")).toBeVisible();
   });
 

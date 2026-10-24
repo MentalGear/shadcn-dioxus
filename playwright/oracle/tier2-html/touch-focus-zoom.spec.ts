@@ -54,47 +54,44 @@
  * test fails, every other test in this file is meaningless (wrong tool),
  * not a component defect.
  *
- * Enumeration (docs/plan.md-style oracle prep, 2026-09-02): every
- * `preview/src/components/*` route was visited at this viewport with a
- * one-off script (not part of this suite) to answer "what else does this"
- * before this file was written. Findings, verbatim (RED on the tree before
- * this file's paired fix commit):
+ * Inventory of the text-entry surfaces SELECTOR must cover: every
+ * `preview/src/components/*` route at this viewport, each of which must
+ * compute a font-size of at least 16px.
  *
- *   - `Combobox` (`combobox/style.css`, "Switch workspace" widget included)
- *     -- 0.875rem (14px). THEMED component gap.
+ *   - `Combobox` (`combobox/style.css`, "Switch workspace" widget included):
+ *     a themed component, so the floor is the component's own to declare.
  *   - The navbar's language `<select class="dx-language-select">`, present
- *     on every single route -- 13.3333px (Chromium's UA default for
- *     unstyled form controls, which do not inherit `body`'s font-size the
- *     way ordinary text does). RAW element, app-wide.
+ *     on every single route: Chromium's UA default for unstyled form
+ *     controls is 13.3333px (they do not inherit `body`'s font-size the
+ *     way ordinary text does), so it declares its own floor. A RAW
+ *     element, app-wide.
  *   - `top_layer`'s two background-inertness probe inputs
  *     (`#dialog-inert-bg-input`, `#popover-modal-inert-bg-input`) and its
  *     clip-fixture Combobox-primitive trigger (`#clip-combobox-trigger`,
- *     `type="text"`) -- 13.3333px. RAW elements (this fixture composes
+ *     `type="text"`): RAW elements (this fixture composes
  *     `dioxus_primitives::` directly, per its own header comment; see
- *     `dev-docs/preview-composition.md`).
+ *     `dev-docs/preview-composition.md`), so they carry the floor
+ *     themselves.
  *   - `form`'s two native-reference `<select>` elements (`#fruit-native`,
- *     `#fruit-required-native`) -- 13.3333px. RAW elements, deliberately
- *     (they exist *as* the tier-2 form-participation native control).
+ *     `#fruit-required-native`): RAW elements, deliberately (they exist
+ *     *as* the tier-2 form-participation native control).
  *   - `Calendar`'s month/year navigation -- `.dx-calendar-month-select`/
  *     `.dx-calendar-year-select`, an invisible (`opacity: 0`) native
  *     `<select>` overlaid on the visible `-value` span, the standard
  *     construction for a styled select whose native picker a touch device
- *     should still open on tap -- 13.3333px. THEMED component gap (found
- *     by execution; not visible from a `grep` for `input`, since it is a
- *     `select`).
+ *     should still open on tap. A themed component, easy to miss in a
+ *     `grep` for `input` since it is a `select`.
  *   - Dashboard email client's inline reply box,
- *     `.ec-thread-compose-row [data-slot="textarea"]` -- 15px (0.9375rem),
- *     an app-specific override in `email_client.css` whose specificity
- *     beats the themed `Textarea`'s own `.dx-textarea` floor. THEMED
- *     component (`Textarea`) + app-layer override gap, needing its own fix
- *     in `email_client.css` (component-layer alone does not win the
- *     cascade here).
- *   - Already passing at 16px: `Input`, `Textarea` everywhere else,
+ *     `.ec-thread-compose-row [data-slot="textarea"]`: an app-specific
+ *     override in `email_client.css` whose specificity beats the themed
+ *     `Textarea`'s own `.dx-textarea` floor, so the floor has to hold in
+ *     `email_client.css` too (the component layer alone does not win the
+ *     cascade there).
+ *   - At 16px by default: `Input`, `Textarea` everywhere else,
  *     `DatePicker`'s `contenteditable` segments (inherit the page's
- *     unset-so-16px default -- no bug found, but given an explicit floor
- *     anyway; see that component's `style.css` comment), and every raw
- *     checkbox/radio input in `form` (excluded by SELECTOR: these are not
- *     text-entry).
+ *     unset-so-16px default, with an explicit floor anyway; see that
+ *     component's `style.css` comment), and every raw checkbox/radio input
+ *     in `form` (excluded by SELECTOR: these are not text-entry).
  *   - Not applicable (no text-entry element exists at all, or the one that
  *     does is never user-focusable so the platform behaviour cannot
  *     trigger): `Select`'s visible trigger is a `<button>`, but it does
@@ -136,7 +133,7 @@ const BASE = BASE_URL;
 // Excluded `input` types are never rendered as a zoomable text caret on
 // iOS (checkbox/radio/range paint their own control; button/submit/reset
 // are buttons; color/file open their own picker UI; hidden is invisible).
-// `[tabindex="-1"]` is excluded too, found by execution: `Select`'s hidden
+// `[tabindex="-1"]` is excluded too: `Select`'s hidden
 // native `<select data-slot="select-native">` (the "BubbleSelect" form-
 // participation pattern, dev-docs/plan.md Phase 1.3) sets it alongside
 // `pointer-events: none` and `opacity: 0`, so a real user can never tab or
@@ -246,35 +243,33 @@ test.describe("overlay-gated elements (coarse pointer, desktop-width viewport)",
 
   // axe (static rules) -- no component spec reaches /dashboard/email-client
   // at all (it's a full dashboard demo, not a component gallery page), so
-  // both its default and compose-open states are new coverage here, per
-  // dev-docs/backlog.md row 34.
+  // both its default and compose-open states are covered here
+  // (dev-docs/backlog.md row 34).
   //
-  // Fixed 2026-09-04 (dev-docs/backlog.md row 38): this page's own embedded
+  // Sidebar landmark (dev-docs/backlog.md row 38): this page's own embedded
   // sidebar (`EmailSidebar`, `dashboard/views/email_client/sidebar.rs`)
   // renders the themed `Sidebar` directly, not through the `/component/
-  // block/` route -- but shared the same underlying defect the block route
-  // had (`sidebar.spec.ts`'s own axe tests): `Sidebar`'s content rendered
-  // as a plain, unlandmarked `<div>`, so axe's `region` rule flagged it
-  // here too even though this page already has its own `<h1>` (`ec-title`)
-  // and `<main>` (`SidebarInset`). Fixed at the shared source -- `Sidebar`
-  // now renders a `complementary` landmark (`preview/src/components/
-  // sidebar/component.rs`) -- rather than duplicated per call site.
+  // block/` route, so it shares the block route's axe requirement
+  // (`sidebar.spec.ts`'s own axe tests): `Sidebar` renders a
+  // `complementary` landmark (`preview/src/components/sidebar/component.rs`),
+  // otherwise axe's `region` rule flags its content even though this page
+  // has its own `<h1>` (`ec-title`) and `<main>` (`SidebarInset`). The
+  // landmark lives at the shared source, not per call site.
   //
-  // Fixed 2026-09-04 (dev-docs/backlog.md row 37): each message row
+  // Message rows (dev-docs/backlog.md row 37): each message row
   // (`ListPane`'s `MessageRow`, `dashboard/views/email_client/list_pane.rs`)
-  // used to render `role="button"` on a `div` that also contained its own
+  // must not be a `role="button"` on a `div` that also contains its own
   // further-interactive controls (star/trash toggles) -- a button
-  // containing buttons, which axe's `nested-interactive` rule flagged (6
-  // nodes: 3 rows x their star/trash toggles). Restructured so the
+  // containing buttons, which axe's `nested-interactive` rule flags. The
   // accessibility tree sees one primary action plus sibling toggles
-  // instead: the row container (`Item`) is a plain div again (no `role`,
-  // no `tabindex`), the row's "open thread" action is now a real
+  // instead: the row container (`Item`) is a plain div (no `role`,
+  // no `tabindex`), the row's "open thread" action is a real
   // `<button>` (`.ec-row-open`) wrapping the subject/sender/snippet/tags
   // with an explicit `aria-label` (sender + subject -- the implicit name
   // from its content, which includes the full message-preview snippet,
-  // would be unusably long), and the star/trash toggle buttons stay
+  // would be unusably long), and the star/trash toggle buttons are
   // direct siblings of that button rather than descendants. Both scans
-  // below now expect a fully clean axe run.
+  // below expect a fully clean axe run.
   test("dashboard email client: default state has no automatically detectable a11y issues", async ({ page }) => {
     await gotoHydrated(page, `${BASE}/dashboard/email-client?`, { timeout: 60000 });
     // Wait for the inbox list to actually render before scanning, rather

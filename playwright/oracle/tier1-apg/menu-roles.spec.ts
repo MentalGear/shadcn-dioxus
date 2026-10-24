@@ -98,28 +98,21 @@
  * no menu ever contains the standalone `checkbox`/`radio`/`option`/`listbox`
  * roles (a menu's checkable items are `menuitemcheckbox`/`menuitemradio`).
  *
- * SCOPE NOTE, found verifying this file (contradicts nothing in the
- * contract above, but narrows what is asserted where): `ContextMenu`'s and
- * `Menubar`'s submenu popups carry no aria-labelledby/aria-label at all
- * (`primitives/src/context_menu.rs`, `primitives/src/menubar.rs` -- grepped,
- * zero matches), unlike `DropdownMenu`'s, which does. That is a real,
- * pre-existing accessible-name gap distinct from the listbox/option defect
- * this file's DropdownMenu rows exist to catch (`dev-docs/backlog.md` row 24) --
- * filed as a fresh backlog candidate, not asserted here, so as not to turn
- * an unrelated, already-latent gap into a manufactured red on components
- * this task is not fixing. Likewise, `Menubar`'s own top-level
- * `MenubarTrigger` ("File"/"Edit") has neither aria-haspopup nor
- * aria-expanded at all (grepped, zero matches) despite being the "parent
- * menuitem" the Menu and Menubar prose above requires both of -- also a
- * real, separate, pre-existing gap, so the trigger-contract assertions
- * below run only against DropdownMenu and ContextMenu, whose triggers do
- * carry `aria-haspopup` today; the Menubar describe block asserts the
+ * SCOPE NOTE (narrows what is asserted where, contradicts nothing in the
+ * contract above): `Menubar`'s own top-level `MenubarTrigger`
+ * ("File"/"Edit") has neither aria-haspopup nor aria-expanded
+ * (zero matches in `primitives/src/menubar.rs`) despite being the "parent
+ * menuitem" the Menu and Menubar prose above requires both of -- a
+ * separate gap from the listbox/option defect this file's DropdownMenu rows
+ * exist to catch (`dev-docs/backlog.md` row 24), so the trigger-contract
+ * assertions below run only against DropdownMenu and ContextMenu, whose
+ * triggers carry `aria-haspopup`; the Menubar describe block asserts the
  * popup/item role contract only. `NavbarTrigger` (`primitives/src/
- * navbar.rs`) has the identical gap for the identical reason: it is the
- * same "parent menuitem" role, in the same pattern, as `MenubarTrigger`, and
- * carries neither `aria-haspopup` nor `aria-expanded` either (grepped for
- * "haspopup"/"expanded", zero matches) -- so the Navbar describe block below
- * asserts the same popup/item role contract only, not a trigger contract.
+ * navbar.rs`) has the same gap for the same reason: it is the same "parent
+ * menuitem" role, in the same pattern, as `MenubarTrigger`, and carries
+ * neither `aria-haspopup` nor `aria-expanded` either (zero matches for
+ * "haspopup"/"expanded") -- so the Navbar describe block below asserts the
+ * same popup/item role contract only, not a trigger contract.
  */
 
 import { test, expect } from "../../fixtures";
@@ -317,7 +310,7 @@ test.describe("APG Menu Button pattern — DropdownMenu", () => {
           "model on this component at all",
       ).toBeNull();
     }
-    // Negative check: the old listbox contract must be fully gone.
+    // Negative check: the listbox contract must be fully absent.
     await expect(page.locator('[role="listbox"]'), "no role=\"listbox\" left").toHaveCount(0);
     await expect(page.locator('[role="option"]'), "no role=\"option\" left").toHaveCount(0);
   });
@@ -344,9 +337,9 @@ test.describe("APG Menu pattern (context-menu invocation) — ContextMenu", () =
     const menu = page.getByRole("menu");
     await expect(menu).toHaveAttribute("data-state", "open");
     // dev-docs/backlog.md row 53: `ContextMenuContentRendered`'s aria-labelledby
-    // now comes from the shared `menu_root::content_labelledby_attributes`
+    // comes from the shared `menu_root::content_labelledby_attributes`
     // helper (same construction as DropdownMenu's identical assertion
-    // above) -- asserted here so a future drift between the two hosts'
+    // above) -- asserted here so a drift between the two hosts'
     // shared plumbing shows up as a red test, not a silent divergence.
     await expect(menu, "popup's aria-labelledby resolves to the trigger's id").toHaveAttribute(
       "aria-labelledby",
@@ -385,9 +378,9 @@ test.describe("APG Menu and Menubar pattern — Menubar submenus", () => {
     const fileMenu = page.locator(".dx-menubar-content");
     await expect(fileMenu).toHaveAttribute("data-state", "open");
     // dev-docs/backlog.md row 53: `MenubarContentRendered`'s aria-labelledby
-    // now comes from the shared `menu_root::content_labelledby_attributes`
+    // comes from the shared `menu_root::content_labelledby_attributes`
     // helper too (same construction as DropdownMenu's/ContextMenu's
-    // identical assertions above) -- asserted here so a future drift
+    // identical assertions above) -- asserted here so a drift
     // between the three hosts' shared plumbing shows up as a red test.
     await expect(
       fileMenu,

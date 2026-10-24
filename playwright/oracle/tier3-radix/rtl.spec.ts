@@ -7,20 +7,18 @@
  * shadcn/ui) supports it -- dev-docs/backlog.md row 13, dev-docs/plan.md
  * Phase 6. Every rule below cites the specific Radix source file, and the
  * exact line range, its assertion is drawn from, pinned to
- * `radix-ui/primitives` commit `f7ecd5ab16f5e1e820eb5786a1419a98a2d594ae`
- * (the commit this lane cloned and read from -- see this lane's own
- * `$S/batch3/rtl-rust/reference.md` for the full per-component derivation
- * table). Two components here (Resizable, Calendar) have no Radix/shadcn-
+ * `radix-ui/primitives` commit `f7ecd5ab16f5e1e820eb5786a1419a98a2d594ae` history-ok: pinned upstream revision.
+ * Two components here (Resizable, Calendar) have no Radix/shadcn-
  * with-Radix-primitive original to cite at all (shadcn's own versions wrap
  * `react-resizable-panels`/`react-day-picker`, neither a Radix primitive) --
  * their rules are labelled as an extrapolation from the unanimous pattern
  * every other rule below establishes, not a citation, consistent with this
  * tier's own "read as a proposal" policy.
  *
- * FIXTURE DECISION (resolves dev-docs/conformance-harness.md's queue item 8,
+ * FIXTURE DECISION (dev-docs/conformance-harness.md's queue item 8,
  * "no RTL fixture exists," and dev-docs/backlog.md row 13's "waits on an RTL
  * fixture decision"): one `rtl` variant page per RTL-aware component
- * (`/component/?name=<x>&variant=rtl&`), whose `Demo` sets `dir="rtl"` on
+ * (`/component/<x>/`, variant `rtl`), whose `Demo` sets `dir="rtl"` on
  * its own root element and wraps its primitives in
  * `DirectionProvider { direction: Direction::Rtl, ... }` -- see any of
  * `preview/src/components/<name>/variants/rtl/mod.rs` for the exact shape.
@@ -31,18 +29,18 @@
  * override, so this also exercises the "falls back to context" half of
  * `use_direction`'s contract, not just the "local override wins" half
  * (which `primitives/src/direction.rs`'s own unit tests already cover).
- * Every RTL-aware component also has a `main` variant (already existed,
- * unmodified by this lane) that stays LTR -- used below as this file's own
- * control group, proving the LTR default is unchanged by this work.
+ * Every RTL-aware component also has a `main` variant that stays LTR --
+ * used below as this file's own control group, proving the LTR default
+ * is unchanged by the RTL work.
  *
  * WHY TIER 3, NOT TIER 1/2: `@radix-ui/react-direction` and every
  * component's own `useDirection` consumption is Radix's own design, not a
  * W3C/APG requirement -- APG's own keyboard-interaction prose is written
  * assuming a single (implicitly LTR) reading direction and says nothing
- * about RTL mirroring anywhere this lane found. This tier's rule-source
+ * about RTL mirroring. This tier's rule-source
  * policy fits exactly: "useful only where the standards are silent."
  *
- * SCOPING -- READ BEFORE EDITING (found live, the hard way): every variant
+ * SCOPING -- READ BEFORE EDITING: every variant
  * of a "Normal"-kind component renders on the SAME page at once, `main`
  * inside the page's own top section and every other variant (including
  * "rtl") inside a separate, always-mounted "Examples" section further down
@@ -51,7 +49,7 @@
  * bare, unscoped `page.getByRole(...)`/`getByText(...)` therefore risks a
  * Playwright strict-mode violation (it matches more than one element) the
  * moment a component has more than one variant -- which every RTL-aware
- * component now does. `ComponentVariantHighlight` already solves exactly
+ * component does. `ComponentVariantHighlight` solves exactly
  * this for its own frame element: `id="component-preview-frame"` for
  * `main`, `id="component-preview-frame-<variant name>"` for every other
  * variant (see that function's own doc comment in main.rs) -- unique
@@ -65,50 +63,40 @@
  *
  * A second, independent scoping issue: a submenu's own content
  * (`DropdownMenuSubContent`/`ContextMenuSubContent`) renders NESTED inside
- * its root menu's content in the DOM (confirmed live via `scripts/
- * inspect.mjs`: `rootContent.contains(subContent) === true`, no portal
- * relocation), so once a submenu is open, `role="menu"` matches *two*
- * elements and a `.filter({ hasText: "..." })` on the sub-item's own text
- * matches *both* (the root's own `textContent` includes its submenu's,
- * since it's a descendant) -- another strict-mode violation, this one
+ * its root menu's content in the DOM (`rootContent.contains(subContent)
+ * === true`, no portal relocation), so once a submenu is open, `role="menu"`
+ * matches *two* elements and a `.filter({ hasText: "..." })` on the
+ * sub-item's own text matches *both* (the root's own `textContent` includes
+ * its submenu's, since it's a descendant) -- another strict-mode violation,
  * present even for a single variant in isolation. `subContentFor()` below
  * resolves it the ARIA-idiomatic way: every sub-trigger carries its own
- * `aria-controls` pointing at its own submenu's `id` (confirmed live via
- * `scripts/inspect.mjs`), so the submenu is looked up by that id rather
- * than by role+text.
+ * `aria-controls` pointing at its own submenu's `id`, so the submenu is
+ * looked up by that id rather than by role+text.
  *
  * A third, related issue -- not a scoping bug in this file, but in the
  * fixtures it drives -- is documented on each affected
  * `preview/src/components/<name>/variants/rtl/mod.rs`'s own doc comment:
- * several RTL fixtures were originally written reusing the `main`
- * variant's own visible labels
- * verbatim (the natural choice for an apples-to-apples LTR/RTL
- * comparison), which is exactly the condition the first scoping issue
- * above describes for every *pre-existing* spec that queries those labels
- * by name -- confirmed live, this broke 101 assertions across
- * `tabs.spec.ts`, `radio-group.spec.ts`, `toggle_group.spec.ts`,
- * `menubar.spec.ts`, `navbar.spec.ts`, `dropdown-menu.spec.ts`,
- * `context-menu.spec.ts`, `select.spec.ts`, and the shared
+ * an RTL fixture that reuses the `main` variant's visible labels verbatim
+ * (the natural choice for an apples-to-apples LTR/RTL comparison) is
+ * exactly the condition the first scoping issue above describes for every
+ * other spec that queries those labels by name -- `tabs.spec.ts`,
+ * `radio-group.spec.ts`, `toggle_group.spec.ts`, `menubar.spec.ts`,
+ * `navbar.spec.ts`, `dropdown-menu.spec.ts`, `context-menu.spec.ts`,
+ * `select.spec.ts`, and the shared
  * `oracle/tier1-apg/{keyboard-matrix,menu-roles,menu-submenu}.spec.ts`
- * (all strict-mode violations, `grep -c "strict mode violation"` equal to
- * the failure count exactly -- no other failure cause was present). Fixed
- * at the fixture level (giving each affected RTL fixture's labels its own,
- * non-colliding words) rather than in those spec files, which are out of
- * this lane's editable scope and need no changes of their own. This is a
- * *mitigation* within that scope, not the class fix: the root cause is
- * architectural (`ComponentHighlight` in `preview/src/main.rs`, out of
- * this lane's editable scope, renders every variant unconditionally with
- * no isolation between them, unlike the iframe-isolated `/component/
- * block/` route Block-kind components already get), so the same collision
- * can recur for any *future* variant of any component, added by any future
- * lane, that happens to reuse another variant's visible text -- this fix
- * subsumes only the 13 fixtures this lane itself authored, not that
- * general risk. See this lane's own final report for the fuller account.
+ * would all hit strict-mode violations. So each RTL fixture's labels use
+ * their own, non-colliding words rather than touching those spec files.
+ * This is a *mitigation*, not the class fix: the root cause is
+ * architectural (`ComponentHighlight` in `preview/src/main.rs` renders
+ * every variant unconditionally with no isolation between them, unlike the
+ * iframe-isolated `/component/block/` route Block-kind components get), so
+ * the same collision can recur for any variant of any component that
+ * reuses another variant's visible text.
  *
- * RESOURCE GATE: run against this lane's own dev server (port 8110, see
- * this lane's own final report for the exact `dx serve` invocation) --
- * `PLAYWRIGHT_BASE_URL=http://127.0.0.1:8110` retargets every test below
- * via `BASE_URL`, imported (not a local literal) since this is a new file.
+ * Retarget the whole file at another server with `PLAYWRIGHT_BASE_URL`
+ * (every test below goes through `BASE_URL`, imported, not a local literal).
+ */
+
  */
 
 import { test, expect } from "../../fixtures";
@@ -197,13 +185,12 @@ test.describe("Roving focus: RadioGroup", () => {
     // The `main` fixture never sets `horizontal: true` (vertical is the
     // default), so `ArrowLeft`/`ArrowRight` are not roving-focus keys for
     // it at all -- `radio_group.rs` gates that whole arm on `horizontal`
-    // (confirmed live: pressing it here leaves focus exactly where it
-    // was). The RTL fixture below sets `horizontal: true` specifically so
-    // its own Left/Right comparison is meaningful; `main`'s existing
-    // vertical Up/Down roving focus is already covered by
-    // `radio-group.spec.ts`/`keyboard-matrix.spec.ts`, so this test
-    // instead confirms the `horizontal` gate itself is unaffected by this
-    // lane's direction work.
+    // (pressing it here leaves focus exactly where it was). The RTL
+    // fixture below sets `horizontal: true` specifically so its own
+    // Left/Right comparison is meaningful; `main`'s vertical Up/Down roving
+    // focus is covered by `radio-group.spec.ts`/`keyboard-matrix.spec.ts`,
+    // so this test instead confirms the `horizontal` gate itself is
+    // unaffected by direction.
     await page.keyboard.press("ArrowLeft");
     await expect(comfortable).toBeFocused();
   });
@@ -283,7 +270,7 @@ test.describe("Roving focus: Navbar (always-horizontal trigger row)", () => {
   // `Navbar`'s own roving-tabindex root carries `role="menubar"`, and
   // clicking a trigger opens its dropdown rather than simply focusing it
   // (`data-state` doesn't even exist on the trigger the way it does on
-  // Menubar's, confirmed live) -- so, exactly like the pre-existing
+  // Menubar's) -- so, exactly like
   // `navbar.spec.ts`'s own "keyboard navigation" test, focus is
   // established by focusing the `menubar` container itself (which resolves
   // to whichever item currently owns the roving `tabindex="0"`, "Widgets"/
@@ -318,24 +305,20 @@ test.describe("Roving focus: Navbar (always-horizontal trigger row)", () => {
  * closes it and returns focus to the sub-trigger (LTR: `ArrowLeft`); the
  * submenu opens to the trigger's LEFT (LTR: right). `Escape` is not part
  * of either keyset upstream and stays direction-independent here too (this
- * crate folds it into the same close arm as a pre-existing, unrelated
+ * crate folds it into the same close arm by an unrelated
  * design choice -- see primitives/src/menu_sub.rs's
  * `is_submenu_close_arrow_key` doc).
  *
  * Each test reaches the sub-trigger by roving focus (repeated `ArrowDown`
  * from the just-opened root menu), the way a keyboard user would, exactly
- * like the pre-existing `oracle/tier1-apg/menu-submenu.spec.ts` already
- * does -- not `subTrigger.focus()`. That is not a style preference: tried
- * first, `.focus()` reproducibly reverts focus to the root trigger and
- * closes the whole menu before the following key press lands, and it does
- * so identically on the untouched `main` variant with the pre-existing
- * "More tools" trigger -- confirmed live, so it is a pre-existing quirk of
- * `primitives/src/{dropdown_menu,context_menu}.rs`'s own focus handling,
- * unrelated to this lane's direction work (out of scope to fix here; see
- * this lane's own final report). Roving focus sidesteps it (and is more
- * faithful to a real keyboard user besides), matching this file's own
+ * like `oracle/tier1-apg/menu-submenu.spec.ts` does -- not
+ * `subTrigger.focus()`. That is not a style preference: `.focus()` on the
+ * sub-trigger is a separate focus-handling concern of
+ * `primitives/src/{dropdown_menu,context_menu}.rs` (see the row 85 case in
+ * `menu-submenu.spec.ts`), unrelated to direction. Roving focus is also
+ * more faithful to a real keyboard user, matching this file's own
  * fixtures' index layout: RTL's `Modify`(0)/`Extra tools`(1)/`Erase`(2)
- * needs 2 `ArrowDown`s to reach the sub-trigger; `main`'s pre-existing
+ * needs 2 `ArrowDown`s to reach the sub-trigger; `main`'s
  * `Edit`(0)/`Undo`(1, disabled, skipped)/`Duplicate`(2)/`More tools`(3)
  * (DropdownMenu) or .../`Delete`(3)/`More tools`(4) (ContextMenu) needs 3
  * or 4 respectively -- see each fixture's own file for its index layout.
@@ -472,7 +455,7 @@ test.describe("Slider", () => {
     // `role="group"` container, not the thumb's -- the thumb starts at the
     // 50% default value's position).
     // `has`'s own inner locator is intentionally `page`-rooted, not
-    // `scope`-rooted: confirmed live, `.filter({ has: scope.getByRole(...) })`
+    // `scope`-rooted: `.filter({ has: scope.getByRole(...) })`
     // -- both locators sharing the exact same `#component-preview-frame*`
     // root -- never resolves (Playwright re-evaluates `has` relative to
     // each candidate, and a `has` locator that itself carries that same
@@ -485,12 +468,11 @@ test.describe("Slider", () => {
     const trackBox = await measureAtRest(track);
     expect(trackBox).not.toBeNull();
     // A locator-rooted `.click({ position })`, not `page.mouse.click(x, y)`
-    // at the box's absolute coordinates: confirmed live, the raw
-    // coordinate click landed before the track's own `onpointerdown`
-    // listener had attached (no error, no effect -- the value stayed at
-    // its untouched default), while the locator-rooted click's built-in
-    // actionability wait (stable, receives-events) resolves it correctly
-    // and was not flaky across repeated runs.
+    // at the box's absolute coordinates: a raw coordinate click can land
+    // before the track's own `onpointerdown` listener has attached (no
+    // error, no effect -- the value stays at its untouched default), while
+    // the locator-rooted click's built-in actionability wait (stable,
+    // receives-events) resolves it correctly.
     await track.click({ position: { x: 5, y: trackBox!.height / 2 } });
     const highValue = Number(await thumb.getAttribute("aria-valuenow"));
     expect(highValue).toBeGreaterThan(90);
@@ -514,7 +496,7 @@ test.describe("Slider", () => {
     const scope = demoFrame(page, "main");
     const thumb = scope.getByRole("slider");
     // `has`'s own inner locator is intentionally `page`-rooted, not
-    // `scope`-rooted: confirmed live, `.filter({ has: scope.getByRole(...) })`
+    // `scope`-rooted: `.filter({ has: scope.getByRole(...) })`
     // -- both locators sharing the exact same `#component-preview-frame*`
     // root -- never resolves (Playwright re-evaluates `has` relative to
     // each candidate, and a `has` locator that itself carries that same

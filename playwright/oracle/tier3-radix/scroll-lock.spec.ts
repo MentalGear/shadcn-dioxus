@@ -17,37 +17,31 @@
  *
  * Source for our own implementation:
  * `dignifiedquire/dx-components` (MIT OR Apache-2.0)
- * `primitives/src/scroll_lock.rs` @ 5af3cc292559a0e8d73c7b9a827c4ca08ef34d99,
+ * `primitives/src/scroll_lock.rs` @ 5af3cc292559a0e8d73c7b9a827c4ca08ef34d99 (history-ok: pinned upstream revision),
  * adapted per dev-docs/reference/platform-rationale.md §5 and implemented at
  * `primitives/src/scroll_lock.rs` in this repo -- see that file's header for
  * the full adaptation note (a Rust-side nesting-aware counter in place of
  * the dq base's JS global, reproducing sarendipitee/dx-components'
  * `overlay.rs` unlock-flash guard).
  *
- * STATUS AT WRITE TIME: RED. No scroll lock exists anywhere in this tree
- * before dev-docs/plan.md Phase 3.2 lands -- every test below is expected to
- * fail against current `main`, and the nested-dialog case has no fixture at
- * all until Phase 3.2 adds one (see the dialog demo's "Open Nested Dialog"
- * button, `preview/src/components/dialog/variants/main/mod.rs`).
+ * Fixture: the nested-dialog case uses the dialog demo's "Open Nested Dialog"
+ * button (`preview/src/components/dialog/variants/main/mod.rs`,
+ * dev-docs/plan.md Phase 3.2).
  *
- * UPDATE 2026-09-18 (dev-docs/backlog.md row 9): `Select`'s open listbox is now
- * wired to this same scroll lock too -- see "Select locks and releases page
- * scroll" below. It was deliberately left out of the original Phase 3.2 pass
- * -- "Neither source fork covered it; noted in tier-3 oracle header"
- * (dev-docs/backlog.md row 9's own "Why" column -- THIS file, the paragraph just
- * replaced by this update, was that "tier-3 oracle header" note) -- and this
- * file's Select case is this repo's own construction, opt-out via a
- * `scroll_lock` prop (default `true`, matching Radix) on `Select`/
- * `SelectMulti` rather than the `modal` prop `DropdownMenu`/`ContextMenu`
- * use -- a select-only combobox's listbox has no non-modal mode to gate
- * this on.
+ * Select (dev-docs/backlog.md row 9): `Select`'s open listbox is wired to
+ * this same scroll lock -- see "Select locks and releases page scroll"
+ * below. Neither source fork covers it, so this file's Select case is this
+ * repo's own construction, opt-out via a `scroll_lock` prop (default
+ * `true`, matching Radix) on `Select`/`SelectMulti` rather than the `modal`
+ * prop `DropdownMenu`/`ContextMenu` use -- a select-only combobox's listbox
+ * has no non-modal mode to gate this on.
  * `Menubar` is correctly excluded throughout -- it is never modal.
  *
- * UPDATE 2026-09-18 (dev-docs/backlog.md row 72, following up on row 9's own
- * "NOT COVERED HERE" note): the `scroll_lock=false` opt-out itself now has a
- * fixture and a case too -- see "Select scroll_lock=false opt-out releases
- * page scroll" below, against a new labelled instance on the `top_layer`
- * fixture page (`preview/src/components/top_layer/component.rs`).
+ * The `scroll_lock=false` opt-out itself has a fixture and a case too
+ * (dev-docs/backlog.md row 72) -- see "Select scroll_lock=false opt-out
+ * releases page scroll" below, against a labelled instance on the
+ * `top_layer` fixture page
+ * (`preview/src/components/top_layer/component.rs`).
  *
  * KNOWN GAP, both in the dq base and here (see
  * dev-docs/reference/platform-rationale.md §5): no iOS momentum-scroll handling.
@@ -64,16 +58,15 @@
  * `dev-docs/archive/research/phase4-spike-findings.md` "Round 2 -- solved by construction",
  * Construction A/C. Removing a classic (non-overlay) scrollbar's `overflow:
  * hidden` without reserving its space shifts everything horizontally by the
- * scrollbar's width the instant the lock engages -- confirmed 15px on this
- * image under a forced real scrollbar (see `playwright/xvfb.local.config.ts`).
- * That regression is invisible under this repo's default headless Chromium,
+ * scrollbar's width the instant the lock engages (15px under a forced real
+ * scrollbar, see `playwright/xvfb.local.config.ts`). That regression is invisible under this repo's default headless Chromium,
  * which renders 0-width overlay scrollbars even for a genuinely scrollable
  * page -- so `assertNoHorizontalShift` is trivially satisfied there and only
  * bites for real when run under `xvfb.local.config.ts`. Both runs matter:
- * headless proves the fix doesn't *introduce* a shift on overlay-scrollbar
- * platforms (a transient `scrollbar-gutter` toggle was tried and falsified
- * for exactly this reason -- see the findings doc), and the Xvfb run proves
- * it *removes* the shift on classic-scrollbar platforms.
+ * headless proves the lock doesn't *introduce* a shift on overlay-scrollbar
+ * platforms (a transient `scrollbar-gutter` toggle is falsified for exactly
+ * this reason -- see the findings doc), and the Xvfb run proves it
+ * *removes* the shift on classic-scrollbar platforms.
  */
 
 import { test, expect } from "../../fixtures";
@@ -171,7 +164,7 @@ async function assertScrollIsUnlocked(page: Page) {
  * block, whose size tracks the true viewport net of whatever scrollbar the
  * platform is actually rendering right now -- unlike normal-flow content,
  * which a `padding-right` compensation recipe can reach but this can't (that
- * recipe was tried and falsified for exactly this element shape; see
+ * recipe does not cover this element shape; see
  * `dev-docs/archive/research/phase4-spike-findings.md`, Round 2 Construction A). A stand-in for a
  * realistic right-aligned navbar action.
  */
@@ -376,10 +369,9 @@ test.describe("ContextMenu locks and releases page scroll", () => {
 });
 
 /**
- * dev-docs/backlog.md row 9: `Select`'s open listbox now locks page scroll too,
+ * dev-docs/backlog.md row 9: `Select`'s open listbox locks page scroll too,
  * via the same `ScrollLockGuard`/`use_scroll_lock` mechanism as every other
- * `test.describe` block above -- see this file's header doc, "UPDATE
- * 2026-09-18", for why this was left out of the original pass and how it's
+ * `test.describe` block above -- see this file's header doc for how it's
  * wired (opt-out `scroll_lock` prop, default `true`, on `Select`/
  * `SelectMulti`, mounted from `SelectListRendered`, `primitives/src/select/
  * components/list.rs`).
@@ -430,16 +422,16 @@ test.describe("Select locks and releases page scroll", () => {
     const rightBefore = await rightEdgeMarkerRight(page);
 
     // `.evaluate((el) => el.click())`, not Playwright's own `.click()` --
-    // same technique `top-layer.spec.ts` already uses for its own
+    // same technique `top-layer.spec.ts` uses for its own
     // fixed/off-screen triggers (e.g. `#stack-popover-trigger`,
-    // `#edge-bottom-popover-trigger`): this fixture's new "Select
+    // `#edge-bottom-popover-trigger`): this fixture's "Select
     // scroll_lock opt-out" section is the LAST thing on the page, so a real
     // `.click()`'s own actionability auto-scroll (`scrollIntoViewIfNeeded`)
-    // lands the page at its maximum scrollY -- confirmed by execution, this
-    // left no further room for the wheel-scroll assertion below to move
-    // `window.scrollY` at all, regardless of whether the lock was actually
-    // suppressed (a test-methodology bug, not a product one; see this
-    // repo's own `dev-docs/dx-serve-hot-reload.md` for the general class).
+    // lands the page at its maximum scrollY, leaving no further room for the
+    // wheel-scroll assertion below to move `window.scrollY` at all,
+    // regardless of whether the lock was actually suppressed (a
+    // test-methodology hazard; see `dev-docs/dx-serve-hot-reload.md` for the
+    // general class).
     // Clicking via raw JS bypasses that auto-scroll entirely, leaving the
     // page at its initial scrollY (0) with the whole page below still free
     // to scroll into.
@@ -474,38 +466,29 @@ test.describe("Select locks and releases page scroll", () => {
 
 test.describe("Dialog does not leave the page permanently scrolled after a lock cycle", () => {
   /**
-   * NOT part of the original scroll-lock.spec.ts coverage above (all of
-   * which only checks that a wheel-driven scroll is blocked/unblocked, and
-   * that layout doesn't shift *horizontally*). This checks the page's own
+   * Beyond the wheel-driven blocked/unblocked checks above and the
+   * *horizontal* layout-shift checks, this checks the page's own
    * *vertical scroll position*, `window.scrollY`, across a full open-and-
-   * close cycle -- confirmed by execution (`playwright/xvfb.local.config.ts`,
-   * a real Chromium window, and separately a real Firefox build) to move by
-   * several hundred pixels the instant a modal `<dialog>`'s `showModal()`
-   * runs (almost certainly its own default scroll-into-view-on-focus
-   * behavior, which `overflow: hidden` does not suppress), and to *never be
-   * restored* -- `primitives/src/scroll_lock.rs`'s lock/unlock cycle only
-   * ever restores `overflow`, never `scrollY`/`scrollX`. Left unresolved,
-   * every dialog interaction permanently scrolls the user's page away from
-   * where they left it, most visibly stranding this docs site's `position:
-   * sticky` top nav off-screen for the rest of the session.
+   * close cycle. A modal `<dialog>`'s `showModal()` can move the page by
+   * several hundred pixels the instant it runs (its own default
+   * scroll-into-view-on-focus behavior, which `overflow: hidden` does not
+   * suppress), and a lock/unlock cycle that only restores `overflow`, never
+   * `scrollY`/`scrollX`, would leave it there: every dialog interaction would
+   * permanently scroll the user's page away from where they left it, most
+   * visibly stranding this docs site's `position: sticky` top nav
+   * off-screen for the rest of the session.
    *
-   * A `use_early_scroll_capture` mitigation exists in `scroll_lock.rs`
-   * (captures/restores scroll position around the lock, from `DialogRoot`/
+   * `use_early_scroll_capture` in `scroll_lock.rs` covers it (captures/
+   * restores scroll position around the lock, from `DialogRoot`/
    * `AlertDialogRoot` specifically so it runs before `DialogContent`'s own
-   * `showModal()` call) but does not, in practice, land the correction in
-   * time -- in initial testing with an under-settled page (`waitUntil:
-   * "load"` plus a fixed delay, not this file's `networkidle`), this looked
-   * red: `showModal()` appeared to drag the page down ~500px and never let
-   * go. Re-tested here, through this suite's own `goto` helper (which waits
-   * for `networkidle`) both in default headless Chromium and under
-   * `playwright/xvfb.local.config.ts`'s real classic scrollbar, it passes
-   * cleanly -- the earlier reading was this task's own test artifact (an
-   * in-flight layout settling mid-interaction), not a defect in the shipped
-   * code. Kept anyway, passing, as a regression guard: this exact failure
-   * mode (a native `<dialog>`'s focus/scroll-into-view behavior stranding
-   * the page) is real and well-documented upstream, `use_early_scroll_
-   * capture`'s mitigation exists specifically to cover it, and this is the
-   * one assertion that would catch it coming back.
+   * `showModal()` call). Run through this suite's own `goto` helper (which
+   * waits for `networkidle`; an under-settled page, with its layout still
+   * settling mid-interaction, makes the test look red), in default headless
+   * Chromium and under `playwright/xvfb.local.config.ts`'s real classic
+   * scrollbar, it passes cleanly. It stays as a regression guard: this
+   * failure mode (a native `<dialog>`'s focus/scroll-into-view behavior
+   * stranding the page) is well-documented upstream, and this is the one
+   * assertion that would catch it coming back.
    */
   test("closing a Dialog restores window.scrollY to where it was before opening", async ({
     page,
@@ -542,30 +525,24 @@ test.describe("scrollbar-gutter reservation survives the lock itself, not just i
   /**
    * NOT the same thing `assertNoHorizontalShift` above checks (a
    * `position: fixed` marker's on-screen edge). This checks
-   * `document.documentElement.clientWidth` directly -- and this used to
-   * confirm a real, then-still-open gap in the PR #10 gutter fix:
+   * `document.documentElement.clientWidth` directly:
    * `ensure_scrollbar_gutter_baseline` (`scroll_lock.rs`) installs
    * `scrollbar-gutter: stable` once, permanently, specifically so a classic
    * scrollbar's width is reserved *before* any lock ever engages. But
    * `scrollbar-gutter` only has an effect while `overflow` computes to
-   * `auto` or `scroll` -- and the lock used to set `overflow: hidden` on
-   * `<html>`, which is neither. Confirmed by execution
-   * (`playwright/xvfb.local.config.ts`, a real classic scrollbar):
-   * `document.documentElement.clientWidth` measured 1012px with the page
-   * unlocked (1027px viewport minus a real ~15px scrollbar) and jumped to
-   * the full 1027px the instant a `Dialog` opened and locked scroll -- the
-   * exact shift the permanent baseline exists to prevent, just reintroduced
-   * by the lock's own `overflow: hidden`, not by the gutter being absent.
+   * `auto` or `scroll`, so a lock that sets `overflow: hidden` on
+   * `<html>` (neither) would void it: `clientWidth` would read 1012px
+   * unlocked (1027px viewport minus a real ~15px scrollbar) and jump to the
+   * full 1027px the instant a `Dialog` opened and locked scroll
+   * (`playwright/xvfb.local.config.ts`, a real classic scrollbar).
    *
-   * FIXED (see `primitives/src/scroll_lock.rs`'s module docs, "Generation
-   * 3"): the lock no longer touches `<html>`'s `overflow` at all -- it
+   * Hence the lock does not touch `<html>`'s `overflow` at all (see
+   * `primitives/src/scroll_lock.rs`'s module docs, "Generation 3"): it
    * freezes `<body>` instead (`position: fixed; top: -{scrollY}px; left: 0;
    * right: 0;`), which blocks scrolling structurally (`<html>` has nothing
    * left to scroll) without ever making the permanent baseline's own
    * precondition (`overflow` computing to `auto`/`scroll` on `<html>`) stop
-   * holding. Confirmed by execution: this test went from RED (1012 -> 1280,
-   * this suite's default xvfb viewport, before the fix landed) to GREEN
-   * after it, with no other assertion in this file regressing.
+   * holding.
    */
   test("Dialog: opening a modal does not widen clientWidth by the scrollbar's reserved gutter", async ({
     page,
@@ -589,38 +566,33 @@ test.describe("scrollbar-gutter reservation survives the lock itself, not just i
 
 test.describe("Breakpoint-flip regression: exact 1027px viewport with a classic scrollbar", () => {
   /**
-   * Ties this suite's generic gutter-defeat finding above (measured at
+   * Ties this suite's generic gutter check above (measured at
    * whatever width `xvfb.local.config.ts`'s default viewport happens to
-   * be) directly to the user-facing bug report this whole fix pass responds
-   * to: "the page jumps and the top nav disappears at around 1027px wide."
-   * 1027px is not an arbitrary number -- it is (viewport width) with a real
+   * be) directly to the user-facing symptom it prevents:
+   * "the page jumps and the top nav disappears at around 1027px wide."
+   * 1027px is not an arbitrary number -- a (viewport width) of 1027px with a real
    * ~15px classic scrollbar subtracted lands at 1012px, and this repo's own
    * responsive breakpoints react to `document.documentElement.clientWidth`
    * (not `window.innerWidth`, which a scrollbar never affects); a
    * clientWidth that silently jumps from 1012 to 1027 the instant a modal
    * locks scroll is exactly the kind of change that can cross a layout
-   * breakpoint sitting anywhere in that 15px band, and 1027 is the exact
-   * viewport width the previous test's own investigation measured this
-   * defect at. This test pins the viewport to precisely that width and
+   * breakpoint sitting anywhere in that 15px band. This test pins the
+   * viewport to precisely that width and
    * checks two independent signals at once: `clientWidth` directly (the
    * mechanism), and the sticky top nav's (`nav.dx-preview-navbar`, `position:
    * sticky; top: 0` -- `preview/assets/main.css`) `getBoundingClientRect()`
    * (the symptom the user actually sees -- this element spans the full
-   * layout width, so it visibly reflows/shifts under exactly this defect,
-   * which reads as "the nav disappeared" when it happens during a modal's
-   * open animation).
+   * layout width, so it visibly reflows/shifts if the lock widens
+   * `clientWidth`, which reads as "the nav disappeared" when it happens
+   * during a modal's open animation).
    *
-   * Confirmed RED before the Generation-3 body-freeze fix landed (this
-   * suite's `xvfb.local.config.ts`, real classic scrollbar): rerunning this
-   * exact test against the pre-fix `scroll_lock.rs` (the `overflow: hidden`
-   * on `<html>` generation) failed both assertions -- `clientWidth` jumped
-   * 1012 -> 1027 on open, and the nav's bounding rect widened/moved to
-   * match, precisely the "jumps at ~1027px / top nav vanishes" shape of the
-   * user's original report (this pass's B2). GREEN after the fix, both
-   * assertions, both `oracle.local.config.ts` (headless, 0-width overlay
-   * scrollbar -- nothing to catch, proves the fix introduces no shift on
-   * that platform either) and `xvfb.local.config.ts` (the real regression
-   * case).
+   * A lock that sets `overflow: hidden` on `<html>` fails both assertions
+   * under `xvfb.local.config.ts` (real classic scrollbar): `clientWidth`
+   * jumps 1012 -> 1027 on open, and the nav's bounding rect widens/moves to
+   * match. Both assertions hold under `oracle.local.config.ts` (headless,
+   * 0-width overlay scrollbar -- nothing to catch, proves the lock
+   * introduces no shift on that platform either) and `xvfb.local.config.ts`
+   * (the real regression case).
    */
   test("Dialog open/close never changes clientWidth or moves the sticky top nav at 1027px", async ({
     page,
@@ -672,15 +644,16 @@ test.describe("Breakpoint-flip regression: exact 1027px viewport with a classic 
  * Backlog row 375: a lock handed from one surface to another in ONE click. The `top_layer` fixture's
  * "Scroll-lock handoff" section renders two SIBLING themed dialogs (not nested): A's "Continue" closes A and
  * opens B. A keeps its lock through its exit animation (the release waits for the `<dialog>`'s `close`
- * event), so for a moment both are held. When locks were counted per nesting chain, the two siblings had two
- * counters, and A's last release ran `window.scrollTo(A's saved position)` while B was open, moving the page
- * under B. With one page-wide lock, A's release is not the last one and touches nothing; B's close restores.
+ * event), so for a moment both are held. If locks were counted per nesting chain, the two siblings would have
+ * two counters, and A's last release would run `window.scrollTo(A's saved position)` while B was open, moving
+ * the page under B. With one page-wide lock, A's release is not the last one and touches nothing; B's close
+ * restores.
  *
  * What the restore does to the page depends on whether anything moved it after A's capture (a `showModal()`
  * focus jump, an app's own scroll): headless Chromium moves nothing here, so A's stray restore lands on the
- * same Y and `scrollY` alone stays flat (measured on the per-chain build: one `scrollTo(0, 400)` ~730 ms
- * after B opened, page already at 400). The test therefore also spies on `window.scrollTo` and asserts that
- * nothing restores the page while B holds it, which is red on the per-chain build in every run.
+ * same Y and `scrollY` alone stays flat (one `scrollTo(0, 400)` ~730 ms after B opened, page already at
+ * 400, with per-chain counting). The test therefore also spies on `window.scrollTo` and asserts that
+ * nothing restores the page while B holds it, which is red under per-chain counting in every run.
  *
  * The page is scrolled to a non-zero Y first, and every click on a page-level trigger goes through
  * `el.click()` so Playwright's actionability auto-scroll never moves the page itself.

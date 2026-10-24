@@ -1,6 +1,5 @@
 /**
- * Auto-popover opening-gesture oracle (dev-docs/backlog.md row 40, 2026-10-03
- * re-audit).
+ * Auto-popover opening-gesture oracle (dev-docs/backlog.md row 40).
  *
  * The class under test: a `popover="auto"` surface that becomes
  * `:popover-open` BETWEEN the `pointerdown` and the `pointerup` of the same
@@ -40,10 +39,9 @@
  * (NavbarNav's `onmouseenter`) can silently re-open a just-light-dismissed
  * Navbar and mask the false dismiss.
  *
- * Expected state when this file landed: UNVERIFIED -- written in a lane that
- * could not build. If the Navbar case is RED, the construction fix is to
- * stop opening an `auto` popover from `pointerdown` (open on `click`, or
- * make `NavbarContent` `manual` + `use_outside_dismiss`); see
+ * If the Navbar case is RED, the construction fix is to stop opening an
+ * `auto` popover from `pointerdown` (open on `click`, or make
+ * `NavbarContent` `manual` + `use_outside_dismiss`); see
  * dev-docs/backlog.md row 40. The DropdownMenu case is a green control for
  * the click-open family.
  */
@@ -67,7 +65,7 @@ const CASES: {
   trigger: (page: Page) => import("@playwright/test").Locator;
 }[] = [
   {
-    // pointerdown-open: the family the 2026-10-03 audit found exposed.
+    // pointerdown-open: the family exposed to the pointerdown/pointerup gap.
     name: "NavbarTrigger (opens on pointerdown)",
     url: `${BASE_URL}/component/navbar/`,
     trigger: (page) => demoRole(page, "menuitem", 0),

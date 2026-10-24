@@ -66,11 +66,10 @@
  *
  * NOT covered by role="combobox"/aria-autocomplete="none": this library
  * deliberately keeps its existing real-roving-DOM-focus model rather than
- * adopting the reference example's `aria-activedescendant` technique (task
- * brief for this row: "keep this repo's existing focus model, do NOT switch
- * to aria-activedescendant") -- see keyboard-matrix.spec.ts's Select
- * section for the (unchanged by this row) behavioural rows that already
- * document that divergence. `aria-autocomplete="none"` itself is NOT part
+ * adopting the reference example's `aria-activedescendant` technique (row 8:
+ * "keep this repo's existing focus model, do NOT switch to
+ * aria-activedescendant") -- see keyboard-matrix.spec.ts's Select
+ * section for the behavioural rows that document that divergence. `aria-autocomplete="none"` itself is NOT part
  * of R1's dual-subject check: the vendored reference page does not set it
  * anywhere in its static markup or `select-only.js` (confirmed by reading
  * both) even though combobox-pattern.html's prose says every combobox

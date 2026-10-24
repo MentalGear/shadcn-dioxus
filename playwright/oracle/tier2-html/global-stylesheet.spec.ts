@@ -9,13 +9,13 @@
  * `document.styleSheets` and out of the cascade even though `link.sheet`
  * already exposes its parsed rules.
  *
- * Found by execution, 2026-09-02: `preview/assets/main.css` began with an
- * `@import` of the Geist fonts from fonts.googleapis.com; in an environment
- * where that request hangs, the ENTIRE app stylesheet was inert on every
- * route (body computed to the UA default serif, every navbar/layout rule
- * dead) while every other stylesheet applied — and nothing in the harness
- * noticed, because component behaviour lives in per-component css_module
- * files. This rule makes that class of silent failure visible: the app's
+ * The hazard: a `preview/assets/main.css` that begins with an `@import` of
+ * the Geist fonts from fonts.googleapis.com. In an environment where that
+ * request hangs, the ENTIRE app stylesheet is inert on every route (body
+ * computes to the UA default serif, every navbar/layout rule dead) while
+ * every other stylesheet applies -- and nothing else in the harness notices,
+ * because component behaviour lives in per-component sheets. This rule makes
+ * that class of silent failure visible: the app's
  * global stylesheet must be in the applied set on every route, judged by a
  * property only it sets.
  */

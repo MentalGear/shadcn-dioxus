@@ -80,7 +80,7 @@ test("Select returns focus to its trigger on Escape", async ({ page }) => {
   await open(page, "select");
 
   // role=combobox, not button (dev-docs/backlog.md row 8) -- SelectTrigger's
-  // ARIA role under the APG select-only-combobox trigger contract
+  // ARIA role follows the APG select-only-combobox trigger contract
   // (primitives/src/select/components/trigger.rs), so `getByRole("button")`
   // does not match the trigger.
   const trigger = demoRole(page, "combobox");

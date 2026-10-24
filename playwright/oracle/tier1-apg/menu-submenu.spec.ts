@@ -7,8 +7,8 @@
  * (`content/patterns/menubar/menu-and-menubar-pattern.html`, pinned commit
  * `7e4034b262bc0d25332e330d8a582aaf34113829` of `w3c/aria-practices` --
  * see `playwright/oracle/reference/README.md`). Quoted below verbatim, read
- * from that pinned commit's own file (fetched fresh for this task, not
- * from memory -- `keyboard-matrix.spec.ts`'s file header documents the
+ * from that pinned commit's own file (not from memory --
+ * `keyboard-matrix.spec.ts`'s file header documents the
  * same technique and cites the same commit for its own prose quotes).
  * There is neither a heading nor a separate page titled "submenu keyboard
  * interaction" -- the quotes below are bullet items nested under the plain
@@ -45,10 +45,9 @@
  * value that refers to the menuitem or button that controls its display.
  * A label provided by aria-label.") -- not re-derived here, just applied to
  * a submenu's own popup instead of a root menu's. `dev-docs/backlog.md` row 25
- * is the earlier fix for exactly this gap on `ContextMenu`/`Menubar`'s
- * *existing* submenu-shaped popups; this file is the same rule applied to
- * the genuinely new `*SubContent` components row 68 adds, so the gap row
- * 25 closed cannot reopen here silently.
+ * closed exactly this gap on `ContextMenu`/`Menubar`'s submenu-shaped
+ * popups; this file applies the same rule to the `*SubContent` components
+ * of row 68, so the gap cannot reopen here silently.
  *
  * Calibration: neither `../reference/7e4034b/` (menu-button/combobox/radio
  * only, per that directory's README) nor this repo vendors an executable
@@ -61,37 +60,32 @@
  * Hover-intent open/close-on-leave (`crate::menu_sub::SUBMENU_OPEN_INTENT_
  * DELAY`/`SUBMENU_CLOSE_GRACE_DELAY`, `primitives/src/menu_sub.rs`) is this
  * crate's own UX choice, not cited to APG (that module's own doc says so,
- * and a fresh check of the pinned commit's page found no hover/mouse
+ * and the pinned commit's page has no hover/mouse
  * wording of any kind) -- asserted below as an implementation contract
- * this crate committed to, not as an APG requirement.
+ * of this crate, not as an APG requirement.
  *
- * Subject components -- both nested-submenu hosts this task adds:
+ * Subject components -- both nested-submenu hosts:
  *   - DropdownMenu.Sub  (`preview/…/dropdown_menu`'s demo: root items
  *     Edit/Undo(disabled)/Duplicate, sub-trigger "More tools", submenu
  *     items Rename/Archive, then Delete)
  *   - ContextMenu.Sub   (`preview/…/context_menu`'s demo: root items
  *     Edit/Undo(disabled)/Duplicate/Delete, then sub-trigger "More tools",
  *     submenu items Rename/Archive)
- * Both demos keep their pre-existing Edit/Undo/Duplicate(/Delete) items and
- * indices untouched (see each demo file's own top-of-file comment) --
+ * Both demos keep their Edit/Undo/Duplicate(/Delete) items at fixed
+ * indices (see each demo file's own top-of-file comment) --
  * `playwright/dropdown-menu.spec.ts`, `playwright/context-menu.spec.ts`,
- * and this file's own sibling `keyboard-matrix.spec.ts` already depend on
- * that exact shape, so the submenu was added on rather than interleaved
- * with it.
+ * and this file's own sibling `keyboard-matrix.spec.ts` depend on
+ * that exact shape, so the submenu sits alongside rather than interleaved
+ * with them.
  *
- * RED BEFORE THE FIX: every test in this file exercises
- * `DropdownMenuSub`/`ContextMenuSub`/their `*SubTrigger`/`*SubContent`/
- * `*SubItem`, none of which existed before this task -- the demo pages had
- * no "More tools" trigger and no second popover to open at all, so every
- * locator below (`getByRole("menuitem", { name: "More tools" })` first and
- * foremost) resolved to zero elements and every assertion failed. This is
- * the fresh-design-work row 68's own recommendation names, budgeted
- * against a stale, shape-only patch (`dev-docs/archive/rounds/component-backlog.md` row 68,
- * finding 2) -- there was no prior implementation to regress test against.
+ * WHAT THESE TESTS EXERCISE: `DropdownMenuSub`/`ContextMenuSub`/their
+ * `*SubTrigger`/`*SubContent`/`*SubItem` (backlog row 68), so every locator
+ * below (`getByRole("menuitem", { name: "More tools" })` first and
+ * foremost) must resolve and every assertion is graded against the demo's
+ * "More tools" trigger and the second popover it opens.
  *
- * CORRECTED LOCATOR (not an APG rule change -- a query-precision fix, once
- * the feature actually opened for the first time): every "find the
- * submenu" locator originally read
+ * LOCATOR: every "find the submenu" locator is
+ * `page.getByRole("menu", { name: "More tools" })`, not
  * `page.getByRole("menu").filter({ has: page.getByRole("menuitem", { name:
  * "Rename" }) })`. A nested submenu's `role="menu"` popup is, by design (see
  * `crate::menu_sub`'s module doc and each `*SubContentRendered`'s own doc,
@@ -102,22 +96,14 @@
  * `menu-and-menubar-pattern.html` forbids or even discusses DOM nesting of
  * a submenu inside its parent menu). That means the *root* menu also has a
  * "Rename" menuitem as a descendant, transitively through the submenu --
- * `.filter({ has: ... })` matches on descendant containment, so it matched
- * *both* menus once the submenu genuinely opened (a Playwright strict-mode
- * violation: "resolved to 2 elements"), never just one as the original
- * author assumed. Confirmed live against this exact build: after the real
- * fix (`primitives/src/{dropdown_menu,context_menu}.rs`), the failure
- * changed from "0 elements" (the feature genuinely not opening) to "2
- * elements, strict mode violation" (the feature opening correctly, but this
- * locator unable to tell "the submenu" from "the submenu's own ancestor,
- * which -- through it -- also contains a Rename item"). The fix used below,
- * `page.getByRole("menu", { name: "More tools" })`, locates the exact same
- * element by its own accessible name instead (`aria-labelledby` resolving
- * to the sub-trigger's own id and text, per this file's already-asserted
+ * `.filter({ has: ... })` matches on descendant containment, so it matches
+ * *both* menus once the submenu is open (a Playwright strict-mode
+ * violation: "resolved to 2 elements"). The accessible-name locator finds
+ * the exact submenu element by its own name instead (`aria-labelledby`
+ * resolving to the sub-trigger's own id and text, per this file's
  * general-menu rule) -- unambiguous, since only the one submenu is named
- * "More tools", and it does not weaken a single assertion below: every
- * `data-state`/`aria-labelledby`/item-count/visibility check downstream is
- * unchanged, only how "the submenu" is *found* changes.
+ * "More tools", and every `data-state`/`aria-labelledby`/item-count/
+ * visibility check downstream is graded against that one element.
  */
 
 import { test, expect } from "../../fixtures";
@@ -377,18 +363,15 @@ test.describe("APG Menu and Menubar pattern — DropdownMenu.Sub", () => {
     ).toHaveAttribute("aria-expanded", "false");
   });
 
-  // REGRESSION (bug report: "on sub-menu mouse hover, the sub-menu
-  // disappears / submenus not selectable/usable"). Root cause: the
-  // close-grace timer `*SubTrigger`'s own `onmouseleave` schedules used to
-  // be private state (`use_delayed_action()` called directly inside
-  // `*SubTrigger`), so only the trigger's own `onmouseenter` could cancel
-  // it -- `*SubContent`/`*SubContentRendered` had no `onmouseenter`/
-  // `onmouseleave` handlers at all. A pointer that left the trigger and
-  // moved into the submenu's own content (the expected way to reach a
-  // submenu item) never touched the trigger again, so the close scheduled
-  // on the way out fired unconditionally ~200ms later and closed the
-  // submenu out from under the pointer, regardless of it still hovering
-  // the content. Fixed by hoisting the hover timers onto the shared
+  // INVARIANT (bug report: "on sub-menu mouse hover, the sub-menu
+  // disappears / submenus not selectable/usable"). The close-grace timer
+  // that `*SubTrigger`'s `onmouseleave` schedules must be cancellable from
+  // the submenu's own content, not only from the trigger's `onmouseenter`:
+  // a pointer that leaves the trigger and moves into the submenu's own
+  // content (the expected way to reach a submenu item) never touches the
+  // trigger again, so a timer that only the trigger can cancel would fire
+  // ~200ms later and close the submenu out from under the pointer, while it
+  // still hovers the content. The hover timers therefore live on the shared
   // `SubMenuState` (`primitives/src/menu_sub.rs`) so `*SubContentRendered`
   // can cancel/reschedule the same timer from its own `onmouseenter`/
   // `onmouseleave`. This test drives real intermediate `mousemove` events
@@ -434,10 +417,10 @@ test.describe("APG Menu and Menubar pattern — DropdownMenu.Sub", () => {
       { steps: 15 },
     );
 
-    // Wait past the close-grace delay. Before the fix, this is exactly
-    // when the trigger's stale close timer fired and closed the submenu
-    // out from under the pointer even though it is now resting on the
-    // submenu's own item.
+    // Wait past the close-grace delay. This is exactly when a stale close
+    // timer scheduled by the trigger would fire and close the submenu out
+    // from under the pointer, which is now resting on the submenu's own
+    // item.
     await page.waitForTimeout(PAST_INTENT_DELAY_MS);
     await expect(
       subTrigger,
@@ -460,28 +443,25 @@ test.describe("APG Menu and Menubar pattern — DropdownMenu.Sub", () => {
     ).toContainText(new RegExp(renamed, "i"));
   });
 
-  // REGRESSION (`dev-docs/backlog.md` row 85). "Calling .focus() directly on a
+  // INVARIANT (`dev-docs/backlog.md` row 85). "Calling .focus() directly on a
   // submenu's own sub-trigger element (as a test driving focus
   // programmatically does, and as an assistive-technology focus-
-  // restoration path plausibly could) closes the entire menu and reverts
-  // focus to the ROOT trigger, rather than simply focusing the sub-trigger
-  // in place." Root cause: `DropdownMenuTrigger`'s own `onblur` decided
-  // "did focus leave the whole menu" by synchronously reading `ctx.focus.
-  // any_focused()` (a Rust-tracked roving-focus signal) the instant this
-  // trigger blurred -- correct for every focus move this crate's own
-  // click/keyboard code drives (all of which update that signal *before*
-  // moving DOM focus), but never told about a focus move arriving any
-  // other way. Confirmed RED on the unmodified tree with this exact
-  // sequence: `trigger` ended up `data-state="closed"` and the "More
-  // tools" sub-trigger was gone from the DOM entirely (the whole menu had
-  // unmounted), with focus reverted to `trigger` itself -- exactly the
-  // reported symptom. Fixed by construction:
-  // `DropdownMenuContentRendered` now calls `use_outside_dismiss` (the
-  // same DOM-truth-based "did focus/a click land outside the whole
-  // widget" check `ContextMenu`'s own root already used, immune to this
-  // by construction since it asks `element.contains(event.target)` rather
-  // than trusting a signal), and `DropdownMenuTrigger`'s fragile `onblur`
-  // branch is removed.
+  // restoration path plausibly could) must not close the entire menu or
+  // revert focus to the ROOT trigger: the sub-trigger is simply focused in
+  // place." `DropdownMenuTrigger` must therefore not decide "did focus
+  // leave the whole menu" by synchronously reading `ctx.focus.any_focused()`
+  // (a Rust-tracked roving-focus signal) on blur -- that is right for every
+  // focus move this crate's own click/keyboard code drives (all of which
+  // update that signal *before* moving DOM focus), but it is never told
+  // about a focus move arriving any other way. A violation looks like this:
+  // `trigger` ends up `data-state="closed"` and the "More tools" sub-trigger
+  // is gone from the DOM entirely (the whole menu unmounted), with focus
+  // reverted to `trigger` itself. Instead
+  // `DropdownMenuContentRendered` calls `use_outside_dismiss` (the same
+  // DOM-truth-based "did focus/a click land outside the whole widget"
+  // check `ContextMenu`'s own root uses, which asks
+  // `element.contains(event.target)` rather than trusting a signal), and
+  // `DropdownMenuTrigger` has no `onblur` branch.
   test("a raw .focus() call on the sub-trigger does not close the whole menu (row 85)", async ({
     page,
   }) => {
@@ -494,9 +474,9 @@ test.describe("APG Menu and Menubar pattern — DropdownMenu.Sub", () => {
     await expect(subTrigger).toBeVisible();
 
     await subTrigger.focus();
-    // Give any (correctly, now, no-op) reactive close a moment to have
-    // fired if it were going to -- avoids a false green from asserting
-    // before a real regression's own close would have completed.
+    // Give any reactive close a moment to fire if it were going to --
+    // avoids a false green from asserting before a real close would have
+    // completed.
     await page.waitForTimeout(150);
 
     await expect(trigger, "the whole menu must not close").toHaveAttribute("data-state", "open");
@@ -658,24 +638,21 @@ test.describe("APG Menu and Menubar pattern — ContextMenu.Sub", () => {
     ).toContainText(new RegExp(renamed, "i"));
   });
 
-  // CONSTRUCTION-PARITY regression, not a reproduced defect. `dev-docs/backlog.md`
-  // row 85 reports this closing-everything symptom for "BOTH DropdownMenu
-  // and ContextMenu" -- this lane's own investigation (`$S/round4/fix-menu-
-  // toggle/`) could reproduce it for `DropdownMenu`/`DropdownMenu.Sub` (see
-  // the identical test in the `DropdownMenu.Sub` describe block above) and
-  // for `Menubar` (`playwright/menubar.spec.ts`), but this exact "mouse-
-  // opened root, then raw `.focus()` directly on `ContextMenuSubTrigger`"
-  // sequence was already GREEN on the unmodified tree: `ContextMenu`'s own
-  // root dismissal already went through `use_outside_dismiss`
-  // (`context_menu.rs`, pre-existing, unchanged by this fix) rather than a
-  // signal-based `onblur` guard, so it never had the root-level failure
-  // mode `DropdownMenuTrigger` did. `ContextMenuSubTrigger`'s own `onblur`
-  // (the submenu-*level* instance) carried the identical fragile shape
+  // CONSTRUCTION-PARITY guard (`dev-docs/backlog.md` row 85, which names
+  // the closing-everything symptom for "BOTH DropdownMenu and ContextMenu").
+  // `DropdownMenu`/`DropdownMenu.Sub` (see the identical test in the
+  // `DropdownMenu.Sub` describe block above) and `Menubar`
+  // (`playwright/menubar.spec.ts`) have the root-level failure mode; this
+  // exact "mouse-opened root, then raw `.focus()` directly on
+  // `ContextMenuSubTrigger`" sequence does not for `ContextMenu`, whose root
+  // dismissal goes through `use_outside_dismiss` (`context_menu.rs`) rather
+  // than a signal-based `onblur` guard. `ContextMenuSubTrigger`'s own
+  // `onblur` (the submenu-*level* instance) has the same shape
   // (`focused() && !sub.focus.any_focused()`, `context_menu.rs`) as
-  // `DropdownMenuSubTrigger`'s, so it is fixed by the same construction
+  // `DropdownMenuSubTrigger`'s, so both use the same construction
   // (`crate::menu_sub::use_sub_outside_dismiss`) for uniformity and
-  // defense-in-depth, not because this test caught it red -- kept here as
-  // a permanent regression guard now that both hosts share the construction.
+  // defense-in-depth. This test is the permanent regression guard now that
+  // both hosts share the construction.
   test("a raw .focus() call on the sub-trigger does not close the whole menu (row 85, construction parity)", async ({
     page,
   }) => {

@@ -39,9 +39,9 @@
  *   PLAYWRIGHT_BASE_URL=http://127.0.0.1:8083 npx playwright test --config=baseline.local.config.ts \
  *     ./oracle/tier2-html/listener-inventory.spec.ts
  *
- * Red proof (2026-10-05), against the tree before the helper (`scroll_lock.rs` installing its four listeners
- * at the first lock and keeping them; `form` adding two `document` listeners per visit; `pointer.rs`
- * installing four on `window` on first use): see dev-docs/backlog.md row 159.
+ * Red proof: without the helper (`scroll_lock.rs` installing its four listeners at the first lock and
+ * keeping them; `form` adding two `document` listeners per visit; `pointer.rs` installing four on `window`
+ * on first use) the inventory grows with visits: see dev-docs/backlog.md row 159.
  */
 import { test, expect } from "../../fixtures";
 import type { CDPSession, Page } from "@playwright/test";

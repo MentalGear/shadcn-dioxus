@@ -35,10 +35,9 @@
  *   PLAYWRIGHT_BASE_URL=http://127.0.0.1:8083 npx playwright test --config=oracle.local.config.ts \
  *     ./oracle/tier2-html/anchor-landing.spec.ts
  *
- * Red proof (2026-10-04), the `dx serve` build on :8083 before the construction (cv on, no handler): a
- * fresh load of `/#id` does not scroll at all (client-rendered: the target is not in the DOM when the browser
- * looks for it), Back/Forward to a hash does not scroll (stays where it was), and clicking "All components"
- * lands ~35 px low. After: all green. Numbers: the research note's section 8.
+ * Without the construction (cv on, no handler) a fresh load of `/#id` does not scroll at all (client-rendered:
+ * the target is not in the DOM when the browser looks for it), Back/Forward to a hash does not scroll (stays
+ * where it was), and clicking "All components" lands ~35 px low. Numbers: the research note's section 8.
  */
 import { test, expect } from "../../fixtures";
 import type { Page } from "@playwright/test";
