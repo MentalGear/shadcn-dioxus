@@ -67,10 +67,18 @@
 }
 
 /* The panel. Everything about where it sits, how big it is, its edge and its slide is the theme's Edge panel
- * recipe; what is left is Sheet's own (Nova's `.cn-sheet-content`: `shadow-lg`, `gap-4`). */
+ * recipe; what is left is Sheet's own (Nova's `.cn-sheet-content`: `shadow-lg`, `gap-4`). The fill and the
+ * width of a left or right panel are the recipe's values, restated here only so a composing component can
+ * retune them through `--dx-sheet-background` / `--dx-sheet-width` (see docs.md, "Slot variables"). */
 .dx-sheet {
+  background: var(--dx-sheet-background, var(--dx-popover));
   box-shadow: var(--dx-shadow-lg);
   gap: var(--dx-space-4);
+}
+
+/* The width of a left or right panel: the recipe's 75% (its 24rem cap stays the recipe's). */
+.dx-sheet:is([data-side="left"], [data-side="right"]) {
+  width: var(--dx-sheet-width, 75%);
 }
 
 .dx-sheet-header {

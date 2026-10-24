@@ -1,7 +1,7 @@
-use crate::components::button::{Button, ButtonVariant};
+use crate::components::button::{Button, ButtonSize, ButtonVariant};
 use crate::components::separator::Separator;
 use crate::components::sheet::{
-    Sheet, SheetContentClose, SheetDescription, SheetHeader, SheetSide, SheetTitle,
+    Sheet, SheetDescription, SheetHeader, SheetSide, SheetTitle,
 };
 use crate::components::skeleton::Skeleton;
 use crate::components::tooltip::{Tooltip, TooltipContent, TooltipTrigger};
@@ -12,32 +12,15 @@ use dioxus_primitives::js_listener::{use_js_listeners, JsListeners};
 use dioxus_primitives::merge_attributes;
 use dioxus_primitives::use_controlled;
 
-// docs/backlog.md row 32: `#[css_module]` is gone -- see checkbox/component.rs's
-// header comment for the full delivery-mechanism rationale (asset!() +
-// document::Link). This is the heaviest component on the migration: every
-// exported entry point in this file gets its own `document::Link` (dedup on
-// (href, rel) makes that free), and `variants/{main,inset,floating}/mod.rs`
-// each carried their OWN `#[css_module("/src/components/sidebar/style.css")]
-// struct Styles;` pointing at this same sheet -- those are simply deleted
-// (their `Styles::` refs swapped to literals, same as here) rather than given
-// their own `Link`, because every one of those variant demo pages always
-// also renders the real themed wrapper (`SidebarProvider`/`Sidebar`) from
-// THIS file, whose `Link` already covers the sheet. Those three variant
-// files also each carry a second, genuinely separate
-// `#[css_module("/src/components/sidebar/variants/demo.css")] struct
-// DemoStyles;` for their own demo-only decorative classes (team-switcher
-// icon/info-block/chevron, `dx-sidebar-hide-on-collapse`) -- that sheet is
-// NOT this component's own `style.css` and nothing else links it, so each
-// variant's own `Demo()` now carries its own `asset!()` + `document::Link`
-// for `demo.css` instead.
+// Delivery: every exported entry point in this file renders its own `document::Link` to `style.css`
+// (dedup on (href, rel) makes that free; see checkbox/component.rs's header comment). The variant demos in
+// `variants/{main,inset,floating}/mod.rs` always render the real themed wrapper (`SidebarProvider` /
+// `Sidebar`) from this file, so that Link covers the sheet for them; each `Demo()` also links
+// `variants/demo.css`, which holds only the demo's own decorative classes (team-switcher icon/info-block/
+// chevron, `dx-sidebar-hide-on-collapse`).
 //
-// This component is also on the row-32 "not already namespaced" lane: its
-// screen-reader-only helper used to be the bare `dx-sr-only`, which
-// `pagination/style.css` also defines (byte-identical). `#[css_module]`'s
-// hash kept the two apart; renamed to `dx-sidebar-sr-only` in the same
-// change that drops the macro (`pagination` gets its own
-// `dx-pagination-sr-only` copy) -- see `style.css`'s comment on that rule
-// and `scripts/check-dx-class-prefix.sh`.
+// The screen-reader-only helper is `dx-sidebar-sr-only` (`pagination` keeps its own
+// `dx-pagination-sr-only` copy); see `style.css` and `scripts/check-dx-class-prefix.sh`.
 
 // constants
 const SIDEBAR_WIDTH: &str = "16rem";
@@ -307,10 +290,11 @@ pub fn Sidebar(
                 "data-sidebar": "sidebar",
                 "data-slot": "sidebar",
                 "data-mobile": "true",
-                SheetContentClose { class: "dx-sidebar-sheet-close" }
-                SheetHeader { class: "dx-sidebar-sr-only",
-                    SheetTitle { "Sidebar" }
-                    SheetDescription { "Displays the mobile sidebar." }
+                div { class: "dx-sidebar-sr-only",
+                    SheetHeader {
+                        SheetTitle { "Sidebar" }
+                        SheetDescription { "Displays the mobile sidebar." }
+                    }
                 }
                 div { class: "dx-sidebar-mobile-inner", {children} }
             }
@@ -388,6 +372,7 @@ pub fn SidebarTrigger(
         document::Link { rel: "stylesheet", href: asset!("/src/components/sidebar/style.css") }
         Button {
             variant: ButtonVariant::Ghost,
+            size: ButtonSize::IconSm,
             onclick: move |e| {
                 if let Some(handler) = &onclick {
                     handler.call(e);
