@@ -17,8 +17,8 @@
 
   position: fixed;
   display: flex;
-  width: 18rem;
-  max-width: calc(100% - 2rem);
+  width: var(--dx-popover-content-width, 18rem);
+  max-width: var(--dx-popover-content-max-width, calc(100% - 2rem));
   flex-direction: column;
 
   /*
@@ -198,12 +198,14 @@
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  padding: 0.3125rem var(--dx-space-2-5);
-  border: 1px solid transparent;
-  border-color: var(--light, var(--dx-border)) var(--dark, var(--dx-input));
+  padding: var(--dx-popover-trigger-padding, 0.3125rem var(--dx-space-2-5));
+  border: var(--dx-popover-trigger-border, 1px solid transparent);
+  border-color: var(--dx-popover-trigger-border-color, var(--light, var(--dx-border)) var(--dark, var(--dx-input)));
   background-clip: padding-box;
-  background-color: var(--light, var(--dx-background))
-    var(--dark, color-mix(in oklab, var(--dx-input) 30%, transparent));
+  background-color: var(
+    --dx-popover-trigger-background-color,
+    var(--light, var(--dx-background)) var(--dark, color-mix(in oklab, var(--dx-input) 30%, transparent))
+  );
   border-end-end-radius: var(--dx-group-radius-end-end, var(--dx-radius-lg));
   border-end-start-radius: var(--dx-group-radius-end-start, var(--dx-radius-lg));
   border-start-end-radius: var(--dx-group-radius-start-end, var(--dx-radius-lg));
@@ -216,7 +218,7 @@
   line-height: 1.25rem;
   outline: none;
   transition-duration: var(--dx-motion-duration-base);
-  transition-property: all;
+  transition-property: var(--dx-popover-trigger-transition-property, all);
   transition-timing-function: var(--dx-motion-ease-standard);
   white-space: nowrap;
 
@@ -236,20 +238,40 @@
 }
 
 .dx-popover-trigger[aria-expanded="true"] {
-  background-color: var(--light, var(--dx-muted))
-    var(--dark, color-mix(in oklab, var(--dx-input) 50%, transparent));
+  background-color: var(
+    --dx-popover-trigger-active-background-color,
+    var(--light, var(--dx-muted)) var(--dark, color-mix(in oklab, var(--dx-input) 50%, transparent))
+  );
 }
 
 @media (hover: hover) and (pointer: fine) {
   .dx-popover-trigger:hover {
-    background-color: var(--light, var(--dx-muted))
-      var(--dark, color-mix(in oklab, var(--dx-input) 50%, transparent));
+    background-color: var(
+      --dx-popover-trigger-active-background-color,
+      var(--light, var(--dx-muted)) var(--dark, color-mix(in oklab, var(--dx-input) 50%, transparent))
+    );
   }
 }
 
 .dx-popover-trigger:focus-visible {
   border-color: var(--dx-ring-color);
-  box-shadow: var(--dx-ring-focus);
+  border-end-end-radius: var(
+    --dx-popover-trigger-focus-radius,
+    var(--dx-group-radius-end-end, var(--dx-radius-lg))
+  );
+  border-end-start-radius: var(
+    --dx-popover-trigger-focus-radius,
+    var(--dx-group-radius-end-start, var(--dx-radius-lg))
+  );
+  border-start-end-radius: var(
+    --dx-popover-trigger-focus-radius,
+    var(--dx-group-radius-start-end, var(--dx-radius-lg))
+  );
+  border-start-start-radius: var(
+    --dx-popover-trigger-focus-radius,
+    var(--dx-group-radius-start-start, var(--dx-radius-lg))
+  );
+  box-shadow: var(--dx-popover-trigger-focus-shadow, var(--dx-ring-focus));
 }
 
 .dx-popover-trigger:disabled {

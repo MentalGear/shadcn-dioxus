@@ -218,7 +218,7 @@ pub fn Demo() -> Element {
 
     rsx! {
         Card { class: "dx-chart-interactive",
-            CardHeader { class: "dx-chart-interactive-header",
+            div { class: "dx-chart-interactive-header",
                 div { class: "dx-chart-interactive-heading",
                     CardTitle { "Bar Chart - Interactive" }
                     CardDescription { "Showing total visitors for the last 3 months" }
@@ -240,7 +240,7 @@ pub fn Demo() -> Element {
                     }
                 }
             }
-            CardContent { class: "dx-chart-interactive-content",
+            div { class: "dx-chart-interactive-content",
                 ChartContainer { config, data: visible, kind: ChartKind::Bar,
                     Chart {
                         aria_label: "Visitors by day, {current.label()}",
