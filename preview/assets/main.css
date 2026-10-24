@@ -70,12 +70,11 @@ html {
      its target at the very top of the viewport must instead clear the
      sticky nav below it (`.dx-preview-navbar`, `position: sticky; top: 0`) --
      otherwise the target ends up rendered (and, worse, hit-tested for
-     pointer input) underneath the nav. Found by execution
-     (`oracle/tier2-html/native-dialog.spec.ts` 6c/6d/6e, SSG lane only):
-     a real user hitting this needs no test harness at all, just a page
-     whose sticky header is tall enough to reach whatever landed at the
-     top. See `dev-docs/conformance-harness.md`'s hydration-parity section for
-     the specific regression this closes. */
+     pointer input) underneath the nav (`oracle/tier2-html/native-dialog.spec.ts`
+     6c/6d/6e, SSG lane only): a real user hits this with no test harness at
+     all, on any page whose sticky header is tall enough to reach whatever
+     lands at the top. See `dev-docs/conformance-harness.md`'s hydration-parity
+     section for the specific regression this closes. */
   scroll-padding-top: var(--dx-navbar-height);
 
   /* Reserve the classic-scrollbar gutter in the SSR/pre-hydration layout
@@ -96,7 +95,7 @@ html {
    is swapped for a shorter one mid-animation, the browser clamps the scroll offset to the new page's bottom, and
    the visitor sees the bottom of the destination and then watches it glide up (or, on Back, the mirror). An
    ambient rule is also a trap for every future `window.scrollTo` (the scroll-lock restore, the charts tab
-   restore each had to be patched or would have been). So the document is instant by default and
+   restore would each have to be patched). So the document is instant by default and
    `preview/index.html`'s same-page `a[href^="#"]` click handler sets `data-anchor-scroll` on `<html>` for exactly
    the jump it lets the browser animate (`/docs`'s "Start" sub-items), clearing it when the jump has settled.
    `scripts/check-scroll-behavior.sh` fails any other `scroll-behavior: smooth` on the root. */
@@ -211,11 +210,9 @@ main[tabindex="-1"]:focus {
        backstop, and it must beat every component stylesheet's own class
        rule (e.g. `.dx-language-select { font-size: 0.8rem }`), which any
        class selector otherwise does against these bare element selectors.
-       Found by execution: the touch-focus-zoom oracle stayed red on every
-       route through the navbar's language <select> until this won the
-       cascade. Scoped to coarse pointers only, so desktop sizes are
+       (The touch-focus-zoom oracle checks every route.) Scoped to coarse pointers only, so desktop sizes are
        untouched. `var(--dx-text-base)` (dev-docs/backlog.md row 31a) resolves
-       to the same `16px`/`1rem` this was hardcoded to -- it is both the
+       to `16px`/`1rem` -- it is both the
        type scale's base step and this touch floor, one token. Custom
        property resolution doesn't depend on `<link>` order (there is
        exactly one declaration of `--dx-text-base` to resolve, defined on
@@ -246,8 +243,7 @@ main[tabindex="-1"]:focus {
  * `touch-action: manipulation` as the per-element opt-out authors should
  * set on tappable controls. Same references as
  * `playwright/oracle/tier2-html/touch-double-tap.spec.ts`'s header.
- * A person tapping buttons in quick succession (reported: "if the user is
- * quickly tapping buttons, the double-tap zoom is triggered") gets a page
+ * A person tapping buttons in quick succession gets a page
  * zoom instead of two button presses whenever an interactive element
  * leaves this to the UA default (`auto`, which permits the gesture).
  *
@@ -263,8 +259,8 @@ main[tabindex="-1"]:focus {
  * starting a touch on the thumb).
  *
  * Selectors are simple/flat for the same reason the font-size floor's are
- * (see that rule's own comment): this app's CSS asset pipeline has been
- * observed to silently drop a rule using a selector-list-inside-`:not()`
+ * (see that rule's own comment): this app's CSS asset pipeline
+ * silently drops a rule using a selector-list-inside-`:not()`
  * shape. `[role="menuitem"]`/`[role="option"]`/etc. are listed explicitly
  * rather than relying on any single element's own class, since several of
  * these roles are rendered by primitives this app also uses directly (the
@@ -301,8 +297,8 @@ summary,
  * it is a drag, never a page pan, so its effective `touch-action` must be `none`. The catch-all's
  * `!important` otherwise beats the handle's own `touch-action: none` (resizable/style.css), and
  * under `manipulation` Chromium starts a pan once the finger leaves the touch slop and CANCELS the
- * pointer (`pointercancel` after ~20px: the drag dies). That was masked by a
- * `ontouchstart: prevent_default` on the handle, which Dioxus delegates to `#main` as a
+ * pointer (`pointercancel` after ~20px: the drag dies). An
+ * `ontouchstart: prevent_default` on the handle would mask that, but Dioxus delegates it to `#main` as a
  * NON-passive root listener -- making every wheel/touch on the whole page wait for the main thread
  * (dev-docs/archive/research/scroll-jank-2026-10-04.md, Cause 2b; scripts/check-blocking-scroll-listeners.sh).
  * The slider thumb and the color area need no such rule: their non-focusable containers
@@ -802,8 +798,8 @@ button.dx-theme-phone-trigger {
  * shares the page with the sticky site `.dx-preview-navbar` above and the
  * `Footer` below, so a `position: fixed` column would keep floating over
  * the footer once the page scrolls past the nav's own height. `.dx-docs-shell`
- * re-scopes just that: a plain sticky in-flow column (mirrors the old
- * hand-rolled `.dx-docs-sidebar`'s `position: sticky; top: 3.25rem`) with a
+ * re-scopes just that: a plain sticky in-flow column (mirrors a hand-rolled
+ * docs sidebar's `position: sticky; top: 3.25rem`) with a
  * width collapse instead of the fixed-position slide (same transition
  * token, same "content reflows to fill the freed width" effect, no
  * viewport-relative positioning to conflict with page chrome). Everything
@@ -822,9 +818,8 @@ button.dx-theme-phone-trigger {
  * `Sidebar`+`SidebarInset` under one new wrapper, `.dx-docs-shell-body`,
  * and `.dx-sidebar-wrapper.dx-docs-shell` itself becomes a `flex-direction:
  * column` of exactly two children: `Navbar`, then that body row. Width/
- * border/centering (previously on the outer wrapper, back when `Navbar`
- * was a sibling above it rather than a child) move down to
- * `.dx-docs-shell-body`, since it is now the box that must match the
+ * border/centering live on
+ * `.dx-docs-shell-body` (not the outer wrapper), since it is the box that must match the
  * navbar's own centered, content-width inner row -- the outer wrapper
  * itself just needs to span full width so `Navbar`'s sticky full-bleed
  * background still reaches the viewport edges (its base `width: 100%` and
@@ -1012,7 +1007,7 @@ html[data-nav-sort="category"] .dx-nav-sort .dx-nav-sort-option[data-nav-sort-op
   /* Cancels `sidebar/style.css`'s own `.dx-sidebar-wrapper:has([data-side=
    * "right"])` row-reverse for the docs-shell specifically: that base rule
    * matches ANY `.dx-sidebar-wrapper` containing a right-sided `Sidebar`
-   * ANYWHERE inside it -- which, now that `Navbar` lives inside this same
+   * ANYWHERE inside it -- which, since `Navbar` lives inside this same
    * wrapper too, includes the outer `.dx-docs-shell` wrapper. Reversing at
    * that level would swap `Navbar` and `.dx-docs-shell-body` (i.e. put the
    * navbar row on the right and the sidebar+inset row on the left), not the
@@ -1693,7 +1688,7 @@ html[data-nav-sort="category"] .dx-nav-sort .dx-nav-sort-option[data-nav-sort-op
   text-transform: capitalize;
 }
 
-/* Homepage component catalog. Width/border/centering now live on
+/* Homepage component catalog. Width/border/centering live on
  * `.dx-docs-shell` (the sidebar+content shell this renders inside, via
  * `DocsLayout`) -- this only needs to fill the sidebar inset's own
  * remaining width, not independently re-center against the viewport. */
@@ -1816,8 +1811,8 @@ html[data-nav-sort="category"] .dx-nav-sort .dx-nav-sort-option[data-nav-sort-op
  * `--dx-cv` is the ONE switch for all of them: every `content-visibility: auto` in this file is
  * written `var(--dx-cv, auto)`, and `html[data-cv-settle]` (below) flips it to `visible`. A skipped
  * card lays out at its estimate, so a jump over never-rendered cards (a `#fragment` link, a deep
- * link, Back/Forward to a hash) was computed against geometry that changes the moment the cards are
- * rendered, and landed up to ~1,200 px off (dev-docs/archive/research/scroll-jank-2026-10-04.md section 8).
+ * link, Back/Forward to a hash) is computed against geometry that changes the moment the cards are
+ * rendered, and lands up to ~1,200 px off (dev-docs/archive/research/scroll-jank-2026-10-04.md section 8).
  * The shell's anchor handler (the inline script in `preview/index.html`) sets the attribute BEFORE
  * it scrolls, so every card is laid out for real when the scroll offset is computed, and removes it
  * once the page has settled; each card has by then recorded its true height for `auto`. A new
@@ -1837,8 +1832,8 @@ html[data-nav-sort="category"] .dx-nav-sort .dx-nav-sort-option[data-nav-sort-op
  * cards are one demo row, a few -- form 2,020, bubble 836 -- are very tall), because it is the sum over the
  * 75 cards that keeps the scrollbar's length steady; the running error stays under ~5% of the page.
  * Content-box means over 78 cards, all rendered, with the `Card` markup: 1280 px 376, 1024 px
- * (gallery narrower than 67rem, so stacked) 448, 390 px 444. Widgets measure 327 px (-> 267) at every width. `auto` keeps the real height once a card has been
- * rendered. `playwright/oracle/tier2-html/home-scroll-stability.spec.ts` fails if the first scroll changes
+ * (gallery narrower than 67rem, so stacked) 448, 390 px 444. Widgets measure 327 px (-> 267) at every
+ * width. `auto` keeps the real height once a card has been rendered. `playwright/oracle/tier2-html/home-scroll-stability.spec.ts` fails if the first scroll changes
  * the document height by 10% or more, which is what re-measuring is for when the gallery changes. */
 .dx-component-card {
   padding: 3rem 0;
