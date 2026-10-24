@@ -538,7 +538,7 @@ html[data-theme="light"] [class~="dxc-system"] {
   --dx-z-chrome-raised: 1200;
   --dx-z-top: 9999;             /* toast, top_layer's absolute ceiling */
 
-  /* Chart categorical palette (dev-docs/research/chart-2026-09-19.md §6.3,
+  /* Chart categorical palette (dev-docs/archive/research/chart-2026-09-19.md §6.3,
    * $S/chart-api.md "Tokens"). This repo's first component that needs
    * distinguishable series hues -- no prior token set to reuse. Validated
    * with the `dataviz` skill's own `validate_palette.js` against this

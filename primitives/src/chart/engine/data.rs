@@ -4,7 +4,7 @@
 //! behind reactive signals; this module itself never touches reactivity at
 //! all.
 //!
-//! Per `dev-docs/research/chart-2026-09-19.md` §1.4, this crate's chart API
+//! Per `dev-docs/archive/research/chart-2026-09-19.md` §1.4, this crate's chart API
 //! is data-driven (`ChartConfig`/`ChartDatum` as plain props), never
 //! children-as-configuration -- Dioxus's `children: Element` gives a parent
 //! no equivalent of React's `Children.map`/`cloneElement`, so a Recharts-

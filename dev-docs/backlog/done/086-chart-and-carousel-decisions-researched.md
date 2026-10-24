@@ -15,7 +15,7 @@ Chart and Carousel — decisions researched, awaiting the user (**SUPERSEDED**: 
 
 ## Status / trigger
 
-**SUPERSEDED 2026-09-26 (Chart row 88, Carousel row 91)** -- was: Both fully researched 2026-09-19 (batch 3); **user decision needed** — see `dev-docs/research/chart-2026-09-19.md` §8 and `dev-docs/archive/research/carousel-2026-09-19.md` §8
+**SUPERSEDED 2026-09-26 (Chart row 88, Carousel row 91)** -- was: Both fully researched 2026-09-19 (batch 3); **user decision needed** — see `dev-docs/archive/research/chart-2026-09-19.md` §8 and `dev-docs/archive/research/carousel-2026-09-19.md` §8
 
 ## Size
 

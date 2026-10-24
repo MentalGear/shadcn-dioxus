@@ -12,7 +12,7 @@ import { gotoHydrated } from "./hydration";
 // variants/*` -- `main` is shadcn's `chart-pie-simple.tsx`. One-to-one with
 // `preview/src/components/mod.rs`'s `pie_chart[...]` registration line and
 // shadcn's own 11 `chart-pie-*.tsx` demos (dev-docs/research/
-// chart-2026-09-19.md §1.2) -- each variant's own doc comment in
+// dev-docs/archive/research/chart-2026-09-19.md §1.2) -- each variant's own doc comment in
 // `preview/src/components/pie_chart/variants/<name>/mod.rs` cites the exact
 // shadcn source file it ports.
 //

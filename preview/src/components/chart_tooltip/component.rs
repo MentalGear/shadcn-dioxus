@@ -1,6 +1,6 @@
 //! `ChartTooltip`'s gallery -- shadcn/ui's nine `chart-tooltip-*.tsx` demos
 //! (`$S/refs/ui/apps/v4/registry/new-york-v4/charts/chart-tooltip-*.tsx`,
-//! `dev-docs/research/chart-2026-09-19.md` §1.2's "Tooltip variants: 9"
+//! `dev-docs/archive/research/chart-2026-09-19.md` §1.2's "Tooltip variants: 9"
 //! row), each showing one tooltip/legend option this crate's `chart`
 //! package exposes: the indicator shape (dot/line/dashed/none), hiding the
 //! label and/or indicator, a custom label, a label formatter, a fully

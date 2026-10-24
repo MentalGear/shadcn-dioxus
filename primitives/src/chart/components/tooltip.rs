@@ -154,7 +154,7 @@ pub struct ChartTooltipProps {
 /// A tooltip that follows the pointer the way shadcn/Recharts tooltips do,
 /// and tracks [`crate::chart::use_chart`]'s `active_index` -- shadcn's
 /// `ChartTooltip`/`ChartTooltipContent`
-/// (`dev-docs/research/chart-2026-09-19.md` §1.1), ported as a plain
+/// (`dev-docs/archive/research/chart-2026-09-19.md` §1.1), ported as a plain
 /// sibling of [`crate::chart::Chart`] rather than a Recharts render-prop
 /// consumer (the module doc explains why the rest of this API differs from
 /// shadcn's own children-introspection shape).
@@ -194,7 +194,7 @@ pub struct ChartTooltipProps {
 ///
 /// `aria-hidden="true"` on the root: this tooltip is a sighted-user
 /// convenience, not the accessible data path -- the hidden `<table>`
-/// `Chart` always renders is (`dev-docs/research/chart-2026-09-19.md`
+/// `Chart` always renders is (`dev-docs/archive/research/chart-2026-09-19.md`
 /// §2.5). Each swatch carries `role="graphics-symbol"` (WAI-ARIA Graphics
 /// Module 1.0 -- an atomic, presentational-children image role, the
 /// textbook fit for a color swatch) and its series' label as its own

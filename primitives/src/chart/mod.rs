@@ -10,7 +10,7 @@
 //! which also carries `data-chart="<id>"`),
 //! `ChartContainer`/`ChartTooltip`/`ChartLegend`) rather than its literal
 //! React composition API, which has no Dioxus equivalent -- see
-//! `dev-docs/research/chart-2026-09-19.md` §1 (especially §1.4) for why a
+//! `dev-docs/archive/research/chart-2026-09-19.md` §1 (especially §1.4) for why a
 //! `Chart { XAxis {...} Bar {...} }` children-introspection API is not
 //! portable, and §6 for the design this module implements. Its
 //! accessibility contract (§2 of the same report) follows: `role="img"` +

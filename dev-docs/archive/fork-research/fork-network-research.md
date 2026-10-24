@@ -27,7 +27,7 @@ What exists in the 81 forks of `DioxusLabs/dioxus-components` that upstream does
 | `next-steps-2026-10-03.md` (deleted by row 266) | **Paste-ready thread briefs** written after the chart-parity round: row 116 (build/dev loop) first, then row 111 (theme migration). |
 | [`next-steps-2026-10-04.md`](../rounds/next-steps-2026-10-04.md) | **Paste-ready thread briefs** after the build-loop and theme-foundations round: row 111 phase C first, then the open small rows (quick ones marked). |
 | [`research/{scroll-jank,shadcn-catalog,unification-audit,virtualization-survey}-2026-10-04.md`](../../research/) | The **2026-10-04 round-2 research notes**: why the overview page scrolls badly (and the fixes, section 7), the shadcn catalog audit (`backlog.md` rows 136-138), the 15-concern unification audit (row 145) and the virtualization / `content-visibility` survey (rows 143, 144, 147). |
-| [`research/chart-parity-2026-10-03/`](../../research/chart-parity-2026-10-03/README.md) | The **2026-10-03 snapshot** behind `backlog.md` rows 117-119: shadcn `/charts` UX spec, our audit, area/line/bar and pie/radar/radial parity reports, the sizing contract, and the final visual comparison. |
+| [`research/chart-parity-2026-10-03/`](../research/chart-parity-2026-10-03/README.md) | The **2026-10-03 snapshot** behind `backlog.md` rows 117-119: shadcn `/charts` UX spec, our audit, area/line/bar and pie/radar/radial parity reports, the sizing contract, and the final visual comparison. |
 | `../playwright/oracle-focus-restore.spec.ts` | The **executable oracle**: APG conformance tests that turn a claim into a reproducible result. |
 
 ## The short version

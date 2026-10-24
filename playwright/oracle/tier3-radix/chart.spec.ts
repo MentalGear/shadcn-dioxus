@@ -5,7 +5,7 @@
  *
  * Chart has no Radix primitive to calibrate against at all -- Radix ships
  * no chart component, and neither does any fork this repo's own research
- * already surveyed (dev-docs/research/chart-2026-09-19.md §2.4). This file
+ * already surveyed (dev-docs/archive/research/chart-2026-09-19.md §2.4). This file
  * lives in `tier3-radix/` (the folder name is kept, per that research
  * doc's own §6.5 decision (b): a new `chart.spec.ts` whose header names its
  * real opinion source rather than renaming the folder) with two different

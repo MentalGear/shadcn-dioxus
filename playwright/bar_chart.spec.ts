@@ -1,6 +1,6 @@
 /**
  * `bar_chart` gallery -- shadcn/ui `chart-bar-*` demo parity
- * (dev-docs/research/chart-2026-09-19.md §1.2, $S/stage2-common.md).
+ * (dev-docs/archive/research/chart-2026-09-19.md §1.2, $S/stage2-common.md).
  *
  * Every registered variant of a "Normal"-kind component (this one included)
  * renders on the SAME `/component/?name=bar_chart&` page load, all at once

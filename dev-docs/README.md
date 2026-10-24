@@ -57,7 +57,7 @@ Dated evidence behind rows and decisions; the backlog rows link to the file that
 | `backlog-order-2026-10-18.md`, `next-round-plan-2026-10-15.md` | **Living:** see above. `next-round-plan-2026-10-14.md` is the earlier draft of it. |
 | `round3-2026-10-05.md` | Round 3 evidence: modal close glitch, stylesheet delivery, listener inventory, VirtualList numbers, fonts. |
 | `dev-docs/archive/rounds/phase-c-plan-2026-10-13.md`, `theme-2026-09-26/`, `theme-2026-10-03/` (with `tools/`) | Theme migration to shadcn's system (row 111): role-token map, border-box, Nova vs base, generators. |
-| `chart-2026-09-19.md`, `dev-docs/archive/fork-research/chart-forks-2026-09-19.md`, `chart-parity-2026-10-03/` | Chart engine decisions and the shadcn / Recharts parity snapshot (rows 88, 117-119). |
+| `dev-docs/archive/research/chart-2026-09-19.md`, `dev-docs/archive/fork-research/chart-forks-2026-09-19.md`, `chart-parity-2026-10-03/` | Chart engine decisions and the shadcn / Recharts parity snapshot (rows 88, 117-119). |
 | `carousel-*.md`, `carousel-loop-2026-09-25/`, `carousel-overscroll-bench.html` | Carousel engine, overscroll, loop research (rows 91, 96, 102, 103). |
 | `scroll-jank`, `shadcn-catalog`, `unification-audit`, `virtualization-survey` (all `-2026-10-04.md`) | Round-2 research notes feeding rows 136-154. |
 | `message-scroller-parity-2026-10-14.md`, `chat-kit-demos-2026-10-14.md` | Chat kit and Message Scroller parity (rows 146, 213). |
