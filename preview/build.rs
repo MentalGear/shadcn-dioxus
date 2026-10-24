@@ -27,7 +27,7 @@ fn main() {
     // removes the compounding, on top of the primary fix in `main.rs`/
     // `components/mod.rs`.
     //
-    // (Row 219 update: this script now also registers `src/components/mod.rs` and every
+    // (Row 219: this script also registers `src/components/mod.rs` and every
     // component's `variants/` directory, so adding a component -- which edits `CATALOG` in
     // `mod.rs` -- or a variant re-runs it. The trade-off below still holds for a new `.md` file
     // alone.)
@@ -35,13 +35,12 @@ fn main() {
     // Known, accepted trade-off: a brand new `.md` file inside an EXISTING component (one this
     // script has never seen) isn't watched until something else causes it to rerun -- cargo has no
     // "watch this directory for new entries only" primitive, only the recursive watch just removed.
-    // A new COMPONENT or variant no longer needs a manual `touch` (backlog row 92, moot since row
-    // 219): adding a component edits `CATALOG` in `components/mod.rs`, and the
+    // A new COMPONENT or variant needs no manual `touch` (backlog rows 92 and 219): adding a
+    // component edits `CATALOG` in `components/mod.rs`, and the
     // `rerun-if-changed` on that file and on every `variants/` directory below re-runs this script,
-    // so `OUT_DIR` gets the component's `description.txt`/`docs.html` without help. (Before row
-    // 219 this was NOT self-healing: `cargo clippy`/`test`/`doc` failed with `couldn't read
-    // .../out/<name>/description.txt` until `touch preview/build.rs`; observed 2026-09-20 when
-    // Carousel landed.)
+    // so `OUT_DIR` gets the component's `description.txt`/`docs.html` without help. (Without
+    // that, `cargo clippy`/`test`/`doc` fail with `couldn't read
+    // .../out/<name>/description.txt` until `touch preview/build.rs`.)
     // Process all markdown files in each component folder.
     for folder in std::fs::read_dir("src/components").unwrap().flatten() {
         if !folder.file_type().unwrap().is_dir() {
@@ -212,7 +211,7 @@ fn walk_markdown_dir(dir: &std::path::Path, out_dir: &std::path::Path) -> std::i
         }
         if file.path().extension() == Some(std::ffi::OsStr::new("md")) {
             // A component's own `docs.md` (not a variant note) is a page of sections: structured
-            // data the page renders as its own `Accordion` (backlog row 233; owner 2026-10-19).
+            // data the page renders as its own `Accordion` (backlog row 233).
             if file.file_name() == "docs.md"
                 && dir.parent() == Some(std::path::Path::new("src/components"))
             {

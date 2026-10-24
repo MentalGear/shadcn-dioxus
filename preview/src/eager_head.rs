@@ -56,7 +56,7 @@
 //! while the document "allows adding render-blocking elements"; `blocking=render` on a late link measured as
 //! a no-op), so a route or popover that FIRST renders after the page's first paint is painted with UA defaults
 //! (a white `<input>`, a grey UA button) for one round trip, then restyled with a reflow
-//! (backlog "first-paint style delivery", 2026-10-05: 5-10 late sheets and 150-270 ms unstyled on every
+//! (backlog "first-paint style delivery": 5-10 late sheets and 150-270 ms unstyled on every
 //! component page entered by client-side navigation; the date picker's calendar sheet on its first open).
 //! The construction for that class is NOT here: `scripts/ssg-css-bundle.mjs` (run by `scripts/build-ssg.sh`)
 //! puts every component stylesheet in each page's render-blocking head as one `<link data-dx-css-bundle

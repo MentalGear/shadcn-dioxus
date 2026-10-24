@@ -178,21 +178,20 @@ fn MessageRow(
     // per-row star/trash toggle buttons) in a single `role="button"` div --
     // a button containing buttons, which no AT can announce sensibly (the
     // toggles become unreachable "content" of the outer button per the
-    // accessibility tree). Restructured so the tree sees one primary action
-    // plus sibling toggles instead:
-    //   - `Item` (this row's own container) is back to being a plain div:
+    // accessibility tree). The row is structured so the tree sees one
+    // primary action plus sibling toggles instead:
+    //   - `Item` (this row's own container) is a plain div:
     //     no `role`, no `tabindex`. It keeps a bare `onclick` fallback so
     //     clicking empty space (the avatar, the grid gaps) still opens the
-    //     thread with the mouse, same as before -- but an unadorned
+    //     thread with the mouse -- an unadorned
     //     `onclick` on a non-interactive div isn't itself an axe target
     //     (nested-interactive and friends key off ARIA/native interactive
-    //     semantics, which this div no longer carries), and every keyboard
-    //     path now goes through a real button below, not this div.
+    //     semantics, which this div does not carry), and every keyboard
+    //     path goes through a real button below, not this div.
     //   - The message content (subject/sender/snippet/tags) is wrapped in
     //     an actual `<button>` (`.ec-row-open`) -- one focusable, correctly
-    //     -named control per row, exactly where `role="button"` used to
-    //     sit conceptually, just now a real button instead of a div
-    //     impersonating one. It stops propagation so it doesn't also
+    //     -named control per row, a real button rather than a div
+    //     impersonating one with `role="button"`. It stops propagation so it doesn't also
     //     re-trigger the container's own click fallback.
     //   - The avatar (`ItemMedia`) and the star/trash toggles
     //     (`ItemActions`) stay direct siblings of that button, not

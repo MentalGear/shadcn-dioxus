@@ -67,7 +67,7 @@ mod wasm_libc_shim;
 /// `document::Title` suffix (`charts_gallery`) and the Open Graph `og:site_name`. The static shell's
 /// `<title>` in `index.html` is the one place Rust cannot reach; `site_name_tests` pins it to this.
 /// The crates keep their own names (`dioxus-primitives`), and so does the Git repository, which is
-/// also the GitHub Pages path (`--base-path shadcn-dioxus`, renamed from `dioxus-components` on 2026-10-10): this is the SITE's name only.
+/// also the GitHub Pages path (`--base-path shadcn-dioxus`): this is the SITE's name only.
 pub(crate) const SITE_NAME: &str = "shadcn-dioxus";
 
 /// This repository as a `dx components` registry: the root `component.json` plus every
@@ -542,40 +542,26 @@ impl Route {
 /// routes that both sit outside `NavigationLayout`
 /// (`ComponentBlockDemo`/`ComponentBlockDemoPath`/`EmailClientDashboard`).
 ///
-/// **Row 46 finding:** before this construction, those three routes each
-/// called `GlobalHead {}` themselves (the same shape, three separate call
-/// sites -- CLAUDE.md's "two or more occurrences is a class" case). That
-/// was harmless as long as the ONLY way to reach any of them was a hard
-/// page load, but `ComponentBlockDemo`'s new client-side redirect (this
-/// same row) to `ComponentBlockDemoPath` made it the first construction in
-/// this app to ever SPA-navigate between two routes that each mount their
-/// own independent `GlobalHead` instance -- and doing so silently dropped
-/// `main.css`/`dx-components-theme.css`/the Google Fonts `<link>`s
-/// entirely (confirmed by reading `document.styleSheets` before/after:
-/// present on a hard load of the destination route directly, absent after
-/// the redirect transition) rather than erroring, a hydration-adjacent
-/// silent-CSS-loss defect of the exact same *class* `oracle/tier2-html/
-/// global-stylesheet.spec.ts` already exists to catch for the `@import`
-/// case. Root cause (corrected 2026-10-04, see `eager_head`'s module docs):
-/// `document::Link` records its href in a de-duplication set while it
-/// RENDERS but only appends the `<link>` from an effect queued on its own
-/// scope, and a removed scope's queued effects are dropped -- so the FIRST
-/// `GlobalHead` instance, torn down by the redirect in the turn it first
-/// rendered, never inserted anything, and the SECOND instance's identical
-/// `document::Link`s were skipped as duplicates of links that were never
-/// there. (Unmounting does not remove head elements, so the sheets could
-/// only have been absent because they were never inserted.) This layout's
-/// once-only mount fixes that instance for these four sheets; the class --
-/// every other component's link on any torn-down subtree -- is fixed by
-/// `eager_head`, installed in `App`. `GlobalHead` now mounts exactly once,
-/// here, and simply never unmounts for the lifetime of the app.
-/// Subsumes all three prior call sites
-/// (`NavigationLayout`, `ComponentBlockDemo`/`ComponentBlockDemoPath`,
-/// `EmailClientDashboard`); does not need a matching fix for
-/// `NavigationLayout`'s own `hero.css` link, which stays where it is --
-/// no evidence of the same defect there (nothing outside `NavigationLayout`
-/// ever needed `hero.css`, so no cross-layout transition has ever unmounted
-/// it under a sibling that also renders it).
+/// **Why `GlobalHead` mounts here, once (row 46):** if each of those three routes called
+/// `GlobalHead {}` itself, the first client-side navigation between two routes that each mount their
+/// own independent `GlobalHead` instance (`ComponentBlockDemo`'s redirect to `ComponentBlockDemoPath`)
+/// would silently drop `main.css`/`dx-components-theme.css`/the Google Fonts `<link>`s entirely
+/// (present on a hard load of the destination route directly, absent after the redirect transition)
+/// rather than erroring: a hydration-adjacent silent-CSS-loss defect of the same *class*
+/// `oracle/tier2-html/global-stylesheet.spec.ts` exists to catch for the `@import` case. Root cause
+/// (see `eager_head`'s module docs): `document::Link` records its href in a de-duplication set while
+/// it RENDERS but only appends the `<link>` from an effect queued on its own scope, and a removed
+/// scope's queued effects are dropped -- so the FIRST `GlobalHead` instance, torn down by the redirect
+/// in the turn it first rendered, never inserts anything, and the SECOND instance's identical
+/// `document::Link`s are skipped as duplicates of links that were never there. (Unmounting does not
+/// remove head elements, so the sheets can only be absent because they were never inserted.) This
+/// layout's once-only mount covers these four sheets; the class -- every other component's link on
+/// any torn-down subtree -- is covered by `eager_head`, installed in `App`. `GlobalHead` therefore
+/// mounts exactly once, here, and never unmounts for the lifetime of the app. It replaces a call per
+/// route (`NavigationLayout`, `ComponentBlockDemo`/`ComponentBlockDemoPath`, `EmailClientDashboard`);
+/// `NavigationLayout`'s own `hero.css` link stays where it is, since nothing outside
+/// `NavigationLayout` needs `hero.css`, so no cross-layout transition unmounts it under a sibling
+/// that also renders it.
 #[component]
 fn AppLayout() -> Element {
     use_effect(move || {
@@ -1642,11 +1628,10 @@ fn Demos(dark_mode: Option<bool>) -> Element {
 /// backlog.md row 46). Renders the SAME markup regardless of `name` -- a
 /// generic, name-agnostic loading shell -- on every platform, so there is
 /// nothing for a server prerender and a client hydration to ever disagree
-/// on structurally (unlike the old behavior this replaces, which tried to
-/// resolve `name` against `components::DEMOS` here and rendered the
-/// "Component not found" shell server-side for every X, since `dx build
-/// --ssg` only ever prerenders this route with an EMPTY query -- see
-/// `Route::ComponentDemo`'s own doc comment). Once mounted client-side (in
+/// on structurally (resolving `name` against `components::DEMOS` here would
+/// render the "Component not found" shell server-side for every X, since
+/// `dx build --ssg` only ever prerenders this route with an EMPTY query --
+/// see `Route::ComponentDemo`'s own doc comment). Once mounted client-side (in
 /// a real browser, where `name` IS available from the real URL), redirects
 /// to the canonical `ComponentDemoPath` route so old links/bookmarks/specs
 /// keep landing on the right component.
@@ -1892,8 +1877,8 @@ fn ComponentHighlight(demo: ComponentDemoData) -> Element {
                         },
                     }
                 }
-                // Installation and the docs.md sections are ONE `Accordion` of the library's own (owner
-                // 2026-10-19: the docs are built from its components, so they look and move like them):
+                // Installation and the docs.md sections are ONE `Accordion` of the library's own (dev-docs/
+                // decisions.md: the docs are built from its components, so they look and move like them):
                 // several may be open, every item starts closed, and closed content stays in the server
                 // markup as `hidden="until-found"`, so find-in-page and `#fragment` links still reach it
                 // and hydration changes nothing the reader sees. Each `h2` wraps its trigger (shadcn's
@@ -2457,15 +2442,15 @@ const GEIST_MONO_WOFF2: Asset = asset!("/assets/fonts/GeistMono-Latin-Variable.w
 const LATIN_RANGE: &str = "U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD";
 
 /// The head links every route shares, in one place so the three route roots
-/// cannot drift apart (they used to repeat this block by hand).
+/// cannot drift apart.
 ///
 /// The Geist fonts are self-hosted (row 162): no request leaves the origin, and the preloads and the
 /// `@font-face` rules are written here from the same `asset!` URLs (they cannot be in `main.css`, which
 /// does not rewrite `url()` to the hashed names). Never `@import` a font from `main.css`: a stylesheet
-/// whose `@import` is still loading is not applied at all (found 2026-09-02, see the top of
+/// whose `@import` is still loading is not applied at all (see the top of
 /// `assets/main.css` and `playwright/oracle/tier2-html/global-stylesheet.spec.ts`).
 ///
-/// **No font-swap layout shift (measured 2026-10-05, hard load, CLS summed):** with `display=swap` the
+/// **No font-swap layout shift (hard load, CLS summed):** with `display=swap` the
 /// page paints in the fallback face and re-wraps when Geist arrives (0.117 on /component/form/). Two
 /// things, together: the two LATIN woff2 files are `preload`ed from the head so they are ready by first
 /// paint, and the faces say `font-display: optional`, so a face that is not ready in time keeps the
@@ -2551,7 +2536,7 @@ fn GlobalHead() -> Element {
 fn EmailClientDashboard(dark_mode: Option<bool>) -> Element {
     // `GlobalHead` renders once, in `AppLayout` (this route's own ancestor
     // layout) -- see that component's doc comment (row 46) for why it moved
-    // there rather than being called per-route as it used to be here.
+    // there rather than per-route.
     rsx! {
         dashboard::views::email_client::EmailClient {}
     }
@@ -2572,8 +2557,8 @@ const SR_ONLY_STYLE: &str = "position: absolute; overflow: hidden; width: 1px; h
 /// on server and client, that redirects to the canonical
 /// `ComponentBlockDemoPath` once mounted in a real browser. Resolves the
 /// same "no variant specified -> use the demo's first (\"main\") variant"
-/// default the old direct-render code used to apply, so an old link that
-/// never named a variant still redirects to the content it used to render
+/// default the direct-render path applied, so an old link that
+/// never named a variant still redirects to the content it rendered
 /// directly.
 #[component]
 fn ComponentBlockDemo(name: String, variant: Option<String>, dark_mode: Option<bool>) -> Element {
@@ -2907,20 +2892,20 @@ fn MasonryColumn(slot: MasonrySlot) -> Element {
 /// scope and its hooks live in it.
 ///
 /// It must NOT be passed as a `Callback<(), Element>` that this component then
-/// invokes (`component.call(())` around `(entry.component)()`, which is what
-/// this used to do): `Callback::call` runs its closure with the scope it was
+/// invokes (`component.call(())` around `(entry.component)()`):
+/// `Callback::call` runs its closure with the scope it was
 /// CREATED in on top of the stack (dioxus-core `events.rs`, `with_scope_on_stack`),
 /// i.e. `WidgetMasonry`'s, not this card's. A block that calls hooks directly
 /// (`BlockPlayer`, `BlockColorPalette`, `BlockCommand`, `BlockComposer`) then
-/// pushed them onto `WidgetMasonry`'s hook list, whose `hook_index` is only
+/// pushes them onto `WidgetMasonry`'s hook list, whose `hook_index` is only
 /// reset when `WidgetMasonry` itself re-renders (never). Every later re-render of
-/// the card therefore ran those hooks at an index past the end of the list and
-/// allocated a FRESH set (new signal at its initial value, new memo, new
-/// effect) while the old ones lived on, unreachable and never dropped. For
-/// `BlockPlayer` that was a new, never-cleared 100 ms `setInterval` per
+/// the card would run those hooks at an index past the end of the list and
+/// allocate a FRESH set (new signal at its initial value, new memo, new
+/// effect) while the old ones live on, unreachable and never dropped. For
+/// `BlockPlayer` that is a new, never-cleared 100 ms `setInterval` per
 /// re-render (one a second, since each fresh player re-renders when its label
-/// ticks), and the readout never got past 1:24 because every fresh signal
-/// restarted at 84 s (dev-docs/archive/research/scroll-jank-2026-10-04.md, Cause 1).
+/// ticks), and the readout never gets past 1:24 because every fresh signal
+/// restarts at 84 s (dev-docs/archive/research/scroll-jank-2026-10-04.md, Cause 1).
 #[component]
 fn MasonryCard(#[props(default)] popout: bool, children: Element) -> Element {
     let class = if popout {
@@ -3026,9 +3011,9 @@ fn BlockStats() -> Element {
                 }
                 Badge {
                     variant: BadgeVariant::Secondary,
-                    // axe `color-contrast`, in BOTH themes (dev-docs/backlog.md row 39, then the
-                    // 2026-10-05 sweep): the first fix was a literal green pair measured on the light page
-                    // only, and it was 2.3:1 in dark (#137337 on #173321). Tokens fix both: the
+                    // axe `color-contrast`, in BOTH themes (dev-docs/backlog.md row 39): a literal green pair
+                    // measured on the light page only would be 2.3:1 in dark (#137337 on #173321). Tokens
+                    // serve both: the
                     // `--dx-success-subtle` ground is pale in light and deep in dark; the ink is the
                     // success colour itself in dark (pale mint, high contrast) and, in light, that colour
                     // with its OKLCH lightness clamped to 0.45 (the `--dx-primary-ink` idea; #10b981
@@ -3590,8 +3575,8 @@ fn ComponentGallery() -> Element {
             // and this filter only narrows the *gallery grid's* iteration)
             // -- see dev-docs/backlog.md for the landed row and
             // dev-docs/conformance-harness.md's hydration-parity section for
-            // Rule 4b's replacement subject, now that its old one
-            // (the fixture's toast region) no longer renders on `/`.
+            // Rule 4b's subject (the fixture's toast region does not render
+            // on `/`).
             for component in components::DEMOS.iter().filter(|c| c.name != "top_layer").cloned() {
                 ComponentGalleryPreview { component }
             }

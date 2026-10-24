@@ -10,7 +10,7 @@
 //! referenced, so it is never linked, and linking it as well duplicates every
 //! other shim symbol (`duplicate symbol: malloc`...).
 //!
-//! rustc 1.97 (measured 2026-10-03) does not pass `--allow-undefined` for
+//! rustc 1.97 does not pass `--allow-undefined` for
 //! `wasm32-unknown-unknown`, so an unoptimised (debug) build, where lld cannot
 //! dead-strip that function, fails with `undefined symbol: stderr`. Release
 //! builds link only because lld garbage-collects the unreachable function.
