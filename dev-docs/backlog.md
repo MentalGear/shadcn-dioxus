@@ -40,7 +40,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (37)
+## Open rows (38)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -72,6 +72,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [387](backlog/387-docs-clarity-review.md) | Standing docs-clarity review: a technical-writer pass over every component's docs and props for implicit behaviour | STANDING. Run after every round that adds a component or changes a public prop, and before row… | M | docs |
 | [388](backlog/388-virtual-grid-pinning-api.md) | Virtual Grid: explicit row and column pinning in the API and the docs (pinned_columns_start, pinned_columns_end, pin_header) | Owner decision 2026-10-24 (Tom): "API and docs". Pre-1.0, so the breaking rename is accepted. DONE… | M | components |
 | [389](backlog/389-accent-active-selected-states.md) | Active and selected states take the picked accent (mark, ink, tint slots) | DECIDED 2026-10-24 (owner), BUILT on lane/accent-states (audit: 58 rows). Hard requirement kept by… | M | theme |
+| [390](backlog/390-base-accent-preset-split.md) | Base and accent presets own disjoint variables; charts follow the accent | DECIDED 2026-10-24 (owner): (1) each axis owns its own variables, disjoint and enforced; (2) charts… | M | theme |
 | [391](backlog/391-wrappers-forward-primitive-props.md) | Themed wrappers forward every primitive prop, enforced by a props-diff gate | BACKLOG. Found by row 387's first docs-clarity review; the evidence (file:line per finding) is in… | M | components |
 | [392](backlog/392-docs-snippets-compile.md) | Compile-check the docs.md code samples; samples use the uncontrolled props | BACKLOG. Found by row 387's first docs-clarity review; the evidence (file:line per finding) is in… | M | docs |
 | [393](backlog/393-docs-contradict-code.md) | Fix the docs statements the code contradicts | BACKLOG. Found by row 387's first docs-clarity review; the evidence (file:line per finding) is in… | S | docs |

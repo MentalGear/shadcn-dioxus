@@ -111,6 +111,7 @@ gates=(
   "check-anchored-keyframes|scripts/check-anchored-keyframes.sh"
   "check-duplicate-keyframes|scripts/check-duplicate-keyframes.sh"
   "check-theme-baseline|scripts/check-theme-baseline.sh"
+  "check-theme-preset-axes|scripts/check-theme-preset-axes.sh"
   "check-cursor-baseline|scripts/check-cursor-baseline.sh"
   "check-popup-boundary|scripts/check-popup-boundary.sh"
   "check-variant-scope|scripts/check-variant-scope.sh"
