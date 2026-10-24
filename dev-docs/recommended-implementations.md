@@ -1,6 +1,6 @@
 # Recommended implementations — best of each source
 
-For every gap in [`capability-gaps.md`](./capability-gaps.md), which solution to actually build, assembled from the strongest parts of upstream, Radix, and the forks rather than copying any one of them wholesale.
+For every gap in [`capability-gaps.md`](./archive/fork-research/capability-gaps.md), which solution to actually build, assembled from the strongest parts of upstream, Radix, and the forks rather than copying any one of them wholesale.
 
 Sources compared: this repo (`bf007c1`), `radix-ui/primitives`, `dignifiedquire/dx-components`, `sarendipitee/dioxus-components`, `jcgruenhage/dioxus-components`, and the WHATWG HTML spec.
 
@@ -274,7 +274,7 @@ Best-of here means recognising that upstream already wins one.
 
 ## Sequence
 
-> Superseded by [`plan.md`](./plan.md), which reconciles this with the batches in `adopt-fork-fixes-results.md` §0 and the queue in `lifting-from-forks.md` §7. Kept here for the per-gap rationale.
+> Superseded by [`plan.md`](./plan.md), which reconciles this with the batches in `dev-docs/archive/fork-research/adopt-fork-fixes-results.md` §0 and the queue in `dev-docs/archive/fork-research/lifting-from-forks.md` §7. Kept here for the per-gap rationale.
 
 1. **Ask upstream about caveat 1** — the history shows no recorded rationale, so this is a question, not a blocker. It does not need to be answered before item 1.
 2. **Form participation** (item 1) — highest severity, no caveats, applies an in-tree pattern.

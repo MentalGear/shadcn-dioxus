@@ -70,7 +70,7 @@
 //!
 //! ## References -- read-never-vendor
 //!
-//! Per `docs/lifting-from-forks.md` §1 and the plan doc's own "References"
+//! Per `dev-docs/guides/lifting-code.md` and the plan doc's own "References"
 //! section, both of the below were read for shape only. Nothing from either
 //! was copied; no provenance header applies.
 //!

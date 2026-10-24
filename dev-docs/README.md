@@ -36,9 +36,9 @@ Everything here is for the people and agents who work on this repository. Start 
 |---|---|
 | [`conformance-harness.md`](./conformance-harness.md) | The Playwright conformance harness: three rule tiers (APG / HTML / Radix-opinion), sources, calibration, current inventory. |
 | [`component-backlog.md`](./component-backlog.md) | The component catalog harvest (upstream PRs, forks, shadcn gaps), re-rated; ranked queue of components. |
-| [`capability-gaps.md`](./capability-gaps.md) | Capabilities upstream lacks (form participation, focus restore, scroll lock, collision, typeahead, RTL) and which fork closed each. |
-| [`lifting-from-forks.md`](./lifting-from-forks.md), [`recommended-implementations.md`](./recommended-implementations.md) | How to port from forks (licensing, lift shapes, traps) and what to build per gap. |
-| [`fork-network-research.md`](./fork-network-research.md) | The former `README.md`: summary of the 81-fork research with its document index and confidence notes. |
+| [`capability-gaps.md`](./archive/fork-research/capability-gaps.md) | Capabilities upstream lacks (form participation, focus restore, scroll lock, collision, typeahead, RTL) and which fork closed each. |
+| [`lifting-from-forks.md`](./archive/fork-research/lifting-from-forks.md), [`recommended-implementations.md`](./recommended-implementations.md) | How to port from forks (licensing, lift shapes, traps) and what to build per gap. |
+| [`fork-network-research.md`](./archive/fork-research/fork-network-research.md) | The former `README.md`: summary of the 81-fork research with its document index and confidence notes. |
 | [`mutants-baseline.md`](./mutants-baseline.md), [`baseline.md`](./baseline.md) | One-off baselines (cargo-mutants 2026-08-31; the Phase 0 green baseline 2026-08-29). |
 
 ## Issues and upstream drafts
@@ -57,7 +57,7 @@ Dated evidence behind rows and decisions; the backlog rows link to the file that
 | `backlog-order-2026-10-18.md`, `next-round-plan-2026-10-15.md` | **Living:** see above. `next-round-plan-2026-10-14.md` is the earlier draft of it. |
 | `round3-2026-10-05.md` | Round 3 evidence: modal close glitch, stylesheet delivery, listener inventory, VirtualList numbers, fonts. |
 | `phase-c-plan-2026-10-13.md`, `theme-2026-09-26/`, `theme-2026-10-03/` (with `tools/`) | Theme migration to shadcn's system (row 111): role-token map, border-box, Nova vs base, generators. |
-| `chart-2026-09-19.md`, `chart-forks-2026-09-19.md`, `chart-parity-2026-10-03/` | Chart engine decisions and the shadcn / Recharts parity snapshot (rows 88, 117-119). |
+| `chart-2026-09-19.md`, `dev-docs/archive/fork-research/chart-forks-2026-09-19.md`, `chart-parity-2026-10-03/` | Chart engine decisions and the shadcn / Recharts parity snapshot (rows 88, 117-119). |
 | `carousel-*.md`, `carousel-loop-2026-09-25/`, `carousel-overscroll-bench.html` | Carousel engine, overscroll, loop research (rows 91, 96, 102, 103). |
 | `scroll-jank`, `shadcn-catalog`, `unification-audit`, `virtualization-survey` (all `-2026-10-04.md`) | Round-2 research notes feeding rows 136-154. |
 | `message-scroller-parity-2026-10-14.md`, `chat-kit-demos-2026-10-14.md` | Chat kit and Message Scroller parity (rows 146, 213). |
@@ -72,4 +72,4 @@ Dated evidence behind rows and decisions; the backlog rows link to the file that
 |---|---|
 | `next-steps-2026-10-03.md` (deleted by row 266), [`next-steps-2026-10-04.md`](./next-steps-2026-10-04.md), [`next-steps-2026-10-05.md`](./next-steps-2026-10-05.md) | Paste-ready thread briefs written after those rounds. Superseded by the backlog order and STATUS. |
 | [`phase4-spike-findings.md`](./phase4-spike-findings.md) | The native `<dialog>` spike (Phase 4); the decision is recorded in `plan.md`. |
-| `adopt-fork-fixes.md` (deleted by row 266), [`adopt-fork-fixes-results.md`](./adopt-fork-fixes-results.md) | The fork-fix mining brief and its results (four fixes adopted, ~11 conditional, ~45 rejected). |
+| `adopt-fork-fixes.md` (deleted by row 266), [`adopt-fork-fixes-results.md`](./archive/fork-research/adopt-fork-fixes-results.md) | The fork-fix mining brief and its results (four fixes adopted, ~11 conditional, ~45 rejected). |

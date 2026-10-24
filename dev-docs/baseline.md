@@ -7,7 +7,7 @@ HEAD commit: `c8b6aeeba43985d8529726b873392251012947a9`
 
 ## Environment
 
-- `dx` 0.7.9 (matches `Cargo.lock`'s `dioxus = 0.7.9`; `Cargo.toml` alone would have pointed at the wrong version — see `lifting-from-forks.md` §6).
+- `dx` 0.7.9 (matches `Cargo.lock`'s `dioxus = 0.7.9`; `Cargo.toml` alone would have pointed at the wrong version — see `dev-docs/archive/fork-research/lifting-from-forks.md` §6).
 - `wasm-bindgen` 0.2.121 (matches `Cargo.lock`), pre-seeded into `~/.cargo/bin/wasm-bindgen` **and** into dx's own tool cache (`~/.local/share/.dx/tools/wasm-bindgen-0.2.121/wasm-bindgen`) — dx looks in the latter, not `$PATH`, so pre-seeding only `~/.cargo/bin` is not sufficient on its own.
 - `NO_PROXY="localhost,127.0.0.1,::1"` and `SSL_CERT_FILE=/root/.ccr/ca-bundle.crt` exported before every `dx` invocation.
 - `rustup target add wasm32-unknown-unknown` done.
@@ -23,7 +23,7 @@ Failed to install prebuilt binary for wasm-opt/binaryen@version_127: client erro
 invalid peer certificate: UnknownIssuer
 ```
 
-`dx --release` needs `wasm-opt` (from the `binaryen` GitHub release) to optimize the wasm output, and that fetch does not honor `SSL_CERT_FILE`/the proxy CA the same way the npm/dx/wasm-bindgen fetches do — it hits `github.com` directly and fails TLS verification. This is a new environment gotcha beyond the four in `lifting-from-forks.md` §6. Per this task's fallback instruction, the server was rebuilt and served **without `--release`** (plain `dx run --web --port 8080`, debug profile). Cold debug build took ~176s. All results below are against the debug build.
+`dx --release` needs `wasm-opt` (from the `binaryen` GitHub release) to optimize the wasm output, and that fetch does not honor `SSL_CERT_FILE`/the proxy CA the same way the npm/dx/wasm-bindgen fetches do — it hits `github.com` directly and fails TLS verification. This is a new environment gotcha beyond the four in `dev-docs/archive/fork-research/lifting-from-forks.md` §6. Per this task's fallback instruction, the server was rebuilt and served **without `--release`** (plain `dx run --web --port 8080`, debug profile). Cold debug build took ~176s. All results below are against the debug build.
 
 ### dx server
 
@@ -94,7 +94,7 @@ cd playwright && pnpm exec playwright test --config=baseline.local.config.ts
 | ContextMenu returns focus to its trigger on Escape | ❌ fail — focus falls to `<body>` instead of the trigger |
 | **CONTROL: Dialog returns focus to its trigger on close** | ✅ **pass** |
 
-Control passing confirms the harness itself is sound, per `lifting-from-forks.md` §6 ("if the control fails, the harness is broken").
+Control passing confirms the harness itself is sound, per `dev-docs/archive/fork-research/lifting-from-forks.md` §6 ("if the control fails, the harness is broken").
 
 ### The other 4 failures — not oracle, and not real regressions in 3 of 4 cases
 

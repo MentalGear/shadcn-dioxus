@@ -23,4 +23,4 @@ L
 
 ## Detail
 
-References checked, per `lifting-from-forks.md` hygiene, and NOT taken: `molikto/dioxus-components@ed681439` (stale, shape-only, pre-dates the collection/focus refactors this repo now has)
+References checked, per `dev-docs/archive/fork-research/lifting-from-forks.md` hygiene, and NOT taken: `molikto/dioxus-components@ed681439` (stale, shape-only, pre-dates the collection/focus refactors this repo now has)

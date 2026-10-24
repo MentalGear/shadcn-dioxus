@@ -10,7 +10,7 @@
 | xiel/embla-carousel-wheel-gestures | `research/embla-carousel-wheel-gestures` | `637a56a727fef9cae05b6340f342838efe171a28` | `embla-carousel-wheel-gestures@8.1.0` |
 | davidjerleke/embla-carousel | `research/embla-carousel` | `85a5e3cdb69756d6e139e697665cee72e1150e05` | latest published `embla-carousel@8.6.0`; the cloned default branch (`master`) is actually already on `9.0.0-rc03` — no `v8.6.0` tag exists in this shallow clone, so the wheel-listener-absence finding below is confirmed against the *current* source tree, not literally the 8.6.0 npm tarball, but `packages/embla-carousel/src/components/` has not gained a wheel listener between the two lines. |
 
-All three: **MIT**. `wheel-gestures` and `embla-carousel-wheel-gestures` are both © 2020 Felix Leupold (xiel), same author/monorepo family. `embla-carousel` is © David Jerleke. Per `dev-docs/lifting-from-forks.md` §1's "concept port" doctrine (permissive-licence family): reading these is unrestricted; if we port an *algorithm* into our own Rust (not copy-pasted text), no provenance header is required, but citing repo+file+SHA+licence in the commit message is standing practice here.
+All three: **MIT**. `wheel-gestures` and `embla-carousel-wheel-gestures` are both © 2020 Felix Leupold (xiel), same author/monorepo family. `embla-carousel` is © David Jerleke. Per `dev-docs/archive/fork-research/lifting-from-forks.md` §1's "concept port" doctrine (permissive-licence family): reading these is unrestricted; if we port an *algorithm* into our own Rust (not copy-pasted text), no provenance header is required, but citing repo+file+SHA+licence in the commit message is standing practice here.
 
 ## Embla-core-wheel verdict: FALSE — embla core has zero wheel handling
 
@@ -46,4 +46,4 @@ All in `research/wheel-gestures/src/wheel-gestures/`.
 
 ## Licence / attribution
 
-Both `wheel-gestures` and `embla-carousel-wheel-gestures` are MIT (Felix Leupold/xiel, 2020); `embla-carousel` is MIT (David Jerleke). All three read freely. Per `dev-docs/lifting-from-forks.md` §1: adopting the *algorithms* above (recommendations 1–5) as our own Rust reimplementation is a "concept port" — no provenance header required, but cite `xiel/wheel-gestures@4c0592b` (file:line as above) and MIT in the commit message that lands it.
+Both `wheel-gestures` and `embla-carousel-wheel-gestures` are MIT (Felix Leupold/xiel, 2020); `embla-carousel` is MIT (David Jerleke). All three read freely. Per `dev-docs/archive/fork-research/lifting-from-forks.md` §1: adopting the *algorithms* above (recommendations 1–5) as our own Rust reimplementation is a "concept port" — no provenance header required, but cite `xiel/wheel-gestures@4c0592b` (file:line as above) and MIT in the commit message that lands it.

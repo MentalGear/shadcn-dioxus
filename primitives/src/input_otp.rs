@@ -37,7 +37,7 @@
 //! way to read a caret position from the Dioxus event itself.
 //!
 //! Two references were read (never vendored or copied from), per
-//! `docs/lifting-from-forks.md` §1: upstream Dioxus PR #255 (`ealmloff`,
+//! `dev-docs/guides/lifting-code.md`: upstream Dioxus PR #255 (`ealmloff`,
 //! draft) and `dignifiedquire`/`rust-ui`'s `input_otp.rs`, both for shape and
 //! edge-case awareness only.
 //!

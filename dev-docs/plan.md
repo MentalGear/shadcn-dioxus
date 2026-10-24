@@ -38,9 +38,9 @@ Every item follows the same loop. An item is not done until all five hold:
 
 1. A conformance test exists, cites its rule source, and **fails first** — per [`conformance-harness.md`](./conformance-harness.md). A port that lands without a red test has proved nothing.
 2. The implementation follows [`recommended-implementations.md`](./recommended-implementations.md), which picks the best source per gap rather than copying one fork.
-3. Provenance and licence handled per [`lifting-from-forks.md`](./lifting-from-forks.md) §1 — cherry-picks keep their author; lifted files get a header.
+3. Provenance and licence handled per [`guides/lifting-code.md`](./guides/lifting-code.md) — cherry-picks keep their author; lifted files get a header.
 4. The repo's own checks pass: `cargo clippy --workspace --examples --tests --all-features --all-targets -- -D warnings`, `cargo fmt --check`, `cargo test --workspace`, stylelint, and Playwright. *(2026-10-04: the clippy command as written is not usable -- `--all-features` needs gtk for preview's `desktop` and would hide the `not(web)` arm. The entry point is `CARGO_TARGET_DIR=<absolute isolated dir> scripts/run-gates.sh`, which runs the three clippy arms; see CLAUDE.md and `backlog.md` row 116's round-2 addendum.)*
-5. The provenance ledger in [`lifting-from-forks.md`](./lifting-from-forks.md) §8 is updated.
+5. The provenance ledger in [`lifting-from-forks.md`](./archive/fork-research/lifting-from-forks.md) §8 is updated.
 
 ---
 
@@ -76,7 +76,7 @@ Not new design: the pattern is already in-tree in `Checkbox`. Render uncondition
 | 2.3 | Popover self-dismiss on internal click | `sarendipitee@f63ee07e` | **Done** 2026-08-29; fixed the shared `use_outside_dismiss`, Dialog re-tested |
 | 2.4 | `use_animated_open` unmount race | `jcgruenhage@6f0a69f0` **+ a generation counter neither fork has** | **Done** 2026-08-29/30 (both landed). The follow-on `Wervice@a704c517` tooltip fade this item gated is now **landed 2026-09-18** — `backlog.md` row 7 (sequenced after row 19, its own dependency, in the same lane) |
 
-All four shipped with a regression test per the definition of done. Provenance ledger: `lifting-from-forks.md` §8.
+All four shipped with a regression test per the definition of done. Provenance ledger: `dev-docs/archive/fork-research/lifting-from-forks.md` §8.
 
 ## Phase 3 — Accessibility behaviour
 

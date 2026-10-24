@@ -21,7 +21,7 @@ Beyond those, **11 candidates are conditional** (§6) and **~45 are rejected** (
 
 One decision has to be made before adopting #2: two forks patch the same function in **incompatible** ways, and the one with an open upstream PR is the weaker of the two. See §5.
 
-**Status update (2026-09-02):** this document is a point-in-time mining report from the scan date above; its `TAKE`/`FLAG`/`SKIP` calls are unchanged, but most `TAKE`s have since landed. All four items in this TL;DR (Phase 2) are done, as is form participation (Batch 4 → Phase 1), scroll lock and focus restore (Batch 5 → Phase 3), and native `<dialog>`/`popover=` (the `FLAG`ged native-dialog and top-layer rows in Batch 5 → Phase 4, both caveats resolved by execution). See `plan.md`'s phase tables and `lifting-from-forks.md` §8 for what actually landed and when; do not treat this report's tables as current status.
+**Status update (2026-09-02):** this document is a point-in-time mining report from the scan date above; its `TAKE`/`FLAG`/`SKIP` calls are unchanged, but most `TAKE`s have since landed. All four items in this TL;DR (Phase 2) are done, as is form participation (Batch 4 → Phase 1), scroll lock and focus restore (Batch 5 → Phase 3), and native `<dialog>`/`popover=` (the `FLAG`ged native-dialog and top-layer rows in Batch 5 → Phase 4, both caveats resolved by execution). See `plan.md`'s phase tables and `dev-docs/archive/fork-research/lifting-from-forks.md` §8 for what actually landed and when; do not treat this report's tables as current status.
 
 ---
 
@@ -66,7 +66,7 @@ Sources are `dq` = `dignifiedquire/dx-components`, `sr` = `sarendipitee/dioxus-c
 | Source | Fork | Category | What it adds | Take? |
 |---|---|---|---|---|
 | `scroll_lock.rs` (58 ln) | dq | a11y | Body scroll lock, refcounted for nested modals, restoring the original `overflow` | **TAKE** — plus sr's unlock-flash guard |
-| native `<dialog>` + `showModal()` | dq (`7b25d863`) | a11y | Focus trap, focus restore, inert background and top layer as browser behaviour — subsumes `focus_scope.rs` and `aria_hidden.rs` | **FLAG** — see caveats in [`recommended-implementations.md`](./recommended-implementations.md); needs a declarative-`open` floor |
+| native `<dialog>` + `showModal()` | dq (`7b25d863`) | a11y | Focus trap, focus restore, inert background and top layer as browser behaviour — subsumes `focus_scope.rs` and `aria_hidden.rs` | **FLAG** — see caveats in [`recommended-implementations.md`](../../recommended-implementations.md); needs a declarative-`open` floor |
 | `use_refocus_on_close_unless` (`lib.rs:241-255`) | dq | a11y | Focus restore for the menu family, Radix `onCloseAutoFocus` semantics | **TAKE** — plus moving focus off the item, which our oracle found and no source handles |
 | `aria_hidden.rs` (91 ln) | dq | a11y | Background content hidden from AT while a modal is open | **FLAG** — only if the native-dialog route is rejected; also needs the Dialog wiring that fork never did |
 | `df16e449` | matchish | behavior | `pub mod portal` — `use_portal`/`PortalId` are unreachable by consumers | **FLAG** — public-API decision, one line, merges clean |
@@ -302,7 +302,7 @@ The remaining ~45 candidates (the balance of the ~60 analysed, after the 4 adopt
 
 ## 8. Suggested sequence
 
-> The authoritative ordering is [`plan.md`](./plan.md); this section is the exact commands for the four mined fixes (Phase 2 there).
+> The authoritative ordering is [`plan.md`](../../plan.md); this section is the exact commands for the four mined fixes (Phase 2 there).
 
 Adopt in three batches so each is independently revertable, and validate between them with what CI runs — `cargo clippy --workspace --examples --tests --all-features --all-targets -- -D warnings`, `cargo fmt --check`, and the Playwright suite.
 

@@ -196,7 +196,7 @@ test.describe("Rule 1 — a named control contributes name=value to FormData on 
     expect(
       hasEntry(entries, "plan-lib", "pro"),
       "RadioGroup declares `name` but RadioItem never renders a submittable " +
-        "element (no <input>, no BubbleInput) — see capability-gaps.md.",
+        "element (no <input>, no BubbleInput) — see dev-docs/archive/fork-research/capability-gaps.md.",
     ).toBe(true);
   });
 
@@ -225,7 +225,7 @@ test.describe("Rule 1 — a named control contributes name=value to FormData on 
     expect(
       hasKey(entries, "fruit-lib"),
       "Select declares `name` but never renders a submittable element for it " +
-        "(no <select>, no hidden input) — see capability-gaps.md.",
+        "(no <select>, no hidden input) — see dev-docs/archive/fork-research/capability-gaps.md.",
     ).toBe(true);
   });
 });

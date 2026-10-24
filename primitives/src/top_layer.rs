@@ -5,7 +5,7 @@
 //! (`use_top_layer`, `TopLayerKind`). Adapted: rewritten against this
 //! crate's `document::eval` house pattern (see `use_form_reset_listener`,
 //! `lib.rs`) instead of `wasm_bindgen`/`web_sys` — this crate has neither as
-//! a dependency, and `lifting-from-forks.md` §4 says not to take dependency
+//! a dependency, and `dev-docs/archive/fork-research/lifting-from-forks.md` §4 says not to take dependency
 //! edits when a lift can avoid them. Narrowed to the Popover API only; the
 //! fork's `TopLayerKind::DialogModal` arm is dropped, since native
 //! `<dialog>` + `showModal()` is Phase 4.2's job (docs/plan.md), not this

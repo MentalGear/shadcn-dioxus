@@ -29,7 +29,7 @@ Tier 2's reference is the strongest of the three tiers: each rule runs against o
 7. A `<label>` association focuses and activates the control.
 8. The `form` attribute associates a control rendered outside the `<form>` element.
 
-Rules 1–4 alone would have caught the `RadioGroup` and `Select` defects described in `capability-gaps.md`.
+Rules 1–4 alone would have caught the `RadioGroup` and `Select` defects described in `dev-docs/archive/fork-research/capability-gaps.md`.
 
 ## What is mined but does not run here
 

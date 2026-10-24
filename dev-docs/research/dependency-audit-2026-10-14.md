@@ -170,7 +170,7 @@ Supply chain: crates.io checksum + exact version + `cargo deny`/`cargo vet` entr
 
 ## B4. Vendor / lift vs depend vs own subset
 
-Licence **[V]**: pulldown-cmark MIT; lifting is allowed with the copyright + permission notice retained (same family as the repo's `dev-docs/lifting-from-forks.md` section 1: attribution survives; a lifted file needs a provenance header with source + version/sha + what changed; MIT notice must ship with it). comrak BSD-2-Clause also fine; markdown-rs MIT.
+Licence **[V]**: pulldown-cmark MIT; lifting is allowed with the copyright + permission notice retained (same family as the repo's `dev-docs/archive/fork-research/lifting-from-forks.md` section 1: attribution survives; a lifted file needs a provenance header with source + version/sha + what changed; MIT notice must ship with it). comrak BSD-2-Clause also fine; markdown-rs MIT.
 
 | Option | Ownership cost | Size/complexity | Risks |
 |---|---|---|---|

@@ -165,7 +165,6 @@ primitives/src/combobox/components/list.rs	path	docs/conformance-harness.md
 primitives/src/combobox/components/list.rs	path	docs/plan.md
 primitives/src/command.rs	path	docs/backlog.md
 primitives/src/command.rs	path	docs/component-backlog.md
-primitives/src/command.rs	path	docs/lifting-from-forks.md
 primitives/src/context_menu.rs	path	docs/backlog.md
 primitives/src/context_menu.rs	path	docs/component-backlog.md
 primitives/src/context_menu.rs	path	docs/conformance-harness.md
@@ -187,7 +186,6 @@ primitives/src/hover_card.rs	path	docs/conformance-harness.md
 primitives/src/hover_card.rs	path	docs/plan.md
 primitives/src/hover_card.rs	path	docs/recommended-implementations.md
 primitives/src/input_otp.rs	path	docs/conformance-harness.md
-primitives/src/input_otp.rs	path	docs/lifting-from-forks.md
 primitives/src/lib.rs	path	docs/conformance-harness.md
 primitives/src/lib.rs	path	docs/phase4-spike-findings.md
 primitives/src/lib.rs	path	docs/plan.md

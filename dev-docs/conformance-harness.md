@@ -43,7 +43,7 @@ Two related suites, and what they are actually good for:
 
 ## Tier 2 — HTML forms
 
-This is where the most severe defect in `capability-gaps.md` sits: `RadioGroup` and `Select` declare `name`/`required`, document them as being for form submission, and never reference them in their render bodies.
+This is where the most severe defect in `dev-docs/archive/fork-research/capability-gaps.md` sits: `RadioGroup` and `Select` declare `name`/`required`, document them as being for form submission, and never reference them in their render bodies.
 
 ### Normative text — all verified reachable (HTTP 200)
 
@@ -378,7 +378,7 @@ Where the e2e suite stops is precise and revealing:
 | `aria-hidden` | **0** |
 | `overflow` / `scrollY` | **0** |
 
-Keyboard interaction is genuinely well covered. The suite tests what a component *does*, and never what it must *prevent* — no scroll containment, no background inertness, and no assertion of where focus *lands* after a close, only that the thing closed. That is the exact shape of the gaps in `capability-gaps.md`, and it is why they survived 123 tests.
+Keyboard interaction is genuinely well covered. The suite tests what a component *does*, and never what it must *prevent* — no scroll containment, no background inertness, and no assertion of where focus *lands* after a close, only that the thing closed. That is the exact shape of the gaps in `dev-docs/archive/fork-research/capability-gaps.md`, and it is why they survived 123 tests.
 
 ### Radix
 
