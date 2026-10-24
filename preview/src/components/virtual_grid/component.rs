@@ -1,8 +1,9 @@
 use dioxus::prelude::*;
 #[allow(unused_imports)] // a consumer-facing surface; this crate's own demos use a subset
 pub use dioxus_primitives::virtual_grid::{
-    ScrollFade, SortDirection, TileRect, VirtualGridProps, VirtualJustifiedGridProps, VirtualWrapGridProps,
-    VirtualizeMode, DEFAULT_AUTO_THRESHOLD,
+    use_virtual_scroller, ScrollAlign, ScrollFade, SortDirection, TileRect, VirtualGridProps,
+    VirtualJustifiedGridProps, VirtualScroller, VirtualWrapGridProps, VirtualizeMode,
+    DEFAULT_AUTO_THRESHOLD,
 };
 use dioxus_primitives::{dioxus_attributes::attributes, merge_attributes};
 
@@ -38,6 +39,7 @@ pub fn VirtualGrid(props: VirtualGridProps) -> Element {
             virtualize: props.virtualize,
             auto_threshold: props.auto_threshold,
             fade: props.fade,
+            scroller: props.scroller,
             attributes: merged,
         }
     }
@@ -67,6 +69,7 @@ pub fn VirtualWrapGrid(props: VirtualWrapGridProps) -> Element {
             virtualize: props.virtualize,
             auto_threshold: props.auto_threshold,
             fade: props.fade,
+            scroller: props.scroller,
             attributes: merged,
         }
     }
@@ -95,6 +98,7 @@ pub fn VirtualJustifiedGrid(props: VirtualJustifiedGridProps) -> Element {
             on_active_change: props.on_active_change,
             active: props.active,
             fade: props.fade,
+            scroller: props.scroller,
             attributes: merged,
         }
     }

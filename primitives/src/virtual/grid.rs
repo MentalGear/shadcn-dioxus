@@ -26,6 +26,7 @@
 //! and [`GridShape::wrapping`] from this module.
 
 use super::pin::with_pinned;
+use super::scroll_to::ScrollAlign;
 use super::size_index::SizeEstimates;
 use super::types::{ScrollReport, VirtualItem};
 use super::virtualizer::Engine;
@@ -222,6 +223,43 @@ impl GridEngine {
         self.rows.visible_len()
     }
 
+    /// Whether the container has reported its size (a scroll target needs it).
+    pub(crate) fn viewport_known(&self) -> bool {
+        self.rows.viewport_known()
+    }
+
+    /// The container scroll offsets `(top, left)` that put the cell `(row, column)` at `align`,
+    /// `None` on an axis that stays (no `column`, or a pinned column, which is always in view).
+    /// A row past the last goes to the last. The engine's offsets are set to the targets, as a
+    /// scroll report would, so the render that follows mounts the window there.
+    pub(crate) fn align_cell(
+        &mut self,
+        row: usize,
+        column: Option<usize>,
+        align: ScrollAlign,
+    ) -> (Option<u32>, Option<u32>) {
+        let top = self
+            .rows
+            .item_count()
+            .checked_sub(1)
+            .and_then(|last| self.rows.align_target(row.min(last), align))
+            .map(|target| {
+                self.rows.set_scroll_offset(target);
+                // Offset 0 is the very top, header and all.
+                if target == 0 {
+                    0
+                } else {
+                    target.saturating_add(self.pins.lead)
+                }
+            });
+        let left = column
+            .and_then(|column| column.checked_sub(self.pins.start_columns))
+            .filter(|&scrolling| scrolling < self.columns.item_count())
+            .and_then(|scrolling| self.columns.align_target(scrolling, align))
+            .inspect(|&target| self.columns.set_scroll_offset(target));
+        (top, left)
+    }
+
     /// The window to draw, with the `pinned` cell (data row, data column) added on each axis
     /// where it is outside the window. A pinned column is always drawn anyway (it is no item of
     /// the columns engine, so a pinned active cell adds nothing to the scrolling columns).
@@ -398,6 +436,42 @@ mod tests {
         let plan = grid.plan(0, 0, None);
         assert_eq!(plan.rows[0].index(), 10);
         assert_eq!(grid.page_rows(), 18);
+    }
+
+    #[test]
+    fn align_cell_targets_both_axes_past_the_pinned_edges() {
+        let mut grid = data_grid(1);
+        at(&mut grid, 0, 0);
+        assert!(grid.viewport_known());
+        let start = ScrollAlign::Start;
+        // Row 5,000 is 180,000px down; column 30 is the pane's 29th item, 3,480px along.
+        assert_eq!(grid.align_cell(5_000, Some(30), start), (Some(180_000), Some(3_480)));
+        // A pinned column is always in view: only the rows move. No column, no horizontal move.
+        assert_eq!(grid.align_cell(10, Some(0), start), (Some(360), None));
+        assert_eq!(grid.align_cell(10, None, start), (Some(360), None));
+        // Past the last row goes to the last, clamped to the scroll range (600px of body).
+        assert_eq!(grid.align_cell(99_999, None, start).0, Some(10_000 * 36 - 600));
+        // The engine now holds the target, so `Nearest` from there is a no-op.
+        assert_eq!(
+            grid.align_cell(10_000, None, ScrollAlign::Nearest).0,
+            Some(10_000 * 36 - 600)
+        );
+    }
+
+    #[test]
+    fn align_cell_adds_the_header_that_scrolls_away_except_at_the_very_top() {
+        let mut grid = GridEngine::new();
+        grid.sync(
+            &uniform(10_000, 36),
+            &uniform(50, 120),
+            Pins {
+                lead: 40,
+                ..Pins::default()
+            },
+        );
+        at(&mut grid, 0, 0);
+        assert_eq!(grid.align_cell(10, None, ScrollAlign::Start).0, Some(400));
+        assert_eq!(grid.align_cell(0, None, ScrollAlign::Start).0, Some(0));
     }
 
     #[test]

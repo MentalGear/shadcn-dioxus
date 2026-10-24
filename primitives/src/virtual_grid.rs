@@ -75,6 +75,20 @@
 //! and `Space` / `Enter` act on the control natively. A cell with a text field, a select or
 //! several controls needs the APG's Enter/F2 interaction mode, which the grid does not provide.
 //!
+//! # Scrolling to an item (row 398)
+//!
+//! [`use_virtual_scroller`] makes a [`VirtualScroller`]; pass it as `scroller` to any of the three
+//! grids and call it from an event handler or an effect. [`VirtualScroller::scroll_to_cell`]
+//! (`VirtualGrid`) aligns a cell on both axes to a [`ScrollAlign`] (`Start`, `Center`, `End`, or
+//! `Nearest`: nothing if it is fully in view), clear of the pinned header and columns, and a
+//! pinned column moves only the rows. [`VirtualScroller::scroll_to_index`] reads the index as a
+//! row for `VirtualGrid`, as an item for `VirtualWrapGrid` (its row scrolls into place) and as a
+//! tile for `VirtualJustifiedGrid` (vertical only). Windowed, the target comes from the engines'
+//! measured-or-estimated positions, so a cell far outside the window is reachable; in
+//! content-visibility mode the browser scrolls to it and the alignment is corrected for a few
+//! frames. An index past the end goes to the last item; a call before the grid has mounted is kept
+//! and runs then (see [`VirtualScroller`]).
+//!
 //! # Modes, and what windowing costs
 //!
 //! [`VirtualGrid`] and [`VirtualWrapGrid`] take the same `virtualize` / `auto_threshold` props as
@@ -95,11 +109,13 @@ pub use crate::data_view::SortDirection;
 use crate::direction::{use_direction, Direction, HorizontalNav};
 use crate::r#virtual::{
     cv_chunks, engine_row_keys, justified_navigate, parse_cell, render_key, resolve_index,
-    use_find_in_page, use_virtual_bridge, with_pinned, Bridge, ChunkSkip, Engine, FindLayer,
+    scroll_dom_to, use_find_in_page, use_scroller_attach, use_virtual_bridge, with_pinned, Bridge, ChunkSkip, Engine, FindLayer,
     FindLayout, GridEngine, GridKey, GridShape, JustifiedEngine, JustifiedOptions, Pins, RowPlan,
-    ScrollReport, SizeEstimates, DEFAULT_SIZE,
+    ScrollReport, ScrollRequest, SizeEstimates, DEFAULT_SIZE,
 };
-pub use crate::r#virtual::{VirtualizeMode, DEFAULT_AUTO_THRESHOLD};
+pub use crate::r#virtual::{
+    use_virtual_scroller, ScrollAlign, VirtualScroller, VirtualizeMode, DEFAULT_AUTO_THRESHOLD,
+};
 use crate::scroll_area::use_scroll_fade;
 pub use crate::scroll_area::ScrollFade;
 use crate::{merge_attributes, use_unique_id};
@@ -210,6 +226,9 @@ pub struct VirtualGridProps {
     /// all four edges of a two-axis scroller.
     #[props(default)]
     pub fade: ScrollFade,
+    /// A handle from [`use_virtual_scroller`] that scrolls the grid to a row or a cell: `scroll_to_index(row, align)` and `scroll_to_cell(row, column, align)`. It works in both
+    /// modes (see [`VirtualScroller`]).
+    pub scroller: Option<VirtualScroller>,
     /// Additional attributes to apply to the container element.
     #[props(extends = GlobalAttributes)]
     pub attributes: Vec<Attribute>,
@@ -610,6 +629,7 @@ fn VirtualGridContentVisibility(
         pinned_columns_end,
         dir,
         on_active_change,
+        scroller,
         attributes,
         ..
     } = grid;
@@ -644,6 +664,28 @@ fn VirtualGridContentVisibility(
         true,
         cover_cell,
     );
+    // Every cell is in the DOM: the browser scrolls to it, clear of the pinned edges.
+    let on_scroll = use_callback(move |request: ScrollRequest| {
+        let (Some(last_row), Some(last_column)) = (
+            row_count.peek().checked_sub(1),
+            column_count.peek().checked_sub(1),
+        ) else {
+            return;
+        };
+        let (row, column) = (
+            request.index.min(last_row),
+            request.column.map_or(0, |column| column.min(last_column)),
+        );
+        let cover = *cover_cell.read();
+        scroll_dom_to(
+            container_id.peek().clone(),
+            format!(r#"[data-grid-cell="{row}:{column}"]"#),
+            request.align,
+            (cover.top, cover.start, cover.end),
+            request.column.is_some(),
+        );
+    });
+    use_scroller_attach(scroller, on_scroll);
     // The viewport's height, for PageUp/PageDown (a viewport of rows).
     let mut viewport = use_signal(|| 0u32);
 
@@ -749,6 +791,7 @@ fn VirtualGridWindowed(
         column_buffer,
         dir,
         on_active_change,
+        scroller,
         attributes,
         ..
     } = grid;
@@ -764,9 +807,13 @@ fn VirtualGridWindowed(
             let mut engine = bridge.engine();
             engine.with_mut(|engine| engine.scroll(report));
             bridge.publish();
+            bridge.run_deferred();
         },
     );
     let engine = bridge.engine();
+    // The public scroll-to-cell: both axes aim past the pinned edges (`GridEngine::align_cell`).
+    let on_scroll = use_callback(move |request: ScrollRequest| bridge.scroll_to(request));
+    use_scroller_attach(scroller, on_scroll);
     let focus = GridFocus::use_new(row_key, row_count, on_active_change);
 
     let row_estimates = use_memo(move || {
@@ -1048,6 +1095,9 @@ pub struct VirtualWrapGridProps {
     /// all four edges of a two-axis scroller.
     #[props(default)]
     pub fade: ScrollFade,
+    /// A handle from [`use_virtual_scroller`] that scrolls the grid to an item: `scroll_to_index(index, align)` scrolls the row that holds it. It works in both
+    /// modes (see [`VirtualScroller`]).
+    pub scroller: Option<VirtualScroller>,
     /// Additional attributes to apply to the container element.
     #[props(extends = GlobalAttributes)]
     pub attributes: Vec<Attribute>,
@@ -1241,6 +1291,7 @@ fn VirtualWrapGridContentVisibility(
         item_key,
         dir,
         on_active_change,
+        scroller,
         attributes,
         ..
     } = grid;
@@ -1248,6 +1299,19 @@ fn VirtualWrapGridContentVisibility(
     let direction = use_direction(dir);
     let container_id = use_unique_id();
     let focus = WrapFocus::use_new(item_key, count, on_active_change);
+    // Every item is in the DOM: the browser scrolls to it.
+    let on_scroll = use_callback(move |request: ScrollRequest| {
+        if let Some(last) = count.peek().checked_sub(1) {
+            scroll_dom_to(
+                container_id.peek().clone(),
+                wrap_item_selector(&request.index.min(last).to_string()),
+                request.align,
+                (0, 0, 0),
+                false,
+            );
+        }
+    });
+    use_scroller_attach(scroller, on_scroll);
     let active_cell = use_active_cell(focus.active, columns);
     let no_cover = use_hook(|| CopyValue::new(Cover::default()));
     use_focus_active_cell(
@@ -1323,6 +1387,7 @@ fn VirtualWrapGridWindowed(
         buffer,
         dir,
         on_active_change,
+        scroller,
         attributes,
         ..
     } = grid;
@@ -1333,6 +1398,18 @@ fn VirtualWrapGridWindowed(
     // anchoring correction for rows measured above the viewport.
     let bridge = use_virtual_bridge(container_id, Engine::new, Bridge::scroll_axis);
     let engine = bridge.engine();
+    // The public scroll-to-index: an item is scrolled to by the row that holds it.
+    let on_scroll = use_callback(move |request: ScrollRequest| {
+        if let Some(last) = count.peek().checked_sub(1) {
+            let row = request.index.min(last) / columns.peek().max(1);
+            bridge.scroll_to(ScrollRequest {
+                index: row,
+                column: None,
+                ..request
+            });
+        }
+    });
+    use_scroller_attach(scroller, on_scroll);
     let laid_out_for = use_hook(|| CopyValue::new(0usize));
     // The active item, as an index: it keeps its item when the column count changes.
     let focus = WrapFocus::use_new(item_key, count, on_active_change);
@@ -1525,6 +1602,9 @@ pub struct VirtualJustifiedGridProps {
     /// all four edges of a two-axis scroller.
     #[props(default)]
     pub fade: ScrollFade,
+    /// A handle from [`use_virtual_scroller`] that scrolls the grid to a tile: `scroll_to_index(index, align)` scrolls the row that holds it (vertically; the canvas's horizontal scroll is not moved). It works in both
+    /// modes (see [`VirtualScroller`]).
+    pub scroller: Option<VirtualScroller>,
     /// Additional attributes to apply to the container element.
     #[props(extends = GlobalAttributes)]
     pub attributes: Vec<Attribute>,
@@ -1604,6 +1684,7 @@ pub fn VirtualJustifiedGrid(props: VirtualJustifiedGridProps) -> Element {
         on_active_change,
         active: active_prop,
         fade,
+        scroller,
         attributes,
     } = props;
     let attributes = merge_attributes(vec![attributes, use_scroll_fade(fade)]);
@@ -1655,9 +1736,13 @@ pub fn VirtualJustifiedGrid(props: VirtualJustifiedGridProps) -> Element {
                 }
             }
             bridge.publish();
+            bridge.run_deferred();
         },
     );
     let engine = bridge.engine();
+    // The public scroll-to-index: the tile's row, from the layout.
+    let on_scroll = use_callback(move |request: ScrollRequest| bridge.scroll_to(request));
+    use_scroller_attach(scroller, on_scroll);
     use_focus_active_tile(container_id, active, focus_request);
 
     let set_active = move |index: usize| {

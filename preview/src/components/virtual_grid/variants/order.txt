@@ -1,5 +1,6 @@
 # Display order of this component's demos after `main`; a variants/<name>/ directory not listed here follows, sorted by name.
 pinning
+scroll_to
 gallery
 justified
 photo_wall

@@ -22,6 +22,8 @@
 //!   and `VirtualGrid` (backlog row 343).
 //! - [`find`]: the find-in-page layer of `hidden="until-found"` placeholders a windowed
 //!   `VirtualList`, `VirtualGrid` and `VirtualWrapGrid` lay over their canvas (rows 153, 309).
+//! - [`scroll_to`]: the public scroll-to-index handle ([`VirtualScroller`]) and the alignment math
+//!   (backlog row 398).
 //! - [`bridge`]: the DOM bridge every windowed component consumes (one passive scroll
 //!   listener, one ResizeObserver, scope-owned cleanup, a render only when the window moves).
 //!
@@ -36,6 +38,7 @@ mod justified_engine;
 pub(crate) mod layout;
 mod mode;
 mod pin;
+mod scroll_to;
 mod size_index;
 pub(crate) mod types;
 mod utils;
@@ -51,6 +54,8 @@ pub(crate) use justified_engine::{navigate as justified_navigate, JustifiedEngin
 pub(crate) use layout::justified::JustifiedOptions;
 pub use mode::{VirtualizeMode, DEFAULT_AUTO_THRESHOLD};
 pub(crate) use pin::{pin_in_flow, with_pinned};
+pub use scroll_to::{use_virtual_scroller, ScrollAlign, VirtualScroller};
+pub(crate) use scroll_to::{scroll_dom_to, use_scroller_attach, ScrollRequest};
 pub(crate) use size_index::{SizeEstimates, DEFAULT_SIZE};
 pub(crate) use types::ScrollReport;
 pub(crate) use virtualizer::Engine;

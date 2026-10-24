@@ -2,5 +2,6 @@
 dynamic_row_heights
 content_visibility
 windowed
+scroll_to
 fade
 find_in_page

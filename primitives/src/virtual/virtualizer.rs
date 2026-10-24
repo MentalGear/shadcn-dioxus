@@ -33,6 +33,7 @@
 
 use std::collections::HashMap;
 
+use super::scroll_to::{align_offset, ScrollAlign};
 use super::size_index::{SizeEstimates, SizeIndex};
 use super::types::VirtualItem;
 use super::utils::default_range_extractor;
@@ -384,14 +385,30 @@ impl Engine {
         self.rendered = None;
     }
 
-    /// The scroll offset that centres item `index` in the viewport, clamped to the scroll range:
-    /// the core's `scroll_to(index)` (row 154 layer 1). `None` past the end. Before the viewport
-    /// is known it is the item's start.
-    pub(crate) fn scroll_target(&self, index: usize) -> Option<u32> {
+    /// The scroll offset that puts item `index` at `align` in the viewport, clamped to the scroll
+    /// range: the core's `scroll_to(index)` (row 154 layer 1, row 398). The position is the
+    /// measured size where there is one and the estimate elsewhere, so an unmounted item has
+    /// one. `None` past the end. Before the viewport is known it is the item's start.
+    pub(crate) fn align_target(&self, index: usize, align: ScrollAlign) -> Option<u32> {
         let item = self.index.item(index)?;
-        let centre = (item.start() + item.size() / 2).saturating_sub(self.viewport / 2);
-        let max = self.index.total().saturating_sub(self.viewport);
-        Some(centre.min(max))
+        Some(align_offset(
+            item.start(),
+            item.size(),
+            self.scroll_offset,
+            self.viewport,
+            self.index.total(),
+            align,
+        ))
+    }
+
+    /// How many items there are.
+    pub(crate) fn item_count(&self) -> usize {
+        self.index.count()
+    }
+
+    /// Whether the container has reported its size (a scroll target needs it).
+    pub(crate) fn viewport_known(&self) -> bool {
+        self.viewport > 0
     }
 
     /// How many items the viewport shows now (at least 1 once the viewport is known, 0 before):
@@ -713,14 +730,34 @@ mod tests {
     }
 
     #[test]
-    fn scroll_target_centres_the_item_and_clamps_to_the_scroll_range() {
+    fn align_target_places_the_item_and_clamps_to_the_scroll_range() {
         // 100 rows of 50px, 600px viewport: row 40 (2000..2050) centred is 2025 - 300.
         let engine = engine(100, 50, 0, 8);
-        assert_eq!(engine.scroll_target(40), Some(1725));
+        let target = |index, align| engine.align_target(index, align);
+        assert_eq!(target(40, ScrollAlign::Center), Some(1725));
         // Near the ends the target is clamped to 0 and to total - viewport.
-        assert_eq!(engine.scroll_target(2), Some(0));
-        assert_eq!(engine.scroll_target(99), Some(4400));
-        assert_eq!(engine.scroll_target(100), None);
+        assert_eq!(target(2, ScrollAlign::Center), Some(0));
+        assert_eq!(target(99, ScrollAlign::Center), Some(4400));
+        assert_eq!(target(100, ScrollAlign::Center), None);
+        assert_eq!(target(40, ScrollAlign::Start), Some(2000));
+        assert_eq!(target(40, ScrollAlign::End), Some(1450));
+    }
+
+    #[test]
+    fn align_target_follows_measured_sizes_and_the_current_offset() {
+        // Rows 0..10 measured at 100px instead of 50: row 40 now starts 500px later.
+        let mut engine = engine(100, 50, 0, 8);
+        for row in 0..10 {
+            let _ = engine.resize_item(row, 100);
+        }
+        assert_eq!(engine.align_target(40, ScrollAlign::Start), Some(2500));
+        // Nearest: a row already in view stays put, one below takes its bottom edge.
+        engine.set_scroll_offset(2500);
+        assert_eq!(engine.align_target(42, ScrollAlign::Nearest), Some(2500));
+        assert_eq!(engine.align_target(60, ScrollAlign::Nearest), Some(2950));
+        assert!(engine.viewport_known());
+        assert_eq!(engine.item_count(), 100);
+        assert!(!Engine::new().viewport_known());
     }
 
     #[test]
