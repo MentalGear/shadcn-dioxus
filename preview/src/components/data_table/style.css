@@ -32,16 +32,15 @@
   gap: var(--dx-space-2);
 }
 
+/* Input slot variable (input/docs.md). */
 .dx-data-table-filter {
-  max-width: 20rem;
+  --dx-input-max-width: 20rem;
 }
 
-.dx-data-table-column-header-button {
+/* The sort button's wrapper: it carries the negative margin the button sits with inside its header cell. */
+.dx-data-table-sort {
   display: inline-flex;
-  align-items: center;
-  padding: var(--dx-space-1) var(--dx-space-2);
   margin: calc(var(--dx-space-2) * -1);
-  gap: var(--dx-space-1);
 }
 
 .dx-data-table-sort-icon {

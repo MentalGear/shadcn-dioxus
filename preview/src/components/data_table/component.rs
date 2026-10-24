@@ -122,22 +122,23 @@ pub struct DataTableSortButtonProps {
 pub fn DataTableSortButton(props: DataTableSortButtonProps) -> Element {
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/data_table/style.css") }
-        Button {
-            variant: ButtonVariant::Ghost,
-            size: ButtonSize::Sm,
-            class: "dx-data-table-column-header-button",
-            onclick: move |event| props.onclick.call(event),
-            {props.children}
-            match props.sorted {
-                Some(SortDirection::Ascending) => rsx! {
-                    ArrowUp { class: "dx-data-table-sort-icon", size: "16px" }
-                },
-                Some(SortDirection::Descending) => rsx! {
-                    ArrowDown { class: "dx-data-table-sort-icon", size: "16px" }
-                },
-                None => rsx! {
-                    ArrowUpDown { class: "dx-data-table-sort-icon", size: "16px" }
-                },
+        span { class: "dx-data-table-sort",
+            Button {
+                variant: ButtonVariant::Ghost,
+                size: ButtonSize::Sm,
+                onclick: move |event| props.onclick.call(event),
+                {props.children}
+                match props.sorted {
+                    Some(SortDirection::Ascending) => rsx! {
+                        ArrowUp { class: "dx-data-table-sort-icon", size: "16px" }
+                    },
+                    Some(SortDirection::Descending) => rsx! {
+                        ArrowDown { class: "dx-data-table-sort-icon", size: "16px" }
+                    },
+                    None => rsx! {
+                        ArrowUpDown { class: "dx-data-table-sort-icon", size: "16px" }
+                    },
+                }
             }
         }
     }

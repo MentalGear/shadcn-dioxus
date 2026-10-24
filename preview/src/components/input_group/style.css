@@ -23,28 +23,23 @@
   box-shadow: var(--dx-ring-field);
 }
 
+/* The control is bare: the wrapper draws the one set of chrome, in every state, and a disabled or invalid
+ * control draws neither a second time. A control that is a themed `Input` is tuned through its slot
+ * variables (input/docs.md "Slot variables"), which `.dx-input` reads in rest, hover, focus-visible and
+ * disabled alike. */
 .dx-input-group .dx-input-group-control {
-  flex: 1 1 auto;
-  border-radius: 0;
-  background: none;
-  box-shadow: none;
-
-  /* Slot variables (input/style.css reads both): the wrapper draws the invalid ring and dims once as a
-   * whole when its control is disabled (below), so the bare control draws neither a second time. */
+  --dx-input-background: transparent;
+  --dx-input-box-shadow: none;
   --dx-input-disabled-opacity: 1;
   --dx-input-invalid-shadow: none;
+  --dx-input-radius: 0;
 }
 
-.dx-input-group .dx-input-group-control:focus-visible {
-  background: none;
-  box-shadow: none;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .dx-input-group .dx-input-group-control:hover:not(:disabled) {
-    background: none;
-    box-shadow: none;
-  }
+/* Placement: the group's one non-addon child, its control, fills the row. Input declares no `flex`
+ * itself, and a plain control (a `textarea` wearing `dx-input-group-control`) gets the same fill;
+ * stripping such a control's own chrome is the caller's job. */
+.dx-input-group > :not(.dx-input-group-addon, [popover], dialog) {
+  flex: 1 1 auto;
 }
 
 /* Invalid: the wrapper draws the field chrome, so it draws the invalid recipe (the control is bare).
