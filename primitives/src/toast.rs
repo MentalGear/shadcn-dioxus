@@ -551,7 +551,8 @@ listen(el, 'focusout', (e) => { focus = !!e.relatedTarget && el.contains(e.relat
 /// publishes its height as `--front-toast-height` on the list. The first measurement of a toast also sets
 /// `data-sized` on its `li` (`pending`, `true` one frame later), so a skin can keep the unmeasured to
 /// measured switch from animating. A `MutationObserver` on the list follows toasts coming, going and
-/// starting to leave. Both observers end with the provider (`cleanup`). A skin
+/// starting to leave, and measures a new toast as soon as it is inserted, so no frame lays it out
+/// unmeasured. Both observers end with the provider (`cleanup`). A skin
 /// without `data-toast-body` is never measured: its toasts keep their auto height and do not overlap.
 const TOAST_SIZE_JS: &str = r#"
 const id = await dioxus.recv();
@@ -575,26 +576,30 @@ const publishFront = () => {
   if (h) list.style.setProperty(FRONT, h + 'px');
   else list.style.removeProperty(FRONT);
 };
-const sizes = new ResizeObserver((entries) => {
-  for (const entry of entries) {
-    const li = entry.target.closest('li');
-    if (!li) continue;
-    const h = heightOf(entry.target, entry);
-    heights.set(li, h);
-    li.style.setProperty('--toast-height', h + 'px');
-    // The first measurement must not play as a glide from the unmeasured layout: `data-sized` turns
-    // true a frame later, and the stylesheet only transitions a toast's height and margin from then on.
-    if (!li.dataset.sized) {
-      li.dataset.sized = 'pending';
-      requestAnimationFrame(() => { li.dataset.sized = 'true'; });
-    }
+const record = (body, size) => {
+  const li = body.closest('li');
+  if (!li) return;
+  const h = heightOf(body, size);
+  heights.set(li, h);
+  li.style.setProperty('--toast-height', h + 'px');
+  // The first measurement must not play as a glide from the unmeasured layout: `data-sized` turns
+  // true a frame later, and the stylesheet only transitions a toast's height and margin from then on.
+  if (!li.dataset.sized) {
+    li.dataset.sized = 'pending';
+    requestAnimationFrame(() => { li.dataset.sized = 'true'; });
   }
+};
+const sizes = new ResizeObserver((entries) => {
+  for (const entry of entries) record(entry.target, entry);
   publishFront();
 });
 const sync = () => {
   const now = new Set(list.querySelectorAll('[data-toast-body]'));
   for (const body of seen) if (!now.has(body)) { sizes.unobserve(body); seen.delete(body); }
-  for (const body of now) if (!seen.has(body)) { seen.add(body); sizes.observe(body); }
+  // A new toast is measured at once, in the mutation callback that sees it inserted: the observer's
+  // first callback comes after the next frame's rAF callbacks, so a frame would lay the pile out
+  // without the toast's height and the slot it enters through would open by the gap alone.
+  for (const body of now) if (!seen.has(body)) { seen.add(body); record(body); sizes.observe(body); }
   publishFront();
 };
 const changes = new MutationObserver(sync);

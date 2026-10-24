@@ -20,10 +20,13 @@ async function show(page: Page) {
   return t;
 }
 
-/** Press at the toast's left part (away from its buttons), drag by dx in `steps` moves, `pause` ms apart. */
+/**
+ * Press at the toast's centre, on its text and away from the close button at the inline end (the left in
+ * RTL), drag by dx in `steps` moves, `pause` ms apart.
+ */
 async function drag(page: Page, t: ReturnType<typeof toasts>, dx: number, steps: number, pause: number) {
   const b = await measureAtRest(t);
-  const x = b.x + 24;
+  const x = b.x + b.width / 2;
   const y = b.y + b.height / 2;
   await page.mouse.move(x, y);
   await page.mouse.down();
