@@ -14,7 +14,7 @@ All three: **MIT**. `wheel-gestures` and `embla-carousel-wheel-gestures` are bot
 
 ## Embla-core-wheel verdict: FALSE — embla core has zero wheel handling
 
-`dev-docs/research/carousel-2026-09-19.md` §2.1's "trackpad: free (embla)" is wrong. `grep -rn "wheel" packages/embla-carousel/src/components/` and `grep -rln "wheel" packages/embla-carousel/src/` both return **zero matches** at HEAD `85a5e3c`. `DragHandler.ts` (228 lines) only wires `mouseEvents`/`initEvents` via `EventStore` (mouse/pointer/touch) — `research/embla-carousel/packages/embla-carousel/src/components/DragHandler.ts:51-52`. Trackpad/wheel support is entirely the third-party `embla-carousel-wheel-gestures` plugin, which itself depends on `wheel-gestures`.
+`dev-docs/archive/research/carousel-2026-09-19.md` §2.1's "trackpad: free (embla)" is wrong. `grep -rn "wheel" packages/embla-carousel/src/components/` and `grep -rln "wheel" packages/embla-carousel/src/` both return **zero matches** at HEAD `85a5e3c`. `DragHandler.ts` (228 lines) only wires `mouseEvents`/`initEvents` via `EventStore` (mouse/pointer/touch) — `research/embla-carousel/packages/embla-carousel/src/components/DragHandler.ts:51-52`. Trackpad/wheel support is entirely the third-party `embla-carousel-wheel-gestures` plugin, which itself depends on `wheel-gestures`.
 
 ## wheel-gestures: algorithm, with constants
 

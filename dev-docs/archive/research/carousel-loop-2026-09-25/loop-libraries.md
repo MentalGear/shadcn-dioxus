@@ -31,7 +31,7 @@ math, Flickity's `wrapAround`) — converges on the same two rules:
    explicitly freezes `aria-hidden` during `MOVING`/`SCROLLING` state
    (`Slide.ts:203`) to stop Windows Narrator from reading mid-transit content —
    this is the same "never write/re-read during an active scroll" principle our
-   `carousel-overscroll-2026-09-23.md` §3/§6 rule already states, now confirmed
+   `dev-docs/archive/research/carousel-overscroll-2026-09-23.md` §3/§6 rule already states, now confirmed
    as convergent, not an idiosyncrasy of our design.
 
 The one library that keeps DOM order fixed and only *moves elements visually*

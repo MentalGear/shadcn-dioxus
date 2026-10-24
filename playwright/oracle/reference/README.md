@@ -38,7 +38,7 @@ Per conformance-harness.md's reachability note (`patterns/menu-button/examples/m
 
 Added for the `carousel` primitive's oracle
 (`playwright/oracle/tier1-apg/carousel.spec.ts`,
-dev-docs/research/carousel-2026-09-19.md): the Carousel pattern's
+dev-docs/archive/research/carousel-2026-09-19.md): the Carousel pattern's
 "basic" (prev/next, no picker) worked example only. Vendored the same
 way as the patterns above: `carousel/carousel-pattern.html` (the
 pattern's own prose page, kept alongside the example per this file's own
@@ -57,7 +57,7 @@ linked *from* the vendored `carousel-pattern.html` page and cited in the
 research this oracle was scoped from, but was deliberately **not**
 vendored: the approved 2026-09-19 decisions defer the library's own
 tablist-picker variant to a fast-follow (dev-docs/research/
-carousel-2026-09-19.md §8.5), and a reference page for a variant the
+dev-docs/archive/research/carousel-2026-09-19.md §8.5), and a reference page for a variant the
 library doesn't implement yet has nothing to calibrate against.
 
 Added for the `navigation_menu` primitive's oracle
