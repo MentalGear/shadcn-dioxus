@@ -70,6 +70,6 @@ Dated evidence behind rows and decisions; the backlog rows link to the file that
 
 | Path | What it is |
 |---|---|
-| [`next-steps-2026-10-03.md`](./next-steps-2026-10-03.md), [`next-steps-2026-10-04.md`](./next-steps-2026-10-04.md), [`next-steps-2026-10-05.md`](./next-steps-2026-10-05.md) | Paste-ready thread briefs written after those rounds. Superseded by the backlog order and STATUS. |
+| `next-steps-2026-10-03.md` (deleted by row 266), [`next-steps-2026-10-04.md`](./next-steps-2026-10-04.md), [`next-steps-2026-10-05.md`](./next-steps-2026-10-05.md) | Paste-ready thread briefs written after those rounds. Superseded by the backlog order and STATUS. |
 | [`phase4-spike-findings.md`](./phase4-spike-findings.md) | The native `<dialog>` spike (Phase 4); the decision is recorded in `plan.md`. |
-| [`adopt-fork-fixes.md`](./adopt-fork-fixes.md), [`adopt-fork-fixes-results.md`](./adopt-fork-fixes-results.md) | The fork-fix mining brief and its results (four fixes adopted, ~11 conditional, ~45 rejected). |
+| `adopt-fork-fixes.md` (deleted by row 266), [`adopt-fork-fixes-results.md`](./adopt-fork-fixes-results.md) | The fork-fix mining brief and its results (four fixes adopted, ~11 conditional, ~45 rejected). |

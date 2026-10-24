@@ -27,7 +27,7 @@ One decision has to be made before adopting #2: two forks patch the same functio
 
 ## 0. Results table — the brief's requested output
 
-Columns and categories per [`adopt-fork-fixes.md`](./adopt-fork-fixes.md). **TAKE** = functional fix, adopt. **SKIP** = restyle, superseded, or not a fix. **FLAG** = ambiguous, needs a decision, or blocked on something.
+Columns and categories per `adopt-fork-fixes.md` (deleted by row 266). **TAKE** = functional fix, adopt. **SKIP** = restyle, superseded, or not a fix. **FLAG** = ambiguous, needs a decision, or blocked on something.
 
 Sources are `dq` = `dignifiedquire/dx-components`, `sr` = `sarendipitee/dioxus-components`, plus forks outside the brief's scope where they carried the only fix.
 

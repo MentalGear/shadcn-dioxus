@@ -4605,7 +4605,7 @@ pub struct CarouselVirtualContentProps<T: Clone + PartialEq + 'static> {
 ///
 /// **Deviation from the bench's own microtask-timed correction, recorded
 /// rather than silently substituted:** the bench prototype
-/// (`dev-docs/research/carousel-overscroll-bench.html`, `seamlessLoop()`)
+/// (`playwright/fixtures/carousel-overscroll-bench-rev40.html`, `seamlessLoop()`)
 /// runs this same re-alignment from a `MutationObserver` callback -- a
 /// microtask, guaranteed to run before the browser paints the DOM patch
 /// that triggered it. This component instead runs it from a plain
