@@ -90,6 +90,41 @@ test.describe("virtual grids: find-in-page placeholders (row 309)", () => {
     await expect(w.locator('[data-grid-index="2467"]')).toHaveAttribute("data-find-match", "true");
   });
 
+  test("a browser reveal lands on the real item although the row estimate is off", async ({ page }) => {
+    // The demo's `estimate_row_height` (64) is below the real row (72: the item's 56 + 8 margin, plus the
+    // grid's own 8 px of row padding). The placeholder sits at the estimate and the browser scrolls to it
+    // after `beforematch`; the rows mounted above the item then measure 8 px taller each and push the item
+    // below where the browser scrolled: 129 px off at the 422nd grid row, so "Photo 2108" ended half out of the
+    // 256 px viewport and the grid showed other photos. A `#:~:text=` fragment is the one reveal path
+    // Playwright can drive that includes the browser's own scroll (the dispatched `beforematch` of the
+    // tests above does not: it left the item in view).
+    await page.addInitScript(() => {
+      (window as unknown as { __fired: string[] }).__fired = [];
+      document.addEventListener(
+        "beforematch",
+        (e) => (window as unknown as { __fired: string[] }).__fired.push((e.target as HTMLElement).dataset.findIndex ?? "?"),
+        true,
+      );
+    });
+    await gotoHydrated(page, `${FIND_URL}#:~:text=Photo%202108`, { waitUntil: "networkidle" });
+    const w = wrap(page, "find-in-page");
+    // The estimate really is off (the test is about that; fix the demo's numbers and it must say so).
+    const sizes = await w.evaluate((el) => ({
+      real: el.querySelector('[role="row"]')!.getBoundingClientRect().height,
+      placeholder: el.querySelector("[data-find-index]")!.getBoundingClientRect().height,
+    }));
+    expect(sizes.real).toBeGreaterThan(sizes.placeholder);
+    // The fragment is searched while the document loads and again as the placeholders mount; Chromium
+    // fires `beforematch` on the placeholder of item 2107.
+    await expect.poll(() => page.evaluate(() => (window as unknown as { __fired: string[] }).__fired)).toContain("2107");
+    const item = '[data-grid-index="2107"]';
+    await expect(w.locator(item)).toHaveAttribute("data-find-match", "true");
+    await expect.poll(() => inView(w, item)).toBe(true);
+    // It stays: rows still measuring around it do not move it out again.
+    await page.waitForTimeout(500);
+    expect(await inView(w, item)).toBe(true);
+  });
+
   test("a grid without text_value has no find layer", async ({ page }) => {
     await gotoHydrated(page, MAIN_URL);
     const g = page.locator('[data-virtual-grid="grid"]').first();
