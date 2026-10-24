@@ -22,7 +22,7 @@
 # The browser half is `playwright/docs-accordion.spec.ts` and `playwright/docs-structure.spec.ts`.
 #
 # ALLOWLIST: `<file>|<reason>` for a file that may keep a native disclosure (there is none today). An entry whose
-# file no longer has a hit fails (stale), and a reason is mandatory.
+# file with no hit fails (stale), and a reason is mandatory.
 #
 # Usage: scripts/check-docs-own-components.sh
 set -euo pipefail

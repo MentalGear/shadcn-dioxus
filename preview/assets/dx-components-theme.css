@@ -115,7 +115,7 @@ html[data-theme="light"] [class~="dxc-system"] {
    * muted, accent, border, ...), not a numbered ramp. This is the role layer,
    * and it is the whole palette: the upstream Dioxus numbered ramp
    * (`--primary-color-*`, `--secondary-color-*`, the status and error
-   * variables, `--focused-border-color`) is gone: every role carries its
+   * variables, `--focused-border-color`) is not used: every role carries its
    * own literal (backlog row 373), so a role's default is written once,
    * here, and is shadcn's Neutral value unless a comment says why not.
    * Component sites read these roles
@@ -173,7 +173,7 @@ html[data-theme="light"] [class~="dxc-system"] {
 
   /* Actions */
 
-  /* Nova: `--primary` is shadcn's `oklch(0.205)` = #171717 in light (it was pure black until row 373) and
+  /* Nova: `--primary` is shadcn's `oklch(0.205)` = #171717 in light (row 373) and
    * `oklch(0.922)` = #e5e5e5 in dark (shadcn globals.css). */
   --dx-primary: var(--primary, var(--light, oklch(20.5% 0 0deg)) var(--dark, oklch(92.2% 0 0deg)));
   --dx-primary-foreground: var(--primary-foreground, var(--light, #fafafa) var(--dark, #171717));
@@ -274,7 +274,7 @@ html[data-theme="light"] [class~="dxc-system"] {
   --dx-ring-color: var(--dx-ring-source);
 
   /* Non-shadcn role: a stronger line than `--dx-border` (hover borders,
-   * checkbox ring). Phase B removed every other `-alt` role variant. There is
+   * checkbox ring). It is the only `-alt` role variant. There is
    * no shadcn variable to read, so a theme preset
    * (`preview/assets/theme-presets.css`) supplies the optional `--border-strong`
    * hook, derived from its own ink and page so the line keeps the preset's tint.
@@ -362,7 +362,7 @@ html[data-theme="light"] [class~="dxc-system"] {
    * literals) lands almost entirely on a 4px/0.25rem grid already; this
    * scale *is* that grid. Steps are named after Tailwind v4's own spacing
    * scale (`--spacing * N`) because they resolve to the same values for
-   * every step below -- deliberate, since row 32 keeps the door open to
+   * every step below -- deliberate: row 32 keeps the door open to
    * Tailwind's `@theme` block, which is CSS custom properties. Only steps
    * with real evidence are defined; gaps (11, 13, 14, ...) have none. The
    * half steps carry the 6px gaps and 10px insets of Nova's compact controls

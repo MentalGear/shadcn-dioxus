@@ -20,8 +20,8 @@
 # its gallery, one such demo's first-render panic takes down the entire
 # home page and every home-page-dependent test with it. The fix is always
 # to hoist the calls out of the closure into the component body. Row 74
-# names the before/after commits of the one real instance: this script
-# fails on the pre-fix `navigation_menu.rs` and passes on the fixed one.
+# holds the one real instance (`navigation_menu.rs`): this script flags
+# the hook-in-closure shape there and passes once the calls are hoisted.
 #
 # What this catches: a call shaped like a hook -- `use_[a-z0-9_]+(`,
 # called as a free function or path-qualified function, never as a
@@ -36,8 +36,8 @@
 #
 # Detection is deliberately conservative: it flags every `use_*(`-shaped
 # free-function call found in that span without first trying to prove the
-# callee really is a hook. This was verified empirically against this
-# crate's own ~60 `fn use_*` definitions and ~300 call sites: every one of
+# callee really is a hook. Across this crate's own
+# ~60 `fn use_*` definitions and ~300 call sites, every one of
 # them -- including less obviously-named ones like `use_controlled` -- is
 # in fact a hook, so the tree runs clean with no entries in the
 # NON_HOOK_NAMES exclusion below. `.method()`-style calls are
@@ -188,7 +188,7 @@ def matching_paren(text, open_pos):
 
 def preceded_by_dot(text, pos):
     """True if the nearest non-whitespace character before `pos` is `.`
-    -- used to exclude `.use_something(` method calls (none exist in this
+    -- excludes `.use_something(` method calls (none exist in this
     crate today; see NON_HOOK_NAMES above) from matching as free-function
     hook calls."""
     window = text[max(0, pos - 10) : pos].rstrip()

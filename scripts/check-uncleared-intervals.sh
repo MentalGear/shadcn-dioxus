@@ -47,7 +47,7 @@
 # the page is idle and fails when the count grows with page age.
 #
 # Comment handling: `//` line comments are ignored, so prose that names the
-# old API (like this file's neighbours) does not trip it. A marker comment is
+# raw interval API (like this file's neighbours) does not trip it. A marker comment is
 # looked for before stripping.
 #
 # Usage: scripts/check-uncleared-intervals.sh [file ...]

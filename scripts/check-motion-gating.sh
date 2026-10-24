@@ -33,7 +33,7 @@
 #     or the stylesheet is in ALLOW below with a reason. Non-component sheets under preview/assets with an
 #     infinite animation are UTILITY classes (`.dx-shimmer` in dx-effects.css) with no root of their own; they
 #     are gated at their HOST instead (check C). A new utility loop must be added to UTILITY below. An ALLOW entry whose
-#     sheet no longer has an infinite animation, or whose component has since been wired, fails the run, so
+#     sheet has no infinite animation, or whose component is wired to `use_motion`, fails the run, so
 #     the list cannot rot into blanket permission.
 #
 #  C. UTILITY CLASSES. A utility class that loops (`dx-shimmer`) is applied by a host: a component that

@@ -21,9 +21,9 @@ use dioxus::prelude::*;
 // and -- keyboard-matrix.spec.ts specifically -- Delete reachable via End
 // as the *last* item and as ArrowDown's wrap-around target from it. Roving
 // focus orders by `index` value, not by JSX/DOM position (`collection.rs`),
-// so Delete keeps index 4 (bumped up from its old 3) precisely so it stays
+// so Delete holds index 4 (after the submenu trigger at 3) precisely so it stays
 // the highest index -- and therefore still "last" -- with the submenu
-// trigger sliding in at index 3, between Duplicate and it.
+// trigger sitting at index 3, between Duplicate and it.
 #[derive(Debug, Clone, Copy, PartialEq)]
 enum Operation {
     Edit,

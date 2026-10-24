@@ -8,7 +8,7 @@ use time::{ext::NumericalDuration, Date, UtcDateTime};
 ///
 /// Computed from today, never hard-coded: a fixed date goes stale the day the calendar stops
 /// opening on its month, and the demo then shows no unavailable day at all. The ranges are anchored
-/// on today and the anchor slides back when today is near the end of the month, so the farthest
+/// on today and the anchor slides earlier when today is near the end of the month, so the farthest
 /// range (anchor + 17 days) always still lands inside the month in view. Near the end of the month
 /// that slide can put today inside a range; that is harmless (an unavailable day is only a day
 /// that cannot be picked), and the alternative -- dropping a range -- would leave the demo with
