@@ -8,7 +8,7 @@
  * Link it once at your app root next to `dx-components-theme.css` (it reads that
  * file's `--dx-space-*` tokens, with fallbacks, and its `--light`/`--dark` mode
  * toggles for the dark-mode shimmer highlight). `attachment`, `marker`, `message_scroller`,
- * `scroll_area` and `virtual_list` list it in their `component.json` `globalAssets`, so `dx components add` copies it
+ * `scroll_area`, `trace`, `virtual_grid` and `virtual_list` list it in their `component.json` `globalAssets`, so `dx components add` copies it
  * alongside the theme.
  *
  * Ported from shadcn/ui's `scroll-fade` and `shimmer` utilities
@@ -63,10 +63,10 @@
  *   edges where scroll-driven animations are missing); with no script they stay
  *   0px and the scrollbar simply fades with the content.
  *
- * In Rust: `ScrollArea`, `VirtualList` and `MessageScrollerViewport` take a
+ * In Rust: `ScrollArea`, `VirtualList`, `VirtualGrid` and `MessageScrollerViewport` take a
  * `fade: ScrollFade` prop (`None`, `Y`, `X`, `Both`, `Top`, `Bottom`, `Start`, `End`: one
  * class each, on the element that scrolls). It only adds the class, so this file
- * must be linked for it to do anything; the three components list it in their
+ * must be linked for it to do anything; the components list it in their
  * `globalAssets`. Documented in `scroll_area/docs.md` ("Edge fade").
  * ---------------------------------------------------------------------------
  */
@@ -411,7 +411,7 @@
  * inside the content area and 1 everywhere else: the scrollbar gutters and any border stay
  * fully opaque. Where there is no gutter (no overflow, `scrollbar-width: none`, an overlay
  * scrollbar, or no script to measure it) the content area is the padding box and nothing
- * outside it is painted but a border, so the mask is the plain gradient it was before. The
+ * outside it is painted but a border, so the mask is the plain gradient. The
  * lists have four entries for the four layers; a one-gradient mask has three and the
  * extra entry is ignored. The mask is `none` under `.dx-scroll-fade-none`. */
 .dx-scroll-fade,

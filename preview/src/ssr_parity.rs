@@ -628,8 +628,8 @@ mod tests {
         rsx! { div { style: "flex-basis: {basis}%;" } }
     }
 
-    /// A text input whose `value` an effect fills (row 306's Combobox half: the input showed no label
-    /// until hydration). The browser spec `first-paint-text` read `input.value`; this is that read.
+    /// A text input whose `value` an effect fills (row 306's Combobox half: the input shows no label
+    /// until hydration). The browser spec `first-paint-text` reads `input.value`; this is that read.
     fn effect_valued_input() -> Element {
         let mut value = use_signal(String::new);
         use_effect(move || value.set("SvelteKit".into()));

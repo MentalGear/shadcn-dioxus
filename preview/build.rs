@@ -8,22 +8,22 @@ fn main() {
     let out_dir = std::env::var("OUT_DIR").unwrap();
     let out_dir = std::path::PathBuf::from(out_dir);
     // Deliberately NOT `cargo:rerun-if-changed=src/components`. That
-    // blanket, recursive directory watch made cargo rerun this script on
+    // blanket, recursive directory watch would rerun this script on
     // ANY change under any component folder -- including `component.rs`/
     // `style.css`/`variants/**`, none of which this script reads -- and
     // `walk_markdown_dir` below unconditionally rewrites every component's
     // `description.txt`/`docs_sections.rs` in `OUT_DIR` on every run regardless of
     // which file triggered it. Since `components/mod.rs` `include_str!`s
-    // those two per component, their bumped mtimes made cargo treat
+    // those two per component, their bumped mtimes would make cargo treat
     // `preview` itself as dirty too, compounding the separate compile-time
     // CSS embed that `dev-docs/dev-loop.md`'s CSS section root-causes as
-    // the primary reason a component `style.css` edit forced a full
+    // the primary reason a component `style.css` edit forces a full
     // rebuild instead of hot-reloading. This script only ever reads `*.md`
-    // and `component.json` files; each one already registers its own
+    // and `component.json` files; each one registers its own
     // precise `cargo:rerun-if-changed` below (`process_markdown_to_html`/
     // `read_component_description`), which is the complete, correct watch
-    // list for what this script actually does -- narrowing to just that
-    // removes the compounding, on top of the primary fix in `main.rs`/
+    // list for what this script does -- watching just those avoids
+    // the compounding, on top of the primary fix in `main.rs`/
     // `components/mod.rs`.
     //
     // (Row 219: this script also registers `src/components/mod.rs` and every
@@ -33,7 +33,7 @@ fn main() {
     //
     // Known, accepted trade-off: a brand new `.md` file inside an EXISTING component (one this
     // script has never seen) isn't watched until something else causes it to rerun -- cargo has no
-    // "watch this directory for new entries only" primitive, only the recursive watch just removed.
+    // "watch this directory for new entries only" primitive, only the recursive watch this script avoids.
     // A new COMPONENT or variant needs no manual `touch` (backlog rows 92 and 219): adding a
     // component edits `CATALOG` in `components/mod.rs`, and the
     // `rerun-if-changed` on that file and on every `variants/` directory below re-runs this script,
@@ -317,7 +317,7 @@ fn doc_html(doc: &str) -> String {
     let doc = doc.replace("[`", "`").replace("`]", "`");
     let mut out = String::new();
     // A doc comment is content under the page's own `<h3>` (struct) or inside a table cell: its `# Example` /
-    // `## Styling` headings must never join the page outline (they rendered an `<h1>` and `<h2>`s in the docs
+    // `## Styling` headings must never join the page outline (they would render an `<h1>` and `<h2>`s in the docs
     // prose), so every heading level is demoted to `<h4>`.
     use pulldown_cmark::{Event, HeadingLevel, Tag, TagEnd};
     let events = pulldown_cmark::Parser::new(&doc).map(|event| match event {
@@ -462,7 +462,7 @@ fn markdown_events(markdown_input: &str) -> Vec<pulldown_cmark::Event<'_>> {
     let mut options = Options::empty();
     options.insert(Options::ENABLE_GFM);
     // `ENABLE_GFM` alone does not turn on pipe tables (nor the other GFM
-    // extensions), so they shipped as raw `|` text.
+    // extensions), so tables would stay raw `|` text.
     options.insert(Options::ENABLE_TABLES);
     options.insert(Options::ENABLE_STRIKETHROUGH);
     options.insert(Options::ENABLE_TASKLISTS);

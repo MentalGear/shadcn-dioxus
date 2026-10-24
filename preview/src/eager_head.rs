@@ -24,12 +24,12 @@
 //! `nav.replace(ComponentDemoPath)`, so a stylesheet of the header or of a popover in it is recorded
 //! and never inserted, and `/component/X/` renders that component unstyled.
 //!
-//! It is a CLASS, not an instance: any component's link is exposed to it, which is why moving
-//! `GlobalHead` into `AppLayout` (backlog row 46) covered only the four app sheets.
+//! It is a CLASS, not an instance: any component's link is exposed to it, which is why mounting
+//! `GlobalHead` once in `AppLayout` (backlog row 46) covers only the four app sheets.
 //!
 //! # The construction
 //!
-//! Put the insertion back where the de-duplication happens. [`EagerHeadDocument`] wraps whatever
+//! The insertion happens where the de-duplication does. [`EagerHeadDocument`] wraps whatever
 //! `Document` the platform provided and leaves `create_link`/`create_meta`/`create_script`/
 //! `create_style` at the trait's own defaults, which run `create_element_in_head` through `eval` --
 //! and `WebDocument::eval` calls its JS synchronously (`dioxus-web/src/document.rs`
@@ -135,7 +135,7 @@ fn covered_file(props: &LinkProps) -> Option<String> {
         && file
             .chars()
             .all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_'));
-    // Only `[A-Za-z0-9._-]` got this far, so a double-quoted literal needs no escaping.
+    // Only `[A-Za-z0-9._-]` gets this far, so a double-quoted literal needs no escaping.
     plain.then(|| format!("\"{file}\""))
 }
 

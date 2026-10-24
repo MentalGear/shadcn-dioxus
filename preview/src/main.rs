@@ -274,7 +274,7 @@ fn server_static_routes() -> Vec<String> {
 pub fn App() -> Element {
     // Insert every `document::Link`/`Stylesheet`/`Meta` into `<head>` as it renders, not from an effect
     // that a same-turn teardown drops while Dioxus's de-duplication still counts the link as present
-    // (the legacy `/component/?name=X` shell loses the header's `Popover` CSS that way).
+    // (the legacy `/component/?name=X` shell would lose the header's `Popover` CSS that way).
     // First, so it is in place before any component can render a link. Client builds only: the server's
     // `ServerDocument` must keep collecting the SSR head. See `eager_head`.
     #[cfg(not(feature = "server"))]
@@ -284,7 +284,7 @@ pub fn App() -> Element {
     // interaction tests race hydration). `document::eval` only ever runs
     // client-side (a no-op string during SSR, per `dioxus-document`), and
     // `use_effect` only fires after a render has actually committed to the
-    // DOM -- under the SSG lane that means after wasm has booted and
+    // DOM -- in a prerendered page that means after wasm has booted and
     // hydration has walked the tree and attached event listeners, not
     // merely after the prerendered HTML has loaded. `<html>` (`document
     // .documentElement`) is never vdom-owned by this app, so writing to its
@@ -557,9 +557,9 @@ impl Route {
 /// remove head elements, so the sheets can only be absent because they were never inserted.) This
 /// layout's once-only mount covers these four sheets; the class -- every other component's link on
 /// any torn-down subtree -- is covered by `eager_head`, installed in `App`. `GlobalHead` therefore
-/// mounts exactly once, here, and never unmounts for the lifetime of the app. It replaces a call per
-/// route (`NavigationLayout`, `ComponentBlockDemo`/`ComponentBlockDemoPath`, `EmailClientDashboard`),
-/// so no route calls it;
+/// mounts exactly once, here, and never unmounts for the lifetime of the app. No route
+/// (`NavigationLayout`, `ComponentBlockDemo`/`ComponentBlockDemoPath`, `EmailClientDashboard`)
+/// calls it;
 /// `NavigationLayout`'s own `hero.css` link stays where it is, since nothing outside
 /// `NavigationLayout` needs `hero.css`, so no cross-layout transition unmounts it under a sibling
 /// that also renders it.
@@ -975,7 +975,7 @@ async fn fetch_asset_text(url: String) -> Option<String> {
 /// The docs' copy-to-clipboard button for a code block: the library's own ghost icon `Button`.
 ///
 /// The copy runs from an inline `onclick` attribute (not a Rust handler) so it works before the
-/// wasm hydrates, as the `<button>` this replaces did. The same script flips `data-copied`, and
+/// wasm hydrates. The same script flips `data-copied`, and
 /// `main.css` swaps the two icons on it (a Rust-side signal would need its own `onclick`, which
 /// `merge_attributes` would let the inline string replace). Placement over the code block comes
 /// from the caller's `attributes` (`position`/`top`/`right`).
@@ -1349,8 +1349,8 @@ enum DocsNavActive {
     /// A component page, keyed by the component's raw name.
     Component(&'static str),
     /// The homepage (`/`) -- part of this same nav, but distinct from
-    /// `Overview`: with a bare `Option<&'static str>` where `None` meant "on
-    /// Docs", the gallery page would wrongly light up "Overview".
+    /// `Overview`: a bare `Option<&'static str>` with `None` for "on
+    /// Docs" would wrongly light up "Overview" on the gallery page.
     Home,
     /// The demo-apps index (`/demos`): "Start" > "Demos" (backlog row 303).
     Demos,
@@ -1417,8 +1417,7 @@ fn DocsLayout(
     // component pages) leaves this `None` and keeps the open-by-
     // default behavior -- those pages need the nav immediately usable.
     // `SidebarProvider`'s own `default_open` (`components/sidebar/
-    // component.rs`) already exists for exactly this and just needed
-    // threading through here.
+    // component.rs`) carries it, threaded through here.
     #[props(default)] default_open: Option<bool>,
     // The CURRENT page's own section headings, if it has any -- `Docs()`
     // passes its `DOCS_SECTIONS`, `Home()` passes its `HOME_SECTIONS`.
@@ -2235,8 +2234,8 @@ fn ComponentVariantHighlight(
 }
 
 /// The prose about one demo (`variants/<variant>/notes.md`, rendered by `build.rs`), in a closed
-/// `Collapsible` under that demo, so a long explanation costs one line until the reader asks for it. It
-/// replaces the text-only "Examples" lists that described the demos from a section away (row 233).
+/// `Collapsible` under that demo, so a long explanation costs one line until the reader asks for it, and the prose sits with its
+/// demo, not in a section away (row 233).
 /// `hidden_until_found` keeps the closed note in the server markup, searchable and reachable by a
 /// `#fragment` (`use_open_section_for_hash`).
 #[component]
@@ -2385,7 +2384,7 @@ fn BlockComponentVariantHighlight(
                         // query written inside the iframe's own stylesheet
                         // would evaluate against the iframe's own (possibly
                         // squeezed) viewport -- the exact ambiguous signal
-                        // at the heart of this bug -- but `main.css` is
+                        // at the heart of the problem -- but `main.css` is
                         // loaded by the OUTER top-level page, so its media
                         // query evaluates against the outer page's real
                         // `window.innerWidth`, i.e. the actual visitor
@@ -2576,11 +2575,11 @@ fn ComponentBlockDemo(name: String, variant: Option<String>, dark_mode: Option<b
 
     // `GlobalHead` renders once, in `AppLayout` (see that component's doc
     // comment, row 46) -- NOT called here. This route's own redirect to
-    // `ComponentBlockDemoPath` is exactly the transition that finding
-    // documents: calling `GlobalHead` independently in both of two routes a
+    // `ComponentBlockDemoPath` is exactly the transition that doc
+    // comment describes: calling `GlobalHead` independently in both of two routes a
     // client-side navigation can move between silently drops its `<link>`s
     // on the destination once the source unmounts, which a per-route call
-    // here would reintroduce.
+    // here would cause.
     rsx! {
         main {
             style: "min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem;",
@@ -2631,7 +2630,7 @@ fn ComponentBlockDemoPath(name: String, variant: String, dark_mode: Option<bool>
     // `inset` variants) already renders its own `<main>` via
     // `SidebarInset`, so a second, outer `<main>` here would nest one
     // `<main>` inside another (`landmark-no-duplicate-main`/
-    // `landmark-main-is-top-level` -- the same defect row 34 covers for
+    // `landmark-main-is-top-level` -- the same rule row 34 covers for
     // the dashboard). This way the block's own landmarks stay
     // untouched and nothing is duplicated; see `Sidebar`'s own component
     // (`components/sidebar/component.rs`) for the matching fix that gives
@@ -2742,7 +2741,7 @@ fn Home(iframe: Option<bool>, dark_mode: Option<bool>) -> Element {
 /// Which fixed column group of the masonry a card belongs to. A card's column is decided HERE, at
 /// compile time, and is the same in the prerendered HTML, in a half-parsed document and after hydration:
 /// it does not depend on the card's height or on how many of its neighbours have arrived (backlog row
-/// 214; the CSS multi-column masonry this replaces re-assigned cards to columns on every parsed card).
+/// 214; a CSS multi-column masonry re-assigns cards to columns on every parsed card).
 ///
 /// Three columns above 1100px: `Left`, `Middle`, and `RightUpper` stacked on `RightLower`. Two columns
 /// from 641 to 1100px: `Left` over `RightUpper`, and `Middle` over `RightLower` (a grid with two rows,
@@ -3227,7 +3226,7 @@ fn BlockFilters() -> Element {
                     for tag in [("ft-design", "Design", true), ("ft-eng", "Engineering", false), ("ft-research", "Research", false)] {
                         // `var(--dx-space-3)` (12px), not the `0.55rem`
                         // (8.8px) every other unrelated gap in this
-                        // dashboard mockup still uses -- this is the one
+                        // dashboard mockup uses -- this is the one
                         // row that actually pairs a `Checkbox` with its
                         // label text, so it should match the same
                         // checkbox+label spacing convention every other
