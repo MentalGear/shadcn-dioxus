@@ -22,10 +22,6 @@
 /// symbol must come from the system libc.
 #[cfg(target_arch = "wasm32")]
 #[expect(
-    non_upper_case_globals,
-    reason = "`stderr` is the C symbol's name, which the linker matches"
-)]
-#[expect(
     unsafe_code,
     reason = "`no_mangle` exports the C symbol tree-sitter links against; the only unsafe item in the workspace"
 )]
