@@ -63,6 +63,7 @@ pub fn ToolbarGroup(
     #[props(extends = GlobalAttributes)]
     #[props(extends = div)]
     attributes: Vec<Attribute>,
+    /// The toolbar buttons or controls in the group.
     children: Element,
 ) -> Element {
     let base = attributes!(div {

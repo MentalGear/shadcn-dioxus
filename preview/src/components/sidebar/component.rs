@@ -172,8 +172,12 @@ pub fn use_is_mobile() -> Signal<bool> {
 
 #[component]
 pub fn SidebarProvider(
+    /// Whether the sidebar starts expanded when `open` is not set. Defaults to `true`.
     #[props(default = true)] default_open: bool,
+    /// The controlled open state: `true` expands the sidebar, `false` collapses it. Unset, the
+    /// provider tracks it itself.
     #[props(default)] open: ReadSignal<Option<bool>>,
+    /// Called with the new open state when the desktop sidebar expands or collapses.
     #[props(default)] on_open_change: Callback<bool>,
     /// The key that toggles the sidebar with Ctrl (Cmd on macOS), `'b'` like shadcn's
     /// `SIDEBAR_KEYBOARD_SHORTCUT`; `None` turns the shortcut off. It is left alone while focus
@@ -182,6 +186,7 @@ pub fn SidebarProvider(
     #[props(default = ReadSignal::new(Signal::new(Some(SIDEBAR_KEYBOARD_SHORTCUT))))]
     keyboard_shortcut: ReadSignal<Option<char>>,
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The sidebar and the page, wrapped in the provider.
     children: Element,
 ) -> Element {
     let is_mobile = use_is_mobile();
@@ -252,10 +257,16 @@ pub fn SidebarProvider(
 
 #[component]
 pub fn Sidebar(
+    /// The edge the sidebar sits on: `Left` (default) or `Right`.
     #[props(default)] side: SidebarSide,
+    /// The chrome: `Sidebar` (flush with the edge, the default), or `Floating` and `Inset` (padded
+    /// and rounded).
     #[props(default)] variant: SidebarVariant,
+    /// How the sidebar collapses: `Offcanvas` (default) slides it off the edge, `Icon` keeps an
+    /// icon strip, and `None` never collapses.
     #[props(default)] collapsible: SidebarCollapsible,
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The sidebar's content: its header, content and footer.
     children: Element,
 ) -> Element {
     let ctx = use_sidebar();
@@ -367,6 +378,7 @@ pub fn Sidebar(
 
 #[component]
 pub fn SidebarTrigger(
+    /// Runs when the trigger is clicked, before the sidebar toggles.
     #[props(default)] onclick: Option<EventHandler<MouseEvent>>,
     /// Replaces the default panel icon (e.g. a hamburger `Menu`). Give it the class
     /// `dx-sidebar-trigger-icon` to keep the trigger's icon sizing and RTL flip.
@@ -439,6 +451,7 @@ pub fn SidebarRail(#[props(extends = GlobalAttributes)] attributes: Vec<Attribut
 #[component]
 pub fn SidebarInset(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The page content beside the sidebar.
     children: Element,
 ) -> Element {
     let base = attributes!(main {
@@ -456,6 +469,7 @@ pub fn SidebarInset(
 #[component]
 pub fn SidebarHeader(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The header's content, usually a team or app switcher.
     children: Element,
 ) -> Element {
     let base = attributes!(div {
@@ -474,6 +488,7 @@ pub fn SidebarHeader(
 #[component]
 pub fn SidebarContent(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The sidebar's main content, usually groups and menus.
     children: Element,
 ) -> Element {
     let base = attributes!(div {
@@ -492,6 +507,7 @@ pub fn SidebarContent(
 #[component]
 pub fn SidebarFooter(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The footer's content, usually a user menu or account controls.
     children: Element,
 ) -> Element {
     let base = attributes!(div {
@@ -509,7 +525,9 @@ pub fn SidebarFooter(
 
 #[component]
 pub fn SidebarSeparator(
+    /// Whether the separator runs horizontally (the default) or vertically.
     #[props(default = true)] horizontal: bool,
+    /// Whether the separator is decorative, so assistive technology skips it. Defaults to `true`.
     #[props(default = true)] decorative: bool,
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
 ) -> Element {
@@ -529,6 +547,7 @@ pub fn SidebarSeparator(
 #[component]
 pub fn SidebarGroup(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The group's label, content and actions.
     children: Element,
 ) -> Element {
     let base = attributes!(div {
@@ -546,8 +565,11 @@ pub fn SidebarGroup(
 
 #[component]
 pub fn SidebarGroupLabel(
+    /// Renders the label as the element the callback returns, instead of a `<div>`. The callback
+    /// gets the attributes and the children.
     r#as: Option<Callback<AsChild, Element>>,
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The label text.
     children: Element,
 ) -> Element {
     let base = attributes!(div {
@@ -569,8 +591,11 @@ pub fn SidebarGroupLabel(
 
 #[component]
 pub fn SidebarGroupAction(
+    /// Renders the action as the element the callback returns, instead of a `<button>`. The
+    /// callback gets the attributes and the children.
     r#as: Option<Callback<AsChild, Element>>,
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The action's content, usually an icon.
     children: Element,
 ) -> Element {
     let base = attributes!(button {
@@ -595,6 +620,7 @@ pub fn SidebarGroupAction(
 #[component]
 pub fn SidebarGroupContent(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The group's menu.
     children: Element,
 ) -> Element {
     let base = attributes!(div {
@@ -613,6 +639,7 @@ pub fn SidebarGroupContent(
 #[component]
 pub fn SidebarMenu(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The menu items.
     children: Element,
 ) -> Element {
     let base = attributes!(ul {
@@ -631,6 +658,7 @@ pub fn SidebarMenu(
 #[component]
 pub fn SidebarMenuItem(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The menu button, action or sub-menu.
     children: Element,
 ) -> Element {
     let base = attributes!(li {
@@ -684,12 +712,20 @@ impl SidebarMenuButtonSize {
 
 #[component]
 pub fn SidebarMenuButton(
+    /// Marks the button as the current page or selection. Defaults to `false`.
     #[props(default = false)] is_active: bool,
+    /// The look: `Default`, or `Outline` (a thin border).
     #[props(default)] variant: SidebarMenuButtonVariant,
+    /// The button's size: `Default`, `Sm` or `Lg`.
     #[props(default)] size: SidebarMenuButtonSize,
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The tooltip shown beside the button while the sidebar is collapsed. Unset, the button has
+    /// none.
     #[props(default)] tooltip: Option<Element>,
+    /// Renders the button as the element the callback returns, instead of a `<button>`. The
+    /// callback gets the attributes and the children.
     r#as: Option<Callback<AsChild, Element>>,
+    /// The button's content: an icon and a label.
     children: Element,
 ) -> Element {
     let ctx = use_sidebar();
@@ -755,9 +791,14 @@ pub fn SidebarMenuButton(
 
 #[component]
 pub fn SidebarMenuAction(
+    /// Hides the action until its menu item is hovered or focused. Defaults to `false`, which
+    /// always shows it.
     #[props(default = false)] show_on_hover: bool,
+    /// Renders the action as the element the callback returns, instead of a `<button>`. The
+    /// callback gets the attributes and the children.
     r#as: Option<Callback<AsChild, Element>>,
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The action's content, usually an icon.
     children: Element,
 ) -> Element {
     let base = attributes!(button {
@@ -783,6 +824,7 @@ pub fn SidebarMenuAction(
 #[component]
 pub fn SidebarMenuBadge(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The badge's content, usually a count.
     children: Element,
 ) -> Element {
     let base = attributes!(div {
@@ -800,6 +842,7 @@ pub fn SidebarMenuBadge(
 
 #[component]
 pub fn SidebarMenuSkeleton(
+    /// Shows a placeholder icon before the text line. Defaults to `false`.
     #[props(default = false)] show_icon: bool,
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
 ) -> Element {
@@ -825,6 +868,7 @@ pub fn SidebarMenuSkeleton(
 #[component]
 pub fn SidebarMenuSub(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The sub-menu items.
     children: Element,
 ) -> Element {
     let base = attributes!(ul {
@@ -843,6 +887,7 @@ pub fn SidebarMenuSub(
 #[component]
 pub fn SidebarMenuSubItem(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The sub-menu link.
     children: Element,
 ) -> Element {
     let base = attributes!(li {
@@ -877,10 +922,15 @@ impl SidebarMenuSubButtonSize {
 
 #[component]
 pub fn SidebarMenuSubButton(
+    /// Marks the link as the current page. Defaults to `false`.
     #[props(default = false)] is_active: bool,
+    /// The link's size: `Md` (default) or `Sm`.
     #[props(default)] size: SidebarMenuSubButtonSize,
+    /// Renders the link as the element the callback returns, instead of an `<a>`. The callback gets
+    /// the attributes and the children.
     r#as: Option<Callback<AsChild, Element>>,
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The link's content.
     children: Element,
 ) -> Element {
     let base = attributes!(a {

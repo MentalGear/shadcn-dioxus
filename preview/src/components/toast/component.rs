@@ -110,8 +110,12 @@ pub use dioxus_primitives::toast::{
 
 #[component]
 pub fn ToastProvider(
+    /// How long a toast without its own duration stays up. Defaults to 5 seconds; `None` keeps such
+    /// toasts up until they are closed.
     #[props(default = ReadSignal::new(Signal::new(Some(Duration::from_secs(5)))))]
     default_duration: ReadSignal<Option<Duration>>,
+    /// The most toasts kept at once. Past it, the oldest non-permanent toast is removed first.
+    /// Defaults to 10.
     #[props(default = ReadSignal::new(Signal::new(10)))] max_toasts: ReadSignal<usize>,
     /// How many toasts the pile shows; the rest wait hidden until a slot frees (default 3).
     #[props(default = ReadSignal::new(Signal::new(3)))]
@@ -119,8 +123,10 @@ pub fn ToastProvider(
     /// Where the toaster sits: a top or bottom edge, at the start, centre or end (default `BottomEnd`).
     #[props(default)]
     position: ReadSignal<ToastPosition>,
+    /// Renders each toast. Defaults to the themed toast.
     #[props(default)] render_toast: Option<Callback<toast::ToastPropsWithOwner, Element>>,
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The page content the toasts appear over.
     children: Element,
 ) -> Element {
     let render_toast = render_toast.unwrap_or_else(|| {
