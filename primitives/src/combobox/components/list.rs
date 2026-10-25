@@ -113,7 +113,14 @@ pub fn ComboboxList(props: ComboboxListProps) -> Element {
 /// the `auto`-vs-`manual` choice above and holds either way.
 #[cfg(feature = "web")]
 #[component]
-fn ComboboxListRendered(id: String, attributes: Vec<Attribute>, children: Element) -> Element {
+fn ComboboxListRendered(
+    /// The DOM id of the list element.
+    id: String,
+    /// Extra HTML attributes merged onto the list element.
+    attributes: Vec<Attribute>,
+    /// The options and empty state inside the list.
+    children: Element,
+) -> Element {
     let ctx: ComboboxContext = use_context();
     let mut selectable = ctx.selectable;
     let open = selectable.open;
@@ -197,7 +204,14 @@ fn ComboboxListRendered(id: String, attributes: Vec<Attribute>, children: Elemen
 /// the functional floor, a plain, always-in-flow `div`.
 #[cfg(not(feature = "web"))]
 #[component]
-fn ComboboxListRendered(id: String, attributes: Vec<Attribute>, children: Element) -> Element {
+fn ComboboxListRendered(
+    /// The DOM id of the list element.
+    id: String,
+    /// Extra HTML attributes merged onto the list element.
+    attributes: Vec<Attribute>,
+    /// The options and empty state inside the list.
+    children: Element,
+) -> Element {
     let ctx: ComboboxContext = use_context();
     let open = ctx.selectable.open;
 

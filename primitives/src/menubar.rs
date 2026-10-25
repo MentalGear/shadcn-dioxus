@@ -818,7 +818,14 @@ pub fn MenubarContent(props: MenubarContentProps) -> Element {
 /// correct choice, not an oversight.
 #[cfg(feature = "web")]
 #[component]
-fn MenubarContentRendered(id: String, attributes: Vec<Attribute>, children: Element) -> Element {
+fn MenubarContentRendered(
+    /// The DOM id of the menu's content element.
+    id: String,
+    /// Extra HTML attributes for the menu's content element.
+    attributes: Vec<Attribute>,
+    /// The menu items.
+    children: Element,
+) -> Element {
     let mut ctx: MenubarContext = use_context();
     let menu_ctx: MenubarMenuContext = use_context();
     let open = menu_ctx.is_open;
@@ -970,7 +977,14 @@ fn MenubarContentRendered(id: String, attributes: Vec<Attribute>, children: Elem
 /// the functional floor, a plain, always-in-flow `div`.
 #[cfg(not(feature = "web"))]
 #[component]
-fn MenubarContentRendered(id: String, attributes: Vec<Attribute>, children: Element) -> Element {
+fn MenubarContentRendered(
+    /// The DOM id of the menu's content element.
+    id: String,
+    /// Extra HTML attributes for the menu's content element.
+    attributes: Vec<Attribute>,
+    /// The menu items.
+    children: Element,
+) -> Element {
     let mut ctx: MenubarContext = use_context();
     let menu_ctx: MenubarMenuContext = use_context();
     let index = menu_ctx.index;

@@ -740,6 +740,7 @@ pub fn DropdownMenuContent(props: DropdownMenuContentProps) -> Element {
 #[cfg(feature = "web")]
 #[component]
 fn DropdownMenuContentRendered(
+    /// The DOM id of the menu's content element.
     id: String,
     /// The side of the trigger the menu opens on ([`DropdownMenuContentProps::side`]).
     side: ContentSide,
@@ -747,8 +748,11 @@ fn DropdownMenuContentRendered(
     align: ContentAlign,
     /// The gap to the trigger in px ([`DropdownMenuContentProps::side_offset`]).
     side_offset: u32,
+    /// Extra HTML attributes for the menu's content element.
     attributes: Vec<Attribute>,
+    /// Whether page scrolling is locked while the menu is open. True only for an open modal menu.
     scroll_lock_active: Memo<bool>,
+    /// The menu items.
     children: Element,
 ) -> Element {
     let mut ctx: DropdownMenuContext = use_context();
@@ -887,6 +891,7 @@ fn DropdownMenuContentRendered(
 #[cfg(not(feature = "web"))]
 #[component]
 fn DropdownMenuContentRendered(
+    /// The DOM id of the menu's content element.
     id: String,
     /// The side of the trigger the menu opens on ([`DropdownMenuContentProps::side`]).
     side: ContentSide,
@@ -894,8 +899,11 @@ fn DropdownMenuContentRendered(
     align: ContentAlign,
     /// The gap to the trigger in px ([`DropdownMenuContentProps::side_offset`]).
     side_offset: u32,
+    /// Extra HTML attributes for the menu's content element.
     attributes: Vec<Attribute>,
+    /// Whether page scrolling is locked while the menu is open. True only for an open modal menu.
     scroll_lock_active: Memo<bool>,
+    /// The menu items.
     children: Element,
 ) -> Element {
     // This arm is always in flow below the trigger (this component's doc): there is nothing to
@@ -1889,8 +1897,11 @@ pub fn DropdownMenuSubContent(props: DropdownMenuSubContentProps) -> Element {
 #[cfg(feature = "web")]
 #[component]
 fn DropdownMenuSubContentRendered(
+    /// The DOM id of the submenu's content element.
     id: String,
+    /// Extra HTML attributes for the submenu's content element.
     attributes: Vec<Attribute>,
+    /// The submenu items.
     children: Element,
 ) -> Element {
     let ctx: DropdownMenuContext = use_context();
@@ -2100,8 +2111,11 @@ fn DropdownMenuSubContentRendered(
 #[cfg(not(feature = "web"))]
 #[component]
 fn DropdownMenuSubContentRendered(
+    /// The DOM id of the submenu's content element.
     id: String,
+    /// Extra HTML attributes for the submenu's content element.
     attributes: Vec<Attribute>,
+    /// The submenu items.
     children: Element,
 ) -> Element {
     let ctx: DropdownMenuContext = use_context();

@@ -571,13 +571,21 @@ pub fn HoverCardContent(props: HoverCardContentProps) -> Element {
 #[cfg(feature = "web")]
 #[component]
 fn HoverCardContentRendered(
+    /// The DOM id of the card element.
     id: String,
+    /// Whether the card is open. On the web, its popover is kept shown while this is true.
     open: Memo<bool>,
+    /// Sets the open state. On the web, it is called when the browser or a scroll closes the card.
     set_open: Callback<bool>,
+    /// Whether the card is open. Sets its `data-state`.
     is_open: bool,
+    /// The side of the trigger the card is placed on.
     side: ContentSide,
+    /// The alignment of the card relative to the trigger.
     align: ContentAlign,
+    /// Extra HTML attributes for the card element.
     attributes: Vec<Attribute>,
+    /// The card's content.
     children: Element,
 ) -> Element {
     crate::top_layer::use_popover_shown_while_mounted(id.clone(), open, set_open);
@@ -657,16 +665,24 @@ fn HoverCardContentRendered(
 #[cfg(not(feature = "web"))]
 #[component]
 fn HoverCardContentRendered(
+    /// The DOM id of the card element.
     id: String,
     // Unused on this arm -- kept as a same-named field so the shared,
     // cfg-independent call site in `HoverCardContent` compiles unchanged on
     // both arms.
+    /// Whether the card is open. On the web, its popover is kept shown while this is true.
     open: Memo<bool>,
+    /// Sets the open state. On the web, it is called when the browser or a scroll closes the card.
     set_open: Callback<bool>,
+    /// Whether the card is open. Sets its `data-state`.
     is_open: bool,
+    /// The side of the trigger the card is placed on.
     side: ContentSide,
+    /// The alignment of the card relative to the trigger.
     align: ContentAlign,
+    /// Extra HTML attributes for the card element.
     attributes: Vec<Attribute>,
+    /// The card's content.
     children: Element,
 ) -> Element {
     let _ = (open, set_open);

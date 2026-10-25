@@ -689,9 +689,13 @@ pub fn ContextMenuContent(props: ContextMenuContentProps) -> Element {
 #[cfg(feature = "web")]
 #[component]
 fn ContextMenuContentRendered(
+    /// The DOM id of the menu's content element.
     id: String,
+    /// Extra HTML attributes for the menu's content element.
     attributes: Vec<Attribute>,
+    /// Whether page scrolling is locked while the menu is open. True only for an open modal menu.
     scroll_lock_active: Memo<bool>,
+    /// The menu items.
     children: Element,
 ) -> Element {
     let mut ctx: ContextMenuCtx = use_context();
@@ -880,9 +884,13 @@ fn ContextMenuContentRendered(
 #[cfg(not(feature = "web"))]
 #[component]
 fn ContextMenuContentRendered(
+    /// The DOM id of the menu's content element.
     id: String,
+    /// Extra HTML attributes for the menu's content element.
     attributes: Vec<Attribute>,
+    /// Whether page scrolling is locked while the menu is open. True only for an open modal menu.
     scroll_lock_active: Memo<bool>,
+    /// The menu items.
     children: Element,
 ) -> Element {
     let mut ctx: ContextMenuCtx = use_context();
@@ -1903,8 +1911,11 @@ pub fn ContextMenuSubContent(props: ContextMenuSubContentProps) -> Element {
 #[cfg(feature = "web")]
 #[component]
 fn ContextMenuSubContentRendered(
+    /// The DOM id of the submenu's content element.
     id: String,
+    /// Extra HTML attributes for the submenu's content element.
     attributes: Vec<Attribute>,
+    /// The submenu items.
     children: Element,
 ) -> Element {
     let ctx: ContextMenuCtx = use_context();
@@ -2091,8 +2102,11 @@ fn ContextMenuSubContentRendered(
 #[cfg(not(feature = "web"))]
 #[component]
 fn ContextMenuSubContentRendered(
+    /// The DOM id of the submenu's content element.
     id: String,
+    /// Extra HTML attributes for the submenu's content element.
     attributes: Vec<Attribute>,
+    /// The submenu items.
     children: Element,
 ) -> Element {
     let ctx: ContextMenuCtx = use_context();

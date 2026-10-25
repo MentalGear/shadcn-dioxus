@@ -245,6 +245,7 @@ pub fn Checkbox(props: CheckboxProps) -> Element {
 #[component]
 pub fn CheckboxIndicator(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// Shown while the checkbox is checked or indeterminate, such as a check icon.
     children: Element,
 ) -> Element {
     let ctx: CheckboxCtx = use_context();
@@ -269,7 +270,9 @@ pub fn CheckboxIndicator(
 
 #[component]
 fn BubbleInput(
+    /// The checkbox's state, mirrored onto the hidden native input so a form submits it.
     checked: ReadSignal<CheckboxState>,
+    /// The state the form restores on reset: the checkbox's default state.
     default_checked: CheckboxState,
     /// Called when the owning `<form>` fires a native `reset` event, so the
     /// component's own (Dioxus-side) checked state can resync -- the browser

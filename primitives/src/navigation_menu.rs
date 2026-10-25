@@ -943,8 +943,11 @@ fn NavigationMenuOutsidePressDismiss() -> Element {
 #[cfg(feature = "web")]
 #[component]
 fn NavigationMenuContentRendered(
+    /// The DOM id of the content element.
     id: String,
+    /// Extra HTML attributes for the content element.
     attributes: Vec<Attribute>,
+    /// The content of the panel, typically a grid of links.
     children: Element,
 ) -> Element {
     let mut ctx: NavigationMenuContext = use_context();
@@ -1067,8 +1070,11 @@ fn NavigationMenuContentRendered(
 #[cfg(not(feature = "web"))]
 #[component]
 fn NavigationMenuContentRendered(
+    /// The DOM id of the content element.
     id: String,
+    /// Extra HTML attributes for the content element.
     attributes: Vec<Attribute>,
+    /// The content of the panel, typically a grid of links.
     children: Element,
 ) -> Element {
     let mut ctx: NavigationMenuContext = use_context();
