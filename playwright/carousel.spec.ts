@@ -208,7 +208,7 @@ test.describe("Carousel: arrows never overflow their frame", () => {
           // above already uses for its own settle) rather than trusting one
           // instantaneous `boundingBox()` triple: this page mounts five
           // independent carousels at once, each running its own mount-time
-          // settle effect (`primitives/src/carousel.rs`'s own
+          // settle effect (`primitives/src/carousel/scroll.rs`'s own
           // `CAROUSEL_SCROLL_INTO_VIEW_JS` effect), and under this suite's
           // parallel workers sharing one plain `http.server` (slower to
           // answer four workers' concurrent requests than one), a read
@@ -423,7 +423,7 @@ test.describe("Axe automated scan", () => {
 
 /**
  * The first paged transition (slide 1 to slide 2) animates like every later one -- see
- * `primitives/src/carousel.rs`'s mount-time effect doc for the construction. The failure it
+ * `primitives/src/carousel/root.rs`'s mount-time effect doc for the construction. The failure it
  * guards: every click, the first included, sends `CAROUSEL_SCROLL_INTO_VIEW_JS`
  * `{instant: false, behavior: 'smooth'}` while the test browser reports
  * `prefers-reduced-motion: no-preference` throughout -- so this asserts the actual, sampled
@@ -457,7 +457,7 @@ test.describe("Carousel: the first paged transition actually animates", () => {
 
 /**
  * Mouse/pen drag-to-scroll on the track, layered on the
- * same scroll-snap construction (see `primitives/src/carousel.rs`'s own
+ * same scroll-snap construction (see `primitives/src/carousel/content.rs`'s own
  * "Pointer drag" doc). Touch is deliberately never exercised here -- it
  * already scrolls natively and Playwright's own synthetic touch input
  * would not exercise this code path anyway (`CAROUSEL_DRAG_JS` explicitly
@@ -558,7 +558,7 @@ test.describe("Carousel: pointer drag (mouse/pen)", () => {
     const content = frame.locator(".dx-carousel-content");
     const slide = (n: number) => frame.getByRole("group", { name: `${n} of 4` });
 
-    // Rightward, not leftward -- see primitives/src/carousel.rs's own
+    // Rightward, not leftward -- see primitives/src/carousel/content.rs's own
     // "Pointer drag" doc for why this mirrors LTR (the same swap
     // `ArrowLeft`/`ArrowRight` already gets at the carousel root).
     const pitch = await slidePitch(slide(1));
@@ -584,11 +584,11 @@ test.describe("Carousel: pointer drag (mouse/pen)", () => {
 
 /**
  * A drag release settles on the nearest slide through the same `scrollIntoView` paging path
- * `CarouselPrevious`/`CarouselNext` use (see `primitives/src/carousel.rs`'s `CarouselContent` doc,
- * "Release settle" section, for the construction), so it animates. Restoring `scroll-snap-type`
- * and trusting Chromium's own re-snap would not: sampling `scrollLeft` across such a release
- * yields exactly two distinct values (the mid-drag position and the final slide), both landing
- * instantly, whatever the drag length.
+ * `CarouselPrevious`/`CarouselNext` use (see `primitives/src/carousel/content.rs`'s
+ * `CarouselContent` doc, "Release settle" section, for the construction), so it animates.
+ * Restoring `scroll-snap-type` and trusting Chromium's own re-snap would not: sampling
+ * `scrollLeft` across such a release yields exactly two distinct values (the mid-drag position
+ * and the final slide), both landing instantly, whatever the drag length.
  *
  * Sampling starts only once the drag has already stopped moving and is
  * sitting at a raw, unsnapped position -- `page.mouse.up()` is the only
@@ -652,9 +652,9 @@ test.describe("Carousel: a drag release actually animates to the nearest slide",
 });
 
 /**
- * `scroll-snap-stop: always` (`primitives/src/carousel.rs`, a plain inline
+ * `scroll-snap-stop: always` (`primitives/src/carousel/item.rs`, a plain inline
  * `style` declaration on each slide, right alongside `scroll-snap-align`
- * -- see that file's own `CarouselContent` doc, "scroll-snap-stop"
+ * -- see `primitives/src/carousel/content.rs`'s own `CarouselContent` doc, "scroll-snap-stop"
  * section) requires this track to stop at the first snap position a
  * scroll operation would otherwise pass, rather than skipping over
  * several to settle on whichever is numerically nearest. Measured to

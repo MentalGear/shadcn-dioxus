@@ -316,7 +316,7 @@ pub(super) fn snap_type_value(orientation: CarouselOrientation, drag_free: bool)
 /// remain genuinely `disabled` at the ends regardless (module doc,
 /// "Accessibility") -- the bounce is additional physical feedback for a
 /// drag/scroll gesture, not a replacement for that signal. Headless
-/// wheel events (`playwright/carousel.spec.ts`'s own "wheel/trackpad edge
+/// wheel events (`playwright/carousel-edge-wheel.spec.ts`'s own "wheel/trackpad edge
 /// band" tests, dispatched in-page with real timing and sampled in-page)
 /// exercise ownership, every release path and the spring-back with
 /// recorded-shape delta sequences, but cannot reproduce a real trackpad's

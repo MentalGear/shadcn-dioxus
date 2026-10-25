@@ -287,7 +287,7 @@ pub fn CarouselRotationControl(props: CarouselRotationControlProps) -> Element {
             // onto it (standard Chromium `<button>` behavior), and without
             // this, `focus_within` would immediately re-pause the very
             // rotation this click just started, defeating a mouse click's
-            // own visible effect (`playwright/carousel.spec.ts`'s own
+            // own visible effect (`playwright/carousel-rewind-autoplay.spec.ts`'s own
             // "autoplay" describe block covers it). Keyboard/pointer focus on every
             // OTHER focusable piece of the carousel (Previous/Next, the
             // content track, a `CarouselIndicator`) still pauses normally.

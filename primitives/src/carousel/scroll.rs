@@ -51,8 +51,8 @@ use super::*;
 /// reads as correct in isolation; a multi-slide jump (`loop`'s rewind
 /// wraparound, a `CarouselIndicator` activation more than one tab away,
 /// [`CarouselApi::scroll_to`] to a distant index) is what exposes it
-/// (`carousel.spec.ts`'s `clicking a tab activates its slide and moves the
-/// roving tab stop` jumps tab 1 -> tab 3). Since a fresh `document::eval` call has no
+/// (`carousel-rewind-autoplay.spec.ts`'s `clicking a tab activates its slide and moves
+/// the roving tab stop` jumps tab 1 -> tab 3). Since a fresh `document::eval` call has no
 /// closure shared with any other call (unlike `CAROUSEL_DRAG_JS`'s single
 /// long-lived script), the "is a restore already pending" hand-off
 /// [`CAROUSEL_DRAG_JS`]'s `onPointerDown` keeps in a closure variable is

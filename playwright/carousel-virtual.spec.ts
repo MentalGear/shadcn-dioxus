@@ -14,7 +14,7 @@ import {
 
 /**
  * `CarouselVirtualContent`: the data-driven, virtualised drop-in for
- * `CarouselContent` + `CarouselItem`s (`primitives/src/carousel.rs`'s own
+ * `CarouselContent` + `CarouselItem`s (`primitives/src/carousel/virtual_content.rs`'s own
  * `CarouselVirtualContent` doc has the construction; `dev-docs/backlog.md`
  * row 91 has the report).
  *
@@ -34,7 +34,7 @@ import {
  * (`preview/src/components/carousel/variants/virtual_loop|virtual_many/mod.rs`),
  * both on the default `radius` (10). A looping window never repeats an
  * item, so `virtual_loop`'s is capped at `(12 - 2) / 2 = 5` per side
- * (`effective_radius`, `primitives/src/carousel.rs`): 11 slides.
+ * (`effective_radius`, `primitives/src/carousel/helpers.rs`): 11 slides.
  * `virtual_many`'s is the full `2 * 10 + 1 = 21` once away from its start.
  */
 const VLOOP_WINDOW = 11;

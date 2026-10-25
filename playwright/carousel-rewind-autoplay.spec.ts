@@ -22,7 +22,7 @@ import {
  * shadcn-parity addendum); `r#loop: true` alone (the default
  * `LoopMode::Seamless`) does nothing for the plain children API,
  * see
- * `primitives/src/carousel.rs`'s own `LoopMode` doc. One `rewind` demo, two rows
+ * `primitives/src/carousel/options.rs`'s own `LoopMode` doc. One `rewind` demo, two rows
  * (LTR/RTL), shows the opt-in -- see
  * `preview/src/components/carousel/variants/rewind/mod.rs`.
  */

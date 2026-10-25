@@ -24,7 +24,7 @@ import {
 /**
  * Edge rubber-band, pointer half (mode B3), backlog row 102 -- port of the
  * closed design in `dev-docs/archive/research/carousel-overscroll-2026-09-23.md`.
- * See `primitives/src/carousel.rs`'s own `CarouselContent` doc, "Edge
+ * See `primitives/src/carousel/content.rs`'s own `CarouselContent` doc, "Edge
  * rubber-band" section, for the construction these tests hold to: a
  * `transform` on `.dx-carousel-content` only, never a spacer child, and
  * never a change to `selected`. The wheel/trackpad half is mode D; its
@@ -182,7 +182,7 @@ test.describe("Carousel: edge rubber-band, pointer (mode B3)", () => {
 });
 
 /** The presentational clipping wrapper `CarouselContent` renders around its
- * scroller (`primitives/src/carousel.rs`'s `CarouselContent` doc, "Edge
+ * scroller (`primitives/src/carousel/content.rs`'s `CarouselContent` doc, "Edge
  * rubber-band (mode B3)" section, "Correction" paragraph). */
 function viewportLocator(frame: Locator): Locator {
   return frame.locator('[data-slot="carousel-viewport"]');
@@ -210,7 +210,7 @@ async function paintsAt(content: Locator, x: number, y: number): Promise<boolean
  * included -- as one rigid unit. A scroller alone therefore never clips its
  * own overdrag: on real hardware a trackpad overdrag pushes the whole
  * visible slide track ~750px past the carousel, unclipped, overlapping the
- * rest of the page (`primitives/src/carousel.rs`'s `CarouselContent` doc has
+ * rest of the page (`primitives/src/carousel/content.rs`'s `CarouselContent` doc has
  * the full "Correction" writeup). So a stationary wrapper
  * (`div[data-slot="carousel-viewport"]`, `overflow: clip`) surrounds the
  * scroller, and translating the scroller moves content inside a clip

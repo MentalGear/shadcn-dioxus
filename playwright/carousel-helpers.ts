@@ -93,7 +93,7 @@ export async function scrollIntoViewInstant(locator: Locator): Promise<void> {
  * (vertical) start position matches its scroll container's own -- i.e.
  * scroll-snap has actually settled on this slide's boundary, not merely
  * "the click/keypress handler ran." Mirrors the exact technique
- * `primitives/src/carousel.rs`'s own `CAROUSEL_SCROLL_TRACKING_JS` uses
+ * `primitives/src/carousel/scroll.rs`'s own `CAROUSEL_SCROLL_TRACKING_JS` uses
  * (`getBoundingClientRect`, never `scrollLeft`, so this works identically
  * under `dir="rtl"` with no sign-convention special-casing).
  *
@@ -184,7 +184,7 @@ export async function expectSnappedToBoundary(content: Locator, item: Locator, o
  * `CAROUSEL_DRAG_JS`'s own threshold/pointer-capture/click-suppression
  * logic all key off genuine `pointerdown`/`pointermove`/`pointerup`
  * events, which a script-fired fake event does not reliably reproduce
- * (see `primitives/src/carousel.rs`'s "Pointer drag" doc).
+ * (see `primitives/src/carousel/content.rs`'s "Pointer drag" doc).
  */
 export async function dragBy(page: Page, target: Locator, dx: number, dy: number, steps = 12) {
   // Without this, `boundingBox()` can return coordinates outside the
@@ -235,7 +235,8 @@ export async function dragHold(page: Page, target: Locator, dx: number, dy: numb
 
 /**
  * The carousel track's own inline `transform` (mode B3's edge rubber-band,
- * `primitives/src/carousel.rs`'s `CAROUSEL_DRAG_JS`/`CAROUSEL_WHEEL_BOUNCE_JS`
+ * `primitives/src/carousel/drag.rs`'s `CAROUSEL_DRAG_JS` and
+ * `primitives/src/carousel/wheel.rs`'s `CAROUSEL_WHEEL_BOUNCE_JS`
  * -- both mutate `element.style.transform` directly via `document::eval`,
  * never through a Dioxus-rendered attribute, so this reads the live inline
  * style, not a rendered one). Empty string means identity (no bounce).

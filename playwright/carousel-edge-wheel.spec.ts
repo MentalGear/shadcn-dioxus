@@ -22,7 +22,7 @@ import {
 
 /**
  * Wheel/trackpad edge band (mode D, the "platform-aware band") --
- * `primitives/src/carousel.rs`'s `CAROUSEL_WHEEL_BAND_JS`, ported from the
+ * `primitives/src/carousel/wheel.rs`'s `CAROUSEL_WHEEL_BAND_JS`, ported from the
  * carousel lab's bench (`bench-rev40.html`, `mode === "onewriter"`). It is
  * the wheel path; the pointer half above is B3.
  *

@@ -214,7 +214,7 @@ test.describe("Carousel: paging never scrolls the page", () => {
  * the current (or, for a multi-per-view layout, every slide actually
  * inside the viewport at rest) slide is reachable by Tab or exposed to the
  * accessibility tree -- everything else is `inert`
- * (`primitives/src/carousel.rs`'s own "Visible slides / `inert`" doc on
+ * (`primitives/src/carousel/item.rs`'s own "Visible slides / `inert`" doc on
  * [`CarouselItem`]). `getByRole`/`ariaSnapshot` cannot verify the
  * accessibility-tree half of this (see `axTreeGroupNames`'s own doc,
  * above, for the discrepancy between Playwright's role engine and the platform tree).

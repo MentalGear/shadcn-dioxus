@@ -1016,7 +1016,7 @@ fn AutoplayCarouselNotPlaying() -> Element {
     // just to spawn-and-immediately-abandon a timer would test the
     // runtime, not this component. The actual tick -> advance ->
     // aria-live="off" round trip is exercised in a browser instead,
-    // `playwright/carousel.spec.ts`'s own "autoplay" describe block,
+    // `playwright/carousel-rewind-autoplay.spec.ts`'s own "autoplay" describe block,
     // where a real browser's own JS timer backs it.
     rsx! {
         Carousel { aria_label: "Featured photos",
