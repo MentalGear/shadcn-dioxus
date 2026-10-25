@@ -92,6 +92,7 @@ gates=(
   "check-raw-text-interpolation|scripts/check-raw-text-interpolation.sh"
   "check-dynamic-style-shorthand|scripts/check-dynamic-style-shorthand.sh"
   "check-as-child|scripts/check-as-child.sh"
+  "check-wrapper-props|scripts/check-wrapper-props.sh"
   # group: Timers, listeners, motion and focus
   "check-uncleared-intervals|scripts/check-uncleared-intervals.sh"
   "check-blocking-scroll-listeners|scripts/check-blocking-scroll-listeners.sh"

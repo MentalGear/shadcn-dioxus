@@ -18,6 +18,7 @@ pub fn Menubar(props: MenubarProps) -> Element {
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/menubar/style.css") }
         menubar::Menubar {
+            dir: props.dir,
             disabled: props.disabled,
             roving_loop: props.roving_loop,
             open_on_hover: props.open_on_hover,
@@ -48,7 +49,7 @@ pub fn MenubarTrigger(props: MenubarTriggerProps) -> Element {
     let merged = merge_attributes(vec![base, props.attributes]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/menubar/style.css") }
-        menubar::MenubarTrigger { attributes: merged, {props.children} }
+        menubar::MenubarTrigger { id: props.id, attributes: merged, {props.children} }
     }
 }
 

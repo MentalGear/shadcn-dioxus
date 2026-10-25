@@ -125,6 +125,12 @@ pub struct CalendarProps {
     #[props(default)]
     pub disabled_ranges: ReadSignal<Vec<calendar::DateRange>>,
 
+    /// The text direction for the day grid's `ArrowLeft`/`ArrowRight` step.
+    /// Defaults to the nearest [`dioxus_primitives::direction::DirectionProvider`], or
+    /// LTR if there is none.
+    #[props(default)]
+    pub dir: Option<dioxus_primitives::direction::Direction>,
+
     /// Additional attributes to extend the calendar element
     #[props(extends = GlobalAttributes)]
     pub attributes: Vec<Attribute>,
@@ -199,6 +205,10 @@ pub struct RangeCalendarProps {
     #[props(default)]
     pub disabled_ranges: ReadSignal<Vec<calendar::DateRange>>,
 
+    /// The text direction -- see [`dioxus_primitives::calendar::CalendarProps::dir`]'s identical doc.
+    #[props(default)]
+    pub dir: Option<dioxus_primitives::direction::Direction>,
+
     /// Additional attributes to extend the calendar element
     #[props(extends = GlobalAttributes)]
     pub attributes: Vec<Attribute>,
@@ -210,6 +220,7 @@ pub fn Calendar(props: CalendarProps) -> Element {
 
     rsx! {
         CalendarRoot {
+            dir: props.dir,
             selected_date: props.selected_date,
             on_date_change: props.on_date_change,
             on_format_weekday: props.on_format_weekday,
@@ -243,6 +254,7 @@ pub fn RangeCalendar(props: RangeCalendarProps) -> Element {
 
     rsx! {
         RangeCalendarRoot {
+            dir: props.dir,
             selected_range: props.selected_range,
             on_range_change: props.on_range_change,
             on_format_weekday: props.on_format_weekday,
@@ -299,6 +311,7 @@ pub(crate) fn CalendarRoot(props: calendar::CalendarProps) -> Element {
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/calendar/style.css") }
         calendar::Calendar {
+            dir: props.dir,
             selected_date: props.selected_date,
             on_date_change: props.on_date_change,
             on_format_weekday: props.on_format_weekday,
@@ -331,6 +344,7 @@ pub(crate) fn RangeCalendarRoot(props: calendar::RangeCalendarProps) -> Element 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/calendar/style.css") }
         calendar::RangeCalendar {
+            dir: props.dir,
             selected_range: props.selected_range,
             on_range_change: props.on_range_change,
             on_format_weekday: props.on_format_weekday,

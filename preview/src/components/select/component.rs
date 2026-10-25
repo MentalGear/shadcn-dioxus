@@ -144,6 +144,12 @@ pub struct SelectProps<T: Clone + PartialEq + 'static = String> {
     #[props(default)]
     pub trigger: Option<Element>,
 
+    /// The text direction, emitted on the trigger and listbox content.
+    /// Defaults to the nearest [`dioxus_primitives::direction::DirectionProvider`], or
+    /// LTR if there is none.
+    #[props(default)]
+    pub dir: Option<dioxus_primitives::direction::Direction>,
+
     /// Additional attributes for the select's root element.
     #[props(extends = GlobalAttributes)]
     pub attributes: Vec<Attribute>,
@@ -243,6 +249,10 @@ pub struct SelectMultiProps<T: Clone + PartialEq + 'static = String> {
     #[props(default)]
     pub trigger: Option<Element>,
 
+    /// The text direction -- see [`SelectProps::dir`]'s identical doc.
+    #[props(default)]
+    pub dir: Option<dioxus_primitives::direction::Direction>,
+
     /// Additional attributes for the select's root element.
     #[props(extends = GlobalAttributes)]
     pub attributes: Vec<Attribute>,
@@ -271,6 +281,7 @@ pub fn Select<T: Clone + PartialEq + 'static>(props: SelectProps<T>) -> Element 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/select/style.css") }
         select::Select {
+            dir: props.dir,
             value: props.value,
             default_value: props.default_value,
             item_to_label: props.item_to_label,
@@ -329,6 +340,7 @@ pub fn SelectMulti<T: Clone + PartialEq + 'static>(props: SelectMultiProps<T>) -
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/select/style.css") }
         select::SelectMulti {
+            dir: props.dir,
             values: props.values,
             default_values: props.default_values,
             item_to_label: props.item_to_label,

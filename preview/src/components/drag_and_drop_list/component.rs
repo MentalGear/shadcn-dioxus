@@ -63,6 +63,12 @@ pub struct DragAndDropListProps {
     #[props(default)]
     pub drop_gap: Option<String>,
 
+    /// The axis the items are laid out on. `Vertical` (the default) moves a
+    /// lifted item with Up and Down; `Horizontal` uses Left and Right,
+    /// mirrored under right-to-left, and the pointer picks the slot by x.
+    #[props(default)]
+    pub axis: dioxus_primitives::drag_and_drop_list::ReorderAxis,
+
     /// Additional attributes to apply to the list element.
     #[props(extends = GlobalAttributes)]
     pub attributes: Vec<Attribute>,
@@ -102,6 +108,7 @@ pub fn DragAndDropList(props: DragAndDropListProps) -> Element {
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/drag_and_drop_list/style.css") }
         drag_and_drop_list::DragAndDropList {
+            axis: props.axis,
             items,
             order: props.order,
             on_reorder: props.on_reorder,

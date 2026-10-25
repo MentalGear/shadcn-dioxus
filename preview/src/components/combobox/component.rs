@@ -237,6 +237,10 @@ pub struct ComboboxMultiProps<T: Clone + PartialEq + ToString + 'static = String
     #[props(default)]
     pub show_clear: bool,
 
+    /// Accessible-name prefix of a chip's remove button: "Remove" gives "Remove Next.js".
+    #[props(default = "Remove".to_string())]
+    pub remove_label: String,
+
     #[props(extends = GlobalAttributes)]
     pub attributes: Vec<Attribute>,
 
@@ -273,6 +277,7 @@ pub fn ComboboxMulti<T: Clone + PartialEq + ToString + 'static>(
             filter: props.filter,
             attributes: merged,
             combobox::ComboboxChips {
+                remove_label: props.remove_label,
                 class: "dx-combobox-chips",
                 chip_class: "dx-combobox-chip",
                 remove_class: "dx-combobox-chip-remove",
