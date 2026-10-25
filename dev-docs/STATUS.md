@@ -36,7 +36,7 @@ Owner order of 2026-10-24 (backlog thread), each stage reading the finished outp
 3. Structure: **267** with **384**, at a quiet point in the queue; then **355** and **382**.
 4. Dependency review **371** (outcomes to the owner).
 5. One review pass: the code-quality review sweep together with **365**.
-6. Docs on the settled API: **393**, **392**, **394**, **422** (shared-section grouping, proposal first), **399** (now with demo renames and the focus-target readout), then the standing review **387**.
+6. Docs on the settled API: **393**, **392**, **394**, **422** (Basic / Component-Specific section groups, outline approved), **399** (now with demo renames and the focus-target readout), then the standing review **387**.
 7. The 152b suite prune, then **383** last.
 
 Independent, in parallel at any point: 153, 268, 170.

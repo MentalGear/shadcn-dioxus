@@ -79,6 +79,6 @@ proposing one is closed as out of scope (row 337 is the first).
 | [413](backlog/413-property-tests-and-miri.md) | Property tests and Miri on the pure logic | OPTIONAL: needs owner approval before it is adopted or scheduled (owner 2026-10-24). Not part of… | M | tests |
 | [414](backlog/414-formal-proof-spike.md) | Spike: formal proofs of one headless model (Kani, optionally Aeneas to Lean) | OPTIONAL: needs owner approval before it is adopted or scheduled (owner 2026-10-24). Not part of… | M | research |
 | [415](backlog/415-pin-actions-to-shas.md) | Pin GitHub Actions to commit SHAs | OPTIONAL: needs owner approval before it is adopted or scheduled (owner 2026-10-24). Not part of… | XS | build |
-| [422](backlog/422-docs-page-shared-section-group.md) | Component pages: group the sections every page shares under one header, component-specific sections under another | BACKLOG, owner decision before building. The owner asked for the headers and an outline before work… | M | docs |
+| [422](backlog/422-docs-page-shared-section-group.md) | Component pages: group the sections every page shares under one header, component-specific sections under another | BACKLOG, outline approved by the owner 2026-10-25 (backlog thread): build it as below. Docs stage… | M | docs |
 
 <!-- END GENERATED -->
