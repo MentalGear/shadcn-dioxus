@@ -31,14 +31,14 @@ pub struct CarouselAutoplayProps {
     /// **Scope note:** a native pointer-drag or wheel/trackpad scroll
     /// does **not** count as "interaction" here -- only the discrete
     /// paging actions above do. Wiring the drag/wheel bridges too is an
-    /// deliberate scope cut, not a silent gap: see [`AutoplayContext::note_interaction`]'s
+    /// deliberate scope cut, not a silent gap: see `AutoplayContext::note_interaction`'s
     /// own doc for exactly which call sites are wired.
     #[props(default = ReadSignal::new(Signal::new(true)))]
     pub stop_on_interaction: ReadSignal<bool>,
 
     /// Whether hovering anywhere in the carousel pauses rotation --
     /// resuming once the pointer leaves, unless focus is *also* currently
-    /// holding it paused (see [`AutoplayContext`]'s own "pause/resume
+    /// holding it paused (see `AutoplayContext`'s own "pause/resume
     /// state machine" doc for the hover-vs-focus asymmetry, taken directly
     /// from the vendored tabbed reference's own accessibility prose).
     /// Mirrors `embla-carousel-autoplay`'s own `stopOnMouseEnter` option
@@ -59,15 +59,15 @@ pub struct CarouselAutoplayProps {
 /// # CarouselAutoplay
 ///
 /// Installs the APG "auto-rotating" carousel's timer behavior: ticks every
-/// [`CarouselAutoplayProps::delay_ms`], paging through the same [`step_next`]
-/// path [`CarouselNext`] uses (so [`CarouselProps::r#loop`] applies
+/// [`CarouselAutoplayProps::delay_ms`], paging through the same `step_next`
+/// path [`CarouselNext`] uses (so `CarouselProps::r#loop` applies
 /// identically -- without `loop`, rotation simply stops once it reaches
 /// the last slide, rather than ticking forever against a no-op the way
 /// `embla-carousel-autoplay`'s own documented behavior does; with `loop`,
 /// it rewinds and keeps going). Renders no DOM of its own -- pair it with
 /// a [`CarouselRotationControl`] (placed **first**, before any other
 /// focusable content, per APG's own requirement) to give the user a way to
-/// toggle it, and see [`AutoplayContext`]'s own doc for the full
+/// toggle it, and see `AutoplayContext`'s own doc for the full
 /// pause/resume state machine (hover, focus, and the sticky
 /// "does not auto-resume after focus" rule).
 ///

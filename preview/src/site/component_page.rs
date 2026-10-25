@@ -342,7 +342,7 @@ pub(crate) enum ExtraBadgeTip {
 /// tooltip, delivered per [`ExtraBadgeTip`]. It stays out of the heading
 /// elements (the page `h1`, the card `h3`) so those keep the component's name
 /// as their accessible name, and sits inside the sidebar link, where it
-/// extends the link's name to "<name> Extra".
+/// extends the link's name to `"<name> Extra"`.
 #[component]
 pub(crate) fn ExtraBadge(name: &'static str, #[props(default)] tip: ExtraBadgeTip) -> Element {
     let Some(reason) = components::extra_reason(name) else {
@@ -373,7 +373,7 @@ pub(crate) fn ExtraBadge(name: &'static str, #[props(default)] tip: ExtraBadgeTi
 }
 
 /// The visible, always-on form of the "Extra" reason, under the component
-/// page's heading: "Extra: not in shadcn/ui. <reason>". Unlike a tooltip it
+/// page's heading: `"Extra: not in shadcn/ui. <reason>"`. Unlike a tooltip it
 /// works on touch and is read in order by screen readers. Renders nothing for
 /// a shadcn component or an unclassified one.
 #[component]

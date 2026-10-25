@@ -54,16 +54,16 @@ pub struct CarouselItemProps {
 /// bridges below -- a safety net, not the primary signal: never leaves
 /// the slide the rest of this component's own state calls "selected"
 /// stranded `inert` by a stale/lagging geometry read) unioned with
-/// [`CarouselContext::visible_range`], the `[start, end]` item indices
-/// [`use_carousel_scroll_tracking`]/[`use_carousel_drag`] last measured
+/// `CarouselContext::visible_range`, the `[start, end]` item indices
+/// `use_carousel_scroll_tracking`/`use_carousel_drag` last measured
 /// actually inside [`CarouselContent`]'s own viewport at rest -- which for
 /// a single-slide-per-view layout is always just the current slide again,
 /// and for a multi-per-view one (e.g. `flex-basis: 33%`) additionally
 /// covers however many full neighbours are genuinely on screen.
 ///
-/// **First render / SSR is deterministic.** [`CarouselContext::selected`]
+/// **First render / SSR is deterministic.** `CarouselContext::selected`
 /// is forced to `0` until every sibling has registered (this component's
-/// own "SSR stability" doc above), and [`CarouselContext::visible_range`]
+/// own "SSR stability" doc above), and `CarouselContext::visible_range`
 /// starts at its own matching default, `(0, 0)` -- so server and a
 /// client's own pre-hydration first render both render only index `0` as
 /// non-`inert`, agreeing without either needing a special case for the
@@ -71,13 +71,13 @@ pub struct CarouselItemProps {
 /// from Rust-only state at all (it depends on `flex-basis`/gap CSS this
 /// component never reads) -- widening past that single slide is real, but
 /// always happens through a later effect's own signal write
-/// ([`use_carousel_scroll_tracking`]'s own `ResizeObserver`, whose first
+/// (`use_carousel_scroll_tracking`'s own `ResizeObserver`, whose first
 /// callback fires for the scroller's *current* box the moment it attaches
 /// -- reached even for an already-aligned `default_value == 0` mount that
 /// never scrolls on its own at all -- see that constant's own doc), never
 /// inside this component's own first render.
 ///
-/// **Frozen while moving.** [`use_carousel_scroll_tracking`]'s own settle
+/// **Frozen while moving.** `use_carousel_scroll_tracking`'s own settle
 /// only ever writes `visible_range` at a genuine rest point -- on
 /// `scrollend` (or the debounced-`scroll` fallback) or a `ResizeObserver`
 /// firing, explicitly skipped for as long as `data-dragging` is set -- never

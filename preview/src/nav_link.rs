@@ -14,7 +14,7 @@
 //! HTML says `aria-current="page"`; the browser's route string has no `?`, the
 //! comparison is false on hydration, and the attribute vanishes (site-wide:
 //! navbar, footer and sidebar links on every page). `NavLink` renders its own
-//! anchor with exactly one `aria-current`, decided by [`is_current`], which
+//! anchor with exactly one `aria-current`, decided by [`is_current`](dioxus_primitives::nav_link::is_current), which
 //! compares *paths* (the route rendered, query stripped), never the
 //! `?`-suffixed string, so server and client agree by construction.
 //!

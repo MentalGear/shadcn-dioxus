@@ -56,7 +56,7 @@ pub enum LineLabels {
     #[default]
     None,
     /// The point's own value, formatted like every other numeric readout
-    /// in this crate ([`fmt_decimal`]: up to 2 decimals, trailing zeros
+    /// in this crate (`fmt_decimal`: up to 2 decimals, trailing zeros
     /// trimmed). shadcn's `chart-line-label.tsx`.
     Value,
     /// A caller-supplied label, given this point's index -- e.g. shadcn's

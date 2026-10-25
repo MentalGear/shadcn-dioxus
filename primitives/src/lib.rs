@@ -1094,7 +1094,7 @@ impl ContentAlign {
 ///
 /// Only a plain `style` (namespace `None`) is folded here; CSS set the shorthand way
 /// (`padding: ".."`, namespace `Some("style")`) is a different attribute name and is handled by
-/// [`fold_style_attributes`].
+/// `fold_style_attributes`.
 pub fn merge_attributes(mut lists: Vec<Vec<Attribute>>) -> Vec<Attribute> {
     let mut merged = Vec::new();
     // The inputs are usually sorted by name, so we can do a k-way merge cheaply

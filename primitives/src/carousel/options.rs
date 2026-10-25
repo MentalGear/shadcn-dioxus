@@ -41,9 +41,9 @@ impl CarouselOrientation {
 /// [`Self::as_str`]).
 ///
 /// Every place this module computes "where a slide rests" -- the explicit
-/// `scrollBy`-by-delta paging call ([`CAROUSEL_SCROLL_TO_JS`]), the
+/// `scrollBy`-by-delta paging call (`CAROUSEL_SCROLL_TO_JS`), the
 /// "which slide is nearest" search a native scroll/drag release settles
-/// to ([`CAROUSEL_SCROLL_TRACKING_JS`]/[`CAROUSEL_DRAG_JS`]) -- reads this
+/// to (`CAROUSEL_SCROLL_TRACKING_JS`/`CAROUSEL_DRAG_JS`) -- reads this
 /// value and anchors on the matching point (an item/the scrollport's own
 /// leading edge, midpoint, or trailing edge) rather than always the
 /// leading edge, so a caller who sets `align: CarouselAlign::Center` (for
@@ -83,7 +83,7 @@ impl CarouselAlign {
     }
 }
 
-/// How [`CarouselProps::r#loop`] wraps at the ends, for content this
+/// How `CarouselProps::r#loop` wraps at the ends, for content this
 /// module cannot seamlessly loop on its own.
 ///
 /// [`CarouselVirtualContent`] with virtualisation genuinely active is

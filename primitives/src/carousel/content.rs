@@ -141,7 +141,7 @@ pub(super) fn snap_type_value(orientation: CarouselOrientation, drag_free: bool)
 /// this element (the scroller itself, never `nearest.scrollIntoView()`)
 /// by the physical delta to that slide, with `behavior: 'smooth'` (or
 /// `'auto'` under `prefers-reduced-motion: reduce`, the exact policy
-/// [`CAROUSEL_SCROLL_TO_JS`] already applies to every other paging
+/// `CAROUSEL_SCROLL_TO_JS` already applies to every other paging
 /// path). This reuses that same scroller-only `scrollBy`-by-delta
 /// mechanism this crate already pages with everywhere else -- not a
 /// second, hand-rolled animation engine, and (see that constant's own
@@ -254,7 +254,7 @@ pub(super) fn snap_type_value(orientation: CarouselOrientation, drag_free: bool)
 /// scroll container, and this module's paging/drag-release-settle paths
 /// do not risk scrolling it even so -- both call `scrollBy()` on
 /// the scroller element directly rather than `scrollIntoView()` on a
-/// slide (see [`CAROUSEL_SCROLL_TO_JS`]'s own doc for why, a hard
+/// slide (see `CAROUSEL_SCROLL_TO_JS`'s own doc for why, a hard
 /// requirement rather than a nice-to-have)
 /// -- but `clip` establishes no scrollport at all regardless, so nothing
 /// here (or added later) can ever scroll this wrapper by accident, the

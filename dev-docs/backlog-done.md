@@ -6,7 +6,7 @@ resolves here by id.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Done rows (356)
+## Done rows (357)
 
 | # | Item | Updated |
 |---|---|---|
@@ -346,6 +346,7 @@ resolves here by id.
 | [379](backlog/done/379-session-setup-fetches-detached-locks.md) | Session setup fetches every committed Cargo.lock, so check-cargo-locks resolves offline in a fresh container | 2026-10-24 |
 | [380](backlog/done/380-calendar-clock-read-after-mount.md) | Calendars read the visitor's clock after mount, so a prerendered page never keeps the build day | 2026-10-24 |
 | [381](backlog/done/381-interactive-element-cursor-option.md) | Interactive-element cursor is one theme option, data-dx-interactive-element-cursor | 2026-10-24 |
+| [382](backlog/done/382-rustdoc-warnings-to-zero.md) | Rustdoc warnings to zero: shrink the check-rustdoc baseline (87 entries) and make the gate strict | 2026-10-25 |
 | [384](backlog/done/384-burn-down-ratchet-baselines.md) | Burn down the ratchet baselines and the leftover TODO comments (props docs, history comments, dead refs) | 2026-10-25 |
 | [391](backlog/done/391-wrappers-forward-primitive-props.md) | Themed wrappers forward every primitive prop, enforced by a props-diff gate | 2026-10-24 |
 | [395](backlog/done/395-as-keeps-children.md) | `as` keeps the component's children and handlers (Radix asChild semantics) | 2026-10-24 |
