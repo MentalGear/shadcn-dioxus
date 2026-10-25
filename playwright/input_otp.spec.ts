@@ -491,34 +491,27 @@ test.describe("Slot dividers are a single border width", () => {
   }
 });
 
-// Row 348: the slot edges are an OPAQUE colour (`--dx-input-edge`), not the translucent dark `--dx-input`
-// (white at 15%), so where two edges meet they cannot stack into a darker line.
-test.describe("Slot edges are opaque", () => {
+// The slot edges are Input's own edge colour, `--dx-input`, so an OTP field reads with the same contrast as an Input
+// on any surface. Each divider is drawn once (the abutting-slot test above), so a translucent edge cannot stack.
+test.describe("Slot edges are the Input edge colour", () => {
   for (const mode of ["light", "dark"] as const) {
-    test(`${mode}: no alpha in the edge colour`, async ({ page }) => {
+    test(`${mode}: the edge resolves to --dx-input`, async ({ page }) => {
       await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
       await page.evaluate((m) => (window as unknown as { __dxApplyMode: (m: string) => void }).__dxApplyMode(m), mode);
       const slot = page.locator("#otp-main + div .dx-input-otp-slot").first();
       await expect(slot).toBeVisible();
-      await expect
-        .poll(() => slot.evaluate((e) => getComputedStyle(e).getPropertyValue("--dx-input-otp-edge")))
-        .not.toBe("");
-      const shadow = await slot.evaluate((e) => getComputedStyle(e).boxShadow);
-      expect(shadow).not.toBe("none");
-      // The computed colour of every layer: an alpha channel shows as `/ <n>` (color()/oklch()) or a fourth
-      // `rgba` component; an opaque colour has neither.
-      expect(shadow).not.toMatch(/\/\s*[\d.]+%?\s*\)/);
-      expect(shadow).not.toMatch(/rgba\(/);
-      // The edge is the page colour with the line mixed in: in dark it is lighter than the page, not equal.
-      const edge = await slot.evaluate((e) => {
-        const probe = document.createElement("i");
-        probe.style.color = getComputedStyle(e).getPropertyValue("--dx-input-edge");
-        document.body.append(probe);
-        const c = getComputedStyle(probe).color;
-        probe.remove();
-        return c;
+      const { edge, input } = await slot.evaluate((e) => {
+        const resolve = (v: string) => {
+          const probe = document.createElement("i");
+          probe.style.color = v;
+          e.append(probe);
+          const c = getComputedStyle(probe).color;
+          probe.remove();
+          return c;
+        };
+        return { edge: resolve("var(--dx-input-otp-edge)"), input: resolve("var(--dx-input)") };
       });
-      expect(edge).not.toMatch(/\/\s*[\d.]+%?\s*\)/);
+      expect(edge).toBe(input);
     });
   }
 });

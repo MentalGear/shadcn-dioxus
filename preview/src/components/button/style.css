@@ -10,8 +10,10 @@
   padding: 0;
   border: 1px solid var(--dx-button-border-color, transparent);
   background-clip: padding-box;
+  border-block-start-width: var(--dx-group-edge-block-start, 1px);
   border-end-end-radius: var(--dx-group-radius-end-end, var(--dx-button-radius, var(--dx-radius-lg)));
   border-end-start-radius: var(--dx-group-radius-end-start, var(--dx-button-radius, var(--dx-radius-lg)));
+  border-inline-start-width: var(--dx-group-edge-inline-start, 1px);
   border-start-end-radius: var(--dx-group-radius-start-end, var(--dx-button-radius, var(--dx-radius-lg)));
   border-start-start-radius: var(--dx-group-radius-start-start, var(--dx-button-radius, var(--dx-radius-lg)));
   font-family: inherit;
