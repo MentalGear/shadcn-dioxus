@@ -145,7 +145,7 @@ for (const c of CONTROLS) {
       for (const it of items) {
         if (c.fine.layout) expect(c.fine.layout(it.layout), `${c.name} fine layout ${JSON.stringify(it.layout)}`).toBe(true);
         if (c.name !== "accordion trigger") {
-          // A switch in a narrow flex row is squeezed to a narrower track on a fine pointer (as it always was), so its width is not asserted.
+          // A switch in a narrow flex row is squeezed to a narrower track on a fine pointer, so its width is not asserted.
           if (c.name !== "switch") expect(it.target.w, `${c.name} fine target width`).toBeGreaterThanOrEqual(24 - 0.5);
           expect(it.target.h, `${c.name} fine target height`).toBeGreaterThanOrEqual(24 - 0.5);
         }
@@ -157,7 +157,7 @@ for (const c of CONTROLS) {
       expect(overlaps(items)).toEqual([]);
     });
 
-    test("coarse (on): targets are at least 44px, the glyph is unchanged, targets do not overlap", async ({ page }) => {
+    test("coarse (on): targets are at least 44px, the glyph keeps its size, targets do not overlap", async ({ page }) => {
       const fine = await read(page, c, "off");
       const items = await read(page, c, "on");
       expect(items.length).toBe(fine.length);
