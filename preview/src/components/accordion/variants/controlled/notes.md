@@ -1,0 +1,1 @@
+`value` makes the accordion controlled: the open item lives in your own signal, a click on a trigger only calls `on_value_change` with the new list, and you write it back. The two buttons below change that signal from outside the accordion, and the accordion follows.

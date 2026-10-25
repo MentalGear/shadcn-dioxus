@@ -286,7 +286,7 @@ const HEADER = `/* GENERATED FILE -- DO NOT EDIT BY HAND.
  *
  * A small, static set of \`dx-\`-prefixed utility classes -- spacing,
  * gap, flex/grid basics, text sizes, radius, shadow -- for point-of-use
- * composition (docs/demo layouts, consumer tweaks) without pulling in a
+ * composition (demo page layouts, consumer tweaks) without pulling in a
  * JIT engine. This file is entirely optional: no themed component
  * depends on it, and it ships separately from
  * \`dx-components-theme.css\` so importing the theme never pulls these

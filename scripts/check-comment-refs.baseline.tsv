@@ -1,3 +1,2 @@
 # check-comment-refs baseline: dead `row N` / repo-path citations in code comments (shrink-only debt).
 # file<TAB>kind<TAB>ref. Fix the citation, then scripts/check-comment-refs.sh --update-baseline.
-preview/assets/dx-utilities.css	path	docs/demo
