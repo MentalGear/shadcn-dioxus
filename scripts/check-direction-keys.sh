@@ -54,7 +54,7 @@ while IFS= read -r f; do
     grep -nE 'Key::Arrow(Left|Right)|delta_x' "$f" | grep -vE '^[0-9]+:[[:space:]]*//' | head -3 | sed 's/^/    /'
     fail=1
   fi
-done < <(find primitives/src -name '*.rs' | sort)
+done < <(find primitives/src -name '*.rs' ! -name tests.rs | sort) # a split-out tests.rs is wholly #[cfg(test)] (declared so by its mod.rs)
 
 for entry in "${allowlist[@]}"; do
   f="${entry%%|*}"; reason="${entry#*|}"
