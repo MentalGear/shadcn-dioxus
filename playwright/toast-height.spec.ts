@@ -30,7 +30,14 @@ function fit(toast: Locator) {
     const cs = getComputedStyle(el);
     let top = Infinity;
     let bottom = -Infinity;
+    // The close button's hit target reaches into the padding on purpose (row 419: a bigger target that
+    // adds no height), so the padding is measured around the content without it; `closeInside` checks the
+    // target still sits within the toast.
+    const close = el.querySelector('button[aria-label="close"]');
+    const cr = close?.getBoundingClientRect(); // rest-ok: read inside readAtRest
+    const closeInside = !cr || (cr.top >= box.top && cr.bottom <= box.bottom && cr.left >= box.left && cr.right <= box.right);
     el.querySelectorAll("*").forEach((c) => {
+      if (close && (c === close || close.contains(c))) return;
       const r = c.getBoundingClientRect(); // rest-ok: read inside readAtRest
       if (r.height === 0) return;
       top = Math.min(top, r.top);
@@ -42,7 +49,7 @@ function fit(toast: Locator) {
       height: parseFloat(cs.height),
       padTop: top - box.top - bt,
       padBottom: box.bottom - bottom - bb,
-      clipped: el.scrollHeight > el.clientHeight + 0.5,
+      clipped: el.scrollHeight > el.clientHeight + 0.5 || !closeInside,
     };
   });
 }
