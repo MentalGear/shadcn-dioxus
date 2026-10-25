@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Run only the Playwright specs that cover what this branch changed (row 152a).
 #
-#   pnpm run test:changed                         # from playwright/: diff = origin/main...HEAD + uncommitted changes
+#   pnpm run test:changed                         # from playwright/: diff = nearest base (origin/main or an origin/queue/* ref; row 418)...HEAD + uncommitted changes
 #   pnpm run test:changed -- --workers=2          # extra args go to `playwright test`
 #   CHANGED_RANGE=abc123..HEAD pnpm run test:changed
 #   CHANGED_MATRIX=1 pnpm run test:changed        # also the route-matrix specs for a single-component change
