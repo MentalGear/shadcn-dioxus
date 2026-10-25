@@ -5,7 +5,7 @@ the page as stale and check `git log` and the flag files named here.** What each
 backlog row files, not here: this page says only what is deployed, what runs, what is next and what waits for the owner.
 
 Last updated: **2026-10-25**. Several sessions work in parallel; who holds what is on the `claims` branch (`CLAIMS.md`).
-Preview site: https://mentalgear.github.io/shadcn-dioxus/ (deployed from main `52bfb4b8`, PR #146, merge queue batch 19).
+Preview site: https://mentalgear.github.io/shadcn-dioxus/ (deployed from main `41ac351b`, PR #147, merge queue batch 20).
 
 ## Merge queue
 
@@ -17,11 +17,11 @@ deploy running the full Playwright suite on a release build. Procedure:
 
 ## Merged and deployed
 
-Merge queue batches 1-19 are on main (PRs #121-#146), batch 19 deployed as `52bfb4b8`.
+Merge queue batches 1-20 are on main (PRs #121-#147), batch 20 deployed as `41ac351b`.
 
 ## In the queue
 
-Batch 20 (`queue/batch-20`): row 188 closes (the FieldLabel `required` marker, the audit's last item).
+Batch 21 (`queue/batch-21`): rows 418 (`test:changed` diffs against the nearest base) and 419 (Toast close button target and hover), and the owner's Haiku-first rule for delegated tasks.
 
 ## Running
 
