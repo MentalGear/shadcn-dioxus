@@ -143,3 +143,21 @@ test.describe('Axe automated scan', () => {
     await expectNoAxeViolations(page, 'toast: toast shown', { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });
 });
+
+// The close button is a square hit target around the glyph, and hovering it tints the target
+// (backlog row 419).
+test.describe('Toast close button target', () => {
+  test('is at least 28 px square and tints on hover', async ({ page }) => {
+    await gotoHydrated(page, `${BASE_URL}/component/toast/`);
+    await page.getByRole('button', { name: 'Info (60s)' }).click();
+    const close = page.getByRole('alertdialog').first().getByRole('button', { name: 'close', exact: true });
+    const box = await measureAtRest(close);
+    expect(box.width).toBeGreaterThanOrEqual(28);
+    expect(box.height).toBeGreaterThanOrEqual(28);
+
+    const fill = () => close.evaluate((el) => getComputedStyle(el).backgroundColor);
+    await expect.poll(fill).toBe('rgba(0, 0, 0, 0)');
+    await close.hover();
+    await expect.poll(fill).not.toBe('rgba(0, 0, 0, 0)');
+  });
+});
