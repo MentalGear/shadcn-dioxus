@@ -25,8 +25,8 @@
    * translate pull the frame back so the layout is the track's; coarse, the frame is layout in the block axis (stacked switches
    * never overlap) and negative sideways, so the track keeps the label gap. The track is the button's
    * `::before`, laid over the content box. */
-  --dx-switch-hit-x: max(0px, calc((var(--dx-control-hit-size, var(--dx-pick-coarse, 2.75rem) var(--dx-pick-fine, 1.5rem)) - var(--dx-switch-width)) / 2));
-  --dx-switch-hit-y: max(0px, calc((var(--dx-control-hit-size, var(--dx-pick-coarse, 2.75rem) var(--dx-pick-fine, 1.5rem)) - var(--dx-switch-height)) / 2));
+  --dx-switch-hit-x: max(0px, calc((var(--dx-control-hit-size) - var(--dx-switch-width)) / 2));
+  --dx-switch-hit-y: max(0px, calc((var(--dx-control-hit-size) - var(--dx-switch-height)) / 2));
   --dx-switch-hit-pull: var(--dx-pick-coarse, 0px) var(--dx-pick-fine, calc(-1 * var(--dx-switch-hit-y)));
 
   position: relative;

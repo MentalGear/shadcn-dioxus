@@ -108,7 +108,7 @@
 .dx-slider-thumb::after {
     position: absolute;
     content: "";
-    inset: calc(-1 * max(0px, (var(--dx-control-hit-size, var(--dx-pick-coarse, 2.75rem) var(--dx-pick-fine, 1.5rem)) - var(--dx-coarse-slider-thumb-size)) / 2));
+    inset: calc(-1 * max(0px, (var(--dx-control-hit-size) - var(--dx-coarse-slider-thumb-size)) / 2));
 }
 
 .dx-slider[data-orientation="vertical"] > .dx-slider-track > .dx-slider-thumb {

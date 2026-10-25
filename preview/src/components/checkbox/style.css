@@ -11,7 +11,7 @@
        checkboxes grows to 44px each and so never overlaps) and still negative sideways, so the glyph keeps
        the label gap. The glyph is painted by `.dx-checkbox-indicator` inside the frame, so the fill, the edge
        and the rings stay 1rem whatever the target. */
-    --checkbox-hit-pad: max(0px, calc((var(--dx-control-hit-size, var(--dx-pick-coarse, 2.75rem) var(--dx-pick-fine, 1.5rem)) - 1rem) / 2));
+    --checkbox-hit-pad: max(0px, calc((var(--dx-control-hit-size) - 1rem) / 2));
     --checkbox-hit-pull: var(--dx-pick-coarse, 0px) var(--dx-pick-fine, calc(-1 * var(--checkbox-hit-pad)));
 
     /* A constant 1rem square that is a FLEX box, never an inline-block

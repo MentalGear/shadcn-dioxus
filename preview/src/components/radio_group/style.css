@@ -33,7 +33,7 @@
   margin-block: 0 calc(2 * var(--dx-radio-hit-pull));
   translate: 0 var(--dx-radio-hit-pull);
 
-  --dx-radio-hit: var(--dx-control-hit-size, var(--dx-pick-coarse, 2.75rem) var(--dx-pick-fine, 1.5rem));
+  --dx-radio-hit: var(--dx-control-hit-size);
   --dx-radio-hit-pull: var(--dx-pick-coarse, 0px) var(--dx-pick-fine, calc((1rem - var(--dx-radio-hit)) / 2));
 }
 
