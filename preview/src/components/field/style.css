@@ -86,6 +86,13 @@
   --dx-label-line-height: 1.375;
 }
 
+/* `FieldLabel { required }`: the marker after the label text. Decorative (`aria-hidden`); the
+ * control's own `required` is what is announced and enforced. The label is a flex row with Label's
+ * gap, so the marker needs no spacing of its own. */
+.dx-field-required-marker {
+  color: var(--dx-destructive-text);
+}
+
 /* Choice card: a `FieldLabel` that wraps a `Field` (shadcn `field.tsx`:
  * `has-[>[data-slot=field]]:w-full flex-col rounded-md border`,
  * `*:data-[slot=field]:p-4`, `has-data-[state=checked]:bg-primary/5

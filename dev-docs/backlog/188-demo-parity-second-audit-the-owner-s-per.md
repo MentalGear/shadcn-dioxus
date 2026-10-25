@@ -52,3 +52,8 @@ demo `auto_highlight`. Invalid: wrapper `invalid` sets `aria-invalid` on the inp
 icon or text inside the input's start edge and pads the text past it; demo `input_group`. Spec:
 `playwright/demos-menu-toolbar-combobox-parts.spec.ts`. Still open: the `FieldLabel` required marker, an owner
 decision (shadcn has none; the `input/required` demo draws it).
+
+**Update 2026-10-25 (lane field-required):** the owner chose to add the required marker. `FieldLabel { required: true }`
+draws a `*` in `--dx-destructive-text` after the label text (`.dx-field-required-marker`, `aria-hidden`, so the accessible
+name stays the label text and the control's own `required` is what is announced and enforced). The `input/required` demo
+uses it instead of a hand-drawn span. Spec: `playwright/field-required-marker.spec.ts`.
