@@ -1,7 +1,7 @@
 ---
 id: 416
 title: "Load flakes, second set (masonry mouse drag, grid find reveal by text fragment, hover overlays after the simulated on-screen keyboard)"
-status: "Done on lane/load-flakes-416. Trigger for reopening: one of these specs red under load on an…"
+status: "LANDED (merge queue batch 19, lane/load-flakes-416). Trigger for reopening: one of these specs red…"
 size: "M"
 area: tests
 updated: 2026-10-25
@@ -19,7 +19,7 @@ keyboard), and `layout-stability` "/" light at 1 of 64 widths when paired with `
 
 ## Status / trigger
 
-Done on `lane/load-flakes-416`. Trigger for reopening: one of these specs red under load on an unchanged component.
+LANDED (merge queue batch 19, lane/load-flakes-416). Trigger for reopening: one of these specs red under load on an unchanged component.
 
 ## Size
 

@@ -40,7 +40,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (42)
+## Open rows (41)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -85,6 +85,5 @@ proposing one is closed as out of scope (row 337 is the first).
 | [413](backlog/413-property-tests-and-miri.md) | Property tests and Miri on the pure logic | OPTIONAL: needs owner approval before it is adopted or scheduled (owner 2026-10-24). Not part of… | M | tests |
 | [414](backlog/414-formal-proof-spike.md) | Spike: formal proofs of one headless model (Kani, optionally Aeneas to Lean) | OPTIONAL: needs owner approval before it is adopted or scheduled (owner 2026-10-24). Not part of… | M | research |
 | [415](backlog/415-pin-actions-to-shas.md) | Pin GitHub Actions to commit SHAs | OPTIONAL: needs owner approval before it is adopted or scheduled (owner 2026-10-24). Not part of… | XS | build |
-| [416](backlog/416-load-flakes-round-two.md) | Load flakes, second set (masonry mouse drag, grid find reveal by text fragment, hover overlays after the simulated on-screen keyboard) | Done on lane/load-flakes-416. Trigger for reopening: one of these specs red under load on an… | M | tests |
 
 <!-- END GENERATED -->

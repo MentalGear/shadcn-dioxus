@@ -5,7 +5,7 @@ the page as stale and check `git log` and the flag files named here.** What each
 backlog row files, not here: this page says only what is deployed, what runs, what is next and what waits for the owner.
 
 Last updated: **2026-10-24**. Several sessions work in parallel; who holds what is on the `claims` branch (`CLAIMS.md`).
-Preview site: https://mentalgear.github.io/shadcn-dioxus/ (deployed from main `3bb8927c`, PR #143, merge queue batch 16).
+Preview site: https://mentalgear.github.io/shadcn-dioxus/ (deployed from main `42dc6687`, PR #145, merge queue batch 18).
 
 ## Merge queue
 
@@ -17,17 +17,16 @@ deploy running the full Playwright suite on a release build. Procedure:
 
 ## Merged and deployed
 
-Merge queue batches 1-16 are on main (PRs #121-#143), batch 16 deployed as `3bb8927c`.
+Merge queue batches 1-18 are on main (PRs #121-#145), batch 18 deployed as `42dc6687`.
 
 ## In the queue
 
-Batch 17 (`queue/batch-17`): row 407's first-paint gate on component pages (owner pick 2026-10-24: hold first paint
-until the top group is parsed), row 411 (test:changed maps primitive submodules), the optional rows 412-415.
+Batch 19 (`queue/batch-19`): rows 416 (load flakes, round two) and 417 (variant slot variables declared on the base).
 
 ## Running
 
-Row 407 follow-up (the first-paint gate for home, /docs/ and /demos/, a deterministic slow-parse sweep); rows 395, 396,
-397, 398 part A (owner approved 395, 396 and every item of 398 as proposed, 2026-10-24).
+Nothing in the API stage: rows 391, 395, 396, 397 and 398 have landed. Next is stage 3 (structure: 267 with 384, then 355
+and 382).
 
 ## Next
 
