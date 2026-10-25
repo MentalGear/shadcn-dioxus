@@ -8,6 +8,7 @@
  * (see the header of `carousel.spec.ts` for the full write-up).
  */
 
+import { expect } from "./fixtures";
 import { type Page, type Locator } from "@playwright/test";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
