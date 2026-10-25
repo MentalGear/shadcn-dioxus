@@ -93,84 +93,25 @@ import os
 import re
 import sys
 
+sys.path.insert(0, "scripts/lib")
+from allow import Allowlist  # noqa: E402
+from css import rules as css_rules, split_top  # noqa: E402
+
 COMPONENTS = "preview/src/components"
 LIST = os.environ.get("LIST") == "1"
 VARIANT = re.compile(r'\[data-(?:variant|size|orientation|spacing|align)\b')
 
 # (component dir, regex searched in the selector, reason). See the header: prefer the construction.
-ALLOW = [
+ALLOW_ROWS = [
     ("item", r'^\.dx-item-media\[data-variant="(icon|image)"\] (svg|img)$',
      "the svg/img is the user's leaf icon or image inside ItemMedia; an ItemMedia does not hold another ItemMedia, "
      "and a slot default on the svg/img would override the element's own width/height attributes"),
 ]
 
 
-def strip_comments(css):
-    return re.sub(r"/\*.*?\*/", lambda m: "\n" * m.group(0).count("\n"), css, flags=re.S)
-
-
 def style_rules(css):
-    """[(prelude, line, body)] for every style rule, at-rule bodies descended into."""
-    css = strip_comments(css)
-    out, stack, buf, quote, paren = [], [], [], None, 0
-    for i, ch in enumerate(css):
-        if quote:
-            buf.append(ch)
-            if ch == quote:
-                quote = None
-        elif ch in "\"'":
-            quote = ch
-            buf.append(ch)
-        elif ch == "(":
-            paren += 1
-            buf.append(ch)
-        elif ch == ")":
-            paren = max(0, paren - 1)
-            buf.append(ch)
-        elif paren:
-            buf.append(ch)
-        elif ch == "{":
-            prelude = "".join(buf)
-            start = i - len(prelude) + (len(prelude) - len(prelude.lstrip()))
-            prelude = prelude.strip()
-            is_at = prelude.startswith("@")
-            stack.append(None if is_at else (prelude, css.count("\n", 0, start) + 1, i + 1))
-            buf = []
-        elif ch == ";":
-            buf = []
-        elif ch == "}":
-            if stack:
-                rule = stack.pop()
-                if rule is not None:
-                    out.append((rule[0], rule[1], css[rule[2]:i]))
-            buf = []
-        else:
-            buf.append(ch)
-    out.sort(key=lambda r: r[1])
-    return out
-
-
-def split_top(s, sep):
-    out, depth, cur, quote = [], 0, [], None
-    for ch in s:
-        if quote:
-            cur.append(ch)
-            if ch == quote:
-                quote = None
-            continue
-        if ch in "\"'":
-            quote = ch
-        elif ch in "([":
-            depth += 1
-        elif ch in ")]":
-            depth -= 1
-        if ch == sep and depth == 0:
-            out.append("".join(cur))
-            cur = []
-        else:
-            cur.append(ch)
-    out.append("".join(cur))
-    return out
+    """[(prelude, line, body)] for every style rule, at-rule bodies descended into (the shared reader, row 429)."""
+    return sorted(((r.prelude, r.line, r.body) for r in css_rules(css)), key=lambda r: r[1])
 
 
 def tokens(sel):
@@ -321,15 +262,12 @@ def slot_report(sheets):
     """(sites, unallowed, stale entries) for {component dir: css}."""
     sites = [(comp, line, root, var, sel)
              for comp in sorted(sheets) for line, root, var, sel in undeclared_slots(comp, sheets[comp])]
-    used = [0] * len(SLOT_ALLOW)
+    allow = Allowlist("check-variant-scope", SLOT_ALLOW, fields=("comp", "slot"))  # fresh `used` per report
     unallowed = []
     for site in sites:
-        hits = [n for n, (acomp, avar, _) in enumerate(SLOT_ALLOW) if (acomp, avar) == (site[0], site[3])]
-        for n in hits:
-            used[n] += 1
-        if not hits:
+        if not allow.find_all(lambda e: (e.comp, e.slot) == (site[0], site[3])):
             unallowed.append(site)
-    return sites, unallowed, [SLOT_ALLOW[n] for n, u in enumerate(used) if not u]
+    return sites, unallowed, allow.unused()
 
 
 def slot_self_test(sheets):
@@ -378,18 +316,10 @@ for comp in sorted(os.listdir(COMPONENTS)):
             if kind:
                 sites.append((comp, path, line, kind, sel))
 
-used = [0] * len(ALLOW)
+ALLOW = Allowlist("check-variant-scope", ALLOW_ROWS, fields=("comp", "rx"))
 bad = []
 for comp, path, line, kind, sel in sites:
-    hit = None
-    for n, (acomp, rx, reason) in enumerate(ALLOW):
-        if acomp == comp and re.search(rx, sel):
-            if not reason.strip():
-                print(f"check-variant-scope: allowlist entry {acomp!r} {rx!r} has no reason", file=sys.stderr)
-                sys.exit(2)
-            used[n] += 1
-            hit = n
-            break
+    hit = ALLOW.find(lambda e: e.comp == comp and re.search(e.rx, sel))
     if LIST:
         print(f"{path}:{line}: {kind}: {sel}" + ("  [allowlisted]" if hit is not None else ""))
     if hit is None:
@@ -401,14 +331,15 @@ if LIST:
     for comp, line, root, var, sel in slot_sites:
         print(f"{COMPONENTS}/{comp}/style.css:{line}: undeclared-slot: {sel} sets {var}"
               + ("  [allowlisted]" if (comp, line, root, var, sel) in allowed_sites else ""))
-for acomp, avar, reason in SLOT_ALLOW:
-    if not reason.strip():
-        print(f"check-variant-scope: slot allowlist entry ({acomp}, {avar}) has no reason", file=sys.stderr)
-        sys.exit(2)
+bad_tables = ALLOW.problems(stale=False) + Allowlist("check-variant-scope", SLOT_ALLOW, fields=("comp", "slot")).problems(stale=False)
+if bad_tables:
+    for problem in bad_tables:
+        print(f"check-variant-scope: {problem}", file=sys.stderr)
+    sys.exit(2)
 results, control_green = slot_self_test(sheets)
 not_red = [label for label, is_red in results if not is_red]
 
-stale = [ALLOW[n] for n, u in enumerate(used) if not u]
+stale = ALLOW.unused()
 for acomp, rx, _ in stale:
     print(f"check-variant-scope: stale allowlist entry ({acomp}, {rx!r}) matches no flagged selector", file=sys.stderr)
 for acomp, avar, _ in slot_stale:

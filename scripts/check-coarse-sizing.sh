@@ -24,27 +24,27 @@ cd "$repo_root"
 python3 - "$@" <<'PYEOF'
 import glob, re, sys
 
+sys.path.insert(0, "scripts/lib")
+from allow import Allowlist  # noqa: E402
+from css import blank_comments  # noqa: E402
+
 explicit = sys.argv[1:]
 THEME = "preview/assets/dx-components-theme.css"
 
 # (file, reason). One entry per file; the file may keep its raw media rules.
-ALLOW = [
+ALLOW = Allowlist("check-coarse-sizing", [
     (THEME, "the switch itself: the media rules that flip --dx-pick-coarse / --dx-pick-fine"),
     ("preview/assets/main.css",
      "the preview app's own backstop floor for RAW <input>/<select>/<textarea> (not library components, not shipped); "
      "it follows the device, the theme variables cover every `dx-` control"),
-]
+], fields=("path",))
 
 PATTERN = re.compile(r"@media[^{]*\b(?:any-)?pointer\s*:\s*coarse", re.I)
 
 
-def strip(src):
-    return re.sub(r"/\*.*?\*/", lambda m: re.sub(r"[^\n]", " ", m.group(0)), src, flags=re.S)
-
-
 def scan(src):
     """Line numbers of every raw coarse media feature (comments stripped)."""
-    src = strip(src)
+    src = blank_comments(src)
     return [src.count("\n", 0, m.start()) + 1 for m in PATTERN.finditer(src)]
 
 
@@ -60,13 +60,12 @@ if explicit:
 else:
     files = sorted(set(glob.glob("preview/src/**/*.css", recursive=True) + glob.glob("preview/assets/*.css")))
     files = [f for f in files if "node_modules" not in f]
-violations, used = [], set()
+violations = []
 for path in files:
     lines = scan(open(path, encoding="utf-8").read())
     if not lines:
         continue
-    if not explicit and any(a[0] == path for a in ALLOW):
-        used.add(path)
+    if not explicit and ALLOW.find_all(lambda e: e.path == path):
         continue
     violations += [(path, l) for l in lines]
 
@@ -77,10 +76,8 @@ if violations:
                     "\"Coarse sizing\" block:")
     problems += [f"  {p}:{l}" for p, l in violations]
 if not explicit:
-    for path, _ in ALLOW:
-        if path not in used:
-            problems.append(f"stale ALLOW entry {path}: it has no raw coarse media rule any more; delete the entry")
-    theme = strip(open(THEME, encoding="utf-8").read())
+    problems += ALLOW.problems()
+    theme = blank_comments(open(THEME, encoding="utf-8").read())
     for label, needle in [
         ("the `auto` media rule", r"@media \(pointer: coarse\)\s*\{\s*:root,\s*\[data-dx-coarse=\"auto\"\]"),
         ("the fine default on `:root, [data-dx-coarse=\"auto\"]`", r"(?<![\w}])\n:root,\s*\[data-dx-coarse=\"auto\"\]\s*\{"),

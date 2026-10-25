@@ -30,7 +30,9 @@
 #   2. a script write to the document's scroller (`documentElement`/`body` `.style.scrollBehavior = ...`,
 #      `setProperty('scroll-behavior', ...)`) fails.
 # ALLOW format: (path, fnmatch pattern on the whitespace-normalised selector entry or the script line, reason).
-# An entry that matches nothing fails the run as stale, so the list cannot rot into blanket permission.
+# An entry that matches nothing fails the run as stale, so the list cannot rot into blanket permission
+# (scripts/lib/allow.py). A `.css` file is read by scripts/lib/css.py, the one CSS reader of the gates; the CSS in a
+# Rust string or an HTML `<style>` (not a stylesheet) is read by its fragment mode.
 #
 # The browser half is `playwright/nav-scroll-instant.spec.ts`; it must not run through a fixture that forces
 # `scroll-behavior: auto !important`, which would mask the very bug it guards.
@@ -49,9 +51,12 @@ import re
 import sys
 from pathlib import Path
 
-ALLOW = [
-    # (path, fnmatch pattern, reason) -- none today: no stylesheet needs ambient smooth scrolling.
-]
+sys.path.insert(0, "scripts/lib")
+from allow import Allowlist  # noqa: E402
+from css import blank_comments, rules as css_rules, split_top as split_top_raw, subject_compound  # noqa: E402
+
+# (path, fnmatch pattern, reason) -- none today: no stylesheet needs ambient smooth scrolling.
+ALLOW = Allowlist("check-scroll-behavior", [], fields=("path", "pattern"))
 
 explicit = [Path(a) for a in sys.argv[1:]]
 ROOTS = ["preview/src", "preview/assets", "primitives/src", "templates"]
@@ -67,49 +72,34 @@ def files():
                 out.append(p)
     return [p for p in out if p.exists()]
 
-COMMENT = re.compile(r"/\*.*?\*/", re.S)
 HTML_COMMENT = re.compile(r"<!--.*?-->", re.S)
 RS_LINE_COMMENT = re.compile(r"^[ \t]*//[^\n]*", re.M)   # `//`, `///`, `//!` lines: prose that names the property
-def blank(text):
-    for rx in (COMMENT, HTML_COMMENT, RS_LINE_COMMENT):
+def blank(text, is_css=False):
+    text = blank_comments(text, strings=is_css)
+    for rx in (HTML_COMMENT, RS_LINE_COMMENT):
         text = rx.sub(lambda m: re.sub(r"[^\n]", " ", m.group(0)), text)
     return text
 
 SMOOTH = re.compile(r"(?<![\w-])scroll-behavior\s*:\s*smooth\b", re.I)
-RULE = re.compile(r"([^{}]*)\{([^{}]*)\}")
 JS_WRITE = re.compile(
     r"(documentElement|document\.body)\s*\.\s*style\s*\.\s*scrollBehavior\s*=|"
     r"(documentElement|document\.body)\s*\.\s*style\s*\.\s*setProperty\(\s*['\"]scroll-behavior['\"]", re.I)
 
-def split_top(s, sep=","):
-    out, depth, cur = [], 0, ""
-    for ch in s:
-        if ch in "([":
-            depth += 1
-        elif ch in ")]":
-            depth -= 1
-        if ch == sep and depth == 0:
-            out.append(cur); cur = ""
-        else:
-            cur += ch
-    out.append(cur)
-    return [e.strip() for e in out if e.strip()]
+def selector_list(s, is_css=True):
+    """The stripped, non-empty entries of a selector list."""
+    return [e.strip() for e in split_top_raw(s, strings=is_css) if e.strip()]
 
-def last_compound(entry):
-    depth, start = 0, 0
-    for i, ch in enumerate(entry):
-        if ch in "([":
-            depth += 1
-        elif ch in ")]":
-            depth -= 1
-        elif depth == 0 and ch in " >+~":
-            start = i + 1
-    return entry[start:].strip()
+def rule_sites(path, raw, text):
+    """(line of the `{`, selector list, body) of every rule: the shared reader for a stylesheet; for the CSS inside a
+    Rust string or an HTML `<style>` its fragment mode, innermost blocks only (the host language's braces nest)."""
+    if path.suffix == ".css":
+        return [(r.brace_line, r.prelude, r.body) for r in css_rules(raw)]
+    return [(r.brace_line, r.prelude, r.body) for r in css_rules(text, fragment=True) if not r.nested]
 
-def can_match_root(entry):
+def can_match_root(entry, is_css=True):
     if "[data-anchor-scroll]" in entry:
         return False
-    c = re.sub(r"::?[\w-]+(\((?:[^()]|\([^()]*\))*\))?", lambda m: m.group(0) if m.group(0).startswith(":where(") or m.group(0).startswith(":root") else "", last_compound(entry))
+    c = re.sub(r"::?[\w-]+(\((?:[^()]|\([^()]*\))*\))?", lambda m: m.group(0) if m.group(0).startswith(":where(") or m.group(0).startswith(":root") else "", subject_compound(entry, strings=is_css))
     c = c.strip()
     if re.match(r"^(html|body|\*|:root)\b", c) or c in ("", "html", "body", "*"):
         return True
@@ -118,27 +108,23 @@ def can_match_root(entry):
         return False
     return True   # attribute/pseudo only, e.g. `[data-theme="dark"]`
 
-errors, used = [], set()
+errors = []
 
 def allowed(path, text):
-    for i, (p, pat, _reason) in enumerate(ALLOW):
-        if p == path and fnmatch.fnmatch(text, pat):
-            used.add(i)
-            return True
-    return False
+    return ALLOW.find(lambda e: e.path == path and fnmatch.fnmatch(text, e.pattern)) is not None
 
 scanned = 0
 for path in files():
     scanned += 1
     raw = path.read_text(encoding="utf-8", errors="replace")
-    text = blank(raw)
-    for m in RULE.finditer(text):
-        if not SMOOTH.search(m.group(2)):
+    text = blank(raw, path.suffix == ".css")
+    for line, prelude, body in rule_sites(path, raw, text):
+        if not SMOOTH.search(body):
             continue
-        line = text.count("\n", 0, m.start(2)) + 1
-        for entry in split_top(m.group(1)):
+        is_css = path.suffix == ".css"
+        for entry in selector_list(prelude, is_css):
             norm = " ".join(entry.split())
-            if can_match_root(norm) and not allowed(str(path), norm):
+            if can_match_root(norm, is_css) and not allowed(str(path), norm):
                 errors.append(f"{path}:{line}: `{norm}` declares `scroll-behavior: smooth` and can match the "
                               f"document's scroller; smooth scrolling is opt-in, `html[data-anchor-scroll]` only "
                               f"(preview/index.html sets it for one same-page anchor jump)")
@@ -152,15 +138,13 @@ for path in files():
 
 if not explicit:
     css = Path("preview/assets/main.css").read_text(encoding="utf-8")
-    if not re.search(r"html\[data-anchor-scroll\]\s*\{[^{}]*scroll-behavior\s*:\s*smooth", blank(css)):
+    if not re.search(r"html\[data-anchor-scroll\]\s*\{[^{}]*scroll-behavior\s*:\s*smooth", blank(css, True)):
         errors.append("preview/assets/main.css: the opt-in rule `html[data-anchor-scroll] { scroll-behavior: smooth }` is gone "
                       "(the `/docs` anchor jump would be an instant cut)")
     html = blank(Path("preview/index.html").read_text(encoding="utf-8"))
     if "data-anchor-scroll" not in html:
         errors.append("preview/index.html: the same-page anchor handler no longer sets `data-anchor-scroll`")
-    for i, (p, pat, reason) in enumerate(ALLOW):
-        if i not in used:
-            errors.append(f"stale ALLOW entry: ({p}, {pat}) matched nothing -- delete it")
+    errors += [f"ALLOW: {p}" for p in ALLOW.problems()]
 
 if errors:
     for e in errors:

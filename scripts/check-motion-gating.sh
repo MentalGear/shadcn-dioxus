@@ -59,6 +59,9 @@ import re
 import sys
 from pathlib import Path
 
+sys.path.insert(0, "scripts/lib")
+from css import strip_comments  # noqa: E402
+
 GATE = re.compile(r"use_motion\w*|use_entered_view_when|use_document_visible")
 
 # (stylesheet path, reason). The reason says WHY this loop is not paused by the gate.
@@ -117,8 +120,7 @@ for p in rs_files:
 INFINITE = re.compile(r"animation(?:-iteration-count)?\s*:[^;{}]*\binfinite\b", re.S)
 
 def has_infinite(path: Path) -> bool:
-    src = re.sub(r"/\*.*?\*/", "", path.read_text(), flags=re.S)
-    return bool(INFINITE.search(src))
+    return bool(INFINITE.search(strip_comments(path.read_text())))
 
 def component_wired(name: str) -> bool:
     candidates = [Path(f"preview/src/components/{name}/component.rs"), Path(f"primitives/src/{name}.rs")]

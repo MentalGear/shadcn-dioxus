@@ -104,96 +104,18 @@ import os
 import re
 import sys
 
+sys.path.insert(0, "scripts/lib")
+from css import rules as css_rules, split_top  # noqa: E402
+
 COMPONENTS = "preview/src/components"
 FORM_TAGS = ("input", "select", "textarea", "button", "label")
 
 
 # ----------------------------------------------------------------------------- CSS
-def strip_comments(css):
-    # Keep the newlines, so line numbers survive.
-    return re.sub(r"/\*.*?\*/", lambda m: "\n" * m.group(0).count("\n"), css, flags=re.S)
-
-
 def parse_rules(css):
-    """Return [(prelude, [declaration-text], line, [enclosing at-rule preludes])] for every
-    style rule. Quote- and paren-aware, so `url("data:..;..{")` cannot split a declaration."""
-    css = strip_comments(css)
-    rules, stack, buf = [], [], []
-    quote, paren, i, n = None, 0, 0, len(css)
-    while i < n:
-        ch = css[i]
-        if quote:
-            buf.append(ch)
-            if ch == "\\" and i + 1 < n:
-                buf.append(css[i + 1])
-                i += 1
-            elif ch == quote:
-                quote = None
-        elif ch in "\"'":
-            quote = ch
-            buf.append(ch)
-        elif ch == "(":
-            paren += 1
-            buf.append(ch)
-        elif ch == ")":
-            paren = max(0, paren - 1)
-            buf.append(ch)
-        elif paren > 0:
-            buf.append(ch)
-        elif ch == "{":
-            prelude = "".join(buf)
-            lead = len(prelude) - len(prelude.lstrip())
-            start = i - len(prelude) + lead
-            stack.append({
-                "kind": "at" if prelude.strip().startswith("@") else "rule",
-                "prelude": prelude.strip(),
-                "line": css.count("\n", 0, start) + 1,
-                "decls": [],
-            })
-            buf = []
-        elif ch == ";":
-            decl = "".join(buf).strip()
-            if stack and stack[-1]["kind"] == "rule" and decl:
-                stack[-1]["decls"].append(decl)
-            buf = []
-        elif ch == "}":
-            decl = "".join(buf).strip()
-            if stack:
-                top = stack.pop()
-                if top["kind"] == "rule":
-                    if decl:
-                        top["decls"].append(decl)
-                    ctx = [s["prelude"] for s in stack if s["kind"] == "at"]
-                    rules.append((top["prelude"], top["decls"], top["line"], ctx))
-            buf = []
-        else:
-            buf.append(ch)
-        i += 1
-    return rules
-
-
-def split_top(s, sep):
-    out, depth, cur, quote = [], 0, [], None
-    for ch in s:
-        if quote:
-            cur.append(ch)
-            if ch == quote:
-                quote = None
-        elif ch in "\"'":
-            quote = ch
-            cur.append(ch)
-        else:
-            if ch in "([":
-                depth += 1
-            elif ch in ")]":
-                depth -= 1
-            if ch == sep and depth == 0:
-                out.append("".join(cur))
-                cur = []
-            else:
-                cur.append(ch)
-    out.append("".join(cur))
-    return out
+    """[(prelude, [declaration-text], line, [enclosing at-rule preludes])] for every style rule (the shared
+    reader scripts/lib/css.py, row 429: quote-, escape-, `url(...)`- and paren-aware)."""
+    return [(r.prelude, r.decls, r.line, r.at) for r in css_rules(css)]
 
 
 def subject_compound(sel):

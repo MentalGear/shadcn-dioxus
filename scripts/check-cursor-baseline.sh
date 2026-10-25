@@ -44,6 +44,10 @@ import glob
 import re
 import sys
 
+sys.path.insert(0, "scripts/lib")
+from allow import Allowlist  # noqa: E402
+from css import blank_comments, rules as css_rules, split_decl, split_top as split_top_raw  # noqa: E402
+
 THEME = "preview/assets/dx-components-theme.css"
 MAIN = "preview/assets/main.css"
 THEME_RS = "preview/src/theme.rs"
@@ -53,71 +57,40 @@ TOKEN = f"var({VAR}, default)"
 KEY = "dx-interactive-element-cursor"
 
 # (stylesheet, whitespace-normalised selector, reason the baseline cannot cover it)
-ALLOW = []
+ALLOW_ROWS = []
 
 REQUIRED_TAGS = ["button", "summary", "select"]
 REQUIRED_ROLES = ["button", "menuitem", "menuitemcheckbox", "menuitemradio", "option", "tab", "switch",
                   "checkbox", "radio", "slider"]
 
-COMMENT = re.compile(r"/\*.*?\*/", re.S)
-
-
-def blank_comments(text):
-    # Same-length whitespace, newlines kept, so reported line numbers are the file's.
-    return COMMENT.sub(lambda m: re.sub(r"[^\n]", " ", m.group(0)), text)
-
-
-DECL = re.compile(r"(?<![\w-])cursor\s*:\s*([^;}]*)", re.I)
+DECL_PROP = "cursor"
 
 
 def declarations(text):
-    """Yield (line, selector, value) for every `cursor` declaration of comment-stripped CSS text."""
-    for m in DECL.finditer(text):
-        pos = m.start()
-        depth, i = 0, pos
-        while i >= 0:
-            c = text[i]
-            if c == "}":
-                depth += 1
-            elif c == "{":
-                if depth == 0:
-                    break
-                depth -= 1
-            i -= 1
-        j = max(text.rfind("}", 0, i), text.rfind(";", 0, i), text.rfind("{", 0, i))
-        selector = " ".join(text[j + 1:i].split())
-        value = " ".join(m.group(1).replace("!important", "").split())
-        yield text.count("\n", 0, pos) + 1, selector, value
+    """Yield (line, selector, value) for every `cursor` declaration of the stylesheet `text` (read by the shared
+    scripts/lib/css.py: comments, strings, `url(...)` and at-rules understood)."""
+    for r in css_rules(text):
+        for decl, line in zip(r.decls, r.decl_lines):
+            prop, value = split_decl(decl)
+            if prop == DECL_PROP:
+                yield line, " ".join(r.prelude.split()), " ".join(value.replace("!important", "").split())
 
 
-def split_top(selector):
-    out, depth, cur = [], 0, ""
-    for ch in selector:
-        if ch in "([":
-            depth += 1
-        elif ch in ")]":
-            depth -= 1
-        if ch == "," and depth == 0:
-            out.append(cur)
-            cur = ""
-        else:
-            cur += ch
-    out.append(cur)
-    return [s.strip() for s in out if s.strip()]
+def selector_list(selector):
+    return [s.strip() for s in split_top_raw(selector) if s.strip()]
 
 
 def check(sheets, theme, main, theme_rs, index_html):
     """Return (violations, used_allow_entries) for the given file texts. `sheets` maps path -> text."""
-    violations, used = [], set()
+    violations = []
+    allow = Allowlist("check-cursor-baseline", ALLOW_ROWS, fields=("file", "selector"))
     scanned = dict(sheets)
     scanned[MAIN] = main
     for path, raw in scanned.items():
-        for line, selector, value in declarations(blank_comments(raw)):
+        for line, selector, value in declarations(raw):
             low = value.lower()
             if low in ("pointer", "default", "auto"):
-                hit = next((a for a in ALLOW if a[0] == path and a[1] == selector), None)
-                if hit:
-                    used.add(id(hit))
+                if allow.find(lambda e: e.file == path and e.selector == selector):
                     continue
                 violations.append(
                     f"{path}:{line}: `{selector}` declares `cursor: {value}`; the theme's baseline decides it "
@@ -126,14 +99,12 @@ def check(sheets, theme, main, theme_rs, index_html):
                 if low != TOKEN.lower():
                     violations.append(f"{path}:{line}: `{selector}` declares `cursor: {value}`; the only var() "
                                       f"spelling is `cursor: {TOKEN}`")
-    for a in ALLOW:
-        if id(a) not in used:
-            violations.append(f"stale ALLOW entry {a[0]} ({a[1]}): it matches no `cursor` declaration; delete it")
+    violations += allow.problems()
 
     # 2 + 3: the theme.
     t = blank_comments(theme)
     baseline = []
-    for line, selector, value in declarations(t):
+    for line, selector, value in declarations(theme):
         if value == TOKEN:
             baseline.append((line, selector))
         elif value.lower() in ("pointer", "default"):
@@ -148,7 +119,7 @@ def check(sheets, theme, main, theme_rs, index_html):
             violations.append(f"{THEME}:{line}: the baseline rule must be `:where(:is(<list>):not(<disabled>))`: zero "
                               "specificity, and a disabled control left out of the list")
         else:
-            entries = split_top(shape.group(1))
+            entries = selector_list(shape.group(1))
             for tag in REQUIRED_TAGS:
                 for spelling in (f'{tag}[class^="dx-"]', f'{tag}[class*=" dx-"]'):
                     if spelling not in entries:
@@ -159,7 +130,7 @@ def check(sheets, theme, main, theme_rs, index_html):
                         violations.append(f"{THEME}:{line}: the baseline rule lost `{spelling}`")
             if "[data-dx-menu-item]" not in entries:
                 violations.append(f"{THEME}:{line}: the baseline rule lost `[data-dx-menu-item]`")
-            disabled = split_top(shape.group(2))
+            disabled = selector_list(shape.group(2))
             for spelling in (":disabled", '[aria-disabled="true"]', '[data-disabled="true"]'):
                 if spelling not in disabled:
                     violations.append(f"{THEME}:{line}: the baseline rule no longer leaves `{spelling}` out "
@@ -174,7 +145,7 @@ def check(sheets, theme, main, theme_rs, index_html):
     for path, text in ((THEME_RS, theme_rs), (INDEX, index_html)):
         if f"'{KEY}'" not in text or f"(k!=='{KEY}'||v==='pointer'||v==='default')" not in text:
             violations.append(f"{path}: PREPAINT_JS must list `'{KEY}'` and accept only `pointer` and `default` for it")
-    return violations, used
+    return violations, [e for e in allow if allow.used(e)]
 
 
 def load():
@@ -257,10 +228,10 @@ def self_test():
     expect_red("theme.rs loses the key", theme_rs=theme_rs.replace(f"'{KEY}'", "'gone'"))
     expect_red("index.html accepts any value", index_html=index_html.replace(f"(k!=='{KEY}'||v==='pointer'||v==='default')", "true"))
     # A stale ALLOW entry fails.
-    ALLOW.append((any_sheet, ".dx-nothing-matches", "self-test"))
+    ALLOW_ROWS.append((any_sheet, ".dx-nothing-matches", "self-test"))
     v, _ = check(sheets, theme, main, theme_rs, index_html)
-    ALLOW.pop()
-    if not any("stale ALLOW" in x for x in v):
+    ALLOW_ROWS.pop()
+    if not any("stale allowlist entry" in x for x in v):
         failures.append("a stale ALLOW entry")
     if failures:
         print("check-cursor-baseline: self-test FAIL -- these mutations were not caught:")

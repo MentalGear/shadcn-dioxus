@@ -75,18 +75,17 @@ if not files:
     print("check-theme-baseline: no stylesheets found (run from a checkout)", file=sys.stderr)
     sys.exit(2)
 
-COMMENT = re.compile(r"/\*.*?\*/", re.S)
-
-def blank_comments(text):
-    # Same-length whitespace, newlines kept, so reported line numbers are the file's.
-    return COMMENT.sub(lambda m: re.sub(r"[^\n]", " ", m.group(0)), text)
+sys.path.insert(0, "scripts/lib")
+from allow import Allowlist  # noqa: E402
+# blank_comments: same-length whitespace, newlines kept, so reported line numbers are the file's.
+from css import blank_comments, rules as css_rules, split_top as split_top_raw, subject_compound  # noqa: E402
 
 # Elements the theme's user-select rule covers: tag button/summary, or one of these roles (button included).
 BASELINE_TAGS = {"button", "summary"}
 BASELINE_ROLES = {"button", "menuitem", "menuitemcheckbox", "menuitemradio", "option", "tab", "switch",
                   "checkbox", "radio", "slider"}
 # (stylesheet, whitespace-normalised selector entry, reason the baseline does not reach it)
-USER_SELECT_ALLOW = [
+USER_SELECT_ALLOW = Allowlist("check-theme-baseline", [
     ("preview/src/components/avatar/style.css", ".dx-avatar",
      "a non-interactive circle: the initials fallback is a label, not a control"),
     ("preview/src/components/avatar/style.css", ".dx-avatar-badge",
@@ -125,7 +124,7 @@ USER_SELECT_ALLOW = [
      "the drag handle bar (`div`): a drag can start on it before `data-dragging` flips"),
     ("preview/src/components/sidebar/style.css", ".dx-sidebar-menu-badge",
      "a decorative count badge beside a menu button (`pointer-events: none`), not a control"),
-]
+], fields=("file", "entry"), source="scripts/check-theme-baseline.sh")
 
 # No component rule may reset with the `all` shorthand: `all: unset` (0,1,0) beats every zero-specificity theme
 # baseline on that element (user-select, touch-action, press feedback, box-sizing), so the class is banned outright
@@ -133,96 +132,69 @@ USER_SELECT_ALLOW = [
 ALL_RESET = re.compile(r"(?<![\w-])all\s*:\s*(unset|initial|revert|revert-layer)\b", re.I)
 
 TOUCH = re.compile(r"(?<![\w-])touch-action\s*:\s*manipulation\b", re.I)
-# A rule whose selector list mentions `::backdrop`: capture selector and body (no nested blocks inside).
-BACKDROP_RULE = re.compile(r"([^{}]*::backdrop[^{}]*)\{([^{}]*)\}", re.I)
 PAINTS = re.compile(r"(?<![\w-])(background(-color|-image)?|backdrop-filter|transition(-[a-z]+)?)\s*:", re.I)
 
 USER_SELECT = re.compile(r"(?<![\w-])(-webkit-)?user-select\s*:\s*none\b", re.I)
-RULE = re.compile(r"([^{}]*)\{([^{}]*)\}")
 
-def split_top(selector):
-    out, depth, cur = [], 0, ""
-    for ch in selector:
-        if ch in "([":
-            depth += 1
-        elif ch in ")]":
-            depth -= 1
-        if ch == "," and depth == 0:
-            out.append(cur); cur = ""
-        else:
-            cur += ch
-    out.append(cur)
-    return [" ".join(e.split()) for e in out if e.strip()]
-
-def last_compound(entry):
-    depth, start = 0, 0
-    for i, ch in enumerate(entry):
-        if ch in "([":
-            depth += 1
-        elif ch in ")]":
-            depth -= 1
-        elif depth == 0 and ch in " >+~":
-            start = i + 1
-    return entry[start:]
+def selector_list(selector):
+    """The whitespace-normalised, non-empty entries of a selector list."""
+    return [" ".join(e.split()) for e in split_top_raw(selector) if e.strip()]
 
 def covered_by_baseline(entry):
-    c = last_compound(entry)
+    c = subject_compound(entry)
     tag = re.match(r"^[a-z][\w-]*", c)
     if tag and tag.group(0) in BASELINE_TAGS:
         return True
     return any(r in BASELINE_ROLES for r in re.findall(r"\[role=[\"']?([\w-]+)[\"']?\]", c))
 
 errors = []
-used_allow = set()
 for path in files:
     with open(path, encoding="utf-8") as fh:
-        text = blank_comments(fh.read())
+        raw = fh.read()
+    text = blank_comments(raw)
+    sheet_rules = css_rules(raw)
     for m in TOUCH.finditer(text):
         line = text.count("\n", 0, m.start()) + 1
         errors.append(f"{path}:{line}: `touch-action: manipulation` is declared once, in {THEME} "
                       f"(the shared `dx-` control rule); delete it here")
-    for m in BACKDROP_RULE.finditer(text):
-        selector = " ".join(m.group(1).split())
+    for r in sheet_rules:
+        if not re.search("::backdrop", r.prelude, re.I):
+            continue
+        selector = " ".join(r.prelude.split())
         # The overlay-off switch is a theme rule, never a component one; a component has none to write.
-        if PAINTS.search(m.group(2)):
-            line = text.count("\n", 0, m.start(2)) + 1
+        if PAINTS.search(r.body):
+            line = r.brace_line
             errors.append(f"{path}:{line}: `{selector}` paints a `::backdrop`; the modal scrim is the one "
                           f"shared rule in {THEME} (\"The modal scrim, once\"), retuned by the "
                           f"--dx-overlay-* tokens")
 
     # Arm 4: no component sheet re-declares the baseline's user-select, and every other one says why.
     if path.replace("\\", "/").startswith("preview/src/components/"):
-        for m in RULE.finditer(text):
-            line = text.count("\n", 0, m.start(2)) + 1
-            if ALL_RESET.search(m.group(2)):
-                for entry in split_top(m.group(1)):
+        for r in sheet_rules:
+            line = r.brace_line
+            if ALL_RESET.search(r.body):
+                for entry in selector_list(r.prelude):
                     errors.append(f"{path}:{line}: `{entry}` resets with `all:`, which beats every zero-specificity "
                                   f"theme baseline (user-select, touch-action, press feedback, box-sizing) on that "
                                   f"element; spell the resets out (appearance, background, border, padding, margin, "
                                   f"font, color, outline) -- `all:` is banned in component stylesheets (row 239)")
                 continue
-            if not USER_SELECT.search(m.group(2)):
+            if not USER_SELECT.search(r.body):
                 continue
-            for entry in split_top(m.group(1)):
+            for entry in selector_list(r.prelude):
                 if covered_by_baseline(entry):
                     errors.append(f"{path}:{line}: `{entry}` re-declares `user-select: none` for an element the "
                                   f"theme's shared control rule already covers ({THEME}, \"Controls are not "
                                   f"text\"); delete it")
                     continue
-                hit = [i for i, (p, pat, _r) in enumerate(USER_SELECT_ALLOW) if p == path and entry == pat]
-                if hit:
-                    used_allow.update(hit)
-                else:
+                if not USER_SELECT_ALLOW.find_all(lambda e: e.file == path and e.entry == entry):
                     errors.append(f"{path}:{line}: `{entry}` declares `user-select: none`: if the element is a "
                                   f"button, summary or widget role the theme's shared control rule already covers it "
                                   f"(delete this); if it is a drag surface or a non-interactive label, add it to "
                                   f"USER_SELECT_ALLOW in scripts/check-theme-baseline.sh with that reason")
 
 if not explicit:
-    for i, (p, pat, _r) in enumerate(USER_SELECT_ALLOW):
-        if i not in used_allow:
-            errors.append(f"scripts/check-theme-baseline.sh: stale USER_SELECT_ALLOW entry ({p}, {pat}) matches "
-                          f"nothing -- delete it")
+    errors += [f"scripts/check-theme-baseline.sh: USER_SELECT_ALLOW: {p}" for p in USER_SELECT_ALLOW.problems()]
     with open(THEME, encoding="utf-8") as fh:
         theme = blank_comments(fh.read())
     # Arm 3: the theme still has both rules.

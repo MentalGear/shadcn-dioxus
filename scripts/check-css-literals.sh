@@ -46,6 +46,9 @@ import re
 import sys
 import glob
 
+sys.path.insert(0, "scripts/lib")
+from css import strip_comments  # noqa: E402
+
 THEME = "preview/assets/dx-components-theme.css"
 
 # Properties the token set covers. Anything else is out of scope by design.
@@ -134,7 +137,7 @@ for path in sorted(glob.glob("preview/src/components/*/style.css")):
     if path.split("/")[-2] not in members:
         continue
     text = open(path).read()
-    text = re.sub(r"/\*.*?\*/", lambda m: "\n" * m.group(0).count("\n"), text, flags=re.S)
+    text = strip_comments(text)
     for lineno, line in enumerate(text.splitlines(), 1):
         m = SCANNED.match(line)
         if not m:
