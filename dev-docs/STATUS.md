@@ -21,11 +21,11 @@ Merge queue batches 1-21 are on main (PRs #121-#148), batch 21 deployed as `f986
 
 ## In the queue
 
-Batch 22 (`queue/batch-22`): row 267, six oversized files split into module directories (public paths unchanged).
+Batch 23 (`queue/batch-23`, carrying batch 22): row 267 (six oversized files split into module directories, public paths unchanged) and row 384 (every component argument documented and the props-docs gate strict, comment-ref and history baselines at zero, a controlled Accordion and Radix's Label double-click guard).
 
 ## Running
 
-Stage 3 (structure): row 267 is in batch 22. Next 384, then 355 and 382.
+Stage 3 (structure): rows 267 and 384 are in batch 23. Next 355 and 382.
 
 ## Next
 
