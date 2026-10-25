@@ -1,3 +1,6 @@
+#[cfg(doc)]
+use super::*;
+
 /// The axis a [`Carousel`] pages along.
 ///
 /// Matches [`crate::resizable::ResizableDirection`]'s own

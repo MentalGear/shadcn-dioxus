@@ -1,3 +1,6 @@
+#[cfg(doc)]
+use super::*;
+
 /// THE one home of "may an edge rubber-band engage here?" -- the rule
 /// shared by both band bridges ([`CAROUSEL_WHEEL_BAND_JS`] and
 /// [`CAROUSEL_DRAG_JS`]): only at a TRUE end of the data. Expands to one JS
