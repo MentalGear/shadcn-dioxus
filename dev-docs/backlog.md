@@ -40,7 +40,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (42)
+## Open rows (41)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -77,7 +77,6 @@ proposing one is closed as out of scope (row 337 is the first).
 | [392](backlog/392-docs-snippets-compile.md) | Compile-check the docs.md code samples; samples use the uncontrolled props | BACKLOG. Found by row 387's first docs-clarity review; the evidence (file:line per finding) is in… | M | docs |
 | [393](backlog/393-docs-contradict-code.md) | Fix the docs statements the code contradicts | BACKLOG. Found by row 387's first docs-clarity review; the evidence (file:line per finding) is in… | S | docs |
 | [394](backlog/394-coming-from-shadcn-radix-tanstack.md) | A 'Coming from shadcn / Radix / TanStack' table on every component page | BACKLOG. Found by row 387's first docs-clarity review; the evidence (file:line per finding) is in… | M | docs |
-| [395](backlog/395-as-keeps-children.md) | `as` keeps the component's children and handlers (Radix asChild semantics) | Owner approved as proposed (2026-10-24, backlog thread): as merges the component's children and… | M | components |
 | [398](backlog/398-docs-review-api-gaps.md) | API gaps the docs review found | Owner approved every item as proposed (2026-10-24, backlog thread). The DataTable callbacks landed… | M | components |
 | [399](backlog/399-docs-review-demos.md) | Demo batch from the docs review | BACKLOG. Found by row 387's first docs-clarity review; the evidence (file:line per finding) is in… | S | docs |
 | [402](backlog/402-load-robust-timing-specs.md) | Release timing specs compare same-run measurements, not absolute milliseconds | Done on lane/timing-relative (numbers below). Trigger for reopening: a release timing spec that… | S | tests |
