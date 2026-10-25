@@ -12,6 +12,11 @@
 # `scripts/check-wrapper-props.allow.tsv` (`path<TAB>module::Name.prop<TAB>reason`, or `*` for a whole fixture
 # file). An allowlist entry that no longer matches a dropped prop fails too, so the list only shrinks.
 #
+# A component's header is read from the token stream (`fn_signatures` in the scanner), not from one line of text, so
+# `pub fn X(mut props: XProps)` is recognised multi-line, with `///` docs or attributes on the argument, with or
+# without `mut`. The scanner's unit tests (every spelling of the header must give the same dropped props) are built
+# with `rustc --test` and run first, so a scanner that stops reading a header form is red here, not silently empty.
+#
 # Usage: scripts/check-wrapper-props.sh
 # Exit status: 0 when clean, 1 on a violation.
 set -euo pipefail
@@ -22,6 +27,10 @@ trap 'rm -rf "$out"' EXIT
 allow=scripts/check-wrapper-props.allow.tsv
 rustc --edition 2021 -O -o "$out/wrapper-props" scripts/wrapper-props/main.rs 2>"$out/rustc.log" \
   || { cat "$out/rustc.log"; echo "check-wrapper-props: scanner failed to compile" >&2; exit 1; }
+rustc --edition 2021 --test -o "$out/wrapper-props-test" scripts/wrapper-props/main.rs 2>"$out/rustc-test.log" \
+  || { cat "$out/rustc-test.log"; echo "check-wrapper-props: scanner tests failed to compile" >&2; exit 1; }
+"$out/wrapper-props-test" --quiet >"$out/test.log" 2>&1 \
+  || { cat "$out/test.log"; echo "check-wrapper-props: scanner unit tests failed" >&2; exit 1; }
 "$out/wrapper-props" primitives/src preview/src/components/*/component.rs | LC_ALL=C sort -u >"$out/dropped.tsv"
 
 grep -v '^#' "$allow" | awk -F'\t' 'NF' >"$out/allow.tsv"
