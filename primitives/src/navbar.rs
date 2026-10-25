@@ -1190,10 +1190,7 @@ pub struct NavbarItemProps {
 /// The [`NavbarItem`] component defines the following data attributes you can use to control styling:
 /// - `data-disabled`: Indicates if the item is disabled. Values are `true` or `false`.
 #[component]
-pub fn NavbarItem(
-    /// The item's [`NavbarItemProps`]: its `index`, `value`, `disabled` state, `on_select` handler, link and styling props, and the global attributes.
-    mut props: NavbarItemProps,
-) -> Element {
+pub fn NavbarItem(mut props: NavbarItemProps) -> Element {
     let mut ctx: NavbarContext = use_context();
     let mut nav_ctx: Option<NavbarNavContext> = try_use_context();
 

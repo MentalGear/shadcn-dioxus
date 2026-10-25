@@ -21,7 +21,9 @@ rustc --edition 2021 -O -o "$out/props-scan" scripts/props-scan/main.rs 2>"$out/
   || { cat "$out/rustc.log"; echo "check-props-docs: scanner failed to compile" >&2; exit 1; }
 
 # Self-test: the fixture has a documented argument (`ok`), an undocumented argument (`bare_arg`), an undocumented
-# multi-line argument (`bare_multi`), a documented and an undocumented struct field; exactly the three bare ones must show.
+# multi-line argument (`bare_multi`), a documented and an undocumented struct field, and two components that take a
+# props struct (`props: XProps`, `mut props: XProps`, one multi-line: dioxus accepts no `///` on that argument, so it
+# is the derive form and never a prop); exactly the three bare ones must show.
 cat >"$out/fixture.rs" <<'RS'
 #[derive(Props, Clone, PartialEq)]
 pub struct FixtureProps {
@@ -37,6 +39,18 @@ pub fn Fixture(
     bare_arg: u8,
     #[props(default)]
     bare_multi: u8,
+) -> Element {
+    rsx! {}
+}
+
+#[component]
+pub fn FixtureDerive(mut props: FixtureProps) -> Element {
+    rsx! {}
+}
+
+#[component]
+pub fn FixtureDeriveMulti(
+    mut props: FixtureProps,
 ) -> Element {
     rsx! {}
 }
