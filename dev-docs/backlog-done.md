@@ -6,7 +6,7 @@ resolves here by id.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Done rows (362)
+## Done rows (363)
 
 | # | Item | Updated |
 |---|---|---|
@@ -372,5 +372,6 @@ resolves here by id.
 | [420](backlog/done/420-coarse-sizing-every-control.md) | Touch sizing covers every control: a coarse-aware control scale and one hit size | 2026-10-25 |
 | [421](backlog/done/421-toast-insert-no-glide.md) | Toast: a new toast's first measurement never plays as a glide (collapsed pile jumps on insert, Firefox) | 2026-10-25 |
 | [423](backlog/done/423-accordion-header-hover-underline.md) | An open Accordion header still underlines on hover; the header should never underline | 2026-10-25 |
+| [430](backlog/done/430-component-manifests-derived-from-source.md) | Component manifests derived from source, not hand-kept | 2026-10-25 |
 
 <!-- END GENERATED -->

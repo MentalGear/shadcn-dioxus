@@ -9,9 +9,5 @@
       "git": "https://github.com/MentalGear/shadcn-dioxus"
     }
   ],
-  "componentDependencies": [
-    { "name": "button", "git": "https://github.com/MentalGear/shadcn-dioxus" },
-    { "name": "tabs", "git": "https://github.com/MentalGear/shadcn-dioxus" }
-  ],
   "globalAssets": ["../../../assets/dx-components-theme.css"]
 }

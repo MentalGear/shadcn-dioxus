@@ -139,6 +139,7 @@ gates=(
   "check-virtual-docs-parity|scripts/check-virtual-docs-parity.sh"
   "check-ssg-verify|scripts/check-ssg-verify.sh"
   # group: Registry and installed components
+  "check-component-manifests|scripts/check-component-manifests.sh"
   "check-component-catalog|scripts/check-component-catalog.sh"
   "check-installed-paths|scripts/check-installed-paths.sh"
   "check-registry-url|scripts/check-registry-url.sh"
