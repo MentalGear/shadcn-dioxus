@@ -1304,12 +1304,11 @@ interface AnchoredOverlay {
   contentId: string;
   open: (page: Page) => Promise<void>;
   /**
-   * Hover-driven overlays (Tooltip/HoverCard) can lose `:hover` when the
-   * viewport shrinks and a `mouse.wheel` scroll moves the trigger out from
-   * under the (stationary) synthetic pointer -- irrelevant to what this
-   * rule checks (placement, not open/close persistence), so those two
-   * re-assert the hover after the keyboard-simulation step. A no-op for
-   * every click/keyboard-driven overlay.
+   * Hover-driven overlays (Tooltip/HoverCard/Navbar/NavigationMenu) lose `:hover`, and with an
+   * `AnyScroll` close policy their panel, when the viewport shrinks and a `mouse.wheel` scroll moves
+   * the trigger out from under the (stationary) synthetic pointer -- irrelevant to what this rule
+   * checks (placement, not open/close persistence), so `assertNoSelfOverlapOnceOpen` re-enters the
+   * trigger through this until the panel is open. Absent for every click/keyboard-driven overlay.
    */
   reengage?: (page: Page) => Promise<void>;
 }
@@ -1417,14 +1416,107 @@ const ANCHORED_OVERLAYS: AnchoredOverlay[] = [
   },
 ];
 
-async function assertNoSelfOverlapWithinViewport(page: Page, overlay: AnchoredOverlay) {
-  const trigger = await rectOf(page, `#${overlay.triggerId}`);
-  const content = await rectOf(page, `#${overlay.contentId}`);
-  const viewport = await viewportSize(page);
+type PlacementRect = { top: number; left: number; right: number; bottom: number };
+
+function expectNoSelfOverlapWithinViewport(
+  overlay: AnchoredOverlay,
+  trigger: PlacementRect,
+  content: PlacementRect,
+  viewport: { width: number; height: number },
+) {
   const debug = JSON.stringify({ overlay: overlay.name, trigger, content, viewport });
   expect(rectsIntersect(content, trigger), debug).toBe(false);
   expect(content.top, debug).toBeGreaterThanOrEqual(-EDGE_TOLERANCE);
   expect(content.bottom, debug).toBeLessThanOrEqual(viewport.height + EDGE_TOLERANCE);
+}
+
+async function assertNoSelfOverlapWithinViewport(page: Page, overlay: AnchoredOverlay) {
+  const trigger = await rectOf(page, `#${overlay.triggerId}`);
+  const content = await rectOf(page, `#${overlay.contentId}`);
+  const viewport = await viewportSize(page);
+  expectNoSelfOverlapWithinViewport(overlay, trigger, content, viewport);
+}
+
+/**
+ * The overlay's placement as of one instant at which it is open and at rest, or `null` when it is not open
+ * (absent, closing or closed). The open state and the content's rect are read in the same in-page turn, so
+ * the rect that gets asserted is provably the rect of an open panel.
+ */
+async function sampleOpenPlacement(page: Page, overlay: AnchoredOverlay) {
+  const contentLoc = page.locator(`#${overlay.contentId}`);
+  const read = async () => {
+    if ((await contentLoc.count()) === 0) return null;
+    try {
+      const content = await readAtRest(contentLoc, (el) => {
+        const r = (el as HTMLElement).getBoundingClientRect();
+        return {
+          open: el.getAttribute("data-state") === "open",
+          top: r.top, left: r.left, right: r.right, bottom: r.bottom, width: r.width, height: r.height,
+        };
+      });
+      if (!content.open) return null;
+      return { trigger: await rectOf(page, `#${overlay.triggerId}`), content, viewport: await viewportSize(page) };
+    } catch {
+      return null;
+    }
+  };
+  // A panel that is removed after the read began (its exit animation ended) leaves `readAtRest` waiting for
+  // an element that only a re-entry of the trigger can bring back, and that re-entry is the caller's next
+  // step: so a read is bounded, and "no answer" is "not open".
+  const pending = read();
+  pending.catch(() => undefined);
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const bound = new Promise<null>((resolve) => {
+    timer = setTimeout(() => resolve(null), 2000);
+  });
+  try {
+    return await Promise.race([pending, bound]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
+ * The post-keyboard assertion of Rule 11 (b) and (c). A click- or keyboard-driven overlay is still open after
+ * the viewport shrink and the wheel, so it is measured as it stands. A hover-driven one (`reengage`) is not
+ * guaranteed to be: the sticky navbar can end up over the trigger, so the pointer move has to bring the
+ * trigger back into view first, and ANY scroll closes a Tooltip / HoverCard / Navbar / NavigationMenu panel
+ * (`top_layer::use_close_on_scroll`'s `AnyScroll`), by a message to the Rust side that lands some time after
+ * the scroll event. So the test does its own scroll first (Playwright's `hover()` would do it right before
+ * the pointer moves, and a close landing after the pointer entered leaves the panel shut under the pointer
+ * with nothing to open it: backlog row 416), lets those scroll events reach the page (scroll steps run
+ * before the next frame's rAF callbacks), and then measures the first instant at which the panel is open,
+ * re-entering the trigger for as long as it is not. No scroll is left to happen, so that converges.
+ */
+async function assertNoSelfOverlapOnceOpen(page: Page, overlay: AnchoredOverlay) {
+  if (!overlay.reengage) {
+    await assertNoSelfOverlapWithinViewport(page, overlay);
+    return;
+  }
+  await page.locator(`#${overlay.triggerId}`).scrollIntoViewIfNeeded();
+  await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+  let placement: Awaited<ReturnType<typeof sampleOpenPlacement>> = null;
+  await expect
+    .poll(
+      async () => {
+        placement = await sampleOpenPlacement(page, overlay);
+        if (!placement) {
+          await page.mouse.move(0, 0);
+          await overlay.reengage!(page);
+        }
+        return placement !== null;
+      },
+      {
+        message: `${overlay.name}: the panel never reached the open state after the keyboard simulation`,
+        // Each re-entry restarts the trigger's open-intent timer, so the spacing has to leave it room to
+        // fire (`hover_intent.rs`'s HOVER_OPEN_INTENT_DELAY, several times over on a loaded box).
+        intervals: [1500],
+        timeout: 30_000,
+      },
+    )
+    .toBe(true);
+  const { trigger, content, viewport } = placement!;
+  expectNoSelfOverlapWithinViewport(overlay, trigger, content, viewport);
 }
 
 test.describe("Rule 11 — anchored-overlay self-overlap contract", () => {
@@ -1452,9 +1544,8 @@ test.describe("Rule 11 — anchored-overlay self-overlap contract", () => {
         await expect(page.locator(`#${overlay.contentId}`)).toBeVisible();
 
         await simulateOnScreenKeyboard(page);
-        await overlay.reengage?.(page);
 
-        await assertNoSelfOverlapWithinViewport(page, overlay);
+        await assertNoSelfOverlapOnceOpen(page, overlay);
       });
     }
   });
@@ -1470,9 +1561,8 @@ test.describe("Rule 11 — anchored-overlay self-overlap contract", () => {
         await expect(page.locator(`#${overlay.contentId}`)).toBeVisible();
 
         await simulateOnScreenKeyboard(page);
-        await overlay.reengage?.(page);
 
-        await assertNoSelfOverlapWithinViewport(page, overlay);
+        await assertNoSelfOverlapOnceOpen(page, overlay);
       });
     }
 
