@@ -340,7 +340,7 @@ macro_rules! examples {
         $(
             pub(crate) mod $name {
                 mod component;
-                #[allow(unused)]
+                #[allow(unused, reason = "a component module's surface is for apps; the preview's own demos use a subset")]
                 pub use component::*;
                 pub(crate) mod variants {
                     pub(crate) mod main;

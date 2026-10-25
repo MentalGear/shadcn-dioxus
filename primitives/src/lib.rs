@@ -1,5 +1,6 @@
 #![doc = include_str!("../README.md")]
 #![warn(missing_docs)]
+#![deny(clippy::unwrap_used, clippy::return_self_not_must_use)]
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -181,7 +182,11 @@ fn format_unique_id(is_server: bool, n: usize) -> String {
 /// Only run on the server, on the client when nothing was server-cached for
 /// the hook (a post-hydration mount), or in a non-fullstack build.
 fn allocate_unique_id() -> String {
-    #[allow(unused_mut, unused_assignments)]
+    #[allow(
+        unused_mut,
+        unused_assignments,
+        reason = "only the `ssr` build assigns it, through `server_only!`"
+    )]
     let mut is_server = false;
     // `ssr` is on for the fullstack server build (`dioxus/server` implies
     // it) and for plain SSR; off for every client build.
@@ -197,7 +202,11 @@ fn allocate_unique_id() -> String {
 /// `dxc-c{n}`, which can never equal any server id -- see
 /// [`format_unique_id`].
 fn use_unique_id() -> Signal<String> {
-    #[allow(unused_mut, unused_assignments)]
+    #[allow(
+        unused_mut,
+        unused_assignments,
+        reason = "only the fullstack build assigns it, through `fullstack!`"
+    )]
     let mut cached: Option<String> = None;
     fullstack! {
         // The closure runs on the server, and on the client only on a cache
@@ -225,7 +234,7 @@ fn use_id_or<T: Clone + PartialEq + 'static>(
     // Return the appropriate ID
     use_memo(move || {
         if has_user_id() {
-            user_id().unwrap()
+            user_id().expect("`has_user_id` is true only while `user_id` is `Some`")
         } else {
             gen_id.peek().clone()
         }
@@ -261,7 +270,13 @@ pub fn use_controlled<T: Clone + PartialEq + 'static>(
 }
 
 /// Run some cleanup code when the component is unmounted if the effect was run.
-fn use_effect_cleanup<F: FnOnce() + 'static>(#[allow(unused)] cleanup: F) {
+fn use_effect_cleanup<F: FnOnce() + 'static>(
+    #[allow(
+        unused,
+        reason = "only the client build runs the cleanup, through `client!`"
+    )]
+    cleanup: F,
+) {
     client!(crate::dioxus_core::use_drop(cleanup))
 }
 
@@ -1122,7 +1137,7 @@ pub fn merge_attributes(mut lists: Vec<Vec<Attribute>>) -> Vec<Attribute> {
 
         for iter in &mut iters {
             while iter.peek().map(|a| a.name) == Some(min_name) {
-                let attr = iter.next().unwrap();
+                let attr = iter.next().expect("`peek` just returned an attribute");
                 if let Some(existing) = by_namespace
                     .iter_mut()
                     .find(|a| a.namespace == attr.namespace)

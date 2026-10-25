@@ -4,6 +4,8 @@
 //! `MIT OR Apache-2.0`, (c) the Dioxus authors), reduced to what a single registry needs and changed
 //! where `dx components` fell short for it. See `cli/README.md` for the differences.
 
+#![deny(clippy::unwrap_used)]
+
 mod add;
 mod init;
 mod lock;

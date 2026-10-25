@@ -96,7 +96,10 @@ pub(crate) fn weekday_abbreviation(weekday: Weekday) -> &'static str {
 
 // The number of days since the first weekday of current date
 pub(super) fn days_since(date: Date, weekday: Weekday) -> i64 {
-    let lhs = date.replace_day(1).unwrap().weekday() as i64;
+    let lhs = date
+        .replace_day(1)
+        .expect("every month has a day 1")
+        .weekday() as i64;
     let rhs = weekday as i64;
     if lhs < rhs {
         7 + lhs - rhs

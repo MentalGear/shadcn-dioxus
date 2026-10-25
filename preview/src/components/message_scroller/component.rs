@@ -13,7 +13,7 @@ use dioxus_primitives::message_scroller::{
 // `use crate::components::message_scroller::*;` and reach the commands hook,
 // the scrollability signal and the option enums without a second import from
 // `dioxus_primitives` -- the same convention `carousel`'s wrapper follows.
-#[allow(unused_imports)] // a consumer-facing surface; this crate's own demos use a subset
+#[allow(unused_imports, reason = "a consumer-facing surface; this crate's own demos use a subset")]
 pub use dioxus_primitives::message_scroller::{
     use_message_scroller, use_message_scroller_scrollable, use_message_scroller_visibility,
     DefaultScrollPosition, MessageScrollerApi, MessageScrollerDirection, ScrollAlign,

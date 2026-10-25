@@ -76,11 +76,17 @@ pub(crate) struct LayoutParams<'a> {
 /// scales and plot geometry [`build`] computed once for this render, plus
 /// the chart's own data/config/active index. All lengths are CSS px.
 pub(crate) struct SeriesRenderContext {
-    #[allow(dead_code)]
+    #[expect(
+        dead_code,
+        reason = "kept on the context for the series families; none reads it yet"
+    )]
     pub kind: ChartKind,
     pub config: ChartConfig,
     pub data: Vec<ChartDatum>,
-    #[allow(dead_code)]
+    #[expect(
+        dead_code,
+        reason = "kept on the context for the series families; none reads it yet"
+    )]
     pub dir: Direction,
     /// The currently hovered/keyboard-focused datum index.
     pub active_index: Option<usize>,
@@ -88,7 +94,10 @@ pub(crate) struct SeriesRenderContext {
     pub width: f64,
     pub height: f64,
     /// The resolved Recharts margin.
-    #[allow(dead_code)]
+    #[expect(
+        dead_code,
+        reason = "kept on the context for the series families; none reads it yet"
+    )]
     pub margin: ChartMargin,
     pub plot_x0: f64,
     pub plot_x1: f64,

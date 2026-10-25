@@ -881,7 +881,10 @@ pub struct TagOptionProps<T: Clone + PartialEq + 'static = String> {
     pub children: Element,
 }
 
-#[allow(clippy::too_many_arguments)] // one keydown arm per input; grouping these into a struct would only rename the list
+#[expect(
+    clippy::too_many_arguments,
+    reason = "one keydown arm per input; grouping these into a struct would only rename the list"
+)]
 fn tag_option_on_keydown(
     e: Event<KeyboardData>,
     ctx: TagGroupCtx,

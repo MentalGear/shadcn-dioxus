@@ -1,5 +1,5 @@
 use dioxus::prelude::*;
-#[allow(unused_imports)] // a consumer-facing surface; this crate's own demos use a subset
+#[allow(unused_imports, reason = "a consumer-facing surface; this crate's own demos use a subset")]
 pub use dioxus_primitives::virtual_list::{
     use_virtual_scroller, ScrollAlign, ScrollFade, VirtualListProps, VirtualScroller, VirtualizeMode,
 };

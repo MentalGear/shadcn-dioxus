@@ -88,20 +88,20 @@ use crate::{
 /// Context for the [`DialogRoot`] component
 #[derive(Clone, Copy)]
 pub struct DialogCtx {
-    #[allow(unused)]
+    #[allow(unused, reason = "read only in some `web`/native arms")]
     open: Memo<bool>,
     /// Callback to set the open state of the dialog.
-    #[allow(unused)]
+    #[allow(unused, reason = "read only in some `web`/native arms")]
     set_open: Callback<bool>,
 
     // Whether the dialog is a modal and should capture focus.
-    #[allow(unused)]
+    #[allow(unused, reason = "read only in some `web`/native arms")]
     is_modal: ReadSignal<bool>,
     // Whether the dialog dims the page behind it -- see `DialogRootProps::overlay`.
-    #[allow(unused)]
+    #[allow(unused, reason = "read only in some `web`/native arms")]
     overlay: ReadSignal<bool>,
     // See `DialogRootProps::disable_pointer_dismissal`.
-    #[allow(unused)]
+    #[allow(unused, reason = "read only in some `web`/native arms")]
     disable_pointer_dismissal: ReadSignal<bool>,
     dialog_labelledby: Signal<String>,
     dialog_describedby: Signal<String>,

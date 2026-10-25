@@ -607,8 +607,10 @@ listen(el, 'focusout', (e) => { focus = !!e.relatedTarget && el.contains(e.relat
 /// restyles, so a re-render cannot drop it), `--toast-height`: the body's height plus the toast's computed
 /// padding and border. The front toast, the first list item that is not closing (`data-removed`), also
 /// publishes its height as `--front-toast-height` on the list. The first measurement of a toast also sets
-/// `data-sized` on its `li` (`pending`, `true` one frame later), so a skin can keep the unmeasured to
-/// measured switch from animating. A `MutationObserver` on the list follows toasts coming, going and
+/// `data-sized="true"` on its `li`, so a skin can keep the unmeasured to measured switch from animating:
+/// the measured height is committed to the toast's style (a computed-style read) while `data-sized` is
+/// still absent, and only then is the attribute set, so the two never land in the same style change in
+/// any engine. A `MutationObserver` on the list follows toasts coming, going and
 /// starting to leave, and measures a new toast as soon as it is inserted, so no frame lays it out
 /// unmeasured. Both observers end with the provider (`cleanup`). A skin
 /// without `data-toast-body` is never measured: its toasts keep their auto height and do not overlap.
@@ -640,11 +642,17 @@ const record = (body, size) => {
   const h = heightOf(body, size);
   heights.set(li, h);
   li.style.setProperty('--toast-height', h + 'px');
-  // The first measurement must not play as a glide from the unmeasured layout: `data-sized` turns
-  // true a frame later, and the stylesheet only transitions a toast's height and margin from then on.
-  if (!li.dataset.sized) {
-    li.dataset.sized = 'pending';
-    requestAnimationFrame(() => { li.dataset.sized = 'true'; });
+  // The first measurement must not play as a glide from the unmeasured layout (backlog row 421). The
+  // stylesheet transitions a toast's height and margin only under `data-sized`, and a transition runs
+  // when one style change sees both the new height and the attribute. So the measured height is
+  // committed first, with the transitions still off (reading the computed style recalculates it), and
+  // the attribute follows in a later style change. A frame's wait is no substitute: the rAF callbacks
+  // run before that frame's style recalculation, so unless something else recalculated style in
+  // between, the height and the attribute arrive together and the new toast's slot glides shut
+  // from its full unmeasured height.
+  if (li.dataset.sized !== 'true') {
+    getComputedStyle(body.parentElement).marginTop;
+    li.dataset.sized = 'true';
   }
 };
 const sizes = new ResizeObserver((entries) => {
@@ -1699,18 +1707,21 @@ impl ToastOptions {
     }
 
     /// Set the description for the toast.
+    #[must_use]
     pub fn description(mut self, description: impl ToString) -> Self {
         self.description = Some(description.to_string());
         self
     }
 
     /// Set the duration for the toast.
+    #[must_use]
     pub fn duration(mut self, duration: Duration) -> Self {
         self.duration = Some(duration);
         self
     }
 
     /// Set whether the toast is permanent.
+    #[must_use]
     pub fn permanent(mut self, permanent: bool) -> Self {
         self.permanent = permanent;
         self
@@ -1718,6 +1729,7 @@ impl ToastOptions {
 
     /// Adds an action button (e.g. "Undo"); activating it runs `on_click` and dismisses the
     /// toast.
+    #[must_use]
     pub fn action(mut self, label: impl ToString, on_click: impl FnMut(()) + 'static) -> Self {
         self.action = Some(ToastAction::new(label, on_click));
         self
@@ -1742,48 +1754,56 @@ impl ToastUpdate {
     }
 
     /// Replace the title.
+    #[must_use]
     pub fn title(mut self, title: impl ToString) -> Self {
         self.title = Some(title.to_string());
         self
     }
 
     /// Replace the description.
+    #[must_use]
     pub fn description(mut self, description: impl ToString) -> Self {
         self.description = Some(Some(description.to_string()));
         self
     }
 
     /// Removes the description.
+    #[must_use]
     pub fn clear_description(mut self) -> Self {
         self.description = Some(None);
         self
     }
 
     /// Change the type (e.g. `Loading` to `Success`).
+    #[must_use]
     pub fn toast_type(mut self, toast_type: ToastType) -> Self {
         self.toast_type = Some(toast_type);
         self
     }
 
     /// Set the auto-dismiss duration.
+    #[must_use]
     pub fn duration(mut self, duration: Duration) -> Self {
         self.duration = Some(duration);
         self
     }
 
     /// Set whether the toast is permanent.
+    #[must_use]
     pub fn permanent(mut self, permanent: bool) -> Self {
         self.permanent = Some(permanent);
         self
     }
 
     /// Replace the action button.
+    #[must_use]
     pub fn action(mut self, label: impl ToString, on_click: impl FnMut(()) + 'static) -> Self {
         self.action = Some(Some(ToastAction::new(label, on_click)));
         self
     }
 
     /// Removes the action button.
+    #[must_use]
     pub fn clear_action(mut self) -> Self {
         self.action = Some(None);
         self

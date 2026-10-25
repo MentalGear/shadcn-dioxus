@@ -43,14 +43,26 @@ mod popover_sync;
 mod scroll_clamp;
 mod styles;
 
-#[cfg_attr(not(feature = "web"), allow(unused_imports))]
+#[cfg_attr(
+    not(feature = "web"),
+    expect(unused_imports, reason = "only the web build uses it")
+)]
 pub(crate) use anchor_fallback::*;
 pub(crate) use attributes::*;
-#[cfg_attr(not(feature = "web"), allow(unused_imports))]
+#[cfg_attr(
+    not(feature = "web"),
+    expect(unused_imports, reason = "only the web build uses it")
+)]
 pub(crate) use popover_sync::*;
-#[cfg_attr(not(feature = "web"), allow(unused_imports))]
+#[cfg_attr(
+    all(not(feature = "web"), not(test)),
+    expect(unused_imports, reason = "only the web build and the tests use it")
+)]
 pub(crate) use scroll_clamp::*;
-#[cfg_attr(not(feature = "web"), allow(unused_imports))]
+#[cfg_attr(
+    not(feature = "web"),
+    expect(unused_imports, reason = "only the web build uses it")
+)]
 pub(crate) use styles::*;
 
 #[cfg(all(test, feature = "web"))]

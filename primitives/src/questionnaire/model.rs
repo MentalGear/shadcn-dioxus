@@ -179,30 +179,35 @@ impl ItemDef {
     }
 
     /// Makes the item required.
+    #[must_use]
     pub fn required(mut self) -> Self {
         self.required = true;
         self
     }
 
     /// Makes the item accept several answers (checkboxes).
+    #[must_use]
     pub fn multiple(mut self) -> Self {
         self.multiple = true;
         self
     }
 
     /// Disables the item when `disabled` is true: it does not apply (a conditional item).
+    #[must_use]
     pub fn disabled(mut self, disabled: bool) -> Self {
         self.disabled = disabled;
         self
     }
 
     /// Marks the item externally invalid when `invalid` is true.
+    #[must_use]
     pub fn invalid(mut self, invalid: bool) -> Self {
         self.invalid = invalid;
         self
     }
 
     /// Adds an enabled choice.
+    #[must_use]
     pub fn choice(mut self, value: impl Into<String>) -> Self {
         self.choices.push(ChoiceDef {
             value: value.into(),
@@ -212,6 +217,7 @@ impl ItemDef {
     }
 
     /// Adds several enabled choices.
+    #[must_use]
     pub fn choices<I, S>(mut self, values: I) -> Self
     where
         I: IntoIterator<Item = S>,
@@ -224,6 +230,7 @@ impl ItemDef {
     }
 
     /// Adds a disabled choice.
+    #[must_use]
     pub fn disabled_choice(mut self, value: impl Into<String>) -> Self {
         self.choices.push(ChoiceDef {
             value: value.into(),
@@ -233,11 +240,13 @@ impl ItemDef {
     }
 
     /// Adds a freeform text answer.
+    #[must_use]
     pub fn freeform(self) -> Self {
         self.freeform_kind(InputKind::Text)
     }
 
     /// Adds a freeform answer of the given input type.
+    #[must_use]
     pub fn freeform_kind(mut self, kind: InputKind) -> Self {
         self.input = Some(InputDef {
             kind,
@@ -247,12 +256,14 @@ impl ItemDef {
     }
 
     /// Selects `value` initially and after a reset.
+    #[must_use]
     pub fn default_choice(mut self, value: impl Into<String>) -> Self {
         self.default_choices.push(value.into());
         self
     }
 
     /// Fills the freeform answer initially and after a reset.
+    #[must_use]
     pub fn default_input(mut self, text: impl Into<String>) -> Self {
         self.default_input = text.into();
         self
