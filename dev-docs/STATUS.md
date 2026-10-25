@@ -21,7 +21,7 @@ Merge queue batches 1-24 are on main (PRs #121-#150), batch 24 deployed as `9940
 
 ## In the queue
 
-Batch 25 (`queue/batch-25`): rows 355 (workspace lint table and Google Rust style items) and 421 (Firefox toast pile no longer jumps on insert), plus backlog rows 422 and 423. The Button Group seam lane waits for the owner's solid-edge follow-up.
+Batch 25 (deployed): rows 355 (workspace lint table and Google Rust style items) and 421 (Firefox toast pile no longer jumps on insert), plus backlog rows 422 and 423. Batch 26 (`queue/batch-26`): row 423 (no Accordion header underline on hover), row 422's approved outline, and the Button Group solid input edges (owner accepted) once its lane hands back.
 
 ## Running
 
@@ -31,7 +31,7 @@ Stage 3 (structure): 267 and 384 landed; 382 landed, 355 is in batch 25. Stage 4
 
 Owner order of 2026-10-24 (backlog thread), each stage reading the finished output of the one before:
 
-1. Open bugs: **423** (Accordion header hover underline).
+1. Open bugs: toast stack jump with mixed toast types (owner report 2026-10-25, toast thread reproducing).
 2. API shape, pre-1.0: **396**, **395**, **398**, **391**.
 3. Structure: **267** with **384**, at a quiet point in the queue; then **355** and **382**.
 4. Dependency review **371** (outcomes to the owner).
