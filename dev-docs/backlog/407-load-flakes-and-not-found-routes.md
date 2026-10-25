@@ -81,3 +81,17 @@ LS_CPU=4`. Cost, median FCP of 5 loads at 1280 px: avatar 128 -> 132 ms and butt
 avatar 360 -> 420 ms and button 252 -> 320 ms at 4x CPU. Not gated (no failure seen there at the suite's settings):
 the home page (its masonry has its own construction, row 214), `/docs/` and `/demos/`; the navbar-row member above is
 gated on component pages only.
+
+**Every page with a top group, and a sweep that does not need load (owner decision 2026-10-24: hold the first paint
+until the top group is parsed).** `FirstPaintGate` (`preview/src/main.rs`) is the one construction: an empty marker
+placed where a page's top group ends plus the render-blocking `expect` link for it, on component pages (after the main
+demo), home (after the masonry), `/docs/` (end of its fourth section) and `/demos/` (after the card grid). The
+`layout-stability` sweep loads every width through `slowDocServer` (the first 250 KB of the body in 8 KB pieces 20 ms
+apart), so the class shows on every run: the batch-16 build fails all five `/docs/`, `/demos/` and component groups on
+an idle box (sidebar 53.2 -> 60 at every desktop width, the avatar row re-centring), and this tree passes all seven
+groups (6.4 min at 2 workers).
+
+The "progressive paint" group (home masonry, row 214) strips the `expect` link from the document it streams: with it,
+Chromium holds the paint until the masonry is parsed and the group's own check that the parse was progressive fails (12
+of 12, "cards were seen in only 1 distinct counts"). Stripped, it is the page as WebKit and Gecko load it, which still
+need the masonry's fixed-column construction: 12 of 12 green.
