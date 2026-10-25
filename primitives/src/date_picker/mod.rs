@@ -15,7 +15,7 @@ use crate::sleep::sleep;
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
 use std::{fmt::Display, str::FromStr, time::Duration};
-use time::{macros::date, Date, Month, Weekday};
+use time::{Date, Month, Weekday};
 
 use crate::direction::use_direction;
 use crate::merge_attributes;

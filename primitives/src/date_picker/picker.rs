@@ -37,11 +37,11 @@ pub struct DatePickerProps {
     pub read_only: ReadSignal<bool>,
 
     /// Lower limit of the range of available dates
-    #[props(default = date!(1925-01-01))]
+    #[props(default = crate::calendar::DEFAULT_MIN_DATE)]
     pub min_date: Date,
 
     /// Upper limit of the range of available dates
-    #[props(default = date!(2050-12-31))]
+    #[props(default = crate::calendar::DEFAULT_MAX_DATE)]
     pub max_date: Date,
 
     /// Unavailable dates
@@ -236,11 +236,11 @@ pub struct DateRangePickerProps {
     pub read_only: ReadSignal<bool>,
 
     /// Lower limit of the range of available dates
-    #[props(default = date!(1925-01-01))]
+    #[props(default = crate::calendar::DEFAULT_MIN_DATE)]
     pub min_date: Date,
 
     /// Upper limit of the range of available dates
-    #[props(default = date!(2050-12-31))]
+    #[props(default = crate::calendar::DEFAULT_MAX_DATE)]
     pub max_date: Date,
 
     /// Unavailable dates

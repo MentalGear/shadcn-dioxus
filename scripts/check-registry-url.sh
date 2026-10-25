@@ -35,7 +35,7 @@
 #   - the installer CLI (`cli/`, package `shadcn-dioxus`) cannot reach preview's constant, so it keeps its own
 #     `pub const DEFAULT_REGISTRY_GIT_URL: &str = "...";` in cli/src/registry.rs: it must equal REGISTRY_GIT_URL
 #     (it is the registry `shadcn-dioxus add` reads when nothing else is named), and cli/README.md's
-#     `cargo install --git` command must use the same string.
+#     `cargo install --git` command must use the same string and `--locked` (the CLI is built against its tested `Cargo.lock`).
 #
 # Usage: scripts/check-registry-url.sh
 # Exit status: 0 when clean, 1 on a violation, 2 when REGISTRY_GIT_URL cannot be read.
@@ -122,7 +122,7 @@ elif [ "$cli_url" != "$url" ]; then
   echo "check-registry-url: cli/src/registry.rs DEFAULT_REGISTRY_GIT_URL is $cli_url, want $url" >&2
   fail=1
 fi
-if ! grep -q -- "cargo install --git $url shadcn-dioxus" cli/README.md; then
+if ! grep -q -- "cargo install --git $url shadcn-dioxus --locked" cli/README.md; then
   echo "check-registry-url: cli/README.md has no \`cargo install --git $url shadcn-dioxus\` command" >&2
   fail=1
 fi
