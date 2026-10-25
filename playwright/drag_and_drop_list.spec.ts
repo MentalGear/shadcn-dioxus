@@ -742,10 +742,26 @@ test.describe("Home page lists", () => {
     await page.mouse.move(source.x + 40, source.y + source.height / 2);
     await page.mouse.down();
     await page.mouse.move(source.x + 45, source.y + source.height / 2 + 10, { steps: 5 });
-    await page.mouse.move(target.x + 60, target.y + target.height * 0.8, { steps: 15 });
+    // Playwright's emulated drag dispatches `dragover` only for the moves it is given, and the last
+    // move's own event can be missing or can be answered against a layout that is still sliding: an
+    // open slot moves the items after it down by the drop gap, so on the way past item 1 the slot
+    // before item 2 opens and item 2 slides under the pointer. A real drag keeps firing `dragover`
+    // while the pointer rests; the emulation does not, so the pointer keeps re-asserting its
+    // position (one pixel apart) while the slot settles (backlog row 416). The stop is the bottom
+    // edge of item 2, the half that reads "after" both at rest and once item 2 has shifted.
+    const endX = target.x + 60;
+    const endY = target.y + target.height * 0.97;
+    await page.mouse.move(endX, endY, { steps: 15 });
+    let nudge = 0;
+    const holdPointer = () => page.mouse.move(endX, endY - (nudge++ % 2));
     // Slot between items 2 and 3.
     await expect.poll(() => ghostOpacity(list)).toBeCloseTo(DEFAULT_GHOST_OPACITY, 2);
-    await expect.poll(() => spaceBetween(list, 2, 3)).toBeCloseTo(rest + DEFAULT_DROP_GAP, 0);
+    await expect
+      .poll(async () => {
+        await holdPointer();
+        return spaceBetween(list, 2, 3);
+      })
+      .toBeCloseTo(rest + DEFAULT_DROP_GAP, 0);
     await page.mouse.up();
   });
 });
