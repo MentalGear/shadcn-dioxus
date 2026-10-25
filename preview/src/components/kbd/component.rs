@@ -8,6 +8,7 @@ use dioxus_primitives::merge_attributes;
 #[component]
 pub fn Kbd(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The key label, such as `⌘` or `Shift`.
     children: Element,
 ) -> Element {
     let base = attributes!(kbd { class: "dx-kbd", "data-dx-root": "" });
@@ -23,6 +24,7 @@ pub fn Kbd(
 #[component]
 pub fn KbdGroup(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The `Kbd`s that make up one shortcut.
     children: Element,
 ) -> Element {
     let base = attributes!(span { class: "dx-kbd-group" });

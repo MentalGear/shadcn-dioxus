@@ -74,6 +74,7 @@ pub fn ItemGroup(
     #[props(extends=GlobalAttributes)]
     #[props(extends=div)]
     attributes: Vec<Attribute>,
+    /// The `Item`s of the list.
     children: Element,
 ) -> Element {
     use_context_provider(|| InItemGroup);
@@ -110,14 +111,23 @@ pub fn ItemSeparator(
 
 #[component]
 pub fn Item(
+    /// The item's look: `Default`, `Outline` (a visible border) or `Muted` (a tinted background).
+    /// The default is `Default`.
     #[props(default)] variant: ItemVariant,
+    /// The item's density: `Default`, `Sm`, or `Xs` (tighter padding and gap, smaller description
+    /// text). The default is `Default`.
     #[props(default)] size: ItemSize,
     #[props(extends=GlobalAttributes)]
     #[props(extends=div)]
     attributes: Vec<Attribute>,
+    /// Called on a click.
     onclick: Option<EventHandler<MouseEvent>>,
+    /// Called on a key press while the item has focus.
     onkeydown: Option<EventHandler<KeyboardEvent>>,
+    /// Renders the item as another element, such as a link. The callback receives the item's
+    /// attributes and children as an `AsChild` and returns the element that carries them.
     r#as: Option<Callback<AsChild, Element>>,
+    /// The item's parts, such as `ItemMedia`, `ItemContent` and `ItemActions`.
     children: Element,
 ) -> Element {
     let in_group = try_use_context::<InItemGroup>().is_some();
@@ -161,10 +171,13 @@ pub fn Item(
 
 #[component]
 pub fn ItemMedia(
+    /// The media's kind: `Default`, `Icon` (sized for an icon) or `Image` (a fixed square
+    /// that crops its image). The default is `Default`.
     #[props(default)] variant: ItemMediaVariant,
     #[props(extends=GlobalAttributes)]
     #[props(extends=div)]
     attributes: Vec<Attribute>,
+    /// An icon or an image.
     children: Element,
 ) -> Element {
     let base = attributes!(div {
@@ -185,6 +198,7 @@ pub fn ItemContent(
     #[props(extends=GlobalAttributes)]
     #[props(extends=div)]
     attributes: Vec<Attribute>,
+    /// The item's text: its title and description.
     children: Element,
 ) -> Element {
     let base = attributes!(div {
@@ -204,6 +218,7 @@ pub fn ItemTitle(
     #[props(extends=GlobalAttributes)]
     #[props(extends=div)]
     attributes: Vec<Attribute>,
+    /// The item's title.
     children: Element,
 ) -> Element {
     let base = attributes!(div {
@@ -223,6 +238,7 @@ pub fn ItemDescription(
     #[props(extends=GlobalAttributes)]
     #[props(extends=p)]
     attributes: Vec<Attribute>,
+    /// The item's secondary text.
     children: Element,
 ) -> Element {
     let base = attributes!(p {
@@ -242,6 +258,7 @@ pub fn ItemActions(
     #[props(extends=GlobalAttributes)]
     #[props(extends=div)]
     attributes: Vec<Attribute>,
+    /// The item's actions, such as buttons.
     children: Element,
 ) -> Element {
     let base = attributes!(div {
@@ -261,6 +278,7 @@ pub fn ItemHeader(
     #[props(extends=GlobalAttributes)]
     #[props(extends=div)]
     attributes: Vec<Attribute>,
+    /// Content above the item's title.
     children: Element,
 ) -> Element {
     let base = attributes!(div {
@@ -280,6 +298,7 @@ pub fn ItemFooter(
     #[props(extends=GlobalAttributes)]
     #[props(extends=div)]
     attributes: Vec<Attribute>,
+    /// Content below the item's main row.
     children: Element,
 ) -> Element {
     let base = attributes!(div {

@@ -48,6 +48,7 @@ impl PaginationLinkKind {
 #[component]
 pub fn Pagination(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The `PaginationContent`.
     children: Element,
 ) -> Element {
     let base = attributes!(nav { class: "dx-pagination", "data-dx-root": "", "data-slot": "pagination", aria_label: "pagination" });
@@ -65,6 +66,7 @@ pub fn Pagination(
 #[component]
 pub fn PaginationContent(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The `PaginationItem`s of the page list.
     children: Element,
 ) -> Element {
     let base = attributes!(ul { class: "dx-pagination-content", "data-slot": "pagination-content" });
@@ -78,6 +80,7 @@ pub fn PaginationContent(
 #[component]
 pub fn PaginationItem(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// A page link, a `PaginationEllipsis`, or a previous or next link.
     children: Element,
 ) -> Element {
     let base = attributes!(li { "data-slot": "pagination-item" });
@@ -154,8 +157,11 @@ pub fn PaginationLink(props: PaginationLinkProps) -> Element {
 
 #[component]
 pub fn PaginationPrevious(
+    /// Called on `click`.
     onclick: Option<EventHandler<MouseEvent>>,
+    /// Called on `mousedown`.
     onmousedown: Option<EventHandler<MouseEvent>>,
+    /// Called on `mouseup`.
     onmouseup: Option<EventHandler<MouseEvent>>,
     #[props(extends = GlobalAttributes)]
     #[props(extends = a)]
@@ -185,8 +191,11 @@ pub fn PaginationPrevious(
 
 #[component]
 pub fn PaginationNext(
+    /// Called on `click`.
     onclick: Option<EventHandler<MouseEvent>>,
+    /// Called on `mousedown`.
     onmousedown: Option<EventHandler<MouseEvent>>,
+    /// Called on `mouseup`.
     onmouseup: Option<EventHandler<MouseEvent>>,
     #[props(extends = GlobalAttributes)]
     #[props(extends = a)]
