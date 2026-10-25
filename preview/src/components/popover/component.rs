@@ -67,6 +67,7 @@ pub fn PopoverContent(props: PopoverContentProps) -> Element {
 #[component]
 pub fn PopoverHeader(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The header's content: usually a `PopoverTitle` and a `PopoverDescription`.
     children: Element,
 ) -> Element {
     let base = attributes!(div {
@@ -86,6 +87,7 @@ pub fn PopoverHeader(
 #[component]
 pub fn PopoverTitle(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The title text.
     children: Element,
 ) -> Element {
     let base = attributes!(h3 {
@@ -103,6 +105,7 @@ pub fn PopoverTitle(
 #[component]
 pub fn PopoverDescription(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The description text.
     children: Element,
 ) -> Element {
     let base = attributes!(p {

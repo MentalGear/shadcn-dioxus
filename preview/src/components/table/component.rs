@@ -114,6 +114,7 @@ pub fn TableHeader(props: TableHeaderProps) -> Element {
 #[component]
 pub fn TableBody(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The body rows.
     children: Element,
 ) -> Element {
     let base = attributes!(tbody { class: "dx-table-body", "data-slot": "table-body" });
@@ -129,6 +130,7 @@ pub fn TableBody(
 #[component]
 pub fn TableFooter(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The footer rows.
     children: Element,
 ) -> Element {
     let base = attributes!(tfoot { class: "dx-table-footer", "data-slot": "table-footer" });
@@ -187,6 +189,7 @@ pub fn TableHead(
     #[props(extends = GlobalAttributes)]
     #[props(extends = th)]
     attributes: Vec<Attribute>,
+    /// The header cell's content.
     children: Element,
 ) -> Element {
     let base = attributes!(th { class: "dx-table-head", "data-slot": "table-head", scope: "col" });
@@ -204,6 +207,7 @@ pub fn TableCell(
     #[props(extends = GlobalAttributes)]
     #[props(extends = td)]
     attributes: Vec<Attribute>,
+    /// The cell's content.
     children: Element,
 ) -> Element {
     let base = attributes!(td { class: "dx-table-cell", "data-slot": "table-cell" });
@@ -219,6 +223,7 @@ pub fn TableCell(
 #[component]
 pub fn TableCaption(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The caption text.
     children: Element,
 ) -> Element {
     let base = attributes!(caption { class: "dx-table-caption", "data-slot": "table-caption" });

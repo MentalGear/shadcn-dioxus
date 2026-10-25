@@ -25,25 +25,46 @@ impl TextareaVariant {
 
 #[component]
 pub fn Textarea(
+    /// Runs on every edit.
     oninput: Option<EventHandler<FormEvent>>,
+    /// Runs when the value is committed.
     onchange: Option<EventHandler<FormEvent>>,
+    /// Runs when the textarea fails its validation.
     oninvalid: Option<EventHandler<FormEvent>>,
+    /// Runs when text in the textarea is selected.
     onselect: Option<EventHandler<SelectionEvent>>,
+    /// Runs when the textarea's selection changes.
     onselectionchange: Option<EventHandler<SelectionEvent>>,
+    /// Runs when the textarea gains focus.
     onfocus: Option<EventHandler<FocusEvent>>,
+    /// Runs when the textarea loses focus.
     onblur: Option<EventHandler<FocusEvent>>,
+    /// Runs when focus enters the textarea.
     onfocusin: Option<EventHandler<FocusEvent>>,
+    /// Runs when focus leaves the textarea.
     onfocusout: Option<EventHandler<FocusEvent>>,
+    /// Runs when a key is pressed down in the textarea.
     onkeydown: Option<EventHandler<KeyboardEvent>>,
+    /// Runs on a key press that types a character in the textarea.
     onkeypress: Option<EventHandler<KeyboardEvent>>,
+    /// Runs when a key is released in the textarea.
     onkeyup: Option<EventHandler<KeyboardEvent>>,
+    /// Runs when an input-method composition starts in the textarea.
     oncompositionstart: Option<EventHandler<CompositionEvent>>,
+    /// Runs as an input-method composition changes in the textarea.
     oncompositionupdate: Option<EventHandler<CompositionEvent>>,
+    /// Runs when an input-method composition ends in the textarea.
     oncompositionend: Option<EventHandler<CompositionEvent>>,
+    /// Runs when text is copied from the textarea.
     oncopy: Option<EventHandler<ClipboardEvent>>,
+    /// Runs when text is cut from the textarea.
     oncut: Option<EventHandler<ClipboardEvent>>,
+    /// Runs when text is pasted into the textarea.
     onpaste: Option<EventHandler<ClipboardEvent>>,
+    /// Runs once the textarea is mounted, with its element.
     onmounted: Option<EventHandler<MountedEvent>>,
+    /// The surface style: `Default`, `Fade`, `Outline` or `Ghost` (transparent). Defaults to
+    /// `Default`.
     #[props(default)] variant: TextareaVariant,
     #[props(extends=GlobalAttributes)]
     #[props(extends=textarea)]

@@ -109,12 +109,14 @@ pub fn Sheet(props: SheetProps) -> Element {
 /// of the dialog primitive put none on their content element.
 #[component]
 fn SheetPanel(
+    /// The edge the panel slides in from, already resolved from the sheet's `side`.
     side: SheetSide,
     /// The sheet's `initial_focus`, for the dialog content.
     initial_focus: Option<dioxus_primitives::modality::FocusTargetFn>,
     /// The sheet's `final_focus`, for the dialog content.
     final_focus: Option<dioxus_primitives::modality::FocusTargetFn>,
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The sheet's content.
     children: Element,
 ) -> Element {
     let ctx: DialogCtx = use_context();
@@ -172,6 +174,7 @@ pub fn SheetContentClose(#[props(extends = GlobalAttributes)] attributes: Vec<At
 #[component]
 pub fn SheetHeader(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The header's content: usually a `SheetTitle` and a `SheetDescription`.
     children: Element,
 ) -> Element {
     let base = attributes!(div { class: "dx-sheet-header", "data-slot": "sheet-header" });
@@ -185,6 +188,7 @@ pub fn SheetHeader(
 #[component]
 pub fn SheetFooter(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The footer's content, usually buttons.
     children: Element,
 ) -> Element {
     let base = attributes!(div { class: "dx-sheet-footer", "data-slot": "sheet-footer" });
@@ -230,7 +234,10 @@ pub fn SheetDescription(props: DialogDescriptionProps) -> Element {
 #[component]
 pub fn SheetClose(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// Renders the close control as the element the callback returns, instead of a `<button>`. The
+    /// callback gets the close handler and attributes, and the children.
     r#as: Option<Callback<AsChild, Element>>,
+    /// The close control's content.
     children: Element,
 ) -> Element {
     let ctx: DialogCtx = use_context();
