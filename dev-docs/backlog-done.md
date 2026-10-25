@@ -6,7 +6,7 @@ resolves here by id.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Done rows (351)
+## Done rows (352)
 
 | # | Item | Updated |
 |---|---|---|
@@ -361,5 +361,6 @@ resolves here by id.
 | [411](backlog/done/411-select-maps-primitive-submodules.md) | test:changed maps a primitive submodule to the components that reach it | 2026-10-24 |
 | [416](backlog/done/416-load-flakes-round-two.md) | Load flakes, second set (masonry mouse drag, grid find reveal by text fragment, hover overlays after the simulated on-screen keyboard) | 2026-10-25 |
 | [417](backlog/done/417-variant-slot-declared-on-base.md) | A variant's slot variable is declared on the component's base root too | 2026-10-25 |
+| [418](backlog/done/418-test-changed-nearest-base.md) | test:changed diffs against the nearest base, not always origin/main | 2026-10-25 |
 
 <!-- END GENERATED -->

@@ -7,7 +7,9 @@
 // Prints, one per line and relative to playwright/, the spec files that cover what a diff touched. No browser, no
 // build, no network: it reads the working tree and `git diff --name-only`.
 //
-// Default diff: everything this branch changed against origin/main (`origin/main...HEAD`) plus uncommitted changes.
+// Default diff: everything this branch changed against its NEAREST base (backlog row 418): origin/main or an
+// origin/queue/* ref, whichever HEAD has the fewest commits past (`<base>...HEAD`), plus uncommitted changes. The base
+// it picked is printed on stderr. `--range` / CHANGED_RANGE override it. select-base.mjs holds the picker.
 //
 // The map (a COVER relation, deliberately over-inclusive: a missed spec is a hole, an extra one is only minutes):
 //   preview/src/components/<c>/**            -> specs about component <c>, plus all-routes' test of <c>'s page (the
@@ -56,6 +58,7 @@ import { fileURLToPath } from "node:url";
 import { loadIndex } from "./site-index.mjs";
 import { buildContext, impactOfChanges } from "./css-impact.mjs";
 import { makeTitleScopes } from "./select-titles.mjs";
+import { pickBase } from "./select-base.mjs";
 
 const PW = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const ROOT = path.resolve(PW, "..");
@@ -90,7 +93,11 @@ for (let i = 0; i < args.length; i++) {
 const git = (...a) => execFileSync("git", a, { cwd: ROOT, encoding: "utf8" }).split("\n").filter(Boolean);
 const gitText = (...a) => { try { return execFileSync("git", a, { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], maxBuffer: 1 << 28 }); } catch { return null; } };
 // the two sides of a rule-level diff: the base of the range, and the end of it (the working tree when the range ends at HEAD)
-const rangeSpec = opt.range ?? "origin/main...HEAD";
+// one computed default for both the rule-level diff and the changed list (backlog row 418)
+const explicitRange = opt.range ?? (process.env.CHANGED_RANGE || null);
+const picked = explicitRange ? null : pickBase(ROOT);
+if (picked) process.stderr.write(`select: base ${picked.ref} ${picked.n === null ? "(no merge-base with HEAD)" : `(${picked.n} commits ahead)`}\n`);
+const rangeSpec = explicitRange ?? `${picked.ref}...HEAD`;
 const threeDot = rangeSpec.includes("...");
 const [rangeA, rangeB] = rangeSpec.split(threeDot ? "..." : "..").map((x) => x || "HEAD");
 const oldRef = threeDot ? (gitText("merge-base", rangeA, rangeB) ?? rangeA).trim() : rangeA;
@@ -101,8 +108,7 @@ let changed;
 if (opt.files) changed = opt.files;
 else if (opt.pages && !opt.range) changed = []; // --pages pretends the changed rules: the branch's own diff (and its at-rest component tests) would leak in
 else {
-  const range = opt.range ?? "origin/main...HEAD";
-  changed = [...new Set([...git("diff", "--name-only", range), ...git("diff", "--name-only", "HEAD"), ...git("ls-files", "--others", "--exclude-standard")])];
+  changed = [...new Set([...git("diff", "--name-only", rangeSpec),...git("diff", "--name-only", "HEAD"), ...git("ls-files", "--others", "--exclude-standard")])];
 }
 
 // ---- inventory -----------------------------------------------------------------------------------------------
