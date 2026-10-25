@@ -18,10 +18,12 @@
 //! profile instead of tolerating undefined symbols. The debug-graph printer is
 //! never called, so the value is never dereferenced.
 
-#![allow(non_upper_case_globals)]
-
 /// C `FILE *stderr`; see the module docs. Wasm-only: on a host target the
 /// symbol must come from the system libc.
 #[cfg(target_arch = "wasm32")]
+#[expect(
+    unsafe_code,
+    reason = "`no_mangle` exports the C symbol tree-sitter links against; the only unsafe item in the workspace"
+)]
 #[unsafe(no_mangle)]
 pub static mut stderr: *mut core::ffi::c_void = core::ptr::null_mut();

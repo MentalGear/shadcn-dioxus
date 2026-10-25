@@ -1,0 +1,2 @@
+# Clippy configuration (row 355). `unwrap_used` is denied in primitives and cli; a test may unwrap.
+allow-unwrap-in-tests = true

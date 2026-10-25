@@ -295,7 +295,10 @@ pub struct Visibility {
 /// array is also a discriminant string, which Rust ignores because the shapes
 /// differ.
 #[derive(Debug, Clone, PartialEq, Deserialize)]
-#[cfg_attr(not(feature = "web"), allow(dead_code))]
+#[cfg_attr(
+    not(feature = "web"),
+    expect(dead_code, reason = "only the web build uses it")
+)]
 #[serde(untagged)]
 enum Out {
     /// `["scrollable", start, end]`.
@@ -308,7 +311,10 @@ enum Out {
 /// switches on. `Init`, `Config` and `Teardown` are only built by the `web`
 /// arm's controller wiring.
 #[derive(Debug, Clone, PartialEq, Serialize)]
-#[cfg_attr(not(feature = "web"), allow(dead_code))]
+#[cfg_attr(
+    not(feature = "web"),
+    expect(dead_code, reason = "only the web build uses it")
+)]
 #[serde(tag = "t", rename_all = "camelCase")]
 enum Msg {
     /// The first message: the provider's props and its root id.
@@ -378,7 +384,10 @@ struct MessageScrollerCtx {
     visibility: Signal<Visibility>,
     /// How many [`use_message_scroller_visibility`] subscribers are mounted;
     /// the controller observes rows only while this is above zero.
-    #[cfg_attr(not(feature = "web"), allow(dead_code))]
+    #[cfg_attr(
+        not(feature = "web"),
+        expect(dead_code, reason = "only the web build uses it")
+    )]
     observers: CopyValue<usize>,
     /// Whether the root and viewport render `data-pending-scroll`.
     pending_scroll: bool,

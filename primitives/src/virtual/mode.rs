@@ -58,6 +58,7 @@ impl VirtualizeMode {
     /// The concrete mode for `count` rows: `self` unless it is `Auto`, which becomes
     /// `ContentVisibility` up to `auto_threshold` rows and `Windowed` above. Never returns
     /// `Auto`.
+    #[must_use]
     pub fn resolve(self, count: usize, auto_threshold: usize) -> Self {
         match self {
             Self::Auto if count <= auto_threshold => Self::ContentVisibility,

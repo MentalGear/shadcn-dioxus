@@ -164,6 +164,7 @@ impl ReorderState {
     }
 
     /// The pointer is over slot `hovered` on side `position`.
+    #[must_use]
     pub fn hover(self, hovered: usize, position: DropPosition) -> Self {
         let Self::Lifted { from, .. } = self else {
             return self;
@@ -178,6 +179,7 @@ impl ReorderState {
 
     /// A keyboard step of `delta` slots from the current target (or from
     /// `index`, the focused slot), wrapping at the ends of a list of `len`.
+    #[must_use]
     pub fn step(self, index: usize, delta: isize, len: usize) -> Self {
         let Self::Lifted { from, to, .. } = self else {
             return self;

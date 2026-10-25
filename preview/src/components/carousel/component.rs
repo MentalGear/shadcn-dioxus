@@ -14,7 +14,7 @@ use dioxus_primitives::{dioxus_attributes::attributes, merge_attributes};
 // custom picker" section) without a second import from `dioxus_primitives`
 // directly -- the same convention `resizable`'s themed wrapper already
 // follows for `ResizableDirection`.
-#[allow(unused_imports)] // `CarouselApi` is only ever named as `use_carousel()`'s inferred
+#[allow(unused_imports, reason = "a registry component: an app that installs it uses a different subset than the preview's demos")] // `CarouselApi` is only ever named as `use_carousel()`'s inferred
 // return type within this crate's own demos (the `api` variant) -- re-exported anyway so a
 // consumer building their own custom picker can name the type explicitly.
 pub use dioxus_primitives::carousel::{

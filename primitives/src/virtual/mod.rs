@@ -63,5 +63,4 @@ pub(crate) use virtualizer::Engine;
 // directly (`super::window::window`). Re-exported here per the shared-window-math API
 // contract so the looping `CarouselVirtualContent` can
 // call `crate::r#virtual::window(..., wrap: true)` without reaching into a submodule.
-#[allow(unused_imports)]
 pub(crate) use window::{window, WindowItem};

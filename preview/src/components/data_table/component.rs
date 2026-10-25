@@ -28,40 +28,40 @@ use dioxus_primitives::checkbox::CheckboxState;
 use std::collections::HashSet;
 
 // A consumer-facing surface: this crate's own demos use a subset of it.
-#[allow(dead_code)]
+#[allow(dead_code, reason = "a registry component: an app that installs it uses a different subset than the preview's demos")]
 #[path = "columns.rs"]
 mod columns;
-#[allow(dead_code)]
+#[allow(dead_code, reason = "a registry component: an app that installs it uses a different subset than the preview's demos")]
 #[path = "columns_menu.rs"]
 mod columns_menu;
-#[allow(dead_code)]
+#[allow(dead_code, reason = "a registry component: an app that installs it uses a different subset than the preview's demos")]
 #[path = "grid.rs"]
 mod grid;
-#[allow(dead_code)]
+#[allow(dead_code, reason = "a registry component: an app that installs it uses a different subset than the preview's demos")]
 #[path = "layout.rs"]
 mod layout;
-#[allow(dead_code)]
+#[allow(dead_code, reason = "a registry component: an app that installs it uses a different subset than the preview's demos")]
 #[path = "model.rs"]
 mod model;
-#[allow(dead_code)]
+#[allow(dead_code, reason = "a registry component: an app that installs it uses a different subset than the preview's demos")]
 #[path = "reorder.rs"]
 mod reorder;
-#[allow(dead_code)]
+#[allow(dead_code, reason = "a registry component: an app that installs it uses a different subset than the preview's demos")]
 #[path = "state.rs"]
 mod state;
 
-#[allow(unused_imports)]
+#[allow(unused_imports, reason = "a registry component: an app that installs it uses a different subset than the preview's demos")]
 pub use columns::{
     use_data_table, use_data_table_index, Column, ColumnAlign, DataTableIndex, DataTableModel,
     DataTableOptions, DataTableState, RowFn, DEFAULT_GRID_COLUMN_WIDTH,
 };
-#[allow(unused_imports)]
+#[allow(unused_imports, reason = "a registry component: an app that installs it uses a different subset than the preview's demos")]
 pub use columns_menu::{ColumnsMenuItem, DataTableColumnsMenu, DataTableColumnsMenuProps};
-#[allow(unused_imports)]
+#[allow(unused_imports, reason = "a registry component: an app that installs it uses a different subset than the preview's demos")]
 pub use layout::ColumnLayout;
-#[allow(unused_imports)]
+#[allow(unused_imports, reason = "a registry component: an app that installs it uses a different subset than the preview's demos")]
 pub use model::{derive, RowCompare, TableState, TableView};
-#[allow(unused_imports)]
+#[allow(unused_imports, reason = "a registry component: an app that installs it uses a different subset than the preview's demos")]
 pub use state::{
     filter_rows, includes_string, paginate, sort_rows, sort_rows_by, tri_state, SortDirection,
 };

@@ -92,6 +92,7 @@ impl LinearScale {
     /// let s = LinearScale { domain: (0.32, 98.6), range: (0.0, 1.0) }.nice();
     /// assert_eq!(s.domain, (0.0, 100.0));
     /// ```
+    #[must_use]
     pub fn nice(self) -> Self {
         let (d0, d1) = self.domain;
         if d0 == d1 || !d0.is_finite() || !d1.is_finite() {

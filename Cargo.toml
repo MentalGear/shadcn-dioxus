@@ -14,6 +14,20 @@ members = [
     "scripts/attr-spread-collision-checker",
 ]
 
+# The lint policy of every workspace crate (row 355); each member opts in with `lints.workspace = true`.
+# A table cannot vary per crate, so the lints that apply to one crate only are crate attributes at its
+# root: `missing_docs`, `clippy::unwrap_used` and `clippy::return_self_not_must_use` in
+# `primitives/src/lib.rs`, `clippy::unwrap_used` in `cli/src/main.rs`. The gates add `-D warnings`.
+[workspace.lints.rust]
+# The one exception is `preview/src/wasm_libc_shim.rs`, which allows it with its reason.
+unsafe_code = "deny"
+
+[workspace.lints.clippy]
+# `#[allow]` and `#[expect]` say why; a lint that fires in every build is silenced with `#[expect]`,
+# so a stale one fails (`unfulfilled_lint_expectations`). `#[allow]` stays for a lint that fires in
+# only some builds (a `cfg` arm, a feature, a registry component copied into an app).
+allow_attributes_without_reason = "warn"
+
 [workspace.dependencies]
 dioxus-primitives = { path = "primitives" }
 tracing = { version = "0.1", features = ["std"] }

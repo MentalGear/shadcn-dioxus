@@ -1,6 +1,9 @@
 //! `PopoverKind` and the popover attribute <-> signal sync hooks.
 
-#[cfg_attr(not(feature = "web"), allow(unused_imports))]
+#[cfg_attr(
+    not(feature = "web"),
+    expect(unused_imports, reason = "only the web build uses it")
+)]
 use super::*;
 
 /// Which `popover` dismissal behaviour an element declares.

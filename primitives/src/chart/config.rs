@@ -62,6 +62,7 @@ impl ChartConfig {
     /// assert_eq!(config.series.len(), 2);
     /// assert_eq!(config.series[0].key, "desktop");
     /// ```
+    #[must_use]
     pub fn series(
         mut self,
         key: impl Into<String>,

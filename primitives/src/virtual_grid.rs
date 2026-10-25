@@ -479,7 +479,10 @@ impl Pinning {
 
 /// One data or pinned cell of a [`VirtualGrid`], positioned by `style`. `row_header` makes it a
 /// `role="rowheader"` (the first column, when a start column is pinned).
-#[allow(clippy::too_many_arguments)]
+#[expect(
+    clippy::too_many_arguments,
+    reason = "one argument per input of a cell's layout; a struct would only rename the list"
+)]
 fn grid_cell(
     cell: (usize, usize),
     pin: Option<PinnedColumn>,
@@ -1243,7 +1246,10 @@ fn wrap_item_selector(index: &str) -> String {
 }
 
 /// The cells of row `row` of a [`VirtualWrapGrid`].
-#[allow(clippy::too_many_arguments)]
+#[expect(
+    clippy::too_many_arguments,
+    reason = "one argument per input of a row's layout; a struct would only rename the list"
+)]
 fn wrap_row_cells(
     row: usize,
     shape: GridShape,

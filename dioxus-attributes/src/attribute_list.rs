@@ -12,7 +12,10 @@ use syn::{
 /// A parsed list of attributes from the `attributes!` macro
 pub struct AttributeList {
     /// The element name for namespace/volatility lookup
-    #[allow(dead_code)]
+    #[expect(
+        dead_code,
+        reason = "parsed to keep the syntax tree complete; no expansion reads it"
+    )]
     pub element_name: ElementName,
     /// Regular attributes (not spreads)
     pub attributes: Vec<Attribute>,
@@ -22,7 +25,10 @@ pub struct AttributeList {
 
 /// A spread expression like `..existing_attrs`
 pub struct SpreadExpr {
-    #[allow(dead_code)]
+    #[expect(
+        dead_code,
+        reason = "parsed to keep the syntax tree complete; no expansion reads it"
+    )]
     pub dots: Token![..],
     pub expr: Expr,
 }
