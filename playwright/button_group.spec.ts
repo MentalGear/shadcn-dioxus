@@ -45,10 +45,10 @@ test("popover trigger is an outline icon Button beside its group sibling", async
   expect(box.h).toBeCloseTo(siblingH, 0);
 });
 
-// Joined children overlap by one pixel column at every seam and only the previous child paints it (the follower
-// is clipped by that column), so on the RENDERED page every seam is the same colour as the group's outer edge. Dark
-// edges and fills are translucent, so a second layer on the column would draw the seam heavier; the check reads
-// screenshot pixels because only the composite shows it.
+// Joined children sit edge to edge and a follower leaves out its start edge, so each seam is the previous child's
+// end edge painted once and, on the RENDERED page, the same colour as the group's outer edge. Dark edges and fills
+// are translucent, so a second layer on the seam would draw it heavier; the check reads screenshot pixels because
+// only the composite shows it.
 test.describe("Seams match the outer edge", () => {
   for (const mode of ["light", "dark"] as const) {
     test(`${mode}: every seam pixel equals the outer edge pixel`, async ({ page }) => {
@@ -65,7 +65,11 @@ test.describe("Seams match the outer edge", () => {
           const r = g.getBoundingClientRect();
           return {
             h: Math.round(r.height),
-            seams: [...g.children].slice(1).map((c) => Math.round(c.getBoundingClientRect().left - r.left)),
+            // The seam is the previous child's end edge: the column just before a follower (LTR) or just after it (RTL).
+            seams: [...g.children].slice(1).map((c) => {
+              const cr = c.getBoundingClientRect();
+              return getComputedStyle(g).direction === "rtl" ? Math.round(cr.right - r.left) : Math.round(cr.left - r.left) - 1;
+            }),
           };
         });
         const png = (await group.screenshot({ animations: "disabled" })).toString("base64");
