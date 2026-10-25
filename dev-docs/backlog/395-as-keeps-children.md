@@ -1,7 +1,7 @@
 ---
 id: 395
 title: "`as` keeps the component's children and handlers (Radix asChild semantics)"
-status: "BACKLOG. Found by row 387's first docs-clarity review; the evidence (file:line per finding) is in…"
+status: "Owner approved as proposed (2026-10-24, backlog thread): as merges the component's children and…"
 size: "M"
 area: components
 updated: 2026-10-24
@@ -14,6 +14,8 @@ updated: 2026-10-24
 With `as` set, Item, Marker, the Collapsible trigger, Attachment and others render only the closure; children and `onclick`/`onkeydown` given to the component vanish. Radix `asChild` keeps them.
 
 ## Status / trigger
+
+Owner approved as proposed (2026-10-24, backlog thread): `as` merges the component's children and handlers into the closure's element, Radix `asChild` semantics. In a thread.
 
 BACKLOG. Found by row 387's first docs-clarity review; the evidence (file:line per finding) is in the project's shared files, `docs-clarity/2026-10-24-docs-clarity-review.md`.
 

@@ -40,7 +40,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (44)
+## Open rows (43)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -77,10 +77,9 @@ proposing one is closed as out of scope (row 337 is the first).
 | [392](backlog/392-docs-snippets-compile.md) | Compile-check the docs.md code samples; samples use the uncontrolled props | BACKLOG. Found by row 387's first docs-clarity review; the evidence (file:line per finding) is in… | M | docs |
 | [393](backlog/393-docs-contradict-code.md) | Fix the docs statements the code contradicts | BACKLOG. Found by row 387's first docs-clarity review; the evidence (file:line per finding) is in… | S | docs |
 | [394](backlog/394-coming-from-shadcn-radix-tanstack.md) | A 'Coming from shadcn / Radix / TanStack' table on every component page | BACKLOG. Found by row 387's first docs-clarity review; the evidence (file:line per finding) is in… | M | docs |
-| [395](backlog/395-as-keeps-children.md) | `as` keeps the component's children and handlers (Radix asChild semantics) | BACKLOG. Found by row 387's first docs-clarity review; the evidence (file:line per finding) is in… | M | components |
-| [396](backlog/396-derive-item-index.md) | Derive item `index` from registration order | BACKLOG. Found by row 387's first docs-clarity review; the evidence (file:line per finding) is in… | L | components |
-| [397](backlog/397-docs-review-bugs.md) | Bugs the docs review found: ToggleGroup arrows, dead ScrollArea prop, DataTable sort, Sidebar Ctrl+B | BACKLOG. Found by row 387's first docs-clarity review; the evidence (file:line per finding) is in… | S | components |
-| [398](backlog/398-docs-review-api-gaps.md) | API gaps the docs review found | BACKLOG. Found by row 387's first docs-clarity review; the evidence (file:line per finding) is in… | M | components |
+| [395](backlog/395-as-keeps-children.md) | `as` keeps the component's children and handlers (Radix asChild semantics) | Owner approved as proposed (2026-10-24, backlog thread): as merges the component's children and… | M | components |
+| [396](backlog/396-derive-item-index.md) | Derive item `index` from registration order | Owner approved as proposed (2026-10-24, backlog thread): order from registration, index only an… | L | components |
+| [398](backlog/398-docs-review-api-gaps.md) | API gaps the docs review found | Owner approved every item as proposed (2026-10-24, backlog thread). The DataTable callbacks landed… | M | components |
 | [399](backlog/399-docs-review-demos.md) | Demo batch from the docs review | BACKLOG. Found by row 387's first docs-clarity review; the evidence (file:line per finding) is in… | S | docs |
 | [402](backlog/402-load-robust-timing-specs.md) | Release timing specs compare same-run measurements, not absolute milliseconds | Done on lane/timing-relative (numbers below). Trigger for reopening: a release timing spec that… | S | tests |
 | [407](backlog/407-load-flakes-and-not-found-routes.md) | Load flakes (docs sidebar shift, avatar demo re-centring, non-modal popover scroll, carousel edge band) and spec runs that serve unknown URLs like the site | Done on lane/flake-roots. Trigger for reopening: one of these specs red under load on an unchanged… | M | tests |
