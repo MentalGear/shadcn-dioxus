@@ -487,7 +487,24 @@ struct RsxFinder<'a> {
     findings: &'a mut Vec<Finding>,
 }
 
+/// Whether `attrs` carry `#[cfg(test)]`: test-only code is never compiled into an app,
+/// so its `rsx!` (fixtures that probe a primitive) is not scanned.
+fn is_cfg_test(attrs: &[syn::Attribute]) -> bool {
+    attrs.iter().any(|attr| {
+        attr.path().is_ident("cfg")
+            && attr
+                .parse_args::<syn::Ident>()
+                .is_ok_and(|ident| ident == "test")
+    })
+}
+
 impl<'ast> Visit<'ast> for RsxFinder<'_> {
+    fn visit_item_mod(&mut self, node: &'ast syn::ItemMod) {
+        if !is_cfg_test(&node.attrs) {
+            visit::visit_item_mod(self, node);
+        }
+    }
+
     fn visit_item_fn(&mut self, node: &'ast syn::ItemFn) {
         let prev = self.current_fn.replace(node.sig.ident.to_string());
         visit::visit_item_fn(self, node);
@@ -709,6 +726,12 @@ mod tests {
             .filter(|f| f.kind == FindingKind::RawTextDynamicChild)
             .map(|f| (f.line, f.name))
             .collect()
+    }
+
+    #[test]
+    fn skips_a_cfg_test_module() {
+        let src = "#[cfg(test)]\nmod tests {\n    fn probe() -> Element {\n        rsx! { style { {css} } }\n    }\n}\nfn demo() -> Element {\n    rsx! { style { {css} } }\n}\n";
+        assert_eq!(raw_text_findings(src), vec![(8, "style".to_string())]);
     }
 
     #[test]
