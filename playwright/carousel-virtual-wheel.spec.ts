@@ -83,7 +83,7 @@ const AUTOPLAY: Variant[] = ["virtual_loop", "virtual_loop_rtl"];
 async function open(page: Page, variant: Variant): Promise<{ frame: Locator; content: Locator }> {
   await page.addInitScript(installScrollWriteProbe);
   // Autoplay would move the carousel on its own schedule. `CarouselAutoplay`
-  // never starts under reduced motion (carousel.spec.ts's own autoplay
+  // never starts under reduced motion (carousel-rewind-autoplay.spec.ts's own autoplay
   // tests), which takes it out deterministically; nothing on the wheel/
   // scroll-end path under test depends on that preference (the re-align
   // is always instant, and the wheel band is off on these demos anyway).
@@ -344,7 +344,7 @@ test.describe("Carousel: scroll-end reactions wait until the browser is truly id
  * - virtual, non-looping: only when its real first/last item is the slide at
  *   the edge the scroller rests at -- never at the rendered slice's edge
  *   mid-list (the browser clamps there; the window re-centres once idle);
- * - plain, non-looping: both ends (carousel.spec.ts's own mode-D
+ * - plain, non-looping: both ends (carousel-edge-wheel.spec.ts's own mode-D
  *   block, e.g. "real (trusted) wheel input at the start and end edges").
  *
  * HOLDING A SLICE EDGE. A virtual window only rests at its slice's edge

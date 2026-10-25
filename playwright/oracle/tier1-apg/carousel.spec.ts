@@ -47,7 +47,7 @@
  *
  *   - The rotation control button, `aria-live` region, and
  *     `prefers-reduced-motion` handling for the *basic* (prev/next) style
- *     are exercised live (`playwright/carousel.spec.ts`'s own "autoplay"
+ *     are exercised live (`playwright/carousel-rewind-autoplay.spec.ts`'s own "autoplay"
  *     describe block) rather than as a second dual-subject oracle rule set
  *     here -- the basic reference page itself does not expose a way to
  *     turn its own combined rotation+prev/next widget into "prev/next
