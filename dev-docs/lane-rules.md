@@ -149,7 +149,7 @@ Use the cheapest tool that answers the question, in this order:
    `tools/select.mjs` maps your diff to, on `ssg.local.config.ts`; `CHANGED_RANGE=A..B` for another range,
    `CHANGED_MATRIX=1` to add the route-matrix specs; "no spec covers the diff" means docs/gates/tooling only; a changed `preview/assets/*.css` is read rule by rule -- the page-scoped matrix specs run only the tests of the pages the changed rules reach, the owning component's specs and every spec that spells a changed class are added, anything it cannot place keeps the whole broad set; `node playwright/tools/select.mjs --explain` says why, `CHANGED_FULL_CSS=1` forces the old behaviour; row 323).
    Quote its summary line in your report. Do not pick the specs by hand: `node playwright/tools/select.mjs --explain` lists the specs
-   that cover your diff (default range `origin/main...HEAD` plus uncommitted files; `--range A..B`, `--files f...`).
+   that cover your diff (default range `<nearest base>...HEAD`, the nearest of `origin/main` and any `origin/queue/*` ref (row 418), plus uncommitted files; `--range A..B`, `--files f...`).
    Map: a component directory -> the specs about that component (file named for it, or naming its page); a primitive
    -> the specs of every component that uses it, directly or through another primitive (more than 30 components =
    shared plumbing, the broad set is added); theme CSS, `main.rs`, `eager_head.rs`, `index.html`, `components/mod.rs` ->
