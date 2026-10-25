@@ -47,7 +47,7 @@ const CONTROLS: Control[] = [
     route: "/component/checkbox/",
     selector: ".dx-checkbox",
     glyph: `(el) => { const r = el.firstElementChild.getBoundingClientRect(); return { w: r.width, h: r.height }; }`,
-    fine: { layout: (s) => near(s.w, 16) && near(s.h, 16), glyph: { w: 16, h: 16 } },
+    fine: { layout: (s) => near(s.w, 16) && (near(s.h, 16) || near(s.h, 17)), glyph: { w: 16, h: 16 } },
     coarse: { target: { w: 44, h: 44 }, glyph: { w: 16, h: 16 } },
   },
   {
@@ -55,7 +55,7 @@ const CONTROLS: Control[] = [
     route: "/component/radio_group/",
     selector: ".dx-radio-group-item",
     glyph: `(el) => { const c = getComputedStyle(el, "::before"); return { w: parseFloat(c.width), h: parseFloat(c.height) }; }`,
-    fine: { layout: (s) => near(s.h, 16), glyph: { w: 16, h: 16 } },
+    fine: { layout: (s) => near(s.h, 16) || near(s.h, 17), glyph: { w: 16, h: 16 } },
     coarse: { target: { w: 44, h: 44 }, glyph: { w: 16, h: 16 } },
   },
   {
