@@ -56,7 +56,7 @@ test.describe("Seams match the outer edge", () => {
       await page.evaluate((m) => (window as unknown as { __dxApplyMode: (m: string) => void }).__dxApplyMode(m), mode);
       await page.mouse.move(0, 0);
       const groups = page.locator(
-        "#component-preview-frame .dx-button-group:not([data-orientation='vertical']):not(:has(.dx-button-group, .dx-button-group-separator))",
+        "[id^='component-preview-frame'] .dx-button-group:not([data-orientation='vertical']):not(:has(.dx-button-group, .dx-button-group-separator))",
       );
       expect(await groups.count()).toBeGreaterThan(0);
       for (const group of await groups.all()) {
