@@ -119,7 +119,7 @@ Each item: problem -> evidence -> decision -> construction (the class it removes
   the sentence under it, the calendar button).
 - **Also:** which shadcn date demos keep the overlay open after a selection (the uncontrolled basic one does) --
   record per demo in the lane report; our demos mirror the source per demo, with `confirm` as the library default.
-- **Files:** `primitives/src/date_picker.rs` (staging state), `preview/src/components/date_picker/**`,
+- **Files:** `primitives/src/date_picker/context.rs` (staging state), `preview/src/components/date_picker/**`,
   `calendar` only if the footer needs a slot. Specs: `date-picker.spec.ts` (apply/cancel/escape restore; range).
 
 ### Item 7 -- Close overlays on scroll (merged into row 193)
@@ -201,7 +201,7 @@ Each item: problem -> evidence -> decision -> construction (the class it removes
 | O (overlays) | 193, 210 | `primitives/src/top_layer.rs`, combobox/popover/tooltip/hover_card/select primitives, their specs, new combobox geometry spec | component sheets (T owns them this batch) |
 | F (focus) | 206 | `primitives/src/dialog.rs`, `alert_dialog.rs` focus parts, focus specs | drawer.rs (E) |
 | E (edge panels) | 207, 208 | `primitives/src/drawer.rs`, sheet + drawer components/sheets, their specs | dialog.rs focus code (F) -- coordinate through F's API |
-| D (date) | 209 | `primitives/src/date_picker.rs`, date_picker/calendar components, date specs | top_layer.rs |
+| D (date) | 209 | `primitives/src/date_picker/`, date_picker/calendar components, date specs | top_layer.rs |
 | C (charts) | 211 | chart component + sheet, chart specs | activity.rs (read-only use) |
 | L (layout debug) | 204 | read-only, then the root-cause file + new layout-stability spec | -- |
 | Demo | 212 | `variants/**` of the listed components | component.rs / style.css |
