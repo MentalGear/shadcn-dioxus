@@ -55,9 +55,12 @@ test('the box and its indicator keep one constant size whether or not it is chec
   const checked = await boxes();
 
   for (const [state, b] of [['unchecked', unchecked], ['checked', checked]] as const) {
-    expect(b.checkbox.width, `${state}: checkbox width`).toBeCloseTo(16, 1);
-    expect(b.checkbox.height, `${state}: checkbox height`).toBeCloseTo(16, 1);
-    expect(b.indicator, `${state}: indicator fills the checkbox`).toEqual(b.checkbox);
+    // The painted box is the indicator (1rem); the button around it is the touch target (the global hit size,
+    // coarse-sizing.spec.ts), a transparent frame centred on the indicator.
+    expect(b.indicator.width, `${state}: indicator width`).toBeCloseTo(16, 1);
+    expect(b.indicator.height, `${state}: indicator height`).toBeCloseTo(16, 1);
+    expect(b.checkbox.x + b.checkbox.width / 2, `${state}: indicator centred horizontally`).toBeCloseTo(b.indicator.x + 8, 1);
+    expect(b.checkbox.y + b.checkbox.height / 2, `${state}: indicator centred vertically`).toBeCloseTo(b.indicator.y + 8, 1);
     // A flex box, not an inline-block: an inline-block button sits on the line box's baseline
     // (2px above a table cell's centre) -- see data_table.spec.ts.
     expect(b.display, `${state}: display`).toBe('flex');

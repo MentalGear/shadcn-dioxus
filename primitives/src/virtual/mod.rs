@@ -1,8 +1,8 @@
 //! The engines behind windowed lists.
 //!
-//! - [`window`]: the pure "which indices are in the window, with overscan" math, shared by
+//! - [`window`](mod@window): the pure "which indices are in the window, with overscan" math, shared by
 //!   `VirtualList` (`wrap: false`) and the looping carousel (`wrap: true`).
-//! - [`cv_chunks`]: how rows are grouped for `content-visibility` skipping, shared by
+//! - [`cv_chunks`](mod@cv_chunks): how rows are grouped for `content-visibility` skipping, shared by
 //!   `VirtualList`'s content-visibility mode and `MessageScroller`.
 //! - [`size_index`]: item positions from measured or estimated sizes, as a Fenwick tree
 //!   (`O(log N)` measure and lookup).

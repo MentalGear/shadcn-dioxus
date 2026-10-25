@@ -82,7 +82,7 @@ const HALO: (f64, f64) = (12.0, 25.0);
 /// Recharts' pie label offset beyond the rim (`offsetRadius = 20`).
 const LABEL_OFFSET: f64 = 20.0;
 
-/// How [`render`] draws per-slice text.
+/// How `render` draws per-slice text.
 #[derive(Clone, Debug, PartialEq, Default)]
 pub enum PieLabels {
     /// No per-slice labels (the default).
@@ -112,7 +112,7 @@ pub enum PieLabels {
 /// (see the module doc).
 #[derive(Clone, Debug, PartialEq)]
 pub struct PieOptions {
-    /// `innerRadius`: [`Radius::Px(0.0)`] (the default) draws a plain pie;
+    /// `innerRadius`: [`Radius::Px(0.0)`](Radius::Px) (the default) draws a plain pie;
     /// more draws a donut.
     pub inner_radius: Radius,
     /// `outerRadius`: default [`Radius::DEFAULT_OUTER`] (`80%`).

@@ -7,7 +7,7 @@ description = "Installer for the shadcn-dioxus component registry: add, list, re
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/MentalGear/shadcn-dioxus"
 readme = "README.md"
-# Not published to crates.io: `cargo install --git https://github.com/MentalGear/shadcn-dioxus shadcn-dioxus`.
+# Not published to crates.io: `cargo install --git https://github.com/MentalGear/shadcn-dioxus shadcn-dioxus --locked`.
 publish = false
 
 [[bin]]

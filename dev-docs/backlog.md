@@ -40,7 +40,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (36)
+## Open rows (35)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -62,7 +62,6 @@ proposing one is closed as out of scope (row 337 is the first).
 | [365](backlog/365-final-sweep-refactor-and-root-cause-review.md) | Final sweep: refactor review with the deconstruct-to-root and solve-by-construction exercise, proposals to the owner | BACKLOG (owner 2026-10-22, backlog thread: "final sweep, check for refactors and also run there the… | M for the review. Each accepted… | process |
 | [371](backlog/371-dependency-evaluation-keep-lift-drop.md) | Dependency evaluation: keep, feature-gate, replace, lift or drop (rule of 2026-10-23) | BACKLOG: unparked by the owner 2026-10-24, stage 4 of the adopted order (after the structure rows… | S each outcome | build |
 | [372](backlog/372-scroll-fade-overlay-scrollbar-hybrid.md) | Scroll fade: transition the edge depths (landed) and paint the fade as gradients where the scrollbar is an overlay (deferred) | WAITING ON OWNER: part 1, the overlay-scrollbar hybrid, is deferred ("leave mask for now"); reopen… | M | primitives |
-| [382](backlog/382-rustdoc-warnings-to-zero.md) | Rustdoc warnings to zero: shrink the check-rustdoc baseline (87 entries, mostly unclosed HTML tags) | OPEN, S, no browser: shrink scripts/check-rustdoc.baseline.tsv (87 entries, mostly unclosed HTML… | S | primitives |
 | [383](backlog/383-adversarial-review-board.md) | Adversarial review board: independent expert reviewers attack the finished library, last item of the backlog | BACKLOG. Runs last: after row 365's proposals are answered and every other engineering row has… | M | process |
 | [385](backlog/385-accent-focus-ring-clamped.md) | The focus ring follows the picked accent, clamped to 3:1 per mode | DECIDED 2026-10-24 (owner), BUILT on lane/accent-ring. With an accent picked the ring takes the… | S | theme |
 | [386](backlog/386-virtual-grid-header-hover-see-through.md) | Virtual Grid: hovering the sticky header row makes it see-through (a translucent row hover replaced the opaque cover) | FIXED on lane/grid-header-hover, merge pending. | S | components |

@@ -30,7 +30,7 @@ const BEFORE: Record<string, Record<string, string>> = {
     "height": "18.3906px",
     "margin-top": "0px",
     "margin-left": "0px",
-    "padding-top": "0px",
+    "padding-top": "2.8px",
     "padding-left": "0px",
     "border-top-width": "0px",
     "border-top-style": "none",
@@ -52,8 +52,8 @@ const BEFORE: Record<string, Record<string, string>> = {
     "transform": "none",
     "transition-property": "background-color, box-shadow",
     "align-items": "center",
-    "background-color": "rgb(229, 229, 229)",
-    "rect": "32x18.39"
+    "background-color": "rgba(0, 0, 0, 0)",
+    "rect": "32x23.98"
   },
   "slider-thumb": {
     "display": "block",

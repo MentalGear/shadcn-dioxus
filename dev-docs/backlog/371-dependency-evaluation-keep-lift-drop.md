@@ -4,7 +4,7 @@ title: "Dependency evaluation: keep, feature-gate, replace, lift or drop (rule o
 status: "BACKLOG: unparked by the owner 2026-10-24, stage 4 of the adopted order (after the structure rows…"
 size: "S each outcome"
 area: build
-updated: 2026-10-24
+updated: 2026-10-25
 ---
 
 # Row 371: Dependency evaluation: keep, feature-gate, replace, lift or drop
@@ -15,7 +15,13 @@ Apply the owner's dependency rule (2026-10-23) to every dependency a user's `dx 
 
 ## Status / trigger
 
-**BACKLOG: unparked by the owner 2026-10-24, stage 4 of the adopted order (after the structure rows, before the review pass and row 365).** Inventory done, no outcome approved; each outcome goes to the owner before it is applied.
+**BACKLOG: unparked by the owner 2026-10-24, stage 4 of the adopted order (after the structure rows, before the review pass and row 365).** Inventory done; each outcome goes to the owner before it is applied.
+
+**Applied 2026-10-25 (owner-approved, branch `lane/row-371-dep-trims`):** (1) `palette` with `default-features = false, features = ["std"]`; (2) `time` without `macros` (the 10 library `date!` defaults are `const` dates in `primitives/src/calendar/mod.rs`; `macros` moved to primitives' `[dev-dependencies]`; `preview` keeps its own `macros`); (3) `cargo install ... --locked` in every copy of the install line (README, `cli/README.md`, `templates/starter/README.md`, `cli/Cargo.toml`, `preview/src/main.rs` which renders the docs pages; `scripts/check-registry-url.sh` requires it in `cli/README.md`); (4) version floors equal to the lock in `primitives/Cargo.toml` (`tokio` 1.52.3 both entries, `serde` 1.0.228, `gloo-timers` 0.3.0) and rule 7 of `scripts/check-cargo-dep-versions.sh`, which fails when a registry-sourced `[dependencies]` or `[target.*.dependencies]` entry of primitives has a floor other than the lock version. **Deferred by the owner 2026-10-25:** the `dioxus-icons` lift (outcome 3). Open: outcome 4 (`gloo-timers` replace) and the construction half.
+
+**Measured 2026-10-25** (`cargo tree -p dioxus-primitives --target wasm32-unknown-unknown --no-default-features --features "web[ calendar| color-picker]" -e normal,build --prefix none --locked | sort -u | wc -l`; unique lines, so a crate in two versions counts twice): `web` 146 -> 146, `web calendar` 152 -> 151 (`time-macros` gone), `web color-picker` 160 -> 150 (phf, phf_generator, phf_macros, phf_shared, rand, rand_core, siphasher and three more). Proof the trims build: `scripts/check-primitives-features.sh` OK (no features, each feature alone, `web`, all), `cargo check` of the calendar and color-picker features for wasm32 and native, and the primitives `--lib` tests (1068 passed).
+
+**For users (not changed here):** the `calendar` and `date_picker` `component.json` list `time` `0.3.47` without `macros`; the installed files, `docs.md` and `variants` (excluded from the install) do not use `date!`, so nothing the install ships needs it. An app that wrote `date!(...)` for `Calendar` props relied on `dioxus-primitives` switching `time`'s `macros` on through feature unification and now adds `features = ["macros"]` to its own `time`, or builds dates with `Date::from_calendar_date`. If that should be said on the calendar docs page, it is a docs change for the owner to approve.
 
 Owner notes for when it is picked up:
 
@@ -35,7 +41,7 @@ S each outcome
 
 The rule: a dependency qualifies when (1) security (code risk and channel risk, weighed by reach against trust), (2) cost (compile time, crate count, wasm bytes) or (3) small stable low-risk slice; veto for time zones, colour science, parsers and the framework. Outcome ladder, cheapest and most reversible first: drop > feature-gate > pin exactly > replace (std / web-sys / browser API) > lift > keep. Blast radius is counted per crate in the research doc.
 
-**Proposed outcomes (none applied):**
+**Proposed outcomes (1, 2 applied 2026-10-25; 3 deferred by the owner; 4 and 5 open):**
 
 1. `palette`: `default-features = false, features = ["std"]`. The default `named_from_str` pulls phf, phf_generator, phf_macros, phf_shared, rand, rand_core and siphasher (7 crates, 1 proc-macro) for string colour names we never parse. Drop rung. Unbuilt estimate for ColorPicker users: 12 -> about 5 extra crates.
 2. `time`: keep (veto), but `macros` is used only for 10 non-test `date!` defaults; use const `Date::from_calendar_date`, make `macros` a dev-dependency, drop `time-macros` (1 proc-macro) from users' trees.

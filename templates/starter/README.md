@@ -8,7 +8,7 @@ A Dioxus app set up for the shadcn-dioxus component registry
 Install the `shadcn-dioxus` command-line tool once:
 
 ```
-cargo install --git https://github.com/MentalGear/shadcn-dioxus shadcn-dioxus
+cargo install --git https://github.com/MentalGear/shadcn-dioxus shadcn-dioxus --locked
 ```
 
 Then, from this directory:

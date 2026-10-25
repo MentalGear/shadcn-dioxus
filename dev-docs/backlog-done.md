@@ -6,7 +6,7 @@ resolves here by id.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Done rows (356)
+## Done rows (358)
 
 | # | Item | Updated |
 |---|---|---|
@@ -346,6 +346,7 @@ resolves here by id.
 | [379](backlog/done/379-session-setup-fetches-detached-locks.md) | Session setup fetches every committed Cargo.lock, so check-cargo-locks resolves offline in a fresh container | 2026-10-24 |
 | [380](backlog/done/380-calendar-clock-read-after-mount.md) | Calendars read the visitor's clock after mount, so a prerendered page never keeps the build day | 2026-10-24 |
 | [381](backlog/done/381-interactive-element-cursor-option.md) | Interactive-element cursor is one theme option, data-dx-interactive-element-cursor | 2026-10-24 |
+| [382](backlog/done/382-rustdoc-warnings-to-zero.md) | Rustdoc warnings to zero: shrink the check-rustdoc baseline (87 entries) and make the gate strict | 2026-10-25 |
 | [384](backlog/done/384-burn-down-ratchet-baselines.md) | Burn down the ratchet baselines and the leftover TODO comments (props docs, history comments, dead refs) | 2026-10-25 |
 | [391](backlog/done/391-wrappers-forward-primitive-props.md) | Themed wrappers forward every primitive prop, enforced by a props-diff gate | 2026-10-24 |
 | [395](backlog/done/395-as-keeps-children.md) | `as` keeps the component's children and handlers (Radix asChild semantics) | 2026-10-24 |
@@ -366,5 +367,6 @@ resolves here by id.
 | [417](backlog/done/417-variant-slot-declared-on-base.md) | A variant's slot variable is declared on the component's base root too | 2026-10-25 |
 | [418](backlog/done/418-test-changed-nearest-base.md) | test:changed diffs against the nearest base, not always origin/main | 2026-10-25 |
 | [419](backlog/done/419-toast-close-target.md) | Toast close button: a bigger hit target and a hover style | 2026-10-25 |
+| [420](backlog/done/420-coarse-sizing-every-control.md) | Touch sizing covers every control: a coarse-aware control scale and one hit size | 2026-10-25 |
 
 <!-- END GENERATED -->

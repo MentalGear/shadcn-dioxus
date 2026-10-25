@@ -11,15 +11,15 @@
 //! - **`variant`** -- [`MenuItemVariant`]: `Default` or `Destructive`. A
 //!   destructive item is a plain `menuitem` (the role does not change); the
 //!   primitive emits `data-variant="default" | "destructive"` through
-//!   [`item_style_attributes`], the one place that attribute is written, and
+//!   `item_style_attributes`, the one place that attribute is written, and
 //!   the themed sheets paint it.
 //! - **`inset`** -- reserves the leading indicator slot on an item that draws
 //!   no indicator, so a menu that mixes plain and checkable items keeps its
 //!   labels on one edge. The primitive emits `data-inset="true"` only while
-//!   it is set (nothing otherwise), again through [`item_style_attributes`].
-//! - **Separator / Group / Shortcut** -- [`render_separator`]
-//!   (`role="separator"`, `aria-orientation="horizontal"`), [`render_group`]
-//!   (`role="group"`, name it with `aria-label`) and [`render_shortcut`] (a
+//!   it is set (nothing otherwise), again through `item_style_attributes`.
+//! - **Separator / Group / Shortcut** -- `render_separator`
+//!   (`role="separator"`, `aria-orientation="horizontal"`), `render_group`
+//!   (`role="group"`, name it with `aria-label`) and `render_shortcut` (a
 //!   `span`). None of them registers in a roving-focus collection, so arrow
 //!   keys, Home/End and typeahead walk straight past them; they take no
 //!   `index`.
@@ -35,22 +35,22 @@
 //! what genuinely differs (which roving-focus collection the item registers
 //! in, how a pointer press is committed, what "close the menu" means):
 //!
-//! - **Roles and ARIA** -- [`CheckableState::owned_attributes`]: `role`
-//!   (`menuitemcheckbox`/`menuitemradio`, from [`crate::menu_semantics`]),
+//! - **Roles and ARIA** -- `CheckableState::owned_attributes`: `role`
+//!   (`menuitemcheckbox`/`menuitemradio`, from `crate::menu_semantics`),
 //!   `aria-checked` (always present, `"true"` or `"false"`), `data-state`
 //!   (`checked`/`unchecked`), `aria-disabled`, `data-disabled`, `tabindex`.
 //!   Owned by the primitive, so they win over a caller's own attributes.
-//! - **State** -- [`use_checkbox_state`] (controlled or uncontrolled
-//!   `checked`) and [`use_radio_group`] + [`use_radio_state`] (controlled or
+//! - **State** -- `use_checkbox_state` (controlled or uncontrolled
+//!   `checked`) and `use_radio_group` + `use_radio_state` (controlled or
 //!   uncontrolled group `value`; an item is checked when its `value` equals
 //!   the group's).
 //! - **Props** -- [`MenuCheckboxItemProps`], [`MenuRadioItemProps`] and
 //!   [`MenuRadioGroupProps`], re-exported by each host under its own name
 //!   (`DropdownMenuCheckboxItemProps`, ...), so the three APIs cannot drift.
-//! - **The radio group** -- [`render_radio_group`], a `role="group"`
+//! - **The radio group** -- `render_radio_group`, a `role="group"`
 //!   element, identical for every host.
-//! - **Activation** -- [`CheckableState::activate`] flips a checkbox or
-//!   chooses a radio's value; [`is_activation_key`] is the one definition of
+//! - **Activation** -- `CheckableState::activate` flips a checkbox or
+//!   chooses a radio's value; `is_activation_key` is the one definition of
 //!   "Enter or Space".
 //!
 //! # Close semantics
@@ -230,7 +230,7 @@ pub struct MenuCheckboxItemProps {
     pub close_on_select: ReadSignal<bool>,
 
     /// Reserves the leading indicator slot without drawing anything -- shadcn's
-    /// `inset`. See [`item_style_attributes`].
+    /// `inset`. See `item_style_attributes`.
     #[props(default)]
     pub inset: bool,
 
@@ -278,7 +278,7 @@ pub struct MenuRadioItemProps {
     pub close_on_select: ReadSignal<bool>,
 
     /// Reserves the leading indicator slot without drawing anything -- shadcn's
-    /// `inset`. See [`item_style_attributes`].
+    /// `inset`. See `item_style_attributes`.
     #[props(default)]
     pub inset: bool,
 

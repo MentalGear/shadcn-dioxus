@@ -11,7 +11,7 @@ use dioxus_primitives::merge_attributes;
 ///
 /// This is shadcn/ui's documented recipe (a separator Marker with a button in its content) as
 /// one component, so the part that is easy to get wrong cannot be: `label` is required, and
-/// the button's accessible name is built from it ("Restore checkpoint: <label>"), so a thread
+/// the button's accessible name is built from it (`"Restore checkpoint: <label>"`), so a thread
 /// with many checkpoints never has several buttons that are all just "Restore". The visible
 /// word stays the first word of that name (WCAG 2.5.3, label in name). The row is never
 /// `role="separator"`, which would hide the label from assistive tech.
@@ -21,7 +21,7 @@ pub fn Checkpoint(
     /// separator and used in the button's accessible name.
     #[props(into)]
     label: String,
-    /// The visible text of the button. Its accessible name still reads "<this> checkpoint: <label>".
+    /// The visible text of the button. Its accessible name still reads `"<this> checkpoint: <label>"`.
     #[props(into, default = "Restore".to_string())]
     action: String,
     /// Called when the Restore button is pressed.

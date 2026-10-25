@@ -16,7 +16,7 @@
 #      - the workspace files: Cargo.toml, Cargo.lock, rust-toolchain[.toml], rustfmt.toml, clippy.toml, their dotted
 #        forms, .cargo/*, and the root component.json (cli reads it);
 #      - the cargo gates' own scripts and baselines: scripts/check-primitives-features.sh,
-#        scripts/check-rustdoc.sh and its baseline, scripts/check-attr-spread-collision.sh and its two *.baseline.tsv;
+#        scripts/check-rustdoc.sh, scripts/check-attr-spread-collision.sh and its two *.baseline.tsv;
 #      - every file a Rust source pulls in with a literal `include_str!("..")` / `include_bytes!("..")`, resolved
 #        against the including file, wherever it lives (dev-docs/motion.md, README.md, preview/assets/main.css,
 #        theme-presets.css, ...). This is derived on every run, so a NEW include is covered the day it is written.
@@ -49,7 +49,7 @@ export LC_ALL=C
 
 CARGO_ROOTS=(primitives cli preview test-harness dioxus-attributes scripts/attr-spread-collision-checker templates)
 WORKSPACE_FILES=(Cargo.toml Cargo.lock rust-toolchain rust-toolchain.toml rustfmt.toml .rustfmt.toml clippy.toml
-  .clippy.toml component.json scripts/check-primitives-features.sh scripts/check-rustdoc.sh scripts/check-rustdoc.baseline.tsv scripts/check-attr-spread-collision.sh
+  .clippy.toml component.json scripts/check-primitives-features.sh scripts/check-rustdoc.sh scripts/check-attr-spread-collision.sh
   scripts/check-attr-spread-collision.baseline.tsv scripts/check-attr-spread-collision.component-forward.baseline.tsv)
 ASSET_EXT='css|svg|png|jpg|jpeg|gif|webp|ico|woff|woff2'
 

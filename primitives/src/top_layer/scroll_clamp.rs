@@ -5,8 +5,8 @@ use super::*;
 
 /// The ONE viewport measurement every JS collision/clamp script in this
 /// crate shares -- defines `viewportMetrics()` inside whatever `eval` string
-/// it is interpolated into ([`use_anchor_position_fallback`]'s
-/// `reposition()` and [`use_point_anchor_clamp`]). Any other script
+/// it is interpolated into (`use_anchor_position_fallback`'s
+/// `reposition()` and `use_point_anchor_clamp`). Any other script
 /// that needs "how much room is there" must splice this in rather than read
 /// `window.inner{Width,Height}` or `visualViewport.{width,height}` itself
 /// (`viewport_metrics_js_is_the_only_viewport_read` below fails the build

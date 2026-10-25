@@ -105,10 +105,10 @@
 //! **When the lock releases.** At the real close of the surface, never at the
 //! state flip: a modal `<dialog>` keeps playing its exit animation, still in the
 //! top layer, after `open` has gone `false`
-//! ([`crate::use_dialog_open_driver`]), and until its `close()` the page behind
+//! (`crate::use_dialog_open_driver`), and until its `close()` the page behind
 //! must still not scroll. [`use_modal_closed`] is the hand-off: a
 //! `use_scroll_lock` publishes a release handle to its subtree and the shared
-//! `close`-event sync ([`crate::use_dialog_close_sync`]) calls it when the
+//! `close`-event sync (`crate::use_dialog_close_sync`) calls it when the
 //! `<dialog>` has really closed, ~250 ms (`use_animated_open`'s unmount hold)
 //! before the component unmounts. The unmount cleanup stays as the fallback
 //! (a surface that is not a `<dialog>`, a dialog removed while open), and both
@@ -650,7 +650,7 @@ pub(crate) fn use_scroll_lock(active: Memo<bool>) {
 struct ModalClosedRelease(Rc<dyn Fn()>);
 
 /// A handle for the `<dialog>` driver to say that its dialog has really closed (the
-/// `close` event, fired after the exit animation by [`crate::use_dialog_open_driver`]'s
+/// `close` event, fired after the exit animation by `crate::use_dialog_open_driver`'s
 /// `close()`). A no-op when no [`use_scroll_lock`] sits above the caller.
 #[derive(Clone)]
 #[cfg_attr(not(feature = "web"), allow(dead_code))]
