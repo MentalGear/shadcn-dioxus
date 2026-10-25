@@ -124,7 +124,7 @@ pub fn ComboboxOption<T: PartialEq + Clone + 'static>(props: ComboboxOptionProps
     let mut counted = use_hook(|| CopyValue::new(false));
     use_effect(move || {
         let Some(mut group) = group else { return };
-        let shown = render() && visible();
+        let shown = render() && ctx.is_visible(index());
         if shown != *counted.peek() {
             counted.set(shown);
             let mut count = group.visible.write();

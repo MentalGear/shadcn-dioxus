@@ -74,7 +74,9 @@
 
 .dx-toolbar-group {
     display: flex;
-    flex-direction: row;
+
+    /* Slot variable: a vertical toolbar sets `column` on its root (below). */
+    flex-direction: var(--dx-toolbar-group-direction, row);
     gap: 5px;
 }
 
@@ -88,16 +90,15 @@
 /* `horizontal: false` (`data-orientation="vertical"`): the bar and its groups stack top to bottom,
  * and every button takes the column's width. The separators in it are horizontal (a separator takes
  * the orientation opposite to its toolbar's unless it sets `horizontal` itself), so the separator
- * rule keys on the separator's own `data-orientation`, not on the toolbar's. */
+ * rule keys on the separator's own `data-orientation`, not on the toolbar's. The groups read
+ * `--dx-toolbar-group-direction`, set on the root. */
 .dx-toolbar[data-orientation="vertical"] {
+    --dx-toolbar-group-direction: column;
+
     width: fit-content;
     flex-flow: column nowrap;
     align-items: stretch;
     justify-content: flex-start;
-}
-
-.dx-toolbar[data-orientation="vertical"] .dx-toolbar-group {
-    flex-direction: column;
 }
 
 .dx-toolbar-separator[data-orientation="horizontal"] {

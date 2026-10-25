@@ -741,8 +741,11 @@ pub fn DropdownMenuContent(props: DropdownMenuContentProps) -> Element {
 #[component]
 fn DropdownMenuContentRendered(
     id: String,
+    /// The side of the trigger the menu opens on ([`DropdownMenuContentProps::side`]).
     side: ContentSide,
+    /// The menu's alignment along that side ([`DropdownMenuContentProps::align`]).
     align: ContentAlign,
+    /// The gap to the trigger in px ([`DropdownMenuContentProps::side_offset`]).
     side_offset: u32,
     attributes: Vec<Attribute>,
     scroll_lock_active: Memo<bool>,
@@ -885,8 +888,11 @@ fn DropdownMenuContentRendered(
 #[component]
 fn DropdownMenuContentRendered(
     id: String,
+    /// The side of the trigger the menu opens on ([`DropdownMenuContentProps::side`]).
     side: ContentSide,
+    /// The menu's alignment along that side ([`DropdownMenuContentProps::align`]).
     align: ContentAlign,
+    /// The gap to the trigger in px ([`DropdownMenuContentProps::side_offset`]).
     side_offset: u32,
     attributes: Vec<Attribute>,
     scroll_lock_active: Memo<bool>,

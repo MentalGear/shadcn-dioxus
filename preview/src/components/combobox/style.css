@@ -113,7 +113,7 @@
   transform: translateY(-50%);
 }
 
-.dx-combobox-addon svg {
+.dx-combobox-addon svg:not(:where([popover], dialog) *) {
   width: 1rem;
   height: 1rem;
   flex: none;
