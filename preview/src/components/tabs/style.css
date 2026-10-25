@@ -40,7 +40,7 @@
     --dx-tabs-active-color: var(--dx-active-ink);
     --dx-tabs-active-border-color: var(--dark, var(--dx-input));
     --dx-tabs-active-background: var(--light, var(--dx-background))
-        var(--dark, color-mix(in oklab, var(--dx-input) 30%, transparent));
+        var(--dark, color-mix(in oklab, var(--dx-input-fill) 30%, transparent));
     --dx-tabs-active-shadow: var(--dx-shadow-sm);
     --dx-tabs-panel-border: 1px solid var(--dx-border);
     --dx-tabs-panel-background: var(--dx-card);

@@ -67,7 +67,7 @@
   position: absolute;
   border-radius: var(--dx-radius-full);
   background-color: var(--light, var(--dx-input))
-    var(--dark, color-mix(in oklab, var(--dx-input) 80%, transparent));
+    var(--dark, color-mix(in oklab, var(--dx-input-fill) 80%, transparent));
   content: "";
   inset: var(--dx-switch-hit-y) var(--dx-switch-hit-x);
   transition: background-color var(--dx-motion-duration-base), box-shadow var(--dx-motion-duration-base);

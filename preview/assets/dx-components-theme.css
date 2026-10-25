@@ -296,7 +296,19 @@ html[data-theme="light"] [class~="dxc-system"] {
    * the ramp step. */
   --dx-border: var(--border, var(--light, #e5e5e5) var(--dark, oklch(100% 0 0deg / 10%)));
   --dx-input-source: var(--input, var(--light, #e5e5e5) var(--dark, oklch(100% 0 0deg / 15%)));
-  --dx-input: var(--dx-input-source);
+
+  /* Dark input EDGES are solid (owner decision, backlog row 348): a translucent edge drawn twice on one pixel -- two
+   * neighbours' shared side, or the corner where two one-sided inset shadows meet -- reads brighter than the
+   * rest of the line. `--dx-input` is therefore the colour shadcn's translucent `--input` edge SHOWS on a
+   * field (white at A over the `input`/30% field fill over `--dx-background`, i.e. white at
+   * A + (1 - A) * 0.3 * A), mixed in as one opaque colour; A is `--dx-input-alpha` (shadcn's 15%; the
+   * calibrated mode raises it). Fills keep the translucent source as `--dx-input-fill`, so a fill still
+   * takes its tint from the surface. A host's custom dark `--input` reaches the fills; retune
+   * `--dx-input-alpha` for the edge. */
+  --dx-input-alpha: 0.15;
+  --dx-input-fill: var(--dx-input-source);
+  --dx-input: var(--light, var(--dx-input-fill))
+    var(--dark, color-mix(in var(--dx-hover-mix-space), oklch(100% 0 0deg) calc((var(--dx-input-alpha) + (1 - var(--dx-input-alpha)) * 0.3 * var(--dx-input-alpha)) * 100%), var(--dx-background)));
 
   /* The focus ring colour, shadcn-exact: `--dx-ring-source` is a preset's or a host's `--ring` when one is
    * set (shadcn's base colours each set a tinted `--ring`; accents never do), else shadcn neutral's own, light
@@ -2517,8 +2529,8 @@ html:not([data-dx-press-feedback="off"]) [role="radio"][class*=" dx-"]:not([disa
 
 /* stylelint-disable-next-line no-duplicate-selectors -- see above */
 :root {
-  /* Dark `--dx-input` alpha in calibrated mode (a number, so one value feeds the relative colour and the
-   * opaque twin's percentage). */
+  /* Dark `--dx-input` alpha in calibrated mode (a number, so one value feeds the relative colour of the
+   * fill and the percentage of the solid edge). */
   --dx-wcag-input-alpha: 0.44;
 
   /* P3: the focus ring (non-text 3:1). Light arm only; the dark ring already clears 3.47:1. */
@@ -2526,8 +2538,9 @@ html:not([data-dx-press-feedback="off"]) [role="radio"][class*=" dx-"]:not([disa
     var(--dx-pick-shadcn, var(--dx-ring-source));
 
   /* P9: the input / checkbox / radio edge and the unchecked Switch track. */
-  --dx-input: var(--dx-pick-wcag, var(--light, oklch(from var(--dx-input-source) min(l, 0.65) c h)) var(--dark, oklch(from var(--dx-input-source) l c h / max(alpha, var(--dx-wcag-input-alpha)))))
+  --dx-input-fill: var(--dx-pick-wcag, var(--light, oklch(from var(--dx-input-source) min(l, 0.65) c h)) var(--dark, oklch(from var(--dx-input-source) l c h / max(alpha, var(--dx-wcag-input-alpha)))))
     var(--dx-pick-shadcn, var(--dx-input-source));
+  --dx-input-alpha: var(--dx-pick-wcag, max(0.15, var(--dx-wcag-input-alpha))) var(--dx-pick-shadcn, 0.15);
 
   /* P1: muted text (4.5:1) on every muted-ish surface, light arm. */
   --dx-muted-foreground: var(--dx-pick-wcag, var(--light, oklch(from var(--dx-muted-foreground-source) min(l, 0.54) c h)) var(--dark, var(--dx-muted-foreground-source)))

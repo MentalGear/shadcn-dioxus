@@ -54,7 +54,7 @@
 
 @media (hover: hover) and (pointer: fine) {
   .dx-native-select:hover:not(:disabled) {
-    background: var(--light, var(--dx-accent)) var(--dark, color-mix(in oklab, var(--dx-input) 50%, transparent));
+    background: var(--light, var(--dx-accent)) var(--dark, color-mix(in oklab, var(--dx-input-fill) 50%, transparent));
     color: var(--dx-accent-foreground);
     outline: none;
   }
@@ -66,7 +66,7 @@
  * draws the shared `--dx-ring-field` token rather than the 2px `--dx-ring`
  * of the button-like controls. */
 .dx-native-select:focus-visible {
-  background: var(--light, var(--dx-accent)) var(--dark, color-mix(in oklab, var(--dx-input) 50%, transparent));
+  background: var(--light, var(--dx-accent)) var(--dark, color-mix(in oklab, var(--dx-input-fill) 50%, transparent));
   box-shadow: var(--dx-ring-field);
   color: var(--dx-accent-foreground);
   outline: none;

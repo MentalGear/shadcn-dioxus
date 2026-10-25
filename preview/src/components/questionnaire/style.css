@@ -111,7 +111,7 @@
   border: 1px solid var(--dx-input);
   border-radius: var(--dx-radius-lg);
   background-color: var(--light, transparent)
-    var(--dark, color-mix(in oklab, var(--dx-input) 20%, transparent));
+    var(--dark, color-mix(in oklab, var(--dx-input-fill) 20%, transparent));
   cursor: var(--dx-interactive-element-cursor, default);
   font-size: var(--dx-text-sm);
   gap: var(--dx-space-2-5);
@@ -179,7 +179,7 @@
   border: 1px solid var(--dx-input);
   border-radius: 4px;
   background-color: var(--light, transparent)
-    var(--dark, color-mix(in oklab, var(--dx-input) 30%, transparent));
+    var(--dark, color-mix(in oklab, var(--dx-input-fill) 30%, transparent));
   color: var(--dx-primary-foreground);
   pointer-events: none;
   translate: 0 0.1125rem;
@@ -273,7 +273,7 @@
   border-radius: var(--dx-radius-lg);
   margin: 0;
   background-color: var(--light, transparent)
-    var(--dark, color-mix(in oklab, var(--dx-input) 30%, transparent));
+    var(--dark, color-mix(in oklab, var(--dx-input-fill) 30%, transparent));
   box-shadow: inset 0 0 0 1px var(--dx-input);
   color: var(--dx-foreground);
   font-family: inherit;
@@ -303,8 +303,8 @@
 }
 
 .dx-questionnaire-input:disabled {
-  background-color: var(--light, color-mix(in oklab, var(--dx-input) 50%, transparent))
-    var(--dark, color-mix(in oklab, var(--dx-input) 80%, transparent));
+  background-color: var(--light, color-mix(in oklab, var(--dx-input-fill) 50%, transparent))
+    var(--dark, color-mix(in oklab, var(--dx-input-fill) 80%, transparent));
   opacity: var(--dx-opacity-disabled);
   pointer-events: none;
 }

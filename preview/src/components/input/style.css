@@ -78,8 +78,8 @@
 .dx-input:disabled {
   background-color: var(
     --dx-input-background,
-    var(--light, color-mix(in oklab, var(--dx-input) 50%, transparent))
-      var(--dark, color-mix(in oklab, var(--dx-input) 80%, transparent))
+    var(--light, color-mix(in oklab, var(--dx-input-fill) 50%, transparent))
+      var(--dark, color-mix(in oklab, var(--dx-input-fill) 80%, transparent))
   );
   color: var(--dx-muted-foreground);
   cursor: not-allowed;

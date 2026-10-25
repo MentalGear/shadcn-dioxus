@@ -491,9 +491,9 @@ test.describe("Slot dividers are a single border width", () => {
   }
 });
 
-// The slot edges are Input's own edge colour, `--dx-input`, so an OTP field reads with the same contrast as an Input
-// on any surface. Each divider is drawn once (the abutting-slot test above), so a translucent edge cannot stack.
-test.describe("Slot edges are the Input edge colour", () => {
+// The slot edges are Input's own edge colour, `--dx-input`, so an OTP field reads with the same contrast as an Input,
+// and that colour is solid in both modes (row 348).
+test.describe("Slot edges are the solid Input edge colour", () => {
   for (const mode of ["light", "dark"] as const) {
     test(`${mode}: the edge resolves to --dx-input`, async ({ page }) => {
       await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
@@ -512,6 +512,10 @@ test.describe("Slot edges are the Input edge colour", () => {
         return { edge: resolve("var(--dx-input-otp-edge)"), input: resolve("var(--dx-input)") };
       });
       expect(edge).toBe(input);
+      // Solid: an alpha channel shows as `/ <n>` (color()/oklch()) or a fourth `rgba` component. The slot's
+      // one-side shadows meet at the corners, where a translucent edge would paint twice.
+      expect(edge).not.toMatch(/\/\s*[\d.]+%?\s*\)/);
+      expect(edge).not.toMatch(/rgba\(/);
     });
   }
 });

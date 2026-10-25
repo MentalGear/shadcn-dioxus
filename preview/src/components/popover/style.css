@@ -204,7 +204,7 @@
   background-clip: padding-box;
   background-color: var(
     --dx-popover-trigger-background-color,
-    var(--light, var(--dx-background)) var(--dark, color-mix(in oklab, var(--dx-input) 30%, transparent))
+    var(--light, var(--dx-background)) var(--dark, color-mix(in oklab, var(--dx-input-fill) 30%, transparent))
   );
   border-block-start-width: var(--dx-group-edge-block-start, 1px);
   border-end-end-radius: var(--dx-group-radius-end-end, var(--dx-radius-lg));
@@ -242,7 +242,7 @@
 .dx-popover-trigger[aria-expanded="true"] {
   background-color: var(
     --dx-popover-trigger-active-background-color,
-    var(--light, var(--dx-muted)) var(--dark, color-mix(in oklab, var(--dx-input) 50%, transparent))
+    var(--light, var(--dx-muted)) var(--dark, color-mix(in oklab, var(--dx-input-fill) 50%, transparent))
   );
 }
 
@@ -250,7 +250,7 @@
   .dx-popover-trigger:hover {
     background-color: var(
       --dx-popover-trigger-active-background-color,
-      var(--light, var(--dx-muted)) var(--dark, color-mix(in oklab, var(--dx-input) 50%, transparent))
+      var(--light, var(--dx-muted)) var(--dark, color-mix(in oklab, var(--dx-input-fill) 50%, transparent))
     );
   }
 }
