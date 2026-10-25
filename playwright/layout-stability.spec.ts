@@ -52,12 +52,13 @@
  * MOVES, SHRINKS or RESIZES sideways is. The row 204 sweep loads every width through `slowDocServer` (below): the head
  * at once, then the first `LS_SWEEP_BYTES` of the body in `LS_SWEEP_CHUNK`-byte pieces `LS_SWEEP_DELAY` ms apart, so a
  * page that paints before its top group has been parsed fails on every run, not only on a loaded box (row 407; the
- * pages hold their first paint until then, `FirstPaintGate` in `preview/src/main.rs`). The second group of tests
+ * pages hold their first paint until then, `FirstPaintGate` in
+ * `preview/src/site/variant_page.rs`). The second group of tests
  * ("progressive paint") makes the parse slow as well, with Chrome's own network and CPU throttling
  * (CDP `Network.emulateNetworkConditions` + `Emulation.setCPUThrottlingRate`), so the document really arrives in
  * chunks and is painted between them, and it records every widget card's position from the first frame in which the
  * card exists. A card must stay in its column and at its place: a card's column is its DOM position
- * (`MasonrySlot` in `preview/src/main.rs`), so a parsed card never re-assigns the others (a multi-column
+ * (`MasonrySlot` in `preview/src/site/home.rs`), so a parsed card never re-assigns the others (a multi-column
  * masonry does: 6 to 8 cards changed column in one frame at 1280px, 3 at 768px).
  *
  * Not covered here: `/charts/`. A chart's drawing is a function of the measured width and re-renders when the wasm

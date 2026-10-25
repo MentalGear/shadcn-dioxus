@@ -7,7 +7,7 @@
  * block instead of this generic sweep.
  *
  * SCOPING: every variant of a "Normal"-kind component renders on the same
- * page at once (`ComponentVariantHighlight` in `preview/src/main.rs`), so
+ * page at once (`ComponentVariantHighlight` in `preview/src/site/variant_page.rs`), so
  * every locator below is rooted through `demoFrame()` -- the same
  * `#component-preview-frame`/`#component-preview-frame-<variant>`
  * construction `oracle/tier3-radix/rtl.spec.ts` already established for

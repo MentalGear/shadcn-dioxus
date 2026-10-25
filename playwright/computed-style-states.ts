@@ -96,7 +96,7 @@ export function emptyCoverage(): StateCoverage {
 
 /**
  * Navigate and wait until the page is the page: the legacy `/component/?name=x&` route renders a
- * "Loading component..." stub and redirects client-side once wasm has hydrated (preview/src/main.rs
+ * "Loading component..." stub and redirects client-side once wasm has hydrated (preview/src/site/demos.rs
  * `ComponentDemo`), which on a loaded machine takes longer than any fixed wait (a capture of the stub has a
  * fraction of the page's records). So wait for the stub to be gone, for every `<img>` to have settled (an avatar shows
  * its fallback until `load`), then for the DOM to be quiet.

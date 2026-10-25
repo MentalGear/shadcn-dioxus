@@ -42,7 +42,7 @@
  * of a "Normal"-kind component renders on the SAME page at once, `main`
  * inside the page's own top section and every other variant (including
  * "rtl") inside a separate, always-mounted "Examples" section further down
- * -- see `preview/src/main.rs`'s `ComponentHighlight`
+ * -- see `preview/src/site/component_page.rs`'s `ComponentHighlight`
  * (`let [main, variants @ ..] = variants`, two separate render blocks). A
  * bare, unscoped `page.getByRole(...)`/`getByText(...)` therefore risks a
  * Playwright strict-mode violation (it matches more than one element) the
@@ -50,7 +50,7 @@
  * component does. `ComponentVariantHighlight` solves exactly
  * this for its own frame element: `id="component-preview-frame"` for
  * `main`, `id="component-preview-frame-<variant name>"` for every other
- * variant (see that function's own doc comment in main.rs) -- unique
+ * variant (see that function's own doc comment in `preview/src/site/variant_page.rs`) -- unique
  * page-wide, and it wraps exactly one variant's own rendered demo (the
  * harness's *own* "DEMO"/"CODE" tab chrome sits *outside* this element, so
  * scoping through it also excludes that chrome -- material for any
@@ -85,7 +85,7 @@
  * would all hit strict-mode violations. So each RTL fixture's labels use
  * their own, non-colliding words rather than touching those spec files.
  * This is a *mitigation*, not the class fix: the root cause is
- * architectural (`ComponentHighlight` in `preview/src/main.rs` renders
+ * architectural (`ComponentHighlight` in `preview/src/site/component_page.rs` renders
  * every variant unconditionally with no isolation between them, unlike the
  * iframe-isolated `/component/block/` route Block-kind components get), so
  * the same collision can recur for any variant of any component that

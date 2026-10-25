@@ -14,7 +14,7 @@ const GOTO = { timeout: 20 * 60 * 1000 }; // Increase timeout to 20 minutes
  * This demo page's own `NavigationMenu` -- scoped by its `aria_label`
  * (`preview/src/components/navigation_menu/variants/main/mod.rs`), not
  * `page.getByRole(...)` directly against the whole page. The site's own
- * persistent chrome (header navbar, footer -- `preview/src/main.rs`,
+ * persistent chrome (header navbar, footer -- `preview/src/site/chrome.rs`,
  * not part of this demo) renders its own "Docs" links on every
  * route, and would otherwise make `page.getByRole('link', { name: 'Docs' })`
  * resolve to more than one element (3

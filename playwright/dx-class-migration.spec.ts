@@ -232,7 +232,7 @@ for (const name of MIGRATED.filter((n) => SAMPLED.has(n))) {
     // navbar/footer/language-picker chrome that wraps every route: it hand-
     // rolls a `dx-navbar-*`/`dx-select-expand-icon`-prefixed class or two of
     // its own (collisions with the `navbar`/`select` components' own
-    // prefixes, see `preview/src/main.rs` and
+    // prefixes, see `preview/src/site/chrome.rs` and
     // `preview/assets/main.css`/`language-select.css`) that are unrelated
     // to this route's OWN composition and would otherwise make this
     // assertion fail on almost every component page for a reason that has

@@ -254,14 +254,14 @@ test.describe("Axe automated scan", () => {
 
 /**
  * Every variant of this ("Normal"-type) component renders together on the
- * SAME page (`preview/src/main.rs`'s `ComponentVariantHighlight` loops over every
+ * SAME page (`preview/src/site/variant_page.rs`'s `ComponentVariantHighlight` loops over every
  * variant unconditionally, and `preview/src/components/mod.rs`'s
  * `component_page!` macro sets `name: stringify!($variant)`) -- there is no
  * `?variant=` query-string switch for this component's route (unlike, e.g.,
  * `select`/`combobox`/`popover`, `variant=range` and
  * `variant=main` render byte-identical pages here). Each demo is scoped by
  * `#component-preview-frame` (the "main" demo) or
- * `#component-preview-frame-<variant>` (`frame_id` in `main.rs`, keyed by
+ * `#component-preview-frame-<variant>` (`frame_id` in `preview/src/site/variant_page.rs`, keyed by
  * the variant's own Rust identifier -- `range`, `internationalized`,
  * `multi_month`, `unavailable_dates`), so every test below scopes into the
  * right one explicitly instead of relying on `.first()`/page-wide role
