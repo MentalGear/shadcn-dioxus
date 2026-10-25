@@ -609,7 +609,7 @@ test.describe("Rule 7d — a keyboard activation of a control inside the dialog 
  * Reproduction status: touch-emulated (`hasTouch`,
  * `locator.tap()`) opens of the modal popover and of every `Auto`-kind
  * `popover` this crate has (`DropdownMenu`, `Menubar`, `Select`, non-modal
- * `Popover` -- see `PopoverKind`'s doc, `primitives/src/top_layer.rs`, for
+ * `Popover` -- see `PopoverKind`'s doc, `primitives/src/top_layer/popover_sync.rs`, for
  * which components are `Auto` vs. `Manual`; `Tooltip`/`HoverCard` are
  * `Manual` and never light-dismiss at all, so they are not exposed to
  * either variant of this bug class) do not self-dismiss in this sandbox's

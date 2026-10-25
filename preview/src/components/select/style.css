@@ -128,7 +128,7 @@
    * attribute. The matching `margin`/`inset` reset, and the `@supports (anchor-name: --a)`
    * anchor-positioning rules that keep this listbox anchored to its trigger once promoted to the top
    * layer, live in the shared, engine-injected stylesheet every `dx-anchor-*`-marked overlay gets
-   * for free -- see `primitives/src/top_layer.rs`'s `ensure_anchor_positioning_styles` doc.
+   * for free -- see `primitives/src/top_layer/styles.rs`'s `ensure_anchor_positioning_styles` doc.
    */
   min-width: var(--dx-anchor-width, 100%);
 
@@ -151,7 +151,7 @@
  * `min-width: 100%` alone resolves against this element's containing block. On the native/non-web
  * arm that is `.dx-select` (the trigger+list wrapper, `position: relative` above, so 100% means "as
  * wide as the trigger"); on the web arm the listbox is promoted to the top layer, whose containing
- * block is the *viewport* (see `primitives/src/top_layer.rs`'s `position_anchor_style` doc), so the
+ * block is the *viewport* (see `primitives/src/top_layer/attributes.rs`'s `position_anchor_style` doc), so the
  * same percentage would mean "100% of the viewport width".
  *
  * Trigger-relative sizing therefore does not use `@supports`/`anchor-size()` in this stylesheet but a

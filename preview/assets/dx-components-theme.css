@@ -1671,7 +1671,7 @@ html:not([data-dx-press-feedback="off"]) [role="radio"][class*=" dx-"]:not([disa
 }
 
 /* The ink is the one property NOT at zero specificity: the engine's top-layer ink fix
- * (`primitives/src/top_layer.rs`, `TOP_LAYER_INK_STYLES_INJECT_JS`) injects `:where([popover]),
+ * (`primitives/src/top_layer/styles.rs`, `TOP_LAYER_INK_STYLES_INJECT_JS`) injects `:where([popover]),
  * :where(dialog) { color: inherit }` into `<head>` at run time, AFTER this file, so at equal
  * (zero) specificity it would win the tie and every panel would inherit the page's ink (an inverted
  * tooltip would print dark text on its dark fill). One attribute selector out-ranks it and still

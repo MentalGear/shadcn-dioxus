@@ -105,7 +105,7 @@
  * that keep this panel anchored to its own trigger once promoted to the top
  * layer live in the shared, engine-injected stylesheet every
  * `dx-anchor-*`-marked overlay gets for free -- see
- * `primitives/src/top_layer.rs`'s `ensure_anchor_positioning_styles` doc.
+ * `primitives/src/top_layer/styles.rs`'s `ensure_anchor_positioning_styles` doc.
  */
 .dx-navigation-menu-content {
   /* Nova `.cn-navigation-menu-content` with `group-data-[viewport=false]` (this panel is its own
@@ -152,7 +152,7 @@
  *
  * (1) A plain CSS tie: the shared, engine-injected anchor-positioning
  * stylesheet's `.dx-anchor-navigation-menu[popover] { ...; transform: none;
- * ... }` rule (primitives/src/top_layer.rs's `ANCHOR_POSITIONING_CSS_JS_
+ * ... }` rule (primitives/src/top_layer/styles.rs's `ANCHOR_POSITIONING_CSS_JS_
  * LITERAL`, appended to `<head>` well after this file's own `<link>`) ties
  * `transition`-based `[data-state]` rules at the exact same specificity (one
  * class + one attribute each) and, being later-injected, wins the cascade.
@@ -195,7 +195,7 @@
 }
 
 /* `scale`/`translate`, not `transform`: an animated `transform` REPLACES an anchor's own
- * centring transform (`translateX(-50%)`, `primitives/src/top_layer.rs`'s engine stylesheet)
+ * centring transform (`translateX(-50%)`, `primitives/src/top_layer/styles.rs`'s engine stylesheet)
  * for as long as the animation runs, which would play a date/colour picker panel 144px/133px
  * off its anchor. This content sets no `data-side`, so no centring applies to it today; the
  * individual properties compose with `transform` and keep it safe if one ever does.

@@ -32,7 +32,7 @@
  *
  * ## The construction under test
  *
- * `primitives/src/top_layer.rs`'s `ensure_top_layer_ink_styles` installs a
+ * `primitives/src/top_layer/styles.rs`'s `ensure_top_layer_ink_styles` installs a
  * pair of engine-injected, zero-specificity baselines:
  *
  *   :where([popover]), :where(dialog) { color: inherit; }
@@ -52,7 +52,7 @@
  * background) is the load-bearing negative case this file checks: it must
  * keep winning, not fall back to the shared rule's `inherit`.
  *
- * See that function's own doc (`primitives/src/top_layer.rs`) for the full
+ * See that function's own doc (`primitives/src/top_layer/styles.rs`) for the full
  * proof that every top-layer consumer in this crate reaches the fix,
  * through one of exactly three hooks (`use_popover_sync`,
  * `use_popover_shown_while_mounted`, `use_dialog_open_driver`) -- this file

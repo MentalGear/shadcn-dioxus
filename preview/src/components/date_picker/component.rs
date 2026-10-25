@@ -335,7 +335,7 @@ pub fn DatePicker(props: DatePickerProps) -> Element {
                     // `DatePickerPopover` to forward `is_modal` to
                     // `PopoverRoot`, and the engine-injected
                     // `@supports (anchor-name: --a)` block every other
-                    // non-modal-arm consumer has (`primitives/src/top_layer.rs`),
+                    // non-modal-arm consumer has (`primitives/src/top_layer/styles.rs`),
                     // or this would only trade one broken position for
                     // another.
                     popover_root: PopoverRoot,

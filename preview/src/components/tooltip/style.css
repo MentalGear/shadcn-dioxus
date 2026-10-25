@@ -69,7 +69,7 @@
    * `inset` reset (undoing the same UA rule's `inset: 0; margin: auto`, which would otherwise invoke
    * the CSS auto-margin centering algorithm and land the tooltip far from its trigger) lives in the
    * shared, engine-injected stylesheet every `dx-anchor-*`-marked overlay gets for free -- see
-   * `primitives/src/top_layer.rs`'s `ensure_anchor_positioning_styles` doc (dev-docs/backlog.md item 1).
+   * `primitives/src/top_layer/styles.rs`'s `ensure_anchor_positioning_styles` doc (dev-docs/backlog.md item 1).
    */
   line-height: calc(1 / 0.75);
 }
@@ -217,7 +217,7 @@
  * `[data-side]`/`[data-align]` `anchor()` rules keyed on the
  * `.dx-anchor-tooltip` marker class) lives in a single, engine-injected
  * stylesheet shared by every `dx-anchor-*`-marked overlay in the app --
- * `primitives/src/top_layer.rs`'s `ensure_anchor_positioning_styles` doc has
+ * `primitives/src/top_layer/styles.rs`'s `ensure_anchor_positioning_styles` doc has
  * the full rationale (dev-docs/backlog.md item 1): hand-copying this
  * block into every consuming page's own stylesheet is the "forgot to
  * duplicate it" bug class (`color_picker`/`date_picker`), so it is a single,
