@@ -4,7 +4,7 @@
  * `--dx-carousel-nav-disabled-visibility`), and where keyboard focus goes
  * when the arrow that holds it becomes disabled.
  *
- * The construction under test (preview/src/components/carousel/style.css, primitives/src/carousel.rs):
+ * The construction under test (preview/src/components/carousel/style.css, primitives/src/carousel/helpers.rs):
  *
  *  - one CSS custom property sets the disabled opacity for BOTH arrows, with
  *    the theme's 0.5 disabled opacity as the default;
@@ -59,7 +59,7 @@ function hiddenArrows(page: Page): Locator {
 /**
  * Do to an existing carousel exactly what `nav_disabled_opacity: 0.0` does:
  * the prop is nothing but these two inline custom properties on the root
- * (primitives/src/carousel.rs `nav_disabled_vars`, unit-tested there). Used
+ * (primitives/src/carousel/helpers.rs `nav_disabled_vars`, unit-tested there). Used
  * for the RTL and vertical layouts so the `hidden_arrows` demo can stay one
  * carousel -- every variant of a component renders on the same page, so each
  * extra demo carousel is hydrated by every carousel test.

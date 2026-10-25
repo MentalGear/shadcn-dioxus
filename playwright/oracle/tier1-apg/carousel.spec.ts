@@ -43,7 +43,7 @@
  *      (`data-test-id="carousel-key-tab"`).
  *
  * WHAT THIS FILE DELIBERATELY DOES NOT COVER, and why (scope -- see
- * `primitives/src/carousel.rs`'s own module doc, "Scope"):
+ * `primitives/src/carousel/mod.rs`'s own module doc, "Scope"):
  *
  *   - The rotation control button, `aria-live` region, and
  *     `prefers-reduced-motion` handling for the *basic* (prev/next) style

@@ -19,7 +19,7 @@
  *
  *  (b) COMPONENT -- the shipped carousel's `.dx-carousel-content` transform,
  *      asserted against the component's INTENDED contract, which the "mode D"
- *      edge-band engine in `primitives/src/carousel.rs` satisfies (the
+ *      edge-band engine in `primitives/src/carousel/wheel.rs` satisfies (the
  *      per-test comments say which assertions a plateau/velocity engine would
  *      fail).
  *

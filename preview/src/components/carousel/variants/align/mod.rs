@@ -7,7 +7,7 @@ use dioxus_icons::lucide::{ChevronLeft, ChevronRight};
 /// rests against the scrollport. Not a shadcn demo of its own -- shadcn's
 /// `opts={{ align }}` is Embla's own generic options bag, never
 /// demonstrated at anything but `start` in any `base` example -- but it is
-/// a real primitive option (`primitives/src/carousel.rs`'s own
+/// a real primitive option (`primitives/src/carousel/options.rs`'s own
 /// `CarouselAlign`), so this demo exists to show all three side by side.
 /// Each row uses `--dx-carousel-per-view: 2` and `--dx-carousel-peek: 20%`
 /// -- with only whole slides and no leftover space, `start`/`center`/`end`
