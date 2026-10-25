@@ -28,21 +28,18 @@ pub fn Demo() -> Element {
                     value: Some(appearance()),
                     on_value_change: move |value| appearance.set(value),
                     DropdownMenuRadioItem {
-                        index: 0usize,
                         value: "light".to_string(),
                         close_on_select: false,
                         Sun { size: "16px" }
                         "Light"
                     }
                     DropdownMenuRadioItem {
-                        index: 1usize,
                         value: "dark".to_string(),
                         close_on_select: false,
                         Moon { size: "16px" }
                         "Dark"
                     }
                     DropdownMenuRadioItem {
-                        index: 2usize,
                         value: "system".to_string(),
                         close_on_select: false,
                         Monitor { size: "16px" }

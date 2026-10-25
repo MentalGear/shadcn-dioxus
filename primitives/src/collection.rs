@@ -1,10 +1,27 @@
 //! Ordered interactive collection state shared by roving-focus components.
 
+use std::collections::HashMap;
 use std::rc::Rc;
 
+use dioxus::core::{current_scope_id, use_drop, Runtime, ScopeId};
 use dioxus::prelude::*;
 
-use crate::use_effect_cleanup;
+use crate::{use_effect_cleanup, use_unique_id};
+
+/// The attribute that marks a derived-index item's element for the DOM-order
+/// pass: `"{collection id}:{slot}"`.
+const ORDER_MARKER: &str = "data-collection-item";
+
+/// Lists the slots of one collection's marked elements in document order
+/// (`querySelectorAll` returns document order).
+const DOM_ORDER_JS: &str = r#"
+const prefix = await dioxus.recv();
+const slots = [];
+for (const el of document.querySelectorAll('[data-collection-item^="' + prefix + '"]')) {
+  slots.push(Number(el.getAttribute('data-collection-item').slice(prefix.length)));
+}
+dioxus.send(slots);
+"#;
 
 #[derive(Clone, PartialEq)]
 struct CollectionItemState {
@@ -34,7 +51,7 @@ impl CollectionItemState {
 }
 
 /// A requested initial focus placement.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq)]
 pub(crate) enum CollectionPlacement {
     First,
     Last,
@@ -57,10 +74,49 @@ pub(crate) struct CollectionState {
     focused: Signal<Option<usize>>,
     focus_key: Signal<Option<String>>,
     items: Signal<Vec<CollectionItemState>>,
+    order: CollectionOrder,
+}
+
+/// How a collection numbers the items that take no explicit `index`
+/// ([`use_item_index`], row 396).
+///
+/// An item is numbered when it is created, from `next_index`. Creation order
+/// is not tree order: Dioxus creates the component siblings nested inside one
+/// element of a template in reverse (`dioxus-core`'s `load_placeholders`
+/// walks them backwards to keep its template paths valid), while template
+/// roots and `for` loops are created forwards. So on the client, once the
+/// items are in the document, a pass reads their elements' document order
+/// and renumbers them when it disagrees. Indices are only compared, never
+/// counted: the pass numbers into a fresh range above every index handed out
+/// so far, so no two items ever share an index on the way.
+#[derive(Clone, Copy)]
+struct CollectionOrder {
+    /// The next index handed out. Not reactive: read and bumped once per item.
+    next_index: CopyValue<usize>,
+    /// The prefix of every derived item's [`ORDER_MARKER`] value.
+    marker_prefix: Signal<String>,
+    /// Each derived item's index signal, by its slot (the index it was
+    /// created with, which its marker carries).
+    derived: CopyValue<HashMap<usize, Signal<usize>>>,
+    /// Set once any item passes an explicit `index`: the caller then owns
+    /// the order, and the pass never runs.
+    explicit: CopyValue<bool>,
+    /// Whether a pass is scheduled and not finished. Initial focus placement
+    /// waits for it ([`CollectionState::try_focus_placement`]).
+    pending: Signal<bool>,
+    /// The provider's scope, which owns the pass's task: an item that
+    /// unmounts mid-pass must not cancel it.
+    scope: ScopeId,
 }
 
 impl CollectionState {
-    pub(crate) fn new(roving_loop: ReadSignal<bool>, options: CollectionOptions) -> Self {
+    /// `id` is a hydration-stable unique id ([`use_unique_id`]): derived
+    /// items render it in their order marker on the server too.
+    pub(crate) fn new(
+        roving_loop: ReadSignal<bool>,
+        options: CollectionOptions,
+        id: Signal<String>,
+    ) -> Self {
         Self {
             roving_loop,
             tabbable_when_empty: options.tabbable_when_empty,
@@ -68,6 +124,110 @@ impl CollectionState {
             focused: Signal::new(None),
             focus_key: Signal::new(None),
             items: Signal::new(Vec::new()),
+            order: CollectionOrder {
+                next_index: CopyValue::new(0),
+                marker_prefix: Signal::new(format!("{}:", id.peek())),
+                derived: CopyValue::new(HashMap::new()),
+                explicit: CopyValue::new(false),
+                pending: Signal::new(false),
+                scope: current_scope_id(),
+            },
+        }
+    }
+
+    /// Whether a DOM-order pass is in flight, after which the items' indices
+    /// may differ. Tracked.
+    pub(crate) fn order_pending(&self) -> bool {
+        (self.order.pending)()
+    }
+
+    /// Hand out the index of an item that is being created: the next one in
+    /// creation order, or `explicit` when the caller set one. An explicit
+    /// index also moves the counter past itself.
+    fn allocate_index(&mut self, explicit: Option<usize>) -> usize {
+        let next_index = *self.order.next_index.peek();
+        let index = match explicit {
+            Some(index) => {
+                self.order.explicit.set(true);
+                index
+            }
+            None => next_index,
+        };
+        self.order
+            .next_index
+            .set(index.saturating_add(1).max(next_index));
+        index
+    }
+
+    /// Schedule the DOM-order pass (see [`CollectionOrder`]) unless one is
+    /// already scheduled, there is nothing to order, or the caller owns the
+    /// order. Call it whenever derived items may have entered the document.
+    pub(crate) fn request_order_pass(&mut self) {
+        let order = self.order;
+        if *order.explicit.peek() || order.derived.peek().is_empty() || *order.pending.peek() {
+            return;
+        }
+        let mut pending = order.pending;
+        pending.set(true);
+        let mut collection = *self;
+        Runtime::current().spawn(order.scope, async move {
+            let mut eval = document::eval(DOM_ORDER_JS);
+            let slots = match eval.send(order.marker_prefix.peek().clone()) {
+                Ok(()) => eval.recv::<Vec<usize>>().await.ok(),
+                Err(_) => None,
+            };
+            if let Some(slots) = slots {
+                collection.apply_dom_order(&slots);
+            }
+            pending.set(false);
+        });
+    }
+
+    /// Renumber the derived items whose slots `slots` lists (document order)
+    /// when their indices are not already ascending in that order.
+    ///
+    /// The registered items and the focus are renumbered here, in one step:
+    /// each item's own registration effect only catches up afterwards, and a
+    /// reader in between (an initial focus placement, which waits for this
+    /// pass) must already see the new order.
+    fn apply_dom_order(&mut self, slots: &[usize]) {
+        let derived = self.order.derived.peek();
+        let signals: Vec<Signal<usize>> = slots
+            .iter()
+            .filter_map(|slot| derived.get(slot).copied())
+            .collect();
+        drop(derived);
+        let ascending = signals
+            .windows(2)
+            .all(|pair| *pair[0].peek() < *pair[1].peek());
+        if ascending {
+            return;
+        }
+        let base = *self.order.next_index.peek();
+        self.order.next_index.set(base + signals.len());
+        let renumbered: HashMap<usize, usize> = signals
+            .iter()
+            .enumerate()
+            .map(|(offset, index)| (*index.peek(), base + offset))
+            .collect();
+        let renumber = |index: usize| renumbered.get(&index).copied().unwrap_or(index);
+        {
+            let mut items = self.items.write();
+            for item in items.iter_mut() {
+                item.index = renumber(item.index);
+            }
+            items.sort_by_key(|item| item.index);
+        }
+        let focused = (*self.focused.peek()).map(renumber);
+        if *self.focused.peek() != focused {
+            self.focused.set(focused);
+        }
+        let recent = (*self.recent.peek()).map(renumber);
+        if *self.recent.peek() != recent {
+            self.recent.set(recent);
+        }
+        for (offset, mut index) in signals.into_iter().enumerate() {
+            index.set(base + offset);
         }
     }
 
@@ -333,6 +493,12 @@ impl CollectionState {
     }
 
     pub(crate) fn try_focus_placement(&mut self, placement: CollectionPlacement) -> bool {
+        // An order pass in flight may still renumber the items: "first" is
+        // only known once it is done. Tracked, so the caller's effect
+        // retries when it finishes.
+        if (self.order.pending)() {
+            return false;
+        }
         let index = match placement {
             CollectionPlacement::First => self.first_available_index(),
             CollectionPlacement::Last => self.last_available_index(),
@@ -462,7 +628,90 @@ pub(crate) fn use_collection_provider_with(
     roving_loop: ReadSignal<bool>,
     options: CollectionOptions,
 ) -> CollectionState {
-    use_context_provider(|| CollectionState::new(roving_loop, options))
+    let id = use_unique_id();
+    use_context_provider(|| CollectionState::new(roving_loop, options, id))
+}
+
+/// An item's index in its collection, from [`use_item_index`].
+#[derive(Clone, Copy)]
+pub(crate) struct ItemIndex {
+    /// The index, for [`collection_item`] and anything else the item keys by
+    /// it.
+    pub(crate) index: ReadSignal<usize>,
+    /// The collection's marker prefix and this item's slot, for its
+    /// `data-collection-item` attribute. `None` when the caller set the index.
+    marker: Option<(Signal<String>, usize)>,
+}
+
+impl ItemIndex {
+    /// The order marker attribute the DOM-order pass reads. Render it on the
+    /// item's focusable element (the one whose document position is the
+    /// item's place in keyboard order); empty when the caller set the index.
+    pub(crate) fn marker_attribute(&self) -> Vec<Attribute> {
+        self.marker
+            .map(|(prefix, slot)| {
+                let value = format!("{}{slot}", prefix.peek());
+                Attribute::new(ORDER_MARKER, value, None, false)
+            })
+            .into_iter()
+            .collect()
+    }
+}
+
+/// The index of one item in `collection`, for [`collection_item`] (row 396).
+///
+/// Without an explicit `index` the item is numbered for its place in the
+/// tree: in creation order at first, then, on the client, in document order
+/// once its element (carrying [`ItemIndex::marker_attribute`]) is in the
+/// document -- see [`CollectionOrder`]. An item mounted later (a menu's items
+/// on open, an item appended to a list) is placed by the same pass.
+///
+/// `index` is the override for a caller that wants to own the order. Once
+/// any item of the collection sets it, none is renumbered, so set it on
+/// every item or on none.
+///
+/// A hook: call it unconditionally, once per render, before [`use_item`].
+pub(crate) fn use_item_index(
+    collection: CollectionState,
+    index: ReadSignal<Option<usize>>,
+) -> ItemIndex {
+    let explicit = *index.peek();
+    let slot = use_hook(move || {
+        let mut collection = collection;
+        collection.allocate_index(explicit)
+    });
+    // Owned by the provider, whose task the DOM-order pass writes it from;
+    // dropped with the item.
+    let derived = use_hook(move || Signal::new_in_scope(slot, collection.order.scope));
+    let marker = use_hook(move || {
+        explicit.is_none().then(|| {
+            let mut derived_items = collection.order.derived;
+            derived_items.write().insert(slot, derived);
+            (collection.order.marker_prefix, slot)
+        })
+    });
+    use_drop(move || {
+        let mut derived_items = collection.order.derived;
+        if let Ok(mut derived) = derived_items.try_write() {
+            derived.remove(&slot);
+        };
+        derived.manually_drop();
+    });
+    // Before `use_item`'s own registration effect, so a deferred focus
+    // placement sees the pass pending as soon as it sees the item.
+    use_effect(move || {
+        let mut collection = collection;
+        collection.request_order_pass();
+    });
+    let index = use_memo(move || index().unwrap_or_else(|| *derived.read()));
+    let index = use_hook(move || ReadSignal::new(index));
+    ItemIndex { index, marker }
+}
+
+/// [`use_item_index`] for an item that takes no `index` override.
+pub(crate) fn use_tree_item_index(collection: CollectionState) -> ItemIndex {
+    let none = use_hook(|| ReadSignal::new(Signal::new(None)));
+    use_item_index(collection, none)
 }
 
 /// Everything an item needs from its collection, returned by the single
@@ -475,6 +724,7 @@ pub(crate) struct CollectionItem {
     pub(crate) tabindex: Memo<&'static str>,
     focused: Memo<bool>,
     controlled_ref: Signal<Option<Rc<MountedData>>>,
+    collection: CollectionState,
 }
 
 impl CollectionItem {
@@ -487,7 +737,13 @@ impl CollectionItem {
     /// Attach it to the focusable element.
     pub(crate) fn onmounted(self) -> impl FnMut(MountedEvent) {
         let mut controlled_ref = self.controlled_ref;
-        move |event: MountedEvent| controlled_ref.set(Some(event.data()))
+        let mut collection = self.collection;
+        move |event: MountedEvent| {
+            controlled_ref.set(Some(event.data()));
+            // The element may mount after its item (a listbox's options on
+            // open): order it now that it is in the document.
+            collection.request_order_pass();
+        }
     }
 }
 
@@ -631,6 +887,7 @@ pub(crate) fn use_item(builder: CollectionItemBuilder) -> CollectionItem {
         tabindex,
         focused,
         controlled_ref,
+        collection,
     }
 }
 
@@ -702,5 +959,155 @@ fn prev_index_before(
         }
         None if roving_loop => indices.last().copied(),
         None => indices.first().copied(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::cell::Cell;
+
+    use super::*;
+    use crate::test_support::find_elements;
+
+    thread_local! {
+        static COLLECTION: Cell<Option<CollectionState>> = const { Cell::new(None) };
+    }
+
+    #[component]
+    fn Root(children: Element) -> Element {
+        let collection = use_collection_provider(ReadSignal::new(Signal::new(true)));
+        COLLECTION.set(Some(collection));
+        rsx! { {children} }
+    }
+
+    #[component]
+    fn Probe(label: &'static str, #[props(default)] index: ReadSignal<Option<usize>>) -> Element {
+        let collection: CollectionState = use_context();
+        let order = use_item_index(collection, index);
+        let marker = order.marker_attribute();
+        rsx! {
+            span { "data-label": label, "data-index": "{order.index}", ..marker }
+        }
+    }
+
+    fn render(dom: &VirtualDom) -> String {
+        dioxus_ssr::render(dom)
+    }
+
+    /// `(label, index, marker)` of every probe, in document order.
+    fn probes(html: &str) -> Vec<(String, usize, Option<String>)> {
+        find_elements(html, |a| a.contains_key("data-label"))
+            .into_iter()
+            .map(|el| {
+                let a = el.attrs;
+                (
+                    a["data-label"].clone(),
+                    a["data-index"].parse().unwrap(),
+                    a.get(ORDER_MARKER).cloned(),
+                )
+            })
+            .collect()
+    }
+
+    fn labels_by_index(html: &str) -> Vec<String> {
+        let mut probes = probes(html);
+        probes.sort_by_key(|(_, index, _)| *index);
+        probes.into_iter().map(|(label, _, _)| label).collect()
+    }
+
+    #[test]
+    fn template_roots_and_loops_are_numbered_in_tree_order() {
+        let mut dom = VirtualDom::new(|| {
+            rsx! {
+                Root {
+                    Probe { label: "a" }
+                    for label in ["b", "c"] {
+                        Probe { label }
+                    }
+                    Probe { label: "d" }
+                }
+            }
+        });
+        dom.rebuild_in_place();
+        assert_eq!(labels_by_index(&render(&dom)), ["a", "b", "c", "d"]);
+    }
+
+    /// Why the DOM-order pass exists: siblings nested in one element of a
+    /// template are created, and so numbered, in reverse.
+    #[test]
+    fn siblings_nested_in_one_element_are_created_in_reverse() {
+        let mut dom = VirtualDom::new(|| {
+            rsx! {
+                Root {
+                    div {
+                        Probe { label: "a" }
+                        Probe { label: "b" }
+                        Probe { label: "c" }
+                    }
+                }
+            }
+        });
+        dom.rebuild_in_place();
+        assert_eq!(labels_by_index(&render(&dom)), ["c", "b", "a"]);
+    }
+
+    #[test]
+    fn the_dom_order_pass_renumbers_into_a_fresh_ascending_range() {
+        let mut dom = VirtualDom::new(|| {
+            rsx! {
+                Root {
+                    div {
+                        Probe { label: "a" }
+                        Probe { label: "b" }
+                        Probe { label: "c" }
+                    }
+                }
+            }
+        });
+        dom.rebuild_in_place();
+        let html = render(&dom);
+        let before = probes(&html);
+        // The slots the markers carry, in document order: what the pass's
+        // script returns.
+        let slots: Vec<usize> = before
+            .iter()
+            .map(|(_, _, marker)| {
+                let marker = marker
+                    .as_deref()
+                    .expect("a derived item renders its marker");
+                marker.rsplit(':').next().unwrap().parse().unwrap()
+            })
+            .collect();
+        let mut collection = COLLECTION.get().unwrap();
+        dom.in_runtime(|| collection.apply_dom_order(&slots));
+        dom.render_immediate_to_vec();
+        let after = probes(&render(&dom));
+        assert_eq!(labels_by_index(&render(&dom)), ["a", "b", "c"]);
+        let lowest_after = after.iter().map(|(_, index, _)| *index).min().unwrap();
+        let highest_before = before.iter().map(|(_, index, _)| *index).max().unwrap();
+        assert!(lowest_after > highest_before, "{before:?} -> {after:?}");
+        // Already in order: a second pass changes nothing.
+        dom.in_runtime(|| collection.apply_dom_order(&slots));
+        dom.render_immediate_to_vec();
+        assert_eq!(probes(&render(&dom)), after);
+    }
+
+    #[test]
+    fn an_explicit_index_is_used_as_given_and_renders_no_marker() {
+        let mut dom = VirtualDom::new(|| {
+            rsx! {
+                Root {
+                    Probe { label: "a", index: 7usize }
+                    Probe { label: "b" }
+                }
+            }
+        });
+        dom.rebuild_in_place();
+        let probes = probes(&render(&dom));
+        assert_eq!(probes[0].1, 7);
+        assert_eq!(probes[0].2, None);
+        // The counter moved past the explicit index.
+        assert_eq!(probes[1].1, 8);
+        assert!(*COLLECTION.get().unwrap().order.explicit.peek());
     }
 }

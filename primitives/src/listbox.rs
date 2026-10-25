@@ -62,7 +62,15 @@ pub(crate) fn use_listbox_container(
             return;
         }
 
-        if let Some(index) = selectable.initial_focus.cloned() {
+        let Some(focus) = selectable.initial_focus.cloned() else {
+            return;
+        };
+        // The open list's options are mounted afresh: wait until they are in
+        // document order (row 396), then resolve the intent against them.
+        if selectable.collection.order_pending() {
+            return;
+        }
+        if let Some(index) = selectable.initial_focus_target(focus) {
             selectable.collection.set_focus(Some(index));
             selectable.initial_focus.set(None);
         }

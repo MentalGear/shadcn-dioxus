@@ -12,7 +12,7 @@ use std::rc::Rc;
 use crate::{
     collection::{
         collection_item, use_collection_provider, use_deferred_collection_focus, use_item,
-        CollectionPlacement, CollectionState,
+        use_item_index, CollectionPlacement, CollectionState,
     },
     direction::{use_direction, use_direction_signal, Direction},
     has_own_accessible_name,
@@ -197,7 +197,6 @@ pub struct DropdownMenuProps {
 ///             DropdownMenuContent {
 ///                 DropdownMenuItem::<String> {
 ///                     value: "edit".to_string(),
-///                     index: 0usize,
 ///                     on_select: move |value| {
 ///                         tracing::info!("Selected: {}", value);
 ///                     },
@@ -205,7 +204,6 @@ pub struct DropdownMenuProps {
 ///                 }
 ///                 DropdownMenuItem::<String> {
 ///                     value: "undo".to_string(),
-///                     index: 1usize,
 ///                     disabled: true,
 ///                     on_select: move |value| {
 ///                         tracing::info!("Selected: {}", value);
@@ -468,7 +466,6 @@ pub struct DropdownMenuTriggerProps {
 ///             DropdownMenuContent {
 ///                 DropdownMenuItem::<String> {
 ///                     value: "edit".to_string(),
-///                     index: 0usize,
 ///                     on_select: move |value| {
 ///                         tracing::info!("Selected: {}", value);
 ///                     },
@@ -476,7 +473,6 @@ pub struct DropdownMenuTriggerProps {
 ///                 }
 ///                 DropdownMenuItem::<String> {
 ///                     value: "undo".to_string(),
-///                     index: 1usize,
 ///                     disabled: true,
 ///                     on_select: move |value| {
 ///                         tracing::info!("Selected: {}", value);
@@ -629,7 +625,6 @@ pub struct DropdownMenuContentProps {
 ///             DropdownMenuContent {
 ///                 DropdownMenuItem::<String> {
 ///                     value: "edit".to_string(),
-///                     index: 0usize,
 ///                     on_select: move |value| {
 ///                         tracing::info!("Selected: {}", value);
 ///                     },
@@ -637,7 +632,6 @@ pub struct DropdownMenuContentProps {
 ///                 }
 ///                 DropdownMenuItem::<String> {
 ///                     value: "undo".to_string(),
-///                     index: 1usize,
 ///                     disabled: true,
 ///                     on_select: move |value| {
 ///                         tracing::info!("Selected: {}", value);
@@ -926,8 +920,11 @@ fn DropdownMenuContentRendered(
 pub struct DropdownMenuItemProps<T: Clone + PartialEq + 'static> {
     /// The value of the item, which will be passed to the `on_select` callback when clicked.
     pub value: ReadSignal<T>,
-    /// The index of the item within the [`DropdownMenuContent`]. This is used to order the items for keyboard navigation.
-    pub index: ReadSignal<usize>,
+    /// The item's place in keyboard order. Leave it unset: items are ordered as they are
+    /// created, which is tree order. Set it on every item only when one is inserted between
+    /// items that are already mounted, or a keyed list reorders them.
+    #[props(default)]
+    pub index: ReadSignal<Option<usize>>,
 
     /// Whether the item is disabled. If true, the item will not be clickable and will not respond to keyboard events.
     /// Defaults to false.
@@ -987,7 +984,6 @@ pub struct DropdownMenuItemProps<T: Clone + PartialEq + 'static> {
 ///             DropdownMenuContent {
 ///                 DropdownMenuItem::<String> {
 ///                     value: "edit".to_string(),
-///                     index: 0usize,
 ///                     on_select: move |value| {
 ///                         tracing::info!("Selected: {}", value);
 ///                     },
@@ -995,7 +991,6 @@ pub struct DropdownMenuItemProps<T: Clone + PartialEq + 'static> {
 ///                 }
 ///                 DropdownMenuItem::<String> {
 ///                     value: "undo".to_string(),
-///                     index: 1usize,
 ///                     disabled: true,
 ///                     on_select: move |value| {
 ///                         tracing::info!("Selected: {}", value);
@@ -1019,8 +1014,10 @@ pub fn DropdownMenuItem<T: Clone + PartialEq + 'static>(
     let mut ctx: DropdownMenuContext = use_context();
 
     let disabled = move || (ctx.disabled)() || (props.disabled)();
+    let order = use_item_index(ctx.focus, props.index);
+    let index = order.index;
     let item = use_item(
-        collection_item(ctx.focus, props.index)
+        collection_item(ctx.focus, index)
             .disabled(disabled)
             .text_value(move || {
                 Some(crate::selection::option_text_value(
@@ -1039,6 +1036,7 @@ pub fn DropdownMenuItem<T: Clone + PartialEq + 'static>(
     // `props.attributes` rather than risk the SSR duplicate-attribute
     // hazard (`dev-docs/backlog.md` row 93).
     let attributes = merge_attributes(vec![
+        order.marker_attribute(),
         props.attributes,
         attributes!(div {
             role: crate::menu_semantics::MENU_ITEM_ROLE,
@@ -1136,7 +1134,6 @@ pub type DropdownMenuRadioItemProps = MenuRadioItemProps;
 ///             DropdownMenuTrigger { "View" }
 ///             DropdownMenuContent {
 ///                 DropdownMenuCheckboxItem {
-///                     index: 0usize,
 ///                     checked: Some(show_status_bar()),
 ///                     on_checked_change: move |checked| show_status_bar.set(checked),
 ///                     close_on_select: false,
@@ -1192,12 +1189,10 @@ pub fn DropdownMenuCheckboxItem(props: DropdownMenuCheckboxItemProps) -> Element
 ///                     value: Some(position()),
 ///                     on_value_change: move |value| position.set(value),
 ///                     DropdownMenuRadioItem {
-///                         index: 0usize,
 ///                         value: "top".to_string(),
 ///                         "Top"
 ///                     }
 ///                     DropdownMenuRadioItem {
-///                         index: 1usize,
 ///                         value: "bottom".to_string(),
 ///                         "Bottom"
 ///                     }
@@ -1343,6 +1338,8 @@ fn dropdown_checkable_item(state: CheckableState, common: CheckableCommon) -> El
         children,
     } = common;
     let disabled = move || (ctx.disabled)() || item_disabled();
+    let order = use_item_index(focus, index);
+    let index = order.index;
     let item = use_item(
         collection_item(focus, index)
             .disabled(disabled)
@@ -1364,6 +1361,7 @@ fn dropdown_checkable_item(state: CheckableState, common: CheckableCommon) -> El
     // Owned by this component, so they win over a caller's own attributes
     // (`dev-docs/backlog.md` row 93's duplicate-attribute hazard).
     let attributes = merge_attributes(vec![
+        order.marker_attribute(),
         attributes,
         state.owned_attributes(disabled(), inset, if focused() { "0" } else { "-1" }),
     ]);
@@ -1491,18 +1489,16 @@ pub struct DropdownMenuSubProps {
 ///             DropdownMenuContent {
 ///                 DropdownMenuItem::<String> {
 ///                     value: "edit".to_string(),
-///                     index: 0usize,
 ///                     on_select: move |value| {
 ///                         tracing::info!("Selected: {}", value);
 ///                     },
 ///                     "Edit"
 ///                 }
 ///                 DropdownMenuSub {
-///                     DropdownMenuSubTrigger { index: 1usize, "More tools" }
+///                     DropdownMenuSubTrigger { "More tools" }
 ///                     DropdownMenuSubContent {
 ///                         DropdownMenuSubItem::<String> {
 ///                             value: "duplicate".to_string(),
-///                             index: 0usize,
 ///                             on_select: move |value| {
 ///                                 tracing::info!("Selected: {}", value);
 ///                             },
@@ -1575,11 +1571,11 @@ pub fn DropdownMenuSub(props: DropdownMenuSubProps) -> Element {
 /// The props for the [`DropdownMenuSubTrigger`] component.
 #[derive(Props, Clone, PartialEq)]
 pub struct DropdownMenuSubTriggerProps {
-    /// The index of this sub-trigger within the enclosing
-    /// [`DropdownMenuContent`]/[`DropdownMenuSubContent`]. Orders it
-    /// for keyboard navigation, the same as
-    /// [`DropdownMenuItemProps::index`].
-    pub index: ReadSignal<usize>,
+    /// The item's place in keyboard order. Leave it unset: items are ordered as they are
+    /// created, which is tree order. Set it on every item only when one is inserted between
+    /// items that are already mounted, or a keyed list reorders them.
+    #[props(default)]
+    pub index: ReadSignal<Option<usize>>,
 
     /// The ID of the sub-trigger element. If not provided, an internally
     /// generated ID is used -- see `DropdownMenuTrigger`'s identical use of
@@ -1671,8 +1667,10 @@ pub fn DropdownMenuSubTrigger(props: DropdownMenuSubTriggerProps) -> Element {
     // the enclosing menu's collection (`ctx.focus`), the same way
     // `MenubarTrigger` registers in `Menubar`'s row rather than its own
     // menu's collection (`menubar.rs`).
+    let order = use_item_index(ctx.focus, props.index);
+    let index = order.index;
     let item = use_item(
-        collection_item(ctx.focus, props.index)
+        collection_item(ctx.focus, index)
             .disabled(disabled)
             .text_value(move || (props.text_value)()),
     );
@@ -1763,6 +1761,7 @@ pub fn DropdownMenuSubTrigger(props: DropdownMenuSubTriggerProps) -> Element {
         // root menu.
     });
     let merged = merge_attributes(vec![
+        order.marker_attribute(),
         base,
         props.attributes,
         menu_item::item_style_attributes(MenuItemVariant::Default, props.inset),
@@ -2173,9 +2172,11 @@ pub struct DropdownMenuSubItemProps<T: Clone + PartialEq + 'static> {
     /// The value of the item, which will be passed to the `on_select`
     /// callback when clicked.
     pub value: ReadSignal<T>,
-    /// The index of the item within the enclosing [`DropdownMenuSubContent`].
-    /// This is used to order the items for keyboard navigation.
-    pub index: ReadSignal<usize>,
+    /// The item's place in keyboard order. Leave it unset: items are ordered as they are
+    /// created, which is tree order. Set it on every item only when one is inserted between
+    /// items that are already mounted, or a keyed list reorders them.
+    #[props(default)]
+    pub index: ReadSignal<Option<usize>>,
 
     /// Whether the item is disabled. Defaults to false.
     #[props(default)]
@@ -2238,8 +2239,10 @@ pub fn DropdownMenuSubItem<T: Clone + PartialEq + 'static>(
     let mut sub: crate::menu_sub::SubMenuState = use_context();
 
     let disabled = move || (ctx.disabled)() || (props.disabled)();
+    let order = use_item_index(sub.focus, props.index);
+    let index = order.index;
     let item = use_item(
-        collection_item(sub.focus, props.index)
+        collection_item(sub.focus, index)
             .disabled(disabled)
             .text_value(move || {
                 Some(crate::selection::option_text_value(
@@ -2255,6 +2258,7 @@ pub fn DropdownMenuSubItem<T: Clone + PartialEq + 'static>(
     // Owned by this component -- see `DropdownMenuItem`'s identical
     // construction above (`dev-docs/backlog.md` row 93).
     let attributes = merge_attributes(vec![
+        order.marker_attribute(),
         props.attributes,
         attributes!(div {
             role: crate::menu_semantics::MENU_ITEM_ROLE,

@@ -13,17 +13,17 @@ pub fn Demo() -> Element {
             variant: TabsVariant::Line,
             max_width: "28rem",
             TabList {
-                TabTrigger { value: "teams".to_string(), index: 0usize, "Teams" }
-                TabTrigger { value: "members".to_string(), index: 1usize, "Members" }
-                TabTrigger { value: "roles".to_string(), index: 2usize, "Roles" }
+                TabTrigger { value: "teams".to_string(), "Teams" }
+                TabTrigger { value: "members".to_string(), "Members" }
+                TabTrigger { value: "roles".to_string(), "Roles" }
             }
-            TabContent { index: 0usize, value: "teams".to_string(), padding: "var(--dx-space-4)",
+            TabContent { value: "teams".to_string(), padding: "var(--dx-space-4)",
                 "Group people by project and give each team its own channel."
             }
-            TabContent { index: 1usize, value: "members".to_string(), padding: "var(--dx-space-4)",
+            TabContent { value: "members".to_string(), padding: "var(--dx-space-4)",
                 "Invite colleagues, or remove people who have left."
             }
-            TabContent { index: 2usize, value: "roles".to_string(), padding: "var(--dx-space-4)",
+            TabContent { value: "roles".to_string(), padding: "var(--dx-space-4)",
                 "Decide who can edit, who can comment and who can only read."
             }
         }

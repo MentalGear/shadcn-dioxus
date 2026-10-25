@@ -24,7 +24,6 @@ pub fn Demo() -> Element {
             DropdownMenuContent {
                 DropdownMenuItem::<String> {
                     value: "Compose".to_string(),
-                    index: 0usize,
                     text_value: "Compose",
                     on_select: move |value| chosen.set(Some(value)),
                     Pencil { size: "16px" }
@@ -32,7 +31,6 @@ pub fn Demo() -> Element {
                 }
                 DropdownMenuItem::<String> {
                     value: "Star".to_string(),
-                    index: 1usize,
                     text_value: "Star",
                     on_select: move |value| chosen.set(Some(value)),
                     Star { size: "16px" }
@@ -40,7 +38,6 @@ pub fn Demo() -> Element {
                 }
                 DropdownMenuItem::<String> {
                     value: "Pin to top".to_string(),
-                    index: 2usize,
                     text_value: "Pin to top",
                     on_select: move |value| chosen.set(Some(value)),
                     Pin { size: "16px" }
@@ -48,7 +45,6 @@ pub fn Demo() -> Element {
                 }
                 DropdownMenuItem::<String> {
                     value: "Share".to_string(),
-                    index: 3usize,
                     text_value: "Share",
                     on_select: move |value| chosen.set(Some(value)),
                     Share2 { size: "16px" }
@@ -56,7 +52,6 @@ pub fn Demo() -> Element {
                 }
                 DropdownMenuItem::<String> {
                     value: "Export".to_string(),
-                    index: 4usize,
                     text_value: "Export",
                     disabled: true,
                     on_select: move |value| chosen.set(Some(value)),

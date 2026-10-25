@@ -25,21 +25,18 @@ pub fn Demo() -> Element {
                     ContextMenuLabel { "File" }
                     ContextMenuItem {
                         value: "New File".to_string(),
-                        index: 0usize,
                         on_select: move |value| chosen.set(Some(value)),
                         "New File"
                         ContextMenuShortcut { "⌘N" }
                     }
                     ContextMenuItem {
                         value: "Open File".to_string(),
-                        index: 1usize,
                         on_select: move |value| chosen.set(Some(value)),
                         "Open File"
                         ContextMenuShortcut { "⌘O" }
                     }
                     ContextMenuItem {
                         value: "Save File".to_string(),
-                        index: 2usize,
                         on_select: move |value| chosen.set(Some(value)),
                         "Save File"
                         ContextMenuShortcut { "⌘S" }
@@ -50,14 +47,12 @@ pub fn Demo() -> Element {
                     ContextMenuLabel { "History" }
                     ContextMenuItem {
                         value: "Undo".to_string(),
-                        index: 3usize,
                         on_select: move |value| chosen.set(Some(value)),
                         "Undo"
                         ContextMenuShortcut { "⌘Z" }
                     }
                     ContextMenuItem {
                         value: "Redo".to_string(),
-                        index: 4usize,
                         on_select: move |value| chosen.set(Some(value)),
                         "Redo"
                         ContextMenuShortcut { "⇧⌘Z" }
@@ -67,21 +62,18 @@ pub fn Demo() -> Element {
                 ContextMenuGroup {
                     ContextMenuItem {
                         value: "Cut".to_string(),
-                        index: 5usize,
                         on_select: move |value| chosen.set(Some(value)),
                         "Cut"
                         ContextMenuShortcut { "⌘X" }
                     }
                     ContextMenuItem {
                         value: "Copy".to_string(),
-                        index: 6usize,
                         on_select: move |value| chosen.set(Some(value)),
                         "Copy"
                         ContextMenuShortcut { "⌘C" }
                     }
                     ContextMenuItem {
                         value: "Paste".to_string(),
-                        index: 7usize,
                         on_select: move |value| chosen.set(Some(value)),
                         "Paste"
                         ContextMenuShortcut { "⌘V" }
@@ -91,7 +83,6 @@ pub fn Demo() -> Element {
                 ContextMenuGroup {
                     ContextMenuItem {
                         value: "Delete selection".to_string(),
-                        index: 8usize,
                         variant: MenuItemVariant::Destructive,
                         on_select: move |value| chosen.set(Some(value)),
                         "Delete selection"

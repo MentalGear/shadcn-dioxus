@@ -65,12 +65,11 @@ pub(super) fn ListPane(
                         }
                     },
                     TabList { class: "ec-mail-tabs-list",
-                        for (idx, tab) in TABS.iter().enumerate() {
+                        for tab in TABS.iter() {
                             TabTrigger {
                                 class: "ec-mail-tab",
                                 key: "{tab.id.as_str()}",
                                 value: tab.id.as_str().to_string(),
-                                index: idx,
                                 {tab.label}
                                 span { class: "ec-muted",
                                     " {state.tab_count(tab.id, query.as_str(), &tags)}"

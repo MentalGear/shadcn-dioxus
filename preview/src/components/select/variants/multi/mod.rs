@@ -34,9 +34,9 @@ impl Topping {
 
 #[component]
 pub fn Demo() -> Element {
-    let toppings = Topping::ALL.into_iter().enumerate().map(|(i, t)| {
+    let toppings = Topping::ALL.into_iter().map(|t| {
         rsx! {
-            SelectOption::<Topping> { index: i, value: t, text_value: "{t}",
+            SelectOption::<Topping> { value: t, text_value: "{t}",
                 "{t.emoji()} {t}"
             }
         }

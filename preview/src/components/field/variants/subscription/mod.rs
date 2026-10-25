@@ -32,7 +32,6 @@ pub fn Demo() -> Element {
                                     id: "field-subscription-plan-starter",
                                     aria_label: "Starter plan",
                                     value: "starter".to_string(),
-                                    index: 0usize,
                                 }
                             }
                         }
@@ -46,7 +45,6 @@ pub fn Demo() -> Element {
                                     id: "field-subscription-plan-pro",
                                     aria_label: "Pro plan",
                                     value: "pro".to_string(),
-                                    index: 1usize,
                                 }
                             }
                         }
@@ -60,7 +58,6 @@ pub fn Demo() -> Element {
                                     id: "field-subscription-plan-scale",
                                     aria_label: "Scale plan",
                                     value: "scale".to_string(),
-                                    index: 2usize,
                                 }
                             }
                         }

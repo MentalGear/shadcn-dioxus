@@ -25,22 +25,19 @@ pub fn Demo() -> Element {
             ContextMenuContent {
                 ContextMenuItem {
                     value: "share".to_string(),
-                    index: 0usize,
                     on_select: move |v| selected.set(Some(v)),
                     "Share"
                 }
                 ContextMenuSub { open_on_hover: false,
-                    ContextMenuSubTrigger { index: 1usize, "Export as" }
+                    ContextMenuSubTrigger { "Export as" }
                     ContextMenuSubContent {
                         ContextMenuSubItem {
                             value: "pdf".to_string(),
-                            index: 0usize,
                             on_select: move |v| selected.set(Some(v)),
                             "PDF document"
                         }
                         ContextMenuSubItem {
                             value: "text".to_string(),
-                            index: 1usize,
                             on_select: move |v| selected.set(Some(v)),
                             "Plain text"
                         }
@@ -48,7 +45,6 @@ pub fn Demo() -> Element {
                 }
                 ContextMenuItem {
                     value: "print".to_string(),
-                    index: 2usize,
                     on_select: move |v| selected.set(Some(v)),
                     "Print"
                 }

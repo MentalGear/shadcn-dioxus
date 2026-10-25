@@ -31,7 +31,6 @@ pub fn Demo() -> Element {
             ContextMenuContent {
                 ContextMenuItem {
                     value: "Preview".to_string(),
-                    index: 0usize,
                     text_value: "Preview",
                     on_select: move |value| chosen.set(Some(value)),
                     Eye { size: "16px" }
@@ -39,7 +38,6 @@ pub fn Demo() -> Element {
                 }
                 ContextMenuItem {
                     value: "Move to folder".to_string(),
-                    index: 1usize,
                     text_value: "Move to folder",
                     on_select: move |value| chosen.set(Some(value)),
                     FolderOpen { size: "16px" }
@@ -47,7 +45,6 @@ pub fn Demo() -> Element {
                 }
                 ContextMenuItem {
                     value: "Make a copy".to_string(),
-                    index: 2usize,
                     text_value: "Make a copy",
                     on_select: move |value| chosen.set(Some(value)),
                     CopyIcon { size: "16px" }
@@ -55,7 +52,6 @@ pub fn Demo() -> Element {
                 }
                 ContextMenuItem {
                     value: "Copy link".to_string(),
-                    index: 3usize,
                     text_value: "Copy link",
                     on_select: move |value| chosen.set(Some(value)),
                     Link2 { size: "16px" }
@@ -63,7 +59,6 @@ pub fn Demo() -> Element {
                 }
                 ContextMenuItem {
                     value: "Download".to_string(),
-                    index: 4usize,
                     text_value: "Download",
                     on_select: move |value| chosen.set(Some(value)),
                     Download { size: "16px" }
@@ -71,7 +66,6 @@ pub fn Demo() -> Element {
                 }
                 ContextMenuItem {
                     value: "Move to trash".to_string(),
-                    index: 5usize,
                     text_value: "Move to trash",
                     disabled: true,
                     on_select: move |value| chosen.set(Some(value)),

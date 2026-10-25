@@ -217,11 +217,10 @@ pub fn Demo() -> Element {
                                         },
                                     }
                                     DropdownMenuContent {
-                                        for (i , name) in ATTACH_MENU.into_iter().enumerate() {
+                                        for name in ATTACH_MENU.into_iter() {
                                             DropdownMenuItem::<String> {
                                                 key: "{name}",
                                                 value: name.to_string(),
-                                                index: i,
                                                 text_value: name,
                                                 on_select: move |value: String| chosen.set(Some(value)),
                                                 MenuIcon { name }

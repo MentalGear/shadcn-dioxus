@@ -70,9 +70,8 @@ pub fn Demo() -> Element {
             aria_label: "Assign teammate",
             list_aria_label: "Teammates",
             ComboboxEmpty { "No teammate found." }
-            for (i , teammate) in teammates.iter().enumerate() {
+            for teammate in teammates.iter() {
                 ComboboxOption::<String> {
-                    index: i,
                     value: teammate.value.to_string(),
                     text_value: teammate.name.to_string(),
                     // Decorative: the name and email beside it already say who this is.

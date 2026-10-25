@@ -28,11 +28,10 @@ pub fn Demo() -> Element {
 
     rsx! {
         Menubar {
-            MenubarMenu { index: 0usize,
+            MenubarMenu {
                 MenubarTrigger { "View" }
                 MenubarContent {
                     MenubarCheckboxItem {
-                        index: 0usize,
                         checked: Some(bookmarks_bar()),
                         on_checked_change: move |checked| bookmarks_bar.set(checked),
                         close_on_select: false,
@@ -40,7 +39,6 @@ pub fn Demo() -> Element {
                         "Always Show Bookmarks Bar"
                     }
                     MenubarCheckboxItem {
-                        index: 1usize,
                         checked: Some(full_urls()),
                         on_checked_change: move |checked| full_urls.set(checked),
                         close_on_select: false,
@@ -48,13 +46,11 @@ pub fn Demo() -> Element {
                         "Always Show Full URLs"
                     }
                     MenubarItem {
-                        index: 2usize,
                         value: "reload".to_string(),
                         inset: true,
                         "Reload"
                     }
                     MenubarItem {
-                        index: 3usize,
                         value: "force-reload".to_string(),
                         disabled: true,
                         inset: true,
@@ -62,11 +58,10 @@ pub fn Demo() -> Element {
                     }
                 }
             }
-            MenubarMenu { index: 1usize,
+            MenubarMenu {
                 MenubarTrigger { "Format" }
                 MenubarContent {
                     MenubarCheckboxItem {
-                        index: 0usize,
                         checked: Some(strikethrough()),
                         on_checked_change: move |checked| strikethrough.set(checked),
                         close_on_select: false,
@@ -74,7 +69,6 @@ pub fn Demo() -> Element {
                         "Strikethrough"
                     }
                     MenubarCheckboxItem {
-                        index: 1usize,
                         checked: Some(code()),
                         on_checked_change: move |checked| code.set(checked),
                         close_on_select: false,
@@ -82,7 +76,6 @@ pub fn Demo() -> Element {
                         "Code"
                     }
                     MenubarCheckboxItem {
-                        index: 2usize,
                         checked: Some(superscript()),
                         on_checked_change: move |checked| superscript.set(checked),
                         close_on_select: false,

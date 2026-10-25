@@ -34,10 +34,9 @@ pub fn Demo() -> Element {
                             },
                         }
                         DropdownMenuContent {
-                            for (i , name) in ["Everywhere", "This project", "Archived"].into_iter().enumerate() {
+                            for name in ["Everywhere", "This project", "Archived"].into_iter() {
                                 DropdownMenuItem::<String> {
                                     value: name.to_string(),
-                                    index: i,
                                     text_value: name,
                                     on_select: move |value: String| scope.set(value),
                                     "{name}"

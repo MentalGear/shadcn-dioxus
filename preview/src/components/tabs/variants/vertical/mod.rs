@@ -13,17 +13,17 @@ pub fn Demo() -> Element {
             horizontal: false,
             max_width: "28rem",
             TabList {
-                TabTrigger { value: "account".to_string(), index: 0usize, "Account" }
-                TabTrigger { value: "password".to_string(), index: 1usize, "Password" }
-                TabTrigger { value: "notifications".to_string(), index: 2usize, "Notifications" }
+                TabTrigger { value: "account".to_string(), "Account" }
+                TabTrigger { value: "password".to_string(), "Password" }
+                TabTrigger { value: "notifications".to_string(), "Notifications" }
             }
-            TabContent { index: 0usize, value: "account".to_string(), padding: "var(--dx-space-4)",
+            TabContent { value: "account".to_string(), padding: "var(--dx-space-4)",
                 "Update your name, email and profile photo."
             }
-            TabContent { index: 1usize, value: "password".to_string(), padding: "var(--dx-space-4)",
+            TabContent { value: "password".to_string(), padding: "var(--dx-space-4)",
                 "Change your password, or sign out of every other device."
             }
-            TabContent { index: 2usize, value: "notifications".to_string(), padding: "var(--dx-space-4)",
+            TabContent { value: "notifications".to_string(), padding: "var(--dx-space-4)",
                 "Choose which events email you and which stay in the app."
             }
         }

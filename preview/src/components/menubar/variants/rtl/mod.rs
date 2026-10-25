@@ -32,23 +32,20 @@ pub fn Demo() -> Element {
         div { dir: "rtl",
             DirectionProvider { direction: Direction::Rtl,
                 Menubar {
-                    MenubarMenu { index: 0usize,
+                    MenubarMenu {
                         MenubarTrigger { "Options" }
                         MenubarContent {
                             MenubarItem {
-                                index: 0usize,
                                 value: "create".to_string(),
                                 on_select: move |_| {},
                                 "Create"
                             }
                             MenubarItem {
-                                index: 1usize,
                                 value: "launch".to_string(),
                                 on_select: move |_| {},
                                 "Launch"
                             }
                             MenubarCheckboxItem {
-                                index: 2usize,
                                 checked: Some(pinned()),
                                 on_checked_change: move |checked| pinned.set(checked),
                                 text_value: "Pinned",
@@ -56,17 +53,15 @@ pub fn Demo() -> Element {
                             }
                         }
                     }
-                    MenubarMenu { index: 1usize,
+                    MenubarMenu {
                         MenubarTrigger { "Modify" }
                         MenubarContent {
                             MenubarItem {
-                                index: 0usize,
                                 value: "remove".to_string(),
                                 on_select: move |_| {},
                                 "Remove"
                             }
                             MenubarItem {
-                                index: 1usize,
                                 value: "duplicate".to_string(),
                                 on_select: move |_| {},
                                 "Duplicate"
@@ -76,12 +71,10 @@ pub fn Demo() -> Element {
                                 value: Some(order()),
                                 on_value_change: move |value| order.set(value),
                                 MenubarRadioItem {
-                                    index: 2usize,
                                     value: "ascending".to_string(),
                                     "Ascending"
                                 }
                                 MenubarRadioItem {
-                                    index: 3usize,
                                     value: "descending".to_string(),
                                     "Descending"
                                 }

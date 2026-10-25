@@ -12,7 +12,6 @@ Select::<String> {
     SelectGroup {
         SelectGroupLabel { "Group A" }
         SelectOption::<String> {
-            index: 0,
             value: "option1",
             "Option 1"
         }

@@ -45,22 +45,19 @@ pub fn Demo() -> Element {
                     DropdownMenuContent {
                         DropdownMenuItem::<String> {
                             value: "modify".to_string(),
-                            index: 0usize,
                             on_select: move |v| selected.set(Some(v)),
                             "Modify"
                         }
                         DropdownMenuSub {
-                            DropdownMenuSubTrigger { index: 1usize, "Extra tools" }
+                            DropdownMenuSubTrigger { "Extra tools" }
                             DropdownMenuSubContent {
                                 DropdownMenuSubItem::<String> {
                                     value: "relabel".to_string(),
-                                    index: 0usize,
                                     on_select: move |v| selected.set(Some(v)),
                                     "Relabel"
                                 }
                                 DropdownMenuSubItem::<String> {
                                     value: "stash".to_string(),
-                                    index: 1usize,
                                     on_select: move |v| selected.set(Some(v)),
                                     "Stash"
                                 }
@@ -68,12 +65,10 @@ pub fn Demo() -> Element {
                         }
                         DropdownMenuItem::<String> {
                             value: "erase".to_string(),
-                            index: 2usize,
                             on_select: move |v| selected.set(Some(v)),
                             "Erase"
                         }
                         DropdownMenuCheckboxItem {
-                            index: 3usize,
                             checked: Some(pinned()),
                             on_checked_change: move |checked| pinned.set(checked),
                             text_value: "Pinned",
@@ -84,12 +79,10 @@ pub fn Demo() -> Element {
                             value: Some(order()),
                             on_value_change: move |value| order.set(value),
                             DropdownMenuRadioItem {
-                                index: 4usize,
                                 value: "ascending".to_string(),
                                 "Ascending"
                             }
                             DropdownMenuRadioItem {
-                                index: 5usize,
                                 value: "descending".to_string(),
                                 "Descending"
                             }

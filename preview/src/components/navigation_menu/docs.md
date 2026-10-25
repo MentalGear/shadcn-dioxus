@@ -20,9 +20,8 @@ NavigationMenu {
     aria_label: "Main",
     // The NavigationMenuList is the `ul` that holds the top-level items.
     NavigationMenuList {
-        // Each NavigationMenuItem is one top-level entry, in order of its index.
+        // Each NavigationMenuItem is one top-level entry, in document order.
         NavigationMenuItem {
-            index: 0usize,
             // A trigger discloses a panel of links on click or hover.
             NavigationMenuTrigger { "Components" }
             NavigationMenuContent {
@@ -32,7 +31,6 @@ NavigationMenu {
             }
         }
         NavigationMenuItem {
-            index: 1usize,
             // Or an item can be a single plain link with no panel.
             NavigationMenuLink { href: "/docs", "Docs" }
         }
@@ -102,7 +100,7 @@ Opening content slides in over `--dx-motion-duration-slow` and out over `--dx-mo
 
 ```rust
 NavigationMenuList {
-    NavigationMenuItem { index: 0usize, /* trigger and content */ }
+    NavigationMenuItem { /* trigger and content */ }
     NavigationMenuIndicator {}
 }
 ```

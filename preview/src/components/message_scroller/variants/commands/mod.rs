@@ -70,11 +70,10 @@ fn CommandMenu() -> Element {
             }
             DropdownMenuContent {
                 DropdownMenuLabel { "Conversations" }
-                for (i , (id , _ , text)) in CHAT.iter().filter(|(_, mine, _)| *mine).enumerate() {
+                for (id , _ , text) in CHAT.iter().filter(|(_, mine, _)| *mine) {
                     DropdownMenuItem::<String> {
                         key: "{id}",
                         value: id.to_string(),
-                        index: i,
                         text_value: *text,
                         on_select: move |id: String| {
                             scroller

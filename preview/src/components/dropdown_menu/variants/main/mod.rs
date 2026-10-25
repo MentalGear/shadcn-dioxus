@@ -11,19 +11,16 @@ use dioxus::prelude::*;
 // carries its own `document::Link` for `style.css`.
 // `document::Link` dedupes on `(href, rel)`, so those links cover this page.
 //
-// Index layout (the submenu is dev-docs/archive/rounds/component-backlog.md row 68):
-// Edit=0, Undo=1 (disabled), Duplicate=2, the submenu trigger=3, Delete=4.
-// Several Playwright specs depend on this demo's *shape*, not just its
-// presence, so the nested submenu is slotted in without
-// disturbing any of it: `playwright/dropdown-menu.spec.ts` and
+// Item order (the submenu is dev-docs/archive/rounds/component-backlog.md row 68):
+// Edit, Undo (disabled), Duplicate, the submenu trigger, Delete. Several
+// Playwright specs depend on this demo's *shape*, not just its presence:
+// `playwright/dropdown-menu.spec.ts` and
 // `oracle/tier1-apg/keyboard-matrix.spec.ts` both require Edit first, Undo
 // disabled (so a 2nd ArrowDown from Edit skips it and lands on Duplicate),
 // and -- keyboard-matrix.spec.ts specifically -- Delete reachable via End
 // as the *last* item and as ArrowDown's wrap-around target from it. Roving
-// focus orders by `index` value, not by JSX/DOM position (`collection.rs`),
-// so Delete holds index 4 (after the submenu trigger at 3) precisely so it stays
-// the highest index -- and therefore still "last" -- with the submenu
-// trigger sitting at index 3, between Duplicate and it.
+// focus follows document order (row 396), so the order above is the order
+// the items are written in.
 #[derive(Debug, Clone, Copy, PartialEq)]
 enum Operation {
     Edit,
@@ -72,12 +69,11 @@ pub fn Demo() -> Element {
     // from `value` alone here the way it can for a `String`-valued item --
     // an explicit `text_value` is required for these rows to be
     // typeahead-searchable at all, not just a nicety.
-    let operations = Operation::ALL.into_iter().enumerate().map(|(i, o)| {
+    let operations = Operation::ALL.into_iter().map(|o| {
         rsx! {
             DropdownMenuItem::<Operation> {
                 class: "dx-dropdown-menu-item",
                 value: o,
-                index: i,
                 disabled: matches!(o, Operation::Undo),
                 text_value: o.to_string(),
                 on_select: move |value: Operation| {
@@ -88,11 +84,10 @@ pub fn Demo() -> Element {
         }
     });
 
-    let tool_operations = ToolOperation::ALL.into_iter().enumerate().map(|(i, o)| {
+    let tool_operations = ToolOperation::ALL.into_iter().map(|o| {
         rsx! {
             DropdownMenuSubItem::<ToolOperation> {
                 value: o,
-                index: i,
                 text_value: o.to_string(),
                 on_select: move |value: ToolOperation| {
                     selected_operation.set(Some(value.to_string()));
@@ -107,12 +102,10 @@ pub fn Demo() -> Element {
             DropdownMenuTrigger { class: "dx-dropdown-menu-trigger", "Open Menu" }
             DropdownMenuContent { class: "dx-dropdown-menu-content",
                 {operations}
-                // Nested submenu (dev-docs/archive/rounds/component-backlog.md row 68): see
-                // this file's top-of-file comment for why this sits at
-                // index 3, between Duplicate (2) and Delete (4).
+                // Nested submenu (dev-docs/archive/rounds/component-backlog.md row 68),
+                // between Duplicate and Delete: see this file's top-of-file comment.
                 DropdownMenuSub {
                     DropdownMenuSubTrigger {
-                        index: 3usize,
                         text_value: "More tools",
                         "More tools"
                     }
@@ -121,7 +114,6 @@ pub fn Demo() -> Element {
                 DropdownMenuItem::<String> {
                     class: "dx-dropdown-menu-item",
                     value: "Delete".to_string(),
-                    index: 4usize,
                     text_value: "Delete",
                     on_select: move |value: String| {
                         selected_operation.set(Some(value));

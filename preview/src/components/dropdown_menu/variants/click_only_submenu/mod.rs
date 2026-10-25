@@ -28,22 +28,19 @@ pub fn Demo() -> Element {
             DropdownMenuContent {
                 DropdownMenuItem::<String> {
                     value: "share".to_string(),
-                    index: 0usize,
                     on_select: move |v| selected.set(Some(v)),
                     "Share"
                 }
                 DropdownMenuSub { open_on_hover: false,
-                    DropdownMenuSubTrigger { index: 1usize, "Export as" }
+                    DropdownMenuSubTrigger { "Export as" }
                     DropdownMenuSubContent {
                         DropdownMenuSubItem::<String> {
                             value: "pdf".to_string(),
-                            index: 0usize,
                             on_select: move |v| selected.set(Some(v)),
                             "PDF document"
                         }
                         DropdownMenuSubItem::<String> {
                             value: "text".to_string(),
-                            index: 1usize,
                             on_select: move |v| selected.set(Some(v)),
                             "Plain text"
                         }
@@ -51,7 +48,6 @@ pub fn Demo() -> Element {
                 }
                 DropdownMenuItem::<String> {
                     value: "print".to_string(),
-                    index: 2usize,
                     on_select: move |v| selected.set(Some(v)),
                     "Print"
                 }

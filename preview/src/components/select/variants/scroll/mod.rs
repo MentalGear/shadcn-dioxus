@@ -19,8 +19,8 @@ pub fn Demo() -> Element {
             trigger_aria_label: "Time zone select",
             list_aria_label: "Time zone options",
             SelectGroup {
-                for (i , zone) in ZONES.iter().enumerate() {
-                    SelectOption::<String> { index: i, value: zone.to_string(), text_value: zone.to_string(), "{zone}" }
+                for zone in ZONES.iter() {
+                    SelectOption::<String> { value: zone.to_string(), text_value: zone.to_string(), "{zone}" }
                 }
             }
         }

@@ -19,7 +19,6 @@ pub fn Demo() -> Element {
                         RadioItem {
                             id: "radio-group-invalid-email",
                             value: "email".to_string(),
-                            index: 0usize,
                             aria_invalid: "true",
                         }
                         FieldLabel { html_for: "radio-group-invalid-email", "Email" }
@@ -28,7 +27,6 @@ pub fn Demo() -> Element {
                         RadioItem {
                             id: "radio-group-invalid-sms",
                             value: "sms".to_string(),
-                            index: 1usize,
                             aria_invalid: "true",
                         }
                         FieldLabel { html_for: "radio-group-invalid-sms", "Text message" }
@@ -37,7 +35,6 @@ pub fn Demo() -> Element {
                         RadioItem {
                             id: "radio-group-invalid-push",
                             value: "push".to_string(),
-                            index: 2usize,
                             aria_invalid: "true",
                         }
                         FieldLabel { html_for: "radio-group-invalid-push", "Push notification" }

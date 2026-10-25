@@ -49,9 +49,8 @@ pub fn Demo() -> Element {
                 aria_label: "Controlled framework",
                 list_aria_label: "Controlled frameworks",
                 ComboboxEmpty { "No framework found." }
-                for (i , (value , label)) in frameworks.iter().enumerate() {
+                for (value , label) in frameworks.iter() {
                     ComboboxOption::<String> {
-                        index: i,
                         value: value.to_string(),
                         text_value: label.to_string(),
                         {*label}

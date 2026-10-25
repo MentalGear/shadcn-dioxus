@@ -5,7 +5,7 @@ use dioxus_attributes::attributes;
 
 use super::super::context::ComboboxContext;
 use crate::{
-    collection::{collection_item, use_item},
+    collection::{collection_item, use_item, use_item_index},
     listbox::{ListboxContext, ListboxItemIndicator},
     merge_attributes,
     selectable::{
@@ -67,8 +67,11 @@ pub struct ComboboxOptionProps<T: Clone + PartialEq + 'static> {
     #[props(default)]
     pub id: ReadSignal<Option<String>>,
 
-    /// Registration order used for keyboard navigation.
-    pub index: ReadSignal<usize>,
+    /// The option's place in keyboard order, across every group of the list. Leave it unset:
+    /// options are ordered as they appear in the document. Set it on every option only when one
+    /// is inserted between options that are already mounted, or a keyed list reorders them.
+    #[props(default)]
+    pub index: ReadSignal<Option<usize>>,
 
     /// Optional aria-label.
     #[props(default)]
@@ -89,9 +92,9 @@ pub struct ComboboxOptionProps<T: Clone + PartialEq + 'static> {
 /// A selectable option inside a [`ComboboxList`](super::list::ComboboxList).
 #[component]
 pub fn ComboboxOption<T: PartialEq + Clone + 'static>(props: ComboboxOptionProps<T>) -> Element {
-    let index = props.index;
-
     let mut ctx: ComboboxContext = use_context();
+    let order = use_item_index(ctx.selectable.collection, props.index);
+    let index = order.index;
     let visible = move || ctx.is_visible(index());
     let option = use_selectable_option(
         ctx.selectable,
@@ -133,12 +136,19 @@ pub fn ComboboxOption<T: PartialEq + Clone + 'static>(props: ComboboxOptionProps
         "data-disabled": (option.disabled)(),
         "data-selected": (option.selected)(),
     });
-    let merged = merge_attributes(vec![props.attributes.clone(), owned]);
+    let merged = merge_attributes(vec![
+        order.marker_attribute(),
+        props.attributes.clone(),
+        owned,
+    ]);
 
     rsx! {
         if render() && visible() {
             div {
                 id: option.id,
+                // Rendered only while the list is open and the option passes
+                // the filter: order it once it is in the document.
+                onmounted: move |_| ctx.selectable.collection.request_order_pass(),
                 aria_label: props.aria_label.clone(),
                 aria_roledescription: props.aria_roledescription.clone(),
 

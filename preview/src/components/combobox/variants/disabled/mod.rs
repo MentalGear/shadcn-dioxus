@@ -23,9 +23,8 @@ pub fn Demo() -> Element {
                 aria_label: "Framework with disabled option",
                 list_aria_label: "Frameworks with disabled option",
                 ComboboxEmpty { "No framework found." }
-                for (i , (value , label , disabled)) in frameworks.iter().enumerate() {
+                for (value , label , disabled) in frameworks.iter() {
                     ComboboxOption::<String> {
-                        index: i,
                         value: value.to_string(),
                         text_value: label.to_string(),
                         disabled: *disabled,
@@ -40,7 +39,6 @@ pub fn Demo() -> Element {
                 aria_label: "Disabled combobox",
                 list_aria_label: "Disabled list",
                 ComboboxOption::<String> {
-                    index: 0usize,
                     value: "disabled".to_string(),
                     text_value: "Disabled option",
                     "Disabled option"

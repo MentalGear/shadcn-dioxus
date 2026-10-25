@@ -24,14 +24,12 @@ pub fn Demo() -> Element {
                 ContextMenuGroup {
                     ContextMenuItem {
                         value: "Rename note".to_string(),
-                        index: 0usize,
                         on_select: move |value| chosen.set(Some(value)),
                         Pencil { size: "16px" }
                         "Rename note"
                     }
                     ContextMenuItem {
                         value: "Share note".to_string(),
-                        index: 1usize,
                         on_select: move |value| chosen.set(Some(value)),
                         Share2 { size: "16px" }
                         "Share note"
@@ -41,7 +39,6 @@ pub fn Demo() -> Element {
                 ContextMenuGroup {
                     ContextMenuItem {
                         value: "Delete note".to_string(),
-                        index: 2usize,
                         variant: MenuItemVariant::Destructive,
                         on_select: move |value| chosen.set(Some(value)),
                         Trash2 { size: "16px" }
