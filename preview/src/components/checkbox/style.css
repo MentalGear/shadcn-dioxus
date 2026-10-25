@@ -46,6 +46,14 @@
     translate: 0 var(--checkbox-hit-pull);
 }
 
+/* In a table or grid cell the row height is the table's (a windowed grid's rows are fixed), so the target
+   never takes layout there: it stays pulled back to the 1rem box in both modes and is capped at the small
+   control height (24px fine, 36px coarse), so it fits a row and does not reach into the next row's target. */
+:is(td, th, [role="gridcell"], [role="rowheader"], [role="columnheader"]) .dx-checkbox {
+    --checkbox-hit-pad: max(0px, calc((min(var(--dx-control-hit-size), var(--dx-control-height-xs)) - 1rem) / 2));
+    --checkbox-hit-pull: calc(-1 * var(--checkbox-hit-pad));
+}
+
 .dx-checkbox-indicator {
     /* Always laid out at the checkbox's full size, checked or not. The
        primitive mounts the indicator's CHILDREN (the check icon) only while

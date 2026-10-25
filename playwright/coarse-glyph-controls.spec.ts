@@ -205,3 +205,21 @@ test("slider: the coarse thumb's hit area is 44px (a press 21px from its centre 
   });
   expect(hit).toEqual([true, true, true, true, false]);
 });
+
+// A checkbox in a table or grid cell keeps the row's height (a windowed grid's rows are fixed), so its target is
+// capped at the small control height and pulled back to the glyph: neighbouring rows' targets never overlap.
+for (const route of ["/component/data_table/", "/component/virtual_grid/", "/component/table/"]) {
+  test(`cell checkboxes on ${route}: capped targets that never overlap, in both modes`, async ({ page }) => {
+    await gotoHydrated(page, `${BASE_URL}${route}`);
+    const cell: Control = { ...CONTROLS[0], route, selector: ':is(td, th, [role="gridcell"], [role="rowheader"], [role="columnheader"]) .dx-checkbox' };
+    for (const [mode, cap] of [["off", 24], ["on", 36]] as const) {
+      const items = await read(page, cell, mode);
+      expect(items.length, `${route} has cell checkboxes`).toBeGreaterThan(0);
+      for (const i of items) {
+        expect(i.target.h, `${mode}: target capped at ${cap}px`).toBeLessThanOrEqual(cap + 0.5);
+        expect(i.glyph.h, `${mode}: the glyph stays 16px`).toBeCloseTo(16, 0);
+      }
+      expect(overlaps(items), `${mode}: no two cell targets overlap`).toEqual([]);
+    }
+  });
+}
