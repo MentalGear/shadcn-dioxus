@@ -119,7 +119,7 @@ Files are `preview/src/components/<c>/variants/<v>/mod.rs` at HEAD. "Exists" mea
 | drawer | side positions | partial: `main` has the default Bottom plus a Top drawer; `DrawerSide` has Top/Right/Bottom/Left, so Left/Right are one demo. |
 | calendar | month / year dropdown caption | **exists in every demo** (the styled `Calendar` always renders both selectors; `calendar/docs.md:24`). Row 155 group 8 changes the default to a label. |
 | calendar | presets, date+time, cell size | none exist. Variants: main, simple, range, multi_month, unavailable_dates, internationalized, rtl. |
-| date_picker | typed input | **exists**: `DatePickerInput` has day/month/year segments you type into (`primitives/src/date_picker.rs`, docs "entered it from the keyboard"). Variants: main, range, multi_month, unavailable_dates, internationalized, keep_open. |
+| date_picker | typed input | **exists**: `DatePickerInput` has day/month/year segments you type into (`primitives/src/date_picker/input.rs`, docs "entered it from the keyboard"). Variants: main, range, multi_month, unavailable_dates, internationalized, keep_open. |
 | date_picker | time picker, DOB dropdown, natural-language | none exist. |
 | select | disabled | option-level **exists** (`main`: Orange); trigger-level (`Select { disabled }`) not demoed. |
 | select | long list | no. Variants: main (groups + labels), multi (`SelectMulti`), rtl. |

@@ -24,7 +24,12 @@ jobs:
             -f primitives/src/virtual/virtualizer.rs \
             -f primitives/src/select/text_search.rs \
             -f primitives/src/pointer.rs \
-            -f primitives/src/date_picker.rs \
+            -f primitives/src/date_picker/context.rs \
+            -f primitives/src/date_picker/picker.rs \
+            -f primitives/src/date_picker/popover.rs \
+            -f primitives/src/date_picker/segment.rs \
+            -f primitives/src/date_picker/date_segments.rs \
+            -f primitives/src/date_picker/input.rs \
             -f primitives/src/selection.rs \
             -f primitives/src/color_picker.rs \
             -f primitives/src/move_interaction.rs

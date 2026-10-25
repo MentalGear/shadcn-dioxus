@@ -10,13 +10,13 @@ One-off baseline per [`backlog.md`](../backlog.md) row 17, scoped to the 9 unit-
 | select/text_search.rs | 143 | 92 | 50 | 1 | 0 |
 | slider.rs | 110 | 34 | 50 | 26 | 0 |
 | virtual/virtualizer.rs | 79 | 44 | 25 | 9 | 1 |
-| date_picker.rs | 71 | **0** | 52 | 19 | 0 |
+| date_picker/ (then date_picker.rs) | 71 | **0** | 52 | 19 | 0 |
 | color_picker.rs | 45 | **0** | 36 | 9 | 0 |
 | move_interaction.rs | 26 | 9 | 12 | 5 | 0 |
 | selection.rs | 24 | 7 | 15 | 2 | 0 |
 | pointer.rs | 14 | 2 | 12 | 0 | 0 |
 
-`date_picker.rs` and `color_picker.rs` caught **zero** viable mutants — their tests are SSR-render smoke checks that never touch the algorithmic core.
+`date_picker.rs` (since row 267 `date_picker/`: `-f` names its six part files in `mutants.yml`) and `color_picker.rs` caught **zero** viable mutants — their tests are SSR-render smoke checks that never touch the algorithmic core.
 
 ## Classification: ~350 of 397 survivors are genuine, unit-killable gaps
 
@@ -30,7 +30,7 @@ The eight concrete, cheap fixes (kill the large majority of survivors):
 4. `pointer.rs` — same `with_runtime` pattern for the public `GlobalSignal` API (12/12 missed today).
 5. `color_picker.rs:20-83` — direct tests for the pure color math (`color_hex`, `area_value_from_hsv`, clamps).
 6. `selection.rs:60-97` — direct tests for `selected_text`, `option_text_value`, and `RcPartialEqValue`'s `PartialEq` (never exercised by any test).
-7. `date_picker.rs:678-947` — extract segment key-handling from `rsx!` closures into standalone functions (precedent: `move_interaction.rs`'s `MoveEvent::from_keyboard`), then unit-test (~40 of 52 killable).
+7. `date_picker.rs:678-947` (now `date_picker/segment.rs`, `date_segment_key_effects`) — extract segment key-handling from `rsx!` closures into standalone functions (precedent: `move_interaction.rs`'s `MoveEvent::from_keyboard`), then unit-test (~40 of 52 killable).
 8. `calendar.rs` pure predicates (`DateRange::contains`, `nth_month_*`, `AvailableRanges::*`, `is_between/start/end`, context accessors, ~70 survivors) — direct tests; calendar has essentially **no** browser-only residue.
 
 Browser-only (expected, Playwright's layer): ~30–40 (drag-effect math in slider/color_picker/move_interaction). Trivial/noise: ~10–15. Timeouts (7): mutations inducing unbounded loops — neutralized, not silent.
@@ -48,7 +48,7 @@ All eight landed (tests-only except the mechanical date_picker key-handler extra
 | File | Before | After |
 |---|---|---|
 | calendar.rs | 23% | **68%** |
-| date_picker.rs | 0% | **85%** |
+| date_picker/ (then date_picker.rs) | 0% | **85%** |
 | color_picker.rs | 0% | **58%** |
 | slider.rs | 40% | **75%** |
 | pointer.rs | 14% | **79%** |
