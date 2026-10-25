@@ -219,6 +219,38 @@ test.describe("toast: a dismissal does not make the stack jump", () => {
     expectSmooth(motions, 2, 60);
   });
 
+  test("collapsed, a newly added toast: its first measurement never plays as a glide", async ({ page }) => {
+    // Row 421. An unmeasured toast is auto-sized and does not overlap the pile, so a height or margin
+    // transition on the new toast's first measurement shows as the whole pile jumping up by the new
+    // toast's height and gliding back down. Watched through `transitionrun` (no layout reads, which
+    // would recalculate style and hide the case), with the click dispatched from the page.
+    await open(page);
+    await page.mouse.move(2, 2);
+    await add(page, "Add to stack", 1, STACK);
+    await page.waitForTimeout(400);
+    const before = await toasts(page, STACK).first().evaluate((el) => el.id);
+    await region(page, STACK).evaluate((reg) => {
+      const w = window as unknown as { __dxRuns: string[] };
+      w.__dxRuns = [];
+      reg.addEventListener("transitionrun", (e) => {
+        const t = e.target as HTMLElement;
+        if (t.getAttribute("role") === "alertdialog" && (e.propertyName === "height" || e.propertyName === "margin-top")) {
+          w.__dxRuns.push(`${t.id}:${e.propertyName}`);
+        }
+      });
+    });
+    await page.evaluate(() => {
+      const b = Array.from(document.querySelectorAll("button")).find((x) => x.textContent?.trim() === "Add to stack");
+      b!.click();
+    });
+    await expect(toasts(page, STACK)).toHaveCount(2);
+    await page.waitForTimeout(400);
+    const added = await toasts(page, STACK).first().evaluate((el) => el.id);
+    expect(added).not.toBe(before);
+    const runs = await page.evaluate(() => (window as unknown as { __dxRuns: string[] }).__dxRuns);
+    expect(runs.filter((r) => r.startsWith(`${added}:`)), "no height or margin transition on the new toast").toEqual([]);
+  });
+
   test("a toast that becomes visible animates opacity and translate from their start values", async ({ page }) => {
     await open(page);
     await page.mouse.move(2, 2);
