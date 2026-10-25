@@ -40,6 +40,7 @@
   align-items: center;
   padding: var(--dx-switch-hit-y) var(--dx-switch-hit-x);
   border: 0;
+  border-radius: var(--dx-radius-full);
   margin: 0;
 
   /* The native-button reset, spelled out (not `all: unset`): `all:` (0,1,0) beats

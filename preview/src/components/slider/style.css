@@ -108,7 +108,9 @@
 .dx-slider-thumb::after {
     position: absolute;
     content: "";
-    inset: calc(-1 * max(0px, (var(--dx-control-hit-size) - var(--dx-coarse-slider-thumb-size)) / 2));
+
+    /* The thumb's 1px border is outside the padding box this inset is measured from. */
+    inset: calc(-1 * max(0px, (var(--dx-control-hit-size) - var(--dx-coarse-slider-thumb-size) + 2px) / 2));
 }
 
 .dx-slider[data-orientation="vertical"] > .dx-slider-track > .dx-slider-thumb {
