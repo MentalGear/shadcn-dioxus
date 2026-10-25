@@ -206,7 +206,7 @@ test.describe('Open animation never reflows the content', () => {
     // transition): `preview/src/components/navigation_menu/style.css`'s
     // `[data-state]` motion rules must not tie in CSS specificity with the shared,
     // engine-injected anchor-positioning stylesheet's own `transform: none` reset
-    // (primitives/src/top_layer.rs), which -- injected later in the cascade -- would
+    // (primitives/src/top_layer/styles.rs), which -- injected later in the cascade -- would
     // win and silently kill the scale/slide entrance motion (opacity would be the
     // only property transitioning). Switching between two differently-sized panels
     // with *that* motion dead pops each panel to its own full (and differently

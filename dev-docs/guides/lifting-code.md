@@ -46,6 +46,6 @@ comments (`dev-docs/history-in-comments.md`).
 
 ## Safety checks before any lift
 
-No vendored build hacks, no dependency the fork added only for itself (`primitives/src/top_layer.rs` takes no
+No vendored build hacks, no dependency the fork added only for itself (`primitives/src/top_layer/mod.rs` takes no
 dependency for what a short module does), and a regression test that fails on the old behaviour, per the definition of
 done in [`../plan.md`](../plan.md).

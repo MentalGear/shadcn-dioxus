@@ -48,7 +48,7 @@ SRC_DIR="primitives/src"
 # so a single narrowly-scoped exception doesn't require rewriting this
 # script's logic, only adding a path here.
 ALLOWLIST=(
-  # "primitives/src/top_layer.rs"
+  # "primitives/src/top_layer/mod.rs"
   # "primitives/src/lib.rs"
   # "primitives/src/scroll_lock.rs"
   # Not markup: `tokio` (native) and `gloo-timers` (wasm) are target-gated dependencies in

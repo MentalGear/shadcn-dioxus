@@ -137,7 +137,7 @@ test("uses the CSS-anchor path, not the JS-measured fallback (no inline top/left
   await trigger(page).evaluate((el) => (el as HTMLElement).click());
   await expect(content(page)).toBeVisible();
 
-  // `use_anchor_position_fallback` (primitives/src/top_layer.rs) is the
+  // `use_anchor_position_fallback` (primitives/src/top_layer/anchor_fallback.rs) is the
   // only thing that ever writes an inline `top` on this element -- an
   // empty style here confirms the CSS-native `anchor()` path engaged
   // first, the same signal top-layer.spec.ts Rule 8 checks for its

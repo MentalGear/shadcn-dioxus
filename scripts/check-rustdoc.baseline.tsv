@@ -78,8 +78,8 @@ primitives/src/menu_item.rs	public documentation for `menu_item` links to privat
 primitives/src/scroll_lock.rs	unresolved link to `crate::use_dialog_close_sync`: no item named `use_dialog_close_sync` in module `dioxus_primitives`
 primitives/src/scroll_lock.rs	unresolved link to `crate::use_dialog_open_driver`: no item named `use_dialog_open_driver` in module `dioxus_primitives`
 primitives/src/scroll_lock.rs	unresolved link to `crate::use_dialog_open_driver`: no item named `use_dialog_open_driver` in module `dioxus_primitives`
-primitives/src/top_layer.rs	unresolved link to `use_anchor_position_fallback`: no item named `use_anchor_position_fallback` in scope
-primitives/src/top_layer.rs	unresolved link to `use_point_anchor_clamp`: no item named `use_point_anchor_clamp` in scope
+primitives/src/top_layer/anchor_fallback.rs	unresolved link to `use_anchor_position_fallback`: no item named `use_anchor_position_fallback` in scope
+primitives/src/top_layer/scroll_clamp.rs	unresolved link to `use_point_anchor_clamp`: no item named `use_point_anchor_clamp` in scope
 primitives/src/virtual/bridge.rs	unresolved link to `Bridge::measure`: the struct `Bridge` has no field or associated item named `measure`
 primitives/src/virtual/grid.rs	redundant explicit link target: explicit target is redundant
 primitives/src/virtual/grid.rs	redundant explicit link target: explicit target is redundant

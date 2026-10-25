@@ -68,7 +68,7 @@ test.describe("Axe automated scan", () => {
 // play (`display: none` from the very first sample, so
 // `assertFadesOutThenUnmounts` fails both the "no display:none while
 // mounted" invariant and the "a few frames of decreasing opacity" check).
-// `primitives/src/top_layer.rs`'s `use_popover_shown_while_mounted`
+// `primitives/src/top_layer/popover_sync.rs`'s `use_popover_shown_while_mounted`
 // (row 19) keeps the popover shown through the animation that CSS defines
 // (row 7).
 test.describe("Close-fade animation (dev-docs/backlog.md rows 19, 7)", () => {
