@@ -22,7 +22,7 @@ for (const mode of ["light", "dark"] as const) {
     const label = await root.locator(".dx-field-label").evaluate((e) => getComputedStyle(e).color);
     expect(ink).not.toBe(label);
     const input = root.getByRole("textbox", { name: "Handle", exact: true });
-    await expect(input).toHaveAttribute("required", "");
+    expect(await input.evaluate((e) => (e as HTMLInputElement).required)).toBe(true);
     await expectNoAxeViolations(page, `input/required ${mode}`);
   });
 }
