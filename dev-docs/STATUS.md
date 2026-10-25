@@ -35,7 +35,7 @@ Owner order of 2026-10-24 (backlog thread), each stage reading the finished outp
 2. API shape, pre-1.0: **396**, **395**, **398**, **391**.
 3. Structure: **267** with **384**, at a quiet point in the queue; then **355** and **382**.
 4. Dependency review **371** (outcomes to the owner).
-5. One review pass: the code-quality review sweep together with **365**.
+5. Refactors from the **365** sweep (owner approved all ten 2026-10-25): rows **426-435**, small first, **435** (one menu engine, P10a first) last. Then the code-quality skill review **436** (owner: after the refactors).
 6. Docs on the settled API: **393**, **392**, **394**, **422** (Basic / Component-Specific section groups, outline approved), **399** (now with demo renames and the focus-target readout), then the standing review **387**.
 7. The 152b suite prune, then **383** last.
 
