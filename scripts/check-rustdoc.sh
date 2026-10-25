@@ -4,8 +4,8 @@
 #
 # Rustdoc builds without a warning: `cargo doc --no-deps --document-private-items` on the default arm of the whole
 # workspace and on the `web` arm of primitives and preview, so a broken intra-doc link, an unclosed HTML tag, a bare URL
-# or a public doc comment that links a private item is red before docs.rs shows it. Strict since row 382 emptied the
-# old shrink-only baseline: any rustdoc warning or error fails the gate. Fix a site by rewriting the doc comment: link
+# or a public doc comment that links a private item is red before docs.rs shows it. Strict, with no baseline: any rustdoc warning
+# or error fails the gate (dev-docs/backlog.md row 382). Fix a site by rewriting the doc comment: link
 # only items that are public, use a plain code span for a private one (or one that exists only on the `web` arm),
 # put a literal `<tag>` in a code span, write a URL as `<url>`, disambiguate a name that is both
 # a function and a module with `derive()` / `mod@window`. A raw identifier (`r#loop`) cannot be an intra-doc link.
