@@ -20,8 +20,16 @@
 //! start tags, no unescaped `<`/`>` inside attribute values, no raw-text
 //! elements like `<script>`/`<style>` in these component fixtures), which
 //! is all these tests ever need.
+//!
+//! It also holds the one runtime harness, [`with_runtime`] (backlog row 431):
+//! every test that needs a live Dioxus runtime (Signal, Memo, Callback,
+//! context, a `GlobalSignal`) runs its body through it instead of writing a
+//! private copy.
 
+use dioxus::prelude::*;
+use std::cell::RefCell;
 use std::collections::HashMap;
+use std::rc::Rc;
 
 /// One parsed start tag: its raw text, its attributes (name -> value,
 /// looked up order-independently), and its position in the source `html`.
@@ -265,6 +273,40 @@ fn parse_attr_value(html: &str, bytes: &[u8], start: usize) -> (String, usize) {
         }
         (html[start..p].to_string(), p)
     }
+}
+
+/// The props of the harness component: the type-erased body, nothing to compare.
+#[derive(Clone, Props)]
+struct HarnessProps {
+    body: Rc<dyn Fn()>,
+}
+
+impl PartialEq for HarnessProps {
+    fn eq(&self, _: &Self) -> bool {
+        true
+    }
+}
+
+/// Run `f` once inside a live Dioxus runtime (a rebuilt root component), so that
+/// `Signal`/`Memo`/`Callback`, context and hooks are available, and return what it
+/// returned. Panics if the component never ran, and a panic in `f` propagates.
+pub fn with_runtime<R: 'static>(f: impl Fn() -> R + 'static) -> R {
+    let slot: Rc<RefCell<Option<R>>> = Rc::new(RefCell::new(None));
+    let sink = slot.clone();
+    let body: Rc<dyn Fn()> = Rc::new(move || {
+        *sink.borrow_mut() = Some(f());
+    });
+    let mut dom = VirtualDom::new_with_props(
+        |props: HarnessProps| {
+            (props.body)();
+            rsx! { div {} }
+        },
+        HarnessProps { body },
+    );
+    dom.rebuild_in_place();
+    slot.borrow_mut()
+        .take()
+        .expect("the harness component did not run")
 }
 
 #[cfg(test)]

@@ -1,41 +1,9 @@
 use super::*;
+use crate::test_support::with_runtime;
 
 // -----------------------------------------------------------------
 // Context accessors
 // -----------------------------------------------------------------
-
-/// Run a closure inside a Dioxus runtime context so that Signal/Callback
-/// APIs are available (mirrors `virtual/virtualizer.rs`'s `with_runtime`).
-fn with_runtime(f: impl Fn() + 'static) {
-    let result = std::rc::Rc::new(std::cell::Cell::new(false));
-    let result2 = result.clone();
-    let test_fn = std::rc::Rc::new(f);
-    let mut dom = VirtualDom::new_with_props(
-        |props: TestHarnessProps| {
-            (props.test_fn)();
-            props.result.set(true);
-            rsx! { div {} }
-        },
-        TestHarnessProps {
-            test_fn,
-            result: result2,
-        },
-    );
-    dom.rebuild_in_place();
-    assert!(result.get(), "Test component did not run");
-}
-
-#[derive(Clone, Props)]
-struct TestHarnessProps {
-    test_fn: std::rc::Rc<dyn Fn()>,
-    result: std::rc::Rc<std::cell::Cell<bool>>,
-}
-
-impl PartialEq for TestHarnessProps {
-    fn eq(&self, _: &Self) -> bool {
-        true
-    }
-}
 
 #[test]
 fn date_picker_context_set_date_only_emits_on_change() {

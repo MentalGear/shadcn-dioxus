@@ -84,37 +84,10 @@ pub(crate) fn engine_row_keys(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_support::with_runtime;
     use dioxus::prelude::*;
     use std::cell::{Cell, RefCell};
     use std::rc::Rc;
-
-    /// Runs `f` inside a Dioxus runtime, where a `Callback` can be made.
-    fn with_runtime(f: impl Fn() + 'static) {
-        #[derive(Clone, Props)]
-        struct Harness {
-            f: Rc<dyn Fn()>,
-            ran: Rc<Cell<bool>>,
-        }
-        impl PartialEq for Harness {
-            fn eq(&self, _: &Self) -> bool {
-                true
-            }
-        }
-        let ran = Rc::new(Cell::new(false));
-        let mut dom = VirtualDom::new_with_props(
-            |props: Harness| {
-                (props.f)();
-                props.ran.set(true);
-                rsx! { div {} }
-            },
-            Harness {
-                f: Rc::new(f),
-                ran: ran.clone(),
-            },
-        );
-        dom.rebuild_in_place();
-        assert!(ran.get(), "the harness component did not run");
-    }
 
     /// The key-OFF half of `playwright/item-key.spec.ts` ("without item_key a row is its slot"),
     /// proved at the engine: with no `item_key` the identity of an element IS its index, so after

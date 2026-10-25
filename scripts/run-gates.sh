@@ -84,6 +84,7 @@ gates=(
   "check-hooks-in-closures|scripts/check-hooks-in-closures.sh"
   "check-self-subscribing-effects|scripts/check-self-subscribing-effects.sh"
   "check-component-call|scripts/check-component-call.sh"
+  "check-test-harness-controlled|scripts/check-test-harness-controlled.sh"
   "check-attr-spread-collision|scripts/check-attr-spread-collision.sh"
   "check-direction-keys|scripts/check-direction-keys.sh"
   "check-render-keys|scripts/check-render-keys.sh"

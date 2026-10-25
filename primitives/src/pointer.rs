@@ -120,6 +120,7 @@ fn remove_pointer(pointer_id: i32) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_support::with_runtime;
     use std::cell::Cell;
     use std::rc::Rc;
 
@@ -134,41 +135,6 @@ mod tests {
 
         assert_eq!(pointers.len(), 1);
         assert_eq!(pointers[0].position, ClientPoint::new(30.0, 40.0));
-    }
-
-    /// Run a closure inside a Dioxus runtime context. The `POINTERS` `GlobalSignal` (and the
-    /// `queue_effect`/`Runtime::current` machinery its initializer touches) require a live
-    /// runtime, so its public API can only be exercised this way (mirrors
-    /// `virtual/virtualizer.rs`'s `with_runtime`).
-    fn with_runtime(f: impl Fn() + 'static) {
-        let result = Rc::new(Cell::new(false));
-        let result2 = result.clone();
-        let test_fn = Rc::new(f);
-        let mut dom = VirtualDom::new_with_props(
-            |props: TestHarnessProps| {
-                (props.test_fn)();
-                props.result.set(true);
-                rsx! { div {} }
-            },
-            TestHarnessProps {
-                test_fn,
-                result: result2,
-            },
-        );
-        dom.rebuild_in_place();
-        assert!(result.get(), "Test component did not run");
-    }
-
-    #[derive(Clone, Props)]
-    struct TestHarnessProps {
-        test_fn: Rc<dyn Fn()>,
-        result: Rc<Cell<bool>>,
-    }
-
-    impl PartialEq for TestHarnessProps {
-        fn eq(&self, _: &Self) -> bool {
-            true
-        }
     }
 
     /// Each test picks pointer ids not used by other tests in this file: `POINTERS` is a

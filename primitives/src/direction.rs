@@ -199,6 +199,7 @@ pub fn use_direction(local: Option<Direction>) -> Direction {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_support::with_runtime;
     use std::cell::Cell;
     use std::rc::Rc;
 
@@ -280,33 +281,5 @@ mod tests {
             with_runtime(|| use_direction(Some(Direction::Rtl))),
             Direction::Rtl
         );
-    }
-
-    /// Run a closure inside a Dioxus runtime context so `try_consume_context`
-    /// is callable -- mirrors `slider.rs`'s own `with_runtime` test harness.
-    fn with_runtime(f: impl Fn() -> Direction + 'static) -> Direction {
-        let result = Rc::new(Cell::new(Direction::Ltr));
-        let result2 = result.clone();
-        let test_fn = Rc::new(f);
-        let mut dom = VirtualDom::new_with_props(
-            move |props: TestHarnessProps| {
-                result2.set((props.test_fn)());
-                rsx! { div {} }
-            },
-            TestHarnessProps { test_fn },
-        );
-        dom.rebuild_in_place();
-        result.get()
-    }
-
-    #[derive(Clone, Props)]
-    struct TestHarnessProps {
-        test_fn: Rc<dyn Fn() -> Direction>,
-    }
-
-    impl PartialEq for TestHarnessProps {
-        fn eq(&self, _: &Self) -> bool {
-            true
-        }
     }
 }

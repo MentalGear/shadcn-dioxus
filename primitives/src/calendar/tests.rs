@@ -1,5 +1,6 @@
 use super::*;
 use crate::test_support::find_element;
+use crate::test_support::with_runtime;
 use std::cell::Cell;
 use time::macros::date;
 
@@ -1064,39 +1065,6 @@ fn test_relative_month_display() {
 // -----------------------------------------------------------------
 // Context accessors (dev-docs/reference/mutants-baseline.md)
 // -----------------------------------------------------------------
-
-/// Run a closure inside a Dioxus runtime context so that Signal/Memo/Callback
-/// APIs are available (mirrors `virtual/virtualizer.rs`'s `with_runtime`).
-fn with_runtime(f: impl Fn() + 'static) {
-    let result = Rc::new(Cell::new(false));
-    let result2 = result.clone();
-    let test_fn = Rc::new(f);
-    let mut dom = VirtualDom::new_with_props(
-        |props: TestHarnessProps| {
-            (props.test_fn)();
-            props.result.set(true);
-            rsx! { div {} }
-        },
-        TestHarnessProps {
-            test_fn,
-            result: result2,
-        },
-    );
-    dom.rebuild_in_place();
-    assert!(result.get(), "Test component did not run");
-}
-
-#[derive(Clone, Props)]
-struct TestHarnessProps {
-    test_fn: Rc<dyn Fn()>,
-    result: Rc<Cell<bool>>,
-}
-
-impl PartialEq for TestHarnessProps {
-    fn eq(&self, _: &Self) -> bool {
-        true
-    }
-}
 
 /// Build a minimal but real `BaseCalendarContext` just to exercise
 /// `relative_calendar_month`'s `enabled_date_range` read; must run inside `with_runtime`.
