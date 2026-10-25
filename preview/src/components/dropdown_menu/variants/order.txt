@@ -7,3 +7,4 @@ account_switcher
 radio_icons
 shortcuts
 destructive
+placement

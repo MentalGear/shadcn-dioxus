@@ -71,7 +71,9 @@
     height: 24px;
     flex-grow: 1;
     border-radius: var(--dx-radius-md);
-    background: linear-gradient(to right, rgb(255 0 0), rgb(255 255 0), rgb(0 255 0), rgb(0 255 255), rgb(0 0 255), rgb(255 0 255), rgb(255 0 0)), repeating-conic-gradient(rgb(204 204 204) 0%, rgb(204 204 204) 25%, white 0%, white 50%) 50% center / 16px 16px;
+
+    /* `--track-gradient` is the channel's own ramp: the hue sweep by default, the alpha slider sets its transparent-to-color one inline. */
+    background: var(--track-gradient, linear-gradient(to right, rgb(255 0 0), rgb(255 255 0), rgb(0 255 0), rgb(0 255 255), rgb(0 0 255), rgb(255 0 255), rgb(255 0 0))), repeating-conic-gradient(rgb(204 204 204) 0%, rgb(204 204 204) 25%, white 0%, white 50%) 50% center / 16px 16px;
 }
 
 .dx-color-picker-slider-thumb {

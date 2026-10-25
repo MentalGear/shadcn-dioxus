@@ -23,7 +23,7 @@ use crate::{
         MenuShortcutProps,
     },
     merge_attributes, use_animated_open, use_controlled, use_id_or, use_outside_dismiss,
-    use_unique_id,
+    use_unique_id, ContentAlign, ContentSide,
 };
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
@@ -601,6 +601,17 @@ pub fn DropdownMenuTrigger(props: DropdownMenuTriggerProps) -> Element {
 pub struct DropdownMenuContentProps {
     /// The ID of the dropdown menu content element. If not provided, a unique ID will be generated.
     pub id: ReadSignal<Option<String>>,
+    /// The side of the trigger the menu opens on. It flips to the opposite side when that side has
+    /// no room; the side it was actually placed on is published as `data-placed-side`.
+    #[props(default = ContentSide::Bottom)]
+    pub side: ContentSide,
+    /// How the menu lines up with the trigger along that side: `Start` puts the two leading edges
+    /// together.
+    #[props(default = ContentAlign::Start)]
+    pub align: ContentAlign,
+    /// The gap between the trigger and the menu, in CSS pixels.
+    #[props(default = 4)]
+    pub side_offset: u32,
     /// Additional attributes to apply to the dropdown menu content element.
     #[props(extends = GlobalAttributes)]
     pub attributes: Vec<Attribute>,
@@ -687,6 +698,9 @@ pub fn DropdownMenuContent(props: DropdownMenuContentProps) -> Element {
         if render() {
             DropdownMenuContentRendered {
                 id: id.cloned(),
+                side: props.side,
+                align: props.align,
+                side_offset: props.side_offset,
                 attributes: props.attributes,
                 scroll_lock_active,
                 children: props.children,
@@ -727,6 +741,12 @@ pub fn DropdownMenuContent(props: DropdownMenuContentProps) -> Element {
 #[component]
 fn DropdownMenuContentRendered(
     id: String,
+    /// The side of the trigger the menu opens on ([`DropdownMenuContentProps::side`]).
+    side: ContentSide,
+    /// The menu's alignment along that side ([`DropdownMenuContentProps::align`]).
+    align: ContentAlign,
+    /// The gap to the trigger in px ([`DropdownMenuContentProps::side_offset`]).
+    side_offset: u32,
     attributes: Vec<Attribute>,
     scroll_lock_active: Memo<bool>,
     children: Element,
@@ -774,19 +794,19 @@ fn DropdownMenuContentRendered(
         ctx.focus.clear_focus();
         ctx.set_open.call(false);
     });
-    // JS-measured static positioning fallback for engines without CSS
-    // Anchor Positioning -- see `top_layer::use_anchor_position_fallback`'s
-    // doc. `side`/`align` match the APG/Radix dropdown-menu default:
-    // anchored below the trigger, left-aligned with it (not centered, the
-    // `Tooltip`/`HoverCard`/`Popover` default -- a menu's items read
-    // left-to-right from the trigger's own left edge).
+    // Places the menu at `side`/`align`, `side_offset` px from the trigger -- see
+    // `top_layer::use_anchor_position_fallback`'s doc. The defaults match the Radix dropdown menu:
+    // below the trigger and start-aligned with it (not centered, the `Tooltip`/`HoverCard`/
+    // `Popover` default -- a menu's items read from the trigger's own leading edge). The content
+    // carries no `data-side`: the engine's `[data-side]` anchor rules use an 8px gap, so this
+    // measured placement is the one authority, and it publishes the resolved `data-placed-side`.
     crate::top_layer::use_anchor_position_fallback(
         id.clone(),
         id.clone(),
         open,
-        crate::ContentSide::Bottom,
-        crate::ContentAlign::Start,
-        4,
+        side,
+        align,
+        side_offset,
     );
     // A menu that does NOT lock the page (`modal: false`) closes on any
     // scroll instead (`top_layer::use_close_on_scroll`'s doc); a locking one
@@ -868,10 +888,19 @@ fn DropdownMenuContentRendered(
 #[component]
 fn DropdownMenuContentRendered(
     id: String,
+    /// The side of the trigger the menu opens on ([`DropdownMenuContentProps::side`]).
+    side: ContentSide,
+    /// The menu's alignment along that side ([`DropdownMenuContentProps::align`]).
+    align: ContentAlign,
+    /// The gap to the trigger in px ([`DropdownMenuContentProps::side_offset`]).
+    side_offset: u32,
     attributes: Vec<Attribute>,
     scroll_lock_active: Memo<bool>,
     children: Element,
 ) -> Element {
+    // This arm is always in flow below the trigger (this component's doc): there is nothing to
+    // place.
+    let _ = (side, align, side_offset);
     let mut ctx: DropdownMenuContext = use_context();
 
     // See the web arm's identical construction above (dev-docs/backlog.md row

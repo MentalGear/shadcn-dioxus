@@ -1,4 +1,8 @@
 .dx-toolbar {
+    /* Every root declares the groups' direction, so a horizontal toolbar nested in a vertical one
+     * keeps `row` instead of inheriting the outer root's `column`. */
+    --dx-toolbar-group-direction: row;
+
     display: flex;
     flex-flow: row wrap;
     align-items: center;
@@ -74,7 +78,9 @@
 
 .dx-toolbar-group {
     display: flex;
-    flex-direction: row;
+
+    /* Slot variable, declared on every root (`row`, or `column` on a vertical one). */
+    flex-direction: var(--dx-toolbar-group-direction);
     gap: 5px;
 }
 
@@ -83,6 +89,26 @@
     height: var(--dx-space-6);
     margin: 0 5px;
     background-color: var(--dx-border);
+}
+
+/* `horizontal: false` (`data-orientation="vertical"`): the bar and its groups stack top to bottom,
+ * and every button takes the column's width. The separators in it are horizontal (a separator takes
+ * the orientation opposite to its toolbar's unless it sets `horizontal` itself), so the separator
+ * rule keys on the separator's own `data-orientation`, not on the toolbar's. The groups read
+ * `--dx-toolbar-group-direction`, set on the root. */
+.dx-toolbar[data-orientation="vertical"] {
+    --dx-toolbar-group-direction: column;
+
+    width: fit-content;
+    flex-flow: column nowrap;
+    align-items: stretch;
+    justify-content: flex-start;
+}
+
+.dx-toolbar-separator[data-orientation="horizontal"] {
+    width: auto;
+    height: 1px;
+    margin: 5px 0;
 }
 
 .dx-toolbar-content p:not(:where([popover], dialog) *) {

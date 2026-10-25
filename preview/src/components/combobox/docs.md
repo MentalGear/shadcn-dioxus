@@ -5,7 +5,7 @@ query-dependent ranking, control `query`, sort your item data in user code and r
 in that sorted order. Options that are reordered while mounted (a keyed list) keep their first
 place, so such a list sets each option's `index` from the sorted list.
 
-Selecting several options (chips, clear button, form value) is `ComboboxMulti`: its demos come first under Examples below, and its API is in "Multiple selection".
+Selecting several options (chips) is `ComboboxMulti`: its demos come first under Examples below, and its API is in "Multiple selection".
 
 ## Behavior
 
@@ -46,14 +46,42 @@ value's display text. The input's value reads it at render time, never the optio
 client-only effect), so a preselected `Combobox` carries `value="Next.js"` in the server-rendered HTML instead of
 an empty input until hydration, and the input cannot flash empty while the list re-registers its options.
 
+## Forms, clearing and the input
+
+- `name` submits the selected value under that name; nothing is submitted while nothing is selected. The
+  submitted text is `item_to_value` (like Base UI's `itemToStringValue`), or the label when it is not set, so
+  `T` needs no `ToString`. `<form reset>` restores `default_value`. See the `clear_form` variant.
+- `show_clear` draws a clear button before the chevron while something is selected. It empties the selection
+  (`on_value_change` gets `None`) and the input, and returns focus to the input.
+- `invalid` sets `aria-invalid="true"` on the input, which draws the invalid ring; put the combobox in
+  `Field { invalid }` for the red label and `FieldError`. See the `invalid` variant.
+- `addon` draws an icon or a short text inside the input at its start edge (shadcn's `InputGroupAddon` inside
+  `ComboboxInput`), and the text starts after it. See the `input_group` variant.
+- `auto_highlight` highlights the first matching option while the user types, so Enter picks it without an
+  arrow key first (Base UI's `autoHighlight`). Opening the list still highlights the selected option. Both
+  roots take it. See the `auto_highlight` variant.
+
+## Groups
+
+`ComboboxGroup` is a `role="group"` named by its `ComboboxGroupLabel`. Options in groups keep the list's one
+keyboard order, and the label is never an option. While the query leaves none of a group's options visible,
+the group (its heading too) is `hidden`. See the `groups` variant.
+
+```rust
+ComboboxGroup {
+    ComboboxGroupLabel { "Fruits" }
+    ComboboxOption::<String> { value: "apple".to_string(), text_value: "Apple", "Apple" }
+}
+```
+
 ## Multiple selection
 
 `ComboboxMulti` selects several options and shows them as removable chips (shadcn's `multiple` +
 `chips` combobox). It takes and reports a `Vec<T>` (`values` / `default_values` / `on_values_change`)
 where `Combobox` takes `Option<T>`: the two roots have different *types*, so the operations that only
-exist on a set (remove one, clear all, Backspace on an empty input, chips) cannot be reached from a
+exist on a set (remove one, Backspace on an empty input, chips) cannot be reached from a
 single-select root, and a single root's callback can never see a list. Both share the same input, list,
-options and empty state.
+groups, options, empty state and clear button.
 
 ```rust
 ComboboxMulti::<String> {

@@ -19,6 +19,7 @@ struct TagGroupState {
     set_value: Callback<RcPartialEqValue>,
     set_values: Callback<Vec<RcPartialEqValue>>,
     clear_selection: Callback<()>,
+    on_remove: Callback<Vec<RcPartialEqValue>>,
     selection_mode: SelectionMode,
     items: Signal<Vec<TagItem>>,
     focus: CollectionState,
@@ -81,6 +82,7 @@ struct TagGroupSelection {
     set_value: Callback<RcPartialEqValue>,
     set_values: Callback<Vec<RcPartialEqValue>>,
     clear_selection: Callback<()>,
+    on_remove: Callback<Vec<RcPartialEqValue>>,
     selection_mode: SelectionMode,
 }
 
@@ -224,6 +226,7 @@ impl TagGroupState {
         let items = self.items.read();
         let selected_values = self.values.read().clone();
         let mut removal_ids = Vec::new();
+        let mut removed_values: Vec<RcPartialEqValue> = Vec::new();
         let mut removed_selected_values: Vec<RcPartialEqValue> = Vec::new();
 
         for id in ids {
@@ -246,6 +249,7 @@ impl TagGroupState {
                 removed_selected_values.push(item.value.clone());
             }
             removal_ids.push(item.id.clone());
+            removed_values.push(item.value.clone());
         }
 
         if removal_ids.is_empty() {
@@ -295,6 +299,8 @@ impl TagGroupState {
                 }
             }
         }
+
+        self.on_remove.call(removed_values);
 
         true
     }
@@ -374,6 +380,12 @@ pub struct TagGroupProps<T: Clone + PartialEq + 'static = String> {
     #[props(default)]
     pub on_value_change: Callback<Option<T>>,
 
+    /// Called with the values of the tags a remove button or Delete/Backspace removed, in list
+    /// order (one action removes every selected removable tag when the focused tag is selected).
+    /// The tags hide themselves either way; an app that owns the list drops them here.
+    #[props(default)]
+    pub on_remove: Callback<Vec<T>>,
+
     /// Whether the entire tag group is disabled.
     #[props(default)]
     pub disabled: ReadSignal<bool>,
@@ -416,6 +428,12 @@ pub struct TagGroupMultiProps<T: Clone + PartialEq + 'static = String> {
     /// Called when the selected values change.
     #[props(default)]
     pub on_values_change: Callback<Vec<T>>,
+
+    /// Called with the values of the tags a remove button or Delete/Backspace removed, in list
+    /// order (one action removes every selected removable tag when the focused tag is selected).
+    /// The tags hide themselves either way; an app that owns the list drops them here.
+    #[props(default)]
+    pub on_remove: Callback<Vec<T>>,
 
     /// Whether the entire tag group is disabled.
     #[props(default)]
@@ -504,6 +522,10 @@ pub fn TagGroup<T: Clone + PartialEq + 'static>(props: TagGroupProps<T>) -> Elem
         internal_value.set(None);
         on_change.call(None);
     });
+    let on_remove_props = props.on_remove;
+    let on_remove = use_callback(move |removed: Vec<RcPartialEqValue>| {
+        on_remove_props.call(typed_values::<T>(removed, "TagGroup"));
+    });
 
     use_tag_group_inner(
         TagGroupSharedProps::from_single(&props),
@@ -512,6 +534,7 @@ pub fn TagGroup<T: Clone + PartialEq + 'static>(props: TagGroupProps<T>) -> Elem
             set_value,
             set_values,
             clear_selection,
+            on_remove,
             selection_mode: SelectionMode::Single,
         },
     )
@@ -569,19 +592,14 @@ pub fn TagGroupMulti<T: Clone + PartialEq + 'static>(props: TagGroupMultiProps<T
         set_multi_internal.call(current);
     });
     let set_values = use_callback(move |values: Vec<RcPartialEqValue>| {
-        let values = values
-            .into_iter()
-            .map(|value| {
-                value
-                    .as_ref::<T>()
-                    .unwrap_or_else(|| panic!("TagGroupMulti and TagOption value types must match"))
-                    .clone()
-            })
-            .collect();
-        set_multi_internal.call(values);
+        set_multi_internal.call(typed_values::<T>(values, "TagGroupMulti"));
     });
     let clear_selection = use_callback(move |_| {
         set_multi_internal.call(Vec::new());
+    });
+    let on_remove_props = props.on_remove;
+    let on_remove = use_callback(move |removed: Vec<RcPartialEqValue>| {
+        on_remove_props.call(typed_values::<T>(removed, "TagGroupMulti"));
     });
 
     use_tag_group_inner(
@@ -591,9 +609,25 @@ pub fn TagGroupMulti<T: Clone + PartialEq + 'static>(props: TagGroupMultiProps<T
             set_value,
             set_values,
             clear_selection,
+            on_remove,
             selection_mode: SelectionMode::Multiple,
         },
     )
+}
+
+fn typed_values<T: Clone + PartialEq + 'static>(
+    values: Vec<RcPartialEqValue>,
+    group: &str,
+) -> Vec<T> {
+    values
+        .into_iter()
+        .map(|value| {
+            value
+                .as_ref::<T>()
+                .unwrap_or_else(|| panic!("{group} and TagOption value types must match"))
+                .clone()
+        })
+        .collect()
 }
 
 fn use_tag_group_inner(shared: TagGroupSharedProps, selection: TagGroupSelection) -> Element {
@@ -611,6 +645,7 @@ fn use_tag_group_inner(shared: TagGroupSharedProps, selection: TagGroupSelection
         set_value,
         set_values,
         clear_selection,
+        on_remove,
         selection_mode,
     } = selection;
 
@@ -622,6 +657,7 @@ fn use_tag_group_inner(shared: TagGroupSharedProps, selection: TagGroupSelection
         set_value,
         set_values,
         clear_selection,
+        on_remove,
         selection_mode,
         items,
         focus,

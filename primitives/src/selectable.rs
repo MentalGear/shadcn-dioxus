@@ -237,16 +237,23 @@ impl SelectableContext {
     }
 }
 
+/// The model of a single-select root, from [`use_single_selectable_value`].
+pub(crate) struct SingleSelectableValue {
+    /// The selection as the selectable's list: empty or one value.
+    pub(crate) values: Memo<Vec<RcPartialEqValue>>,
+    pub(crate) set_value: Callback<RcPartialEqValue>,
+    /// Restores `default_value` (a `<form reset>`).
+    pub(crate) reset_to_default: Callback<()>,
+    /// Selects nothing.
+    pub(crate) clear: Callback<()>,
+}
+
 pub(crate) fn use_single_selectable_value<T: Clone + PartialEq + 'static>(
     controlled_value: Option<ReadSignal<Option<T>>>,
     default_value: Option<T>,
     on_change: Callback<Option<T>>,
     component_name: &'static str,
-) -> (
-    Memo<Vec<RcPartialEqValue>>,
-    Callback<RcPartialEqValue>,
-    Callback<()>,
-) {
+) -> SingleSelectableValue {
     let mut internal_value: Signal<Option<T>> = use_signal(|| default_value.clone());
     let value = use_memo(move || match controlled_value {
         Some(value) => value.cloned(),
@@ -271,8 +278,17 @@ pub(crate) fn use_single_selectable_value<T: Clone + PartialEq + 'static>(
         internal_value.set(default_for_reset.clone());
         on_change.call(default_for_reset.clone());
     });
+    let clear = use_callback(move |()| {
+        internal_value.set(None);
+        on_change.call(None);
+    });
 
-    (values, set_value, reset_to_default)
+    SingleSelectableValue {
+        values,
+        set_value,
+        reset_to_default,
+        clear,
+    }
 }
 
 pub(crate) fn use_selectable_root(

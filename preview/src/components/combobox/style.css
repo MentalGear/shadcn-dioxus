@@ -97,6 +97,45 @@
   color: var(--dx-muted-foreground);
 }
 
+/* `addon`: an icon or short text at the input's inline start, inside its edge (Nova's
+ * `InputGroupAddon`: `text-muted-foreground`, a 16px icon, `pl-2`). The input moves its text past it.
+ * Clicks fall through to the input, so the addon never steals its focus. */
+.dx-combobox-addon {
+  position: absolute;
+  top: 50%;
+  display: flex;
+  align-items: center;
+  color: var(--dx-muted-foreground);
+  font-size: var(--dx-text-sm);
+  gap: var(--dx-space-1);
+  inset-inline-start: var(--dx-space-2-5);
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+
+.dx-combobox-addon svg:not(:where([popover], dialog) *) {
+  width: 1rem;
+  height: 1rem;
+  flex: none;
+}
+
+.dx-combobox-input-wrapper:has(> .dx-combobox-addon) > .dx-combobox-input {
+  padding-inline-start: calc(var(--dx-space-2-5) + 1rem + var(--dx-space-2));
+}
+
+/* The single-select clear button sits just before the chevron, and the input's text stops before
+ * both. */
+.dx-combobox-input-wrapper > .dx-combobox-clear {
+  position: absolute;
+  top: 50%;
+  inset-inline-end: calc(var(--dx-menu-item-indicator-inset) + var(--dx-menu-item-indicator-size) + var(--dx-space-1));
+  transform: translateY(-50%);
+}
+
+.dx-combobox-input-wrapper:has(> .dx-combobox-clear) > .dx-combobox-input {
+  padding-inline-end: calc(var(--dx-menu-item-indicator-inset) + var(--dx-menu-item-indicator-size) + var(--dx-space-1) + 1.375rem + var(--dx-space-1));
+}
+
 .dx-combobox-expand-icon {
   position: absolute;
   top: 50%;
@@ -312,4 +351,15 @@
   .dx-combobox-clear:hover {
     color: var(--dx-foreground);
   }
+}
+
+/* A group's heading: Nova's `.cn-combobox-label` (`text-muted-foreground px-2 py-1.5 text-xs`). */
+.dx-combobox-group-label {
+  padding: var(--dx-space-1-5) var(--dx-space-2);
+  color: var(--dx-muted-foreground);
+  font-size: var(--dx-text-xs);
+}
+
+.dx-combobox-group[hidden] {
+  display: none;
 }

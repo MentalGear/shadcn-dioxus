@@ -10,12 +10,11 @@ pub fn default_combobox_filter(query: &str, text: &str) -> bool {
 
 /// What a combobox holds, by construction.
 ///
-/// `Single` carries nothing but the label: a single-select root has no way to remove one
-/// value or clear them all, so no chip, clear button or Backspace path can be
-/// reached from it, and its `on_value_change` only ever sees `Option<T>`.
-/// `Multi` carries the only two operations that exist on a set of values;
-/// they are built next to the root's `Vec<T>` model (`multi.rs`), so a value
-/// that reaches a single-select root's callback cannot be a list.
+/// `Single` holds at most one value, so the only operation besides picking is clearing it (the
+/// clear button); there are no chips and no Backspace removal, and its `on_value_change` only ever
+/// sees `Option<T>`. `Multi` carries the two operations that exist on a set of values; they are
+/// built next to the root's `Vec<T>` model (`multi.rs`), so a value that reaches a single-select
+/// root's callback cannot be a list.
 ///
 /// Both carry `label`, the root's required `item_to_label`: a selected value's display text
 /// (the chips and their remove buttons' accessible names; the single input's text). It is read at
@@ -24,6 +23,8 @@ pub fn default_combobox_filter(query: &str, text: &str) -> bool {
 #[derive(Clone, Copy)]
 pub(super) enum ComboboxModel {
     Single {
+        /// Select nothing (the clear button).
+        clear: Callback<()>,
         label: Callback<RcPartialEqValue, String>,
     },
     Multi {
@@ -94,6 +95,14 @@ impl ComboboxContext {
         }
     }
 
+    /// Clear the selection (the clear button). A single-select's input empties with it: the edit is
+    /// over, so it shows the (now absent) selection's label.
+    pub fn clear(&mut self) {
+        let (ComboboxModel::Single { clear, .. } | ComboboxModel::Multi { clear, .. }) = self.model;
+        clear.call(());
+        self.reset_query();
+    }
+
     /// Remove the last selected value (Backspace on an empty input). No-op for `Single`.
     pub fn remove_last(&self) {
         let last = self.selectable.values.peek().last().cloned();
@@ -105,7 +114,7 @@ impl ComboboxContext {
     /// A selected value's text: the root's `item_to_label`, available at render time.
     pub fn label_of(&self, value: &RcPartialEqValue) -> String {
         match self.model {
-            ComboboxModel::Single { label } | ComboboxModel::Multi { label, .. } => {
+            ComboboxModel::Single { label, .. } | ComboboxModel::Multi { label, .. } => {
                 label.call(value.clone())
             }
         }

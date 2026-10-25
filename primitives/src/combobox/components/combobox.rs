@@ -8,8 +8,9 @@ use crate::{
     merge_attributes,
     selectable::{
         use_selectable_root, use_single_selectable_value, RcPartialEqValue, SelectionMode,
+        SingleSelectableValue,
     },
-    use_controlled, use_unique_id, Controlled,
+    use_controlled, use_form_reset_listener, use_unique_id, Controlled,
 };
 
 /// Props for [`Combobox`].
@@ -32,6 +33,16 @@ pub struct ComboboxProps<T: Clone + PartialEq + 'static = String> {
     /// Callback fired when the value changes.
     #[props(default)]
     pub on_value_change: Callback<Option<T>>,
+
+    /// Form field name. The selected value is submitted under it as `item_to_value`'s text (the
+    /// label when that is not set); nothing is submitted while nothing is selected.
+    #[props(default)]
+    pub name: ReadSignal<Option<String>>,
+
+    /// The text a selected value submits under `name`, like Base UI's `itemToStringValue`.
+    /// Defaults to `item_to_label`.
+    #[props(default)]
+    pub item_to_value: Option<Callback<T, String>>,
 
     /// Whether the combobox is disabled.
     #[props(default)]
@@ -64,6 +75,12 @@ pub struct ComboboxProps<T: Clone + PartialEq + 'static = String> {
     #[props(default)]
     pub on_query_change: Callback<String>,
 
+    /// Whether typing highlights the first option that matches the query, so Enter picks it
+    /// without an arrow key first (Base UI's `autoHighlight`). Opening the list highlights the
+    /// selected option either way.
+    #[props(default)]
+    pub auto_highlight: ReadSignal<bool>,
+
     /// Whether arrow-key navigation should wrap.
     #[props(default = ReadSignal::new(Signal::new(true)))]
     pub roving_loop: ReadSignal<bool>,
@@ -90,6 +107,7 @@ pub(in crate::combobox) fn use_combobox_root(
     open: Controlled<bool>,
     query: Controlled<String>,
     filter: Callback<(String, String), bool>,
+    auto_highlight: ReadSignal<bool>,
 ) -> Memo<bool> {
     let selection_mode = match model {
         ComboboxModel::Single { .. } => SelectionMode::Single,
@@ -110,7 +128,7 @@ pub(in crate::combobox) fn use_combobox_root(
     let input_id = use_unique_id();
     let edited = use_signal(|| false);
 
-    use_context_provider(|| ComboboxContext {
+    let ctx = use_context_provider(|| ComboboxContext {
         model,
         selectable,
         query,
@@ -120,29 +138,48 @@ pub(in crate::combobox) fn use_combobox_root(
         edited,
     });
 
+    // Auto-highlight: each edit of the query (the input's `oninput` clears the highlight) and each
+    // change to which options pass the filter puts the highlight on the first matching option.
+    // Arrow keys move it afterwards, since nothing read here changes when they do.
+    use_effect(move || {
+        if !auto_highlight() || !open() || !*edited.read() {
+            return;
+        }
+        if selectable.collection.order_pending() {
+            return;
+        }
+        let mut ctx = ctx;
+        ctx.focus_first_visible();
+    });
+
     open
 }
 
 /// A single-select autocomplete input with a filterable popup list.
 #[component]
 pub fn Combobox<T: Clone + PartialEq + 'static>(props: ComboboxProps<T>) -> Element {
-    let (selected, set_value, _reset_to_default) = use_single_selectable_value(
+    let SingleSelectableValue {
+        values: selected,
+        set_value,
+        reset_to_default,
+        clear,
+    } = use_single_selectable_value(
         props.value,
         props.default_value,
         props.on_value_change,
         "combobox",
     );
 
-    let item_to_label = props.item_to_label;
-    let label = use_callback(move |value: RcPartialEqValue| {
-        let value = value
+    let typed = move |value: &RcPartialEqValue| -> T {
+        value
             .as_ref::<T>()
             .unwrap_or_else(|| panic!("combobox and option value types must match"))
-            .clone();
-        item_to_label.call(value)
-    });
+            .clone()
+    };
+    let item_to_label = props.item_to_label;
+    let label = use_callback(move |value: RcPartialEqValue| item_to_label.call(typed(&value)));
     let open = use_combobox_root(
-        ComboboxModel::Single { label },
+        ComboboxModel::Single { clear, label },
         selected,
         set_value,
         props.disabled,
@@ -158,6 +195,7 @@ pub fn Combobox<T: Clone + PartialEq + 'static>(props: ComboboxProps<T>) -> Elem
             on_change: props.on_query_change,
         },
         props.filter,
+        props.auto_highlight,
     );
 
     let owned = attributes!(div {
@@ -166,9 +204,25 @@ pub fn Combobox<T: Clone + PartialEq + 'static>(props: ComboboxProps<T>) -> Elem
     });
     let merged = merge_attributes(vec![props.attributes.clone(), owned]);
 
+    // Native `<form reset>` cannot reach the selection: restore the default through a hidden anchor.
+    let reset_id = use_unique_id();
+    use_form_reset_listener(reset_id, move || reset_to_default.call(()));
+    let item_to_value = props.item_to_value.unwrap_or(item_to_label);
+    let submitted = (props.name)().zip(selected.read().first().map(typed));
+    let disabled = (props.disabled)();
+
     rsx! {
         div {
             ..merged,
+            input { id: reset_id, r#type: "hidden", disabled: true }
+            if let Some((name, value)) = submitted {
+                input {
+                    r#type: "hidden",
+                    name: "{name}",
+                    value: item_to_value.call(value),
+                    disabled,
+                }
+            }
             {props.children}
         }
     }

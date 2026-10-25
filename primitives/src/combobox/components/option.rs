@@ -4,6 +4,7 @@ use dioxus::prelude::*;
 use dioxus_attributes::attributes;
 
 use super::super::context::ComboboxContext;
+use super::group::ComboboxGroupContext;
 use crate::{
     collection::{collection_item, use_item, use_item_index},
     listbox::{ListboxContext, ListboxItemIndicator},
@@ -116,6 +117,33 @@ pub fn ComboboxOption<T: PartialEq + Clone + 'static>(props: ComboboxOptionProps
     );
 
     let render = use_context::<ListboxContext>().render;
+
+    // Count this option in its group's visible options while it is shown, so a group the query
+    // empties hides with its label (`ComboboxGroup`).
+    let group = try_use_context::<ComboboxGroupContext>();
+    let mut counted = use_hook(|| CopyValue::new(false));
+    use_effect(move || {
+        let Some(mut group) = group else { return };
+        let shown = render() && ctx.is_visible(index());
+        if shown != *counted.peek() {
+            counted.set(shown);
+            let mut count = group.visible.write();
+            *count = if shown {
+                *count + 1
+            } else {
+                count.saturating_sub(1)
+            };
+        }
+    });
+    use_drop(move || {
+        if let Some(mut group) = group {
+            if *counted.peek() {
+                if let Ok(mut count) = group.visible.try_write() {
+                    *count = count.saturating_sub(1);
+                }
+            }
+        }
+    });
 
     // Keep the active option in view: on open (the selected option is
     // highlighted) and as arrow keys move the highlight.

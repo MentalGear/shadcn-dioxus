@@ -114,6 +114,8 @@ pub fn Toolbar(props: ToolbarProps) -> Element {
 
     let owned = attributes!(div {
         role: "toolbar",
+        // APG toolbar: a vertical toolbar says so (the role's implicit orientation is horizontal).
+        aria_orientation: ctx.orientation(),
         "data-orientation": ctx.orientation(),
         "data-disabled": (props.disabled)(),
         "data-direction": direction.as_str(),

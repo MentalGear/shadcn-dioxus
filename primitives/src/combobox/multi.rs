@@ -1,13 +1,13 @@
 //! Multi-select combobox: the `Vec<T>` model, chips and the clear button.
 //!
 //! [`ComboboxMulti`] is the second root of the combobox. It shares every part
-//! with [`Combobox`](super::Combobox) (input, list, options, empty state)
-//! through one `ComboboxContext`; what differs is the *type* of its model.
+//! with [`Combobox`](super::Combobox) (input, list, options, empty state, clear
+//! button) through one `ComboboxContext`; what differs is the *type* of its model.
 //! The single root takes and reports `Option<T>`, this one `Vec<T>`, and the
 //! context records which one it is (`ComboboxModel`), so the operations that
-//! only exist on a set -- remove one value, clear all, Backspace on an empty
-//! input, chips -- are unreachable from a single-select root rather than
-//! guarded at each call site.
+//! only exist on a set -- remove one value, Backspace on an empty input, chips --
+//! are unreachable from a single-select root rather than guarded at each call
+//! site.
 
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
@@ -108,6 +108,11 @@ pub struct ComboboxMultiProps<T: Clone + PartialEq + ToString + 'static> {
     #[props(default)]
     pub on_query_change: Callback<String>,
 
+    /// Whether typing highlights the first option that matches the query, so Enter toggles it
+    /// without an arrow key first (Base UI's `autoHighlight`).
+    #[props(default)]
+    pub auto_highlight: ReadSignal<bool>,
+
     /// Whether arrow-key navigation should wrap.
     #[props(default = ReadSignal::new(Signal::new(true)))]
     pub roving_loop: ReadSignal<bool>,
@@ -187,6 +192,7 @@ pub fn ComboboxMulti<T: Clone + PartialEq + ToString + 'static>(
             on_change: props.on_query_change,
         },
         props.filter,
+        props.auto_highlight,
     );
 
     // Native `<form reset>` cannot reach the signals above: restore the default through a hidden anchor.
@@ -369,15 +375,13 @@ pub struct ComboboxClearProps {
     pub children: Element,
 }
 
-/// Clears every selected value. Renders nothing while nothing is selected, and
-/// nothing at all inside a single-select root.
+/// Clears the selection -- every value of a [`ComboboxMulti`], the one value of a
+/// [`Combobox`](super::Combobox) -- and returns focus to the input. Renders nothing while nothing is
+/// selected.
 #[component]
 pub fn ComboboxClear(props: ComboboxClearProps) -> Element {
-    let ctx = use_context::<ComboboxContext>();
+    let mut ctx = use_context::<ComboboxContext>();
     let input_id = ctx.input_id;
-    let ComboboxModel::Multi { clear, .. } = ctx.model else {
-        return rsx! {};
-    };
     if ctx.selectable.values.read().is_empty() {
         return rsx! {};
     }
@@ -398,7 +402,7 @@ pub fn ComboboxClear(props: ComboboxClearProps) -> Element {
                 event.stop_propagation();
             },
             onclick: move |_| {
-                clear.call(());
+                ctx.clear();
                 focus_id(input_id.cloned());
             },
             ..merged,

@@ -8,6 +8,7 @@ use crate::{
     merge_attributes,
     selectable::{
         use_selectable_root, use_single_selectable_value, RcPartialEqValue, SelectionMode,
+        SingleSelectableValue,
     },
     use_controlled, use_effect, use_form_reset_listener, use_unique_id, Controlled,
 };
@@ -344,7 +345,12 @@ pub fn Select<T: Clone + PartialEq + 'static>(props: SelectProps<T>) -> Element 
     // default value `initial_selected` (-> `.defaultSelected`), which is
     // what the HTML reset algorithm restores from.
     let default_value_for_reset = props.default_value.clone();
-    let (values, set_value, reset_to_default) = use_single_selectable_value(
+    let SingleSelectableValue {
+        values,
+        set_value,
+        reset_to_default,
+        ..
+    } = use_single_selectable_value(
         props.value,
         props.default_value,
         props.on_value_change,

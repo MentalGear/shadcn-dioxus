@@ -25,6 +25,7 @@ use super::grid::GridKey;
 use super::layout::justified::{justified_layout, JustifiedLayout, JustifiedOptions, Tile};
 use super::layout::partition_point;
 use super::pin::pin_sorted;
+use super::scroll_to::{align_offset, ScrollAlign};
 use super::types::ScrollReport;
 
 /// The viewport the engine assumes before the first scroll report (the server render and the
@@ -136,6 +137,32 @@ impl JustifiedEngine {
         if let Some(viewport) = &mut self.viewport {
             viewport.top = top;
         }
+    }
+
+    /// Whether there is a layout to scroll in: the container has reported its size and there are
+    /// tiles.
+    pub(crate) fn has_layout(&self) -> bool {
+        self.viewport.is_some() && !self.layout.tiles.is_empty()
+    }
+
+    /// The `scrollTop` that puts the row holding tile `index` (the last tile when `index` is
+    /// past the end) at `align`, clamped to the canvas, and records it as the engine's offset.
+    /// `None` without a layout. Vertical only: a row is the unit, whatever its width.
+    pub(crate) fn align_tile(&mut self, index: usize, align: ScrollAlign) -> Option<u32> {
+        let last = self.layout.tiles.len().checked_sub(1)?;
+        let row = self.layout.rows[self.layout.tiles[index.min(last)].row];
+        let viewport = self.viewport();
+        let px = |value: f64| value.round().clamp(0.0, f64::from(u32::MAX)) as u32;
+        let target = align_offset(
+            px(row.y),
+            px(row.height),
+            viewport.top,
+            viewport.height,
+            px(self.layout.total_height),
+            align,
+        );
+        self.set_top(target);
+        Some(target)
     }
 
     /// The first tile of the row at the top of the viewport: what a re-layout keeps in place.
@@ -490,6 +517,33 @@ mod tests {
         let mut engine = JustifiedEngine::new();
         engine.sync(&aspects, Some(JustifiedOptions::new(width, 160.0, 4.0)));
         engine
+    }
+
+    #[test]
+    fn align_tile_scrolls_to_the_tiles_row_and_clamps_to_the_canvas() {
+        let mut engine = engine(800.0, 20_000);
+        assert!(!engine.has_layout(), "no viewport has been reported");
+        engine.scroll(report(0, 0, 800, 480));
+        assert!(engine.has_layout());
+        let layout = engine.layout().clone();
+        let tile = 12_345;
+        let row = layout.rows[layout.tiles[tile].row];
+        let start = engine.align_tile(tile, ScrollAlign::Start).unwrap();
+        assert_eq!(start, row.y.round() as u32);
+        assert_eq!(engine.viewport().top, start, "the engine holds the target");
+        let end = engine.align_tile(tile, ScrollAlign::End).unwrap();
+        assert_eq!(end, (row.y + row.height).round() as u32 - 480);
+        // Nearest from where Start left it is fully visible: no move.
+        engine.align_tile(tile, ScrollAlign::Start);
+        assert_eq!(engine.align_tile(tile, ScrollAlign::Nearest), Some(start));
+        // Past the last tile, the bottom of the canvas.
+        let max = layout.total_height.round() as u32 - 480;
+        assert_eq!(engine.align_tile(usize::MAX, ScrollAlign::Start), Some(max));
+        assert!(!JustifiedEngine::new().has_layout());
+        assert_eq!(
+            JustifiedEngine::new().align_tile(0, ScrollAlign::Start),
+            None
+        );
     }
 
     #[test]

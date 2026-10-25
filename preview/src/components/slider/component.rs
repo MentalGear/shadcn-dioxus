@@ -10,6 +10,7 @@ pub fn Slider(props: SliderProps) -> Element {
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/slider/style.css") }
         slider::Slider {
+            dir: props.dir,
             value: props.value,
             default_value: props.default_value,
             min: props.min,
@@ -36,6 +37,7 @@ pub fn RangeSlider(props: RangeSliderProps) -> Element {
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/slider/style.css") }
         slider::RangeSlider {
+            dir: props.dir,
             value: props.value,
             default_value: props.default_value,
             min: props.min,

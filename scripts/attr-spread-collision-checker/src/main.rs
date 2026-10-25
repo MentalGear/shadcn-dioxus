@@ -403,7 +403,8 @@ impl<'a> FnFieldCollector<'a> {
         // Manual style: exactly one non-receiver parameter, shaped `props: XProps` /
         // `props: &XProps`, `XProps` possibly itself generic (`props: FooProps<T>`) --
         // the parameter's own name must be exactly `props`, and its type must be a
-        // single-segment path (optionally behind exactly one non-`mut` `&`).
+        // path (optionally behind exactly one non-`mut` `&`) whose last segment names the
+        // struct: `props: CalendarProps` and `props: calendar::CalendarProps` alike.
         //
         // A generic `props: FooProps<T>` must resolve to `FooProps`'s real fields, not to
         // the single literal param name `props` (which is what the `#[component]`-sugar
@@ -442,10 +443,10 @@ impl<'a> FnFieldCollector<'a> {
     }
 }
 
-/// `&Ident<..>` or bare `Ident<..>` (single path segment, any/no generic arguments) ->
-/// the segment's own ident, i.e. the struct name with its generics stripped; anything
-/// else (`&mut`, a multi-segment path, a qualified `<T as Trait>::X` path, ...) ->
-/// `None`. Generic arguments are intentionally ignored, not required-absent -- see the
+/// `&path::Ident<..>` or bare `path::Ident<..>` (any module prefix, any/no generic
+/// arguments) -> the last segment's ident, i.e. the struct name with its module path and
+/// generics stripped (structs are keyed by bare name, like fns); anything else (`&mut`, a
+/// qualified `<T as Trait>::X` path, ...) -> `None`. Generic arguments are intentionally ignored, not required-absent -- see the
 /// call site's doc for why (a generic Props type is a real, common shape).
 fn generic_reference_type_ident(ty: &Type) -> Option<String> {
     let inner = match ty {
@@ -453,8 +454,8 @@ fn generic_reference_type_ident(ty: &Type) -> Option<String> {
         other => other,
     };
     match inner {
-        Type::Path(tp) if tp.qself.is_none() && tp.path.segments.len() == 1 => {
-            Some(tp.path.segments[0].ident.to_string())
+        Type::Path(tp) if tp.qself.is_none() => {
+            tp.path.segments.last().map(|seg| seg.ident.to_string())
         }
         _ => None,
     }
@@ -726,6 +727,25 @@ mod tests {
             .filter(|f| f.kind == FindingKind::RawTextDynamicChild)
             .map(|f| (f.line, f.name))
             .collect()
+    }
+
+    #[test]
+    fn a_module_qualified_props_type_resolves_to_its_struct() {
+        let src = "struct CalendarProps { dir: Option<Direction>, attributes: Vec<Attribute> }\nfn CalendarRoot(props: calendar::CalendarProps) -> Element { todo!() }\n";
+        let file = syn::parse_file(src).expect("fixture parses");
+        let mut struct_fields = HashMap::new();
+        struct_fields.insert(
+            "CalendarProps".to_string(),
+            HashSet::from(["dir".to_string(), "attributes".to_string()]),
+        );
+        let mut out = HashMap::new();
+        FnFieldCollector {
+            struct_fields: &struct_fields,
+            out: &mut out,
+        }
+        .visit_file(&file);
+        let fields = out["CalendarRoot"].as_ref().expect("resolved");
+        assert!(fields.contains("dir") && !fields.contains("props"));
     }
 
     #[test]

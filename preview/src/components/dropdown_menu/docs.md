@@ -152,6 +152,10 @@ DropdownMenuContent {
 
 See the `shortcuts` and `destructive` variants.
 
+## Placement
+
+`DropdownMenuContent` opens below its trigger, start-aligned with it, 4px away. `side` (`ContentSide::Top`, `Right`, `Bottom` or `Left`), `align` (`ContentAlign::Start`, `Center` or `End`) and `side_offset` (the gap, in px) move it. A side without room flips to the opposite one, and the side the menu was actually placed on is on the content as `data-placed-side`. See the `placement` variant.
+
 ## Direction / RTL
 
 `DropdownMenu` accepts a `dir: Option<Direction>` prop, inherited by every `DropdownMenuSub`. Under RTL: the submenu open key is `ArrowLeft` instead of `ArrowRight`, the close key `ArrowRight` instead of `ArrowLeft` (`Escape` always closes regardless of direction), and each `DropdownMenuSubContent` opens to the left of its trigger instead of the right. See the `rtl` variant.
