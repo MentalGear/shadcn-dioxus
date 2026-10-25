@@ -1,6 +1,9 @@
 //! JS anchor-position fallback / self-check (`use_anchor_position_fallback`).
 
-#[cfg_attr(not(feature = "web"), allow(unused_imports))]
+#[cfg_attr(
+    not(feature = "web"),
+    expect(unused_imports, reason = "only the web build uses it")
+)]
 use super::*;
 
 /// JS-measured static positioning fallback/self-check for engines where CSS

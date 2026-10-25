@@ -43,7 +43,10 @@ pub(crate) struct Frames {
 
 /// The root every demo sits under on the site (the i18n demos bring their own, `crate::i18n::LocaleDemo`).
 #[derive(Props, Clone, PartialEq)]
-#[allow(unpredictable_function_pointer_comparisons)]
+#[allow(
+    unpredictable_function_pointer_comparisons,
+    reason = "the derived PartialEq compares a component fn pointer by address, as every Dioxus prop does; `#[expect]` is not seen by the derive"
+)]
 struct RootProps {
     /// The demo under test.
     demo: fn() -> Element,

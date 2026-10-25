@@ -10,7 +10,10 @@ use super::*;
 
 /// Test-only convenience wrapper taking the flat argument
 /// list, so each case below stays a single readable call.
-#[allow(clippy::too_many_arguments)]
+#[expect(
+    clippy::too_many_arguments,
+    reason = "the helper takes every input of the key handler it drives"
+)]
 fn key_effects(
     key: &Key,
     ctrl: bool,
@@ -48,7 +51,10 @@ fn key_effects(
 
 /// Like [`key_effects`], but with `wrap: false` -- the year segment's
 /// clamp-at-the-bound policy (backlog row 84 finding 4).
-#[allow(clippy::too_many_arguments)]
+#[expect(
+    clippy::too_many_arguments,
+    reason = "the helper takes every input of the key handler it drives"
+)]
 fn key_effects_clamped(
     key: &Key,
     ctrl: bool,

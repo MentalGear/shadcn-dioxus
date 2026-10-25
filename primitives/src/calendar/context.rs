@@ -184,7 +184,11 @@ impl CalendarContext {
 /// This is the one place a component reads the clock; `scripts/check-render-clock.sh` rejects a
 /// clock read anywhere else in a component file.
 pub fn use_today() -> ReadSignal<Date> {
-    #[allow(unused_mut, unused_assignments)]
+    #[allow(
+        unused_mut,
+        unused_assignments,
+        reason = "only the fullstack build assigns it, through `fullstack!`"
+    )]
     let mut rendered: Option<i32> = None;
     fullstack! {
         // A Julian day number, because `Date` has no serde impl without `time`'s `serde` feature.

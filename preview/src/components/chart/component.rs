@@ -28,7 +28,7 @@ use dioxus_primitives::merge_attributes;
 // `ChartSeries`/`ChartIcon`/`StackMode` are on this list for `area_chart`'s
 // own `icons`/`stacked_expand` variants (setting a series' `icon` field
 // directly, and `AreaOptions.stack_mode`, respectively).
-#[allow(unused_imports)]
+#[allow(unused_imports, reason = "a registry component: an app that installs it uses a different subset than the preview's demos")]
 pub use dioxus_primitives::chart::{
     AreaOptions, BarOptions, BarRadius, ChartConfig, ChartDatum, ChartIcon, ChartKind,
     ChartMargin, ChartSeries, Curve, LegendAlign, LineOptions, PieLabels, PieOptions,

@@ -32,7 +32,10 @@
 
 // `VirtualJustifiedGrid` (through `super::justified_engine`) consumes the justified packer; the
 // sectioned model and the strip arithmetic have no consumer outside their tests, which exercise all of it.
-#![allow(dead_code)]
+#![allow(
+    dead_code,
+    reason = "the sectioned model and the strip arithmetic are used only by their tests, so it fires outside test builds"
+)]
 
 use std::ops::Range;
 

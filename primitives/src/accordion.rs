@@ -69,7 +69,10 @@ struct AccordionContext {
 }
 
 impl AccordionContext {
-    #[allow(clippy::too_many_arguments)]
+    #[expect(
+        clippy::too_many_arguments,
+        reason = "each argument is one field of the context"
+    )]
     pub fn new(
         internal: Signal<Vec<String>>,
         value: Memo<Vec<String>>,

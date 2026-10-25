@@ -1,10 +1,10 @@
 ---
 id: 355
 title: "Adopt Google Rust style guide items: workspace lint table and conventions"
-status: "BACKLOG -- Round 6 sweep, after row 267's file split (owner approved 2026-10-21)"
+status: "IN QUEUE -- items 1-4 on lane/row-355-google-rust-lints for the merge queue; item 5 is…"
 size: "S-M"
 area: process
-updated: 2026-10-21
+updated: 2026-10-25
 ---
 
 # Row 355: Adopt Google Rust style guide items: workspace lint table and conventions
@@ -15,7 +15,23 @@ Adopt the Google Rust style guide items Tom approved on 2026-10-21 ("OK" to all 
 
 ## Status / trigger
 
-**BACKLOG -- Round 6 sweep, after row 267's file split (owner approved 2026-10-21)**
+**IN QUEUE -- items 1-4 on lane/row-355-google-rust-lints for the merge queue; item 5 is dev-docs/guides/rust-conventions.md**
+
+Done on the lane (2026-10-25), measured with clippy 0.1.97, `-D warnings`, all three arms clean:
+
+- Item 1: `[workspace.lints]` in the root `Cargo.toml`, `lints.workspace = true` in all six members. A table cannot vary
+  per crate, so the per-crate lints stay crate attributes (`missing_docs`, `unwrap_used`, `return_self_not_must_use` in
+  `primitives/src/lib.rs`, `unwrap_used` in `cli/src/main.rs`); the gates keep `-D warnings`. `unsafe_code = "deny"`, one
+  `#[expect(unsafe_code, reason)]` on the wasm `stderr` static.
+- Item 2: 9 library `unwrap()`s in primitives (the estimate was 2) became `expect("<invariant>")`; one was a real panic:
+  `CalendarSelectMonth` called `replace_month` on a view date on the 31st, which fails for a 30-day month, so the day is
+  now clamped as `nth_month_next` does. cli had none. `clippy.toml`: `allow-unwrap-in-tests = true`.
+- Item 3: 30 `#[must_use]` builder methods (toast 12, questionnaire 11, drag-and-drop 2, chart 2, drawer, virtual mode).
+- Item 4: `allow_attributes_without_reason`; 83 attributes (67 `#[allow]` + 16 `cfg_attr` allows) all carry a reason.
+  `#[expect]` where the lint fires in every build; `#[allow]` kept where it fires in only some (cfg arms, the 24 registry
+  `component.rs` re-exports an app uses differently, the 4 derived `PartialEq` on fn-pointer props, which do not see
+  `#[expect]`). 4 stale allows were removed (2 `too_many_arguments` on `#[component]` fns, slider `dead_code`, a virtual
+  re-export). primitives `rust-version` 1.80.0 -> 1.81.0.
 
 ## Size
 

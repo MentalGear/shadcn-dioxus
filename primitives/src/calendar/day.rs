@@ -447,7 +447,9 @@ fn SingleCalendarDay(props: CalendarDayProps) -> Element {
             return;
         }
         let view_date = view_ctx.offset_view_date();
-        let date = view_date.replace_day(day).unwrap();
+        let date = view_date
+            .replace_day(day)
+            .expect("the grid renders only the days of the view month");
         ctx.set_selected_date.call((!is_selected()).then_some(date));
         base_ctx.focused_date.set(Some(date));
     };
