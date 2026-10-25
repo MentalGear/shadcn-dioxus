@@ -23,6 +23,8 @@ pub fn DropdownMenu(props: DropdownMenuProps) -> Element {
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/dropdown_menu/style.css") }
         dropdown_menu::DropdownMenu {
+            modal: props.modal,
+            dir: props.dir,
             open: props.open,
             default_open: props.default_open,
             on_open_change: props.on_open_change,
@@ -43,7 +45,7 @@ pub fn DropdownMenuTrigger(props: DropdownMenuTriggerProps) -> Element {
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/dropdown_menu/style.css") }
-        dropdown_menu::DropdownMenuTrigger { as: props.r#as, attributes: merged, {props.children} }
+        dropdown_menu::DropdownMenuTrigger { id: props.id, as: props.r#as, attributes: merged, {props.children} }
     }
 }
 

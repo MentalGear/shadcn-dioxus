@@ -143,6 +143,34 @@ VirtualGrid { row_count: 1_000usize, column_count: 30usize, fade: ScrollFade::Bo
 - Examples: the `fade` variants (a windowed list and a content-visibility list; a wrapping gallery and a two-axis data grid).
 <!-- /shared:virtual-engine:fade -->
 
+## Scrolling to a row
+
+`use_virtual_scroller()` returns a `VirtualScroller`, a `Copy` handle. Pass it as the list's `scroller` prop and call it from an event handler or an effect:
+
+```rust
+let scroller = use_virtual_scroller();
+rsx! {
+    button { onclick: move |_| scroller.scroll_to_index(4_999, ScrollAlign::Center), "Row 5,000" }
+    VirtualList { count: 100_000usize, scroller, render_item: .. }
+}
+```
+
+`scroll_to_index(index, align)` takes a zero-based row and a `ScrollAlign` (the type `MessageScroller` uses):
+
+| `ScrollAlign` | The row lands |
+|---|---|
+| `Start` | with its top at the top of the viewport |
+| `Center` | in the middle |
+| `End` | with its bottom at the bottom of the viewport |
+| `Nearest` | where it already is when fully in view, else at the nearest edge (a row taller than the viewport takes its top) |
+
+- The result is clamped to the scroll range, so the last rows cannot reach `Start`, and an `index` past the end goes to the last row.
+- **Windowed**: the row need not be mounted. Its position is computed from the measured sizes where the list has them and from `estimate_size` elsewhere, the window moves onto it, and the rows around it are measured as they mount (a row that resizes above the viewport keeps the content in place). So the nearer `estimate_size` is to the real heights, the nearer the landing is to exact; with fixed heights it is exact.
+- **Content-visibility**: every row is in the DOM, so the browser scrolls to it (`scrollIntoView`), and the list then corrects the alignment for a few frames, because a chunk that has just rendered replaces its height guess with its real height.
+- A call made before the list has mounted (in the component's first render or an early effect), or before a windowed list has its size, is kept and runs once the list is ready; only the last such call is kept. A call after the list unmounted does nothing. When the list switches mode (the count crosses `auto_threshold`) the handle follows the new body.
+- There is no smooth scrolling: the jump is instant.
+- Example: the `scroll_to` variant. The grids take the same handle (`VirtualGrid` adds `scroll_to_cell(row, column, align)`).
+
 ## Props
 
 - `count` (required): the number of rows.
@@ -153,3 +181,4 @@ VirtualGrid { row_count: 1_000usize, column_count: 30usize, fade: ScrollFade::Bo
 - `buffer`: windowed mode only; default `8`.
 - `fade`: `ScrollFade::{None, Y, X, Both, Top, Bottom, Start, End}`, default `None`; the scroll-edge fade above.
 - `text_value`: windowed mode only, experimental; the find-in-page placeholders above.
+- `scroller`: a `VirtualScroller` from `use_virtual_scroller()`; see "Scrolling to a row" above.

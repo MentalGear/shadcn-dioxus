@@ -139,6 +139,26 @@ Three hooks let the grid host a data table. All are optional.
 - `row_selected: Callback<String, bool>` is asked, for every mounted row, whether the row with that `row_key` (the index as a string without one) is selected. Selected rows get `aria-selected="true"` and `data-state="selected"` (painted `--dx-muted` by the sheet, pinned columns included); the others `aria-selected="false"`. It is keyed by identity, so the selection follows the row through a sort and a window move.
 - **A cell may hold one control** (checkbox, switch, button, link): the APG grid's "focus the widget" model. The control, not its cell, is then the grid's single tab stop, the arrows still move between cells (focus lands on the next cell's control, or on the cell when it has none), and `Space` / `Enter` act on the control natively. A cell with a text field, a select or several controls needs the APG's `Enter`/`F2` interaction mode, which the grid does not provide: keep those out of the grid, or edit in a dialog.
 
+## Scrolling to an item
+
+`use_virtual_scroller()` returns a `VirtualScroller`, a `Copy` handle; pass it as the `scroller` prop of `VirtualGrid`, `VirtualWrapGrid` or `VirtualJustifiedGrid` and call it from an event handler or an effect:
+
+```rust
+let scroller = use_virtual_scroller();
+rsx! {
+    button { onclick: move |_| scroller.scroll_to_cell(4_999, 30, ScrollAlign::Center), "Go" }
+    VirtualGrid { row_count: 10_000usize, column_count: 50usize, scroller, render_cell: .. }
+}
+```
+
+- `scroll_to_cell(row, column, align)` (`VirtualGrid`) aligns the cell on both axes to a `ScrollAlign`: `Start`, `Center`, `End`, or `Nearest` (nothing if it is fully in view, else the nearest edge). The pinned header and the pinned columns are not part of the area it aligns to: `Start` puts the cell just below the header and beside the start columns. A pinned column is always in view, so a cell in one moves only the rows.
+- `scroll_to_index(index, align)` is a row for `VirtualGrid`, an item for `VirtualWrapGrid` (the row that holds it scrolls into place; rows are the unit, so the item's column does not matter) and a tile for `VirtualJustifiedGrid` (its row, vertically only; a wall with `canvas_width` keeps its horizontal position).
+- The result is clamped to the scroll range; an index past the end goes to the last item.
+- **Windowed**: the target need not be mounted. Row and column positions come from the engines (measured sizes where there are any, `row_height` / `column_width` / `estimate_row_height` elsewhere; the justified layout is exact), the window moves onto the target and a wrapping grid measures its rows as they mount.
+- **Content-visibility**: every cell is in the DOM, so the browser scrolls to it and the grid corrects the alignment for a few frames, clear of the pinned edges.
+- A call before the grid has mounted (or before a windowed grid has its size) is kept and runs then; only the last is kept. After the grid unmounted it does nothing. The scroll is instant.
+- Examples: the `scroll_to` variant of `VirtualGrid`; `VirtualList` has one too.
+
 ## What windowing costs
 
 A `VirtualGrid` cell taller than its row overflows it (rows are not measured). A grid of up to `auto_threshold` cells (1,000) is not windowed at all under the default `Auto`: every cell stays in the DOM, columns in flow, and the browser skips the rows that are off-screen in chunks of 20 (`data-virtualize="content-visibility"`, the `content_visibility` variant); the keyboard model, the pinned header and columns, sorting, selection and controls in cells are the same in both modes. Pass `virtualize: VirtualizeMode::Windowed` (or `ContentVisibility`) to choose. Find-in-page, the accessibility tree and the server are covered under "Find-in-page and the windowed DOM" below.

@@ -3,9 +3,9 @@
   "build": "debug",
   "workers": "2",
   "date": "2026-10-21",
-  "tests": 3897,
-  "files": 246,
-  "total_seconds": 11705,
+  "tests": 3910,
+  "files": 248,
+  "total_seconds": 11769,
   "budget_seconds": 17000,
   "max_file_seconds": 3000,
   "note": "seconds = sum of test durations (worker time) on the DEBUG SSG build, 2 workers, 4-core box shared with other lanes; main-thread.spec.ts and scroll-main-thread.spec.ts are release-only (skipped on debug) and carry their RELEASE seconds. release_total_seconds = the same run on a release build. Refresh: playwright/tools/run-suite.sh, then durations.mjs chunk-*.json --write",
@@ -413,9 +413,9 @@
    "retried": 0
   },
   "color-picker.spec.ts": {
-   "tests": 11,
-   "seconds": 24.5,
-   "passed": 11,
+   "tests": 14,
+   "seconds": 53.9,
+   "passed": 14,
    "failed": 0,
    "skipped": 0,
    "retried": 0
@@ -1764,6 +1764,14 @@
    "skipped": 0,
    "retried": 0
   },
+  "toast-position.spec.ts": {
+   "tests": 6,
+   "seconds": 24.8,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "retried": 0
+  },
   "toast-promise.spec.ts": {
    "tests": 3,
    "seconds": 15.6,
@@ -1967,6 +1975,14 @@
   "virtual-list-find.spec.ts": {
    "tests": 4,
    "seconds": 10.1,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "retried": 0
+  },
+  "virtual-scroll-to.spec.ts": {
+   "tests": 4,
+   "seconds": 10.4,
    "passed": 4,
    "failed": 0,
    "skipped": 0,

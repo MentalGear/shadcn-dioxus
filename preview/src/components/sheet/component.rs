@@ -47,6 +47,27 @@ pub struct SheetProps {
     #[props(default = ReadSignal::new(Signal::new(SheetSide::Right)))]
     pub side: ReadSignal<SheetSide>,
 
+    /// Base UI's `disablePointerDismissal`: when `true`, a press outside the panel and focus
+    /// moving outside it do not close the dialog (a modal's backdrop click included), so the
+    /// first press on the page of a non-modal dialog only acts on the page. Escape and the
+    /// dialog's own close controls still close it. Defaults to `false`.
+    #[props(default = ReadSignal::new(Signal::new(false)))]
+    pub disable_pointer_dismissal: ReadSignal<bool>,
+
+    /// Where focus lands when the panel opens, as a function of how it was opened
+    /// ([`OpenModality`](dioxus_primitives::modality::OpenModality)). An input to the one open-focus policy
+    /// (`dxOpenFocus`), not a second path: with none, keyboard and mouse opens focus the first
+    /// control and touch and pen opens focus the panel (no software keyboard). A selector that
+    /// matches nothing falls back to that default.
+    #[props(default)]
+    pub initial_focus: Option<dioxus_primitives::modality::FocusTargetFn>,
+
+    /// Where focus goes when the panel closes, as a function of the modality of the close.
+    /// Default: the element that held focus when it opened (the trigger for a click open, the
+    /// previously focused element for a programmatic one).
+    #[props(default)]
+    pub final_focus: Option<dioxus_primitives::modality::FocusTargetFn>,
+
     /// Additional attributes to apply to the sheet panel element.
     #[props(extends = GlobalAttributes)]
     pub attributes: Vec<Attribute>,
@@ -62,6 +83,7 @@ pub fn Sheet(props: SheetProps) -> Element {
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/sheet/style.css") }
         dialog::DialogRoot {
+            disable_pointer_dismissal: props.disable_pointer_dismissal,
             class: "dx-sheet-root",
             "data-slot": "sheet-root",
             id: props.id,
@@ -70,7 +92,13 @@ pub fn Sheet(props: SheetProps) -> Element {
             open: props.open,
             default_open: props.default_open,
             on_open_change: props.on_open_change,
-            SheetPanel { side: side(), attributes: props.attributes, {props.children} }
+            SheetPanel {
+                side: side(),
+                initial_focus: props.initial_focus,
+                final_focus: props.final_focus,
+                attributes: props.attributes,
+                {props.children}
+            }
         }
     }
 }
@@ -82,6 +110,10 @@ pub fn Sheet(props: SheetProps) -> Element {
 #[component]
 fn SheetPanel(
     side: SheetSide,
+    /// The sheet's `initial_focus`, for the dialog content.
+    initial_focus: Option<dioxus_primitives::modality::FocusTargetFn>,
+    /// The sheet's `final_focus`, for the dialog content.
+    final_focus: Option<dioxus_primitives::modality::FocusTargetFn>,
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
     children: Element,
 ) -> Element {
@@ -102,6 +134,8 @@ fn SheetPanel(
         dialog::DialogContent {
             id: panel.id(),
             class: None,
+            initial_focus,
+            final_focus,
             attributes: content_attributes,
             {children}
             KeyboardInset { panel }

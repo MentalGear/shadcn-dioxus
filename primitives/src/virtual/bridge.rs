@@ -18,7 +18,9 @@
 //!   quantised range, for every consumer);
 //! - for one-axis engines, the shared flows on top: a scroll report with its anchoring
 //!   correction ([`Bridge::scroll_axis`]), a measured item ([`Bridge::measure`]) and
-//!   `scroll_to(index)` ([`Bridge::reveal`]), each writing the corrected `scrollTop` back.
+//!   `scroll_to(index)` ([`Bridge::reveal`]), each writing the corrected `scrollTop` back;
+//! - for every engine, [`Bridge::scroll_to`]: the public scroll-to-index (row 398, `scroll_to.rs`),
+//!   kept until the container has reported its size when it arrives earlier.
 //!
 //! What stays per component: what an engine is (one axis, or a [`super::GridEngine`] of two),
 //! the keyboard model, focus moves and the DOM each one draws.
@@ -27,6 +29,7 @@ use dioxus::prelude::*;
 
 use super::grid::GridEngine;
 use super::justified_engine::JustifiedEngine;
+use super::scroll_to::{ScrollAlign, ScrollRequest};
 use super::types::ScrollReport;
 use super::virtualizer::Engine;
 use crate::js_listener::{use_js_listeners, JsListeners};
@@ -36,11 +39,38 @@ pub(crate) trait Windowing {
     /// Whether rendering now would draw something different from what the last render (the
     /// engine's `plan`) drew.
     fn needs_render(&mut self) -> bool;
+
+    /// Where `request` scrolls the container, and the engine now holds that position.
+    fn aim(&mut self, request: ScrollRequest) -> Aim;
+}
+
+/// What an engine makes of a [`ScrollRequest`].
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Aim {
+    /// The container has not reported its size (or there is no layout) yet.
+    NotReady,
+    /// The `scrollTop` and `scrollLeft` to write; `None` leaves an axis where it is.
+    Offsets(Option<u32>, Option<u32>),
 }
 
 impl Windowing for Engine {
     fn needs_render(&mut self) -> bool {
         Engine::needs_render(self)
+    }
+
+    /// The row axis: `request.index` is the item.
+    fn aim(&mut self, request: ScrollRequest) -> Aim {
+        if !self.viewport_known() {
+            return Aim::NotReady;
+        }
+        let Some(last) = self.item_count().checked_sub(1) else {
+            return Aim::Offsets(None, None);
+        };
+        let target = self.align_target(request.index.min(last), request.align);
+        if let Some(target) = target {
+            self.set_scroll_offset(target);
+        }
+        Aim::Offsets(target, None)
     }
 }
 
@@ -48,11 +78,28 @@ impl Windowing for GridEngine {
     fn needs_render(&mut self) -> bool {
         GridEngine::needs_render(self)
     }
+
+    /// `request.index` is the row, `request.column` the data column.
+    fn aim(&mut self, request: ScrollRequest) -> Aim {
+        if !self.viewport_known() {
+            return Aim::NotReady;
+        }
+        let (top, left) = self.align_cell(request.index, request.column, request.align);
+        Aim::Offsets(top, left)
+    }
 }
 
 impl Windowing for JustifiedEngine {
     fn needs_render(&mut self) -> bool {
         JustifiedEngine::needs_render(self)
+    }
+
+    /// `request.index` is the tile.
+    fn aim(&mut self, request: ScrollRequest) -> Aim {
+        if !self.has_layout() {
+            return Aim::NotReady;
+        }
+        Aim::Offsets(self.align_tile(request.index, request.align), None)
     }
 }
 
@@ -61,6 +108,8 @@ pub(crate) struct Bridge<E: 'static> {
     engine: CopyValue<E>,
     rev: Signal<u64>,
     container_id: Signal<String>,
+    /// A [`scroll_to`](Bridge::scroll_to) that arrived before the engine could place it.
+    deferred: CopyValue<Option<ScrollRequest>>,
 }
 
 impl<E: 'static> Clone for Bridge<E> {
@@ -81,10 +130,12 @@ pub(crate) fn use_virtual_bridge<E: Windowing + 'static>(
 ) -> Bridge<E> {
     let engine = use_hook(|| CopyValue::new(init()));
     let rev = use_signal(|| 0u64);
+    let deferred = use_hook(|| CopyValue::new(None));
     let bridge = Bridge {
         engine,
         rev,
         container_id,
+        deferred,
     };
     use_js_listeners(move || {
         let mut on_report = on_report.clone();
@@ -121,6 +172,32 @@ impl<E: Windowing + 'static> Bridge<E> {
     pub(crate) fn set_scroll_top(self, top: u32) {
         set_scroll_top(self.container_id.peek().clone(), top);
     }
+
+    /// Scroll as `request` says (the public scroll-to-index): the engine aims, the window moves
+    /// onto the target and the container is scrolled there. Before the engine can aim (no
+    /// viewport reported yet) the request waits for [`run_deferred`](Self::run_deferred); the
+    /// last one wins.
+    pub(crate) fn scroll_to(self, request: ScrollRequest) {
+        let (mut engine, mut deferred) = (self.engine, self.deferred);
+        match engine.with_mut(|engine| engine.aim(request)) {
+            Aim::NotReady => deferred.set(Some(request)),
+            Aim::Offsets(top, left) => {
+                if top.is_some() || left.is_some() {
+                    self.publish();
+                    set_scroll(self.container_id.peek().clone(), top, left);
+                }
+            }
+        }
+    }
+
+    /// Run the request [`scroll_to`](Self::scroll_to) deferred, if the engine can aim now.
+    pub(crate) fn run_deferred(self) {
+        let mut deferred = self.deferred;
+        let pending = deferred.write().take();
+        if let Some(request) = pending {
+            self.scroll_to(request);
+        }
+    }
 }
 
 impl Bridge<Engine> {
@@ -137,6 +214,7 @@ impl Bridge<Engine> {
             engine.with_mut(|engine| engine.set_scroll_offset(top));
         }
         self.publish();
+        self.run_deferred();
     }
 
     /// Item `index` measured `exact` px along the axis, fraction included: offsets use whole px,
@@ -160,16 +238,11 @@ impl Bridge<Engine> {
     /// `scroll_to(index)`: centre item `index` in the viewport (clamped to the scroll range),
     /// which mounts it. Nothing past the end.
     pub(crate) fn reveal(self, index: usize) {
-        let mut engine = self.engine;
-        let target = engine.with_mut(|engine| {
-            let target = engine.scroll_target(index)?;
-            engine.set_scroll_offset(target);
-            Some(target)
+        self.scroll_to(ScrollRequest {
+            index,
+            column: None,
+            align: ScrollAlign::Center,
         });
-        if let Some(target) = target {
-            self.publish();
-            self.set_scroll_top(target);
-        }
     }
 }
 
@@ -196,6 +269,23 @@ fn set_scroll_top(container_id: String, top: u32) {
         "#,
     );
     let _ = eval.send((container_id, top));
+}
+
+/// Moves a container's scroll position on either axis by id. `left` is the distance from the
+/// inline start, so it is negated in RTL.
+fn set_scroll(container_id: String, top: Option<u32>, left: Option<u32>) {
+    let eval = document::eval(
+        r#"
+        const [id, top, left] = await dioxus.recv();
+        const container = document.getElementById(id);
+        if (!container) return;
+        if (top !== null) container.scrollTop = top;
+        if (left !== null) {
+            container.scrollLeft = getComputedStyle(container).direction === "rtl" ? -left : left;
+        }
+        "#,
+    );
+    let _ = eval.send((container_id, top, left));
 }
 
 /// Reports the container's scroll position and size (see the module doc). `left` is the distance

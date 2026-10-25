@@ -1,0 +1,26 @@
+# path	module::Component.prop (or * for the whole file)	why the wrapper does not pass it (row 391)
+preview/src/components/top_layer/component.rs	*	Test fixture page, not a themed wrapper: it composes primitives with their defaults on purpose.
+preview/src/components/attachment/component.rs	scroll_area::ScrollArea.dir	AttachmentGroup is a fixed horizontal snapping row; direction comes from the nearest DirectionProvider.
+preview/src/components/attachment/component.rs	scroll_area::ScrollArea.always_show_scrollbars	AttachmentGroup's scroller is part of its design (edge fade, no visible bar).
+preview/src/components/attachment/component.rs	scroll_area::ScrollArea.scroll_type	AttachmentGroup's scroller is part of its design (edge fade, no visible bar).
+preview/src/components/calendar/component.rs	local::CalendarHeader.id	Internal caption part; the primitive generates its id.
+preview/src/components/calendar/component.rs	calendar::CalendarSelectMonthValue.short	Internal caption part; the caption layout picks the month format.
+preview/src/components/color_picker/component.rs	popover::PopoverRoot.overlay	ColorPicker composes the popover; its own props are its surface and the popover keeps the primitive's default.
+preview/src/components/color_picker/component.rs	popover::PopoverRoot.default_open	ColorPicker composes the popover; its own props are its surface and the popover keeps the primitive's default.
+preview/src/components/color_picker/component.rs	popover::PopoverRoot.id	Internal part; the primitive generates its id.
+preview/src/components/color_picker/component.rs	popover::PopoverContent.id	Internal part; the primitive generates its id.
+preview/src/components/color_picker/component.rs	popover::PopoverContent.side	ColorPicker composes the popover; its own props are its surface and the popover keeps the primitive's default.
+preview/src/components/color_picker/component.rs	popover::PopoverContent.align	ColorPicker composes the popover; its own props are its surface and the popover keeps the primitive's default.
+preview/src/components/color_picker/component.rs	popover::PopoverContent.initial_focus	ColorPicker composes the popover; its own props are its surface and the popover keeps the primitive's default.
+preview/src/components/color_picker/component.rs	popover::PopoverContent.final_focus	ColorPicker composes the popover; its own props are its surface and the popover keeps the primitive's default.
+preview/src/components/color_picker/component.rs	local::ColorArea.step	Internal part; the area uses the primitive's step.
+preview/src/components/combobox/component.rs	combobox::ComboboxInput.id	Internal part of the composite Combobox; the primitive generates its id.
+preview/src/components/combobox/component.rs	combobox::ComboboxList.id	Internal part of the composite Combobox; the primitive generates its id.
+preview/src/components/combobox/component.rs	combobox::ComboboxChips.id	Internal part of the composite ComboboxMulti; the primitive generates its id.
+preview/src/components/command/component.rs	command::CommandInput.id	Internal part of the composite Command; the primitive generates its id.
+preview/src/components/command/component.rs	command::CommandInput.onmounted	Internal part of the composite Command; nothing outside needs the input's mount.
+preview/src/components/command/component.rs	command::CommandList.id	Internal part of the composite Command; the primitive generates its id.
+preview/src/components/select/component.rs	select::SelectTrigger.id	Internal part of the composite Select; the primitive generates its id.
+preview/src/components/select/component.rs	select::SelectValue.placeholder	Passed when the caller gives one; the call without it keeps the primitive's default text.
+preview/src/components/select/component.rs	select::SelectList.id	Internal part of the composite Select; the primitive generates its id.
+preview/src/components/slider/component.rs	slider::SliderThumb.index	Slider renders its single thumb, index 0 (RangeSlider renders 0 and 1).

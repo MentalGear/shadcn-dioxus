@@ -35,6 +35,11 @@ pub struct CommandDialogProps {
     #[props(default)]
     pub on_open_change: Callback<bool>,
 
+    /// Whether the dialog is modal. Defaults to `true`, matching
+    /// [`dioxus_primitives::dialog::DialogRoot`]'s own default.
+    #[props(default = ReadSignal::new(Signal::new(true)))]
+    pub is_modal: ReadSignal<bool>,
+
     #[props(extends = GlobalAttributes)]
     pub attributes: Vec<Attribute>,
 
@@ -56,6 +61,7 @@ pub fn CommandDialog(props: CommandDialogProps) -> Element {
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/command/style.css") }
         command::CommandDialog {
+            is_modal: props.is_modal,
             id: props.id,
             overlay: props.overlay,
             open: props.open,

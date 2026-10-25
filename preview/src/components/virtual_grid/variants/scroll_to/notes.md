@@ -1,0 +1,1 @@
+A 10,000 x 50 grid with a pinned header and first column. Type a row and a column, choose an alignment (Start, Center, End, or Nearest) and press Scroll to cell: the grid works out where the cell is from its row heights and column widths, moves the window there and aligns it past the pinned edges. The handle comes from `use_virtual_scroller`.

@@ -104,7 +104,9 @@ fn ToastCloseButton(props: ToastCloseButtonProps) -> Element {
 }
 
 // Non-markup API types, re-exported so demos compose them through this wrapper.
-pub use dioxus_primitives::toast::{PromiseMessages, ToastId, ToastType, ToastUpdate};
+pub use dioxus_primitives::toast::{
+    PromiseMessages, ToastId, ToastPosition, ToastType, ToastUpdate,
+};
 
 #[component]
 pub fn ToastProvider(
@@ -114,6 +116,9 @@ pub fn ToastProvider(
     /// How many toasts the pile shows; the rest wait hidden until a slot frees (default 3).
     #[props(default = ReadSignal::new(Signal::new(3)))]
     visible_toasts: ReadSignal<usize>,
+    /// Where the toaster sits: a top or bottom edge, at the start, centre or end (default `BottomEnd`).
+    #[props(default)]
+    position: ReadSignal<ToastPosition>,
     #[props(default)] render_toast: Option<Callback<toast::ToastPropsWithOwner, Element>>,
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
     children: Element,
@@ -141,6 +146,7 @@ pub fn ToastProvider(
             default_duration,
             max_toasts,
             visible_toasts,
+            position,
             render_toast,
             attributes: merged,
             {children}

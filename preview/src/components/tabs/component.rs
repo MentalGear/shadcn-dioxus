@@ -49,6 +49,12 @@ pub struct TabsProps {
     #[props(default)]
     pub size: TabsSize,
 
+    /// The text direction for `ArrowLeft`/`ArrowRight` roving focus.
+    /// Defaults to the nearest [`dioxus_primitives::direction::DirectionProvider`], or
+    /// LTR if there is none. See [`dioxus_primitives::direction::use_direction`].
+    #[props(default)]
+    pub dir: Option<dioxus_primitives::direction::Direction>,
+
     /// Additional attributes to apply to the tabs element.
     #[props(extends = GlobalAttributes)]
     pub attributes: Vec<Attribute>,
@@ -116,6 +122,7 @@ pub fn Tabs(props: TabsProps) -> Element {
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/tabs/style.css") }
         tabs::Tabs {
+            dir: props.dir,
             value: props.value,
             default_value: props.default_value,
             on_value_change: props.on_value_change,
