@@ -21,7 +21,7 @@ Merge queue batches 1-23 are on main (PRs #121-#149), batches 22+23 deployed as 
 
 ## In the queue
 
-Batch 24 (`queue/batch-24`): rows 371 (dependency trims, owner-approved: palette default features off, `time` macros out of shipped code, `--locked` installs, version floors), 382 (rustdoc warnings to zero, the gate strict) and the Button Group dark-mode seam (`--dx-group-edge`).
+Batch 24 (`queue/batch-24`): rows 371 (dependency trims, owner-approved: palette default features off, `time` macros out of shipped code, `--locked` installs, version floors), 382 (rustdoc warnings to zero, the gate strict) and 420 (the coarse-pointer switch covers every control: 44px control heights, 17px text entry, larger checkbox, radio, switch, tag-remove and slider targets).
 
 ## Running
 
