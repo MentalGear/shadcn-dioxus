@@ -64,7 +64,7 @@ Controlled, `default_open` and `default_value` are ignored, and a find-in-page r
 
 Pass `chevron: AccordionChevron::Start` on `Accordion` to put the chevron before the label (default `AccordionChevron::End`, shadcn's layout). It points right when closed and down when open, instead of down and up. The prop is emitted as `data-chevron` (`start` / `end`) on the root and on every trigger, so a custom trigger can read it from its own element.
 
-A collapsed trigger does not underline on hover; an open one does. That is a deliberate deviation from shadcn, which underlines every trigger.
+A trigger never underlines on hover, open or collapsed. That is a deliberate deviation from shadcn, which underlines every trigger on hover.
 
 ```rust
 Accordion { chevron: AccordionChevron::Start,

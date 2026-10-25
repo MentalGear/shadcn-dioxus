@@ -1,7 +1,7 @@
 /* Nova accordion (shadcn-ui/ui@295a1f1 registry/styles/style-nova.css,
  * `.cn-accordion-*`, structure from registry/bases/base/ui/accordion.tsx):
- * the trigger is `rounded-lg py-2.5 text-left text-sm font-medium
- * hover:underline` on a 1px transparent border with `items-start
+ * the trigger is `rounded-lg py-2.5 text-left text-sm font-medium` (without
+ * shadcn's `hover:underline`, row 423) on a 1px transparent border with `items-start
  * justify-between`, its chevron `size-4 text-muted-foreground`; the item is
  * `not-last:border-b`; the panel is `text-sm` and its inner box `pt-0 pb-2.5`
  * (here `.dx-accordion-content-body`, one level inside the animated box, see
@@ -32,13 +32,8 @@
   box-shadow: var(--dx-ring-focus-inset);
 }
 
-/* Deliberate deviation from shadcn (`hover:underline` on every trigger, row 299): a
- * collapsed header does not underline on hover, an open one does. */
-@media (hover: hover) and (pointer: fine) {
-  .dx-accordion-trigger[aria-expanded="true"]:hover:not(:disabled) {
-    text-decoration-line: underline;
-  }
-}
+/* No trigger underlines, in any state (row 423): shadcn's `hover:underline` is not carried over,
+ * so no `:hover` rule in this sheet sets a text decoration. */
 
 .dx-accordion-trigger:disabled {
   color: var(--dx-muted-foreground);

@@ -40,7 +40,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (37)
+## Open rows (36)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -80,6 +80,5 @@ proposing one is closed as out of scope (row 337 is the first).
 | [414](backlog/414-formal-proof-spike.md) | Spike: formal proofs of one headless model (Kani, optionally Aeneas to Lean) | OPTIONAL: needs owner approval before it is adopted or scheduled (owner 2026-10-24). Not part of… | M | research |
 | [415](backlog/415-pin-actions-to-shas.md) | Pin GitHub Actions to commit SHAs | OPTIONAL: needs owner approval before it is adopted or scheduled (owner 2026-10-24). Not part of… | XS | build |
 | [422](backlog/422-docs-page-shared-section-group.md) | Component pages: group the sections every page shares under one header, component-specific sections under another | BACKLOG, owner decision before building. The owner asked for the headers and an outline before work… | M | docs |
-| [423](backlog/423-accordion-header-hover-underline.md) | An open Accordion header still underlines on hover; the header should never underline | BACKLOG, bug. Stage 1 (bugs) of the adopted order. | S | components |
 
 <!-- END GENERATED -->

@@ -1,5 +1,5 @@
 /**
- * Backlog row 299: a collapsed accordion header does not underline on hover (an open one does), and
+ * Backlog row 299: an accordion header does not underline on hover (row 423 removed the open-header underline), and
  * `chevron: AccordionChevron::Start` puts the chevron before the label. The docs component page's
  * accordion, and its "Manual installation files" Collapsible, use the start chevron.
  */
@@ -9,7 +9,7 @@ import { gotoHydrated } from './hydration';
 
 const GOTO_OPTS = { timeout: 20 * 60 * 1000 };
 
-test('a collapsed accordion header does not underline on hover; an open one does', async ({ page }) => {
+test('an accordion header does not underline on hover, collapsed or open', async ({ page }) => {
   await gotoHydrated(page, `${BASE_URL}/component/accordion/`, GOTO_OPTS);
   const trigger = page.locator('.dx-component-examples .dx-accordion-item button.dx-accordion-trigger').nth(1);
   await expect(trigger).toBeVisible();
@@ -20,7 +20,7 @@ test('a collapsed accordion header does not underline on hover; an open one does
   await trigger.click();
   await expect(trigger).toHaveAttribute('aria-expanded', 'true');
   await trigger.hover();
-  await expect.poll(decoration).toContain('underline');
+  await expect.poll(decoration).toBe('none');
 });
 
 test('the docs page accordion and manual-install collapsible lead with a chevron that rotates open', async ({ page }) => {
