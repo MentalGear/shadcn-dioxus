@@ -1,7 +1,7 @@
 ---
 id: 391
 title: "Themed wrappers forward every primitive prop, enforced by a props-diff gate"
-status: "IN QUEUE on lane/wrapper-props-forward. Found by row 387's first docs-clarity review; the evidence…"
+status: "LANDED (merge queue batch 18, lane/wrapper-props-forward): every primitive prop a wrapper drops is…"
 size: "M"
 area: components
 updated: 2026-10-24
@@ -15,7 +15,7 @@ Themed wrappers drop primitive props their docs describe; the value falls into t
 
 ## Status / trigger
 
-IN QUEUE on `lane/wrapper-props-forward`. Found by row 387's first docs-clarity review; the evidence (file:line per finding) is in the project's shared files, `docs-clarity/2026-10-24-docs-clarity-review.md`.
+LANDED (merge queue batch 18, lane/wrapper-props-forward): every primitive prop a wrapper drops is forwarded or allowlisted with a reason, enforced by `check-wrapper-props`. Trigger for reopening: a new primitive prop that no wrapper forwards. Found by row 387's first docs-clarity review; the evidence (file:line per finding) is in the project's shared files, `docs-clarity/2026-10-24-docs-clarity-review.md`.
 
 ## Size
 

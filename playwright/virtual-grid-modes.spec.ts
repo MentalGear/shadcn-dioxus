@@ -98,6 +98,12 @@ test.describe("virtual grids: find-in-page placeholders (row 309)", () => {
     // 256 px viewport and the grid showed other photos. A `#:~:text=` fragment is the one reveal path
     // Playwright can drive that includes the browser's own scroll (the dispatched `beforematch` of the
     // tests above does not: it left the item in view).
+    //
+    // The fragment is applied by a navigation to the finished page, not by the load that opens it: the
+    // placeholders mount after hydration, and a fragment carried by the first load is searched only in
+    // the browser's own window around the load event, which a loaded machine (a debug wasm build takes
+    // seconds to hydrate) overruns, so no `beforematch` ever fires. A same-document navigation to the
+    // fragment searches the document as it is (backlog row 416).
     await page.addInitScript(() => {
       (window as unknown as { __fired: string[] }).__fired = [];
       document.addEventListener(
@@ -106,23 +112,41 @@ test.describe("virtual grids: find-in-page placeholders (row 309)", () => {
         true,
       );
     });
-    await gotoHydrated(page, `${FIND_URL}#:~:text=Photo%202108`, { waitUntil: "networkidle" });
+    await gotoHydrated(page, FIND_URL);
     const w = wrap(page, "find-in-page");
+    await expect(placeholder(w, "2107")).toHaveAttribute("hidden", "until-found");
     // The estimate really is off (the test is about that; fix the demo's numbers and it must say so).
     const sizes = await w.evaluate((el) => ({
       real: el.querySelector('[role="row"]')!.getBoundingClientRect().height,
       placeholder: el.querySelector("[data-find-index]")!.getBoundingClientRect().height,
     }));
     expect(sizes.real).toBeGreaterThan(sizes.placeholder);
-    // The fragment is searched while the document loads and again as the placeholders mount; Chromium
-    // fires `beforematch` on the placeholder of item 2107.
+    // goto-ok: a same-document fragment navigation on the page the lines above already hydrated and populated
+    await page.goto(`${page.url().split("#")[0]}#:~:text=Photo%202108`);
+    // Chromium fires `beforematch` on the placeholder of item 2107.
     await expect.poll(() => page.evaluate(() => (window as unknown as { __fired: string[] }).__fired)).toContain("2107");
     const item = '[data-grid-index="2107"]';
     await expect(w.locator(item)).toHaveAttribute("data-find-match", "true");
     await expect.poll(() => inView(w, item)).toBe(true);
-    // It stays: rows still measuring around it do not move it out again.
-    await page.waitForTimeout(500);
-    expect(await inView(w, item)).toBe(true);
+    // It stays: rows still measuring around it do not move it out again. Sixty animation frames, not a
+    // wall-clock wait: a loaded machine paints fewer of them in the same time, and the settle counts frames.
+    expect(
+      await w.evaluate(
+        (el, sel) =>
+          new Promise<boolean>((resolve) => {
+            let frames = 0;
+            const check = () => {
+              const a = el.querySelector(sel)?.getBoundingClientRect();
+              const b = el.getBoundingClientRect();
+              if (!a || a.top < b.top - 1 || a.bottom > b.bottom + 1) return resolve(false);
+              if (++frames >= 60) return resolve(true);
+              requestAnimationFrame(check);
+            };
+            requestAnimationFrame(check);
+          }),
+        item,
+      ),
+    ).toBe(true);
   });
 
   test("a grid without text_value has no find layer", async ({ page }) => {

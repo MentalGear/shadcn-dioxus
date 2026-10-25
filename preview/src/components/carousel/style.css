@@ -22,6 +22,19 @@
 
     /* Slot read by the Previous/Next icon (`none`; an RTL horizontal Carousel mirrors it below). */
     --dx-carousel-nav-icon-transform: none;
+
+    /* Previous/Next placement slots (horizontal, the default orientation), read by the
+       `.dx-carousel-previous`/`-next` rules; the vertical root re-declares all of them. The base
+       root declares every one, so a Carousel nested in another never inherits the outer one's
+       placement (dev-docs/backlog.md row 218). */
+    --dx-carousel-previous-inset-block-start: 50%;
+    --dx-carousel-previous-inset-inline-start: 0;
+    --dx-carousel-previous-transform: translateY(-50%); /* rtl-physical: vertical-only offset, centers on the block axis regardless of dir */
+    --dx-carousel-next-inset-block-start: 50%;
+    --dx-carousel-next-inset-block-end: auto;
+    --dx-carousel-next-inset-inline-start: auto;
+    --dx-carousel-next-inset-inline-end: 0;
+    --dx-carousel-next-transform: translateY(-50%); /* rtl-physical: vertical-only offset, centers on the block axis regardless of dir */
 }
 
 .dx-carousel-content {
@@ -258,18 +271,6 @@
    pixels with `.dx-carousel-content`), never load-bearing. */
 .dx-carousel[data-orientation="horizontal"] {
     padding-inline: var(--dx-space-12);
-
-    /* Previous/Next placement slots, read by the two rules after the vertical block below.
-       Every orientation re-declares all of them on the root, so a Carousel nested in another
-       never inherits the outer one's placement. */
-    --dx-carousel-previous-inset-block-start: 50%;
-    --dx-carousel-previous-inset-inline-start: 0;
-    --dx-carousel-previous-transform: translateY(-50%); /* rtl-physical: vertical-only offset, centers on the block axis regardless of dir */
-    --dx-carousel-next-inset-block-start: 50%;
-    --dx-carousel-next-inset-block-end: auto;
-    --dx-carousel-next-inset-inline-start: auto;
-    --dx-carousel-next-inset-inline-end: 0;
-    --dx-carousel-next-transform: translateY(-50%); /* rtl-physical: vertical-only offset, centers on the block axis regardless of dir */
 }
 
 /* Vertical: centered on the inline axis, pinned near the block edges --
@@ -520,19 +521,16 @@
 }
 
 @supports (animation-timeline: scroll()) and (timeline-scope: --dx-carousel-scroll) {
+    /* Orientation slots: the base fade root declares them (horizontal `ltr`), the vertical and RTL
+       roots re-declare them, so a fade Carousel nested in another never inherits the outer one's;
+       the track and the viewport read them below. */
     .dx-carousel-fade {
         --dx-carousel-fade-size: var(--dx-space-12);
-
-        timeline-scope: --dx-carousel-scroll-x, --dx-carousel-scroll-y;
-    }
-
-    /* Orientation slots: a fade root declares them for both orientations (horizontal `ltr` is
-       the base), so a fade Carousel nested in another re-declares its own and never inherits
-       the outer one's; the track and the viewport read them below. */
-    .dx-carousel-fade[data-orientation="horizontal"] {
         --dx-carousel-fade-scroll-timeline: --dx-carousel-scroll-x inline;
         --dx-carousel-fade-animation-timeline: --dx-carousel-scroll-x, --dx-carousel-scroll-x;
         --dx-carousel-fade-viewport-dir: to right;
+
+        timeline-scope: --dx-carousel-scroll-x, --dx-carousel-scroll-y;
     }
 
     .dx-carousel-fade[data-orientation="vertical"] {
