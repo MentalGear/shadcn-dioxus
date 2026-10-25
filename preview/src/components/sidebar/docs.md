@@ -50,8 +50,9 @@ SidebarProvider {
         }
     }
 
-    // Optional desktop rail controller placed between rail and content
-    SidebarRail {}                               // draggable resize handle
+    // Optional click target on the sidebar's edge; clicking it toggles the sidebar
+    // (a button, not a draggable resize handle; pointer-only, out of the tab order)
+    SidebarRail {}
 
     // Layout - Main content area beside the rail
     SidebarInset { /* ... */ }

@@ -65,15 +65,20 @@ pub struct ComboboxProps<T: Clone + PartialEq + 'static = String> {
     #[props(default)]
     pub on_open_change: Callback<bool>,
 
-    /// The controlled text in the input.
+    /// The controlled filter text, not the input's displayed text: the input shows the selected
+    /// option's label until the user edits it, and only then does what they type become the query.
+    /// It is reset to the empty string when a popup session starts or ends, so a controlled value
+    /// is not kept across opens.
     #[props(default)]
     pub query: ReadSignal<Option<String>>,
 
-    /// The initial text in the input when uncontrolled.
+    /// The initial filter text when uncontrolled. Filtering uses it only once the user has edited
+    /// the input (or when no option is selected).
     #[props(default)]
     pub default_query: ReadSignal<String>,
 
-    /// Called with the new text whenever the user types.
+    /// Called with the new query when the user types, and with an empty string whenever the query is
+    /// reset (a new popup session, the popup finishing closing, a clear, a pick in a multi-select).
     #[props(default)]
     pub on_query_change: Callback<String>,
 

@@ -456,7 +456,10 @@ pub struct HoverCardContentProps {
     #[props(default = ContentAlign::Center)]
     pub align: ContentAlign,
 
-    /// Whether to force the hover card to stay open when hovered
+    /// Skips the early return that keeps a closed card's hooks from running. It does not keep the
+    /// card in the DOM: the card is rendered only while it is open (and for its exit animation),
+    /// whatever this is set to, and it stays open while the pointer is over it regardless. Leave it at
+    /// the default.
     #[props(default = true)]
     pub force_mount: bool,
 
@@ -470,7 +473,7 @@ pub struct HoverCardContentProps {
 
 /// # HoverCardContent
 ///
-/// The [`HoverCardContent`] component defines the content of the parent [`HoverCard`]. It is only rendered when the hover card is open or if [`HoverCardContentProps::force_mount`] is set to true.
+/// The [`HoverCardContent`] component defines the content of the parent [`HoverCard`]. It is only rendered while the hover card is open (and for its exit animation); [`HoverCardContentProps::force_mount`] does not change that.
 ///
 /// This component must be used inside a [`HoverCard`] component.
 ///

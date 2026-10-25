@@ -6,7 +6,7 @@ resolves here by id.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Done rows (360)
+## Done rows (361)
 
 | # | Item | Updated |
 |---|---|---|
@@ -349,6 +349,7 @@ resolves here by id.
 | [382](backlog/done/382-rustdoc-warnings-to-zero.md) | Rustdoc warnings to zero: shrink the check-rustdoc baseline (87 entries) and make the gate strict | 2026-10-25 |
 | [384](backlog/done/384-burn-down-ratchet-baselines.md) | Burn down the ratchet baselines and the leftover TODO comments (props docs, history comments, dead refs) | 2026-10-25 |
 | [391](backlog/done/391-wrappers-forward-primitive-props.md) | Themed wrappers forward every primitive prop, enforced by a props-diff gate | 2026-10-24 |
+| [393](backlog/done/393-docs-contradict-code.md) | Fix the docs statements the code contradicts | 2026-10-25 |
 | [395](backlog/done/395-as-keeps-children.md) | `as` keeps the component's children and handlers (Radix asChild semantics) | 2026-10-24 |
 | [396](backlog/done/396-derive-item-index.md) | Derive item `index` from registration order | 2026-10-24 |
 | [397](backlog/done/397-docs-review-bugs.md) | Bugs the docs review found: ToggleGroup arrows, dead ScrollArea prop, DataTable sort, Sidebar Ctrl+B | 2026-10-24 |

@@ -40,7 +40,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (36)
+## Open rows (35)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -70,7 +70,6 @@ proposing one is closed as out of scope (row 337 is the first).
 | [389](backlog/389-accent-active-selected-states.md) | Active and selected states take the picked accent (mark, ink, tint slots) | DECIDED 2026-10-24 (owner), BUILT on lane/accent-states (audit: 58 rows). Hard requirement kept by… | M | theme |
 | [390](backlog/390-base-accent-preset-split.md) | Base and accent presets own disjoint variables; charts follow the accent | DECIDED 2026-10-24 (owner): (1) each axis owns its own variables, disjoint and enforced; (2) charts… | M | theme |
 | [392](backlog/392-docs-snippets-compile.md) | Compile-check the docs.md code samples; samples use the uncontrolled props | BACKLOG. Found by row 387's first docs-clarity review; the evidence (file:line per finding) is in… | M | docs |
-| [393](backlog/393-docs-contradict-code.md) | Fix the docs statements the code contradicts | BACKLOG. Found by row 387's first docs-clarity review; the evidence (file:line per finding) is in… | S | docs |
 | [394](backlog/394-coming-from-shadcn-radix-tanstack.md) | A 'Coming from shadcn / Radix / TanStack' table on every component page | BACKLOG. Found by row 387's first docs-clarity review; the evidence (file:line per finding) is in… | M | docs |
 | [399](backlog/399-docs-review-demos.md) | Demo batch from the docs review | BACKLOG. Found by row 387's first docs-clarity review; the evidence (file:line per finding) is in… | S | docs |
 | [402](backlog/402-load-robust-timing-specs.md) | Release timing specs compare same-run measurements, not absolute milliseconds | Done on lane/timing-relative (numbers below). Trigger for reopening: a release timing spec that… | S | tests |

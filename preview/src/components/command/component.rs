@@ -76,11 +76,12 @@ pub fn CommandDialog(props: CommandDialogProps) -> Element {
 /// Props for the themed [`Command`].
 #[derive(Props, Clone, PartialEq)]
 pub struct CommandProps<T: Clone + PartialEq + 'static = String> {
-    /// The controlled highlighted value.
+    /// The controlled picked value (the item last chosen), not the highlighted row: arrowing through
+    /// the list moves the highlight without changing it. `None` means no item has been picked.
     #[props(default)]
     pub value: Option<ReadSignal<Option<T>>>,
 
-    /// The initially highlighted value when uncontrolled.
+    /// The initially picked value when uncontrolled; it does not set which row is highlighted.
     #[props(default)]
     pub default_value: Option<T>,
 

@@ -98,7 +98,7 @@ pub struct DatePickerProps {
     #[props(default)]
     pub disabled: ReadSignal<bool>,
 
-    /// Whether the date picker is enable user input
+    /// Sets `contenteditable="false"` on the date segments, nothing more: a read-only picker has no text caret, but the digit and arrow keys still change the value and the calendar popover still opens and picks. Use `disabled` to block interaction.
     #[props(default = ReadSignal::new(Signal::new(false)))]
     pub read_only: ReadSignal<bool>,
 
@@ -200,7 +200,7 @@ pub struct DateRangePickerProps {
     #[props(default)]
     pub disabled: ReadSignal<bool>,
 
-    /// Whether the date picker is enable user input
+    /// Sets `contenteditable="false"` on the date segments, nothing more: a read-only picker has no text caret, but the digit and arrow keys still change the value and the calendar popover still opens and picks. Use `disabled` to block interaction.
     #[props(default = ReadSignal::new(Signal::new(false)))]
     pub read_only: ReadSignal<bool>,
 

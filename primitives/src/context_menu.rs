@@ -1060,8 +1060,9 @@ pub struct ContextMenuItemProps {
 
 /// # ContextMenuItem
 ///
-/// The [`ContextMenuItem`] component defines an individual item in the context menu. You must define an index that
-/// controls the order items are focused when navigating the menu with the keyboard.
+/// The [`ContextMenuItem`] component defines an individual item in the context menu. Its `index` is optional: items are
+/// ordered for keyboard navigation as they are created (tree order), so set it only when an item is
+/// inserted between mounted items or a keyed list reorders them. It never changes where an item is drawn.
 ///
 /// When an item is selected with either the pointer or the keyboard, the menu is closed and the `on_select` callback is called with the item's value.
 ///
