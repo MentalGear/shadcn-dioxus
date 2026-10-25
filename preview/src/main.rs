@@ -3247,9 +3247,9 @@ fn BlockFilters() -> Element {
 #[component]
 fn BlockColorPalette() -> Element {
     use dioxus_primitives::color_picker::Color;
-    use palette::{encoding, Hsv, IntoColor};
+    use palette::{encoding, Hsva, IntoColor};
 
-    let mut color = use_signal(|| -> Hsv<encoding::Srgb, f64> {
+    let mut color = use_signal(|| -> Hsva<encoding::Srgb, f64> {
         Color::new(124, 58, 237).into_format::<f64>().into_color()
     });
 

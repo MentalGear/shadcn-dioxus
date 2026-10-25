@@ -2,11 +2,11 @@ use dioxus::prelude::*;
 
 use super::super::component::*;
 use dioxus_primitives::color_picker::Color;
-use palette::{encoding, Hsv, IntoColor};
+use palette::{encoding, Hsva, IntoColor};
 
 #[component]
 pub fn Demo() -> Element {
-    let mut color = use_signal(|| -> Hsv<encoding::Srgb, f64> {
+    let mut color = use_signal(|| -> Hsva<encoding::Srgb, f64> {
         Color::new(155, 128, 255).into_format::<f64>().into_color()
     });
 
