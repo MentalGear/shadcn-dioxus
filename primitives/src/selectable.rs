@@ -4,7 +4,7 @@ use dioxus::html::input_data::MouseButton;
 use dioxus::prelude::*;
 
 use crate::{
-    collection::{use_collection_provider, CollectionState},
+    collection::{use_collection_provider, CollectionPlacement, CollectionState},
     listbox::{use_listbox_option, ListboxOptionContext},
     use_controlled, use_unique_id, Controlled,
 };
@@ -30,6 +30,42 @@ impl SelectionMode {
     }
 }
 
+/// Where an opening listbox puts focus: the (first) selected option, else the
+/// `fallback` placement, else nowhere.
+///
+/// An intent, not an index: the list mounts its options afresh on every open,
+/// so they only get their indices, and their document order (row 396's
+/// `crate::collection::use_item_index`), once the list is open.
+/// [`crate::listbox::use_listbox_container`] resolves it then.
+#[derive(Clone, Copy, PartialEq)]
+pub(crate) struct ListboxFocus {
+    pub(crate) selected: bool,
+    pub(crate) fallback: Option<CollectionPlacement>,
+}
+
+impl ListboxFocus {
+    pub(crate) const SELECTED: Self = Self {
+        selected: true,
+        fallback: None,
+    };
+    pub(crate) const FIRST: Self = Self {
+        selected: false,
+        fallback: Some(CollectionPlacement::First),
+    };
+    pub(crate) const LAST: Self = Self {
+        selected: false,
+        fallback: Some(CollectionPlacement::Last),
+    };
+    pub(crate) const SELECTED_OR_FIRST: Self = Self {
+        selected: true,
+        fallback: Some(CollectionPlacement::First),
+    };
+    pub(crate) const SELECTED_OR_LAST: Self = Self {
+        selected: true,
+        fallback: Some(CollectionPlacement::Last),
+    };
+}
+
 /// Shared context for components built around a selectable listbox.
 #[derive(Clone, Copy)]
 pub(crate) struct SelectableContext {
@@ -41,7 +77,7 @@ pub(crate) struct SelectableContext {
     pub(crate) options: Signal<Vec<OptionState>>,
     pub(crate) list_id: Signal<Option<String>>,
     pub(crate) collection: CollectionState,
-    pub(crate) initial_focus: Signal<Option<usize>>,
+    pub(crate) initial_focus: Signal<Option<ListboxFocus>>,
     pub(crate) disabled: ReadSignal<bool>,
 
     /// Id of the trigger button, for `use_refocus_on_close_unless` (lib.rs)
@@ -86,6 +122,29 @@ impl SelectableContext {
 
     pub(crate) fn is_empty(&self) -> bool {
         self.values.read().is_empty()
+    }
+
+    /// The option `focus` resolves to among the registered options: the
+    /// first available selected one, else the fallback placement. Tracked.
+    pub(crate) fn initial_focus_target(&self, focus: ListboxFocus) -> Option<usize> {
+        let selected = focus
+            .selected
+            .then(|| {
+                self.options
+                    .read()
+                    .iter()
+                    .filter(|option| {
+                        self.is_selected(&option.value)
+                            && self.collection.is_available(option.index)
+                    })
+                    .map(|option| option.index)
+                    .min()
+            })
+            .flatten();
+        selected.or_else(|| match focus.fallback? {
+            CollectionPlacement::First => self.collection.first_available_index(),
+            CollectionPlacement::Last => self.collection.last_available_index(),
+        })
     }
 
     pub(crate) fn focused_option_id(&self) -> Option<String> {

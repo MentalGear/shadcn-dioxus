@@ -56,7 +56,6 @@ pub fn Demo() -> Element {
                 }
                 DropdownMenuItem::<String> {
                     value: "Upgrade to Pro".to_string(),
-                    index: 0usize,
                     text_value: "Upgrade to Pro",
                     on_select: move |value| chosen.set(Some(value)),
                     Sparkles { size: "16px" }
@@ -64,7 +63,6 @@ pub fn Demo() -> Element {
                 }
                 DropdownMenuItem::<String> {
                     value: "Account".to_string(),
-                    index: 1usize,
                     text_value: "Account",
                     on_select: move |value| chosen.set(Some(value)),
                     BadgeCheck { size: "16px" }
@@ -72,7 +70,6 @@ pub fn Demo() -> Element {
                 }
                 DropdownMenuItem::<String> {
                     value: "Billing".to_string(),
-                    index: 2usize,
                     text_value: "Billing",
                     on_select: move |value| chosen.set(Some(value)),
                     CreditCard { size: "16px" }
@@ -80,7 +77,6 @@ pub fn Demo() -> Element {
                 }
                 DropdownMenuItem::<String> {
                     value: "Notifications".to_string(),
-                    index: 3usize,
                     text_value: "Notifications",
                     on_select: move |value| chosen.set(Some(value)),
                     Bell { size: "16px" }
@@ -88,7 +84,6 @@ pub fn Demo() -> Element {
                 }
                 DropdownMenuItem::<String> {
                     value: "Log out".to_string(),
-                    index: 4usize,
                     text_value: "Log out",
                     on_select: move |value| chosen.set(Some(value)),
                     LogOut { size: "16px" }

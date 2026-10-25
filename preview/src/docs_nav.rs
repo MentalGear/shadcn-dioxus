@@ -236,11 +236,10 @@ pub(crate) fn DocsComponentNav(active: DocsNavActive) -> Element {
                         ChevronDown { size: "1rem", "aria-hidden": "true" }
                     }
                     DropdownMenuContent {
-                        for (i , cat) in ComponentCategory::ALL.iter().copied().enumerate() {
+                        for cat in ComponentCategory::ALL.iter().copied() {
                             DropdownMenuItem::<ComponentCategory> {
                                 key: "{cat.label()}",
                                 value: cat,
-                                index: i,
                                 text_value: cat.label(),
                                 on_select: move |cat: ComponentCategory| {
                                     sort.set(NavSort::Category);

@@ -22,13 +22,12 @@ const PANEL_GRID: &str = "width: 25rem; max-width: 100%; grid-template-columns: 
 #[component]
 fn IconLink(
     href: String,
-    index: usize,
     title: String,
     description: String,
     children: Element,
 ) -> Element {
     rsx! {
-        NavigationMenuLink { href, content_index: index,
+        NavigationMenuLink { href,
             div { style: "display: flex; align-items: center; gap: 0.5rem;",
                 {children}
                 div { class: "dx-navigation-menu-link-title", "{title}" }
@@ -44,7 +43,7 @@ pub fn Demo() -> Element {
         div {
             NavigationMenu { aria_label: "Navigation menu with icons",
                 NavigationMenuList {
-                    NavigationMenuItem { index: 0usize,
+                    NavigationMenuItem {
                         NavigationMenuTrigger { "Product" }
                         NavigationMenuContent {
                             div {
@@ -52,21 +51,18 @@ pub fn Demo() -> Element {
                                 style: PANEL_GRID,
                                 IconLink {
                                     href: site_href("/component/calendar/"),
-                                    index: 0usize,
                                     title: "Calendar",
                                     description: "Pick a date or a range of dates.",
                                     Calendar { size: "16px" }
                                 }
                                 IconLink {
                                     href: site_href("/component/card/"),
-                                    index: 1usize,
                                     title: "Card",
                                     description: "A container for related content and actions.",
                                     Layers { size: "16px" }
                                 }
                                 IconLink {
                                     href: site_href("/component/table/"),
-                                    index: 2usize,
                                     title: "Table",
                                     description: "Rows and columns of structured data.",
                                     LayoutGrid { size: "16px" }
@@ -74,7 +70,7 @@ pub fn Demo() -> Element {
                             }
                         }
                     }
-                    NavigationMenuItem { index: 1usize,
+                    NavigationMenuItem {
                         NavigationMenuTrigger { "Resources" }
                         NavigationMenuContent {
                             div {
@@ -82,21 +78,18 @@ pub fn Demo() -> Element {
                                 style: PANEL_GRID,
                                 IconLink {
                                     href: site_href("/docs"),
-                                    index: 0usize,
                                     title: "Introduction",
                                     description: "Learn how the library fits into your project.",
                                     BookOpen { size: "16px" }
                                 }
                                 IconLink {
                                     href: site_href("/component/accordion/"),
-                                    index: 1usize,
                                     title: "Tour",
                                     description: "A quick look at the most common building blocks.",
                                     Compass { size: "16px" }
                                 }
                                 IconLink {
                                     href: site_href("/component/badge/"),
-                                    index: 2usize,
                                     title: "Look and feel",
                                     description: "Colors, radii and type that follow your theme.",
                                     Palette { size: "16px" }

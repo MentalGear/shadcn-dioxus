@@ -185,7 +185,6 @@ pub fn TabContent(props: TabContentProps) -> Element {
             class: None,
             value: props.value,
             id: props.id,
-            index: props.index,
             attributes: merged,
             {props.children}
         }

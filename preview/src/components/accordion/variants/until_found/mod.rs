@@ -25,7 +25,7 @@ pub fn Demo() -> Element {
         div { style: "display: flex; flex-direction: column; gap: var(--dx-space-3); width: 100%; max-width: 15rem;",
             Accordion { allow_multiple_open: false, hidden_until_found: true,
                 for (i , (title , body)) in ITEMS.into_iter().enumerate() {
-                    AccordionItem { index: i, default_open: i == 0,
+                    AccordionItem { default_open: i == 0,
                         AccordionTrigger { "{title}" }
                         AccordionContent {
                             p { padding: "0", "{body}" }

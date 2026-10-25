@@ -56,14 +56,14 @@ Switch { name: "opt-in-lib", value: "subscribed", required: true,
     SwitchThumb {}
 }
 RadioGroup { name: "tier-lib", required: true,
-    RadioItem { value: "small".to_string(), index: 0usize, "Small" }
-    RadioItem { value: "medium".to_string(), index: 1usize, "Medium" }
-    RadioItem { value: "large".to_string(), index: 2usize, "Large" }
+    RadioItem { value: "small".to_string(), "Small" }
+    RadioItem { value: "medium".to_string(), "Medium" }
+    RadioItem { value: "large".to_string(), "Large" }
 }
 Select::<String> { name: "fruit-lib",
     SelectTrigger { SelectValue {} }
     SelectList {
-        SelectOption::<String> { index: 0usize, value: "apple", "Apple" }
+        SelectOption::<String> { value: "apple", "Apple" }
     }
 }
 ```

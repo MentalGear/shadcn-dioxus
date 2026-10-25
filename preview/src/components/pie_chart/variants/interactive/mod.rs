@@ -119,7 +119,6 @@ pub fn Demo() -> Element {
                         for month in Month::ALL {
                             SelectOption::<Month> {
                                 key: "{month.label()}",
-                                index: month.index(),
                                 value: month,
                                 text_value: month.label(),
                                 span { class: "dx-chart-select-value",

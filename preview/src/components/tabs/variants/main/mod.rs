@@ -9,11 +9,11 @@ pub fn Demo() -> Element {
             horizontal: true,
             max_width: "16rem",
             TabList {
-                TabTrigger { value: "tab1".to_string(), index: 0usize, "Tab 1" }
-                TabTrigger { value: "tab2".to_string(), index: 1usize, "Tab 2" }
-                TabTrigger { value: "tab3".to_string(), index: 2usize, "Tab 3" }
+                TabTrigger { value: "tab1".to_string(), "Tab 1" }
+                TabTrigger { value: "tab2".to_string(), "Tab 2" }
+                TabTrigger { value: "tab3".to_string(), "Tab 3" }
             }
-            TabContent { index: 0usize, value: "tab1".to_string(),
+            TabContent { value: "tab1".to_string(),
                 div {
                     width: "100%",
                     height: "5rem",
@@ -24,7 +24,6 @@ pub fn Demo() -> Element {
                 }
             }
             TabContent {
-                index: 1usize,
                 value: "tab2".to_string(),
                 div {
                     width: "100%",
@@ -35,7 +34,7 @@ pub fn Demo() -> Element {
                     "Tab 2 Content"
                 }
             }
-            TabContent { index: 2usize, value: "tab3".to_string(),
+            TabContent { value: "tab3".to_string(),
                 div {
                     width: "100%",
                     height: "5rem",

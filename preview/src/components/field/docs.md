@@ -59,7 +59,7 @@ FieldLabel { html_for: "plan-pro",
             "Pro"
             FieldDescription { "For growing businesses." }
         }
-        RadioItem { id: "plan-pro", value: "pro".to_string(), index: 0usize }
+        RadioItem { id: "plan-pro", value: "pro".to_string(), }
     }
 }
 ```

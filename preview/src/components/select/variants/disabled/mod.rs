@@ -31,9 +31,9 @@ pub fn Demo() -> Element {
             list_aria_label: "Disabled fruit options",
             SelectGroup {
                 SelectGroupLabel { "Fruits" }
-                SelectOption::<String> { index: 0usize, value: "blueberry", text_value: "Blueberry", "Blueberry" }
-                SelectOption::<String> { index: 1usize, value: "grapes", text_value: "Grapes", "Grapes" }
-                SelectOption::<String> { index: 2usize, value: "mango", text_value: "Mango", "Mango" }
+                SelectOption::<String> { value: "blueberry", text_value: "Blueberry", "Blueberry" }
+                SelectOption::<String> { value: "grapes", text_value: "Grapes", "Grapes" }
+                SelectOption::<String> { value: "mango", text_value: "Mango", "Mango" }
             }
         }
     }

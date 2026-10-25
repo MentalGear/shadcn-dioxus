@@ -25,13 +25,11 @@ pub fn Demo() -> Element {
                     value: Some(person()),
                     on_value_change: move |value| person.set(value),
                     ContextMenuRadioItem {
-                        index: 0usize,
                         value: "pedro".to_string(),
                         close_on_select: false,
                         "Pedro Duarte"
                     }
                     ContextMenuRadioItem {
-                        index: 1usize,
                         value: "colm".to_string(),
                         close_on_select: false,
                         "Colm Tuite"
@@ -43,19 +41,16 @@ pub fn Demo() -> Element {
                     value: Some(theme()),
                     on_value_change: move |value| theme.set(value),
                     ContextMenuRadioItem {
-                        index: 2usize,
                         value: "light".to_string(),
                         close_on_select: false,
                         "Light"
                     }
                     ContextMenuRadioItem {
-                        index: 3usize,
                         value: "dark".to_string(),
                         close_on_select: false,
                         "Dark"
                     }
                     ContextMenuRadioItem {
-                        index: 4usize,
                         value: "system".to_string(),
                         close_on_select: false,
                         "System"

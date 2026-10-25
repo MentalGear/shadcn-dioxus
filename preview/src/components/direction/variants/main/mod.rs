@@ -30,15 +30,15 @@ pub fn Demo() -> Element {
                 DirectionProvider { direction: direction(),
                     Tabs { default_value: "a".to_string(), horizontal: true,
                         TabList {
-                            TabTrigger { value: "a".to_string(), index: 0usize, "First" }
-                            TabTrigger { value: "b".to_string(), index: 1usize, "Second" }
-                            TabTrigger { value: "c".to_string(), index: 2usize, "Third" }
+                            TabTrigger { value: "a".to_string(), "First" }
+                            TabTrigger { value: "b".to_string(), "Second" }
+                            TabTrigger { value: "c".to_string(), "Third" }
                         }
-                        TabContent { index: 0usize, value: "a".to_string(),
+                        TabContent { value: "a".to_string(),
                             "Focus a tab and press the arrow keys: ArrowRight moves to the next tab in LTR and to the previous one in RTL."
                         }
-                        TabContent { index: 1usize, value: "b".to_string(), "Second panel." }
-                        TabContent { index: 2usize, value: "c".to_string(), "Third panel." }
+                        TabContent { value: "b".to_string(), "Second panel." }
+                        TabContent { value: "c".to_string(), "Third panel." }
                     }
                 }
             }

@@ -2,12 +2,15 @@
 
 use crate::{
     collapsible::{hidden_attribute, use_beforematch, PanelHidden},
-    collection::{collection_item, use_collection_provider, use_item, CollectionState},
+    collection::{
+        collection_item, use_collection_provider, use_item, use_item_index, CollectionState,
+    },
     direction::{use_direction, use_direction_signal, Direction, HorizontalNav},
     merge_attributes, use_controlled, use_id_or, use_unique_id,
 };
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
+use std::collections::HashMap;
 
 #[derive(Clone, Copy)]
 struct TabsContext {
@@ -29,8 +32,8 @@ struct TabsContext {
     // see `direction::Direction::resolve_horizontal`'s doc.
     direction: ReadSignal<Direction>,
 
-    // ARIA attributes
-    tab_content_ids: Signal<Vec<String>>,
+    // ARIA attributes: each `TabContent`'s element id, by its `value`
+    tab_content_ids: Signal<HashMap<String, String>>,
 }
 
 /// The props for the [`Tabs`] component.
@@ -118,22 +121,18 @@ pub struct TabsProps {
 ///             TabList {
 ///                 TabTrigger {
 ///                     value: "tab1".to_string(),
-///                     index: 0usize,
 ///                     "Tab 1"
 ///                 }
 ///                 TabTrigger {
 ///                     value: "tab2".to_string(),
-///                     index: 1usize,
 ///                     "Tab 2"
 ///                 }
 ///             }
 ///             TabContent {
-///                 index: 0usize,
 ///                 value: "tab1".to_string(),
 ///                 "Tab 1 Content"
 ///             }
 ///             TabContent {
-///                 index: 1usize,
 ///                 value: "tab2".to_string(),
 ///                 "Tab 2 Content"
 ///             }
@@ -166,7 +165,7 @@ pub fn Tabs(props: TabsProps) -> Element {
 
         horizontal: props.horizontal,
         direction: direction_signal,
-        tab_content_ids: Signal::new(Vec::new()),
+        tab_content_ids: Signal::new(HashMap::new()),
     });
 
     let owned = attributes!(div {
@@ -220,22 +219,18 @@ pub struct TabListProps {
 ///             TabList {
 ///                 TabTrigger {
 ///                     value: "tab1".to_string(),
-///                     index: 0usize,
 ///                     "Tab 1"
 ///                 }
 ///                 TabTrigger {
 ///                     value: "tab2".to_string(),
-///                     index: 1usize,
 ///                     "Tab 2"
 ///                 }
 ///             }
 ///             TabContent {
-///                 index: 0usize,
 ///                 value: "tab1".to_string(),
 ///                 "Tab 1 Content"
 ///             }
 ///             TabContent {
-///                 index: 1usize,
 ///                 value: "tab2".to_string(),
 ///                 "Tab 2 Content"
 ///             }
@@ -271,8 +266,11 @@ pub struct TabTriggerProps {
     /// The value of the tab trigger, which is used to identify the corresponding tab content. This
     /// must match the `value` prop of the corresponding [`TabContent`].
     pub value: String,
-    /// The index of the tab trigger. This is used to define the focus order for keyboard navigation.
-    pub index: ReadSignal<usize>,
+    /// The trigger's place in keyboard order. Leave it unset: triggers are ordered as they are
+    /// created, which is tree order. Set it on every trigger only when a trigger is inserted
+    /// between triggers that are already mounted, or a keyed list reorders them.
+    #[props(default)]
+    pub index: ReadSignal<Option<usize>>,
 
     /// Whether the tab trigger is disabled.
     #[props(default)]
@@ -311,22 +309,18 @@ pub struct TabTriggerProps {
 ///             TabList {
 ///                 TabTrigger {
 ///                     value: "tab1".to_string(),
-///                     index: 0usize,
 ///                     "Tab 1"
 ///                 }
 ///                 TabTrigger {
 ///                     value: "tab2".to_string(),
-///                     index: 1usize,
 ///                     "Tab 2"
 ///                 }
 ///             }
 ///             TabContent {
-///                 index: 0usize,
 ///                 value: "tab1".to_string(),
 ///                 "Tab 1 Content"
 ///             }
 ///             TabContent {
-///                 index: 1usize,
 ///                 value: "tab2".to_string(),
 ///                 "Tab 2 Content"
 ///             }
@@ -348,8 +342,10 @@ pub fn TabTrigger(props: TabTriggerProps) -> Element {
     let selected = use_memo(move || (ctx.value)() == value);
 
     let disabled = move || (ctx.disabled)() || (props.disabled)();
+    let order = use_item_index(ctx.focus, props.index);
+    let index = order.index;
     let item = use_item(
-        collection_item(ctx.focus, props.index)
+        collection_item(ctx.focus, index)
             .disabled(disabled)
             .selected(move || selected.cloned()),
     );
@@ -365,11 +361,16 @@ pub fn TabTrigger(props: TabTriggerProps) -> Element {
         role: "tab",
         tabindex: tab_index,
         aria_selected: selected,
-        aria_controls: (ctx.tab_content_ids)().get((props.index)()).cloned(),
+        aria_controls: (ctx.tab_content_ids)().get(&props.value).cloned(),
         "data-state": if selected() { "active" } else { "inactive" },
         "data-disabled": disabled(),
     });
-    let merged = merge_attributes(vec![defaults, props.attributes.clone(), owned]);
+    let merged = merge_attributes(vec![
+        order.marker_attribute(),
+        defaults,
+        props.attributes.clone(),
+        owned,
+    ]);
 
     rsx! {
         button {
@@ -385,7 +386,7 @@ pub fn TabTrigger(props: TabTriggerProps) -> Element {
                 }
             },
 
-            onfocus: move |_| ctx.focus.set_focus(Some((props.index)())),
+            onfocus: move |_| ctx.focus.set_focus(Some(index())),
 
             onkeydown: move |event: Event<KeyboardData>| {
                 let key = event.key();
@@ -427,9 +428,6 @@ pub struct TabContentProps {
     /// The class of the tab content element.
     pub class: Option<String>,
 
-    /// The index of the tab content. This is used to define the focus order for keyboard navigation.
-    pub index: ReadSignal<usize>,
-
     /// Additional attributes to apply to the tab content element.
     #[props(extends = GlobalAttributes)]
     #[props(extends = div)]
@@ -459,22 +457,18 @@ pub struct TabContentProps {
 ///             TabList {
 ///                 TabTrigger {
 ///                     value: "tab1".to_string(),
-///                     index: 0usize,
 ///                     "Tab 1"
 ///                 }
 ///                 TabTrigger {
 ///                     value: "tab2".to_string(),
-///                     index: 1usize,
 ///                     "Tab 2"
 ///                 }
 ///             }
 ///             TabContent {
-///                 index: 0usize,
 ///                 value: "tab1".to_string(),
 ///                 "Tab 1 Content"
 ///             }
 ///             TabContent {
-///                 index: 1usize,
 ///                 value: "tab2".to_string(),
 ///                 "Tab 2 Content"
 ///             }
@@ -495,6 +489,7 @@ pub struct TabContentProps {
 pub fn TabContent(props: TabContentProps) -> Element {
     let mut ctx: TabsContext = use_context();
     let panel_value = props.value.clone();
+    let content_value = props.value.clone();
     let selected = use_memo(move || (ctx.value)() == props.value);
     let uuid = use_unique_id();
     let id = use_id_or(uuid, props.id);
@@ -508,12 +503,9 @@ pub fn TabContent(props: TabContentProps) -> Element {
     });
 
     use_effect(move || {
-        let mut tab_ids = ctx.tab_content_ids.write();
-        let index = (props.index)();
-        while tab_ids.len() <= index {
-            tab_ids.push(String::new());
-        }
-        tab_ids[index] = id();
+        ctx.tab_content_ids
+            .write()
+            .insert(content_value.clone(), id());
     });
 
     let hidden = match (selected(), until_found()) {
@@ -572,8 +564,8 @@ mod tests {
     fn Plain() -> Element {
         rsx! {
             Tabs { default_value: "a".to_string(),
-                TabContent { index: 0usize, value: "a".to_string(), "alpha text" }
-                TabContent { index: 1usize, value: "b".to_string(), "beta text" }
+                TabContent { value: "a".to_string(), "alpha text" }
+                TabContent { value: "b".to_string(), "beta text" }
             }
         }
     }
@@ -582,8 +574,8 @@ mod tests {
     fn UntilFound() -> Element {
         rsx! {
             Tabs { default_value: "a".to_string(), hidden_until_found: true,
-                TabContent { index: 0usize, value: "a".to_string(), "alpha text" }
-                TabContent { index: 1usize, value: "b".to_string(), "beta text" }
+                TabContent { value: "a".to_string(), "alpha text" }
+                TabContent { value: "b".to_string(), "beta text" }
             }
         }
     }
@@ -594,14 +586,14 @@ mod tests {
             Some(h) => rsx! {
                 Tabs { default_value: "a".to_string(), horizontal: h,
                     TabList {
-                        TabTrigger { value: "a".to_string(), index: 0usize, "A" }
+                        TabTrigger { value: "a".to_string(), "A" }
                     }
                 }
             },
             None => rsx! {
                 Tabs { default_value: "a".to_string(),
                     TabList {
-                        TabTrigger { value: "a".to_string(), index: 0usize, "A" }
+                        TabTrigger { value: "a".to_string(), "A" }
                     }
                 }
             },

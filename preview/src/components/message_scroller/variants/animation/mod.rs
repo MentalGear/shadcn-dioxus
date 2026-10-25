@@ -170,10 +170,9 @@ pub fn Demo() -> Element {
                             }
                         },
                         SelectGroup {
-                            for (i , (id , name)) in PRESETS.iter().copied().enumerate() {
+                            for (id , name) in PRESETS.iter().copied() {
                                 SelectOption::<String> {
                                     key: "{id}",
-                                    index: i,
                                     value: id.to_string(),
                                     text_value: name,
                                     "{name}"

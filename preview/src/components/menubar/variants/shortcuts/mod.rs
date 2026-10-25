@@ -20,12 +20,11 @@ pub fn Demo() -> Element {
     rsx! {
         div {
             Menubar { aria_label: "Document menu",
-                MenubarMenu { index: 0usize,
+                MenubarMenu {
                     MenubarTrigger { "Document" }
                     MenubarContent {
                         MenubarGroup {
                             MenubarItem {
-                                index: 0usize,
                                 value: "New Tab".to_string(),
                                 text_value: "New Tab",
                                 on_select: move |value| chosen.set(Some(value)),
@@ -33,7 +32,6 @@ pub fn Demo() -> Element {
                                 MenubarShortcut { "⌘T" }
                             }
                             MenubarItem {
-                                index: 1usize,
                                 value: "New Window".to_string(),
                                 text_value: "New Window",
                                 on_select: move |value| chosen.set(Some(value)),
@@ -41,7 +39,6 @@ pub fn Demo() -> Element {
                                 MenubarShortcut { "⌘N" }
                             }
                             MenubarItem {
-                                index: 2usize,
                                 value: "New Private Window".to_string(),
                                 text_value: "New Private Window",
                                 disabled: true,
@@ -52,7 +49,6 @@ pub fn Demo() -> Element {
                         MenubarSeparator {}
                         MenubarGroup {
                             MenubarItem {
-                                index: 3usize,
                                 value: "Print".to_string(),
                                 text_value: "Print",
                                 on_select: move |value| chosen.set(Some(value)),
@@ -62,12 +58,11 @@ pub fn Demo() -> Element {
                         }
                     }
                 }
-                MenubarMenu { index: 1usize,
+                MenubarMenu {
                     MenubarTrigger { "Selection" }
                     MenubarContent {
                         MenubarGroup {
                             MenubarItem {
-                                index: 0usize,
                                 value: "Select All".to_string(),
                                 text_value: "Select All",
                                 inset: true,
@@ -76,7 +71,6 @@ pub fn Demo() -> Element {
                                 MenubarShortcut { "⌘A" }
                             }
                             MenubarItem {
-                                index: 1usize,
                                 value: "Invert Selection".to_string(),
                                 text_value: "Invert Selection",
                                 inset: true,
@@ -87,7 +81,6 @@ pub fn Demo() -> Element {
                         MenubarSeparator {}
                         MenubarGroup {
                             MenubarItem {
-                                index: 2usize,
                                 value: "Delete Selection".to_string(),
                                 text_value: "Delete Selection",
                                 variant: MenuItemVariant::Destructive,

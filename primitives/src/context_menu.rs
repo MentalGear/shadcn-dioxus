@@ -11,7 +11,7 @@ use crate::sleep::sleep;
 use crate::{
     collection::{
         collection_item, use_collection_provider, use_deferred_collection_focus, use_item,
-        CollectionPlacement, CollectionState,
+        use_item_index, CollectionPlacement, CollectionState,
     },
     direction::{use_direction, use_direction_signal, Direction},
     fold_style_attributes, has_own_accessible_name,
@@ -182,7 +182,6 @@ pub struct ContextMenuProps {
 ///             ContextMenuContent {
 ///                 ContextMenuItem {
 ///                     value: "edit".to_string(),
-///                     index: 0usize,
 ///                     on_select: move |value| {
 ///                         tracing::info!("Selected item: {}", value);
 ///                     },
@@ -190,7 +189,6 @@ pub struct ContextMenuProps {
 ///                 }
 ///                 ContextMenuItem {
 ///                     value: "undo".to_string(),
-///                     index: 1usize,
 ///                     disabled: true,
 ///                     on_select: move |value| {
 ///                         tracing::info!("Selected item: {}", value);
@@ -361,7 +359,6 @@ pub struct ContextMenuTriggerProps {
 ///             ContextMenuContent {
 ///                 ContextMenuItem {
 ///                     value: "edit".to_string(),
-///                     index: 0usize,
 ///                     on_select: move |value| {
 ///                         tracing::info!("Selected item: {}", value);
 ///                     },
@@ -369,7 +366,6 @@ pub struct ContextMenuTriggerProps {
 ///                 }
 ///                 ContextMenuItem {
 ///                     value: "undo".to_string(),
-///                     index: 1usize,
 ///                     disabled: true,
 ///                     on_select: move |value| {
 ///                         tracing::info!("Selected item: {}", value);
@@ -570,7 +566,6 @@ pub struct ContextMenuContentProps {
 ///             ContextMenuContent {
 ///                 ContextMenuItem {
 ///                     value: "edit".to_string(),
-///                     index: 0usize,
 ///                     on_select: move |value| {
 ///                         tracing::info!("Selected item: {}", value);
 ///                     },
@@ -578,7 +573,6 @@ pub struct ContextMenuContentProps {
 ///                 }
 ///                 ContextMenuItem {
 ///                     value: "undo".to_string(),
-///                     index: 1usize,
 ///                     disabled: true,
 ///                     on_select: move |value| {
 ///                         tracing::info!("Selected item: {}", value);
@@ -1020,8 +1014,11 @@ pub struct ContextMenuItemProps {
     /// The value of the menu item
     pub value: ReadSignal<String>,
 
-    /// The index of the item in the menu
-    pub index: ReadSignal<usize>,
+    /// The item's place in keyboard order. Leave it unset: items are ordered as they are
+    /// created, which is tree order. Set it on every item only when one is inserted between
+    /// items that are already mounted, or a keyed list reorders them.
+    #[props(default)]
+    pub index: ReadSignal<Option<usize>>,
 
     /// Explicit label text used for typeahead search (`dev-docs/backlog.md`
     /// row 11 -- APG's "Any key that corresponds to a printable character"
@@ -1079,7 +1076,6 @@ pub struct ContextMenuItemProps {
 ///             ContextMenuContent {
 ///                 ContextMenuItem {
 ///                     value: "edit".to_string(),
-///                     index: 0usize,
 ///                     on_select: move |value| {
 ///                         tracing::info!("Selected item: {}", value);
 ///                     },
@@ -1087,7 +1083,6 @@ pub struct ContextMenuItemProps {
 ///                 }
 ///                 ContextMenuItem {
 ///                     value: "undo".to_string(),
-///                     index: 1usize,
 ///                     disabled: true,
 ///                     on_select: move |value| {
 ///                         tracing::info!("Selected item: {}", value);
@@ -1109,8 +1104,10 @@ pub fn ContextMenuItem(props: ContextMenuItemProps) -> Element {
     let mut ctx: ContextMenuCtx = use_context();
 
     let disabled = move || (props.disabled)() || (ctx.disabled)();
+    let order = use_item_index(ctx.focus, props.index);
+    let index = order.index;
     let item = use_item(
-        collection_item(ctx.focus, props.index)
+        collection_item(ctx.focus, index)
             .disabled(disabled)
             .text_value(move || Some((props.text_value)().unwrap_or_else(|| (props.value)()))),
     );
@@ -1145,6 +1142,7 @@ pub fn ContextMenuItem(props: ContextMenuItemProps) -> Element {
     // Owned by this component -- see `ContextMenuContentRendered`'s
     // identical construction above (`dev-docs/backlog.md` row 93).
     let attributes = merge_attributes(vec![
+        order.marker_attribute(),
         props.attributes,
         attributes!(div {
             role: crate::menu_semantics::MENU_ITEM_ROLE,
@@ -1236,7 +1234,6 @@ pub type ContextMenuRadioItemProps = MenuRadioItemProps;
 ///             ContextMenuTrigger { "right click here" }
 ///             ContextMenuContent {
 ///                 ContextMenuCheckboxItem {
-///                     index: 0usize,
 ///                     checked: Some(show_bookmarks()),
 ///                     on_checked_change: move |checked| show_bookmarks.set(checked),
 ///                     close_on_select: false,
@@ -1292,12 +1289,10 @@ pub fn ContextMenuCheckboxItem(props: ContextMenuCheckboxItemProps) -> Element {
 ///                     value: Some(person()),
 ///                     on_value_change: move |value| person.set(value),
 ///                     ContextMenuRadioItem {
-///                         index: 0usize,
 ///                         value: "pedro".to_string(),
 ///                         "Pedro Duarte"
 ///                     }
 ///                     ContextMenuRadioItem {
-///                         index: 1usize,
 ///                         value: "colm".to_string(),
 ///                         "Colm Tuite"
 ///                     }
@@ -1442,6 +1437,8 @@ fn context_checkable_item(state: CheckableState, common: CheckableCommon) -> Ele
         children,
     } = common;
     let disabled = move || (ctx.disabled)() || item_disabled();
+    let order = use_item_index(focus, index);
+    let index = order.index;
     let item = use_item(
         collection_item(focus, index)
             .disabled(disabled)
@@ -1469,6 +1466,7 @@ fn context_checkable_item(state: CheckableState, common: CheckableCommon) -> Ele
     };
 
     let attributes = merge_attributes(vec![
+        order.marker_attribute(),
         attributes,
         state.owned_attributes(disabled(), inset, if focused() { "0" } else { "-1" }),
     ]);
@@ -1604,18 +1602,16 @@ pub struct ContextMenuSubProps {
 ///             ContextMenuContent {
 ///                 ContextMenuItem {
 ///                     value: "edit".to_string(),
-///                     index: 0usize,
 ///                     on_select: move |value| {
 ///                         tracing::info!("Selected item: {}", value);
 ///                     },
 ///                     "Edit"
 ///                 }
 ///                 ContextMenuSub {
-///                     ContextMenuSubTrigger { index: 1usize, "More tools" }
+///                     ContextMenuSubTrigger { "More tools" }
 ///                     ContextMenuSubContent {
 ///                         ContextMenuSubItem {
 ///                             value: "duplicate".to_string(),
-///                             index: 0usize,
 ///                             on_select: move |value| {
 ///                                 tracing::info!("Selected item: {}", value);
 ///                             },
@@ -1675,10 +1671,11 @@ pub fn ContextMenuSub(props: ContextMenuSubProps) -> Element {
 /// The props for the [`ContextMenuSubTrigger`] component.
 #[derive(Props, Clone, PartialEq)]
 pub struct ContextMenuSubTriggerProps {
-    /// The index of this sub-trigger within the enclosing
-    /// [`ContextMenuContent`]. Orders it for keyboard navigation,
-    /// the same as [`ContextMenuItemProps::index`].
-    pub index: ReadSignal<usize>,
+    /// The item's place in keyboard order. Leave it unset: items are ordered as they are
+    /// created, which is tree order. Set it on every item only when one is inserted between
+    /// items that are already mounted, or a keyed list reorders them.
+    #[props(default)]
+    pub index: ReadSignal<Option<usize>>,
 
     /// The ID of the sub-trigger element. If not provided, an internally
     /// generated ID is used.
@@ -1739,8 +1736,10 @@ pub fn ContextMenuSubTrigger(props: ContextMenuSubTriggerProps) -> Element {
     // The sub-trigger is the focusable element, so it registers *itself* in
     // the enclosing (root) menu's collection -- see
     // `DropdownMenuSubTrigger`'s identical choice.
+    let order = use_item_index(ctx.focus, props.index);
+    let index = order.index;
     let item = use_item(
-        collection_item(ctx.focus, props.index)
+        collection_item(ctx.focus, index)
             .disabled(disabled)
             .text_value(move || (props.text_value)()),
     );
@@ -1816,6 +1815,7 @@ pub fn ContextMenuSubTrigger(props: ContextMenuSubTriggerProps) -> Element {
         // submenu the DOM-truth-based construction instead.
     });
     let merged = merge_attributes(vec![
+        order.marker_attribute(),
         base,
         props.attributes,
         menu_item::item_style_attributes(MenuItemVariant::Default, props.inset),
@@ -2205,8 +2205,11 @@ pub struct ContextMenuSubItemProps {
     /// The value of the menu item.
     pub value: ReadSignal<String>,
 
-    /// The index of the item within the enclosing [`ContextMenuSubContent`].
-    pub index: ReadSignal<usize>,
+    /// The item's place in keyboard order. Leave it unset: items are ordered as they are
+    /// created, which is tree order. Set it on every item only when one is inserted between
+    /// items that are already mounted, or a keyed list reorders them.
+    #[props(default)]
+    pub index: ReadSignal<Option<usize>>,
 
     /// Explicit label text used for typeahead search within this submenu
     /// -- see [`ContextMenuItemProps::text_value`]'s identical doc for the
@@ -2263,8 +2266,10 @@ pub fn ContextMenuSubItem(props: ContextMenuSubItemProps) -> Element {
     let mut sub: crate::menu_sub::SubMenuState = use_context();
 
     let disabled = move || (props.disabled)() || (ctx.disabled)();
+    let order = use_item_index(sub.focus, props.index);
+    let index = order.index;
     let item = use_item(
-        collection_item(sub.focus, props.index)
+        collection_item(sub.focus, index)
             .disabled(disabled)
             .text_value(move || Some((props.text_value)().unwrap_or_else(|| (props.value)()))),
     );
@@ -2307,6 +2312,7 @@ pub fn ContextMenuSubItem(props: ContextMenuSubItemProps) -> Element {
     // Owned by this component -- see `ContextMenuItem`'s identical
     // construction above (`dev-docs/backlog.md` row 93).
     let attributes = merge_attributes(vec![
+        order.marker_attribute(),
         props.attributes,
         attributes!(div {
             role: crate::menu_semantics::MENU_ITEM_ROLE,

@@ -1010,10 +1010,10 @@ fn ComponentCode(
             horizontal: true,
             width: "100%",
             TabList {
-                TabTrigger { value: "main.rs", index: 0usize, "main.rs" }
-                TabTrigger { value: "style.css", index: 1usize, "style.css" }
+                TabTrigger { value: "main.rs", "main.rs" }
+                TabTrigger { value: "style.css", "style.css" }
                 if component_type != ComponentType::Block {
-                    TabTrigger { value: "dx-components-theme.css", index: 2usize, "dx-components-theme.css" }
+                    TabTrigger { value: "dx-components-theme.css", "dx-components-theme.css" }
                 }
             }
             div {
@@ -1024,7 +1024,6 @@ fn ComponentCode(
                 justify_content: "center",
                 align_items: "center",
                 TabContent {
-                    index: 0usize,
                     padding: 0,
                     value: "main.rs",
                     width: "100%",
@@ -1032,7 +1031,6 @@ fn ComponentCode(
                     CodeBlock { source: rs_highlighted }
                 }
                 TabContent {
-                    index: 1usize,
                     padding: 0,
                     value: "style.css",
                     width: "100%",
@@ -1041,7 +1039,6 @@ fn ComponentCode(
                 }
                 if component_type != ComponentType::Block {
                     TabContent {
-                        index: 2usize,
                         padding: 0,
                         value: "dx-components-theme.css",
                         width: "100%",
@@ -1887,7 +1884,7 @@ fn ComponentHighlight(demo: ComponentDemoData) -> Element {
                         collapsible: true,
                         hidden_until_found: true,
                         chevron: AccordionChevron::Start,
-                        AccordionItem { index: 0usize,
+                        AccordionItem {
                             h2 { id: "installation", class: "dx-docs-accordion-heading",
                                 AccordionTrigger { class: "dx-docs-accordion-trigger",
                                     "{PAGE_HEADING_INSTALLATION}"
@@ -1927,8 +1924,8 @@ fn ComponentHighlight(demo: ComponentDemoData) -> Element {
                                 }
                             }
                         }
-                        for (i , section) in docs.iter().enumerate() {
-                            AccordionItem { key: "{section.id}", index: i + 1,
+                        for section in docs.iter() {
+                            AccordionItem { key: "{section.id}",
                                 h2 { id: section.id, class: "dx-docs-accordion-heading",
                                     AccordionTrigger { class: "dx-docs-accordion-trigger",
                                         span { dangerous_inner_html: section.title_html }
@@ -2190,8 +2187,8 @@ fn ComponentVariantHighlight(
             variant: TabsVariant::Ghost,
             div { class: "dx-component-tabs-header",
                 TabList {
-                    TabTrigger { value: "Demo", index: 0usize, "DEMO" }
-                    TabTrigger { value: "Code", index: 1usize, "CODE" }
+                    TabTrigger { value: "Demo", "DEMO" }
+                    TabTrigger { value: "Code", "CODE" }
                 }
             }
             div {
@@ -2202,7 +2199,6 @@ fn ComponentVariantHighlight(
                 justify_content: "center",
                 align_items: "center",
                 TabContent {
-                    index: 0usize,
                     class: "dx-component-preview-frame",
                     id: "{frame_id}",
                     value: "Demo",
@@ -2214,7 +2210,6 @@ fn ComponentVariantHighlight(
                     DirectionProvider { direction: PREVIEW_DIRECTION(), Comp {} }
                 }
                 TabContent {
-                    index: 1usize,
                     class: "dx-component-preview-frame",
                     value: "Code",
                     width: "100%",
@@ -2309,8 +2304,8 @@ fn BlockComponentVariantHighlight(
             variant: TabsVariant::Ghost,
             div { class: "dx-component-tabs-header",
                 TabList {
-                    TabTrigger { value: "Preview", index: 0usize, "PREVIEW" }
-                    TabTrigger { value: "Code", index: 1usize, "CODE" }
+                    TabTrigger { value: "Preview", "PREVIEW" }
+                    TabTrigger { value: "Code", "CODE" }
                 }
             }
             div {
@@ -2321,7 +2316,6 @@ fn BlockComponentVariantHighlight(
                 justify_content: "center",
                 align_items: "center",
                 TabContent {
-                    index: 0usize,
                     id: "{frame_id}",
                     // Nova tabs content has no padding (row 132); the Block frame keeps its 2rem.
                     padding: "var(--dx-space-8)",
@@ -2403,7 +2397,6 @@ fn BlockComponentVariantHighlight(
                     }
                 }
                 TabContent {
-                    index: 1usize,
                     padding: "var(--dx-space-8)",
                     value: "Code",
                     width: "100%",
@@ -3207,9 +3200,9 @@ fn BlockFilters() -> Element {
                     "Status"
                 }
                 RadioGroup { default_value: "active".to_string(),
-                    RadioItem { value: "active".to_string(), index: 0usize, "Active" }
-                    RadioItem { value: "draft".to_string(), index: 1usize, "Drafts" }
-                    RadioItem { value: "archived".to_string(), index: 2usize, "Archived" }
+                    RadioItem { value: "active".to_string(), "Active" }
+                    RadioItem { value: "draft".to_string(), "Drafts" }
+                    RadioItem { value: "archived".to_string(), "Archived" }
                 }
             }
             div { style: "display: grid; gap: 0.45rem;",
@@ -3288,11 +3281,11 @@ fn BlockTabs() -> Element {
             horizontal: true,
             width: "100%",
             TabList {
-                TabTrigger { value: "members".to_string(), index: 0usize, "Members" }
-                TabTrigger { value: "activity".to_string(), index: 1usize, "Activity" }
-                TabTrigger { value: "files".to_string(), index: 2usize, "Files" }
+                TabTrigger { value: "members".to_string(), "Members" }
+                TabTrigger { value: "activity".to_string(), "Activity" }
+                TabTrigger { value: "files".to_string(), "Files" }
             }
-            TabContent { index: 0usize, value: "members".to_string(), padding: "var(--dx-space-8)",
+            TabContent { value: "members".to_string(), padding: "var(--dx-space-8)",
                 div { style: "display: grid; gap: 0.85rem;",
                     for member in members.iter() {
                         div { style: "display: flex; align-items: center; gap: 0.7rem;",
@@ -3318,7 +3311,7 @@ fn BlockTabs() -> Element {
                     }
                 }
             }
-            TabContent { index: 1usize, value: "activity".to_string(), padding: "var(--dx-space-8)",
+            TabContent { value: "activity".to_string(), padding: "var(--dx-space-8)",
                 div { style: "display: grid; gap: 0.85rem;",
                     for entry in activity.iter() {
                         div { style: "display: flex; align-items: baseline; gap: 0.45rem; font-size: 0.88rem;",
@@ -3329,7 +3322,7 @@ fn BlockTabs() -> Element {
                     }
                 }
             }
-            TabContent { index: 2usize, value: "files".to_string(), padding: "var(--dx-space-8)",
+            TabContent { value: "files".to_string(), padding: "var(--dx-space-8)",
                 div { style: "display: grid; gap: 0.6rem; color: var(--dx-foreground); font-size: 0.88rem;",
                     div { style: "display: flex; align-items: center; gap: 0.5rem;",
                         span { style: "font-family: var(--dx-font-mono); color: var(--dx-muted-foreground);", "/" }
@@ -3395,9 +3388,8 @@ fn BlockCommand() -> Element {
             aria_label: "Switch workspace",
             list_aria_label: "Workspaces",
             ComboboxEmpty { "No workspaces match." }
-            for (i , (value , label)) in workspaces.iter().enumerate() {
+            for (value , label) in workspaces.iter() {
                 ComboboxOption::<String> {
-                    index: i,
                     value: value.to_string(),
                     text_value: label.to_string(),
                     "{label}"

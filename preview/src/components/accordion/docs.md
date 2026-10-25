@@ -7,8 +7,6 @@ The accordion component is used to display collapsible content panels for presen
 Accordion {
     // Each accordion item contains both a trigger the expanded contents of the item.
     AccordionItem {
-        // Each item must have an index starting from 0 to control where the item is placed.
-        index: 0,
         // The trigger is used to expand or collapse the item.
         AccordionTrigger {}
         // The content that is shown when the item is expanded.
@@ -25,11 +23,11 @@ By default opening an item closes the one that was open. Pass `allow_multiple_op
 
 ```rust
 Accordion { allow_multiple_open: true,
-    AccordionItem { index: 0, default_open: true,
+    AccordionItem { default_open: true,
         AccordionTrigger { "Notification Settings" }
         AccordionContent { "..." }
     }
-    AccordionItem { index: 1,
+    AccordionItem {
         AccordionTrigger { "Privacy & Security" }
         AccordionContent { "..." }
     }
@@ -44,7 +42,7 @@ A collapsed trigger does not underline on hover; an open one does. That is a del
 
 ```rust
 Accordion { chevron: AccordionChevron::Start,
-    AccordionItem { index: 0,
+    AccordionItem {
         AccordionTrigger { "Installation" }
         AccordionContent { "..." }
     }
@@ -59,7 +57,6 @@ By default closed items are unmounted after their close animation, so find-in-pa
 Accordion {
     hidden_until_found: true,
     AccordionItem {
-        index: 0,
         AccordionTrigger { "Returns" }
         AccordionContent { "Text that Ctrl+F can find while closed" }
     }

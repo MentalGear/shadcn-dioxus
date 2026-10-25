@@ -41,9 +41,9 @@ pub fn Demo() -> Element {
                     },
                     width: "12rem",
                     default_value: "first".to_string(),
-                    SelectOption::<String> { index: 0usize, value: "first", "First" }
-                    SelectOption::<String> { index: 1usize, value: "second", "Second" }
-                    SelectOption::<String> { index: 2usize, value: "third", "Third" }
+                    SelectOption::<String> { value: "first", "First" }
+                    SelectOption::<String> { value: "second", "Second" }
+                    SelectOption::<String> { value: "third", "Third" }
                 }
             }
         }

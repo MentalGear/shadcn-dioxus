@@ -38,14 +38,12 @@ pub fn Demo() -> Element {
                 list_aria_label: "Dynamic frameworks",
                 ComboboxEmpty { "No framework found." }
                 ComboboxOption::<String> {
-                    index: 0usize,
                     value: "next".to_string(),
                     text_value: "Next.js",
                     "Next.js"
                 }
                 if show_svelte() {
                     ComboboxOption::<String> {
-                        index: 1usize,
                         value: "svelte".to_string(),
                         text_value: "SvelteKit",
                         "SvelteKit"
@@ -53,14 +51,12 @@ pub fn Demo() -> Element {
                 }
                 if show_solid() {
                     ComboboxOption::<String> {
-                        index: 2usize,
                         value: "solid".to_string(),
                         text_value: "SolidStart",
                         "SolidStart"
                     }
                 }
                 ComboboxOption::<String> {
-                    index: 3usize,
                     value: "dioxus".to_string(),
                     text_value: "Dioxus",
                     "Dioxus"

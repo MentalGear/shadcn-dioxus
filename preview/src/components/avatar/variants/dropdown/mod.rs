@@ -32,10 +32,9 @@ pub fn Demo() -> Element {
                     },
                 }
                 DropdownMenuContent {
-                    for (i , name) in ["Profile", "Billing", "Settings", "Sign out"].into_iter().enumerate() {
+                    for name in ["Profile", "Billing", "Settings", "Sign out"].into_iter() {
                         DropdownMenuItem::<String> {
                             value: name.to_string(),
-                            index: i,
                             text_value: name,
                             on_select: move |value: String| selected.set(value),
                             "{name}"

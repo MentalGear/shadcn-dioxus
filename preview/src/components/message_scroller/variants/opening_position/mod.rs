@@ -93,9 +93,9 @@ pub fn Demo() -> Element {
                         horizontal: true,
                         style: "width: 100%;",
                         TabList { style: "width: 100%;",
-                            TabTrigger { value: "start".to_string(), index: 0usize, "start" }
-                            TabTrigger { value: "end".to_string(), index: 1usize, "end" }
-                            TabTrigger { value: "last-anchor".to_string(), index: 2usize, "last-anchor" }
+                            TabTrigger { value: "start".to_string(), "start" }
+                            TabTrigger { value: "end".to_string(), "end" }
+                            TabTrigger { value: "last-anchor".to_string(), "last-anchor" }
                         }
                     }
                 }

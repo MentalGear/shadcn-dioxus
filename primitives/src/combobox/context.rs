@@ -1,6 +1,6 @@
 //! Shared state for the combobox component.
 
-use crate::selectable::{OptionState, RcPartialEqValue, SelectableContext};
+use crate::selectable::{ListboxFocus, OptionState, RcPartialEqValue, SelectableContext};
 use dioxus::prelude::*;
 
 /// The default case-insensitive substring filter.
@@ -182,47 +182,25 @@ impl ComboboxContext {
         self.reset_query();
     }
 
-    /// The registration index of the selected option, if any. Read from the
-    /// option registry rather than the collection: a stale filter from the
-    /// previous session may still have the selected option marked hidden
-    /// there for a moment after a reopen.
-    fn selected_index(&self) -> Option<usize> {
-        let options = self.selectable.options.read();
-        options
-            .iter()
-            .filter(|option| self.selectable.is_selected(&option.value))
-            .map(|option| option.index)
-            .min()
-    }
-
-    fn open_session(&mut self, initial_focus: Option<usize>) {
+    fn open_session(&mut self, initial_focus: ListboxFocus) {
         self.begin_session();
-        self.selectable.initial_focus.set(initial_focus);
+        self.selectable.initial_focus.set(Some(initial_focus));
         self.set_open(true);
     }
 
     /// Open on a click: the selected option (if any) becomes the active one.
     pub fn open_at_selected(&mut self) {
-        let selected = self.selected_index();
-        self.open_session(selected);
+        self.open_session(ListboxFocus::SELECTED);
     }
 
     /// Open on ArrowDown: the selected option, else the first.
     pub fn open_at_selected_or_first(&mut self) {
-        let first = self
-            .selectable
-            .first_matching_enabled_index(self.predicate_for(String::new()));
-        let target = self.selected_index().or(first);
-        self.open_session(target);
+        self.open_session(ListboxFocus::SELECTED_OR_FIRST);
     }
 
     /// Open on ArrowUp: the selected option, else the last.
     pub fn open_at_selected_or_last(&mut self) {
-        let last = self
-            .selectable
-            .last_matching_enabled_index(self.predicate_for(String::new()));
-        let target = self.selected_index().or(last);
-        self.open_session(target);
+        self.open_session(ListboxFocus::SELECTED_OR_LAST);
     }
 
     pub fn focused_option_id(&self) -> Option<String> {

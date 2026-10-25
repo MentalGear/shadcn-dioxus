@@ -5,7 +5,8 @@ use std::collections::HashMap;
 use crate::default_checked::use_default_checked;
 use crate::{
     collection::{
-        collection_item, use_collection_provider_with, use_item, CollectionOptions, CollectionState,
+        collection_item, use_collection_provider_with, use_item, use_item_index, CollectionOptions,
+        CollectionState,
     },
     direction::{use_direction, use_direction_signal, Direction, HorizontalNav},
     merge_attributes, use_controlled, use_effect_with_cleanup, use_form_reset_listener,
@@ -156,17 +157,14 @@ pub struct RadioGroupProps {
 ///         RadioGroup {
 ///             RadioItem {
 ///                 value: "option1".to_string(),
-///                 index: 0usize,
 ///                 "Blue"
 ///             }
 ///             RadioItem {
 ///                 value: "option2".to_string(),
-///                 index: 1usize,
 ///                 "Red"
 ///             }
 ///             RadioItem {
 ///                 value: "option3".to_string(),
-///                 index: 2usize,
 ///                 disabled: true,
 ///                 "Green"
 ///             }
@@ -243,8 +241,11 @@ pub fn RadioGroup(props: RadioGroupProps) -> Element {
 pub struct RadioItemProps {
     /// The value of the radio item. This will be passed to [`RadioGroupProps::on_value_change`] when selected.
     pub value: ReadSignal<String>,
-    /// The index of the radio item within the [`RadioGroup`]. This is used to order the items for keyboard navigation.
-    pub index: ReadSignal<usize>,
+    /// The item's place in keyboard order within the [`RadioGroup`]. Leave it unset: items are
+    /// ordered as they are created, which is tree order. Set it on every item only when an item is
+    /// inserted between items that are already mounted, or a keyed list reorders them.
+    #[props(default)]
+    pub index: ReadSignal<Option<usize>>,
 
     /// Whether the radio item is disabled.
     #[props(default)]
@@ -281,17 +282,14 @@ pub struct RadioItemProps {
 ///         RadioGroup {
 ///             RadioItem {
 ///                 value: "option1".to_string(),
-///                 index: 0usize,
 ///                 "Blue"
 ///             }
 ///             RadioItem {
 ///                 value: "option2".to_string(),
-///                 index: 1usize,
 ///                 "Red"
 ///             }
 ///             RadioItem {
 ///                 value: "option3".to_string(),
-///                 index: 2usize,
 ///                 disabled: true,
 ///                 "Green"
 ///             }
@@ -309,9 +307,11 @@ pub struct RadioItemProps {
 pub fn RadioItem(props: RadioItemProps) -> Element {
     let mut ctx: RadioGroupCtx = use_context();
     let disabled = move || (ctx.disabled)() || (props.disabled)();
+    let order = use_item_index(ctx.focus, props.index);
+    let index = order.index;
 
     use_effect_with_cleanup(move || {
-        let index = (props.index)();
+        let index = index();
         if disabled() {
             ctx.values.write().remove(&index);
         } else {
@@ -326,7 +326,7 @@ pub fn RadioItem(props: RadioItemProps) -> Element {
     let checked = use_memo(move || (ctx.value)() == value);
 
     let item = use_item(
-        collection_item(ctx.focus, props.index)
+        collection_item(ctx.focus, index)
             .disabled(disabled)
             .selected(move || checked.cloned()),
     );
@@ -366,7 +366,12 @@ pub fn RadioItem(props: RadioItemProps) -> Element {
         "data-state": if checked() { "checked" } else { "unchecked" },
         "data-disabled": disabled(),
     });
-    let merged = merge_attributes(vec![defaults, props.attributes.clone(), owned]);
+    let merged = merge_attributes(vec![
+        order.marker_attribute(),
+        defaults,
+        props.attributes.clone(),
+        owned,
+    ]);
 
     rsx! {
         button {
@@ -380,7 +385,7 @@ pub fn RadioItem(props: RadioItemProps) -> Element {
             },
 
             onmounted,
-            onfocus: move |_| ctx.set_focus(Some((props.index)())),
+            onfocus: move |_| ctx.set_focus(Some(index())),
 
             onkeydown: move |event: Event<KeyboardData>| {
                 let key = event.key();
@@ -442,9 +447,9 @@ mod tests {
     fn Defaults() -> Element {
         rsx! {
             RadioGroup { default_value: "pro", name: "plan",
-                RadioItem { value: "starter", index: 0usize, "Starter" }
-                RadioItem { value: "pro", index: 1usize, "Pro" }
-                RadioItem { value: "scale", index: 2usize, "Scale" }
+                RadioItem { value: "starter", "Starter" }
+                RadioItem { value: "pro", "Pro" }
+                RadioItem { value: "scale", "Scale" }
             }
         }
     }

@@ -1,7 +1,9 @@
 //! Defines the [`Accordion`] component and its sub-components.
 
 use crate::collapsible::{hidden_attribute, use_beforematch, PanelHidden};
-use crate::collection::{collection_item, use_item, CollectionOptions, CollectionState};
+use crate::collection::{
+    collection_item, use_item, use_tree_item_index, CollectionOptions, CollectionState,
+};
 use crate::dioxus_elements::Key;
 use crate::direction::use_direction;
 use crate::{merge_attributes, use_animated_open, use_id_or, use_unique_id};
@@ -70,6 +72,7 @@ impl AccordionContext {
         horizontal: ReadSignal<bool>,
         hidden_until_found: ReadSignal<bool>,
         chevron: ReadSignal<AccordionChevron>,
+        focus_id: Signal<String>,
     ) -> Self {
         Self {
             next_id: Signal::new(0),
@@ -83,6 +86,7 @@ impl AccordionContext {
             focus: CollectionState::new(
                 ReadSignal::new(Signal::new(true)),
                 CollectionOptions::default(),
+                focus_id,
             ),
         }
     }
@@ -212,9 +216,8 @@ pub struct AccordionProps {
 ///         Accordion {
 ///             allow_multiple_open: false,
 ///             horizontal: false,
-///             for i in 0..4 {
+///             for _ in 0..4 {
 ///                 AccordionItem {
-///                     index: i,
 ///                     on_change: move |open| {
 ///                         tracing::info!("{open};");
 ///                     },
@@ -246,6 +249,7 @@ pub struct AccordionProps {
 /// - `data-chevron`: Which end of each trigger the chevron sits on, `start` or `end`.
 #[component]
 pub fn Accordion(props: AccordionProps) -> Element {
+    let focus_id = use_unique_id();
     let mut ctx = use_context_provider(|| {
         AccordionContext::new(
             props.allow_multiple_open,
@@ -254,6 +258,7 @@ pub fn Accordion(props: AccordionProps) -> Element {
             props.horizontal,
             props.hidden_until_found,
             props.chevron,
+            focus_id,
         )
     });
 
@@ -299,11 +304,6 @@ pub struct AccordionItemProps {
     #[props(default)]
     pub on_trigger_click: Callback,
 
-    /// The index of the accordion item within the [`Accordion`].
-    ///
-    /// This is required to implement keyboard navigation and focus management.
-    pub index: usize,
-
     /// Additional attributes to extend the item element.
     #[props(extends = GlobalAttributes)]
     pub attributes: Vec<Attribute>,
@@ -331,7 +331,6 @@ pub struct AccordionItemProps {
 ///     rsx! {
 ///         Accordion {
 ///             AccordionItem {
-///                 index: 0,
 ///                 AccordionTrigger {
 ///                     "the quick brown fox"
 ///                 }
@@ -422,7 +421,6 @@ pub struct AccordionContentProps {
 ///     rsx! {
 ///         Accordion {
 ///             AccordionItem {
-///                 index: 0,
 ///                 AccordionTrigger {
 ///                     "the quick brown fox"
 ///                 }
@@ -541,7 +539,6 @@ pub struct AccordionTriggerProps {
 ///     rsx! {
 ///         Accordion {
 ///             AccordionItem {
-///                 index: 0,
 ///                 AccordionTrigger {
 ///                     "the quick brown fox"
 ///                 }
@@ -560,21 +557,24 @@ pub fn AccordionTrigger(props: AccordionTriggerProps) -> Element {
     let direction = use_direction(None);
 
     let disabled = move || ctx.is_disabled() || item.is_disabled();
-    // The trigger is the focusable element, so it registers this accordion item.
-    let id_signal = use_signal(|| item.id);
-    let onmounted = use_item(collection_item(ctx.focus, id_signal).disabled(disabled)).onmounted();
+    // The trigger is the focusable element, so it registers this accordion
+    // item, in tree order (`item.id` is the open state's key, not the order).
+    let order = use_tree_item_index(ctx.focus);
+    let index = order.index;
+    let onmounted = use_item(collection_item(ctx.focus, index).disabled(disabled)).onmounted();
 
     // `type` is an overridable default; the rest is this trigger's own
     // functional state (managed `disabled`/`tabindex`, and aria-controls/
     // aria-expanded reflecting its real relationship/state).
     let defaults = attributes!(button { r#type: "button" });
-    let owned = attributes!(button {
+    let mut owned = attributes!(button {
         disabled: disabled(),
         tabindex: "0",
         aria_controls: item.aria_id(),
         aria_expanded: ctx.is_open(item.id),
         "data-chevron": (ctx.chevron)().as_str(),
     });
+    owned.extend(order.marker_attribute());
     let merged = merge_attributes(vec![defaults, props.attributes.clone(), owned]);
 
     rsx! {
@@ -583,7 +583,7 @@ pub fn AccordionTrigger(props: AccordionTriggerProps) -> Element {
 
             onmounted,
             onfocus: move |_| {
-                ctx.focus.set_focus(Some(item.id));
+                ctx.focus.set_focus(Some(index()));
             },
             onkeydown: move |event| {
                 // RTL mirrors the horizontal pair (`Direction::ltr_equivalent`).
@@ -676,7 +676,7 @@ mod tests {
     fn Plain() -> Element {
         rsx! {
             Accordion {
-                AccordionItem { index: 0usize,
+                AccordionItem {
                     AccordionTrigger { "one" }
                     AccordionContent { "first text" }
                 }
@@ -688,11 +688,11 @@ mod tests {
     fn UntilFound() -> Element {
         rsx! {
             Accordion { hidden_until_found: true,
-                AccordionItem { index: 0usize, default_open: true,
+                AccordionItem { default_open: true,
                     AccordionTrigger { "one" }
                     AccordionContent { "first text" }
                 }
-                AccordionItem { index: 1usize,
+                AccordionItem {
                     AccordionTrigger { "two" }
                     AccordionContent { "second text" }
                 }

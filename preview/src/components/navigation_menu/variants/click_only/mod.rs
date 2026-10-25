@@ -31,36 +31,33 @@ pub fn Demo() -> Element {
         div {
             NavigationMenu { aria_label: "Click-only navigation menu", open_on_hover: false,
                 NavigationMenuList {
-                    NavigationMenuItem { index: 0usize,
+                    NavigationMenuItem {
                         NavigationMenuTrigger { "Guides" }
                         NavigationMenuContent {
                             div { class: "dx-navigation-menu-grid",
                                 NavigationMenuLink {
                                     href: site_href("/docs"),
-                                    content_index: 0usize,
                                     "Installation"
                                 }
                                 NavigationMenuLink {
                                     href: site_href("/docs"),
-                                    content_index: 1usize,
                                     "Theming"
                                 }
                             }
                         }
                     }
-                    NavigationMenuItem { index: 1usize,
+                    NavigationMenuItem {
                         NavigationMenuTrigger { "Reference" }
                         NavigationMenuContent {
                             div { class: "dx-navigation-menu-grid",
                                 NavigationMenuLink {
                                     href: site_href("/component/button/"),
-                                    content_index: 0usize,
                                     "Primitives"
                                 }
                             }
                         }
                     }
-                    NavigationMenuItem { index: 2usize,
+                    NavigationMenuItem {
                         NavigationMenuLink { href: site_href("/docs"), "Changelog" }
                     }
                 }

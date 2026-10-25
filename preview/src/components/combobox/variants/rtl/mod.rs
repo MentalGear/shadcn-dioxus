@@ -22,19 +22,16 @@ pub fn Demo() -> Element {
                     aria_label: "RTL frameworks",
                     list_aria_label: "RTL frameworks list",
                     ComboboxOption::<String> {
-                        index: 0usize,
                         value: "next".to_string(),
                         text_value: "Next.js",
                         "Next.js"
                     }
                     ComboboxOption::<String> {
-                        index: 1usize,
                         value: "nuxt".to_string(),
                         text_value: "Nuxt.js",
                         "Nuxt.js"
                     }
                     ComboboxOption::<String> {
-                        index: 2usize,
                         value: "remix".to_string(),
                         text_value: "Remix",
                         "Remix"

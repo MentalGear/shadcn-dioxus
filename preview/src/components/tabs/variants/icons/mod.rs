@@ -11,26 +11,26 @@ pub fn Demo() -> Element {
             horizontal: true,
             max_width: "24rem",
             TabList {
-                TabTrigger { value: "dashboard".to_string(), index: 0usize,
+                TabTrigger { value: "dashboard".to_string(), 
                     LayoutDashboard {}
                     "Dashboard"
                 }
-                TabTrigger { value: "alerts".to_string(), index: 1usize,
+                TabTrigger { value: "alerts".to_string(), 
                     Bell {}
                     "Alerts"
                 }
-                TabTrigger { value: "profile".to_string(), index: 2usize,
+                TabTrigger { value: "profile".to_string(), 
                     User {}
                     "Profile"
                 }
             }
-            TabContent { index: 0usize, value: "dashboard".to_string(), padding: "var(--dx-space-4)",
+            TabContent { value: "dashboard".to_string(), padding: "var(--dx-space-4)",
                 "Pin the charts and shortcuts you use every day."
             }
-            TabContent { index: 1usize, value: "alerts".to_string(), padding: "var(--dx-space-4)",
+            TabContent { value: "alerts".to_string(), padding: "var(--dx-space-4)",
                 "You are all caught up. New alerts will show up here."
             }
-            TabContent { index: 2usize, value: "profile".to_string(), padding: "var(--dx-space-4)",
+            TabContent { value: "profile".to_string(), padding: "var(--dx-space-4)",
                 "Choose how your name and avatar appear to teammates."
             }
         }

@@ -28,7 +28,6 @@ pub fn Demo() -> Element {
                             id: "radio-group-choice-card-plus",
                             aria_label: "Plus",
                             value: "plus".to_string(),
-                            index: 0usize,
                         }
                     }
                 }
@@ -43,7 +42,6 @@ pub fn Demo() -> Element {
                             id: "radio-group-choice-card-pro",
                             aria_label: "Pro",
                             value: "pro".to_string(),
-                            index: 1usize,
                         }
                     }
                 }
@@ -58,7 +56,6 @@ pub fn Demo() -> Element {
                             id: "radio-group-choice-card-enterprise",
                             aria_label: "Enterprise",
                             value: "enterprise".to_string(),
-                            index: 2usize,
                         }
                     }
                 }

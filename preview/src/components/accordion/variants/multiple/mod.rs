@@ -24,7 +24,7 @@ pub fn Demo() -> Element {
         div { style: "width: 100%; max-width: 32rem;",
             Accordion { allow_multiple_open: true, horizontal: false,
                 for (i , (question , answer)) in ITEMS.into_iter().enumerate() {
-                    AccordionItem { index: i, default_open: i == 0,
+                    AccordionItem { default_open: i == 0,
                         AccordionTrigger { "{question}" }
                         AccordionContent {
                             p { padding: "0", "{answer}" }

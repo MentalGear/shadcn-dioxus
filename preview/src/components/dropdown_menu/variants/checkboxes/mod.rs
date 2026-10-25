@@ -37,7 +37,6 @@ pub fn Demo() -> Element {
             DropdownMenuContent {
                 DropdownMenuLabel { "Appearance" }
                 DropdownMenuCheckboxItem {
-                    index: 0usize,
                     checked: Some(status_bar()),
                     on_checked_change: move |checked| status_bar.set(checked),
                     close_on_select: false,
@@ -45,7 +44,6 @@ pub fn Demo() -> Element {
                     "Status Bar"
                 }
                 DropdownMenuCheckboxItem {
-                    index: 1usize,
                     checked: Some(activity_bar()),
                     on_checked_change: move |checked| activity_bar.set(checked),
                     close_on_select: false,
@@ -54,7 +52,6 @@ pub fn Demo() -> Element {
                     "Activity Bar"
                 }
                 DropdownMenuCheckboxItem {
-                    index: 2usize,
                     checked: Some(panel()),
                     on_checked_change: move |checked| panel.set(checked),
                     close_on_select: false,
@@ -63,13 +60,11 @@ pub fn Demo() -> Element {
                 }
                 DropdownMenuSub {
                     DropdownMenuSubTrigger {
-                        index: 3usize,
                         text_value: "More options",
                         "More options"
                     }
                     DropdownMenuSubContent {
                         DropdownMenuCheckboxItem {
-                            index: 0usize,
                             checked: Some(word_wrap()),
                             on_checked_change: move |checked| word_wrap.set(checked),
                             close_on_select: false,
@@ -77,7 +72,6 @@ pub fn Demo() -> Element {
                             "Word Wrap"
                         }
                         DropdownMenuCheckboxItem {
-                            index: 1usize,
                             checked: Some(minimap()),
                             on_checked_change: move |checked| minimap.set(checked),
                             text_value: "Minimap",

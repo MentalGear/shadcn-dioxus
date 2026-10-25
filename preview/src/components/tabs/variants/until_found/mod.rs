@@ -16,17 +16,17 @@ pub fn Demo() -> Element {
                 horizontal: true,
                 hidden_until_found: true,
                 TabList {
-                    TabTrigger { value: "overview".to_string(), index: 0usize, "Overview" }
-                    TabTrigger { value: "specs".to_string(), index: 1usize, "Specs" }
-                    TabTrigger { value: "reviews".to_string(), index: 2usize, "Reviews" }
+                    TabTrigger { value: "overview".to_string(), "Overview" }
+                    TabTrigger { value: "specs".to_string(), "Specs" }
+                    TabTrigger { value: "reviews".to_string(), "Reviews" }
                 }
-                TabContent { index: 0usize, value: "overview".to_string(),
+                TabContent { value: "overview".to_string(),
                     div { padding: "var(--dx-space-4)", "A small amphibian for small tanks." }
                 }
-                TabContent { index: 1usize, value: "specs".to_string(),
+                TabContent { value: "specs".to_string(),
                     div { padding: "var(--dx-space-4)", "Regenerates limbs: the axolotl is fully aquatic." }
                 }
-                TabContent { index: 2usize, value: "reviews".to_string(),
+                TabContent { value: "reviews".to_string(),
                     div { padding: "var(--dx-space-4)", "Rated four stars by keepers." }
                 }
             }

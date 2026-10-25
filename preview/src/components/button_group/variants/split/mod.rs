@@ -36,10 +36,9 @@ pub fn Demo() -> Element {
                     },
                 }
                 DropdownMenuContent {
-                    for (i , label) in items.into_iter().enumerate() {
+                    for label in items.into_iter() {
                         DropdownMenuItem::<String> {
                             value: label.to_string(),
-                            index: i,
                             text_value: label,
                             on_select: move |value: String| last_action.set(Some(value)),
                             "{label}"

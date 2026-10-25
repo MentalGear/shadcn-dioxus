@@ -12,10 +12,8 @@ DropdownMenu {
     }
     // The dropdown menu content contains all the items that will be displayed in the dropdown menu.
     DropdownMenuContent {
-        // Each dropdown menu item represents an individual option in the dropdown menu. Items are displayed in order based on the order of the index property.
+        // Each dropdown menu item represents an individual option in the dropdown menu. Arrow keys move through the items in document order.
         DropdownMenuItem {
-            // The index of the item, used to determine the order in which items are displayed.
-            index: 0,
             // The value of the item which will be passed to the on_select callback when the item is selected.
             value: "",
             on_select: |value: String| {
@@ -40,16 +38,14 @@ items but not a further nested submenu of its own (one level of nesting).
 ```rust
 DropdownMenuContent {
     DropdownMenuSub {
-        // The sub-trigger is itself an item of the enclosing menu, so it
-        // takes an `index` the same way `DropdownMenuItem` does.
+        // The sub-trigger is itself an item of the enclosing menu, in its
+        // keyboard order like `DropdownMenuItem`.
         DropdownMenuSubTrigger {
-            index: 0,
             "More tools"
         }
         // Only rendered while the submenu is open.
         DropdownMenuSubContent {
             DropdownMenuSubItem {
-                index: 0,
                 value: "duplicate",
                 on_select: |value: String| {
                     // Selecting a sub-item closes the entire menu tree,
@@ -72,7 +68,7 @@ delay, so a diagonal move toward the submenu is not misread as leaving. Pass
 DropdownMenuSub {
     // Default is `true`.
     open_on_hover: false,
-    DropdownMenuSubTrigger { index: 0, "Export as" }
+    DropdownMenuSubTrigger { "Export as" }
     DropdownMenuSubContent { /* ... */ }
 }
 ```
@@ -96,8 +92,6 @@ hover timers. See the `click_only_submenu` variant.
 ```rust
 DropdownMenuContent {
     DropdownMenuCheckboxItem {
-        // Items are ordered by `index`, like plain items.
-        index: 0,
         // Controlled: `checked` + `on_checked_change`. Uncontrolled:
         // `default_checked` -- but note the content unmounts when the menu
         // closes, so an uncontrolled item starts over on every open.
@@ -116,8 +110,8 @@ DropdownMenuContent {
         value: Some(position()),
         on_value_change: move |value| position.set(value),
         // A radio item's `value` is also its typeahead label.
-        DropdownMenuRadioItem { index: 1, value: "top".to_string(), "Top" }
-        DropdownMenuRadioItem { index: 2, value: "bottom".to_string(), "Bottom" }
+        DropdownMenuRadioItem { value: "top".to_string(), "Top" }
+        DropdownMenuRadioItem { value: "bottom".to_string(), "Bottom" }
     }
 }
 ```
@@ -135,7 +129,6 @@ DropdownMenuContent {
     DropdownMenuGroup {
         DropdownMenuLabel { "My Account" }
         DropdownMenuItem::<String> {
-            index: 0,
             value: "profile".to_string(),
             // Items take `variant` and `inset`, like shadcn's `variant="destructive"` / `inset`.
             "Profile"
@@ -146,7 +139,6 @@ DropdownMenuContent {
     // A divider between groups: `role="separator"`, not focusable, skipped by arrow keys and typeahead.
     DropdownMenuSeparator {}
     DropdownMenuItem::<String> {
-        index: 1,
         value: "delete".to_string(),
         variant: MenuItemVariant::Destructive,
         "Delete"
@@ -156,7 +148,7 @@ DropdownMenuContent {
 
 - **`variant`** (`MenuItemVariant::Default` or `Destructive`) paints the item in the theme's destructive text colour with a destructive-tinted highlight. The role stays `menuitem` and the item carries `data-variant`.
 - **`inset`** reserves the leading indicator slot on an item (or `DropdownMenuLabel`) that draws none, so a menu that mixes plain and checkable items keeps its labels on one edge. It also exists on the checkbox and radio items and, where the menu has submenus, on the sub-trigger. The element carries `data-inset="true"`.
-- **`DropdownMenuGroup`** is a `role="group"` with no behaviour; items inside it keep their `index` across the whole menu. Name it with `aria-label` when it has a visible heading.
+- **`DropdownMenuGroup`** is a `role="group"` with no behaviour; items inside it stay in the whole menu's keyboard order. Name it with `aria-label` when it has a visible heading.
 
 See the `shortcuts` and `destructive` variants.
 
