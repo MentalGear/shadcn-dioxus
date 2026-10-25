@@ -79,7 +79,7 @@ async function probe(page: Page) {
         color: own.color,
         // Nova `.cn-native-select` is `bg-transparent` (Input's light fill), not `--dx-background`.
         expectBgLight: resolve("backgroundColor", "transparent"),
-        expectBgDark: resolve("backgroundColor", "color-mix(in oklab, var(--dx-input) 30%, transparent)"),
+        expectBgDark: resolve("backgroundColor", "color-mix(in oklab, var(--dx-input-fill) 30%, transparent)"),
         expectColor: resolve("color", "var(--dx-foreground)"),
       },
       option: {
