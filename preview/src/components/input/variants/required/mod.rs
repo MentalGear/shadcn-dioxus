@@ -7,14 +7,7 @@ pub fn Demo() -> Element {
     rsx! {
         div { style: "width: 100%; max-width: 20rem;",
             Field {
-                FieldLabel { html_for: "input-required-handle",
-                    "Handle"
-                    span {
-                        "aria-hidden": "true",
-                        style: "color: var(--dx-destructive-text);",
-                        " *"
-                    }
-                }
+                FieldLabel { html_for: "input-required-handle", required: true, "Handle" }
                 Input {
                     id: "input-required-handle",
                     placeholder: "@maxleiter",

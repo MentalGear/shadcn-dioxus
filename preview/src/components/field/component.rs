@@ -126,7 +126,13 @@ pub fn FieldLegend(
 /// never has to reimplement label/control association.
 #[component]
 pub fn FieldLabel(
+    /// The id of the control this label names.
     html_for: ReadSignal<String>,
+    /// Draws a required marker (`*`, in the destructive ink) after the label text. It is hidden from
+    /// assistive technology: give the control its own `required`, which is what screen readers
+    /// announce and what the form enforces.
+    #[props(default)]
+    required: bool,
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
     children: Element,
 ) -> Element {
@@ -137,7 +143,12 @@ pub fn FieldLabel(
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/field/style.css") }
-        Label { html_for, attributes: merged, {children} }
+        Label { html_for, attributes: merged,
+            {children}
+            if required {
+                span { class: "dx-field-required-marker", aria_hidden: "true", "*" }
+            }
+        }
     }
 }
 
