@@ -37,6 +37,7 @@ impl InputGroupAlign {
 #[component]
 pub fn InputGroup(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The group's `InputGroupAddon`s and its `InputGroupInput` or `InputGroupTextarea`.
     children: Element,
 ) -> Element {
     let base = attributes!(div {
@@ -56,9 +57,13 @@ pub fn InputGroup(
 /// edge shows a border.
 #[component]
 pub fn InputGroupInput(
+    /// Called on every edit of the value.
     oninput: Option<EventHandler<FormEvent>>,
+    /// Called when the value is committed.
     onchange: Option<EventHandler<FormEvent>>,
+    /// Called when the input gains focus.
     onfocus: Option<EventHandler<FocusEvent>>,
+    /// Called when the input loses focus.
     onblur: Option<EventHandler<FocusEvent>>,
     #[props(extends = GlobalAttributes)]
     #[props(extends = input)]
@@ -126,8 +131,11 @@ pub fn InputGroupTextarea(
 /// or static text that sit flush with the input's border.
 #[component]
 pub fn InputGroupAddon(
+    /// The edge the addon sits on: `Start` (the default) or `End`, beside the control.
+    /// `BlockStart` and `BlockEnd` make it a full-width row above or below the control.
     #[props(default)] align: InputGroupAlign,
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The addon's content: an icon, a button or static text.
     children: Element,
 ) -> Element {
     let base = attributes!(div {
@@ -210,6 +218,7 @@ pub fn InputGroupButton(
 #[component]
 pub fn InputGroupText(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The static text, such as a currency symbol or a unit.
     children: Element,
 ) -> Element {
     let base = attributes!(span {

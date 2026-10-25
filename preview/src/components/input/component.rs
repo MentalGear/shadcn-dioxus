@@ -22,28 +22,48 @@ use dioxus_primitives::{dioxus_attributes::attributes, merge_attributes};
 /// visible double-border/"pill within a pill" seam.
 #[component]
 pub fn Input(
+    /// Called on every edit of the value (`input`).
     oninput: Option<EventHandler<FormEvent>>,
+    /// Called when the value is committed.
     onchange: Option<EventHandler<FormEvent>>,
+    /// Called when the value fails the input's constraints (`invalid`).
     oninvalid: Option<EventHandler<FormEvent>>,
+    /// Called when text is selected inside the input (`select`).
     onselect: Option<EventHandler<SelectionEvent>>,
+    /// Called when the selection inside the input changes (`selectionchange`).
     onselectionchange: Option<EventHandler<SelectionEvent>>,
+    /// Called when the input gains focus.
     onfocus: Option<EventHandler<FocusEvent>>,
+    /// Called when the input loses focus.
     onblur: Option<EventHandler<FocusEvent>>,
+    /// Called on `focusin`, which bubbles.
     onfocusin: Option<EventHandler<FocusEvent>>,
+    /// Called on `focusout`, which bubbles.
     onfocusout: Option<EventHandler<FocusEvent>>,
+    /// Called when a key is pressed down.
     onkeydown: Option<EventHandler<KeyboardEvent>>,
+    /// Called when a key that produces a character is pressed (`keypress`).
     onkeypress: Option<EventHandler<KeyboardEvent>>,
+    /// Called when a key is released.
     onkeyup: Option<EventHandler<KeyboardEvent>>,
+    /// Called when the mouse wheel or a trackpad scrolls over the input.
     onwheel: Option<EventHandler<WheelEvent>>,
+    /// Called when an IME composition starts (`compositionstart`).
     oncompositionstart: Option<EventHandler<CompositionEvent>>,
+    /// Called as an IME composition changes (`compositionupdate`).
     oncompositionupdate: Option<EventHandler<CompositionEvent>>,
+    /// Called when an IME composition is committed (`compositionend`).
     oncompositionend: Option<EventHandler<CompositionEvent>>,
+    /// Called when text is copied from the input.
     oncopy: Option<EventHandler<ClipboardEvent>>,
+    /// Called when text is cut from the input.
     oncut: Option<EventHandler<ClipboardEvent>>,
+    /// Called when text is pasted into the input.
     onpaste: Option<EventHandler<ClipboardEvent>>,
     #[props(extends=GlobalAttributes)]
     #[props(extends=input)]
     attributes: Vec<Attribute>,
+    /// Content placed inside the `<input>`. An input is void, so leave this empty.
     children: Element,
 ) -> Element {
     let base = attributes!(input { class: "dx-input", "data-dx-root": "" });

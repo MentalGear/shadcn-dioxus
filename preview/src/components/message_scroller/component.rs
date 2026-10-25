@@ -141,14 +141,23 @@ pub fn MessageScrollerRows(props: MessageScrollerRowsProps) -> Element {
 /// tuned through Button's slot variables.
 #[component]
 pub fn MessageScrollerButton(
+    /// The transcript edge to jump to: `End` (the newest message, the default)
+    /// or `Start` (the oldest).
     #[props(default)] direction: MessageScrollerDirection,
+    /// How the jump scrolls: `Smooth` (the default, skipped under reduced motion),
+    /// `Auto` (the viewport's own CSS `scroll-behavior`) or `Instant`.
     #[props(default = ScrollBehavior::Smooth)] behavior: ScrollBehavior,
+    /// The button's look. Default `Secondary`.
     #[props(default = ButtonVariant::Secondary)] variant: ButtonVariant,
+    /// The button's size. Default `IconSm`.
     #[props(default = ButtonSize::IconSm)] size: ButtonSize,
+    /// Called on a click, before the jump. Calling `prevent_default()` on the
+    /// event cancels the jump.
     #[props(default)] onclick: Option<EventHandler<MouseEvent>>,
     #[props(extends = GlobalAttributes)]
     #[props(extends = button)]
     attributes: Vec<Attribute>,
+    /// Replaces the default arrow and screen-reader label.
     children: Option<Element>,
 ) -> Element {
     let base = attributes!(button {

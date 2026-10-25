@@ -105,8 +105,12 @@ use dioxus_primitives::js_listener::{use_js_listeners, JsListeners};
 #[component]
 pub fn DemoForm(
     #[props(extends=GlobalAttributes)] attributes: Vec<Attribute>,
+    /// Shows a status line that reads that the demo was submitted, once the form is submitted.
+    /// Default `true`; pass `false` when the page reports the result itself.
     #[props(default = true)] show_status: bool,
+    /// Called after the submit is prevented, with the form's `submit` event.
     onsubmit: Option<EventHandler<FormEvent>>,
+    /// The form's fields and submit button.
     children: Element,
 ) -> Element {
     let mut submits = use_signal(|| 0u32);

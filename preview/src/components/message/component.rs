@@ -28,6 +28,7 @@ impl MessageAlign {
 #[component]
 pub fn MessageGroup(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The consecutive `Message`s from one sender.
     children: Element,
 ) -> Element {
     let base = attributes!(div {
@@ -48,8 +49,11 @@ pub fn MessageGroup(
 /// `aria-label`; an in-progress state is a `Marker` with `role: "status"`).
 #[component]
 pub fn Message(
+    /// The side of the conversation the row sits on: `Start` (the default, the receiver's side)
+    /// or `End` (the sender's side, mirrored).
     #[props(default)] align: MessageAlign,
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The row's parts, usually a `MessageAvatar` and a `MessageContent`.
     children: Element,
 ) -> Element {
     let base = attributes!(div {
@@ -73,6 +77,7 @@ pub fn Message(
 #[component]
 pub fn MessageAvatar(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The avatar, or nothing to reserve the avatar's width.
     children: Element,
 ) -> Element {
     let base = attributes!(div {
@@ -90,6 +95,7 @@ pub fn MessageAvatar(
 #[component]
 pub fn MessageContent(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The header, the message surface and the footer.
     children: Element,
 ) -> Element {
     let base = attributes!(div {
@@ -107,6 +113,7 @@ pub fn MessageContent(
 #[component]
 pub fn MessageHeader(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// Content above the message, such as the sender's name.
     children: Element,
 ) -> Element {
     let base = attributes!(div {
@@ -126,6 +133,7 @@ pub fn MessageHeader(
 #[component]
 pub fn MessageFooter(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// Content below the message, such as delivery status or actions.
     children: Element,
 ) -> Element {
     let base = attributes!(div {
