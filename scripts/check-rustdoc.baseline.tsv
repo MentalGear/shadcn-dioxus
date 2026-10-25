@@ -2,9 +2,9 @@
 preview/src/components/checkpoint/component.rs	unclosed HTML tag `label`
 preview/src/components/checkpoint/component.rs	unclosed HTML tag `label`
 preview/src/components/checkpoint/component.rs	unclosed HTML tag `this`
-preview/src/main.rs	unclosed HTML tag `name`
-preview/src/main.rs	unclosed HTML tag `reason`
 preview/src/nav_link.rs	unresolved link to `is_current`: no item named `is_current` in scope
+preview/src/site/component_page.rs	unclosed HTML tag `name`
+preview/src/site/component_page.rs	unclosed HTML tag `reason`
 primitives/src/carousel/autoplay.rs	public documentation for `CarouselAutoplay` links to private item `AutoplayContext`
 primitives/src/carousel/autoplay.rs	public documentation for `CarouselAutoplay` links to private item `step_next`
 primitives/src/carousel/autoplay.rs	public documentation for `stop_on_interaction` links to private item `AutoplayContext::note_interaction`

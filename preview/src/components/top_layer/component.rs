@@ -39,7 +39,7 @@ struct Styles;
 /// established pattern).
 ///
 /// Reachable only at its own page, `/component/top_layer/` --
-/// `preview/src/main.rs`'s `ComponentGallery` deliberately excludes
+/// `preview/src/site/gallery.rs`'s `ComponentGallery` deliberately excludes
 /// `top_layer` from the `/` home-page catalog grid (it is not an
 /// installable component, just this large oracle probe surface), while
 /// `components::DEMOS`/`DocsSidebar` still list it under "Overlays" so it

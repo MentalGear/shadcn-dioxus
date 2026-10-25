@@ -15,7 +15,7 @@
 # unreviewed implementation of a component the library already ships.
 #
 # THE CONSTRUCTION: the docs chrome uses `Accordion`/`AccordionItem`/`AccordionTrigger`/`AccordionContent` and
-# `Collapsible` (`ComponentHighlight`, `VariantNotes` in preview/src/main.rs), and preview/build.rs emits docs.md
+# `Collapsible` (`ComponentHighlight`, `VariantNotes` in preview/src/site/), and preview/build.rs emits docs.md
 # sections as data (`render_docs_sections`), never as disclosure HTML. So this gate fails on:
 #   - a `details {` or `summary {` rsx element in the docs chrome sources below (comment lines ignored);
 #   - a `<details` or `<summary` emitted by preview/build.rs (comment lines ignored).
@@ -30,6 +30,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
 RSX_FILES=(
   preview/src/main.rs
+  preview/src/site/*.rs
   preview/src/docs_nav.rs
   preview/src/charts_gallery.rs
   preview/src/theme.rs

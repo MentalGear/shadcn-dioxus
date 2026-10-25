@@ -17,7 +17,7 @@
 # block rendered through a `Callback` runs its hooks in the PARENT's scope),
 # gives a fresh interval about every 1.2 s: 128 live intervals after ~100 s,
 # 1,326 timer wakeups per second at 155 s, 387 layouts during one scroll
-# instead of 0-1 (measured on `BlockPlayer` in `preview/src/main.rs` and the Progress
+# instead of 0-1 (measured on `BlockPlayer` in `preview/src/site/blocks.rs` and the Progress
 # demos). The fix is by construction, not
 # per instance: the one sanctioned timer is `use_interval`
 # (`primitives/src/interval.rs`), a task spawned in the calling component's

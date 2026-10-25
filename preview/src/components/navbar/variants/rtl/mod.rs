@@ -11,7 +11,7 @@ use dioxus_primitives::direction::{Direction, DirectionProvider};
 /// `oracle/tier1-apg/keyboard-matrix.spec.ts` both query these by name
 /// (e.g. `getByRole('menuitem', { name: 'Inputs' })`, no `exact`), and
 /// this variant renders alongside `main` on the same page
-/// (`preview/src/main.rs`'s `ComponentHighlight`), so reusing those words
+/// (`preview/src/site/component_page.rs`'s `ComponentHighlight`), so reusing those words
 /// would make such a locator match both. `Navbar`'s top-level trigger row
 /// is unconditionally horizontal, matching `Menubar`'s identical shape.
 #[component]

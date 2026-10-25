@@ -273,7 +273,7 @@ pub fn Sidebar(
         // landmark role would leave its content (menu items, footer) outside
         // every landmark on the page. Both call sites render `Sidebar`
         // directly: the block-route direct visit (`ComponentBlockDemo`,
-        // `preview/src/main.rs`) and the dashboard email client's embedded
+        // `preview/src/site/block_demo.rs`) and the dashboard email client's embedded
         // sidebar (`dashboard/views/email_client/sidebar.rs`). `role:
         // "complementary"` (the `<aside>` landmark) covers both at their one
         // shared source; the label keeps it unambiguous if a page has more
