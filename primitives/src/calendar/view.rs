@@ -280,7 +280,13 @@ pub fn CalendarPreviousMonthButton(props: CalendarPreviousMonthButtonProps) -> E
         // Get the current view date from context
         let view_date = view_ctx.offset_view_date();
         match previous_month(view_date) {
-            Some(date) => ctx.enabled_date_range.start.replace_day(1).unwrap() > date,
+            Some(date) => {
+                ctx.enabled_date_range
+                    .start
+                    .replace_day(1)
+                    .expect("every month has a day 1")
+                    > date
+            }
             None => true,
         }
     });
@@ -393,7 +399,9 @@ pub fn CalendarNextMonthButton(props: CalendarNextMonthButtonProps) -> Element {
             Some(date) => {
                 let max = ctx.enabled_date_range.end();
                 let last_day = max.month().length(max.year());
-                max.replace_day(last_day).unwrap() < date
+                max.replace_day(last_day)
+                    .expect("`last_day` is the length of `max`'s month")
+                    < date
             }
             None => true,
         }

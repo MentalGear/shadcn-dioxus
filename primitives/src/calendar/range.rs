@@ -247,7 +247,7 @@ pub fn RangeCalendar(props: RangeCalendarProps) -> Element {
                 }
                 let mut set_focused_date = |new_date: Option<Date>| {
                     if let Some(date) = new_date {
-                        let min_date = (base_ctx.view_date)().replace_day(1).unwrap();
+                        let min_date = (base_ctx.view_date)().replace_day(1).expect("every month has a day 1");
                         if date < min_date {
                             let view_date = previous_month(min_date).unwrap_or(min_date);
                             (base_ctx.set_view_date)(view_date);

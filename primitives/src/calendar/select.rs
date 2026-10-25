@@ -155,7 +155,11 @@ pub fn CalendarSelectMonthSelect(props: CalendarSelectMonthSelectProps) -> Eleme
                 let mut view_date = view_ctx.offset_view_date();
                 let number = e.value().parse().unwrap_or(view_date.month() as u8);
                 let cur_month = Month::try_from(number).expect("Month out-of-range");
-                view_date = view_date.replace_month(cur_month).unwrap();
+                // The day is clamped to the chosen month's length, as `nth_month_next` does, so a view on
+                // the 31st can move to a 30-day month.
+                let day = view_date.day().min(cur_month.length(view_date.year()));
+                view_date = Date::from_calendar_date(view_date.year(), cur_month, day)
+                    .expect("the day is clamped to the month's length");
                 view_ctx.set_offset_view_date(view_date);
             },
             ..merged,

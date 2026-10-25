@@ -115,7 +115,10 @@ struct DocsSection {
     html: &'static str,
 }
 
-#[allow(unpredictable_function_pointer_comparisons)]
+#[allow(
+    unpredictable_function_pointer_comparisons,
+    reason = "the derived PartialEq compares a component fn pointer by address, as every Dioxus prop does; `#[expect]` is not seen by the derive"
+)]
 #[derive(Clone, PartialEq)]
 struct ComponentVariantDemoData {
     name: &'static str,

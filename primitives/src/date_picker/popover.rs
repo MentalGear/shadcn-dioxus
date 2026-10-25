@@ -1,7 +1,10 @@
 use super::*;
 
 /// The props for the [`DatePickerPopover`] component.
-#[allow(unpredictable_function_pointer_comparisons)]
+#[allow(
+    unpredictable_function_pointer_comparisons,
+    reason = "the derived PartialEq compares a component fn pointer by address, as every Dioxus prop does; `#[expect]` is not seen by the derive"
+)]
 #[derive(Props, Clone, PartialEq)]
 pub struct DatePickerPopoverProps {
     /// Whether the popover is a modal and should capture focus. Defaults to `false`, like
@@ -119,7 +122,10 @@ pub trait DefaultCalendarProps {
 }
 
 /// The props for the Calendar component.
-#[allow(unpredictable_function_pointer_comparisons)]
+#[allow(
+    unpredictable_function_pointer_comparisons,
+    reason = "the derived PartialEq compares a component fn pointer by address, as every Dioxus prop does; `#[expect]` is not seen by the derive"
+)]
 #[derive(Props, Clone, PartialEq)]
 pub struct DatePickerCalendarProps<T: DefaultCalendarProps + Properties + PartialEq> {
     /// Callback when display weekday
@@ -222,7 +228,10 @@ pub fn DatePickerCalendar(props: DatePickerCalendarProps<CalendarProps>) -> Elem
     let base_ctx = use_context::<BaseDatePickerContext>();
     let mut ctx = use_context::<DatePickerContext>();
 
-    #[allow(non_snake_case)]
+    #[expect(
+        non_snake_case,
+        reason = "rsx! needs a PascalCase binding to call the component"
+    )]
     let Calendar = props.calendar;
     // `None` until something picks a month: the calendar then shows the month of `today`.
     let mut view_date = use_signal(|| (props.view_date)());
@@ -321,7 +330,10 @@ pub fn DateRangePickerCalendar(props: DatePickerCalendarProps<RangeCalendarProps
     let base_ctx = use_context::<BaseDatePickerContext>();
     let mut ctx = use_context::<DateRangePickerContext>();
 
-    #[allow(non_snake_case)]
+    #[expect(
+        non_snake_case,
+        reason = "rsx! needs a PascalCase binding to call the component"
+    )]
     let RangeCalendar = props.calendar;
     let mut view_date = use_signal(|| (props.view_date)());
     let displayed = ctx.staging.displayed;

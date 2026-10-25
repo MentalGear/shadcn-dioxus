@@ -1,6 +1,9 @@
 //! Shared viewport metrics, close-on-scroll and the point-anchor clamp.
 
-#[cfg_attr(not(feature = "web"), allow(unused_imports))]
+#[cfg_attr(
+    not(feature = "web"),
+    expect(unused_imports, reason = "only the web build uses it")
+)]
 use super::*;
 
 /// The ONE viewport measurement every JS collision/clamp script in this
@@ -48,7 +51,10 @@ use super::*;
 ///
 /// Spliced into the scripts as a function declaration, so it hoists and may
 /// be called anywhere in them.
-#[cfg_attr(not(feature = "web"), allow(dead_code))]
+#[cfg_attr(
+    all(not(feature = "web"), not(test)),
+    expect(dead_code, reason = "only the web build and the tests use it")
+)]
 pub(crate) const VIEWPORT_METRICS_JS: &str = r#"
             function viewportMetrics() {
                 const vv = window.visualViewport;
@@ -248,7 +254,10 @@ pub(crate) fn use_close_on_scroll(
 /// `left`/`top` in the same synchronous block, so no frame paints the probe
 /// position. Sizes stay `offsetWidth`/`offsetHeight` (layout sizes, unaffected
 /// by an open animation's `scale`), never `getBoundingClientRect()`.
-#[cfg_attr(not(feature = "web"), allow(dead_code))]
+#[cfg_attr(
+    not(feature = "web"),
+    expect(dead_code, reason = "only the web build uses it")
+)]
 pub(crate) const MEASURE_AT_FULL_WIDTH_JS: &str = r#"
             function measureAtFullWidth(content, vp) {
                 content.style.inset = 'auto';

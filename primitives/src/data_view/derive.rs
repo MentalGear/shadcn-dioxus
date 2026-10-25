@@ -162,7 +162,10 @@ pub struct TableView<T> {
 impl<T: Clone> TableView<T> {
     /// The page of `rows` that `view` selects.
     pub fn from_view(rows: &[T], view: &View) -> Self {
-        #[allow(deprecated)]
+        #[expect(
+            deprecated,
+            reason = "the deprecated field is still filled for callers that read it"
+        )]
         Self {
             rows: view.indices.iter().map(|&i| rows[i].clone()).collect(),
             keys: view.keys.clone(),
@@ -405,7 +408,7 @@ mod tests {
             (v.selected_in_view, v.filtered_count, v.selected_total),
             (0, 0, 3)
         );
-        #[allow(deprecated)]
+        #[expect(deprecated, reason = "the test pins the deprecated field's value")]
         {
             assert_eq!(v.selected_count, 3);
         }

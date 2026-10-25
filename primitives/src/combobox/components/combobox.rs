@@ -97,7 +97,10 @@ pub struct ComboboxProps<T: Clone + PartialEq + 'static = String> {
     pub children: Element,
 }
 
-#[allow(clippy::too_many_arguments)] // the shared root hook for Combobox and ComboboxMulti; each argument is one prop or model value
+#[expect(
+    clippy::too_many_arguments,
+    reason = "the shared root hook for Combobox and ComboboxMulti; each argument is one prop or model value"
+)]
 pub(in crate::combobox) fn use_combobox_root(
     model: ComboboxModel,
     values: Memo<Vec<RcPartialEqValue>>,
