@@ -1,7 +1,7 @@
 ---
 id: 395
 title: "`as` keeps the component's children and handlers (Radix asChild semantics)"
-status: "IN QUEUE on lane/as-keeps-children. Found by row 387's first docs-clarity review; the evidence…"
+status: "LANDED (merge queue batch 17, lane/as-keeps-children). Owner approved as proposed (2026-10-24…"
 size: "M"
 area: components
 updated: 2026-10-24
@@ -15,7 +15,7 @@ With `as` set, Item, Marker, the Collapsible trigger, Attachment and others rend
 
 ## Status / trigger
 
-IN QUEUE on `lane/as-keeps-children`. Found by row 387's first docs-clarity review; the evidence (file:line per finding) is in the project's shared files, `docs-clarity/2026-10-24-docs-clarity-review.md`. Built with Radix semantics (owner decision relayed by the coordinator: breaking renames are accepted pre-1.0).
+LANDED (merge queue batch 17, lane/as-keeps-children). Owner approved as proposed (2026-10-24, backlog thread): Radix `asChild` semantics. Every `as` prop is `Option<Callback<AsChild, Element>>` (`dioxus_primitives::AsChild { attributes, children }`), and `check-as-child` blocks the old `Callback<Vec<Attribute>, Element>` shape. Found by row 387's first docs-clarity review (evidence: `docs-clarity/2026-10-24-docs-clarity-review.md` in the project's shared files). Trigger for reopening: an `as` closure that loses the component's children or handlers.
 
 ## Size
 
