@@ -456,11 +456,11 @@ pub struct HoverCardContentProps {
     #[props(default = ContentAlign::Center)]
     pub align: ContentAlign,
 
-    /// Skips the early return that keeps a closed card's hooks from running. It does not keep the
-    /// card in the DOM: the card is rendered only while it is open (and for its exit animation),
-    /// whatever this is set to, and it stays open while the pointer is over it regardless. Leave it at
-    /// the default.
-    #[props(default = true)]
+    /// Keeps the card in the DOM while it is closed, hidden (`hidden`, `data-state="closed"`), like
+    /// Radix's `forceMount`: for an animation library that drives the card itself, or content that
+    /// should exist in the markup. By default (`false`) a closed card is not rendered at all; it is
+    /// mounted when it opens and removed after its exit animation.
+    #[props(default = false)]
     pub force_mount: bool,
 
     /// Additional attributes for the hover card content
@@ -473,7 +473,7 @@ pub struct HoverCardContentProps {
 
 /// # HoverCardContent
 ///
-/// The [`HoverCardContent`] component defines the content of the parent [`HoverCard`]. It is only rendered while the hover card is open (and for its exit animation); [`HoverCardContentProps::force_mount`] does not change that.
+/// The [`HoverCardContent`] component defines the content of the parent [`HoverCard`]. It is only rendered while the hover card is open (and for its exit animation), unless [`HoverCardContentProps::force_mount`] is set, which keeps it in the DOM, hidden, while it is closed.
 ///
 /// This component must be used inside a [`HoverCard`] component.
 ///
@@ -519,11 +519,7 @@ pub struct HoverCardContentProps {
 pub fn HoverCardContent(props: HoverCardContentProps) -> Element {
     let ctx: HoverCardCtx = use_context();
 
-    // Only render if the hover card is open or force_mount is true
     let is_open = (ctx.open)();
-    if !is_open && !props.force_mount {
-        return rsx!({});
-    }
 
     // Use use_id_or to handle the ID
     let id = use_id_or(ctx.content_id, props.id);
@@ -537,9 +533,17 @@ pub fn HoverCardContent(props: HoverCardContentProps) -> Element {
     // element's actual DOM lifetime. See
     // `tooltip.rs`'s identical `TooltipContentRendered` comment for why a
     // plain fn here would be a conditional-hook-call hazard instead.
+    // `force_mount` keeps the card in the DOM while it is closed, as a dormant instance:
+    // `use_animated_open` still decides when the card is *shown* (open, and for its exit
+    // animation), and `shown` is the instance's key, so the card is remounted at each of those
+    // edges -- a card whose exit animation has finished leaves the top layer by being replaced,
+    // exactly as an unmounted one does, and never stays a closed card that is still painted.
+    let shown = render();
     rsx! {
-        if render() {
+        if shown || props.force_mount {
             HoverCardContentRendered {
+                key: "{shown}",
+                dormant: !shown,
                 id: id.cloned(),
                 open: ctx.open,
                 set_open: ctx.set_open,
@@ -574,6 +578,8 @@ pub fn HoverCardContent(props: HoverCardContentProps) -> Element {
 #[cfg(feature = "web")]
 #[component]
 fn HoverCardContentRendered(
+    /// Whether the card is only mounted because of `force_mount`: closed, and not in its exit animation. It is hidden.
+    dormant: bool,
     /// The DOM id of the card element.
     id: String,
     /// Whether the card is open. On the web, its popover is kept shown while this is true.
@@ -634,6 +640,7 @@ fn HoverCardContentRendered(
             "data-state": if is_open { "open" } else { "closed" },
             "data-side": side.as_str(),
             "data-align": align.as_str(),
+            hidden: dormant,
         }),
     ]);
     // Folds the caller's own `style` together with the anchor binding into
@@ -668,6 +675,8 @@ fn HoverCardContentRendered(
 #[cfg(not(feature = "web"))]
 #[component]
 fn HoverCardContentRendered(
+    /// Whether the card is only mounted because of `force_mount`: closed, and not in its exit animation. It is hidden.
+    dormant: bool,
     /// The DOM id of the card element.
     id: String,
     // Unused on this arm -- kept as a same-named field so the shared,
@@ -706,6 +715,7 @@ fn HoverCardContentRendered(
             "data-state": if is_open { "open" } else { "closed" },
             "data-side": side.as_str(),
             "data-align": align.as_str(),
+            hidden: dormant,
         }),
     ]);
 
@@ -723,5 +733,39 @@ fn HoverCardContentRendered(
             ..attributes,
             {children}
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[component]
+    fn Card(force_mount: bool) -> Element {
+        rsx! {
+            HoverCard { open: None::<bool>,
+                HoverCardTrigger { "trigger" }
+                HoverCardContent { force_mount, "card body" }
+            }
+        }
+    }
+
+    fn render(force_mount: bool) -> String {
+        let mut dom = VirtualDom::new_with_props(Card, CardProps { force_mount });
+        dom.rebuild_in_place();
+        dioxus_ssr::render(&dom)
+    }
+
+    #[test]
+    fn a_closed_card_is_not_rendered_unless_it_is_force_mounted() {
+        // backlog row 425: `force_mount` keeps the closed card in the DOM, hidden; the default
+        // renders nothing while it is closed.
+        let html = render(false);
+        assert!(!html.contains("card body"), "{html}");
+
+        let html = render(true);
+        assert!(html.contains("card body"), "{html}");
+        assert!(html.contains("data-state=\"closed\""), "{html}");
+        assert!(html.contains("hidden=true"), "{html}");
     }
 }

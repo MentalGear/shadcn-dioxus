@@ -139,7 +139,33 @@ impl CloseDwell {
     }
 }
 
+/// Wrap a value callback so a read-only picker never reports an edit. A hook: call it once per
+/// render from the picker root and hand the result to everything that can change the value
+/// (`use_staging`'s commit, the date or range context), so a path that forgets the check still
+/// cannot write: a read-only picker's `on_value_change` / `on_range_change` is never called.
+/// The check reads `read_only` through `.peek()`, because the wrapped callback runs from effects
+/// as well as from handlers.
+pub(super) fn use_unless_read_only<T: 'static>(
+    read_only: ReadSignal<bool>,
+    report: Callback<T>,
+) -> Callback<T> {
+    use_callback(move |value: T| {
+        if !*read_only.peek() {
+            report.call(value);
+        }
+    })
+}
+
 impl BaseDatePickerContext {
+    /// Whether the picker refuses edits (`read_only`). The one read of the prop below the picker
+    /// root: the segments (keys, and the clamp that rewrites an out-of-range value), the popover
+    /// (it does not open) and the calendars (a pick is dropped) all ask here, and the value
+    /// callbacks are wrapped by [`use_unless_read_only`] from the same prop. Tracked, so a render
+    /// or effect that asks follows the prop.
+    pub(super) fn is_read_only(self) -> bool {
+        (self.read_only)()
+    }
+
     /// A selection has just been completed (a date picked, or a range's end date picked): close
     /// the popover as `close_on_select`/`close_delay` say. The selected state is already painted
     /// by the time a dwell elapses, the popover's own exit animation runs after it, and focus

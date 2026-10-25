@@ -1,0 +1,1 @@
+`force_mount` on `HoverCardContent` (Radix's `forceMount`): the card stays in the DOM while it is closed, hidden, for an animation library that drives it or for content that should exist in the markup. Without it a closed card is not rendered at all.

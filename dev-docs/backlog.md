@@ -40,7 +40,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (47)
+## Open rows (45)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -78,8 +78,6 @@ proposing one is closed as out of scope (row 337 is the first).
 | [414](backlog/414-formal-proof-spike.md) | Spike: formal proofs of one headless model (Kani, optionally Aeneas to Lean) | OPTIONAL: needs owner approval before it is adopted or scheduled (owner 2026-10-24). Not part of… | M | research |
 | [415](backlog/415-pin-actions-to-shas.md) | Pin GitHub Actions to commit SHAs | OPTIONAL: needs owner approval before it is adopted or scheduled (owner 2026-10-24). Not part of… | XS | build |
 | [422](backlog/422-docs-page-shared-section-group.md) | Component pages: group the sections every page shares under one header, component-specific sections under another | BACKLOG, outline approved by the owner 2026-10-25 (backlog thread): build it as below. Docs stage… | M | docs |
-| [424](backlog/424-date-picker-read-only-still-edits.md) | DatePicker `read_only` still lets keys change the value and the popover pick a date | BACKLOG. Found by row 393's docs lane (2026-10-25). The prop docs describe the current behaviour… | S | components |
-| [425](backlog/425-hover-card-force-mount-no-effect.md) | HoverCard `force_mount` has no effect: the card is still rendered only while open | BACKLOG. Found by row 393's docs lane (2026-10-25). The prop docs describe the current behaviour… | S | components |
 | [426](backlog/426-theme-owns-modal-scrim-and-visually-hidden-recipe.md) | Theme owns the no-top-layer modal scrim and the visually-hidden recipe | BACKLOG. Owner approved 2026-10-25 (row 365 sweep, P1). | S | components |
 | [427](backlog/427-spec-page-and-read-kind-helpers-retire-markers.md) | Spec page and read kinds become helpers; the exception markers retire | BACKLOG. Owner approved 2026-10-25 (row 365 sweep, P2). | S-M | testing |
 | [428](backlog/428-themed-wrappers-forward-with-props-spread.md) | Themed wrappers forward primitive props with a struct spread, not field by field | BACKLOG. Owner approved 2026-10-25 (row 365 sweep, P3). | M | components |

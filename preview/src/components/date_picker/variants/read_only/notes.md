@@ -1,0 +1,1 @@
+`read_only: true`, like a native `readonly` input: the date segments stay focusable and selectable, but every edit is refused (typing, the Up, Down, Home and End steps, Backspace and Delete), the calendar popover does not open, and the value callback is never called.
