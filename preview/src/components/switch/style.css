@@ -58,6 +58,7 @@
   text-indent: 0;
   text-shadow: none;
   text-transform: none;
+  transition: background-color var(--dx-motion-duration-base), box-shadow var(--dx-motion-duration-base);
   translate: 0 var(--dx-switch-hit-pull);
   word-spacing: inherit;
 }
