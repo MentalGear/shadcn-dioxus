@@ -45,7 +45,8 @@ const CONTROLS: Control[] = [
   {
     name: "checkbox",
     route: "/component/checkbox/",
-    selector: ".dx-checkbox",
+    // Cell checkboxes have their own capped target (the test at the end of this file).
+    selector: '.dx-checkbox:not(:is(td, th, [role="gridcell"], [role="rowheader"], [role="columnheader"]) .dx-checkbox)',
     glyph: `(el) => { const r = el.firstElementChild.getBoundingClientRect(); return { w: r.width, h: r.height }; }`,
     fine: { layout: (s) => near(s.w, 16) && (near(s.h, 16) || near(s.h, 17)), glyph: { w: 16, h: 16 } },
     coarse: { target: { w: 44, h: 44 }, glyph: { w: 16, h: 16 } },
