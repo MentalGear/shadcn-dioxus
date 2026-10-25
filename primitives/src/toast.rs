@@ -607,8 +607,10 @@ listen(el, 'focusout', (e) => { focus = !!e.relatedTarget && el.contains(e.relat
 /// restyles, so a re-render cannot drop it), `--toast-height`: the body's height plus the toast's computed
 /// padding and border. The front toast, the first list item that is not closing (`data-removed`), also
 /// publishes its height as `--front-toast-height` on the list. The first measurement of a toast also sets
-/// `data-sized` on its `li` (`pending`, `true` one frame later), so a skin can keep the unmeasured to
-/// measured switch from animating. A `MutationObserver` on the list follows toasts coming, going and
+/// `data-sized="true"` on its `li`, so a skin can keep the unmeasured to measured switch from animating:
+/// the measured height is committed to the toast's style (a computed-style read) while `data-sized` is
+/// still absent, and only then is the attribute set, so the two never land in the same style change in
+/// any engine. A `MutationObserver` on the list follows toasts coming, going and
 /// starting to leave, and measures a new toast as soon as it is inserted, so no frame lays it out
 /// unmeasured. Both observers end with the provider (`cleanup`). A skin
 /// without `data-toast-body` is never measured: its toasts keep their auto height and do not overlap.
@@ -640,11 +642,17 @@ const record = (body, size) => {
   const h = heightOf(body, size);
   heights.set(li, h);
   li.style.setProperty('--toast-height', h + 'px');
-  // The first measurement must not play as a glide from the unmeasured layout: `data-sized` turns
-  // true a frame later, and the stylesheet only transitions a toast's height and margin from then on.
-  if (!li.dataset.sized) {
-    li.dataset.sized = 'pending';
-    requestAnimationFrame(() => { li.dataset.sized = 'true'; });
+  // The first measurement must not play as a glide from the unmeasured layout (backlog row 421). The
+  // stylesheet transitions a toast's height and margin only under `data-sized`, and a transition runs
+  // when one style change sees both the new height and the attribute. So the measured height is
+  // committed first, with the transitions still off (reading the computed style recalculates it), and
+  // the attribute follows in a later style change. A frame's wait is no substitute: the rAF callbacks
+  // run before that frame's style recalculation, so unless something else recalculated style in
+  // between, the height and the attribute arrive together and the new toast's slot glides shut
+  // from its full unmeasured height.
+  if (li.dataset.sized !== 'true') {
+    getComputedStyle(body.parentElement).marginTop;
+    li.dataset.sized = 'true';
   }
 };
 const sizes = new ResizeObserver((entries) => {

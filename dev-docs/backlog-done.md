@@ -6,7 +6,7 @@ resolves here by id.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Done rows (356)
+## Done rows (357)
 
 | # | Item | Updated |
 |---|---|---|
@@ -366,5 +366,6 @@ resolves here by id.
 | [417](backlog/done/417-variant-slot-declared-on-base.md) | A variant's slot variable is declared on the component's base root too | 2026-10-25 |
 | [418](backlog/done/418-test-changed-nearest-base.md) | test:changed diffs against the nearest base, not always origin/main | 2026-10-25 |
 | [419](backlog/done/419-toast-close-target.md) | Toast close button: a bigger hit target and a hover style | 2026-10-25 |
+| [421](backlog/done/421-toast-insert-no-glide.md) | Toast: a new toast's first measurement never plays as a glide (collapsed pile jumps on insert, Firefox) | 2026-10-25 |
 
 <!-- END GENERATED -->
