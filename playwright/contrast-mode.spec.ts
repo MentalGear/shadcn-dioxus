@@ -185,9 +185,9 @@ test.describe("muted-foreground (P1)", () => {
 // ---------------------------------------------------------------------------------------------------------
 const CONTROLS = [
   { name: "input", route: "/component/input/", selector: "input.dx-input:not(:disabled)", pseudo: "", track: false },
-  { name: "checkbox", route: "/component/checkbox/", selector: '.dx-checkbox[data-state="unchecked"]:not([data-disabled="true"])', pseudo: "", track: false },
+  { name: "checkbox", route: "/component/checkbox/", selector: '.dx-checkbox[data-state="unchecked"]:not([data-disabled="true"]) > .dx-checkbox-indicator', pseudo: "", track: false },
   { name: "radio", route: "/component/radio_group/", selector: ".dx-radio-group-item:not([data-state='checked'])", pseudo: "::before", track: false },
-  { name: "switch (unchecked track)", route: "/component/switch/", selector: '.dx-switch[data-state="unchecked"]', pseudo: "", track: true },
+  { name: "switch (unchecked track)", route: "/component/switch/", selector: '.dx-switch[data-state="unchecked"]', pseudo: "::before", track: true },
 ] as const;
 
 test.describe("field edges and the unchecked switch track (P9)", () => {

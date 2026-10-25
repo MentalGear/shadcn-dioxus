@@ -17,6 +17,11 @@
 
 .dx-radio-group-item {
   display: flex;
+
+  /* The row is the touch target: at least the global hit size (`--dx-control-hit-size`: 24px fine, 44px
+   * coarse; theme "Coarse sizing"). Fine, a negative bottom margin and a translate (a Field sets the item's `margin-top`) keep the row's own height; coarse, the row
+   * grows, so a stacked group's targets never overlap. */
+  min-height: var(--dx-radio-hit);
   flex-direction: row;
   align-items: center;
   padding: 0;
@@ -25,6 +30,19 @@
   color: var(--dx-foreground);
   font-size: var(--dx-text-sm);
   gap: var(--dx-space-3);
+  margin-block: 0 calc(2 * var(--dx-radio-hit-pull));
+  translate: 0 var(--dx-radio-hit-pull);
+
+  --dx-radio-hit: var(--dx-control-hit-size);
+  --dx-radio-hit-pull: var(--dx-pick-coarse, 0px) var(--dx-pick-fine, calc((1rem - var(--dx-radio-hit)) / 2));
+}
+
+/* A bare radio (its label is a sibling) is a square target around the circle; the negative inline margin keeps
+ * the circle where the sibling gap puts it. */
+.dx-radio-group-item:empty {
+  min-width: var(--dx-radio-hit);
+  justify-content: center;
+  margin-inline: calc((1rem - var(--dx-radio-hit)) / 2);
 }
 
 .dx-radio-group-item::before {

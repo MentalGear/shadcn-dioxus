@@ -23,7 +23,7 @@
 .dx-tag-group-tag {
   display: flex;
   max-width: fit-content;
-  min-height: var(--dx-space-7);
+  min-height: max(var(--dx-space-7), var(--dx-control-hit-size));
   align-items: center;
   border: 1px solid var(--dx-border);
   border-radius: var(--dx-radius-full);
@@ -54,18 +54,28 @@
   box-shadow: var(--dx-ring-focus);
 }
 
+/* The remove target is a box around the 12px X, the global hit size (`--dx-control-hit-size`: 24px fine,
+ * 44px coarse; theme "Coarse sizing"). The negative margins pull it into the tag's own padding,
+ * so a fine tag is no taller than its label needs and the X sits where the padding puts it; on a coarse
+ * pointer the tag itself is 44px tall and the target fills it. Hover tints with the tag's own ink, like
+ * the toast close, so it reads on a plain and on a selected tag. */
 .dx-tag-group-remove-button {
+  --tag-remove-size: var(--dx-control-hit-size);
+
   display: flex;
   overflow: visible;
+  width: var(--tag-remove-size);
+  height: var(--tag-remove-size);
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
   padding: 0;
   border-style: none;
-  border-radius: var(--dx-radius-md);
+  border-radius: var(--dx-radius-full);
   background-color: transparent;
   color: var(--dx-muted-foreground);
-  margin-inline-start: var(--dx-space-1);
+  margin-block: calc((1.125rem - var(--tag-remove-size)) / 2);
+  margin-inline: calc(0.25rem - (var(--tag-remove-size) - 0.75rem) / 2) calc((0.75rem - var(--tag-remove-size)) / 2);
   transition:
     background-color 120ms var(--dx-motion-ease),
     color 120ms var(--dx-motion-ease),
@@ -74,8 +84,8 @@
 
 @media (hover: hover) and (pointer: fine) {
   .dx-tag-group-remove-button:hover {
-    background-color: var(--dx-muted);
-    color: var(--dx-foreground);
+    background-color: color-mix(in oklab, currentcolor 14%, transparent);
+    color: inherit;
   }
 }
 

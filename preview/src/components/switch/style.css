@@ -20,12 +20,25 @@
   --dx-switch-height: 1.15rem;
   --dx-switch-thumb-size: 1rem;
 
+  /* The touch target: a transparent frame around the track, so the button is at least the global hit size
+   * (`--dx-control-hit-size`: 24px fine, 44px coarse; theme "Coarse sizing"). Fine, a negative bottom margin and a
+   * translate pull the frame back so the layout is the track's; coarse, the frame is layout in the block axis (stacked switches
+   * never overlap) and negative sideways, so the track keeps the label gap. The track is the button's
+   * `::before`, laid over the content box. */
+  --dx-switch-hit-x: max(0px, calc((var(--dx-control-hit-size) - var(--dx-switch-width)) / 2));
+  --dx-switch-hit-y: max(0px, calc((var(--dx-control-hit-size) - var(--dx-switch-height)) / 2));
+  --dx-switch-hit-pull: var(--dx-pick-coarse, 0px) var(--dx-pick-fine, calc(-1 * var(--dx-switch-hit-y)));
+
   position: relative;
   display: inline-flex;
   width: var(--dx-switch-width);
   height: var(--dx-switch-height);
+  box-sizing: content-box;
+
+  /* A narrow flex row squeezes a fine switch (its track is narrower than 32px there); the touch target never shrinks. */
+  flex-shrink: var(--dx-pick-coarse, 0) var(--dx-pick-fine, 1);
   align-items: center;
-  padding: 0;
+  padding: var(--dx-switch-hit-y) var(--dx-switch-hit-x);
   border: 0;
   border-radius: var(--dx-radius-full);
   margin: 0;
@@ -35,21 +48,32 @@
      scripts/check-theme-baseline.sh bans it. The resets are the ones a native button needs and this rule does not set itself. */
   appearance: none;
   background-color: transparent;
-  background-color: var(--light, var(--dx-input))
-    var(--dark, color-mix(in oklab, var(--dx-input) 80%, transparent));
   color: inherit;
   font: inherit;
   letter-spacing: inherit;
+  margin-block: 0 calc(2 * var(--dx-switch-hit-pull));
+  margin-inline: calc(-1 * var(--dx-switch-hit-x));
   outline: none;
   text-align: inherit;
   text-indent: 0;
   text-shadow: none;
   text-transform: none;
   transition: background-color var(--dx-motion-duration-base), box-shadow var(--dx-motion-duration-base);
+  translate: 0 var(--dx-switch-hit-pull);
   word-spacing: inherit;
 }
 
-.dx-switch[data-state="checked"] {
+.dx-switch::before {
+  position: absolute;
+  border-radius: var(--dx-radius-full);
+  background-color: var(--light, var(--dx-input))
+    var(--dark, color-mix(in oklab, var(--dx-input) 80%, transparent));
+  content: "";
+  inset: var(--dx-switch-hit-y) var(--dx-switch-hit-x);
+  transition: background-color var(--dx-motion-duration-base), box-shadow var(--dx-motion-duration-base);
+}
+
+.dx-switch[data-state="checked"]::before {
   background-color: var(--dx-primary);
 }
 
@@ -62,18 +86,19 @@
   --dx-switch-thumb-size: 0.75rem;
 }
 
-.dx-switch:focus-visible {
+.dx-switch:focus-visible::before {
   box-shadow: var(--dx-ring-field);
 }
 
 /* Nova: `aria-invalid:border-destructive ring-3 ring-destructive/20 dark:ring-destructive/40`. After the
  * focus rule so a focused invalid switch stays red. */
-.dx-switch[aria-invalid="true"],
-.dx-switch[data-invalid="true"] {
+.dx-switch[aria-invalid="true"]::before,
+.dx-switch[data-invalid="true"]::before {
   box-shadow: var(--dx-ring-invalid-field);
 }
 
 .dx-switch-thumb {
+  position: relative;
   display: block;
   width: var(--dx-switch-thumb-size);
   height: var(--dx-switch-thumb-size);
