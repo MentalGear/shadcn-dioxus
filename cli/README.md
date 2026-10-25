@@ -7,7 +7,7 @@ the components it depends on, **from this registry**.
 This is the CLI reference. For the install walkthrough (CLI first, then the `dx` alternatives and the warning about plain `dx components add`) see the repository's [README](../README.md#getting-started) or the site's [Docs](https://mentalgear.github.io/shadcn-dioxus/docs/); for what each component animates and how, see [`dev-docs/motion.md`](../dev-docs/motion.md).
 
 ```sh
-cargo install --git https://github.com/MentalGear/shadcn-dioxus shadcn-dioxus
+cargo install --git https://github.com/MentalGear/shadcn-dioxus shadcn-dioxus --locked
 ```
 
 ```sh

@@ -36,7 +36,7 @@ First, explore the [component gallery](https://mentalgear.github.io/shadcn-dioxu
 Install the `shadcn-dioxus` command-line tool once. It copies a component's source and stylesheet into your app, adds the crates it needs to `Cargo.toml`, installs the components it depends on, and reads **this** registry by default, so no command below needs a `--git` flag:
 
 ```sh
-cargo install --git https://github.com/MentalGear/shadcn-dioxus shadcn-dioxus
+cargo install --git https://github.com/MentalGear/shadcn-dioxus shadcn-dioxus --locked
 ```
 
 ```sh

@@ -15,23 +15,25 @@ repository = "https://github.com/DioxusLabs/components"
 dioxus.workspace = true
 dioxus-attributes = { path = "../dioxus-attributes" }
 # Optional, switched on by the `calendar` feature (Calendar, DatePicker): see `[features]`.
-time = { version = "0.3.47", optional = true, features = ["std", "macros", "local-offset"] }
+time = { version = "0.3.47", optional = true, features = ["std", "local-offset"] }
 tracing.workspace = true
-serde = { version = "1.0", features = ["derive"] }
+serde = { version = "1.0.228", features = ["derive"] }
 # Optional, switched on by the `color-picker` feature (ColorPicker).
-palette = { version = "0.7.6", optional = true }
+palette = { version = "0.7.6", optional = true, default-features = false, features = ["std"] }
 
 # `src/sleep.rs`, the one timer: tokio on native, gloo-timers on wasm (what `dioxus-sdk-time::sleep` was).
 [target.'cfg(not(target_family = "wasm"))'.dependencies]
-tokio = { version = "1", features = ["time"] }
+tokio = { version = "1.52.3", features = ["time"] }
 
 [target.'cfg(target_family = "wasm")'.dependencies]
-gloo-timers = { version = "0.3", features = ["futures"] }
+gloo-timers = { version = "0.3.0", features = ["futures"] }
 
 [dev-dependencies]
 dioxus-ssr = "0.7.0"
+# The calendar and date-picker tests write dates with `time::macros::date!`; the library itself does not.
+time = { version = "0.3.47", features = ["macros"] }
 # `interval.rs` tests drive a VirtualDom on tokio's paused clock (tokio is a native dependency of `src/sleep.rs`).
-tokio = { version = "1", features = ["rt", "macros", "time", "test-util"] }
+tokio = { version = "1.52.3", features = ["rt", "macros", "time", "test-util"] }
 
 # A component pays only for the crates it uses: `dx components add <name>` runs `cargo add dioxus-primitives
 # --features <the component.json features>`, so an app without a colour picker never compiles `palette` (and

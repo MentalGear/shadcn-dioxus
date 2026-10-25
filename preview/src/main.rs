@@ -65,7 +65,7 @@ fn dx_new_command() -> String {
 /// `scripts/check-registry-url.sh` pins the same string in `cli/README.md` and the CLI's
 /// `DEFAULT_REGISTRY_GIT_URL`.
 fn cli_install_command() -> String {
-    format!("cargo install --git {REGISTRY_GIT_URL} shadcn-dioxus")
+    format!("cargo install --git {REGISTRY_GIT_URL} shadcn-dioxus --locked")
 }
 
 /// The CLI command that installs `name` (a component directory name), its component dependencies and

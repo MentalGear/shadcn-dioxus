@@ -8,7 +8,7 @@
 # component (`markdown`) may list a markdown, HTML or syntax parser, the `dioxus-primitives` `rev`s are all unstamped
 # or all one 40-hex value (`scripts/stamp-release-rev.sh <sha>` writes it at release time), and every primitives
 # module behind a cargo feature that a component's installed Rust files name has that feature in its closure's
-# `features`.
+# `features`. The registry-sourced `[dependencies]` of primitives/Cargo.toml carry the same lock-version floor.
 #
 # What a user's `dx components add <name>` puts in their Cargo.toml is `cargo add <crate>[@<version>]
 # [--features ..]` for every `cargoDependencies` entry of the component and of its `componentDependencies`
@@ -40,6 +40,12 @@
 #      `dx components add` yields E0432 in a user's tree while the repo (all features on) compiles.
 #      `scripts/check-primitives-features.sh` is the compile half; `scripts/registry-install-smoke.sh` the
 #      definitive pre-merge one.
+#   7. PRIMITIVES FLOORS. Every registry-sourced entry in `[dependencies]` and `[target.*.dependencies]` of
+#      primitives/Cargo.toml (not a `workspace = true` or `path` entry) states a requirement whose floor
+#      is exactly the `Cargo.lock` version (`tokio = "1.52.3"`, not `"1"`): `dx components add` runs `cargo add
+#      dioxus-primitives`, so that requirement is the only version text a user's resolver sees for the crates the
+#      primitives pull in, and the lock never reaches the user. Same shipped == tested rule as 1, for the crate
+#      that is not named in a component.json.
 #
 # `scripts/stamp-release-rev.sh <sha>` writes the release rev into every `dioxus-primitives` entry; `--check` verifies
 # it and `--remove` returns the tree to the unstamped development state.
@@ -193,11 +199,35 @@ for name in comps:
             if ft and ft not in have:
                 err(f"{p}: uses dioxus_primitives::{mod}, which needs the primitives feature {ft!r}; add \"features\": [\"{ft}\"] to the dioxus-primitives entry of {name}/component.json (or of a component in its closure)")
 
+# 7. primitives' own dependency floors equal the lock
+def prim_dep_tables(t):
+    yield "dependencies", t.get("dependencies", {})
+    for tgt, body in sorted(t.get("target", {}).items()):
+        yield f"target.{tgt}.dependencies", body.get("dependencies", {})
+for table, deps in prim_dep_tables(prim_toml):
+    for crate, spec in sorted(deps.items()):
+        if isinstance(spec, dict):
+            if spec.get("workspace") or "path" in spec or "git" in spec: continue
+            ver = spec.get("version")
+        else:
+            ver = spec
+        where = f"primitives/Cargo.toml [{table}] {crate}"
+        if not ver:
+            err(f"{where}: no `version` (state the Cargo.lock version as the floor)"); continue
+        mm = req_re.match(ver)
+        if not mm:
+            err(f"{where}: version {ver!r} is not `x.y.z`, `^x.y.z`, `~x.y.z` or `=x.y.z`: a bare `1` or `0.3` leaves the floor below the tested version"); continue
+        base = mm.group(2)
+        if crate not in locked:
+            err(f"{where}: {crate} is not in Cargo.lock, so nothing tests it")
+        elif base not in locked[crate]:
+            err(f"{where}: version {ver!r} but Cargo.lock has {sorted(locked[crate])}: the floor must equal the tested version (shipped == tested)")
+
 if errors:
-    print("check-cargo-dep-versions: component.json out of step with Cargo.lock / policy:", file=sys.stderr)
+    print("check-cargo-dep-versions: component.json / primitives manifest out of step with Cargo.lock / policy:", file=sys.stderr)
     for e in sorted(set(errors)): print("  " + e, file=sys.stderr)
     sys.exit(1)
 n = sum(len([c for c in m.get("cargoDependencies") or [] if isinstance(c, dict) and c.get("version")]) for _, m in comps.values())
 print(f"check-cargo-dep-versions: OK -- {n} versioned cargoDependencies equal the Cargo.lock versions; gated primitives modules: {gated}; "
-      f"{'release rev stamped' if stamped else 'primitives unstamped (development tree)'}.")
+      f"primitives dependency floors equal the lock; {'release rev stamped' if stamped else 'primitives unstamped (development tree)'}.")
 PY
