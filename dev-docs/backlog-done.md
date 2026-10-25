@@ -6,7 +6,7 @@ resolves here by id.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Done rows (361)
+## Done rows (362)
 
 | # | Item | Updated |
 |---|---|---|
@@ -332,6 +332,7 @@ resolves here by id.
 | [362](backlog/done/362-reorder-gesture-controlled-dnd.md) | Reorder gesture extracted, KeyOrder, DragAndDropList controlled mode with on_reorder | 2026-10-23 |
 | [363](backlog/done/363-datatable-row-reorder-and-columns.md) | DataTable: reorderable rows (drag handle) and a Columns menu (visibility, keyboard column order) | 2026-10-22 |
 | [364](backlog/done/364-togglegroup-value-keyed.md) | ToggleGroup: pressed state keyed by value, not index (optional) | 2026-10-22 |
+| [365](backlog/done/365-final-sweep-refactor-and-root-cause-review.md) | Final sweep: refactor review with the deconstruct-to-root and solve-by-construction exercise, proposals to the owner | 2026-10-25 |
 | [366](backlog/done/366-test-the-shipped-web-arm.md) | Gates: run cargo test on the shipped web arm too (ssr_parity differs between the plain and server feature sets) | 2026-10-22 |
 | [367](backlog/done/367-lane-build-disk-class.md) | Lane builds need 10.4 GB free because every lane-ssg copies 6.8 GB of template, 3.0 GB of it dead incremental state | 2026-10-23 |
 | [368](backlog/done/368-virtual-grid-row-axis-first-paint.md) | VirtualGrid: the row axis plans max(rows, viewport), so a short grid differs between server and first client frame | 2026-10-23 |

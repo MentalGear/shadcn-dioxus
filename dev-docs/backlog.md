@@ -40,7 +40,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (37)
+## Open rows (46)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -59,7 +59,6 @@ proposing one is closed as out of scope (row 337 is the first).
 | [305](backlog/305-side-drawer-scrolling-its-content-also-drags-the.md) | Side drawer: scrolling its content also drags the drawer sideways (iOS) | WAITING ON OWNER: iPhone re-test of the side drawer (scroll its content, the drawer must not drag… | S–M | primitives |
 | [307](backlog/307-ios-color-panel-does-not-pick-colors.md) | iOS: the Color Panel opens but tapping its color box does not change the color | WAITING ON OWNER: reproduce on an iPhone (owner report 2026-10-20: the Color Panel opens but… | M | overlays |
 | [355](backlog/355-adopt-google-rust-style-guide-items.md) | Adopt Google Rust style guide items: workspace lint table and conventions | IN QUEUE -- items 1-4 on lane/row-355-google-rust-lints for the merge queue; item 5 is… | S-M | process |
-| [365](backlog/365-final-sweep-refactor-and-root-cause-review.md) | Final sweep: refactor review with the deconstruct-to-root and solve-by-construction exercise, proposals to the owner | BACKLOG (owner 2026-10-22, backlog thread: "final sweep, check for refactors and also run there the… | M for the review. Each accepted… | process |
 | [371](backlog/371-dependency-evaluation-keep-lift-drop.md) | Dependency evaluation: keep, feature-gate, replace, lift or drop (rule of 2026-10-23) | BACKLOG: unparked by the owner 2026-10-24, stage 4 of the adopted order (after the structure rows… | S each outcome | build |
 | [372](backlog/372-scroll-fade-overlay-scrollbar-hybrid.md) | Scroll fade: transition the edge depths (landed) and paint the fade as gradients where the scrollbar is an overlay (deferred) | WAITING ON OWNER: part 1, the overlay-scrollbar hybrid, is deferred ("leave mask for now"); reopen… | M | primitives |
 | [383](backlog/383-adversarial-review-board.md) | Adversarial review board: independent expert reviewers attack the finished library, last item of the backlog | BACKLOG. Runs last: after row 365's proposals are answered and every other engineering row has… | M | process |
@@ -81,5 +80,15 @@ proposing one is closed as out of scope (row 337 is the first).
 | [422](backlog/422-docs-page-shared-section-group.md) | Component pages: group the sections every page shares under one header, component-specific sections under another | BACKLOG, outline approved by the owner 2026-10-25 (backlog thread): build it as below. Docs stage… | M | docs |
 | [424](backlog/424-date-picker-read-only-still-edits.md) | DatePicker `read_only` still lets keys change the value and the popover pick a date | BACKLOG. Found by row 393's docs lane (2026-10-25). The prop docs describe the current behaviour… | S | components |
 | [425](backlog/425-hover-card-force-mount-no-effect.md) | HoverCard `force_mount` has no effect: the card is still rendered only while open | BACKLOG. Found by row 393's docs lane (2026-10-25). The prop docs describe the current behaviour… | S | components |
+| [426](backlog/426-theme-owns-modal-scrim-and-visually-hidden-recipe.md) | Theme owns the no-top-layer modal scrim and the visually-hidden recipe | BACKLOG. Owner approved 2026-10-25 (row 365 sweep, P1). | S | components |
+| [427](backlog/427-spec-page-and-read-kind-helpers-retire-markers.md) | Spec page and read kinds become helpers; the exception markers retire | BACKLOG. Owner approved 2026-10-25 (row 365 sweep, P2). | S-M | testing |
+| [428](backlog/428-themed-wrappers-forward-with-props-spread.md) | Themed wrappers forward primitive props with a struct spread, not field by field | BACKLOG. Owner approved 2026-10-25 (row 365 sweep, P3). | M | components |
+| [429](backlog/429-one-gate-kit-css-walker-allowlist-engine.md) | One gate kit: a shared CSS walker and one allowlist engine for the check scripts | BACKLOG. Owner approved 2026-10-25 (row 365 sweep, P4). | M | tooling |
+| [430](backlog/430-component-manifests-derived-from-source.md) | Component manifests derived from source, not hand-kept | BACKLOG. Owner approved 2026-10-25 (row 365 sweep, P5). | M | tooling |
+| [431](backlog/431-one-test-harness-controlled-state-use-controlled.md) | One test runtime harness; controlled state only through use_controlled | BACKLOG. Owner approved 2026-10-25 (row 365 sweep, P6). | S | primitives |
+| [432](backlog/432-anchor-engine-one-attribute-not-marker-classes.md) | Anchor engine selects on one data attribute, not nine hand-kept marker classes | BACKLOG. Owner approved 2026-10-25 (row 365 sweep, P7). | M | primitives |
+| [433](backlog/433-slot-variables-derived-from-sheet.md) | Slot variables derived from the sheet, not documented by hand | BACKLOG. Owner approved 2026-10-25 (row 365 sweep, P8). | S-M | docs |
+| [434](backlog/434-javascript-in-typescript-modules-not-rust-strings.md) | JavaScript lives in TypeScript modules, not in Rust raw strings | BACKLOG. Owner approved 2026-10-25 (row 365 sweep, P9). | L | primitives |
+| [435](backlog/435-one-menu-family-behind-three-hosts.md) | One menu-family implementation behind three hosts (DropdownMenu, ContextMenu, Menubar) | BACKLOG. Owner approved 2026-10-25 (row 365 sweep, P10). | L | primitives |
 
 <!-- END GENERATED -->
