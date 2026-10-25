@@ -155,7 +155,8 @@ const primText = (m) => {
 };
 const compText = (c) => walk(path.join(ROOT, "preview/src/components", c)).filter((x) => /\.(rs|toml|json)$/.test(x)).map((x) => noComments(fs.readFileSync(x, "utf8"))).join("\n");
 const compTexts = Object.fromEntries(comps.map((c) => [c, compText(c)]));
-const usesPrim = (text, m, ns) => new RegExp(`${ns}::(?:${m}\\b|\\{[^}]*\\b${m}\\b[^}]*\\})`, "s").test(text);
+// `r#`: a module named by a keyword (`mod r#virtual`) is spelled `crate::r#virtual::...` by its users
+const usesPrim = (text, m, ns) => new RegExp(`${ns}::(?:(?:r#)?${m}\\b|\\{[^}]*\\b${m}\\b[^}]*\\})`, "s").test(text);
 const primTexts = Object.fromEntries(primMods.map((m) => [m, primText(m)]));
 const primUsers = new Map(); // module -> primitive modules that use it
 for (const m of primMods) primUsers.set(m, primMods.filter((o) => o !== m && usesPrim(primTexts[o], m, "crate")));
@@ -166,6 +167,49 @@ function compsUsingPrim(m) {
     for (const c of comps) if (usesPrim(compTexts[c], p, "dioxus_primitives")) out.add(c);
     for (const u of primUsers.get(p) ?? []) if (!seen.has(u)) { seen.add(u); queue.push(u); }
   }
+  return out;
+}
+
+// A file inside a primitive directory (`virtual/find.rs`) is reached only through what the directory's mod.rs
+// re-exports from it, so its users are the components that reach one of those items: through a primitive outside the
+// directory that names one, or directly. A sibling file that uses the changed one adds its own exports first
+// (transitive). A name match is a word match, so a common name (`window`, `Engine`) only ever adds users. Anything this
+// cannot read (mod.rs itself, a file mod.rs does not declare, a glob re-export) returns null: the whole directory's users.
+function compsUsingSubmodule(dir, sub) {
+  const d = path.join(primDir, dir), modRs = path.join(d, "mod.rs");
+  if (sub === "mod" || !fs.existsSync(modRs)) return null;
+  const modText = noComments(fs.readFileSync(modRs, "utf8"));
+  const subs = [...new Set(fs.readdirSync(d).map((n) => n.replace(/\.rs$/, "")))].filter((n) => n !== "mod");
+  if (!subs.includes(sub) || !new RegExp(`\\bmod\\s+${sub}\\b`).test(modText) || /\buse\s+[\w:]*\*\s*;/.test(modText)) return null;
+  const exportsOf = (x) => {
+    const out = new Set();
+    for (const m of modText.matchAll(new RegExp(`\\buse\\s+${x}::([^;]+);`, "g"))) {
+      for (const item of m[1].replace(/[{}]/g, ",").split(",").map((t) => t.trim()).filter(Boolean)) {
+        const as = item.match(/\bas\s+(\w+)$/);
+        const name = as ? as[1] : item.split("::").pop();
+        if (name && name !== "self") out.add(name);
+      }
+    }
+    return out;
+  };
+  const word = (n) => new RegExp(`(?<![\\w#])${n}(?!\\w)`);
+  // a submodule named by path (`super::find::`, `crate::r#virtual::layout::`), never by its bare name (`.find(`)
+  const byPath = (x) => new RegExp(`(?:super|${dir})::${x}::`);
+  const names = new Set(), reached = new Set([sub]), queue = [sub];
+  while (queue.length) {
+    const x = queue.pop();
+    const ex = exportsOf(x);
+    for (const n of ex) names.add(n);
+    for (const o of subs) {
+      if (reached.has(o)) continue;
+      const t = primText(`${dir}/${o}`);
+      if (byPath(x).test(t) || [...ex].some((n) => word(n).test(t))) { reached.add(o); queue.push(o); }
+    }
+  }
+  const mentions = (t) => [...reached].some((x) => byPath(x).test(t)) || [...names].some((n) => word(n).test(t));
+  const out = new Set();
+  for (const o of primMods) if (o !== dir && usesPrim(primTexts[o], dir, "crate") && mentions(primTexts[o])) for (const c of compsUsingPrim(o)) out.add(c);
+  for (const c of comps) if (usesPrim(compTexts[c], dir, "dioxus_primitives") && mentions(compTexts[c])) out.add(c);
   return out;
 }
 
@@ -213,7 +257,8 @@ for (const f of changed) {
     for (const s of specsOf(c)) add(s, f);
     for (const s of specs.filter((s) => /^(chart|charts)/.test(path.basename(s)))) add(s, f);
   } else if ((m = f.match(/^primitives\/src\/(?:ts\/|js\/)?([^/.]+)(?:\.[a-z]+|\/)/)) && primMods.includes(m[1])) {
-    const users = compsUsingPrim(m[1]);
+    const sub = f.match(/^primitives\/src\/[^/.]+\/([^/.]+)(?:\.rs$|\/)/);
+    const users = (sub && compsUsingSubmodule(m[1], sub[1])) ?? compsUsingPrim(m[1]);
     for (const c of users) for (const s of specsOf(c)) add(s, `${f} -> ${c}`);
     if (users.size <= BROAD_AT) for (const c of users) atRestKeys.add(`c:${c}`);
     if (users.size > BROAD_AT) addBroad(`${f} (shared plumbing: ${users.size} components)`);

@@ -11,6 +11,7 @@ use crate::components::{
     message::{Message, MessageAlign, MessageContent},
 };
 use dioxus::prelude::*;
+use dioxus_primitives::AsChild;
 
 /// `(id, is_user, text)`. Only the user turns appear in the "Jump to..." menu.
 const CHAT: [(&str, bool, &str); 8] = [
@@ -64,17 +65,16 @@ fn CommandMenu() -> Element {
     rsx! {
         DropdownMenu {
             DropdownMenuTrigger {
-                as: move |attributes: Vec<Attribute>| rsx! {
-                    Button { variant: ButtonVariant::Secondary, r#type: "button", attributes, "Jump to..." }
+                as: move |el: AsChild| rsx! {
+                    Button { variant: ButtonVariant::Secondary, r#type: "button", attributes: el.attributes, "Jump to..." }
                 },
             }
             DropdownMenuContent {
                 DropdownMenuLabel { "Conversations" }
-                for (i , (id , _ , text)) in CHAT.iter().filter(|(_, mine, _)| *mine).enumerate() {
+                for (id , _ , text) in CHAT.iter().filter(|(_, mine, _)| *mine) {
                     DropdownMenuItem::<String> {
                         key: "{id}",
                         value: id.to_string(),
-                        index: i,
                         text_value: *text,
                         on_select: move |id: String| {
                             scroller

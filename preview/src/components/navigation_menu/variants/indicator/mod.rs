@@ -10,20 +10,20 @@ pub fn Demo() -> Element {
         div {
             NavigationMenu { aria_label: "Indicator navigation menu",
                 NavigationMenuList {
-                    NavigationMenuItem { index: 0usize,
+                    NavigationMenuItem {
                         NavigationMenuTrigger { "Learn" }
                         NavigationMenuContent {
                             div { class: "dx-navigation-menu-grid",
-                                NavigationMenuLink { href: "#learn", content_index: 0usize, "Tutorials" }
-                                NavigationMenuLink { href: "#learn", content_index: 1usize, "Guides" }
+                                NavigationMenuLink { href: "#learn", "Tutorials" }
+                                NavigationMenuLink { href: "#learn", "Guides" }
                             }
                         }
                     }
-                    NavigationMenuItem { index: 1usize,
+                    NavigationMenuItem {
                         NavigationMenuTrigger { "Build with the library" }
                         NavigationMenuContent {
                             div { class: "dx-navigation-menu-grid",
-                                NavigationMenuLink { href: "#build", content_index: 0usize, "Recipes" }
+                                NavigationMenuLink { href: "#build", "Recipes" }
                             }
                         }
                     }

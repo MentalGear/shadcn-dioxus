@@ -34,7 +34,6 @@ pub fn Demo() -> Element {
             ContextMenuTrigger { "Right click for checkboxes" }
             ContextMenuContent {
                 ContextMenuCheckboxItem {
-                    index: 0usize,
                     checked: Some(bookmarks()),
                     on_checked_change: move |checked| bookmarks.set(checked),
                     close_on_select: false,
@@ -42,7 +41,6 @@ pub fn Demo() -> Element {
                     "Show Bookmarks Bar"
                 }
                 ContextMenuCheckboxItem {
-                    index: 1usize,
                     checked: Some(full_urls()),
                     on_checked_change: move |checked| full_urls.set(checked),
                     close_on_select: false,
@@ -50,7 +48,6 @@ pub fn Demo() -> Element {
                     "Show Full URLs"
                 }
                 ContextMenuCheckboxItem {
-                    index: 2usize,
                     checked: Some(developer_tools()),
                     on_checked_change: move |checked| developer_tools.set(checked),
                     close_on_select: false,
@@ -60,13 +57,11 @@ pub fn Demo() -> Element {
                 }
                 ContextMenuSub {
                     ContextMenuSubTrigger {
-                        index: 3usize,
                         text_value: "More options",
                         "More options"
                     }
                     ContextMenuSubContent {
                         ContextMenuCheckboxItem {
-                            index: 0usize,
                             checked: Some(word_wrap()),
                             on_checked_change: move |checked| word_wrap.set(checked),
                             close_on_select: false,
@@ -74,7 +69,6 @@ pub fn Demo() -> Element {
                             "Word Wrap"
                         }
                         ContextMenuCheckboxItem {
-                            index: 1usize,
                             checked: Some(minimap()),
                             on_checked_change: move |checked| minimap.set(checked),
                             text_value: "Minimap",

@@ -1,5 +1,6 @@
 //! SelectTrigger component implementation.
 
+use crate::selectable::ListboxFocus;
 use crate::{has_own_accessible_name, merge_attributes, use_id_or};
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
@@ -50,13 +51,11 @@ pub struct SelectTriggerProps {
 ///                 SelectGroup {
 ///                     SelectGroupLabel { "Fruits" }
 ///                     SelectOption::<String> {
-///                         index: 0usize,
 ///                         value: "apple",
 ///                         "Apple"
 ///                         SelectItemIndicator { "✔️" }
 ///                     }
 ///                     SelectOption::<String> {
-///                         index: 1usize,
 ///                         value: "banana",
 ///                         "Banana"
 ///                         SelectItemIndicator { "✔️" }
@@ -247,9 +246,7 @@ pub fn SelectTrigger(props: SelectTriggerProps) -> Element {
                 match event.key() {
                     Key::ArrowUp => {
                         ctx.set_open(true);
-                        ctx.selectable
-                            .initial_focus
-                            .set(ctx.selectable.collection.last_available_index());
+                        ctx.selectable.initial_focus.set(Some(ListboxFocus::LAST));
                         event.prevent_default();
                         event.stop_propagation();
                     }
@@ -262,9 +259,7 @@ pub fn SelectTrigger(props: SelectTriggerProps) -> Element {
                         if event.modifiers().alt() {
                             ctx.keep_trigger_focus.set(true);
                         } else {
-                            ctx.selectable
-                                .initial_focus
-                                .set(ctx.selectable.collection.first_available_index());
+                            ctx.selectable.initial_focus.set(Some(ListboxFocus::FIRST));
                         }
                         event.prevent_default();
                         event.stop_propagation();

@@ -16,7 +16,6 @@ pub fn Demo() -> Element {
                     RadioItem {
                         id: "radio-group-description-default",
                         value: "default".to_string(),
-                        index: 0usize,
                     }
                     FieldContent {
                         FieldLabel { html_for: "radio-group-description-default", "Default spacing" }
@@ -27,7 +26,6 @@ pub fn Demo() -> Element {
                     RadioItem {
                         id: "radio-group-description-comfortable",
                         value: "comfortable".to_string(),
-                        index: 1usize,
                     }
                     FieldContent {
                         FieldLabel { html_for: "radio-group-description-comfortable", "Comfortable" }
@@ -38,7 +36,6 @@ pub fn Demo() -> Element {
                     RadioItem {
                         id: "radio-group-description-compact",
                         value: "compact".to_string(),
-                        index: 2usize,
                     }
                     FieldContent {
                         FieldLabel { html_for: "radio-group-description-compact", "Compact" }

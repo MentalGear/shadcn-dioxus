@@ -91,6 +91,7 @@ gates=(
   "check-collection-derive|scripts/check-collection-derive.sh"
   "check-raw-text-interpolation|scripts/check-raw-text-interpolation.sh"
   "check-dynamic-style-shorthand|scripts/check-dynamic-style-shorthand.sh"
+  "check-as-child|scripts/check-as-child.sh"
   # group: Timers, listeners, motion and focus
   "check-uncleared-intervals|scripts/check-uncleared-intervals.sh"
   "check-blocking-scroll-listeners|scripts/check-blocking-scroll-listeners.sh"

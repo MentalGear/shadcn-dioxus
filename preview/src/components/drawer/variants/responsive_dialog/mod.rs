@@ -12,6 +12,7 @@ use crate::components::{
     sidebar::use_is_mobile,
 };
 use dioxus::prelude::*;
+use dioxus_primitives::AsChild;
 
 /// shadcn's "Responsive Dialog": a `Dialog` on a desktop viewport and a `Drawer` below the mobile
 /// breakpoint (`use_is_mobile`, the Sidebar's hook), with the same form in both.
@@ -39,9 +40,10 @@ pub fn Demo() -> Element {
                     ProfileForm { on_save: move |_| open.set(false) }
                     DrawerFooter {
                         DrawerClose {
-                            as: |attributes| rsx! {
-                                Button { variant: ButtonVariant::Outline, attributes, "Cancel" }
+                            as: |el: AsChild| rsx! {
+                                Button { variant: ButtonVariant::Outline, attributes: el.attributes, {el.children} }
                             },
+                            "Cancel"
                         }
                     }
                 }

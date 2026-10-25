@@ -2,8 +2,8 @@
 
 use crate::hover_card::{use_hover_timers, HoverTimers};
 use crate::{
-    merge_attributes, use_animated_open, use_controlled, use_id_or, use_unique_id, ContentAlign,
-    ContentSide,
+    merge_attributes, use_animated_open, use_controlled, use_id_or, use_unique_id, AsChild,
+    ContentAlign, ContentSide,
 };
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
@@ -201,8 +201,10 @@ pub struct TooltipTriggerProps {
     pub id: Option<String>,
 
     /// Render the trigger element as a custom component/element.
+    /// The callback gets the merged attributes (listeners included) and the children, see
+    /// [`AsChild`].
     #[props(default)]
-    pub r#as: Option<Callback<Vec<Attribute>, Element>>,
+    pub r#as: Option<Callback<AsChild, Element>>,
 
     /// Additional attributes for the trigger element
     #[props(extends = GlobalAttributes)]
@@ -283,7 +285,7 @@ pub fn TooltipTrigger(props: TooltipTriggerProps) -> Element {
     let merged = crate::top_layer::anchored_trigger_attributes(&ctx.tooltip_id.cloned(), merged);
 
     if let Some(dynamic) = props.r#as {
-        dynamic.call(merged)
+        dynamic.call(AsChild::new(merged, props.children))
     } else {
         rsx! {
             div {

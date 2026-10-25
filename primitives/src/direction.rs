@@ -150,9 +150,9 @@ pub struct DirectionProviderProps {
 ///         DirectionProvider { direction: Direction::Rtl,
 ///             Tabs { default_value: "a".to_string(),
 ///                 TabList {
-///                     TabTrigger { value: "a".to_string(), index: 0usize, "A" }
+///                     TabTrigger { value: "a".to_string(), "A" }
 ///                 }
-///                 TabContent { index: 0usize, value: "a".to_string(), "A content" }
+///                 TabContent { value: "a".to_string(), "A content" }
 ///             }
 ///         }
 ///     }

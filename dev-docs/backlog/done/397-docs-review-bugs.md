@@ -1,7 +1,7 @@
 ---
 id: 397
 title: "Bugs the docs review found: ToggleGroup arrows, dead ScrollArea prop, DataTable sort, Sidebar Ctrl+B"
-status: "BACKLOG. Found by row 387's first docs-clarity review; the evidence (file:line per finding) is in…"
+status: "LANDED (merge queue batch 17, lane/row-397-component-bugs): ToggleGroup roving_loop: false stops…"
 size: "S"
 area: components
 updated: 2026-10-24
@@ -17,6 +17,8 @@ updated: 2026-10-24
 - Sidebar: the global Ctrl/Cmd+B handler cannot be turned off and swallows the shortcut in editors on the page.
 
 ## Status / trigger
+
+LANDED (merge queue batch 17, lane/row-397-component-bugs): ToggleGroup `roving_loop: false` stops only the wrap; ScrollArea's visibility classes live in `scroll_area/style.css`; DataTable sort cycles ascending, descending, none, with `clear_sort` and `on_sort_change`/`on_page_change`/`on_selection_change` (fired from one diff, `ViewState::changes_since`); `SidebarProvider { keyboard_shortcut }` (default `b`, `None` turns it off) skips editable targets and prevented events. Trigger for reopening: any of the four behaviours regressing.
 
 BACKLOG. Found by row 387's first docs-clarity review; the evidence (file:line per finding) is in the project's shared files, `docs-clarity/2026-10-24-docs-clarity-review.md`.
 

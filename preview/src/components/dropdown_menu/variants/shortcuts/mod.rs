@@ -24,7 +24,6 @@ pub fn Demo() -> Element {
                     DropdownMenuLabel { "My Account" }
                     DropdownMenuItem::<String> {
                         value: "Profile".to_string(),
-                        index: 0usize,
                         text_value: "Profile",
                         on_select: move |value| chosen.set(Some(value)),
                         "Profile"
@@ -32,7 +31,6 @@ pub fn Demo() -> Element {
                     }
                     DropdownMenuItem::<String> {
                         value: "Billing".to_string(),
-                        index: 1usize,
                         text_value: "Billing",
                         on_select: move |value| chosen.set(Some(value)),
                         "Billing"
@@ -40,7 +38,6 @@ pub fn Demo() -> Element {
                     }
                     DropdownMenuItem::<String> {
                         value: "Settings".to_string(),
-                        index: 2usize,
                         text_value: "Settings",
                         on_select: move |value| chosen.set(Some(value)),
                         "Settings"
@@ -50,7 +47,6 @@ pub fn Demo() -> Element {
                 DropdownMenuSeparator {}
                 DropdownMenuItem::<String> {
                     value: "Log out".to_string(),
-                    index: 3usize,
                     text_value: "Log out",
                     on_select: move |value| chosen.set(Some(value)),
                     "Log out"

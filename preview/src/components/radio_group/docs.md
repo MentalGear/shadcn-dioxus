@@ -13,8 +13,6 @@ RadioGroup {
     },
     // The RadioItem component represents each individual radio button in the group.
     RadioItem {
-        // The index of the radio item, used to determine the order in which items are displayed.
-        index: 0,
         // The value of the radio button, which is used to identify the selected option and will be passed to the on_value_change callback when selected.
         value: "option1",
         // The contents of the radio item button

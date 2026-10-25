@@ -128,7 +128,6 @@ pub fn TopLayerFixture() -> Element {
                             style: "min-height: 100px;",
                             DropdownMenuItem::<String> {
                                 value: "one".to_string(),
-                                index: 0usize,
                                 on_select: move |_: String| {},
                                 "Item one"
                             }
@@ -148,7 +147,6 @@ pub fn TopLayerFixture() -> Element {
                             style: "min-height: 100px;",
                             ContextMenuItem {
                                 value: "one".to_string(),
-                                index: 0usize,
                                 on_select: move |_: String| {},
                                 "Item one"
                             }
@@ -161,13 +159,12 @@ pub fn TopLayerFixture() -> Element {
                     // `position: absolute`-only div, which clips at the
                     // 60px ancestor.
                     Menubar { id: "clip-menubar-root",
-                        MenubarMenu { index: 0usize,
+                        MenubarMenu {
                             MenubarTrigger { id: "clip-menubar-trigger", "Menubar trigger" }
                             MenubarContent {
                                 id: "clip-menubar-content",
                                 style: "min-height: 100px;",
                                 MenubarItem {
-                                    index: 0usize,
                                     value: "one".to_string(),
                                     on_select: move |_: String| {},
                                     "Item one"
@@ -186,7 +183,6 @@ pub fn TopLayerFixture() -> Element {
                             id: "clip-select-content",
                             style: "min-height: 100px;",
                             SelectOption::<String> {
-                                index: 0usize,
                                 value: "one",
                                 "Option one"
                             }
@@ -203,7 +199,6 @@ pub fn TopLayerFixture() -> Element {
                             id: "clip-combobox-content",
                             style: "min-height: 100px;",
                             ComboboxOption::<String> {
-                                index: 0usize,
                                 value: "one",
                                 "Option one"
                             }
@@ -249,7 +244,7 @@ pub fn TopLayerFixture() -> Element {
                     // fixture instance right alongside Navbar's.
                     NavigationMenu { id: "clip-navigation-menu-root", aria_label: "Clip navigation menu test",
                         NavigationMenuList {
-                            NavigationMenuItem { index: 0usize,
+                            NavigationMenuItem {
                                 NavigationMenuTrigger { id: "clip-navigation-menu-trigger", "Navigation menu trigger" }
                                 NavigationMenuContent {
                                     id: "clip-navigation-menu-content",
@@ -449,18 +444,16 @@ pub fn TopLayerFixture() -> Element {
                     ContextMenuContent { id: "scroll-context-menu-content",
                         ContextMenuItem {
                             value: "one".to_string(),
-                            index: 0usize,
                             on_select: move |_: String| {},
                             "Item one"
                         }
                     }
                 }
                 Menubar { id: "scroll-menubar-root",
-                    MenubarMenu { index: 0usize,
+                    MenubarMenu {
                         MenubarTrigger { id: "scroll-menubar-trigger", "Scroll test menu" }
                         MenubarContent { id: "scroll-menubar-content",
                             MenubarItem {
-                                index: 0usize,
                                 value: "one".to_string(),
                                 on_select: move |_: String| {},
                                 "Item one"
@@ -568,7 +561,7 @@ pub fn TopLayerFixture() -> Element {
                     // the identical construction as the Navbar case.
                     NavigationMenu { id: "edge-bottom-navigation-menu-root", aria_label: "Edge bottom navigation menu test",
                         NavigationMenuList {
-                            NavigationMenuItem { index: 0usize,
+                            NavigationMenuItem {
                                 NavigationMenuTrigger { id: "edge-bottom-navigation-menu-trigger", "Bottom navigation menu" }
                                 NavigationMenuContent {
                                     id: "edge-bottom-navigation-menu-content",
@@ -929,7 +922,6 @@ pub fn TopLayerFixture() -> Element {
                     SelectList {
                         id: "scroll-lock-select-content",
                         SelectOption::<String> {
-                            index: 0usize,
                             value: "one",
                             "Option one"
                         }

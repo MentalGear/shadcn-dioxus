@@ -1,13 +1,13 @@
 ---
 id: 407
-title: "Load flakes (docs sidebar shift, non-modal popover scroll, carousel edge band) and spec runs that serve unknown URLs like the site"
+title: "Load flakes (docs sidebar shift, avatar demo re-centring, non-modal popover scroll, carousel edge band) and spec runs that serve unknown URLs like the site"
 status: "Done on lane/flake-roots. Trigger for reopening: one of these specs red under load on an unchanged…"
 size: "M"
 area: tests
 updated: 2026-10-24
 ---
 
-# Row 407: Load flakes (docs sidebar shift, non-modal popover scroll, carousel edge band) and spec runs that serve unknown URLs like the site
+# Row 407: Load flakes (docs sidebar shift, avatar demo re-centring, non-modal popover scroll, carousel edge band) and spec runs that serve unknown URLs like the site
 
 ## Item
 
@@ -68,3 +68,30 @@ Not subsumed (found at `LS_CPU=4` on `/docs/`, 2 of 2 runs; `LS_CPU=6` was green
 picker's trigger after them is parsed (the same "later sibling takes space" shape as the nav-sort pill, in the
 navbar's flex row), and an inline `code` whose padding box is painted before its text moves 4 px right as it fills.
 Both need the same fixed-from-the-first-byte construction for the navbar row; left for a follow-up row.
+
+**Avatar page (`layout-stability.spec.ts`, `/component/avatar/`, the batch-16 release red at 448 px dark).** Reproduced
+every run with `LS_STEP=32 LS_CPU=4` (light and dark, 30+ of 64 widths): the page is painted while the HTML is still
+arriving, and the demo row (`justify-content: center`) is drawn with one or two avatars and re-centres as the rest are
+parsed (12-116 px). The RTL toggle above it did the same as its label arrived. Not batch 16's (the demo is unchanged
+against main): the progressive-parse class above, which load exposes. Construction: a component page's first paint
+waits until the main demo frame has been parsed (`document::Link { rel: "expect", href: "#component-preview-frame",
+blocking: "render" }` in the SSR head, Chromium 124+, ignored elsewhere), so nothing above or in the first demo can be
+re-laid out by HTML that has not arrived yet. After: the avatar (light, dark) and button sweeps green at `LS_STEP=32
+LS_CPU=4`. Cost, median FCP of 5 loads at 1280 px: avatar 128 -> 132 ms and button 104 -> 104 ms unthrottled,
+avatar 360 -> 420 ms and button 252 -> 320 ms at 4x CPU. Not gated (no failure seen there at the suite's settings):
+the home page (its masonry has its own construction, row 214), `/docs/` and `/demos/`; the navbar-row member above is
+gated on component pages only.
+
+**Every page with a top group, and a sweep that does not need load (owner decision 2026-10-24: hold the first paint
+until the top group is parsed).** `FirstPaintGate` (`preview/src/main.rs`) is the one construction: an empty marker
+placed where a page's top group ends plus the render-blocking `expect` link for it, on component pages (after the main
+demo), home (after the masonry), `/docs/` (end of its fourth section) and `/demos/` (after the card grid). The
+`layout-stability` sweep loads every width through `slowDocServer` (the first 250 KB of the body in 8 KB pieces 20 ms
+apart), so the class shows on every run: the batch-16 build fails all five `/docs/`, `/demos/` and component groups on
+an idle box (sidebar 53.2 -> 60 at every desktop width, the avatar row re-centring), and this tree passes all seven
+groups (6.4 min at 2 workers).
+
+The "progressive paint" group (home masonry, row 214) strips the `expect` link from the document it streams: with it,
+Chromium holds the paint until the masonry is parsed and the group's own check that the parse was progressive fails (12
+of 12, "cards were seen in only 1 distinct counts"). Stripped, it is the page as WebKit and Gecko load it, which still
+need the masonry's fixed-column construction: 12 of 12 green.

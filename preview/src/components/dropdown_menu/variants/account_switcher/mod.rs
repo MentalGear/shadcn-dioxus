@@ -4,6 +4,7 @@ use super::super::component::{
 use crate::components::avatar::{AvatarImageSize, ImageAvatar};
 use crate::components::button::{Button, ButtonSize, ButtonVariant};
 use dioxus::prelude::*;
+use dioxus_primitives::AsChild;
 use dioxus_icons::lucide::{BadgeCheck, Bell, CreditCard, LogOut, Sparkles};
 
 const AVERY_LIN: Asset = asset!("/assets/avatars/avery-lin.svg");
@@ -24,11 +25,11 @@ pub fn Demo() -> Element {
         DropdownMenu {
             DropdownMenuTrigger {
                 "aria-label": "Account switcher",
-                as: |attributes: Vec<Attribute>| rsx! {
+                as: |el: AsChild| rsx! {
                     Button {
                         variant: ButtonVariant::Ghost,
                         size: ButtonSize::Icon,
-                        attributes,
+                        attributes: el.attributes,
                         ImageAvatar {
                             size: AvatarImageSize::Small,
                             src: AVERY_LIN.to_string(),
@@ -56,7 +57,6 @@ pub fn Demo() -> Element {
                 }
                 DropdownMenuItem::<String> {
                     value: "Upgrade to Pro".to_string(),
-                    index: 0usize,
                     text_value: "Upgrade to Pro",
                     on_select: move |value| chosen.set(Some(value)),
                     Sparkles { size: "16px" }
@@ -64,7 +64,6 @@ pub fn Demo() -> Element {
                 }
                 DropdownMenuItem::<String> {
                     value: "Account".to_string(),
-                    index: 1usize,
                     text_value: "Account",
                     on_select: move |value| chosen.set(Some(value)),
                     BadgeCheck { size: "16px" }
@@ -72,7 +71,6 @@ pub fn Demo() -> Element {
                 }
                 DropdownMenuItem::<String> {
                     value: "Billing".to_string(),
-                    index: 2usize,
                     text_value: "Billing",
                     on_select: move |value| chosen.set(Some(value)),
                     CreditCard { size: "16px" }
@@ -80,7 +78,6 @@ pub fn Demo() -> Element {
                 }
                 DropdownMenuItem::<String> {
                     value: "Notifications".to_string(),
-                    index: 3usize,
                     text_value: "Notifications",
                     on_select: move |value| chosen.set(Some(value)),
                     Bell { size: "16px" }
@@ -88,7 +85,6 @@ pub fn Demo() -> Element {
                 }
                 DropdownMenuItem::<String> {
                     value: "Log out".to_string(),
-                    index: 4usize,
                     text_value: "Log out",
                     on_select: move |value| chosen.set(Some(value)),
                     LogOut { size: "16px" }

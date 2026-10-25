@@ -12,7 +12,6 @@ pub fn Demo() -> Element {
                 RadioItem {
                     id: "radio-group-main-default",
                     value: "default".to_string(),
-                    index: 0usize,
                 }
                 Label { html_for: "radio-group-main-default", "Default" }
             }
@@ -20,7 +19,6 @@ pub fn Demo() -> Element {
                 RadioItem {
                     id: "radio-group-main-comfortable",
                     value: "comfortable".to_string(),
-                    index: 1usize,
                 }
                 Label { html_for: "radio-group-main-comfortable", "Comfortable" }
             }
@@ -28,7 +26,6 @@ pub fn Demo() -> Element {
                 RadioItem {
                     id: "radio-group-main-compact",
                     value: "compact".to_string(),
-                    index: 2usize,
                 }
                 Label { html_for: "radio-group-main-compact", "Compact" }
             }

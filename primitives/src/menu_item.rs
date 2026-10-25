@@ -195,10 +195,11 @@ pub struct MenuShortcutProps {
 /// [`MenubarCheckboxItem`]: crate::menubar::MenubarCheckboxItem
 #[derive(Props, Clone, PartialEq)]
 pub struct MenuCheckboxItemProps {
-    /// The index of the item within the enclosing menu content (or submenu
-    /// content). This is used to order the items for keyboard navigation,
-    /// the same as a plain item's `index`.
-    pub index: ReadSignal<usize>,
+    /// The item's place in keyboard order. Leave it unset: items are ordered as they are
+    /// created, which is tree order. Set it on every item only when one is inserted between
+    /// items that are already mounted, or a keyed list reorders them.
+    #[props(default)]
+    pub index: ReadSignal<Option<usize>>,
 
     /// Whether the item is checked. If not provided, the item is
     /// uncontrolled and uses [`Self::default_checked`].
@@ -251,10 +252,11 @@ pub struct MenuCheckboxItemProps {
 /// [`MenubarRadioItem`]: crate::menubar::MenubarRadioItem
 #[derive(Props, Clone, PartialEq)]
 pub struct MenuRadioItemProps {
-    /// The index of the item within the enclosing menu content (or submenu
-    /// content). This is used to order the items for keyboard navigation,
-    /// the same as a plain item's `index`.
-    pub index: ReadSignal<usize>,
+    /// The item's place in keyboard order. Leave it unset: items are ordered as they are
+    /// created, which is tree order. Set it on every item only when one is inserted between
+    /// items that are already mounted, or a keyed list reorders them.
+    #[props(default)]
+    pub index: ReadSignal<Option<usize>>,
 
     /// The value of the item. The item is checked while the group's value
     /// equals this.
@@ -395,7 +397,7 @@ impl CheckableState {
 /// what is left of a [`MenuCheckboxItemProps`]/[`MenuRadioItemProps`] once
 /// the state half has been turned into a [`CheckableState`].
 pub(crate) struct CheckableCommon {
-    pub(crate) index: ReadSignal<usize>,
+    pub(crate) index: ReadSignal<Option<usize>>,
     pub(crate) disabled: ReadSignal<bool>,
     pub(crate) text_value: ReadSignal<Option<String>>,
     pub(crate) close_on_select: ReadSignal<bool>,
@@ -591,12 +593,12 @@ mod tests {
         rsx! {
             DropdownMenu {
                 DropdownMenuTrigger { "t" }
-                DropdownMenuItem::<String> { value: "plain".to_string(), index: 0usize, "Plain" }
-                DropdownMenuCheckboxItem { index: 1usize, default_checked: true, "On" }
-                DropdownMenuCheckboxItem { index: 2usize, "Off" }
+                DropdownMenuItem::<String> { value: "plain".to_string(), "Plain" }
+                DropdownMenuCheckboxItem { default_checked: true, "On" }
+                DropdownMenuCheckboxItem { "Off" }
                 DropdownMenuRadioGroup { default_value: "b".to_string(), aria_label: "Pick",
-                    DropdownMenuRadioItem { index: 3usize, value: "a".to_string(), "A" }
-                    DropdownMenuRadioItem { index: 4usize, value: "b".to_string(), "B" }
+                    DropdownMenuRadioItem { value: "a".to_string(), "A" }
+                    DropdownMenuRadioItem { value: "b".to_string(), "B" }
                 }
             }
         }
@@ -607,12 +609,12 @@ mod tests {
         rsx! {
             ContextMenu {
                 ContextMenuTrigger { "t" }
-                ContextMenuItem { value: "plain".to_string(), index: 0usize, "Plain" }
-                ContextMenuCheckboxItem { index: 1usize, default_checked: true, "On" }
-                ContextMenuCheckboxItem { index: 2usize, "Off" }
+                ContextMenuItem { value: "plain".to_string(), "Plain" }
+                ContextMenuCheckboxItem { default_checked: true, "On" }
+                ContextMenuCheckboxItem { "Off" }
                 ContextMenuRadioGroup { default_value: "b".to_string(), aria_label: "Pick",
-                    ContextMenuRadioItem { index: 3usize, value: "a".to_string(), "A" }
-                    ContextMenuRadioItem { index: 4usize, value: "b".to_string(), "B" }
+                    ContextMenuRadioItem { value: "a".to_string(), "A" }
+                    ContextMenuRadioItem { value: "b".to_string(), "B" }
                 }
             }
         }
@@ -622,14 +624,14 @@ mod tests {
     fn MenubarWithCheckables() -> Element {
         rsx! {
             Menubar {
-                MenubarMenu { index: 0usize,
+                MenubarMenu {
                     MenubarTrigger { "t" }
-                    MenubarItem { value: "plain".to_string(), index: 0usize, "Plain" }
-                    MenubarCheckboxItem { index: 1usize, default_checked: true, "On" }
-                    MenubarCheckboxItem { index: 2usize, "Off" }
+                    MenubarItem { value: "plain".to_string(), "Plain" }
+                    MenubarCheckboxItem { default_checked: true, "On" }
+                    MenubarCheckboxItem { "Off" }
                     MenubarRadioGroup { default_value: "b".to_string(), aria_label: "Pick",
-                        MenubarRadioItem { index: 3usize, value: "a".to_string(), "A" }
-                        MenubarRadioItem { index: 4usize, value: "b".to_string(), "B" }
+                        MenubarRadioItem { value: "a".to_string(), "A" }
+                        MenubarRadioItem { value: "b".to_string(), "B" }
                     }
                 }
             }
@@ -685,7 +687,6 @@ mod tests {
         rsx! {
             DropdownMenu {
                 DropdownMenuCheckboxItem {
-                    index: 0usize,
                     role: "menuitem",
                     aria_checked: "mixed",
                     "x"
@@ -729,16 +730,15 @@ mod tests {
         rsx! {
             DropdownMenu {
                 DropdownMenuTrigger { "t" }
-                DropdownMenuItem::<String> { value: "plain".to_string(), index: 0usize, "Plain" }
+                DropdownMenuItem::<String> { value: "plain".to_string(), "Plain" }
                 DropdownMenuItem::<String> {
                     value: "del".to_string(),
-                    index: 1usize,
                     variant: MenuItemVariant::Destructive,
                     inset: true,
                     "Delete"
                     DropdownMenuShortcut { "⌫" }
                 }
-                DropdownMenuCheckboxItem { index: 2usize, inset: true, "On" }
+                DropdownMenuCheckboxItem { inset: true, "On" }
                 DropdownMenuSeparator {}
                 DropdownMenuGroup { aria_label: "G", "x" }
             }
@@ -750,16 +750,15 @@ mod tests {
         rsx! {
             ContextMenu {
                 ContextMenuTrigger { "t" }
-                ContextMenuItem { value: "plain".to_string(), index: 0usize, "Plain" }
+                ContextMenuItem { value: "plain".to_string(), "Plain" }
                 ContextMenuItem {
                     value: "del".to_string(),
-                    index: 1usize,
                     variant: MenuItemVariant::Destructive,
                     inset: true,
                     "Delete"
                     ContextMenuShortcut { "⌫" }
                 }
-                ContextMenuCheckboxItem { index: 2usize, inset: true, "On" }
+                ContextMenuCheckboxItem { inset: true, "On" }
                 ContextMenuSeparator {}
                 ContextMenuGroup { aria_label: "G", "x" }
             }
@@ -770,18 +769,17 @@ mod tests {
     fn MenubarWithParts() -> Element {
         rsx! {
             Menubar {
-                MenubarMenu { index: 0usize,
+                MenubarMenu {
                     MenubarTrigger { "t" }
-                    MenubarItem { value: "plain".to_string(), index: 0usize, "Plain" }
+                    MenubarItem { value: "plain".to_string(), "Plain" }
                     MenubarItem {
                         value: "del".to_string(),
-                        index: 1usize,
                         variant: MenuItemVariant::Destructive,
                         inset: true,
                         "Delete"
                         MenubarShortcut { "⌫" }
                     }
-                    MenubarCheckboxItem { index: 2usize, inset: true, "On" }
+                    MenubarCheckboxItem { inset: true, "On" }
                     MenubarSeparator {}
                     MenubarGroup { aria_label: "G", "x" }
                 }
@@ -838,7 +836,6 @@ mod tests {
             DropdownMenu {
                 DropdownMenuItem::<String> {
                     value: "x".to_string(),
-                    index: 0usize,
                     variant: MenuItemVariant::Destructive,
                     "data-variant": "default",
                     "x"

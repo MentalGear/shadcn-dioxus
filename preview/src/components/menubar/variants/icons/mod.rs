@@ -21,11 +21,10 @@ pub fn Demo() -> Element {
     rsx! {
         div {
             Menubar { aria_label: "Media player menu",
-                MenubarMenu { index: 0usize,
+                MenubarMenu {
                     MenubarTrigger { "Library" }
                     MenubarContent {
                         MenubarItem {
-                            index: 0usize,
                             value: "Add to playlist".to_string(),
                             text_value: "Add to playlist",
                             on_select: move |value| chosen.set(Some(value)),
@@ -33,7 +32,6 @@ pub fn Demo() -> Element {
                             "Add to playlist"
                         }
                         MenubarItem {
-                            index: 1usize,
                             value: "Download".to_string(),
                             text_value: "Download",
                             on_select: move |value| chosen.set(Some(value)),
@@ -41,7 +39,6 @@ pub fn Demo() -> Element {
                             "Download"
                         }
                         MenubarItem {
-                            index: 2usize,
                             value: "Share".to_string(),
                             text_value: "Share",
                             disabled: true,
@@ -51,11 +48,10 @@ pub fn Demo() -> Element {
                         }
                     }
                 }
-                MenubarMenu { index: 1usize,
+                MenubarMenu {
                     MenubarTrigger { "Playback" }
                     MenubarContent {
                         MenubarItem {
-                            index: 0usize,
                             value: "Play".to_string(),
                             text_value: "Play",
                             on_select: move |value| chosen.set(Some(value)),
@@ -63,7 +59,6 @@ pub fn Demo() -> Element {
                             "Play"
                         }
                         MenubarItem {
-                            index: 1usize,
                             value: "Shuffle".to_string(),
                             text_value: "Shuffle",
                             on_select: move |value| chosen.set(Some(value)),
@@ -71,7 +66,6 @@ pub fn Demo() -> Element {
                             "Shuffle"
                         }
                         MenubarItem {
-                            index: 2usize,
                             value: "Repeat".to_string(),
                             text_value: "Repeat",
                             on_select: move |value| chosen.set(Some(value)),

@@ -4,6 +4,7 @@ use crate::components::dropdown_menu::{
     DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 };
 use dioxus::prelude::*;
+use dioxus_primitives::AsChild;
 use dioxus_icons::lucide::ChevronDown;
 
 /// shadcn's "Split" example: a primary "Follow" button plus a chevron button
@@ -26,20 +27,19 @@ pub fn Demo() -> Element {
                 // variant.
                 DropdownMenuTrigger {
                     "aria-label": "More follow options",
-                    as: |attributes: Vec<Attribute>| rsx! {
+                    as: |el: AsChild| rsx! {
                         Button {
                             variant: ButtonVariant::Secondary,
                             size: ButtonSize::Icon,
-                            attributes,
+                            attributes: el.attributes,
                             ChevronDown {}
                         }
                     },
                 }
                 DropdownMenuContent {
-                    for (i , label) in items.into_iter().enumerate() {
+                    for label in items.into_iter() {
                         DropdownMenuItem::<String> {
                             value: label.to_string(),
-                            index: i,
                             text_value: label,
                             on_select: move |value: String| last_action.set(Some(value)),
                             "{label}"

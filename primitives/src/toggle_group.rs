@@ -42,7 +42,6 @@ struct ToggleGroupCtx {
     focus: CollectionState,
 
     horizontal: ReadSignal<bool>,
-    roving_loop: ReadSignal<bool>,
 
     // Text direction, for `ArrowLeft`/`ArrowRight`'s roving-focus role --
     // see `direction::Direction::resolve_horizontal`'s doc.
@@ -79,19 +78,13 @@ impl ToggleGroupCtx {
         (self.horizontal)()
     }
 
+    // The collection reads `roving_loop` itself: `false` stops the wrap at either end, the
+    // arrows still move between items.
     fn focus_next(&mut self) {
-        if !(self.roving_loop)() {
-            return;
-        }
-
         self.focus.focus_next();
     }
 
     fn focus_prev(&mut self) {
-        if !(self.roving_loop)() {
-            return;
-        }
-
         self.focus.focus_prev();
     }
 }
@@ -142,7 +135,8 @@ pub struct ToggleGroupProps {
     #[props(default)]
     pub dir: Option<Direction>,
 
-    /// Whether focus should loop around when reaching the end.
+    /// Whether arrow-key focus wraps from the last item to the first and back (Radix `loop`).
+    /// `false` stops at either end; the arrows still move between items.
     #[props(default = ReadSignal::new(Signal::new(true)))]
     pub roving_loop: ReadSignal<bool>,
 
@@ -223,7 +217,6 @@ pub fn ToggleGroup(props: ToggleGroupProps) -> Element {
 
         focus,
         horizontal: props.horizontal,
-        roving_loop: props.roving_loop,
         direction: direction_signal,
     });
 

@@ -88,7 +88,7 @@ pub fn NavigationMenuLink(props: NavigationMenuLinkProps) -> Element {
         navigation_menu::NavigationMenuLink {
             active: props.active,
             disabled: props.disabled,
-            content_index: props.content_index,
+            index: props.index,
             onclick: props.onclick,
             attributes: merged,
             {props.children}

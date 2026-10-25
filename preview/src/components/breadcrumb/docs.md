@@ -37,11 +37,12 @@ Because it is a `span`, `BreadcrumbEllipsis` can be the content of a button, so 
 BreadcrumbItem {
     DropdownMenu {
         DropdownMenuTrigger { aria_label: "Toggle menu",
-            as: move |attributes: Vec<Attribute>| rsx! {
-                Button { variant: ButtonVariant::Ghost, size: ButtonSize::IconSm, attributes,
-                    BreadcrumbEllipsis {}
+            as: |el: AsChild| rsx! {
+                Button { variant: ButtonVariant::Ghost, size: ButtonSize::IconSm, attributes: el.attributes,
+                    {el.children}
                 }
             },
+            BreadcrumbEllipsis {}
         }
         DropdownMenuContent { /* DropdownMenuItem { .. } */ }
     }
@@ -50,14 +51,15 @@ BreadcrumbItem {
 
 ### As a router link
 
-`BreadcrumbLink { r#as }` renders the crumb as the element the callback returns, given the crumb's attributes (shadcn's `render` prop). Pass the attributes to your router's link and the children inside it, so a click navigates in-app:
+`BreadcrumbLink { r#as }` renders the crumb as the element the callback returns (shadcn's `render` prop). The callback gets the crumb's attributes and children as an `AsChild`; pass the attributes to your router's link and the children inside it, so a click navigates in-app:
 
 ```rust
 BreadcrumbItem {
     BreadcrumbLink {
-        r#as: move |attributes: Vec<Attribute>| rsx! {
-            Link { to: Route::Components {}, attributes, "Components" }
+        r#as: |el: AsChild| rsx! {
+            Link { to: Route::Components {}, attributes: el.attributes, {el.children} }
         },
+        "Components"
     }
 }
 ```

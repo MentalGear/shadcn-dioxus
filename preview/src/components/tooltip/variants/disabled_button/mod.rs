@@ -1,6 +1,7 @@
 use super::super::component::*;
 use crate::components::button::{Button, ButtonVariant};
 use dioxus::prelude::*;
+use dioxus_primitives::AsChild;
 
 /// A tooltip on a disabled button. A disabled button takes no pointer or focus,
 /// so the trigger is the wrapping `span` (focusable, `tabindex` from the
@@ -11,8 +12,8 @@ pub fn Demo() -> Element {
     rsx! {
         Tooltip {
             TooltipTrigger {
-                as: |attributes: Vec<Attribute>| rsx! {
-                    span { ..attributes,
+                as: |el: AsChild| rsx! {
+                    span { ..el.attributes,
                         Button { variant: ButtonVariant::Outline, disabled: true, "Export" }
                     }
                 },

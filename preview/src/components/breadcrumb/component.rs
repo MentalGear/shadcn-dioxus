@@ -1,4 +1,5 @@
 use dioxus::prelude::*;
+use dioxus_primitives::AsChild;
 use dioxus_icons::lucide::{ChevronRight, Ellipsis};
 use dioxus_primitives::dioxus_attributes::attributes;
 use dioxus_primitives::merge_attributes;
@@ -54,10 +55,10 @@ pub fn BreadcrumbLink(
     #[props(extends = GlobalAttributes)]
     #[props(extends = a)]
     attributes: Vec<Attribute>,
-    /// Renders the crumb as the element the callback returns, given the crumb's attributes
-    /// (shadcn's `render` prop: a router link instead of an `<a>`). The callback then owns the
-    /// children, so pass them inside it; the `children` of the crumb are not rendered.
-    r#as: Option<Callback<Vec<Attribute>, Element>>,
+    /// Renders the crumb as the element the callback returns (shadcn's `render` prop: a router
+    /// link instead of an `<a>`). The callback gets the crumb's attributes and children
+    /// as an [`AsChild`], to spread on and render inside that element.
+    r#as: Option<Callback<AsChild, Element>>,
     children: Element,
 ) -> Element {
     let base = attributes!(a { class: "dx-breadcrumb-link" });
@@ -65,7 +66,7 @@ pub fn BreadcrumbLink(
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/breadcrumb/style.css") }
         if let Some(dynamic) = r#as {
-            {dynamic.call(merged)}
+            {dynamic.call(AsChild::new(merged, children))}
         } else {
             a { ..merged, {children} }
         }

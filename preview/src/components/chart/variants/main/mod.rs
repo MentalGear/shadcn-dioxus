@@ -81,19 +81,16 @@ pub fn Demo() -> Element {
                             }
                         },
                         SelectOption::<TimeRange> {
-                            index: 0usize,
                             value: TimeRange::Days90,
                             text_value: "Last 3 months",
                             "Last 3 months"
                         }
                         SelectOption::<TimeRange> {
-                            index: 1usize,
                             value: TimeRange::Days30,
                             text_value: "Last 30 days",
                             "Last 30 days"
                         }
                         SelectOption::<TimeRange> {
-                            index: 2usize,
                             value: TimeRange::Days7,
                             text_value: "Last 7 days",
                             "Last 7 days"

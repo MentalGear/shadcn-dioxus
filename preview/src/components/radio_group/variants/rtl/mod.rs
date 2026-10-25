@@ -20,9 +20,9 @@ pub fn Demo() -> Element {
         div { dir: "rtl",
             DirectionProvider { direction: Direction::Rtl,
                 RadioGroup { horizontal: true,
-                    RadioItem { value: "option1".to_string(), index: 0usize, "Amber" }
-                    RadioItem { value: "option2".to_string(), index: 1usize, "Teal" }
-                    RadioItem { value: "option3".to_string(), index: 2usize, "Violet" }
+                    RadioItem { value: "option1".to_string(), "Amber" }
+                    RadioItem { value: "option2".to_string(), "Teal" }
+                    RadioItem { value: "option3".to_string(), "Violet" }
                 }
             }
         }

@@ -482,15 +482,15 @@ pub fn FormFixture() -> Element {
                             legend { "Plan (library radio group)" }
                             RadioGroup { name: "plan-lib", aria_label: "Plan (library)",
                                 label { r#for: "plan-lib-starter",
-                                    RadioItem { id: "plan-lib-starter", value: "starter".to_string(), index: 0usize }
+                                    RadioItem { id: "plan-lib-starter", value: "starter".to_string(), }
                                     "Starter"
                                 }
                                 label { r#for: "plan-lib-pro",
-                                    RadioItem { id: "plan-lib-pro", value: "pro".to_string(), index: 1usize }
+                                    RadioItem { id: "plan-lib-pro", value: "pro".to_string(), }
                                     "Pro"
                                 }
                                 label { r#for: "plan-lib-enterprise",
-                                    RadioItem { id: "plan-lib-enterprise", value: "enterprise".to_string(), index: 2usize }
+                                    RadioItem { id: "plan-lib-enterprise", value: "enterprise".to_string(), }
                                     "Enterprise"
                                 }
                             }
@@ -521,10 +521,10 @@ pub fn FormFixture() -> Element {
                                 default_value: Some("apple".to_string()),
                                 trigger_aria_label: "Fruit (library)",
                                 list_aria_label: "Fruit options (library)",
-                                SelectOption::<String> { index: 0usize, value: "apple", "Apple" }
-                                SelectOption::<String> { index: 1usize, value: "banana", "Banana" }
-                                SelectOption::<String> { index: 2usize, value: "cherry", "Cherry" }
-                                SelectOption::<String> { index: 3usize, value: "date", "Date" }
+                                SelectOption::<String> { value: "apple", "Apple" }
+                                SelectOption::<String> { value: "banana", "Banana" }
+                                SelectOption::<String> { value: "cherry", "Cherry" }
+                                SelectOption::<String> { value: "date", "Date" }
                             }
                         }
                         div { class: "dx-form-field",
@@ -547,10 +547,10 @@ pub fn FormFixture() -> Element {
                                 default_values: vec!["apple".to_string(), "cherry".to_string()],
                                 trigger_aria_label: "Fruits (library)",
                                 list_aria_label: "Fruits options (library)",
-                                SelectOption::<String> { index: 0usize, value: "apple", "Apple" }
-                                SelectOption::<String> { index: 1usize, value: "banana", "Banana" }
-                                SelectOption::<String> { index: 2usize, value: "cherry", "Cherry" }
-                                SelectOption::<String> { index: 3usize, value: "date", "Date" }
+                                SelectOption::<String> { value: "apple", "Apple" }
+                                SelectOption::<String> { value: "banana", "Banana" }
+                                SelectOption::<String> { value: "cherry", "Cherry" }
+                                SelectOption::<String> { value: "date", "Date" }
                             }
                         }
                         div { class: "dx-form-field",
@@ -621,11 +621,11 @@ pub fn FormFixture() -> Element {
                             default_value: "starter".to_string(),
                             aria_label: "Plan (library, outside the form)",
                             label { r#for: "plan-outside-starter",
-                                RadioItem { id: "plan-outside-starter", value: "starter".to_string(), index: 0usize }
+                                RadioItem { id: "plan-outside-starter", value: "starter".to_string(), }
                                 "Starter"
                             }
                             label { r#for: "plan-outside-pro",
-                                RadioItem { id: "plan-outside-pro", value: "pro".to_string(), index: 1usize }
+                                RadioItem { id: "plan-outside-pro", value: "pro".to_string(), }
                                 "Pro"
                             }
                         }
@@ -718,15 +718,15 @@ pub fn FormFixture() -> Element {
                             legend { "Tier, required (library radio group)" }
                             RadioGroup { name: "tier-required-lib", required: true, aria_label: "Tier, required (library)",
                                 label { r#for: "tier-lib-small",
-                                    RadioItem { id: "tier-lib-small", value: "small".to_string(), index: 0usize }
+                                    RadioItem { id: "tier-lib-small", value: "small".to_string(), }
                                     "Small"
                                 }
                                 label { r#for: "tier-lib-medium",
-                                    RadioItem { id: "tier-lib-medium", value: "medium".to_string(), index: 1usize }
+                                    RadioItem { id: "tier-lib-medium", value: "medium".to_string(), }
                                     "Medium"
                                 }
                                 label { r#for: "tier-lib-large",
-                                    RadioItem { id: "tier-lib-large", value: "large".to_string(), index: 2usize }
+                                    RadioItem { id: "tier-lib-large", value: "large".to_string(), }
                                     "Large"
                                 }
                             }
@@ -758,9 +758,9 @@ pub fn FormFixture() -> Element {
                                 trigger_aria_label: "Fruit, required (library)",
                                 list_aria_label: "Fruit options, required (library)",
                                 placeholder: "Choose a fruit",
-                                SelectOption::<String> { index: 0usize, value: "apple", "Apple" }
-                                SelectOption::<String> { index: 1usize, value: "banana", "Banana" }
-                                SelectOption::<String> { index: 2usize, value: "cherry", "Cherry" }
+                                SelectOption::<String> { value: "apple", "Apple" }
+                                SelectOption::<String> { value: "banana", "Banana" }
+                                SelectOption::<String> { value: "cherry", "Cherry" }
                             }
                         }
                         div { class: "dx-form-field",

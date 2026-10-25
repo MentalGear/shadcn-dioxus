@@ -59,6 +59,9 @@ ALLOW = [
      "the `@supports (scrollbar-width: auto)` REST state: scrollbars are transparent until the element is hovered. "
      "`:not(:hover)` matches everything on a touch device, which is the intent there (an overlay scrollbar), and "
      "its `:hover` partner is wrapped"),
+    ("preview/src/components/scroll_area/style.css", "*.dx-scroll-area-auto-hide:not(:hover)",
+     "the same scrollbar REST state as main.css's, scoped to `ScrollArea { always_show_scrollbars: false }` so an "
+     "installed component carries it: transparent until hovered, its `:hover` partner is wrapped"),
 ]
 
 # (rust path, substring on the line, reason) for a `:hover` in a .rs file that is not CSS.

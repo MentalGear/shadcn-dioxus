@@ -35,7 +35,7 @@ use dioxus_icons::lucide::{
     ExternalLink, FileText, Hash, House, Mail, Menu, Monitor, Pause, Play, SkipBack, SkipForward,
 };
 use dioxus_primitives::direction::{Direction, DirectionProvider};
-use dioxus_primitives::{ContentAlign, ContentSide};
+use dioxus_primitives::{AsChild, ContentAlign, ContentSide};
 use nav_link::NavLink;
 
 #[cfg(test)]
@@ -1010,10 +1010,10 @@ fn ComponentCode(
             horizontal: true,
             width: "100%",
             TabList {
-                TabTrigger { value: "main.rs", index: 0usize, "main.rs" }
-                TabTrigger { value: "style.css", index: 1usize, "style.css" }
+                TabTrigger { value: "main.rs", "main.rs" }
+                TabTrigger { value: "style.css", "style.css" }
                 if component_type != ComponentType::Block {
-                    TabTrigger { value: "dx-components-theme.css", index: 2usize, "dx-components-theme.css" }
+                    TabTrigger { value: "dx-components-theme.css", "dx-components-theme.css" }
                 }
             }
             div {
@@ -1024,7 +1024,6 @@ fn ComponentCode(
                 justify_content: "center",
                 align_items: "center",
                 TabContent {
-                    index: 0usize,
                     padding: 0,
                     value: "main.rs",
                     width: "100%",
@@ -1032,7 +1031,6 @@ fn ComponentCode(
                     CodeBlock { source: rs_highlighted }
                 }
                 TabContent {
-                    index: 1usize,
                     padding: 0,
                     value: "style.css",
                     width: "100%",
@@ -1041,7 +1039,6 @@ fn ComponentCode(
                 }
                 if component_type != ComponentType::Block {
                     TabContent {
-                        index: 2usize,
                         padding: 0,
                         value: "dx-components-theme.css",
                         width: "100%",
@@ -1318,6 +1315,9 @@ fn Docs(dark_mode: Option<bool>) -> Element {
                         li { "Customize the generated Rust and CSS to fit your app." }
                         li { "Run the update command now and then; it keeps your edits." }
                     }
+                    // The header and the first four sections fill the first screens at every width: the top group.
+                    // Inside the section, so `.dx-docs-section + .dx-docs-section` still matches the next one.
+                    FirstPaintGate {}
                 }
                 section { class: "dx-docs-section",
                     h2 { id: "{docs_section_slug(DOCS_SECTIONS[4])}", "{DOCS_SECTIONS[4]}" }
@@ -1372,10 +1372,10 @@ fn page_sections_submenu(sections: &'static [&'static str]) -> Element {
             for title in sections.iter().copied() {
                 SidebarMenuSubItem { key: "{title}",
                     SidebarMenuSubButton {
-                        as: move |attributes: Vec<Attribute>| rsx! {
+                        as: move |el: AsChild| rsx! {
                             a {
                                 href: "#{docs_section_slug(title)}",
-                                ..attributes,
+                                ..el.attributes,
                                 Hash { size: "0.875rem", "aria-hidden": "true" }
                                 span { "{title}" }
                             }
@@ -1468,8 +1468,8 @@ fn DocsLayout(
                                 SidebarMenuItem {
                                     SidebarMenuButton {
                                         is_active: active == DocsNavActive::Home,
-                                        as: move |attributes: Vec<Attribute>| rsx! {
-                                            NavLink { to: Route::home(), attributes,
+                                        as: move |el: AsChild| rsx! {
+                                            NavLink { to: Route::home(), attributes: el.attributes,
                                                 House { size: "1rem", "aria-hidden": "true" }
                                                 span { "Home" }
                                             }
@@ -1490,8 +1490,8 @@ fn DocsLayout(
                                 SidebarMenuItem {
                                     SidebarMenuButton {
                                         is_active: active == DocsNavActive::Overview,
-                                        as: move |attributes: Vec<Attribute>| rsx! {
-                                            NavLink { to: Route::docs(), attributes,
+                                        as: move |el: AsChild| rsx! {
+                                            NavLink { to: Route::docs(), attributes: el.attributes,
                                                 FileText { size: "1rem", "aria-hidden": "true" }
                                                 span { "Overview" }
                                             }
@@ -1514,8 +1514,8 @@ fn DocsLayout(
                                 SidebarMenuItem {
                                     SidebarMenuButton {
                                         is_active: active == DocsNavActive::Demos,
-                                        as: move |attributes: Vec<Attribute>| rsx! {
-                                            NavLink { to: Route::demos(), attributes,
+                                        as: move |el: AsChild| rsx! {
+                                            NavLink { to: Route::demos(), attributes: el.attributes,
                                                 Monitor { size: "1rem", "aria-hidden": "true" }
                                                 span { "Demos" }
                                             }
@@ -1525,12 +1525,12 @@ fn DocsLayout(
                                 SidebarMenuItem {
                                     SidebarMenuButton {
                                         is_active: active == DocsNavActive::Charts,
-                                        as: move |attributes: Vec<Attribute>| rsx! {
+                                        as: move |el: AsChild| rsx! {
                                             // Current on every chart type (`/charts/bar/` ...), not only on `/charts/`.
                                             NavLink {
                                                 to: Route::charts_index(),
                                                 active: active == DocsNavActive::Charts,
-                                                attributes,
+                                                attributes: el.attributes,
                                                 ChartColumn { size: "1rem", "aria-hidden": "true" }
                                                 span { "Charts" }
                                             }
@@ -1610,6 +1610,8 @@ fn Demos(dark_mode: Option<bool>) -> Element {
                             }
                         }
                     }
+                    // The header and the card grid are the page's top group.
+                    FirstPaintGate {}
                 }
             }
         }
@@ -1887,7 +1889,7 @@ fn ComponentHighlight(demo: ComponentDemoData) -> Element {
                         collapsible: true,
                         hidden_until_found: true,
                         chevron: AccordionChevron::Start,
-                        AccordionItem { index: 0usize,
+                        AccordionItem {
                             h2 { id: "installation", class: "dx-docs-accordion-heading",
                                 AccordionTrigger { class: "dx-docs-accordion-trigger",
                                     "{PAGE_HEADING_INSTALLATION}"
@@ -1910,8 +1912,8 @@ fn ComponentHighlight(demo: ComponentDemoData) -> Element {
                                         class: "dx-docs-collapsible-trigger dx-accordion-trigger",
                                         "data-style": "accordion",
                                         "data-chevron": "start",
-                                        r#as: move |attrs: Vec<Attribute>| rsx! {
-                                            button { ..attrs,
+                                        r#as: move |el: AsChild| rsx! {
+                                            button { ..el.attributes,
                                                 ChevronDown {
                                                     class: "dx-accordion-expand-icon",
                                                     size: "16px",
@@ -1927,8 +1929,8 @@ fn ComponentHighlight(demo: ComponentDemoData) -> Element {
                                 }
                             }
                         }
-                        for (i , section) in docs.iter().enumerate() {
-                            AccordionItem { key: "{section.id}", index: i + 1,
+                        for section in docs.iter() {
+                            AccordionItem { key: "{section.id}",
                                 h2 { id: section.id, class: "dx-docs-accordion-heading",
                                     AccordionTrigger { class: "dx-docs-accordion-trigger",
                                         span { dangerous_inner_html: section.title_html }
@@ -2190,8 +2192,8 @@ fn ComponentVariantHighlight(
             variant: TabsVariant::Ghost,
             div { class: "dx-component-tabs-header",
                 TabList {
-                    TabTrigger { value: "Demo", index: 0usize, "DEMO" }
-                    TabTrigger { value: "Code", index: 1usize, "CODE" }
+                    TabTrigger { value: "Demo", "DEMO" }
+                    TabTrigger { value: "Code", "CODE" }
                 }
             }
             div {
@@ -2202,7 +2204,6 @@ fn ComponentVariantHighlight(
                 justify_content: "center",
                 align_items: "center",
                 TabContent {
-                    index: 0usize,
                     class: "dx-component-preview-frame",
                     id: "{frame_id}",
                     value: "Demo",
@@ -2214,7 +2215,6 @@ fn ComponentVariantHighlight(
                     DirectionProvider { direction: PREVIEW_DIRECTION(), Comp {} }
                 }
                 TabContent {
-                    index: 1usize,
                     class: "dx-component-preview-frame",
                     value: "Code",
                     width: "100%",
@@ -2223,7 +2223,28 @@ fn ComponentVariantHighlight(
                 }
             }
         }
+        // The main demo is the end of a component page's top group.
+        if main_variant {
+            FirstPaintGate {}
+        }
         VariantNotes { owner, name }
+    }
+}
+
+/// The id of [`FirstPaintGate`]'s marker.
+pub(crate) const FIRST_PAINT_ID: &str = "dx-first-paint";
+
+/// Placed where a page's top group ends: the page's first paint waits until the parser has reached this point (a
+/// render-blocking `expect` link in the SSR head for the empty marker after it; Chromium 124+, ignored elsewhere).
+/// Painted earlier, the half-parsed top of the page is on screen and every later sibling re-lays it out: a centred
+/// demo row re-centres as its items arrive, a right-aligned control slides as its label does, a sticky sidebar drops
+/// once the column beside it is tall enough (backlog row 407, `layout-stability.spec.ts`). One per page. After a
+/// client-side navigation the link is inert: render-blocking only applies before a document's first paint.
+#[component]
+fn FirstPaintGate() -> Element {
+    rsx! {
+        document::Link { rel: "expect", href: "#{FIRST_PAINT_ID}", blocking: "render" }
+        span { id: FIRST_PAINT_ID, hidden: true }
     }
 }
 
@@ -2309,8 +2330,8 @@ fn BlockComponentVariantHighlight(
             variant: TabsVariant::Ghost,
             div { class: "dx-component-tabs-header",
                 TabList {
-                    TabTrigger { value: "Preview", index: 0usize, "PREVIEW" }
-                    TabTrigger { value: "Code", index: 1usize, "CODE" }
+                    TabTrigger { value: "Preview", "PREVIEW" }
+                    TabTrigger { value: "Code", "CODE" }
                 }
             }
             div {
@@ -2321,7 +2342,6 @@ fn BlockComponentVariantHighlight(
                 justify_content: "center",
                 align_items: "center",
                 TabContent {
-                    index: 0usize,
                     id: "{frame_id}",
                     // Nova tabs content has no padding (row 132); the Block frame keeps its 2rem.
                     padding: "var(--dx-space-8)",
@@ -2403,7 +2423,6 @@ fn BlockComponentVariantHighlight(
                     }
                 }
                 TabContent {
-                    index: 1usize,
                     padding: "var(--dx-space-8)",
                     value: "Code",
                     width: "100%",
@@ -2853,6 +2872,8 @@ fn WidgetMasonry(heading_id: String) -> Element {
                     MasonryColumn { slot: MasonrySlot::RightLower }
                 }
             }
+            // The hero and the whole masonry are the home page's top group.
+            FirstPaintGate {}
         }
     }
 }
@@ -3207,9 +3228,9 @@ fn BlockFilters() -> Element {
                     "Status"
                 }
                 RadioGroup { default_value: "active".to_string(),
-                    RadioItem { value: "active".to_string(), index: 0usize, "Active" }
-                    RadioItem { value: "draft".to_string(), index: 1usize, "Drafts" }
-                    RadioItem { value: "archived".to_string(), index: 2usize, "Archived" }
+                    RadioItem { value: "active".to_string(), "Active" }
+                    RadioItem { value: "draft".to_string(), "Drafts" }
+                    RadioItem { value: "archived".to_string(), "Archived" }
                 }
             }
             div { style: "display: grid; gap: 0.45rem;",
@@ -3288,11 +3309,11 @@ fn BlockTabs() -> Element {
             horizontal: true,
             width: "100%",
             TabList {
-                TabTrigger { value: "members".to_string(), index: 0usize, "Members" }
-                TabTrigger { value: "activity".to_string(), index: 1usize, "Activity" }
-                TabTrigger { value: "files".to_string(), index: 2usize, "Files" }
+                TabTrigger { value: "members".to_string(), "Members" }
+                TabTrigger { value: "activity".to_string(), "Activity" }
+                TabTrigger { value: "files".to_string(), "Files" }
             }
-            TabContent { index: 0usize, value: "members".to_string(), padding: "var(--dx-space-8)",
+            TabContent { value: "members".to_string(), padding: "var(--dx-space-8)",
                 div { style: "display: grid; gap: 0.85rem;",
                     for member in members.iter() {
                         div { style: "display: flex; align-items: center; gap: 0.7rem;",
@@ -3318,7 +3339,7 @@ fn BlockTabs() -> Element {
                     }
                 }
             }
-            TabContent { index: 1usize, value: "activity".to_string(), padding: "var(--dx-space-8)",
+            TabContent { value: "activity".to_string(), padding: "var(--dx-space-8)",
                 div { style: "display: grid; gap: 0.85rem;",
                     for entry in activity.iter() {
                         div { style: "display: flex; align-items: baseline; gap: 0.45rem; font-size: 0.88rem;",
@@ -3329,7 +3350,7 @@ fn BlockTabs() -> Element {
                     }
                 }
             }
-            TabContent { index: 2usize, value: "files".to_string(), padding: "var(--dx-space-8)",
+            TabContent { value: "files".to_string(), padding: "var(--dx-space-8)",
                 div { style: "display: grid; gap: 0.6rem; color: var(--dx-foreground); font-size: 0.88rem;",
                     div { style: "display: flex; align-items: center; gap: 0.5rem;",
                         span { style: "font-family: var(--dx-font-mono); color: var(--dx-muted-foreground);", "/" }
@@ -3395,9 +3416,8 @@ fn BlockCommand() -> Element {
             aria_label: "Switch workspace",
             list_aria_label: "Workspaces",
             ComboboxEmpty { "No workspaces match." }
-            for (i , (value , label)) in workspaces.iter().enumerate() {
+            for (value , label) in workspaces.iter() {
                 ComboboxOption::<String> {
-                    index: i,
                     value: value.to_string(),
                     text_value: label.to_string(),
                     "{label}"

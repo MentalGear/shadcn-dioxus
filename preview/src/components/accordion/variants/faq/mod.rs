@@ -26,8 +26,8 @@ pub fn Demo() -> Element {
     rsx! {
         div { style: "width: 100%; max-width: 24rem;",
             Accordion { allow_multiple_open: false, horizontal: false,
-                for (i , (question , answer)) in FAQ.into_iter().enumerate() {
-                    AccordionItem { index: i,
+                for (question , answer) in FAQ.into_iter() {
+                    AccordionItem { 
                         AccordionTrigger { "{question}" }
                         AccordionContent {
                             p { padding: "0", "{answer}" }

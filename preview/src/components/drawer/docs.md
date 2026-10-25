@@ -17,9 +17,10 @@ Drawer {
         DrawerFooter {
             DrawerClose { "Submit" }
             DrawerClose {
-                as: |attributes| rsx! {
-                    Button { variant: ButtonVariant::Outline, attributes, "Cancel" }
-                }
+                as: |el: AsChild| rsx! {
+                    Button { variant: ButtonVariant::Outline, attributes: el.attributes, {el.children} }
+                },
+                "Cancel"
             }
         }
     }
@@ -91,17 +92,18 @@ shadcn's "Responsive Dialog": render a `Dialog` at and above the mobile breakpoi
 
 ## DrawerClose with `as` prop
 
-The `as` prop allows you to render a custom element while preserving the close behavior, similar to shadcn/ui's `asChild` pattern.
+The `as` prop renders a custom element while keeping the close behavior, as Radix's `asChild` does. The callback gets an `AsChild`: the attributes (the close `onclick` included) to spread on the element, and the children to render inside it.
 
 ```rust
 // Default: renders as <button>
 DrawerClose { "Close" }
 
-// Custom element: attributes include the preset onclick handler
+// Custom element
 DrawerClose {
-    as: |attributes| rsx! {
-        a { href: "#", ..attributes, "Go back" }
-    }
+    as: |el: AsChild| rsx! {
+        a { href: "#", ..el.attributes, {el.children} }
+    },
+    "Go back"
 }
 ```
 

@@ -4,6 +4,7 @@ use crate::components::dropdown_menu::{
     DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 };
 use dioxus::prelude::*;
+use dioxus_primitives::AsChild;
 
 const SARAH_CHEN: Asset = asset!("/assets/avatars/sarah-chen.svg");
 
@@ -16,12 +17,12 @@ pub fn Demo() -> Element {
         div { style: "display: flex; flex-direction: column; align-items: flex-start; gap: 0.75rem;",
             DropdownMenu {
                 DropdownMenuTrigger {
-                    as: move |attributes: Vec<Attribute>| rsx! {
+                    as: move |el: AsChild| rsx! {
                         Button {
                             variant: ButtonVariant::Ghost,
                             size: ButtonSize::Icon,
                             "aria-label": "Open account menu",
-                            attributes,
+                            attributes: el.attributes,
                             ImageAvatar {
                                 size: AvatarImageSize::Small,
                                 src: SARAH_CHEN.to_string(),
@@ -32,10 +33,9 @@ pub fn Demo() -> Element {
                     },
                 }
                 DropdownMenuContent {
-                    for (i , name) in ["Profile", "Billing", "Settings", "Sign out"].into_iter().enumerate() {
+                    for name in ["Profile", "Billing", "Settings", "Sign out"].into_iter() {
                         DropdownMenuItem::<String> {
                             value: name.to_string(),
-                            index: i,
                             text_value: name,
                             on_select: move |value: String| selected.set(value),
                             "{name}"

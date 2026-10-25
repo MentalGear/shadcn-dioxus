@@ -38,11 +38,13 @@
  *       the literal attribute, or its documented default, `"none"`, when
  *       absent — see the R1 assertion helper's own comment for why an
  *       absent attribute still counts as "exposing" the state), and
- *       exactly one sortable header carries `ascending`/`descending` at a
- *       time (never zero, per "aria-sort is removed and set on the newly
- *       sorted column" — the column changes, one is always active; never
- *       two, since the *singular* "the currently sorted column" rules out
- *       more than one).
+ *       exactly one sortable header carries `ascending`/`descending` in
+ *       the initial state (one, per "aria-sort is removed and set on the
+ *       newly sorted column" -- the reference always has an active column;
+ *       never two, since the *singular* "the currently sorted column" rules
+ *       out more than one). DataTable also lets a third click clear the
+ *       sort (TanStack's cycle), a state with no active column that the
+ *       reference does not have, so R1 reads only the initial state.
  *   R2. Activating the active (ascending) column's sort button toggles it
  *       to `descending` and the table's first data row changes
  *       accordingly (the reference's own `sortColumn`/`setColumnHeaderSort`

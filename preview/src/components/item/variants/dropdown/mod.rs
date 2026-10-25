@@ -26,10 +26,9 @@ pub fn Demo() -> Element {
                     DropdownMenu {
                         DropdownMenuTrigger { aria_label: "Change workspace role", "Change role" }
                         DropdownMenuContent {
-                            for (i , name) in ROLES.iter().enumerate() {
+                            for name in ROLES.iter() {
                                 DropdownMenuItem::<String> {
                                     value: name.to_string(),
-                                    index: i,
                                     text_value: *name,
                                     on_select: move |value: String| role.set(value),
                                     "{name}"

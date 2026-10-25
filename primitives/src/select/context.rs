@@ -8,7 +8,7 @@ use std::time::Duration;
 
 use super::text_search::AdaptiveKeyboard;
 use crate::direction::Direction;
-use crate::selectable::{RcPartialEqValue, SelectableContext};
+use crate::selectable::{ListboxFocus, RcPartialEqValue, SelectableContext};
 
 /// Where a [`Select`](super::components::select::Select)'s listbox is placed (Radix's `position`).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -103,12 +103,9 @@ impl SelectContext {
     /// do just below this in `trigger.rs`.
     pub fn open_with_selected_or_first_focus(&mut self) {
         self.set_open(true);
-        let target = self
-            .selectable
-            .collection
-            .selected_available_index()
-            .or_else(|| self.selectable.collection.first_available_index());
-        self.selectable.initial_focus.set(target);
+        self.selectable
+            .initial_focus
+            .set(Some(ListboxFocus::SELECTED_OR_FIRST));
     }
 
     /// The pointer (click or tap) open: the currently selected option is highlighted and focused,
@@ -119,11 +116,10 @@ impl SelectContext {
     pub fn open_for_pointer(&mut self) {
         // Single-select only: a multi-select has no one selected option to open on, and its
         // pointer open keeps its focus on the listbox (ArrowDown then reaches the first option).
-        let target = (!self.multi())
-            .then(|| self.selectable.collection.selected_available_index())
-            .flatten();
-        if target.is_some() {
-            self.selectable.initial_focus.set(target);
+        if !self.multi() {
+            self.selectable
+                .initial_focus
+                .set(Some(ListboxFocus::SELECTED));
         }
         self.set_open(true);
     }

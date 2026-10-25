@@ -6,6 +6,7 @@ use crate::components::sheet::{
 use crate::components::skeleton::Skeleton;
 use crate::components::tooltip::{Tooltip, TooltipContent, TooltipTrigger};
 use dioxus::prelude::*;
+use dioxus_primitives::AsChild;
 use dioxus_icons::lucide::PanelLeft;
 use dioxus_primitives::dioxus_attributes::attributes;
 use dioxus_primitives::js_listener::{use_js_listeners, JsListeners};
@@ -35,7 +36,7 @@ use dioxus_primitives::use_controlled;
 const SIDEBAR_WIDTH: &str = "16rem";
 const SIDEBAR_WIDTH_MOBILE: &str = "18rem";
 const SIDEBAR_WIDTH_ICON: &str = "3rem";
-const SIDEBAR_KEYBOARD_SHORTCUT: &str = "b";
+const SIDEBAR_KEYBOARD_SHORTCUT: char = 'b';
 const MOBILE_BREAKPOINT: u32 = 768;
 
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
@@ -174,6 +175,12 @@ pub fn SidebarProvider(
     #[props(default = true)] default_open: bool,
     #[props(default)] open: ReadSignal<Option<bool>>,
     #[props(default)] on_open_change: Callback<bool>,
+    /// The key that toggles the sidebar with Ctrl (Cmd on macOS), `'b'` like shadcn's
+    /// `SIDEBAR_KEYBOARD_SHORTCUT`; `None` turns the shortcut off. It is left alone while focus
+    /// is in a text field, a `select` or a contenteditable, and when a handler nearer the
+    /// target (an editor's own Ctrl+B) already called `preventDefault`.
+    #[props(default = ReadSignal::new(Signal::new(Some(SIDEBAR_KEYBOARD_SHORTCUT))))]
+    keyboard_shortcut: ReadSignal<Option<char>>,
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
     children: Element,
 ) -> Element {
@@ -202,15 +209,20 @@ pub fn SidebarProvider(
 
     use_context_provider(|| ctx);
 
+    // Reads `keyboard_shortcut`, so a new key (or `None`) reinstalls (or removes) the listener.
+    // The key is inlined as a `\u{..}` escape, which no character can break out of.
     use_js_listeners(move || {
+        let key = keyboard_shortcut()?.escape_unicode();
         Some(
             JsListeners::install(&format!(
                 r#"
+                const editable = 'input, textarea, select, [contenteditable]:not([contenteditable="false"])';
                 listen(window, 'keydown', (event) => {{
-                    if (event.key === '{SIDEBAR_KEYBOARD_SHORTCUT}' && (event.metaKey || event.ctrlKey)) {{
-                        event.preventDefault();
-                        dioxus.send(true);
-                    }}
+                    if (event.key !== '{key}' || !(event.metaKey || event.ctrlKey)) return;
+                    if (event.defaultPrevented || event.isComposing) return;
+                    if (event.target instanceof Element && event.target.closest(editable)) return;
+                    event.preventDefault();
+                    dioxus.send(true);
                 }});
                 "#
             ))
@@ -534,7 +546,7 @@ pub fn SidebarGroup(
 
 #[component]
 pub fn SidebarGroupLabel(
-    r#as: Option<Callback<Vec<Attribute>, Element>>,
+    r#as: Option<Callback<AsChild, Element>>,
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
     children: Element,
 ) -> Element {
@@ -546,7 +558,7 @@ pub fn SidebarGroupLabel(
     let merged = merge_attributes(vec![base, attributes]);
 
     if let Some(dynamic) = r#as {
-        dynamic.call(merged)
+        dynamic.call(AsChild::new(merged, children))
     } else {
         rsx! {
             document::Link { rel: "stylesheet", href: asset!("/src/components/sidebar/style.css") }
@@ -557,7 +569,7 @@ pub fn SidebarGroupLabel(
 
 #[component]
 pub fn SidebarGroupAction(
-    r#as: Option<Callback<Vec<Attribute>, Element>>,
+    r#as: Option<Callback<AsChild, Element>>,
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
     children: Element,
 ) -> Element {
@@ -571,7 +583,7 @@ pub fn SidebarGroupAction(
     let merged = merge_attributes(vec![base, attributes]);
 
     if let Some(dynamic) = r#as {
-        dynamic.call(merged)
+        dynamic.call(AsChild::new(merged, children))
     } else {
         rsx! {
             document::Link { rel: "stylesheet", href: asset!("/src/components/sidebar/style.css") }
@@ -677,7 +689,7 @@ pub fn SidebarMenuButton(
     #[props(default)] size: SidebarMenuButtonSize,
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
     #[props(default)] tooltip: Option<Element>,
-    r#as: Option<Callback<Vec<Attribute>, Element>>,
+    r#as: Option<Callback<AsChild, Element>>,
     children: Element,
 ) -> Element {
     let ctx = use_sidebar();
@@ -702,7 +714,7 @@ pub fn SidebarMenuButton(
 
     let Some(tooltip_content) = tooltip else {
         return if let Some(dynamic) = r#as {
-            dynamic.call(merged)
+            dynamic.call(AsChild::new(merged, children))
         } else {
             rsx! {
                 document::Link { rel: "stylesheet", href: asset!("/src/components/sidebar/style.css") }
@@ -720,11 +732,11 @@ pub fn SidebarMenuButton(
             class: "dx-sidebar-tooltip",
             disabled: hidden,
             TooltipTrigger {
-                as: move |tooltip_attrs: Vec<Attribute>| {
-                    let final_attrs = merge_attributes(vec![tooltip_attrs, merged.clone()]);
+                as: move |el: AsChild| {
+                    let final_attrs = merge_attributes(vec![el.attributes, merged.clone()]);
                     let children = children.clone();
                     if let Some(dynamic) = &r#as {
-                        dynamic.call(final_attrs)
+                        dynamic.call(AsChild::new(final_attrs, children))
                     } else {
                         rsx! { button { ..final_attrs, {children} } }
                     }
@@ -744,7 +756,7 @@ pub fn SidebarMenuButton(
 #[component]
 pub fn SidebarMenuAction(
     #[props(default = false)] show_on_hover: bool,
-    r#as: Option<Callback<Vec<Attribute>, Element>>,
+    r#as: Option<Callback<AsChild, Element>>,
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
     children: Element,
 ) -> Element {
@@ -759,7 +771,7 @@ pub fn SidebarMenuAction(
     let merged = merge_attributes(vec![base, attributes]);
 
     if let Some(dynamic) = r#as {
-        dynamic.call(merged)
+        dynamic.call(AsChild::new(merged, children))
     } else {
         rsx! {
             document::Link { rel: "stylesheet", href: asset!("/src/components/sidebar/style.css") }
@@ -867,7 +879,7 @@ impl SidebarMenuSubButtonSize {
 pub fn SidebarMenuSubButton(
     #[props(default = false)] is_active: bool,
     #[props(default)] size: SidebarMenuSubButtonSize,
-    r#as: Option<Callback<Vec<Attribute>, Element>>,
+    r#as: Option<Callback<AsChild, Element>>,
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
     children: Element,
 ) -> Element {
@@ -881,7 +893,7 @@ pub fn SidebarMenuSubButton(
     let merged = merge_attributes(vec![base, attributes]);
 
     if let Some(dynamic) = r#as {
-        dynamic.call(merged)
+        dynamic.call(AsChild::new(merged, children))
     } else {
         rsx! {
             document::Link { rel: "stylesheet", href: asset!("/src/components/sidebar/style.css") }

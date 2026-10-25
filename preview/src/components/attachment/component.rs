@@ -1,5 +1,6 @@
 use crate::components::button::{Button, ButtonSize, ButtonVariant};
 use dioxus::prelude::*;
+use dioxus_primitives::AsChild;
 use dioxus_primitives::activity::use_motion_when;
 use dioxus_primitives::dioxus_attributes::attributes;
 use dioxus_primitives::merge_attributes;
@@ -277,27 +278,28 @@ pub fn AttachmentTrigger(
     #[props(extends = button)]
     attributes: Vec<Attribute>,
     onclick: Option<EventHandler<MouseEvent>>,
-    r#as: Option<Callback<Vec<Attribute>, Element>>,
+    r#as: Option<Callback<AsChild, Element>>,
     children: Element,
 ) -> Element {
     let base = attributes!(button {
         class: "dx-attachment-trigger",
         "data-slot": "attachment-trigger",
     });
-    let merged = merge_attributes(vec![base, attributes]);
+    // `onclick` is an attribute, so the `as` element receives it exactly as the `<button>` does
+    // (row 395); `merge_attributes` chains one that also arrives through `attributes`.
+    let mut handlers = Vec::new();
+    if let Some(f) = onclick {
+        handlers.extend(attributes!(button { onclick: move |event| f.call(event) }));
+    }
+    let merged = merge_attributes(vec![base, handlers, attributes]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/attachment/style.css") }
         if let Some(dynamic) = r#as {
-            {dynamic.call(merged)}
+            {dynamic.call(AsChild::new(merged, children))}
         } else {
             // `type` is an overridable default, and only for the real `<button>`
             // (an `as` link must not get one).
             button {
-                onclick: move |event| {
-                    if let Some(f) = &onclick {
-                        f.call(event);
-                    }
-                },
                 ..merge_attributes(vec![attributes!(button { r#type: "button" }), merged]),
                 {children}
             }

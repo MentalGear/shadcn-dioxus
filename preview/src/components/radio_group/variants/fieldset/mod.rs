@@ -19,7 +19,6 @@ pub fn Demo() -> Element {
                         RadioItem {
                             id: "radio-group-fieldset-monthly",
                             value: "monthly".to_string(),
-                            index: 0usize,
                         }
                         FieldLabel { html_for: "radio-group-fieldset-monthly", "Monthly ($9.99/month)" }
                     }
@@ -27,7 +26,6 @@ pub fn Demo() -> Element {
                         RadioItem {
                             id: "radio-group-fieldset-yearly",
                             value: "yearly".to_string(),
-                            index: 1usize,
                         }
                         FieldLabel { html_for: "radio-group-fieldset-yearly", "Yearly ($99.99/year)" }
                     }
@@ -35,7 +33,6 @@ pub fn Demo() -> Element {
                         RadioItem {
                             id: "radio-group-fieldset-lifetime",
                             value: "lifetime".to_string(),
-                            index: 2usize,
                         }
                         FieldLabel { html_for: "radio-group-fieldset-lifetime", "Lifetime ($299.99)" }
                     }

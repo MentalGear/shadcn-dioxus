@@ -4,6 +4,7 @@ use crate::components::dropdown_menu::{
     DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 };
 use dioxus::prelude::*;
+use dioxus_primitives::AsChild;
 use dioxus_icons::lucide::Ellipsis;
 
 /// shadcn's "Dropdown Menu" example: a "Follow" button beside an overflow
@@ -24,20 +25,19 @@ pub fn Demo() -> Element {
                 // `SheetClose`), so it matches the neighbouring button.
                 DropdownMenuTrigger {
                     "aria-label": "More message actions",
-                    as: |attributes: Vec<Attribute>| rsx! {
+                    as: |el: AsChild| rsx! {
                         Button {
                             variant: ButtonVariant::Outline,
                             size: ButtonSize::Icon,
-                            attributes,
+                            attributes: el.attributes,
                             Ellipsis {}
                         }
                     },
                 }
                 DropdownMenuContent {
-                    for (i , label) in items.into_iter().enumerate() {
+                    for label in items.into_iter() {
                         DropdownMenuItem::<String> {
                             value: label.to_string(),
-                            index: i,
                             text_value: label,
                             on_select: move |value: String| last_action.set(Some(value)),
                             "{label}"

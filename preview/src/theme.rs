@@ -11,6 +11,7 @@ use crate::components::{
 };
 use dioxus::prelude::*;
 use dioxus_icons::lucide::{Moon, Palette, Sun};
+use dioxus_primitives::AsChild;
 use dioxus_primitives::ContentAlign;
 use std::collections::HashSet;
 
@@ -461,8 +462,8 @@ fn ThemePickerDrawer(state: ThemeState, open: Signal<bool>) -> Element {
                 }
                 DrawerFooter {
                     DrawerClose {
-                        as: |attributes| rsx! {
-                            Button { variant: ButtonVariant::Outline, attributes, "Done" }
+                        as: |el: AsChild| rsx! {
+                            Button { variant: ButtonVariant::Outline, attributes: el.attributes, "Done" }
                         },
                     }
                 }

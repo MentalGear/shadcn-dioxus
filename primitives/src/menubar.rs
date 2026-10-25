@@ -11,7 +11,7 @@ use crate::merge_attributes;
 use crate::{
     collection::{
         collection_item, use_collection_provider, use_deferred_collection_focus, use_item,
-        CollectionPlacement, CollectionState,
+        use_item_index, CollectionPlacement, CollectionState, ItemIndex,
     },
     direction::{use_direction, use_direction_signal, Direction, HorizontalNav},
     use_id_or, use_outside_dismiss, use_unique_id,
@@ -93,11 +93,10 @@ pub struct MenubarProps {
 /// fn Demo() -> Element {
 ///     rsx! {
 ///         Menubar {
-///             MenubarMenu { index: 0usize,
+///             MenubarMenu {
 ///                 MenubarTrigger { "File" }
 ///                 MenubarContent {
 ///                     MenubarItem {
-///                         index: 0usize,
 ///                         value: "new".to_string(),
 ///                         on_select: move |value| {
 ///                             tracing::info!("Selected value: {}", value);
@@ -105,7 +104,6 @@ pub struct MenubarProps {
 ///                         "New"
 ///                     }
 ///                     MenubarItem {
-///                         index: 1usize,
 ///                         value: "open".to_string(),
 ///                         on_select: move |value| {
 ///                             tracing::info!("Selected value: {}", value);
@@ -114,11 +112,10 @@ pub struct MenubarProps {
 ///                     }
 ///                 }
 ///             }
-///             MenubarMenu { index: 1usize,
+///             MenubarMenu {
 ///                 MenubarTrigger { "Edit" }
 ///                 MenubarContent {
 ///                     MenubarItem {
-///                         index: 0usize,
 ///                         value: "cut".to_string(),
 ///                         on_select: move |value| {
 ///                             tracing::info!("Selected value: {}", value);
@@ -126,7 +123,6 @@ pub struct MenubarProps {
 ///                         "Cut"
 ///                     }
 ///                     MenubarItem {
-///                         index: 1usize,
 ///                         value: "copy".to_string(),
 ///                         on_select: move |value| {
 ///                             tracing::info!("Selected value: {}", value);
@@ -199,6 +195,8 @@ pub fn Menubar(props: MenubarProps) -> Element {
 #[derive(Clone, Copy)]
 struct MenubarMenuContext {
     index: ReadSignal<usize>,
+    // This menu's place in the menubar row; its trigger renders the marker.
+    order: ItemIndex,
     focus: CollectionState,
     is_open: Memo<bool>,
     disabled: ReadSignal<bool>,
@@ -247,8 +245,11 @@ impl MenubarMenuContext {
 /// The props for the [`MenubarMenu`] component.
 #[derive(Props, Clone, PartialEq)]
 pub struct MenubarMenuProps {
-    /// The index of this menu in the menubar. This is used to define the focus order for keyboard navigation.
-    pub index: ReadSignal<usize>,
+    /// The menu's place in the menubar's keyboard order. Leave it unset: menus are ordered as
+    /// they are created, which is tree order. Set it on every menu only when one is inserted
+    /// between menus that are already mounted, or a keyed list reorders them.
+    #[props(default)]
+    pub index: ReadSignal<Option<usize>>,
 
     /// Whether this menu is disabled.
     #[props(default)]
@@ -280,11 +281,10 @@ pub struct MenubarMenuProps {
 /// fn Demo() -> Element {
 ///     rsx! {
 ///         Menubar {
-///             MenubarMenu { index: 0usize,
+///             MenubarMenu {
 ///                 MenubarTrigger { "File" }
 ///                 MenubarContent {
 ///                     MenubarItem {
-///                         index: 0usize,
 ///                         value: "new".to_string(),
 ///                         on_select: move |value| {
 ///                             tracing::info!("Selected value: {}", value);
@@ -292,7 +292,6 @@ pub struct MenubarMenuProps {
 ///                         "New"
 ///                     }
 ///                     MenubarItem {
-///                         index: 1usize,
 ///                         value: "open".to_string(),
 ///                         on_select: move |value| {
 ///                             tracing::info!("Selected value: {}", value);
@@ -301,11 +300,10 @@ pub struct MenubarMenuProps {
 ///                     }
 ///                 }
 ///             }
-///             MenubarMenu { index: 1usize,
+///             MenubarMenu {
 ///                 MenubarTrigger { "Edit" }
 ///                 MenubarContent {
 ///                     MenubarItem {
-///                         index: 0usize,
 ///                         value: "cut".to_string(),
 ///                         on_select: move |value| {
 ///                             tracing::info!("Selected value: {}", value);
@@ -313,7 +311,6 @@ pub struct MenubarMenuProps {
 ///                         "Cut"
 ///                     }
 ///                     MenubarItem {
-///                         index: 1usize,
 ///                         value: "copy".to_string(),
 ///                         on_select: move |value| {
 ///                             tracing::info!("Selected value: {}", value);
@@ -335,7 +332,9 @@ pub struct MenubarMenuProps {
 #[component]
 pub fn MenubarMenu(props: MenubarMenuProps) -> Element {
     let mut ctx: MenubarContext = use_context();
-    let is_open = use_memo(move || (ctx.open_menu)() == Some(props.index.cloned()));
+    let order = use_item_index(ctx.focus, props.index);
+    let index = order.index;
+    let is_open = use_memo(move || (ctx.open_menu)() == Some(index.cloned()));
     let focus = use_collection_provider(ctx.focus.loop_signal());
     let initial_focus = use_signal(|| None);
     let disabled = move || (ctx.disabled)() || (props.disabled)();
@@ -349,7 +348,8 @@ pub fn MenubarMenu(props: MenubarMenuProps) -> Element {
     let root_id = use_unique_id();
 
     let mut menu_ctx = use_context_provider(|| MenubarMenuContext {
-        index: props.index,
+        index,
+        order,
         focus,
         is_open,
         disabled: props.disabled,
@@ -411,7 +411,7 @@ pub fn MenubarMenu(props: MenubarMenuProps) -> Element {
                         // oracle/tier1-apg/keyboard-matrix.spec.ts.
                         if !is_open() {
                             menu_ctx.initial_focus.set(Some(CollectionPlacement::First));
-                            ctx.set_open_menu.call(Some(props.index.cloned()));
+                            ctx.set_open_menu.call(Some(index.cloned()));
                         } else {
                             ctx.set_open_menu.call(None);
                         }
@@ -426,7 +426,7 @@ pub fn MenubarMenu(props: MenubarMenuProps) -> Element {
                         // act on it at all.
                         if !is_open() {
                             menu_ctx.initial_focus.set(Some(CollectionPlacement::First));
-                            ctx.set_open_menu.call(Some(props.index.cloned()));
+                            ctx.set_open_menu.call(Some(index.cloned()));
                         }
                     }
                     Key::Escape => {
@@ -443,7 +443,7 @@ pub fn MenubarMenu(props: MenubarMenuProps) -> Element {
                         // never re-runs `control_mount_focus` -- clear first
                         // to force a real transition.
                         ctx.focus.clear_focus();
-                        ctx.focus.set_focus(Some(props.index.cloned()));
+                        ctx.focus.set_focus(Some(index.cloned()));
                     }
                     Key::ArrowLeft | Key::ArrowRight => {
                         match (ctx.direction)().resolve_horizontal(&event.key()) {
@@ -455,7 +455,7 @@ pub fn MenubarMenu(props: MenubarMenuProps) -> Element {
                     Key::ArrowDown if !disabled() => {
                         if !is_open() {
                             menu_ctx.initial_focus.set(Some(CollectionPlacement::First));
-                            ctx.set_open_menu.call(Some(props.index.cloned()));
+                            ctx.set_open_menu.call(Some(index.cloned()));
                         } else {
                             menu_ctx.focus_next();
                         }
@@ -465,7 +465,7 @@ pub fn MenubarMenu(props: MenubarMenuProps) -> Element {
                             menu_ctx.focus_prev();
                         } else {
                             menu_ctx.initial_focus.set(Some(CollectionPlacement::Last));
-                            ctx.set_open_menu.call(Some(props.index.cloned()));
+                            ctx.set_open_menu.call(Some(index.cloned()));
                         }
                     },
                     Key::Home => ctx.focus.focus_first(),
@@ -530,11 +530,10 @@ pub struct MenubarTriggerProps {
 /// fn Demo() -> Element {
 ///     rsx! {
 ///         Menubar {
-///             MenubarMenu { index: 0usize,
+///             MenubarMenu {
 ///                 MenubarTrigger { "File" }
 ///                 MenubarContent {
 ///                     MenubarItem {
-///                         index: 0usize,
 ///                         value: "new".to_string(),
 ///                         on_select: move |value| {
 ///                             tracing::info!("Selected value: {}", value);
@@ -542,7 +541,6 @@ pub struct MenubarTriggerProps {
 ///                         "New"
 ///                     }
 ///                     MenubarItem {
-///                         index: 1usize,
 ///                         value: "open".to_string(),
 ///                         on_select: move |value| {
 ///                             tracing::info!("Selected value: {}", value);
@@ -551,11 +549,10 @@ pub struct MenubarTriggerProps {
 ///                     }
 ///                 }
 ///             }
-///             MenubarMenu { index: 1usize,
+///             MenubarMenu {
 ///                 MenubarTrigger { "Edit" }
 ///                 MenubarContent {
 ///                     MenubarItem {
-///                         index: 0usize,
 ///                         value: "cut".to_string(),
 ///                         on_select: move |value| {
 ///                             tracing::info!("Selected value: {}", value);
@@ -563,7 +560,6 @@ pub struct MenubarTriggerProps {
 ///                         "Cut"
 ///                     }
 ///                     MenubarItem {
-///                         index: 1usize,
 ///                         value: "copy".to_string(),
 ///                         on_select: move |value| {
 ///                             tracing::info!("Selected value: {}", value);
@@ -636,6 +632,7 @@ pub fn MenubarTrigger(props: MenubarTriggerProps) -> Element {
     // duplicate-attribute hazard).
     let attributes = merge_attributes(vec![
         attributes,
+        menu_ctx.order.marker_attribute(),
         attributes!(button {
             role: crate::menu_semantics::MENU_ITEM_ROLE,
             type: "button",
@@ -710,11 +707,10 @@ pub struct MenubarContentProps {
 /// fn Demo() -> Element {
 ///     rsx! {
 ///         Menubar {
-///             MenubarMenu { index: 0usize,
+///             MenubarMenu {
 ///                 MenubarTrigger { "File" }
 ///                 MenubarContent {
 ///                     MenubarItem {
-///                         index: 0usize,
 ///                         value: "new".to_string(),
 ///                         on_select: move |value| {
 ///                             tracing::info!("Selected value: {}", value);
@@ -722,7 +718,6 @@ pub struct MenubarContentProps {
 ///                         "New"
 ///                     }
 ///                     MenubarItem {
-///                         index: 1usize,
 ///                         value: "open".to_string(),
 ///                         on_select: move |value| {
 ///                             tracing::info!("Selected value: {}", value);
@@ -731,11 +726,10 @@ pub struct MenubarContentProps {
 ///                     }
 ///                 }
 ///             }
-///             MenubarMenu { index: 1usize,
+///             MenubarMenu {
 ///                 MenubarTrigger { "Edit" }
 ///                 MenubarContent {
 ///                     MenubarItem {
-///                         index: 0usize,
 ///                         value: "cut".to_string(),
 ///                         on_select: move |value| {
 ///                             tracing::info!("Selected value: {}", value);
@@ -743,7 +737,6 @@ pub struct MenubarContentProps {
 ///                         "Cut"
 ///                     }
 ///                     MenubarItem {
-///                         index: 1usize,
 ///                         value: "copy".to_string(),
 ///                         on_select: move |value| {
 ///                             tracing::info!("Selected value: {}", value);
@@ -814,7 +807,7 @@ pub fn MenubarContent(props: MenubarContentProps) -> Element {
 /// Escape is handled entirely by `MenubarMenu`'s own `onkeydown`
 /// (which calls `prevent_default()` unconditionally): APG
 /// requires Escape to move focus to *this specific menu's own trigger*
-/// (`ctx.focus.set_focus(Some(props.index))`), which native light dismiss
+/// (`ctx.focus.set_focus(Some(index))`), which native light dismiss
 /// has no way to know how to do (it has no notion of "which trigger opened
 /// this"), so this component keeps driving that close+refocus itself
 /// rather than deferring to the platform the way `DropdownMenuContent`
@@ -1023,8 +1016,11 @@ fn MenubarContentRendered(id: String, attributes: Vec<Attribute>, children: Elem
 /// The props for the [`MenubarItem`] component.
 #[derive(Props, Clone, PartialEq)]
 pub struct MenubarItemProps {
-    /// The index of this item within the [`MenubarContent`]. This is used to define the focus order for keyboard navigation.
-    pub index: ReadSignal<usize>,
+    /// The item's place in keyboard order. Leave it unset: items are ordered as they are
+    /// created, which is tree order. Set it on every item only when one is inserted between
+    /// items that are already mounted, or a keyed list reorders them.
+    #[props(default)]
+    pub index: ReadSignal<Option<usize>>,
 
     /// The value associated with this menu item. This value will be passed to the [`Self::on_select`] callback when the item is selected.
     pub value: String,
@@ -1081,11 +1077,10 @@ pub struct MenubarItemProps {
 /// fn Demo() -> Element {
 ///     rsx! {
 ///         Menubar {
-///             MenubarMenu { index: 0usize,
+///             MenubarMenu {
 ///                 MenubarTrigger { "File" }
 ///                 MenubarContent {
 ///                     MenubarItem {
-///                         index: 0usize,
 ///                         value: "new".to_string(),
 ///                         on_select: move |value| {
 ///                             tracing::info!("Selected value: {}", value);
@@ -1093,7 +1088,6 @@ pub struct MenubarItemProps {
 ///                         "New"
 ///                     }
 ///                     MenubarItem {
-///                         index: 1usize,
 ///                         value: "open".to_string(),
 ///                         on_select: move |value| {
 ///                             tracing::info!("Selected value: {}", value);
@@ -1102,11 +1096,10 @@ pub struct MenubarItemProps {
 ///                     }
 ///                 }
 ///             }
-///             MenubarMenu { index: 1usize,
+///             MenubarMenu {
 ///                 MenubarTrigger { "Edit" }
 ///                 MenubarContent {
 ///                     MenubarItem {
-///                         index: 0usize,
 ///                         value: "cut".to_string(),
 ///                         on_select: move |value| {
 ///                             tracing::info!("Selected value: {}", value);
@@ -1114,7 +1107,6 @@ pub struct MenubarItemProps {
 ///                         "Cut"
 ///                     }
 ///                     MenubarItem {
-///                         index: 1usize,
 ///                         value: "copy".to_string(),
 ///                         on_select: move |value| {
 ///                             tracing::info!("Selected value: {}", value);
@@ -1143,8 +1135,10 @@ pub fn MenubarItem(props: MenubarItemProps) -> Element {
     // already use below -- `String` isn't `Copy`, so each closure needing
     // it clones its own copy rather than fighting over one move.
     let fallback_text_value = props.value.clone();
+    let order = use_item_index(menu_ctx.focus, props.index);
+    let index = order.index;
     let item = use_item(
-        collection_item(menu_ctx.focus, props.index)
+        collection_item(menu_ctx.focus, index)
             .disabled(disabled)
             .text_value(move || {
                 Some((props.text_value)().unwrap_or_else(|| fallback_text_value.clone()))
@@ -1157,6 +1151,7 @@ pub fn MenubarItem(props: MenubarItemProps) -> Element {
     // Owned by this component -- see `MenubarTrigger`'s identical
     // construction above (`dev-docs/backlog.md` row 93).
     let attributes = merge_attributes(vec![
+        order.marker_attribute(),
         props.attributes,
         attributes!(div {
             role: crate::menu_semantics::MENU_ITEM_ROLE,
@@ -1272,11 +1267,10 @@ pub type MenubarRadioItemProps = MenuRadioItemProps;
 ///     let mut auto_save = use_signal(|| true);
 ///     rsx! {
 ///         Menubar {
-///             MenubarMenu { index: 0usize,
+///             MenubarMenu {
 ///                 MenubarTrigger { "File" }
 ///                 MenubarContent {
 ///                     MenubarCheckboxItem {
-///                         index: 0usize,
 ///                         checked: Some(auto_save()),
 ///                         on_checked_change: move |checked| auto_save.set(checked),
 ///                         close_on_select: false,
@@ -1326,7 +1320,7 @@ pub fn MenubarCheckboxItem(props: MenubarCheckboxItemProps) -> Element {
 ///     let mut profile = use_signal(|| "benoit".to_string());
 ///     rsx! {
 ///         Menubar {
-///             MenubarMenu { index: 0usize,
+///             MenubarMenu {
 ///                 MenubarTrigger { "Profiles" }
 ///                 MenubarContent {
 ///                     MenubarRadioGroup {
@@ -1334,12 +1328,10 @@ pub fn MenubarCheckboxItem(props: MenubarCheckboxItemProps) -> Element {
 ///                         value: Some(profile()),
 ///                         on_value_change: move |value| profile.set(value),
 ///                         MenubarRadioItem {
-///                             index: 0usize,
 ///                             value: "andy".to_string(),
 ///                             "Andy"
 ///                         }
 ///                         MenubarRadioItem {
-///                             index: 1usize,
 ///                             value: "benoit".to_string(),
 ///                             "Benoit"
 ///                         }
@@ -1479,6 +1471,8 @@ fn menubar_checkable_item(state: CheckableState, common: CheckableCommon) -> Ele
         children,
     } = common;
     let disabled = move || (ctx.disabled)() || item_disabled();
+    let order = use_item_index(menu_ctx.focus, index);
+    let index = order.index;
     let item = use_item(
         collection_item(menu_ctx.focus, index)
             .disabled(disabled)
@@ -1504,6 +1498,7 @@ fn menubar_checkable_item(state: CheckableState, common: CheckableCommon) -> Ele
     };
 
     let attributes = merge_attributes(vec![
+        order.marker_attribute(),
         attributes,
         state.owned_attributes(disabled(), inset, if focused() { "0" } else { "-1" }),
     ]);
@@ -1544,7 +1539,7 @@ mod ssr_tests {
     fn MenubarWithOwnMenuId() -> Element {
         rsx! {
             Menubar {
-                MenubarMenu { index: 0usize, id: "my-menu-root", "content" }
+                MenubarMenu { id: "my-menu-root", "content" }
             }
         }
     }

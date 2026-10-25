@@ -307,13 +307,11 @@ fn use_select_root(
 ///                 SelectGroup {
 ///                     SelectGroupLabel { "Fruits" }
 ///                     SelectOption::<String> {
-///                         index: 0usize,
 ///                         value: "apple",
 ///                         "Apple"
 ///                         SelectItemIndicator { "✔️" }
 ///                     }
 ///                     SelectOption::<String> {
-///                         index: 1usize,
 ///                         value: "banana",
 ///                         "Banana"
 ///                         SelectItemIndicator { "✔️" }
@@ -501,13 +499,11 @@ pub fn Select<T: Clone + PartialEq + 'static>(props: SelectProps<T>) -> Element 
 ///                 SelectGroup {
 ///                     SelectGroupLabel { "Toppings" }
 ///                     SelectOption::<String> {
-///                         index: 0usize,
 ///                         value: "pepperoni",
 ///                         "Pepperoni"
 ///                         SelectItemIndicator { "✔️" }
 ///                     }
 ///                     SelectOption::<String> {
-///                         index: 1usize,
 ///                         value: "mushroom",
 ///                         "Mushroom"
 ///                         SelectItemIndicator { "✔️" }

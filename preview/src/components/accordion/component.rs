@@ -38,7 +38,6 @@ pub fn AccordionItem(props: AccordionItemProps) -> Element {
             default_open: props.default_open,
             on_change: props.on_change,
             on_trigger_click: props.on_trigger_click,
-            index: props.index,
             attributes: merged,
             {props.children}
         }

@@ -35,6 +35,9 @@
 # `attributes: Vec<Attribute>` -- there is only ever one `Attribute` for that name, so
 # there is nothing to collide, and that site is correctly not reported.
 #
+# A `#[cfg(test)]` module is not scanned: test code never reaches an app, and its `rsx!` fixtures exist to probe a
+# primitive, not to be called with a caller's attributes.
+#
 # WHAT THIS DOES NOT DETECT -- the forwarded-`attributes` variant is reported separately, see
 # "The second, separate check" below; beyond that:
 #   - An `rsx! { .. }` invocation written lexically INSIDE another `rsx! { .. }`'s own

@@ -1,6 +1,7 @@
 use super::super::component::*;
 use crate::components::button::{Button, ButtonVariant};
 use dioxus::prelude::*;
+use dioxus_primitives::AsChild;
 use dioxus_primitives::ContentSide;
 
 /// shadcn's "Side" tooltip demo: one outline button per `side` of `TooltipContent`.
@@ -21,8 +22,8 @@ fn SideTip(label: String, side: ContentSide, text: String) -> Element {
     rsx! {
         Tooltip {
             TooltipTrigger {
-                as: move |attributes: Vec<Attribute>| rsx! {
-                    Button { variant: ButtonVariant::Outline, attributes, "{label}" }
+                as: move |el: AsChild| rsx! {
+                    Button { variant: ButtonVariant::Outline, attributes: el.attributes, "{label}" }
                 },
             }
             TooltipContent { side, "{text}" }

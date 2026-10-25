@@ -2,6 +2,7 @@ use super::super::component::*;
 use crate::components::button::{Button, ButtonSize, ButtonVariant};
 use crate::components::tooltip::{Tooltip, TooltipContent, TooltipTrigger};
 use dioxus::prelude::*;
+use dioxus_primitives::AsChild;
 use dioxus_icons::lucide::Check;
 
 /// A tooltip on a bubble's reaction: `TooltipTrigger`'s `as` renders the trigger as a ghost
@@ -18,16 +19,17 @@ pub fn Demo() -> Element {
                 BubbleReactions {
                     Tooltip {
                         TooltipTrigger {
-                            as: move |attributes: Vec<Attribute>| rsx! {
+                            as: move |el: AsChild| rsx! {
                                 Button {
                                     variant: ButtonVariant::Ghost,
                                     size: ButtonSize::IconXs,
                                     r#type: "button",
                                     aria_label: "Read on Jan 5, 2026 at 4:32 PM",
-                                    attributes,
-                                    Check {}
+                                    attributes: el.attributes,
+                                    {el.children}
                                 }
                             },
+                            Check {}
                         }
                         TooltipContent { "Read on Jan 5, 2026 at 4:32 PM" }
                     }

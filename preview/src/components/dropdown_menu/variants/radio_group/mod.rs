@@ -27,19 +27,16 @@ pub fn Demo() -> Element {
                     value: Some(position()),
                     on_value_change: move |value| position.set(value),
                     DropdownMenuRadioItem {
-                        index: 0usize,
                         value: "top".to_string(),
                         close_on_select: false,
                         "Top"
                     }
                     DropdownMenuRadioItem {
-                        index: 1usize,
                         value: "bottom".to_string(),
                         close_on_select: false,
                         "Bottom"
                     }
                     DropdownMenuRadioItem {
-                        index: 2usize,
                         value: "right".to_string(),
                         close_on_select: false,
                         disabled: true,

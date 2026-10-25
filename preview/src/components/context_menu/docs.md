@@ -12,10 +12,8 @@ ContextMenu {
     }
     // The context menu content contains all the items that will be displayed in the context menu.
     ContextMenuContent {
-        // Each context menu item represents an individual action in the context menu. Items are displayed in order based on the order of the index property.
+        // Each context menu item represents an individual action in the context menu. Arrow keys move through the items in document order.
         ContextMenuItem {
-            // The index of the item, used to determine the order in which items are displayed.
-            index: 0,
             // The value of the item which will be passed to the on_select callback when the item is selected.
             value: "",
             on_select: |value: String| {
@@ -41,16 +39,14 @@ level of nesting).
 ```rust
 ContextMenuContent {
     ContextMenuSub {
-        // The sub-trigger is itself an item of the enclosing menu, so it
-        // takes an `index` the same way `ContextMenuItem` does.
+        // The sub-trigger is itself an item of the enclosing menu, in its
+        // keyboard order like `ContextMenuItem`.
         ContextMenuSubTrigger {
-            index: 0,
             "More tools"
         }
         // Only rendered while the submenu is open.
         ContextMenuSubContent {
             ContextMenuSubItem {
-                index: 0,
                 value: "duplicate".to_string(),
                 on_select: |value: String| {
                     // Selecting a sub-item closes the entire menu tree,
@@ -73,7 +69,7 @@ activation**:
 ContextMenuSub {
     // Default is `true`.
     open_on_hover: false,
-    ContextMenuSubTrigger { index: 0, "Export as" }
+    ContextMenuSubTrigger { "Export as" }
     ContextMenuSubContent { /* ... */ }
 }
 ```
@@ -94,8 +90,6 @@ the `click_only_submenu` variant.
 ```rust
 ContextMenuContent {
     ContextMenuCheckboxItem {
-        // Items are ordered by `index`, like plain items.
-        index: 0,
         // Controlled: `checked` + `on_checked_change`. Uncontrolled:
         // `default_checked` -- but note the content unmounts when the menu
         // closes, so an uncontrolled item starts over on every open.
@@ -114,8 +108,8 @@ ContextMenuContent {
         value: Some(position()),
         on_value_change: move |value| position.set(value),
         // A radio item's `value` is also its typeahead label.
-        ContextMenuRadioItem { index: 1, value: "top".to_string(), "Top" }
-        ContextMenuRadioItem { index: 2, value: "bottom".to_string(), "Bottom" }
+        ContextMenuRadioItem { value: "top".to_string(), "Top" }
+        ContextMenuRadioItem { value: "bottom".to_string(), "Bottom" }
     }
 }
 ```
@@ -133,7 +127,6 @@ ContextMenuContent {
     ContextMenuGroup {
         ContextMenuLabel { "My Account" }
         ContextMenuItem {
-            index: 0,
             value: "profile".to_string(),
             // Items take `variant` and `inset`, like shadcn's `variant="destructive"` / `inset`.
             "Profile"
@@ -144,7 +137,6 @@ ContextMenuContent {
     // A divider between groups: `role="separator"`, not focusable, skipped by arrow keys and typeahead.
     ContextMenuSeparator {}
     ContextMenuItem {
-        index: 1,
         value: "delete".to_string(),
         variant: MenuItemVariant::Destructive,
         "Delete"
@@ -154,7 +146,7 @@ ContextMenuContent {
 
 - **`variant`** (`MenuItemVariant::Default` or `Destructive`) paints the item in the theme's destructive text colour with a destructive-tinted highlight. The role stays `menuitem` and the item carries `data-variant`.
 - **`inset`** reserves the leading indicator slot on an item (or `ContextMenuLabel`) that draws none, so a menu that mixes plain and checkable items keeps its labels on one edge. It also exists on the checkbox and radio items and, where the menu has submenus, on the sub-trigger. The element carries `data-inset="true"`.
-- **`ContextMenuGroup`** is a `role="group"` with no behaviour; items inside it keep their `index` across the whole menu. Name it with `aria-label` when it has a visible heading.
+- **`ContextMenuGroup`** is a `role="group"` with no behaviour; items inside it stay in the whole menu's keyboard order. Name it with `aria-label` when it has a visible heading.
 
 See the `groups` and `destructive` variants.
 

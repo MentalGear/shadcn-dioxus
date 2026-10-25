@@ -6,7 +6,7 @@ resolves here by id.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Done rows (343)
+## Done rows (347)
 
 | # | Item | Updated |
 |---|---|---|
@@ -344,6 +344,9 @@ resolves here by id.
 | [379](backlog/done/379-session-setup-fetches-detached-locks.md) | Session setup fetches every committed Cargo.lock, so check-cargo-locks resolves offline in a fresh container | 2026-10-24 |
 | [380](backlog/done/380-calendar-clock-read-after-mount.md) | Calendars read the visitor's clock after mount, so a prerendered page never keeps the build day | 2026-10-24 |
 | [381](backlog/done/381-interactive-element-cursor-option.md) | Interactive-element cursor is one theme option, data-dx-interactive-element-cursor | 2026-10-24 |
+| [395](backlog/done/395-as-keeps-children.md) | `as` keeps the component's children and handlers (Radix asChild semantics) | 2026-10-24 |
+| [396](backlog/done/396-derive-item-index.md) | Derive item `index` from registration order | 2026-10-24 |
+| [397](backlog/done/397-docs-review-bugs.md) | Bugs the docs review found: ToggleGroup arrows, dead ScrollArea prop, DataTable sort, Sidebar Ctrl+B | 2026-10-24 |
 | [400](backlog/done/400-merge-drivers-generated-files.md) | Merge drivers for the generated backlog index and the durations table | 2026-10-24 |
 | [401](backlog/done/401-select-css-gate-names-dead-mutation.md) | check-select-css names a mutation that died instead of printing a blank verdict | 2026-10-24 |
 | [403](backlog/done/403-theme-picker-in-the-phone-header-on-every-page.md) | The theme picker's palette icon is in the phone header on every page | 2026-10-24 |
@@ -353,5 +356,6 @@ resolves here by id.
 | [408](backlog/done/408-selectmulti-name-submits.md) | SelectMulti's name prop takes part in form submission | 2026-10-24 |
 | [409](backlog/done/409-css-vars-declared-with-fallbacks.md) | Every CSS custom property read is declared, fallbacks included | 2026-10-24 |
 | [410](backlog/done/410-history-comments-third-cold-read.md) | History comments: third fresh-seed cold read | 2026-10-24 |
+| [411](backlog/done/411-select-maps-primitive-submodules.md) | test:changed maps a primitive submodule to the components that reach it | 2026-10-24 |
 
 <!-- END GENERATED -->

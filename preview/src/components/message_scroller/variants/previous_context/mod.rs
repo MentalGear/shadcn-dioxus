@@ -10,6 +10,7 @@ use crate::components::{
     tooltip::{Tooltip, TooltipContent, TooltipTrigger},
 };
 use dioxus::prelude::*;
+use dioxus_primitives::AsChild;
 use dioxus_icons::lucide::{ArrowUp, RotateCw};
 
 const DEFAULT_PEEK: f64 = 64.0;
@@ -140,7 +141,7 @@ pub fn Demo() -> Element {
                         CardAction {
                             Tooltip {
                                 TooltipTrigger {
-                                    as: move |attributes: Vec<Attribute>| rsx! {
+                                    as: move |el: AsChild| rsx! {
                                         Button {
                                             variant: ButtonVariant::Outline,
                                             size: ButtonSize::Icon,
@@ -154,7 +155,7 @@ pub fn Demo() -> Element {
                                                 peek.set(DEFAULT_PEEK);
                                                 demo_key += 1;
                                             },
-                                            attributes,
+                                            attributes: el.attributes,
                                             RotateCw {}
                                         }
                                     },

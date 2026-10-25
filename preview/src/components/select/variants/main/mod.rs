@@ -36,9 +36,9 @@ impl Fruit {
 
 #[component]
 pub fn Demo() -> Element {
-    let fruits = Fruit::ALL.into_iter().enumerate().map(|(i, f)| {
+    let fruits = Fruit::ALL.into_iter().map(|f| {
         rsx! {
-            SelectOption::<Option<Fruit>> { index: i, value: f, text_value: "{f}",
+            SelectOption::<Option<Fruit>> { value: f, text_value: "{f}",
                 disabled: matches!(f, Fruit::Orange),
                 "{f.emoji()} {f}"
             }
@@ -60,7 +60,6 @@ pub fn Demo() -> Element {
             SelectGroup {
                 SelectGroupLabel { "Other" }
                 SelectOption::<Option<Fruit>> {
-                    index: Fruit::ALL.len(),
                     value: None,
                     text_value: "Other",
                     "Other"

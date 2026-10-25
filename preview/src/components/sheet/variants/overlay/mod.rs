@@ -3,6 +3,7 @@ use crate::components::{
     sheet::{Sheet, SheetClose, SheetContentClose, SheetDescription, SheetFooter, SheetHeader, SheetTitle},
 };
 use dioxus::prelude::*;
+use dioxus_primitives::AsChild;
 
 /// `overlay: false` keeps the sheet modal and drops only the dim and the blur behind it.
 #[component]
@@ -25,9 +26,10 @@ pub fn Demo() -> Element {
             }
             SheetFooter {
                 SheetClose {
-                    as: |attributes| rsx! {
-                        Button { variant: ButtonVariant::Outline, attributes, "Dismiss" }
+                    as: |el: AsChild| rsx! {
+                        Button { variant: ButtonVariant::Outline, attributes: el.attributes, {el.children} }
                     },
+                    "Dismiss"
                 }
             }
             SheetContentClose {}

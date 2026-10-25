@@ -1,7 +1,7 @@
 //! SelectOption and SelectItemIndicator component implementations.
 
 use crate::{
-    collection::{collection_item, use_item},
+    collection::{collection_item, use_item, use_item_index},
     listbox::{ListboxContext, ListboxItemIndicator},
     merge_attributes,
     selectable::{
@@ -32,8 +32,11 @@ pub struct SelectOptionProps<T: Clone + PartialEq + 'static> {
     #[props(default)]
     pub id: ReadSignal<Option<String>>,
 
-    /// The index of the option in the list. This is used to define the focus order for keyboard navigation.
-    pub index: ReadSignal<usize>,
+    /// The option's place in keyboard order, across every group of the list. Leave it unset:
+    /// options are ordered as they appear in the document. Set it on every option only when one
+    /// is inserted between options that are already mounted, or a keyed list reorders them.
+    #[props(default)]
+    pub index: ReadSignal<Option<usize>>,
 
     /// Optional label for the option (for accessibility)
     #[props(default)]
@@ -86,13 +89,11 @@ pub struct SelectOptionProps<T: Clone + PartialEq + 'static> {
 ///                 SelectGroup {
 ///                     SelectGroupLabel { "Fruits" }
 ///                     SelectOption::<String> {
-///                         index: 0usize,
 ///                         value: "apple",
 ///                         "Apple"
 ///                         SelectItemIndicator { "✔️" }
 ///                     }
 ///                     SelectOption::<String> {
-///                         index: 1usize,
 ///                         value: "banana",
 ///                         "Banana"
 ///                         SelectItemIndicator { "✔️" }
@@ -105,9 +106,9 @@ pub struct SelectOptionProps<T: Clone + PartialEq + 'static> {
 /// ```
 #[component]
 pub fn SelectOption<T: PartialEq + Clone + 'static>(props: SelectOptionProps<T>) -> Element {
-    let index = props.index;
-
     let mut ctx: SelectContext = use_context();
+    let order = use_item_index(ctx.selectable.collection, props.index);
+    let index = order.index;
     let option = use_selectable_option(
         ctx.selectable,
         SelectableOptionConfig {
@@ -121,7 +122,7 @@ pub fn SelectOption<T: PartialEq + Clone + 'static>(props: SelectOptionProps<T>)
     );
 
     let item = use_item(
-        collection_item(ctx.selectable.collection, props.index)
+        collection_item(ctx.selectable.collection, index)
             .key(move || Some(option.id.cloned()))
             .disabled(move || option.disabled.cloned())
             .selected(move || (option.selected)()),
@@ -140,7 +141,11 @@ pub fn SelectOption<T: PartialEq + Clone + 'static>(props: SelectOptionProps<T>)
         aria_disabled: (option.disabled)(),
         "data-disabled": (option.disabled)(),
     });
-    let merged = merge_attributes(vec![props.attributes.clone(), owned]);
+    let merged = merge_attributes(vec![
+        order.marker_attribute(),
+        props.attributes.clone(),
+        owned,
+    ]);
 
     rsx! {
         if render() {
@@ -218,13 +223,11 @@ pub struct SelectItemIndicatorProps {
 ///                 SelectGroup {
 ///                     SelectGroupLabel { "Fruits" }
 ///                     SelectOption::<String> {
-///                         index: 0usize,
 ///                         value: "apple",
 ///                         "Apple"
 ///                         SelectItemIndicator { "✔️" }
 ///                     }
 ///                     SelectOption::<String> {
-///                         index: 1usize,
 ///                         value: "banana",
 ///                         "Banana"
 ///                         SelectItemIndicator { "✔️" }

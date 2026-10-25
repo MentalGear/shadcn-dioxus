@@ -1,7 +1,27 @@
-/* Scroll area doesn't require any additional styles. Nova's `.cn-scroll-area-scrollbar` (`w-2.5`/`h-2.5`)
- * and `.cn-scroll-area-thumb` (`rounded-full`, `bg-border`) style Radix's custom scrollbar; this
- * component wraps the browser's native one (primitives/src/scroll_area.rs), whose colours come from
- * the app-wide `scrollbar-color` rules in main.css, so there is no Nova block to match here.
+/* Nova's `.cn-scroll-area-scrollbar` (`w-2.5`/`h-2.5`) and `.cn-scroll-area-thumb` (`rounded-full`, `bg-border`)
+ * style Radix's custom scrollbar; this component wraps the browser's native one (primitives/src/scroll_area.rs), so
+ * there is no Nova block to match here. What this sheet does carry is `always_show_scrollbars` (row 397): the
+ * primitive puts `dx-scroll-area-auto-hide` or `dx-scroll-area-always-show` on the scroller, and these rules give
+ * the two classes their meaning in any app, with or without an app-wide `scrollbar-color` rule (the preview's
+ * main.css hides every thumb until hover; `[data-scroll-direction]` lifts these rules above it, (0,2,0) against
+ * (0,1,0)). Auto-hide is Radix's default `type="hover"`: the thumb paints while a fine pointer hovers the box.
+ * Always-show paints it at rest, so the box reads as scrollable. An overlay scrollbar (macOS, iOS) is still drawn
+ * by the OS only while scrolling.
  *
  * The `fade` prop only adds a `dx-scroll-fade-*` class; the utility itself (mask, `@property`, keyframes) is the
  * global `assets/dx-effects.css`, listed in this component's `globalAssets`, so it is not repeated here. */
+@supports (scrollbar-width: auto) {
+  [data-scroll-direction].dx-scroll-area-auto-hide:not(:hover) {
+    scrollbar-color: transparent transparent;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    [data-scroll-direction].dx-scroll-area-auto-hide:hover {
+      scrollbar-color: var(--dx-foreground) transparent;
+    }
+  }
+
+  [data-scroll-direction].dx-scroll-area-always-show {
+    scrollbar-color: var(--dx-foreground) transparent;
+  }
+}

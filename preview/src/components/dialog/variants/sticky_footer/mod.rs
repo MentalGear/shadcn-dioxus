@@ -4,6 +4,7 @@ use super::super::component::{
     Dialog, DialogClose, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 };
 use dioxus::prelude::*;
+use dioxus_primitives::AsChild;
 
 /// shadcn's `dialog-sticky-footer`: a header, a scrolling body and a `DialogFooter` that stays in
 /// view while the body scrolls. Only the body has an `overflow`, so the footer is never inside
@@ -41,9 +42,10 @@ pub fn Demo() -> Element {
             }
             DialogFooter {
                 DialogClose {
-                    r#as: |attributes| rsx! {
-                        Button { variant: ButtonVariant::Outline, attributes, "Close" }
+                    r#as: |el: AsChild| rsx! {
+                        Button { variant: ButtonVariant::Outline, attributes: el.attributes, {el.children} }
                     },
+                    "Close"
                 }
             }
         }

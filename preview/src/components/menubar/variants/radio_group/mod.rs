@@ -21,7 +21,7 @@ pub fn Demo() -> Element {
 
     rsx! {
         Menubar {
-            MenubarMenu { index: 0usize,
+            MenubarMenu {
                 MenubarTrigger { "Accounts" }
                 MenubarContent {
                     MenubarLabel { id: "dx-mb-account-label", "Switch account" }
@@ -30,19 +30,16 @@ pub fn Demo() -> Element {
                         value: Some(account()),
                         on_value_change: move |value| account.set(value),
                         MenubarRadioItem {
-                            index: 0usize,
                             value: "andy".to_string(),
                             close_on_select: false,
                             "Andy"
                         }
                         MenubarRadioItem {
-                            index: 1usize,
                             value: "benoit".to_string(),
                             close_on_select: false,
                             "Benoit"
                         }
                         MenubarRadioItem {
-                            index: 2usize,
                             value: "luis".to_string(),
                             close_on_select: false,
                             "Luis"
@@ -50,7 +47,7 @@ pub fn Demo() -> Element {
                     }
                 }
             }
-            MenubarMenu { index: 1usize,
+            MenubarMenu {
                 MenubarTrigger { "Theme" }
                 MenubarContent {
                     MenubarRadioGroup {
@@ -58,19 +55,16 @@ pub fn Demo() -> Element {
                         value: Some(theme()),
                         on_value_change: move |value| theme.set(value),
                         MenubarRadioItem {
-                            index: 0usize,
                             value: "light".to_string(),
                             close_on_select: false,
                             "Light"
                         }
                         MenubarRadioItem {
-                            index: 1usize,
                             value: "dark".to_string(),
                             close_on_select: false,
                             "Dark"
                         }
                         MenubarRadioItem {
-                            index: 2usize,
                             value: "system".to_string(),
                             close_on_select: false,
                             "System"

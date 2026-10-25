@@ -19,11 +19,10 @@ pub fn Demo() -> Element {
     rsx! {
         div {
             Menubar { open_on_hover: false,
-                MenubarMenu { index: 0usize,
+                MenubarMenu {
                     MenubarTrigger { "Insert" }
                     MenubarContent {
                         MenubarItem {
-                            index: 0usize,
                             value: "table".to_string(),
                             on_select: move |value| {
                                 tracing::info!("Selected value: {}", value);
@@ -31,7 +30,6 @@ pub fn Demo() -> Element {
                             "Table"
                         }
                         MenubarItem {
-                            index: 1usize,
                             value: "image".to_string(),
                             on_select: move |value| {
                                 tracing::info!("Selected value: {}", value);
@@ -40,11 +38,10 @@ pub fn Demo() -> Element {
                         }
                     }
                 }
-                MenubarMenu { index: 1usize,
+                MenubarMenu {
                     MenubarTrigger { "Tools" }
                     MenubarContent {
                         MenubarItem {
-                            index: 0usize,
                             value: "spelling".to_string(),
                             on_select: move |value| {
                                 tracing::info!("Selected value: {}", value);
@@ -52,7 +49,6 @@ pub fn Demo() -> Element {
                             "Spelling"
                         }
                         MenubarItem {
-                            index: 1usize,
                             value: "statistics".to_string(),
                             on_select: move |value| {
                                 tracing::info!("Selected value: {}", value);

@@ -24,7 +24,6 @@ pub fn Demo() -> Element {
                 DropdownMenuGroup {
                     DropdownMenuItem::<String> {
                         value: "Rename".to_string(),
-                        index: 0usize,
                         text_value: "Rename",
                         on_select: move |value| chosen.set(Some(value)),
                         Pencil { size: "16px" }
@@ -32,7 +31,6 @@ pub fn Demo() -> Element {
                     }
                     DropdownMenuItem::<String> {
                         value: "Share link".to_string(),
-                        index: 1usize,
                         text_value: "Share link",
                         on_select: move |value| chosen.set(Some(value)),
                         Share2 { size: "16px" }
@@ -43,7 +41,6 @@ pub fn Demo() -> Element {
                 DropdownMenuGroup {
                     DropdownMenuItem::<String> {
                         value: "Delete project".to_string(),
-                        index: 2usize,
                         text_value: "Delete project",
                         variant: MenuItemVariant::Destructive,
                         on_select: move |value| chosen.set(Some(value)),

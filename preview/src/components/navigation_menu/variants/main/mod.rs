@@ -18,9 +18,9 @@ fn site_href(path: &str) -> String {
 /// never render as bare text next to titled siblings (which would make
 /// "Button"/"Input" larger and lighter than "Introduction").
 #[component]
-fn ListItem(href: String, index: usize, title: String, description: String) -> Element {
+fn ListItem(href: String, title: String, description: String) -> Element {
     rsx! {
-        NavigationMenuLink { href, content_index: index,
+        NavigationMenuLink { href,
             div { class: "dx-navigation-menu-link-title", "{title}" }
             div { class: "dx-navigation-menu-link-description", "{description}" }
         }
@@ -37,13 +37,12 @@ pub fn Demo() -> Element {
             // identical comment.
             NavigationMenu { aria_label: "Component navigation menu",
                 NavigationMenuList {
-                    NavigationMenuItem { index: 0usize,
+                    NavigationMenuItem {
                         NavigationMenuTrigger { "Getting started" }
                         NavigationMenuContent {
                             div { class: "dx-navigation-menu-grid dx-navigation-menu-grid-2col",
                                 NavigationMenuLink {
                                     href: site_href("/"),
-                                    content_index: 0usize,
                                     class: "dx-navigation-menu-featured",
                                     // Deliberately not "shadcn-dioxus" --
                                     // the site's own persistent chrome
@@ -64,69 +63,60 @@ pub fn Demo() -> Element {
                                 }
                                 ListItem {
                                     href: site_href("/docs"),
-                                    index: 1usize,
                                     title: "Introduction",
                                     description: "Re-usable primitives you can copy into your own project.",
                                 }
                                 ListItem {
                                     href: site_href("/component/button/"),
-                                    index: 2usize,
                                     title: "Button",
                                     description: "Displays a button or a component that looks like a button.",
                                 }
                                 ListItem {
                                     href: site_href("/component/input/"),
-                                    index: 3usize,
                                     title: "Input",
                                     description: "Displays a form input field or a component that looks like an input field.",
                                 }
                             }
                         }
                     }
-                    NavigationMenuItem { index: 1usize,
+                    NavigationMenuItem {
                         NavigationMenuTrigger { "Components" }
                         NavigationMenuContent {
                             div { class: "dx-navigation-menu-grid",
                                 ListItem {
                                     href: site_href("/component/accordion/"),
-                                    index: 0usize,
                                     title: "Accordion",
                                     description: "A vertically stacked set of collapsible panels.",
                                 }
                                 ListItem {
                                     href: site_href("/component/dialog/"),
-                                    index: 1usize,
                                     title: "Dialog",
                                     description: "A modal window layered above the page.",
                                 }
                                 ListItem {
                                     href: site_href("/component/tooltip/"),
-                                    index: 2usize,
                                     title: "Tooltip",
                                     description: "A short message shown on hover or focus.",
                                 }
                                 ListItem {
                                     href: site_href("/component/tabs/"),
-                                    index: 3usize,
                                     title: "Tabs",
                                     description: "Switch between panels of related content.",
                                 }
                                 ListItem {
                                     href: site_href("/component/select/"),
-                                    index: 4usize,
                                     title: "Select",
                                     description: "Pick one value from a list of options.",
                                 }
                                 ListItem {
                                     href: site_href("/component/progress/"),
-                                    index: 5usize,
                                     title: "Progress",
                                     description: "Displays the completion progress of a task.",
                                 }
                             }
                         }
                     }
-                    NavigationMenuItem { index: 2usize,
+                    NavigationMenuItem {
                         NavigationMenuLink { href: site_href("/docs"), "Docs" }
                     }
                 }

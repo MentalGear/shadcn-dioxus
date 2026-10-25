@@ -10,15 +10,14 @@ Badge {
 }
 ```
 
-To make the badge a link, pass `as` and render the element yourself, with the children inside it:
+To make the badge a link, pass `as` (Radix's `asChild`). The callback gets an `AsChild`: spread its `attributes` on your element and render its `children` inside it, so the badge's own children stay where you wrote them:
 
 ```rust
 Badge {
-    r#as: move |attrs: Vec<Attribute>| rsx! {
-        a { href: "#link", ..attrs,
-            "Open Link"
-            ArrowUpRight {}
-        }
+    r#as: |el: AsChild| rsx! {
+        a { href: "#link", ..el.attributes, {el.children} }
     },
+    "Open Link"
+    ArrowUpRight {}
 }
 ```

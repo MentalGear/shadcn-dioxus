@@ -154,7 +154,8 @@ use dioxus::prelude::*;
 use dioxus_attributes::attributes;
 
 use crate::collection::{
-    collection_item, use_collection_provider, use_item, CollectionOptions, CollectionState,
+    collection_item, use_collection_provider, use_item, use_item_index, CollectionOptions,
+    CollectionPlacement, CollectionState, ItemIndex,
 };
 use crate::direction::use_direction;
 use crate::hover_intent::{use_hover_intent, HoverIntent};
@@ -260,14 +261,14 @@ pub struct NavigationMenuProps {
 ///     rsx! {
 ///         NavigationMenu { aria_label: "Main",
 ///             NavigationMenuList {
-///                 NavigationMenuItem { index: 0usize,
+///                 NavigationMenuItem {
 ///                     NavigationMenuTrigger { "Components" }
 ///                     NavigationMenuContent {
 ///                         NavigationMenuLink { href: "/calendar", "Calendar" }
 ///                         NavigationMenuLink { href: "/slider", "Slider" }
 ///                     }
 ///                 }
-///                 NavigationMenuItem { index: 1usize,
+///                 NavigationMenuItem {
 ///                     NavigationMenuLink { href: "/docs", "Docs" }
 ///                 }
 ///             }
@@ -427,6 +428,9 @@ pub fn NavigationMenuIndicator(props: NavigationMenuIndicatorProps) -> Element {
 #[derive(Clone, Copy)]
 struct NavigationMenuItemContext {
     index: ReadSignal<usize>,
+    /// This item's place in the top-level row; the element that registers
+    /// it (its trigger, or its top-level link) renders the marker.
+    order: ItemIndex,
     is_open: Memo<bool>,
     disabled: ReadSignal<bool>,
     /// This item's own [`NavigationMenuContent`]'s current element id, kept
@@ -468,9 +472,11 @@ struct NavigationMenuItemContext {
 /// The props for the [`NavigationMenuItem`] component.
 #[derive(Props, Clone, PartialEq)]
 pub struct NavigationMenuItemProps {
-    /// The index of this item within the [`NavigationMenu`]. Used for
-    /// Left/Right keyboard navigation between top-level items.
-    pub index: ReadSignal<usize>,
+    /// The item's place in the top-level keyboard order (Left/Right, Home/End). Leave it unset:
+    /// items are ordered as they are created, which is tree order. Set it on every item only when
+    /// one is inserted between items that are already mounted, or a keyed list reorders them.
+    #[props(default)]
+    pub index: ReadSignal<Option<usize>>,
 
     /// Whether this item is disabled.
     #[props(default)]
@@ -504,9 +510,12 @@ pub struct NavigationMenuItemProps {
 #[component]
 pub fn NavigationMenuItem(props: NavigationMenuItemProps) -> Element {
     let ctx: NavigationMenuContext = use_context();
-    let is_open = use_memo(move || (ctx.open)() == Some(props.index.cloned()));
+    let order = use_item_index(ctx.focus, props.index);
+    let index = order.index;
+    let is_open = use_memo(move || (ctx.open)() == Some(index.cloned()));
     let content_id = use_unique_id();
     let trigger_id = use_unique_id();
+    let content_focus_id = use_unique_id();
 
     // Not `use_collection_provider` (which also provides `CollectionState`
     // as its own bare context type): nothing here needs `content_focus`
@@ -519,11 +528,13 @@ pub fn NavigationMenuItem(props: NavigationMenuItemProps) -> Element {
         CollectionState::new(
             ReadSignal::new(Signal::new(false)),
             CollectionOptions::default(),
+            content_focus_id,
         )
     });
 
     let mut item_ctx = use_context_provider(|| NavigationMenuItemContext {
-        index: props.index,
+        index,
+        order,
         is_open,
         disabled: props.disabled,
         content_id,
@@ -636,6 +647,7 @@ pub fn NavigationMenuTrigger(props: NavigationMenuTriggerProps) -> Element {
     // (`dev-docs/backlog.md` row 93's duplicate-attribute hazard).
     let attributes = merge_attributes(vec![
         attributes,
+        item_ctx.order.marker_attribute(),
         attributes!(button {
             type: "button",
             aria_expanded: is_open(),
@@ -810,30 +822,19 @@ pub fn NavigationMenuContent(props: NavigationMenuContentProps) -> Element {
     // Consume a pending "focus the first link" request (the trigger's own
     // ArrowDown) once `content_focus` has at least one link registered --
     // see `NavigationMenuItemContext::focus_first_link`'s doc. Moves focus
-    // through `content_focus.set_focus`, the exact mechanism Home/Left/
-    // Right already use to move focus on the top-level collection
-    // (`use_item`'s own `control_mount_focus`), not a hand-rolled
-    // `MountedData` tracker ("whichever content link mounts first",
-    // tracked via a `Signal::peek()`-then-`set()` guard). That tracker is
-    // unreliable: it assumes a content panel's children mount in source
-    // order, and for this shape they do not -- they mount in the exact
-    // *reverse* of source order, reproducibly, so a multi-link panel
-    // opened via ArrowDown would focus its *last* link. `content_focus`'s own
-    // `first_available_index()` sidesteps this entirely: it sorts by each
-    // registered item's own `index`, and `NavigationMenuLink`'s `index`
-    // for a content link is `props.content_index` -- a plain value fixed
-    // by the caller before any rendering happens (see that prop's own
-    // doc), not anything computed from mount order at all.
+    // through the collection (`use_item`'s own `control_mount_focus`), the
+    // mechanism Home/Left/Right use on the top-level collection. The panel's
+    // links are created in reverse of source order for this shape, so
+    // "first" is the collection's document order, which
+    // `try_focus_placement` waits for (`crate::collection::use_item_index`).
     use_effect(move || {
         if !(item_ctx.focus_first_link)() {
             return;
         }
         let mut content_focus = item_ctx.content_focus;
-        let Some(first_index) = content_focus.first_available_index() else {
-            return;
-        };
-        item_ctx.focus_first_link.set(false);
-        content_focus.set_focus(Some(first_index));
+        if content_focus.try_focus_placement(CollectionPlacement::First) {
+            item_ctx.focus_first_link.set(false);
+        }
     });
 
     use_context_provider(|| NavigationMenuContentContext);
@@ -1134,27 +1135,13 @@ pub struct NavigationMenuLinkProps {
     #[props(default)]
     pub disabled: ReadSignal<bool>,
 
-    /// This link's own position within its panel, for ArrowUp/ArrowDown to
-    /// move between links in the right order (this module's own doc, "Tab
-    /// order: native, not roving"). Ignored for a top-level link (a direct
-    /// child of [`NavigationMenuItem`], no [`NavigationMenuContent`]
-    /// ancestor) -- those instead key off their own [`NavigationMenuItem`]'s
-    /// `index` prop for Left/Right/Home/End, so leaving this at its default
-    /// there is correct, not merely tolerated. **Required** (in the same
-    /// sense [`NavigationMenuItemProps::index`] is -- no runtime check
-    /// enforces it) for a link nested inside [`NavigationMenuContent`]: set
-    /// it to that link's own position among its panel's siblings, `0`-based
-    /// in reading order. Deliberately not inferred from mount order --
-    /// Dioxus does not mount a content panel's
-    /// children in source order for this shape (a `use_hook`-assigned,
-    /// monotonic-counter index numbers every
-    /// panel's links in the exact *reverse* of their
-    /// visual order, reproducibly), so nothing
-    /// computed at a content link's own mount time can be trusted for this
-    /// -- only a value fixed by the caller, before any rendering happens,
-    /// the same way the top-level collection's own indices already are.
+    /// The link's place in its panel's keyboard order (ArrowUp/ArrowDown). Leave it unset: links
+    /// are ordered as they appear in the document. Set it on every link of the panel only when one
+    /// is inserted between links that are already mounted, or a keyed list reorders them. Ignored
+    /// for a top-level link (a direct child of [`NavigationMenuItem`]), which takes its place from
+    /// its [`NavigationMenuItem`].
     #[props(default)]
-    pub content_index: ReadSignal<usize>,
+    pub index: ReadSignal<Option<usize>>,
 
     /// Called when the link is activated (after this primitive's own
     /// close-the-open-panel handling runs).
@@ -1202,18 +1189,20 @@ pub fn NavigationMenuLink(props: NavigationMenuLinkProps) -> Element {
     // its own `NavigationMenuItem`'s `index` prop). A content link instead
     // participates in *this item's own* `content_focus` collection
     // (ArrowUp/ArrowDown, and the trigger's own ArrowDown-to-first-link --
-    // see `NavigationMenuItemContext::content_focus`'s doc), keyed by
-    // `props.content_index` (see that prop's own doc for why this is a
-    // plain, caller-supplied value rather than anything computed from
-    // mount order). `is_top_level` cannot change for a mounted instance
+    // see `NavigationMenuItemContext::content_focus`'s doc), in document
+    // order (`crate::collection::use_item_index`; both hooks run for every
+    // link, and a top-level link's unused content slot is never rendered).
+    // `is_top_level` cannot change for a mounted instance
     // (it is fixed by where this component sits in the tree), so which of
     // the two ends up used is itself stable across this instance's
     // re-renders.
-    let (collection, own_index) = if is_top_level {
-        (ctx.focus, item_ctx.index)
+    let content_order = use_item_index(item_ctx.content_focus, props.index);
+    let (collection, order) = if is_top_level {
+        (ctx.focus, item_ctx.order)
     } else {
-        (item_ctx.content_focus, props.content_index)
+        (item_ctx.content_focus, content_order)
     };
+    let own_index = order.index;
     let item = use_item(collection_item(collection, own_index).disabled(disabled));
     let mut onmounted_item = item.onmounted();
 
@@ -1222,6 +1211,7 @@ pub fn NavigationMenuLink(props: NavigationMenuLinkProps) -> Element {
     // duplicate-attribute hazard).
     let attributes = merge_attributes(vec![
         props.attributes,
+        order.marker_attribute(),
         attributes!(a {
             aria_current: props.active.then_some("page"),
             // `<a>` has no native disabled semantics (unlike

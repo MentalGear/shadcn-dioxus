@@ -6,11 +6,10 @@ pub fn Demo() -> Element {
     rsx! {
         div {
             Menubar {
-                MenubarMenu { index: 0usize,
+                MenubarMenu {
                     MenubarTrigger { "File" }
                     MenubarContent {
                         MenubarItem {
-                            index: 0usize,
                             value: "new".to_string(),
                             on_select: move |value| {
                                 tracing::info!("Selected value: {}", value);
@@ -18,7 +17,6 @@ pub fn Demo() -> Element {
                             "New"
                         }
                         MenubarItem {
-                            index: 1usize,
                             value: "open".to_string(),
                             disabled: true,
                             on_select: move |value| {
@@ -27,7 +25,6 @@ pub fn Demo() -> Element {
                             "Open"
                         }
                         MenubarItem {
-                            index: 2usize,
                             value: "save".to_string(),
                             on_select: move |value| {
                                 tracing::info!("Selected value: {}", value);
@@ -36,11 +33,10 @@ pub fn Demo() -> Element {
                         }
                     }
                 }
-                MenubarMenu { index: 1usize,
+                MenubarMenu {
                     MenubarTrigger { "Edit" }
                     MenubarContent {
                         MenubarItem {
-                            index: 0usize,
                             value: "cut".to_string(),
                             on_select: move |value| {
                                 tracing::info!("Selected value: {}", value);
@@ -48,7 +44,6 @@ pub fn Demo() -> Element {
                             "Cut"
                         }
                         MenubarItem {
-                            index: 1usize,
                             value: "copy".to_string(),
                             on_select: move |value| {
                                 tracing::info!("Selected value: {}", value);
@@ -56,7 +51,6 @@ pub fn Demo() -> Element {
                             "Copy"
                         }
                         MenubarItem {
-                            index: 2usize,
                             value: "paste".to_string(),
                             on_select: move |value| {
                                 tracing::info!("Selected value: {}", value);

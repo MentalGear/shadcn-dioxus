@@ -23,8 +23,8 @@ pub fn Demo() -> Element {
                 trigger_aria_label: "Small size select",
                 list_aria_label: "Small size options",
                 SelectGroup {
-                    SelectOption::<String> { index: 0usize, value: "blueberry", text_value: "Blueberry", "Blueberry" }
-                    SelectOption::<String> { index: 1usize, value: "grapes", text_value: "Grapes", "Grapes" }
+                    SelectOption::<String> { value: "blueberry", text_value: "Blueberry", "Blueberry" }
+                    SelectOption::<String> { value: "grapes", text_value: "Grapes", "Grapes" }
                 }
             }
             Select::<String> {
@@ -34,8 +34,8 @@ pub fn Demo() -> Element {
                 trigger_aria_label: "Default size select",
                 list_aria_label: "Default size options",
                 SelectGroup {
-                    SelectOption::<String> { index: 0usize, value: "blueberry", text_value: "Blueberry", "Blueberry" }
-                    SelectOption::<String> { index: 1usize, value: "grapes", text_value: "Grapes", "Grapes" }
+                    SelectOption::<String> { value: "blueberry", text_value: "Blueberry", "Blueberry" }
+                    SelectOption::<String> { value: "grapes", text_value: "Grapes", "Grapes" }
                 }
             }
         }

@@ -43,11 +43,12 @@ pub fn Demo() -> Element {
     // filtered column), a row key, and which features are on. The component
     // owns sort, filter, page and selection (`use_data_table`).
     //
-    // Exactly one column is the "active" sort at all times (default: email
-    // ascending), matching the vendored APG sortable-table reference, which
-    // likewise always has exactly one column carrying `aria-sort` (see
-    // `DataTableColumnHeader`'s doc and
-    // `playwright/oracle/tier1-apg/sortable-table.spec.ts`'s R1).
+    // At most one column is the "active" sort (default: email ascending), like
+    // the vendored APG sortable-table reference, which carries `aria-sort` on
+    // one column (see `DataTableColumnHeader`'s doc and
+    // `playwright/oracle/tier1-apg/sortable-table.spec.ts`'s R1). A third
+    // activation of the sorted column clears the sort (TanStack's cycle), and
+    // the rows return to the order of `PAYMENTS`.
     let columns = vec![
         Column::new("id", "ID", |p: &Payment| rsx! { "{p.id}" }),
         Column::new("status", "Status", |p: &Payment| rsx! { "{p.status}" }),

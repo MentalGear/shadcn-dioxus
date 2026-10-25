@@ -3,12 +3,10 @@ The Menubar component can be used to display a menu bar with collapsible menus.
 ## Component Structure
 
 ```rust
-// The Menubar component wraps the entire menu bar and contains the individual menus in the order of their index.
+// The Menubar component wraps the entire menu bar and contains the individual menus, in document order.
 Menubar {
     // The MenubarMenu contains the individual menus that can be opened.
     MenubarMenu {
-        // The index of the menu, used to determine the order in which menus are displayed.
-        index: 0,
         // The menubar trigger is the element that will display the menu when activated.
         MenubarTrigger {
             // The content of the trigger button
@@ -41,8 +39,6 @@ Menubar {
 ```rust
 MenubarContent {
     MenubarCheckboxItem {
-        // Items are ordered by `index`, like plain items.
-        index: 0,
         // Controlled: `checked` + `on_checked_change`. Uncontrolled:
         // `default_checked` -- but note the content unmounts when the menu
         // closes, so an uncontrolled item starts over on every open.
@@ -61,8 +57,8 @@ MenubarContent {
         value: Some(position()),
         on_value_change: move |value| position.set(value),
         // A radio item's `value` is also its typeahead label.
-        MenubarRadioItem { index: 1, value: "top".to_string(), "Top" }
-        MenubarRadioItem { index: 2, value: "bottom".to_string(), "Bottom" }
+        MenubarRadioItem { value: "top".to_string(), "Top" }
+        MenubarRadioItem { value: "bottom".to_string(), "Bottom" }
     }
 }
 ```
@@ -99,7 +95,6 @@ MenubarContent {
     MenubarGroup {
         MenubarLabel { "My Account" }
         MenubarItem {
-            index: 0,
             value: "profile".to_string(),
             // Items take `variant` and `inset`, like shadcn's `variant="destructive"` / `inset`.
             "Profile"
@@ -110,7 +105,6 @@ MenubarContent {
     // A divider between groups: `role="separator"`, not focusable, skipped by arrow keys and typeahead.
     MenubarSeparator {}
     MenubarItem {
-        index: 1,
         value: "delete".to_string(),
         variant: MenuItemVariant::Destructive,
         "Delete"
@@ -120,7 +114,7 @@ MenubarContent {
 
 - **`variant`** (`MenuItemVariant::Default` or `Destructive`) paints the item in the theme's destructive text colour with a destructive-tinted highlight. The role stays `menuitem` and the item carries `data-variant`.
 - **`inset`** reserves the leading indicator slot on an item (or `MenubarLabel`) that draws none, so a menu that mixes plain and checkable items keeps its labels on one edge. It also exists on the checkbox and radio items. The element carries `data-inset="true"`.
-- **`MenubarGroup`** is a `role="group"` with no behaviour; items inside it keep their `index` across the whole menu. Name it with `aria-label` when it has a visible heading.
+- **`MenubarGroup`** is a `role="group"` with no behaviour; items inside it stay in the whole menu's keyboard order. Name it with `aria-label` when it has a visible heading.
 
 See the `shortcuts` variant.
 

@@ -1,8 +1,9 @@
 The Combobox component is an autocomplete input with a filterable popup list.
 
-Filtering preserves the order defined by the rendered `ComboboxOption` elements and their `index`
-props. If you want query-dependent ranking, control `query`, sort your item data in user code,
-render the options in that sorted order, and assign indexes from the sorted list.
+Filtering preserves the document order of the rendered `ComboboxOption` elements. If you want
+query-dependent ranking, control `query`, sort your item data in user code and render the options
+in that sorted order. Options that are reordered while mounted (a keyed list) keep their first
+place, so such a list sets each option's `index` from the sorted list.
 
 Selecting several options (chips, clear button, form value) is `ComboboxMulti`: its demos come first under Examples below, and its API is in "Multiple selection".
 
@@ -33,7 +34,6 @@ Combobox::<String> {
     list_aria_label: "Frameworks",
     ComboboxEmpty { "No framework found." }
     ComboboxOption::<String> {
-        index: 0usize,
         value: "next".to_string(),
         text_value: "Next.js",
         "Next.js"
@@ -64,7 +64,7 @@ ComboboxMulti::<String> {
     placeholder: "Choose frameworks...",
     aria_label: "Frameworks",
     ComboboxEmpty { "No framework found." }
-    ComboboxOption::<String> { index: 0usize, value: "next".to_string(), text_value: "Next.js", "Next.js" }
+    ComboboxOption::<String> { value: "next".to_string(), text_value: "Next.js", "Next.js" }
 }
 ```
 

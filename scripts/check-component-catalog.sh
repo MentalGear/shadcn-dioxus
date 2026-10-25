@@ -39,7 +39,7 @@
 #    every style.css in dx's asset manifest (`css_highlight!` under `debug_assertions`), and the SSG
 #    bundle then includes it, so a forgotten Link is invisible in every debug build and spec run and
 #    shows only in the release preview (an unlinked virtual_grid sheet ships unstyled: overflow:
-#    visible, nothing scrolled). A comment-only sheet (scroll_area, virtual_list) is exempt.
+#    visible, nothing scrolled). A comment-only sheet (virtual_list) is exempt.
 #
 # 3. EVERY SIBLING COMPONENT A COMPONENT IMPORTS IS A DECLARED DEPENDENCY.
 #    `dx components add <name>` installs the component's own files plus the

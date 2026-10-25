@@ -1,6 +1,7 @@
 use super::super::component::*;
 use crate::components::button::{Button, ButtonVariant};
 use dioxus::prelude::*;
+use dioxus_primitives::AsChild;
 use dioxus_icons::lucide::{BadgeCheck, ChevronLeft};
 use dioxus_primitives::direction::{Direction, DirectionProvider};
 
@@ -28,19 +29,20 @@ pub fn Demo() -> Element {
                 Item {
                     variant: ItemVariant::Outline,
                     size: ItemSize::Sm,
-                    as: move |attrs: Vec<Attribute>| rsx! {
-                        a { href: "#", ..attrs,
-                            ItemMedia { variant: ItemMediaVariant::Icon,
-                                BadgeCheck { size: "20" }
-                            }
-                            ItemContent {
-                                ItemTitle { "تم التحقق من ملفك الشخصي." }
-                            }
-                            ItemActions {
-                                ChevronLeft { size: "16" }
-                            }
+                    as: move |el: AsChild| rsx! {
+                        a { href: "#", ..el.attributes,
+                            {el.children}
                         }
                     },
+                    ItemMedia { variant: ItemMediaVariant::Icon,
+                        BadgeCheck { size: "20" }
+                    }
+                    ItemContent {
+                        ItemTitle { "تم التحقق من ملفك الشخصي." }
+                    }
+                    ItemActions {
+                        ChevronLeft { size: "16" }
+                    }
                 }
             }
         }

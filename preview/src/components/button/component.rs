@@ -1,4 +1,5 @@
 use dioxus::prelude::*;
+use dioxus_primitives::AsChild;
 use dioxus_primitives::dioxus_attributes::attributes;
 use dioxus_primitives::merge_attributes;
 
@@ -89,11 +90,11 @@ pub fn Button(
     onmousedown: Option<EventHandler<MouseEvent>>,
     onmouseup: Option<EventHandler<MouseEvent>>,
     onkeydown: Option<EventHandler<KeyboardEvent>>,
-    /// Renders the button as the element the callback returns, given the
-    /// button's attributes (shadcn's "As Link": an anchor, or a router link).
-    /// The callback then owns the children, and the handlers ride on the
-    /// element it renders, so a click on that element still calls `onclick`.
-    r#as: Option<Callback<Vec<Attribute>, Element>>,
+    /// Renders the button as the element the callback returns, shadcn's "As
+    /// Link": an anchor, or a router link. The callback gets an [`AsChild`]:
+    /// the button's attributes with its handlers in them, so a click on that
+    /// element still calls `onclick`, and the button's children.
+    r#as: Option<Callback<AsChild, Element>>,
     children: Element,
 ) -> Element {
     let base = attributes!(button {
@@ -128,7 +129,7 @@ pub fn Button(
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/button/style.css") }
         if let Some(dynamic) = r#as {
-            {dynamic.call(merged)}
+            {dynamic.call(AsChild::new(merged, children))}
         } else {
             button { ..merged, {children} }
         }

@@ -36,7 +36,6 @@ pub fn Demo() -> Element {
             ContextMenuContent {
                 ContextMenuItem {
                     value: "edit".to_string(),
-                    index: 0usize,
                     on_select: move |value| {
                         selected_item.set(Some(value));
                     },
@@ -44,7 +43,6 @@ pub fn Demo() -> Element {
                 }
                 ContextMenuItem {
                     value: "undo".to_string(),
-                    index: 1usize,
                     disabled: true,
                     on_select: move |value| {
                         selected_item.set(Some(value));
@@ -53,7 +51,6 @@ pub fn Demo() -> Element {
                 }
                 ContextMenuItem {
                     value: "duplicate".to_string(),
-                    index: 2usize,
                     on_select: move |value| {
                         selected_item.set(Some(value));
                     },
@@ -61,7 +58,6 @@ pub fn Demo() -> Element {
                 }
                 ContextMenuItem {
                     value: "delete".to_string(),
-                    index: 3usize,
                     on_select: move |value| {
                         selected_item.set(Some(value));
                     },
@@ -71,11 +67,10 @@ pub fn Demo() -> Element {
                 // this file's top-of-file comment for why this sits at
                 // index 4 rather than interleaved with the items above.
                 ContextMenuSub {
-                    ContextMenuSubTrigger { index: 4usize, "More tools" }
+                    ContextMenuSubTrigger { "More tools" }
                     ContextMenuSubContent {
                         ContextMenuSubItem {
                             value: "rename".to_string(),
-                            index: 0usize,
                             on_select: move |value| {
                                 selected_item.set(Some(value));
                             },
@@ -83,7 +78,6 @@ pub fn Demo() -> Element {
                         }
                         ContextMenuSubItem {
                             value: "archive".to_string(),
-                            index: 1usize,
                             on_select: move |value| {
                                 selected_item.set(Some(value));
                             },
@@ -92,14 +86,12 @@ pub fn Demo() -> Element {
                     }
                 }
                 ContextMenuCheckboxItem {
-                    index: 5usize,
                     checked: Some(show_bookmarks()),
                     on_checked_change: move |checked| show_bookmarks.set(checked),
                     text_value: "Show Bookmarks",
                     "Show Bookmarks"
                 }
                 ContextMenuCheckboxItem {
-                    index: 6usize,
                     checked: Some(show_full_urls()),
                     on_checked_change: move |checked| show_full_urls.set(checked),
                     text_value: "Show Full URLs",
@@ -110,12 +102,10 @@ pub fn Demo() -> Element {
                     value: Some(person()),
                     on_value_change: move |value| person.set(value),
                     ContextMenuRadioItem {
-                        index: 7usize,
                         value: "pedro".to_string(),
                         "Pedro Duarte"
                     }
                     ContextMenuRadioItem {
-                        index: 8usize,
                         value: "colm".to_string(),
                         "Colm Tuite"
                     }

@@ -29,22 +29,19 @@ pub fn Demo() -> Element {
                     ContextMenuContent {
                         ContextMenuItem {
                             value: "modify".to_string(),
-                            index: 0usize,
                             on_select: move |v| selected.set(Some(v)),
                             "Modify"
                         }
                         ContextMenuSub {
-                            ContextMenuSubTrigger { index: 1usize, "Extra tools" }
+                            ContextMenuSubTrigger { "Extra tools" }
                             ContextMenuSubContent {
                                 ContextMenuSubItem {
                                     value: "relabel".to_string(),
-                                    index: 0usize,
                                     on_select: move |v| selected.set(Some(v)),
                                     "Relabel"
                                 }
                                 ContextMenuSubItem {
                                     value: "stash".to_string(),
-                                    index: 1usize,
                                     on_select: move |v| selected.set(Some(v)),
                                     "Stash"
                                 }
@@ -52,12 +49,10 @@ pub fn Demo() -> Element {
                         }
                         ContextMenuItem {
                             value: "erase".to_string(),
-                            index: 2usize,
                             on_select: move |v| selected.set(Some(v)),
                             "Erase"
                         }
                         ContextMenuCheckboxItem {
-                            index: 3usize,
                             checked: Some(pinned()),
                             on_checked_change: move |checked| pinned.set(checked),
                             text_value: "Pinned",
@@ -68,12 +63,10 @@ pub fn Demo() -> Element {
                             value: Some(order()),
                             on_value_change: move |value| order.set(value),
                             ContextMenuRadioItem {
-                                index: 4usize,
                                 value: "ascending".to_string(),
                                 "Ascending"
                             }
                             ContextMenuRadioItem {
-                                index: 5usize,
                                 value: "descending".to_string(),
                                 "Descending"
                             }

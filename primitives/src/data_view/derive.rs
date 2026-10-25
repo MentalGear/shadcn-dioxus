@@ -256,7 +256,7 @@ mod tests {
     }
 
     #[test]
-    fn toggle_sort_new_column_is_ascending_same_column_flips() {
+    fn toggle_sort_new_column_is_ascending_same_column_flips_then_clears() {
         let mut s = state();
         s.toggle_sort("n");
         assert_eq!(s.sort, Some(("n".into(), SortDirection::Ascending)));
@@ -264,6 +264,9 @@ mod tests {
         s.toggle_sort("n");
         assert_eq!(s.sort, Some(("n".into(), SortDirection::Descending)));
         assert_eq!(ids(&view(&s)), vec!["e", "d"]);
+        s.toggle_sort("n");
+        assert_eq!(s.sort, None);
+        assert_eq!(ids(&view(&s)), vec!["a", "b"]);
         s.toggle_sort("name");
         assert_eq!(s.sort, Some(("name".into(), SortDirection::Ascending)));
     }

@@ -4,11 +4,13 @@ use dioxus_icons::lucide::{Bold, Italic, Underline};
 use std::collections::HashSet;
 
 /// shadcn's `toggle-group-vertical`: a multiple-select column, `spacing: 1`, bold and italic pressed.
+/// `roving_loop: false` (Radix `loop={false}`): ArrowUp/ArrowDown stop at the first and last item.
 #[component]
 pub fn Demo() -> Element {
     rsx! {
         ToggleGroup {
             horizontal: false,
+            roving_loop: false,
             allow_multiple_pressed: true,
             spacing: 1u8,
             default_value: HashSet::from(["bold".to_string(), "italic".to_string()]),
