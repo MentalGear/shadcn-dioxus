@@ -55,18 +55,20 @@ pub fn DrawerContent(props: DrawerContentProps) -> Element {
         "data-dx-surface": "edge",
         "data-dx-edge": "floating",
     });
-    let content_attributes = merge_attributes(vec![content_base, props.attributes]);
+    let content_attributes = merge_attributes(vec![content_base, props.attributes.clone()]);
     // The panel follows the on-screen keyboard (`primitives/src/keyboard_inset.rs`; `style.css`
     // consumes `--dx-keyboard-inset`). A caller's own `id` is kept.
     let panel = use_keyboard_panel(Some(props.id));
 
+    let children = props.children.clone();
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/drawer/style.css") }
         drawer::DrawerContent {
             id: panel.id(),
             class: content_class,
             attributes: content_attributes,
-            {props.children}
+            ..props,
+            {children}
             KeyboardInset { panel }
         }
     }
@@ -78,11 +80,14 @@ pub fn DrawerHandle(props: DrawerHandleProps) -> Element {
         class: "dx-drawer-handle",
         "data-slot": "drawer-handle",
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/drawer/style.css") }
-        drawer::DrawerHandle { attributes: merged }
+        drawer::DrawerHandle {
+            attributes: merged,
+            ..props
+        }
     }
 }
 
@@ -117,10 +122,13 @@ pub fn DrawerFooter(
 #[component]
 pub fn DrawerTitle(props: DialogTitleProps) -> Element {
     let base = attributes!(div { class: "dx-drawer-title", "data-slot": "drawer-title" });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/drawer/style.css") }
-        drawer::DrawerTitle { id: props.id, attributes: merged, {props.children} }
+        drawer::DrawerTitle {
+            attributes: merged,
+            ..props
+        }
     }
 }
 
@@ -128,10 +136,13 @@ pub fn DrawerTitle(props: DialogTitleProps) -> Element {
 pub fn DrawerDescription(props: DialogDescriptionProps) -> Element {
     let base =
         attributes!(div { class: "dx-drawer-description", "data-slot": "drawer-description" });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/drawer/style.css") }
-        drawer::DrawerDescription { id: props.id, attributes: merged, {props.children} }
+        drawer::DrawerDescription {
+            attributes: merged,
+            ..props
+        }
     }
 }
 
@@ -147,10 +158,13 @@ pub fn DrawerClose(props: DrawerCloseProps) -> Element {
     let base = attributes!(button {
         class: "dx-drawer-close",
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
 
     rsx! {
-        drawer::DrawerClose { attributes: merged, r#as: props.r#as, {props.children} }
+        drawer::DrawerClose {
+            attributes: merged,
+            ..props
+        }
     }
 }
 

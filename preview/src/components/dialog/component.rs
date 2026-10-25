@@ -204,14 +204,13 @@ pub fn DialogTitle(props: DialogTitleProps) -> Element {
     let base = attributes!(h2 {
         class: "dx-dialog-title",
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/dialog/style.css") }
         dialog::DialogTitle {
-            id: props.id,
             attributes: merged,
-            {props.children}
+            ..props
         }
     }
 }
@@ -221,14 +220,13 @@ pub fn DialogDescription(props: DialogDescriptionProps) -> Element {
     let base = attributes!(p {
         class: "dx-dialog-description",
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/dialog/style.css") }
         dialog::DialogDescription {
-            id: props.id,
             attributes: merged,
-            {props.children}
+            ..props
         }
     }
 }

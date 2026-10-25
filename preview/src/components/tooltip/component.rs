@@ -70,15 +70,13 @@ pub fn TooltipTrigger(props: TooltipTriggerProps) -> Element {
     let base = attributes!(button {
         class: "dx-tooltip-trigger",
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/tooltip/style.css") }
         tooltip::TooltipTrigger {
-            id: props.id,
-            as: props.r#as,
             attributes: merged,
-            {props.children}
+            ..props
         }
     }
 }
@@ -90,16 +88,13 @@ pub fn TooltipContent(props: TooltipContentProps) -> Element {
         "data-dx-surface": "floating",
         "data-dx-tone": "inverted",
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/tooltip/style.css") }
         tooltip::TooltipContent {
-            id: props.id,
-            side: props.side,
-            align: props.align,
             attributes: merged,
-            {props.children}
+            ..props
         }
     }
 }

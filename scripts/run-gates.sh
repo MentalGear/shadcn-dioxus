@@ -93,6 +93,7 @@ gates=(
   "check-dynamic-style-shorthand|scripts/check-dynamic-style-shorthand.sh"
   "check-as-child|scripts/check-as-child.sh"
   "check-wrapper-props|scripts/check-wrapper-props.sh"
+  "check-wrapper-spread|scripts/check-wrapper-spread.sh"
   # group: Timers, listeners, motion and focus
   "check-uncleared-intervals|scripts/check-uncleared-intervals.sh"
   "check-blocking-scroll-listeners|scripts/check-blocking-scroll-listeners.sh"

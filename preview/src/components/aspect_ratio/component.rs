@@ -24,14 +24,13 @@ pub fn AspectRatio(props: AspectRatioProps) -> Element {
     let base = attributes!(div {
         class: "dx-aspect-ratio", "data-dx-root": "",
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/aspect_ratio/style.css") }
         aspect_ratio::AspectRatio {
-            ratio: props.ratio,
             attributes: merged,
-            {props.children}
+            ..props
         }
     }
 }

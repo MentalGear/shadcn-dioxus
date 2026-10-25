@@ -130,17 +130,13 @@ pub fn DragAndDropList(props: DragAndDropListProps) -> Element {
 #[component]
 pub fn DragAndDropListItem(props: DragAndDropListItemProps) -> Element {
     let base = attributes!(li { class: "dx-drag-and-drop-list-item" });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/drag_and_drop_list/style.css") }
         drag_and_drop_list::DragAndDropListItem {
-            index: props.index,
-            // Forward the stable item key so the primitive tracks focus by
-            // identity across reorders and removals instead of losing it.
-            item_key: props.item_key.clone(),
             attributes: merged,
-            {props.children}
+            ..props
         }
     }
 }
@@ -148,13 +144,13 @@ pub fn DragAndDropListItem(props: DragAndDropListItemProps) -> Element {
 #[component]
 pub fn DragAndDropListItems(props: DragAndDropListItemsProps) -> Element {
     let base = attributes!(ul { class: "dx-drag-and-drop-list-ul" });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/drag_and_drop_list/style.css") }
         drag_and_drop_list::DragAndDropListItems {
-            aria_label: props.aria_label,
             attributes: merged,
+            ..props,
             for item in drag_and_drop_list::use_drag_and_drop_list_items() {
                 Fragment {
                     key: "{item.key}",
@@ -180,14 +176,13 @@ pub fn DragAndDropListItems(props: DragAndDropListItemsProps) -> Element {
 #[component]
 pub fn DragAndDropDropIndicator(props: DragAndDropDropIndicatorProps) -> Element {
     let base = attributes!(div { class: "dx-drag-and-drop-list-drop-indicator" });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/drag_and_drop_list/style.css") }
         drag_and_drop_list::DragAndDropDropIndicator {
-            index: props.index,
-            position: props.position,
             attributes: merged,
+            ..props
         }
     }
 }

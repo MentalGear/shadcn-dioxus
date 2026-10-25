@@ -146,10 +146,13 @@ pub fn Questionnaire(props: StyledQuestionnaireProps) -> Element {
 #[component]
 pub fn QuestionnaireProgress(props: QuestionnaireProgressProps) -> Element {
     let base = attributes!(div { class: "dx-questionnaire-progress", "data-slot": "questionnaire-progress" });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
     rsx! {
         // `children:` hands the Element through as is, so an empty one still reads as "use the default text".
-        primitive::QuestionnaireProgress { attributes: merged, children: props.children }
+        primitive::QuestionnaireProgress {
+            attributes: merged,
+            ..props
+        }
     }
 }
 
@@ -158,9 +161,12 @@ pub fn QuestionnaireProgress(props: QuestionnaireProgressProps) -> Element {
 pub fn QuestionnaireItem(props: QuestionnaireItemProps) -> Element {
     let base =
         attributes!(fieldset { class: "dx-questionnaire-item", "data-slot": "questionnaire-item" });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
     rsx! {
-        primitive::QuestionnaireItem { name: props.name, attributes: merged, {props.children} }
+        primitive::QuestionnaireItem {
+            attributes: merged,
+            ..props
+        }
     }
 }
 
@@ -169,9 +175,12 @@ pub fn QuestionnaireItem(props: QuestionnaireItemProps) -> Element {
 pub fn QuestionnaireTitle(props: QuestionnairePartProps) -> Element {
     let base =
         attributes!(legend { class: "dx-questionnaire-title", "data-slot": "questionnaire-title" });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
     rsx! {
-        primitive::QuestionnaireTitle { attributes: merged, {props.children} }
+        primitive::QuestionnaireTitle {
+            attributes: merged,
+            ..props
+        }
     }
 }
 
@@ -179,9 +188,12 @@ pub fn QuestionnaireTitle(props: QuestionnairePartProps) -> Element {
 #[component]
 pub fn QuestionnaireDescription(props: QuestionnairePartProps) -> Element {
     let base = attributes!(p { class: "dx-questionnaire-description", "data-slot": "questionnaire-description" });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
     rsx! {
-        primitive::QuestionnaireDescription { attributes: merged, {props.children} }
+        primitive::QuestionnaireDescription {
+            attributes: merged,
+            ..props
+        }
     }
 }
 
@@ -189,9 +201,12 @@ pub fn QuestionnaireDescription(props: QuestionnairePartProps) -> Element {
 #[component]
 pub fn QuestionnaireChoices(props: QuestionnairePartProps) -> Element {
     let base = attributes!(div { class: "dx-questionnaire-choices", "data-slot": "questionnaire-choices" });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
     rsx! {
-        primitive::QuestionnaireChoices { attributes: merged, {props.children} }
+        primitive::QuestionnaireChoices {
+            attributes: merged,
+            ..props
+        }
     }
 }
 
@@ -200,9 +215,12 @@ pub fn QuestionnaireChoices(props: QuestionnairePartProps) -> Element {
 #[component]
 pub fn QuestionnaireChoice(props: QuestionnaireChoiceProps) -> Element {
     let base = attributes!(label { class: "dx-questionnaire-choice", "data-slot": "questionnaire-choice" });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
+    let children = props.children.clone();
     rsx! {
-        primitive::QuestionnaireChoice { value: props.value, attributes: merged,
+        primitive::QuestionnaireChoice {
+            attributes: merged,
+            ..props,
             primitive::QuestionnaireChoiceInput {
                 class: "dx-questionnaire-choice-input",
                 "data-slot": "questionnaire-choice-input",
@@ -226,7 +244,7 @@ pub fn QuestionnaireChoice(props: QuestionnaireChoiceProps) -> Element {
             primitive::QuestionnaireChoiceLabel {
                 class: "dx-questionnaire-choice-label",
                 "data-slot": "questionnaire-choice-label",
-                {props.children}
+                {children}
             }
             primitive::QuestionnaireChoiceShortcut {
                 class: "dx-questionnaire-choice-shortcut",
@@ -260,12 +278,15 @@ pub fn QuestionnaireChoiceDescription(
 pub fn QuestionnaireInput(props: QuestionnaireInputProps) -> Element {
     let base =
         attributes!(input { class: "dx-questionnaire-input", "data-slot": "questionnaire-input" });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
     rsx! {
         div {
             class: "dx-questionnaire-input-wrapper",
             "data-slot": "questionnaire-input-wrapper",
-            primitive::QuestionnaireInput { attributes: merged }
+            primitive::QuestionnaireInput {
+                attributes: merged,
+                ..props
+            }
         }
     }
 }
@@ -275,9 +296,12 @@ pub fn QuestionnaireInput(props: QuestionnaireInputProps) -> Element {
 pub fn QuestionnaireError(props: QuestionnaireErrorProps) -> Element {
     let base =
         attributes!(p { class: "dx-questionnaire-error", "data-slot": "questionnaire-error" });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
     rsx! {
-        primitive::QuestionnaireError { attributes: merged, children: props.children }
+        primitive::QuestionnaireError {
+            attributes: merged,
+            ..props
+        }
     }
 }
 

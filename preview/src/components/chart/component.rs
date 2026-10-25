@@ -56,7 +56,7 @@ pub fn ChartContainer(props: ChartContainerProps) -> Element {
         class: "dx-chart", "data-dx-root": "",
     });
     // `.clone()`, not a move: `..props` below needs `props` intact --
-    // moving `props.attributes` out first (as the non-spread `Chart`/
+    // moving `props.attributes.clone()` out first (as the non-spread `Chart`/
     // `ChartTooltip`/`ChartLegend` bodies safely could not, either, if they
     // needed to override `attributes` the same way) would make `props` a
     // partially-moved value, which struct-update syntax rejects (E0382).
@@ -64,7 +64,11 @@ pub fn ChartContainer(props: ChartContainerProps) -> Element {
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/chart/style.css") }
-        chart::ChartContainer { attributes: merged, ..props }
+        chart::ChartContainer {
+            attributes: merged,
+            ..props,
+ ..props
+        }
     }
 }
 
@@ -95,7 +99,10 @@ pub fn ChartContainer(props: ChartContainerProps) -> Element {
 pub fn Chart(props: ChartProps) -> Element {
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/chart/style.css") }
-        chart::Chart { ..props }
+        chart::Chart {
+            ..props,
+ ..props
+        }
     }
 }
 
@@ -123,7 +130,11 @@ pub fn ChartTooltip(props: ChartTooltipProps) -> Element {
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/chart/style.css") }
-        chart::ChartTooltip { attributes: merged, ..props }
+        chart::ChartTooltip {
+            attributes: merged,
+            ..props,
+ ..props
+        }
     }
 }
 
@@ -145,6 +156,10 @@ pub fn ChartLegend(props: ChartLegendProps) -> Element {
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/chart/style.css") }
-        chart::ChartLegend { attributes: merged, ..props }
+        chart::ChartLegend {
+            attributes: merged,
+            ..props,
+ ..props
+        }
     }
 }
