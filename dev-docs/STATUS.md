@@ -4,8 +4,8 @@
 the page as stale and check `git log` and the flag files named here.** What each batch contained is in `git log` and the
 backlog row files, not here: this page says only what is deployed, what runs, what is next and what waits for the owner.
 
-Last updated: **2026-10-24**. Several sessions work in parallel; who holds what is on the `claims` branch (`CLAIMS.md`).
-Preview site: https://mentalgear.github.io/shadcn-dioxus/ (deployed from main `42dc6687`, PR #145, merge queue batch 18).
+Last updated: **2026-10-25**. Several sessions work in parallel; who holds what is on the `claims` branch (`CLAIMS.md`).
+Preview site: https://mentalgear.github.io/shadcn-dioxus/ (deployed from main `52bfb4b8`, PR #146, merge queue batch 19).
 
 ## Merge queue
 
@@ -17,16 +17,15 @@ deploy running the full Playwright suite on a release build. Procedure:
 
 ## Merged and deployed
 
-Merge queue batches 1-18 are on main (PRs #121-#145), batch 18 deployed as `42dc6687`.
+Merge queue batches 1-19 are on main (PRs #121-#146), batch 19 deployed as `52bfb4b8`.
 
 ## In the queue
 
-Batch 19 (`queue/batch-19`): rows 416 (load flakes, round two) and 417 (variant slot variables declared on the base).
+Batch 20 (`queue/batch-20`): row 188 closes (the FieldLabel `required` marker, the audit's last item).
 
 ## Running
 
-Nothing in the API stage: rows 391, 395, 396, 397 and 398 have landed. Next is stage 3 (structure: 267 with 384, then 355
-and 382).
+Stage 3 (structure): row 267's file split, one lane per file. Then 384, then 355 and 382.
 
 ## Next
 
@@ -40,7 +39,7 @@ Owner order of 2026-10-24 (backlog thread), each stage reading the finished outp
 6. Docs on the settled API: **393**, **392**, **394**, **399**, then the standing review **387**.
 7. The 152b suite prune, then **383** last.
 
-Independent, in parallel at any point: 188, 153, 268, 170.
+Independent, in parallel at any point: 153, 268, 170.
 
 ## Owner inputs pending
 
