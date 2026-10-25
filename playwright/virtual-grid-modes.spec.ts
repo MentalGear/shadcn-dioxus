@@ -121,6 +121,7 @@ test.describe("virtual grids: find-in-page placeholders (row 309)", () => {
       placeholder: el.querySelector("[data-find-index]")!.getBoundingClientRect().height,
     }));
     expect(sizes.real).toBeGreaterThan(sizes.placeholder);
+    // goto-ok: a same-document fragment navigation on the page the lines above already hydrated and populated
     await page.goto(`${page.url().split("#")[0]}#:~:text=Photo%202108`);
     // Chromium fires `beforematch` on the placeholder of item 2107.
     await expect.poll(() => page.evaluate(() => (window as unknown as { __fired: string[] }).__fired)).toContain("2107");
