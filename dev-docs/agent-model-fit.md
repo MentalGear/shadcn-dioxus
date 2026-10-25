@@ -5,15 +5,18 @@ Terms (owner, 2026-10-14): a **lane** is a work stream with its own file set and
 agent"). Never "a Haiku lane".
 
 This page is the rules. The running evidence log that produced them (2026-10-14 to 2026-10-21) is closed and archived in
-[`archive/rounds/agent-model-fit-evidence.md`](./archive/rounds/agent-model-fit-evidence.md); lanes add no rows.
+[`archive/rounds/agent-model-fit-evidence.md`](./archive/rounds/agent-model-fit-evidence.md); the running log at the
+end takes one row per delegated lane.
 
 ## The standing rule (owner)
 
-Sonnet subagents do delegated work (implementation, research, validation runs, debugging); the main loop keeps review,
-delegation and high-level decisions. Escalate to a stronger model only when a task has repeatedly failed or is unusually
-judgment-heavy (a headless state machine such as the Questionnaire). **Never substitute Opus for a Sonnet or Haiku lane**
-(owner 2026-10-20: when Sonnet is limited, wait, or use Haiku where it fits below); a lane stopped by a usage limit is
-resumed by message with its context, which beat a fresh agent.
+Consider a Haiku subagent first for any delegated task, after a complexity assessment (owner 2026-10-25): the two
+lists below are that assessment. A task on the "good fit" list goes to Haiku; a task on the "not a fit" list goes to
+Sonnet; a task on neither is judged by how much construction it needs (a known idiom to copy is Haiku, a new decision is
+Sonnet). The main loop keeps review, delegation and high-level decisions, and reviews every Haiku diff. Escalate only
+after a failed attempt or for unusually judgment-heavy work (a headless state machine such as the Questionnaire).
+**Never substitute Opus for a Sonnet or Haiku lane** (owner 2026-10-20: when Sonnet is limited, wait, or use Haiku where
+it fits below); a lane stopped by a usage limit is resumed by message with its context, which beat a fresh agent.
 
 ## Haiku is a good fit for
 
@@ -60,3 +63,4 @@ on a shared or copied target untrustworthy until the sources were touched. Squas
 | Date | Lane | Agent | Result |
 |---|---|---|---|
 | 2026-10-24 | `find-photo-wall` (row 406: a find-in-page match landed on the item's estimate; shared `primitives/src/virtual/find.rs`) | Sonnet (root cause with a real find bar under Xvfb, shared-layer fix, spec) | Root-caused by measurement, fixed in the layer so the list and the wrapping grid share the step; a Haiku agent would not fit (primitives, a debugging hypothesis). |
+| 2026-10-25 | `select-base-418` (row 418: `test:changed` diffs against the nearest of `origin/main` and `origin/queue/*`; closed file list in `playwright/tools/`, verified by `select.mjs --self-test` and `check-select-css.sh`) | Haiku | Fit: one new module, a self-test section on a throwaway repo, fast gates green, a manual proof on `queue/batch-20` (0 commits ahead, 4 before). It noted its own gaps (docs outside its list, no picker mutation) instead of widening the change. |

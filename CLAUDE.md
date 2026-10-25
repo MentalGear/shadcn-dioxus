@@ -23,17 +23,19 @@ gate never needs an edit to this file.
   port). When a resource is the constraint, still parallelize the *editing* and serialize only the build or test step
   at the end. Before dispatching, tell each lane which files it owns and which it must not touch; before starting a
   batch, capture whatever baseline the work will later be verified against, since it cannot be recovered afterwards.
-- **Models** ([`dev-docs/agent-model-fit.md`](./dev-docs/agent-model-fit.md)): Sonnet subagents for delegated work
-  (implementation, research, validation runs, debugging); the main loop keeps review, delegation and high-level
-  decisions. Haiku fits read-only inventories and audits and small mechanical edits for a lane with a closed file list
-  and a verifying gate; it does not fit debugging, primitives or shared code, new gates or specs, or long lanes that wait
-  on shared resources. Escalate to a stronger model only after repeated failure or for unusually judgment-heavy work;
-  never substitute Opus for a Sonnet or Haiku lane. Delegate debugging to Sonnet too (reproduce, bisect, root-cause,
-  propose the construction); the main loop reviews the evidence and decides, and runs no long hands-on debugging loops.
+- **Models** ([`dev-docs/agent-model-fit.md`](./dev-docs/agent-model-fit.md)): **consider a Haiku subagent first for
+  any delegated task, after a complexity assessment** (owner 2026-10-25). Haiku takes what the assessment rates simple:
+  inventories and audits, run-and-report jobs, and edits with a closed file list, a known idiom and a verifying gate.
+  Sonnet takes what it rates complex: debugging and root-causing, primitives or shared code, new gates or specs, long
+  lanes that wait on shared resources, and reports that must separate measured from inferred. The main loop keeps
+  review, delegation and high-level decisions, and reviews every Haiku diff. Escalate a model only after a failed
+  attempt or for unusually judgment-heavy work; never substitute Opus for a Sonnet or Haiku lane. Delegate debugging to
+  Sonnet (reproduce, bisect, root-cause, propose the construction); the main loop reviews the evidence and decides, and
+  runs no long hands-on debugging loops.
 - A **lane** is the work stream (file set, worktree); the **agent** is the Haiku or Sonnet subagent that executes it,
   never "a Haiku lane". Every lane agent gets [`dev-docs/lane-rules.md`](./dev-docs/lane-rules.md) plus its own prompt
-  (worktree, build lock, mtime touch, gate procedure, merge queue, web-request rules). The evidence log of lane outcomes
-  is closed; lanes add no rows to `agent-model-fit.md`.
+  (worktree, build lock, mtime touch, gate procedure, merge queue, web-request rules). Each delegated lane adds a row to the running log in
+  `agent-model-fit.md` (model, task, whether it fit).
 
 ## Rules for every change
 

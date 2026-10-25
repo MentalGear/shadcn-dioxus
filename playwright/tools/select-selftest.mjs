@@ -20,6 +20,7 @@ import { parseCss, diffRules, analyzeSelector } from "./css-rules.mjs";
 import { fromDir } from "./site-index.mjs";
 import { buildContext, impactOfChanges, routeKey } from "./css-impact.mjs";
 import { makeTitleScopes } from "./select-titles.mjs";
+import { pickBase } from "./select-base.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PW = path.resolve(HERE, "..");
@@ -157,6 +158,42 @@ try {
   eq("keyframes: traced to the rules that name it", [r.broad, keys(r)], [[], ["c:alpha", "c:beta", "site:docs"]]);
 } finally {
   fs.rmSync(tmp, { recursive: true, force: true });
+}
+
+// ---- 0. the default base (backlog row 418): the nearest of origin/main and origin/queue/* ----------------------------
+{
+  // a throwaway repo: main, a bare `origin` holding it, a queue branch of 3 commits pushed there, and a lane cut from the
+  // queue tip with 1 commit. Local files only: no network.
+  const base = fs.mkdtempSync(path.join(os.tmpdir(), "select-base-"));
+  try {
+    const git = (cwd, ...a) => execFileSync("git", a, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
+    const repo = path.join(base, "repo"), bare = path.join(base, "origin.git");
+    fs.mkdirSync(repo);
+    git(base, "init", "-q", "--bare", "-b", "main", bare);
+    git(repo, "init", "-q", "-b", "main");
+    git(repo, "config", "user.name", "select-selftest");
+    git(repo, "config", "user.email", "select-selftest@invalid");
+    git(repo, "config", "commit.gpgsign", "false");
+    const commit = (n) => { fs.writeFileSync(path.join(repo, `f${n}.txt`), `${n}\n`); git(repo, "add", "-A"); git(repo, "commit", "-q", "-m", `c${n}`); };
+    commit("main");
+    git(repo, "remote", "add", "origin", bare);
+    git(repo, "push", "-q", "origin", "main");
+    git(repo, "checkout", "-q", "-b", "queue");
+    for (const n of ["q1", "q2", "q3"]) commit(n);
+    git(repo, "push", "-q", "origin", "queue:refs/heads/queue/batch-99");
+    git(repo, "checkout", "-q", "-b", "lane", "origin/queue/batch-99");
+    commit("lane");
+    git(repo, "fetch", "-q", "origin");
+    eq("base: a lane cut from a queue branch picks the queue ref, 1 commit ahead", pickBase(repo), { ref: "origin/queue/batch-99", n: 1 });
+    git(repo, "update-ref", "-d", "refs/remotes/origin/queue/batch-99");
+    eq("base: with no queue ref it picks origin/main, 4 commits ahead", pickBase(repo), { ref: "origin/main", n: 4 });
+    git(repo, "fetch", "-q", "origin");
+    git(repo, "checkout", "-q", "-b", "tied", "origin/main");
+    commit("tied");
+    eq("base: a queue at the same distance ties to origin/main", pickBase(repo), { ref: "origin/main", n: 1 });
+  } finally {
+    fs.rmSync(base, { recursive: true, force: true });
+  }
 }
 
 let LISTED = null; // spec file -> every test title path, from `playwright test --list` (section 4)

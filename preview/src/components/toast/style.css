@@ -450,27 +450,44 @@
   font-size: var(--dx-text-sm);
 }
 
+/* The close button: a square hit target (28px on a mouse, 36px on touch, `--dx-pick-coarse`) around the
+ * glyph, as big as the sheet's close. The negative margins let the target reach into the toast's padding,
+ * so a one-line toast is no taller for it. Hover tints the target with the toast's own foreground, which
+ * reads on the plain toast and on every typed fill alike (backlog row 419). */
 .dx-toast-close {
+  --toast-close-size: var(--dx-pick-coarse, 2.25rem) var(--dx-pick-fine, var(--dx-control-height-sm));
+
+  display: inline-flex;
+  width: var(--toast-close-size);
+  height: var(--toast-close-size);
+  flex: none;
+  align-items: center;
   align-self: flex-start;
+  justify-content: center;
   padding: 0;
-  border: none;
-  margin: 0;
-  background: none;
+  border: 1px solid transparent;
+  border-radius: min(var(--dx-radius-md), 12px);
+  background: transparent;
   color: var(--dx-toast-foreground, var(--dx-foreground));
   font-size: var(--dx-text-lg);
   line-height: 1;
+  margin-block: calc(-1 * var(--dx-space-1-5));
+  margin-inline-end: calc(-1 * var(--dx-space-1-5));
+  outline: none;
+  transition: background-color var(--dx-motion-duration-base) var(--dx-motion-ease-standard);
 }
 
 @media (hover: hover) and (pointer: fine) {
   .dx-toast-close:hover {
-    color: var(--dx-toast-foreground, var(--dx-accent-foreground));
+    background-color: color-mix(in oklab, currentcolor 14%, transparent);
   }
 }
 
-/* The error toast keeps its foreground on hover (accent-foreground is dark on the red fill), so
-   dim the glyph instead. */
-@media (hover: hover) and (pointer: fine) {
-  .dx-toast[data-type="error"] .dx-toast-close:hover {
-    opacity: 0.8;
-  }
+.dx-toast-close:active {
+  background-color: color-mix(in oklab, currentcolor 22%, transparent);
+}
+
+.dx-toast-close:focus-visible {
+  border-color: var(--dx-ring-color);
+  box-shadow: var(--dx-ring-focus);
 }
