@@ -5,13 +5,13 @@ import { gotoHydrated } from "./hydration";
 import { readAtRest } from "./animations";
 
 /**
- * Backlog row 420: the control height scale (`--dx-control-height-xs/sm/default/lg`) follows the touch switch
+ * The control height scale (`--dx-control-height-xs/sm/default/lg`) follows the touch switch
  * (`data-dx-coarse`, `dx-components-theme.css` "Coarse sizing"), so every sized control does. Heights stay
  * fixed tokens, which is what keeps an input, a select, a text button and an icon button in one row exactly
  * aligned; this spec holds that in both modes.
  *
- *   (a) fine (`off`): the desktop heights are the pre-migration values, token by token (xs 24, sm 28,
- *       default 32, lg 36), so the migration provably changed nothing on a desktop;
+ *   (a) fine (`off`): the desktop heights are Nova's, token by token (xs 24, sm 28,
+ *       default 32, lg 36);
  *   (b) coarse (`on`): every consumer is at its coarse height (36 / 40 / 44 / 48), icon-only controls square;
  *   (c) rows of mixed controls have one height and one top edge, and an input group's addon is centred;
  *   (d) no text is clipped (`scrollHeight <= clientHeight`; tabs are checked by their trigger sitting inside the list, because the trigger's bar pseudo-element extends its scroll box), and text entry is 14px fine, 17px coarse.
@@ -26,7 +26,7 @@ import { readAtRest } from "./animations";
 type Mode = "off" | "on";
 type Step = "xs" | "sm" | "default" | "lg";
 
-/** The scale in px. Fine is Nova's h-6 / h-7 / h-8 / h-9, unchanged by the migration. */
+/** The scale in px. Fine is Nova's h-6 / h-7 / h-8 / h-9. */
 const HEIGHTS: Record<Mode, Record<Step, number>> = {
   off: { xs: 24, sm: 28, default: 32, lg: 36 },
   on: { xs: 36, sm: 40, default: 44, lg: 48 },
