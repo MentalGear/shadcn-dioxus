@@ -6,7 +6,7 @@ resolves here by id.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Done rows (351)
+## Done rows (352)
 
 | # | Item | Updated |
 |---|---|---|
@@ -189,6 +189,7 @@ resolves here by id.
 | [185](backlog/done/185-component-json-cargodependencies-were-missing.md) | component.json cargoDependencies were missing for 14 components; the gate and the smoke app both hid it | 2026-10-11 |
 | [186](backlog/done/186-shadcn-utilities-scroll-fade-and-shimmer-are.md) | shadcn utilities: scroll-fade and shimmer are built but not shipped as documented, public utilities | 2026-10-20 |
 | [187](backlog/done/187-demo-upgrades-25-components-whose-shadcn-demo.md) | Demo upgrades: 25 components whose shadcn demo is clearly richer than ours | 2026-10-19 |
+| [188](backlog/done/188-demo-parity-second-audit-the-owner-s-per.md) | Demo parity, second audit: the owner's per-example list against the original shadcn demos (51 components; row… | 2026-10-25 |
 | [189](backlog/done/189-navigationmenu-a-click-on-a-trigger-whose-panel.md) | NavigationMenu: a click on a trigger whose panel hover just opened CLOSED it | 2026-10-11 |
 | [190](backlog/done/190-oracle-tier2-html-demo-placeholder-links-spec.md) | oracle/tier2-html/demo-placeholder-links.spec.ts:146 (top_layer) is flaky: link.focus() times out | 2026-10-14 |
 | [191](backlog/done/191-batch-2-of-the-demo-parity-work-surfaced-four.md) | Batch 2 of the demo-parity work surfaced four library classes; all fixed by construction | 2026-10-12 |

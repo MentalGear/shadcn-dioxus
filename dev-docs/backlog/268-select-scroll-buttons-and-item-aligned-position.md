@@ -27,7 +27,7 @@ S (native arm only)
 
 **`position="item-aligned"` (M-L).** A primitive change that aligns the selected option over the trigger (Radix's default mode). `primitives/src/select/context.rs` documents it as deliberately unimplemented (popper positioning only). Needs an anchor change plus the offset math, including RTL, collision with the viewport edges and the scroll-into-view of the selected option before measuring.
 
-Related: [row 188](188-demo-parity-second-audit-the-owner-s-per.md).
+Related: [row 188](done/188-demo-parity-second-audit-the-owner-s-per.md).
 
 
 ## Progress (2026-10-20, claude/batch-b)
