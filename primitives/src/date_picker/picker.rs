@@ -32,7 +32,10 @@ pub struct DatePickerProps {
     #[props(default)]
     pub disabled: ReadSignal<bool>,
 
-    /// Sets `contenteditable="false"` on the date segments, nothing more: a read-only picker has no text caret, but the digit and arrow keys still change the value and the calendar popover still opens and picks. Use `disabled` to block interaction.
+    /// Whether the picker refuses edits, like a native `readonly` input. The segments stay
+    /// focusable and selectable (the arrow keys still move between them), but typing, the Up, Down,
+    /// Home and End steps, Backspace and Delete change nothing, the calendar popover does not
+    /// open, and the value callback is never called.
     #[props(default = ReadSignal::new(Signal::new(false)))]
     pub read_only: ReadSignal<bool>,
 
@@ -133,12 +136,14 @@ pub fn DatePicker(props: DatePickerProps) -> Element {
     let focus = use_collection_provider(props.roving_loop);
     let available_ranges = use_memo(move || AvailableRanges::new(&props.disabled_ranges.read()));
     let dwell = use_close_dwell(open);
+    // Every value write is reported through this one wrapper, see `use_unless_read_only`.
+    let on_value_change = use_unless_read_only(props.read_only, props.on_value_change);
     let (staging, confirm) = use_staging(
         props.confirm,
         open,
         dwell,
         props.selected_date,
-        props.on_value_change,
+        on_value_change,
     );
 
     // Create context provider for child components
@@ -156,7 +161,7 @@ pub fn DatePicker(props: DatePickerProps) -> Element {
     });
 
     use_context_provider(|| DatePickerContext {
-        on_value_change: props.on_value_change,
+        on_value_change,
         selected_date: props.selected_date,
         staging,
     });
@@ -165,6 +170,7 @@ pub fn DatePicker(props: DatePickerProps) -> Element {
     let owned = attributes!(div {
         role: "group",
         "data-disabled": (props.disabled)(),
+        "data-read-only": (props.read_only)().then_some("true"),
     });
     let merged = merge_attributes(vec![defaults, props.attributes.clone(), owned]);
 
@@ -231,7 +237,10 @@ pub struct DateRangePickerProps {
     #[props(default)]
     pub disabled: ReadSignal<bool>,
 
-    /// Sets `contenteditable="false"` on the date segments, nothing more: a read-only picker has no text caret, but the digit and arrow keys still change the value and the calendar popover still opens and picks. Use `disabled` to block interaction.
+    /// Whether the picker refuses edits, like a native `readonly` input. The segments stay
+    /// focusable and selectable (the arrow keys still move between them), but typing, the Up, Down,
+    /// Home and End steps, Backspace and Delete change nothing, the calendar popover does not
+    /// open, and the value callback is never called.
     #[props(default = ReadSignal::new(Signal::new(false)))]
     pub read_only: ReadSignal<bool>,
 
@@ -333,12 +342,14 @@ pub fn DateRangePicker(props: DateRangePickerProps) -> Element {
 
     let available_ranges = use_memo(move || AvailableRanges::new(&props.disabled_ranges.read()));
     let dwell = use_close_dwell(open);
+    // Every value write is reported through this one wrapper, see `use_unless_read_only`.
+    let on_range_change = use_unless_read_only(props.read_only, props.on_range_change);
     let (staging, confirm) = use_staging(
         props.confirm,
         open,
         dwell,
         props.selected_range,
-        props.on_range_change,
+        on_range_change,
     );
 
     // Create context provider for child components
@@ -357,7 +368,7 @@ pub fn DateRangePicker(props: DateRangePickerProps) -> Element {
 
     use_context_provider(|| DateRangePickerContext {
         date_range: props.selected_range,
-        set_selected_range: props.on_range_change,
+        set_selected_range: on_range_change,
         staging,
     });
 
@@ -367,6 +378,7 @@ pub fn DateRangePicker(props: DateRangePickerProps) -> Element {
     let owned = attributes!(div {
         role: "group",
         "data-disabled": (props.disabled)(),
+        "data-read-only": (props.read_only)().then_some("true"),
     });
     let merged = merge_attributes(vec![defaults, props.attributes.clone(), owned]);
 

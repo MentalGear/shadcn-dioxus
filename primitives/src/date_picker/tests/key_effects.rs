@@ -767,3 +767,59 @@ fn day_bounds_clamp_only_at_the_boundary_year_and_month() {
         "max_date's month matches but year doesn't: falls through to the real month length"
     );
 }
+
+// -----------------------------------------------------------------
+// Read-only segments (backlog row 424)
+// -----------------------------------------------------------------
+
+#[test]
+fn read_only_segment_refuses_every_edit_key_and_keeps_the_focus_keys() {
+    let none = SegmentKeyModifiers::default();
+    let edit_keys = [
+        Key::Character("1".to_string()),
+        Key::Character("x".to_string()),
+        Key::Backspace,
+        Key::Delete,
+        Key::ArrowUp,
+        Key::ArrowDown,
+        Key::Home,
+        Key::End,
+    ];
+    for key in &edit_keys {
+        assert!(is_edit_key(key), "{key:?} edits a segment");
+        let effects = read_only_key_effects::<i32>(key, none);
+        assert!(
+            effects.iter().all(|e| matches!(
+                e,
+                DateSegmentEffect::PreventDefault | DateSegmentEffect::StopPropagation
+            )),
+            "{key:?} on a read-only segment emits no value and moves no focus: {effects:?}"
+        );
+    }
+    for key in [Key::ArrowLeft, Key::ArrowRight, Key::Enter, Key::Tab] {
+        assert!(!is_edit_key(&key), "{key:?} only moves focus");
+    }
+}
+
+#[test]
+fn read_only_segment_swallows_a_typed_character_but_not_a_shortcut() {
+    let typed = read_only_key_effects::<i32>(
+        &Key::Character("5".to_string()),
+        SegmentKeyModifiers::default(),
+    );
+    assert_eq!(
+        typed,
+        vec![
+            DateSegmentEffect::PreventDefault,
+            DateSegmentEffect::StopPropagation
+        ]
+    );
+    let shortcut = read_only_key_effects::<i32>(
+        &Key::Character("c".to_string()),
+        SegmentKeyModifiers {
+            ctrl: true,
+            ..Default::default()
+        },
+    );
+    assert!(shortcut.is_empty(), "Ctrl+C still reaches the browser");
+}

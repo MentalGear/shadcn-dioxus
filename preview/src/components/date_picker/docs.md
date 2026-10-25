@@ -94,6 +94,10 @@ screen the months stack vertically and the panel stays inside the viewport.
 selected, and (in a `DateRangePicker`) cannot be spanned by a range. The `unavailable_dates` demo
 computes its ranges from today, so they are always inside the month the picker opens on.
 
+## Read-only
+
+`read_only: true` makes either picker behave like a native `readonly` input. The segments stay focusable and selectable (`aria-readonly="true"`, and the arrow keys still move between them), and every edit is refused: typing, the Up, Down, Home and End steps, Backspace and Delete. The calendar popover does not open (the trigger stays focusable and is `aria-disabled`), and `on_value_change` / `on_range_change` is never called, whichever path tried to write. Use `disabled` for a picker that is not interactive at all.
+
 ## Popover overlay
 
 `DatePickerPopover` (what both pickers render their calendar in) takes `overlay: bool`, default

@@ -149,3 +149,35 @@ fn date_range_picker_input_renders_controlled_range_on_first_render() {
     assert!(!html.contains("MM"));
     assert!(!html.contains("DD"));
 }
+
+#[component]
+fn ReadOnlyDatePicker() -> Element {
+    rsx! {
+        DatePicker {
+            selected_date: Some(date!(2026 - 05 - 07)),
+            read_only: true,
+            DatePickerInput {}
+        }
+    }
+}
+
+#[test]
+fn read_only_picker_marks_its_segments_not_editable_and_readonly() {
+    // backlog row 424: a read-only picker keeps its segments focusable (`tabindex="0"`) but they
+    // are `contenteditable="false"` and say so to assistive technology (`aria-readonly`).
+    let mut dom = VirtualDom::new(ReadOnlyDatePicker);
+    dom.rebuild_in_place();
+    let html = dioxus_ssr::render(&dom);
+
+    assert_eq!(html.matches("aria-readonly=\"true\"").count(), 3, "{html}");
+    // SSR writes a bool attribute unquoted.
+    assert_eq!(html.matches("contenteditable=false").count(), 3, "{html}");
+    assert!(html.contains("data-read-only=\"true\""), "{html}");
+
+    let mut dom = VirtualDom::new(ControlledDatePicker);
+    dom.rebuild_in_place();
+    let html = dioxus_ssr::render(&dom);
+    assert!(!html.contains("aria-readonly"), "{html}");
+    assert!(!html.contains("data-read-only"), "{html}");
+    assert!(html.contains("contenteditable=true"), "{html}");
+}
