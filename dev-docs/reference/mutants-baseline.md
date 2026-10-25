@@ -6,7 +6,7 @@ One-off baseline per [`backlog.md`](../backlog.md) row 17, scoped to the 9 unit-
 
 | File | Total | Caught | Missed | Unviable | Timeout |
 |---|--:|--:|--:|--:|--:|
-| calendar.rs | 253 | 45 | 145 | 57 | 6 |
+| calendar/ (was calendar.rs) | 253 | 45 | 145 | 57 | 6 |
 | select/text_search.rs | 143 | 92 | 50 | 1 | 0 |
 | slider.rs | 110 | 34 | 50 | 26 | 0 |
 | virtual/virtualizer.rs | 79 | 44 | 25 | 9 | 1 |
@@ -20,18 +20,18 @@ One-off baseline per [`backlog.md`](../backlog.md) row 17, scoped to the 9 unit-
 
 ## Classification: ~350 of 397 survivors are genuine, unit-killable gaps
 
-Headline find — the exact failure mode this baseline exists to catch: **`calendar.rs` `calendar_grid_weeks` (the shipped month-grid builder) survived all 9 of its mutants because `test_calendar_grid_weeks` tests a hand-copied reimplementation of the function instead of calling it.**
+Headline find — the exact failure mode this baseline exists to catch: **`calendar.rs` (now `calendar/`) `calendar_grid_weeks` (the shipped month-grid builder) survived all 9 of its mutants because `test_calendar_grid_weeks` tests a hand-copied reimplementation of the function instead of calling it.**
 
 The eight concrete, cheap fixes (kill the large majority of survivors):
 
-1. `calendar.rs:1613-1644` — point `test_calendar_grid_weeks` at the real function.
+1. `calendar.rs:1613-1644` (now `calendar/tests.rs`) — point `test_calendar_grid_weeks` at the real function.
 2. `text_search.rs:329-364` — one parametrized test over all 36 `code_to_char` arms (30/36 deletable today).
 3. `slider.rs:770-810` — `with_runtime` test constructing `SliderContext` directly (~24 survivors; the free functions are tested, the signal-wiring methods are not).
 4. `pointer.rs` — same `with_runtime` pattern for the public `GlobalSignal` API (12/12 missed today).
 5. `color_picker.rs:20-83` — direct tests for the pure color math (`color_hex`, `area_value_from_hsv`, clamps).
 6. `selection.rs:60-97` — direct tests for `selected_text`, `option_text_value`, and `RcPartialEqValue`'s `PartialEq` (never exercised by any test).
 7. `date_picker.rs:678-947` — extract segment key-handling from `rsx!` closures into standalone functions (precedent: `move_interaction.rs`'s `MoveEvent::from_keyboard`), then unit-test (~40 of 52 killable).
-8. `calendar.rs` pure predicates (`DateRange::contains`, `nth_month_*`, `AvailableRanges::*`, `is_between/start/end`, context accessors, ~70 survivors) — direct tests; calendar has essentially **no** browser-only residue.
+8. `calendar.rs` (now `calendar/`) pure predicates (`DateRange::contains`, `nth_month_*`, `AvailableRanges::*`, `is_between/start/end`, context accessors, ~70 survivors) — direct tests; calendar has essentially **no** browser-only residue.
 
 Browser-only (expected, Playwright's layer): ~30–40 (drag-effect math in slider/color_picker/move_interaction). Trivial/noise: ~10–15. Timeouts (7): mutations inducing unbounded loops — neutralized, not silent.
 
@@ -47,7 +47,7 @@ All eight landed (tests-only except the mechanical date_picker key-handler extra
 
 | File | Before | After |
 |---|---|---|
-| calendar.rs | 23% | **68%** |
+| calendar/ (was calendar.rs) | 23% | **68%** |
 | date_picker.rs | 0% | **85%** |
 | color_picker.rs | 0% | **58%** |
 | slider.rs | 40% | **75%** |

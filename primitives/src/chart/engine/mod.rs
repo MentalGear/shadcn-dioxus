@@ -26,7 +26,7 @@
 //!   `VirtualDom` -- matching `dev-docs/conformance-harness.md`'s own
 //!   coverage table ("Cargo unit tests for algorithms ... the algorithmic
 //!   ones") and this crate's existing math-module precedent (`slider.rs`'s
-//!   `ordered_range`/`snap_value`/..., `calendar.rs`'s date-grid helpers)
+//!   `ordered_range`/`snap_value`/..., `calendar/`'s date-grid helpers)
 //!   -- this module is simply the first one large enough to earn its own
 //!   directory rather than living inline in one file.
 //!

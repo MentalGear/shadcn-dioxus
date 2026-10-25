@@ -408,7 +408,7 @@ test.describe("aria-disabled on unavailable/disabled days -- backlog row 84 find
     // early-returns instead); with only `data-disabled`/`data-unavailable`
     // plus CSS, assistive tech would have no signal at all that the day
     // cannot be chosen. So `calendar_day_attributes` (primitives/src/
-    // calendar.rs) emits `aria-disabled`, mirroring `data-disabled` exactly
+    // calendar/day.rs) emits `aria-disabled`, mirroring `data-disabled` exactly
     // (same source value, unconditionally present) -- `aria-disabled` (unlike a real `disabled`
     // attribute) does not remove the element from the tab order, matching
     // this crate's own "focusable but not operable" convention elsewhere

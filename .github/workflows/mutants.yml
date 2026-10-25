@@ -20,7 +20,7 @@ jobs:
         run: |
           cargo mutants -p dioxus-primitives --timeout-multiplier 3 -j 2 \
             -f primitives/src/slider.rs \
-            -f primitives/src/calendar.rs \
+            -f 'primitives/src/calendar/*.rs' \
             -f primitives/src/virtual/virtualizer.rs \
             -f primitives/src/select/text_search.rs \
             -f primitives/src/pointer.rs \
