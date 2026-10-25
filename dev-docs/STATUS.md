@@ -5,7 +5,7 @@ the page as stale and check `git log` and the flag files named here.** What each
 backlog row files, not here: this page says only what is deployed, what runs, what is next and what waits for the owner.
 
 Last updated: **2026-10-25**. Several sessions work in parallel; who holds what is on the `claims` branch (`CLAIMS.md`).
-Preview site: https://mentalgear.github.io/shadcn-dioxus/ (deployed from main `a36d321e`, PR #149, merge queue batches 22+23).
+Preview site: https://mentalgear.github.io/shadcn-dioxus/ (deployed from main `99407766`, PR #150, merge queue batch 24).
 
 ## Merge queue
 
@@ -17,15 +17,15 @@ deploy running the full Playwright suite on a release build. Procedure:
 
 ## Merged and deployed
 
-Merge queue batches 1-23 are on main (PRs #121-#149), batches 22+23 deployed as `a36d321e`.
+Merge queue batches 1-24 are on main (PRs #121-#150), batch 24 deployed as `99407766`.
 
 ## In the queue
 
-Batch 24 (`queue/batch-24`): rows 371 (dependency trims, owner-approved: palette default features off, `time` macros out of shipped code, `--locked` installs, version floors), 382 (rustdoc warnings to zero, the gate strict) and 420 (the coarse-pointer switch covers every control: 44px control heights, 17px text entry, larger checkbox, radio, switch, tag-remove and slider targets).
+Batch 25 (`queue/batch-25`): rows 355 (workspace lint table and Google Rust style items) and 421 (Firefox toast pile no longer jumps on insert), plus backlog rows 422 and 423. The Button Group seam lane waits for the owner's solid-edge follow-up.
 
 ## Running
 
-Stage 3 (structure): 267 and 384 landed; 382 is in batch 24, 355 is being built. Stage 4: 371 is in batch 24.
+Stage 3 (structure): 267 and 384 landed; 382 landed, 355 is in batch 25. Stage 4: 371 landed (the icon lift deferred).
 
 ## Next
 
