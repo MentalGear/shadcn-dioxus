@@ -1,21 +1,13 @@
 {
   "name": "skeleton",
   "description": "A placeholder component for all loading elements.",
-  "authors": [
-    "zhiyanzhaijie"
-  ],
-  "exclude": [
-    "variants",
-    "docs.md",
-    "component.json"
-  ],
+  "authors": ["zhiyanzhaijie"],
+  "exclude": ["variants", "docs.md", "component.json"],
   "cargoDependencies": [
     {
       "name": "dioxus-primitives",
       "git": "https://github.com/MentalGear/shadcn-dioxus"
     }
   ],
-  "globalAssets": [
-    "../../../assets/dx-components-theme.css"
-  ]
+  "globalAssets": ["../../../assets/dx-components-theme.css"]
 }

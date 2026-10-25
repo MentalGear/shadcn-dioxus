@@ -5,12 +5,12 @@
   "exclude": ["variants", "docs.md", "component.json"],
   "cargoDependencies": [
     {
-      "name": "dioxus-icons",
-      "version": "=0.1.0"
-    },
-    {
       "name": "dioxus-primitives",
       "git": "https://github.com/MentalGear/shadcn-dioxus"
+    },
+    {
+      "name": "dioxus-icons",
+      "version": "=0.1.0"
     }
   ],
   "globalAssets": ["../../../assets/dx-components-theme.css"]

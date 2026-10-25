@@ -1,14 +1,8 @@
 {
   "name": "pagination",
   "description": "Navigation controls for paged content.",
-  "authors": [
-    "zhiyanzhaijie"
-  ],
-  "exclude": [
-    "variants",
-    "docs.md",
-    "component.json"
-  ],
+  "authors": ["zhiyanzhaijie"],
+  "exclude": ["variants", "docs.md", "component.json"],
   "cargoDependencies": [
     {
       "name": "dioxus-primitives",
@@ -19,7 +13,5 @@
       "version": "=0.1.0"
     }
   ],
-  "globalAssets": [
-    "../../../assets/dx-components-theme.css"
-  ]
+  "globalAssets": ["../../../assets/dx-components-theme.css"]
 }
