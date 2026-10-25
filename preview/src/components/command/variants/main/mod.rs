@@ -52,7 +52,7 @@ pub fn Demo() -> Element {
             // uses for its own `SheetTitle`. The title sits in a `div`
             // wearing `.dx-command-sr-only` (see `style.css`), so the hiding
             // rule styles an element this component owns, not the title.
-            div { class: "dx-command-sr-only",
+            div { "data-dx-visually-hidden": "",
                 DialogTitle { "Command Palette" }
             }
             Command::<String> {

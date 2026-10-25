@@ -588,7 +588,7 @@ fn DataTableTable<T: Clone + PartialEq + 'static>(props: DataTableProps<T>) -> E
                     TableRow {
                         if props.reorderable {
                             TableHead { class: "dx-data-table-handle-cell",
-                                span { class: "dx-data-table-sr-only", "Reorder" }
+                                span { "data-dx-visually-hidden": "", "Reorder" }
                             }
                         }
                         if props.selectable {
@@ -639,7 +639,7 @@ fn DataTableTable<T: Clone + PartialEq + 'static>(props: DataTableProps<T>) -> E
             }
             if props.reorderable || props.column_menu {
                 div {
-                    class: "dx-data-table-sr-only",
+                    "data-dx-visually-hidden": "",
                     role: "status",
                     aria_live: "assertive",
                     aria_atomic: "true",

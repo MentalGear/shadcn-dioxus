@@ -44,14 +44,9 @@ sys.path.insert(0, "scripts/lib")
 from allow import Allowlist  # noqa: E402
 from css import parse  # noqa: E402
 
-# (path-glob::name-glob, reason). Each covers the DUPLICATE side of a cluster; the canonical one stays out.
+# (path-glob::name-glob, reason). Each covers the DUPLICATE side of a cluster; the canonical one stays out. Empty since
+# row 426: the three modal wrappers' opacity fades went to the theme's `data-dx-scrim` rule, which uses `dx-fade-in/out`.
 ALLOW = Allowlist("check-duplicate-keyframes", [
-    ("preview/src/components/alert_dialog/style.css::dx-alert-animate-*",
-     "pure opacity fade, identical to the theme's dx-fade-in/out; moves to the shared pair with the modal panels (row 145)"),
-    ("preview/src/components/command/style.css::dx-command-dialog-backdrop-*",
-     "pure opacity fade, identical to the theme's dx-fade-in/out; moves to the shared pair with the modal panels (row 145)"),
-    ("preview/src/components/dialog/style.css::dx-dialog-backdrop-animate-*",
-     "pure opacity fade, identical to the theme's dx-fade-in/out; moves to the shared pair with the modal panels (row 145)"),
 ], fields=("pattern",))
 
 explicit = sys.argv[1:]

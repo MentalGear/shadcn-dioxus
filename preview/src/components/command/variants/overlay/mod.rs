@@ -25,7 +25,7 @@ pub fn Demo() -> Element {
                     query.set(String::new());
                 }
             },
-            div { class: "dx-command-sr-only",
+            div { "data-dx-visually-hidden": "",
                 DialogTitle { "Command Palette" }
             }
             Command::<String> {

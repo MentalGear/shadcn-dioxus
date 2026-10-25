@@ -338,7 +338,7 @@ fn NavProjects(projects: &'static [Project]) -> Element {
                                 as: move |el: AsChild| rsx! {
                                     SidebarMenuAction { show_on_hover: true, attributes: el.attributes,
                                         DemoIcon {}
-                                        span { class: "dx-sidebar-sr-only", "More" }
+                                        span { "data-dx-visually-hidden": "", "More" }
                                     }
                                 },
                             }

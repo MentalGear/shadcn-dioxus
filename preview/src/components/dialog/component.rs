@@ -74,6 +74,7 @@ pub fn Dialog(props: DialogProps) -> Element {
         document::Link { rel: "stylesheet", href: asset!("/src/components/dialog/style.css") }
         dialog::DialogRoot {
             class: "dx-dialog-backdrop",
+            "data-dx-scrim": "",
             id: props.id,
             is_modal: props.is_modal,
             overlay: props.overlay,

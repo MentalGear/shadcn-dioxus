@@ -15,6 +15,7 @@ pub fn Drawer(props: DrawerRootProps) -> Element {
         document::Link { rel: "stylesheet", href: asset!("/src/components/drawer/style.css") }
         drawer::Drawer {
             class: "dx-drawer-root",
+            "data-dx-scrim": "",
             "data-slot": "drawer-root",
             id: props.id,
             is_modal: props.is_modal,

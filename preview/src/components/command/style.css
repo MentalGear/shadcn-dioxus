@@ -10,95 +10,9 @@
  * `rounded-lg` inside a dialog, highlight `bg-muted text-foreground`. The panel fill is the one
  * modal fill (`--dx-popover`) shared with Dialog, AlertDialog, Sheet and Drawer. */
 
-/* Visually-hidden accessible name for `CommandDialog`: a `div` around the `DialogTitle`. A command palette
- * conventionally shows no visible heading above its search input (unlike
- * `Dialog`/`AlertDialog`, whose demos always render a *visible*
- * `DialogTitle`/`AlertDialogTitle`) -- but `dialog.rs`'s `DialogRoot`
- * always wires the dialog's `aria-labelledby` to a `DialogTitle` id
- * regardless (see `dialog.rs`'s `dialog_labelledby`), so an accessible
- * name is still required, just not a sighted one. Sidebar's mobile `Sheet`
- * (`sidebar/style.css`'s `.dx-sidebar-sr-only`) already solves this exact
- * "needs a real title element, not a visible heading" shape for the same
- * reason -- this is that same rule, copied under this component's own
- * namespace rather than shared, for the same
- * reason `.dx-sidebar-sr-only`'s own header comment gives (dev-docs/backlog.md
- * row 32). TODO(row 31a): collapses into one shared `dx-sr-only` utility
- * once that lands. */
-.dx-command-sr-only {
-  position: absolute;
-  overflow: hidden;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  border: 0;
-  margin: -1px;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
-/* Backdrop -- the wrapper `div` `DialogRoot` renders around the content, under
- * this component's own `dx-command-dialog-*` namespace (dev-docs/backlog.md row 32:
- * sharing `.dx-dialog-backdrop` would require linking `dialog/style.css` too --
- * see `component.rs`'s doc for why the primitive carries this class as its own
- * literal default). Same construction as `../dialog/style.css`: on the web arm
- * (`<dialog>` + `showModal()`) it paints nothing -- the scrim is the dialog's own
- * `::backdrop` (the shared rule in `dx-components-theme.css`) and this element only holds the
- * `<dialog>` and its animation times `use_animated_open`'s unmount hold. On the
- * non-web arm and for `is_modal: false` the content is a plain `div` with no top
- * layer and no `::backdrop`, so there this element IS the scrim, from the same
- * tokens. (On the web arm it must not paint its own wrapper over the UA's default
- * `::backdrop`: that would be a second, stacked scrim.) */
-.dx-command-dialog-backdrop {
-  position: fixed;
-  z-index: var(--dx-z-overlay);
-  backdrop-filter: blur(var(--dx-overlay-blur));
-  background: var(--dx-overlay-scrim);
-  inset: 0;
-  opacity: 0;
-  will-change: opacity;
-}
-
-.dx-command-dialog-backdrop:has(> dialog) {
-  backdrop-filter: none;
-  background: transparent;
-}
-
-/* `overlay: false` (`data-dx-overlay="off"`, set on this element and on the `<dialog>`):
- * the theme's one `dialog[data-dx-overlay="off"]::backdrop` rule removes the web arm's
- * scrim; this one removes the scrim this element paints where there is no top layer. */
-.dx-command-dialog-backdrop[data-dx-overlay="off"] {
-  backdrop-filter: none;
-  background: transparent;
-}
-
-.dx-command-dialog-backdrop[data-state="closed"] {
-  animation: dx-command-dialog-backdrop-out var(--dx-overlay-duration) var(--dx-overlay-ease) forwards;
-  pointer-events: none;
-}
-
-@keyframes dx-command-dialog-backdrop-out {
-  0% {
-    opacity: 1;
-  }
-
-  100% {
-    opacity: 0;
-  }
-}
-
-.dx-command-dialog-backdrop[data-state="open"] {
-  animation: dx-command-dialog-backdrop-in var(--dx-overlay-duration) var(--dx-overlay-ease) forwards;
-}
-
-@keyframes dx-command-dialog-backdrop-in {
-  0% {
-    opacity: 0;
-  }
-
-  100% {
-    opacity: 1;
-  }
-}
+/* The wrapper `div` `DialogRoot` renders around the `<dialog>` carries `data-dx-scrim` (`component.rs`): the
+ * theme's one "The modal scrim without a top layer" rule paints it where there is no top layer (non-web
+ * arm, `is_modal: false`), fades it with `data-state`, and drops it for `overlay: false`. Nothing to write here. */
 
 /* The scrim (this dialog's top-layer `::backdrop`) is the ONE shared rule in
  * `dx-components-theme.css` ("The modal scrim, once"): keyed on any `<dialog>` with a `dx-`
@@ -144,10 +58,6 @@ dialog.dx-command-dialog[open][data-state="open"] {
 @media (prefers-reduced-motion: reduce) {
   dialog.dx-command-dialog {
     transition-duration: var(--dx-motion-duration-reduced);
-  }
-
-  .dx-command-dialog-backdrop {
-    animation-duration: var(--dx-motion-duration-reduced);
   }
 }
 

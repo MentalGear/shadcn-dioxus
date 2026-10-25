@@ -390,34 +390,6 @@
   pointer-events: all;
 }
 
-/* The real, visually-hidden `<table>` -- the actual AT-facing "browse the
- * data" path (dev-docs/archive/research/chart-2026-09-19.md §2.5/§6.4). Same
- * technique as `sidebar/style.css`'s `.dx-sidebar-sr-only` and
- * `pagination/style.css`'s `.dx-pagination-sr-only` (byte-identical there
- * too; each component keeps its own copy -- see those files' own
- * TODO(row 31a) comment), namespaced here as this component's own copy.
- *
- * The clamp sits on the table's WRAPPER (`chart-data-wrapper`), not on the
- * table: a `table` box is sized to at least its min-content width and
- * ignores `width: 1px` / `overflow: hidden` (CSS 2.1 17.5.2), so with
- * `white-space: nowrap` cells it stays 280-440px wide -- invisible
- * (`clip-path`) yet still counted as scrollable overflow, widening the
- * whole page on phones (measured: 418-727px full-page at a 390px
- * viewport). Overriding the table's `display` instead would strip its table
- * semantics in WebKit/VoiceOver, so the table itself stays a normal
- * `display: table` and only the block-level wrapper is clamped. */
-.dx-chart [data-slot="chart-data-wrapper"] {
-  position: absolute;
-  overflow: hidden;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  border: 0;
-  margin: -1px;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
 /* ---------------------------------------------------------------------- *
  * Tooltip
  * ---------------------------------------------------------------------- */

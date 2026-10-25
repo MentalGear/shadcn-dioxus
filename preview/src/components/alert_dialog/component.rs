@@ -104,7 +104,8 @@ pub struct AlertDialogProps {
 #[component]
 pub fn AlertDialog(props: AlertDialogProps) -> Element {
     let base = attributes!(div {
-        class: "dx-alert-dialog-backdrop"
+        class: "dx-alert-dialog-backdrop",
+        "data-dx-scrim": "",
     });
     let merged = merge_attributes(vec![base, props.attributes]);
     // The panel follows the on-screen keyboard (`primitives/src/keyboard_inset.rs`; `style.css`

@@ -119,18 +119,6 @@
   opacity: 1;
 }
 
-.dx-code-block-sr-only {
-  position: absolute;
-  overflow: hidden;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  border: 0;
-  margin: -1px;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
 .dx-code-block-content {
   overflow: auto;
   min-width: 0;
