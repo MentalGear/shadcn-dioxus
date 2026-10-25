@@ -127,6 +127,12 @@ pub fn FieldLegend(
 #[component]
 pub fn FieldLabel(
     html_for: ReadSignal<String>,
+    /// Draws a required marker (an asterisk in the destructive text colour) after the
+    /// label text. An addition: shadcn's `FieldLabel` has no such prop. The marker is
+    /// decorative (`aria-hidden`) and only draws; the control carries the semantics, so
+    /// give it its own `required` (or `aria-required`) too.
+    #[props(default)]
+    required: bool,
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
     children: Element,
 ) -> Element {
@@ -137,7 +143,12 @@ pub fn FieldLabel(
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/field/style.css") }
-        Label { html_for, attributes: merged, {children} }
+        Label { html_for, attributes: merged,
+            {children}
+            if required {
+                span { class: "dx-field-label-required", "aria-hidden": "true", "*" }
+            }
+        }
     }
 }
 

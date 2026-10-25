@@ -86,6 +86,16 @@
   --dx-label-line-height: 1.375;
 }
 
+/* `FieldLabel { required }`: the marker is its own span (class `dx-field-label-required`, `aria-hidden`), so
+ * the colour is the one destructive TEXT role (never the fill-grade `--dx-destructive`,
+ * `scripts/check-destructive-text.sh`) and no property is declared on the label itself. The label is a flex
+ * row with `gap: var(--dx-label-gap)`, which would put the asterisk a full gap from the text; the negative
+ * margin cancels the gap down to 2px, so the marker reads as part of the word. No `font-family`: it inherits. */
+.dx-field-label-required {
+  color: var(--dx-destructive-text);
+  margin-inline-start: calc(var(--dx-space-0-5) - var(--dx-label-gap, var(--dx-space-2)));
+}
+
 /* Choice card: a `FieldLabel` that wraps a `Field` (shadcn `field.tsx`:
  * `has-[>[data-slot=field]]:w-full flex-col rounded-md border`,
  * `*:data-[slot=field]:p-4`, `has-data-[state=checked]:bg-primary/5
