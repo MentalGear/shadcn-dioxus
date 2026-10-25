@@ -2,9 +2,9 @@
 preview/src/components/checkpoint/component.rs	unclosed HTML tag `label`
 preview/src/components/checkpoint/component.rs	unclosed HTML tag `label`
 preview/src/components/checkpoint/component.rs	unclosed HTML tag `this`
-preview/src/main.rs	unclosed HTML tag `name`
-preview/src/main.rs	unclosed HTML tag `reason`
 preview/src/nav_link.rs	unresolved link to `is_current`: no item named `is_current` in scope
+preview/src/site/component_page.rs	unclosed HTML tag `name`
+preview/src/site/component_page.rs	unclosed HTML tag `reason`
 primitives/src/carousel.rs	public documentation for `CarouselAlign` links to private item `CAROUSEL_DRAG_JS`
 primitives/src/carousel.rs	public documentation for `CarouselAlign` links to private item `CAROUSEL_SCROLL_TO_JS`
 primitives/src/carousel.rs	public documentation for `CarouselAlign` links to private item `CAROUSEL_SCROLL_TRACKING_JS`

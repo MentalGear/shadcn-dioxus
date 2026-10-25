@@ -40,5 +40,5 @@ compositions, a palette and a small offset (a clash with an earlier name steps
 to the next free one), so running it again rewrites byte-identical files. To
 change the look, edit `PALETTES` or `TEMPLATES` in the script. To add a person,
 add the name to `NAMES` and run it; the file is `<first>-<last>.svg`, which
-`demo_avatar` in `preview/src/main.rs` (or an `asset!` path in a demo) then
+`demo_avatar` in `preview/src/site/blocks.rs` (or an `asset!` path in a demo) then
 refers to.

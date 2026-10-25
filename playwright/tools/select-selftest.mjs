@@ -234,6 +234,10 @@ eq("titles: alias matches a squashed name", SCOPES["oracle/tier1-apg/keyboard-ma
   const run = (...a) => JSON.parse(execFileSync(node, [path.join(HERE, "select.mjs"), "--format", "json", ...a], { cwd: ROOT, env, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], maxBuffer: 1 << 28 }));
   // `--files` with no names is an empty diff: the checks below must not read this branch's own git diff (a batch branch that
   // changes components adds their at-rest all-routes tests to the kept set, row 152), only the pages they pretend.
+  // Row 267: `preview/src/main.rs` was split into `preview/src/site/*.rs`; a file there selects exactly what main.rs does (the broad set).
+  const mainSel = run("--files", "preview/src/main.rs").specs;
+  eq("site/: a split-out docs-site file selects the same broad set as main.rs", run("--files", "preview/src/site/blocks.rs").specs, mainSel);
+  check("site/: the broad set is not empty", mainSel.length > 10, String(mainSel.length));
   const narrowed = run("--files", "--pages", "c:calendar");
   const all = narrowed.narrowed.find((n) => n.file === "all-routes.spec.ts");
   check("pages: all-routes is narrowed to the calendar page", !!all && all.kept < 30 && all.kept >= 2, JSON.stringify(all && [all.kept, all.total]));

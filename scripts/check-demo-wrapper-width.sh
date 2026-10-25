@@ -24,7 +24,7 @@
 # WHAT THIS CHECKS
 #
 # Every `preview/src/components/<name>/variants/<variant>/mod.rs`'s
-# `pub fn Demo() -> Element` is (per `preview/src/main.rs`'s
+# `pub fn Demo() -> Element` is (per `preview/src/site/variant_page.rs`'s
 # `ComponentVariantHighlight`) rendered as the DIRECT CHILD of
 # `.dx-component-preview-frame` -- so this script resolves exactly that
 # function's OUTERMOST rendered element (one hop through a same-folder

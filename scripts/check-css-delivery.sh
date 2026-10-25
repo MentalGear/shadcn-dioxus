@@ -33,7 +33,7 @@ BUNDLER="scripts/ssg-css-bundle.mjs"
 BUILD="scripts/build-ssg.sh"
 DEPLOY="scripts/deploy-preview.sh"
 EAGER="preview/src/eager_head.rs"
-MAIN="preview/src/main.rs"
+MAIN="preview/src/site/head.rs"
 
 # 1. the bundler exists and still refuses what a concatenated sheet cannot hold.
 if [ ! -f "$BUNDLER" ]; then
@@ -69,7 +69,7 @@ fi
 if [ ! -f "$MAIN" ]; then
   fail "$MAIN is missing"
 else
-  head=$(awk '/^fn GlobalHead\(\)/{f=1} f{print} f&&/^}/{exit}' "$MAIN")
+  head=$(awk '/^(pub\(crate\) )?fn GlobalHead\(\)/{f=1} f{print} f&&/^}/{exit}' "$MAIN")
   if [ -z "$head" ]; then
     fail "could not find 'fn GlobalHead()' in $MAIN"
   else

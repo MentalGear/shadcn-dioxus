@@ -72,7 +72,7 @@ ALLOW = {
         "contract, 'Unused for now' in chart/config.rs); nothing in the tree sets it",
     "primitives/src/chart/components/legend.rs|icon":
         "same `ChartIcon` render prop as the tooltip's",
-    "preview/src/main.rs|thumb":
+    "preview/src/site/demos.rs|thumb":
         "`email_client_thumb` is a hook-free `rsx!` of one icon in a `DEMO_ENTRIES` const; "
         "a `const` table cannot hold a mounted element",
 }
