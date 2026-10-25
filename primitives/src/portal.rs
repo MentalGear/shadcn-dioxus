@@ -94,7 +94,12 @@ pub fn use_portal() -> PortalId {
 /// wherever that is in the tree. See the [module docs](self) for a full
 /// example.
 #[component]
-pub fn PortalIn(portal: PortalId, children: Element) -> Element {
+pub fn PortalIn(
+    /// The portal this content belongs to, from [`use_portal`].
+    portal: PortalId,
+    /// The content to render at the [`PortalOut`] with the same portal.
+    children: Element,
+) -> Element {
     if let Some(mut ctx) = try_use_context::<PortalCtx>() {
         let mut portals = ctx.portals.write();
         if let Some(portal) = portals.get_mut(&portal.0) {
@@ -109,7 +114,10 @@ pub fn PortalIn(portal: PortalId, children: Element) -> Element {
 /// it as children (or nothing, if that `PortalIn` hasn't rendered yet). See
 /// the [module docs](self) for a full example.
 #[component]
-pub fn PortalOut(portal: PortalId) -> Element {
+pub fn PortalOut(
+    /// The portal whose content to render, from [`use_portal`].
+    portal: PortalId,
+) -> Element {
     if let Some(ctx) = try_use_context::<PortalCtx>() {
         if let Some(children) = ctx.portals.peek().get(&portal.0) {
             return rsx! {

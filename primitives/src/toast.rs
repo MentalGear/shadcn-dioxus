@@ -875,10 +875,15 @@ if (!document.getElementById('dx-toast-base-styles')) {
 #[cfg(feature = "web")]
 #[component]
 fn ToastRegionRendered(
+    /// The DOM id of the region element.
     id: String,
+    /// The number of toasts. Sets the `--toast-count` the region reads and its accessible label.
     length: usize,
+    /// Extra HTML attributes for the region element. The region's own `id` is ignored.
     attributes: Vec<Attribute>,
+    /// Called with the region's mounted element, so the provider can keep a reference to it.
     onmounted: EventHandler<MountedEvent>,
+    /// The toast list rendered inside the region.
     children: Element,
 ) -> Element {
     // Always `true`: this region is mounted for the lifetime of
@@ -981,10 +986,15 @@ fn ToastRegionRendered(
 #[cfg(not(feature = "web"))]
 #[component]
 fn ToastRegionRendered(
+    /// The DOM id of the region element.
     id: String,
+    /// The number of toasts. Sets the `--toast-count` the region reads and its accessible label.
     length: usize,
+    /// Extra HTML attributes for the region element. The region's own `id` is ignored.
     attributes: Vec<Attribute>,
+    /// Called with the region's mounted element, so the provider can keep a reference to it.
     onmounted: EventHandler<MountedEvent>,
+    /// The toast list rendered inside the region.
     children: Element,
 ) -> Element {
     // Same `style` fold as the web arm above (dev-docs/backlog.md row
@@ -1356,7 +1366,12 @@ pub fn Toast(props: ToastProps) -> Element {
 /// waiting on, not decoration, and scrolling must not change how long it stays
 /// (`crate::activity`, "Timers that carry meaning").
 #[component]
-fn ToastTimer(id: ToastId, duration: Duration) -> Element {
+fn ToastTimer(
+    /// The toast this timer dismisses when the countdown ends.
+    id: ToastId,
+    /// How long the toast stays before it is dismissed. The countdown runs only while the page is visible and the toast is not paused.
+    duration: Duration,
+) -> Element {
     const TICK: Duration = Duration::from_millis(50);
     let ctx = use_context::<ToastCtx>();
     let remove_toast = ctx.remove_toast;

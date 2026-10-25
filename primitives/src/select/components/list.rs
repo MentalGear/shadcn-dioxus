@@ -324,7 +324,14 @@ fn select_list_onkeydown(mut ctx: SelectContext) -> impl FnMut(KeyboardEvent) {
 ///   mount/unmount-scoped variant avoids it.
 #[cfg(feature = "web")]
 #[component]
-fn SelectListRendered(id: String, attributes: Vec<Attribute>, children: Element) -> Element {
+fn SelectListRendered(
+    /// The DOM id of the list element.
+    id: String,
+    /// Extra HTML attributes for the list element.
+    attributes: Vec<Attribute>,
+    /// The list's items.
+    children: Element,
+) -> Element {
     let mut ctx: SelectContext = use_context();
     // Scroll buttons render only inside this subtree (`scroll_button.rs`).
     use_context_provider(|| InRenderedList);
@@ -525,7 +532,14 @@ fn SelectListRendered(id: String, attributes: Vec<Attribute>, children: Element)
 /// both arms rather than only the web one.
 #[cfg(not(feature = "web"))]
 #[component]
-fn SelectListRendered(id: String, attributes: Vec<Attribute>, children: Element) -> Element {
+fn SelectListRendered(
+    /// The DOM id of the list element.
+    id: String,
+    /// Extra HTML attributes for the list element.
+    attributes: Vec<Attribute>,
+    /// The list's items.
+    children: Element,
+) -> Element {
     let mut ctx: SelectContext = use_context();
     // Scroll buttons render only inside this subtree (`scroll_button.rs`).
     use_context_provider(|| InRenderedList);

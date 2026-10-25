@@ -420,11 +420,17 @@ pub fn DialogContent(props: DialogContentProps) -> Element {
 /// (dev-docs/plan.md Phase 4.2 scopes native `<dialog>` to the modal path only).
 #[component]
 fn DialogContentNonModal(
+    /// The DOM id of the dialog element.
     id: Memo<String>,
+    /// The class of the dialog element.
     class: String,
+    /// The id of the title element that names the dialog for assistive technology.
     labelledby: Signal<String>,
+    /// The id of the description element that describes the dialog for assistive technology.
     describedby: Signal<String>,
+    /// Extra HTML attributes for the dialog element.
     attributes: Vec<Attribute>,
+    /// The dialog's content.
     children: Element,
 ) -> Element {
     let ctx: DialogCtx = use_context();
@@ -470,11 +476,17 @@ fn DialogContentNonModal(
 #[cfg(not(feature = "web"))]
 #[component]
 fn DialogContentModal(
+    /// The DOM id of the dialog element.
     id: Memo<String>,
+    /// The class of the dialog element.
     class: String,
+    /// The id of the title element that names the dialog for assistive technology.
     labelledby: Signal<String>,
+    /// The id of the description element that describes the dialog for assistive technology.
     describedby: Signal<String>,
+    /// Extra HTML attributes for the dialog element.
     attributes: Vec<Attribute>,
+    /// The dialog's content.
     children: Element,
 ) -> Element {
     let ctx: DialogCtx = use_context();
@@ -542,11 +554,17 @@ fn DialogContentModal(
 #[cfg(feature = "web")]
 #[component]
 fn DialogContentModal(
+    /// The DOM id of the dialog element.
     id: Memo<String>,
+    /// The class of the dialog element.
     class: String,
+    /// The id of the title element that names the dialog for assistive technology.
     labelledby: Signal<String>,
+    /// The id of the description element that describes the dialog for assistive technology.
     describedby: Signal<String>,
+    /// Extra HTML attributes for the dialog element.
     attributes: Vec<Attribute>,
+    /// The dialog's content.
     children: Element,
 ) -> Element {
     let ctx: DialogCtx = use_context();
