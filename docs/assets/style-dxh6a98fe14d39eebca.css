@@ -1,0 +1,1 @@
+@supports (scrollbar-width:auto){[data-scroll-direction].dx-scroll-area-auto-hide:not(:hover){scrollbar-color:transparent transparent}@media (hover:hover) and (pointer:fine){[data-scroll-direction].dx-scroll-area-auto-hide:hover{scrollbar-color:var(--dx-foreground) transparent}}[data-scroll-direction].dx-scroll-area-always-show{scrollbar-color:var(--dx-foreground) transparent}}
