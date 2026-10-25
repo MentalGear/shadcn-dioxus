@@ -102,13 +102,15 @@
     word-spacing: inherit;
 }
 
-/* `after:absolute after:-inset-2`: an invisible 8px margin around the thumb, so the 12px thumb is a
- * 28px pointer and touch target. A pseudo-element of the thumb, so a press on it is a press on the
- * thumb. */
+/* `after:absolute after:-inset-2`, sized by the global hit size (`--dx-control-hit-size`: 24px fine, 44px
+ * coarse; theme "Coarse sizing"): an invisible margin around the thumb, so the thumb is a hit-size pointer
+ * and touch target. A pseudo-element of the thumb, so a press on it is a press on the thumb. */
 .dx-slider-thumb::after {
     position: absolute;
     content: "";
-    inset: calc(-1 * var(--dx-coarse-slider-thumb-margin));
+
+    /* The thumb's 1px border is outside the padding box this inset is measured from. */
+    inset: calc(-1 * max(0px, (var(--dx-control-hit-size) - var(--dx-coarse-slider-thumb-size) + 2px) / 2));
 }
 
 .dx-slider[data-orientation="vertical"] > .dx-slider-track > .dx-slider-thumb {

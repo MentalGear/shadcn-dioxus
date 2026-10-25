@@ -1,7 +1,7 @@
 //! The `/docs` page's "Touch sizing" section: `data-dx-coarse="auto|on|off"` (backlog rows 349, 350).
 //!
-//! The theme's sizes that differ by pointer (menu rows, text-entry font size, slider thumb, resize hit
-//! area, hover-revealed actions) are variables, and `data-dx-coarse` on `<html>` or any container
+//! The theme's sizes that differ by pointer (the control height scale every control reads, menu rows,
+//! text-entry font size, slider thumb, resize hit area, hover-revealed actions) are variables, and `data-dx-coarse` on `<html>` or any container
 //! switches them. The demo renders the same four controls in a container forced `off` and one forced `on`,
 //! so the two can be compared on a desktop with a mouse; the theme picker's "Touch sizing" control
 //! (`theme.rs`) writes the same attribute on `<html>`.
@@ -18,9 +18,11 @@ use crate::DocsPre;
 use dioxus::prelude::*;
 
 const SIZES: &[[&str; 3]] = &[
+    ["Hit target of small glyph-sized controls (checkbox, radio, switch, tag remove, close buttons): the glyph keeps its size, only the target grows", "24px minimum (--dx-control-hit-size)", "44px minimum"],
+    ["Control heights (button, input, select, native select, toggle, toggle group, tabs, pagination, toolbar, input OTP, date picker, combobox, command input and the rest: every control follows the switch)", "24 / 28 / 32 / 36px (xs / sm / default / lg)", "36 / 40 / 44 / 48px (default is the 44px target)"],
     ["Menu rows (dropdown, context menu, menubar, select, combobox, command)", "28px rows, 14px text", "44px rows, 16px text"],
     ["Menu bar entries (menubar, navbar, navigation menu)", "no minimum height", "44px minimum height"],
-    ["Text entry (input, textarea, combobox, command, native select, date picker, calendar selects)", "14px text", "16px text (no iOS zoom on focus)"],
+    ["Text entry (input, textarea, combobox, command, native select, date picker, calendar selects)", "14px text", "17px text (no iOS zoom on focus)"],
     ["Slider thumb", "12px thumb, 28px target", "20px thumb, 44px target"],
     ["Resizable handle", "12px hit area", "24px hit area"],
     ["Code block actions", "shown on hover or focus", "always shown"],
@@ -31,7 +33,7 @@ document::eval("document.documentElement.setAttribute('data-dx-coarse', 'on')");
 
 // One subtree. `auto` inside an `on` subtree is the media query again.
 div { "data-dx-coarse": "on",
-    Input { placeholder: "16px text, 44px slider target" }
+    Input { placeholder: "44px field, 17px text, 44px slider target" }
     Slider { default_value: 40.0 }
 }"#;
 
@@ -60,7 +62,7 @@ pub fn CoarseDocs() -> Element {
             code { "on" }
             " and "
             code { "off" }
-            " force touch or desktop sizing for that subtree. A nested container wins over its ancestors. The \"Touch sizing\" control in this site's theme picker sets it page-wide."
+            " force touch or desktop sizing for that subtree. A nested container wins over its ancestors. The \"Touch sizing\" control in this site's theme picker sets it page-wide. The control height scale (\"xs\", \"sm\", \"default\" and \"lg\") is part of the set, so every control follows the switch: heights stay fixed tokens, which keeps an input, a select, a text button and an icon button in one row exactly aligned in both modes."
         }
         Table {
             TableHeader {

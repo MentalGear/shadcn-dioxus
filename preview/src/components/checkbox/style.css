@@ -4,6 +4,16 @@
    box-shadow below, so the focus and invalid rings replace it (the field recipes carry their own
    edge). */
 .dx-checkbox {
+    /* The touch target: a transparent frame around the 1rem box, so the button is the global hit size
+       (`--dx-control-hit-size`: 24px fine, 44px coarse; theme "Coarse sizing"). Fine, a negative bottom margin and
+       a translate (not a negative top margin, which a Field's own `margin-top` would override) pull the
+       frame back so the layout is the 1rem box's; coarse, the frame is layout in the block axis (a stack of
+       checkboxes grows to 44px each and so never overlaps) and still negative sideways, so the glyph keeps
+       the label gap. The glyph is painted by `.dx-checkbox-indicator` inside the frame, so the fill, the edge
+       and the rings stay 1rem whatever the target. */
+    --checkbox-hit-pad: max(0px, calc((var(--dx-control-hit-size) - 1rem) / 2));
+    --checkbox-hit-pull: var(--dx-pick-coarse, 0px) var(--dx-pick-fine, calc(-1 * var(--checkbox-hit-pad)));
+
     /* A constant 1rem square that is a FLEX box, never an inline-block
        (Nova's `flex size-4 items-center justify-center`,
        shadcn-ui/ui@295a1f1 style-nova.css `.cn-checkbox`).
@@ -19,19 +29,29 @@
     display: flex;
     width: 1rem;
     height: 1rem;
+    box-sizing: content-box;
     flex-shrink: 0;
     align-items: center;
     justify-content: center;
-    padding: 0;
+    padding: var(--checkbox-hit-pad);
     border: none;
-    border-radius: 4px;
     margin: 0;
-    background-color: var(--dx-field-fill);
-    box-shadow: inset 0 0 0 1px var(--dx-input);
+    background-color: transparent;
     color: var(--dx-foreground);
+    margin-block: 0 calc(2 * var(--checkbox-hit-pull));
+    margin-inline: calc(-1 * var(--checkbox-hit-pad));
 
     /* The ring is the box-shadow token on :focus-visible; the UA outline would be a second ring. */
     outline: none;
+    translate: 0 var(--checkbox-hit-pull);
+}
+
+/* In a table or grid cell the row height is the table's (a windowed grid's rows are fixed), so the target
+   never takes layout there: it stays pulled back to the 1rem box in both modes and is capped at the small
+   control height (24px fine, 36px coarse), so it fits a row and does not reach into the next row's target. */
+:is(td, th, [role="gridcell"], [role="rowheader"], [role="columnheader"]) .dx-checkbox {
+    --checkbox-hit-pad: max(0px, calc((min(var(--dx-control-hit-size), var(--dx-control-height-xs)) - 1rem) / 2));
+    --checkbox-hit-pull: calc(-1 * var(--checkbox-hit-pad));
 }
 
 .dx-checkbox-indicator {
@@ -46,6 +66,11 @@
     flex: none;
     align-items: center;
     justify-content: center;
+
+    /* The painted box (Nova's `border-input dark:bg-input/30 rounded-[4px]`). */
+    border-radius: 4px;
+    background-color: var(--dx-field-fill);
+    box-shadow: inset 0 0 0 1px var(--dx-input);
 }
 
 /* `.cn-checkbox-indicator`: `[&>svg]:size-3.5` (14px). */
@@ -62,21 +87,25 @@
 /* Indeterminate is filled like checked (shadcn: `data-[state=indeterminate]`), with the minus glyph. */
 .dx-checkbox[data-state="checked"],
 .dx-checkbox[data-state="indeterminate"] {
+    color: var(--dx-primary-foreground);
+}
+
+.dx-checkbox[data-state="checked"] > .dx-checkbox-indicator,
+.dx-checkbox[data-state="indeterminate"] > .dx-checkbox-indicator {
     background-color: var(--dx-primary);
     box-shadow: none;
-    color: var(--dx-primary-foreground);
 }
 
 /* Nova: `focus-visible:border-ring ring-3 ring-ring/50`. The edge is an inset box-shadow here, so the
    field recipe (ring-coloured edge + halo) is the ring. */
-.dx-checkbox:focus-visible {
+.dx-checkbox:focus-visible > .dx-checkbox-indicator {
     box-shadow: var(--dx-ring-field);
 }
 
 /* `aria-invalid:border-destructive ring-3 ring-destructive/20 dark:ring-destructive/40`. After the
    focus rule so a focused invalid checkbox stays red; `[data-invalid]` is Form's blocked-submit marker. */
-.dx-checkbox[aria-invalid="true"],
-.dx-checkbox[data-invalid="true"] {
+.dx-checkbox[aria-invalid="true"] > .dx-checkbox-indicator,
+.dx-checkbox[data-invalid="true"] > .dx-checkbox-indicator {
     box-shadow: var(--dx-ring-invalid-field);
 }
 

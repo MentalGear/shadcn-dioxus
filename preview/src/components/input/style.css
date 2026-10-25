@@ -1,7 +1,7 @@
 /* Input Styles -- Nova input (shadcn-ui/ui@295a1f1 registry/styles/style-nova.css,
  * `.cn-input`): h-8, px-2.5 py-1, `rounded-lg`, transparent in light and
  * `input/30` in dark, 1px `input` border, `ring-3 ring-ring/50` + `border-ring`
- * on focus, `text-sm` (16px on touch, below).
+ * on focus, `text-sm` (17px on touch, below).
  *
  * The 1px border is drawn as an inset box-shadow, not `border`: `InputGroup`
  * strips its control's chrome by setting `--dx-input-box-shadow: none`, and that

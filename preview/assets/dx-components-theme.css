@@ -428,20 +428,20 @@ html[data-theme="light"] [class~="dxc-system"] {
 
   /* Control height scale -- the one ladder every sized control reads, so
    * "small", "default" and "large" mean the same pixels in a button, a tab
-   * list, an input and a select (dev-docs/decisions.md). The values are
+   * list, an input and a select (dev-docs/decisions.md). The fine values are
    * Nova's h-6 / h-7 / h-8 / h-9 and are Button's `data-size` xs / sm / default
-   * / lg exactly; `default` is shadcn's 32px field and never moves. Read these
-   * for a control's `height` (and the width of its icon-only twin); do not
-   * re-type 1.5 / 1.75 / 2 / 2.25rem in a sheet. Consumers today: Button (all
-   * four), Input, Select trigger, Combobox input (36px = `lg`), the Input
-   * Group addon button (24px = `xs`), the Tabs list (`sm` / `default` / `lg`
-   * via `TabsSize`). Native Select, Toggle and Toggle Group take their height
-   * from padding and content, not a literal. Any new control height (backlog
-   * row 155) reads these same tokens rather than introducing its own. */
-  --dx-control-height-xs: 1.5rem;       /* 24px */
-  --dx-control-height-sm: 1.75rem;      /* 28px */
-  --dx-control-height-default: 2rem;    /* 32px */
-  --dx-control-height-lg: 2.25rem;      /* 36px */
+   * / lg exactly; `default` is shadcn's 32px field. The tokens are declared in
+   * the "Coarse sizing" block below (they follow the touch switch, 24 / 28 /
+   * 32 / 36px fine, 36 / 40 / 44 / 48px coarse), because a forced container
+   * (`data-dx-coarse="on"`) has to re-evaluate them. Read them for a control's
+   * `height` (and the width of its icon-only twin); do not re-type
+   * 1.5 / 1.75 / 2 / 2.25rem in a sheet. Consumers: Button (all four sizes and
+   * the icon twins), Input, Select trigger, Native Select, Combobox, Command
+   * input, Date Picker, Input OTP slots, Toggle, Toggle Group, Toolbar, Tabs
+   * list, Pagination, Menubar, Navigation Menu, Form actions, Questionnaire
+   * input, the Alert Dialog / Drawer / Sheet / Dropdown Menu triggers and
+   * closes, the Calendar caption. Any new control height (backlog row 155)
+   * reads these same tokens rather than introducing its own. */
 
   /* Radius scale -- shadcn's, rooted at `--dx-radius` (10px at the default
    * base). The right-hand column is the default-base value.
@@ -800,13 +800,22 @@ html[data-theme="light"] [class~="dxc-system"] {
  * Apps retune one size by redeclaring it (`--dx-menu-item-min-height`, ...), after this sheet.
  *
  * The sizes:
+ *  - the control height scale `--dx-control-height-xs/sm/default/lg` (24 / 28 / 32 / 36px fine,
+ *    36 / 40 / 44 / 48px coarse): every sized control (button, input, select, toggle, tabs, pagination,
+ *    toolbar, ...) reads it, so every control follows the switch. The coarse step keeps the ladder's
+ *    order and puts `default`, what a finger meets most, on the 44px target; `sm` stays at or above
+ *    the 36px a fine `lg` already is, and the heights stay fixed tokens (not padding) so an input, a
+ *    select, a text button and an icon button in one row stay exactly aligned in both modes;
+ *  - `--dx-control-hit-size` (24px fine, WCAG 2.5.8; 44px coarse): the minimum hit target of a small
+ *    glyph-sized control (checkbox, radio, switch, tag remove, slider thumb, icon-only close). The
+ *    visible glyph keeps its own size; only the target follows this token;
  *  - menus and option lists (dev-docs/backlog.md row 291): `--dx-menu-item-min-height` /
  *    `-font-size` / `-padding-inline` (a row of a menu, listbox or command palette: rows centre
  *    their content, so a taller row needs no padding of its own) and `--dx-menu-trigger-min-height`
  *    / `-padding` (an entry in a menu BAR: menubar, navbar, navigation-menu triggers);
  *  - text entry: `--dx-coarse-text-entry-font-size` / `-line-height` (input, textarea, combobox,
- *    command, native select, date-picker segments, the OTP and calendar `select` inputs; 16px
- *    avoids WebKit's zoom-on-focus);
+ *    command, native select, date-picker segments, the OTP slots and calendar `select` inputs; 17px
+ *    on a coarse pointer, above the 16px under which WebKit zooms on focus);
  *  - drag targets: `--dx-coarse-slider-thumb-size` / `-margin` (a 20px thumb with a 44px target),
  *    `--dx-coarse-resizable-hit-size`;
  *  - `--dx-coarse-actions-opacity`: hover-revealed action buttons (code block copy) are always
@@ -848,7 +857,12 @@ html[data-theme="light"] [class~="dxc-system"] {
   --dx-menu-item-font-size: var(--dx-pick-coarse, var(--dx-text-base)) var(--dx-pick-fine, var(--dx-text-sm));
   --dx-menu-trigger-min-height: var(--dx-pick-coarse, 2.75rem) var(--dx-pick-fine, 0px);
   --dx-menu-trigger-padding: var(--dx-pick-coarse, var(--dx-space-2) var(--dx-space-3)) var(--dx-pick-fine, var(--dx-space-0-5) var(--dx-space-1-5));
-  --dx-coarse-text-entry-font-size: var(--dx-pick-coarse, var(--dx-text-base)) var(--dx-pick-fine, var(--dx-text-sm));
+  --dx-control-height-xs: var(--dx-pick-coarse, 2.25rem) var(--dx-pick-fine, 1.5rem);
+  --dx-control-height-sm: var(--dx-pick-coarse, 2.5rem) var(--dx-pick-fine, 1.75rem);
+  --dx-control-height-default: var(--dx-pick-coarse, 2.75rem) var(--dx-pick-fine, 2rem);
+  --dx-control-height-lg: var(--dx-pick-coarse, 3rem) var(--dx-pick-fine, 2.25rem);
+  --dx-control-hit-size: var(--dx-pick-coarse, 2.75rem) var(--dx-pick-fine, 1.5rem);
+  --dx-coarse-text-entry-font-size: var(--dx-pick-coarse, 1.0625rem) var(--dx-pick-fine, var(--dx-text-sm));
   --dx-coarse-text-entry-line-height: var(--dx-pick-coarse, 1.5rem) var(--dx-pick-fine, 1.25rem);
   --dx-coarse-slider-thumb-size: var(--dx-pick-coarse, var(--dx-space-5)) var(--dx-pick-fine, var(--dx-space-3));
   --dx-coarse-slider-thumb-margin: var(--dx-pick-coarse, var(--dx-space-3)) var(--dx-pick-fine, var(--dx-space-2));

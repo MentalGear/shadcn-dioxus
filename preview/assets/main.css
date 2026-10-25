@@ -2388,6 +2388,13 @@ html[data-cv-settle] {
   .dx-navbar-link {
     font-size: 0.9rem;
   }
+
+  /* The sidebar trigger is an `icon-sm` Button, 40px under coarse sizing (28px fine) and every phone is coarse;
+   * the row has no room for the extra 12px at this width, so the trigger keeps the fine step here. */
+  .dx-navbar-inner .dx-navbar-sidebar-trigger[data-size] {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
 }
 
 @media (width <= 320px) {

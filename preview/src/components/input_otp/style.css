@@ -3,7 +3,7 @@
 
   /* This real input is invisible (opacity: 0, primitives/src/input_otp.rs) but still geometrically
      focusable, so iOS Safari's zoom-on-focus below 16px applies to it: it takes the theme's text-entry
-     size, the 16px touch floor under coarse sizing. */
+     size, the 17px touch size under coarse sizing. */
   font-size: var(--dx-coarse-text-entry-font-size);
 }
 
@@ -46,7 +46,7 @@
   box-shadow: inset 0 1px 0 var(--dx-input-otp-edge), inset 0 -1px 0 var(--dx-input-otp-edge),
     inset var(--dx-input-otp-end) 0 0 var(--dx-input-otp-edge);
   color: var(--dx-foreground);
-  font-size: var(--dx-text-sm);
+  font-size: var(--dx-coarse-text-entry-font-size);
   font-variant-numeric: tabular-nums;
   transition: box-shadow var(--dx-motion-duration-fast) var(--dx-motion-ease-out),
     background-color var(--dx-motion-duration-fast) var(--dx-motion-ease-out);

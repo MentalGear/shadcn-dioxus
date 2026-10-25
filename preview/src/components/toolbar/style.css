@@ -34,7 +34,7 @@
  * button the app places in the bar is its own component's business. */
 .dx-toolbar-button {
   display: inline-flex;
-  min-width: var(--dx-space-8);
+  min-width: var(--dx-control-height-default);
   height: var(--dx-control-height-default);
   align-items: center;
   justify-content: center;

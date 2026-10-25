@@ -23,7 +23,7 @@ type Sizes = { fontSize: string; thumb: string; menuRow: string; actions: string
 
 /** Fine = Nova's dense sizes, coarse = the touch step. Menu row min-height is `0px` (no floor) when fine. */
 const FINE: Sizes = { fontSize: "14px", thumb: "12px", menuRow: "0px", actions: "0" };
-const COARSE: Sizes = { fontSize: "16px", thumb: "20px", menuRow: "44px", actions: "1" };
+const COARSE: Sizes = { fontSize: "17px", thumb: "20px", menuRow: "44px", actions: "1" };
 
 /**
  * Wraps a probe set in `<div data-dx-coarse=mode>` (nested inside `outer` when given) and returns what its
@@ -120,7 +120,7 @@ test.describe("docs section and theme picker", () => {
     await expect(on).toBeVisible();
     const fs = (p: typeof off) => p.locator(".dx-input").evaluate((e) => getComputedStyle(e).fontSize);
     expect(await fs(off)).toBe("14px");
-    expect(await fs(on)).toBe("16px");
+    expect(await fs(on)).toBe("17px");
     const thumb = async (p: typeof off) => (await measureAtRest(p.locator(".dx-slider-thumb"))).width;
     expect(await thumb(off)).toBeCloseTo(12, 0);
     expect(await thumb(on)).toBeCloseTo(20, 0);
@@ -155,7 +155,7 @@ test.describe("docs section and theme picker", () => {
         document.body.append(i);
         return getComputedStyle(i).fontSize;
       });
-    expect(await bodyInput()).toBe("16px");
+    expect(await bodyInput()).toBe("17px");
 
     await chip("Off").click();
     await expect(html).toHaveAttribute("data-dx-coarse", "off");

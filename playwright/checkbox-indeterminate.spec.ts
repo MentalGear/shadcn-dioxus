@@ -22,7 +22,7 @@ const glyphs = (box: ReturnType<typeof demoRole>) =>
     return {
       check: shown(".dx-checkbox-glyph-check"),
       minus: shown(".dx-checkbox-glyph-minus"),
-      bg: getComputedStyle(el).backgroundColor,
+      bg: getComputedStyle(el.firstElementChild!).backgroundColor,
     };
   });
 

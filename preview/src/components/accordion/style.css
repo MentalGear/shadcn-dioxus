@@ -11,6 +11,9 @@
 .dx-accordion-trigger {
   display: flex;
   width: 100%;
+
+  /* The global control height (theme "Coarse sizing": 44px on a coarse pointer); the padded label is taller on a fine one. */
+  min-height: var(--dx-control-height-default);
   flex-direction: row;
   align-items: flex-start;
   justify-content: space-between;
