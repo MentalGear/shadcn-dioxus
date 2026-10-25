@@ -1,9 +1,14 @@
 # Rust conventions
 
 Six conventions adopted from the Google Rust style guide (owner 2026-10-21, [row 355](../backlog/355-adopt-google-rust-style-guide-items.md)).
-They apply to `primitives/`, `cli/` and `preview/`. The lint-enforced items of the same row (the workspace lint table,
-`unwrap_used`, `return_self_not_must_use`, `#[expect]` with a reason) are lints, not prose, and live in `Cargo.toml` and
-`clippy.toml` once they land; the gates ([`gates.md`](../gates.md)) enforce the rest of the repo's source rules.
+They apply to `primitives/`, `cli/` and `preview/`. The lint-enforced items of the same row are lints, not prose: the
+`[workspace.lints]` table in the root `Cargo.toml` (every crate opts in with `lints.workspace = true`; `unsafe_code` is
+denied and every `#[allow]`/`#[expect]` carries a `reason`), the crate attributes at the root of `primitives` (`missing_docs`,
+`clippy::unwrap_used`, `clippy::return_self_not_must_use`) and `cli` (`clippy::unwrap_used`), and `clippy.toml`
+(`allow-unwrap-in-tests`). A lint that fires in every build is silenced with `#[expect]`, so a stale one fails; `#[allow]`
+stays only where the lint fires in some builds and not others (a `cfg` arm or feature, a registry component an app
+installs, a derive, which does not see `#[expect]`). The gates ([`gates.md`](../gates.md)) enforce the rest of the
+repo's source rules.
 
 1. **An assert message says why, not what.** `assert!(idx < len, "idx {idx} out of range for {len} rows")` names the
    state that broke; `assert!(idx < len, "index too large")` repeats the condition. The same goes for `expect("...")`: it
