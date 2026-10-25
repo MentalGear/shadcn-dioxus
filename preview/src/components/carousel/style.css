@@ -1,7 +1,7 @@
 /* Layout-critical properties (overflow/scroll-snap/flex-direction on
    `.dx-carousel-content`, `flex-basis`/`scroll-snap-align` on
    `.dx-carousel-item`) are structural and live on the primitive itself
-   (primitives/src/carousel.rs), the same way ScrollArea/Resizable inline
+   (primitives/src/carousel/content.rs and item.rs), the same way ScrollArea/Resizable inline
    their own required layout -- it has to work with zero theme CSS
    applied. Everything below is purely visual. */
 
@@ -38,7 +38,7 @@
 }
 
 .dx-carousel-content {
-    /* The gap between slides -- read by `primitives/src/carousel.rs`'s own
+    /* The gap between slides -- read by `primitives/src/carousel/helpers.rs`'s own
        `item_gap_padding`/`content_gap_margin` (a leading-edge padding on
        every `CarouselItem`, exactly compensated by a negative margin here),
        never a real flex `gap` -- see that module's own "Gap model" doc for
@@ -62,7 +62,7 @@
     display: none;
 }
 
-/* Pointer-drag affordance (primitives/src/carousel.rs's own
+/* Pointer-drag affordance (primitives/src/carousel/drag.rs's own
    `use_carousel_drag`/`CAROUSEL_DRAG_JS`, `data-draggable`/`data-dragging`
    are that primitive's own styling hooks). `touch-action` is deliberately
    never set here at all -- `none` must never be used (it also blocks the

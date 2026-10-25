@@ -19,7 +19,7 @@
  *
  *  (b) COMPONENT -- the shipped carousel's `.dx-carousel-content` transform,
  *      asserted against the component's INTENDED contract, which the "mode D"
- *      edge-band engine in `primitives/src/carousel.rs` satisfies (the
+ *      edge-band engine in `primitives/src/carousel/wheel.rs` satisfies (the
  *      per-test comments say which assertions a plateau/velocity engine would
  *      fail).
  *
@@ -255,7 +255,7 @@ test.describe("Carousel wheel replay: reference (the bench's own mode D, rev 40)
 async function openComponent(page: Page): Promise<{ content: Locator }> {
   await gotoHydrated(page, `${BASE_URL}/component/carousel/`, { timeout: 20 * 60 * 1000 });
   const frame = page.locator("#component-preview-frame");
-  // The same element carousel.spec.ts's `readContentTransform` reads: it is
+  // The same element carousel-helpers.ts's `readContentTransform` reads: it is
   // the scroll-snap track AND the element the band's transform is written to.
   const content = frame.locator(".dx-carousel-content");
   await expect(frame.getByRole("group", { name: "1 of 5" })).toHaveAttribute("data-selected", "true");

@@ -28,7 +28,8 @@ baseline=scripts/check-props-docs.baseline.tsv
 rustc --edition 2021 -O -o "$out/props-scan" scripts/props-scan/main.rs 2>"$out/rustc.log" \
   || { cat "$out/rustc.log"; echo "check-props-docs: scanner failed to compile" >&2; exit 1; }
 
-mapfile -t files < <({ find primitives/src -name '*.rs'; find preview/src/components -name component.rs; } | sort)
+# Files split out of a `#[cfg(test)]` module (`tests.rs`, `*_tests.rs`) hold test components, not a public prop surface.
+mapfile -t files < <({ find primitives/src -name '*.rs' ! -name tests.rs ! -name '*_tests.rs'; find preview/src/components -name component.rs; } | sort)
 "$out/props-scan" "${files[@]}" >"$out/missing.tsv"
 
 awk -F'\t' '$1=="FN"{print $2 "\t" $3}' "$out/missing.tsv" | LC_ALL=C sort -u >"$out/fn.tsv"
