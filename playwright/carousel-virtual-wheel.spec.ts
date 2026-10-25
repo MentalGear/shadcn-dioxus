@@ -4,9 +4,9 @@
  * must not let the custom scroll-end snap interfere with a looping or
  * virtual slider.
  *
- * Two failure classes, one test group each (see `primitives/src/carousel.rs`,
+ * Two failure classes, one test group each (see `primitives/src/carousel/scroll.rs`,
  * `CAROUSEL_SCROLL_TRACKING_JS`'s "Browser-idle gate" and
- * `item_basis_style`'s own docs):
+ * `item_basis_style`'s own docs in `helpers.rs`):
  *
  * 1. OVERSIZED SNAP AREAS. The gap model puts each slide's gap inside its
  *    own box as `padding-inline-start` next to `flex-basis: 100%`, which is
@@ -23,7 +23,7 @@
  *    downstream of it (the `selected` update, the virtual window's re-anchor and
  *    re-render, the instant re-align `scrollBy` with snapping suspended)
  *    mid-gesture -- writing the scroll position while the browser is still
- *    scrolling (THE RULE, `carousel.rs` module doc).
+ *    scrolling (THE RULE, `carousel/mod.rs` module doc).
  *
  * METHOD. A probe installed before the app boots wraps every scroll write
  * (`scrollBy`/`scrollTo`/`scroll`/`scrollIntoView` and the
@@ -83,7 +83,7 @@ const AUTOPLAY: Variant[] = ["virtual_loop", "virtual_loop_rtl"];
 async function open(page: Page, variant: Variant): Promise<{ frame: Locator; content: Locator }> {
   await page.addInitScript(installScrollWriteProbe);
   // Autoplay would move the carousel on its own schedule. `CarouselAutoplay`
-  // never starts under reduced motion (carousel.spec.ts's own autoplay
+  // never starts under reduced motion (carousel-rewind-autoplay.spec.ts's own autoplay
   // tests), which takes it out deterministically; nothing on the wheel/
   // scroll-end path under test depends on that preference (the re-align
   // is always instant, and the wheel band is off on these demos anyway).
@@ -344,7 +344,7 @@ test.describe("Carousel: scroll-end reactions wait until the browser is truly id
  * - virtual, non-looping: only when its real first/last item is the slide at
  *   the edge the scroller rests at -- never at the rendered slice's edge
  *   mid-list (the browser clamps there; the window re-centres once idle);
- * - plain, non-looping: both ends (carousel.spec.ts's own mode-D
+ * - plain, non-looping: both ends (carousel-edge-wheel.spec.ts's own mode-D
  *   block, e.g. "real (trusted) wheel input at the start and end edges").
  *
  * HOLDING A SLICE EDGE. A virtual window only rests at its slice's edge
@@ -678,7 +678,7 @@ test.describe("Carousel wheel band: only at a true end of the data", () => {
 /*
  * The mouse/pen drag rubber-band follows the SAME true-end rule as the wheel
  * band, through the same shared predicate (`carousel_true_end_js!` in
- * `primitives/src/carousel.rs`, spliced into both bridges). A drag decides
+ * `primitives/src/carousel/js_macros.rs`, spliced into both bridges). A drag decides
  * once per edge per gesture, the first time it overdrags past that edge; a
  * refused edge behaves like a drag that simply cannot pass it (the scroller
  * clamps, no transform, the slide settles normally, and a virtual window
@@ -929,7 +929,7 @@ test.describe("Carousel drag band: only at a true end of the data", () => {
  * its physical ends) for ~1s -- where macOS Firefox draws its own native
  * bounce whenever `overscroll-behavior` is `auto`. This crate's own band
  * never fires there. The rule under test (`content_overscroll_style` in
- * `primitives/src/carousel.rs`): the scroll axis is `overscroll-behavior:
+ * `primitives/src/carousel/helpers.rs`): the scroll axis is `overscroll-behavior:
  * none` unless BOTH ends of the rendered slides are true ends, so wherever a
  * flick can clamp at a false end, the platform cannot bounce. (Whether
  * Firefox then shows no bounce is a real-device check: headless

@@ -1,5 +1,5 @@
 /* Typography: Geist / Geist Mono are self-hosted (row 162, `preview/assets/fonts/`, SIL OFL). The
-   `@font-face` rules and the preloads are written by `GlobalHead` in `preview/src/main.rs`, because
+   `@font-face` rules and the preloads are written by `GlobalHead` in `preview/src/site/head.rs`, because
    `asset!` hashes the font file names and a stylesheet `url()` is not rewritten; NEVER `@import` a font
    here (a stylesheet whose `@import` has not finished loading is never applied, so the whole file
    would be inert; oracle: `global-stylesheet.spec.ts`).
@@ -132,7 +132,7 @@ body {
   font-weight: 400;
 }
 
-/* "Skip to content" (WCAG 2.4.1), the first focusable element on every page (`Navbar`, main.rs). Parked above
+/* "Skip to content" (WCAG 2.4.1), the first focusable element on every page (`Navbar`, site/chrome.rs). Parked above
    the viewport until it takes focus: `transform`, not `display`/`visibility`, so it stays in the tab order and
    never touches layout (it is `position: fixed`). Its target is the page's `<main id="main-content"
    tabindex="-1">`, which is a focus target, not a control, so it gets no ring. */
@@ -410,7 +410,7 @@ summary,
 
 /* `SidebarTrigger`, rendered as the leading item of `.dx-navbar-primary` on
  * routes that have a sidebar (`Navbar`'s own `try_consume_context` check in
- * `main.rs` -- routes without one just don't render this at all). Its own
+ * `site/chrome.rs` -- routes without one just don't render this at all). Its own
  * `.dx-sidebar-trigger` (sidebar/style.css) is already a compact 1.75rem
  * ghost button; `flex-shrink: 0` only guards it against being squeezed once
  * `.dx-navbar-primary` wraps at the mobile breakpoint below. */
@@ -786,7 +786,7 @@ button.dx-theme-phone-trigger {
 
 /* Docs, component and home pages: real site nav via the themed `Sidebar`
  * system (`preview/src/components/sidebar/component.rs`), composed by
- * `DocsLayout` in `main.rs`. `sidebar/style.css`'s desktop rendering is
+ * `DocsLayout` in `site/docs_page.rs`. `sidebar/style.css`'s desktop rendering is
  * built assuming the WHOLE page is the sidebar's shell -- a fixed-position
  * column over a reserved flex gap, `100svh` tall -- which holds for its
  * other two call sites (the block-route demo, the email-client dashboard)
@@ -1089,7 +1089,7 @@ html[data-nav-sort="category"] .dx-nav-sort .dx-nav-sort-option[data-nav-sort-op
   }
 }
 
-/* The "Extra" badge (`ExtraBadge`, main.rs; list: `components::CATALOG`) marks
+/* The "Extra" badge (`ExtraBadge`, site/component_page.rs; list: `components::CATALOG`) marks
  * a component that is not in shadcn/ui's catalog. It is a sibling of the page
  * `h1` and of the card `h3` (never inside them), so these two rows only lay the
  * name and the badge out side by side; `flex-wrap` lets a long name push the
@@ -1144,7 +1144,7 @@ html[data-nav-sort="category"] .dx-nav-sort .dx-nav-sort-option[data-nav-sort-op
 }
 
 /* The "Extra" explainer under the component page's heading (`ExtraExplainer`,
- * main.rs): why this component is not a shadcn/ui page, always visible so it
+ * site/component_page.rs): why this component is not a shadcn/ui page, always visible so it
  * works on touch and is read in order by screen readers. Smaller than the
  * description below it, which it must out-rank in specificity. */
 .dx-component-page-header p.dx-extra-explainer {
@@ -1382,7 +1382,7 @@ html[data-nav-sort="category"] .dx-nav-sort .dx-nav-sort-option[data-nav-sort-op
   gap: 1rem;
 }
 
-/* `BlockComponentVariantHighlight` (`preview/src/main.rs`)'s live-preview
+/* `BlockComponentVariantHighlight` (`preview/src/site/variant_page.rs`)'s live-preview
  * iframe for a `ComponentType::Block` demo. See that iframe's own comment
  * for the full reasoning; the short version: the `min-width: 820px`
  * below must be gated on THIS file's `@media` query rather than baked into
@@ -1440,7 +1440,7 @@ html[data-nav-sort="category"] .dx-nav-sort .dx-nav-sort-option[data-nav-sort-op
   flex-shrink: 0;
 }
 
-/* The install command (`ComponentInstallCommand`, main.rs) sits in the Installation disclosure. The box
+/* The install command (`ComponentInstallCommand`, site/component_page.rs) sits in the Installation disclosure. The box
  * may shrink below its content width, so the command truncates inside it at phone width rather than
  * widening the page. */
 .dx-component-install-commands {
@@ -1478,7 +1478,7 @@ html[data-nav-sort="category"] .dx-nav-sort .dx-nav-sort-option[data-nav-sort-op
  * (`--dx-space-3`) keeps a visible canvas edge without eating the demo.
  *
  * The frame element is ALSO a `.dx-tabs-content` (`ComponentVariantHighlight`,
- * `preview/src/main.rs`). Nova's tabs content has no padding of its own
+ * `preview/src/site/variant_page.rs`). Nova's tabs content has no padding of its own
  * (`components/tabs/style.css`, loaded after this file; row 132), so the
  * frame owns its padding above. The compound selector is kept so a future tabs padding cannot
  * win by load order; it must stay ABOVE the `:has(.dx-code-block)` rule below
@@ -1745,7 +1745,7 @@ html[data-nav-sort="category"] .dx-nav-sort .dx-nav-sort-option[data-nav-sort-op
   line-height: 1.6;
 }
 
-/* Widget masonry: the columns are FIXED GROUPS decided at build time (`MasonrySlot` in `preview/src/main.rs`), never balanced
+/* Widget masonry: the columns are FIXED GROUPS decided at build time (`MasonrySlot` in `preview/src/site/home.rs`), never balanced
  * from the cards' heights. CSS multi-column would assign each card to a column from the
  * height of everything laid out so far: the ~580 KB prerendered page is parsed in chunks and painted between
  * them, so every parsed card would re-balance the columns and cards would jump between them while the page loads
@@ -1773,7 +1773,7 @@ html[data-nav-sort="category"] .dx-nav-sort .dx-nav-sort-option[data-nav-sort-op
   gap: 1.5rem;
 }
 
-/* A `Card` (`MasonryCard`, main.rs): the ring, fill and radius are the library's; this is the layout and the roomier
+/* A `Card` (`MasonryCard`, site/home.rs): the ring, fill and radius are the library's; this is the layout and the roomier
  * inset. The doubled class outranks `.dx-card` whatever order the stylesheets load in. */
 .dx-card.dx-widget-card {
   --dx-card-spacing: 1.75rem;

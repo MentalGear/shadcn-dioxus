@@ -7,7 +7,7 @@ use dioxus_primitives::merge_attributes;
 // dev-docs/backlog.md row 32: this stylesheet is
 // plain, unhashed `dx-`-prefixed CSS (collision safety comes from
 // scripts/check-dx-class-prefix.sh instead of a hash), delivered the same
-// way `main.rs`'s `GlobalHead` delivers its sheets: an
+// way `site/head.rs`'s `GlobalHead` delivers its sheets: an
 // `asset!()`-bundled path linked via `document::Link`. Unlike that
 // call site this one lives *inside* the themed wrapper itself so a
 // `shadcn-dioxus add checkbox`-copied component keeps working with zero

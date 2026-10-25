@@ -38,13 +38,13 @@
  *     dismissal would race that existing lifecycle rather than usefully
  *     extend it. So rules 2 ("light dismiss") and 3 ("Escape") below apply
  *     only to the non-modal `Popover` arm (`popover="auto"`) and its native
- *     reference — see primitives/src/top_layer.rs's `PopoverKind` doc for
+ *     reference — see primitives/src/top_layer/popover_sync.rs's `PopoverKind` doc for
  *     the full reasoning.
  *   - The non-modal `Popover` arm renders as `<dialog popover="auto">`,
  *     getting light dismiss for free from the platform; this file's rules
  *     2-3 are exactly what checks that the WHATWG-mandated browser behaviour
  *     (`toggle` event) still lands back in the Rust `open` signal, per
- *     primitives/src/top_layer.rs's `use_popover_sync` (the same defect
+ *     primitives/src/top_layer/popover_sync.rs's `use_popover_sync` (the same defect
  *     class documented for a one-way `<dialog>` binding in
  *     dev-docs/reference/platform-rationale.md Caveat 1).
  *   - Rule 1 ("clipping escape") and rule 4 ("stacking") are top-layer
@@ -161,7 +161,7 @@
  * Rule 7 (no spurious flip): a normal, mid-viewport placement (the existing
  * "Stacking popover" from the section above, `side="bottom"` far from any
  * edge) renders unflipped, below its trigger — this is the guard
- * for `primitives/src/top_layer.rs`'s `use_anchor_position_fallback`: since
+ * for `primitives/src/top_layer/anchor_fallback.rs`'s `use_anchor_position_fallback`: since
  * that hook's JS fallback accepts *either* the primary or the flipped
  * placement as contract-legal (see its doc), this rule confirms it isn't
  * accepting a flip that never should have happened in the common case.
@@ -219,7 +219,7 @@ const gotoFixture = (page: Page) =>
  * viewport-relative API that returns `null` for any coordinate outside
  * `[0, innerWidth) x [0, innerHeight)` -- always, regardless of what
  * top-layer content would otherwise paint there. `use_anchor_position_
- * fallback` (primitives/src/top_layer.rs) can legitimately compute a
+ * fallback` (primitives/src/top_layer/anchor_fallback.rs) can legitimately compute a
  * position
  * that runs partly off-screen for this fixture's unstyled, unconstrained-
  * width tooltip content -- a real, on-screen escape from the clip ancestor
@@ -607,7 +607,7 @@ test.describe("Rule 2 — light dismiss for popover=auto (click outside closes i
     await page.locator("#outside-click-target").click();
 
     // The browser's own light dismiss hides the element; the Rust signal
-    // must independently learn about it (primitives/src/top_layer.rs
+    // must independently learn about it (primitives/src/top_layer/popover_sync.rs
     // `use_popover_sync`'s `toggle` listener) -- assert both, since a
     // stranded signal (the exact defect class dev-docs/reference/platform-rationale.md
     // Caveat 1 documents for <dialog>) would leave data-state="open" even
@@ -702,7 +702,7 @@ async function viewportSize(page: Page) {
 
 // A 1px tolerance throughout the flip rules below for the same
 // rounding/subpixel reason `use_anchor_position_fallback`'s own >2px
-// tolerance exists (primitives/src/top_layer.rs) -- comparisons here are
+// tolerance exists (primitives/src/top_layer/anchor_fallback.rs) -- comparisons here are
 // looser (1px) since they only need "fully inside the viewport"/"on the
 // correct side of the trigger," not exact pixel equality to a formula.
 const EDGE_TOLERANCE = 1;
@@ -827,7 +827,7 @@ test.describe("Rule 6 — inline-axis flip: a right-edge trigger with side=\"rig
 });
 
 test.describe("Rule 7 — normal mid-viewport placement does not flip", () => {
-  // Regression guard for the primitives/src/top_layer.rs
+  // Regression guard for the primitives/src/top_layer/anchor_fallback.rs
   // `use_anchor_position_fallback` interaction: that hook's JS fallback
   // accepts *either* the primary or the flipped placement as
   // contract-legal (see its doc) precisely so it never fights a real CSS
@@ -854,7 +854,7 @@ test.describe("Rule 7 — normal mid-viewport placement does not flip", () => {
 /**
  * Rule 8 — scroll tracking (a `ColorPicker` popup must not float
  * viewport-fixed while the page scrolls, detached from its trigger). Two independent positioning paths
- * exist (`primitives/src/top_layer.rs`'s `use_anchor_position_fallback`
+ * exist (`primitives/src/top_layer/anchor_fallback.rs`'s `use_anchor_position_fallback`
  * doc, "Scroll/resize tracking"), so both need their own case here:
  *
  *   - The CSS-anchor path (native `anchor()` in the stylesheet): the
@@ -1081,7 +1081,7 @@ test.describe("Rule 9 — point-positioned vs. anchored scroll behavior", () => 
  * never cover its own anchor" as a normative MUST -- this rule cites this
  * repo's own anchored-overlay contract (the `[data-side]`/`[data-align]`
  * placement formula `use_anchor_position_fallback` implements and
- * self-checks, `primitives/src/top_layer.rs`) plus the platform surface the
+ * self-checks, `primitives/src/top_layer/anchor_fallback.rs`) plus the platform surface the
  * contract is built on:
  *   - CSSOM View's `VisualViewport` -- the on-screen-keyboard-aware
  *     viewport rectangle. `window.innerWidth`/`innerHeight` do NOT shrink
@@ -1131,7 +1131,7 @@ test.describe("Rule 9 — point-positioned vs. anchored scroll behavior", () => 
  *     `@supports (anchor-name: --a) { ... }` block's body -- the only
  *     top-level `@supports` in the engine-injected
  *     `#dx-anchor-positioning-styles` stylesheet
- *     (`primitives/src/top_layer.rs`'s `anchor_positioning_inject_js`).
+ *     (`primitives/src/top_layer/styles.rs`'s `anchor_positioning_inject_js`).
  *     This drops exactly the `anchor()`-based placement rules an engine
  *     without the feature would never have applied, regardless of whether
  *     *this* browser actually supports it.
@@ -1816,7 +1816,7 @@ test.describe("Rule 11 — anchored-overlay self-overlap contract", () => {
  * either engine.
  *
  * Why a shift is needed (see `use_anchor_position_fallback`'s doc, "Inline-axis shift",
- * `primitives/src/top_layer.rs`): flip only ever swaps `side`
+ * `primitives/src/top_layer/anchor_fallback.rs`): flip only ever swaps `side`
  * to its own axis's opposite (block for top/bottom, inline for left/right).
  * A `side="top"`/`side="bottom"` placement's horizontal position comes
  * entirely from `align`, computed once against the trigger and never
@@ -1923,7 +1923,7 @@ test.describe("Rule 12 — inline-axis shift: a center-aligned overlay wider tha
  * width).
  *
  * Regression guard for the exact failure mode `top_layer::
- * anchored_content_attributes` (`primitives/src/top_layer.rs`) exists to
+ * anchored_content_attributes` (`primitives/src/top_layer/attributes.rs`) exists to
  * prevent: a duplicated `style` attribute on an
  * anchored-content leaf where SSR and the WASM client disagree about which
  * `style` wins (`dev-docs/conformance-harness.md` hydration-parity Rule 4). If
@@ -2189,7 +2189,7 @@ test.describe("Rule 14 — aria-labelledby resolves to the caller-overridden tri
  *
  * Citation: same as Rules 11/12 above -- this repo's own anchored-overlay
  * placement contract (`use_anchor_position_fallback`,
- * `primitives/src/top_layer.rs`), not a normative WHATWG/W3C MUST. See that
+ * `primitives/src/top_layer/anchor_fallback.rs`), not a normative WHATWG/W3C MUST. See that
  * function's doc, "Vertical shift + size clamp", for the full
  * construction this rule guards: CSS Anchor Positioning's own
  * collision-avoidance family (`position-try-fallbacks`) has no primitive
@@ -2299,7 +2299,7 @@ test.describe("Rule 15 — vertical shift + size clamp: an overlay taller than t
     });
     const viewport = await viewportSize(page);
     // Mirrors `use_anchor_position_fallback`'s own `EDGE_MARGIN` constant
-    // (`primitives/src/top_layer.rs`) -- kept as a literal here, not
+    // (`primitives/src/top_layer/anchor_fallback.rs`) -- kept as a literal here, not
     // imported, since this file has no access to that Rust module's
     // constants and duplicating a single small number is clearer than
     // scraping it out at runtime.

@@ -21,6 +21,8 @@
 # or be on the ALLOWLIST below with the reason there is nothing to flip. direction.rs itself is the rule.
 # The browser half is `playwright/oracle/tier3-radix/rtl.spec.ts` and `playwright/rtl-toggle.spec.ts`.
 #
+# A file split out of a `#[cfg(test)]` module (`tests.rs`, `*_tests.rs`, anything under a `tests/` directory) is test
+# code too and is not scanned (row 267).
 # ALLOWLIST: `<file under primitives/src>|<reason>`. An entry that no longer matches a hook fails (stale), and a
 # reason is mandatory.
 #
@@ -54,7 +56,7 @@ while IFS= read -r f; do
     grep -nE 'Key::Arrow(Left|Right)|delta_x' "$f" | grep -vE '^[0-9]+:[[:space:]]*//' | head -3 | sed 's/^/    /'
     fail=1
   fi
-done < <(find primitives/src -name '*.rs' | sort)
+done < <(find primitives/src -name '*.rs' ! -name tests.rs ! -name '*_tests.rs' ! -path '*/tests/*' | sort)
 
 for entry in "${allowlist[@]}"; do
   f="${entry%%|*}"; reason="${entry#*|}"

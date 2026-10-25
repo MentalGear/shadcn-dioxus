@@ -10,11 +10,11 @@ use dioxus_icons::lucide::{ChevronLeft, ChevronRight};
 /// physically forward one already-mounted window slide at a time (never a
 /// visible rewind across every intervening slide), and paging back past
 /// the first slides physically backward -- see
-/// `primitives/src/carousel.rs`'s own `CarouselVirtualContent` doc,
+/// `primitives/src/carousel/virtual_content.rs`'s own `CarouselVirtualContent` doc,
 /// "Seamless loop," for the construction. The default `radius: 10`, capped
 /// for a loop at `(n - 2) / 2` so no item shows twice, keeps 11 slides
 /// mounted at once for this 12-item data set --
-/// `playwright/carousel.spec.ts` asserts this DOM-node-count bound
+/// `playwright/carousel-virtual.spec.ts` asserts this DOM-node-count bound
 /// directly. See `virtual_loop_rtl` for the identical demo under RTL.
 ///
 /// Also carries `CarouselAutoplay` (so the same seamless wrap is exercised

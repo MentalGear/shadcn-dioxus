@@ -10,7 +10,7 @@ use dioxus_primitives::direction::{Direction, DirectionProvider};
 /// `oracle/tier1-apg/keyboard-matrix.spec.ts` both query these by name
 /// (e.g. `getByRole("menuitem", { name: "File" })`, no `exact`), and this
 /// variant renders alongside `main` on the same page (`preview/src/
-/// main.rs`'s `ComponentHighlight`), so reusing those words -- even as a
+/// site/component_page.rs`'s `ComponentHighlight`), so reusing those words -- even as a
 /// substring -- would make such a locator match both. `MenubarMenu`'s
 /// top-level trigger row is unconditionally horizontal, so its
 /// `ArrowLeft`/`ArrowRight` roving focus between "Options"/"Modify" always

@@ -5,7 +5,7 @@ import { gotoHydrated } from "./hydration";
 // `area_chart` is a shadcn/ui `chart-area-*` demo gallery -- see
 // `preview/src/components/area_chart/component.rs`'s own doc comment. Every
 // variant renders on the same `/component/?name=area_chart&` page (this
-// repo's normal multi-variant layout, `preview/src/main.rs`): the first/
+// repo's normal multi-variant layout, `preview/src/site/variant_page.rs`): the first/
 // default demo's frame is `#component-preview-frame`, every other named
 // variant's is `#component-preview-frame-<variant>`.
 const VARIANTS: { name: string; frameId: string; seriesCount: number }[] = [

@@ -5,7 +5,7 @@
  * The calendar anchors to its trigger, not to the narrow date-input group around it:
  *   1. `date_picker/style.css` carries its own copy of the `@supports (anchor-name: --a)` block every other
  *      non-modal-arm consumer in this workspace has (as `color_picker/style.css` does).
- *   2. `date_picker::DatePickerPopover` (`primitives/src/date_picker.rs`) forwards its `is_modal` prop to the
+ *   2. `date_picker::DatePickerPopover` (`primitives/src/date_picker/popover.rs`) forwards its `is_modal` prop to the
  *      `PopoverRoot` it renders, and the preview's `DatePickerPopover` calls set `is_modal: false`
  *      (`preview/src/components/date_picker/component.rs`, matching `ColorPickerPopover`). The modal arm's
  *      DOM-relative "centering trick" positions the popup under its *positioned ancestor* (the narrow
@@ -137,7 +137,7 @@ test("uses the CSS-anchor path, not the JS-measured fallback (no inline top/left
   await trigger(page).evaluate((el) => (el as HTMLElement).click());
   await expect(content(page)).toBeVisible();
 
-  // `use_anchor_position_fallback` (primitives/src/top_layer.rs) is the
+  // `use_anchor_position_fallback` (primitives/src/top_layer/anchor_fallback.rs) is the
   // only thing that ever writes an inline `top` on this element -- an
   // empty style here confirms the CSS-native `anchor()` path engaged
   // first, the same signal top-layer.spec.ts Rule 8 checks for its
@@ -220,7 +220,7 @@ test.describe("Axe automated scan", () => {
  * resembles those two tests.)
  *
  * Reference basis (derive-then-cite, not "assert whatever the crate does"):
- * `primitives/src/date_picker.rs`'s `DateSegment` renders `role="spinbutton"`
+ * `primitives/src/date_picker/segment.rs`'s `DateSegment` renders `role="spinbutton"`
  * with `aria-valuemin`/`aria-valuemax`/`aria-valuenow` and a keydown handler
  * (`date_segment_key_effects`) -- the closest APG pattern is
  * `content/patterns/spinbutton/spinbutton-pattern.html` (the *current*,
@@ -254,14 +254,14 @@ test.describe("Axe automated scan", () => {
 
 /**
  * Every variant of this ("Normal"-type) component renders together on the
- * SAME page (`preview/src/main.rs`'s `ComponentVariantHighlight` loops over every
+ * SAME page (`preview/src/site/variant_page.rs`'s `ComponentVariantHighlight` loops over every
  * variant unconditionally, and `preview/src/components/mod.rs`'s
  * `component_page!` macro sets `name: stringify!($variant)`) -- there is no
  * `?variant=` query-string switch for this component's route (unlike, e.g.,
  * `select`/`combobox`/`popover`, `variant=range` and
  * `variant=main` render byte-identical pages here). Each demo is scoped by
  * `#component-preview-frame` (the "main" demo) or
- * `#component-preview-frame-<variant>` (`frame_id` in `main.rs`, keyed by
+ * `#component-preview-frame-<variant>` (`frame_id` in `preview/src/site/variant_page.rs`, keyed by
  * the variant's own Rust identifier -- `range`, `internationalized`,
  * `multi_month`, `unavailable_dates`), so every test below scopes into the
  * right one explicitly instead of relying on `.first()`/page-wide role
@@ -416,7 +416,7 @@ test.describe("Segment typing (digit entry, spinbutton-pattern.html #keyboard_in
     // Month: min=1, max=12, max_length=2. Typing "9" alone: value=9 is in
     // range, but a probed third-digit overflow check ("90" > 12) already
     // fails after this one keystroke -- `push_commit_text_effects` in
-    // `date_picker.rs` advances focus immediately rather than waiting for a
+    // `date_picker/segment.rs` advances focus immediately rather than waiting for a
     // second digit. Flipping the expected focus target to "month" fails
     // the test, so it does exercise the advance.
     await gotoDatePicker(page);
@@ -466,7 +466,7 @@ test.describe("Segment typing (digit entry, spinbutton-pattern.html #keyboard_in
     await expect(month).toHaveText(textBefore!);
     // `Key::Character` calls `prevent_default`/`stop_propagation` for
     // a non-digit (matches `key_effects_non_digit_character_still_blocks_
-    // default_but_does_not_edit` in date_picker.rs's own unit tests) but
+    // default_but_does_not_edit` in `date_picker/tests/key_effects.rs`) but
     // pushes no focus-moving effect, so focus stays put.
     expect(await activeLabel(page)).toBe("month");
   });
@@ -682,7 +682,7 @@ test.describe("Tab order", () => {
 
 test.describe("aria-valuenow / aria-valuetext, and no dangling aria-labelledby", () => {
   test("aria-valuenow mirrors the live value on every arrow-key change (already exercised above); before any date is chosen it is entirely absent, not today's date -- backlog row 84 finding 3", async ({ page }) => {
-    // `now_value` in `date_picker.rs` must not be `value().unwrap_or(default)`:
+    // `now_value` in `date_picker/segment.rs` must not be `value().unwrap_or(default)`:
     // `default` is today's year/month/day, so an untouched segment's
     // `aria-valuenow` would never be blank (it would report e.g. today's
     // actual year) although `display_value` correctly shows the YYYY/MM/DD
@@ -847,7 +847,7 @@ test.describe("Range picker (DateRangePicker, variant=range)", () => {
   });
 
   test("typing into the start and end year/month segments updates each independently (stops short of completing either date -- see the Home-key test below)", async ({ page }) => {
-    // `DateRangePickerInputValue`'s own commit effect (`date_picker.rs`)
+    // `DateRangePickerInputValue`'s own commit effect (`date_picker/input.rs`)
     // only calls `on_date_change`/touches the calendar once a side's
     // year+month+day all resolve to `Some` -- this exercises everything up
     // to but not including that point, which is where the hang
@@ -874,7 +874,7 @@ test.describe("Range picker (DateRangePicker, variant=range)", () => {
   test("completing a full date on the start side via the segments (year+month, then Home on day) resolves promptly and commits only the start side", async ({ page }) => {
     // Regression guard for a page hang (dev-docs/backlog.md's range-hang account). The moment a
     // `DateRangePicker` side's year/month/day segments first all resolve, `DateElement`'s own two
-    // effects (`date_picker.rs`) and `DateRangeInputContext`'s `start_date`/`end_date` signals must
+    // effects (`date_picker/input.rs`) and `DateRangeInputContext`'s `start_date`/`end_date` signals must
     // not form an unconditional two-way sync: `DateElement`'s "sync down from selected_date" effect
     // writes the segment signals, whose "sync up via on_date_change" effect writes `start_date`
     // right back, and if neither hop checks whether the value it is about to write actually differs,
@@ -922,7 +922,7 @@ test.describe("Range picker (DateRangePicker, variant=range)", () => {
 
 test.describe("Internationalized variant (variant=internationalized)", () => {
   test("renders the same fixed year -> month -> day segment order as the default variant (locale-based reordering is not implemented)", async ({ page }) => {
-    // `DateElement`'s default children (`date_picker.rs`) are hardcoded
+    // `DateElement`'s default children (`date_picker/input.rs`) are hardcoded
     // `DatePickerYearSegment, Separator, DatePickerMonthSegment, Separator,
     // DatePickerDaySegment` regardless of which `on_format_*_placeholder`
     // callbacks a caller supplies -- the internationalized variant
@@ -991,7 +991,7 @@ test.describe("Unavailable dates variant (variant=unavailable_dates)", () => {
     // navigation is needed -- and none is done here, which is the point: the
     // test must not jump to a hard-coded May 2026 through the
     // selects, or the demo it exercises would show nothing to anyone opening it on
-    // any other month. `RangeCalendarDay::handle_day_select` (calendar.rs)
+    // any other month. `RangeCalendarDay::handle_day_select` (calendar/day.rs)
     // early-returns for an unavailable date before ever calling
     // `set_selected_date`/committing anything, and never sets a native
     // `disabled` attribute (`.disabled` is `false`) -- only
@@ -1102,7 +1102,7 @@ test.describe("Completing a range selection via the calendar", () => {
   // `page.evaluate(() => 1 + 1)` (a real hang with the render thread pinned near 100% CPU, not a
   // slow response). So every write to `start_date`/`end_date` (including this sync-down
   // effect's) goes through the guarded `DateRangeInputContext::set_start_date`/`set_end_date`
-  // choke point; `calendar.rs`, `popover.rs` and `top_layer.rs` take no part in it.
+  // choke point; `calendar/`, `popover.rs` and `top_layer.rs` take no part in it.
   test("clicking a second, different calendar day to complete a range selection resolves, and Apply closes the popover and syncs the segments", async ({ page }) => {
     await gotoDatePickerFrozen(page);
     await pickerTrigger(page, "range").click();
@@ -1150,7 +1150,7 @@ test.describe("Completing a range selection via the calendar", () => {
  * the 3rd, a build with two extra log lines on the 4th -- so no single count of ranges proves it
  * gone: this completes six, and ALSO counts what the demo's `on_range_change` was told, which a
  * ping-pong inflates long before it freezes.
- * (Guarded natively too: `a_range_the_parent_sets_is_never_reported_back`, primitives/src/date_picker.rs.)
+ * (Guarded natively too: `a_range_the_parent_sets_is_never_reported_back`, primitives/src/date_picker/tests/state.rs.)
  * -----------------------------------------------------------------------
  */
 test.describe("Completing several ranges in a row (variant=range)", () => {

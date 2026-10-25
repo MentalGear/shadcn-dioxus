@@ -2,7 +2,7 @@
  * Shared close-fade sampler/assertions for dev-docs/backlog.md rows 19 and
  * 7: `Tooltip`, `HoverCard` and non-modal `Popover` content is promoted to
  * the top layer with the `popover` attribute
- * (`primitives/src/top_layer.rs::use_popover_shown_while_mounted`, called
+ * (`primitives/src/top_layer/popover_sync.rs::use_popover_shown_while_mounted`, called
  * from the web leaves in `tooltip.rs`/`hover_card.rs`/`popover.rs`) and
  * held mounted by `use_animated_open` (`primitives/src/lib.rs`) for its
  * whole CSS close animation (plus a settle hold) before actually

@@ -314,7 +314,7 @@ test("typeahead skips disabled options", async ({ page }) => {
  * *viewport* once the listbox is promoted to the top layer (its
  * containing block is no longer `.dx-select`'s `position: relative` box),
  * so trigger-relative sizing comes from the engine instead: see
- * `primitives/src/top_layer.rs`'s `use_anchor_position_fallback` doc,
+ * `primitives/src/top_layer/anchor_fallback.rs`'s `use_anchor_position_fallback` doc,
  * "Anchor width contract" (`--dx-anchor-width`, engine-published on every
  * anchored content).
  *

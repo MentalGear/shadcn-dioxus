@@ -7,7 +7,7 @@ use dioxus_icons::lucide::{ChevronLeft, ChevronRight};
 /// items) -- shows the DOM only ever holds a small window (the default `radius: 10`
 /// -> at most 21 slides) regardless of `N`, and that Previous/Next genuinely
 /// `disabled` at the real ends (no loop, so `wrap: false` clamps the
-/// window there too) -- see `primitives/src/carousel.rs`'s own
+/// window there too) -- see `primitives/src/carousel/virtual_content.rs`'s own
 /// `CarouselVirtualContent` doc, "Non-loop, virtualised."
 #[component]
 pub fn Demo() -> Element {

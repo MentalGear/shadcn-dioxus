@@ -18,7 +18,7 @@
 //                                               another primitive (transitive), plus those components' all-routes
 //                                               tests; if that is > BROAD_AT components the change is shared plumbing
 //                                               and the BROAD set is added
-//   theme / main.css / main.rs / eager_head / index.html / components/mod.rs / scripts that build the site
+//   theme / main.css / main.rs / site/ / eager_head / index.html / components/mod.rs / scripts that build the site
 //                                            -> the BROAD set (below); a changed preview/assets/*.css is read rule by rule
 //                                               first and often needs only part of it (see "CSS finer", below)
 //   playwright/<spec>.spec.ts                -> itself; playwright/<helper>.ts -> the specs that import it (transitively);
@@ -256,7 +256,7 @@ for (const f of changed) {
     cssChanged.push(f);
   } else if (f === "preview/src/components/mod.rs" || /^preview\/(assets\/|index\.html|build\.rs|Cargo\.toml)/.test(f) ||
              /^preview\/src\/(main|theme|eager_head|docs_nav|nav_link|motion_docs|installed_source|wasm_libc_shim)\.rs$/.test(f) ||
-             /^preview\/src\/(i18n|dashboard)\//.test(f) || /^scripts\/(build-ssg|ssg-verify|ssg-css-bundle|emit-404)/.test(f)) {
+             /^preview\/src\/(i18n|dashboard|site)\//.test(f) || /^scripts\/(build-ssg|ssg-verify|ssg-css-bundle|emit-404)/.test(f)) {
     addBroad(f);
   } else if ((m = f.match(/^preview\/src\/(\w+?)_parity\.rs$/)) || (m = f.match(/^preview\/src\/(charts_gallery)\.rs$/))) {
     const c = comps.find((x) => m[1] === x || m[1].startsWith(x)) ?? "chart";

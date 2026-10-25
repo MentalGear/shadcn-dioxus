@@ -13,7 +13,8 @@ import type { Locator, Page } from "@playwright/test";
  * `demoRole(page, "button")` is the first button of the page's main demo, `demoRole(page, "tab", 2)` its third
  * tab -- and an item of an OPEN popup by its position in that popup (`popupItem(page, "menu", "menuitem", 2)`).
  * The main demo's frame has the one stable id the docs page template gives it (`#component-preview-frame`;
- * every other variant's is `component-preview-frame-<name>`, preview/src/main.rs). Names that belong to the
+ * every other variant's is `component-preview-frame-<name>`,
+ * preview/src/site/variant_page.rs). Names that belong to the
  * COMPONENT rather than to a demo (a Close button's `aria-label`, a carousel's "Previous slide") are not demo
  * copy and may still be used; `scripts/check-demo-text-locators.sh` fails any other text locator in a shared
  * spec, with a reasoned allowlist.

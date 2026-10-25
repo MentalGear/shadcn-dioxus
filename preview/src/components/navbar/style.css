@@ -80,7 +80,7 @@
    * directional slide, below. The matching `margin`/`inset` reset, and the `@supports (anchor-name:
    * --a)` anchor-positioning rules that keep each nav anchored to its own trigger once promoted to
    * the top layer, live in the shared, engine-injected stylesheet every `dx-anchor-*`-marked overlay
-   * gets for free -- see `primitives/src/top_layer.rs`'s `ensure_anchor_positioning_styles` doc. On
+   * gets for free -- see `primitives/src/top_layer/styles.rs`'s `ensure_anchor_positioning_styles` doc. On
    * an engine without CSS Anchor Positioning, this rule's own `position: absolute; top: 100%; left:
    * 0` stays the fallback placement -- irrelevant to whichever anchored path is actually active,
    * since `use_anchor_position_fallback`'s JS-measured correction always overrides with inline
@@ -111,7 +111,7 @@
  * (1) This content never sets a `data-side`/`data-align` attribute (unlike
  * `popover.rs`/`hover_card.rs`/`tooltip.rs`), so the shared, engine-injected
  * anchor-positioning stylesheet's per-side `anchor()` placement rules
- * (`primitives/src/top_layer.rs`'s `ANCHOR_POSITIONING_CSS_JS_LITERAL`)
+ * (`primitives/src/top_layer/styles.rs`'s `ANCHOR_POSITIONING_CSS_JS_LITERAL`)
  * never match it, meaning native CSS Anchor Positioning never actually
  * places this content anywhere -- so `use_anchor_position_fallback`'s own
  * `matches()` self-check always concludes the native path failed and takes
@@ -148,7 +148,7 @@
 }
 
 /* `scale`/`translate`, not `transform`: an animated `transform` REPLACES an anchor's own
- * centring transform (`translateX(-50%)`, `primitives/src/top_layer.rs`'s engine stylesheet)
+ * centring transform (`translateX(-50%)`, `primitives/src/top_layer/styles.rs`'s engine stylesheet)
  * for as long as the animation runs, which would play a date/colour picker panel 144px/133px
  * off its anchor. This content sets no `data-side`, so no centring applies to it today; the
  * individual properties compose with `transform` and keep it safe if one ever does.

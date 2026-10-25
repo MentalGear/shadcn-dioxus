@@ -59,7 +59,7 @@
  * Residue beyond that is listed in `dev-docs/backlog.md` row 39.
  *
  * `EXCLUDE_VENDORED_CODE_HIGHLIGHT` scopes out nothing: the syntax-highlighted code spans (the "Manual
- * installation"/component-source viewer, `preview/src/main.rs`'s `CodeBlock` wrapping a `PreviewCode`, and the
+ * installation"/component-source viewer, `preview/src/site/code.rs`'s `CodeBlock` wrapping a `PreviewCode`, and the
  * same highlighter's output in a component's "Usage notes" prose, all under `.dx-preview-code-theme`) clear
  * contrast by construction. The `github-light` theme's CSS is not source this repo owns: it is generated from
  * the `dioxus-code`/`arborium-theme` crates into `docs/assets/github-light*.css` on every
@@ -205,8 +205,10 @@ const APP_READY_TIMEOUT_MS = 15_000;
  * finishes well under a normal scan's time).
  *
  * Two waits, not one, because the race produces *two* violations and
- * every route this suite scans (`preview/src/main.rs`'s `Home`, `Docs`,
- * `Demos`, `ComponentHighlight`/`ComponentDemo`, the dashboard) renders
+ * every route this suite scans (`preview/src/site/home.rs`'s `Home`,
+ * `preview/src/site/docs_page.rs`'s `Docs`, `preview/src/site/demos.rs`'s `Demos`,
+ * `preview/src/site/component_page.rs`'s `ComponentHighlight`,
+ * `preview/src/site/demos.rs`'s `ComponentDemo`, the dashboard) renders
  * both together as part of the same first paint -- each either rendering
  * its own top-level `main { .. }` + `h1` (`Home`, `Docs`, `Demos`) or
  * composing `DocsLayout`, whose `SidebarInset` always renders the page's

@@ -86,7 +86,7 @@ used = set()
 # ARM 2 exceptions: (file suffix, substring of the line, reason). Each is the same shape as the defect, but none
 # misrenders on the built site, because the choice is made once and never swapped live.
 ALLOW_CHOICE = [
-    ("preview/src/main.rs", "style: match member.2 {", "docs-site member status dot: the status is fixed per row and never changes after render, and every arm declares the same longhands (background-color is a longhand)"),
+    ("preview/src/site/blocks.rs", "style: match member.2 {", "docs-site member status dot: the status is fixed per row and never changes after render, and every arm declares the same longhands (background-color is a longhand)"),
     ("primitives/src/chart/components/series/radar.rs", "style: if ring_fill {", "sets only a custom property, or nothing; ring_fill is fixed for a chart's lifetime, so the string is never swapped"),
     ("primitives/src/combobox/components/input.rs", "style: if ctx.is_multi()", "is_multi is fixed for a combobox's lifetime, so the string is never swapped for \"\""),
 ]

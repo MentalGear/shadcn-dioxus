@@ -161,7 +161,7 @@ can disagree between lanes even when the tree shape agrees. The house rule it en
 caller-`attributes` spread on the same element is merged (`merge_attributes`, caller wins), never left as two sequential
 same-named attributes. For `style` on every anchored-content component (`TooltipContent`, `HoverCardContent`,
 `DropdownMenuContent`, `MenubarContent`, `PopoverContent`, `SelectList`, `ComboboxList`) the construction is
-`top_layer::anchored_content_attributes` (`primitives/src/top_layer.rs`), which folds the component's own `position-anchor`
+`top_layer::anchored_content_attributes` (`primitives/src/top_layer/attributes.rs`), which folds the component's own `position-anchor`
 binding and a caller's `style` into the one attribute `merge_attributes` carries. A preview-level themed wrapper can hit the
 same class one layer up (`Label`'s literal `class` beside a caller `class`), so the rule also runs on **every prerendered
 component page** (`SSG_SITE_DIR`), not only `/`: only SSR/SSG's raw text can show the duplicate, because the browser DOM

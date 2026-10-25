@@ -152,7 +152,7 @@ Use the cheapest tool that answers the question, in this order:
    that cover your diff (default range `<nearest base>...HEAD`, the nearest of `origin/main` and any `origin/queue/*` ref (row 418), plus uncommitted files; `--range A..B`, `--files f...`).
    Map: a component directory -> the specs about that component (file named for it, or naming its page); a primitive
    -> the specs of every component that uses it, directly or through another primitive (more than 30 components =
-   shared plumbing, the broad set is added); theme CSS, `main.rs`, `eager_head.rs`, `index.html`, `components/mod.rs` ->
+   shared plumbing, the broad set is added); theme CSS, `main.rs`, `site/`, `eager_head.rs`, `index.html`, `components/mod.rs` ->
    the broad set (every spec that names more than 12 components, i.e. the route and subject matrices
    `hydration-parity`, `dx-class-migration`, `keyboard-matrix`, ..., plus the cheap cross-cutting guards listed in
    `BROAD_EXTRA`); a changed spec -> itself; a changed helper -> the specs importing it; `fixtures.ts`, `base-url.ts`

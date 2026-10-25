@@ -10,7 +10,7 @@ use dioxus_primitives::direction::{Direction, DirectionProvider};
 /// `getByRole("button", { name: "B", exact: true })`, and while `exact`
 /// rules out a same-named *substring* collision, it does nothing for an
 /// outright identical label -- this variant renders alongside `main` on
-/// the same page (`preview/src/main.rs`'s `ComponentHighlight`), so
+/// the same page (`preview/src/site/component_page.rs`'s `ComponentHighlight`), so
 /// reusing "B" verbatim would still make that locator match two buttons.
 #[component]
 pub fn Demo() -> Element {

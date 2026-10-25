@@ -10,7 +10,7 @@
    * clipping inside `overflow: hidden`/transformed ancestors. Unlike
    * `../dropdown_menu/style.css`'s identical-looking content, this one is
    * *not* paired with the shared `dx-anchor-*` engine stylesheet
-   * (`primitives/src/top_layer.rs`'s `ensure_anchor_positioning_styles`):
+   * (`primitives/src/top_layer/styles.rs`'s `ensure_anchor_positioning_styles`):
    * `ContextMenu` opens at a raw click point, not next to a persistent
    * trigger, so it never sets `anchor-name`/`position-anchor` and is not
    * `dx-anchor-*`-marked -- `margin`/`inset` are written out directly instead.

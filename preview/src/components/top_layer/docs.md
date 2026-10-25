@@ -1,5 +1,5 @@
 The Top Layer fixture is the probe surface for the two overlay engines
-(the popover engine in `primitives/src/top_layer.rs` and the native
+(the popover engine in `primitives/src/top_layer/mod.rs` and the native
 `<dialog>` path in `primitives/src/dialog.rs`). It is **not an
 installable component** — there is no `shadcn-dioxus add top_layer` — which
 is why it is listed under Overlays in the sidebar but excluded from the
@@ -68,7 +68,7 @@ visibility (Toast) can look broken here while the themed demo is fine.
 
 Positioning is CSS Anchor Positioning (`anchor-name`/`position-anchor`/
 `anchor()`/`position-try-fallbacks`) where the engine has it, and
-`use_anchor_position_fallback` (`primitives/src/top_layer.rs`) elsewhere:
+`use_anchor_position_fallback` (`primitives/src/top_layer/anchor_fallback.rs`) elsewhere:
 the fallback measures trigger and content, flips across the block axis and
 clamps the inline axis to the visual viewport, and re-measures on scroll,
 resize and `visualViewport` changes for the overlay's lifetime. Both paths

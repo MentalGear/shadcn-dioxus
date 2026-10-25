@@ -39,7 +39,7 @@ struct Styles;
 /// established pattern).
 ///
 /// Reachable only at its own page, `/component/top_layer/` --
-/// `preview/src/main.rs`'s `ComponentGallery` deliberately excludes
+/// `preview/src/site/gallery.rs`'s `ComponentGallery` deliberately excludes
 /// `top_layer` from the `/` home-page catalog grid (it is not an
 /// installable component, just this large oracle probe surface), while
 /// `components::DEMOS`/`DocsSidebar` still list it under "Overlays" so it
@@ -351,7 +351,7 @@ pub fn TopLayerFixture() -> Element {
                 // element into the top layer changes its containing block
                 // to the *initial* containing block regardless of its own
                 // `position` value (see `crate::top_layer::anchor_name_
-                // style`'s doc in `primitives/src/top_layer.rs` for the
+                // style`'s doc in `primitives/src/top_layer/attributes.rs` for the
                 // general rule this is an instance of), and for `position:
                 // absolute` specifically that initial containing block is
                 // sized like the viewport but anchored to the *document's*

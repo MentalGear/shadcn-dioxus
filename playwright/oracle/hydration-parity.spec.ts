@@ -42,7 +42,7 @@
  * the mismatched element.
  *
  * Fixture: no dedicated fixture -- this spec exercises the real home page
- * (`/`, `preview/src/main.rs`'s `Route::Home`) exactly as a real visitor's
+ * (`/`, `preview/src/site/routes.rs`'s `Route::Home`) exactly as a real visitor's
  * browser would hard-load it from the deployed site, using the SSG static
  * build's own served HTML (see `playwright/ssg.local.config.ts`'s header
  * for how to build and serve it). Rule 3's Dropdown Menu demo is
@@ -88,12 +88,12 @@
  *      five primitives that carry the hazard. The legacy query-string route
  *      (`Route::ComponentDemo`) still serves the same name-agnostic shell
  *      regardless of `X` by construction (see that route's own doc comment
- *      in `preview/src/main.rs`) -- it is what the "legacy query-URL
+ *      in `preview/src/site/routes.rs`) -- it is what the "legacy query-URL
  *      redirect" describe block below exercises. `/` is where the fixtures
  *      live pre-JS: the whole component gallery is embedded directly on
  *      the home page (Rule 3's Dropdown Menu is the same pattern). The
  *      `top_layer` fixture itself is excluded from the `/` gallery grid
- *      (`preview/src/main.rs`'s `ComponentGallery` -- it is an oracle
+ *      (`preview/src/site/gallery.rs`'s `ComponentGallery` -- it is an oracle
  *      fixture, not an installable component; it has its own
  *      `/component/top_layer/` page). That does not weaken Rule 4's
  *      coverage, since every duplicate-attribute defect it guards lives in
@@ -206,7 +206,7 @@
  * Rows 46 and 22 (dev-docs/backlog.md): a `/component/?name=X&` page can
  * only prerender as the "Component not found" shell for every `X` (a
  * query string can never become a distinct static file -- see
- * `preview/src/main.rs`'s `Route::ComponentDemo` doc comment), so `name`
+ * `preview/src/site/routes.rs`'s `Route::ComponentDemo` doc comment), so `name`
  * lives in the URL PATH on the canonical `ComponentDemoPath` route
  * (`/component/:name/`), and `dx build
  * --ssg` prerenders one real, distinct static file per
@@ -229,7 +229,7 @@
  *     still only ever serve ONE physical file for every `/component/?name=
  *     X&` request regardless of `X` (the query string is invisible to
  *     file-path resolution), so the legacy `ComponentDemo` route's client-side
- *     redirect (`preview/src/main.rs`) is what has to resolve the real
+ *     redirect (`preview/src/site/demos.rs`) is what has to resolve the real
  *     component after hydration, not the server. Both blocks `test.skip`
  *     (not fail) when `SSG_SITE_DIR` is unset, so rules 1-4b still run
  *     against an SSG build that was not invoked through that env var.
@@ -741,7 +741,7 @@ test.describe("hydration parity — SSG server markup vs. wasm client", () => {
   // mounted on `/`. (The top-layer oracle fixture's `ToastProvider` region --
   // a caller `aria_label: "Top-layer fixture notifications"` override of
   // `ToastRegionRendered`'s own default (`toast.rs`) -- would be the more
-  // direct subject, but `preview/src/main.rs`'s `ComponentGallery` does not
+  // direct subject, but `preview/src/site/gallery.rs`'s `ComponentGallery` does not
   // embed the `top_layer` fixture on the home page (it is an oracle probe
   // surface, not an installable component; see Rule 4's doc note above), and
   // `/component/?name=X&` cannot serve as a fixture page for the reason
@@ -919,7 +919,7 @@ test.describe("hydration parity — per-component pages (row 46)", () => {
 // GitHub Pages in production) resolves a URL to a file by PATH alone -- the
 // query string plays no part, so it can only ever serve ONE physical file
 // for every `/component/?name=X&` request regardless of `X`
-// (`preview/src/main.rs`'s `Route::ComponentDemo` doc comment). There is no
+// (`preview/src/site/routes.rs`'s `Route::ComponentDemo` doc comment). There is no
 // server-side redirect available at all in this deployment shape, so the
 // ONLY thing that can ever land a query-string deep link on the right
 // component is the client: `ComponentDemo`'s `use_effect` reading the real

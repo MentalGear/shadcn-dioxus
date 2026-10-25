@@ -5,7 +5,7 @@ use super::{ComponentDemoData, ComponentType, ComponentVariantDemoData, Highligh
 #[cfg(debug_assertions)]
 use dioxus::prelude::*;
 
-/// Builds this codebase's `CssHighlight` (`main.rs`) for one component's
+/// Builds this codebase's `CssHighlight` (`site/code.rs`) for one component's
 /// CSS file (`style.css` or a Block-kind variant's `demo.css`). See
 /// `CssHighlight`'s own doc comment for the full why: release/SSG builds
 /// embed the file at compile time with `dioxus_code::code!()`; debug
@@ -113,7 +113,7 @@ pub enum Origin {
     /// A page of shadcn/ui's catalog.
     Shadcn,
     /// A shadcn-dioxus addition that shadcn/ui does not have. Rendered
-    /// with an "Extra" badge (`ExtraBadge`, `main.rs`). The payload is WHY it
+    /// with an "Extra" badge (`ExtraBadge`, `site/component_page.rs`). The payload is WHY it
     /// is an extra: one short, user-facing sentence that says what the thing
     /// is and why it is here. It is part of the variant, so an extra without
     /// a reason does not compile; the badge tooltip, the sidebar/card `title`

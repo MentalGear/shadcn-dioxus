@@ -25,7 +25,7 @@
  * e.g. `playwright/oracle/tier3-radix/chart.spec.ts`'s header comment):
  * the un-suffixed `#component-preview-frame` is the `main` (shadcn
  * "default") variant; every other variant gets
- * `#component-preview-frame-<variant>` (`preview/src/main.rs`'s own
+ * `#component-preview-frame-<variant>` (`preview/src/site/variant_page.rs`'s own
  * frame-id-per-variant naming).
  */
 

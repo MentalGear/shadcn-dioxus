@@ -6,7 +6,7 @@ use time::{macros::date, Date};
 /// RTL fixture (dev-docs/backlog.md row 13) -- see `tabs/variants/rtl/mod.rs`'s
 /// doc for the general shape. `Calendar`'s day grid `ArrowLeft`/`ArrowRight`
 /// resolves this ambient RTL direction via `horizontal_day_step`
-/// (`primitives/src/calendar.rs`); `ArrowUp`/`ArrowDown` (+/-7 days) are
+/// (`primitives/src/calendar/dates.rs`); `ArrowUp`/`ArrowDown` (+/-7 days) are
 /// untouched.
 #[component]
 pub fn Demo() -> Element {

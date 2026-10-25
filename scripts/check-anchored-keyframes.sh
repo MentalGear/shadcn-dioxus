@@ -9,7 +9,7 @@
 # THE CLASS (a keyframe that sets `transform` puts the date picker's fade 144px off-centre, the colour picker's 133px;
 # dev-docs/research/round3-2026-10-05.md): an anchored overlay positions itself with `transform` -- `translateX(-50%)` for a centred
 # anchor, `-100%` for an end-aligned one, `translateY(-50%)` beside it -- in the engine stylesheet
-# `primitives/src/top_layer.rs` injects, keyed on `[data-side]`/`[data-align]`, and that stylesheet covers
+# `primitives/src/top_layer/styles.rs` injects, keyed on `[data-side]`/`[data-align]`, and that stylesheet covers
 # EVERY `dx-anchor-*` overlay (tooltip, hover card, popover, dropdown menu, menubar, navbar, navigation menu,
 # select, combobox). A `@keyframes` that sets `transform` REPLACES that value for as long as the animation
 # runs (and, with `forwards`, afterwards), so the panel plays its whole fade at its un-centred spot and

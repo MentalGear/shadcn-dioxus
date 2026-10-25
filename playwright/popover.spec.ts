@@ -291,7 +291,7 @@ test.describe("Axe automated scan", () => {
 // (`../preview/src/components/popover/style.css`) ever got a chance to run
 // (`display: none` from the very first sample, so `assertFadesOutThenUnmounts`
 // fails both the "no display:none while mounted" invariant and the "a few
-// frames of decreasing opacity" check). `primitives/src/top_layer.rs`'s
+// frames of decreasing opacity" check). `primitives/src/top_layer/popover_sync.rs`'s
 // `use_popover_shown_while_mounted` (row 19) keeps the popover shown through
 // the animation that CSS defines (row 7).
 //
@@ -322,13 +322,14 @@ test.describe("Axe automated scan", () => {
 // Both `main` and `non_modal` render on this one page (`ComponentDemo`'s
 // "Normal" component layout puts every variant on the same route, not
 // behind a `?variant=` query param -- see
-// `preview/src/main.rs`'s `ComponentHighlight`/`ComponentVariantHighlight`;
+// `preview/src/site/component_page.rs`'s `ComponentHighlight`, and
+// `preview/src/site/variant_page.rs`'s `ComponentVariantHighlight`;
 // `select.spec.ts`'s `?variant=multi&` etc. disambiguate by each variant's
 // own unique visible text for the same reason, not the URL), so this test
 // locates its trigger by the non-modal demo's own distinct label ("Open
 // popover", vs. the main/modal demo's "Show Popover") rather than by
 // `#component-preview-frame`, which both variants' `Tabs` share -- see
-// `preview/src/main.rs`'s `ComponentVariantHighlight`, which hard-codes
+// `preview/src/site/variant_page.rs`'s `ComponentVariantHighlight`, which hard-codes
 // that id onto every variant's own "Demo" tab panel.
 //
 // The close is triggered via `.evaluate(el => el.click())`, not
