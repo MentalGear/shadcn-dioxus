@@ -195,9 +195,9 @@
   --toast-box: var(--toast-height);
 
   /* What animates when the pile restacks: the toast's height (the front toast changed) and its margin
-   * (expanding, collapsing). Off until the toast has been measured and a frame has passed
-   * (`data-sized`, written with the measurement), so the switch from the unmeasured layout to the
-   * measured one never plays as a glide. */
+   * (expanding, collapsing). Off until the toast has been measured (`data-sized`, which the primitive
+   * writes only after the measured height is in the toast's style), so the switch from the unmeasured
+   * layout to the measured one never plays as a glide. */
   --toast-box-transition: height var(--dx-motion-duration-slow) var(--dx-motion-ease), margin-top var(--dx-motion-duration-slow) var(--dx-motion-ease);
 
   /* One padding for every toast, whatever it holds (Sonner's 16px): the box is the content plus this. */
