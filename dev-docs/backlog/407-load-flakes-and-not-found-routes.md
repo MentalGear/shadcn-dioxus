@@ -90,3 +90,8 @@ demo), home (after the masonry), `/docs/` (end of its fourth section) and `/demo
 apart), so the class shows on every run: the batch-16 build fails all five `/docs/`, `/demos/` and component groups on
 an idle box (sidebar 53.2 -> 60 at every desktop width, the avatar row re-centring), and this tree passes all seven
 groups (6.4 min at 2 workers).
+
+The "progressive paint" group (home masonry, row 214) strips the `expect` link from the document it streams: with it,
+Chromium holds the paint until the masonry is parsed and the group's own check that the parse was progressive fails (12
+of 12, "cards were seen in only 1 distinct counts"). Stripped, it is the page as WebKit and Gecko load it, which still
+need the masonry's fixed-column construction: 12 of 12 green.

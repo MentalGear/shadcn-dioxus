@@ -279,7 +279,9 @@ for (const { route, scheme, widths, pool = POOL } of GROUPS) {
  * PROGRESSIVE PAINT (backlog row 214): the home page's widget cards, recorded from the first frame in which each card
  * exists, while the document really arrives in chunks. A card may grow downward as its own content is parsed; it may
  * never change column or width, and never move vertically. The wasm is refused so the run is about the parse alone
- * (hydration is covered by the sweep above).
+ * (hydration is covered by the sweep above). The document's render-blocking `expect` link (`FirstPaintGate`) is
+ * stripped, so this is the page as WebKit and Gecko load it: they ignore the link and paint the half-parsed masonry,
+ * which the masonry's own construction (fixed columns by DOM position) has to keep still.
  *
  * Making the parse progressive deterministically: a small local server (`slowDocServer`) sits in front of the SSG
  * site. Every asset (the render-blocking stylesheets, fonts, images) passes straight through, but the home document
@@ -306,12 +308,19 @@ async function slowDocServer(
   chunk: number,
   delay: number,
   headWait: number,
-  doc: { path: string; slowEnd: (body: Buffer, bodyStart: number) => number } = { path: "/", slowEnd: (body) => body.indexOf("dx-catalog-section") },
+  doc: { path: string; slowEnd: (body: Buffer, bodyStart: number) => number; ungated?: boolean } = {
+    path: "/",
+    slowEnd: (body) => body.indexOf("dx-catalog-section"),
+    ungated: true,
+  },
 ): Promise<{ url: string; close: () => Promise<void> }> {
   const server = http.createServer(async (req, res) => {
     try {
       const upstream = await fetch(`${BASE_URL}${req.url}`);
-      const body = Buffer.from(await upstream.arrayBuffer());
+      let body = Buffer.from(await upstream.arrayBuffer());
+      // `ungated`: the document as a browser without render-blocking `expect` links sees it (WebKit, Gecko), so the
+      // first paint comes while the top group is still arriving and the layout itself has to hold.
+      if (doc.ungated && req.url === doc.path) body = Buffer.from(body.toString("utf8").replace(/<link rel="expect"[^>]*>/g, ""));
       const headers: Record<string, string> = {};
       upstream.headers.forEach((v, k) => { if (!/^(content-length|content-encoding|transfer-encoding|connection)$/i.test(k)) headers[k] = v; });
       res.writeHead(upstream.status, headers);
