@@ -98,14 +98,14 @@
 .dx-pagination-link[data-active="true"] {
   border-color: var(--dx-accent-mark, var(--light, var(--dx-border)) var(--dark, var(--dx-input)));
   background-color: var(--light, var(--dx-background))
-    var(--dark, color-mix(in oklab, var(--dx-input) 30%, transparent));
+    var(--dark, color-mix(in oklab, var(--dx-input-fill) 30%, transparent));
   color: var(--dx-active-ink);
 }
 
 @media (hover: hover) and (pointer: fine) {
   .dx-pagination-link[data-active="true"]:hover {
     background-color: var(--light, var(--dx-muted))
-      var(--dark, color-mix(in oklab, var(--dx-input) 50%, transparent));
+      var(--dark, color-mix(in oklab, var(--dx-input-fill) 50%, transparent));
     color: var(--dx-active-ink);
   }
 }

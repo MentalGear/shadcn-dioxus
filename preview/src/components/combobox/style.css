@@ -87,8 +87,8 @@
 }
 
 .dx-combobox-input[disabled] {
-  background: var(--light, color-mix(in oklab, var(--dx-input) 50%, transparent))
-    var(--dark, color-mix(in oklab, var(--dx-input) 80%, transparent));
+  background: var(--light, color-mix(in oklab, var(--dx-input-fill) 50%, transparent))
+    var(--dark, color-mix(in oklab, var(--dx-input-fill) 80%, transparent));
   cursor: not-allowed;
   opacity: var(--dx-opacity-disabled);
 }
@@ -263,8 +263,8 @@
 }
 
 .dx-combobox-chips[data-disabled="true"] {
-  background: var(--light, color-mix(in oklab, var(--dx-input) 50%, transparent))
-    var(--dark, color-mix(in oklab, var(--dx-input) 80%, transparent));
+  background: var(--light, color-mix(in oklab, var(--dx-input-fill) 50%, transparent))
+    var(--dark, color-mix(in oklab, var(--dx-input-fill) 80%, transparent));
   cursor: not-allowed;
   opacity: var(--dx-opacity-disabled);
 }

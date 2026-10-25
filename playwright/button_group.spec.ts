@@ -44,3 +44,53 @@ test("popover trigger is an outline icon Button beside its group sibling", async
   expect(box.iconH).toBeCloseTo(16, 0);
   expect(box.h).toBeCloseTo(siblingH, 0);
 });
+
+// Joined children sit edge to edge and a follower leaves out its start edge, so each seam is the previous child's
+// end edge painted once and, on the RENDERED page, the same colour as the group's outer edge. Dark edges and fills
+// are translucent, so a second layer on the seam would draw it heavier; the check reads screenshot pixels because
+// only the composite shows it.
+test.describe("Seams match the outer edge", () => {
+  for (const mode of ["light", "dark"] as const) {
+    test(`${mode}: every seam pixel equals the outer edge pixel`, async ({ page }) => {
+      await gotoHydrated(page, `${BASE_URL}/component/button_group/`, { timeout: 20 * 60 * 1000 });
+      await page.evaluate((m) => (window as unknown as { __dxApplyMode: (m: string) => void }).__dxApplyMode(m), mode);
+      await page.mouse.move(0, 0);
+      const groups = page.locator(
+        "[id^='component-preview-frame'] .dx-button-group:not([data-orientation='vertical']):not(:has(.dx-button-group, .dx-button-group-separator))",
+      );
+      expect(await groups.count()).toBeGreaterThan(0);
+      for (const group of await groups.all()) {
+        await group.scrollIntoViewIfNeeded();
+        // Borders paint on whole device pixels (the rounded box edges), so the clip starts on the group's rounded left
+        // edge: column 0 is the outer edge, and each seam is the previous child's end edge -- the column just before a
+        // follower (LTR) or just after it (RTL).
+        const geo = await group.evaluate((g) => {
+          const r = g.getBoundingClientRect();
+          const x0 = Math.round(r.left);
+          const rtl = getComputedStyle(g).direction === "rtl";
+          return {
+            clip: { x: x0, y: Math.round(r.top), width: Math.round(r.right) - x0, height: Math.round(r.height) },
+            seams: [...g.children].slice(1).map((c) => {
+              const cr = c.getBoundingClientRect();
+              return rtl ? Math.round(cr.right) - x0 : Math.round(cr.left) - 1 - x0;
+            }),
+          };
+        });
+        const png = (await page.screenshot({ clip: geo.clip, animations: "disabled" })).toString("base64");
+        const cols = await page.evaluate(
+          async ({ png, geo }) => {
+            const bmp = await createImageBitmap(await (await fetch(`data:image/png;base64,${png}`)).blob());
+            const ctx = new OffscreenCanvas(bmp.width, bmp.height).getContext("2d")!;
+            ctx.drawImage(bmp, 0, 0);
+            const at = (x: number) => Array.from(ctx.getImageData(x, Math.floor(bmp.height / 2), 1, 1).data.slice(0, 3));
+            return { outer: at(0), seams: geo.seams.map(at) };
+          },
+          { png, geo },
+        );
+        for (const seam of cols.seams) {
+          seam.forEach((v, i) => expect(Math.abs(v - cols.outer[i]), `seam ${seam} vs outer ${cols.outer}`).toBeLessThanOrEqual(2));
+        }
+      }
+    });
+  }
+});

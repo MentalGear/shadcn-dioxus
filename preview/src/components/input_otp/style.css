@@ -37,7 +37,7 @@
   align-items: center;
   justify-content: center;
 
-  --dx-input-otp-edge: var(--dx-input-edge);
+  --dx-input-otp-edge: var(--dx-input);
   --dx-input-otp-end: -1px;
   --dx-input-otp-start: 1px;
 
