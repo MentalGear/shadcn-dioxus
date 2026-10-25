@@ -164,6 +164,7 @@ gates=(
   "check-gates-doc|scripts/check-gates-doc.sh"
   "check-lane-lock|scripts/check-lane-lock.sh"
   "check-gate-reuse|scripts/check-gate-reuse.sh"
+  "check-gate-kit|scripts/check-gate-kit.sh"
   "check-lane-target|scripts/check-lane-target.sh"
   "check-merge-drivers|scripts/check-merge-drivers.sh"
 

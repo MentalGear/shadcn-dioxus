@@ -40,6 +40,9 @@ import os
 import re
 import sys
 
+sys.path.insert(0, "scripts/lib")
+from css import rules as css_rules, split_decl  # noqa: E402
+
 THEME = sys.argv[1] if len(sys.argv) > 1 else "preview/assets/dx-components-theme.css"
 MDN = "preview/node_modules/mdn-data/css/properties.json"
 
@@ -101,43 +104,19 @@ EXCLUDED = {
 # Vendor families that are never reset (legacy engines).
 EXCLUDED_PREFIXES = ("-ms-", "-moz-")
 
-COMMENT = re.compile(r"/\*.*?\*/", re.S)
-
-
-def strip_comments(text):
-    return COMMENT.sub("", text)
+POPUP_ROOT = '[popover][class^="dx-"]'
 
 
 def find_rule(css):
-    """Return (selector, body) for every rule whose selector names the popup-root `[popover][class^=..` form."""
-    css = strip_comments(css)
+    """[(selector, declared property names)] for every rule whose selector names the popup-root `[popover][class^=..`
+    form, wherever it sits (the shared reader scripts/lib/css.py: a rule inside `@media`/`@supports`/`@layer` is
+    found like a top-level one)."""
     out = []
-    for m in re.finditer(r"([^{}]*\[popover\]\[class\^=\"dx-\"\][^{}]*)\{([^{}]*)\}", css):
-        out.append((" ".join(m.group(1).split()), m.group(2)))
+    for r in css_rules(css):
+        if POPUP_ROOT in r.prelude:
+            names = [split_decl(d)[0] for d in r.decls if ":" in d]
+            out.append((" ".join(r.prelude.split()), names))
     return out
-
-
-def declarations(body):
-    props = []
-    depth = 0
-    cur = ""
-    for ch in body:
-        if ch == "(":
-            depth += 1
-        elif ch == ")":
-            depth -= 1
-        if ch == ";" and depth == 0:
-            props.append(cur)
-            cur = ""
-        else:
-            cur += ch
-    props.append(cur)
-    names = []
-    for d in props:
-        d = d.strip()
-        if ":" in d:
-            names.append(d.split(":", 1)[0].strip().lower())
-    return names
 
 
 def zero_specificity(selector):
@@ -161,13 +140,12 @@ def check(css, with_mdn=True):
     rules = find_rule(css)
     if len(rules) != 1:
         return [f"expected exactly 1 popup-root rule in the theme, found {len(rules)}"]
-    selector, body = rules[0]
+    selector, names = rules[0]
     if not zero_specificity(selector):
         errs.append("the popup-root selector is not a single zero-specificity `:where( ... )`")
     for needle in ('[popover][class^="dx-"]', '[popover][class*=" dx-"]', 'dialog[class^="dx-"]', 'dialog[class*=" dx-"]'):
         if needle not in selector:
             errs.append(f"the popup-root selector lacks {needle}")
-    names = declarations(body)
     have = set(names)
     for p in INHERITED:
         if p not in have:

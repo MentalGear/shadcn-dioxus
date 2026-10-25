@@ -43,6 +43,9 @@ import os
 import re
 import sys
 
+sys.path.insert(0, "scripts/lib")
+from css import rules as css_rules  # noqa: E402
+
 explicit = sys.argv[1:]
 
 # Cross-component specs that open overlays and measure them (path under playwright/).
@@ -82,9 +85,9 @@ def animated_components():
         hit = False
         if os.path.exists(css):
             with open(css, encoding="utf-8") as fh:
-                text = re.sub(r"/\*.*?\*/", "", fh.read(), flags=re.S)
-            for m in re.finditer(r"([^{}]+)\{([^{}]*)\}", text):
-                if re.search(r"(?<![\w-])animation(?:-name)?\s*:", m.group(2)) and re.search(r"data-state=[\"']?(?:open|closed)", m.group(1)):
+                sheet_rules = css_rules(fh.read())
+            for r in sheet_rules:
+                if re.search(r"(?<![\w-])animation(?:-name)?\s*:", r.body) and re.search(r"data-state=[\"']?(?:open|closed)", r.prelude):
                     hit = True
                     break
         if not hit:

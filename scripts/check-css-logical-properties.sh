@@ -76,6 +76,9 @@ import sys
 import glob
 import json
 
+sys.path.insert(0, "scripts/lib")
+from css import split_top  # noqa: E402
+
 THEME = "preview/assets/dx-components-theme.css"
 
 # Component folders excluded from the scan. Empty: every component stylesheet is
@@ -102,31 +105,17 @@ FILES.append(THEME)
 def is_zero_len(tok):
     return re.fullmatch(r"0(\.0+)?(%|[a-z]+)?", tok.strip()) is not None
 
-def split_top_level(value):
+def value_tokens(value):
     """Split on whitespace, but not inside ()/[]/quotes -- so a `calc(a + b)`
     or `var(--x, 1 2)` argument is never mistaken for multiple tokens."""
-    toks, cur, depth = [], "", 0
-    for ch in value:
-        if ch in "([":
-            depth += 1
-        elif ch in ")]":
-            depth -= 1
-        if ch.isspace() and depth == 0:
-            if cur:
-                toks.append(cur)
-                cur = ""
-        else:
-            cur += ch
-    if cur:
-        toks.append(cur)
-    return toks
+    return [t for t in split_top(value, " \t\r\n\f\v") if t]
 
 def shorthand_lr_asymmetric(value):
     """True if a 2/3/4-value TRBL-family shorthand's left != right half --
     the only case that is actually a mirrored-layout bug. 1/2/3-value forms
     always mirror the horizontal component onto both sides by the CSS
     shorthand's own expansion rule, so they can never be asymmetric."""
-    toks = split_top_level(value)
+    toks = value_tokens(value)
     if len(toks) != 4:
         return False
     return toks[1].lower() != toks[3].lower()
@@ -137,7 +126,7 @@ def border_radius_asymmetric(value):
     correct for 1-4 values, ignores the elliptical `/ ry` part since only
     the horizontal radius can ever encode a side)."""
     horiz = value.split("/")[0]
-    toks = split_top_level(horiz)
+    toks = value_tokens(horiz)
     n = len(toks)
     if n == 1:
         return False
@@ -193,7 +182,7 @@ def classify(prop, value):
         # The individual property: `translate: <x> [<y> [<z>]]` (or `none`). Only the first token is the
         # inline axis. A `var(...)`/`calc(...)` x is treated as non-zero -- it cannot be proven zero, so it
         # needs the same marker a literal offset does.
-        toks = split_top_level(value)
+        toks = value_tokens(value)
         if toks and toks[0].lower() != "none" and not is_zero_len(toks[0]):
             return "non-zero `translate` x offset (never direction-aware)"
     if p == "margin" and shorthand_lr_asymmetric(value):

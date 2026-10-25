@@ -64,6 +64,9 @@ import os
 import re
 import sys
 
+sys.path.insert(0, "scripts/lib")
+from css import rules as css_rules, split_decl  # noqa: E402
+
 THEME = "preview/assets/dx-components-theme.css"
 COMPONENTS = "preview/src/components"
 MDN = "preview/node_modules/mdn-data/css/properties.json"
@@ -147,34 +150,14 @@ else:
 
 
 # ----------------------------------------------------------------------------- CSS
-def strip_comments(css):
-    return re.sub(r"/\*.*?\*/", lambda m: "\n" * m.group(0).count("\n"), css, flags=re.S)
-
-
 def find_rules(css):
-    """[(selector, body)] for every flat rule whose selector names `[data-dx-root]`."""
-    css = strip_comments(css)
+    """[(selector, declared property names)] for every rule whose selector names `[data-dx-root]`, wherever it sits
+    (the shared reader scripts/lib/css.py: a rule inside an at-rule is found like a top-level one)."""
     out = []
-    for m in re.finditer(r"([^{}]*\[data-dx-root\][^{}]*)\{([^{}]*)\}", css):
-        out.append((" ".join(m.group(1).split()), m.group(2)))
+    for r in css_rules(css):
+        if "[data-dx-root]" in r.prelude:
+            out.append((" ".join(r.prelude.split()), [split_decl(d)[0] for d in r.decls if ":" in d]))
     return out
-
-
-def declarations(body):
-    names, depth, cur = [], 0, ""
-    for ch in body + ";":
-        if ch == "(":
-            depth += 1
-        elif ch == ")":
-            depth -= 1
-        if ch == ";" and depth == 0:
-            d = cur.strip()
-            if ":" in d:
-                names.append(d.split(":", 1)[0].strip().lower())
-            cur = ""
-        else:
-            cur += ch
-    return names
 
 
 def zero_specificity(selector):
@@ -197,12 +180,11 @@ def check_theme(css, mdn):
     rules = find_rules(css)
     if len(rules) != 1:
         return [f"expected exactly 1 component-root rule (a selector naming `[data-dx-root]`) in the theme, found {len(rules)}"]
-    selector, body = rules[0]
+    selector, names = rules[0]
     if not zero_specificity(selector):
         errs.append(f"the component-root selector `{selector}` is not a single zero-specificity `:where( ... )`")
     if selector != SELECTOR:
         errs.append(f"the component-root selector is `{selector}`, expected `{SELECTOR}` (outermost root only)")
-    names = declarations(body)
     have = set(names)
     for p in RESET:
         if p not in have:

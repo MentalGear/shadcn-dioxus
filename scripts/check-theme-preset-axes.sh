@@ -28,6 +28,9 @@ import json
 import re
 import sys
 
+sys.path.insert(0, "scripts/lib")
+from css import blank_comments  # noqa: E402
+
 ownership = json.load(open(sys.argv[1]))
 generated = open(sys.argv[2], encoding="utf-8").read()
 PRESETS = "preview/assets/theme-presets.css"
@@ -40,14 +43,10 @@ slots = list(ownership["base"]["slots"].items())  # (bare name, slot name)
 BLOCK = re.compile(r'\[data-theme-(base|accent)(?:="([a-z0-9.]+)")?\]\s*\{(.*?)\n\}', re.S)
 
 
-def strip_comments(css):
-    return re.sub(r"/\*.*?\*/", lambda m: re.sub(r"[^\n]", " ", m.group(0)), css, flags=re.S)
-
-
 def check(presets, theme, expected):
     """Violations of the axes rules in `presets` (the stylesheet text), `theme` (dx-components-theme.css) and `expected` (generator output)."""
     errors = []
-    css = strip_comments(presets)
+    css = blank_comments(presets)
     seen = {"base": set(), "accent": set()}
     for m in BLOCK.finditer(css):
         axis, name, body = m.group(1), m.group(2), m.group(3)
@@ -68,7 +67,7 @@ def check(presets, theme, expected):
     both = base_ok & accent_ok
     if both:
         errors.append(f"the ownership table gives {sorted(both)} to both axes")
-    th = strip_comments(theme)
+    th = blank_comments(theme)
     for bare, slot in slots:
         if not re.search(r"var\(--" + re.escape(bare) + r",\s*var\(--" + re.escape(slot) + r"\b", th):
             errors.append(f"{THEME}: no role token reads var(--{bare}, var(--{slot}, ...)); the slot --{slot} would never show")
@@ -118,7 +117,7 @@ for what, fn in mutations.items():
 if not check(presets + "\n/* edit */\n", theme, presets):
     print("check-theme-preset-axes: self-test FAILED: a hand edit was not reported", file=sys.stderr)
     sys.exit(1)
-n_base = len(re.findall(r'\[data-theme-base="', strip_comments(presets)))
-n_accent = len(re.findall(r'\[data-theme-accent="', strip_comments(presets)))
+n_base = len(re.findall(r'\[data-theme-base="', blank_comments(presets)))
+n_accent = len(re.findall(r'\[data-theme-accent="', blank_comments(presets)))
 print(f"check-theme-preset-axes: OK ({n_base} base and {n_accent} accent blocks on disjoint variables; {len(mutations) + 1} mutations red)")
 PYEOF

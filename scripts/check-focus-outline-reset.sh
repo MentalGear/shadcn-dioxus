@@ -24,8 +24,8 @@
 # focus rule itself; either satisfies it. A rule inside `@media (forced-colors: active)` does not
 # count as a reset (it restores the outline). The theme's forced-colors rule is the one outline.
 #
-# EXCEPTIONS are in ALLOW below, each with its reason; an entry that matches nothing is reported
-# (not failed) so it can be deleted.
+# EXCEPTIONS are in ALLOW below, each with its reason; an entry that matches nothing fails as stale
+# (scripts/lib/allow.py). The sheets are read by scripts/lib/css.py, the one CSS reader of the gates.
 #
 # Usage: scripts/check-focus-outline-reset.sh [FILE ...]   (default: preview/src/components/*/style.css;
 # explicit files are for self-tests, and skip the allowlist stale-entry report)
@@ -41,6 +41,10 @@ import glob
 import re
 import sys
 
+sys.path.insert(0, "scripts/lib")
+from allow import Allowlist  # noqa: E402
+from css import rules as css_rules, split_top as split_top_raw, subject_compound as last_compound  # noqa: E402
+
 explicit = sys.argv[1:]
 files = explicit or sorted(glob.glob("preview/src/components/*/style.css"))
 if not files:
@@ -48,33 +52,11 @@ if not files:
     sys.exit(2)
 
 # (file suffix, substring of the focus selector, reason)
-ALLOW = []
-used = set()
+ALLOW = Allowlist("check-focus-outline-reset", [], fields=("suffix", "needle"))
 
-COMMENT = re.compile(r"/\*.*?\*/", re.S)
-
-def blank_comments(text):
-    return COMMENT.sub(lambda m: re.sub(r"[^\n]", " ", m.group(0)), text)
-
-def split_top(s, seps):
-    """Split on any char in `seps` at paren/bracket depth 0 (empty pieces dropped)."""
-    out, cur, depth = [], [], 0
-    for ch in s:
-        if ch in "([":
-            depth += 1
-        elif ch in ")]":
-            depth -= 1
-        if depth == 0 and ch in seps:
-            out.append("".join(cur))
-            cur = []
-        else:
-            cur.append(ch)
-    out.append("".join(cur))
-    return [p for p in (x.strip() for x in out) if p]
-
-def last_compound(sel):
-    parts = split_top(sel, " >+~\n\t")
-    return parts[-1] if parts else ""
+def selector_list(s):
+    """The stripped, non-empty entries of a selector list."""
+    return [p for p in (x.strip() for x in split_top_raw(s, ",")) if p]
 
 def strip_groups(c):
     """Drop `:not(...)`/`:is(...)`/`:where(...)`/`:has(...)` groups and [attr] blocks."""
@@ -129,7 +111,6 @@ def tokens_of(compound):
     toks = set(re.findall(r"\.[\w-]+|#[\w-]+|^[a-z][\w-]*|(?<=[\]\)])[a-z][\w-]*", c))
     return toks, pseudos
 
-RULE = re.compile(r"([^{}]+)\{([^{}]*)\}")
 DECL = re.compile(r"(?<![\w-])([a-z-]+)\s*:\s*([^;]+)")
 
 def is_reset(decls):
@@ -147,35 +128,28 @@ def is_reset(decls):
             return True
     return False
 
-def forced_colors_ranges(text):
-    out = []
-    for m in re.finditer(r"@media[^{]*forced-colors[^{]*\{", text):
-        depth, j = 1, m.end()
-        while j < len(text) and depth:
-            depth += {"{": 1, "}": -1}.get(text[j], 0)
-            j += 1
-        out.append((m.start(), j))
-    return out
+FORCED_COLORS = re.compile(r"@media[^{]*forced-colors")
 
 errors = []
 
 for path in files:
     with open(path, encoding="utf-8") as fh:
-        text = blank_comments(fh.read())
-    forced = forced_colors_ranges(text)
+        raw = fh.read()
     resets = []   # (token set) of every non-forced-colors rule-selector with an outline reset
     rings = []    # (line, selector, subject token set, rule declares reset)
-    for m in RULE.finditer(text):
-        selector, body = m.group(1).strip(), m.group(2)
+    for r in css_rules(raw):
+        selector, body = r.prelude, r.body
+        if not selector:
+            continue
         if not re.search(r"[.\[:#]", selector):
             continue
-        if any(a <= m.start() < b for a, b in forced):
+        if any(FORCED_COLORS.search(at) for at in r.at):
             continue
-        line = text.count("\n", 0, m.start(2)) + 1
+        line = r.brace_line
         decls = {k: " ".join(v.split()) for k, v in DECL.findall(body)}
         reset = is_reset(decls)
         shadow = decls.get("box-shadow")
-        for sel in split_top(selector, ","):
+        for sel in selector_list(selector):
             comp = last_compound(sel)
             toks, pseudos = tokens_of(comp)
             has_focus = bool(FOCUS_PSEUDO.search(strip_groups(unwrap_where(comp))))
@@ -188,13 +162,7 @@ for path in files:
             continue
         if toks and any(r and r <= toks for r in resets):
             continue
-        ok = False
-        for entry in ALLOW:
-            suffix, needle, _reason = entry
-            if path.endswith(suffix) and needle in sel:
-                used.add(id(entry))
-                ok = True
-        if ok:
+        if ALLOW.find_all(lambda e: path.endswith(e.suffix) and e.needle in sel):
             continue
         errors.append(f"{path}:{line}: `{sel[:80]}` paints a focus ring (box-shadow) but no rule of this sheet "
                       f"declares `outline: none` for that element: the UA outline shows next to the ring")
@@ -207,11 +175,12 @@ if errors:
           file=sys.stderr)
     sys.exit(1)
 
-stale = [e for e in ALLOW if id(e) not in used]
-if stale and not explicit:
-    for suffix, needle, reason in stale:
-        print(f"FAIL: stale allowlist entry {suffix} {needle!r} -- {reason}")
+problems = ALLOW.problems(stale=not explicit)
+if problems:
+    for p in problems:
+        print(f"FAIL: {p}")
     sys.exit(1)
+n_used = sum(1 for e in ALLOW if ALLOW.used(e))
 print(f"check-focus-outline-reset: OK ({len(files)} stylesheet(s): every focus box-shadow ring has an outline reset; "
-      f"{len(used)} allowlist entr{'y' if len(used) == 1 else 'ies'} in use)")
+      f"{n_used} allowlist entr{'y' if n_used == 1 else 'ies'} in use)")
 PYEOF

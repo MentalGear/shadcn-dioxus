@@ -82,44 +82,23 @@ cat >"$extractor" <<'PYEOF'
 import re
 import sys
 
+sys.path.insert(0, "scripts/lib")
+from css import rules as css_rules  # noqa: E402
+
 
 def extract_class_selectors(css_text):
     """Yield (class_name, line_number) for every class selector in css_text.
 
-    Strips comments first (non-greedy, DOTALL -- comments here routinely
-    quote CSS syntax including literal braces, e.g. "the UA popover
-    stylesheet's `[popover] { ... }`", which must not be mistaken for real
-    rule boundaries). Then does a single linear scan, accumulating
-    characters into `buf` and resetting it on every `{` and `}`: whatever
-    sat in `buf` right before a `{` is that rule's prelude -- a real
-    selector list unless it starts with `@` (an at-rule -- @media,
-    @supports, @keyframes, ... -- whose own prelude is a condition/name,
-    not a selector, but whose nested body is still scanned normally since
-    the reset-per-brace loop just keeps going). Declaration bodies (text
-    between a `{` and its matching `}`) are discarded on `}` and never
-    inspected, so property values can't produce false positives.
+    Reads the sheet with scripts/lib/css.py, the one CSS reader of the gates: comments (which routinely quote CSS
+    syntax with literal braces) are stripped, a style rule's prelude is the selector list and its line is the line the
+    selector starts on, an at-rule's own prelude (a condition or a name, not a selector) is skipped while its nested
+    rules are read like any other, and declaration bodies are never inspected, so property values cannot produce
+    false positives.
     """
-    css = re.sub(r"/\*.*?\*/", "", css_text, flags=re.S)
     selectors = []
-    buf = []
-    buf_start_line = 1
-    line = 1
-    for ch in css:
-        if ch == "\n":
-            line += 1
-        if ch == "{":
-            prelude = "".join(buf)
-            stripped = prelude.strip()
-            if stripped and not stripped.startswith("@"):
-                for m in re.finditer(r"\.([A-Za-z][A-Za-z0-9_-]*)", prelude):
-                    selectors.append((m.group(1), buf_start_line))
-            buf = []
-            buf_start_line = line
-        elif ch == "}":
-            buf = []
-            buf_start_line = line
-        else:
-            buf.append(ch)
+    for rule in css_rules(css_text):
+        for m in re.finditer(r"\.([A-Za-z][A-Za-z0-9_-]*)", rule.prelude):
+            selectors.append((m.group(1), rule.line))
     return selectors
 
 

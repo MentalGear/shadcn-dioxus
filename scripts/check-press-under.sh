@@ -12,8 +12,9 @@
 # By construction, then: in a component sheet (preview/src/components/*/style.css), a rule that declares an image
 # or gradient in `background-image`, or in a `background` shorthand containing `gradient(` or `url(`, must
 # declare `--dx-press-under` as well. An element that can never be pressed (not a button, link, summary or
-# interactive-role element) goes on ALLOW below with its reason; an entry that matches nothing is reported, not
-# failed, so it can be deleted. Comments are stripped.
+# interactive-role element) goes on ALLOW below with its reason; an entry that matches nothing fails as stale
+# (scripts/lib/allow.py), so the list cannot rot. The stylesheet is read by scripts/lib/css.py (comments kept as
+# newlines, strings, `url(...)` and nested at-rules understood), the one reader every CSS gate shares.
 #
 # Usage: scripts/check-press-under.sh [FILE ...]   (explicit files are for self-tests; no stale report)
 # Exit status: 0 when clean.
@@ -25,6 +26,10 @@ cd "$repo_root"
 python3 - "$@" <<'PYEOF'
 import glob, re, sys
 
+sys.path.insert(0, "scripts/lib")
+from allow import Allowlist  # noqa: E402
+from css import rules as css_rules  # noqa: E402
+
 explicit = sys.argv[1:]
 files = explicit or sorted(glob.glob("preview/src/components/*/style.css"))
 if not files:
@@ -32,7 +37,7 @@ if not files:
     sys.exit(2)
 
 # (file, selector substring, reason)
-ALLOW = [
+ALLOW = Allowlist("check-press-under", [
     ("preview/src/components/color_picker/style.css", ".dx-color-picker-swatch",
      "a `div role=img` showing the current colour over a checkerboard: no press handler, not in the press list"),
     ("preview/src/components/color_picker/style.css", ".dx-color-picker-slider-track",
@@ -41,31 +46,16 @@ ALLOW = [
      "a `div` drag surface (the thumb is the control, and sliders are outside the press list)"),
     ("preview/src/components/progress/style.css", ".dx-progress-indicator",
      "a `div` inside a `role=progressbar`: output only, never pressed"),
-]
-
-def strip_comments(t):
-    return re.sub(r"/\*.*?\*/", "", t, flags=re.S)
+], fields=("file", "selector"))
 
 def rules(text):
-    """Yield (selector, body) for every innermost block, nested at-rules flattened."""
-    out, stack, start = [], [], 0
-    for i, ch in enumerate(text):
-        if ch == "{":
-            stack.append((text[start:i].strip(), i + 1))
-            start = i + 1
-        elif ch == "}":
-            if stack:
-                sel, b = stack.pop()
-                body = text[b:i]
-                if "{" not in body:
-                    out.append((sel, body))
-            start = i + 1
-    return out
+    """(selector, body) for every innermost style rule, nested at-rules flattened (the shared reader)."""
+    return [(r.prelude, r.body) for r in css_rules(text) if not r.nested]
 
 img = re.compile(r"(?:^|;)\s*(background-image|background)\s*:\s*([^;]*)", re.I)
-bad, used = [], set()
+bad = []
 for f in files:
-    text = strip_comments(open(f, encoding="utf-8").read())
+    text = open(f, encoding="utf-8").read()
     for sel, body in rules(text):
         has_image = False
         for m in img.finditer(body):
@@ -77,11 +67,8 @@ for f in files:
                 has_image = True
         if not has_image or "--dx-press-under" in body:
             continue
-        allowed = False
-        for k, (af, asel, _why) in enumerate(ALLOW):
-            if (not explicit and f == af and asel in sel) or (explicit and asel in sel):
-                used.add(k)
-                allowed = True
+        allowed = ALLOW.find_all(lambda e: (not explicit and f == e.file and e.selector in sel)
+                                 or (explicit and e.selector in sel))
         if not allowed:
             bad.append((f, " ".join(sel.split())))
 
@@ -92,9 +79,10 @@ if bad:
     print("Declare it once as `--dx-press-under: <image>; background-image: var(--dx-press-under);` so the theme's press\n"
           "wash layers over it, or (an element that is never pressed) add it to ALLOW in this script with a reason.", file=sys.stderr)
     sys.exit(1)
-if not explicit:
-    for k, (af, asel, why) in enumerate(ALLOW):
-        if k not in used:
-            print(f"check-press-under: stale ALLOW entry (matches nothing): {af} {asel}")
+problems = ALLOW.problems(stale=not explicit)
+if problems:
+    for p in problems:
+        print(f"check-press-under: {p}", file=sys.stderr)
+    sys.exit(1)
 print(f"check-press-under: OK -- {len(files)} stylesheet(s)")
 PYEOF
