@@ -191,3 +191,60 @@ test.describe('Axe automated scan', () => {
     await expectNoAxeViolations(page, 'color-picker: popover open', { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });
 });
+
+// The `alpha` demo: `alpha: true`, starting at #EC4899 with alpha 0.5 (0x80).
+async function openAlphaPicker(page: Page) {
+  await gotoHydrated(page, PAGE_URL, { timeout: PAGE_TIMEOUT });
+  await page.waitForLoadState('networkidle');
+  const button = page.getByRole('button', { name: /Color picker #EC4899/i });
+  await expect(button).toBeVisible();
+  await button.click();
+  await expect(button).toHaveAttribute('aria-expanded', 'true');
+  await expect(page.getByRole('dialog')).toBeVisible();
+  return { button };
+}
+
+test('alpha: the hex field shows 8 digits and the trigger announces the alpha', async ({ page }) => {
+  const { button } = await openAlphaPicker(page);
+  await expect(page.locator('#color_field')).toHaveValue('#EC489980');
+  await expect(button).toHaveAttribute('aria-label', /Color picker #EC489980/i);
+  const alpha = page.getByRole('slider', { name: 'Alpha' });
+  await expect(alpha).toHaveAttribute('aria-valuenow', '50');
+  await expect(alpha).toHaveAttribute('aria-valuetext', '50%');
+});
+
+test('alpha: the slider changes the value with the arrow keys', async ({ page }) => {
+  const { button } = await openAlphaPicker(page);
+  const alpha = page.getByRole('slider', { name: 'Alpha' });
+  await alpha.focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(alpha).toHaveAttribute('aria-valuenow', '51');
+  await expect(alpha).toHaveAttribute('aria-valuetext', '51%');
+  // 51 % is 0x82 of 0xFF; the hex field and the trigger follow.
+  await expect(page.locator('#color_field')).toHaveValue('#EC489982');
+  await expect(button).toHaveAttribute('aria-label', /Color picker #EC489982/i);
+  await page.keyboard.press('End');
+  await expect(alpha).toHaveAttribute('aria-valuetext', '100%');
+  // Opaque: the trigger drops the alpha digits, the field keeps them (alpha mode).
+  await expect(button).toHaveAttribute('aria-label', /Color picker #EC4899$/i);
+  await expect(page.locator('#color_field')).toHaveValue('#EC4899FF');
+});
+
+test('alpha: typing 8 hex digits sets the alpha and #RRGGBB means opaque', async ({ page }) => {
+  await openAlphaPicker(page);
+  const hexField = page.locator('#color_field');
+  const alpha = page.getByRole('slider', { name: 'Alpha' });
+  await hexField.click();
+  await hexField.press('ControlOrMeta+A');
+  await hexField.pressSequentially('#FF000040');
+  await expect(hexField).toHaveValue('#FF000040');
+  await expect(alpha).toHaveAttribute('aria-valuetext', '25%');
+  await hexField.press('ControlOrMeta+A');
+  await hexField.pressSequentially('#00FF00');
+  await expect(alpha).toHaveAttribute('aria-valuetext', '100%');
+});
+
+test('without alpha the picker has no Alpha slider', async ({ page }) => {
+  await openPicker(page);
+  await expect(page.getByRole('slider', { name: 'Alpha' })).toHaveCount(0);
+});
