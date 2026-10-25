@@ -11,7 +11,7 @@ updated: 2026-10-25
 
 ## Item
 
-The owner asked on 2026-10-25 whether the library could target Blitz, the native renderer that has no JavaScript. The research is in `/mnt/project-files/research/blitz-feasibility-2026-10-25.md`. It is copied here as a summary because the shared folder is not in the repo.
+The owner asked on 2026-10-25 whether the library could target Blitz, the native renderer that has no JavaScript. The research is in [`../research/blitz-feasibility-2026-10-25.md`](../research/blitz-feasibility-2026-10-25.md).
 
 - `document::eval` on dioxus-native returns `Err(EvalError::Unsupported)`, so every eval path needs a Rust arm. Row 434 (Rust first) is the prerequisite.
 - Hard blockers in Blitz 0.3.0-beta.4 / dioxus-native 0.8.0-alpha.3 (2026-10-16):

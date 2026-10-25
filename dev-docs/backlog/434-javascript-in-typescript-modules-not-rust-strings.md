@@ -17,6 +17,10 @@ The owner's principle (2026-10-25): the point of Dioxus is to drive the UI from 
 2. **Move** every (a) block to Rust, per cluster, with the components' specs on a release build as the proof (timing-sensitive paths compare long tasks before and after).
 3. **What stays** (b, c, d) moves into typed `primitives/src/ts/` modules through the existing bundle chain (the original P9 construction), and the copies become one file.
 
+## Audit result (2026-10-25)
+
+[`../research/js-audit-2026-10-25.md`](../research/js-audit-2026-10-25.md): 103 blocks, about 6,205 lines. (a) movable now 21 blocks / 624 lines (10%); (b) no Dioxus API 55 / 1,580 (25%); (c) before wasm 5 / 107 (2%); (d) JS on purpose 22 / 3,894 (63%). Upstream `main`/0.8.0-alpha.3 adds no element or window API, so no upgrade is waited for. Step 2: about 26 agent-hours in 5 lanes (2A styles and toast pause, 2B focus by handle, 2C scroll and measure, 2D virtual bridge experiment with a keep-JS exit, 2E demo sleeps). Step 3: about 66 agent-hours in 8 lanes over two batches (3.0 the typed channel and loading first).
+
 ## Status / trigger
 
 BACKLOG. Approved as P9 of the row 365 sweep; the owner re-scoped it to Rust first on 2026-10-25. The audit (step 1) is read-only and can run at any time; the moves follow it.
