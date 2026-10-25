@@ -141,12 +141,13 @@ pub fn ComboboxInput(props: ComboboxInputProps) -> Element {
         // the web-arm listbox's `position-anchor`
         // (`ComboboxListRendered`, `list.rs`) so its anchor-positioned
         // placement resolves relative to this input once promoted to
-        // the top layer. Keyed on `ctx.input_id` (kept in sync with
-        // this element's own id above), the same reason
-        // `DropdownMenuTrigger` keys off `ctx.content_id` -- see that
-        // doc. Inert (empty) off the web arm.
+        // the top layer. Keyed on this element's own `id`, which is what
+        // `ctx.input_id` (the listbox's side) is synced to above: `ctx.input_id`
+        // still holds the root's placeholder in the server render and the
+        // first client frame, so keying on it would name a different anchor
+        // there whenever a caller passes `id`. Inert (empty) off the web arm.
         // A multi-select's popup anchors to the chips field instead (`ComboboxChips`).
-        style: if ctx.is_multi() { String::new() } else { crate::top_layer::anchor_name_style(&ctx.input_id.cloned()) },
+        style: if ctx.is_multi() { String::new() } else { crate::top_layer::anchor_name_style(&id()) },
         r#type: "text",
         value: display_value(),
         autocomplete: "off",
