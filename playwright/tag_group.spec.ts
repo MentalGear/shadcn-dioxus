@@ -147,6 +147,10 @@ test.describe("Tag group", () => {
       await expect(bug).toHaveCount(0);
       await expect(core).toHaveCount(0);
       await expect(desktop).toBeFocused();
+      // One `on_remove` call carries both values, in list order (row 398).
+      await expect(multiVariant(page).getByTestId("tag-group-removed")).toHaveText(
+        "Removed bug, core, 4 tags left",
+      );
     });
 
     test("Delete works for non-selectable removable tags", async ({ page }) => {
@@ -199,6 +203,10 @@ test.describe("Tag group", () => {
         .getByRole("button", { name: "Remove item bug" })
         .click();
       await expect(bug).toHaveCount(0);
+      // The demo owns the list and drops the tag in `on_remove` (row 398).
+      await expect(multiVariant(page).getByTestId("tag-group-removed")).toHaveText(
+        "Removed bug, 5 tags left",
+      );
     });
 
     test("disabled tags and groups disable remove buttons", async ({ page }) => {

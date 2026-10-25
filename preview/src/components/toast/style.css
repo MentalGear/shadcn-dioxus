@@ -113,6 +113,19 @@
   --toast-edge: -1;
 }
 
+/* The toaster's inline placement (`position` on the provider writes `data-toaster-align`, backlog row 398). `end`
+ * is the base rule above; `start` mirrors it, and `center` takes both insets with auto margins, which centres the
+ * shrink-to-fit region. Logical insets, so start and end follow the reading direction. */
+.dx-toast-container[popover][data-toaster-align="start"] {
+  inset-inline: var(--dx-space-5) auto;
+}
+
+.dx-toast-container[popover][data-toaster-align="center"] {
+  width: fit-content;
+  inset-inline: 0;
+  margin-inline: auto;
+}
+
 .dx-toast-container[data-toaster-side="top"] .dx-toast-slot {
   --toast-shrink-start: 0px;
   --toast-shrink-end: var(--toast-slot-shrink);

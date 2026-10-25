@@ -39,6 +39,20 @@
 //!   in the other mode. Pass an explicit mode to opt out (a heavy row at 2000 rows may want
 //!   `Windowed`; a 20k-row list of one-line rows may be fine as `ContentVisibility`).
 //!
+//! # Scrolling to a row
+//!
+//! [`use_virtual_scroller`] makes a [`VirtualScroller`]; pass it as `scroller` and call
+//! [`VirtualScroller::scroll_to_index`] with a row and a [`ScrollAlign`] (`Start`, `Center`,
+//! `End`, or `Nearest`: nothing if the row is fully in view, else the nearest edge). Windowed,
+//! the row's position comes from the engine (measured sizes where there are any, `estimate_size`
+//! elsewhere), the window moves onto it and the rows around it are measured as they mount; a
+//! row that is far from any measured one lands where the estimates put it, so the closer
+//! `estimate_size` is to the real heights, the closer the alignment is to exact. In
+//! content-visibility mode the browser scrolls to the row, and the list corrects the alignment
+//! for a few frames while skipped chunks render at their real height. An index past the end
+//! goes to the last row, and a call before the list has mounted (or before a windowed list has
+//! its size) is kept and runs then; see [`VirtualScroller`].
+//!
 //! Both modes render the same container (`role="list"`, `tabindex="0"`, `data-virtualize`) and
 //! the same rows (`role="listitem"`, `aria-setsize`, `aria-posinset`, `data-virtual-index`).
 //!
@@ -55,11 +69,13 @@ use dioxus::prelude::*;
 use dioxus_attributes::attributes;
 
 use crate::r#virtual::{
-    cv_chunks, engine_keys, pin_in_flow, render_key, resolve_index, use_find_in_page,
-    use_virtual_bridge, Bridge, ChunkSkip, Engine, FindLayer, FindLayout, SizeEstimates,
-    CHUNK_ROWS, DEFAULT_SIZE,
+    cv_chunks, engine_keys, pin_in_flow, render_key, resolve_index, scroll_dom_to,
+    use_find_in_page, use_scroller_attach, use_virtual_bridge, Bridge, ChunkSkip, Engine,
+    FindLayer, FindLayout, ScrollRequest, SizeEstimates, CHUNK_ROWS, DEFAULT_SIZE,
 };
-pub use crate::r#virtual::{VirtualizeMode, DEFAULT_AUTO_THRESHOLD};
+pub use crate::r#virtual::{
+    use_virtual_scroller, ScrollAlign, VirtualScroller, VirtualizeMode, DEFAULT_AUTO_THRESHOLD,
+};
 use crate::scroll_area::use_scroll_fade;
 pub use crate::scroll_area::ScrollFade;
 use crate::{merge_attributes, use_unique_id};
@@ -134,6 +150,9 @@ pub struct VirtualListProps {
     /// all four edges of a two-axis scroller.
     #[props(default)]
     pub fade: ScrollFade,
+    /// A handle from [`use_virtual_scroller`] that scrolls to an item by index
+    /// (`VirtualGrid` also by cell), in either mode: see [`VirtualScroller`].
+    pub scroller: Option<VirtualScroller>,
     /// Additional attributes to apply to the container element.
     #[props(extends = GlobalAttributes)]
     pub attributes: Vec<Attribute>,
@@ -148,6 +167,7 @@ struct ListBodyProps {
     render_item: Callback<usize, Element>,
     item_key: Option<Callback<usize, String>>,
     text_value: Option<Callback<usize, String>>,
+    scroller: Option<VirtualScroller>,
     #[props(extends = GlobalAttributes)]
     attributes: Vec<Attribute>,
 }
@@ -206,6 +226,7 @@ pub fn VirtualList(props: VirtualListProps) -> Element {
         virtualize,
         auto_threshold,
         fade,
+        scroller,
         attributes,
     } = props;
     let attributes = merge_attributes(vec![attributes, use_scroll_fade(fade)]);
@@ -227,6 +248,7 @@ pub fn VirtualList(props: VirtualListProps) -> Element {
                 render_item,
                 item_key,
                 text_value,
+                scroller,
                 attributes,
             }
         }
@@ -239,6 +261,7 @@ pub fn VirtualList(props: VirtualListProps) -> Element {
                 render_item,
                 item_key,
                 text_value: None,
+                scroller,
                 attributes,
             }
         }
@@ -254,11 +277,25 @@ fn VirtualListContentVisibility(props: ListBodyProps) -> Element {
         estimate_size,
         render_item,
         item_key,
+        scroller,
         attributes,
         ..
     } = props;
 
     let container_id = use_unique_id();
+    // Every row is in the DOM: the browser scrolls to it (`scroll_to.rs`).
+    let on_scroll = use_callback(move |request: ScrollRequest| {
+        if let Some(last) = count.peek().checked_sub(1) {
+            scroll_dom_to(
+                container_id.peek().clone(),
+                list_item_selector(&request.index.min(last).to_string()),
+                request.align,
+                (0, 0, 0),
+                false,
+            );
+        }
+    });
+    use_scroller_attach(scroller, on_scroll);
     let owned = attributes!(div {
         id: container_id,
         role: "list",
@@ -311,6 +348,7 @@ fn VirtualListWindowed(props: ListBodyProps) -> Element {
         render_item,
         item_key,
         text_value,
+        scroller,
         attributes,
     } = props;
 
@@ -321,6 +359,9 @@ fn VirtualListWindowed(props: ListBodyProps) -> Element {
     // runs only when it says the window moved.
     let bridge = use_virtual_bridge(container_id, Engine::new, Bridge::scroll_axis);
     let engine = bridge.engine();
+    // The public scroll-to-index: the engine aims at the row's (measured or estimated) position.
+    let on_scroll = use_callback(move |request: ScrollRequest| bridge.scroll_to(request));
+    use_scroller_attach(scroller, on_scroll);
 
     // The estimates are evaluated in a memo so that signals the `estimate_size` callback reads
     // are tracked. Measurements are *not* an input: they update the engine

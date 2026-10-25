@@ -206,6 +206,50 @@ fn remove_record(mut toasts: Signal<VecDeque<ToastRecord>>, id: ToastId) {
     }
 }
 
+/// Where the toaster sits in the viewport (Sonner's `position`, backlog row 398). `Start` and
+/// `End` are logical: `BottomEnd` is the bottom-right corner in a left-to-right page and the
+/// bottom-left one in a right-to-left page.
+///
+/// [`ToastProvider`] writes it as `data-toaster-side` (`top` | `bottom`) and
+/// `data-toaster-align` (`start` | `center` | `end`) on the region, which the stylesheet places
+/// it by. Motion and swipe follow from there: toasts enter from and leave toward the toaster's
+/// side, and swipe toward the nearest edge on each axis.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub enum ToastPosition {
+    /// Top edge, at the start of the line (top-left in a left-to-right page).
+    TopStart,
+    /// Top edge, centred.
+    TopCenter,
+    /// Top edge, at the end of the line (top-right in a left-to-right page).
+    TopEnd,
+    /// Bottom edge, at the start of the line (bottom-left in a left-to-right page).
+    BottomStart,
+    /// Bottom edge, centred.
+    BottomCenter,
+    /// Bottom edge, at the end of the line (bottom-right in a left-to-right page). The default.
+    #[default]
+    BottomEnd,
+}
+
+impl ToastPosition {
+    /// The vertical edge: `"top"` or `"bottom"` (the `data-toaster-side` value).
+    pub fn side(self) -> &'static str {
+        match self {
+            Self::TopStart | Self::TopCenter | Self::TopEnd => "top",
+            Self::BottomStart | Self::BottomCenter | Self::BottomEnd => "bottom",
+        }
+    }
+
+    /// The inline placement: `"start"`, `"center"` or `"end"` (the `data-toaster-align` value).
+    pub fn align(self) -> &'static str {
+        match self {
+            Self::TopStart | Self::BottomStart => "start",
+            Self::TopCenter | Self::BottomCenter => "center",
+            Self::TopEnd | Self::BottomEnd => "end",
+        }
+    }
+}
+
 // Toast provider props
 /// The props for the [`ToastProvider`] component
 #[derive(Props, Clone, PartialEq)]
@@ -223,6 +267,10 @@ pub struct ToastProviderProps {
     /// when a slot frees.
     #[props(default = ReadSignal::new(Signal::new(3)))]
     pub visible_toasts: ReadSignal<usize>,
+
+    /// Where the toaster sits in the viewport. Defaults to [`ToastPosition::BottomEnd`].
+    #[props(default)]
+    pub position: ReadSignal<ToastPosition>,
 
     /// The callback to render a toast. Defaults to rendering the [`Toast`] component.
     #[props(default = Callback::new(|props: ToastPropsWithOwner| rsx! { Toast { ..props } }))]
@@ -403,6 +451,16 @@ pub fn ToastProvider(props: ToastProviderProps) -> Element {
         visible_toasts: props.visible_toasts,
     });
 
+    // The position's data attributes go first, so a caller's own `data-toaster-side` still wins.
+    let position = (props.position)();
+    let region_attributes = merge_attributes(vec![
+        attributes!(div {
+            "data-toaster-side": position.side(),
+            "data-toaster-align": position.align(),
+        }),
+        props.attributes.clone(),
+    ]);
+
     rsx! {
         // Render children
         {props.children}
@@ -412,7 +470,7 @@ pub fn ToastProvider(props: ToastProviderProps) -> Element {
             ToastRegionRendered {
                 id: region_id.cloned(),
                 length,
-                attributes: props.attributes,
+                attributes: region_attributes,
                 onmounted: move |e: MountedEvent| {
                     region_ref.set(Some(e.data()));
                 },

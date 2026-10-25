@@ -1,0 +1,1 @@
+Six buttons, one per `position` (`ToastPosition::TopStart` to `BottomEnd`). Each moves the toaster to its spot and shows a toast there. `Start` and `End` are logical, so they swap sides in a right-to-left page.

@@ -53,6 +53,10 @@ One toast goes loading -> success or error in place. Its live region is `role="s
 
 `ToastOptions::new().action("Undo", |_| ..)` adds a real `Button` to the toast. It is in the tab order (F6 focuses the region, Tab reaches it), activates with click, Enter or Space, runs the callback and dismisses the toast. A custom skin reads it with `use_toast_action()` or renders the primitive's `ToastActionButton`.
 
+## Position
+
+`position` on `ToastProvider` places the toaster: `ToastPosition::TopStart`, `TopCenter`, `TopEnd`, `BottomStart`, `BottomCenter` or `BottomEnd` (the default, Sonner's `bottom-right`). `Start` and `End` are logical, so `BottomEnd` is the bottom-left corner in a right-to-left page. The provider writes it as `data-toaster-side` (`top` | `bottom`) and `data-toaster-align` (`start` | `center` | `end`) on the region, and the stylesheet places the region from those two. The side also sets which way toasts enter, leave, pile up and swipe (below). The `position` demo shows all six.
+
 ## Stacking and swipe
 
 Several toasts collapse into a pile; hovering or focusing the stack (or F6) expands it. Under `prefers-reduced-motion: reduce` there is no entrance animation and no restack transition (the pile still expands, instantly).
@@ -80,7 +84,7 @@ The pile shows at most `visible_toasts` toasts (default 3, Sonner's `visibleToas
 
 Closing a toast (close button, action, countdown, `Toasts::close`) does not unmount it at once: it gets `data-removed="true"`, becomes `inert`, stops counting toward the pile and unmounts once a 200 ms exit has finished (plus a short slack), while the stylesheet fades it out and slides it toward the toaster's edge. Its list item takes the same `data-removed="true"` and leaves the layout at once, so the toasts that stay close the gap smoothly while it fades and none of them jumps when it unmounts; a new toast's slot grows in the same way as it enters. The 200 ms is a constant in the primitive, written as `--toast-exit-ms`, which the exit transitions read, so the two cannot drift. A swipe goes through the same close: the toast flies out sideways while its slot shrinks.
 
-Every direction comes from one place, the toaster's side (`--toast-edge` on the container: `1` at the bottom, `-1` for `data-toaster-side="top"`):
+Every direction comes from one place, the toaster's side (`--toast-edge` on the container: `1` at the bottom, `-1` for a `Top*` `position`, which writes `data-toaster-side="top"`):
 
 - a brand-new toast enters from the toaster's own edge (from below at the bottom, from above at the top) and a closed one leaves toward it;
 - with the pile expanded, a queued toast that becomes visible because another closed appears at the far end of the pile: it slides in from the opposite side (from above for a bottom toaster) with a fade. Collapsed, it only fades in.

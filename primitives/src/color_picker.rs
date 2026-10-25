@@ -7,7 +7,7 @@ use dioxus::html::geometry::euclid::Size2D;
 use dioxus::html::geometry::PixelsSize;
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
-use palette::{encoding, FromColor, Hsv, RgbHue, Srgb};
+use palette::{encoding, FromColor, Hsv, Hsva, RgbHue, Srgb};
 
 use std::rc::Rc;
 
@@ -50,41 +50,54 @@ fn area_percent(value: ClientPoint) -> PixelsSize {
 
 /// Context provided by [`ColorPicker`] to its descendants.
 ///
-/// The picker is controlled in HSV — [`Self::color`] echoes the controlled
-/// prop, and the setter methods emit `on_color_change` after applying the
-/// requested edit on top of the current value.
+/// The picker is controlled in HSV with alpha ([`Hsva`]) — [`Self::color`] echoes
+/// the controlled prop, and the setter methods emit `on_color_change` after
+/// applying the requested edit on top of the current value; every setter keeps
+/// the channels it does not name.
 #[derive(Clone, Copy)]
 pub struct ColorPickerContext {
-    color: ReadSignal<Hsv<encoding::Srgb, f64>>,
-    on_color_change: Callback<Hsv<encoding::Srgb, f64>>,
+    color: ReadSignal<Hsva<encoding::Srgb, f64>>,
+    on_color_change: Callback<Hsva<encoding::Srgb, f64>>,
 }
 
 impl ColorPickerContext {
-    /// Read the current HSV color.
-    pub fn color(&self) -> Hsv<encoding::Srgb, f64> {
+    /// Read the current HSV color with its alpha (1.0 is opaque).
+    pub fn color(&self) -> Hsva<encoding::Srgb, f64> {
         (self.color)()
     }
 
-    /// Replace the entire HSV color.
-    pub fn set_color(&self, c: Hsv<encoding::Srgb, f64>) {
+    /// Replace the entire color, alpha included.
+    pub fn set_color(&self, c: Hsva<encoding::Srgb, f64>) {
         self.on_color_change.call(c);
     }
 
-    /// Set hue, keeping saturation and value.
+    /// Set hue, keeping saturation, value and alpha.
     pub fn set_hue(&self, h: f64) {
         let current = (self.color)();
-        self.on_color_change.call(Hsv::<encoding::Srgb, f64>::new(
+        self.on_color_change.call(Hsva::<encoding::Srgb, f64>::new(
             RgbHue::new(h),
             current.saturation,
             current.value,
+            current.alpha,
         ));
     }
 
-    /// Set saturation and value as a pair, keeping hue.
+    /// Set saturation and value as a pair, keeping hue and alpha.
     pub fn set_sv(&self, s: f64, v: f64) {
         let current = (self.color)();
-        self.on_color_change
-            .call(Hsv::<encoding::Srgb, f64>::new(current.hue, s, v));
+        self.on_color_change.call(Hsva::<encoding::Srgb, f64>::new(
+            current.hue,
+            s,
+            v,
+            current.alpha,
+        ));
+    }
+
+    /// Set alpha (clamped to 0.0..=1.0), keeping hue, saturation and value.
+    pub fn set_alpha(&self, a: f64) {
+        let mut current = (self.color)();
+        current.alpha = a.clamp(0.0, 1.0);
+        self.on_color_change.call(current);
     }
 }
 
@@ -93,11 +106,11 @@ impl ColorPickerContext {
 pub struct ColorPickerProps {
     /// The selected color
     #[props(default)]
-    pub color: ReadSignal<Hsv<encoding::Srgb, f64>>,
+    pub color: ReadSignal<Hsva<encoding::Srgb, f64>>,
 
     /// Callback when color changes
     #[props(default)]
-    pub on_color_change: Callback<Hsv<encoding::Srgb, f64>>,
+    pub on_color_change: Callback<Hsva<encoding::Srgb, f64>>,
 
     /// Whether the color picker is disabled
     #[props(default)]
@@ -123,7 +136,7 @@ pub struct ColorPickerProps {
 /// #[component]
 /// fn Demo() -> Element {
 ///    use palette::{IntoColor, encoding};
-///    let mut color = use_signal(|| -> palette::Hsv<encoding::Srgb, f64> {
+///    let mut color = use_signal(|| -> palette::Hsva<encoding::Srgb, f64> {
 ///        Color::new(155, 128, 255).into_format::<f64>().into_color()
 ///    });
 ///    rsx! {
@@ -201,7 +214,7 @@ pub struct ColorAreaProps {
 /// #[component]
 /// fn Demo() -> Element {
 ///    use palette::{IntoColor, encoding};
-///    let mut color = use_signal(|| -> palette::Hsv<encoding::Srgb, f64> {
+///    let mut color = use_signal(|| -> palette::Hsva<encoding::Srgb, f64> {
 ///        Color::new(155, 128, 255).into_format::<f64>().into_color()
 ///    });
 ///    rsx! {
@@ -230,7 +243,7 @@ pub fn ColorArea(props: ColorAreaProps) -> Element {
 
     // Thumb position is read straight from HSV state so saturation is preserved
     // at brightness=0.
-    let value = use_memo(move || area_value_from_hsv(picker_ctx.color()));
+    let value = use_memo(move || area_value_from_hsv(picker_ctx.color().color));
 
     let area_ctx = use_context_provider(|| ColorAreaContext {
         value,
@@ -414,7 +427,7 @@ pub fn AreaThumb(props: AreaThumbProps) -> Element {
         percent.width,
         100. - percent.height
     );
-    let thumb_color = color_hex(Srgb::<f64>::from_color(picker_ctx.color()).into_format());
+    let thumb_color = color_hex(Srgb::<f64>::from_color(picker_ctx.color().color).into_format());
 
     let defaults = attributes!(div {
         aria_label: "Color area"
@@ -480,7 +493,7 @@ pub fn AreaThumbSaturationInput(props: AreaThumbSaturationInputProps) -> Element
     let min = COLOR_AREA_MIN;
     let max = COLOR_AREA_MAX;
     let step = (area_ctx.step)();
-    let color_label = color_name(Srgb::<f64>::from_color(picker_ctx.color()).into_format());
+    let color_label = color_name(Srgb::<f64>::from_color(picker_ctx.color().color).into_format());
 
     // `aria_label`/`aria_roledescription` are overridable defaults; the
     // rest is this axis input's own functional state (type/orientation
@@ -551,7 +564,7 @@ pub fn AreaThumbValueInput(props: AreaThumbValueInputProps) -> Element {
     let min = COLOR_AREA_MIN;
     let max = COLOR_AREA_MAX;
     let step = (area_ctx.step)();
-    let color_label = color_name(Srgb::<f64>::from_color(picker_ctx.color()).into_format());
+    let color_label = color_name(Srgb::<f64>::from_color(picker_ctx.color().color).into_format());
 
     // Same reasoning as `AreaThumbSaturationInput` above.
     let defaults = attributes!(input {
@@ -624,7 +637,7 @@ mod tests {
     fn ColorAreaWithZeroChildThumb() -> Element {
         rsx! {
             ColorPicker {
-                color: Hsv::<encoding::Srgb, f64>::new(RgbHue::new(155.0), 0.5, 0.75),
+                color: Hsva::<encoding::Srgb, f64>::new(RgbHue::new(155.0), 0.5, 0.75, 1.0),
                 ColorArea {
                     AreaTrack {
                         AreaThumb {}
@@ -638,7 +651,7 @@ mod tests {
     fn ColorAreaWithAccessibleThumbInputs() -> Element {
         rsx! {
             ColorPicker {
-                color: Hsv::<encoding::Srgb, f64>::new(RgbHue::new(155.0), 0.5, 0.75),
+                color: Hsva::<encoding::Srgb, f64>::new(RgbHue::new(155.0), 0.5, 0.75, 1.0),
                 ColorArea {
                     AreaTrack {
                         AreaThumb {
@@ -766,9 +779,9 @@ mod tests {
     #[test]
     fn color_picker_context_accessors_round_trip_through_on_color_change() {
         with_runtime(|| {
-            let initial = Hsv::<encoding::Srgb, f64>::new(RgbHue::new(10.0), 0.2, 0.3);
+            let initial = Hsva::<encoding::Srgb, f64>::new(RgbHue::new(10.0), 0.2, 0.3, 0.4);
             let color = use_signal(|| initial);
-            let mut last_emitted = use_signal(|| None::<Hsv<encoding::Srgb, f64>>);
+            let mut last_emitted = use_signal(|| None::<Hsva<encoding::Srgb, f64>>);
             let on_color_change = Callback::new(move |c| last_emitted.set(Some(c)));
 
             let ctx = ColorPickerContext {
@@ -778,7 +791,7 @@ mod tests {
 
             assert_eq!(ctx.color(), initial);
 
-            let replaced = Hsv::<encoding::Srgb, f64>::new(RgbHue::new(200.0), 0.9, 0.1);
+            let replaced = Hsva::<encoding::Srgb, f64>::new(RgbHue::new(200.0), 0.9, 0.1, 0.8);
             ctx.set_color(replaced);
             assert_eq!(
                 last_emitted(),
@@ -799,15 +812,31 @@ mod tests {
             let after_sv = last_emitted().expect("set_sv must emit");
             assert_eq!((after_sv.saturation, after_sv.value), (0.6, 0.7));
             assert_eq!(after_sv.hue, initial.hue, "set_sv keeps the current hue");
+            assert_eq!(after_sv.alpha, 0.4, "set_sv keeps alpha");
+            assert_eq!(after_hue.alpha, 0.4, "set_hue keeps alpha");
+
+            ctx.set_alpha(0.25);
+            let after_alpha = last_emitted().expect("set_alpha must emit");
+            assert_eq!(after_alpha.alpha, 0.25);
+            assert_eq!(
+                (after_alpha.hue, after_alpha.saturation, after_alpha.value),
+                (initial.hue, initial.saturation, initial.value),
+                "set_alpha keeps hue/saturation/value"
+            );
+
+            ctx.set_alpha(3.0);
+            assert_eq!(last_emitted().unwrap().alpha, 1.0, "set_alpha clamps");
+            ctx.set_alpha(-1.0);
+            assert_eq!(last_emitted().unwrap().alpha, 0.0, "set_alpha clamps");
         });
     }
 
     #[test]
     fn set_area_value_scales_down_by_the_area_range_before_setting_sv() {
         with_runtime(|| {
-            let initial = Hsv::<encoding::Srgb, f64>::new(RgbHue::new(10.0), 0.2, 0.3);
+            let initial = Hsva::<encoding::Srgb, f64>::new(RgbHue::new(10.0), 0.2, 0.3, 0.4);
             let color = use_signal(|| initial);
-            let mut last_emitted = use_signal(|| None::<Hsv<encoding::Srgb, f64>>);
+            let mut last_emitted = use_signal(|| None::<Hsva<encoding::Srgb, f64>>);
             let on_color_change = Callback::new(move |c| last_emitted.set(Some(c)));
             let ctx = ColorPickerContext {
                 color: color.into(),
