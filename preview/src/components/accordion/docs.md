@@ -34,6 +34,32 @@ Accordion { allow_multiple_open: true,
 }
 ```
 
+## Controlled
+
+Give the `Accordion` a `value` (Radix's `value`) to own the open items yourself: it is the list of open item values, an item is named by its `AccordionItem` `value`, and a click on a trigger only calls `on_value_change` with the new list, so you write it back. Without `value` the accordion keeps its own state, exactly as before; `default_value` seeds that state, next to `default_open` on an item. With `allow_multiple_open: false` the list holds at most one value, and an empty list means everything is closed. See the `controlled` variant: two buttons outside the accordion change the signal and the accordion follows.
+
+An item without a `value` is named by its position as a decimal string (`"0"`, `"1"`, ...), so give items a `value` as soon as the list can reorder or change.
+
+```rust
+let mut open = use_signal(|| vec!["shipping".to_string()]);
+rsx! {
+    Accordion {
+        value: Some(open()),
+        on_value_change: move |next: Vec<String>| open.set(next),
+        AccordionItem { value: Some("shipping".to_string()),
+            AccordionTrigger { "Shipping" }
+            AccordionContent { "..." }
+        }
+        AccordionItem { value: Some("returns".to_string()),
+            AccordionTrigger { "Returns" }
+            AccordionContent { "..." }
+        }
+    }
+}
+```
+
+Controlled, `default_open` and `default_value` are ignored, and a find-in-page reveal (`hidden_until_found`) goes through `on_value_change` too, so a caller that does not write the value back keeps the item closed. An item's own `on_change` still follows its open state.
+
 ## Chevron placement and hover
 
 Pass `chevron: AccordionChevron::Start` on `Accordion` to put the chevron before the label (default `AccordionChevron::End`, shadcn's layout). It points right when closed and down when open, instead of down and up. The prop is emitted as `data-chevron` (`start` / `end`) on the root and on every trigger, so a custom trigger can read it from its own element.
