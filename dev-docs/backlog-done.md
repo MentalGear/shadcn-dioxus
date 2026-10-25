@@ -6,7 +6,7 @@ resolves here by id.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Done rows (354)
+## Done rows (355)
 
 | # | Item | Updated |
 |---|---|---|
@@ -267,6 +267,7 @@ resolves here by id.
 | [263](backlog/done/263-toast-remaining-base-ui-behaviour.md) | Toast: pause on hover/focus, vertical swipe, legacy keyframes on translate | 2026-10-19 |
 | [264](backlog/done/264-non-modal-dialog-pointer-dismissal-and-aria-modal.md) | Non-modal Dialog/Drawer: aria-modal and an outside-press switch | 2026-10-19 |
 | [265](backlog/done/265-upstream-ai-elements-code-block-trace-chat.md) | Upstream ai-elements (chat, message, code-block, trace, checkpoint, ...) vs our chat kit | 2026-10-23 |
+| [267](backlog/done/267-split-oversized-source-files-into-modules.md) | Split oversized source files into modules (carousel.rs, carousel.spec.ts, main.rs, top_layer.rs, calendar.rs, date_picker.rs) | 2026-10-25 |
 | [280](backlog/done/280-cards-fit-their-content-at-every-width.md) | Home-page cards fit their content at every width | 2026-10-19 |
 | [285](backlog/done/285-docs-preview-card-light-mode-tint.md) | Docs preview card: a visible light-mode tint without breaking Toggle hover contrast | 2026-10-22 |
 | [290](backlog/done/290-toast-exit-animation-a-real-visible-cap-and-enter.md) | Toast: exit animation, a real visible cap, and enter from the toaster's edge (Sonner parity) | 2026-10-20 |

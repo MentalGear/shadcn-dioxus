@@ -40,7 +40,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (38)
+## Open rows (37)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -53,7 +53,6 @@ proposing one is closed as out of scope (row 337 is the first).
 | [153](backlog/153-native-find-in-page-for-windowed-virtual-lists.md) | Native find-in-page for WINDOWED virtual lists: keep per-item text in the DOM as hidden="until-found"… | Left: a Firefox 139+ and Safari 26.2 run of the find bar, and a release-build mount timing for 100k… | M | virtual |
 | [170](backlog/170-cross-component-css-overrides-190-sites-in-12.md) | Cross-component CSS overrides: 190 sites in 12 sheets declare, in one component's stylesheet, a property that… | BURNED DOWN 2026-10-24: baseline is 25 sites in 1 sheet (sidebar dropdown panel placement, a stated… | M (the decision and the prototype are… | theme |
 | [266](backlog/266-repo-cleanup-archive-historical-dev-docs.md) | Repo cleanup: archive historical dev-docs, trim CLAUDE.md and the big dev docs, split backlog.md | Left: deleting the stale remote branches (WAITING ON OWNER: his go), part (c) and part (d). (c) is… | M-L | process |
-| [267](backlog/267-split-oversized-source-files-into-modules.md) | Split oversized source files into modules (carousel.rs, carousel.spec.ts, main.rs, top_layer.rs, calendar.rs, date_picker.rs) | BACKLOG (owner approved 2026-10-19 on the cleanup plan; Round 6, before the 152b suite prune).… | M | process |
 | [268](backlog/268-select-scroll-buttons-and-item-aligned-position.md) | Select scroll buttons and position=item-aligned | Only the native (Blitz) arm is left: position=item-aligned emits data-position there and nothing… | S (native arm only) | select |
 | [295](backlog/295-press-feedback-on-touch-taps-already-on-by.md) | Press feedback on touch taps: already on by default, so check why taps don't show it | WAITING ON OWNER: iPhone re-test of press feedback on /component/tabs/, /component/menubar/… | S (or none) | theme |
 | [296](backlog/296-combobox-list-drifts-from-its-input-on-ios-after.md) | Combobox list drifts from its input on iOS after long scrolling | WAITING ON OWNER: reproduce on an iPhone (owner report 2026-10-19); no fix has landed and the cause… | M + device check | overlays |
