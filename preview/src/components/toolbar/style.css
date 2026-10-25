@@ -1,4 +1,8 @@
 .dx-toolbar {
+    /* Every root declares the groups' direction, so a horizontal toolbar nested in a vertical one
+     * keeps `row` instead of inheriting the outer root's `column`. */
+    --dx-toolbar-group-direction: row;
+
     display: flex;
     flex-flow: row wrap;
     align-items: center;
@@ -75,8 +79,8 @@
 .dx-toolbar-group {
     display: flex;
 
-    /* Slot variable: a vertical toolbar sets `column` on its root (below). */
-    flex-direction: var(--dx-toolbar-group-direction, row);
+    /* Slot variable, declared on every root (`row`, or `column` on a vertical one). */
+    flex-direction: var(--dx-toolbar-group-direction);
     gap: 5px;
 }
 
