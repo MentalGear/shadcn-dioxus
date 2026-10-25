@@ -29,6 +29,15 @@
 #   6. reuse stays honest: no cargo gate script (the `scripts/check-*.sh` that `scripts/cargo-inputs-hash.sh` hashes) may
 #      import the kit while the hash leaves `scripts/lib` out, because a stored cargo PASS is only valid for the inputs
 #      its gates can read. None does today, so a library edit does not invalidate a stored cargo result.
+#   7. the pipefail rule (row 437): in a shell script that sets `pipefail` (every `*.sh` of the repo outside
+#      node_modules), no early-exit reader may sit on the right of an unquoted pipe: `grep -q`/`-qE`/`-qF`/
+#      `--quiet`/`-m N`/`-l`, `head`, `sed ... q`, `awk ... exit`. The reader quits at its first match, the left side
+#      then dies of SIGPIPE (141) and pipefail turns the match into a failure (`cmd | grep -q x || fail`, which is
+#      intermittent: a gate red on a correct tree) or, under `if ! cmd | grep -q x`, a failure into a pass.
+#      Read a variable (`grep -q PAT <<<"$var"`), a file, or take a prefix with `sed -n '1,Np'` (reads to the end).
+#      A `pipe-ok` marker comment with a reason, on the line or the one above, exempts a site whose left side is
+#      known to be tiny (an orphan marker or one without a reason fails). The scanner is quote-aware, joins
+#      continuation lines, skips comments and heredoc bodies, and is fixture- and mutation-tested like the library.
 # Rust-source and shell-only gates keep their own scanning (they do not read CSS); `comment-scan.py` is the shared
 # Rust comment reader.
 #
@@ -320,6 +329,308 @@ def allow_fixtures(a):
     return fails
 
 
+# ------------------------------------------------------------------------------- pipefail rule (row 437)
+# The scanner is kept as source text so the mutation run can break one line of it and require its fixtures to turn
+# red, the way the library is held. Never write the three quote characters of a raw string inside it.
+PIPEFAIL_SRC = r"""
+import re
+
+PIPEFAIL_SET = re.compile(r"^[ \t]*set[ \t]+[^#\n]*\bpipefail\b", re.M)
+HEREDOC = re.compile(r"(?<!<)<<(-?)[ \t]*(['\"]?)([A-Za-z_][A-Za-z0-9_]*)\2")
+MARKER = re.compile(r"#[ \t]*pipe-ok:(.*)$")
+GREP_NAMES = ("grep", "egrep", "fgrep")
+GREP_LONG = ("--quiet", "--silent", "--max-count", "--files-with-matches")
+SED_Q = re.compile(r"(?:^|[\s'\";{}/0-9$])q(?:[\s'\";}0-9]|$)")
+AWK_EXIT = re.compile(r"\bexit\b")
+QUOTED = re.compile(r"'[^']*'|\"(?:\\.|[^\"\\])*\"")
+
+
+def strip_comment(line):
+    return re.sub(r"(?:^|[ \t])#[^'\"]*$", "", line)
+
+
+def logical_lines(text, body):
+    # Yields (first line, last line, code). Comment lines and heredoc bodies are skipped (their 1-based line numbers
+    # go into `body`), a line ending in a pipe or a backslash is joined with the next one.
+    lines = text.split("\n")
+    i, n = 0, len(lines)
+    while i < n:
+        raw = lines[i]
+        if raw.lstrip().startswith("#"):
+            i += 1
+            continue
+        start, code = i, strip_comment(raw).rstrip()
+        while i + 1 < n and (re.search(r"(?<![|&>])\|&?$", code) or code.endswith("\\")):
+            code = code[:-1].rstrip() if code.endswith("\\") else code
+            i += 1
+            code = code + " " + strip_comment(lines[i]).strip()
+            code = code.rstrip()
+        yield start + 1, i + 1, code
+        m = HEREDOC.search(code)
+        if m:
+            delim, dash = m.group(3), m.group(1)
+            i += 1
+            while i < n and (lines[i].lstrip("\t") if dash else lines[i]).rstrip() != delim:
+                body.add(i + 1)
+                i += 1
+        i += 1
+
+
+def unquoted_pipe_segments(code):
+    # The command text to the right of every unquoted single pipe (`||` and `>|` are not pipes), found through a
+    # quote stack: a `$(...)` or `(...)` inside double quotes is code again, so `x="$(cmd | head -n 3)"` is seen.
+    segs, open_segs = [], []
+    stack = []  # "'" and '"' for quotes, "(" for a command substitution or subshell
+    i, n = 0, len(code)
+
+    def close(pred):
+        for seg in [o for o in open_segs if pred(o[1])]:
+            open_segs.remove(seg)
+            segs.append(code[seg[0]:i].strip())
+
+    while i < n:
+        c, top = code[i], (stack[-1] if stack else "")
+        if top == "'":
+            if c == "'":
+                stack.pop()
+        elif c == "\\":
+            i += 1
+        elif top == '"' and c == '"':
+            stack.pop()
+        elif c == "$" and code[i + 1:i + 2] == "(":
+            stack.append("(")
+            i += 1
+        elif top != '"' and c in "'\"(":
+            stack.append(c)
+        elif c == ")" and top == "(":
+            stack.pop()
+            close(lambda base: base > len(stack))
+        elif top != '"' and c in "|;&":
+            close(lambda base: base == len(stack))
+            if c == "|" and code[i + 1:i + 2] == "|":
+                i += 1
+            elif c == "|" and code[i - 1:i] != ">":
+                amp = 1 if code[i + 1:i + 2] == "&" else 0
+                open_segs.append((i + 1 + amp, len(stack)))
+                i += amp
+        i += 1
+    i = n
+    close(lambda base: True)
+    return segs
+
+
+def early_exit_reader(seg):
+    # The name of the early-exit reader this segment is, or None.
+    skeleton = QUOTED.sub(lambda m: "Q" * len(m.group(0)), seg)
+    tokens = skeleton.split()
+    while tokens and tokens[0] in ("command", "builtin", "exec", "nice"):
+        tokens = tokens[1:]
+    if not tokens:
+        return None
+    cmd = tokens[0].rsplit("/", 1)[-1]
+    if cmd == "head":
+        return "head"
+    if cmd in GREP_NAMES:
+        for t in tokens[1:]:
+            if t.startswith("--"):
+                if t.startswith(GREP_LONG):
+                    return "grep " + t.split("=")[0]
+            elif t.startswith("-") and any(ch in "qlm" for ch in t[1:]):
+                return "grep " + t
+        return None
+    if cmd == "sed" and SED_Q.search(seg):
+        return "sed q"
+    if cmd == "awk" and AWK_EXIT.search(seg):
+        return "awk exit"
+    return None
+
+
+def scan(text):
+    # (problems, markers_used_ok): problems are (line, message) for a pipefail script, [] for any other.
+    if not PIPEFAIL_SET.search(text):
+        return []
+    lines = text.split("\n")
+    body = set()
+    logical = list(logical_lines(text, body))
+    markers = {}
+    for k, raw in enumerate(lines, 1):
+        m = MARKER.search(raw)
+        if m and k not in body:
+            markers[k] = m.group(1).strip()
+    used, problems = set(), []
+    for first, last, code in logical:
+        for seg in unquoted_pipe_segments(code):
+            reader = early_exit_reader(seg)
+            if not reader:
+                continue
+            covering = [k for k in markers if first - 1 <= k <= last]
+            if covering:
+                used.update(covering)
+                if all(markers[k] for k in covering):
+                    continue
+                problems.append((covering[0], "a pipe-ok marker needs a reason"))
+                continue
+            problems.append((first, "`| %s` reads early on the right of a pipe in a pipefail script: %s" % (reader, seg[:70])))
+    for k, reason in sorted(markers.items()):
+        if k not in used:
+            problems.append((k, "a pipe-ok marker with no early-exit reader on its line or the next (stale)"))
+    return problems
+"""
+
+PIPEFAIL_HEAD = "#!/usr/bin/env bash\nset -euo pipefail\n"
+PIPEFAIL_RED = [
+    ("grep -q", "printf '%s\\n' \"$x\" | grep -q foo"),
+    ("grep -qE", "printf '%s\\n' \"$x\" | grep -qE 'a|b'"),
+    ("grep -qF", "cmd | grep -qF 'x'"),
+    ("grep -Eq", "cmd | grep -Eq 'x'"),
+    ("grep -qx in an if", "if ! cmd | grep -qx \"$f\"; then"),
+    ("grep --quiet", "cmd | grep --quiet x"),
+    ("grep --silent", "cmd | grep --silent x"),
+    ("grep -m1", "cmd | grep -m1 x"),
+    ("grep -m 1 after a flag", "cmd | grep -F -m 1 x"),
+    ("grep --max-count", "cmd | grep --max-count=1 x"),
+    ("egrep -q", "cmd | egrep -q x"),
+    ("head -n", "cmd | head -n 3"),
+    ("head -1 mid-pipe", "x=$(cmd | head -1 | cut -d: -f1)"),
+    ("head glued to the pipe", "cmd |head -2"),
+    ("sed q", "cmd | sed -n '1p;q'"),
+    ("sed Nq", "cmd | sed 3q"),
+    ("awk exit", "cmd | awk 'NR==1{print; exit}'"),
+    ("inside $(...)", "x=$(cmd | grep -q y && echo 1)"),
+    ("pipe-and-stderr", "cmd |& grep -q x"),
+    ("pipe at the end of a line", "cmd |\n  grep -q x"),
+    ("pipe after a backslash", "cmd \\\n  | grep -q x"),
+    ("flags on a continuation line", "cmd | grep \\\n  -q x"),
+    ("pipe after a quoted pipe", "cmd | sed 's/a|b/c/' | grep -q x"),
+    ("inside a double-quoted substitution", "x=\"$(cmd | grep -q y)\""),
+    ("head inside a quoted substitution with an or-list", "x=\"$(cmd | head -n 3 || true)\""),
+    ("a nested substitution", "echo \"a $(cmd | sed 3q) b\""),
+    ("a substitution after quoted text", "echo 'x' \"$(cmd | head -1)\" done"),
+    ("a pipe after a closed substitution", "x=$(a) ; b | grep -q y"),
+    ("after a heredoc opener", "cat <<EOF | grep -q x\nbody\nEOF"),
+    ("command prefix", "cmd | command grep -q x"),
+    ("a marker without a reason", "cmd | grep -q x  # pipe-ok:"),
+    ("a stale marker", "# pipe-ok: nothing here\ncmd | grep x"),
+]
+PIPEFAIL_GREEN = [
+    ("a here-string", "grep -q foo <<<\"$x\""),
+    ("a file argument", "grep -q foo file | wc -l"),
+    ("grep -c on the right", "cmd | grep -c foo"),
+    ("grep -v on the right", "cmd | grep -v foo"),
+    ("grep -E with q in the pattern", "cmd | grep -E 'quit|q'"),
+    ("grep -n", "cmd | grep -n foo"),
+    ("sed prefix", "cmd | sed -n '1,5p'"),
+    ("sed substitute", "cmd | sed -E 's/x/y/'"),
+    ("awk without exit", "cmd | awk -F'\\t' '$1 == \"C\" { print $2 }'"),
+    ("an or-list", "cmd || grep -q x"),
+    ("a clobber redirect", "cmd >| out"),
+    ("a clobber redirect onto a reader's name", "cmd >| head -n 3"),
+    ("a quoted pipe", "echo 'a | grep -q b'"),
+    ("a double-quoted pipe", "echo \"use | head -n 3\""),
+    ("a double-quoted pipe next to a substitution", "echo \"a | grep -q b $(cmd)\""),
+    ("a flag after a substitution closes", "x=\"$(cmd | grep -E y)\" ; echo -q"),
+    ("an escaped quote", "echo \"a \\\" | head\""),
+    ("a comment line", "# cmd | grep -q x"),
+    ("a comment line with a quote", "# cmd | grep -q x, don't do it"),
+    ("a flag after a command separator", "cmd | grep -E foo && echo -q done"),
+    ("a flag after a semicolon", "cmd | grep -E foo; grep -m1 x file"),
+    ("a trailing comment", "cmd  # | grep -q x"),
+    ("a heredoc body", "python3 - <<'EOF'\nx | grep -q y\nz | head\nEOF"),
+    ("a dash heredoc body", "cat <<-EOF\n\tx | head\n\tEOF"),
+    ("grep -q on the left of a pipe", "grep -q foo file && cmd | wc -l"),
+    ("head on the left of a pipe", "head -n 3 file | sort"),
+    ("a marker with a reason", "cmd | grep -q x  # pipe-ok: the left side is one short line"),
+    ("a marker above with a reason", "# pipe-ok: the left side is one short line\ncmd | grep -q x"),
+]
+
+
+def pipefail_fixtures(m):
+    # Failure messages (empty = green) of the pipefail scanner `m` (a module loaded from PIPEFAIL_SRC).
+    fails = []
+    for label, body in PIPEFAIL_RED:
+        try:
+            got = m.scan(PIPEFAIL_HEAD + body + "\n")
+        except Exception as e:
+            fails.append("%s: raised %r" % (label, e))
+            continue
+        if not got:
+            fails.append("pipefail: `%s` was not reported" % label)
+    for label, body in PIPEFAIL_GREEN:
+        try:
+            got = m.scan(PIPEFAIL_HEAD + body + "\n")
+        except Exception as e:
+            fails.append("%s: raised %r" % (label, e))
+            continue
+        if got:
+            fails.append("pipefail: `%s` was reported: %s" % (label, got))
+    # A script that does not set pipefail is out of scope (a lone `cmd | grep -q x` is fine there).
+    for body in ("cmd | grep -q x", "cmd | head -n 1"):
+        if m.scan("#!/usr/bin/env bash\nset -eu\n" + body + "\n"):
+            fails.append("pipefail: a script without pipefail was reported")
+        if m.scan("#!/usr/bin/env bash\n# set -o pipefail\n" + body + "\n"):
+            fails.append("pipefail: a commented-out `set -o pipefail` counted")
+    for spelling in ("set -o pipefail", "set -Eeuo pipefail", "set -euo pipefail", "set -uo pipefail", "  set -e -o pipefail"):
+        if not m.scan("#!/usr/bin/env bash\n" + spelling + "\ncmd | grep -q x\n"):
+            fails.append("pipefail: `%s` was not recognised" % spelling)
+    # The line number is the logical line's first line.
+    got = m.scan(PIPEFAIL_HEAD + "echo a\ncmd |\n  grep -q x\n")
+    if [k for k, _ in got] != [4]:
+        fails.append("pipefail: a joined line reports line %s, not its first line 4" % [k for k, _ in got])
+    return fails
+
+
+def pipefail_repo_scan(m):
+    # Every shell script of the repository: (path, line, message) for each site, and the number of scripts that set pipefail.
+    skip_dirs = {"node_modules", ".git", "target", "dist", "public", ".cargo"}
+    found, n_scripts, n_pipefail = [], 0, 0
+    for dirpath, dirnames, filenames in os.walk("."):
+        dirnames[:] = sorted(d for d in dirnames if d not in skip_dirs)
+        for name in sorted(filenames):
+            if not name.endswith(".sh"):
+                continue
+            path = os.path.join(dirpath, name)[2:]
+            text = open(path, encoding="utf-8").read()
+            n_scripts += 1
+            if m.PIPEFAIL_SET.search(text):
+                n_pipefail += 1
+            for line, msg in m.scan(text):
+                found.append((path, line, msg))
+    return found, n_scripts, n_pipefail
+
+
+PIPEFAIL_MUTATIONS = [
+    ("head is not an early reader", 'if cmd == "head":', 'if cmd == "headx":'),
+    ("grep -q is not an early reader", 'any(ch in "qlm" for ch in t[1:])', 'any(ch in "lm" for ch in t[1:])'),
+    ("grep -m is not an early reader", 'any(ch in "qlm" for ch in t[1:])', 'any(ch in "ql" for ch in t[1:])'),
+    ("grep long options are ignored", 'if t.startswith(GREP_LONG):', 'if False:'),
+    ("egrep is not a grep", 'GREP_NAMES = ("grep", "egrep", "fgrep")', 'GREP_NAMES = ("grep",)'),
+    ("sed q is not an early reader", 'if cmd == "sed" and SED_Q.search(seg):', 'if False:'),
+    ("awk exit is not an early reader", 'if cmd == "awk" and AWK_EXIT.search(seg):', 'if False:'),
+    ("a script without pipefail is scanned", 'if not PIPEFAIL_SET.search(text):\n        return []', 'if False:\n        return []'),
+    ("a commented-out pipefail counts", r'"^[ \t]*set[ \t]+[^#\n]*\bpipefail\b"', r'"set[ \t]+[^#\n]*\bpipefail\b"'),
+    ("a marker never exempts", 'if covering:\n                used.update(covering)', 'if False:\n                used.update(covering)'),
+    ("a marker needs no reason", 'if all(markers[k] for k in covering):', 'if True:'),
+    ("a stale marker is not reported", 'if k not in used:', 'if False:'),
+    ("a marker above is not seen", 'first - 1 <= k <= last', 'first <= k <= last'),
+    ("continuation lines are not joined", 'while i + 1 < n and (re.search(r"(?<![|&>])\\|&?$", code) or code.endswith("\\\\")):', 'while False:'),
+    ("a backslash continuation is not joined", 'or code.endswith("\\\\")):', '):'),
+    ("comment lines are scanned", 'if raw.lstrip().startswith("#"):', 'if False:'),
+    ("trailing comments are scanned", 'return re.sub(r"(?:^|[ \\t])#[^\'\\"]*$", "", line)', 'return line'),
+    ("heredoc bodies are scanned", 'if m:\n            delim, dash', 'if False:\n            delim, dash'),
+    ("single quotes are not tracked", 'if top == "\'":\n            if c == "\'":', 'if False:\n            if c == "\'":'),
+    ("a substitution in double quotes is not code", 'elif c == "$" and code[i + 1:i + 2] == "(":', 'elif False:'),
+    ("a double quote is not tracked", 'elif top == \'"\' and c == \'"\':', 'elif False:'),
+    ("a pipe inside double quotes is a pipe", 'elif top != \'"\' and c in "|;&":', 'elif c in "|;&":'),
+    ("|| is a pipe", 'if c == "|" and code[i + 1:i + 2] == "|":\n                i += 1', 'if c == "|" and code[i + 1:i + 2] == "|":\n                open_segs.append((i + 2, len(stack)))\n                i += 1'),
+    ("a clobber redirect is a pipe", 'elif c == "|" and code[i - 1:i] != ">":', 'elif c == "|":'),
+    ("the pipe-and-stderr form is not a pipe", 'amp = 1 if code[i + 1:i + 2] == "&" else 0', 'amp = 0'),
+    ("a segment runs past a command separator", 'close(lambda base: base == len(stack))\n            if c', 'if c'),
+    ("a segment runs past the end of its substitution", 'close(lambda base: base > len(stack))', 'pass'),
+    ("a command prefix hides the reader", 'while tokens and tokens[0] in ("command", "builtin", "exec", "nice"):', 'while False:'),
+    ("the reported line is the last line", 'problems.append((first, "`| %s`', 'problems.append((last, "`| %s`'),
+]
+
+
 # ------------------------------------------------------------------------------------------- mutation self-test
 # (label, text in the library source, replacement). The fixtures must turn red for every one.
 CSS_MUTATIONS = [
@@ -403,6 +714,29 @@ if not errors:
     errors += mutation_run(CSS_PATH, CSS_MUTATIONS, css_fixtures, "css.py")
     errors += mutation_run(ALLOW_PATH, ALLOW_MUTATIONS, allow_fixtures, "allow.py")
 
+# The pipefail scanner: fixtures on the real source, a break of each line must turn them red, then the repository.
+pipefail = load("pipefail-scanner", PIPEFAIL_SRC)
+fx = pipefail_fixtures(pipefail)
+errors += ["pipefail fixture: " + f for f in fx]
+if not fx:
+    for name, old, new in PIPEFAIL_MUTATIONS:
+        if PIPEFAIL_SRC.count(old) != 1:
+            errors.append(f"pipefail mutation `{name}`: its anchor is not exactly once in PIPEFAIL_SRC "
+                          f"(found {PIPEFAIL_SRC.count(old)}); update the mutation list with the source")
+            continue
+        try:
+            mutant = load("pipefail-scanner", PIPEFAIL_SRC.replace(old, new))
+            red = bool(pipefail_fixtures(mutant))
+        except Exception:
+            red = True  # a mutant that does not load or raises is red
+        if not red:
+            errors.append(f"pipefail mutation `{name}` stayed GREEN: no fixture notices it")
+pf_sites, n_shell, n_pipefail = pipefail_repo_scan(pipefail)
+for path, line, msg in pf_sites:
+    errors.append(f"{path}:{line}: {msg}. THE CLASS (row 437): the reader exits on its first match, the left side dies "
+                  f"of SIGPIPE and pipefail turns that into a failure; read a variable (`grep -q PAT <<<\"$var\"`), a "
+                  f"file, or use `sed -n '1,Np'`; a short left side takes `# pipe-ok: <reason>`")
+
 # The grep rule and the import rule over every gate script.
 n_gates = n_importing = 0
 for script in sorted(glob.glob("scripts/check-*.sh")):
@@ -455,5 +789,7 @@ if errors:
 print(f"check-gate-kit: OK -- css.py and allow.py fixtures green on the real files ({n_rules} rules in {n_sheets} "
       f"stylesheets read cleanly), red on {len(CSS_MUTATIONS) + len(ALLOW_MUTATIONS)}/"
       f"{len(CSS_MUTATIONS) + len(ALLOW_MUTATIONS)} mutations; no definition of a comment stripper or splitter in "
-      f"{n_gates} gate scripts, {n_importing} of them on the shared kit")
+      f"{n_gates} gate scripts, {n_importing} of them on the shared kit; no early-exit reader on the right of a pipe in "
+      f"{n_pipefail} of {n_shell} shell scripts that set pipefail (red on {len(PIPEFAIL_MUTATIONS)}/{len(PIPEFAIL_MUTATIONS)} "
+      f"scanner mutations)")
 PYEOF

@@ -50,20 +50,20 @@ if [ -z "${CURL_CA_BUNDLE:-}${SSL_CERT_FILE:-}" ] && [ -f /root/.ccr/ca-bundle.c
 fi
 
 # --- 1. wasm target ---------------------------------------------------------
-if ! rustup target list --installed 2>/dev/null | grep -qx 'wasm32-unknown-unknown'; then
+if ! grep -qx 'wasm32-unknown-unknown' <<<"$(rustup target list --installed 2>/dev/null)"; then
   log "adding rustup target wasm32-unknown-unknown"
   rustup target add wasm32-unknown-unknown
 fi
 
 # --- 2. dx -------------------------------------------------------------------
-if ! dx --version 2>/dev/null | grep -q "^dioxus ${DX_VERSION} "; then
+if ! grep -q "^dioxus ${DX_VERSION} " <<<"$(dx --version 2>/dev/null)"; then
   log "installing dx ${DX_VERSION}"
   mkdir -p "${HOME}/.cargo/bin"
   if curl "${curl_opts[@]}" -o "$tmp/dx.tgz" \
       "https://github.com/DioxusLabs/dioxus/releases/download/v${DX_VERSION}/dx-x86_64-unknown-linux-gnu.tar.gz" \
     && tar xzf "$tmp/dx.tgz" -C "$tmp" dx \
     && install -m755 "$tmp/dx" "${HOME}/.cargo/bin/dx" \
-    && dx --version 2>/dev/null | grep -q "^dioxus ${DX_VERSION} "; then
+    && grep -q "^dioxus ${DX_VERSION} " <<<"$(dx --version 2>/dev/null)"; then
     log "dx ${DX_VERSION} installed from the GitHub release binary"
   else
     log "prebuilt dx unavailable; falling back to cargo install --locked (~20 min)"

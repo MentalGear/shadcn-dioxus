@@ -53,7 +53,7 @@ while IFS= read -r f; do
   done
   if [ $allowed = 0 ]; then
     echo "FAIL: $f handles horizontal arrows/deltas without Direction::resolve_horizontal / ltr_equivalent / use_direction"
-    grep -nE 'Key::Arrow(Left|Right)|delta_x' "$f" | grep -vE '^[0-9]+:[[:space:]]*//' | head -3 | sed 's/^/    /'
+    grep -nE 'Key::Arrow(Left|Right)|delta_x' "$f" | grep -vE '^[0-9]+:[[:space:]]*//' | sed -n '1,3p' | sed 's/^/    /'
     fail=1
   fi
 done < <(find primitives/src -name '*.rs' ! -name tests.rs ! -name '*_tests.rs' ! -path '*/tests/*' | sort)

@@ -9,7 +9,7 @@ set -euo pipefail
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"; cd "$here"
 net=0; [ "${1:-}" = "--network" ] && net=1
 CRATES="${DEP_CRATES:-time time-macros palette palette_derive phf@0.11.3 rand@0.8.6 siphasher@1.0.3 approx by_address fast-srgb8 tracing serde tokio gloo-timers dioxus-icons pulldown-cmark pulldown-cmark-escape unicase}"
-src=$(ls -d "$HOME"/.cargo/registry/src/*/ | head -1)
+src=$(ls -d "$HOME"/.cargo/registry/src/*/ | sed -n 1p)
 echo "## per crate (version in Cargo.lock; unsafe = lines containing the token in src/, comments included)"
 printf '%-22s %-10s %7s %-9s %-10s\n' crate version unsafe build.rs proc-macro
 for e in $CRATES; do

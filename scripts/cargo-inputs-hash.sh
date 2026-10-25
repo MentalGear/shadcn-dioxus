@@ -55,7 +55,7 @@ ASSET_EXT='css|svg|png|jpg|jpeg|gif|webp|ico|woff|woff2'
 
 # The working tree's files: tracked and untracked-not-ignored (NUL separated, then one per line).
 all="$(git ls-files -z --cached --others --exclude-standard | tr '\0' '\n')"
-if printf '%s\n' "$all" | grep -q $'\r'; then echo "cargo-inputs-hash: carriage return in a path" >&2; exit 2; fi
+if grep -q $'\r' <<<"$all"; then echo "cargo-inputs-hash: carriage return in a path" >&2; exit 2; fi
 
 in_roots() { # $1 = path
   local r; for r in "${CARGO_ROOTS[@]}"; do [[ "$1" == "$r"/* ]] && return 0; done

@@ -236,7 +236,7 @@ build_once() {
       if grep -q "not in dx's asset manifest" "$bundle_log"; then
         retryable=1
         local drifted
-        drifted="$(find "$repo_root/preview/src" "$repo_root/preview/assets" "$repo_root/primitives/src" -type f -newer "$build_marker" 2>/dev/null | head -n 5 || true)"
+        drifted="$(find "$repo_root/preview/src" "$repo_root/preview/assets" "$repo_root/primitives/src" -type f -newer "$build_marker" 2>/dev/null | sed -n '1,5p' || true)"
         if [ -n "$drifted" ]; then
           echo "build-ssg: sources changed during this build (likely cause of the stale manifest):" >&2
           printf '  - %s\n' $drifted >&2
@@ -246,7 +246,7 @@ build_once() {
     fi
     # Every page, not a sample: a page without the bundle is a page that can flash.
     local unbundled
-    unbundled="$(grep -rL --include=index.html 'data-dx-css-bundle' "$public_dir" | head -n 3 || true)"
+    unbundled="$(grep -rL --include=index.html 'data-dx-css-bundle' "$public_dir" | sed -n '1,3p' || true)"
     if [ -n "$unbundled" ]; then
       echo "error: page(s) without the CSS bundle after guard 4b:" >&2
       printf '  - %s\n' $unbundled >&2
@@ -301,7 +301,7 @@ if [ -n "$base_path" ]; then
       "error: the output would 404 on its host (stale cached artifacts in $target_dir?)."
   fi
 else
-  if hit="$(grep -rlE --include='*.html' "[\"'(]/(shadcn-dioxus|dioxus-components)/" "$public_dir" | head -n 3)" && [ -n "$hit" ]; then
+  if hit="$(grep -rlE --include='*.html' "[\"'(]/(shadcn-dioxus|dioxus-components)/" "$public_dir" | sed -n '1,3p')" && [ -n "$hit" ]; then
     echo "error: no --base-path requested but the output references /shadcn-dioxus/ (or legacy /dioxus-components/) URLs (row 100):" >&2
     printf '  - %s\n' $hit >&2
     echo "       This tree carries base-path build artifacts; use a fresh one (scripts/lane-target.sh create)." >&2

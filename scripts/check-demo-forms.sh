@@ -249,7 +249,7 @@ for f in "${files[@]}"; do
 done
 
 # DemoForm itself must exist even if no candidate file matched it (the file was emptied / renamed).
-if [ -f "$DEMO_FORM_FILE" ] && ! printf '%s\n' "${files[@]}" | grep -qx "$DEMO_FORM_FILE"; then
+if [ -f "$DEMO_FORM_FILE" ] && ! grep -qx "$DEMO_FORM_FILE" <<<"$(printf '%s\n' "${files[@]}")"; then
   fail "$DEMO_FORM_FILE no longer defines DemoForm"
 fi
 

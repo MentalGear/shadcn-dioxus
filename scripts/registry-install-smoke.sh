@@ -222,7 +222,7 @@ target_args=()
 [ -n "$target" ] && target_args=(--target "$target")
 if ! (cd "$app" && cargo check --message-format short "${target_args[@]}") >"$check_log" 2>&1; then
   echo "registry-install-smoke: RED -- cargo check failed after installing $installed/$count components:" >&2
-  grep -E '^(error|[^ ]+: error)' "$check_log" | sort | uniq -c | sort -rn | head -40 >&2
+  grep -E '^(error|[^ ]+: error)' "$check_log" | sort | uniq -c | sort -rn | sed -n '1,40p' >&2
   echo "--- tail of cargo check ---" >&2
   tail -15 "$check_log" >&2
   exit 1

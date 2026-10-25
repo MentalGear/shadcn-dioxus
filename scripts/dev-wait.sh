@@ -134,17 +134,17 @@ while :; do
     new_text=$(sed -n "$((last_scanned + 1)),${now_lines}p" "$log")
     last_scanned="$now_lines"
 
-    if line=$(printf '%s\n' "$new_text" | grep -m1 -F 'Build completed successfully in'); then
+    if line=$(grep -m1 -F 'Build completed successfully in' <<<"$new_text"); then
       elapsed=$(awk -v s="$start_ts" 'BEGIN{cmd="date +%s.%N"; cmd|getline n; close(cmd); printf "%.1f", n-s}' 2>/dev/null || echo "?")
       echo "READY cold ${elapsed}s: $(printf '%s' "$line" | sed 's/^ *//')"
       exit 0
     fi
-    if line=$(printf '%s\n' "$new_text" | grep -m1 -F 'Build completed in' | grep -v -F successfully); then
+    if line=$(grep -m1 -F 'Build completed in' <<<"$new_text" | grep -v -F successfully); then
       elapsed=$(awk -v s="$start_ts" 'BEGIN{cmd="date +%s.%N"; cmd|getline n; close(cmd); printf "%.1f", n-s}' 2>/dev/null || echo "?")
       echo "READY rebuild ${elapsed}s: $(printf '%s' "$line" | sed 's/^ *//')"
       exit 0
     fi
-    if line=$(printf '%s\n' "$new_text" | grep -m1 -F 'Hotreloading:'); then
+    if line=$(grep -m1 -F 'Hotreloading:' <<<"$new_text"); then
       hotreload_seen=1
       hotreload_line="$line"
       hotreload_at=$(date +%s)

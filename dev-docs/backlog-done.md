@@ -6,7 +6,7 @@ resolves here by id.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Done rows (366)
+## Done rows (367)
 
 | # | Item | Updated |
 |---|---|---|
@@ -376,5 +376,6 @@ resolves here by id.
 | [425](backlog/done/425-hover-card-force-mount-no-effect.md) | HoverCard `force_mount` has no effect: the card is still rendered only while open | 2026-10-25 |
 | [429](backlog/done/429-one-gate-kit-css-walker-allowlist-engine.md) | One gate kit: a shared CSS walker and one allowlist engine for the check scripts | 2026-10-25 |
 | [430](backlog/done/430-component-manifests-derived-from-source.md) | Component manifests derived from source, not hand-kept | 2026-10-25 |
+| [437](backlog/done/437-pipefail-early-exit-reader.md) | No early-exit reader on the right of a pipe in a pipefail script (grep -q, head, sed q, awk exit) | 2026-10-25 |
 
 <!-- END GENERATED -->

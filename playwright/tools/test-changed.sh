@@ -39,7 +39,7 @@ site_server_ready test-changed || exit 2
 echo "test-changed: ${#specs[@]} spec file(s) cover the diff: ${specs[*]}" >&2
 [ -n "$narrowed" ] && echo "test-changed: tests kept of the page-scoped matrix specs (CSS reaches only some pages): $narrowed" >&2
 # hydration-parity.spec.ts only RUNS attr-synth; building it is this pre-step, through the build lock (row 338).
-if printf '%s\n' "${specs[@]}" | grep -q 'hydration-parity\.spec\.ts$'; then tools/ensure-attr-synth.sh; fi
+if grep -q 'hydration-parity\.spec\.ts$' <<<"$(printf '%s\n' "${specs[@]}")"; then tools/ensure-attr-synth.sh; fi
 extra=()
 [ -n "$grep_invert" ] && extra+=(--grep-invert "$grep_invert")
 # Not `exec`: a server site_server_ready started is stopped by this shell's EXIT trap.
