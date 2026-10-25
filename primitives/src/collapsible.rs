@@ -5,8 +5,6 @@ use crate::{merge_attributes, use_controlled, use_id_or, use_unique_id, AsChild}
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
 
-// TODO: more docs
-
 /// How a panel that can opt into `hidden="until-found"` is hidden right now.
 ///
 /// Shared by [`Collapsible`], [`crate::accordion::Accordion`] and

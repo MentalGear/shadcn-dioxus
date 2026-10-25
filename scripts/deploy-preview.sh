@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Builds the preview/gallery app and publishes it into /docs for GitHub
+# Builds the preview app (`preview/`) and publishes it into /docs for GitHub
 # Pages, which is configured (repo Settings -> Pages) to serve straight
 # from the `main` branch's /docs folder -- no CI build step involved.
 #

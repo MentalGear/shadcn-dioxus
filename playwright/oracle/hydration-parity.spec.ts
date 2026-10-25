@@ -23,8 +23,8 @@
  * ## The production failure this guards against (backlog row 22)
  *
  * The deployed site (https://mentalgear.github.io/shadcn-dioxus/) is
- * built by CI as fullstack SSG (`.github/workflows/web.yml`: `ssg: true,
- * features: fullstack`). The SSG prerender runs the *server* binary -- a
+ * built as fullstack SSG by `scripts/deploy-preview.sh` (`scripts/build-ssg.sh`:
+ * `dx build --ssg --features fullstack`). The SSG prerender runs the *server* binary -- a
  * host (non-wasm) build, not the wasm client. An overlay component that
  * splits its rendered markup on `#[cfg(target_family = "wasm")]` renders
  * the *native* arm there (plain `div`s, no `popover` attributes, no

@@ -175,7 +175,7 @@ gates=(
   "clippy-default|cargo clippy --workspace $CLIPPY_FLAGS"
   # Clippy, `web` arm: primitives and preview with their `web` features, the code the wasm client compiles (over 100 `feature = "web"` cfg sites in primitives alone).
   "clippy-web|cargo clippy -p dioxus-primitives -p preview --features dioxus-primitives/web,preview/web $CLIPPY_FLAGS"
-  # Clippy, `server` arm: preview with `server` (the SSG prerender server; implies fullstack and primitives/web).
+  # Clippy, `server` arm: preview with `server` (the SSG prerender server; implies fullstack and the primitives `web` feature).
   "clippy-server|cargo clippy -p preview --features server $CLIPPY_FLAGS"
   # `cargo test --workspace`: every unit and integration test of the workspace on the plain arm (no `web` or `server` feature); the server arm is `test-server`.
   "test|cargo test --workspace"
