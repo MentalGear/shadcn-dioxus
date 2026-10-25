@@ -129,7 +129,7 @@
  */
 
 /* The `contenteditable` segment is a text-entry element, so it takes the theme's text-entry size (the
-   16px touch floor under coarse sizing, `data-dx-coarse`; see `dx-components-theme.css`). */
+   17px touch size under coarse sizing, `data-dx-coarse`; see `dx-components-theme.css`). */
 .dx-date-picker-segment {
     caret-color: transparent;
     font-size: var(--dx-coarse-text-entry-font-size);

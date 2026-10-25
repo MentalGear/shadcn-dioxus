@@ -47,7 +47,9 @@
 .dx-calendar-navigation {
     position: relative;
     display: flex;
-    height: var(--dx-calendar-cell-size);
+
+    /* One cell tall, or as tall as the caption's controls (the control scale's `xs`, taller under coarse sizing). */
+    height: max(var(--dx-calendar-cell-size), var(--dx-control-height-xs));
     align-items: center;
     justify-content: center;
     font-size: var(--dx-text-sm);
@@ -70,7 +72,7 @@
 .dx-calendar-nav-prev,
 .dx-calendar-nav-next {
     position: absolute;
-    top: 0;
+    top: calc(50% - var(--dx-calendar-cell-size) / 2);
     display: flex;
     width: var(--dx-calendar-cell-size);
     height: var(--dx-calendar-cell-size);
@@ -489,7 +491,7 @@ td:has(.dx-calendar-grid-cell[data-selection-end="true"]) {
 
     /* Despite `opacity: 0` below, this is the REAL tap target (a native `<select>` overlaid on the
        visible `-value` span, so a touch device still opens its native picker): a focusable text-entry
-       element, so it takes the theme's text-entry size (the 16px touch floor under coarse sizing). */
+       element, so it takes the theme's text-entry size (the 17px touch size under coarse sizing). */
     font-size: var(--dx-coarse-text-entry-font-size);
     inset: 0;
     opacity: 0;
