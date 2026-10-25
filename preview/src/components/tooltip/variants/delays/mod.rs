@@ -1,6 +1,7 @@
 use super::super::component::*;
 use crate::components::button::{Button, ButtonVariant};
 use dioxus::prelude::*;
+use dioxus_primitives::AsChild;
 
 /// `delay` and `close_delay` on `Tooltip` (Radix `delayDuration`, Base UI `delay` / `closeDelay`):
 /// the styled tooltip opens on contact by default (shadcn's `TooltipProvider delay={0}`),
@@ -13,8 +14,8 @@ pub fn Demo() -> Element {
             // No `delay` prop: the styled default (0).
             Tooltip {
                 TooltipTrigger {
-                    as: |attributes: Vec<Attribute>| rsx! {
-                        Button { variant: ButtonVariant::Outline, attributes, "Default (0)" }
+                    as: |el: AsChild| rsx! {
+                        Button { variant: ButtonVariant::Outline, attributes: el.attributes, "Default (0)" }
                     },
                 }
                 TooltipContent { "Opens on contact." }
@@ -40,8 +41,8 @@ fn DelayTooltip(
     rsx! {
         Tooltip { delay, close_delay,
             TooltipTrigger {
-                as: move |attributes: Vec<Attribute>| rsx! {
-                    Button { variant: ButtonVariant::Outline, attributes, "{label}" }
+                as: move |el: AsChild| rsx! {
+                    Button { variant: ButtonVariant::Outline, attributes: el.attributes, "{label}" }
                 },
             }
             TooltipContent { "{note}" }

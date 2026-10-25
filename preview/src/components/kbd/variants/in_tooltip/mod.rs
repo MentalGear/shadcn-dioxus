@@ -2,14 +2,15 @@ use super::super::component::*;
 use crate::components::button::{Button, ButtonVariant};
 use crate::components::tooltip::{Tooltip, TooltipContent, TooltipTrigger};
 use dioxus::prelude::*;
+use dioxus_primitives::AsChild;
 
 #[component]
 pub fn Demo() -> Element {
     rsx! {
         Tooltip {
             TooltipTrigger {
-                as: |attributes: Vec<Attribute>| rsx! {
-                    Button { variant: ButtonVariant::Outline, attributes, "Copy link" }
+                as: |el: AsChild| rsx! {
+                    Button { variant: ButtonVariant::Outline, attributes: el.attributes, "Copy link" }
                 },
             }
             TooltipContent {

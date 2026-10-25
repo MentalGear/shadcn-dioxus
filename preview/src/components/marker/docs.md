@@ -19,16 +19,15 @@ Marker {
 }
 ```
 
-To make the whole marker a link or button, pass `as` and render the element yourself, with the icon and content inside it:
+To make the whole marker a link or button, pass `as` (Radix's `asChild`). The callback gets an `AsChild`: spread its `attributes` on your element and render its `children` (the marker's icon and content) inside it:
 
 ```rust
 Marker {
-    r#as: move |attrs: Vec<Attribute>| rsx! {
-        a { href: "/files", ..attrs,
-            MarkerIcon { FileText {} }
-            MarkerContent { "Explored 4 files" }
-        }
+    r#as: |el: AsChild| rsx! {
+        a { href: "/files", ..el.attributes, {el.children} }
     },
+    MarkerIcon { FileText {} }
+    MarkerContent { "Explored 4 files" }
 }
 ```
 

@@ -1,4 +1,5 @@
 use dioxus::prelude::*;
+use dioxus_primitives::AsChild;
 use dioxus_icons::lucide::X;
 use dioxus_primitives::dialog::{
     self, DialogCtx, DialogDescriptionProps, DialogTitleProps,
@@ -195,7 +196,7 @@ pub fn SheetDescription(props: DialogDescriptionProps) -> Element {
 #[component]
 pub fn SheetClose(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
-    r#as: Option<Callback<Vec<Attribute>, Element>>,
+    r#as: Option<Callback<AsChild, Element>>,
     children: Element,
 ) -> Element {
     let ctx: DialogCtx = use_context();
@@ -210,7 +211,7 @@ pub fn SheetClose(
     let merged = merge_attributes(vec![base, attributes]);
 
     if let Some(dynamic) = r#as {
-        dynamic.call(merged)
+        dynamic.call(AsChild::new(merged, children))
     } else {
         rsx! {
             button { ..merged, {children} }

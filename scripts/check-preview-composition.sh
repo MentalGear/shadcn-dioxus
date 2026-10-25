@@ -179,6 +179,8 @@ declare -A allowed_root=(
                        # hover_card & tooltip variants/main
     ["ContentAlign"]=1 # sibling of `ContentSide`: plain enum off the crate root, not
                        # markup -- preview/src/theme.rs (`ThemePicker`'s end-aligned panel)
+    ["AsChild"]=1      # the plain struct an `as` callback receives (row 395), not markup --
+                       # docs_nav.rs, main.rs, theme.rs, charts_gallery.rs, the email dashboard
 )
 
 trim() {

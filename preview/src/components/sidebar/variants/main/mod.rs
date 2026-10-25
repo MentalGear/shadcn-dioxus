@@ -15,6 +15,7 @@ use crate::components::sidebar::{
 use crate::components::skeleton::Skeleton;
 use dioxus_icons::lucide::{ChevronRight, Circle};
 use dioxus::prelude::*;
+use dioxus_primitives::AsChild;
 
 // dev-docs/backlog.md row 32: this demo variant uses the plain
 // `dx-sidebar-*` literals (as `sidebar/component.rs` does) for the
@@ -223,8 +224,8 @@ fn TeamSwitcher(teams: &'static [Team]) -> Element {
             SidebarMenuItem {
                 DropdownMenu { class: "dx-sidebar-dropdown-menu",
                     DropdownMenuTrigger { class: "dx-sidebar-dropdown-menu-trigger",
-                        as: move |attributes: Vec<Attribute>| rsx! {
-                            SidebarMenuButton { class: "dx-sidebar-menu-disclosure-button", size: SidebarMenuButtonSize::Lg, attributes,
+                        as: move |el: AsChild| rsx! {
+                            SidebarMenuButton { class: "dx-sidebar-menu-disclosure-button", size: SidebarMenuButtonSize::Lg, attributes: el.attributes,
                                 div { style: "display:flex; flex-shrink:0; align-items:center; justify-content:center; width:2rem; height:2rem; aspect-ratio:1; border-radius:0.5rem; background:var(--dx-sidebar-accent); color:var(--dx-sidebar-accent-foreground);",
                                     DemoIcon {}
                                 }
@@ -276,16 +277,16 @@ fn NavMain(items: &'static [NavMainItem]) -> Element {
                 for item in items.iter() {
                     Collapsible {
                         default_open: item.is_active,
-                        as: move |attributes: Vec<Attribute>| rsx! {
-                            SidebarMenuItem { key: "{item.title}", attributes,
+                        as: move |el: AsChild| rsx! {
+                            SidebarMenuItem { key: "{item.title}", attributes: el.attributes,
                                 CollapsibleTrigger { class: "dx-sidebar-collapsible-trigger",
-                                    as: move |attributes: Vec<Attribute>| rsx! {
+                                    as: move |el: AsChild| rsx! {
                                         SidebarMenuButton {
                                             class: "dx-sidebar-menu-disclosure-button",
                                             tooltip: rsx! {
                                                 {item.title}
                                             },
-                                            attributes,
+                                            attributes: el.attributes,
                                             DemoIcon {}
                                             span { {item.title} }
                                             ChevronIcon {}
@@ -297,8 +298,8 @@ fn NavMain(items: &'static [NavMainItem]) -> Element {
                                         for sub_item in item.items {
                                             SidebarMenuSubItem { key: "{sub_item.title}",
                                                 SidebarMenuSubButton {
-                                                    as: move |attributes: Vec<Attribute>| rsx! {
-                                                        a { href: sub_item.url, ..attributes,
+                                                    as: move |el: AsChild| rsx! {
+                                                        a { href: sub_item.url, ..el.attributes,
                                                             span { {sub_item.title} }
                                                         }
                                                     },
@@ -325,8 +326,8 @@ fn NavProjects(projects: &'static [Project]) -> Element {
                 for project in projects.iter() {
                     SidebarMenuItem { key: "{project.name}",
                         SidebarMenuButton {
-                            as: move |attributes: Vec<Attribute>| rsx! {
-                                a { href: project.url, ..attributes,
+                            as: move |el: AsChild| rsx! {
+                                a { href: project.url, ..el.attributes,
                                     DemoIcon {}
                                     span { {project.name} }
                                 }
@@ -334,8 +335,8 @@ fn NavProjects(projects: &'static [Project]) -> Element {
                         }
                         DropdownMenu { class: "dx-sidebar-dropdown-menu",
                             DropdownMenuTrigger { class: "dx-sidebar-dropdown-menu-trigger",
-                                as: move |attributes: Vec<Attribute>| rsx! {
-                                    SidebarMenuAction { show_on_hover: true, attributes,
+                                as: move |el: AsChild| rsx! {
+                                    SidebarMenuAction { show_on_hover: true, attributes: el.attributes,
                                         DemoIcon {}
                                         span { class: "dx-sidebar-sr-only", "More" }
                                     }
@@ -387,8 +388,8 @@ fn NavUser() -> Element {
             SidebarMenuItem {
                 DropdownMenu { class: "dx-sidebar-dropdown-menu",
                     DropdownMenuTrigger { class: "dx-sidebar-dropdown-menu-trigger",
-                        as: move |attributes: Vec<Attribute>| rsx! {
-                            SidebarMenuButton { class: "dx-sidebar-menu-disclosure-button", size: SidebarMenuButtonSize::Lg, attributes,
+                        as: move |el: AsChild| rsx! {
+                            SidebarMenuButton { class: "dx-sidebar-menu-disclosure-button", size: SidebarMenuButtonSize::Lg, attributes: el.attributes,
                                 ImageAvatar {
                                     size: AvatarImageSize::Small,
                                     style: "border-radius:0.5rem;",

@@ -13,15 +13,16 @@ button {
 }
 ```
 
-To render the button as a link (shadcn's "As Link"), pass `as` and render the anchor yourself. The anchor takes the button's attributes and handlers:
+To render the button as a link (shadcn's "As Link", Radix's `asChild`), pass `as`. The callback gets an `AsChild`: the button's attributes, its `onclick` and other handlers included, and its children. Spread the one on the anchor and render the other inside it:
 
 ```rust
 Button {
     variant: ButtonVariant::Secondary,
     size: ButtonSize::Sm,
-    r#as: move |attrs: Vec<Attribute>| rsx! {
-        a { href: "/login", ..attrs, "Login" }
+    r#as: |el: AsChild| rsx! {
+        a { href: "/login", ..el.attributes, {el.children} }
     },
+    "Login"
 }
 ```
 

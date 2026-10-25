@@ -4,6 +4,7 @@ use crate::components::dropdown_menu::{
     DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 };
 use dioxus::prelude::*;
+use dioxus_primitives::AsChild;
 use dioxus_icons::lucide::ChevronDown;
 
 /// A dropdown menu trigger living in the trailing addon, choosing the input's scope.
@@ -23,11 +24,11 @@ pub fn Demo() -> Element {
                         // `as` renders the trigger AS a compact ghost `Button` (xs, like
                         // shadcn's `InputGroupButton`): 14px text, 12px chevron, 4px gap.
                         DropdownMenuTrigger {
-                            as: move |attributes: Vec<Attribute>| rsx! {
+                            as: move |el: AsChild| rsx! {
                                 Button {
                                     variant: ButtonVariant::Ghost,
                                     size: ButtonSize::Xs,
-                                    attributes,
+                                    attributes: el.attributes,
                                     "{scope}"
                                     ChevronDown {}
                                 }

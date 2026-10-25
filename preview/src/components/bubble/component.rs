@@ -1,4 +1,5 @@
 use dioxus::prelude::*;
+use dioxus_primitives::AsChild;
 use dioxus_primitives::dioxus_attributes::attributes;
 use dioxus_primitives::merge_attributes;
 
@@ -121,12 +122,13 @@ pub fn Bubble(
 }
 
 /// The bubble's content. To turn the bubble into a real link or button (so it
-/// is focusable and exposes the right role), pass `as` and render the element
-/// yourself with the text inside it; its accessible name is that text.
+/// is focusable and exposes the right role), pass `as`: the callback gets the
+/// content's attributes and children as an [`AsChild`] and renders them on and in
+/// its own element; its accessible name is that text.
 #[component]
 pub fn BubbleContent(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
-    r#as: Option<Callback<Vec<Attribute>, Element>>,
+    r#as: Option<Callback<AsChild, Element>>,
     children: Element,
 ) -> Element {
     let base = attributes!(div {
@@ -137,7 +139,7 @@ pub fn BubbleContent(
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/bubble/style.css") }
         if let Some(dynamic) = r#as {
-            {dynamic.call(merged)}
+            {dynamic.call(AsChild::new(merged, children))}
         } else {
             div { ..merged, {children} }
         }

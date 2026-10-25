@@ -1,4 +1,5 @@
 use dioxus::prelude::*;
+use dioxus_primitives::AsChild;
 
 use crate::components::avatar::{AvatarImageSize, AvatarShape, ImageAvatar};
 use crate::components::sidebar::{
@@ -24,8 +25,8 @@ pub(super) fn EmailSidebar(mut state: Store<EmailClientState>) -> Element {
                             SidebarMenuButton {
                                 class: "ec-compose",
                                 tooltip: rsx! { "Compose (C)" },
-                                r#as: move |attrs: Vec<Attribute>| rsx! {
-                                    button { r#type: "button", onclick: move |_| state.open_compose(), ..attrs,
+                                r#as: move |el: AsChild| rsx! {
+                                    button { r#type: "button", onclick: move |_| state.open_compose(), ..el.attributes,
                                         LucideIcon { kind: IconKind::Pen }
                                         span { "Compose" }
                                     }
@@ -96,13 +97,13 @@ fn FolderItem(
                 tooltip: rsx! {
                     {label}
                 },
-                r#as: move |attrs: Vec<Attribute>| rsx! {
+                r#as: move |el: AsChild| rsx! {
                     button {
                         r#type: "button",
                         onclick: move |_| {
                             state.set_active_folder(folder_id);
                         },
-                        ..attrs,
+                        ..el.attributes,
                         LucideIcon { kind: icon }
                         span { {label} }
                     }

@@ -1,6 +1,7 @@
 use super::super::component::*;
 use crate::components::toast::ToastProvider;
 use dioxus::prelude::*;
+use dioxus_primitives::AsChild;
 use dioxus_primitives::toast::{use_toast, ToastOptions};
 
 /// Three tinted bubbles that are real buttons, grouped in one `BubbleGroup`. Each press answers
@@ -27,33 +28,35 @@ fn Choices() -> Element {
             BubbleGroup {
                 Bubble { variant: BubbleVariant::Tinted, align: BubbleAlign::End,
                     BubbleContent {
-                        r#as: move |attrs: Vec<Attribute>| rsx! {
+                        r#as: move |el: AsChild| rsx! {
                             button {
                                 r#type: "button",
                                 onclick: move |_| toast.info("You clicked forgot password".to_string(), options()),
-                                ..attrs,
-                                "I forgot my password"
+                                ..el.attributes,
+                                {el.children}
                             }
                         },
+                        "I forgot my password"
                     }
                 }
                 Bubble { variant: BubbleVariant::Tinted, align: BubbleAlign::End,
                     BubbleContent {
-                        r#as: move |attrs: Vec<Attribute>| rsx! {
+                        r#as: move |el: AsChild| rsx! {
                             button {
                                 r#type: "button",
                                 onclick: move |_| {
                                     toast.info("You clicked help with subscription".to_string(), options())
                                 },
-                                ..attrs,
-                                "I need help with my subscription"
+                                ..el.attributes,
+                                {el.children}
                             }
                         },
+                        "I need help with my subscription"
                     }
                 }
                 Bubble { variant: BubbleVariant::Tinted, align: BubbleAlign::End,
                     BubbleContent {
-                        r#as: move |attrs: Vec<Attribute>| rsx! {
+                        r#as: move |el: AsChild| rsx! {
                             button {
                                 r#type: "button",
                                 onclick: move |_| {
@@ -63,10 +66,11 @@ fn Choices() -> Element {
                                             options(),
                                         )
                                 },
-                                ..attrs,
-                                "Something else. Talk to a human."
+                                ..el.attributes,
+                                {el.children}
                             }
                         },
+                        "Something else. Talk to a human."
                     }
                 }
             }

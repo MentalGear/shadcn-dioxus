@@ -8,6 +8,7 @@ use super::super::component::{
     Dialog, DialogClose, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 };
 use dioxus::prelude::*;
+use dioxus_primitives::AsChild;
 
 /// shadcn's `dialog-demo`: a form in a `DialogHeader` / fields / `DialogFooter` panel. The X is
 /// the last control in DOM order, so a keyboard open focuses the first field ("Name"). The form
@@ -54,9 +55,10 @@ pub fn Demo() -> Element {
                 }
                 DialogFooter {
                     DialogClose {
-                        r#as: |attributes| rsx! {
-                            Button { variant: ButtonVariant::Outline, attributes, "Cancel" }
+                        r#as: |el: AsChild| rsx! {
+                            Button { variant: ButtonVariant::Outline, attributes: el.attributes, {el.children} }
                         },
+                        "Cancel"
                     }
                     Button { r#type: "submit", "Save changes" }
                 }

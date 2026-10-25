@@ -6,6 +6,7 @@ use crate::components::{
     },
 };
 use dioxus::prelude::*;
+use dioxus_primitives::AsChild;
 
 /// A drawer inside a drawer (Vaul's `NestedRoot`). The child is a plain `Drawer` rendered inside the
 /// parent's `DrawerContent`: opening it steps the parent back (a small shrink and offset), closing it
@@ -31,9 +32,10 @@ pub fn Demo() -> Element {
                 DrawerFooter {
                     Button { onclick: move |_| nested_open.set(true), "Open nested drawer" }
                     DrawerClose {
-                        as: |attributes| rsx! {
-                            Button { variant: ButtonVariant::Outline, attributes, "Close" }
+                        as: |el: AsChild| rsx! {
+                            Button { variant: ButtonVariant::Outline, attributes: el.attributes, {el.children} }
                         },
+                        "Close"
                     }
                 }
 
@@ -50,9 +52,10 @@ pub fn Demo() -> Element {
                         }
                         DrawerFooter {
                             DrawerClose {
-                                as: |attributes| rsx! {
-                                    Button { variant: ButtonVariant::Outline, attributes, "Close nested" }
+                                as: |el: AsChild| rsx! {
+                                    Button { variant: ButtonVariant::Outline, attributes: el.attributes, {el.children} }
                                 },
+                                "Close nested"
                             }
                         }
                     }

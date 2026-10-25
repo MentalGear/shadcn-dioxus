@@ -6,6 +6,7 @@ use crate::components::{
     },
 };
 use dioxus::prelude::*;
+use dioxus_primitives::AsChild;
 
 /// A non-modal drawer (Base UI `modal: false`): no scrim, no focus trap, no scroll lock, and the page
 /// behind it stays interactive. Escape and the close button still close it, and so does a press outside
@@ -54,9 +55,10 @@ pub fn Demo() -> Element {
                 }
                 DrawerFooter {
                     DrawerClose {
-                        as: |attributes| rsx! {
-                            Button { variant: ButtonVariant::Outline, attributes, "Close" }
+                        as: |el: AsChild| rsx! {
+                            Button { variant: ButtonVariant::Outline, attributes: el.attributes, {el.children} }
                         },
+                        "Close"
                     }
                 }
             }
@@ -76,9 +78,10 @@ pub fn Demo() -> Element {
                 }
                 DrawerFooter {
                     DrawerClose {
-                        as: |attributes| rsx! {
-                            Button { variant: ButtonVariant::Outline, attributes, "Close" }
+                        as: |el: AsChild| rsx! {
+                            Button { variant: ButtonVariant::Outline, attributes: el.attributes, {el.children} }
                         },
+                        "Close"
                     }
                 }
             }

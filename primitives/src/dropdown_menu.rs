@@ -9,6 +9,7 @@
 
 use std::rc::Rc;
 
+use crate::AsChild;
 use crate::{
     collection::{
         collection_item, use_collection_provider, use_deferred_collection_focus, use_item,
@@ -430,8 +431,10 @@ pub fn DropdownMenu(props: DropdownMenuProps) -> Element {
 #[derive(Props, Clone, PartialEq)]
 pub struct DropdownMenuTriggerProps {
     /// Render the trigger element as a custom component/element.
+    /// The callback gets the merged attributes (listeners included) and the children, see
+    /// [`AsChild`].
     #[props(default)]
-    pub r#as: Option<Callback<Vec<Attribute>, Element>>,
+    pub r#as: Option<Callback<AsChild, Element>>,
 
     /// The ID of the trigger button. If not provided, an internally
     /// generated ID is used -- see `DropdownMenuTrigger`'s use of
@@ -582,7 +585,7 @@ pub fn DropdownMenuTrigger(props: DropdownMenuTriggerProps) -> Element {
     let merged = crate::top_layer::anchored_trigger_attributes(&ctx.content_id.cloned(), merged);
 
     if let Some(dynamic) = props.r#as {
-        dynamic.call(merged)
+        dynamic.call(AsChild::new(merged, props.children))
     } else {
         rsx! {
             button {

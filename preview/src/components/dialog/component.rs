@@ -1,5 +1,6 @@
 use crate::components::button::{Button, ButtonSize, ButtonVariant};
 use dioxus::prelude::*;
+use dioxus_primitives::AsChild;
 use dioxus_icons::lucide::X;
 use dioxus_primitives::dialog::{self, DialogCtx, DialogDescriptionProps, DialogTitleProps};
 use dioxus_primitives::keyboard_inset::{use_keyboard_panel, KeyboardInset};
@@ -110,11 +111,11 @@ fn DialogCornerClose() -> Element {
             DialogClose {
                 "data-slot": "dialog-close",
                 aria_label: "Close",
-                r#as: |close_attributes| rsx! {
+                r#as: |el: AsChild| rsx! {
                     Button {
                         variant: ButtonVariant::Ghost,
                         size: ButtonSize::IconSm,
-                        attributes: close_attributes,
+                        attributes: el.attributes,
                         X {}
                     }
                 },
@@ -124,14 +125,14 @@ fn DialogCornerClose() -> Element {
 }
 
 /// Closes the enclosing [`Dialog`] (shadcn's `DialogClose`). Renders a `<button type="button">`;
-/// `r#as` renders another element (typically a `Button`) with the close behaviour in its
-/// `attributes`, as shadcn's `render={<Button />}`.
+/// `r#as` renders another element (typically a `Button`) from the [`AsChild`] it gets: the close
+/// behaviour is in its `attributes`, the label in its `children`, as shadcn's `render={<Button />}`.
 // No `document::Link` (as `SheetClose`): it reads `DialogCtx`, so it only renders inside a
 // `Dialog`, which already links the stylesheet.
 #[component]
 pub fn DialogClose(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
-    r#as: Option<Callback<Vec<Attribute>, Element>>,
+    r#as: Option<Callback<AsChild, Element>>,
     children: Element,
 ) -> Element {
     let ctx: DialogCtx = use_context();
@@ -145,7 +146,7 @@ pub fn DialogClose(
     let merged = merge_attributes(vec![base, attributes]);
 
     if let Some(dynamic) = r#as {
-        dynamic.call(merged)
+        dynamic.call(AsChild::new(merged, children))
     } else {
         rsx! {
             button { ..merged, {children} }
@@ -184,8 +185,8 @@ pub fn DialogFooter(
             {children}
             if show_close_button {
                 DialogClose {
-                    r#as: |close_attributes| rsx! {
-                        Button { variant: ButtonVariant::Outline, attributes: close_attributes, "Close" }
+                    r#as: |el: AsChild| rsx! {
+                        Button { variant: ButtonVariant::Outline, attributes: el.attributes, "Close" }
                     },
                 }
             }

@@ -11,6 +11,7 @@ use crate::components::{
     tooltip::{Tooltip, TooltipContent, TooltipTrigger},
 };
 use dioxus::prelude::*;
+use dioxus_primitives::AsChild;
 use dioxus_icons::lucide::{
     ArrowUp, Globe, Image, MessageCircleDashed, Paperclip, Plus, RotateCw, Telescope,
 };
@@ -129,7 +130,7 @@ pub fn Demo() -> Element {
                     CardAction {
                         Tooltip {
                             TooltipTrigger {
-                                as: move |attributes: Vec<Attribute>| rsx! {
+                                as: move |el: AsChild| rsx! {
                                     Button {
                                         variant: ButtonVariant::Outline,
                                         size: ButtonSize::Icon,
@@ -140,7 +141,7 @@ pub fn Demo() -> Element {
                                             turns.write().clear();
                                             queued.set(0);
                                         },
-                                        attributes,
+                                        attributes: el.attributes,
                                         RotateCw {}
                                     }
                                 },
@@ -205,13 +206,13 @@ pub fn Demo() -> Element {
                             InputGroupAddon { align: InputGroupAlign::Start,
                                 DropdownMenu {
                                     DropdownMenuTrigger {
-                                        as: move |attributes: Vec<Attribute>| rsx! {
+                                        as: move |el: AsChild| rsx! {
                                             Button {
                                                 variant: ButtonVariant::Outline,
                                                 size: ButtonSize::IconSm,
                                                 r#type: "button",
                                                 aria_label: "Add files",
-                                                attributes,
+                                                attributes: el.attributes,
                                                 Plus {}
                                             }
                                         },

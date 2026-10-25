@@ -6,6 +6,7 @@ use super::super::component::{
     Dialog, DialogClose, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 };
 use dioxus::prelude::*;
+use dioxus_primitives::AsChild;
 
 /// shadcn's `dialog-close-button`: the default corner X, plus a `DialogClose` in a start-aligned
 /// footer (`<DialogFooter className="sm:justify-start">`).
@@ -44,9 +45,10 @@ pub fn Demo() -> Element {
             }
             DialogFooter { style: "justify-content: flex-start;",
                 DialogClose {
-                    r#as: |attributes| rsx! {
-                        Button { attributes, "Close" }
+                    r#as: |el: AsChild| rsx! {
+                        Button { attributes: el.attributes, {el.children} }
                     },
+                    "Close"
                 }
             }
         }

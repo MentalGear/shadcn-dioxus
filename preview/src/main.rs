@@ -35,7 +35,7 @@ use dioxus_icons::lucide::{
     ExternalLink, FileText, Hash, House, Mail, Menu, Monitor, Pause, Play, SkipBack, SkipForward,
 };
 use dioxus_primitives::direction::{Direction, DirectionProvider};
-use dioxus_primitives::{ContentAlign, ContentSide};
+use dioxus_primitives::{AsChild, ContentAlign, ContentSide};
 use nav_link::NavLink;
 
 #[cfg(test)]
@@ -1372,10 +1372,10 @@ fn page_sections_submenu(sections: &'static [&'static str]) -> Element {
             for title in sections.iter().copied() {
                 SidebarMenuSubItem { key: "{title}",
                     SidebarMenuSubButton {
-                        as: move |attributes: Vec<Attribute>| rsx! {
+                        as: move |el: AsChild| rsx! {
                             a {
                                 href: "#{docs_section_slug(title)}",
-                                ..attributes,
+                                ..el.attributes,
                                 Hash { size: "0.875rem", "aria-hidden": "true" }
                                 span { "{title}" }
                             }
@@ -1468,8 +1468,8 @@ fn DocsLayout(
                                 SidebarMenuItem {
                                     SidebarMenuButton {
                                         is_active: active == DocsNavActive::Home,
-                                        as: move |attributes: Vec<Attribute>| rsx! {
-                                            NavLink { to: Route::home(), attributes,
+                                        as: move |el: AsChild| rsx! {
+                                            NavLink { to: Route::home(), attributes: el.attributes,
                                                 House { size: "1rem", "aria-hidden": "true" }
                                                 span { "Home" }
                                             }
@@ -1490,8 +1490,8 @@ fn DocsLayout(
                                 SidebarMenuItem {
                                     SidebarMenuButton {
                                         is_active: active == DocsNavActive::Overview,
-                                        as: move |attributes: Vec<Attribute>| rsx! {
-                                            NavLink { to: Route::docs(), attributes,
+                                        as: move |el: AsChild| rsx! {
+                                            NavLink { to: Route::docs(), attributes: el.attributes,
                                                 FileText { size: "1rem", "aria-hidden": "true" }
                                                 span { "Overview" }
                                             }
@@ -1514,8 +1514,8 @@ fn DocsLayout(
                                 SidebarMenuItem {
                                     SidebarMenuButton {
                                         is_active: active == DocsNavActive::Demos,
-                                        as: move |attributes: Vec<Attribute>| rsx! {
-                                            NavLink { to: Route::demos(), attributes,
+                                        as: move |el: AsChild| rsx! {
+                                            NavLink { to: Route::demos(), attributes: el.attributes,
                                                 Monitor { size: "1rem", "aria-hidden": "true" }
                                                 span { "Demos" }
                                             }
@@ -1525,12 +1525,12 @@ fn DocsLayout(
                                 SidebarMenuItem {
                                     SidebarMenuButton {
                                         is_active: active == DocsNavActive::Charts,
-                                        as: move |attributes: Vec<Attribute>| rsx! {
+                                        as: move |el: AsChild| rsx! {
                                             // Current on every chart type (`/charts/bar/` ...), not only on `/charts/`.
                                             NavLink {
                                                 to: Route::charts_index(),
                                                 active: active == DocsNavActive::Charts,
-                                                attributes,
+                                                attributes: el.attributes,
                                                 ChartColumn { size: "1rem", "aria-hidden": "true" }
                                                 span { "Charts" }
                                             }
@@ -1912,8 +1912,8 @@ fn ComponentHighlight(demo: ComponentDemoData) -> Element {
                                         class: "dx-docs-collapsible-trigger dx-accordion-trigger",
                                         "data-style": "accordion",
                                         "data-chevron": "start",
-                                        r#as: move |attrs: Vec<Attribute>| rsx! {
-                                            button { ..attrs,
+                                        r#as: move |el: AsChild| rsx! {
+                                            button { ..el.attributes,
                                                 ChevronDown {
                                                     class: "dx-accordion-expand-icon",
                                                     size: "16px",

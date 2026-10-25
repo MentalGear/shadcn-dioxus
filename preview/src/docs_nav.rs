@@ -40,6 +40,7 @@ use dioxus_icons::lucide::{
     Bell, ChartColumn, ChevronDown, ChevronsUpDown, Compass, Layers, LayoutGrid, MessageSquare,
     SquareCheck,
 };
+use dioxus_primitives::AsChild;
 use std::collections::HashSet;
 
 /// Runs inline, inside the sidebar, before the lists. Copies the remembered order onto `<html>` (an unknown or
@@ -150,8 +151,8 @@ fn nav_item(name: &'static str, active: DocsNavActive) -> Element {
         SidebarMenuItem { key: "{name}",
             SidebarMenuButton {
                 is_active: active == DocsNavActive::Component(name),
-                as: move |attributes: Vec<Attribute>| rsx! {
-                    NavLink { to: Route::component(name), attributes,
+                as: move |el: AsChild| rsx! {
+                    NavLink { to: Route::component(name), attributes: el.attributes,
                         {name.replace("_", " ")}
                         ExtraBadge { name, tip: ExtraBadgeTip::Title }
                     }

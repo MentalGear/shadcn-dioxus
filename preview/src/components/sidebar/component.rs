@@ -6,6 +6,7 @@ use crate::components::sheet::{
 use crate::components::skeleton::Skeleton;
 use crate::components::tooltip::{Tooltip, TooltipContent, TooltipTrigger};
 use dioxus::prelude::*;
+use dioxus_primitives::AsChild;
 use dioxus_icons::lucide::PanelLeft;
 use dioxus_primitives::dioxus_attributes::attributes;
 use dioxus_primitives::js_listener::{use_js_listeners, JsListeners};
@@ -545,7 +546,7 @@ pub fn SidebarGroup(
 
 #[component]
 pub fn SidebarGroupLabel(
-    r#as: Option<Callback<Vec<Attribute>, Element>>,
+    r#as: Option<Callback<AsChild, Element>>,
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
     children: Element,
 ) -> Element {
@@ -557,7 +558,7 @@ pub fn SidebarGroupLabel(
     let merged = merge_attributes(vec![base, attributes]);
 
     if let Some(dynamic) = r#as {
-        dynamic.call(merged)
+        dynamic.call(AsChild::new(merged, children))
     } else {
         rsx! {
             document::Link { rel: "stylesheet", href: asset!("/src/components/sidebar/style.css") }
@@ -568,7 +569,7 @@ pub fn SidebarGroupLabel(
 
 #[component]
 pub fn SidebarGroupAction(
-    r#as: Option<Callback<Vec<Attribute>, Element>>,
+    r#as: Option<Callback<AsChild, Element>>,
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
     children: Element,
 ) -> Element {
@@ -582,7 +583,7 @@ pub fn SidebarGroupAction(
     let merged = merge_attributes(vec![base, attributes]);
 
     if let Some(dynamic) = r#as {
-        dynamic.call(merged)
+        dynamic.call(AsChild::new(merged, children))
     } else {
         rsx! {
             document::Link { rel: "stylesheet", href: asset!("/src/components/sidebar/style.css") }
@@ -688,7 +689,7 @@ pub fn SidebarMenuButton(
     #[props(default)] size: SidebarMenuButtonSize,
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
     #[props(default)] tooltip: Option<Element>,
-    r#as: Option<Callback<Vec<Attribute>, Element>>,
+    r#as: Option<Callback<AsChild, Element>>,
     children: Element,
 ) -> Element {
     let ctx = use_sidebar();
@@ -713,7 +714,7 @@ pub fn SidebarMenuButton(
 
     let Some(tooltip_content) = tooltip else {
         return if let Some(dynamic) = r#as {
-            dynamic.call(merged)
+            dynamic.call(AsChild::new(merged, children))
         } else {
             rsx! {
                 document::Link { rel: "stylesheet", href: asset!("/src/components/sidebar/style.css") }
@@ -731,11 +732,11 @@ pub fn SidebarMenuButton(
             class: "dx-sidebar-tooltip",
             disabled: hidden,
             TooltipTrigger {
-                as: move |tooltip_attrs: Vec<Attribute>| {
-                    let final_attrs = merge_attributes(vec![tooltip_attrs, merged.clone()]);
+                as: move |el: AsChild| {
+                    let final_attrs = merge_attributes(vec![el.attributes, merged.clone()]);
                     let children = children.clone();
                     if let Some(dynamic) = &r#as {
-                        dynamic.call(final_attrs)
+                        dynamic.call(AsChild::new(final_attrs, children))
                     } else {
                         rsx! { button { ..final_attrs, {children} } }
                     }
@@ -755,7 +756,7 @@ pub fn SidebarMenuButton(
 #[component]
 pub fn SidebarMenuAction(
     #[props(default = false)] show_on_hover: bool,
-    r#as: Option<Callback<Vec<Attribute>, Element>>,
+    r#as: Option<Callback<AsChild, Element>>,
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
     children: Element,
 ) -> Element {
@@ -770,7 +771,7 @@ pub fn SidebarMenuAction(
     let merged = merge_attributes(vec![base, attributes]);
 
     if let Some(dynamic) = r#as {
-        dynamic.call(merged)
+        dynamic.call(AsChild::new(merged, children))
     } else {
         rsx! {
             document::Link { rel: "stylesheet", href: asset!("/src/components/sidebar/style.css") }
@@ -878,7 +879,7 @@ impl SidebarMenuSubButtonSize {
 pub fn SidebarMenuSubButton(
     #[props(default = false)] is_active: bool,
     #[props(default)] size: SidebarMenuSubButtonSize,
-    r#as: Option<Callback<Vec<Attribute>, Element>>,
+    r#as: Option<Callback<AsChild, Element>>,
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
     children: Element,
 ) -> Element {
@@ -892,7 +893,7 @@ pub fn SidebarMenuSubButton(
     let merged = merge_attributes(vec![base, attributes]);
 
     if let Some(dynamic) = r#as {
-        dynamic.call(merged)
+        dynamic.call(AsChild::new(merged, children))
     } else {
         rsx! {
             document::Link { rel: "stylesheet", href: asset!("/src/components/sidebar/style.css") }
