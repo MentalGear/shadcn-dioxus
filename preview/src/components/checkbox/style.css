@@ -5,13 +5,14 @@
    edge). */
 .dx-checkbox {
     /* The touch target: a transparent frame around the 1rem box, so the button is the global hit size
-       (`--dx-control-hit-size`: 24px fine, 44px coarse; theme "Coarse sizing"). Fine, negative margins pull the
+       (`--dx-control-hit-size`: 24px fine, 44px coarse; theme "Coarse sizing"). Fine, a negative bottom margin and
+       a translate (not a negative top margin, which a Field's own `margin-top` would override) pull the
        frame back so the layout is the 1rem box's; coarse, the frame is layout in the block axis (a stack of
        checkboxes grows to 44px each and so never overlaps) and still negative sideways, so the glyph keeps
        the label gap. The glyph is painted by `.dx-checkbox-indicator` inside the frame, so the fill, the edge
        and the rings stay 1rem whatever the target. */
     --checkbox-hit-pad: max(0px, calc((var(--dx-control-hit-size, var(--dx-pick-coarse, 2.75rem) var(--dx-pick-fine, 1.5rem)) - 1rem) / 2));
-    --checkbox-hit-margin: var(--dx-pick-coarse, 0px) var(--dx-pick-fine, calc(-1 * var(--checkbox-hit-pad)));
+    --checkbox-hit-pull: var(--dx-pick-coarse, 0px) var(--dx-pick-fine, calc(-1 * var(--checkbox-hit-pad)));
 
     /* A constant 1rem square that is a FLEX box, never an inline-block
        (Nova's `flex size-4 items-center justify-center`,
@@ -37,11 +38,12 @@
     margin: 0;
     background-color: transparent;
     color: var(--dx-foreground);
-    margin-block: var(--checkbox-hit-margin) var(--checkbox-hit-margin);
+    margin-block: 0 calc(2 * var(--checkbox-hit-pull));
     margin-inline: calc(-1 * var(--checkbox-hit-pad));
 
     /* The ring is the box-shadow token on :focus-visible; the UA outline would be a second ring. */
     outline: none;
+    translate: 0 var(--checkbox-hit-pull);
 }
 
 .dx-checkbox-indicator {

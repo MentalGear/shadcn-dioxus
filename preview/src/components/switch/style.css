@@ -21,13 +21,13 @@
   --dx-switch-thumb-size: 1rem;
 
   /* The touch target: a transparent frame around the track, so the button is at least the global hit size
-   * (`--dx-control-hit-size`: 24px fine, 44px coarse; theme "Coarse sizing"). Fine, negative margins pull the
-   * frame back so the layout is the track's; coarse, the frame is layout in the block axis (stacked switches
+   * (`--dx-control-hit-size`: 24px fine, 44px coarse; theme "Coarse sizing"). Fine, a negative bottom margin and a
+   * translate pull the frame back so the layout is the track's; coarse, the frame is layout in the block axis (stacked switches
    * never overlap) and negative sideways, so the track keeps the label gap. The track is the button's
    * `::before`, laid over the content box. */
   --dx-switch-hit-x: max(0px, calc((var(--dx-control-hit-size, var(--dx-pick-coarse, 2.75rem) var(--dx-pick-fine, 1.5rem)) - var(--dx-switch-width)) / 2));
   --dx-switch-hit-y: max(0px, calc((var(--dx-control-hit-size, var(--dx-pick-coarse, 2.75rem) var(--dx-pick-fine, 1.5rem)) - var(--dx-switch-height)) / 2));
-  --dx-switch-hit-margin-y: var(--dx-pick-coarse, 0px) var(--dx-pick-fine, calc(-1 * var(--dx-switch-hit-y)));
+  --dx-switch-hit-pull: var(--dx-pick-coarse, 0px) var(--dx-pick-fine, calc(-1 * var(--dx-switch-hit-y)));
 
   position: relative;
   display: inline-flex;
@@ -50,13 +50,14 @@
   color: inherit;
   font: inherit;
   letter-spacing: inherit;
-  margin-block: var(--dx-switch-hit-margin-y) var(--dx-switch-hit-margin-y);
+  margin-block: 0 calc(2 * var(--dx-switch-hit-pull));
   margin-inline: calc(-1 * var(--dx-switch-hit-x));
   outline: none;
   text-align: inherit;
   text-indent: 0;
   text-shadow: none;
   text-transform: none;
+  translate: 0 var(--dx-switch-hit-pull);
   word-spacing: inherit;
 }
 
