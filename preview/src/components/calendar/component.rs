@@ -397,7 +397,10 @@ pub(crate) fn CalendarMonthView(
 // "October 2026" as a visually hidden live region, because a select's own name ("Month") does not
 // say which month a prev/next click landed on.
 #[component]
-fn CalendarCaption(layout: CaptionLayout) -> Element {
+fn CalendarCaption(
+    /// The caption's layout: plain `Month Year` text (`Label`, the default), a month and a year select (`Dropdown`), or only the month (`DropdownMonths`) or the year (`DropdownYears`) as a select.
+    layout: CaptionLayout,
+) -> Element {
     if layout == CaptionLayout::Label {
         let attributes = attributes!(div {
             class: "dx-calendar-month-title",
@@ -555,6 +558,7 @@ fn CalendarSelectYearValue(props: CalendarSelectYearValueProps) -> Element {
 
 #[component]
 fn CalendarGrid(
+    /// The `id` of the grid's `<table>`, if it needs one.
     #[props(default)] id: Option<String>,
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
 ) -> Element {
@@ -610,7 +614,10 @@ fn CalendarGridWeekNumberHeader() -> Element {
 }
 
 #[component]
-fn CalendarGridWeekNumber(week_number: u8) -> Element {
+fn CalendarGridWeekNumber(
+    /// The number shown in this row's week-number cell: ISO week numbers for a Monday week start, otherwise the week holding January 1st is week 1.
+    week_number: u8,
+) -> Element {
     let base = attributes!(td {
         class: "dx-calendar-grid-weeknum"
     });

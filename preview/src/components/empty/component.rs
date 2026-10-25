@@ -28,6 +28,7 @@ impl EmptyMediaVariant {
 #[component]
 pub fn Empty(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The empty state's header and any content.
     children: Element,
 ) -> Element {
     let base = attributes!(div { class: "dx-empty", "data-dx-root": "" });
@@ -42,6 +43,7 @@ pub fn Empty(
 #[component]
 pub fn EmptyHeader(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The media, title and description.
     children: Element,
 ) -> Element {
     let base = attributes!(div { class: "dx-empty-header" });
@@ -57,8 +59,10 @@ pub fn EmptyHeader(
 /// square; `Default` renders it plain.
 #[component]
 pub fn EmptyMedia(
+    /// The look: `Default` draws the icon plain, `Icon` puts it in a filled rounded square.
     #[props(default)] variant: EmptyMediaVariant,
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The icon or illustration.
     children: Element,
 ) -> Element {
     let base = attributes!(div { class: "dx-empty-media" });
@@ -76,6 +80,7 @@ pub fn EmptyMedia(
 #[component]
 pub fn EmptyTitle(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The heading text.
     children: Element,
 ) -> Element {
     let base = attributes!(div { class: "dx-empty-title" });
@@ -90,6 +95,7 @@ pub fn EmptyTitle(
 #[component]
 pub fn EmptyDescription(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The supporting text under the title.
     children: Element,
 ) -> Element {
     let base = attributes!(div { class: "dx-empty-description" });
@@ -104,6 +110,7 @@ pub fn EmptyDescription(
 #[component]
 pub fn EmptyContent(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The actions, typically one or more `Button`s.
     children: Element,
 ) -> Element {
     let base = attributes!(div { class: "dx-empty-content" });

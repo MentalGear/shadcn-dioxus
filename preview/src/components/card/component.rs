@@ -27,6 +27,7 @@ pub fn Card(
     #[props(default)]
     size: CardSize,
     #[props(extends=GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The card's parts: a header, content and footer.
     children: Element,
 ) -> Element {
     let base = attributes!(div { class: "dx-card", "data-dx-root": "", "data-slot": "card" });
@@ -42,6 +43,7 @@ pub fn Card(
 #[component]
 pub fn CardHeader(
     #[props(extends=GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The title, description and any action.
     children: Element,
 ) -> Element {
     let base = attributes!(div { class: "dx-card-header", "data-slot": "card-header" });
@@ -55,6 +57,7 @@ pub fn CardHeader(
 #[component]
 pub fn CardTitle(
     #[props(extends=GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The card's heading text.
     children: Element,
 ) -> Element {
     let base = attributes!(div { class: "dx-card-title", "data-slot": "card-title" });
@@ -68,6 +71,7 @@ pub fn CardTitle(
 #[component]
 pub fn CardDescription(
     #[props(extends=GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The supporting text under the title.
     children: Element,
 ) -> Element {
     let base = attributes!(div { class: "dx-card-description", "data-slot": "card-description" });
@@ -81,6 +85,7 @@ pub fn CardDescription(
 #[component]
 pub fn CardAction(
     #[props(extends=GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The control to show in the header, such as a `Button`.
     children: Element,
 ) -> Element {
     let base = attributes!(div { class: "dx-card-action", "data-slot": "card-action" });
@@ -94,6 +99,7 @@ pub fn CardAction(
 #[component]
 pub fn CardContent(
     #[props(extends=GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The card's main content.
     children: Element,
 ) -> Element {
     let base = attributes!(div { class: "dx-card-content", "data-slot": "card-content" });
@@ -107,6 +113,7 @@ pub fn CardContent(
 #[component]
 pub fn CardFooter(
     #[props(extends=GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The footer's actions or details.
     children: Element,
 ) -> Element {
     let base = attributes!(div { class: "dx-card-footer", "data-slot": "card-footer" });

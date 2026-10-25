@@ -257,6 +257,7 @@ pub fn ImageAvatar(props: ImageAvatarProps) -> Element {
 #[component]
 pub fn AvatarBadge(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The badge's icon, if it has one.
     #[props(default)] children: Element,
 ) -> Element {
     let base = attributes!(span { class: "dx-avatar-badge" });
@@ -273,6 +274,7 @@ pub fn AvatarBadge(
 #[component]
 pub fn AvatarGroup(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The avatars, ending with an `AvatarGroupCount` for the "+N" tile.
     children: Element,
 ) -> Element {
     let base = attributes!(div { class: "dx-avatar-group" });
@@ -288,6 +290,7 @@ pub fn AvatarGroup(
 #[component]
 pub fn AvatarGroupCount(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The count text, such as `+3`, or an icon.
     children: Element,
 ) -> Element {
     let base = attributes!(div { class: "dx-avatar-group-count" });

@@ -89,6 +89,7 @@ pub fn DrawerHandle(props: DrawerHandleProps) -> Element {
 #[component]
 pub fn DrawerHeader(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The drawer's title and description.
     children: Element,
 ) -> Element {
     let base = attributes!(div { class: "dx-drawer-header", "data-slot": "drawer-header" });
@@ -102,6 +103,7 @@ pub fn DrawerHeader(
 #[component]
 pub fn DrawerFooter(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The footer's actions.
     children: Element,
 ) -> Element {
     let base = attributes!(div { class: "dx-drawer-footer", "data-slot": "drawer-footer" });

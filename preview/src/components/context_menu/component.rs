@@ -280,6 +280,7 @@ pub fn ContextMenuLabel(
     #[props(default)]
     inset: bool,
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The label text.
     children: Element,
 ) -> Element {
     let base = attributes!(div {

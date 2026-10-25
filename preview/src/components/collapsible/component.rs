@@ -60,6 +60,7 @@ pub fn CollapsibleContent(props: CollapsibleContentProps) -> Element {
 #[component]
 pub fn CollapsibleItem(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The item's trigger and content.
     children: Element,
 ) -> Element {
     rsx! {
@@ -77,6 +78,7 @@ pub fn CollapsibleItem(
 #[component]
 pub fn CollapsibleList(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The items, stacked in a column.
     children: Element,
 ) -> Element {
     rsx! {

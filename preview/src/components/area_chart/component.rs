@@ -39,7 +39,10 @@ pub use dioxus_primitives::chart::TooltipIndicator;
 /// demos on every page that renders them rather than being mirrored into
 /// the docs site's own CSS.
 #[component]
-pub fn AreaChartGallery(children: Element) -> Element {
+pub fn AreaChartGallery(
+    /// The demos to show in the gallery.
+    children: Element,
+) -> Element {
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/area_chart/style.css") }
         div { class: "dx-area-chart-gallery", {children} }
