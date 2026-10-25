@@ -154,9 +154,7 @@ pub(crate) fn align_offset(
     let wanted = match align {
         ScrollAlign::Start => start,
         ScrollAlign::End => end.saturating_sub(viewport),
-        ScrollAlign::Center => start
-            .saturating_add(size / 2)
-            .saturating_sub(viewport / 2),
+        ScrollAlign::Center => start.saturating_add(size / 2).saturating_sub(viewport / 2),
         ScrollAlign::Nearest => {
             if start >= current && end <= current.saturating_add(viewport) {
                 current
@@ -281,9 +279,17 @@ mod tests {
             assert!(at(99, 0, align) <= 4_400, "{align:?}");
             assert!(at(2, 0, align) <= 4_400, "{align:?}");
         }
-        assert_eq!(at(99, 0, Start), 4_400, "the last rows cannot reach the top");
+        assert_eq!(
+            at(99, 0, Start),
+            4_400,
+            "the last rows cannot reach the top"
+        );
         assert_eq!(at(99, 0, Center), 4_400);
-        assert_eq!(at(0, 900, End), 0, "the first row's bottom is under the viewport");
+        assert_eq!(
+            at(0, 900, End),
+            0,
+            "the first row's bottom is under the viewport"
+        );
         assert_eq!(at(1, 900, Center), 0);
     }
 

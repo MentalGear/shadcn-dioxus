@@ -445,12 +445,18 @@ mod tests {
         assert!(grid.viewport_known());
         let start = ScrollAlign::Start;
         // Row 5,000 is 180,000px down; column 30 is the pane's 29th item, 3,480px along.
-        assert_eq!(grid.align_cell(5_000, Some(30), start), (Some(180_000), Some(3_480)));
+        assert_eq!(
+            grid.align_cell(5_000, Some(30), start),
+            (Some(180_000), Some(3_480))
+        );
         // A pinned column is always in view: only the rows move. No column, no horizontal move.
         assert_eq!(grid.align_cell(10, Some(0), start), (Some(360), None));
         assert_eq!(grid.align_cell(10, None, start), (Some(360), None));
         // Past the last row goes to the last, clamped to the scroll range (600px of body).
-        assert_eq!(grid.align_cell(99_999, None, start).0, Some(10_000 * 36 - 600));
+        assert_eq!(
+            grid.align_cell(99_999, None, start).0,
+            Some(10_000 * 36 - 600)
+        );
         // The engine now holds the target, so `Nearest` from there is a no-op.
         assert_eq!(
             grid.align_cell(10_000, None, ScrollAlign::Nearest).0,

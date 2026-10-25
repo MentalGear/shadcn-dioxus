@@ -13,7 +13,8 @@ const ALIGNS: [(ScrollAlign, &str); 4] = [
     (ScrollAlign::End, "End"),
     (ScrollAlign::Nearest, "Nearest"),
 ];
-/// Every row is this tall, so a jump lands where its alignment says, to the pixel.
+/// Every row is this tall (the demo's stylesheet says the same), so a jump lands where its
+/// alignment says, to the pixel.
 const ROW: u32 = 48;
 
 #[component]
@@ -72,7 +73,7 @@ pub fn Demo() -> Element {
   display: flex;
   align-items: center;
   box-sizing: border-box;
-  height: {ROW}px;
+  height: 48px;
   padding: 0 0.9rem;
   border-bottom: 1px solid var(--dx-border);
   background: var(--dx-card);

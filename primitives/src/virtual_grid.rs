@@ -109,9 +109,9 @@ pub use crate::data_view::SortDirection;
 use crate::direction::{use_direction, Direction, HorizontalNav};
 use crate::r#virtual::{
     cv_chunks, engine_row_keys, justified_navigate, parse_cell, render_key, resolve_index,
-    scroll_dom_to, use_find_in_page, use_scroller_attach, use_virtual_bridge, with_pinned, Bridge, ChunkSkip, Engine, FindLayer,
-    FindLayout, GridEngine, GridKey, GridShape, JustifiedEngine, JustifiedOptions, Pins, RowPlan,
-    ScrollReport, ScrollRequest, SizeEstimates, DEFAULT_SIZE,
+    scroll_dom_to, use_find_in_page, use_scroller_attach, use_virtual_bridge, with_pinned, Bridge,
+    ChunkSkip, Engine, FindLayer, FindLayout, GridEngine, GridKey, GridShape, JustifiedEngine,
+    JustifiedOptions, Pins, RowPlan, ScrollReport, ScrollRequest, SizeEstimates, DEFAULT_SIZE,
 };
 pub use crate::r#virtual::{
     use_virtual_scroller, ScrollAlign, VirtualScroller, VirtualizeMode, DEFAULT_AUTO_THRESHOLD,
@@ -226,8 +226,8 @@ pub struct VirtualGridProps {
     /// all four edges of a two-axis scroller.
     #[props(default)]
     pub fade: ScrollFade,
-    /// A handle from [`use_virtual_scroller`] that scrolls the grid to a row or a cell: `scroll_to_index(row, align)` and `scroll_to_cell(row, column, align)`. It works in both
-    /// modes (see [`VirtualScroller`]).
+    /// A handle from [`use_virtual_scroller`] that scrolls to an item by index
+    /// (`VirtualGrid` also by cell), in either mode: see [`VirtualScroller`].
     pub scroller: Option<VirtualScroller>,
     /// Additional attributes to apply to the container element.
     #[props(extends = GlobalAttributes)]
@@ -1095,8 +1095,8 @@ pub struct VirtualWrapGridProps {
     /// all four edges of a two-axis scroller.
     #[props(default)]
     pub fade: ScrollFade,
-    /// A handle from [`use_virtual_scroller`] that scrolls the grid to an item: `scroll_to_index(index, align)` scrolls the row that holds it. It works in both
-    /// modes (see [`VirtualScroller`]).
+    /// A handle from [`use_virtual_scroller`] that scrolls to an item by index
+    /// (`VirtualGrid` also by cell), in either mode: see [`VirtualScroller`].
     pub scroller: Option<VirtualScroller>,
     /// Additional attributes to apply to the container element.
     #[props(extends = GlobalAttributes)]
@@ -1602,8 +1602,8 @@ pub struct VirtualJustifiedGridProps {
     /// all four edges of a two-axis scroller.
     #[props(default)]
     pub fade: ScrollFade,
-    /// A handle from [`use_virtual_scroller`] that scrolls the grid to a tile: `scroll_to_index(index, align)` scrolls the row that holds it (vertically; the canvas's horizontal scroll is not moved). It works in both
-    /// modes (see [`VirtualScroller`]).
+    /// A handle from [`use_virtual_scroller`] that scrolls to an item by index
+    /// (`VirtualGrid` also by cell), in either mode: see [`VirtualScroller`].
     pub scroller: Option<VirtualScroller>,
     /// Additional attributes to apply to the container element.
     #[props(extends = GlobalAttributes)]

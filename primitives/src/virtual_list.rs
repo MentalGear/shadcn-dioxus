@@ -150,10 +150,8 @@ pub struct VirtualListProps {
     /// all four edges of a two-axis scroller.
     #[props(default)]
     pub fade: ScrollFade,
-    /// A handle from [`use_virtual_scroller`] that scrolls the list to a row:
-    /// `scroller.scroll_to_index(index, ScrollAlign::Start)`. It works in both modes, including
-    /// for a row that is not mounted (windowed) or is being skipped by the browser
-    /// (content-visibility); see the module documentation.
+    /// A handle from [`use_virtual_scroller`] that scrolls to an item by index
+    /// (`VirtualGrid` also by cell), in either mode: see [`VirtualScroller`].
     pub scroller: Option<VirtualScroller>,
     /// Additional attributes to apply to the container element.
     #[props(extends = GlobalAttributes)]

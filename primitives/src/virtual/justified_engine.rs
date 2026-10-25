@@ -540,7 +540,10 @@ mod tests {
         let max = layout.total_height.round() as u32 - 480;
         assert_eq!(engine.align_tile(usize::MAX, ScrollAlign::Start), Some(max));
         assert!(!JustifiedEngine::new().has_layout());
-        assert_eq!(JustifiedEngine::new().align_tile(0, ScrollAlign::Start), None);
+        assert_eq!(
+            JustifiedEngine::new().align_tile(0, ScrollAlign::Start),
+            None
+        );
     }
 
     #[test]

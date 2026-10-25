@@ -54,8 +54,8 @@ pub(crate) use justified_engine::{navigate as justified_navigate, JustifiedEngin
 pub(crate) use layout::justified::JustifiedOptions;
 pub use mode::{VirtualizeMode, DEFAULT_AUTO_THRESHOLD};
 pub(crate) use pin::{pin_in_flow, with_pinned};
-pub use scroll_to::{use_virtual_scroller, ScrollAlign, VirtualScroller};
 pub(crate) use scroll_to::{scroll_dom_to, use_scroller_attach, ScrollRequest};
+pub use scroll_to::{use_virtual_scroller, ScrollAlign, VirtualScroller};
 pub(crate) use size_index::{SizeEstimates, DEFAULT_SIZE};
 pub(crate) use types::ScrollReport;
 pub(crate) use virtualizer::Engine;
