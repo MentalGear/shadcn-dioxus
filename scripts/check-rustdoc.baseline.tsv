@@ -5,38 +5,38 @@ preview/src/components/checkpoint/component.rs	unclosed HTML tag `this`
 preview/src/main.rs	unclosed HTML tag `name`
 preview/src/main.rs	unclosed HTML tag `reason`
 preview/src/nav_link.rs	unresolved link to `is_current`: no item named `is_current` in scope
-primitives/src/carousel.rs	public documentation for `CarouselAlign` links to private item `CAROUSEL_DRAG_JS`
-primitives/src/carousel.rs	public documentation for `CarouselAlign` links to private item `CAROUSEL_SCROLL_TO_JS`
-primitives/src/carousel.rs	public documentation for `CarouselAlign` links to private item `CAROUSEL_SCROLL_TRACKING_JS`
-primitives/src/carousel.rs	public documentation for `CarouselAutoplay` links to private item `AutoplayContext`
-primitives/src/carousel.rs	public documentation for `CarouselAutoplay` links to private item `step_next`
-primitives/src/carousel.rs	public documentation for `CarouselContent` links to private item `CAROUSEL_SCROLL_TO_JS`
-primitives/src/carousel.rs	public documentation for `CarouselIndicators` links to private item `CarouselContext::set_selected`
-primitives/src/carousel.rs	public documentation for `CarouselItem` links to private item `CarouselContext::selected`
-primitives/src/carousel.rs	public documentation for `CarouselItem` links to private item `CarouselContext::visible_range`
-primitives/src/carousel.rs	public documentation for `CarouselItem` links to private item `use_carousel_drag`
-primitives/src/carousel.rs	public documentation for `CarouselItem` links to private item `use_carousel_scroll_tracking`
-primitives/src/carousel.rs	public documentation for `CarouselVirtualContent` links to private item `CAROUSEL_SCROLL_TO_JS`
-primitives/src/carousel.rs	public documentation for `CarouselVirtualContent` links to private item `CarouselContext::item_ids`
-primitives/src/carousel.rs	public documentation for `CarouselVirtualContent` links to private item `CarouselContext::loop_wraps`
-primitives/src/carousel.rs	public documentation for `CarouselVirtualContent` links to private item `CarouselContext::selected`
-primitives/src/carousel.rs	public documentation for `CarouselVirtualContent` links to private item `CarouselContext::virtualized_loop_active`
-primitives/src/carousel.rs	public documentation for `CarouselVirtualContent` links to private item `CarouselContext`
-primitives/src/carousel.rs	public documentation for `CarouselVirtualContent` links to private item `use_carousel_scroll_tracking`
-primitives/src/carousel.rs	public documentation for `radius` links to private item `effective_radius`
-primitives/src/carousel.rs	public documentation for `stop_on_interaction` links to private item `AutoplayContext::note_interaction`
-primitives/src/carousel.rs	public documentation for `stop_on_mouse_enter` links to private item `AutoplayContext`
-primitives/src/carousel.rs	public documentation for `virtualize` links to private item `effective_radius`
-primitives/src/carousel.rs	unresolved link to `CarouselItem::index`: `CarouselItem` is a function, not a module or type, and cannot have associated items
-primitives/src/carousel.rs	unresolved link to `CarouselProps::r`
-primitives/src/carousel.rs	unresolved link to `CarouselProps::r`: the struct `CarouselProps` has no field or associated item named `r`
-primitives/src/carousel.rs	unresolved link to `CarouselProps::r`: the struct `CarouselProps` has no field or associated item named `r`
-primitives/src/carousel.rs	unresolved link to `CarouselProps::r`: the struct `CarouselProps` has no field or associated item named `r`
-primitives/src/carousel.rs	unresolved link to `CarouselProps::r`: the struct `CarouselProps` has no field or associated item named `r`
-primitives/src/carousel.rs	unresolved link to `CarouselProps::r`: the struct `CarouselProps` has no field or associated item named `r`
-primitives/src/carousel.rs	unresolved link to `CarouselProps::r`: the struct `CarouselProps` has no field or associated item named `r`
-primitives/src/carousel.rs	unresolved link to `Self::render_item`: `CarouselVirtualContent` is a function, not a module or type, and cannot have associated items
-primitives/src/carousel.rs	unresolved link to `crate::r`: no item named `r` in module `dioxus_primitives`
+primitives/src/carousel/autoplay.rs	public documentation for `CarouselAutoplay` links to private item `AutoplayContext`
+primitives/src/carousel/autoplay.rs	public documentation for `CarouselAutoplay` links to private item `step_next`
+primitives/src/carousel/autoplay.rs	public documentation for `stop_on_interaction` links to private item `AutoplayContext::note_interaction`
+primitives/src/carousel/autoplay.rs	public documentation for `stop_on_mouse_enter` links to private item `AutoplayContext`
+primitives/src/carousel/autoplay.rs	unresolved link to `CarouselProps::r`: the struct `CarouselProps` has no field or associated item named `r`
+primitives/src/carousel/content.rs	public documentation for `CarouselContent` links to private item `CAROUSEL_SCROLL_TO_JS`
+primitives/src/carousel/context.rs	unresolved link to `CarouselProps::r`: the struct `CarouselProps` has no field or associated item named `r`
+primitives/src/carousel/indicators.rs	public documentation for `CarouselIndicators` links to private item `CarouselContext::set_selected`
+primitives/src/carousel/indicators.rs	unresolved link to `CarouselItem::index`: `CarouselItem` is a function, not a module or type, and cannot have associated items
+primitives/src/carousel/indicators.rs	unresolved link to `CarouselProps::r`: the struct `CarouselProps` has no field or associated item named `r`
+primitives/src/carousel/item.rs	public documentation for `CarouselItem` links to private item `CarouselContext::selected`
+primitives/src/carousel/item.rs	public documentation for `CarouselItem` links to private item `CarouselContext::visible_range`
+primitives/src/carousel/item.rs	public documentation for `CarouselItem` links to private item `use_carousel_drag`
+primitives/src/carousel/item.rs	public documentation for `CarouselItem` links to private item `use_carousel_scroll_tracking`
+primitives/src/carousel/nav.rs	unresolved link to `CarouselProps::r`: the struct `CarouselProps` has no field or associated item named `r`
+primitives/src/carousel/nav.rs	unresolved link to `CarouselProps::r`: the struct `CarouselProps` has no field or associated item named `r`
+primitives/src/carousel/options.rs	public documentation for `CarouselAlign` links to private item `CAROUSEL_DRAG_JS`
+primitives/src/carousel/options.rs	public documentation for `CarouselAlign` links to private item `CAROUSEL_SCROLL_TO_JS`
+primitives/src/carousel/options.rs	public documentation for `CarouselAlign` links to private item `CAROUSEL_SCROLL_TRACKING_JS`
+primitives/src/carousel/options.rs	unresolved link to `CarouselProps::r`: the struct `CarouselProps` has no field or associated item named `r`
+primitives/src/carousel/virtual_content.rs	public documentation for `CarouselVirtualContent` links to private item `CAROUSEL_SCROLL_TO_JS`
+primitives/src/carousel/virtual_content.rs	public documentation for `CarouselVirtualContent` links to private item `CarouselContext::item_ids`
+primitives/src/carousel/virtual_content.rs	public documentation for `CarouselVirtualContent` links to private item `CarouselContext::loop_wraps`
+primitives/src/carousel/virtual_content.rs	public documentation for `CarouselVirtualContent` links to private item `CarouselContext::selected`
+primitives/src/carousel/virtual_content.rs	public documentation for `CarouselVirtualContent` links to private item `CarouselContext::virtualized_loop_active`
+primitives/src/carousel/virtual_content.rs	public documentation for `CarouselVirtualContent` links to private item `CarouselContext`
+primitives/src/carousel/virtual_content.rs	public documentation for `CarouselVirtualContent` links to private item `use_carousel_scroll_tracking`
+primitives/src/carousel/virtual_content.rs	public documentation for `radius` links to private item `effective_radius`
+primitives/src/carousel/virtual_content.rs	public documentation for `virtualize` links to private item `effective_radius`
+primitives/src/carousel/virtual_content.rs	unresolved link to `CarouselProps::r`
+primitives/src/carousel/virtual_content.rs	unresolved link to `Self::render_item`: `CarouselVirtualContent` is a function, not a module or type, and cannot have associated items
+primitives/src/carousel/virtual_content.rs	unresolved link to `crate::r`: no item named `r` in module `dioxus_primitives`
 primitives/src/chart/components/series/line.rs	public documentation for `Value` links to private item `fmt_decimal`
 primitives/src/chart/components/series/pie.rs	public documentation for `PieLabels` links to private item `render`
 primitives/src/chart/components/series/pie.rs	unresolved link to `Radius::Px(0.0)`: the enum `Radius` has no variant or associated item named `Px(0.0)`

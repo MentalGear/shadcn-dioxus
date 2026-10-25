@@ -1010,7 +1010,7 @@ html[data-theme="light"] [class~="dxc-system"] {
  * Not covered, by design: an element inside a component that carries no `dx-`
  * class (a primitive's inner wrapper, a demo's inline-styled div) keeps the
  * browser's `content-box`; a primitive that needs border-box without this
- * theme must declare it itself (`primitives/src/carousel.rs`'s inline slide
+ * theme must declare it itself (`primitives/src/carousel/helpers.rs`'s inline slide
  * style, `top_layer.rs`), because primitives ship without this file.
  * ========================================================================== */
 :where([class^="dx-"]),

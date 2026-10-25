@@ -4,9 +4,9 @@
  * must not let the custom scroll-end snap interfere with a looping or
  * virtual slider.
  *
- * Two failure classes, one test group each (see `primitives/src/carousel.rs`,
+ * Two failure classes, one test group each (see `primitives/src/carousel/scroll.rs`,
  * `CAROUSEL_SCROLL_TRACKING_JS`'s "Browser-idle gate" and
- * `item_basis_style`'s own docs):
+ * `item_basis_style`'s own docs in `helpers.rs`):
  *
  * 1. OVERSIZED SNAP AREAS. The gap model puts each slide's gap inside its
  *    own box as `padding-inline-start` next to `flex-basis: 100%`, which is
@@ -23,7 +23,7 @@
  *    downstream of it (the `selected` update, the virtual window's re-anchor and
  *    re-render, the instant re-align `scrollBy` with snapping suspended)
  *    mid-gesture -- writing the scroll position while the browser is still
- *    scrolling (THE RULE, `carousel.rs` module doc).
+ *    scrolling (THE RULE, `carousel/mod.rs` module doc).
  *
  * METHOD. A probe installed before the app boots wraps every scroll write
  * (`scrollBy`/`scrollTo`/`scroll`/`scrollIntoView` and the
@@ -678,7 +678,7 @@ test.describe("Carousel wheel band: only at a true end of the data", () => {
 /*
  * The mouse/pen drag rubber-band follows the SAME true-end rule as the wheel
  * band, through the same shared predicate (`carousel_true_end_js!` in
- * `primitives/src/carousel.rs`, spliced into both bridges). A drag decides
+ * `primitives/src/carousel/js_macros.rs`, spliced into both bridges). A drag decides
  * once per edge per gesture, the first time it overdrags past that edge; a
  * refused edge behaves like a drag that simply cannot pass it (the scroller
  * clamps, no transform, the slide settles normally, and a virtual window
@@ -929,7 +929,7 @@ test.describe("Carousel drag band: only at a true end of the data", () => {
  * its physical ends) for ~1s -- where macOS Firefox draws its own native
  * bounce whenever `overscroll-behavior` is `auto`. This crate's own band
  * never fires there. The rule under test (`content_overscroll_style` in
- * `primitives/src/carousel.rs`): the scroll axis is `overscroll-behavior:
+ * `primitives/src/carousel/helpers.rs`): the scroll axis is `overscroll-behavior:
  * none` unless BOTH ends of the rendered slides are true ends, so wherever a
  * flick can clamp at a false end, the platform cannot bounce. (Whether
  * Firefox then shows no bounce is a real-device check: headless

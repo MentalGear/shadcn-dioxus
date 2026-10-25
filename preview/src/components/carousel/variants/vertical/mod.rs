@@ -4,7 +4,7 @@ use dioxus::prelude::*;
 use dioxus_icons::lucide::{ChevronDown, ChevronUp};
 
 /// `CarouselOrientation::Vertical` is the horizontal construction on the
-/// other axis (see `primitives/src/carousel.rs`'s module doc). A vertical
+/// other axis (see `primitives/src/carousel/mod.rs`'s module doc). A vertical
 /// carousel needs an explicit height on `CarouselContent` -- there is
 /// nothing else to derive one from, the same way `ScrollArea` needs one.
 ///

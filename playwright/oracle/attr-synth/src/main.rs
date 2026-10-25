@@ -64,7 +64,7 @@
 //! callers_own_id_on_the_root_is_not_duplicated`): `VirtualDom::new`,
 //! `rebuild_in_place()`, a bounded number of `render_immediate` passes to
 //! drain any synchronous `use_effect`-driven state (`rebuild_in_place`
-//! alone never runs an effect -- `carousel.rs`'s own doc), then
+//! alone never runs an effect -- `carousel/ssr_tests.rs`'s own doc), then
 //! `dioxus_ssr::render(&dom)`. Two of those four files' tests are for the
 //! exact component+attribute pairs this crate also covers
 //! (`dropdown_menu:root:id`, `menubar:menu:id`, `tooltip:content:style`)
@@ -94,7 +94,7 @@
 //! `PopoverContent`/`SelectList`/`TooltipContent` immediately) does not settle within a bounded number of synchronous
 //! passes the way the covered anchored-content components do -- it likely
 //! needs a real async executor polling an actual spawned task, the way
-//! `carousel.rs`'s own doc says its sibling `tooltip.rs` render_immediate
+//! `carousel/ssr_tests.rs`'s own doc says its sibling `tooltip.rs` render_immediate
 //! test sometimes does. Not covered here;
 //! `dropdown_menu:root:id`/`dropdown_menu:trigger:id` above still cover
 //! that file's other two `merge_attributes` sites (and `menubar:*`/
@@ -811,14 +811,14 @@ fn main() {
         let mut dom = VirtualDom::new(case.render);
         dom.rebuild_in_place();
         // `rebuild_in_place` alone never runs an effect (see this repo's
-        // `primitives/src/carousel.rs` `ssr_tests` doc). Several of this crate's targets (e.g.
+        // `primitives/src/carousel/ssr_tests.rs` `ssr_tests` doc). Several of this crate's targets (e.g.
         // `DropdownMenuContent`) are gated behind an animated-open
         // lifecycle signal (`menu_root::use_menu_content_lifecycle`) that
         // only flips from its initial-render value via a plain synchronous
         // `use_effect`, not during the first render pass -- so without
         // this, those elements (and the collision they're meant to
         // synthesize) never appear in the SSR'd output at all. Looping
-        // `render_immediate` a few times (mirroring `carousel.rs`'s own
+        // `render_immediate` a few times (mirroring `carousel/ssr_tests.rs`'s own
         // `next_button_becomes_enabled_once_items_have_registered`, which
         // documents needing more than one pass) drains the effect queue
         // and re-diffs synchronously -- no async executor required, since
