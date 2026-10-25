@@ -38,13 +38,13 @@ pub struct CarouselVirtualContentProps<T: Clone + PartialEq + 'static> {
     /// **Looping lists** never render the same item twice: the effective
     /// radius is capped at `(items.len() - 2) / 2` (5 for 12 items, so 11 of
     /// them), keeping one `data-index` per rendered slide -- see
-    /// [`effective_radius`].
+    /// `effective_radius`.
     #[props(default = 10usize)]
     pub radius: usize,
 
     /// Whether to virtualise at all. `None` (the default) auto-decides:
     /// virtualise only once `items.len() > 2 * radius + 1` (with the
-    /// effective radius -- see [`effective_radius`]; there is
+    /// effective radius -- see `effective_radius`; there is
     /// something to save by not rendering every slide). `Some(false)`
     /// always renders the full list (find-in-page/browse-mode reach every
     /// slide, at the cost of the DOM holding all of them). `Some(true)`
@@ -89,13 +89,13 @@ pub struct CarouselVirtualContentProps<T: Clone + PartialEq + 'static> {
 /// fixed set of children (`dev-docs/backlog.md` row 91 has the
 /// construction this implements).
 ///
-/// Publishes its own count into [`CarouselContext`] the same way
+/// Publishes its own count into `CarouselContext` the same way
 /// [`CarouselItem`]'s own registration effect does, so
 /// [`CarouselPrevious`]/[`CarouselNext`]/[`CarouselIndicators`]/[`CarouselIndicator`]/
 /// [`CarouselAutoplay`]/[`CarouselRotationControl`]/the root's own arrow
 /// keys/[`use_carousel`] all work the same with it -- none of
 /// them know this component exists; every one of them only ever reads or
-/// writes [`CarouselContext`].
+/// writes `CarouselContext`.
 ///
 /// This must be used inside a [`Carousel`] component, in place of
 /// [`CarouselContent`] (never alongside it).
@@ -115,22 +115,22 @@ pub struct CarouselVirtualContentProps<T: Clone + PartialEq + 'static> {
 /// Once mounted, if `virtualize` resolves to `true` (explicit, or the
 /// auto default once `items.len() > 2 * radius + 1`), only a window of
 /// `2 * radius + 1` logical POSITIONS around an internal `anchor` renders,
-/// via [`crate::r#virtual::window`] (`wrap` = [`CarouselProps::r#loop`] AND
+/// via `crate::r#virtual::window` (`wrap` = `CarouselProps::r#loop` AND
 /// at least two slides -- one slide never loops, per this component's own
 /// doc, "N=1 disables loop"). Each rendered slide carries both its stable
 /// `data-index` (`position.rem_euclid(N)`, may repeat across positions
 /// once `N < 2 * radius + 1`) and its own unique `data-position` (the
 /// value every slide is keyed and DOM-id'd by, so a position that survives
-/// an anchor move keeps its own DOM node -- and [`Self::render_item`]'s
+/// an anchor move keeps its own DOM node -- and [`CarouselVirtualContentProps::render_item`]'s
 /// own component state along with it).
 ///
 /// With virtualisation inactive (a small data set, or
-/// `virtualize: Some(false)`), [`CarouselProps::r#loop`] has no seamless
+/// `virtualize: Some(false)`), `CarouselProps::r#loop` has no seamless
 /// path available to it at all -- exactly like the plain children API, it
 /// is gated by [`CarouselProps::loop_mode`] (see that enum's own doc):
 /// [`LoopMode::Rewind`] is the APG **rewind** style --
 /// `position == data index` throughout, and this component publishes a
-/// real per-data-index DOM id into [`CarouselContext::item_ids`] exactly
+/// real per-data-index DOM id into `CarouselContext::item_ids` exactly
 /// like [`CarouselItem`] does, so [`Carousel`]'s own built-in mount/
 /// selected `scrollBy`-by-id paging effect (and drag, wheel bounce, scroll
 /// tracking) drive it without any bespoke code in this component at all,
@@ -143,12 +143,12 @@ pub struct CarouselVirtualContentProps<T: Clone + PartialEq + 'static> {
 ///
 /// ## Seamless loop
 ///
-/// Only reached once virtualisation is active AND [`CarouselProps::r#loop`]
+/// Only reached once virtualisation is active AND `CarouselProps::r#loop`
 /// is on -- **unaffected by [`CarouselProps::loop_mode`] entirely**: this
-/// path publishes `true` into [`CarouselContext::virtualized_loop_active`]
+/// path publishes `true` into `CarouselContext::virtualized_loop_active`
 /// (a small effect just above, keyed off the identical condition this
 /// window-building code already computes), which is the OTHER thing (besides
-/// `LoopMode::Rewind`) [`CarouselContext::loop_wraps`] treats as "wraps" --
+/// `LoopMode::Rewind`) `CarouselContext::loop_wraps` treats as "wraps" --
 /// so `loop_mode`'s default staying at [`LoopMode::Seamless`] never
 /// disables this path; it only ever matters for the two content shapes
 /// that have no seamless illusion to offer, above. `position` is allowed
@@ -157,17 +157,17 @@ pub struct CarouselVirtualContentProps<T: Clone + PartialEq + 'static> {
 /// so paging forward past the last data index does not rewind visibly
 /// across every intervening slide the way the non-virtualised loop above
 /// does -- it keeps sliding physically forward, one already-mounted window
-/// slide at a time. [`CarouselContext::item_ids`] stays empty in this mode
+/// slide at a time. `CarouselContext::item_ids` stays empty in this mode
 /// (a data index can label more than one position at once, so there is no
 /// single DOM id to publish per data index) -- the built-in paging effect
 /// therefore harmlessly no-ops, and this component owns the reaction to
-/// [`CarouselContext::selected`] changing itself:
+/// `CarouselContext::selected` changing itself:
 ///
 /// - A change of exactly one data index -- [`CarouselPrevious`]/
 ///   [`CarouselNext`]/the root's arrow keys/autoplay all step by exactly
 ///   one -- resolves to the nearest matching POSITION (`anchor \u{b1} 1`)
 ///   and is animated there with the very same scroller-only
-///   `scrollBy`-by-id helper ([`CAROUSEL_SCROLL_TO_JS`]) every other
+///   `scrollBy`-by-id helper (`CAROUSEL_SCROLL_TO_JS`) every other
 ///   paging path in this module already uses. The target position is
 ///   already a rendered window slide (`radius >= 1`), so this alone never
 ///   touches the window.
@@ -179,7 +179,7 @@ pub struct CarouselVirtualContentProps<T: Clone + PartialEq + 'static> {
 ///   the intervening ones -- and instantly re-aligns the scroller to it.
 /// - Once a physical scroll genuinely settles (a real drag release, a
 ///   wheel/trackpad gesture, or the animated paging call above finishing
-///   -- see [`use_carousel_scroll_tracking`]'s own doc for what "settles"
+///   -- see `use_carousel_scroll_tracking`'s own doc for what "settles"
 ///   means), the settle's own reported POSITION (not just its data index)
 ///   becomes the new `anchor` directly, covering a native gesture that
 ///   moved the track by more than one slide with no extra arithmetic.
@@ -187,7 +187,7 @@ pub struct CarouselVirtualContentProps<T: Clone + PartialEq + 'static> {
 /// Either way, `anchor` changing re-renders the window keyed by
 /// `position` (so every surviving slide keeps its DOM node across the
 /// move), and a dedicated effect immediately re-aligns the scroller to
-/// the new centre with one more instant [`CAROUSEL_SCROLL_TO_JS`] call --
+/// the new centre with one more instant `CAROUSEL_SCROLL_TO_JS` call --
 /// needed because the window's own far edge changing (one position
 /// dropped, one added) shifts every later flex sibling's physical layout
 /// offset by one slide's width, which a plain DOM patch does not
@@ -206,7 +206,7 @@ pub struct CarouselVirtualContentProps<T: Clone + PartialEq + 'static> {
 ///
 /// ## Non-loop, virtualised
 ///
-/// With virtualisation active but [`CarouselProps::r#loop`] off, the
+/// With virtualisation active but `CarouselProps::r#loop` off, the
 /// window still clamps at the ends (`wrap = false` -- position never
 /// leaves `[0, N)`, so it equals data index throughout), and the existing
 /// edge rubber-band bridges apply exactly as they do for the plain
@@ -217,8 +217,8 @@ pub struct CarouselVirtualContentProps<T: Clone + PartialEq + 'static> {
 /// `N == 0` renders no slides at all (the scroller shell still mounts, an
 /// empty scroll region, matching [`CarouselContent`]'s own shape with zero
 /// children). `N == 1` disables looping regardless of
-/// [`CarouselProps::r#loop`] -- there is nothing to wrap to. A dynamic
-/// change in `N` reclamps [`CarouselContext::selected`] the same way it
+/// `CarouselProps::r#loop` -- there is nothing to wrap to. A dynamic
+/// change in `N` reclamps `CarouselContext::selected` the same way it
 /// already does for the plain children API (`clamp_selected`); this
 /// component's own `anchor` degrades gracefully too, since
 /// `anchor.rem_euclid(N)` is well-defined for any `N > 0` regardless of

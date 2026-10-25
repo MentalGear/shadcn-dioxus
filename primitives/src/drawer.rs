@@ -21,7 +21,7 @@
 //!
 //! ## Drag construction
 //!
-//! The whole gesture lives in one real-DOM script ([`GESTURE_JS`], installed by
+//! The whole gesture lives in one real-DOM script (`GESTURE_JS`, installed by
 //! `use_drawer_gesture` on [`DrawerContent`]'s own root element), and the Rust
 //! side only reacts to three messages: `start` (with the panel's measured size),
 //! `move` (the cumulative offset, oriented so positive always means "toward the
@@ -36,12 +36,12 @@
 //!   slow drag as a fling on a busy main thread, where several
 //!   `pointermove`s collapse into one effect run. The script timestamps every
 //!   sample with the event's own `timeStamp` and takes the velocity over the last
-//!   [`VELOCITY_WINDOW_MS`] of movement before the release; a pause before
+//!   `VELOCITY_WINDOW_MS` of movement before the release; a pause before
 //!   letting go is therefore no flick, and a flick needs at least
-//!   [`FLICK_MIN_DISTANCE_PX`] of travel so jitter cannot read as one.
+//!   `FLICK_MIN_DISTANCE_PX` of travel so jitter cannot read as one.
 //! - **The direction is decided in one place.** Orientation (down for
 //!   `Bottom`, up for `Top`, and so on) is applied once, in the script, from the
-//!   `vertical`/`sign` pair [`EdgeSide::drag_axis`] hands it; everything after
+//!   `vertical`/`sign` pair `EdgeSide::drag_axis` hands it; everything after
 //!   -- the live offset, the rubber band, the release decision -- works on that
 //!   one oriented number, so a drag toward the OPEN side can never be positive.
 //!   `DrawerSide`s are physical screen edges (a `Right` drawer slides in from the
@@ -99,7 +99,7 @@
 //! (`--dx-breakpoint-md`, 768px) and a right panel at and above it. It is resolved
 //! ONCE, in Rust ([`use_resolved_edge_side`]), into a concrete side that everything
 //! downstream sees -- the `data-side` attribute the theme keys on, the drag axis
-//! [`GESTURE_JS`] runs on, the handle, the slide -- so no stylesheet or script ever
+//! `GESTURE_JS` runs on, the handle, the slide -- so no stylesheet or script ever
 //! has to know what `auto` means, and an explicit side is exactly that side.
 //!
 //! ## Snap points
@@ -114,9 +114,9 @@
 //! it rests; a snap change is a custom-property change, so the same `transform` transition that eases a
 //! release settles it. The live drag is the one custom property `--dx-drawer-drag`, added by the same
 //! stylesheet formula (always present while snapped, `0px` at rest: the web renderer applies a changed `style`
-//! per declaration and never removes one that left the string). The release decision runs on the same numbers in Rust ([`snap_rests`], from the
-//! viewport a resize listener reports), picked by [`settle_on_release`]: the panel closes by the one
-//! existing rule ([`should_close_on_release`], applied to the travel below the LOWEST snap point) and
+//! per declaration and never removes one that left the string). The release decision runs on the same numbers in Rust (`snap_rests`, from the
+//! viewport a resize listener reports), picked by `settle_on_release`: the panel closes by the one
+//! existing rule (`should_close_on_release`, applied to the travel below the LOWEST snap point) and
 //! otherwise settles on the snap point nearest the release position projected by the release velocity.
 //! `active_snap_point` / `default_active_snap_point` / `on_active_snap_point_change` make the active point
 //! controlled or not; a controlled value the parent does not change snaps the panel back. Without
@@ -139,7 +139,7 @@
 //! small scale and offset, and closing the child (the moment its close STARTS)
 //! restores it. Escape closes only the top-most because the browser's `cancel` goes
 //! to the top-most modal `<dialog>` only; a drag closes only the top-most because
-//! [`GESTURE_JS`] ignores a press whose nearest drawer is not its own (a child drawer
+//! `GESTURE_JS` ignores a press whose nearest drawer is not its own (a child drawer
 //! is a DOM descendant of its parent, so its `pointerdown` bubbles through it). Scroll
 //! lock stays single because `crate::scroll_lock`'s counter nests.
 
@@ -880,7 +880,7 @@ pub struct DrawerRootProps {
 /// - `data-snap`: with `snap_points`, `"partial"` while the active snap point is not the largest
 ///   (the content does not scroll and a press anywhere drags) and `"full"` at the largest; absent
 ///   without snap points.
-/// - `data-dx-drawer`: always `"content"`; the marker [`GESTURE_JS`] uses to tell this
+/// - `data-dx-drawer`: always `"content"`; the marker `GESTURE_JS` uses to tell this
 ///   panel's presses from a nested drawer's.
 #[component]
 pub fn Drawer(props: DrawerRootProps) -> Element {
@@ -982,7 +982,7 @@ pub struct DrawerContentProps {
 /// for why `transform` and not `translate`) tracking the pointer.
 ///
 /// Owns the drag gesture for both itself and any [`DrawerHandle`] rendered
-/// inside it -- see [`GESTURE_JS`]'s doc for why one listener on this
+/// inside it -- see `GESTURE_JS`'s doc for why one listener on this
 /// component's own root element covers both surfaces.
 ///
 /// ## Example

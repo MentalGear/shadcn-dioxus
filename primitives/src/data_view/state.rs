@@ -171,7 +171,7 @@ pub struct ViewState {
     /// The filter text, as typed.
     pub filter: String,
     /// 0-based current page (may exceed the last page after the rows shrink;
-    /// [`derive`](super::derive) clamps it for display).
+    /// [`derive`](super::derive()) clamps it for display).
     pub page: usize,
     /// Rows per page.
     pub page_size: usize,

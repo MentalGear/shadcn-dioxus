@@ -1,4 +1,4 @@
-//! [`derive`]: the one pipeline `filter -> sort or manual order -> page`.
+//! [`derive()`]: the one pipeline `filter -> sort or manual order -> page`.
 
 use super::field::Field;
 use super::stages::{paginate, tri_state, SortDirection};
@@ -35,7 +35,7 @@ pub struct View {
     pub select_all: CheckboxState,
 }
 
-/// [`derive`] for rows described by [`Field`]s: the active sort field's
+/// [`derive()`] for rows described by [`Field`]s: the active sort field's
 /// comparator, and the filter text of every filterable field.
 pub fn derive<T: 'static>(
     rows: &[T],

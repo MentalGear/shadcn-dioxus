@@ -19,14 +19,14 @@
 //! one `g[data-slot="chart-series"][data-kind="radar"]` group `Chart`
 //! already wraps this function's return value in.
 //!
-//! ## Hover, and why this file calls [`use_chart`] a second time
+//! ## Hover, and why this file calls [`use_chart`](crate::chart::context::use_chart) a second time
 //!
 //! `SeriesRenderContext::active_index` is a plain, **read-only**
 //! `Option<usize>` (`components::layout`'s own doc: "only `Chart`'s own
 //! hit-bands ... write it") -- correct for the three Cartesian families,
 //! whose hit-bands `chart.rs` itself renders, but no help to a
 //! family that must render its *own* hit-target shape (an angular wedge,
-//! not a rectangular band). This file calls [`use_chart`] itself, exactly
+//! not a rectangular band). This file calls [`use_chart`](crate::chart::context::use_chart) itself, exactly
 //! as `components::tooltip`/`components::legend` already do, to reach the
 //! same [`crate::chart::context::ChartContext::active_index`] `Signal`
 //! `Chart` itself reads and writes -- a second, unconditional call to a
@@ -38,7 +38,7 @@
 //! ## Tooltip position and data table (orthogonal to this file)
 //!
 //! 1. **Tooltip position.** Solved in the shared layer: this family
-//!    publishes [`anchors`] (each spoke's vertex of the largest value, used
+//!    publishes `anchors` (each spoke's vertex of the largest value, used
 //!    when the keyboard opens the tooltip) and `Chart` registers it with
 //!    `Follow::Pointer`, so on hover the tooltip follows the pointer, with
 //!    the active spoke picked by this file's own wedge hit-targets.

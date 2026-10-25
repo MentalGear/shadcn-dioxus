@@ -15,14 +15,14 @@
 //!   precedes the body, so the rows axis starts that much later;
 //! - **the pinned cell**: the cell that holds keyboard focus is always rendered, even far
 //!   outside the window (a `Ctrl+End` jump, or a reader who scrolled away), see
-//!   [`with_pinned`](super::pin::with_pinned). A cell that is unmounted while it has focus loses it, and the grid pattern
+//!   [`with_pinned`]. A cell that is unmounted while it has focus loses it, and the grid pattern
 //!   needs exactly one cell in the tab order;
 //! - **navigation**: [`GridShape::navigate`] is the WAI-ARIA grid pattern's key map (arrows,
 //!   Home/End, Ctrl+Home/End, PageUp/PageDown), with no wrapping at an edge. Horizontal keys
 //!   arrive here already resolved to `Prev`/`Next` by `direction.rs`, so RTL needs nothing.
 //!
 //! The wrapping "gallery" layout (a fixed number of columns, items flowing into rows) windows
-//! only the rows: it uses one [`Engine`] over `ceil(count / columns)` rows, plus [`with_pinned`](super::pin::with_pinned)
+//! only the rows: it uses one [`Engine`] over `ceil(count / columns)` rows, plus [`with_pinned`]
 //! and [`GridShape::wrapping`] from this module.
 
 use super::pin::with_pinned;

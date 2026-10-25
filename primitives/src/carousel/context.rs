@@ -34,7 +34,7 @@ pub(super) struct CarouselContext {
     /// `dev-docs/conformance-harness.md`'s tier-2 Rule 14 describes for
     /// `SelectTrigger`/`DropdownMenuTrigger`/etc.).
     pub(super) content_id: Signal<String>,
-    /// Whether `loop`ing is enabled -- see [`CarouselProps::r#loop`]. This
+    /// Whether `loop`ing is enabled -- see `CarouselProps::r#loop`. This
     /// is the raw prop value; [`Self::loop_wraps`] is what every consumer
     /// that decides "does the boundary actually wrap" should read instead.
     pub(super) loop_enabled: ReadSignal<bool>,

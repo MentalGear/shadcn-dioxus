@@ -53,7 +53,7 @@ pub struct CarouselIndicatorsProps {
 ///    associated with the newly focused tab" (no `Enter` needed,
 ///    `examples/carousel-2-tablist.html`'s own keyboard table). Building
 ///    [`CarouselIndicator`] directly on `crate::collection` (below) makes this
-///    one line (`onfocus` calling [`CarouselContext::set_selected`]
+///    one line (`onfocus` calling `CarouselContext::set_selected`
 ///    directly) instead of a manual-activation component fighting its own
 ///    contract.
 ///
@@ -69,7 +69,7 @@ pub struct CarouselIndicatorsProps {
 /// [`Carousel`]'s own resolved [`Direction`] -- wraps at both ends
 /// unconditionally, per APG's own tablist keyboard table ("If focus is on
 /// the last tab, moves focus to the first tab"). This is the *tablist's*
-/// own always-circular navigation, independent of [`CarouselProps::r#loop`]
+/// own always-circular navigation, independent of `CarouselProps::r#loop`
 /// (which governs [`CarouselPrevious`]/[`CarouselNext`]/the root keyboard
 /// instead, and defaults to `false`).
 ///
@@ -120,7 +120,7 @@ pub fn CarouselIndicators(props: CarouselIndicatorsProps) -> Element {
 #[derive(Props, Clone, PartialEq)]
 pub struct CarouselIndicatorProps {
     /// The index of the slide this tab controls (0-based) -- the same
-    /// convention [`CarouselItem::index`] and `tabs.rs`'s own
+    /// convention [`CarouselItemProps::index`] and `tabs.rs`'s own
     /// `TabTrigger`/`TabContent` `index` props use.
     pub index: ReadSignal<usize>,
 

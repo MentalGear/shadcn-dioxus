@@ -3,7 +3,7 @@
 //!
 //! Row identity is a key function; [`ViewState`] is the flat state a view
 //! remembers (sort, filter, page, selection, manual order) with pure
-//! transitions; [`derive`] is the one pipeline `filter -> sort or manual order
+//! transitions; [`derive()`] is the one pipeline `filter -> sort or manual order
 //! -> page` and returns indices and keys, never cloned rows. [`Field`] says how
 //! a row sorts and which text the filter matches. Nothing here renders, owns a
 //! signal or needs a cargo feature (std only), so the Data Table hook, a list

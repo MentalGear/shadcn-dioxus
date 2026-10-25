@@ -17,7 +17,7 @@
 //!   [`Windowing::needs_render`] says a render would draw something different (row 143's
 //!   quantised range, for every consumer);
 //! - for one-axis engines, the shared flows on top: a scroll report with its anchoring
-//!   correction ([`Bridge::scroll_axis`]), a measured item ([`Bridge::measure`]) and
+//!   correction ([`Bridge::scroll_axis`]), a measured item ([`Bridge::measure_exact`]) and
 //!   `scroll_to(index)` ([`Bridge::reveal`]), each writing the corrected `scrollTop` back;
 //! - for every engine, [`Bridge::scroll_to`]: the public scroll-to-index (row 398, `scroll_to.rs`),
 //!   kept until the container has reported its size when it arrives earlier.

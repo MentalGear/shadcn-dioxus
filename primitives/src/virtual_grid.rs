@@ -31,7 +31,7 @@
 //! Both are built on the shared engine (`primitives/src/virtual/`), and share its DOM bridge with
 //! `VirtualList` (one passive scroll listener, one ResizeObserver, a render only when the window
 //! moves) and its pinning of the focused item: each axis is the same
-//! [`Engine`](crate::r#virtual) `VirtualList` uses (a Fenwick tree of item positions, a mounted
+//! `Engine` (`crate::r#virtual`) `VirtualList` uses (a Fenwick tree of item positions, a mounted
 //! range re-centred only once the viewport comes within `buffer / 2` items of its edge, the
 //! canvas size frozen while a scroll runs), so a scroll re-renders Rust about once per few rows
 //! or columns, not once per scroll event.

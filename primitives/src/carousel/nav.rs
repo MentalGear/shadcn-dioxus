@@ -19,7 +19,7 @@ pub struct CarouselPreviousProps {
 ///
 /// A native `<button type="button">` that moves to the previous slide,
 /// genuinely `disabled` (not merely `aria-disabled`) when already at the
-/// first slide -- unless [`CarouselProps::r#loop`] is enabled, in which
+/// first slide -- unless `CarouselProps::r#loop` is enabled, in which
 /// case this is never `disabled` at all (it wraps to the last slide
 /// instead). Default accessible name `"Previous slide"`, overridable with
 /// your own `aria-label`/`aria-labelledby`. `aria-controls` points at the
@@ -76,7 +76,7 @@ pub fn CarouselPrevious(props: CarouselPreviousProps) -> Element {
 /// # CarouselNext
 ///
 /// The mirror of [`CarouselPrevious`]: moves to the next slide, `disabled`
-/// at the last slide unless [`CarouselProps::r#loop`] is enabled (in which
+/// at the last slide unless `CarouselProps::r#loop` is enabled (in which
 /// case it wraps to the first slide instead and is never `disabled`),
 /// default accessible name `"Next slide"`.
 ///
