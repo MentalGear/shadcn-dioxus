@@ -2,12 +2,14 @@
 
 pub mod combobox;
 pub mod empty;
+pub mod group;
 pub mod input;
 pub mod list;
 pub mod option;
 
 pub use combobox::{Combobox, ComboboxProps};
 pub use empty::{ComboboxEmpty, ComboboxEmptyProps};
+pub use group::{ComboboxGroup, ComboboxGroupLabel, ComboboxGroupLabelProps, ComboboxGroupProps};
 pub use input::{ComboboxInput, ComboboxInputProps};
 pub use list::{ComboboxList, ComboboxListProps};
 pub use option::{

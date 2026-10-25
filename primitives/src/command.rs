@@ -99,6 +99,7 @@ use crate::{
         pointer_select_cancel, pointer_select_click, pointer_select_commit, pointer_select_start,
         use_selectable_option, use_selectable_root, use_single_selectable_value, OptionState,
         RcPartialEqValue, SelectableContext, SelectableOptionConfig, SelectionMode,
+        SingleSelectableValue,
     },
     use_controlled, use_id_or, use_unique_id, Controlled,
 };
@@ -239,7 +240,11 @@ pub struct CommandProps<T: Clone + PartialEq + 'static = String> {
 fn use_command_root<T: Clone + PartialEq + 'static>(
     props: &CommandProps<T>,
 ) -> Memo<Vec<RcPartialEqValue>> {
-    let (selected, set_value, _reset_to_default) = use_single_selectable_value(
+    let SingleSelectableValue {
+        values: selected,
+        set_value,
+        ..
+    } = use_single_selectable_value(
         props.value,
         props.default_value.clone(),
         props.on_value_change,

@@ -1,7 +1,8 @@
 use dioxus::prelude::*;
 use dioxus_icons::lucide::{Check, ChevronsUpDown, X};
 use dioxus_primitives::combobox::{
-    self, default_combobox_filter, ComboboxEmptyProps, ComboboxOptionProps,
+    self, default_combobox_filter, ComboboxEmptyProps, ComboboxGroupLabelProps, ComboboxGroupProps,
+    ComboboxOptionProps,
 };
 use dioxus_primitives::{dioxus_attributes::attributes, merge_attributes};
 
@@ -23,6 +24,30 @@ pub struct ComboboxProps<T: Clone + PartialEq + 'static = String> {
     /// Called with the new value (`None` when the selection is cleared).
     #[props(default)]
     pub on_value_change: Callback<Option<T>>,
+
+    /// Form field name: the selected value is submitted under it, as `item_to_value`'s text.
+    #[props(default)]
+    pub name: ReadSignal<Option<String>>,
+
+    /// The text the selected value submits under `name`. Defaults to `item_to_label`.
+    #[props(default)]
+    pub item_to_value: Option<Callback<T, String>>,
+
+    /// Shows a button that clears the selection while something is selected.
+    #[props(default)]
+    pub show_clear: bool,
+
+    /// Marks the input invalid (`aria-invalid="true"`), drawn with the invalid ring.
+    #[props(default)]
+    pub invalid: ReadSignal<bool>,
+
+    /// Content drawn at the input's inline start, inside its edge: an icon or a short text.
+    #[props(default)]
+    pub addon: Option<Element>,
+
+    /// Whether typing highlights the first matching option, so Enter picks it.
+    #[props(default)]
+    pub auto_highlight: ReadSignal<bool>,
 
     /// Whether the combobox is disabled.
     #[props(default)]
@@ -68,6 +93,10 @@ pub struct ComboboxProps<T: Clone + PartialEq + 'static = String> {
     #[props(default)]
     pub aria_label: Option<String>,
 
+    /// The input's id, for a `label` (`FieldLabel { html_for }`) that names it.
+    #[props(default)]
+    pub input_id: ReadSignal<Option<String>>,
+
     /// Accessible name for the listbox of options.
     #[props(default)]
     pub list_aria_label: Option<String>,
@@ -91,6 +120,9 @@ pub fn Combobox<T: Clone + PartialEq + 'static>(props: ComboboxProps<T>) -> Elem
             default_value: props.default_value,
             item_to_label: props.item_to_label,
             on_value_change: props.on_value_change,
+            name: props.name,
+            item_to_value: props.item_to_value,
+            auto_highlight: props.auto_highlight,
             disabled: props.disabled,
             open: props.open,
             default_open: props.default_open,
@@ -102,10 +134,20 @@ pub fn Combobox<T: Clone + PartialEq + 'static>(props: ComboboxProps<T>) -> Elem
             filter: props.filter,
             attributes: merged,
             div { class: "dx-combobox-input-wrapper",
+                if let Some(addon) = props.addon {
+                    div { class: "dx-combobox-addon", {addon} }
+                }
                 combobox::ComboboxInput {
+                    id: props.input_id,
                     class: "dx-combobox-input",
                     placeholder: props.placeholder,
                     aria_label: props.aria_label.clone(),
+                    aria_invalid: if (props.invalid)() { "true" },
+                }
+                if props.show_clear {
+                    combobox::ComboboxClear { class: "dx-combobox-clear",
+                        X { size: "14px" }
+                    }
                 }
                 ChevronsUpDown {
                     class: "dx-combobox-expand-icon",
@@ -160,6 +202,29 @@ pub fn ComboboxOption<T: Clone + PartialEq + 'static>(props: ComboboxOptionProps
                 }
             }
         }
+    }
+}
+
+/// A labelled section of the list. Its options keep the list's one keyboard order, and the whole
+/// group hides while the query leaves none of them visible.
+#[component]
+pub fn ComboboxGroup(props: ComboboxGroupProps) -> Element {
+    let base = attributes!(div { class: "dx-combobox-group" });
+    let merged = merge_attributes(vec![base, props.attributes]);
+
+    rsx! {
+        combobox::ComboboxGroup { id: props.id, attributes: merged, {props.children} }
+    }
+}
+
+/// The heading that names a [`ComboboxGroup`]; the keyboard skips it.
+#[component]
+pub fn ComboboxGroupLabel(props: ComboboxGroupLabelProps) -> Element {
+    let base = attributes!(div { class: "dx-combobox-group-label" });
+    let merged = merge_attributes(vec![base, props.attributes]);
+
+    rsx! {
+        combobox::ComboboxGroupLabel { id: props.id, attributes: merged, {props.children} }
     }
 }
 
@@ -233,6 +298,10 @@ pub struct ComboboxMultiProps<T: Clone + PartialEq + ToString + 'static = String
     #[props(default)]
     pub list_aria_label: Option<String>,
 
+    /// Whether typing highlights the first matching option, so Enter toggles it.
+    #[props(default)]
+    pub auto_highlight: ReadSignal<bool>,
+
     /// Shows a button that clears every chip while anything is selected.
     #[props(default)]
     pub show_clear: bool,
@@ -262,6 +331,7 @@ pub fn ComboboxMulti<T: Clone + PartialEq + ToString + 'static>(
             item_to_label: props.item_to_label,
             on_values_change: props.on_values_change,
             name: props.name,
+            auto_highlight: props.auto_highlight,
             disabled: props.disabled,
             open: props.open,
             default_open: props.default_open,

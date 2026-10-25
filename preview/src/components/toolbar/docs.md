@@ -27,6 +27,10 @@ Toolbar {
 }
 ```
 
+## Orientation
+
+`horizontal: false` makes a vertical toolbar: the bar and each `ToolbarGroup` stack in a column, buttons take the column's width, `ArrowUp`/`ArrowDown` move focus, and a `ToolbarSeparator` inside it is drawn as a horizontal rule (a separator takes the orientation opposite to its toolbar's unless it sets `horizontal`). The root carries `data-orientation`. See the `vertical` variant.
+
 ## Direction / RTL
 
 `Toolbar` accepts a `dir: Option<Direction>` prop. When `horizontal: true` (the default), `ToolbarButton`'s `ArrowLeft`/`ArrowRight` roving focus swaps under RTL. See the `rtl` variant.

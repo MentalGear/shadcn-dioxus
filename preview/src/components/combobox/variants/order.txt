@@ -7,3 +7,8 @@ controlled
 disabled
 dynamic
 custom_items
+clear_form
+groups
+auto_highlight
+invalid
+input_group

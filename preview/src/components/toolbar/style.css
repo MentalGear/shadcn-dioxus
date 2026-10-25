@@ -85,6 +85,27 @@
     background-color: var(--dx-border);
 }
 
+/* `horizontal: false` (`data-orientation="vertical"`): the bar and its groups stack top to bottom,
+ * and every button takes the column's width. The separators in it are horizontal (a separator takes
+ * the orientation opposite to its toolbar's unless it sets `horizontal` itself), so the separator
+ * rule keys on the separator's own `data-orientation`, not on the toolbar's. */
+.dx-toolbar[data-orientation="vertical"] {
+    width: fit-content;
+    flex-flow: column nowrap;
+    align-items: stretch;
+    justify-content: flex-start;
+}
+
+.dx-toolbar[data-orientation="vertical"] .dx-toolbar-group {
+    flex-direction: column;
+}
+
+.dx-toolbar-separator[data-orientation="horizontal"] {
+    width: auto;
+    height: 1px;
+    margin: 5px 0;
+}
+
 .dx-toolbar-content p:not(:where([popover], dialog) *) {
     padding: 0;
     margin: 0;

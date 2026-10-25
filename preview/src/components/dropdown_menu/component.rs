@@ -57,7 +57,14 @@ pub fn DropdownMenuContent(props: DropdownMenuContentProps) -> Element {
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/dropdown_menu/style.css") }
-        dropdown_menu::DropdownMenuContent { id: props.id, attributes: merged, {props.children} }
+        dropdown_menu::DropdownMenuContent {
+            id: props.id,
+            side: props.side,
+            align: props.align,
+            side_offset: props.side_offset,
+            attributes: merged,
+            {props.children}
+        }
     }
 }
 
