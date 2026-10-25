@@ -39,9 +39,14 @@ impl MarkerVariant {
 /// its own element, exactly as with `Item`.
 #[component]
 pub fn Marker(
+    /// The layout: `Default` (inline), `Separator` (a centred label with a divider line on each side)
+    /// or `Border` (a bordered row). Default `Default`.
     #[props(default)] variant: MarkerVariant,
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// Renders the marker as another element, such as a link or a button. The callback receives the
+    /// marker's attributes and children as an `AsChild` and returns the element that carries them.
     r#as: Option<Callback<AsChild, Element>>,
+    /// The marker's parts: a `MarkerIcon` and a `MarkerContent`.
     children: Element,
 ) -> Element {
     let base = attributes!(div {
@@ -68,6 +73,7 @@ pub fn Marker(
 #[component]
 pub fn MarkerIcon(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The decorative icon.
     children: Element,
 ) -> Element {
     let base = attributes!(span {
@@ -91,6 +97,7 @@ pub fn MarkerIcon(
 #[component]
 pub fn MarkerContent(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The marker's text.
     children: Element,
 ) -> Element {
     let shimmer = attributes.iter().any(|a| {

@@ -10,7 +10,7 @@ use dioxus_primitives::direction::{Direction, DirectionProvider};
 /// demo is what actually exercises the rewind behavior. The wrap jumps
 /// **instantly** rather than animating smoothly
 /// across every intervening slide (matching the APG reference's own
-/// basic-style example) -- see `primitives/src/carousel.rs`'s own
+/// basic-style example) -- see `primitives/src/carousel/helpers.rs`'s own
 /// `is_rewind_wrap` doc.
 ///
 /// Two rows -- LTR (5 slides) and RTL (4 slides) -- cover both directions

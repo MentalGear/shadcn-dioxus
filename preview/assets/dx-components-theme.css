@@ -1010,7 +1010,7 @@ html[data-theme="light"] [class~="dxc-system"] {
  * Not covered, by design: an element inside a component that carries no `dx-`
  * class (a primitive's inner wrapper, a demo's inline-styled div) keeps the
  * browser's `content-box`; a primitive that needs border-box without this
- * theme must declare it itself (`primitives/src/carousel.rs`'s inline slide
+ * theme must declare it itself (`primitives/src/carousel/helpers.rs`'s inline slide
  * style, `top_layer.rs`), because primitives ship without this file.
  * ========================================================================== */
 :where([class^="dx-"]),
@@ -1671,7 +1671,7 @@ html:not([data-dx-press-feedback="off"]) [role="radio"][class*=" dx-"]:not([disa
 }
 
 /* The ink is the one property NOT at zero specificity: the engine's top-layer ink fix
- * (`primitives/src/top_layer.rs`, `TOP_LAYER_INK_STYLES_INJECT_JS`) injects `:where([popover]),
+ * (`primitives/src/top_layer/styles.rs`, `TOP_LAYER_INK_STYLES_INJECT_JS`) injects `:where([popover]),
  * :where(dialog) { color: inherit }` into `<head>` at run time, AFTER this file, so at equal
  * (zero) specificity it would win the tie and every panel would inherit the page's ink (an inverted
  * tooltip would print dark text on its dark fill). One attribute selector out-ranks it and still

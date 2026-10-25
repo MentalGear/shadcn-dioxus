@@ -10,9 +10,6 @@ use crate::{merge_attributes, use_animated_open, use_id_or, use_unique_id};
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
 
-// TODO: controlled version
-// TODO: rewrite this to use collapsible
-
 /// Which end of an [`AccordionTrigger`] row the expand chevron sits on.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub enum AccordionChevron {
@@ -39,8 +36,15 @@ struct AccordionContext {
     /// Tracks the next runtime-generated id.
     next_id: Signal<usize>,
 
-    /// The runtime generated ids of the open items.
-    open_items: Signal<Vec<usize>>,
+    /// The uncontrolled open set: the keys of the open items. It also follows a controlled
+    /// change, so an accordion that goes from controlled to uncontrolled keeps what it showed.
+    internal: Signal<Vec<String>>,
+
+    /// The resolved open set: the controlled `value` when given, else `internal`.
+    value: Memo<Vec<String>>,
+
+    /// Called with the new open set after a trigger click or a find-in-page reveal.
+    on_value_change: Callback<Vec<String>>,
 
     /// Whether multiple items can be open at once.
     allow_multiple_open: ReadSignal<bool>,
@@ -65,7 +69,11 @@ struct AccordionContext {
 }
 
 impl AccordionContext {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
+        internal: Signal<Vec<String>>,
+        value: Memo<Vec<String>>,
+        on_value_change: Callback<Vec<String>>,
         allow_multiple_open: ReadSignal<bool>,
         disabled: ReadSignal<bool>,
         collapsible: ReadSignal<bool>,
@@ -76,7 +84,9 @@ impl AccordionContext {
     ) -> Self {
         Self {
             next_id: Signal::new(0),
-            open_items: Signal::new(Vec::new()),
+            internal,
+            value,
+            on_value_change,
             allow_multiple_open,
             disabled,
             collapsible,
@@ -98,30 +108,51 @@ impl AccordionContext {
         id
     }
 
-    pub fn set_open(&mut self, id: usize) {
-        if !*self.allow_multiple_open.peek() {
-            self.open_items.clear();
+    /// Open the item with this key (closing the others unless several may be open).
+    pub fn set_open(&mut self, key: &str) {
+        let mut next = if *self.allow_multiple_open.peek() {
+            self.value.peek().clone()
+        } else {
+            Vec::new()
+        };
+        if !next.iter().any(|k| k == key) {
+            next.push(key.to_string());
         }
-        self.open_items.push(id);
+        self.commit(next);
     }
 
-    pub fn set_closed(&mut self, id: usize) {
-        let mut open_items = self.open_items.write();
+    /// Open the item at mount (`default_open`): seeds the uncontrolled state without calling
+    /// `on_value_change`; a controlled `value` still wins in `value`.
+    pub fn seed_open(&mut self, key: &str) {
+        let mut next = if *self.allow_multiple_open.peek() {
+            self.internal.peek().clone()
+        } else {
+            Vec::new()
+        };
+        if !next.iter().any(|k| k == key) {
+            next.push(key.to_string());
+            self.internal.set(next);
+        }
+    }
+
+    pub fn set_closed(&mut self, key: &str) {
+        let open_items = self.value.peek().clone();
 
         // If the accordion is not collapsible, we can't close this one.
         if !*self.collapsible.peek() && open_items.len() == 1 {
             return;
         }
 
-        *open_items = open_items
-            .iter()
-            .cloned()
-            .filter(|item| *item != id)
-            .collect();
+        self.commit(open_items.into_iter().filter(|k| k != key).collect());
     }
 
-    pub fn is_open(&self, id: usize) -> bool {
-        self.open_items.read().contains(&id)
+    fn commit(&mut self, next: Vec<String>) {
+        self.internal.set(next.clone());
+        self.on_value_change.call(next);
+    }
+
+    pub fn is_open(&self, key: &str) -> bool {
+        self.value.read().iter().any(|k| k == key)
     }
 
     pub fn is_disabled(&self) -> bool {
@@ -190,6 +221,25 @@ pub struct AccordionProps {
     #[props(default)]
     pub chevron: ReadSignal<AccordionChevron>,
 
+    /// The values of the items open initially when the accordion is not controlled (Radix's
+    /// `defaultValue`). Single mode (`allow_multiple_open` false) holds at most one; an item's
+    /// `default_open` is applied on top at mount (in single mode the later one wins). See [`AccordionItemProps::value`] for what an item's value is.
+    #[props(default)]
+    pub default_value: Vec<String>,
+
+    /// The values of the open items, to drive the accordion when controlled (Radix's `value`).
+    /// While it is `Some`, the accordion shows exactly these items open and a click only calls
+    /// `on_value_change`; it is up to the caller to write the new list back. `None` (the default)
+    /// leaves the state to the accordion. Single mode shows a list of more than one value as
+    /// all open, so pass at most one there.
+    pub value: ReadSignal<Option<Vec<String>>>,
+
+    /// Called with the new list of open item values after a trigger click or a find-in-page
+    /// reveal (Radix's `onValueChange`). Single mode passes a list of at most one value; an empty
+    /// list means the last open item closed.
+    #[props(default)]
+    pub on_value_change: Callback<Vec<String>>,
+
     /// Attributes to extend the root element.
     #[props(extends = GlobalAttributes)]
     pub attributes: Vec<Attribute>,
@@ -250,8 +300,19 @@ pub struct AccordionProps {
 #[component]
 pub fn Accordion(props: AccordionProps) -> Element {
     let focus_id = use_unique_id();
+    let internal = use_signal(|| {
+        props
+            .value
+            .cloned()
+            .unwrap_or_else(|| props.default_value.clone())
+    });
+    let controlled = props.value;
+    let value = use_memo(move || controlled.cloned().unwrap_or_else(&*internal));
     let mut ctx = use_context_provider(|| {
         AccordionContext::new(
+            internal,
+            value,
+            props.on_value_change,
             props.allow_multiple_open,
             props.disabled,
             props.collapsible,
@@ -286,6 +347,13 @@ pub fn Accordion(props: AccordionProps) -> Element {
 /// The props for the [`AccordionItem`] component.
 #[derive(Props, Clone, PartialEq)]
 pub struct AccordionItemProps {
+    /// The value that names this item in [`AccordionProps::value`], `default_value` and
+    /// `on_value_change` (Radix's `value`). Unset, it is the item's position as a decimal
+    /// string (`"0"` for the first item the accordion mounts, `"1"` for the next, ...), so
+    /// give an item a value when the list can reorder or items can be added or removed.
+    #[props(default)]
+    pub value: ReadSignal<Option<String>>,
+
     /// Whether the accordion item is disabled.
     #[props(default)]
     pub disabled: ReadSignal<bool>,
@@ -353,8 +421,11 @@ pub fn AccordionItem(props: AccordionItemProps) -> Element {
     let mut ctx: AccordionContext = use_context();
     let aria_id = use_unique_id();
 
+    let position = use_hook(|| ctx.register_item());
+    let explicit = props.value;
+    let key = use_memo(move || explicit().unwrap_or_else(|| position.to_string()));
     let item = use_context_provider(|| Item {
-        id: ctx.register_item(),
+        key,
         aria_id,
         disabled: props.disabled,
         on_trigger_click: props.on_trigger_click,
@@ -363,18 +434,18 @@ pub fn AccordionItem(props: AccordionItemProps) -> Element {
     // Open this item if we're set as default.
     use_hook(move || {
         if props.default_open {
-            ctx.set_open(item.id);
+            ctx.seed_open(&item.key());
         }
     });
 
     // Handle calling `on_change` callback.
     use_effect(move || {
-        let open = ctx.is_open(item.id);
+        let open = ctx.is_open(&item.key());
         props.on_change.call(open)
     });
 
     let owned = attributes!(div {
-        "data-open": ctx.is_open(item.id),
+        "data-open": ctx.is_open(&item.key()),
         "data-disabled": ctx.is_disabled() || item.is_disabled(),
     });
     let merged = merge_attributes(vec![props.attributes.clone(), owned]);
@@ -448,7 +519,7 @@ pub fn AccordionContent(props: AccordionContentProps) -> Element {
     let item: Item = use_context();
     let id = use_id_or(item.aria_id, props.id);
     let mut ctx: AccordionContext = use_context();
-    let open = use_memo(move || ctx.is_open(item.id));
+    let open = use_memo(move || ctx.is_open(&item.key()));
     let until_found = ctx.hidden_until_found;
 
     let render_element = use_animated_open(id, open);
@@ -472,9 +543,9 @@ pub fn AccordionContent(props: AccordionContentProps) -> Element {
     // other items unless multiple may be open, same as the trigger.
     let mut revealed = use_signal(|| false);
     use_beforematch(id, until_found, move || {
-        if !ctx.is_open(item.id) {
+        if !ctx.is_open(&item.key()) {
             revealed.set(true);
-            ctx.set_open(item.id);
+            ctx.set_open(&item.key());
         }
     });
     // A later close or re-open is an ordinary, animated one.
@@ -558,7 +629,7 @@ pub fn AccordionTrigger(props: AccordionTriggerProps) -> Element {
 
     let disabled = move || ctx.is_disabled() || item.is_disabled();
     // The trigger is the focusable element, so it registers this accordion
-    // item, in tree order (`item.id` is the open state's key, not the order).
+    // item, in tree order (`item.key` is the open state's key, not the order).
     let order = use_tree_item_index(ctx.focus);
     let index = order.index;
     let onmounted = use_item(collection_item(ctx.focus, index).disabled(disabled)).onmounted();
@@ -571,7 +642,7 @@ pub fn AccordionTrigger(props: AccordionTriggerProps) -> Element {
         disabled: disabled(),
         tabindex: "0",
         aria_controls: item.aria_id(),
-        aria_expanded: ctx.is_open(item.id),
+        aria_expanded: ctx.is_open(&item.key()),
         "data-chevron": (ctx.chevron)().as_str(),
     });
     owned.extend(order.marker_attribute());
@@ -612,10 +683,11 @@ pub fn AccordionTrigger(props: AccordionTriggerProps) -> Element {
                 }
                 item.on_trigger_click.call(());
 
-                // If the item is not controlled, handle state.
-                match ctx.is_open(item.id) {
-                    true => ctx.set_closed(item.id),
-                    false => ctx.set_open(item.id),
+                // Uncontrolled this updates the accordion's own state; controlled it only reports.
+                let key = item.key();
+                match ctx.is_open(&key) {
+                    true => ctx.set_closed(&key),
+                    false => ctx.set_open(&key),
                 }
             },
 
@@ -629,13 +701,18 @@ pub fn AccordionTrigger(props: AccordionTriggerProps) -> Element {
 /// Internal accordion-item context.
 #[derive(Clone, Copy, PartialEq)]
 struct Item {
-    id: usize,
+    /// The item's value: its `value` prop, else its position.
+    key: Memo<String>,
     aria_id: Signal<String>,
     disabled: ReadSignal<bool>,
     on_trigger_click: Callback,
 }
 
 impl Item {
+    pub fn key(&self) -> String {
+        (self.key)()
+    }
+
     pub fn is_disabled(&self) -> bool {
         (self.disabled)()
     }
@@ -698,6 +775,56 @@ mod tests {
                 }
             }
         }
+    }
+
+    #[component]
+    fn Controlled() -> Element {
+        rsx! {
+            Accordion { value: Some(vec!["b".to_string()]), default_value: vec!["a".to_string()],
+                AccordionItem { value: Some("a".to_string()),
+                    AccordionTrigger { "one" }
+                    AccordionContent { "text a" }
+                }
+                AccordionItem { value: Some("b".to_string()),
+                    AccordionTrigger { "two" }
+                    AccordionContent { "text b" }
+                }
+            }
+        }
+    }
+
+    #[component]
+    fn DefaultValueByPosition() -> Element {
+        rsx! {
+            Accordion { default_value: vec!["1".to_string()],
+                AccordionItem {
+                    AccordionTrigger { "one" }
+                    AccordionContent { "text zero" }
+                }
+                AccordionItem {
+                    AccordionTrigger { "two" }
+                    AccordionContent { "text one" }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn a_controlled_value_wins_over_default_value() {
+        let html = render(Controlled);
+        assert!(
+            html.contains("text b") && !html.contains("text a"),
+            "{html}"
+        );
+    }
+
+    #[test]
+    fn an_item_without_a_value_is_keyed_by_its_position() {
+        let html = render(DefaultValueByPosition);
+        assert!(
+            html.contains("text one") && !html.contains("text zero"),
+            "{html}"
+        );
     }
 
     #[test]

@@ -129,7 +129,8 @@ const VERBOSE = !!process.env.DX_SNAPSHOT_VERBOSE;
 /** Pages captured concurrently, each in its own browser context (default 3). */
 const PARALLEL = Number(process.env.DX_SNAPSHOT_PARALLEL) > 0 ? Number(process.env.DX_SNAPSHOT_PARALLEL) : 3;
 /** Where the interaction targets of a component page live: the DEMO tab's preview frames (`id` is
- *  `component-preview-frame` or `component-preview-frame-<variant>`, see preview/src/main.rs). The shell around
+ *  `component-preview-frame` or `component-preview-frame-<variant>`, see
+ *  preview/src/site/variant_page.rs). The shell around
  *  them (sidebar, theme picker) is identical on every page and is captured by the `route:` pages instead. */
 const COMPONENT_SCOPE = '[id^="component-preview-frame"]';
 /** Comma list of component names to capture (debugging aid; default all). */

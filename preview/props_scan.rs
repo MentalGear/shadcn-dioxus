@@ -354,8 +354,11 @@ fn parse_fields(body: &str, line_starts: &[usize], first_line: usize) -> Vec<Pro
         };
         {
             if let Some((name, ty)) = rest.split_once(':') {
+                // `mut props: XProps` binds mutably but is still the argument `props`.
+                let name = name.trim();
+                let name = name.strip_prefix("mut ").unwrap_or(name).trim_start();
                 fields.push(PropField {
-                    name: name.trim().trim_start_matches("r#").to_string(),
+                    name: name.trim_start_matches("r#").to_string(),
                     ty: collapse_ws(ty.trim()),
                     default: default.take(),
                     extends: extends.take(),

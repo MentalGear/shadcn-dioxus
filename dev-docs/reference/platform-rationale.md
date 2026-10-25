@@ -136,7 +136,7 @@ Native `<dialog>` + `showModal()`. That subsumes a `focus_scope.rs` and `aria_hi
 clipping inside `overflow:hidden` and transformed ancestors, which no CSS workaround can. Two durable rules:
 
 - **An anchored overlay's tracking is unconditional and visual-viewport-aware.** `use_anchor_position_fallback`
-  (`primitives/src/top_layer.rs`) installs its `scroll`/`resize` tracking for the entire open lifetime of every anchored
+  (`primitives/src/top_layer/anchor_fallback.rs`) installs its `scroll`/`resize` tracking for the entire open lifetime of every anchored
   overlay (not gated on whether the first measurement needed the fallback), and reads every viewport size through
   `window.visualViewport` (`window.inner*` does not shrink for an iOS on-screen keyboard). A snapshot taken at open cannot
   see a keyboard summoned by the very focus that opened the overlay. Oracle: `top-layer.spec.ts` Rule 11.

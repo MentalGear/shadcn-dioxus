@@ -865,9 +865,13 @@ pub fn NavbarContent(props: NavbarContentProps) -> Element {
 #[cfg(feature = "web")]
 #[component]
 fn NavbarContentRendered(
+    /// The DOM id of the content element.
     id: String,
+    /// Where the open menu sits relative to this one: `start` if it comes after, `end` if it comes before, `open` if this is it, or `closed` when none is open.
     open_direction: &'static str,
+    /// Extra HTML attributes for the content element.
     attributes: Vec<Attribute>,
+    /// The content of the nav menu.
     children: Element,
 ) -> Element {
     let ctx: NavbarContext = use_context();
@@ -1007,9 +1011,13 @@ fn NavbarContentRendered(
 #[cfg(not(feature = "web"))]
 #[component]
 fn NavbarContentRendered(
+    /// The DOM id of the content element.
     id: String,
+    /// Where the open menu sits relative to this one: `start` if it comes after, `end` if it comes before, `open` if this is it, or `closed` when none is open.
     open_direction: &'static str,
+    /// Extra HTML attributes for the content element.
     attributes: Vec<Attribute>,
+    /// The content of the nav menu.
     children: Element,
 ) -> Element {
     let nav_ctx: NavbarNavContext = use_context();

@@ -105,7 +105,7 @@
  *     `type="range"` (excluded by SELECTOR) and its hex field is a themed
  *     `Input`, covered above.
  *
- * Fixture routes: this app's own routes, per `preview/src/main.rs`'s
+ * Fixture routes: this app's own routes, per `preview/src/site/routes.rs`'s
  * `Route` enum and `preview/src/components/mod.rs`'s `examples!` list --
  * no vendored reference page exists for a rule this specific to one app's
  * inventory of text-entry surfaces.
@@ -306,8 +306,9 @@ test.describe("overlay-gated elements (coarse pointer, desktop-width viewport)",
 
 // Every `preview/src/components/*` page, per `preview/src/components/mod.rs`'s
 // `examples!` list -- each page renders its "main" variant plus every listed
-// variant inline (`ComponentHighlight`/`ComponentVariantHighlight` in
-// `preview/src/main.rs`), so one page load covers every variant.
+// variant inline (`ComponentHighlight` in `preview/src/site/component_page.rs`,
+// `ComponentVariantHighlight` in `preview/src/site/variant_page.rs`), so one page
+// load covers every variant.
 const COMPONENTS = [
   "accordion", "alert_dialog", "aspect_ratio", "avatar", "badge", "button",
   "calendar", "card", "checkbox", "collapsible", "color_picker", "combobox",

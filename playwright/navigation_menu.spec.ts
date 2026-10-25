@@ -14,7 +14,7 @@ const GOTO = { timeout: 20 * 60 * 1000 }; // Increase timeout to 20 minutes
  * This demo page's own `NavigationMenu` -- scoped by its `aria_label`
  * (`preview/src/components/navigation_menu/variants/main/mod.rs`), not
  * `page.getByRole(...)` directly against the whole page. The site's own
- * persistent chrome (header navbar, footer -- `preview/src/main.rs`,
+ * persistent chrome (header navbar, footer -- `preview/src/site/chrome.rs`,
  * not part of this demo) renders its own "Docs" links on every
  * route, and would otherwise make `page.getByRole('link', { name: 'Docs' })`
  * resolve to more than one element (3
@@ -206,7 +206,7 @@ test.describe('Open animation never reflows the content', () => {
     // transition): `preview/src/components/navigation_menu/style.css`'s
     // `[data-state]` motion rules must not tie in CSS specificity with the shared,
     // engine-injected anchor-positioning stylesheet's own `transform: none` reset
-    // (primitives/src/top_layer.rs), which -- injected later in the cascade -- would
+    // (primitives/src/top_layer/styles.rs), which -- injected later in the cascade -- would
     // win and silently kill the scale/slide entrance motion (opacity would be the
     // only property transitioning). Switching between two differently-sized panels
     // with *that* motion dead pops each panel to its own full (and differently

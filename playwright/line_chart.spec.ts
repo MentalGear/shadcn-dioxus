@@ -7,7 +7,7 @@ import { gotoHydrated } from "./hydration";
 const URL = `${BASE_URL}/component/line_chart/`;
 
 /**
- * Variant name -> its own preview frame id, per `preview/src/main.rs`'s own
+ * Variant name -> its own preview frame id, per `preview/src/site/variant_page.rs`'s own
  * convention (`ComponentDemo`'s `frame_id`): the `main` variant keeps the
  * bare `component-preview-frame` id every single-variant component page
  * already uses; every other variant on the same page gets

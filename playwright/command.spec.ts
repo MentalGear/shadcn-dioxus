@@ -46,7 +46,7 @@ const input = (page: Page) => page.getByRole("combobox", { name: "Search command
 const list = (page: Page) => page.getByRole("listbox", { name: "Commands" });
 
 // The home page (`/`) gallery renders every demo, `Command`'s included
-// (`preview/src/main.rs`'s `ComponentGallery`) -- scope every locator to the
+// (`preview/src/site/gallery.rs`'s `ComponentGallery`) -- scope every locator to the
 // Command demo's own card so a same-named element elsewhere on that busy
 // page can't be mistaken for it.
 const commandCard = (page: Page) =>
@@ -109,7 +109,7 @@ test("first mouse-click open focuses the command input, and a second open does t
 
 test("first mouse-click open focuses the command input on the overview page", async ({ page }) => {
     // Same claim, on the home page: the
-    // overview/home page's demo gallery (`preview/src/main.rs`'s
+    // overview/home page's demo gallery (`preview/src/site/gallery.rs`'s
     // `ComponentGallery`), which mounts every demo -- including this one --
     // alongside dozens of others, unlike the isolated component page above.
     await gotoHydrated(page, HOME_URL, { timeout: 20 * 60 * 1000 });

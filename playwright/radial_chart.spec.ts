@@ -11,7 +11,7 @@ import { gotoHydrated } from "./hydration";
 // e.g. `playwright/radar_chart.spec.ts`'s own header comment): the
 // un-suffixed `#component-preview-frame` is the `main` (shadcn "default")
 // variant; every other variant gets `#component-preview-frame-<variant>`
-// (`preview/src/main.rs`'s own frame-id-per-variant naming). One-to-one
+// (`preview/src/site/variant_page.rs`'s own frame-id-per-variant naming). One-to-one
 // with `preview/src/components/mod.rs`'s `radial_chart[...]` registration
 // line and shadcn's own 6 `chart-radial-*.tsx` demos (dev-docs/archive/research/chart-2026-09-19.md §1.2); each variant's own doc comment cites its
 // exact shadcn source file.

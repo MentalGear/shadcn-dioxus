@@ -14,7 +14,7 @@ use dioxus_primitives::direction::{Direction, DirectionProvider};
 /// "Banana"/.../"Other") and `select.spec.ts` queries several of those by
 /// name (e.g. `getByRole("option", { name: "apple" })`); since every
 /// variant of a component renders on the same page at once
-/// (`preview/src/main.rs`'s `ComponentHighlight`), reusing those words
+/// (`preview/src/site/component_page.rs`'s `ComponentHighlight`), reusing those words
 /// here would make such a locator match this variant's option too.
 ///
 /// `default_value` is set (unlike `main`, which starts unselected) so this

@@ -31,14 +31,20 @@ impl NativeSelectSize {
 /// no APG contract to add on top, and no primitive underneath.
 #[component]
 pub fn NativeSelect(
+    /// The control's height: `Default` (the default) or the shorter `Sm`.
     #[props(default)] size: NativeSelectSize,
+    /// Called when the selected option changes.
     onchange: Option<EventHandler<FormEvent>>,
+    /// Called on every change of the selection (`input`).
     oninput: Option<EventHandler<FormEvent>>,
+    /// Called when the select gains focus.
     onfocus: Option<EventHandler<FocusEvent>>,
+    /// Called when the select loses focus.
     onblur: Option<EventHandler<FocusEvent>>,
     #[props(extends = GlobalAttributes)]
     #[props(extends = select)]
     attributes: Vec<Attribute>,
+    /// The `<option>`s of the select.
     children: Element,
 ) -> Element {
     let base = attributes!(select { class: "dx-native-select", "data-dx-root": "", "data-size": size.class() });

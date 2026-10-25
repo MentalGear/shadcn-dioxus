@@ -1,7 +1,8 @@
 /**
  * ORACLE (tier 3, labelled opinion; backlog row 137, "RTL by construction"): the page-level LTR/RTL toggle.
  *
- * Every Normal component page has an RTL button (`#dx-direction-toggle`, preview/src/main.rs) that sets `dir`
+ * Every Normal component page has an RTL button
+ * (`#dx-direction-toggle`, preview/src/site/component_page.rs) that sets `dir`
  * on each demo frame and wraps each demo in a `DirectionProvider` reading one global signal. These tests prove
  * the three halves of that construction through the toggle, on the MAIN demo of each component (no hand-built
  * `rtl` variant): (1) the provider is reactive (the keys mirror live, both ways); (2) the five primitives whose

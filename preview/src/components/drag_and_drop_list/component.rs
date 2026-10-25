@@ -206,6 +206,7 @@ fn DragIcon() -> Element {
 #[component]
 pub fn RemoveButton(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// Extra content shown before the built-in X icon. Usually empty.
     children: Element,
 ) -> Element {
     let mut ctx: DragAndDropContext = use_context();

@@ -434,12 +434,19 @@ pub fn TooltipContent(props: TooltipContentProps) -> Element {
 #[cfg(feature = "web")]
 #[component]
 fn TooltipContentRendered(
+    /// The DOM id of the tooltip content element.
     id: String,
+    /// Whether the tooltip is open. Sets the content's `data-state`, and on the web keeps its popover shown.
     open: Memo<bool>,
+    /// Sets the open state. On the web, it is called when the browser closes the tooltip's popover.
     set_open: Callback<bool>,
+    /// Side of the trigger to place the tooltip.
     side: ContentSide,
+    /// Alignment of the tooltip relative to the trigger.
     align: ContentAlign,
+    /// Extra HTML attributes for the tooltip content element.
     attributes: Vec<Attribute>,
+    /// The tooltip's content.
     children: Element,
 ) -> Element {
     crate::top_layer::use_popover_shown_while_mounted(id.clone(), open, set_open);
@@ -525,15 +532,22 @@ fn TooltipContentRendered(
 #[cfg(not(feature = "web"))]
 #[component]
 fn TooltipContentRendered(
+    /// The DOM id of the tooltip content element.
     id: String,
+    /// Whether the tooltip is open. Sets the content's `data-state`, and on the web keeps its popover shown.
     open: Memo<bool>,
     // Unused on this arm -- kept as a same-named field so the shared,
     // cfg-independent call site in `TooltipContent` compiles on
     // both arms.
+    /// Sets the open state. On the web, it is called when the browser closes the tooltip's popover.
     set_open: Callback<bool>,
+    /// Side of the trigger to place the tooltip.
     side: ContentSide,
+    /// Alignment of the tooltip relative to the trigger.
     align: ContentAlign,
+    /// Extra HTML attributes for the tooltip content element.
     attributes: Vec<Attribute>,
+    /// The tooltip's content.
     children: Element,
 ) -> Element {
     let _ = set_open;

@@ -241,7 +241,7 @@ fn walk_markdown_dir(dir: &std::path::Path, out_dir: &std::path::Path) -> std::i
 const PROPS_HEADING: &str = "Props reference";
 
 /// One section of a component page's docs: a docs.md `##` section, the "Usage notes" intro or the
-/// generated "Props reference". `main.rs` renders each as one `AccordionItem` (its `DocsSection`
+/// generated "Props reference". `site/component_page.rs` renders each as one `AccordionItem` (its `DocsSection`
 /// mirrors this), so the page is built from the library's own Accordion, not a native disclosure.
 struct DocsSection {
     /// The `h2` id, the anchor target (`docs-<slug>`).
@@ -573,13 +573,13 @@ fn process_docs_md_to_sections(markdown_path: &std::path::Path) -> Vec<DocsSecti
 /// The docs.md -> sections pass (backlog row 233).
 ///
 /// Every `##` section of a `docs.md` becomes one [`DocsSection`] (its `h2` id `docs-<slug>`, its heading
-/// HTML and its body), and the text before the first `##` becomes a "Usage notes" section. `main.rs`
+/// HTML and its body), and the text before the first `##` becomes a "Usage notes" section. `site/component_page.rs`
 /// renders them as closed items of the library's own `Accordion` (multi-open, `hidden_until_found`, the
 /// `h2` wrapping the trigger so the outline and the anchors stay), so no `docs.md` has to be edited: a new
-/// section is collapsed by construction. The site opens the item that holds the URL fragment (`main.rs`,
+/// section is collapsed by construction. The site opens the item that holds the URL fragment (`site/component_page.rs`,
 /// `use_open_section_for_hash`).
 ///
-/// The heading text equals `PAGE_HEADING_USAGE` in `main.rs`, which `docs_md_has_no_template_h2`
+/// The heading text equals `PAGE_HEADING_USAGE` in `site/component_page.rs`, which `docs_md_has_no_template_h2`
 /// reserves so a `docs.md` cannot declare the same heading.
 const USAGE_NOTES_HEADING: &str = "Usage notes";
 
@@ -721,7 +721,7 @@ fn slugify(title: &str) -> String {
 /// Per-variant notes (backlog row 233): `variants/<variant>/notes.md` is the prose about one demo. It is
 /// rendered to `OUT_DIR/<component>/variants/<variant>/notes.html` by `walk_markdown_dir` like every
 /// other `.md`; this writes `OUT_DIR/variant_notes.rs`, a `variant_notes(component, variant)` lookup
-/// that `main.rs` `include!`s, so the page shows the note in a `Collapsible` under that demo. It is a
+/// that `site/component_page.rs` `include!`s, so the page shows the note in a `Collapsible` under that demo. It is a
 /// generated lookup rather than a field of the `examples!` macro because the macro cannot test whether
 /// a file exists. `variants/` is excluded from the installed component (`component.json`), so a note
 /// never reaches a user's app.
@@ -799,7 +799,7 @@ fn render_code_block_html(kind: &pulldown_cmark::CodeBlockKind<'_>, source: &str
 
 /// A fence with no highlighter (```html, ```text, an indented block). `.dx-docs-prose pre` scrolls
 /// sideways, so it is a scrollable region and must be keyboard-reachable (axe
-/// `scrollable-region-focusable`), exactly like the highlighted `div` above and `DocsPre` in main.rs.
+/// `scrollable-region-focusable`), exactly like the highlighted `div` above and `DocsPre` in site/code.rs.
 fn render_plain_code_block(source: &str) -> String {
     let source = source.trim_end_matches('\n');
 

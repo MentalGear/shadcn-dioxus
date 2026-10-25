@@ -5,7 +5,7 @@ the page as stale and check `git log` and the flag files named here.** What each
 backlog row files, not here: this page says only what is deployed, what runs, what is next and what waits for the owner.
 
 Last updated: **2026-10-25**. Several sessions work in parallel; who holds what is on the `claims` branch (`CLAIMS.md`).
-Preview site: https://mentalgear.github.io/shadcn-dioxus/ (deployed from main `41ac351b`, PR #147, merge queue batch 20).
+Preview site: https://mentalgear.github.io/shadcn-dioxus/ (deployed from main `f9860a21`, PR #148, merge queue batch 21).
 
 ## Merge queue
 
@@ -17,15 +17,15 @@ deploy running the full Playwright suite on a release build. Procedure:
 
 ## Merged and deployed
 
-Merge queue batches 1-20 are on main (PRs #121-#147), batch 20 deployed as `41ac351b`.
+Merge queue batches 1-21 are on main (PRs #121-#148), batch 21 deployed as `f9860a21`.
 
 ## In the queue
 
-Batch 21 (`queue/batch-21`): rows 418 (`test:changed` diffs against the nearest base) and 419 (Toast close button target and hover), and the owner's Haiku-first rule for delegated tasks.
+Batch 23 (`queue/batch-23`, carrying batch 22): row 267 (six oversized files split into module directories, public paths unchanged) and row 384 (every component argument documented and the props-docs gate strict, comment-ref and history baselines at zero, a controlled Accordion and Radix's Label double-click guard).
 
 ## Running
 
-Stage 3 (structure): row 267's file split, one lane per file. Then 384, then 355 and 382.
+Stage 3 (structure): rows 267 and 384 are in batch 23. Next 355 and 382.
 
 ## Next
 

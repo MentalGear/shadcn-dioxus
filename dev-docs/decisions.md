@@ -55,7 +55,7 @@ the line here is the pointer, so when a row's text and this line disagree, the r
   ([`history-in-comments.md`](./history-in-comments.md), row [266](./backlog/266-repo-cleanup-archive-historical-dev-docs.md)).
 - The repo cleanup (archive, trim, generated `gates.md`, `decisions.md`) runs in the Round 6 sweep, before the file split
   (267), the Rust style items (355), the final sweep (365) and the suite prune (152b). 2026-10-19, extended 2026-10-20
-  (rows [266](./backlog/266-repo-cleanup-archive-historical-dev-docs.md), [267](./backlog/267-split-oversized-source-files-into-modules.md), [355](./backlog/355-adopt-google-rust-style-guide-items.md), [365](./backlog/365-final-sweep-refactor-and-root-cause-review.md), [152](./backlog/152-test-suite-review-revisit-the-playwright-suite.md)).
+  (rows [266](./backlog/266-repo-cleanup-archive-historical-dev-docs.md), [267](./backlog/done/267-split-oversized-source-files-into-modules.md), [355](./backlog/355-adopt-google-rust-style-guide-items.md), [365](./backlog/365-final-sweep-refactor-and-root-cause-review.md), [152](./backlog/152-test-suite-review-revisit-the-playwright-suite.md)).
 - Google Rust style items adopted: a workspace lint table, `unwrap_used` denied in primitives and cli, `must_use` on
   builders, `#[expect]` with a reason, and the conventions in [`guides/rust-conventions.md`](./guides/rust-conventions.md).
   2026-10-21 (row [355](./backlog/355-adopt-google-rust-style-guide-items.md)).

@@ -13,7 +13,7 @@
 // OPTIONS
 //   --variant <name>     Append `variant=<name>` to the URL's query string
 //                         (this app's own `:variant` route param -- see
-//                         preview/src/main.rs's `/component/block/` route).
+//                         preview/src/site/routes.rs's `/component/block/` route).
 //   --dark                Append `dark_mode=true` to the query string (this
 //                         app's own `:dark_mode` route param, supported on
 //                         `/`, `/docs`, `/demos`, `/component/`,

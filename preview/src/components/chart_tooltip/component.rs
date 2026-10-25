@@ -50,7 +50,10 @@ pub use dioxus_primitives::chart::{ChartIcon, ChartSeries, TooltipIndicator, Too
 /// `chart`'s own gallery elsewhere on the site (those rules are a
 /// scoped copy of `chart/style.css`'s -- see `style.css`'s own header comment).
 #[component]
-pub fn Gallery(children: Element) -> Element {
+pub fn Gallery(
+    /// The demos to show in the gallery.
+    children: Element,
+) -> Element {
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/chart_tooltip/style.css") }
         div { class: "dx-chart-tooltip-gallery", {children} }

@@ -2,7 +2,7 @@
 //!
 //! `arborium` (via `dioxus-code`'s `lang-css` -> `runtime`) pulls tree-sitter's
 //! C runtime into the wasm client; the debug Style tab highlights CSS in the
-//! browser (`LazyCssCodeBlock` in `main.rs`). `arborium` 2.17.0 ships its own
+//! browser (`LazyCssCodeBlock` in `site/code.rs`). `arborium` 2.17.0 ships its own
 //! Rust libc shim for `wasm32-unknown-unknown` (`arborium/src/wasm.rs`:
 //! `malloc`, `free`, `fputs`, ...) but not the data symbol `stderr`, which
 //! tree-sitter's `ts_stack_print_dot_graph` (`stack.c`: `if (!f) f = stderr;`)

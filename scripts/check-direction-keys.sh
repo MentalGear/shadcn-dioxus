@@ -8,7 +8,7 @@
 # or `delta_x` puts its file on the hook: the file must also call `resolve_horizontal`, `ltr_equivalent` or
 # `use_direction`, or sit on the reasoned ALLOWLIST (nothing to flip; a stale entry fails). Context structs hold the
 # `ReadSignal<Direction>`, never a mount-time copy, so the RTL toggle reaches mounted descendants. Browser half:
-# `playwright/oracle/tier3-radix/rtl.spec.ts` and `playwright/rtl-toggle.spec.ts`. Backlog row 137.
+# `playwright/oracle/tier3-radix/rtl.spec.ts` and `playwright/oracle/tier3-radix/rtl-toggle.spec.ts`. Backlog row 137.
 #
 # THE CLASS: a handler that maps `Key::ArrowLeft`/`Key::ArrowRight` (or a physical horizontal pointer delta,
 # `delta_x`) to "previous"/"next"/"decrease"/"increase" without asking the text direction is right in LTR and
@@ -19,8 +19,10 @@
 # `Key::ArrowLeft`, `Key::ArrowRight` or `delta_x` puts its FILE on the hook: the file must also call
 # `resolve_horizontal`, `ltr_equivalent` or `use_direction` outside comments and tests (the file reads the direction),
 # or be on the ALLOWLIST below with the reason there is nothing to flip. direction.rs itself is the rule.
-# The browser half is `playwright/oracle/tier3-radix/rtl.spec.ts` and `playwright/rtl-toggle.spec.ts`.
+# The browser half is `playwright/oracle/tier3-radix/rtl.spec.ts` and `playwright/oracle/tier3-radix/rtl-toggle.spec.ts`.
 #
+# A file split out of a `#[cfg(test)]` module (`tests.rs`, `*_tests.rs`, anything under a `tests/` directory) is test
+# code too and is not scanned (row 267).
 # ALLOWLIST: `<file under primitives/src>|<reason>`. An entry that no longer matches a hook fails (stale), and a
 # reason is mandatory.
 #
@@ -54,7 +56,7 @@ while IFS= read -r f; do
     grep -nE 'Key::Arrow(Left|Right)|delta_x' "$f" | grep -vE '^[0-9]+:[[:space:]]*//' | head -3 | sed 's/^/    /'
     fail=1
   fi
-done < <(find primitives/src -name '*.rs' | sort)
+done < <(find primitives/src -name '*.rs' ! -name tests.rs ! -name '*_tests.rs' ! -path '*/tests/*' | sort)
 
 for entry in "${allowlist[@]}"; do
   f="${entry%%|*}"; reason="${entry#*|}"

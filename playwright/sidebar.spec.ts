@@ -24,7 +24,7 @@ test("sidebar: preview page renders block", async ({ page }) => {
   });
   const iframe = page.locator("iframe").first();
   await expect(iframe).toBeVisible({ timeout: SIDEBAR_RENDER_TIMEOUT });
-  // Path-segment form (dev-docs/backlog.md row 46): `preview/src/main.rs`'s
+  // Path-segment form (dev-docs/backlog.md row 46): `preview/src/site/variant_page.rs`'s
   // `BlockComponentVariantHighlight` builds this iframe's `src` from the
   // canonical, SSG-enumerable `Route::ComponentBlockDemoPath`
   // (`/component/block/<name>/<variant>/`). The query form
@@ -203,7 +203,7 @@ test.describe("sidebar: block route", () => {
 // `<h1>`/`<main>` is a non-issue (the iframe's own document is a separate
 // accessibility-tree root). Visiting it directly, as both tests below do,
 // would surface `page-has-heading-one`/`region` without them, so
-// `ComponentBlockDemo` (`preview/src/main.rs`) renders a
+// `ComponentBlockDemo` (`preview/src/site/block_demo.rs`) renders a
 // visually-hidden `<h1>` naming the block, in its own `<header>` landmark;
 // and `Sidebar` (`preview/src/components/sidebar/component.rs`) gives
 // its own content a `complementary` landmark too, so nothing on the page

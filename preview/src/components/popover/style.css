@@ -32,7 +32,7 @@
    * `transform: translate(-50%, -50%)` are the DOM-relative centring the `data-side` rules
    * below build on, so zeroing them would break that path. The non-modal arm's own `inset`/`margin`
    * reset lives in the single, engine-injected anchor-positioning stylesheet shared by every
-   * `dx-anchor-*` overlay (`primitives/src/top_layer.rs`'s `ensure_anchor_positioning_styles`).
+   * `dx-anchor-*` overlay (`primitives/src/top_layer/styles.rs`'s `ensure_anchor_positioning_styles`).
    */
   margin-top: var(--dx-space-2);
   font-size: var(--dx-text-sm);

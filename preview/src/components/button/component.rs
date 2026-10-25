@@ -78,7 +78,9 @@ impl ButtonRadius {
 
 #[component]
 pub fn Button(
+    /// The style: `Primary` (the default), `Secondary`, `Destructive`, `Outline`, `Ghost` or `Link`.
     #[props(default)] variant: ButtonVariant,
+    /// The size: `Default` (the default), `Xs`, `Sm`, `Lg`, `Icon`, `IconXs`, `IconSm` or `IconLg`.
     #[props(default)] size: ButtonSize,
     /// The corner radius. `Full` makes a pill (or, on an icon size, a circle).
     #[props(default)]
@@ -86,15 +88,20 @@ pub fn Button(
     #[props(extends=GlobalAttributes)]
     #[props(extends=button)]
     attributes: Vec<Attribute>,
+    /// Called with the click event.
     onclick: Option<EventHandler<MouseEvent>>,
+    /// Called with the mouse event when a mouse button is pressed on the button.
     onmousedown: Option<EventHandler<MouseEvent>>,
+    /// Called with the mouse event when a mouse button is released on the button.
     onmouseup: Option<EventHandler<MouseEvent>>,
+    /// Called with the keyboard event when a key is pressed while the button has focus.
     onkeydown: Option<EventHandler<KeyboardEvent>>,
     /// Renders the button as the element the callback returns, shadcn's "As
     /// Link": an anchor, or a router link. The callback gets an [`AsChild`]:
     /// the button's attributes with its handlers in them, so a click on that
     /// element still calls `onclick`, and the button's children.
     r#as: Option<Callback<AsChild, Element>>,
+    /// The button's label or icon.
     children: Element,
 ) -> Element {
     let base = attributes!(button {

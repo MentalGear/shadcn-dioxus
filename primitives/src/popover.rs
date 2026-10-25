@@ -418,11 +418,17 @@ pub fn PopoverContent(props: PopoverContentProps) -> Element {
 /// is only added when the popover is actually rendered.
 #[component]
 pub fn PopoverContentRendered(
+    /// The DOM id of the popover content element.
     id: String,
+    /// CSS class for the popover content element.
     class: Option<String>,
+    /// Side of the trigger to place the popover.
     side: ContentSide,
+    /// Alignment of the popover relative to the trigger.
     align: ContentAlign,
+    /// Extra HTML attributes for the popover content element.
     attributes: Vec<Attribute>,
+    /// The popover's content.
     children: Element,
 ) -> Element {
     let ctx: PopoverCtx = use_context();
@@ -481,12 +487,19 @@ pub fn PopoverContentRendered(
 #[component]
 #[allow(clippy::too_many_arguments)]
 fn PopoverModalContent(
+    /// The DOM id of the popover content element.
     id: String,
+    /// CSS class for the popover content element.
     class: Option<String>,
+    /// Side of the trigger to place the popover.
     side: ContentSide,
+    /// Alignment of the popover relative to the trigger.
     align: ContentAlign,
+    /// Extra HTML attributes for the popover content element.
     attributes: Vec<Attribute>,
+    /// The popover's content.
     children: Element,
+    /// Whether the popover is open. Sets its `data-state`, and hides it from assistive technology while closed.
     is_open: bool,
 ) -> Element {
     let ctx: PopoverCtx = use_context();
@@ -580,12 +593,19 @@ fn PopoverModalContent(
 #[component]
 #[allow(clippy::too_many_arguments)]
 fn PopoverModalContent(
+    /// The DOM id of the popover content element.
     id: String,
+    /// CSS class for the popover content element.
     class: Option<String>,
+    /// Side of the trigger to place the popover.
     side: ContentSide,
+    /// Alignment of the popover relative to the trigger.
     align: ContentAlign,
+    /// Extra HTML attributes for the popover content element.
     attributes: Vec<Attribute>,
+    /// The popover's content.
     children: Element,
+    /// Whether the popover is open. Sets its `data-state`, and hides it from assistive technology while closed.
     is_open: bool,
 ) -> Element {
     let ctx: PopoverCtx = use_context();
@@ -710,12 +730,19 @@ fn PopoverModalContent(
 #[cfg(feature = "web")]
 #[component]
 fn PopoverNonModalContent(
+    /// The DOM id of the popover content element.
     id: String,
+    /// CSS class for the popover content element.
     class: Option<String>,
+    /// Side of the trigger to place the popover.
     side: ContentSide,
+    /// Alignment of the popover relative to the trigger.
     align: ContentAlign,
+    /// Extra HTML attributes for the popover content element.
     attributes: Vec<Attribute>,
+    /// The popover's content.
     children: Element,
+    /// Whether the popover is open. Sets its `data-state`, and hides it from assistive technology while closed.
     is_open: bool,
 ) -> Element {
     let ctx: PopoverCtx = use_context();
@@ -805,12 +832,19 @@ fn PopoverNonModalContent(
 #[cfg(not(feature = "web"))]
 #[component]
 fn PopoverNonModalContent(
+    /// The DOM id of the popover content element.
     id: String,
+    /// CSS class for the popover content element.
     class: Option<String>,
+    /// Side of the trigger to place the popover.
     side: ContentSide,
+    /// Alignment of the popover relative to the trigger.
     align: ContentAlign,
+    /// Extra HTML attributes for the popover content element.
     attributes: Vec<Attribute>,
+    /// The popover's content.
     children: Element,
+    /// Whether the popover is open. Sets its `data-state`, and hides it from assistive technology while closed.
     is_open: bool,
 ) -> Element {
     let ctx: PopoverCtx = use_context();

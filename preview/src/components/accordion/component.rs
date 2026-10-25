@@ -21,6 +21,9 @@ pub fn Accordion(props: AccordionProps) -> Element {
             horizontal: props.horizontal,
             hidden_until_found: props.hidden_until_found,
             chevron: props.chevron,
+            default_value: props.default_value,
+            value: props.value,
+            on_value_change: props.on_value_change,
             attributes: merged,
             {props.children}
         }
@@ -34,6 +37,7 @@ pub fn AccordionItem(props: AccordionItemProps) -> Element {
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/accordion/style.css") }
         accordion::AccordionItem {
+            value: props.value,
             disabled: props.disabled,
             default_open: props.default_open,
             on_change: props.on_change,

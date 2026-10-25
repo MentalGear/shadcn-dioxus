@@ -111,10 +111,14 @@ struct AttachmentContext {
 /// `Button` for its actions.
 #[component]
 pub fn Attachment(
+    /// The upload state: `Done` (the default), `Idle`, `Uploading`, `Processing` or `Error`. The title shimmers while it is `Uploading` or `Processing`.
     #[props(default)] state: ReadSignal<AttachmentState>,
+    /// The size: `Default`, `Sm` or `Xs`.
     #[props(default)] size: AttachmentSize,
+    /// Whether the media sits beside the content (`Horizontal`, the default) or above it (`Vertical`).
     #[props(default)] orientation: AttachmentOrientation,
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The attachment's media, content and actions.
     children: Element,
 ) -> Element {
     use_context_provider(|| AttachmentContext { state });
@@ -141,8 +145,10 @@ pub fn Attachment(
 /// the icon set itself.
 #[component]
 pub fn AttachmentMedia(
+    /// What the media holds: an `Icon` (the default) or an `Image`.
     #[props(default)] variant: AttachmentMediaVariant,
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The icon, or the `<img>` preview.
     children: Element,
 ) -> Element {
     let base = attributes!(div {
@@ -162,6 +168,7 @@ pub fn AttachmentMedia(
 #[component]
 pub fn AttachmentContent(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The title and description.
     children: Element,
 ) -> Element {
     let base = attributes!(div {
@@ -180,6 +187,7 @@ pub fn AttachmentContent(
 #[component]
 pub fn AttachmentTitle(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The attachment's name.
     children: Element,
 ) -> Element {
     let ctx = try_use_context::<AttachmentContext>();
@@ -203,6 +211,7 @@ pub fn AttachmentTitle(
 #[component]
 pub fn AttachmentDescription(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The metadata text, such as the file type, size or upload status.
     children: Element,
 ) -> Element {
     let base = attributes!(span {
@@ -221,6 +230,7 @@ pub fn AttachmentDescription(
 #[component]
 pub fn AttachmentActions(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The `AttachmentAction`s to show.
     children: Element,
 ) -> Element {
     let base = attributes!(div {
@@ -239,12 +249,16 @@ pub fn AttachmentActions(
 /// naming the action and its target ("Remove sales-dashboard.pdf").
 #[component]
 pub fn AttachmentAction(
+    /// The button style: `Ghost` (the default) or any other `ButtonVariant`.
     #[props(default = ButtonVariant::Ghost)] variant: ButtonVariant,
+    /// The button size: `IconXs` (the default) or any other `ButtonSize`.
     #[props(default = ButtonSize::IconXs)] size: ButtonSize,
     #[props(extends = GlobalAttributes)]
     #[props(extends = button)]
     attributes: Vec<Attribute>,
+    /// Called with the click event.
     onclick: Option<EventHandler<MouseEvent>>,
+    /// The action's icon or label. Usually one icon, with an `aria-label` naming the action.
     children: Element,
 ) -> Element {
     let base = attributes!(button {
@@ -277,8 +291,11 @@ pub fn AttachmentTrigger(
     #[props(extends = GlobalAttributes)]
     #[props(extends = button)]
     attributes: Vec<Attribute>,
+    /// Called with the click event.
     onclick: Option<EventHandler<MouseEvent>>,
+    /// Renders the trigger as the element the callback returns, such as a link. The callback gets an `AsChild` with the trigger's attributes and handlers, and its children, to render on and in that element.
     r#as: Option<Callback<AsChild, Element>>,
+    /// The trigger's content, if any. It has no text of its own, so name it with an `aria-label`.
     children: Element,
 ) -> Element {
     let base = attributes!(button {
@@ -317,6 +334,7 @@ pub fn AttachmentTrigger(
 #[component]
 pub fn AttachmentGroup(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The attachments in the row.
     children: Element,
 ) -> Element {
     let base = attributes!(div {

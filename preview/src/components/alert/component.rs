@@ -30,8 +30,10 @@ impl AlertVariant {
 /// should interrupt, per the ARIA authoring practices for live regions.
 #[component]
 pub fn Alert(
+    /// The look: `Default` (the default) or `Destructive`.
     #[props(default)] variant: AlertVariant,
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The alert's content: a title, a description, an icon and any actions.
     children: Element,
 ) -> Element {
     let base = attributes!(div { class: "dx-alert", "data-dx-root": "" });
@@ -51,6 +53,7 @@ pub fn Alert(
 #[component]
 pub fn AlertTitle(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The alert's heading text.
     children: Element,
 ) -> Element {
     let base = attributes!(div { class: "dx-alert-title" });
@@ -65,6 +68,7 @@ pub fn AlertTitle(
 #[component]
 pub fn AlertDescription(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The alert's body text.
     children: Element,
 ) -> Element {
     let base = attributes!(div { class: "dx-alert-description" });
@@ -82,6 +86,7 @@ pub fn AlertDescription(
 #[component]
 pub fn AlertAction(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The control to show, such as a small `Button`, a dismiss icon or a link.
     children: Element,
 ) -> Element {
     let base = attributes!(div { class: "dx-alert-action" });

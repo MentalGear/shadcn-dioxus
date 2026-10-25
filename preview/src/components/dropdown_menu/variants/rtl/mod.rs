@@ -19,7 +19,7 @@ use dioxus_primitives::direction::{Direction, DirectionProvider};
 /// `dropdown-menu.spec.ts` and the shared
 /// `oracle/tier1-apg/{keyboard-matrix,menu-roles,menu-submenu}.spec.ts`
 /// all query those words by name (no `exact`), and this variant renders
-/// alongside `main` on the same page (`preview/src/main.rs`'s
+/// alongside `main` on the same page (`preview/src/site/component_page.rs`'s
 /// `ComponentHighlight`), so reusing them -- even as a substring -- would
 /// make such a locator match both: every one of those files' `Open Menu`/
 /// `Edit`/`More tools`/`Rename` locators would throw a strict-mode "resolved

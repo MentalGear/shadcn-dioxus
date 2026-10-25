@@ -11,6 +11,7 @@ use dioxus_primitives::merge_attributes;
 #[component]
 pub fn Breadcrumb(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The breadcrumb's `BreadcrumbList`.
     children: Element,
 ) -> Element {
     let base = attributes!(nav { class: "dx-breadcrumb", "data-dx-root": "", "aria-label": "breadcrumb" });
@@ -25,6 +26,7 @@ pub fn Breadcrumb(
 #[component]
 pub fn BreadcrumbList(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The `BreadcrumbItem`s, in order.
     children: Element,
 ) -> Element {
     let base = attributes!(ol { class: "dx-breadcrumb-list" });
@@ -39,6 +41,7 @@ pub fn BreadcrumbList(
 #[component]
 pub fn BreadcrumbItem(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The step to show: a `BreadcrumbLink` or a `BreadcrumbPage`.
     children: Element,
 ) -> Element {
     let base = attributes!(li { class: "dx-breadcrumb-item" });
@@ -59,6 +62,7 @@ pub fn BreadcrumbLink(
     /// link instead of an `<a>`). The callback gets the crumb's attributes and children
     /// as an [`AsChild`], to spread on and render inside that element.
     r#as: Option<Callback<AsChild, Element>>,
+    /// The crumb's text or icon.
     children: Element,
 ) -> Element {
     let base = attributes!(a { class: "dx-breadcrumb-link" });
@@ -77,6 +81,7 @@ pub fn BreadcrumbLink(
 #[component]
 pub fn BreadcrumbPage(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The current page's name.
     children: Element,
 ) -> Element {
     let base = attributes!(span { class: "dx-breadcrumb-page" });
@@ -102,6 +107,7 @@ pub fn BreadcrumbPage(
 #[component]
 pub fn BreadcrumbSeparator(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// A custom divider to show in place of the default `>` chevron.
     #[props(default)] children: Option<Element>,
 ) -> Element {
     let base = attributes!(li { class: "dx-breadcrumb-separator" });

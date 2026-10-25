@@ -1,10 +1,10 @@
 ---
 id: 267
 title: "Split oversized source files into modules (carousel.rs, carousel.spec.ts, main.rs, top_layer.rs, calendar.rs, date_picker.rs)"
-status: "BACKLOG (owner approved 2026-10-19 on the cleanup plan; Round 6, before the 152b suite prune).…"
+status: "LANDED (merge queue batch 22, lane/split-row267): six files split into module directories, public…"
 size: "M"
 area: process
-updated: 2026-10-19
+updated: 2026-10-25
 ---
 
 # Row 267: Split oversized source files into modules
@@ -17,7 +17,7 @@ Pure moves, no behaviour change: `primitives/src/carousel.rs` (361 KB), `playwri
 
 ## Status / trigger
 
-**BACKLOG (owner approved 2026-10-19 on the cleanup plan; Round 6, before the 152b suite prune). Owner: unassigned**
+**LANDED (merge queue batch 22, lane/split-row267): six files split into module directories, public paths unchanged; the history-comment extension is subsumed by the ratchet at zero (rows 410 and earlier).**
 
 ## Size
 
@@ -35,3 +35,13 @@ files. One file per commit, full gates green after each, `git log --follow`-frie
 rewrite history comments in the ~50 files that have the most (~530 lines; `carousel.rs`, `top_layer.rs`,
 `top-layer.spec.ts` and `carousel.spec.ts` lead) to "current reason + row N". Leave explanatory blocks alone. Keep these
 rewrites in commits separate from the pure moves.
+
+**Landed 2026-10-25 (lane/split-row267, thread "Split oversized files into modules"):** `primitives/src/{carousel (17
+files), top_layer (9), calendar (10), date_picker (10)}/` with `pub` re-exports from `mod.rs`, so every public path is
+unchanged; each primitive split starts with a pure `git mv` commit. `preview/src/main.rs` went from 3,984 to 468 lines
+plus `preview/src/site/` (12 files), which `select.mjs` maps to the broad set. `carousel.spec.ts` became six specs plus
+`carousel-helpers.ts` with identical titles (432) and measured `durations.json` entries. Class fixed by construction:
+split-out test files fooled `check-direction-keys.sh` and `check-props-docs.sh`; both now skip `tests.rs`,
+`*_tests.rs` and `*/tests/*`. The history-comment extension needed no separate pass: `check-history-comments.sh`
+reports 0 baselined lines in 0 files. Evidence on fc623c0b: full gates 90/90, registry-install-smoke 82/82, the
+diff-selected specs green.

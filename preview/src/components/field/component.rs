@@ -39,6 +39,7 @@ impl FieldOrientation {
 /// layout, no ARIA widget role of its own, so no primitive underneath.
 #[component]
 pub fn Field(
+    /// How the label and description stack against the control: `Vertical` (the default), `Horizontal` or `Responsive`.
     #[props(default)] orientation: FieldOrientation,
     /// Marks the field's control as failing validation -- styles the
     /// label/control and is meant to be paired with a [`FieldError`].
@@ -50,6 +51,7 @@ pub fn Field(
     #[props(default)]
     disabled: bool,
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The label, the control, and any description or error text.
     children: Element,
 ) -> Element {
     let base = attributes!(div { class: "dx-field", "data-dx-root": "" });
@@ -77,6 +79,7 @@ pub fn Field(
 #[component]
 pub fn FieldGroup(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The fields in the group.
     children: Element,
 ) -> Element {
     let base = attributes!(div { class: "dx-field-group", "data-dx-root": "" });
@@ -96,6 +99,7 @@ pub fn FieldSet(
     #[props(extends = GlobalAttributes)]
     #[props(extends = fieldset)]
     attributes: Vec<Attribute>,
+    /// The legend and the fields of the set.
     children: Element,
 ) -> Element {
     let base = attributes!(fieldset { class: "dx-field-set", "data-dx-root": "" });
@@ -110,6 +114,7 @@ pub fn FieldSet(
 #[component]
 pub fn FieldLegend(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The legend text.
     children: Element,
 ) -> Element {
     let base = attributes!(legend { class: "dx-field-legend" });
@@ -134,6 +139,7 @@ pub fn FieldLabel(
     #[props(default)]
     required: bool,
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The label text.
     children: Element,
 ) -> Element {
     let base = attributes!(label {
@@ -158,6 +164,7 @@ pub fn FieldLabel(
 #[component]
 pub fn FieldContent(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The label and description beside a control.
     children: Element,
 ) -> Element {
     let base = attributes!(div { class: "dx-field-content" });
@@ -172,6 +179,7 @@ pub fn FieldContent(
 #[component]
 pub fn FieldDescription(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The helper text.
     children: Element,
 ) -> Element {
     let base = attributes!(p { class: "dx-field-description" });
@@ -187,6 +195,7 @@ pub fn FieldDescription(
 #[component]
 pub fn FieldError(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The validation message.
     children: Element,
 ) -> Element {
     let base = attributes!(div { class: "dx-field-error" });
@@ -207,6 +216,7 @@ pub fn FieldError(
 #[component]
 pub fn FieldSeparator(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The optional centred label, such as `OR`.
     #[props(default)] children: Option<Element>,
 ) -> Element {
     let base = attributes!(div { class: "dx-field-separator" });

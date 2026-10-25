@@ -188,6 +188,7 @@ pub fn MenubarLabel(
     #[props(default)]
     inset: bool,
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The heading text.
     children: Element,
 ) -> Element {
     let base = attributes!(div {

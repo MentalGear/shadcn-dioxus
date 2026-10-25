@@ -79,6 +79,7 @@ impl BubbleSide {
 #[component]
 pub fn BubbleGroup(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The bubbles from one sender.
     children: Element,
 ) -> Element {
     let base = attributes!(div {
@@ -99,9 +100,12 @@ pub fn BubbleGroup(
 /// Avatars, names, timestamps and message-level actions belong in `Message`.
 #[component]
 pub fn Bubble(
+    /// The visual treatment: `Default` (the default), `Secondary`, `Muted`, `Tinted`, `Outline`, `Ghost` or `Destructive`.
     #[props(default)] variant: BubbleVariant,
+    /// Which side of the row the bubble sits on: `Start` (the default) or `End`.
     #[props(default)] align: BubbleAlign,
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The message content.
     children: Element,
 ) -> Element {
     let base = attributes!(div {
@@ -128,7 +132,9 @@ pub fn Bubble(
 #[component]
 pub fn BubbleContent(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// Renders the content as the element the callback returns, such as a link or a button. The callback gets an `AsChild` with the content's attributes and children, to render on and in that element.
     r#as: Option<Callback<AsChild, Element>>,
+    /// The message text or markup.
     children: Element,
 ) -> Element {
     let base = attributes!(div {
@@ -153,9 +159,12 @@ pub fn BubbleContent(
 /// leave vertical room between rows.
 #[component]
 pub fn BubbleReactions(
+    /// The bubble edge the row overlaps: `Bottom` (the default) or `Top`.
     #[props(default)] side: BubbleSide,
+    /// The side of the bubble the row aligns to: `End` (the default) or `Start`.
     #[props(default = BubbleAlign::End)] align: BubbleAlign,
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The reactions or quick-action buttons.
     children: Element,
 ) -> Element {
     let base = attributes!(div {

@@ -6,7 +6,7 @@
  * `innerHeight` or `page.viewportSize()`. The app sets `html { scrollbar-gutter: stable }`
  * (preview/assets/main.css), so those read the gutter-inclusive size (390 at a 390px phone width)
  * while a fixed overlay's containing block excludes the reserved gutter (375): a panel landing 11-15px
- * past the right edge would still pass. That is how a real overflow in `primitives/src/top_layer.rs` hides
+ * past the right edge would still pass. That is how a real overflow in `primitives/src/top_layer/scroll_clamp.rs` hides
  * (`viewportMetrics()` there uses the same probe).
  *
  * Measured from a temporary `position: fixed; inset: 0` element (hidden, inert, removed again), because

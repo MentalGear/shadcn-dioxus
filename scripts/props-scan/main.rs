@@ -1,6 +1,6 @@
 //! `scripts/check-props-docs.sh` helper: prints `path:line: Name.field` for every prop with no doc comment,
-//! as `STRUCT` (a `#[derive(Props)]` field: never allowed) or `FN` (an argument of a `#[component] fn`,
-//! which the gate compares with its shrink-only baseline). Shares its parser with `preview/build.rs`.
+//! as `STRUCT` (a `#[derive(Props)]` field) or `FN` (an argument of a `#[component] fn`); the gate fails on
+//! either, with no baseline. Shares its parser with `preview/build.rs`.
 #[path = "../../preview/props_scan.rs"]
 mod props_scan;
 

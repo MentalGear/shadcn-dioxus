@@ -331,11 +331,11 @@ pub fn DatePicker(props: DatePickerProps) -> Element {
                     // (`../color_picker/component.rs`) -- a calendar
                     // dropdown, like a color swatch popover, is meant to sit
                     // anchored next to its trigger, not centered as a modal
-                    // dialog. Requires `primitives/src/date_picker.rs`'s
+                    // dialog. Requires `primitives/src/date_picker/popover.rs`'s
                     // `DatePickerPopover` to forward `is_modal` to
                     // `PopoverRoot`, and the engine-injected
                     // `@supports (anchor-name: --a)` block every other
-                    // non-modal-arm consumer has (`primitives/src/top_layer.rs`),
+                    // non-modal-arm consumer has (`primitives/src/top_layer/styles.rs`),
                     // or this would only trade one broken position for
                     // another.
                     popover_root: PopoverRoot,

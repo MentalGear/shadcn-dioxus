@@ -2,7 +2,7 @@
  * Shared check that an overlay's open/close animation leaves `transform` alone.
  *
  * THE CLASS: an anchored overlay centres itself on its anchor with `transform: translateX(-50%)`
- * (`primitives/src/top_layer.rs`'s engine stylesheet, keyed on `[data-side]`/`[data-align]`). A
+ * (`primitives/src/top_layer/styles.rs`'s engine stylesheet, keyed on `[data-side]`/`[data-align]`). A
  * `@keyframes` that sets `transform` REPLACES that value for as long as the animation runs, so the
  * panel plays its fade at its un-centred spot (far off its anchor)
  * and snaps to the centre on the last frame. The fade animates `translate`/`scale` instead, which are

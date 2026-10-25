@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Builds the preview/gallery app and publishes it into /docs for GitHub
+# Builds the preview app (`preview/`) and publishes it into /docs for GitHub
 # Pages, which is configured (repo Settings -> Pages) to serve straight
 # from the `main` branch's /docs folder -- no CI build step involved.
 #
@@ -199,7 +199,7 @@ echo "==> OK: all $route_count route(s) have their bootstrap script."
 
 # dev-docs/backlog.md row 46: a query-string route (`/component/?name=X&`) is not enumerable at
 # build time, so it prerenders as the "Component not found" shell for every X; the demo routes are
-# path segments (preview/src/main.rs's ComponentDemoPath/ComponentBlockDemoPath). This check is the
+# path segments (preview/src/site/demos.rs and block_demo.rs: ComponentDemoPath/ComponentBlockDemoPath). This check is the
 # safety net for that class, on every route dx actually produced, the same belt-and-suspenders shape as the
 # bootstrap-script check above. A well-formed build should never ship this
 # marker at all: `ComponentDemoPath`'s own not-found branch only renders for

@@ -39,6 +39,6 @@ How to boot the result, and how `document::eval` runs JS in the web renderer, ar
 
 Set `localStorage["dx-carousel-debug"] = "1"` before booting. The component then records:
 - per-gesture wheel records in `window.__dxCarouselWheel`;
-- per-event traces in `window.__dxCarouselTrace` (idle gate, scroll ends, settles, virtual window re-renders, every scroll write). See `carousel_trace_js!` in `primitives/src/carousel.rs`.
+- per-event traces in `window.__dxCarouselTrace` (idle gate, scroll ends, settles, virtual window re-renders, every scroll write). See `carousel_trace_js!` in `primitives/src/carousel/js_macros.rs`.
 
 With the flag off, the cost is zero.

@@ -61,18 +61,18 @@ from pathlib import Path
 
 # file|callee -> reason. Stale entries (no matching hit) fail.
 ALLOW = {
-    "primitives/src/calendar.rs|Calendar":
+    "primitives/src/calendar/single.rs|Calendar":
         "`DefaultCalendarProps::default_calendar` is the `fn(T) -> Element` the date picker "
         "mounts as `Calendar {}`; the body forwards its own props, so hooks run in the "
         "mounted component's own scope",
-    "primitives/src/calendar.rs|RangeCalendar":
+    "primitives/src/calendar/range.rs|RangeCalendar":
         "same as Calendar: the mounted fn pointer forwards its own props",
     "primitives/src/chart/components/tooltip.rs|icon":
         "`ChartIcon` is the documented render-prop for a series icon (an SVG, hook-free by "
         "contract, 'Unused for now' in chart/config.rs); nothing in the tree sets it",
     "primitives/src/chart/components/legend.rs|icon":
         "same `ChartIcon` render prop as the tooltip's",
-    "preview/src/main.rs|thumb":
+    "preview/src/site/demos.rs|thumb":
         "`email_client_thumb` is a hook-free `rsx!` of one icon in a `DEMO_ENTRIES` const; "
         "a `const` table cannot hold a mounted element",
 }

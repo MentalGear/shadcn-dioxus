@@ -1061,6 +1061,7 @@ pub fn TagOption<T: Clone + PartialEq + 'static>(props: TagOptionProps<T>) -> El
 #[component]
 pub fn TagRemoveButton(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The button's content, typically an icon.
     children: Element,
 ) -> Element {
     let ctx: TagGroupCtx = use_context();

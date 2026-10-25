@@ -61,7 +61,7 @@
  * its corner -- and the UA's `border`/`padding`/`background-color`/`color`
  * paint a visible boxed panel behind the toasts, since this element
  * declares none of those either (only its child `.dx-toast`s do). See
- * `primitives/src/top_layer.rs`'s `ensure_anchor_positioning_styles` doc
+ * `primitives/src/top_layer/styles.rs`'s `ensure_anchor_positioning_styles` doc
  * for the same-spirited `margin: 0; inset: auto;` reset applied there, for
  * anchored overlays, via a shared engine-injected stylesheet instead --
  * this region needs the same idea (undo the UA's `inset`/`margin`) without

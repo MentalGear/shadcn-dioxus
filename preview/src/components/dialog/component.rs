@@ -132,7 +132,9 @@ fn DialogCornerClose() -> Element {
 #[component]
 pub fn DialogClose(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// Renders the close control as the element the callback returns, typically a `Button`. The callback gets an `AsChild` with the close behaviour in its attributes and the label in its children.
     r#as: Option<Callback<AsChild, Element>>,
+    /// The label or icon of the close control.
     children: Element,
 ) -> Element {
     let ctx: DialogCtx = use_context();
@@ -158,6 +160,7 @@ pub fn DialogClose(
 #[component]
 pub fn DialogHeader(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The dialog's title and description.
     children: Element,
 ) -> Element {
     let base = attributes!(div { class: "dx-dialog-header", "data-slot": "dialog-header" });
@@ -174,7 +177,9 @@ pub fn DialogHeader(
 #[component]
 pub fn DialogFooter(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// Appends an outline "Close" button after the children that closes the dialog. Defaults to `false`.
     #[props(default = false)] show_close_button: bool,
+    /// The footer's actions.
     children: Element,
 ) -> Element {
     let base = attributes!(div { class: "dx-dialog-footer", "data-slot": "dialog-footer" });

@@ -15,8 +15,10 @@ struct GroupVertical(Signal<bool>);
 /// pattern and no primitive underneath.
 #[component]
 pub fn ButtonGroup(
+    /// Stacks the buttons in a column (`true`) instead of a row (`false`, the default).
     #[props(default)] orientation_vertical: bool,
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The buttons and separators in the group.
     children: Element,
 ) -> Element {
     let base = attributes!(div { class: "dx-button-group", "data-dx-root": "" });
@@ -71,6 +73,7 @@ pub fn ButtonGroupSeparator(
 #[component]
 pub fn ButtonGroupText(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// The label text or unit, such as `px` or `$`.
     children: Element,
 ) -> Element {
     let base = attributes!(div { class: "dx-button-group-text" });

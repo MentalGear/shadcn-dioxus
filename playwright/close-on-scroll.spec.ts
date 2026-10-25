@@ -1,6 +1,6 @@
 /**
  * Non-modal anchored panels close when the page scrolls away from them (backlog row 193): one helper,
- * `use_close_on_scroll` in `primitives/src/top_layer.rs`, two policies.
+ * `use_close_on_scroll` in `primitives/src/top_layer/scroll_clamp.rs`, two policies.
  *
  *   - ANY scroll closes it: Tooltip, HoverCard, Menubar, NavigationMenu (and Select / DropdownMenu /
  *     ContextMenu when their `scroll_lock` / `modal` is off -- every shipped demo keeps the default

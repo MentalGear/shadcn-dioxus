@@ -72,7 +72,7 @@
    * `margin`/`inset` reset, and the `@supports (anchor-name: --a)` anchor-positioning rules that
    * keep each menu anchored to its own trigger once promoted to the top layer, live in the shared,
    * engine-injected stylesheet every `dx-anchor-*`-marked overlay gets for free -- see
-   * `primitives/src/top_layer.rs`'s `ensure_anchor_positioning_styles` doc. On an engine without CSS
+   * `primitives/src/top_layer/styles.rs`'s `ensure_anchor_positioning_styles` doc. On an engine without CSS
    * Anchor Positioning, this rule's own `position: absolute; top: 100%; left: 0` stays the fallback
    * placement -- irrelevant to whichever anchored path is actually active, since
    * `use_anchor_position_fallback`'s JS-measured correction always overrides with inline styles,

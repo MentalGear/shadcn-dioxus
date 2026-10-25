@@ -135,6 +135,7 @@ pub fn Tag(props: TagProps) -> Element {
 #[component]
 pub fn RemoveButton(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    /// Extra content inside the button, before the remove icon. Usually left empty.
     children: Element,
 ) -> Element {
     let base = attributes!(button { class: "dx-tag-group-remove-button" });

@@ -25,7 +25,8 @@ import type { Page, Request } from "@playwright/test";
  *
  * LEGACY REDIRECT SHELL. A `?name=` URL (`/component/?name=x&`, `/component/block/?name=x&variant=y&`) is
  * the one static file a plain file host has for it: a name-agnostic "Loading component..." shell that
- * redirects client-side once mounted (`ComponentDemo`/`ComponentBlockDemo` in preview/src/main.rs). The
+ * redirects client-side once mounted (`ComponentDemo` in preview/src/site/demos.rs, `ComponentBlockDemo` in
+ * preview/src/site/block_demo.rs). The
  * flag is set by that shell, so for such a URL the helper also waits for the redirect to land on the
  * real route. This is how a non-Block component's variant page
  * (`/component/block/<name>/<variant>/`, prerendered for Block components only) is reached on a static

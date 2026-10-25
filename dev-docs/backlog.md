@@ -40,7 +40,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (38)
+## Open rows (36)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -53,7 +53,6 @@ proposing one is closed as out of scope (row 337 is the first).
 | [153](backlog/153-native-find-in-page-for-windowed-virtual-lists.md) | Native find-in-page for WINDOWED virtual lists: keep per-item text in the DOM as hidden="until-found"… | Left: a Firefox 139+ and Safari 26.2 run of the find bar, and a release-build mount timing for 100k… | M | virtual |
 | [170](backlog/170-cross-component-css-overrides-190-sites-in-12.md) | Cross-component CSS overrides: 190 sites in 12 sheets declare, in one component's stylesheet, a property that… | BURNED DOWN 2026-10-24: baseline is 25 sites in 1 sheet (sidebar dropdown panel placement, a stated… | M (the decision and the prototype are… | theme |
 | [266](backlog/266-repo-cleanup-archive-historical-dev-docs.md) | Repo cleanup: archive historical dev-docs, trim CLAUDE.md and the big dev docs, split backlog.md | Left: deleting the stale remote branches (WAITING ON OWNER: his go), part (c) and part (d). (c) is… | M-L | process |
-| [267](backlog/267-split-oversized-source-files-into-modules.md) | Split oversized source files into modules (carousel.rs, carousel.spec.ts, main.rs, top_layer.rs, calendar.rs, date_picker.rs) | BACKLOG (owner approved 2026-10-19 on the cleanup plan; Round 6, before the 152b suite prune).… | M | process |
 | [268](backlog/268-select-scroll-buttons-and-item-aligned-position.md) | Select scroll buttons and position=item-aligned | Only the native (Blitz) arm is left: position=item-aligned emits data-position there and nothing… | S (native arm only) | select |
 | [295](backlog/295-press-feedback-on-touch-taps-already-on-by.md) | Press feedback on touch taps: already on by default, so check why taps don't show it | WAITING ON OWNER: iPhone re-test of press feedback on /component/tabs/, /component/menubar/… | S (or none) | theme |
 | [296](backlog/296-combobox-list-drifts-from-its-input-on-ios-after.md) | Combobox list drifts from its input on iOS after long scrolling | WAITING ON OWNER: reproduce on an iPhone (owner report 2026-10-19); no fix has landed and the cause… | M + device check | overlays |
@@ -65,7 +64,6 @@ proposing one is closed as out of scope (row 337 is the first).
 | [372](backlog/372-scroll-fade-overlay-scrollbar-hybrid.md) | Scroll fade: transition the edge depths (landed) and paint the fade as gradients where the scrollbar is an overlay (deferred) | WAITING ON OWNER: part 1, the overlay-scrollbar hybrid, is deferred ("leave mask for now"); reopen… | M | primitives |
 | [382](backlog/382-rustdoc-warnings-to-zero.md) | Rustdoc warnings to zero: shrink the check-rustdoc baseline (87 entries, mostly unclosed HTML tags) | OPEN, S, no browser: shrink scripts/check-rustdoc.baseline.tsv (87 entries, mostly unclosed HTML… | S | primitives |
 | [383](backlog/383-adversarial-review-board.md) | Adversarial review board: independent expert reviewers attack the finished library, last item of the backlog | BACKLOG. Runs last: after row 365's proposals are answered and every other engineering row has… | M | process |
-| [384](backlog/384-burn-down-ratchet-baselines.md) | Burn down the ratchet baselines and the leftover TODO comments (props docs, history comments, dead refs) | BACKLOG. The history-comment part overlaps row 267's extension (rewrite history comments while… | M | process |
 | [385](backlog/385-accent-focus-ring-clamped.md) | The focus ring follows the picked accent, clamped to 3:1 per mode | DECIDED 2026-10-24 (owner), BUILT on lane/accent-ring. With an accent picked the ring takes the… | S | theme |
 | [386](backlog/386-virtual-grid-header-hover-see-through.md) | Virtual Grid: hovering the sticky header row makes it see-through (a translucent row hover replaced the opaque cover) | FIXED on lane/grid-header-hover, merge pending. | S | components |
 | [387](backlog/387-docs-clarity-review.md) | Standing docs-clarity review: a technical-writer pass over every component's docs and props for implicit behaviour | STANDING. Run after every round that adds a component or changes a public prop, and before row… | M | docs |

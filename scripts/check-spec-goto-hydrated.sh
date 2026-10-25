@@ -23,7 +23,7 @@
 #
 # Rule 2. A spec names a component page by its PATH route (`/component/<name>/`), never the legacy query form
 # `/component/?name=<x>&`. Every component has a prerendered file at the path route; the legacy route renders a
-# name-agnostic "Loading component..." shell and redirects client-side once mounted (`preview/src/main.rs`
+# name-agnostic "Loading component..." shell and redirects client-side once mounted (`preview/src/site/demos.rs`
 # `ComponentDemo`), so `html[data-hydrated]` is already true on the SHELL before the real page exists. It also
 # drops every query parameter except `iframe` and `dark_mode` and builds client-created (not prerendered)
 # charts. A spec that tests the redirect itself carries `legacy-route-ok: <reason>` on the line or the line

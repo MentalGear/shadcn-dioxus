@@ -117,7 +117,7 @@
 /*
  * The `[popover]` UA-stylesheet reset and the `@supports (anchor-name: --a)` block
  * live in a single, engine-injected stylesheet shared by every
- * `dx-anchor-*`-marked overlay in the app (`primitives/src/top_layer.rs`'s
+ * `dx-anchor-*`-marked overlay in the app (`primitives/src/top_layer/styles.rs`'s
  * `ensure_anchor_positioning_styles` doc, backlog row 20, dev-docs/backlog.md item 1).
  *
  * The open/close motion is the theme's floating-surface recipe with the 4px drop (`dx-drop-in` /

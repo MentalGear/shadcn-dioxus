@@ -60,7 +60,7 @@
 #      task reads or writes later -- possibly milliseconds or seconds
 #      after the effect itself already returned -- is attributed to that
 #      effect's subscriptions at all. The `BlockPlayer` demo
-#      (`main.rs`) is the real example: a
+#      (`site/blocks.rs`) is the real example: a
 #      `progress_seconds` signal is read and `.set()` inside a `spawn`ed
 #      polling loop, textually nested inside a `use_effect` whose own
 #      synchronous body reads no signals (so it only ever runs once, on
