@@ -31,6 +31,7 @@ import { BASE_URL } from "../../base-url";
 import { gotoHydrated } from "../../hydration";
 import { demoFrame, demoRole, demoRoles } from "../../demo-frame";
 import { readCatalog } from "../../catalog";
+import { pageMetrics } from "../../viewport-box";
 
 const TOGGLE = "#dx-direction-toggle";
 
@@ -145,10 +146,7 @@ test.describe("every direction-aware component under the toggle", () => {
       await page.keyboard.press("ArrowLeft");
       await page.keyboard.press("ArrowRight");
       await page.keyboard.press("Escape");
-      const overflow = await page.evaluate(
-        // viewport-ok: page-level horizontal overflow, not an overlay bound
-        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
-      );
+      const { sidewaysOverflow: overflow } = await pageMetrics(page);
       expect(overflow, "page scrolls horizontally under RTL").toBeLessThanOrEqual(1);
       expect(errors).toEqual([]);
       await setDirection(page, "ltr");

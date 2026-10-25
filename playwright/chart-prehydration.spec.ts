@@ -12,6 +12,7 @@
 import { test, expect } from "./fixtures";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
+import { gotoPrerendered } from "./page-kinds";
 
 type Box = { x: number; y: number; w: number; h: number };
 type Card = { key: string; parts: Record<string, Box> };
@@ -63,8 +64,7 @@ for (const route of ROUTES) {
       // Pre-hydration: no JavaScript at all.
       const noJs = await browser.newContext({ viewport, javaScriptEnabled: false });
       const p1 = await noJs.newPage();
-      // goto-ok: JavaScript disabled in this context: the page can never hydrate
-      await p1.goto(`${BASE_URL}${route}`, { waitUntil: "load" });
+      await gotoPrerendered(p1, `${BASE_URL}${route}`, { waitUntil: "load" });
       await p1.waitForSelector('svg[data-slot="chart-svg"]');
       const before: Card[] = await p1.evaluate(`(${COLLECT.toString()})()`);
       await noJs.close();

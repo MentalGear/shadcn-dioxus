@@ -16,7 +16,8 @@ import type { Page } from "@playwright/test";
 import { test, expect } from "./fixtures";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
-import { measureAtRest } from "./animations";
+import { measureAtRest, readStatic } from "./animations";
+import { pageMetrics } from "./viewport-box";
 
 const NAV_TIMEOUT = 20 * 60 * 1000; // first run compiles the app
 const DEFAULT_URL = `${BASE_URL}/component/popover/`;
@@ -53,17 +54,19 @@ const bgClicks = (page: Page) => page.evaluate(() => (window as unknown as { __b
 
 /** Make sure the page is taller than the viewport, so "scrollY moved" is a real statement. */
 async function ensureScrollable(page: Page) {
-  await page.evaluate(() => {
-    if (document.documentElement.scrollHeight < window.innerHeight * 3) {
+  const m = await pageMetrics(page);
+  await page.evaluate((tooShort) => {
+    if (tooShort) {
       document.body.style.minHeight = "6000px";
     }
     window.scrollTo(0, 0);
-  });
+  }, m.scrollHeight < m.innerHeight * 3);
 }
 
 /** Everything a scroll lock could leave on the page, in one comparable snapshot. */
 async function lockFootprint(page: Page) {
-  return page.evaluate(() => {
+  const { clientWidth } = await pageMetrics(page);
+  const rest = await page.evaluate(() => {
     const html = document.documentElement;
     const body = document.body;
     const hs = getComputedStyle(html);
@@ -77,9 +80,9 @@ async function lockFootprint(page: Page) {
       htmlInlineStyle: html.getAttribute("style") ?? "",
       locked: w.__dxScrollLocked === true,
       lockCount: w.__dxScrollLockN ?? 0,
-      clientWidth: html.clientWidth,
     };
   });
+  return { ...rest, clientWidth };
 }
 
 /**
@@ -111,8 +114,7 @@ async function scrollAndSettle(page: Page, act: () => Promise<void>): Promise<nu
  * scrolling UNDER an open popover scrolls less than this.
  */
 const scrollKeepingAnchor = (page: Page) =>
-  // rest-ok: the trigger is a page button that does not animate; the popover's own box is never read here
-  trigger(page).evaluate((el) => Math.floor(el.getBoundingClientRect().top - 40));
+  readStatic(trigger(page), (el) => Math.floor(el.getBoundingClientRect().top - 40));
 
 /**
  * Dispatches a cancelable wheel event on the body and reports whether anything called
@@ -261,9 +263,8 @@ test.describe("non-modal Popover (the default): the page keeps scrolling and hol
     // End must reach the bottom. Not "further than after PageDown": on a short page PageDown alone
     // can already reach the bottom.
     const endY = await scrollAndSettle(page, () => page.keyboard.press("End"));
-    const maxY = await page.evaluate(
-      () => document.documentElement.scrollHeight - document.documentElement.clientHeight,
-    );
+    const pm = await pageMetrics(page);
+    const maxY = pm.scrollHeight - pm.clientHeight;
     expect(endY).toBeGreaterThanOrEqual(maxY - 1);
   });
 

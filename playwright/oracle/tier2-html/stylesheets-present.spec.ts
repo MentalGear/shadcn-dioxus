@@ -37,6 +37,7 @@ import type { Page } from "@playwright/test";
 import * as fs from "fs";
 import * as path from "path";
 import { BASE_URL } from "../../base-url";
+import { gotoPrerendered } from "../../page-kinds";
 
 const PREVIEW = path.join(__dirname, "..", "..", "..", "preview");
 
@@ -221,8 +222,7 @@ test("the class -> stylesheet map is not empty (the sources were found)", () => 
 
 for (const { url, settled } of ROUTES) {
   test(`every rendered component has its stylesheet on a fresh load of ${url}`, async ({ page }) => {
-    // goto-ok: stylesheet-presence oracle samples at domcontentloaded and across the redirect; no interaction
-    await page.goto(`${BASE_URL}${url}`, { waitUntil: "domcontentloaded", timeout: 60_000 });
+    await gotoPrerendered(page, `${BASE_URL}${url}`, { waitUntil: "domcontentloaded", timeout: 60_000 });
     await settle(page, settled);
 
     // Links are appended from effects and sheets load asynchronously: poll until settled, so only a
@@ -254,8 +254,7 @@ test("the oracle is not vacuous: a component stylesheet missing from the page is
   // Without this, a mistake in the class -> sheet maps (wrong path, a fingerprint that matches
   // everywhere) would leave every route test above green whatever the page loaded. Take the header's
   // theme picker's popover (it renders on every route) and drop ITS stylesheet, the way the lost insertion did.
-  // goto-ok: stylesheet-presence oracle samples at domcontentloaded and across the redirect; no interaction
-  await page.goto(`${BASE_URL}/docs`, { waitUntil: "domcontentloaded", timeout: 60_000 });
+  await gotoPrerendered(page, `${BASE_URL}/docs`, { waitUntil: "domcontentloaded", timeout: 60_000 });
   await settle(page);
   await expect.poll(() => missingStylesheets(page), { timeout: 10_000 }).toEqual({});
   const { marks } = FINGERPRINTS[POPOVER_SHEET];
@@ -295,8 +294,7 @@ test("the theme picker's popover panel is styled on the legacy component route",
   // The symptom: on `/component/?name=...` the panel computes border 3px /
   // radius 0 (the UA `<dialog>`-ish default) instead of the themed 1px / 10px it has on `/`.
   const panel = async (url: string, settled?: RegExp) => {
-    // goto-ok: stylesheet-presence oracle samples at domcontentloaded and across the redirect; no interaction
-    await page.goto(`${BASE_URL}${url}`, { waitUntil: "domcontentloaded", timeout: 60_000 });
+    await gotoPrerendered(page, `${BASE_URL}${url}`, { waitUntil: "domcontentloaded", timeout: 60_000 });
     await settle(page, settled);
     await page.getByRole("button", { name: "Theme", exact: true }).click();
     const content = page.locator(".dx-theme-picker");

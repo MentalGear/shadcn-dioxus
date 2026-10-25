@@ -78,8 +78,9 @@ import { type Page } from "@playwright/test";
 import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "../../axe";
 import { BASE_URL } from "../../base-url";
 import { gotoHydrated } from "../../hydration";
-import { measureAtRest, awaitAnimationsSettled } from "../../animations";
+import { measureAtRest, awaitAnimationsSettled, readAtRest } from "../../animations";
 import { demoRole } from "../../demo-frame";
+import { pageMetrics } from "../../viewport-box";
 
 const NAV_TIMEOUT = 20 * 60 * 1000; // first run compiles the app
 
@@ -433,10 +434,10 @@ test.describe("Rule 6 — modal Popover", () => {
     await trigger.click();
     await expect(content).toBeVisible();
 
-    await awaitAnimationsSettled(content);
-    const measurement = await page.evaluate(() => {
-      const t = document.getElementById("popover-modal-anchor-trigger")!.getBoundingClientRect(); // rest-ok: settled by the awaitAnimationsSettled(content) above
-      const c = document.getElementById("popover-modal-anchor-content")!.getBoundingClientRect(); // rest-ok: settled by the awaitAnimationsSettled(content) above
+    const viewport = await pageMetrics(page);
+    const measurement = await readAtRest(content, () => {
+      const t = document.getElementById("popover-modal-anchor-trigger")!.getBoundingClientRect();
+      const c = document.getElementById("popover-modal-anchor-content")!.getBoundingClientRect();
       return {
         // The default `side="bottom"`/`align="center"` contract: content
         // top should sit a small, fixed gap below the trigger's bottom
@@ -449,8 +450,8 @@ test.describe("Rule 6 — modal Popover", () => {
         offsetCenterX: c.left + c.width / 2 - (t.left + t.width / 2),
         contentTop: c.top,
         contentLeft: c.left,
-        viewportWidth: window.innerWidth,
-        viewportHeight: window.innerHeight,
+        viewportWidth: viewport.innerWidth,
+        viewportHeight: viewport.innerHeight,
       };
     });
 

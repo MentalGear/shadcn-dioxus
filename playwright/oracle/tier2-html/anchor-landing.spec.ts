@@ -43,6 +43,8 @@ import { test, expect } from "../../fixtures";
 import type { Page } from "@playwright/test";
 import { BASE_URL } from "../../base-url";
 import { gotoHydrated } from "../../hydration";
+import { gotoReference } from "../../page-kinds";
+import { pageMetrics } from "../../viewport-box";
 
 const TOLERANCE_PX = 2;
 const LOAD = { timeout: 20 * 60 * 1000 } as const;
@@ -63,8 +65,7 @@ async function waitReady(page: Page, p: PageSpec) {
 }
 
 async function open(page: Page, p: PageSpec, hash = "") {
-  // goto-ok: about:blank is not the app
-  await page.goto("about:blank"); // a real navigation every time, never a same-document hash jump
+  await gotoReference(page, "about:blank"); // a real navigation every time, never a same-document hash jump
   await gotoHydrated(page, `${BASE_URL}${p.path}${hash}`, LOAD);
   await waitReady(page, p);
 }
@@ -102,8 +103,9 @@ interface Landing {
 
 /** Wait until two rAFs have run and neither scrollY, the target's top nor the page height moved for 300 ms. */
 async function settle(page: Page, id: string): Promise<Landing> {
+  const vh = (await pageMetrics(page)).innerHeight;
   return page.evaluate(
-    (id) =>
+    ({ id, vh }) =>
       new Promise<Landing>((resolve) => {
         const sample = () => {
           const t = document.getElementById(id);
@@ -123,7 +125,7 @@ async function settle(page: Page, id: string): Promise<Landing> {
             }
             if (now - since >= 300 || now - start > 15_000) {
               const pad = parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0;
-              const max = document.documentElement.scrollHeight - innerHeight;
+              const max = document.documentElement.scrollHeight - vh;
               const t = document.getElementById(id)!;
               const abs = t.getBoundingClientRect().top + scrollY;
               const want = Math.min(max, Math.max(0, abs - pad));
@@ -133,7 +135,7 @@ async function settle(page: Page, id: string): Promise<Landing> {
           }),
         );
       }),
-    id,
+    { id, vh },
   );
 }
 

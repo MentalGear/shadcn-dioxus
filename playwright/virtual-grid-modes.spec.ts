@@ -17,6 +17,7 @@ import { test, expect } from "./fixtures";
 import type { Locator, Page } from "@playwright/test";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
+import { gotoPrerendered } from "./page-kinds";
 
 const FIND_URL = `${BASE_URL}/component/block/?name=virtual_grid&variant=find_in_page`;
 const CV_URL = `${BASE_URL}/component/block/?name=virtual_grid&variant=content_visibility`;
@@ -121,8 +122,7 @@ test.describe("virtual grids: find-in-page placeholders (row 309)", () => {
       placeholder: el.querySelector("[data-find-index]")!.getBoundingClientRect().height,
     }));
     expect(sizes.real).toBeGreaterThan(sizes.placeholder);
-    // goto-ok: a same-document fragment navigation on the page the lines above already hydrated and populated
-    await page.goto(`${page.url().split("#")[0]}#:~:text=Photo%202108`);
+    await gotoPrerendered(page, `${page.url().split("#")[0]}#:~:text=Photo%202108`);
     // Chromium fires `beforematch` on the placeholder of item 2107.
     await expect.poll(() => page.evaluate(() => (window as unknown as { __fired: string[] }).__fired)).toContain("2107");
     const item = '[data-grid-index="2107"]';

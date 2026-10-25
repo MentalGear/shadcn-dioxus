@@ -24,6 +24,7 @@ import type { Locator, Page } from "@playwright/test";
 import { expectNoAxeViolations } from "./axe";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
+import { gotoPrerendered } from "./page-kinds";
 
 const GOTO = { timeout: 20 * 60 * 1000 };
 const URL = `${BASE_URL}/component/questionnaire/`;
@@ -86,8 +87,7 @@ const submits = (page: Page) => page.evaluate(() => (window as unknown as { __qS
 test("the server-rendered page is the complete initial state (JavaScript off)", async ({ browser }) => {
   const ctx = await browser.newContext({ javaScriptEnabled: false });
   const page = await ctx.newPage();
-  // goto-ok: JavaScript is disabled in this context: nothing hydrates, the spec reads the prerendered HTML
-  await page.goto(`${BASE_URL}/component/questionnaire/`, { waitUntil: "load", ...GOTO });
+  await gotoPrerendered(page, `${BASE_URL}/component/questionnaire/`, { waitUntil: "load", ...GOTO });
   const root = frame(page, "main");
   await expect(items(root)).toHaveCount(3);
   await expect(items(root).nth(0)).toBeVisible();

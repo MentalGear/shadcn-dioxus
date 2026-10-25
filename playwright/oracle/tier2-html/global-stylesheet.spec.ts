@@ -21,6 +21,7 @@
  */
 import { test, expect } from "../../fixtures";
 import { BASE_URL } from "../../base-url";
+import { gotoPrerendered } from "../../page-kinds";
 
 const ROUTES = [
   `${BASE_URL}/`,
@@ -30,8 +31,7 @@ const ROUTES = [
 
 for (const url of ROUTES) {
   test(`global stylesheet (main.css) is applied on ${new URL(url).pathname}${new URL(url).search}`, async ({ page }) => {
-    // goto-ok: asserts the stylesheet applied at first paint (prerendered CSS), not interactive behaviour
-    await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60_000 });
+    await gotoPrerendered(page, url, { waitUntil: "domcontentloaded", timeout: 60_000 });
     await page.waitForTimeout(3000);
     const state = await page.evaluate(() => {
       const link = document.querySelector('link[rel="stylesheet"][href*="main-"]') as HTMLLinkElement | null;

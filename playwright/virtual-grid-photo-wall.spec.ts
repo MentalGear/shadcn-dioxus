@@ -3,6 +3,7 @@ import type { Locator, Page } from "@playwright/test";
 import { BASE_URL } from "./base-url";
 import { demoFrame, demoRole } from "./demo-frame";
 import { gotoHydrated } from "./hydration";
+import { pageMetrics } from "./viewport-box";
 
 // VirtualGrid page, `photo_wall` demo: a wall of 90,000 mixed-aspect photos, with a Grid / Justified layout toggle:
 // uniform cells of the two-axis VirtualGrid (contain/cover switch), or VirtualJustifiedGrid over the same photos on a
@@ -142,8 +143,7 @@ test.describe("virtual_grid photo_wall", () => {
     const grid = wall(page);
     await grid.scrollIntoViewIfNeeded();
     await expect(tiles(grid).first()).toBeVisible();
-    // viewport-ok: measures page overflow, not an overlay's containing block
-    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    const { sidewaysOverflow: overflow } = await pageMetrics(page);
     expect(overflow).toBeLessThanOrEqual(0);
     await expect(minimap(page)).toBeVisible();
   });

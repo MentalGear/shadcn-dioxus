@@ -26,7 +26,7 @@ const open = (page: Page) => gotoHydrated(page, `${BASE_URL}/component/toast/`);
  */
 function fit(toast: Locator) {
   return readAtRest(toast, (el) => {
-    const box = el.getBoundingClientRect(); // rest-ok: read inside readAtRest
+    const box = el.getBoundingClientRect();
     const cs = getComputedStyle(el);
     let top = Infinity;
     let bottom = -Infinity;
@@ -34,11 +34,11 @@ function fit(toast: Locator) {
     // adds no height), so the padding is measured around the content without it; `closeInside` checks the
     // target still sits within the toast.
     const close = el.querySelector('button[aria-label="close"]');
-    const cr = close?.getBoundingClientRect(); // rest-ok: read inside readAtRest
+    const cr = close?.getBoundingClientRect();
     const closeInside = !cr || (cr.top >= box.top && cr.bottom <= box.bottom && cr.left >= box.left && cr.right <= box.right);
     el.querySelectorAll("*").forEach((c) => {
       if (close && (c === close || close.contains(c))) return;
-      const r = c.getBoundingClientRect(); // rest-ok: read inside readAtRest
+      const r = c.getBoundingClientRect();
       if (r.height === 0) return;
       top = Math.min(top, r.top);
       bottom = Math.max(bottom, r.bottom);
@@ -127,7 +127,7 @@ test.describe("toast: the stack with different heights (row 376)", () => {
     // The peek is the gap, not a function of the heights: the back toast's centre sits one gap above the front's.
     const centre = async (l: Locator) =>
       readAtRest(l, (el) => {
-        const r = el.getBoundingClientRect(); // rest-ok: read inside readAtRest
+        const r = el.getBoundingClientRect();
         return r.top + r.height / 2;
       });
     expect((await centre(front)) - (await centre(back)), "peek offset").toBeGreaterThan(10);
@@ -146,7 +146,7 @@ test.describe("toast: the stack with different heights (row 376)", () => {
     expect(b.contentOpacity, "the back toast shows its content again").toBe(1);
     const rect = (l: Locator) =>
       readAtRest(l, (el) => {
-        const r = el.getBoundingClientRect(); // rest-ok: read inside readAtRest
+        const r = el.getBoundingClientRect();
         return { top: r.top, bottom: r.bottom };
       });
     const fr = await rect(front);

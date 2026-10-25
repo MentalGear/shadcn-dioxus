@@ -3,8 +3,8 @@ import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from './axe';
 import { BASE_URL } from './base-url';
 import { gotoHydrated } from './hydration';
 import { expectFadeKeepsTransform } from './assert-anchor-transform';
-import { awaitAnimationsSettled, measureAtRest } from './animations';
-import { fixedViewportBox } from './viewport-box';
+import { awaitAnimationsSettled, measureAtRest, readStatic } from './animations';
+import { fixedViewportBox, pageMetrics } from './viewport-box';
 
 test('pointer navigation', async ({ page }) => {
   await gotoHydrated(page, `${BASE_URL}/component/context_menu/`, { timeout: 20 * 60 * 1000 }); // Increase timeout to 20 minutes
@@ -299,7 +299,7 @@ test('touch tap outside closes the open menu', async ({ page }) => {
   // point" for a reason that has nothing to do with this test's actual
   // claim; the same false negative and the same fix are documented in
   // `dev-docs/archive/research/phase4-spike-findings.md`'s spike spec.
-  const viewport = page.viewportSize();
+  const viewport = (await pageMetrics(page)).viewportSize;
   if (!viewport) throw new Error('no viewport');
   const farX = viewport.width - 30;
   const farY = viewport.height - 30;
@@ -335,8 +335,8 @@ test('pointerdown at the trigger location does not dismiss an open menu', async 
   await trigger.click({ button: 'right' });
   await expect(contextMenu).toHaveAttribute('data-state', 'open');
 
-  await trigger.evaluate((el) => {
-    const triggerRect = el.getBoundingClientRect(); // rest-ok: the trigger button and its root, neither animates
+  await readStatic(trigger, (el) => {
+    const triggerRect = el.getBoundingClientRect();
     if (triggerRect.width === 0 || triggerRect.height === 0) {
       throw new Error('trigger has no bounding box');
     }
@@ -355,7 +355,7 @@ test('pointerdown at the trigger location does not dismiss an open menu', async 
 
     const root = el.parentElement;
     if (!root) throw new Error('trigger has no root');
-    const rootRect = root.getBoundingClientRect(); // rest-ok: the trigger's root, not an overlay
+    const rootRect = root.getBoundingClientRect();
     if (x < rootRect.left || x > rootRect.right || y < rootRect.top || y > rootRect.bottom) {
       throw new Error('point is outside context menu root bounds');
     }

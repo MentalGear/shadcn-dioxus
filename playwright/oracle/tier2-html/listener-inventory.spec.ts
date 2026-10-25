@@ -48,6 +48,7 @@ import type { CDPSession, Page } from "@playwright/test";
 import { BASE_URL } from "../../base-url";
 import { demoFrame, demoRole } from "../../demo-frame";
 import { gotoHydrated } from "../../hydration";
+import { pageMetrics } from "../../viewport-box";
 
 type Listener = { type: string; capture: boolean; passive: boolean };
 
@@ -388,14 +389,14 @@ test.describe("scroll lock (row 149)", () => {
   // that changes the root scroller's width. Launching with `--hide-scrollbars` dropped gives the 15 px of most
   // users' Windows/Linux browsers. (`test.use({ launchOptions })` cannot be scoped to a describe, so this
   // test launches its own browser, with the project's executable.)
-  test("under a forced classic scrollbar, documentElement.clientWidth is the same on every frame of open, exit and close", async ({ playwright }, testInfo) => {
+  test("under a forced classic scrollbar, the root client width is the same on every frame of open, exit and close", async ({ playwright }, testInfo) => {
     const executablePath = (testInfo.project.use as { launchOptions?: { executablePath?: string } }).launchOptions?.executablePath;
     const browser = await playwright.chromium.launch({ executablePath, args: ["--no-sandbox"], ignoreDefaultArgs: ["--hide-scrollbars"] });
     try {
       const page = await (await browser.newContext({ viewport: { width: 1280, height: 800 } })).newPage();
       await gotoHydrated(page, `${BASE_URL}/component/dialog/`, GOTO);
       await slowExit(page);
-      const gutter = await page.evaluate(() => innerWidth - document.documentElement.clientWidth);
+      const { gutter } = await pageMetrics(page);
       expect(gutter, "this launch must render a classic scrollbar, or the test proves nothing").toBeGreaterThan(0);
       await page.evaluate(() => {
         const w = window as unknown as { __widths: number[]; __raf: number };
