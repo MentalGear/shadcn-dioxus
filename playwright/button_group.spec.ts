@@ -61,24 +61,28 @@ test.describe("Seams match the outer edge", () => {
       expect(await groups.count()).toBeGreaterThan(0);
       for (const group of await groups.all()) {
         await group.scrollIntoViewIfNeeded();
+        // Borders paint on whole device pixels (the rounded box edges), so the clip starts on the group's rounded left
+        // edge: column 0 is the outer edge, and each seam is the previous child's end edge -- the column just before a
+        // follower (LTR) or just after it (RTL).
         const geo = await group.evaluate((g) => {
           const r = g.getBoundingClientRect();
+          const x0 = Math.round(r.left);
+          const rtl = getComputedStyle(g).direction === "rtl";
           return {
-            h: Math.round(r.height),
-            // The seam is the previous child's end edge: the column just before a follower (LTR) or just after it (RTL).
+            clip: { x: x0, y: Math.round(r.top), width: Math.round(r.right) - x0, height: Math.round(r.height) },
             seams: [...g.children].slice(1).map((c) => {
               const cr = c.getBoundingClientRect();
-              return getComputedStyle(g).direction === "rtl" ? Math.round(cr.right - r.left) : Math.round(cr.left - r.left) - 1;
+              return rtl ? Math.round(cr.right) - x0 : Math.round(cr.left) - 1 - x0;
             }),
           };
         });
-        const png = (await group.screenshot({ animations: "disabled" })).toString("base64");
+        const png = (await page.screenshot({ clip: geo.clip, animations: "disabled" })).toString("base64");
         const cols = await page.evaluate(
           async ({ png, geo }) => {
             const bmp = await createImageBitmap(await (await fetch(`data:image/png;base64,${png}`)).blob());
             const ctx = new OffscreenCanvas(bmp.width, bmp.height).getContext("2d")!;
             ctx.drawImage(bmp, 0, 0);
-            const at = (x: number) => Array.from(ctx.getImageData(x, Math.floor(geo.h / 2), 1, 1).data.slice(0, 3));
+            const at = (x: number) => Array.from(ctx.getImageData(x, Math.floor(bmp.height / 2), 1, 1).data.slice(0, 3));
             return { outer: at(0), seams: geo.seams.map(at) };
           },
           { png, geo },
