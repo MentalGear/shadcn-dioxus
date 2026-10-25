@@ -18,6 +18,8 @@ pub fn ContextMenu(props: ContextMenuProps) -> Element {
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/context_menu/style.css") }
         context_menu::ContextMenu {
+            modal: props.modal,
+            dir: props.dir,
             disabled: props.disabled,
             open: props.open,
             default_open: props.default_open,
@@ -34,6 +36,7 @@ pub fn ContextMenuTrigger(props: ContextMenuTriggerProps) -> Element {
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/context_menu/style.css") }
         context_menu::ContextMenuTrigger {
+            id: props.id,
             padding: "20px",
             background: "var(--dx-background)",
             border: "1px dashed var(--dx-border)",

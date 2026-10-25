@@ -12,6 +12,7 @@ pub fn Toolbar(props: ToolbarProps) -> Element {
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/toolbar/style.css") }
         toolbar::Toolbar {
+            dir: props.dir,
             aria_label: props.aria_label,
             disabled: props.disabled,
             horizontal: props.horizontal,

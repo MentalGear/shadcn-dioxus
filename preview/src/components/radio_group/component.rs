@@ -18,6 +18,7 @@ pub fn RadioGroup(props: RadioGroupProps) -> Element {
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/radio_group/style.css") }
         radio_group::RadioGroup {
+            dir: props.dir,
             value: props.value,
             default_value: props.default_value,
             on_value_change: props.on_value_change,

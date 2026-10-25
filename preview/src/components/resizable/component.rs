@@ -20,6 +20,7 @@ pub fn ResizablePanelGroup(props: ResizablePanelGroupProps) -> Element {
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/resizable/style.css") }
         resizable::ResizablePanelGroup {
+            dir: props.dir,
             direction: props.direction,
             sizes: props.sizes,
             default_sizes: props.default_sizes,

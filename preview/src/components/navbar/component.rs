@@ -13,6 +13,7 @@ pub fn Navbar(props: NavbarProps) -> Element {
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/navbar/style.css") }
         navbar::Navbar {
+            dir: props.dir,
             disabled: props.disabled,
             roving_loop: props.roving_loop,
             open_on_hover: props.open_on_hover,
@@ -43,7 +44,7 @@ pub fn NavbarTrigger(props: NavbarTriggerProps) -> Element {
     let merged = merge_attributes(vec![base, props.attributes]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/navbar/style.css") }
-        navbar::NavbarTrigger { attributes: merged,
+        navbar::NavbarTrigger { id: props.id, attributes: merged,
             {props.children}
             ChevronDown {
                 class: "dx-navbar-expand-icon",
@@ -72,6 +73,8 @@ pub fn NavbarItem(props: NavbarItemProps) -> Element {
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/navbar/style.css") }
         navbar::NavbarItem {
+            onclick_only: props.onclick_only,
+            rel: props.rel,
             class: "dx-navbar-item".to_string(),
             index: props.index,
             value: props.value,
