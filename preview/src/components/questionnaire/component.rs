@@ -9,7 +9,7 @@ use dioxus_primitives::questionnaire::{
     QuestionnairePartProps, QuestionnaireProgressProps,
 };
 // The model types a caller builds `items` from and reads answers with; not all are used by the demos.
-#[allow(unused_imports)]
+#[allow(unused_imports, reason = "a registry component: an app that installs it uses a different subset than the preview's demos")]
 pub use dioxus_primitives::questionnaire::{
     use_questionnaire, AnswerChange, ChoiceDef, InputDef, InputKind, ItemDef, ItemStatus,
     ProgressState, QuestionnaireHandle, ShortcutMode,

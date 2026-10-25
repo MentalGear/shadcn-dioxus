@@ -63,14 +63,14 @@ use dioxus_attributes::attributes;
 
 #[derive(Clone, Copy)]
 struct PopoverCtx {
-    #[allow(unused)]
+    #[allow(unused, reason = "read only in some `web`/native arms")]
     open: Memo<bool>,
-    #[allow(unused)]
+    #[allow(unused, reason = "read only in some `web`/native arms")]
     set_open: Callback<bool>,
 
     // Whether the popover is a modal (default false). Only the modal arms trap focus, make the
     // page inert and take the scroll lock.
-    #[allow(unused)]
+    #[allow(unused, reason = "read only in some `web`/native arms")]
     is_modal: ReadSignal<bool>,
     // Whether a modal popover keeps its page-dimming scrim. Only the modal arms read it.
     overlay: ReadSignal<bool>,
@@ -78,9 +78,9 @@ struct PopoverCtx {
     // Only read by `use_outside_dismiss` calls, which live solely in
     // native (Blitz) arms (`PopoverModalContent`/`PopoverNonModalContent`'s
     // `#[cfg(not(feature = "web"))]` variants) -- both web arms get
-    // dismissal from the browser instead. `#[allow(unused)]` so the web
+    // dismissal from the browser instead. `#[allow]` so the web
     // build doesn't warn on a field genuinely unread there.
-    #[allow(unused)]
+    #[allow(unused, reason = "read only by the native arms' `use_outside_dismiss`")]
     root_id: Memo<String>,
 
     // The current `PopoverContent`'s own element id, kept in sync by that
@@ -102,7 +102,7 @@ struct PopoverCtx {
     // popover would render at the fallback `top:0; left:0` corner instead
     // of next to its trigger, on *any* browser, anchor-positioning-capable
     // or not.
-    #[allow(unused)]
+    #[allow(unused, reason = "read only in some `web`/native arms")]
     content_id: Signal<String>,
 }
 
@@ -485,7 +485,6 @@ pub fn PopoverContentRendered(
 /// `PopoverContent`), since this is the only arm that needs it.
 #[cfg(not(feature = "web"))]
 #[component]
-#[allow(clippy::too_many_arguments)]
 fn PopoverModalContent(
     /// The DOM id of the popover content element.
     id: String,
@@ -591,7 +590,6 @@ fn PopoverModalContent(
 /// never does.
 #[cfg(feature = "web")]
 #[component]
-#[allow(clippy::too_many_arguments)]
 fn PopoverModalContent(
     /// The DOM id of the popover content element.
     id: String,

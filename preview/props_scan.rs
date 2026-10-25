@@ -9,7 +9,10 @@
 //! It is a small scan, not `syn`: only column-0 `#[derive(.. Props ..)] pub struct` items are read (a
 //! struct inside `mod tests` is indented and is not a public prop surface), and a field is whatever sits
 //! between top-level commas of the struct body. `std` only, so the gate can build it with bare `rustc`.
-#![allow(dead_code)]
+#![allow(
+    dead_code,
+    reason = "two callers include this file and each uses a different subset"
+)]
 
 /// One field of a props struct (pub or not: the builder setter is public either way).
 #[derive(Debug, Clone)]

@@ -883,7 +883,6 @@ pub fn SliderThumb(props: SliderThumbProps) -> Element {
     }
 }
 
-#[allow(dead_code)]
 #[derive(Copy, Clone)]
 struct SliderContext {
     thumbs: Memo<Vec<f64>>,

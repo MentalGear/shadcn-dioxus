@@ -191,6 +191,7 @@ impl EdgeSide {
 
     /// The concrete side for a viewport that is at or above the `md` breakpoint (`wide`)
     /// or below it. Every explicit side resolves to itself.
+    #[must_use]
     pub fn resolve(self, wide: bool) -> EdgeSide {
         match self {
             EdgeSide::Auto if wide => EdgeSide::Right,

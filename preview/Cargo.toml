@@ -40,3 +40,6 @@ desktop = ["dioxus/desktop", "dioxus-primitives/web"]
 fullstack = ["dioxus/fullstack"]
 server = ["dioxus/server", "dioxus/fullstack", "dioxus-primitives/web"]
 native = ["dioxus/native"]
+
+[lints]
+workspace = true

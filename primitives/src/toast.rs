@@ -1699,18 +1699,21 @@ impl ToastOptions {
     }
 
     /// Set the description for the toast.
+    #[must_use]
     pub fn description(mut self, description: impl ToString) -> Self {
         self.description = Some(description.to_string());
         self
     }
 
     /// Set the duration for the toast.
+    #[must_use]
     pub fn duration(mut self, duration: Duration) -> Self {
         self.duration = Some(duration);
         self
     }
 
     /// Set whether the toast is permanent.
+    #[must_use]
     pub fn permanent(mut self, permanent: bool) -> Self {
         self.permanent = permanent;
         self
@@ -1718,6 +1721,7 @@ impl ToastOptions {
 
     /// Adds an action button (e.g. "Undo"); activating it runs `on_click` and dismisses the
     /// toast.
+    #[must_use]
     pub fn action(mut self, label: impl ToString, on_click: impl FnMut(()) + 'static) -> Self {
         self.action = Some(ToastAction::new(label, on_click));
         self
@@ -1742,48 +1746,56 @@ impl ToastUpdate {
     }
 
     /// Replace the title.
+    #[must_use]
     pub fn title(mut self, title: impl ToString) -> Self {
         self.title = Some(title.to_string());
         self
     }
 
     /// Replace the description.
+    #[must_use]
     pub fn description(mut self, description: impl ToString) -> Self {
         self.description = Some(Some(description.to_string()));
         self
     }
 
     /// Removes the description.
+    #[must_use]
     pub fn clear_description(mut self) -> Self {
         self.description = Some(None);
         self
     }
 
     /// Change the type (e.g. `Loading` to `Success`).
+    #[must_use]
     pub fn toast_type(mut self, toast_type: ToastType) -> Self {
         self.toast_type = Some(toast_type);
         self
     }
 
     /// Set the auto-dismiss duration.
+    #[must_use]
     pub fn duration(mut self, duration: Duration) -> Self {
         self.duration = Some(duration);
         self
     }
 
     /// Set whether the toast is permanent.
+    #[must_use]
     pub fn permanent(mut self, permanent: bool) -> Self {
         self.permanent = Some(permanent);
         self
     }
 
     /// Replace the action button.
+    #[must_use]
     pub fn action(mut self, label: impl ToString, on_click: impl FnMut(()) + 'static) -> Self {
         self.action = Some(Some(ToastAction::new(label, on_click)));
         self
     }
 
     /// Removes the action button.
+    #[must_use]
     pub fn clear_action(mut self) -> Self {
         self.action = Some(None);
         self
