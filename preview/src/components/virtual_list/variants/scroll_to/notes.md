@@ -1,0 +1,1 @@
+Jump to any row of a long list with a handle from `use_virtual_scroller`: type a row number or use the presets, choose where it lands (Start, Center, End, or Nearest), and switch between 100,000 rows (windowed: the row is not mounted until the jump) and 800 (every row in the DOM). Every row is 48px tall, so the landing is exact.

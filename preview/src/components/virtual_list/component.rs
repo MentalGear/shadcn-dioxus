@@ -1,6 +1,8 @@
 use dioxus::prelude::*;
 #[allow(unused_imports)] // a consumer-facing surface; this crate's own demos use a subset
-pub use dioxus_primitives::virtual_list::{ScrollFade, VirtualListProps, VirtualizeMode};
+pub use dioxus_primitives::virtual_list::{
+    use_virtual_scroller, ScrollAlign, ScrollFade, VirtualListProps, VirtualScroller, VirtualizeMode,
+};
 use dioxus_primitives::{dioxus_attributes::attributes, merge_attributes};
 
 /// Styled wrapper around the primitive `VirtualList`.
@@ -22,6 +24,7 @@ pub fn VirtualList(props: VirtualListProps) -> Element {
             auto_threshold: props.auto_threshold,
             fade: props.fade,
             text_value: props.text_value,
+            scroller: props.scroller,
             attributes: merged,
         }
     }
