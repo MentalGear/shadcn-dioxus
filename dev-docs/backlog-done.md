@@ -6,7 +6,7 @@ resolves here by id.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Done rows (349)
+## Done rows (351)
 
 | # | Item | Updated |
 |---|---|---|
@@ -344,9 +344,11 @@ resolves here by id.
 | [379](backlog/done/379-session-setup-fetches-detached-locks.md) | Session setup fetches every committed Cargo.lock, so check-cargo-locks resolves offline in a fresh container | 2026-10-24 |
 | [380](backlog/done/380-calendar-clock-read-after-mount.md) | Calendars read the visitor's clock after mount, so a prerendered page never keeps the build day | 2026-10-24 |
 | [381](backlog/done/381-interactive-element-cursor-option.md) | Interactive-element cursor is one theme option, data-dx-interactive-element-cursor | 2026-10-24 |
+| [391](backlog/done/391-wrappers-forward-primitive-props.md) | Themed wrappers forward every primitive prop, enforced by a props-diff gate | 2026-10-24 |
 | [395](backlog/done/395-as-keeps-children.md) | `as` keeps the component's children and handlers (Radix asChild semantics) | 2026-10-24 |
 | [396](backlog/done/396-derive-item-index.md) | Derive item `index` from registration order | 2026-10-24 |
 | [397](backlog/done/397-docs-review-bugs.md) | Bugs the docs review found: ToggleGroup arrows, dead ScrollArea prop, DataTable sort, Sidebar Ctrl+B | 2026-10-24 |
+| [398](backlog/done/398-docs-review-api-gaps.md) | API gaps the docs review found | 2026-10-25 |
 | [400](backlog/done/400-merge-drivers-generated-files.md) | Merge drivers for the generated backlog index and the durations table | 2026-10-24 |
 | [401](backlog/done/401-select-css-gate-names-dead-mutation.md) | check-select-css names a mutation that died instead of printing a blank verdict | 2026-10-24 |
 | [403](backlog/done/403-theme-picker-in-the-phone-header-on-every-page.md) | The theme picker's palette icon is in the phone header on every page | 2026-10-24 |
