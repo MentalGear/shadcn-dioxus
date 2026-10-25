@@ -30,3 +30,7 @@ Plan: add a theme token for an opaque input edge (the input colour mixed over `-
 ## Landed
 
 New theme token `--dx-input-edge` (light: `--dx-input`; dark: white 15% mixed into `--dx-background` in `--dx-hover-mix-space`); `--dx-input-otp-edge` reads it. Spec: `input_otp.spec.ts` "Slot edges are opaque" (light and dark). Left open: the Button Group seam (`button_group/style.css`, `margin-inline-start: -1px` over `--dx-input` inset rings) overlaps the same way in dark and was not in this lane's files.
+
+## Superseded (2026-10-25)
+
+The opaque `--dx-input-edge` token is removed. It was `--dx-input` pre-composited over `--dx-background`, so on any other surface (a card, the preview frame) and over the slot's own dark fill it no longer matched a normal Input edge, and the OTP edges read too faint (owner report 2026-10-25). The OTP slots already draw each divider once (top, bottom and inline-end per slot, inline-start on the first), so they read `--dx-input` again, the same edge as Input. Button Group's seam (the "left open" item) is fixed by construction instead: a follower is clipped by the one pixel column it overlaps, so only the previous child paints the seam, as Nova's `border-l-0` does (`button_group/style.css` "The seam"; spec `button_group.spec.ts` "Seams match the outer edge", which compares screenshot pixels).

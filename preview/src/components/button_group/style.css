@@ -28,7 +28,7 @@
  * inheritable corner variables on each direct child by POSITION, and every
  * joinable control's own stylesheet reads them with its normal radius as the
  * fallback (`.dx-button`, `.dx-input`, `.dx-select-trigger`, `.dx-native-select`,
- * `.dx-dropdown-menu-trigger`, `.dx-popover-trigger`):
+ * `.dx-dropdown-menu-trigger`, `.dx-popover-trigger`, `.dx-input-group`):
  *
  *   border-start-start-radius: var(--dx-group-radius-start-start, <own radius>);
  *
@@ -93,11 +93,23 @@
 }
 
 /*
- * The seam: the next child overlaps the previous one's last pixel, so two
- * 1px borders (or inset ring shadows) draw one line. The margin goes on the
- * group's OWN flex item -- the wrapper when there is one -- because that is
- * the box the group lays out, exactly like `gap`; a control inside a wrapper
- * could only hang out of it.
+ * The seam: the next child overlaps the previous one's last pixel, so the two
+ * 1px edges share one pixel column. The margin goes on the group's OWN flex
+ * item -- the wrapper when there is one -- because that is the box the group
+ * lays out, exactly like `gap`; a control inside a wrapper could only hang out
+ * of it.
+ *
+ * Only ONE child may paint that shared column. Dark edges and fills are
+ * translucent (`--dx-input` is white at 15%, the field fill `--dx-input` at
+ * 30%), so a second layer on the same pixel draws the seam heavier than the
+ * outer edge, and no opaque stand-in colour matches every surface the group
+ * can sit on. So the follower is clipped by that one column, the way Nova
+ * drops it (`[&>*:not(:first-child)]:border-l-0`): the seam is the previous
+ * child's own edge, painted once over the surface like every outer edge. The
+ * other three sides of the clip reach far out, so an outer focus halo, a
+ * shadow or a coarse-pointer hit area is untouched. A keyboard-focused child
+ * is unclipped and raised (below): its ring is the edge then, start side
+ * included.
  */
 .dx-button-group:not([data-orientation="vertical"]) > :not(:first-child, .dx-button-group-separator) {
   margin-inline-start: -1px;
@@ -107,10 +119,28 @@
   margin-block-start: -1px;
 }
 
+/* The clips sit at one specificity (the orientation and direction in `:where`), so the
+ * focused-child rule below outweighs all three. */
+.dx-button-group:where(:not([data-orientation="vertical"])) > :not(:first-child, .dx-button-group-separator) {
+  clip-path: inset(-100vmax -100vmax -100vmax 1px);
+}
+
+:where([dir="rtl"]) .dx-button-group:where(:not([data-orientation="vertical"])) > :not(:first-child, .dx-button-group-separator) {
+  clip-path: inset(-100vmax 1px -100vmax -100vmax);
+}
+
+.dx-button-group:where([data-orientation="vertical"]) > :not(:first-child, .dx-button-group-separator) {
+  clip-path: inset(1px -100vmax -100vmax);
+}
+
 /* Raise the hovered / keyboard-focused child so its ring is not clipped by the
  * neighbour that overlaps it. */
 .dx-button-group > :is(:focus-visible, :has(:focus-visible)) {
   z-index: var(--dx-z-raise);
+}
+
+.dx-button-group > :not(:first-child, .dx-button-group-separator):is(:focus-visible, :has(:focus-visible)) {
+  clip-path: none;
 }
 
 @media (hover: hover) and (pointer: fine) {

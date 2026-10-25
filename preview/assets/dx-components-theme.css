@@ -653,17 +653,6 @@ html[data-theme="light"] [class~="dxc-system"] {
   --dx-field-fill: var(--light, transparent)
     var(--dark, color-mix(in oklab, var(--dx-input-source) 30%, transparent));
 
-  /* The OPAQUE twin of `--dx-input` (backlog row 348), for an edge that is drawn twice on one pixel. Dark
-   * `--dx-input` is white at 15%, so two edges that overlap by a pixel (the OTP slots' shared divider, a
-   * joined group's seam) stack to a darker line there. This is that same line already composited over
-   * `--dx-background`: light is the opaque ramp step itself, dark mixes the 15% white into the page
-   * colour (`--dx-hover-mix-space`, the theme's one mix space), so it looks like `--dx-input` on the
-   * page and stays the same colour where it overlaps. A custom dark `--input` is not followed by this
-   * arm: retune `--dx-input-edge` with it. */
-  --dx-input-edge: var(--light, var(--dx-input))
-    var(--dark, color-mix(in var(--dx-hover-mix-space), oklch(100% 0 0deg) var(--dx-input-edge-percent), var(--dx-background)));
-  --dx-input-edge-percent: 15%;
-
   /* State recipes (see "State recipes: focus, invalid, disabled" at the end of this file). The
    * inside-the-box twin of `--dx-ring-field` for containers that clip an outer halo: a 1px
    * ring-coloured edge over the 3px ring/50 band, the two layers `--dx-ring-field` draws, mirrored
@@ -2539,7 +2528,6 @@ html:not([data-dx-press-feedback="off"]) [role="radio"][class*=" dx-"]:not([disa
   /* P9: the input / checkbox / radio edge and the unchecked Switch track. */
   --dx-input: var(--dx-pick-wcag, var(--light, oklch(from var(--dx-input-source) min(l, 0.65) c h)) var(--dark, oklch(from var(--dx-input-source) l c h / max(alpha, var(--dx-wcag-input-alpha)))))
     var(--dx-pick-shadcn, var(--dx-input-source));
-  --dx-input-edge-percent: var(--dx-pick-wcag, calc(var(--dx-wcag-input-alpha) * 100%)) var(--dx-pick-shadcn, 15%);
 
   /* P1: muted text (4.5:1) on every muted-ish surface, light arm. */
   --dx-muted-foreground: var(--dx-pick-wcag, var(--light, oklch(from var(--dx-muted-foreground-source) min(l, 0.54) c h)) var(--dark, var(--dx-muted-foreground-source)))
