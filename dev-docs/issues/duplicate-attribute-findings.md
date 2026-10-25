@@ -118,7 +118,7 @@ writing `class: "dx-whatever"` beside its own forwarded spread.
 
 ## Heaviest files (primary check)
 
-`calendar.rs` 31, `color_picker.rs` 29, `popover.rs` 28 (its own `id` is correctly *not*
+`calendar.rs` (now `calendar/`) 31, `color_picker.rs` 29, `popover.rs` 28 (its own `id` is correctly *not*
 among them -- typed, per `f2be1d7`), `context_menu.rs` 26, `slider.rs`/`date_picker.rs`/
 `command.rs` 23 each, `dropdown_menu.rs` 22, `carousel.rs` 21, `resizable.rs`/`navbar.rs`
 18 each, `tag_group.rs`/`menubar.rs` 17 each, `toast.rs`/`navigation_menu.rs` 16 each.

@@ -615,7 +615,7 @@ const day = (grid: Locator, n: number) => grid.locator('.dx-calendar-grid-cell[d
 
 test.describe("Calendar (extrapolated, no Radix original -- see file header)", () => {
   // Day cells' accessible name is a full date ("Friday, May 15, 2026" --
-  // `aria_label()`, primitives/src/calendar.rs), not the plain day number,
+  // `aria_label()`, primitives/src/calendar/day.rs), not the plain day number,
   // so these locate by the cell's exact visible TEXT ("15") instead of by
   // role name. Scoped to the grid so an adjacent month's filler days (a
   // handful at the visible month's edges) can't collide -- none of the

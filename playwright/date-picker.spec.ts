@@ -991,7 +991,7 @@ test.describe("Unavailable dates variant (variant=unavailable_dates)", () => {
     // navigation is needed -- and none is done here, which is the point: the
     // test must not jump to a hard-coded May 2026 through the
     // selects, or the demo it exercises would show nothing to anyone opening it on
-    // any other month. `RangeCalendarDay::handle_day_select` (calendar.rs)
+    // any other month. `RangeCalendarDay::handle_day_select` (calendar/day.rs)
     // early-returns for an unavailable date before ever calling
     // `set_selected_date`/committing anything, and never sets a native
     // `disabled` attribute (`.disabled` is `false`) -- only
@@ -1102,7 +1102,7 @@ test.describe("Completing a range selection via the calendar", () => {
   // `page.evaluate(() => 1 + 1)` (a real hang with the render thread pinned near 100% CPU, not a
   // slow response). So every write to `start_date`/`end_date` (including this sync-down
   // effect's) goes through the guarded `DateRangeInputContext::set_start_date`/`set_end_date`
-  // choke point; `calendar.rs`, `popover.rs` and `top_layer.rs` take no part in it.
+  // choke point; `calendar/`, `popover.rs` and `top_layer.rs` take no part in it.
   test("clicking a second, different calendar day to complete a range selection resolves, and Apply closes the popover and syncs the segments", async ({ page }) => {
     await gotoDatePickerFrozen(page);
     await pickerTrigger(page, "range").click();
