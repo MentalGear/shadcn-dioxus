@@ -146,29 +146,25 @@ pub fn DragAndDropListItems(props: DragAndDropListItemsProps) -> Element {
     let base = attributes!(ul { class: "dx-drag-and-drop-list-ul" });
     let merged = merge_attributes(vec![base, props.attributes.clone()]);
 
+    // The primitive's `children` is an `Option<Element>`, which a struct spread's body cannot assign, so the rows are
+    // built first and passed as the one explicit field beside the spread.
+    let rows = rsx! {
+        for item in drag_and_drop_list::use_drag_and_drop_list_items() {
+            Fragment {
+                key: "{item.key}",
+                DragAndDropDropIndicator { index: item.index, position: "before" }
+                DragAndDropListItem { index: item.index, item_key: item.key.clone(), {item.children} }
+                DragAndDropDropIndicator { index: item.index, position: "after" }
+            }
+        }
+    };
+
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/drag_and_drop_list/style.css") }
         drag_and_drop_list::DragAndDropListItems {
             attributes: merged,
-            ..props,
-            for item in drag_and_drop_list::use_drag_and_drop_list_items() {
-                Fragment {
-                    key: "{item.key}",
-                    DragAndDropDropIndicator {
-                        index: item.index,
-                        position: "before",
-                    }
-                    DragAndDropListItem {
-                        index: item.index,
-                        item_key: item.key.clone(),
-                        {item.children}
-                    }
-                    DragAndDropDropIndicator {
-                        index: item.index,
-                        position: "after",
-                    }
-                }
-            }
+            children: Some(rows),
+            ..props
         }
     }
 }

@@ -49,7 +49,7 @@ def skip_string(s, k):
     return j + 1
 
 
-def blank_comments(s):
+def mask_rust_source(s):
     """The text with `//` comments and string contents blanked, same length, so offsets and lines survive."""
     out = list(s)
     k, n = 0, len(s)
@@ -104,7 +104,7 @@ CALL = re.compile(r"(\w+)::(\w+)(?:::<[^>]*>)?\s*\{")
 
 def scan(path, text):
     """[(fn name, line)] of the wrappers in `text` that render their primitive without `..props`."""
-    clean = blank_comments(text)
+    clean = mask_rust_source(text)
     local = set(re.findall(r"\bstruct (\w+)", clean))
     bad = []
     for m in FN.finditer(clean):

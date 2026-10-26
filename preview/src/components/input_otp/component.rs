@@ -65,17 +65,9 @@ pub fn InputOtpSeparator(props: InputOtpSeparatorProps) -> Element {
     let merged = merge_attributes(vec![base, props.attributes.clone()]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/input_otp/style.css") }
-        if let Some(children) = props.children {
-            input_otp::InputOtpSeparator {
-                attributes: merged,
-                ..props,
- {children}
-            }
-        } else {
-            input_otp::InputOtpSeparator {
-                attributes: merged,
-                ..props
-            }
+        input_otp::InputOtpSeparator {
+            attributes: merged,
+            ..props
         }
     }
 }

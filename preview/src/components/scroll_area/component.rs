@@ -10,9 +10,6 @@ use dioxus_primitives::scroll_area::{self, ScrollAreaProps};
 pub fn ScrollArea(props: ScrollAreaProps) -> Element {
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/scroll_area/style.css") }
-        scroll_area::ScrollArea {
-            ..props,
- ..props
-        }
+        scroll_area::ScrollArea { ..props }
     }
 }

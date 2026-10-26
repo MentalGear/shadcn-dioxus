@@ -73,7 +73,7 @@ pub fn NavbarItem(props: NavbarItemProps) -> Element {
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/navbar/style.css") }
         navbar::NavbarItem {
-            class: "dx-navbar-item".to_string(),
+            class: Some("dx-navbar-item".to_string()),
             ..props
         }
     }

@@ -43,7 +43,7 @@ pub fn DrawerContent(props: DrawerContentProps) -> Element {
     // primitive's typed `class` prop, so it is ONE literal on the dialog element
     // and never rides beside the `..attributes` spread
     // (`scripts/check-attr-spread-collision.sh`).
-    let content_class = if let Some(class) = props.class {
+    let content_class = if let Some(class) = props.class.clone() {
         format!("{} {}", "dx-drawer", class)
     } else {
         "dx-drawer".to_string()
@@ -65,7 +65,7 @@ pub fn DrawerContent(props: DrawerContentProps) -> Element {
         document::Link { rel: "stylesheet", href: asset!("/src/components/drawer/style.css") }
         drawer::DrawerContent {
             id: panel.id(),
-            class: content_class,
+            class: Some(content_class),
             attributes: content_attributes,
             ..props,
             {children}

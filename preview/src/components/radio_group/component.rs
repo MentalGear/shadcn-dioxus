@@ -34,7 +34,7 @@ pub fn RadioItem(props: RadioItemProps) -> Element {
     // button. Merges `class` the same way `../popover/component.rs`'s
     // `PopoverContent` does, for the same reason: a caller's own class
     // should extend, not replace, this theme's.
-    let class = if let Some(class) = props.class {
+    let class = if let Some(class) = props.class.clone() {
         format!("{} {}", "dx-radio-group-item", class)
     } else {
         "dx-radio-group-item".to_string()
@@ -43,7 +43,7 @@ pub fn RadioItem(props: RadioItemProps) -> Element {
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/radio_group/style.css") }
         radio_group::RadioItem {
-            class,
+            class: Some(class),
             ..props
         }
     }
