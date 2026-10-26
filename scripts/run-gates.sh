@@ -100,6 +100,7 @@ gates=(
   "check-blocking-scroll-listeners|scripts/check-blocking-scroll-listeners.sh"
   "check-js-listeners|scripts/check-js-listeners.sh"
   "check-bridge-behaviours|scripts/check-bridge-behaviours.sh"
+  "check-js-volume|scripts/check-js-volume.sh"
   "check-motion-gating|scripts/check-motion-gating.sh"
   "check-infinite-animations|scripts/check-infinite-animations.sh"
   "check-open-focus|scripts/check-open-focus.sh"
@@ -336,6 +337,15 @@ if [ "${#reused[@]}" -gt 0 ]; then
   echo "REUSED (not run now, PASS stored for an identical cargo-input key $reuse_key): ${reused[*]}"
   echo "  taken from tree(s): $reused_from  -- the cargo inputs of $tree_label are byte-identical to theirs"
 fi
+# A ratchet gate (scripts/lib/ratchet.py) that passed with a deliberate raise over the merge base prints it under a
+# `RATCHET RAISES` heading; surface every one here so the reviewer sees it.
+for f in "$log_dir"/*.log; do
+  [ -e "$f" ] || continue
+  if grep -q '^RATCHET RAISES' "$f"; then
+    echo "RATCHET RAISES (a deliberate raise is the owner's decision; quote it in the report):"
+    awk '/^RATCHET RAISES/ { p = 1; next } /^  / { if (p) print "  " $0; next } { p = 0 }' "$f"
+  fi
+done
 if [ "${#red[@]}" -gt 0 ]; then
   echo "RED: ${red[*]}"
   exit 1

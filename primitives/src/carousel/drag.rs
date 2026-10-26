@@ -73,9 +73,9 @@ pub(super) const CAROUSEL_SNAP_RESTORE_FALLBACK_MS: f64 = 500.0;
 /// `await dioxus.recv()` and registers real listeners through `listen`
 /// (removed by the derived teardown), driving
 /// no Rust-side state at all while active (see the module doc's "Engine"
-/// section for why `document::eval` is this crate's established escape
-/// hatch for DOM access -- `setPointerCapture` and a real, ordered
-/// capture-phase `click` listener -- that Dioxus's synthetic event props
+/// section for why this is a legacy `document::eval` script (ported by
+/// row 434) -- `setPointerCapture` and a real, ordered
+/// capture-phase `click` listener are what Dioxus's synthetic event props
 /// don't reach, the same reasoning `drawer.rs`'s own drag gesture
 /// documents for its own escape to `crate::pointer`).
 ///

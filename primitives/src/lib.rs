@@ -812,7 +812,7 @@ const DIALOG_EXIT_TIMEOUT_MS: u32 = 1500;
 /// leaves the `open` signal stranded at `true` and the dialog can never
 /// reopen (`dev-docs/archive/research/phase4-spike-findings.md`
 /// experiment 1 reproduces it; experiment 2's `use_dialog_close_sync`
-/// is the fix). Same eval-channel shape as
+/// is the fix). A legacy eval listener (ported by row 434), like
 /// `use_form_reset_listener` above and
 /// [`crate::top_layer::use_popover_sync`]'s browser-to-signal half.
 ///
