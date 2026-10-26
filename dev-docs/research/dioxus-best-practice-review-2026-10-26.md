@@ -1,5 +1,7 @@
 # Dioxus best-practice review of the row 434 step 3 plan (2026-10-26)
 
+**Status.** This review reads the plan as it stood before boards 2 to 5; its findings were folded into the plan, which is now [`sync-js-root-2026-10-26.md`](./sync-js-root-2026-10-26.md) as amended by [round 5](./board-2026-10-26-r5/SYNTHESIS.md) (the last; the paper review ends there). Where a section here names an option as A, B or C (now scope 1, 2 and 3), lane R (now lane VR) or "step 0" (now the latency session), read the plan's terms block. The review is kept as written.
+
 Independent review of `sync-js-root-2026-10-26.md` and the "Step 3" sections of backlog row 434, against official Dioxus guidance, dioxus-sdk, upstream DioxusLabs/components, the DioxusLabs/dioxus issue tracker, and comparable systems. Read-only: nothing was built or run, and the repo was only read (`/home/user/wt/b28`, branch `queue/batch-28`).
 
 Evidence labels: **[D]** official docs page, **[S]** source file or crate page, **[G]** GitHub issue or PR page, **[X]** other project's docs, **[I]** my inference, not verified by running anything. Most GitHub and docs.rs facts came through WebFetch, which summarises pages with a small model, so field-level claims are only as good as that summary. Where a fetch failed, I say so in section 8.

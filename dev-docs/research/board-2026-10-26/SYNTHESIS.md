@@ -1,5 +1,7 @@
 # Adversarial board on row 434 step 3: synthesis (2026-10-26)
 
+> Superseded in part by later rounds; the current plan is the root doc ([`sync-js-root-2026-10-26.md`](../sync-js-root-2026-10-26.md)), whose sections 2.2 and 2.3 decide.
+
 Five independent members attacked the adopted plan (rules as data, one interpreter, no residue). Reports in this folder: `root-and-timing.md`, `simpler-alternative.md`, `block-mapping.md`, `gates-and-proof.md`, `ux-a11y-perf.md`. All five returned **HOLDS WITH CHANGES**; none returned BROKEN.
 
 ## What held

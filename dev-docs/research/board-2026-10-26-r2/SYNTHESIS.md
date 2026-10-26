@@ -1,5 +1,7 @@
 # Adversarial board round 2: synthesis (2026-10-26)
 
+> Superseded in part by later rounds; the current plan is the root doc ([`sync-js-root-2026-10-26.md`](../sync-js-root-2026-10-26.md)), whose sections 2.2 and 2.3 decide.
+
 Five fresh members attacked the plan hardened after round 1. Reports in this folder: `blank-slate.md`, `core-construct.md`, `platform-desktop.md`, `enforcement.md`, `execution.md`.
 
 ## Trajectory
