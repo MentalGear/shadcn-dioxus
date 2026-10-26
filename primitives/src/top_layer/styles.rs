@@ -1,9 +1,5 @@
 //! Injected anchor-positioning stylesheet and top-layer ink baseline.
 
-#[cfg_attr(
-    not(feature = "web"),
-    expect(unused_imports, reason = "only the web build uses it")
-)]
 use super::*;
 
 #[cfg(feature = "web")]
