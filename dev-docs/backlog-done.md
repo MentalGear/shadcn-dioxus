@@ -6,7 +6,7 @@ resolves here by id.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Done rows (375)
+## Done rows (382)
 
 | # | Item | Updated |
 |---|---|---|
@@ -323,6 +323,7 @@ resolves here by id.
 | [352](backlog/done/352-link-global-attributes-in-prop-tables.md) | Link the 'Plus the global attributes.' sentence in props tables to MDN | 2026-10-21 |
 | [353](backlog/done/353-carousel-next-arrow-fades-in-after-hydration.md) | Carousel Next arrow fades 0.5 to 1 after hydration (first-paint flicker) | 2026-10-21 |
 | [354](backlog/done/354-remove-the-docs-header-language-switcher.md) | Remove the docs header language switcher | 2026-10-21 |
+| [355](backlog/done/355-adopt-google-rust-style-guide-items.md) | Adopt Google Rust style guide items: workspace lint table and conventions | 2026-10-26 |
 | [356](backlog/done/356-lane-disk-guard-ignores-concurrent-copies.md) | Lane disk guard ignores concurrent template copies, so two slots both pass and both die with ENOSPC | 2026-10-22 |
 | [357](backlog/done/357-date-picker-natural-language-test-midnight.md) | Date picker natural_language unit test fails when a run crosses midnight UTC | 2026-10-22 |
 | [358](backlog/done/358-all-routes-one-navigation-for-both-schemes.md) | all-routes: one navigation for both schemes (needs a clean forced-colors reset) | 2026-10-23 |
@@ -349,6 +350,10 @@ resolves here by id.
 | [381](backlog/done/381-interactive-element-cursor-option.md) | Interactive-element cursor is one theme option, data-dx-interactive-element-cursor | 2026-10-24 |
 | [382](backlog/done/382-rustdoc-warnings-to-zero.md) | Rustdoc warnings to zero: shrink the check-rustdoc baseline (87 entries) and make the gate strict | 2026-10-25 |
 | [384](backlog/done/384-burn-down-ratchet-baselines.md) | Burn down the ratchet baselines and the leftover TODO comments (props docs, history comments, dead refs) | 2026-10-25 |
+| [385](backlog/done/385-accent-focus-ring-clamped.md) | The focus ring follows the picked accent, clamped to 3:1 per mode | 2026-10-26 |
+| [386](backlog/done/386-virtual-grid-header-hover-see-through.md) | Virtual Grid: hovering the sticky header row makes it see-through (a translucent row hover replaced the opaque cover) | 2026-10-26 |
+| [388](backlog/done/388-virtual-grid-pinning-api.md) | Virtual Grid: explicit row and column pinning in the API and the docs (pinned_columns_start, pinned_columns_end, pin_header) | 2026-10-26 |
+| [389](backlog/done/389-accent-active-selected-states.md) | Active and selected states take the picked accent (mark, ink, tint slots) | 2026-10-26 |
 | [391](backlog/done/391-wrappers-forward-primitive-props.md) | Themed wrappers forward every primitive prop, enforced by a props-diff gate | 2026-10-24 |
 | [393](backlog/done/393-docs-contradict-code.md) | Fix the docs statements the code contradicts | 2026-10-25 |
 | [395](backlog/done/395-as-keeps-children.md) | `as` keeps the component's children and handlers (Radix asChild semantics) | 2026-10-24 |
@@ -357,10 +362,12 @@ resolves here by id.
 | [398](backlog/done/398-docs-review-api-gaps.md) | API gaps the docs review found | 2026-10-25 |
 | [400](backlog/done/400-merge-drivers-generated-files.md) | Merge drivers for the generated backlog index and the durations table | 2026-10-24 |
 | [401](backlog/done/401-select-css-gate-names-dead-mutation.md) | check-select-css names a mutation that died instead of printing a blank verdict | 2026-10-24 |
+| [402](backlog/done/402-load-robust-timing-specs.md) | Release timing specs compare same-run measurements, not absolute milliseconds | 2026-10-26 |
 | [403](backlog/done/403-theme-picker-in-the-phone-header-on-every-page.md) | The theme picker's palette icon is in the phone header on every page | 2026-10-24 |
 | [404](backlog/done/404-touch-tap-commits-on-click.md) | A touch tap on a Select, Combobox, Command or context-menu item commits on the tap's click | 2026-10-24 |
 | [405](backlog/done/405-scroll-bounce-freezes-windowed-renderers.md) | An iOS rubber-band bounce no longer freezes a windowed renderer: offsets are clamped and a bad message is skipped | 2026-10-24 |
 | [406](backlog/done/406-find-match-lands-on-the-estimate.md) | Find-in-page lands a match on the item's estimated position, not on the item | 2026-10-24 |
+| [407](backlog/done/407-load-flakes-and-not-found-routes.md) | Load flakes (docs sidebar shift, avatar demo re-centring, non-modal popover scroll, carousel edge band) and spec runs that serve unknown URLs like the site | 2026-10-26 |
 | [408](backlog/done/408-selectmulti-name-submits.md) | SelectMulti's name prop takes part in form submission | 2026-10-24 |
 | [409](backlog/done/409-css-vars-declared-with-fallbacks.md) | Every CSS custom property read is declared, fallbacks included | 2026-10-24 |
 | [410](backlog/done/410-history-comments-third-cold-read.md) | History comments: third fresh-seed cold read | 2026-10-24 |

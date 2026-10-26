@@ -1,10 +1,10 @@
 ---
 id: 407
 title: "Load flakes (docs sidebar shift, avatar demo re-centring, non-modal popover scroll, carousel edge band) and spec runs that serve unknown URLs like the site"
-status: "Done on lane/flake-roots. Trigger for reopening: one of these specs red under load on an unchanged…"
+status: "LANDED on main (merge 3d7f461b, deployed by batch 28, main daf90a8f). Done on lane/flake-roots.…"
 size: "M"
 area: tests
-updated: 2026-10-24
+updated: 2026-10-26
 ---
 
 # Row 407: Load flakes (docs sidebar shift, avatar demo re-centring, non-modal popover scroll, carousel edge band) and spec runs that serve unknown URLs like the site
@@ -18,6 +18,8 @@ first paint), `popover-non-modal.spec.ts` :187 and :216 (wheel and keyboard scro
 `theme-picker-phone`'s not-found routes time out.
 
 ## Status / trigger
+
+LANDED on main (merge 3d7f461b, deployed by batch 28, main daf90a8f).
 
 Done on `lane/flake-roots`. Trigger for reopening: one of these specs red under load on an unchanged component.
 

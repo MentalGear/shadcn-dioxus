@@ -1,10 +1,10 @@
 ---
 id: 389
 title: "Active and selected states take the picked accent (mark, ink, tint slots)"
-status: "DECIDED 2026-10-24 (owner), BUILT on lane/accent-states (audit: 58 rows). Hard requirement kept by…"
+status: "LANDED on main (merge 54158da3, deployed by batch 28, main daf90a8f). DECIDED 2026-10-24 (owner)…"
 size: "M"
 area: theme
-updated: 2026-10-24
+updated: 2026-10-26
 ---
 
 # Row 389: active and selected states take the picked accent
@@ -14,6 +14,8 @@ updated: 2026-10-24
 The picked accent (`<html data-theme-accent>`; shadcn's accent presets set `--primary`, charts and sidebar-primary, never `--accent`) reached buttons, badges and links but not the states a user reads as "where am I" or "what is on": the Tabs bar, the current docs-nav row, a pressed Toggle, the highlighted menu row. Owner decision 2026-10-24, scope "must plus optional": those states show the accent, and four marks that already used the accent but were unreadable get fixed. Naming trap: shadcn's `--accent` / `--dx-accent` is the NEUTRAL hover surface, not the picked accent.
 
 ## Status / trigger
+
+LANDED on main (merge 54158da3, deployed by batch 28, main daf90a8f).
 
 DECIDED 2026-10-24 (owner), BUILT on `lane/accent-states` (audit: 58 rows). Hard requirement kept by construction and by spec: with no accent picked every touched state paints the colour it painted before, to the byte.
 

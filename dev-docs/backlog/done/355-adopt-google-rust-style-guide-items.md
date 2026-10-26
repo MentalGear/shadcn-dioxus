@@ -1,10 +1,10 @@
 ---
 id: 355
 title: "Adopt Google Rust style guide items: workspace lint table and conventions"
-status: "IN QUEUE -- items 1-4 on lane/row-355-google-rust-lints for the merge queue; item 5 is…"
+status: "LANDED on main (merge 23bccfd2, deployed by batch 28, main daf90a8f). IN QUEUE -- items 1-4 on…"
 size: "S-M"
 area: process
-updated: 2026-10-25
+updated: 2026-10-26
 ---
 
 # Row 355: Adopt Google Rust style guide items: workspace lint table and conventions
@@ -14,6 +14,8 @@ updated: 2026-10-25
 Adopt the Google Rust style guide items Tom approved on 2026-10-21 ("OK" to all five), from the "Google Rust style guide review" thread. Evaluation, measured on main 1bf5a8d1: https://claude.ai/artifact/PnQoSZWJrE8LMuNbnDYewN
 
 ## Status / trigger
+
+LANDED on main (merge 23bccfd2, deployed by batch 28, main daf90a8f).
 
 **IN QUEUE -- items 1-4 on lane/row-355-google-rust-lints for the merge queue; item 5 is dev-docs/guides/rust-conventions.md**
 

@@ -1,10 +1,10 @@
 ---
 id: 402
 title: "Release timing specs compare same-run measurements, not absolute milliseconds"
-status: "Done on lane/timing-relative (numbers below). Trigger for reopening: a release timing spec that…"
+status: "LANDED on main (merge d904df89, deployed by batch 28, main daf90a8f). Done on lane/timing-relative…"
 size: "S"
 area: tests
-updated: 2026-10-24
+updated: 2026-10-26
 ---
 
 # Row 402: Release timing specs compare same-run measurements, not absolute milliseconds
@@ -14,6 +14,8 @@ updated: 2026-10-24
 `message-scroller-timing.spec.ts` asserted `msPerFrame < 12` and measured 13.24 ms in the batch-16 release suite (another lane was building), and the same test failed in an earlier batch's suite; it passes on a quiet box. The class: a release-only timing spec that compares a measurement with a constant number of milliseconds goes red when the shared 4-core box is loaded, because load scales the measurement and not the constant.
 
 ## Status / trigger
+
+LANDED on main (merge d904df89, deployed by batch 28, main daf90a8f).
 
 Done on `lane/timing-relative` (numbers below). Trigger for reopening: a release timing spec that goes red on load although the component is unchanged.
 

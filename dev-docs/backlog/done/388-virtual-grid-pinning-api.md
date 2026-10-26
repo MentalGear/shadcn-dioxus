@@ -1,10 +1,10 @@
 ---
 id: 388
 title: "Virtual Grid: explicit row and column pinning in the API and the docs (pinned_columns_start, pinned_columns_end, pin_header)"
-status: "Owner decision 2026-10-24 (Tom): \"API and docs\". Pre-1.0, so the breaking rename is accepted. DONE…"
+status: "LANDED on main (merge 497ece5e, deployed by batch 28, main daf90a8f). Owner decision 2026-10-24…"
 size: "M"
 area: components
-updated: 2026-10-24
+updated: 2026-10-26
 ---
 
 # Row 388: Virtual Grid pinning API
@@ -18,6 +18,8 @@ comment and the opening paragraph, in "sticky" vocabulary while shadcn and TanSt
 (`columnPinning: { left, right }`).
 
 ## Status / trigger
+
+LANDED on main (merge 497ece5e, deployed by batch 28, main daf90a8f).
 
 Owner decision 2026-10-24 (Tom): "API and docs". Pre-1.0, so the breaking rename is accepted. DONE on
 `lane/grid-pinning`, merge pending.
