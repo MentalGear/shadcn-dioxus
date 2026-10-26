@@ -74,12 +74,9 @@ fn parse_note(comment: &str, line: usize) -> Option<SlotNote> {
         .map(|l| l.trim().trim_start_matches('*').trim())
         .collect();
     let body = collapse(&lines.join(" "));
-    let (internal, rest) = if let Some(r) = body.strip_prefix("slot-internal:") {
-        (true, r)
-    } else if let Some(r) = body.strip_prefix("slot:") {
-        (false, r)
-    } else {
-        return None;
+    let (internal, rest) = match body.strip_prefix("slot-internal:") {
+        Some(rest) => (true, rest),
+        None => (false, body.strip_prefix("slot:")?),
     };
     let rest = rest.trim();
     let name_len = if rest.starts_with("--") {
