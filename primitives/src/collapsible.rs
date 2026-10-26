@@ -52,8 +52,8 @@ pub(crate) fn hidden_attribute(state: PanelHidden) -> Attribute {
 ///
 /// The browser removes `hidden="until-found"` itself, right after the event, so the component's
 /// open state has to follow it: `on_reveal` is where the caller opens the panel. Dioxus has no
-/// typed `onbeforematch`, so this is an `eval` bridge with the same shape as the other listener
-/// hooks (`use_global_keydown_listener`, `use_dialog_close_sync`): the listener is registered
+/// typed `onbeforematch`, so this is a legacy `eval` listener (ported by row 434, see
+/// `dev-docs/js-interop.md`): the listener is registered
 /// through `use_js_listeners`, whose teardown is derived (the component unmounts or any input
 /// changes), so nothing outlives the element.
 ///
