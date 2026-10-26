@@ -2,41 +2,37 @@
 
 Follow-up to [`sync-js-root-2026-10-26.md`](./sync-js-root-2026-10-26.md) (the "root doc"). Read-only, on `origin/queue/batch-28` @ `d10d34b5`. Nothing was built or run. Evidence labels as in the root doc: **V** = read in code or crate source, **W** = web / web-features 3.44.0, **I** = inferred.
 
-**Revised 2026-10-26 after the adversarial board** ([`SYNTHESIS.md`](./board-2026-10-26/SYNTHESIS.md)). W8 and C5 changed (below); C1 held. **Every desktop and mobile claim here is "web-verified; desktop inferred"** until a `desktop-pass/<tree>.pass` stamp exists ([row 442](../backlog/442-desktop-cadence-harness-and-desktop-pass.md)); Chromium is the only engine installed in the lane container, so Firefox and WebKit claims carry the same label.
+**Revised 2026-10-26 after two adversarial boards** ([round 1](./board-2026-10-26/SYNTHESIS.md), [round 2](./board-2026-10-26-r2/SYNTHESIS.md)). Round 1 changed W8 and C5; round 2 added the `stickToEnd` named behaviour for W8's same-frame write, moved the legacy freeze and the `?dx-impl` switch into lane 3.FZ (phase 0), keyed the legacy removal to the owner's measurement stamp and re-sized 3.MS and 3.WB. C1 held. **Every desktop and mobile claim here is "web-verified; desktop inferred"** until a `desktop-pass/<tree>.pass` stamp exists ([row 442](../backlog/442-desktop-cadence-harness-and-desktop-pass.md)); Chromium is the only engine installed in the lane container, so Firefox and WebKit claims carry the same label.
 
 ## Executive summary (for the owner)
 
 **All three blocks leave bespoke JavaScript. W8 and C5 are measured ports: the owner measures each, one at a time, with the old path switchable for one deploy.**
 
-- **The policy inconsistency was real, and it is fixed.** `overflow-anchor` reached Baseline newly available on 2026-09-14 (Chrome 56, Firefox 66, Safari 27; W). The root doc's policy is "Baseline newly available, with a feature-detected fallback that stays correct", so it qualifies **today**.
-- **W8, the message scroller (1,065 lines): a Rust invariant, with `overflow-anchor` as the accelerator.**
+- **The support policy is per-feature floors plus a boot probe**, not a Baseline date (root doc section 2.1). `overflow-anchor` reached Baseline newly available on 2026-09-14 (Chrome 56, Firefox 66, Safari 27; W); its floor is Safari 27, and an engine that fails the boot probe is a fallback engine.
+- **W8, the message scroller (1,065 lines): a Rust invariant, with `overflow-anchor` as the accelerator and `stickToEnd` for the same-frame write.**
   - The invariant lives in Rust, always on and independent of engine support: while `mode == following-bottom`, **the end sentinel intersects the viewport within one frame, or Rust scrolls to the end**. Its source of truth is bridge `observe` (IntersectionObserver on a 1 px end sentinel, resize on the content).
   - CSS anchoring makes that frame-exact where it works. It cannot be the guarantee: the scroll-anchoring spec selects **no anchor at scroll offset 0**, skips fully clipped nodes (one slipped frame is permanent until a Rust scroll), and cancels a queued adjustment on a computed `height`/`margin`/`padding`/`transform`/`top` change on the way up to the scroller.
-  - The mode machine, opening position, visibility and scroll-intent logic are Rust, fed by a **page-side reducer** over bridge `listen`/`observe`: never by vdom `onscroll`/`onresize`, which on desktop is one blocking request per event.
+  - **Follow-bottom is a same-frame layout write**, and Rust over the bridge alone answers it 1-2 frames late on desktop (render, acknowledgement, eval back). Safari enabled scroll anchoring only in 27, so on the Apple webviews of macOS and iOS 26 (the majority for months after a September release) the CSS cannot do the write either. So the write has a named behaviour, **`stickToEnd`**: a ResizeObserver callback that sets `scrollTop = scrollHeight` while the Rust-published `data-mode` is `following-bottom` (about 40 lines, standard fail-open and epoch). It is the path for engines without verified anchoring; where `overflow-anchor` is verified the CSS does the same write natively.
+  - **Rust keeps the mode machine, scroll intent, opening position, visibility and the invariant**, fed by a **page-side reducer** over bridge `listen`/`observe`: never by vdom `onscroll`/`onresize`, which on desktop is one blocking request per event.
 - **C5, the carousel wheel band (477 lines): a Rust attempt, measured.**
   - It is passive, so lateness is lag, never a wrong decision. A pure Rust classifier; input is a **batched** wheel stream flushed **per event task** (not per rAF: trackpad wheel already arrives about once per frame, so rAF batching only adds up to a frame of latency); output is one CSS variable.
-  - The owner measures it against the old path (`?dx-impl`), including a "Rust busy 30 ms" scenario. **If Rust loses, C5 becomes an allowlisted TypeScript module**; page-side wasm (C2) is no longer the exit.
+  - It sits in the deadline table's **next-frame row** (root doc section 2.2): bridge stream plus Rust under the latency budget the owner sets from the row 442/443 measurements, a named behaviour only if the measured lag exceeds it. Section 3.5's pass column (p95 added lag at most 1 frame, p99 at most 2) is that budget for this port.
+  - The owner measures it against the old path (`?dx-impl`, frozen by lane 3.FZ), including a "Rust busy 30 ms" scenario. **If Rust loses, C5 becomes an allowlisted TypeScript module** (an allowlist entry whose row is the measurement; not a registry behaviour, because a passive stream heuristic has no commit-sensitive effect to pass admission); page-side wasm (C2) is no longer the exit.
   - The proof without a browser is a `cargo test` replay plus a property test under jitter, batching and delay; the committed recordings alone are weak evidence (section 3.3).
-- **C1, the helper macros (65 lines):** confirmed to dissolve. `dxIsTrueEnd` becomes a Rust-published `data-dx-true-end-min/max` pair; `dxTrace` becomes Rust tracing. While the legacy arms live, the macros live in `ts/legacy` with them; `js_macros.rs` is deleted at the legacy-switch expiry deploy.
+- **C1, the helper macros (65 lines):** confirmed to dissolve. `dxIsTrueEnd` becomes a Rust-published `data-dx-true-end-min/max` pair; `dxTrace` becomes Rust tracing. While the legacy arms live, the macros live in `ts/legacy` with them (lane 3.FZ froze them); `js_macros.rs` is deleted by the legacy removal lane, keyed to the owner's measurement stamp.
 - **Result:** class (d) ends with no per-component script. The page-side code is the bridge, the transport seam and the closed registry of named behaviours (root doc sections 2.2 and 4).
-- **Cost:** 3.MS about 20 agent-hours and 3.WB about 12 (inferred; the first version said 16 and 10), each its own batch and deploy, in the owner's order: 3.MS, then 3.WB, then the legacy removal.
+- **Cost:** 3.MS about 30-45 agent-hours and 3.WB about 12-16 (inferred, from the execution member's resizing; the first version said 16 and 10, the second 20 and 12), each its own deploy in phase 4 of the lane plan, in the owner's order: 3.MS, then 3.WB, then the legacy removal. The freeze of the legacy arms and the `?dx-impl` switch are **lane 3.FZ** (phase 0), not part of either.
 - **Biggest risks:**
-  - the quality of Safari 27's new scroll anchoring and Chromium's heuristics under token-rate streaming (the Rust invariant is the answer);
+  - the quality of Safari 27's new scroll anchoring and Chromium's heuristics under token-rate streaming (the Rust invariant plus `stickToEnd` is the answer);
   - desktop latency for C5, which cannot be measured in this container (no gtk) and needs a machine with WebView2 or WKWebView.
 
 ---
 
-## 1. Policy consistency (fixed)
+## 1. Support policy: per-feature floors and a boot probe
 
-Root doc §2.1 policy: *Baseline newly available across Chrome, Firefox and Safari; older engines must stay correct through a feature-detected fallback, not necessarily frame-perfect.* `overflow-anchor` (web-features `overflow-anchor`, W):
-- Baseline low on 2026-09-14;
-- Chrome 56, Firefox 66, Safari 27.
+The root doc's section 2.1 no longer says "Baseline newly available". Baseline dates the first release of each engine, and those releases carry placement bugs, so A is used behind a floor per feature and a boot probe decides at run time; an engine that fails the probe is a fallback engine. `overflow-anchor` (web-features `overflow-anchor`, W): Chrome 56, Firefox 66, **Safari 27** (Baseline low on 2026-09-14). Its floor is Safari 27, so Safari 26 and older WKWebView run the Rust invariant plus `stickToEnd`.
 
-So it qualifies under the same rule as anchor positioning (Baseline low since 2026-01-13). The root doc's §4 wording ("once the policy admits it") contradicted §2.1. There was no hidden difference. The only real extra caveat is that Safari 27's implementation is weeks old, which the fallback design below absorbs. Root doc §3 (the W8 row), §4, §5.1 and §5.4 are now corrected.
-
-The fallback is detected by `@supports (overflow-anchor: auto)` / `CSS.supports`. It cannot detect a *buggy* implementation, so the per-engine probe in §2.5 is part of the lane.
-
----
+The fallback is detected by `@supports (overflow-anchor: auto)` / `CSS.supports`, which cannot detect a *buggy* implementation. The boot probe (a growth step while following, a prepend in free mode, a first overflow from offset 0) and the per-engine run in section 2.5 are part of the lane.
 
 ## 2. W8, the message scroller → a Rust invariant, `overflow-anchor` as the accelerator (+ `settle`, G)
 
@@ -63,6 +59,7 @@ Only the first four rows write layout-dependent scroll in the same frame. The re
    - **The accelerator:** Rust renders a 1 px `[data-message-scroller-end]` as the last child of the content, and CSS says `[data-mode="following-bottom"] [data-message-scroller-content] > * { overflow-anchor: none }` and `[data-message-scroller-end] { overflow-anchor: auto }`. While following, the sentinel is the only anchor candidate, so when the last row grows or a row is appended the browser shifts `scrollTop` inside layout, frame-exact (I; the well-known "pin to bottom" technique).
    - **Why A cannot be the guarantee (W, CSS Scroll Anchoring, <https://drafts.csswg.org/css-scroll-anchoring-1/>; [ux-a11y-perf F1](./board-2026-10-26/ux-a11y-perf.md)):** an anchor is selected only if the scroller is not scrolled away from the origin of its scrolling area (**no anchor at offset 0**: an empty or short chat, then a first long answer that grows past the fold, anchors nothing and leaves the sentinel below the viewport); fully clipped nodes are skipped (**one slipped frame is permanent**: a late arming, a fractional DPR or zoom where the 1 px sentinel sits half a pixel off, a tab returning from the background); and a change of computed `height`/`margin`/`padding`/`transform`/`top` from the anchor up to the scroller cancels the queued adjustment (the turn spacer's `min-height: calc(var(--dx-turn-top) + 100%)` is such a change, right after an anchored turn starts).
    - Arming and release may land a frame late on desktop; with the invariant in Rust that costs a frame, never a drift.
+   - **The same-frame write where A is not available is the `stickToEnd` behaviour** (root doc section 2.2, registry): while the Rust-published `data-mode` is `following-bottom`, a ResizeObserver callback sets `scrollTop = scrollHeight` in the frame the content grew and sends the mode transitions to Rust. Rust keeps the mode machine, the intent, the opening position and the invariant above, which stays the backstop for the cases `stickToEnd` shares with A (first overflow at offset 0, a fractional DPR, a tab return). It is admitted by its effect (`sameFrameWrite`), and it is the deadline table's "before paint" row, not R: a lagging write here is a wrong paint.
 2. **Prepend preservation → A on the rows (`data-mode` not following), with a Rust correction that does not branch on `CSS.supports`.** The current code already relies on the browser and corrects only where it did not (`:762-776`, V). The Rust arm compares an anchor row's top before and after layout, as that code does, so Safari 27 plus the Rust arm never double-corrects.
 3. **Anchored turn hold → A with a value Rust sets once.**
    - Instead of resizing a spacer whenever content below changes, Rust sets `--dx-turn-top` (the anchored row's offset in the content) once, when anchoring starts. CSS gives the content `min-height: calc(var(--dx-turn-top) + 100%)` (the viewport is a scroller with a definite height, so `100%` resolves; I). Content below can grow or collapse without a write, because rows above the turn do not change during a turn.
@@ -77,9 +74,9 @@ Only the first four rows write layout-dependent scroll in the same frame. The re
 8. **Visibility → R** over bridge `observe(IntersectionObserver, {rootMargin})`.
 9. **Consumer-composed rows.** Rust knows appends and prepends without a MutationObserver only for rows rendered by `MessageScrollerRows`. Rows passed as `children: Element` are unknown to Rust, so their growth reaches the controller only through bridge `observe` and native anchoring.
 
-**Engines without `overflow-anchor` (Safari 26 and older, and the matching WKWebView/WebKitGTK)** run on the invariant alone: the observation callback runs Rust, which writes `scroll(end)` while following and corrects a prepend by the before/after comparison. On web that is frame-exact (the observer callback and the Rust handler share the frame through microtasks; `MountedData::scroll` is a synchronous `Element.scroll` on web, audit section 2, V). On desktop with an old WebKit it is a frame late (web-verified; desktop inferred), which the policy allows.
+**Engines without verified `overflow-anchor` (Safari 26 and older, the matching WKWebView, WebKitGTK unverified, an engine failing the boot probe)** run the invariant plus `stickToEnd`: the ResizeObserver callback writes the follow in the same frame, and Rust writes `scroll(end)` while following and corrects a prepend by the before/after comparison as the backstop. On web the Rust path alone would also be frame-exact (the observer callback and the Rust handler share the frame through microtasks; `MountedData::scroll` is a synchronous `Element.scroll` on web, audit section 2, V); on desktop it is IPC out, a Rust task that cannot run while a render is unacknowledged, and an eval back, at least 1-2 frames per growth step (I), so at token rate the newest line paints below the fold first and the acceptance row "follow error at most 1 px over the JS arm" cannot be met by Rust alone. That is why the write has a behaviour (web-verified; desktop inferred).
 
-**Both arms ship for one deploy.** The legacy controller (`message_scroller.js`) is first frozen, byte for byte, into `primitives/src/ts/legacy/` behind the non-default `legacy-impl` feature that only the preview enables, and `?dx-impl=js|rust` (or a `localStorage` key) picks the arm once after hydration, never at render (root doc section 4). The legacy file is an allowlist entry with an expiry date; `message_scroller.js`'s baseline row in the volume gate carries the same expiry.
+**Both arms ship until the owner has measured.** **Lane 3.FZ (phase 0)** freezes the legacy controller (`message_scroller.js`) into `primitives/src/ts/legacy/`, wrapped and behaviour-neutral (not literally byte for byte: it relies on injected globals and a top-level `return`), behind the non-default `legacy-impl` feature that only the preview enables, and `?dx-impl=js|rust` (or a `localStorage` key) picks the arm once after hydration, never at render (root doc section 4). The legacy file is an allowlist entry with its row, removed when the owner's measurement stamp for this port exists; `message_scroller.js`'s baseline row in the volume gate carries the same condition. No calendar date.
 
 ### 2.3 What it subsumes
 
@@ -93,13 +90,13 @@ The content-change detection becomes Rust's own render knowledge: Rust renders t
 
 ### 2.4 Cost
 
-Lane **3.MS is L, about 20 agent-hours** (I; the first version said 16: the added always-on invariant, specs and the legacy freeze and switch). It owns `message_scroller.rs`, `message_scroller.js` (frozen into `ts/legacy`, then deleted at the expiry deploy) and the message-scroller CSS in `preview/src/components/message_scroller/`. It runs **last and alone**, after 3.VS has built `settle`. Its order:
-1. freeze the legacy controller into `ts/legacy` and add the `?dx-impl` switch (byte-parity, behaviour-neutral);
-2. the CSS anchoring rules and the sentinel;
-3. the Rust mode machine plus unit tests, and the always-on invariant;
+Lane **3.MS is L, about 30-45 agent-hours** (I; the first version said 16, the second 20; the execution member's resizing: a 1,065-line controller with a mode machine, seven new scenarios and a 26 min spec pass, the most uncertain lane, so it is time-boxed with the TypeScript-module exit). The freeze and the switch are **not** in it: lane 3.FZ did them in phase 0. It owns `message_scroller.rs`, the message-scroller CSS in `preview/src/components/message_scroller/` and `ts/behaviours/stick_to_end.ts`; the frozen `message_scroller.js` is deleted by the legacy removal. It runs **last and alone** (phase 4), after 3.VS has built `settle`. Its order:
+1. the CSS anchoring rules and the sentinel;
+2. the Rust mode machine plus unit tests, and the always-on invariant;
+3. `stickToEnd` (the module, its vectors, the boot probe that selects it);
 4. G opening position;
 5. `settle` adoption;
-6. the Rust arm without anchoring (`overflow-anchor: none !important` forced run);
+6. the Rust-plus-`stickToEnd` arm without anchoring (`overflow-anchor: none !important` forced run);
 7. visibility and keep-rendered.
 
 ### 2.5 Falsification attempts and remaining risk
@@ -111,17 +108,17 @@ Lane **3.MS is L, about 20 agent-hours** (I; the first version said 16: the adde
 | One slipped frame (late arm, fractional DPR/zoom, tab return) | Clipped nodes are never re-picked by the browser; the invariant re-scrolls. New specs: DPR 1.25/1.5, zoom 110/125%, a background-tab return, rearm after a slip. |
 | Chromium anchoring suppression (back-and-forth adjustments; a computed-size change on the path) | Streaming adjusts in one direction; the turn spacer is a suppression trigger in the window after a turn starts; the invariant covers both. Measure thousands of adjustments per minute at token rate. |
 | content-visibility chunks | Skipped subtrees cannot be anchors (I). The sentinel is never skipped. In free mode the first visible row is rendered, so prepend anchoring works. |
-| Safari 27's anchoring is new | `@supports` cannot see bugs. A `data-dx-anchoring="js"` override forces the Rust-only path per engine if a defect is found; a per-engine probe is part of the lane. |
+| Safari 27's anchoring is new | `@supports` cannot see bugs. A `data-dx-anchoring="js"` override forces the invariant-plus-`stickToEnd` path per engine if a defect is found; the boot probe and a per-engine run are part of the lane. |
 | Upstream tracking (a port of shadcn's controller) | The Rust state machine mirrors theirs function by function: re-porting is TypeScript to Rust instead of TypeScript to TypeScript, a maintenance cost, not a blocker. |
-| Desktop latency of mode flips | A late arm or release delays the start or stop of following by a frame; the invariant keeps the end visible. |
+| Desktop latency of mode flips | A late arm or release delays the start or stop of following by a frame; the invariant keeps the end visible. The follow itself is the same-frame write of `stickToEnd` or of A, not a Rust round trip. |
 
 **Specs:**
 - `message_scroller`, `message-scroller-api`, `message-scroller-timing` (rewritten to stream through Rust), `chat-*`;
-- the same suite with `overflow-anchor: none !important` injected to force the Rust-only path;
+- the same suite with `overflow-anchor: none !important` injected to force the invariant-plus-`stickToEnd` path (scripted at token rate through Rust);
 - the new cases above, RTL, reduced-motion `smooth`;
 - the bridge-delay setting at N = 0 and N = 2, and a Firefox and WebKit probe.
 
-**Remaining risk:** high (chat UX). The exit if anchoring misbehaves in an engine is that engine's Rust-only path, never a revert to JavaScript.
+**Remaining risk:** high (chat UX). The exit if anchoring misbehaves in an engine is that engine's invariant-plus-`stickToEnd` path (about 40 lines of page-side code on top of the Rust invariant), never a revert to the 1,065-line controller.
 
 ---
 
@@ -200,13 +197,14 @@ Run on WebView2 (Windows) and WKWebView (macOS), and on WebKitGTK if Linux deskt
 
 ### 3.6 Cost, falsification, risk
 
-- **Lane 3.WB, about 12 agent-hours, size M** (I; the first version said 10):
+- **Lane 3.WB, about 12-16 agent-hours, size M** (I; the first version said 10, the second 12; the execution member: the best-specified lane, because an oracle already exists in `wheel-replay.ts`, `carousel-wheel-replay.spec.ts` and the recordings, and only the property test and the phase fix are new):
   - classifier port, 3 h;
   - expected-output capture, `cargo test` parity and the property test, 3 h;
   - bridge `sample` wiring (flush per event task, armed `until`), CSS variable and home transition, 2 h;
-  - legacy freeze and the `?dx-impl` arm, debug telemetry kept bit-compatible for the three specs, the "Rust busy" scenario and the harness phase fix, 3 h;
+  - debug telemetry kept bit-compatible for the three specs, the "Rust busy" scenario, the harness phase fix and C4's bounce lines in `drag.rs`, 3-4 h (the legacy freeze and the `?dx-impl` arm are lane 3.FZ's, phase 0);
+  - slack for a red, 1-4 h;
   - desktop measurement, 1 h of a person's time (the owner's).
-- **Files:** `carousel/wheel.rs` and a new `carousel/wheel_band.rs`, plus the fixture. 3.WB runs after 3.CA (the true-end function and the transform channel) and after 3.MS.
+- **Files:** `carousel/wheel.rs`, a new `carousel/wheel_band.rs`, the bounce lines of `carousel/drag.rs` (the handoff with C4 needs both sides edited, because 3.CA has already merged), plus the fixture. 3.WB runs after 3.CA (the true-end function and the transform channel) and after 3.MS (phase 4, second).
 
 | attempt | result |
 |---|---|
@@ -237,7 +235,7 @@ Run on WebView2 (Windows) and WKWebView (macOS), and on WebKitGTK if Linux deskt
 - **Order:**
   - 3.CA removes the uses in `scroll.rs`/`drag.rs` from the Rust arm; the legacy copies of C2, C3, C4 and C5 keep the macros inside `ts/legacy` while the legacy arms live;
   - 3.WB removes the use in `wheel.rs` from the Rust arm;
-  - **`js_macros.rs` is deleted at the legacy-switch expiry deploy**, with `ts/legacy/`, and `ssr_tests.rs:412` is rewritten as a Rust unit test of the true-end function (about 2 h with the other legacy removals). A main-loop deletion right after the ports would break the legacy arm.
+  - **`js_macros.rs` is deleted by the legacy removal lane**, with `ts/legacy/`, once the owner's measurement stamp for the port exists, and `ssr_tests.rs:412` is rewritten as a Rust unit test of the true-end function (about 2 h with the other legacy removals). A main-loop deletion right after the ports would break the legacy arm.
 
 **Subsumes:** the `concat!` construction the audit flagged as needing "its own plan".
 
@@ -249,27 +247,28 @@ Run on WebView2 (Windows) and WKWebView (macOS), and on WebKitGTK if Linux deskt
 
 | construction | blocks | ids | lines |
 |---|---:|---|---:|
-| A, with a Rust invariant or verification behind it | 3 | T8, T11, W8 | 1,638 |
-| Named behaviours (page-side TypeScript, closed registry) | 7 | S11; O5, C4; W3, W5, W7; C2 | 880 |
+| A, with a Rust invariant or verification behind it (W8 also takes `stickToEnd`) | 3 | T8, T11, W8 | 1,638 |
+| Named behaviours (page-side TypeScript, closed registry) | 7 | S11; O5, C4; W3, W5, W7; C2 | 880 (+ about 40 for `stickToEnd`) |
 | R: rsx handlers or plain bridge verbs plus Rust | 6 | L30, W1, C3, C5 (measured, TypeScript fallback), C1 (dissolves), S14 | 1,153 |
 | G: Rust behind a paint-safe gate | 3 | S1, O3, V19 | 172 |
 | Spliced `const` text | 2 | T9, T10 | 39 |
 | The transport seam | 1 | V11 | 12 |
 
-**Lanes, in the owner's order (root doc section 5.4 holds the whole plan):** after the placement and behaviour lanes, **one at a time, each its own batch and deploy, and the next starts only after the owner's measurement**:
-1. **3.MS** message scroller, about 20 h (section 2.4);
-2. **3.WB** wheel band, about 12 h (section 3.6);
-3. the **legacy removal** at the expiry deploy, about 2 h (`js_macros.rs`, `ts/legacy/`, the volume-gate expiry rows).
+**Lanes (root doc section 5.4 holds the whole plan).** Phase 0 (lane 3.FZ) freezes the legacy arms and builds the `?dx-impl` switch before any port. Phases 1 to 3 (four lanes each, one deploy each) build the placement, overlay, behaviour and carousel lanes; 3.CA adds the Rust arm of C2 to C4 next to the frozen legacy arm. Then, in **phase 4, one at a time, each its own deploy, the next starting only after the owner's measurement**:
+1. **3.MS** message scroller, about 30-45 h (section 2.4), time-boxed with the TypeScript-module exit;
+2. **3.WB** wheel band, about 12-16 h (section 3.6);
+3. the **legacy removal**, about 2 h (`js_macros.rs`, `ts/legacy/`, the volume-gate rows), keyed to the owner's measurement stamp.
 
-(The first version of this document and of the root doc's lane table showed 3.CA, 3.WB and 3.MS in one parallel batch; the order above is the decided one. 3.CA runs earlier, in the behaviour batches, and keeps C4's bounce on inline `transform` until 3.WB lands.)
+(The first version of this document and of the root doc's lane table showed 3.CA, 3.WB and 3.MS in one parallel batch; the order above is the decided one. The execution member's alternative, building the three Rust arms in parallel behind the switch and deploying once, stays an option for the owner: it changes calendar time, not the design. 3.CA runs earlier, in phase 3, and keeps C4's bounce on inline `transform` until 3.WB lands.)
 
 **Bridge additions this needs:**
 - `sample` must support *batched* event arrays plus per-event page metrics, flushed per event task and armed only while a gesture holds (the root doc's section 5.2);
-- a `set` verb for `--dx-*` CSS variables on elements whose style Rust does not own.
+- a `set` verb for `--dx-*` CSS variables on elements whose style Rust does not own;
+- the `stickToEnd` behaviour (with its vectors and the boot probe that selects it) and the closed-table rows `location.search` and `localStorage` for the `?dx-impl` read, both from lane 3.0b's sweep; `sample` and `subscribe` are latest-wins with at most one message in flight, and a batched mode carries a cap and a drop-oldest rule that records the loss.
 
 **Gate (root doc section 5.3):**
 - No JavaScript in a `.rs` file outside the transport seam and the class-(c) allowlist; `message_scroller.js` and every `concat!`-built carousel script leave the class-(d) list when their lanes land.
-- The legacy arms (`ts/legacy/*`, behind `legacy-impl`) are allowlist entries with a row number and an `expires:` date that fails after it; the volume gate's `message_scroller.js` row carries the same expiry.
+- The legacy arms (`ts/legacy/*`, behind `legacy-impl`) are allowlist entries with a row number, removed when the owner's measurement stamp for the port exists (the gate fails when the stamp exists and the legacy file is still tracked; no calendar date); the volume gate's `message_scroller.js` row carries the same condition. The shipped (feature-off) arm gets its own clippy and test arm, because `legacy-impl` unifies on under `--workspace`.
 
 ## 6. Not verified
 
