@@ -20,7 +20,7 @@ const REPLY: &str = "Here is a **quick plan** for the release:\n\n\
 Questions? See https://example.com/faq for the rest.";
 
 async fn sleep_ms(ms: u32) {
-    let _ = document::eval(&format!("await new Promise((r) => setTimeout(r, {ms}));")).await;
+    dioxus_primitives::sleep::sleep(std::time::Duration::from_millis(u64::from(ms))).await;
 }
 
 #[component]

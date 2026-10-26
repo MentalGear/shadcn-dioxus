@@ -21,10 +21,10 @@ use dioxus_icons::lucide::{Brain, FileText, RotateCw};
 
 const CODE: &str = "export async function POST(request: Request) {\n  const { messages } = await request.json()\n  const result = streamText({ model, messages })\n  return result.toUIMessageStreamResponse()\n}";
 
-/// A real timer for the simulated run (this demo has no async runtime of its own; the
-/// browser's `setTimeout` is the clock).
+/// A real timer for the simulated run: the primitives' `sleep` (`tokio` natively, `gloo_timers`
+/// on wasm).
 async fn sleep_ms(ms: u32) {
-    let _ = document::eval(&format!("await new Promise((r) => setTimeout(r, {ms}));")).await;
+    dioxus_primitives::sleep::sleep(std::time::Duration::from_millis(u64::from(ms))).await;
 }
 
 /// The agent chat of upstream's `chat-demo`, with the parts this library has: one agent turn
