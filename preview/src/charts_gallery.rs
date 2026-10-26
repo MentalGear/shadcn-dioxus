@@ -360,7 +360,7 @@ fn ChartsPage(kind: ChartKind) -> Element {
                 div { id: "charts", class: "dx-charts-browse",
                     ChartsTabs { active: kind }
                     section { class: "dx-charts-gallery",
-                        h2 { class: "dx-charts-sr-only", "{kind.tab_label()}" }
+                        h2 { "data-dx-visually-hidden": "", "{kind.tab_label()}" }
                         ul { class: "dx-charts-grid",
                             for variant in variants {
                                 ChartsCard {
@@ -497,7 +497,7 @@ fn ChartsCard(
                         size: ButtonSize::Sm,
                         onclick: view_code,
                         "View Code"
-                        span { class: "dx-charts-sr-only", " ({title})" }
+                        span { "data-dx-visually-hidden": "", " ({title})" }
                     }
                 }
             }
@@ -603,7 +603,7 @@ fn CodeViewer(selected: Signal<Option<CodeView>>) -> Element {
             if let Some(view) = sheet_view {
                 CodeViewBody { view: view.clone(),
                     SheetTitle { class: "dx-charts-code-filename", "{view.filename}" }
-                    SheetDescription { class: "dx-charts-sr-only",
+                    SheetDescription { "data-dx-visually-hidden": "",
                         "Source of the {view.title} chart. Press Escape to close."
                     }
                 }
@@ -623,7 +623,7 @@ fn CodeViewer(selected: Signal<Option<CodeView>>) -> Element {
                 if let Some(view) = drawer_view {
                     CodeViewBody { view: view.clone(),
                         DrawerTitle { class: "dx-charts-code-filename", "{view.filename}" }
-                        DrawerDescription { class: "dx-charts-sr-only",
+                        DrawerDescription { "data-dx-visually-hidden": "",
                             "Source of the {view.title} chart. Swipe down or press Escape to close."
                         }
                     }

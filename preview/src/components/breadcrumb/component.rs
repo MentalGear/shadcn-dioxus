@@ -144,7 +144,7 @@ pub fn BreadcrumbEllipsis(#[props(extends = GlobalAttributes)] attributes: Vec<A
         span {
             ..merged,
             Ellipsis {}
-            span { class: "dx-breadcrumb-sr-only", "More" }
+            span { "data-dx-visually-hidden": "", "More" }
         }
     }
 }

@@ -6,7 +6,7 @@ resolves here by id.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Done rows (371)
+## Done rows (372)
 
 | # | Item | Updated |
 |---|---|---|
@@ -374,6 +374,7 @@ resolves here by id.
 | [423](backlog/done/423-accordion-header-hover-underline.md) | An open Accordion header still underlines on hover; the header should never underline | 2026-10-25 |
 | [424](backlog/done/424-date-picker-read-only-still-edits.md) | DatePicker `read_only` still lets keys change the value and the popover pick a date | 2026-10-25 |
 | [425](backlog/done/425-hover-card-force-mount-no-effect.md) | HoverCard `force_mount` has no effect: the card is still rendered only while open | 2026-10-25 |
+| [426](backlog/done/426-theme-owns-modal-scrim-and-visually-hidden-recipe.md) | Theme owns the no-top-layer modal scrim and the visually-hidden recipe | 2026-10-26 |
 | [427](backlog/done/427-spec-page-and-read-kind-helpers-retire-markers.md) | Spec page and read kinds become helpers; the exception markers retire | 2026-10-25 |
 | [428](backlog/done/428-themed-wrappers-forward-with-props-spread.md) | Themed wrappers forward primitive props with a struct spread, not field by field | 2026-10-26 |
 | [429](backlog/done/429-one-gate-kit-css-walker-allowlist-engine.md) | One gate kit: a shared CSS walker and one allowlist engine for the check scripts | 2026-10-25 |

@@ -5,7 +5,8 @@
 # What the theme owns once is not declared per component. No component `style.css` may declare `touch-action:
 # manipulation` (the theme's one zero-specificity rule covers every `dx-` button, link, form control, `tabindex` and
 # interactive ARIA role; a drag surface may still declare `none` or `pan-*`), paint a `::backdrop` (the modal scrim is
-# the theme's one rule on `dialog[class^="dx-"]`, retuned by the `--dx-overlay-*` tokens), reset with `all:` (it
+# the theme's one rule on `dialog[class^="dx-"]`, retuned by the `--dx-overlay-*` tokens), paint the no-top-layer
+# wrapper scrim (`data-dx-scrim`) or paste the visually-hidden recipe (`data-dx-visually-hidden`), reset with `all:` (it
 # outranks every zero-specificity theme rule), or re-declare `user-select: none` for an element the theme's one
 # control rule already covers (every other use sits on the gate's reasoned `USER_SELECT_ALLOW`). The theme's
 # `:where(dialog[class^="dx-"]) { padding: 0 }` reset means every dialog sheet declares its own inset. All these theme
@@ -52,6 +53,17 @@
 #     drop the behaviour from every component at once): the touch rule, the scrim, the dialog-box rule, and the
 #     `user-select` rule with its exclusions intact.
 #
+#  6. The no-top-layer scrim and the visually-hidden recipe (row 426). The scrim of a modal that has no top layer
+#     (non-web arm, `is_modal: false`) is the wrapper `div` Dialog, AlertDialog, Sheet, Drawer and CommandDialog render
+#     around the panel: each carries `data-dx-scrim` and the theme's five zero-specificity `:where([data-dx-scrim])`
+#     rules paint it, fade it with `data-state` and drop it for `overlay: false`. A component sheet may not read
+#     `--dx-overlay-scrim` (that is the scrim being painted by hand again), and each of the five sources must still
+#     emit the attribute. "Text for assistive technology that is not drawn" is the theme's one
+#     `:where([data-dx-visually-hidden])` rule; a rule in a component sheet or in `main.css` that has the recipe's
+#     shape (`position: absolute` + `width: 1px` + `height: 1px` + `clip`/`clip-path`) is a pasted copy (two
+#     spellings, twelve copies, before) -- set the attribute on the element instead. A selector-driven hiding of
+#     children the component does not own (no element to put an attribute on) sits on SR_ONLY_ALLOW with the reason.
+#
 # Comments are stripped before scanning, so prose that mentions either is fine.
 #
 # Usage: scripts/check-theme-baseline.sh [FILE ...]   (default: preview/src/components/*/style.css;
@@ -71,6 +83,8 @@ import sys
 THEME = "preview/assets/dx-components-theme.css"
 explicit = sys.argv[1:]
 files = explicit or sorted(glob.glob("preview/src/components/*/style.css"))
+# The docs site's own sheet: only the scrim and visually-hidden arm applies to it (it has its own `touch-action` backstop).
+EXTRA_SHEETS = [] if explicit else ["preview/assets/main.css"]
 if not files:
     print("check-theme-baseline: no stylesheets found (run from a checkout)", file=sys.stderr)
     sys.exit(2)
@@ -131,6 +145,36 @@ USER_SELECT_ALLOW = Allowlist("check-theme-baseline", [
 # (row 239). Spell the resets out (appearance, background, border, padding, margin, font, color, outline).
 ALL_RESET = re.compile(r"(?<![\w-])all\s*:\s*(unset|initial|revert|revert-layer)\b", re.I)
 
+# (stylesheet, whitespace-normalised selector list, reason): a rule with the visually-hidden recipe's shape that the
+# attribute cannot replace, because the element it hides is chosen by a selector, not rendered by the component.
+SR_ONLY_ALLOW = Allowlist("check-theme-baseline", [
+    ("preview/src/components/sidebar/style.css",
+     '.dx-sidebar-desktop[data-collapsible="icon"] .dx-sidebar-menu-button[data-sidebar="menu-button"]:has(> :first-child:is(svg, img))> :not(:first-child), '
+     '.dx-sidebar-desktop[data-collapsible="icon"] .dx-sidebar-menu-button[data-sidebar="menu-button"]:has(> :first-child:has(svg, img))> :not(:first-child)',
+     "hides the caller's label next to an icon only while the rail is collapsed (`data-collapsible=\"icon\"`): the children "
+     "are the caller's, picked by structure and state, so there is no element of the component's own to mark"),
+    ("preview/assets/main.css", ".dx-navbar-brand span",
+     "the docs navbar hides the brand text below one breakpoint (inside a media query), so the same element is visible "
+     "above it; an attribute is not conditional on the viewport"),
+], fields=("file", "selector"), source="scripts/check-theme-baseline.sh")
+
+# The scrim a wrapper paints (`background: var(--dx-overlay-scrim)`), and the visually-hidden recipe's shape.
+SCRIM_TOKEN = re.compile(r"var\(\s*--dx-overlay-scrim\b")
+# The five wrappers: the Rust source that renders each one's wrapper `div`.
+SCRIM_SOURCES = {
+    "Dialog": "preview/src/components/dialog/component.rs",
+    "AlertDialog": "preview/src/components/alert_dialog/component.rs",
+    "Sheet": "preview/src/components/sheet/component.rs",
+    "Drawer": "preview/src/components/drawer/component.rs",
+    "CommandDialog": "primitives/src/command.rs",
+}
+
+def sr_only_shape(body):
+    b = blank_comments(body)
+    return (re.search(r"(?<![\w-])position\s*:\s*absolute\b", b) and re.search(r"(?<![\w-])width\s*:\s*1px\b", b)
+            and re.search(r"(?<![\w-])height\s*:\s*1px\b", b)
+            and re.search(r"(?<![\w-])clip(-path)?\s*:", b))
+
 TOUCH = re.compile(r"(?<![\w-])touch-action\s*:\s*manipulation\b", re.I)
 PAINTS = re.compile(r"(?<![\w-])(background(-color|-image)?|backdrop-filter|transition(-[a-z]+)?)\s*:", re.I)
 
@@ -148,6 +192,25 @@ def covered_by_baseline(entry):
     return any(r in BASELINE_ROLES for r in re.findall(r"\[role=[\"']?([\w-]+)[\"']?\]", c))
 
 errors = []
+
+def arm6(path, sheet_rules):
+    """No sheet paints the no-top-layer scrim or pastes the visually-hidden recipe (row 426)."""
+    for r in sheet_rules:
+        if re.search("::backdrop", r.prelude, re.I):
+            continue  # arm 2 owns it
+        entries = selector_list(r.prelude)
+        if SCRIM_TOKEN.search(blank_comments(r.body)):
+            errors.append(f"{path}:{r.brace_line}: `{' '.join(r.prelude.split())}` reads `--dx-overlay-scrim`: the wrapper "
+                          f"scrim is the theme's `:where([data-dx-scrim])` rules ({THEME}, \"The modal scrim without a top "
+                          f"layer\"); put `data-dx-scrim` on the wrapper and delete this rule")
+        if sr_only_shape(r.body):
+            if not SR_ONLY_ALLOW.find_all(lambda e: e.file == path and e.selector == ", ".join(entries)):
+                errors.append(f"{path}:{r.brace_line}: `{', '.join(entries)}` is the visually-hidden recipe pasted into a "
+                              f"sheet; it is the theme's `:where([data-dx-visually-hidden])` rule ({THEME}, \"Visually "
+                              f"hidden, once\"): set `data-dx-visually-hidden` on the element and delete this rule (a "
+                              f"selector-driven hiding of children the component does not own goes on SR_ONLY_ALLOW "
+                              f"in scripts/check-theme-baseline.sh with that reason)")
+
 for path in files:
     with open(path, encoding="utf-8") as fh:
         raw = fh.read()
@@ -167,6 +230,8 @@ for path in files:
             errors.append(f"{path}:{line}: `{selector}` paints a `::backdrop`; the modal scrim is the one "
                           f"shared rule in {THEME} (\"The modal scrim, once\"), retuned by the "
                           f"--dx-overlay-* tokens")
+
+    arm6(path, sheet_rules)
 
     # Arm 4: no component sheet re-declares the baseline's user-select, and every other one says why.
     if path.replace("\\", "/").startswith("preview/src/components/"):
@@ -193,10 +258,15 @@ for path in files:
                                   f"(delete this); if it is a drag surface or a non-interactive label, add it to "
                                   f"USER_SELECT_ALLOW in scripts/check-theme-baseline.sh with that reason")
 
+for path in EXTRA_SHEETS:
+    with open(path, encoding="utf-8") as fh:
+        arm6(path, css_rules(fh.read()))
+
 if not explicit:
     errors += [f"scripts/check-theme-baseline.sh: USER_SELECT_ALLOW: {p}" for p in USER_SELECT_ALLOW.problems()]
     with open(THEME, encoding="utf-8") as fh:
-        theme = blank_comments(fh.read())
+        theme_raw = fh.read()
+    theme = blank_comments(theme_raw)
     # Arm 3: the theme still has both rules.
     touch_rule = re.search(r"([^{}]*)\{\s*touch-action\s*:\s*manipulation\s*;?\s*\}", theme)
     if not touch_rule:
@@ -222,6 +292,35 @@ if not explicit:
     if not pad_ok:
         errors.append(f"{THEME}: the shared dialog-box rule `:where(dialog[class^=\"dx-\"]) {{ padding: 0 }}` "
                       f"(the UA's font-size-dependent `padding: 1em` reset, \"The dialog box, once\") is gone")
+
+    # Arm 6b: the theme owns the wrapper scrim and the visually-hidden recipe, and the five wrappers say so.
+    theme_rules = {" ".join(r.prelude.split()): r for r in css_rules(theme_raw)}
+    scrim_need = {
+        ":where([data-dx-scrim])": ["position: fixed", "z-index: var(--dx-z-overlay)", "backdrop-filter: blur(var(--dx-overlay-blur))",
+                                    "background: var(--dx-overlay-scrim)", "inset: 0", "opacity: 0"],
+        ":where([data-dx-scrim]:has(> dialog))": ["backdrop-filter: none", "background: transparent"],
+        ':where([data-dx-scrim][data-dx-overlay="off"])': ["backdrop-filter: none", "background: transparent"],
+        ':where([data-dx-scrim][data-state="closed"])': ["animation: dx-fade-out var(--dx-overlay-duration)", "pointer-events: none"],
+        ':where([data-dx-scrim][data-state="open"])': ["animation: dx-fade-in var(--dx-overlay-duration)"],
+        ":where([data-dx-visually-hidden])": ["position: absolute", "overflow: hidden", "width: 1px", "height: 1px", "padding: 0",
+                                              "border: 0", "margin: -1px", "clip-path: inset(50%)", "white-space: nowrap"],
+    }
+    for sel, needs in scrim_need.items():
+        rule = theme_rules.get(sel)
+        if rule is None:
+            errors.append(f"{THEME}: the shared rule `{sel}` is gone (\"The modal scrim without a top layer\" / "
+                          f"\"Visually hidden, once\")")
+            continue
+        have = {" ".join(d.split()).rstrip(";") for d in rule.decls}
+        for n in needs:
+            if not any(h == n or h.startswith(n + " ") for h in have):
+                errors.append(f"{THEME}: `{sel}` no longer declares `{n}`")
+    for who, src in SCRIM_SOURCES.items():
+        with open(src, encoding="utf-8") as fh:
+            if '"data-dx-scrim"' not in fh.read():
+                errors.append(f"{src}: the {who} wrapper no longer carries `\"data-dx-scrim\": \"\"`, so the theme's scrim "
+                              f"rules do not reach it (no scrim where there is no top layer)")
+    errors += [f"scripts/check-theme-baseline.sh: SR_ONLY_ALLOW: {p}" for p in SR_ONLY_ALLOW.problems()]
 
     # Arm 5b: the theme's shared user-select rule is there, with its inclusions and its exclusions.
     us_rule = re.search(r"([^{}]*)\{[^{}]*-webkit-user-select\s*:\s*none\s*;[^{}]*(?<![\w-])user-select\s*:\s*none\s*;[^{}]*\}", theme)
@@ -252,5 +351,5 @@ if errors:
     sys.exit(1)
 
 print(f"check-theme-baseline: OK ({len(files)} stylesheet(s): no per-component touch-action: manipulation, "
-      f"::backdrop scrim or covered user-select: none; theme rules present)")
+      f"::backdrop or wrapper scrim, pasted visually-hidden recipe or covered user-select: none; theme rules present)")
 PYEOF

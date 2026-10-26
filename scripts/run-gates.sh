@@ -171,6 +171,7 @@ gates=(
   "check-gate-kit|scripts/check-gate-kit.sh"
   "check-lane-target|scripts/check-lane-target.sh"
   "check-merge-drivers|scripts/check-merge-drivers.sh"
+  "check-conflict-markers|scripts/check-conflict-markers.sh"
 
   # group: Rust build, lint, test and style
   # Every Rust file is rustfmt-formatted (`cargo fmt --all -- --check`). Never reused from the store: it takes under a second.
