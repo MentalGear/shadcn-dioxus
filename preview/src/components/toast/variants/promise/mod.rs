@@ -13,10 +13,9 @@ pub fn Demo() -> Element {
     }
 }
 
-/// A stand-in for a request: resolves after 1.5 s (a one-shot browser timer, not a loop).
+/// A stand-in for a request: resolves after 1.5 s (one `sleep`, not a loop).
 async fn save(ok: bool) -> Result<&'static str, &'static str> {
-    let mut wait = document::eval("await new Promise((r) => setTimeout(r, 1500)); dioxus.send(true);");
-    let _ = wait.recv::<bool>().await;
+    dioxus_primitives::sleep::sleep(std::time::Duration::from_millis(1500)).await;
     if ok {
         Ok("Event")
     } else {

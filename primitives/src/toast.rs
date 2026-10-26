@@ -145,6 +145,10 @@ impl ToastRecord {
     }
 }
 
+/// How long a `focusout` waits for a `focusin` that follows it (focus moving between two controls of
+/// the region) before the region counts as left.
+const FOCUS_SETTLE: Duration = Duration::from_millis(20);
+
 // Type alias for the add callback
 type AddToastCallback = Callback<ToastRecord>;
 
@@ -402,7 +406,7 @@ pub fn ToastProvider(props: ToastProviderProps) -> Element {
     });
 
     // A stable id for the region: `ToastRegionRendered`'s popover wiring, the F6 registry and the
-    // pause listener all address the element by it.
+    // size observer all address the element by it.
     let region_id = use_unique_id();
 
     // F6: this provider only REGISTERS its region (and how many toasts it holds) with the one
@@ -422,16 +426,39 @@ pub fn ToastProvider(props: ToastProviderProps) -> Element {
         ));
     });
 
-    // Pause the countdowns while the pointer is over the toaster or focus is inside it.
-    let mut paused = use_signal(|| false);
-    crate::js_listener::use_js_listeners(move || {
-        region_ref()?;
-        let id = region_id.cloned();
-        Some(
-            crate::js_listener::JsListeners::install(TOAST_PAUSE_JS)
-                .arg(id)
-                .on_message(move |p: bool| paused.set(p)),
-        )
+    // Pause the countdowns while the pointer is over the toaster or focus is inside it. The same
+    // condition the stylesheet expands the pile on (`:hover`, `:focus-within`), so the pile and the
+    // countdowns agree. The handlers go on the region element through `region_attributes` below.
+    let mut hovered = use_signal(|| false);
+    let mut focus_inside = use_signal(|| false);
+    // `FocusData` carries no `relatedTarget`, so a `focusout` cannot say whether focus is leaving the
+    // region or moving to another control inside it. Every focus event bumps this counter and a
+    // `focusout` only clears `focus_inside` once `FOCUS_SETTLE` has passed with no newer one: a move
+    // inside the region is a `focusout` straight followed by a `focusin`, which cancels the clear.
+    let mut focus_epoch = use_signal(|| 0u32);
+    let paused = use_memo(move || hovered() || focus_inside());
+    let pause_attributes = attributes!(div {
+        // A touch tap is not a hover (the pile does not expand on it either).
+        onpointerenter: move |event: PointerEvent| {
+            if event.pointer_type() != "touch" {
+                hovered.set(true);
+            }
+        },
+        onpointerleave: move |_| hovered.set(false),
+        onfocusin: move |_| {
+            focus_epoch += 1;
+            focus_inside.set(true);
+        },
+        onfocusout: move |_| {
+            focus_epoch += 1;
+            let epoch = focus_epoch();
+            spawn(async move {
+                crate::sleep::sleep(FOCUS_SETTLE).await;
+                if focus_epoch() == epoch {
+                    focus_inside.set(false);
+                }
+            });
+        },
     });
 
     // Measure every toast's content and publish the heights the pile is sized from (`TOAST_SIZE_JS`).
@@ -458,6 +485,7 @@ pub fn ToastProvider(props: ToastProviderProps) -> Element {
             "data-toaster-side": position.side(),
             "data-toaster-align": position.align(),
         }),
+        pause_attributes,
         props.attributes.clone(),
     ]);
 
@@ -578,24 +606,6 @@ cleanup(() => {
 });
 "#;
 
-/// Reports whether the pointer is over the toaster (a mouse or pen; a touch tap is not a hover)
-/// or focus is inside it, as `true`/`false` on every change. The same condition the stylesheet
-/// expands the pile on (`:hover`, `:focus-within`), so the pile and the countdowns agree.
-const TOAST_PAUSE_JS: &str = r#"
-const id = await dioxus.recv();
-const el = document.getElementById(id);
-if (!el) return;
-let hover = false, focus = false, last = false;
-const report = () => {
-  const p = hover || focus;
-  if (p !== last) { last = p; dioxus.send(p); }
-};
-listen(el, 'pointerenter', (e) => { if (e.pointerType !== 'touch') { hover = true; report(); } });
-listen(el, 'pointerleave', () => { hover = false; report(); });
-listen(el, 'focusin', () => { focus = true; report(); });
-listen(el, 'focusout', (e) => { focus = !!e.relatedTarget && el.contains(e.relatedTarget); report(); });
-"#;
-
 /// The ONE writer of the pile's heights. A toast is as tall as its content plus its own padding, so
 /// the stylesheet needs two numbers it cannot read from CSS: how tall each toast is, and how tall the
 /// FRONT toast is (a collapsed pile shows every toast behind it at that height, as Sonner's
@@ -676,8 +686,8 @@ sync();
 
 #[cfg(feature = "web")]
 thread_local! {
-    /// Whether [`ensure_toast_base_styles`]'s `document::eval` has already
-    /// been scheduled once in this WASM instance -- same idempotency guard
+    /// Whether [`ensure_toast_base_styles`] has already inserted its `<style>`
+    /// once in this WASM instance -- same idempotency guard
     /// shape as `top_layer.rs`'s `ANCHOR_POSITIONING_STYLES_INSTALLED`
     /// (itself modeled on `scroll_lock.rs`'s
     /// `SCROLLBAR_GUTTER_BASELINE_INSTALLED`).
@@ -715,6 +725,14 @@ thread_local! {
 /// `top_layer.rs`'s `ensure_anchor_positioning_styles` already applies for
 /// anchor positioning, just for toast's own box instead.
 ///
+/// ## The sheet
+///
+/// `toast_base.css`, next to this file, so stylelint reads it; [`crate::top_layer::insert_head_style`]
+/// appends it. `dx-toast-base-region`/`dx-toast-base-item` are plain, hand-written marker classes
+/// (never `#[css_module]`-routed -- this crate has no build-time CSS pipeline of its own, only
+/// `preview/`'s does), applied unconditionally by `ToastRegionRendered`/[`Toast`] alongside whatever
+/// class a themed wrapper also merges in via `merge_attributes`'s concatenating `class` rule.
+///
 /// ## Zero specificity, deliberately
 ///
 /// Every rule below is wrapped in `:where(...)`, exactly like
@@ -734,66 +752,8 @@ fn ensure_toast_base_styles() {
     if TOAST_BASE_STYLES_INSTALLED.with(|installed| installed.replace(true)) {
         return;
     }
-    let eval = document::eval(TOAST_BASE_STYLES_INJECT_JS);
-    let _ = eval;
+    crate::top_layer::insert_head_style("dx-toast-base-styles", include_str!("toast_base.css"));
 }
-
-/// The idempotent (JS-side `getElementById` guarded, so safe to run more
-/// than once -- same double-guard shape as `top_layer.rs`'s
-/// `anchor_positioning_inject_js`) style-tag-injection script
-/// [`ensure_toast_base_styles`] dispatches.
-///
-/// `dx-toast-base-region`/`dx-toast-base-item` are plain, hand-written
-/// marker classes (never `#[css_module]`-routed -- this crate has no
-/// build-time CSS pipeline of its own, only `preview/`'s does), applied
-/// unconditionally by `ToastRegionRendered`/[`Toast`] alongside whatever
-/// class a themed wrapper also merges in via `merge_attributes`'s
-/// concatenating `class` rule.
-#[cfg(feature = "web")]
-const TOAST_BASE_STYLES_INJECT_JS: &str = r#"
-if (!document.getElementById('dx-toast-base-styles')) {
-    const style = document.createElement('style');
-    style.id = 'dx-toast-base-styles';
-    style.textContent = `
-      :where(.dx-toast-base-region[popover]) {
-        position: fixed;
-        inset: auto 1rem 1rem auto;
-        margin: 0;
-        overflow: visible;
-        border: none;
-        padding: 0;
-        background: none;
-        color: var(--dx-foreground, inherit);
-      }
-      :where(.dx-toast-base-region ol) {
-        display: flex;
-        flex-direction: column-reverse;
-        margin: 0;
-        padding: 0;
-        gap: 0.5rem;
-        list-style: none;
-      }
-      :where(.dx-toast-base-region li) {
-        display: flex;
-      }
-      :where(.dx-toast-base-item) {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 0.5rem;
-        box-sizing: border-box;
-        min-width: 12rem;
-        min-height: 2.5rem;
-        padding: 0.75rem 1rem;
-        border: 1px solid CanvasText;
-        border-radius: 0.25rem;
-        background: Canvas;
-        color: CanvasText;
-      }
-    `;
-    document.head.appendChild(style);
-}
-"#;
 
 /// Web arm: promote the toast region to the
 /// top layer via `popover="manual"` so toasts are never clipped by an
@@ -825,8 +785,8 @@ if (!document.getElementById('dx-toast-base-styles')) {
 /// (`position: fixed; right: 20px; bottom: 20px`) via plain CSS, with no
 /// `anchor-name`/`position-anchor` involved, so neither
 /// `crate::top_layer::anchor_name_style` nor `use_anchor_position_fallback`
-/// is called here, and this component carries no `dx-anchor-*` marker
-/// class (that class only exists to opt an element into the shared,
+/// is called here, and this component carries no `data-dx-anchored`
+/// attribute (that attribute only exists to opt an element into the shared,
 /// engine-injected `@supports (anchor-name: --a)` block, which has nothing
 /// to contribute here).
 ///

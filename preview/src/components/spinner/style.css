@@ -1,3 +1,6 @@
+/* slot: --dx-spinner-size  Edge length of a spinner nested in a container that sizes its icons (a Badge sets
+ * `0.75rem`). The container sets it on its own element; a spinner outside one is `1rem`. */
+
 /* Nova spinner (shadcn-ui/ui@295a1f1 registry/bases/radix/ui/spinner.tsx: `size-4 animate-spin`; the
  * style sheet has no `.cn-spinner` block). It carries no colour of its own: the ring is
  * `currentColor`, so it takes the ink of whatever it sits in (a Button, a Badge, an input addon).

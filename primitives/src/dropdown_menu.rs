@@ -7,8 +7,6 @@
 //! independent state machine (`crate::menu_sub`) both this file and
 //! `context_menu.rs`'s equivalent build on.
 
-use std::rc::Rc;
-
 use crate::AsChild;
 use crate::{
     collection::{
@@ -61,6 +59,10 @@ struct DropdownMenuContext {
 
     // Unique ID for the trigger button
     trigger_id: Signal<String>,
+
+    // The trigger button by handle: where focus goes back to on close (`use_refocus_on_close_unless`)
+    // and the last press the menu saw, which says whether that hand-back is skipped (touch, pen).
+    trigger: crate::TriggerHandle,
 
     // The current `DropdownMenuContent`'s own element id, kept in sync by
     // that component -- mirrors `PopoverCtx::content_id` (`popover.rs`).
@@ -236,6 +238,7 @@ pub fn DropdownMenu(props: DropdownMenuProps) -> Element {
     let disabled = props.disabled;
     let root_id = use_unique_id();
     let trigger_id = use_unique_id();
+    let trigger = crate::use_trigger_handle();
     // Placeholder value until `DropdownMenuContent` mounts and syncs its
     // own id in -- see `DropdownMenuContext::content_id`'s doc.
     let content_id = use_unique_id();
@@ -251,6 +254,7 @@ pub fn DropdownMenu(props: DropdownMenuProps) -> Element {
         focus,
         initial_focus,
         trigger_id,
+        trigger,
         content_id,
         modal: props.modal,
         interacted_outside,
@@ -291,12 +295,13 @@ pub fn DropdownMenu(props: DropdownMenuProps) -> Element {
     // wiring on the trigger/item `onblur` handlers below).
     crate::use_refocus_on_close_unless(
         ctx.open,
-        ctx.trigger_id,
+        ctx.trigger,
         ReadSignal::new(ctx.interacted_outside),
     );
 
     // Handle escape key to close the menu
     let handle_keydown = move |event: Event<KeyboardData>| {
+        ctx.trigger.press().key_pressed(&event);
         if disabled() {
             return;
         }
@@ -421,6 +426,7 @@ pub fn DropdownMenu(props: DropdownMenuProps) -> Element {
     rsx! {
         div {
             onkeydown: handle_keydown,
+            onpointerdown: move |event: PointerEvent| ctx.trigger.press().pressed(&event),
             ..attributes,
             {props.children}
         }
@@ -496,8 +502,9 @@ pub struct DropdownMenuTriggerProps {
 #[component]
 pub fn DropdownMenuTrigger(props: DropdownMenuTriggerProps) -> Element {
     let ctx: DropdownMenuContext = use_context();
-    let mut element = use_signal(|| None::<Rc<MountedData>>);
-    let press = crate::modality::use_press_kind();
+    // The pointer type of the press before a click is recorded once for the whole menu, by the
+    // root's `onpointerdown` (`DropdownMenu`), which this button's press bubbles to.
+    let press = ctx.trigger.press();
 
     let open = ctx.open;
     let disabled = ctx.disabled;
@@ -522,10 +529,7 @@ pub fn DropdownMenuTrigger(props: DropdownMenuTriggerProps) -> Element {
         disabled: disabled,
         aria_expanded: open,
         aria_haspopup: crate::menu_semantics::MENU_TRIGGER_HASPOPUP,
-        onmounted: move |e: MountedEvent| {
-            element.set(Some(e.data()));
-        },
-        onpointerdown: move |evt: PointerEvent| press.pressed(&evt),
+        onmounted: ctx.trigger.onmounted(),
         onclick: move |_| {
             if disabled() {
                 return;
@@ -539,7 +543,7 @@ pub fn DropdownMenuTrigger(props: DropdownMenuTriggerProps) -> Element {
             // A mouse press only: after a touch or pen press the script focus would make the
             // trigger `:focus-visible` (it rings) and dismiss a field's software keyboard.
             if !press.was_touch() {
-                if let Some(data) = element() {
+                if let Some(data) = ctx.trigger.element() {
                     spawn(async move {
                         // focus-ok: Safari click-focus remedy, mouse presses only (modality.rs)
                         _ = data.set_focus(true).await;
@@ -824,12 +828,6 @@ fn DropdownMenuContentRendered(
         ctx.set_open,
     );
 
-    // See `tooltip.rs`'s `TooltipContentRendered` for why this hand-written,
-    // never-`Styles::`-routed marker class exists: it is what the shared,
-    // engine-injected anchor-positioning stylesheet (`top_layer::
-    // ensure_anchor_positioning_styles`) selects on, sidestepping
-    // `manganis-core`'s `css_module_parser` not scoping classes inside
-    // `@supports` bodies (`dev-docs/issues/css-module-supports-scoping.md`).
     // dev-docs/backlog.md row 25: `aria-labelledby` is not a bare literal
     // alongside `..attributes` -- that is the duplicate-attribute hazard
     // `merge_attributes` exists to prevent (`dev-docs/conformance-harness.md`
@@ -845,9 +843,6 @@ fn DropdownMenuContentRendered(
         crate::menu_root::content_labelledby_attributes(&attributes, &ctx.trigger_id.cloned());
     let attributes = merge_attributes(vec![
         attributes,
-        attributes!(div {
-            class: "dx-anchor-dropdown-menu"
-        }),
         labelledby,
         // `role`/`popover`/`data-state` are owned by this component (menu
         // semantics + top-layer wiring), so they must win over a caller's
@@ -864,7 +859,11 @@ fn DropdownMenuContentRendered(
     // doc for why a bare `style: position_anchor_style(&id)` literal
     // alongside `..attributes` is the duplicate-`style` hazard
     // (`dev-docs/conformance-harness.md` hydration-parity Rule 4).
-    let attributes = crate::top_layer::anchored_content_attributes(&id, attributes);
+    let attributes = crate::top_layer::anchored_content_attributes(
+        crate::top_layer::AnchorKind::DropdownMenu,
+        &id,
+        attributes,
+    );
 
     rsx! {
         div {
@@ -1602,6 +1601,9 @@ pub fn DropdownMenuSub(props: DropdownMenuSubProps) -> Element {
     });
 
     use_context_provider(|| sub);
+    // The sub-trigger's element, for the submenu content's ArrowLeft/Escape hand-back.
+    let sub_trigger = crate::use_trigger_handle();
+    use_context_provider(|| crate::SubTriggerHandle(sub_trigger));
 
     rsx! {
         {props.children}
@@ -1715,7 +1717,12 @@ pub fn DropdownMenuSubTrigger(props: DropdownMenuSubTriggerProps) -> Element {
             .text_value(move || (props.text_value)()),
     );
     let focused = move || item.focused();
-    let onmounted = item.onmounted();
+    let mut register = item.onmounted();
+    let sub_trigger = use_context::<crate::SubTriggerHandle>().0;
+    let onmounted = move |event: MountedEvent| {
+        sub_trigger.set(event.data());
+        register(event);
+    };
 
     // The hover-intent timers are shared with this submenu's own content
     // (`DropdownMenuSubContentRendered`) via `SubMenuState`, not private
@@ -1973,21 +1980,12 @@ fn DropdownMenuSubContentRendered(
         0,
     );
 
-    // Reuses the `dx-anchor-dropdown-menu` marker class rather than a new
-    // `dx-anchor-dropdown-menu-sub` one: `top_layer.rs`'s shared
-    // anchor-positioning stylesheet (`ensure_anchor_positioning_styles`)
-    // keys its `[data-side]` rules off a fixed, hand-enumerated list of
-    // `dx-anchor-*` marker classes, and a submenu needs no entry of its own
-    // in that list. A submenu is positioned by exactly
-    // the same `anchor()`/`position-try-fallbacks` rules as a top-level
-    // `DropdownMenuContent` -- both are plain `popover="auto"` menus
-    // anchored to a trigger, side/align/gap are the only per-call-site
-    // knobs `use_anchor_position_fallback` exposes -- so reusing the
-    // existing class is a correct fit, not a workaround standing in for a
-    // missing one. `context_menu.rs`'s `ContextMenuSubContentRendered`
-    // makes the identical choice for the same reason (its own host has no
-    // `dx-anchor-context-menu` entry in that list at all, since its
-    // top-level content is never anchored).
+    // Passes `AnchorKind::DropdownMenu`, the same kind as a top-level `DropdownMenuContent`: a submenu
+    // is positioned by exactly the same `anchor()`/`position-try-fallbacks` rules -- both are plain
+    // `popover="auto"` menus anchored to a trigger, and side/align/gap are the only per-call-site
+    // knobs `use_anchor_position_fallback` exposes -- so it needs no kind of its own.
+    // `context_menu.rs`'s `ContextMenuSubContentRendered` makes the identical choice (its root
+    // content is point-anchored and never calls `anchored_content_attributes`).
     let labelledby: Vec<Attribute> = if has_own_accessible_name(&attributes) {
         Vec::new()
     } else {
@@ -1997,9 +1995,6 @@ fn DropdownMenuSubContentRendered(
     };
     let attributes = merge_attributes(vec![
         attributes,
-        attributes!(div {
-            class: "dx-anchor-dropdown-menu"
-        }),
         labelledby,
         // Owned by this component -- menu semantics, top-layer wiring and
         // direction state must win over a caller's own attributes
@@ -2012,9 +2007,13 @@ fn DropdownMenuSubContentRendered(
             "data-direction": (ctx.direction)().as_str(),
         }),
     ]);
-    let attributes = crate::top_layer::anchored_content_attributes(&id, attributes);
+    let attributes = crate::top_layer::anchored_content_attributes(
+        crate::top_layer::AnchorKind::DropdownMenu,
+        &id,
+        attributes,
+    );
 
-    let trigger_id = sub.trigger_id;
+    let sub_trigger = use_context::<crate::SubTriggerHandle>().0;
     // APG Menu and Menubar pattern, "Keyboard Interaction" (h2, same pinned
     // section as `DropdownMenuSubTrigger`'s doc):
     //   Left Arrow: "When focus is in a submenu of an item in a menu,
@@ -2049,11 +2048,12 @@ fn DropdownMenuSubContentRendered(
         if closes {
             sub.set_open.call(false);
             sub.focus.clear_focus();
-            let trigger_id = trigger_id.cloned();
-            // focus-ok: ArrowLeft/Escape in a submenu (keyboard only) hands focus to its trigger
-            dioxus::document::eval(&format!(
-                "var e=document.getElementById('{trigger_id}');if(e)e.focus()"
-            ));
+            if let Some(trigger) = sub_trigger.element() {
+                spawn(async move {
+                    // focus-ok: ArrowLeft/Escape in a submenu (keyboard only) hands focus to its trigger
+                    _ = trigger.set_focus(true).await;
+                });
+            }
         } else {
             match key {
                 Key::ArrowDown => sub.focus.focus_next(),
@@ -2155,7 +2155,7 @@ fn DropdownMenuSubContentRendered(
         }),
     ]);
 
-    let trigger_id = sub.trigger_id;
+    let sub_trigger = use_context::<crate::SubTriggerHandle>().0;
     // See the web arm's identical construction (above) for why the close
     // key is resolved via `is_submenu_close_arrow_key` rather than a plain
     // `Key::ArrowLeft` literal.
@@ -2166,11 +2166,12 @@ fn DropdownMenuSubContentRendered(
         if closes {
             sub.set_open.call(false);
             sub.focus.clear_focus();
-            let trigger_id = trigger_id.cloned();
-            // focus-ok: ArrowLeft/Escape in a submenu (keyboard only) hands focus to its trigger
-            dioxus::document::eval(&format!(
-                "var e=document.getElementById('{trigger_id}');if(e)e.focus()"
-            ));
+            if let Some(trigger) = sub_trigger.element() {
+                spawn(async move {
+                    // focus-ok: ArrowLeft/Escape in a submenu (keyboard only) hands focus to its trigger
+                    _ = trigger.set_focus(true).await;
+                });
+            }
         } else {
             match key {
                 Key::ArrowDown => sub.focus.focus_next(),

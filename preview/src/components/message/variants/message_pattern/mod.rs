@@ -54,10 +54,10 @@ pub fn Demo() -> Element {
                             onclick: move |_| {
                                 copied.set(true);
                                 spawn(async move {
-                                    let _ = document::eval(
-                                            "await new Promise((r) => setTimeout(r, 2000));",
-                                        )
-                                        .await;
+                                    dioxus_primitives::sleep::sleep(
+                                        std::time::Duration::from_millis(2000),
+                                    )
+                                    .await;
                                     copied.set(false);
                                 });
                             },

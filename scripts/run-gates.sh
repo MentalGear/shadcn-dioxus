@@ -99,6 +99,7 @@ gates=(
   "check-uncleared-intervals|scripts/check-uncleared-intervals.sh"
   "check-blocking-scroll-listeners|scripts/check-blocking-scroll-listeners.sh"
   "check-js-listeners|scripts/check-js-listeners.sh"
+  "check-js-volume|scripts/check-js-volume.sh"
   "check-motion-gating|scripts/check-motion-gating.sh"
   "check-infinite-animations|scripts/check-infinite-animations.sh"
   "check-open-focus|scripts/check-open-focus.sh"
@@ -113,6 +114,7 @@ gates=(
   "check-coarse-sizing|scripts/check-coarse-sizing.sh"
   "check-press-under|scripts/check-press-under.sh"
   "check-anchored-keyframes|scripts/check-anchored-keyframes.sh"
+  "check-anchor-marker|scripts/check-anchor-marker.sh"
   "check-duplicate-keyframes|scripts/check-duplicate-keyframes.sh"
   "check-theme-baseline|scripts/check-theme-baseline.sh"
   "check-theme-preset-axes|scripts/check-theme-preset-axes.sh"
@@ -138,6 +140,7 @@ gates=(
   "check-docs-no-demo-list|scripts/check-docs-no-demo-list.sh"
   "check-docs-own-components|scripts/check-docs-own-components.sh"
   "check-props-docs|scripts/check-props-docs.sh"
+  "check-slot-docs|scripts/check-slot-docs.sh"
   "check-virtual-docs-parity|scripts/check-virtual-docs-parity.sh"
   "check-ssg-verify|scripts/check-ssg-verify.sh"
   # group: Registry and installed components
@@ -188,8 +191,8 @@ gates=(
   # `cargo test -p preview --features server`: the arm `dx build --ssg` ships, where `ssr_parity` and the web-only effects differ from the plain arm.
   "test-server|cargo test -p preview --features server"
   "check-rustdoc|scripts/check-rustdoc.sh"
-  # Stylelint over every stylesheet under `preview/src` and `preview/assets` (run with `pnpm exec`, which never downloads: a worktree without `node_modules` fails loudly).
-  "stylelint|cd preview && pnpm exec stylelint \"src/**/*.css\" \"assets/**/*.css\""
+  # Stylelint over every stylesheet under `preview/src`, `preview/assets` and `primitives/src` (the engine sheets the primitives insert: `top_layer/*.css`, `toast_base.css`, `scrollbar_gutter.css`, row 434; run with `pnpm exec`, which never downloads: a worktree without `node_modules` fails loudly). The primitives sheets use preview's config explicitly, since stylelint finds a config from the file's own directory.
+  "stylelint|cd preview && pnpm exec stylelint --config .stylelintrc.json \"src/**/*.css\" \"assets/**/*.css\" \"../primitives/src/**/*.css\""
 )
 
 if [ "$list" = 1 ]; then
@@ -333,6 +336,15 @@ if [ "${#reused[@]}" -gt 0 ]; then
   echo "REUSED (not run now, PASS stored for an identical cargo-input key $reuse_key): ${reused[*]}"
   echo "  taken from tree(s): $reused_from  -- the cargo inputs of $tree_label are byte-identical to theirs"
 fi
+# A ratchet gate (scripts/lib/ratchet.py) that passed with a deliberate raise over the merge base prints it under a
+# `RATCHET RAISES` heading; surface every one here so the reviewer sees it.
+for f in "$log_dir"/*.log; do
+  [ -e "$f" ] || continue
+  if grep -q '^RATCHET RAISES' "$f"; then
+    echo "RATCHET RAISES (a deliberate raise is the owner's decision; quote it in the report):"
+    awk '/^RATCHET RAISES/ { p = 1; next } /^  / { if (p) print "  " $0; next } { p = 0 }' "$f"
+  fi
+done
 if [ "${#red[@]}" -gt 0 ]; then
   echo "RED: ${red[*]}"
   exit 1

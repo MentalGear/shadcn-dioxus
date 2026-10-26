@@ -317,8 +317,8 @@ pub fn AlertDialogContent(props: AlertDialogContentProps) -> Element {
     // it's open. See dev-docs/plan.md Phase 3.2.
     crate::scroll_lock::use_scroll_lock(open);
 
-    // Same eval-channel close-sync + `.open`-guarded open-driver pair as
-    // `dialog.rs`'s web modal arm -- see `crate::use_dialog_close_sync`/
+    // The same close-sync + `.open`-guarded open-driver pair (legacy eval,
+    // ported by row 434) as `dialog.rs`'s web modal arm -- see `crate::use_dialog_close_sync`/
     // `crate::use_dialog_open_driver` (lib.rs), which keep a native close
     // from stranding the `open` signal at `true`
     // (dev-docs/reference/platform-rationale.md Caveat 1). Deliberately no

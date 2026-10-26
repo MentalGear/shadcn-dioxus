@@ -1,3 +1,17 @@
+/* slot: --dx-input-background  `background-color` in every state (rest, hover, focus-visible, disabled); each
+ * state keeps its own fill when unset. */
+
+/* slot: --dx-input-box-shadow  `box-shadow` at rest, the 1px `--dx-input` edge. The focus-visible state reads it
+ * too and defaults to `var(--dx-ring-field)`. */
+
+/* slot: --dx-input-radius  All four corners, ahead of a group's per-position `--dx-group-radius-*`. */
+
+/* slot: --dx-input-max-width  `max-width` of the input. */
+
+/* slot: --dx-input-disabled-opacity  `opacity` of a disabled input. */
+
+/* slot: --dx-input-invalid-shadow  `box-shadow` of an input with `aria-invalid="true"`. */
+
 /* Input Styles -- Nova input (shadcn-ui/ui@295a1f1 registry/styles/style-nova.css,
  * `.cn-input`): h-8, px-2.5 py-1, `rounded-lg`, transparent in light and
  * `input/30` in dark, 1px `input` border, `ring-3 ring-ring/50` + `border-ring`

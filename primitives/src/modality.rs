@@ -344,8 +344,11 @@ pub(crate) fn focus_attributes(
 /// Safari remedy "focus the button on click" (Safari does not focus a clicked button) is wrong for a
 /// touch: it makes a script-focused control match `:focus-visible` and ring, and it dismisses the
 /// software keyboard of a field the user was typing in. [`PressKind`] records the type from
-/// `onpointerdown` so the click can focus only after a mouse press.
-#[derive(Clone, Copy)]
+/// `onpointerdown` so the click can focus only after a mouse press. Fed from the `onkeydown` of the
+/// same surface too ([`PressKind::key_pressed`]), it is the Rust half of the modality the writer
+/// keeps on `<html>`: the menus read it at close to skip the focus hand-back after a touch or pen
+/// (`TriggerHandle` in `lib.rs`), where no keyboard focus was lost and a script focus would ring.
+#[derive(Clone, Copy, PartialEq)]
 pub(crate) struct PressKind(Signal<bool>);
 
 impl PressKind {
@@ -354,6 +357,20 @@ impl PressKind {
         // Written from an event handler and only ever read from one, so nothing re-renders.
         let mut touch = self.0;
         touch.set(event.pointer_type() != "mouse");
+    }
+
+    /// Record a key press: wire this to the `onkeydown` of the same surface. A modifier alone is not
+    /// an interaction (the writer in [`MODALITY_JS`] ignores them too), any other key is the
+    /// keyboard, so a touch-opened menu closed with Escape reads as a keyboard close.
+    pub(crate) fn key_pressed(&self, event: &KeyboardEvent) {
+        if matches!(
+            event.key(),
+            Key::Shift | Key::Control | Key::Alt | Key::Meta | Key::AltGraph | Key::CapsLock
+        ) {
+            return;
+        }
+        let mut touch = self.0;
+        touch.set(false);
     }
 
     /// Whether the last press was a touch or a pen (a click without a press counts as a mouse or

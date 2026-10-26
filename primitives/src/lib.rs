@@ -82,7 +82,7 @@ pub mod select;
 mod selectable;
 mod selection;
 pub mod separator;
-mod sleep;
+pub mod sleep;
 pub mod slider;
 pub mod switch;
 pub mod table_rows;
@@ -436,37 +436,120 @@ pub fn use_previous<T: Clone + PartialEq + 'static>(value: ReadSignal<T>) -> Mem
     })
 }
 
+/// How a menu-family surface hands focus back to its trigger on close.
+///
+/// `Signal<String>` (the trigger's id, `SelectableContext::trigger_id`) reaches the trigger by
+/// script and reads the page's modality from `<html>`; [`TriggerHandle`] reaches it through its
+/// `MountedData` and reads the Rust-side [`modality::PressKind`] of the menu.
+pub(crate) trait RefocusTrigger: Copy + 'static {
+    /// Give focus back to the trigger, unless the last interaction was a touch or a pen.
+    fn refocus(self);
+}
+
+impl RefocusTrigger for Signal<String> {
+    fn refocus(self) {
+        let id = self.peek().clone();
+        // Never by script after a touch or pen (`data-dx-modality`, `modality.rs`): nothing was
+        // keyboard-focused to give back, and a script-focused trigger rings on iOS.
+        // focus-ok: restore focus to the trigger on close
+        document::eval(&format!(
+            "var e=document.getElementById('{id}');if(e&&!/^(touch|pen)$/.test(document.documentElement.getAttribute('data-dx-modality')||''))e.focus()"
+        ));
+    }
+}
+
+/// A menu's trigger element, by handle: where focus goes back to on close, and the last press the
+/// menu saw.
+///
+/// The trigger stores its `MountedData` with [`Self::onmounted`]; the menu's root element feeds its
+/// `onpointerdown`/`onkeydown` to the press recorder from [`Self::press`] (both events bubble from
+/// the trigger and from the panel's items, which are DOM descendants of the root), so `refocus` can
+/// apply the same rule the script applied to `<html data-dx-modality>`: no hand-back after a touch or pen. What
+/// the handle cannot see is a modality set by something outside the menu before it opened (a
+/// controlled `open` flipped by a tap elsewhere): the press starts as "not touch".
+#[derive(Clone, Copy, PartialEq)]
+pub(crate) struct TriggerHandle {
+    el: Signal<Option<Rc<MountedData>>>,
+    press: modality::PressKind,
+}
+
+/// A [`TriggerHandle`] that lives as long as the calling component.
+pub(crate) fn use_trigger_handle() -> TriggerHandle {
+    TriggerHandle {
+        el: use_signal(|| None),
+        press: modality::use_press_kind(),
+    }
+}
+
+impl TriggerHandle {
+    /// The trigger's `onmounted`: remember the element.
+    pub(crate) fn onmounted(self) -> impl FnMut(MountedEvent) {
+        let mut el = self.el;
+        move |event: MountedEvent| el.set(Some(event.data()))
+    }
+
+    /// Store the element of an `onmounted` that chains into another handler.
+    pub(crate) fn set(self, data: Rc<MountedData>) {
+        let mut el = self.el;
+        el.set(Some(data));
+    }
+
+    /// The mounted element, once the trigger has mounted.
+    pub(crate) fn element(self) -> Option<Rc<MountedData>> {
+        self.el.peek().clone()
+    }
+
+    /// The menu's press recorder, wired to the root's `onpointerdown`/`onkeydown`.
+    pub(crate) fn press(self) -> modality::PressKind {
+        self.press
+    }
+}
+
+impl RefocusTrigger for TriggerHandle {
+    fn refocus(self) {
+        if self.press.was_touch() {
+            return;
+        }
+        if let Some(data) = self.element() {
+            spawn(async move {
+                // focus-ok: restore focus to the trigger on close, never after a touch or pen
+                _ = data.set_focus(true).await;
+            });
+        }
+    }
+}
+
+/// The sub-trigger of the nearest `DropdownMenuSub`/`ContextMenuSub`, which its content hands focus
+/// back to on ArrowLeft/Escape.
+#[derive(Clone, Copy)]
+pub(crate) struct SubTriggerHandle(pub(crate) TriggerHandle);
+
 /// Refocus the trigger when a menu-family surface closes, unless something
 /// outside caused the close.
 ///
 /// Ported from dignifiedquire/dx-components (MIT OR Apache-2.0),
 /// `primitives/src/lib.rs` @ 5af3cc292559a0e8d73c7b9a827c4ca08ef34d99
-/// (`use_refocus_on_close_unless`). Adapted: none -- taken as-is; only the
-/// per-component wiring of `interacted_outside` is new (dev-docs/plan.md
-/// Phase 3.1).
+/// (`use_refocus_on_close_unless`). Adapted: the trigger is reached through a
+/// [`RefocusTrigger`] (a [`TriggerHandle`] for the two menus; Select still passes
+/// its trigger id); the per-component wiring of `interacted_outside` is new
+/// (dev-docs/plan.md Phase 3.1).
 ///
 /// Matches Radix's `onCloseAutoFocus` on `DropdownMenuContent`/
 /// `ContextMenuContent`/etc.: when `open` transitions from `true` to
-/// `false`, focus is returned to the trigger element by id -- *unless*
+/// `false`, focus is returned to the trigger element -- *unless*
 /// `interacted_outside` is `true`, meaning the close was caused by the user
 /// clicking or focusing something outside the menu, in which case focus
 /// should stay wherever the user put it rather than being yanked back to
 /// the trigger.
 pub(crate) fn use_refocus_on_close_unless(
     open: Memo<bool>,
-    trigger_id: Signal<String>,
+    trigger: impl RefocusTrigger,
     interacted_outside: ReadSignal<bool>,
 ) {
     let prev_open = use_previous(open.into());
     use_effect(move || {
         if prev_open() && !open() && !interacted_outside() {
-            let id = trigger_id();
-            // Never by script after a touch or pen (`data-dx-modality`, `modality.rs`): nothing was
-            // keyboard-focused to give back, and a script-focused trigger rings on iOS.
-            // focus-ok: restore focus to the trigger on close
-            document::eval(&format!(
-                "var e=document.getElementById('{id}');if(e&&!/^(touch|pen)$/.test(document.documentElement.getAttribute('data-dx-modality')||''))e.focus()"
-            ));
+            trigger.refocus();
         }
     });
 }
@@ -728,7 +811,7 @@ const DIALOG_EXIT_TIMEOUT_MS: u32 = 1500;
 /// leaves the `open` signal stranded at `true` and the dialog can never
 /// reopen (`dev-docs/archive/research/phase4-spike-findings.md`
 /// experiment 1 reproduces it; experiment 2's `use_dialog_close_sync`
-/// is the fix). Same eval-channel shape as
+/// is the fix). A legacy eval listener (ported by row 434), like
 /// `use_form_reset_listener` above and
 /// [`crate::top_layer::use_popover_sync`]'s browser-to-signal half.
 ///

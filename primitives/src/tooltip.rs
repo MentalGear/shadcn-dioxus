@@ -467,29 +467,14 @@ fn TooltipContentRendered(
         set_open,
     );
 
-    // `dx-anchor-tooltip` is a plain, hand-written marker class -- never
-    // routed through `Styles::` in any consuming app's `#[css_module(..)]`
-    // file -- so it can be referenced from inside a plain CSS `@supports`
-    // block without being silently dropped by that macro's class-scoping
-    // pass. See `../../preview/src/components/tooltip/style.css`'s
-    // `@supports (anchor-name: --a)` block for why this is required: that
-    // macro's parser (`manganis-core`'s `css_module_parser`) only recurses
-    // into `@media`/`@layer`/`@container`/`@include` bodies when rewriting
-    // class selectors to their per-module hashed form (see
-    // `css_module_parser.rs`'s `at_rule` match arm) -- `@supports`
-    // is not in that list, so a selector like `.dx-tooltip-content[popover]`
-    // written inside one is left completely unscoped in the compiled
-    // stylesheet and can never match the real (hashed-class) element the
-    // preview app renders, silently killing the entire anchor-positioning
-    // enhancement there. A selector built from *this* class instead --
-    // never declared anywhere the macro's scoping pass *does* look, so
-    // never hash-rewritten anywhere -- matches by construction, in any
-    // consumer, css_module-scoped or not.
+    // `top_layer::anchored_content_attributes` below writes the `data-dx-anchored="tooltip"` attribute
+    // the engine's anchor stylesheet selects on (`top_layer/styles.rs`). It is an attribute, never a
+    // `Styles::`-routed class: `manganis-core`'s `css_module_parser` does not scope class selectors
+    // inside `@supports` bodies (`dev-docs/issues/css-module-supports-scoping.md`), so a hashed class
+    // could never match the engine's `@supports (anchor-name: --a)` rules, while an attribute selector
+    // has nothing to hash.
     let attributes = merge_attributes(vec![
         attributes,
-        attributes!(div {
-            class: "dx-anchor-tooltip"
-        }),
         // Owned by this component -- role/top-layer wiring/positioning
         // state must win over a caller's own attributes
         // (`dev-docs/backlog.md` row 93's duplicate-attribute hazard).
@@ -506,7 +491,11 @@ fn TooltipContentRendered(
     // doc for why a bare `style: position_anchor_style(&id)` literal
     // alongside `..attributes` is the duplicate-`style` hazard
     // (`dev-docs/conformance-harness.md` hydration-parity Rule 4).
-    let attributes = crate::top_layer::anchored_content_attributes(&id, attributes);
+    let attributes = crate::top_layer::anchored_content_attributes(
+        crate::top_layer::AnchorKind::Tooltip,
+        &id,
+        attributes,
+    );
 
     // Hoverable content (WCAG 1.4.13): with a `close_delay` above 0 the
     // pointer can travel onto the tooltip, which holds it open; leaving it

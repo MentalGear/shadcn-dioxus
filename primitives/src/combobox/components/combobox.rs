@@ -2,8 +2,11 @@
 
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
+use std::collections::HashMap;
 
-use super::super::context::{default_combobox_filter, ComboboxContext, ComboboxModel};
+use super::super::context::{
+    default_combobox_filter, ComboboxContext, ComboboxHandles, ComboboxModel,
+};
 use crate::{
     merge_attributes,
     selectable::{
@@ -130,6 +133,10 @@ pub(in crate::combobox) fn use_combobox_root(
     // in -- see `ComboboxContext::input_id`'s doc.
     let input_id = use_unique_id();
     let edited = use_signal(|| false);
+    let handles = ComboboxHandles {
+        input: use_signal(|| None),
+        chips: use_signal(HashMap::new),
+    };
 
     let ctx = use_context_provider(|| ComboboxContext {
         model,
@@ -138,6 +145,7 @@ pub(in crate::combobox) fn use_combobox_root(
         set_query,
         filter,
         input_id,
+        handles,
         edited,
     });
 

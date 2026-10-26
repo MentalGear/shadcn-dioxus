@@ -1,3 +1,12 @@
+/* slot: --dx-dropdown-menu-position  `position` of the menu's root. */
+
+/* slot: --dx-dropdown-menu-display  `display` of the menu's root. */
+
+/* slot: --dx-dropdown-menu-width  `width` of the menu's root. */
+
+/* slot: --dx-dropdown-menu-trigger-focus-ring  `box-shadow` of the trigger under `:focus-visible` (the inset
+ * field ring). A parent that restyles the ring sets this instead of declaring `box-shadow`. */
+
 /* Dropdown Menu Styles */
 
 /* The trigger's own chrome is `:not([data-style])`: a `DropdownMenuTrigger`

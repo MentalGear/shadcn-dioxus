@@ -1,3 +1,10 @@
+/* slot: --dx-drawer-nest-scale  Scale of a drawer while another drawer is open on top of it. */
+
+/* slot: --dx-drawer-nest-shift  How far a parent drawer is pushed back while a nested drawer is open. */
+
+/* slot-internal: --dx-drawer-drag  The live drag offset of a snapped drawer (`0px` at rest), written by the drag
+ * script on every move. */
+
 /* Nova drawer (shadcn-ui/ui@295a1f1 registry/styles/style-nova.css, `.cn-drawer-*`):
  * `.cn-drawer-content` = `bg-popover text-popover-foreground flex flex-col text-sm` with a 1px
  * `border` and `rounded-xl` on the corners of the edge facing the page, and no shadow;

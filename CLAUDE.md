@@ -48,6 +48,9 @@ gate never needs an edit to this file.
   The story (dates, commits, "used to", which bug or report found it, which lane or round) goes straight into the
   backlog row's `## Status`/`## Detail`, or `dev-docs/archive/` for a long note, never into the code. The history gates
   enforce it; write it this way the first time.
+- **JavaScript interop:** Rust first; browser APIs only through the bridge (`primitives/src/bridge/`); no JS in Rust
+  strings; JS volume can only shrink (`check-js-volume.sh`). Read [`dev-docs/js-interop.md`](./dev-docs/js-interop.md)
+  before writing any interactive behaviour.
 - **Run every gate before every commit, not just the ones the change "obviously" touches** (all workflows are
   `workflow_dispatch`-only, CI freeze, row 33, so nothing else will): `CARGO_TARGET_DIR=<absolute isolated dir>
   scripts/run-gates.sh`. Green is **`ALL GREEN` with exit 0**; exit 3 is a partial run (`--only`, `--skip`, `--fast`),

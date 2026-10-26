@@ -30,6 +30,8 @@ use dioxus_primitives::drag_and_drop_list::reorder::{
 };
 use dioxus_primitives::merge_attributes;
 use dioxus_primitives::table_rows::TableScroller;
+use std::collections::HashMap;
+use std::rc::Rc;
 
 /// The instructions a handle is described by (the text `DragAndDropList` shows its list).
 pub(crate) const INSTRUCTIONS: &str =
@@ -89,6 +91,8 @@ pub(crate) struct RowReorder {
     gesture: Signal<ReorderState>,
     announcement: Signal<String>,
     focus_key: Signal<Option<String>>,
+    /// Each row handle's element by row key, written by the handle's `onmounted`.
+    handles: Signal<HashMap<String, Rc<MountedData>>>,
     page_keys: Signal<Vec<String>>,
     sorted: Signal<bool>,
     table: DataTableState,
@@ -100,6 +104,7 @@ pub(crate) fn use_row_reorder(table: DataTableState) -> RowReorder {
         gesture: use_signal(|| ReorderState::Idle),
         announcement: use_signal(String::new),
         focus_key: use_signal(|| None),
+        handles: use_signal(HashMap::new),
         page_keys: use_signal(Vec::new),
         sorted: use_signal(|| false),
         table,
@@ -108,16 +113,18 @@ pub(crate) fn use_row_reorder(table: DataTableState) -> RowReorder {
     // Focus returns to a handle by row key once the rows have re-rendered: a keyed row that moves is
     // re-inserted by the DOM and the browser drops its focus on the way.
     let focus_key = reorder.focus_key;
+    let handles = reorder.handles;
     use_effect(move || {
         let Some(key) = focus_key.read().clone() else {
             return;
         };
-        let eval = document::eval(
-            r#"const key = await dioxus.recv();
+        let Some(handle) = handles.peek().get(&key).cloned() else {
+            return;
+        };
+        spawn(async move {
             // focus-ok: returns focus to the handle of the row that was just moved or stepped to
-            document.querySelector('[data-dx-reorder-handle="' + CSS.escape(key) + '"]')?.focus();"#,
-        );
-        let _ = eval.send(key);
+            _ = handle.set_focus(true).await;
+        });
     });
     reorder
 }
@@ -128,6 +135,9 @@ impl RowReorder {
         let (mut keys, mut flag) = (self.page_keys, self.sorted);
         if *keys.peek() != page_keys {
             keys.set(page_keys.to_vec());
+            // A row that left the page takes its handle's element with it.
+            let mut handles = self.handles;
+            handles.write().retain(|key, _| page_keys.contains(key));
         }
         if *flag.peek() != sorted {
             flag.set(sorted);
@@ -338,6 +348,12 @@ pub(crate) fn RowHandle(props: RowHandleProps) -> Element {
     let handle = attributes!(button {
         class: "dx-data-table-handle",
         "data-dx-reorder-handle": props.row_key.clone(),
+        onmounted: {
+            let key = props.row_key.clone();
+            move |event: MountedEvent| {
+                reorder.handles.write().insert(key.clone(), event.data());
+            }
+        },
         draggable: if disabled { "false" } else { "true" },
         aria_roledescription: "drag handle",
         aria_label: "Reorder row {props.row_key}",

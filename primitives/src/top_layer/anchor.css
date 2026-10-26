@@ -1,0 +1,156 @@
+:where([data-dx-anchored]:is([popover], :modal)) {
+  margin: 0;
+  inset: auto;
+}
+
+@supports (anchor-name: --a) {
+  [data-dx-anchored]:where(:not([data-dx-anchored="hover-card"])):is([popover], :modal) {
+    position: fixed;
+    margin: 0;
+    inset: auto;
+    position-try-fallbacks: flip-block, flip-inline;
+    transform: none;
+
+    /* Anchor width contract (dev-docs/backlog.md row 47): publish
+       the trigger's width as the same --dx-anchor-width custom property
+       use_anchor_position_fallback's JS measurement writes on every
+       engine (see that function's doc, "Anchor width contract") -- a CSS-
+       native belt on a conforming engine, alongside that JS suspenders
+       everywhere else. In Chromium, anchor-size() substitutes correctly
+       when only referenced from inside a custom-property declaration and then read
+       back through var() at a sizing property's use site -- so this is
+       safe to declare generically here, on the data-dx-anchored attribute every
+       anchored overlay already carries, without knowing anything about a
+       specific component's styling intent (that stays in each component's
+       own stylesheet, e.g. dx-select-list's min-width: var(--dx-anchor-
+       width, 100%)). The JS write is authoritative regardless: it fires
+       unconditionally too, right after this rule takes effect, and is
+       what actually covers Firefox/WebKit and any engine that reaches
+       this file's use_anchor_position_fallback at all -- this declaration
+       is only for the sliver of time between paint and that effect's
+       first reposition() call, and for engines that resolve anchor-size()
+       in a custom property, this simply keeps agreeing with it. */
+    --dx-anchor-width: anchor-size(width);
+  }
+
+  [data-dx-anchored]:where(:not([data-dx-anchored="hover-card"])):is([popover], :modal)[data-side="top"] {
+    bottom: anchor(top);
+    left: anchor(center);
+    margin-bottom: 8px;
+    transform: translateX(-50%);
+  }
+
+  [data-dx-anchored]:where(:not([data-dx-anchored="hover-card"])):is([popover], :modal)[data-side="right"] {
+    top: anchor(center);
+    left: anchor(right);
+    margin-left: 8px;
+    transform: translateY(-50%);
+  }
+
+  [data-dx-anchored]:where(:not([data-dx-anchored="hover-card"])):is([popover], :modal)[data-side="bottom"] {
+    top: anchor(bottom);
+    left: anchor(center);
+    margin-top: 8px;
+    transform: translateX(-50%);
+  }
+
+  [data-dx-anchored]:where(:not([data-dx-anchored="hover-card"])):is([popover], :modal)[data-side="left"] {
+    top: anchor(center);
+    right: anchor(left);
+    margin-right: 8px;
+    transform: translateY(-50%);
+  }
+
+  [data-dx-anchored="hover-card"][popover] {
+    position: fixed;
+    margin: 0;
+    inset: auto;
+    position-try-fallbacks: flip-block, flip-inline;
+
+    /* See the anchor width contract comment on the shared data-dx-anchored
+       rule above: same reasoning, this selector just lives in its own rule because
+       HoverCard uses a wider default gap. */
+    --dx-anchor-width: anchor-size(width);
+  }
+
+  [data-dx-anchored="hover-card"][popover][data-side="top"] {
+    bottom: anchor(top);
+    left: anchor(center);
+    margin-bottom: 10px;
+    transform: translateX(-50%);
+  }
+
+  [data-dx-anchored="hover-card"][popover][data-side="right"] {
+    top: anchor(center);
+    left: anchor(right);
+    margin-left: 10px;
+    transform: translateY(-50%);
+  }
+
+  [data-dx-anchored="hover-card"][popover][data-side="bottom"] {
+    top: anchor(bottom);
+    left: anchor(center);
+    margin-top: 10px;
+    transform: translateX(-50%);
+  }
+
+  [data-dx-anchored="hover-card"][popover][data-side="left"] {
+    top: anchor(center);
+    right: anchor(left);
+    margin-right: 10px;
+    transform: translateY(-50%);
+  }
+
+  [data-dx-anchored]:is([popover], :modal)[data-side="top"][data-align="start"],
+  [data-dx-anchored]:is([popover], :modal)[data-side="bottom"][data-align="start"] {
+    left: anchor(left);
+    transform: none;
+  }
+
+  [data-dx-anchored]:is([popover], :modal)[data-side="top"][data-align="center"],
+  [data-dx-anchored]:is([popover], :modal)[data-side="bottom"][data-align="center"] {
+    left: anchor(center);
+    transform: translateX(-50%);
+  }
+
+  [data-dx-anchored]:is([popover], :modal)[data-side="top"][data-align="end"],
+  [data-dx-anchored]:is([popover], :modal)[data-side="bottom"][data-align="end"] {
+    left: anchor(right);
+    transform: translateX(-100%);
+  }
+
+  /* RTL (backlog row 137): align is logical -- start is the INLINE start
+     edge, so under dir=rtl a top/bottom panel aligned to start hangs from the
+     trigger's right edge and one aligned to end from its left. The panel is a
+     DOM descendant of its trigger, so :dir() sees the page direction even in
+     the top layer. (left/right sides align on the block axis, which direction does not touch.) */
+  [data-dx-anchored][popover][data-side="top"][data-align="start"]:dir(rtl),
+  [data-dx-anchored][popover][data-side="bottom"][data-align="start"]:dir(rtl) {
+    left: anchor(right);
+    transform: translateX(-100%);
+  }
+
+  [data-dx-anchored][popover][data-side="top"][data-align="end"]:dir(rtl),
+  [data-dx-anchored][popover][data-side="bottom"][data-align="end"]:dir(rtl) {
+    left: anchor(left);
+    transform: none;
+  }
+
+  [data-dx-anchored]:is([popover], :modal)[data-side="left"][data-align="start"],
+  [data-dx-anchored]:is([popover], :modal)[data-side="right"][data-align="start"] {
+    top: anchor(top);
+    transform: none;
+  }
+
+  [data-dx-anchored]:is([popover], :modal)[data-side="left"][data-align="center"],
+  [data-dx-anchored]:is([popover], :modal)[data-side="right"][data-align="center"] {
+    top: anchor(center);
+    transform: translateY(-50%);
+  }
+
+  [data-dx-anchored]:is([popover], :modal)[data-side="left"][data-align="end"],
+  [data-dx-anchored]:is([popover], :modal)[data-side="right"][data-align="end"] {
+    top: anchor(bottom);
+    transform: translateY(-100%);
+  }
+}

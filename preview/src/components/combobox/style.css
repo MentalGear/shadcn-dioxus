@@ -1,3 +1,6 @@
+/* slot: --dx-combobox-width  Width shared by the input, the chips field and the list. Set it on the root
+ * `Combobox` rather than overriding any one box. */
+
 /* Nova combobox (shadcn-ui/ui@295a1f1 registry/styles/style-nova.css `.cn-combobox-*`,
  * registry/bases/base/ui/combobox.tsx). The input is an `InputGroup` field: `h-8 rounded-lg
  * border-input dark:bg-input/30`, `text-sm`, the 3px ring on focus, `has-disabled:bg-input/50

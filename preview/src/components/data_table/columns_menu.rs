@@ -15,6 +15,8 @@ use dioxus::prelude::*;
 use dioxus_primitives::AsChild;
 use dioxus_icons::lucide::ChevronDown;
 use dioxus_primitives::dioxus_attributes::attributes;
+use std::collections::HashMap;
+use std::rc::Rc;
 
 /// One row of the Columns menu.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -53,14 +55,19 @@ pub fn DataTableColumnsMenu(props: DataTableColumnsMenuProps) -> Element {
     // After a move the items re-render in place (they are keyed by position, so the focused DOM node
     // stays put and now shows another column); focus follows the moved column to its new slot.
     let mut focus_slot = use_signal(|| None::<usize>);
+    // Each item's element by slot, written by its `onmounted`.
+    let mut items = use_signal(HashMap::<usize, Rc<MountedData>>::new);
     use_effect(move || {
         let Some(slot) = focus_slot.read().as_ref().copied() else {
             return;
         };
-        let _ = document::eval(&format!(
+        let Some(item) = items.peek().get(&slot).cloned() else {
+            return;
+        };
+        spawn(async move {
             // focus-ok: the focused menu item stays on the column the user just moved
-            "document.querySelectorAll('[data-dx-column-item]')[{slot}]?.focus();"
-        ));
+            _ = item.set_focus(true).await;
+        });
     });
     let on_visible_change = props.on_visible_change;
     let on_move = props.on_move;
@@ -96,6 +103,9 @@ pub fn DataTableColumnsMenu(props: DataTableColumnsMenuProps) -> Element {
                             let id = item.id.clone();
                             attributes!(div {
                                 "data-dx-column-item": id.clone(),
+                                onmounted: move |event: MountedEvent| {
+                                    items.write().insert(i, event.data());
+                                },
                                 aria_keyshortcuts: "Alt+ArrowUp Alt+ArrowDown",
                                 onkeydown: move |event: KeyboardEvent| {
                                     if !event.modifiers().alt() {

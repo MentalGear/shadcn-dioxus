@@ -426,9 +426,9 @@ test.describe("Rule 1 — clipping escape (an ancestor with overflow:hidden + tr
   // dev-docs/backlog.md row 81: `NavigationMenuContent`'s web arm is
   // `popover="manual"`, anchored to its own trigger
   // (`NavigationMenuContentRendered`, `navigation_menu.rs`) -- the same
-  // top-layer engine `NavbarContent` uses (`dx-anchor-navigation-menu`,
-  // already wired alongside `dx-anchor-navbar` in `top_layer.rs`'s shared
-  // anchor-positioning stylesheet). `NavigationMenu` implements a
+  // top-layer engine `NavbarContent` uses (`AnchorKind::NavigationMenu`,
+  // the `data-dx-anchored` attribute `top_layer`'s shared anchor-positioning
+  // stylesheet selects on). `NavigationMenu` implements a
   // *different* APG pattern from `Navbar` (Disclosure Navigation, not
   // Menu/Menubar -- see `primitives/src/navigation_menu.rs`'s module doc),
   // but shares the same hover/click-opened, trigger-anchored top-layer
@@ -1377,7 +1377,7 @@ const ANCHORED_OVERLAYS: AnchoredOverlay[] = [
   {
     // `use_anchor_position_fallback` is a shared function, so the same iOS
     // keyboard/self-overlap contract Rule 11 checks for every other
-    // `dx-anchor-*` consumer must hold for Navbar too, not just the
+    // anchored consumer must hold for Navbar too, not just the
     // flip/clip rules.
     // `.hover()`, not `.click()` -- see the identical comment on this
     // fixture's Rule 1 "Navbar content escapes the clip" case; `reengage`

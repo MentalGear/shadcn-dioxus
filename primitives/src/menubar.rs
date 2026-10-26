@@ -911,13 +911,6 @@ fn MenubarContentRendered(
         }),
     );
 
-    // See `dropdown_menu.rs`'s `DropdownMenuContentRendered` for why this
-    // hand-written, never-`Styles::`-routed marker class exists: it is what
-    // the shared, engine-injected anchor-positioning stylesheet
-    // (`top_layer::ensure_anchor_positioning_styles`) selects on,
-    // sidestepping `manganis-core`'s `css_module_parser` not scoping
-    // classes inside `@supports` bodies.
-    //
     // dev-docs/backlog.md row 25: an APG menu requires an accessible name from
     // either aria-labelledby or aria-label -- labelled by this menu's own
     // trigger, mirroring `DropdownMenuContent`'s identical pattern
@@ -938,9 +931,6 @@ fn MenubarContentRendered(
         crate::menu_root::content_labelledby_attributes(&attributes, &menu_ctx.trigger_id.cloned());
     let attributes = merge_attributes(vec![
         attributes,
-        attributes!(div {
-            class: "dx-anchor-menubar"
-        }),
         labelledby,
         // Owned by this component -- menu semantics + top-layer wiring
         // must win over a caller's own attributes (`dev-docs/backlog.md` row
@@ -956,7 +946,11 @@ fn MenubarContentRendered(
     // doc for why a bare `style: position_anchor_style(&id)` literal
     // alongside `..attributes` is the duplicate-`style` hazard
     // (`dev-docs/conformance-harness.md` hydration-parity Rule 4).
-    let attributes = crate::top_layer::anchored_content_attributes(&id, attributes);
+    let attributes = crate::top_layer::anchored_content_attributes(
+        crate::top_layer::AnchorKind::Menubar,
+        &id,
+        attributes,
+    );
 
     rsx! {
         div {

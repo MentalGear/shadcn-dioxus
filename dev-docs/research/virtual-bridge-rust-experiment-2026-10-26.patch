@@ -1,0 +1,379 @@
+diff --git a/primitives/src/virtual/bridge.rs b/primitives/src/virtual/bridge.rs
+index 6370a889..9fb8c51b 100644
+--- a/primitives/src/virtual/bridge.rs
++++ b/primitives/src/virtual/bridge.rs
+@@ -25,7 +25,12 @@
+ //! What stays per component: what an engine is (one axis, or a [`super::GridEngine`] of two),
+ //! the keyboard model, focus moves and the DOM each one draws.
+ 
++use std::rc::Rc;
++use std::time::Duration;
++
++use dioxus::html::geometry::PixelsVector2D;
+ use dioxus::prelude::*;
++use dioxus_attributes::attributes;
+ 
+ use super::grid::GridEngine;
+ use super::justified_engine::JustifiedEngine;
+@@ -103,6 +108,30 @@ impl Windowing for JustifiedEngine {
+     }
+ }
+ 
++/// EXPERIMENT (row 434, lane 2D): `true` drives the windowed components' scroll bridge from
++/// Dioxus events (`onscroll`, `onresize`, `MountedData`) instead of [`SCROLL_BRIDGE_JS`].
++pub(crate) const RUST_BRIDGE: bool = true;
++
++/// The quiet time after the last scroll event before the scrolling flag drops.
++const SCROLL_QUIET: Duration = Duration::from_millis(600);
++/// The timer's polling step (one task per burst of scrolling, not one timer per event).
++const SCROLL_TICK: Duration = Duration::from_millis(100);
++
++/// What the Rust-side bridge remembers between events.
++#[derive(Default)]
++struct DomState {
++    mounted: Option<Rc<MountedData>>,
++    report: Option<Callback<ScrollReport>>,
++    last: Option<ScrollReport>,
++    top: u32,
++    left: u32,
++    width: u32,
++    height: u32,
++    quiet_ticks: u32,
++    timer_running: bool,
++    rtl: bool,
++}
++
+ /// A component's handle on its engine and its container. `Copy`, so event handlers capture it.
+ pub(crate) struct Bridge<E: 'static> {
+     engine: CopyValue<E>,
+@@ -110,6 +139,9 @@ pub(crate) struct Bridge<E: 'static> {
+     container_id: Signal<String>,
+     /// A [`scroll_to`](Bridge::scroll_to) that arrived before the engine could place it.
+     deferred: CopyValue<Option<ScrollRequest>>,
++    /// Whether the container's events (not [`SCROLL_BRIDGE_JS`]) feed this bridge.
++    events: bool,
++    dom: CopyValue<DomState>,
+ }
+ 
+ impl<E: 'static> Clone for Bridge<E> {
+@@ -127,24 +159,58 @@ pub(crate) fn use_virtual_bridge<E: Windowing + 'static>(
+     container_id: Signal<String>,
+     init: impl FnOnce() -> E,
+     on_report: impl FnMut(Bridge<E>, ScrollReport) + Clone + 'static,
++) -> Bridge<E> {
++    build_bridge(container_id, init, on_report, false)
++}
++
++/// [`use_virtual_bridge`] for a component that renders the container itself: it spreads
++/// [`Bridge::events`] on that element, and with [`RUST_BRIDGE`] the events replace the script.
++pub(crate) fn use_virtual_bridge_events<E: Windowing + 'static>(
++    container_id: Signal<String>,
++    init: impl FnOnce() -> E,
++    on_report: impl FnMut(Bridge<E>, ScrollReport) + Clone + 'static,
++) -> Bridge<E> {
++    build_bridge(container_id, init, on_report, RUST_BRIDGE)
++}
++
++fn build_bridge<E: Windowing + 'static>(
++    container_id: Signal<String>,
++    init: impl FnOnce() -> E,
++    on_report: impl FnMut(Bridge<E>, ScrollReport) + Clone + 'static,
++    events: bool,
+ ) -> Bridge<E> {
+     let engine = use_hook(|| CopyValue::new(init()));
+     let rev = use_signal(|| 0u64);
+     let deferred = use_hook(|| CopyValue::new(None));
++    let dom = use_hook(|| CopyValue::new(DomState::default()));
+     let bridge = Bridge {
+         engine,
+         rev,
+         container_id,
+         deferred,
++        events,
++        dom,
+     };
+-    use_js_listeners(move || {
+-        let mut on_report = on_report.clone();
+-        Some(
+-            JsListeners::install(SCROLL_BRIDGE_JS)
+-                .arg(container_id.cloned())
+-                .on_message(move |report: ScrollReport| on_report(bridge, report)),
+-        )
+-    });
++    if events {
++        let report = use_callback({
++            let on_report = on_report.clone();
++            move |report: ScrollReport| {
++                let mut on_report = on_report.clone();
++                on_report(bridge, report);
++            }
++        });
++        let mut dom = dom;
++        dom.with_mut(|state| state.report = Some(report));
++    } else {
++        use_js_listeners(move || {
++            let mut on_report = on_report.clone();
++            Some(
++                JsListeners::install(SCROLL_BRIDGE_JS)
++                    .arg(container_id.cloned())
++                    .on_message(move |report: ScrollReport| on_report(bridge, report)),
++            )
++        });
++    }
+     bridge
+ }
+ 
+@@ -170,7 +236,128 @@ impl<E: Windowing + 'static> Bridge<E> {
+ 
+     /// Move the container's scroll position.
+     pub(crate) fn set_scroll_top(self, top: u32) {
+-        set_scroll_top(self.container_id.peek().clone(), top);
++        if self.events {
++            self.write_scroll(Some(top), None);
++        } else {
++            set_scroll_top(self.container_id.peek().clone(), top);
++        }
++    }
++
++    /// The container's event handlers, to be merged into its attributes: empty unless the
++    /// events drive this bridge. `rtl` is the container's direction.
++    pub(crate) fn events(self, rtl: bool) -> Vec<Attribute> {
++        if !self.events {
++            return Vec::new();
++        }
++        let mut dom = self.dom;
++        dom.with_mut(|state| state.rtl = rtl);
++        attributes!(div {
++            onscroll: move |event: Event<ScrollData>| self.on_scroll(&event.data()),
++            onresize: move |event: Event<ResizeData>| self.on_resize(&event.data()),
++            onmounted: move |event: Event<MountedData>| {
++                let mut dom = self.dom;
++                dom.with_mut(|state| state.mounted = Some(event.data()));
++            },
++        })
++    }
++
++    /// A scroll event: report at once (no batching), then keep the scrolling flag up until
++    /// the container has been quiet for [`SCROLL_QUIET`].
++    fn on_scroll(self, data: &ScrollData) {
++        let clamp = |value: f64, max: i32| value.max(0.0).min(f64::from(max.max(0))).round() as u32;
++        let size = |client: i32, fallback: u32| u32::try_from(client).ok().filter(|n| *n > 0).unwrap_or(fallback);
++        let mut dom = self.dom;
++        let start_timer = dom.with_mut(|state| {
++            state.top = clamp(data.scroll_top(), data.scroll_height() - data.client_height());
++            state.left = clamp(
++                data.scroll_left().abs(),
++                data.scroll_width() - data.client_width(),
++            );
++            state.width = size(data.client_width(), 800);
++            state.height = size(data.client_height(), 600);
++            state.quiet_ticks = 0;
++            !std::mem::replace(&mut state.timer_running, true)
++        });
++        self.emit(true);
++        if start_timer {
++            spawn(async move {
++                loop {
++                    crate::sleep::sleep(SCROLL_TICK).await;
++                    let quiet = dom.with_mut(|state| {
++                        state.quiet_ticks += 1;
++                        state.quiet_ticks * SCROLL_TICK.as_millis() as u32
++                            >= SCROLL_QUIET.as_millis() as u32
++                    });
++                    if quiet {
++                        dom.with_mut(|state| state.timer_running = false);
++                        self.emit(false);
++                        break;
++                    }
++                }
++            });
++        }
++    }
++
++    /// A resize of the container (the observer also reports once on observe).
++    fn on_resize(self, data: &ResizeData) {
++        let Ok(size) = data.get_content_box_size() else {
++            return;
++        };
++        let px = |value: f64, fallback: u32| {
++            if value >= 1.0 {
++                value.round().min(f64::from(u32::MAX)) as u32
++            } else {
++                fallback
++            }
++        };
++        let mut dom = self.dom;
++        dom.with_mut(|state| {
++            state.width = px(size.width, 800);
++            state.height = px(size.height, 600);
++        });
++        self.emit(false);
++    }
++
++    /// Hand the report the state describes to the component, unless it is the one it last got.
++    fn emit(self, is_scrolling: bool) {
++        let mut dom = self.dom;
++        let next = dom.with_mut(|state| {
++            let report = ScrollReport {
++                top: state.top,
++                left: state.left,
++                width: if state.width == 0 { 800 } else { state.width },
++                height: if state.height == 0 { 600 } else { state.height },
++                is_scrolling,
++            };
++            if state.last == Some(report) {
++                return None;
++            }
++            state.last = Some(report);
++            state.report.map(|callback| (callback, report))
++        });
++        if let Some((callback, report)) = next {
++            callback.call(report);
++        }
++    }
++
++    /// Scroll the mounted container to `top` / `left` (the distance from the inline start); an
++    /// axis left `None` stays where the last report saw it. `MountedData::scroll` sets both axes.
++    fn write_scroll(self, top: Option<u32>, left: Option<u32>) {
++        if top.is_none() && left.is_none() {
++            return;
++        }
++        let state = self.dom.read();
++        let Some(mounted) = state.mounted.clone() else {
++            return;
++        };
++        let sign = if state.rtl { -1.0 } else { 1.0 };
++        let x = f64::from(left.unwrap_or(state.left)) * sign;
++        let y = f64::from(top.unwrap_or(state.top));
++        drop(state);
++        let done = mounted.scroll(PixelsVector2D::new(x, y), ScrollBehavior::Instant);
++        spawn(async move {
++            let _ = done.await;
++        });
+     }
+ 
+     /// Scroll as `request` says (the public scroll-to-index): the engine aims, the window moves
+@@ -184,7 +371,11 @@ impl<E: Windowing + 'static> Bridge<E> {
+             Aim::Offsets(top, left) => {
+                 if top.is_some() || left.is_some() {
+                     self.publish();
+-                    set_scroll(self.container_id.peek().clone(), top, left);
++                    if self.events {
++                        self.write_scroll(top, left);
++                    } else {
++                        set_scroll(self.container_id.peek().clone(), top, left);
++                    }
+                 }
+             }
+         }
+diff --git a/primitives/src/virtual/mod.rs b/primitives/src/virtual/mod.rs
+index 346fc1b9..909eaa58 100644
+--- a/primitives/src/virtual/mod.rs
++++ b/primitives/src/virtual/mod.rs
+@@ -45,7 +45,7 @@ mod utils;
+ mod virtualizer;
+ mod window;
+ 
+-pub(crate) use bridge::{use_virtual_bridge, Bridge};
++pub(crate) use bridge::{use_virtual_bridge, use_virtual_bridge_events, Bridge};
+ pub(crate) use cv_chunks::{cv_chunks, ChunkSkip, CHUNK_ROWS};
+ pub(crate) use find::{parse_cell, use_find_in_page, FindLayer, FindLayout};
+ pub(crate) use grid::{GridEngine, GridKey, GridShape, Pins};
+diff --git a/primitives/src/virtual_grid.rs b/primitives/src/virtual_grid.rs
+index 7b1a8711..be1f1d94 100644
+--- a/primitives/src/virtual_grid.rs
++++ b/primitives/src/virtual_grid.rs
+@@ -109,7 +109,7 @@ pub use crate::data_view::SortDirection;
+ use crate::direction::{use_direction, Direction, HorizontalNav};
+ use crate::r#virtual::{
+     cv_chunks, engine_row_keys, justified_navigate, parse_cell, render_key, resolve_index,
+-    scroll_dom_to, use_find_in_page, use_scroller_attach, use_virtual_bridge, with_pinned, Bridge,
++    scroll_dom_to, use_find_in_page, use_scroller_attach, use_virtual_bridge_events, with_pinned, Bridge,
+     ChunkSkip, Engine, FindLayer, FindLayout, GridEngine, GridKey, GridShape, JustifiedEngine,
+     JustifiedOptions, Pins, RowPlan, ScrollReport, ScrollRequest, SizeEstimates, DEFAULT_SIZE,
+ };
+@@ -803,7 +803,7 @@ fn VirtualGridWindowed(
+     let container_id = use_unique_id();
+     use_cell_controls(container_id);
+     // The shared DOM bridge (`primitives/src/virtual/bridge.rs`); both axes read each report.
+-    let bridge = use_virtual_bridge(
++    let bridge = use_virtual_bridge_events(
+         container_id,
+         GridEngine::new,
+         |bridge: Bridge<GridEngine>, report: ScrollReport| {
+@@ -941,7 +941,7 @@ fn VirtualGridWindowed(
+         "data-virtual-grid": "grid",
+         "data-virtualize": "windowed",
+     });
+-    let merged = merge_attributes(vec![attributes, owned]);
++    let merged = merge_attributes(vec![attributes, owned, bridge.events(direction == Direction::Rtl)]);
+ 
+     // A cell: a pinned one sits in flow beside the pane (sticky at its edge), the others are
+     // placed absolutely in the scrolling pane.
+@@ -1402,7 +1402,7 @@ fn VirtualWrapGridWindowed(
+     let container_id = use_unique_id();
+     // The shared DOM bridge with the one-axis flow `VirtualList` uses: the rows axis, with the
+     // anchoring correction for rows measured above the viewport.
+-    let bridge = use_virtual_bridge(container_id, Engine::new, Bridge::scroll_axis);
++    let bridge = use_virtual_bridge_events(container_id, Engine::new, Bridge::scroll_axis);
+     let engine = bridge.engine();
+     // The public scroll-to-index: an item is scrolled to by the row that holds it.
+     let on_scroll = use_callback(move |request: ScrollRequest| {
+@@ -1501,7 +1501,7 @@ fn VirtualWrapGridWindowed(
+         "data-virtual-grid": "wrap",
+         "data-virtualize": "windowed",
+     });
+-    let merged = merge_attributes(vec![attributes, owned]);
++    let merged = merge_attributes(vec![attributes, owned, bridge.events(direction == Direction::Rtl)]);
+ 
+     rsx! {
+         div { onkeydown, ..merged,
+@@ -1708,7 +1708,7 @@ pub fn VirtualJustifiedGrid(props: VirtualJustifiedGridProps) -> Element {
+ 
+     // The shared DOM bridge. A fluid grid lays out for the measured width; when that changes the
+     // tile at the top of the viewport is kept in place (the scroll position is corrected).
+-    let bridge = use_virtual_bridge(
++    let bridge = use_virtual_bridge_events(
+         container_id,
+         JustifiedEngine::new,
+         move |bridge: Bridge<JustifiedEngine>, report: ScrollReport| {
+@@ -1822,7 +1822,7 @@ pub fn VirtualJustifiedGrid(props: VirtualJustifiedGridProps) -> Element {
+         "data-virtual-grid": "justified",
+         "data-justified-axes": if fixed_width.is_some() { "both" } else { "block" },
+     });
+-    let merged = merge_attributes(vec![attributes, owned]);
++    let merged = merge_attributes(vec![attributes, owned, bridge.events(direction == Direction::Rtl)]);
+ 
+     let tile = move |plan: &RowPlan, tile: crate::r#virtual::layout::justified::Tile| {
+         let index = tile.index;
+diff --git a/primitives/src/virtual_list.rs b/primitives/src/virtual_list.rs
+index e51a59e3..1a930379 100644
+--- a/primitives/src/virtual_list.rs
++++ b/primitives/src/virtual_list.rs
+@@ -70,7 +70,7 @@ use dioxus_attributes::attributes;
+ 
+ use crate::r#virtual::{
+     cv_chunks, engine_keys, pin_in_flow, render_key, resolve_index, scroll_dom_to,
+-    use_find_in_page, use_scroller_attach, use_virtual_bridge, Bridge, ChunkSkip, Engine,
++    use_find_in_page, use_scroller_attach, use_virtual_bridge_events, Bridge, ChunkSkip, Engine,
+     FindLayer, FindLayout, ScrollRequest, SizeEstimates, CHUNK_ROWS, DEFAULT_SIZE,
+ };
+ pub use crate::r#virtual::{
+@@ -357,7 +357,7 @@ fn VirtualListWindowed(props: ListBodyProps) -> Element {
+     // The shared DOM bridge (`primitives/src/virtual/bridge.rs`): one passive scroll listener,
+     // one ResizeObserver, removed with this scope; the engine is non-reactive state and a render
+     // runs only when it says the window moved.
+-    let bridge = use_virtual_bridge(container_id, Engine::new, Bridge::scroll_axis);
++    let bridge = use_virtual_bridge_events(container_id, Engine::new, Bridge::scroll_axis);
+     let engine = bridge.engine();
+     // The public scroll-to-index: the engine aims at the row's (measured or estimated) position.
+     let on_scroll = use_callback(move |request: ScrollRequest| bridge.scroll_to(request));
+@@ -446,7 +446,7 @@ fn VirtualListWindowed(props: ListBodyProps) -> Element {
+         tabindex: "0",
+         "data-virtualize": "windowed",
+     });
+-    let merged = merge_attributes(vec![attributes, owned]);
++    let merged = merge_attributes(vec![attributes, owned, bridge.events(false)]);
+ 
+     rsx! {
+         div {

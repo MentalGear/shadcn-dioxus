@@ -130,10 +130,10 @@
 //!
 //! [`NavigationMenuContent`]'s web-arm leaf promotes to the top layer
 //! broadly the way `NavbarContent` does --
-//! `crate::top_layer::anchored_content_attributes` with a
-//! `dx-anchor-navigation-menu` marker class (added next to every existing
-//! `dx-anchor-navbar` entry in `top_layer.rs`'s shared anchor-positioning
-//! stylesheet) + `crate::top_layer::use_anchor_position_fallback` -- except
+//! `crate::top_layer::anchored_content_attributes` with
+//! `AnchorKind::NavigationMenu` (the `data-dx-anchored` attribute the shared
+//! anchor-positioning stylesheet in `top_layer.rs` selects on) and
+//! `crate::top_layer::use_anchor_position_fallback` -- except
 //! `popover="manual"`, not `"auto"`: this module already owns its entire
 //! open/close lifecycle (hover-intent timers, the focus-leave debounce
 //! above, Escape, click), the same reasoning `crate::tooltip`/
@@ -148,6 +148,7 @@
 //! `NavbarContent`, renders through `use_animated_open` and needs its exit
 //! animation not to be cut short by an instant `hidePopover()`).
 
+use std::rc::Rc;
 use std::time::Duration;
 
 use dioxus::prelude::*;
@@ -157,7 +158,7 @@ use crate::collection::{
     collection_item, use_collection_provider, use_item, use_item_index, CollectionOptions,
     CollectionPlacement, CollectionState, ItemIndex,
 };
-use crate::direction::use_direction;
+use crate::direction::{use_direction, use_direction_signal, Direction};
 use crate::hover_intent::{use_hover_intent, HoverIntent};
 use crate::menu_sub::{use_delayed_action, DelayedAction};
 use crate::{
@@ -198,6 +199,12 @@ struct NavigationMenuContext {
     focus: CollectionState,
     /// The "focus left the nav" debounce -- see this module's doc.
     blur_close: DelayedAction,
+    /// The [`NavigationMenuList`] element, which the indicator measures against.
+    list: Signal<Option<Rc<MountedData>>>,
+    /// The `li` of the open item, with its index: each open [`NavigationMenuItem`] publishes it
+    /// (the index lets the indicator ignore the previous item's handle for the one render
+    /// between the open index changing and the new item publishing).
+    open_item: Signal<Option<(usize, Rc<MountedData>)>>,
 }
 
 /// The props for the [`NavigationMenu`] component.
@@ -305,6 +312,8 @@ pub fn NavigationMenu(props: NavigationMenuProps) -> Element {
     // `cargo test`, since Dioxus's Rules of Hooks are enforced at runtime,
     // not by the type system).
     let blur_close = use_delayed_action();
+    let list = use_signal(|| None);
+    let open_item = use_signal(|| None);
 
     use_context_provider(|| NavigationMenuContext {
         open,
@@ -313,6 +322,8 @@ pub fn NavigationMenu(props: NavigationMenuProps) -> Element {
         disabled: props.disabled,
         focus,
         blur_close,
+        list,
+        open_item,
     });
 
     // Owned by this component -- disabled state must win over a caller's
@@ -355,8 +366,13 @@ pub struct NavigationMenuListProps {
 /// This must be used inside a [`NavigationMenu`] component.
 #[component]
 pub fn NavigationMenuList(props: NavigationMenuListProps) -> Element {
+    let mut ctx: NavigationMenuContext = use_context();
     rsx! {
-        ul { ..props.attributes, {props.children} }
+        ul {
+            onmounted: move |event| ctx.list.set(Some(event.data())),
+            ..props.attributes,
+            {props.children}
+        }
     }
 }
 
@@ -376,8 +392,8 @@ pub struct NavigationMenuIndicatorProps {
 /// open item's trigger and follows it as the open item changes. Place it inside
 /// [`NavigationMenuList`], after the items. It is purely visual (`aria-hidden`, presentational).
 ///
-/// The primitive measures the open item's trigger against the list (`offsetLeft`/`offsetWidth`,
-/// at rest, never a transformed rect) and writes `--dx-nav-indicator-x` (the inline-start offset,
+/// The primitive measures the open item against the list (their client rects, which agree with
+/// the layout offsets because neither is transformed) and writes `--dx-nav-indicator-x` (the inline-start offset,
 /// so it is right in RTL) and `--dx-nav-indicator-width` on the element's own `style`, so the theme positions it with plain
 /// CSS. The measurement runs when the open item changes. It is not re-run on a window resize
 /// while a panel stays open: a resize closes nothing here, so a narrow-to-wide resize with a
@@ -390,29 +406,54 @@ pub struct NavigationMenuIndicatorProps {
 #[component]
 pub fn NavigationMenuIndicator(props: NavigationMenuIndicatorProps) -> Element {
     let ctx: NavigationMenuContext = use_context();
-    let id = use_unique_id();
     let open = ctx.open;
+    // The open item's inline-start offset in the list and its width, in px. Kept after the item
+    // closes: the indicator fades out where it was instead of sliding back to the start.
+    let mut placement = use_signal(|| None::<(f64, f64)>);
+    // A signal, so the effect below re-measures when the direction changes.
+    let direction = use_direction_signal(use_direction(None));
 
     use_effect(move || {
-        let is_open = open().is_some();
-        let _ = dioxus::document::eval(
-            r#"const [id, isOpen] = await dioxus.recv();
-            const el = document.getElementById(id);
-            if (!el) return;
-            const trigger = el.parentElement && el.parentElement.querySelector(':scope > li[data-state="open"] > button');
-            if (!isOpen || !trigger) return;
-            const item = trigger.closest('li');
-            const rtl = getComputedStyle(el.parentElement).direction === 'rtl';
-            const x = rtl ? el.parentElement.clientWidth - item.offsetLeft - item.offsetWidth : item.offsetLeft;
-            el.style.setProperty('--dx-nav-indicator-x', x + 'px');
-            el.style.setProperty('--dx-nav-indicator-width', item.offsetWidth + 'px');"#,
-        )
-        .send((id.cloned(), is_open));
+        let direction = direction();
+        let Some(index) = open() else { return };
+        let (Some(list), Some((item_index, item))) = ((ctx.list)(), (ctx.open_item)()) else {
+            return;
+        };
+        if item_index != index {
+            return;
+        }
+        spawn(async move {
+            let (Ok(list), Ok(item)) = (list.get_client_rect().await, item.get_client_rect().await)
+            else {
+                return;
+            };
+            // Neither the list nor an item is transformed (the list has no border or padding),
+            // so the rect difference is the layout offset the stylesheet positions by.
+            let x = match direction {
+                Direction::Ltr => item.min_x() - list.min_x(),
+                Direction::Rtl => list.max_x() - item.max_x(),
+            };
+            let next = Some((x, item.width()));
+            if *placement.peek() != next {
+                placement.set(next);
+            }
+        });
     });
 
+    // Written as the element's own `style` (merged with a caller's), so the theme positions the
+    // indicator with plain CSS from two custom properties.
+    let measured: Vec<Attribute> = match placement() {
+        Some((x, width)) => {
+            let style =
+                format!("--dx-nav-indicator-x: {x}px; --dx-nav-indicator-width: {width}px;");
+            attributes!(li { style: "{style}" })
+        }
+        None => Vec::new(),
+    };
+
     let attributes = merge_attributes(vec![
-        attributes!(li { id: id.cloned() }),
         props.attributes,
+        measured,
         attributes!(li {
             role: "presentation",
             aria_hidden: "true",
@@ -509,7 +550,7 @@ pub struct NavigationMenuItemProps {
 ///   or `false`.
 #[component]
 pub fn NavigationMenuItem(props: NavigationMenuItemProps) -> Element {
-    let ctx: NavigationMenuContext = use_context();
+    let mut ctx: NavigationMenuContext = use_context();
     let order = use_item_index(ctx.focus, props.index);
     let index = order.index;
     let is_open = use_memo(move || (ctx.open)() == Some(index.cloned()));
@@ -549,6 +590,16 @@ pub fn NavigationMenuItem(props: NavigationMenuItemProps) -> Element {
         }
     });
 
+    // The indicator measures the open item's `li`: publish it while this item is the open one.
+    let mut li = use_signal(|| None::<Rc<MountedData>>);
+    use_effect(move || {
+        if is_open() {
+            if let Some(element) = li() {
+                ctx.open_item.set(Some((index.cloned(), element)));
+            }
+        }
+    });
+
     // Owned by this component -- open/disabled state must win over a
     // caller's own attributes (`dev-docs/backlog.md` row 93's
     // duplicate-attribute hazard).
@@ -561,7 +612,11 @@ pub fn NavigationMenuItem(props: NavigationMenuItemProps) -> Element {
     ]);
 
     rsx! {
-        li { ..attributes, {props.children} }
+        li {
+            onmounted: move |event| li.set(Some(event.data())),
+            ..attributes,
+            {props.children}
+        }
     }
 }
 
@@ -1000,9 +1055,6 @@ fn NavigationMenuContentRendered(
     };
     let attributes = merge_attributes(vec![
         attributes,
-        attributes!(div {
-            class: "dx-anchor-navigation-menu"
-        }),
         labelledby,
         // Owned by this component -- top-layer wiring + state must win
         // over a caller's own attributes (`dev-docs/backlog.md` row 93's
@@ -1012,7 +1064,11 @@ fn NavigationMenuContentRendered(
             "data-state": if open() { "open" } else { "closed" },
         }),
     ]);
-    let attributes = crate::top_layer::anchored_content_attributes(&id, attributes);
+    let attributes = crate::top_layer::anchored_content_attributes(
+        crate::top_layer::AnchorKind::NavigationMenu,
+        &id,
+        attributes,
+    );
 
     rsx! {
         div {

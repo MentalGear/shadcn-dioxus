@@ -4,7 +4,6 @@ use dioxus::prelude::*;
 use dioxus_attributes::attributes;
 
 use super::super::context::ComboboxContext;
-use super::super::multi::chip_nav;
 use crate::{
     direction::{use_direction, HorizontalNav},
     merge_attributes, use_id_or, use_unique_id,
@@ -101,7 +100,8 @@ pub fn ComboboxInput(props: ComboboxInputProps) -> Element {
                 && ctx.query.peek().is_empty()
                 && direction.resolve_horizontal(key) == Some(HorizontalNav::Prev) =>
         {
-            chip_nav(String::new(), HorizontalNav::Prev, ctx.input_id.cloned());
+            let chips = ctx.selectable.values.peek().len();
+            ctx.handles.focus_chip(None, true, chips);
             event.prevent_default();
         }
         Key::Escape if open() => {
@@ -168,6 +168,7 @@ pub fn ComboboxInput(props: ComboboxInputProps) -> Element {
         input {
             id,
             placeholder: props.placeholder,
+            onmounted: move |event: MountedEvent| ctx.handles.input.set(Some(event.data())),
 
             onclick: move |_| {
                 if !open() {

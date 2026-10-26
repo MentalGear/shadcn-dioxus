@@ -42,8 +42,8 @@
 //!   three hosts' `*Content` components. The
 //!   *positioning* half of the name deliberately stays host-private, for the
 //!   exact reason `crate::menu_sub`'s own doc gives for its own submenu
-//!   content: `top_layer.rs` hard-codes a fixed list of `dx-anchor-*` marker
-//!   classes for its shared stylesheet, so the actual
+//!   content: the engine's shared stylesheet is scoped by the `data-dx-anchored`
+//!   attribute `top_layer::anchored_content_attributes` writes, so the actual
 //!   `use_anchor_position_fallback`/`use_point_anchor_clamp` call still has
 //!   to live in each file's own `#[cfg(feature = "web")]` leaf render
 //!   function -- this module only factors the lifecycle gate that runs
