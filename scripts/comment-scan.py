@@ -157,7 +157,12 @@ def _embedded_comments(content, char_lines):
             yield char_lines[min(starts[min(rel, len(starts)) - 1], len(char_lines) - 1)], body
 
 
-def extract_rust(text):
+def _walk_rust(text):
+    """The one Rust tokenizer: yields `("comment", start, end, [(line, body), ...])` for every comment and
+    `("lit", start, end, (line, body_start, body_end, content, char_lines))` for every string literal (normal, raw
+    and byte), in source order. `start`/`end` are offsets of the whole token in `text`, `body_start`/`body_end` of
+    the text between the quotes, `content` is the string's VALUE and `char_lines[k]` the source line of its k-th
+    character. `extract_rust` (comments), `literals_of` and `code_of` (the JS-volume gate) are views of this walk."""
     i, n, line = 0, len(text), 1
     while i < n:
         c = text[i]
@@ -167,7 +172,7 @@ def extract_rust(text):
         elif text.startswith("//", i):
             j = text.find("\n", i)
             j = n if j < 0 else j
-            yield line, re.sub(r"^//[/!]?", "", text[i:j])
+            yield "comment", i, j, [(line, re.sub(r"^//[/!]?", "", text[i:j]))]
             i = j
         elif text.startswith("/*", i):
             depth, j = 1, i + 2
@@ -181,7 +186,7 @@ def extract_rust(text):
                 else:
                     j += 1
             body = text[i + 2:max(i + 2, j - 2)]
-            yield from _block_lines(line, body)
+            yield "comment", i, j, list(_block_lines(line, body))
             line += text.count("\n", i, j)
             i = j
         elif c == '"' or (c in "rb" and re.match(r'b?r#*"', text[i:i + 12]) and not (i and (text[i - 1].isalnum() or text[i - 1] == "_"))):
@@ -201,9 +206,9 @@ def extract_rust(text):
                 while j < n and text[j] != '"':
                     j += 2 if text[j] == "\\" else 1
                 j += 1
-                content, char_lines = _rust_unescape(text[i + 1:max(i + 1, j - 1)], line)
-            if len(content) > 8:
-                yield from _embedded_comments(content, char_lines)
+                body_start, body_end = i + 1, max(i + 1, j - 1)
+                content, char_lines = _rust_unescape(text[body_start:body_end], line)
+            yield "lit", i, j, (line, body_start, body_end, content, char_lines)
             line += text.count("\n", i, j)
             i = j
         elif c == "'":
@@ -217,6 +222,43 @@ def extract_rust(text):
             i = j
         else:
             i += 1
+
+
+def extract_rust(text):
+    for kind, _, _, p in _walk_rust(text):
+        if kind == "comment":
+            yield from p
+        elif len(p[3]) > 8:
+            yield from _embedded_comments(p[3], p[4])
+
+
+class Literal:
+    """A Rust string literal: `line` of its opening quote, `start`/`end` of the token, `content` its value."""
+    __slots__ = ("line", "start", "end", "body_start", "body_end", "content", "char_lines")
+
+    def __init__(self, start, end, payload):
+        self.start, self.end = start, end
+        self.line, self.body_start, self.body_end, self.content, self.char_lines = payload
+
+
+def literals_of(text):
+    """Every string literal of a Rust source, in order (the JS-volume gate's reader of strings)."""
+    return [Literal(i, j, p) for kind, i, j, p in _walk_rust(text) if kind == "lit"]
+
+
+def code_of(text, keep_strings=False):
+    """The Rust source with every comment replaced by spaces and, unless `keep_strings`, every string literal's
+    contents blanked to the same number of spaces (quotes kept). Newlines survive, so line numbers and columns of the
+    result are those of the source, and a token search cannot hit a comment or a string."""
+    out = list(text)
+    for kind, i, j, p in _walk_rust(text):
+        a, b = (i, j) if kind == "comment" else (p[1], p[2])
+        if kind == "lit" and keep_strings:
+            continue
+        for k in range(a, b):
+            if out[k] != "\n":
+                out[k] = " "
+    return "".join(out)
 
 
 def extract_css(text):

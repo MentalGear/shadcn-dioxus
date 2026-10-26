@@ -27,11 +27,10 @@
 //!   labelled `<input>` is the accessible source of truth.
 //!
 //! The caret-position bridge (`use_caret_sync`, DOM caret index -> Rust
-//! signal) is new code but the *shape* -- a small `document::eval` script that
-//! attaches DOM listeners and streams values back over the eval channel,
-//! cleaned up on drop -- mirrors this crate's other browser-to-signal bridges
-//! (`crate::use_form_reset_listener`, `crate::use_dialog_close_sync` in
-//! `lib.rs`), reused here because `dioxus-html`'s own `SelectionEvent` carries
+//! signal) is a legacy `document::eval` script (ported by row 434, see
+//! `dev-docs/js-interop.md`) that attaches DOM listeners and streams values
+//! back over the eval channel, cleaned up on drop. It exists because
+//! `dioxus-html`'s own `SelectionEvent` carries
 //! no cross-platform-readable selection range (`SelectionData` is an opaque
 //! marker type -- see `dioxus-html`'s `events/selection.rs`), so there is no
 //! way to read a caret position from the Dioxus event itself.
@@ -653,9 +652,8 @@ async fn snap_caret_to_slot(
 /// position, so [`InputOtpSlot`] can show which slot currently holds the
 /// caret. See this module's doc for why this can't be done from the Dioxus
 /// event objects alone (`SelectionEvent`'s `SelectionData` carries no
-/// readable range) and reads the DOM directly instead, the same
-/// eval-listener-then-stream-back shape as `crate::use_form_reset_listener`/
-/// `crate::use_dialog_close_sync`.
+/// readable range) and reads the DOM directly instead, through a legacy
+/// eval listener that row 434 ports.
 fn use_caret_sync(
     id: impl Readable<Target = String> + Copy + 'static,
     mut selection_start: Signal<usize>,

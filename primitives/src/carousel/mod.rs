@@ -46,11 +46,10 @@
 //! the same scroller-only `scrollBy`-by-delta paging mechanism
 //! buttons/keyboard already use, not a hand-rolled offset -- see
 //! [`CarouselContent`]'s own "Release settle" doc. All three are
-//! `document::eval` call sites, and
+//! legacy `document::eval` call sites (ported by row 434), and
 //! all three no-op harmlessly off a real document (native/Blitz, or a
-//! plain `cargo test`), the same as every other un-gated `document::eval`
-//! helper in `crate::lib` (`use_outside_dismiss`, `use_form_reset_listener`,
-//! ...): this module's rendered markup never branches on `feature = "web"`
+//! plain `cargo test`), as the other un-gated eval helpers in `crate::lib`
+//! do: this module's rendered markup never branches on `feature = "web"`
 //! at all, so unlike the native-`<dialog>` overlays there is nothing here
 //! for a `feature = "web"` gate to protect.
 //!

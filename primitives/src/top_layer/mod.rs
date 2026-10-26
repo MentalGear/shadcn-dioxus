@@ -2,9 +2,9 @@
 //!
 //! Concept ported from `dignifiedquire/dx-components` (MIT OR Apache-2.0),
 //! `primitives/src/top_layer.rs` @ 5af3cc292559a0e8d73c7b9a827c4ca08ef34d99 (ref-ok: path in the upstream fork repo, not this one)
-//! (`use_top_layer`, `TopLayerKind`). Adapted: rewritten against this
-//! crate's `document::eval` house pattern (see `use_form_reset_listener`,
-//! `lib.rs`) instead of `wasm_bindgen`/`web_sys` — this crate has neither as
+//! (`use_top_layer`, `TopLayerKind`). Adapted: the DOM calls are legacy
+//! `document::eval` scripts (ported by row 434, `dev-docs/js-interop.md`)
+//! instead of `wasm_bindgen`/`web_sys` — this crate has neither as
 //! a dependency, and `dev-docs/archive/fork-research/lifting-from-forks.md` §4 says not to take dependency
 //! edits when a lift can avoid them. Narrowed to the Popover API only; the
 //! fork's `TopLayerKind::DialogModal` arm is dropped, since native

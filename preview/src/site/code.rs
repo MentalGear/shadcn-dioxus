@@ -152,10 +152,8 @@ pub(crate) fn LazyCssCodeBlock(asset: Asset) -> Element {
 }
 
 /// One-shot fetch of a same-origin asset's raw text, used only by
-/// [`LazyCssCodeBlock`] (debug builds). Mirrors this codebase's other
-/// one-shot `document::eval` helpers (e.g. `primitives/src/input_otp.rs`'s
-/// `snap_caret_to_slot`) -- a scoped async JS snippet, not a persistent
-/// listener.
+/// [`LazyCssCodeBlock`] (debug builds). A one-shot legacy `document::eval`
+/// snippet (ported by row 434), not a persistent listener.
 #[cfg(debug_assertions)]
 pub(crate) async fn fetch_asset_text(url: String) -> Option<String> {
     let mut eval = document::eval(
