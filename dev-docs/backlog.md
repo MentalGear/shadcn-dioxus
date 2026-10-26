@@ -40,7 +40,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (43)
+## Open rows (42)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -79,13 +79,12 @@ proposing one is closed as out of scope (row 337 is the first).
 | [415](backlog/415-pin-actions-to-shas.md) | Pin GitHub Actions to commit SHAs | OPTIONAL: needs owner approval before it is adopted or scheduled (owner 2026-10-24). Not part of… | XS | build |
 | [422](backlog/422-docs-page-shared-section-group.md) | Component pages: group the sections every page shares under one header, component-specific sections under another | BACKLOG, outline approved by the owner 2026-10-25 (backlog thread): build it as below. Docs stage… | M | docs |
 | [426](backlog/426-theme-owns-modal-scrim-and-visually-hidden-recipe.md) | Theme owns the no-top-layer modal scrim and the visually-hidden recipe | BACKLOG. Owner approved 2026-10-25 (row 365 sweep, P1). | S | components |
-| [427](backlog/427-spec-page-and-read-kind-helpers-retire-markers.md) | Spec page and read kinds become helpers; the exception markers retire | BACKLOG. Owner approved 2026-10-25 (row 365 sweep, P2). | S-M | testing |
 | [428](backlog/428-themed-wrappers-forward-with-props-spread.md) | Themed wrappers forward primitive props with a struct spread, not field by field | BACKLOG. Owner approved 2026-10-25 (row 365 sweep, P3). | M | components |
-| [431](backlog/431-one-test-harness-controlled-state-use-controlled.md) | One test runtime harness; controlled state only through use_controlled | BACKLOG. Owner approved 2026-10-25 (row 365 sweep, P6). | S | primitives |
 | [432](backlog/432-anchor-engine-one-attribute-not-marker-classes.md) | Anchor engine selects on one data attribute, not nine hand-kept marker classes | BACKLOG. Owner approved 2026-10-25 (row 365 sweep, P7). | M | primitives |
 | [433](backlog/433-slot-variables-derived-from-sheet.md) | Slot variables derived from the sheet, not documented by hand | BACKLOG. Owner approved 2026-10-25 (row 365 sweep, P8). | S-M | docs |
-| [434](backlog/434-javascript-in-typescript-modules-not-rust-strings.md) | JavaScript lives in TypeScript modules, not in Rust raw strings | BACKLOG. Owner approved 2026-10-25 (row 365 sweep, P9). | L | primitives |
+| [434](backlog/434-javascript-in-typescript-modules-not-rust-strings.md) | Cut JavaScript to what Rust cannot do: audit every eval block, move the rest into Rust, TypeScript only for the remainder | BACKLOG. Approved as P9 of the row 365 sweep; the owner re-scoped it to Rust first on 2026-10-25.… | L | primitives |
 | [435](backlog/435-one-menu-family-behind-three-hosts.md) | One menu-family implementation behind three hosts (DropdownMenu, ContextMenu, Menubar) | BACKLOG. Owner approved 2026-10-25 (row 365 sweep, P10). | L | primitives |
 | [436](backlog/436-code-quality-skill-review.md) | Code-quality skill review: code-review and simplify skills over the whole codebase, after the row 426-435 refactors | BACKLOG. It was in the plan next to row 365 but never had a row, so 365 ran without it. The owner… | M for the review. Each accepted finding… | process |
+| [438](backlog/438-blitz-native-renderer.md) | dioxus-native (Blitz) as a supported renderer: parked, research-gated, after row 434 | PARKED. Start when all of these hold: 1. Dioxus 0.8 is stable and the primitives build on it. 2.… | Estimates from the research: tier 0 M… | primitives |
 
 <!-- END GENERATED -->

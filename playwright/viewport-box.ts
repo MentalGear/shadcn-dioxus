@@ -13,9 +13,10 @@
  * that is by definition the rectangle a fixed box resolves `inset` / `%` against. Re-measure after
  * every `setViewportSize()`; nothing is cached.
  *
- * Legitimate uses of the other numbers (page-level horizontal overflow via `scrollWidth - clientWidth`,
- * scroll extents, the gutter itself) stay as they are; `scripts/check-spec-viewport-bound.sh` makes
- * each such use say so.
+ * The other numbers are not an overlay bound but are still real measurements (page-level horizontal overflow, a
+ * scroll extent, the gutter itself, the size a test restores, a coordinate domain for `elementFromPoint`): they are
+ * read through `pageMetrics(page)` below, which names each one, so a spec says which it means and the gate
+ * (`scripts/check-spec-viewport-bound.sh`) accepts only `fixedViewportBox` and `pageMetrics`.
  */
 import type { Page } from "@playwright/test";
 
@@ -30,4 +31,57 @@ export async function fixedViewportBox(page: Page): Promise<ViewportBox> {
     probe.remove();
     return { x: b.x, y: b.y, width: b.width, height: b.height };
   });
+}
+
+/**
+ * The page's own numbers, each named for what it measures (backlog row 427). None of them bounds a `position: fixed`
+ * overlay (that is `fixedViewportBox`): they include or sit beside the `scrollbar-gutter: stable` strip.
+ *
+ *   `innerWidth`, `innerHeight`   the layout viewport including the scrollbar gutter (what `elementFromPoint` takes)
+ *   `clientWidth`, `clientHeight` the root element's own client box (the gutter excluded)
+ *   `scrollWidth`, `scrollHeight`, `scrollX`, `scrollY`   the root element's scroll size and position
+ *   `scrollExtent`      `scrollHeight - innerHeight`: how far the page can scroll down
+ *   `sidewaysOverflow`  `scrollWidth - clientWidth`: how far the page overflows sideways (<= 0: it does not)
+ *   `gutter`            `innerWidth - clientWidth`: the scrollbar strip
+ *   `viewportSize`      the size Playwright set for the page (`page.viewportSize()`), or null for a null viewport
+ *
+ * One `evaluate`, nothing cached: read again after a `setViewportSize()`, a scroll or a layout change. Code that runs
+ * inside `page.evaluate` takes the numbers it needs as arguments (`page.evaluate((vh) => ..., m.innerHeight)`).
+ */
+export type PageMetrics = {
+  innerWidth: number;
+  innerHeight: number;
+  clientWidth: number;
+  clientHeight: number;
+  scrollWidth: number;
+  scrollHeight: number;
+  scrollX: number;
+  scrollY: number;
+  scrollExtent: number;
+  sidewaysOverflow: number;
+  gutter: number;
+  viewportSize: { width: number; height: number } | null;
+};
+
+export async function pageMetrics(page: Page): Promise<PageMetrics> {
+  const m = await page.evaluate(() => {
+    const de = document.documentElement;
+    return {
+      innerWidth: window.innerWidth,
+      innerHeight: window.innerHeight,
+      clientWidth: de.clientWidth,
+      clientHeight: de.clientHeight,
+      scrollWidth: de.scrollWidth,
+      scrollHeight: (document.scrollingElement ?? de).scrollHeight,
+      scrollX: window.scrollX,
+      scrollY: window.scrollY,
+    };
+  });
+  return {
+    ...m,
+    scrollExtent: m.scrollHeight - m.innerHeight,
+    sidewaysOverflow: m.scrollWidth - m.clientWidth,
+    gutter: m.innerWidth - m.clientWidth,
+    viewportSize: page.viewportSize(),
+  };
 }

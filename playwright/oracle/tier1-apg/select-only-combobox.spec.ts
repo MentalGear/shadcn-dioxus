@@ -87,6 +87,7 @@ import { pathToFileURL } from "node:url";
 import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "../../axe";
 import { BASE_URL } from "../../base-url";
 import { gotoHydrated } from "../../hydration";
+import { gotoReference } from "../../page-kinds";
 import { demoRole } from "../../demo-frame";
 
 const REFERENCE_ROOT = path.resolve(__dirname, "../reference/7e4034b/content/patterns");
@@ -110,8 +111,7 @@ const librarySelectTrigger = (page: Page) => demoRole(page, "combobox");
 
 test.describe("R1 -- combobox role/aria-haspopup/aria-expanded/aria-controls contract", () => {
   test("CALIBRATION: W3C's own select-only combobox example carries the role contract", async ({ page }) => {
-    // goto-ok: vendored W3C APG reference page, not the app: it never sets html[data-hydrated]
-    await page.goto(comboboxSelectOnlyUrl);
+    await gotoReference(page, comboboxSelectOnlyUrl);
     const combo = page.locator("#combo1");
     const listbox = page.locator("#listbox1");
 

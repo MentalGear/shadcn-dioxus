@@ -62,6 +62,8 @@ import * as fs from "fs";
 import * as path from "path";
 import { baseUrlOr } from "../../base-url";
 import { gotoHydrated } from "../../hydration";
+import { noWebFonts } from "../../web-fonts";
+import { gotoPrerendered } from "../../page-kinds";
 
 const BASE = baseUrlOr("http://127.0.0.1:8090");
 const PREVIEW = path.join(__dirname, "..", "..", "..", "preview");
@@ -173,17 +175,6 @@ function diffSnaps(a: Snap, b: Snap): string[] {
 
 const summarize = (diffs: string[]) =>
   `${diffs.length} difference(s); first: ${diffs.slice(0, Number(process.env.FIRST_PAINT_DIFFS ?? 6)).join(" | ")}`;
-
-/**
- * Both loads use the fallback face. Geist is self-hosted (`font-display: optional`: it is used only if it lands inside the
- * ~100ms block window, else not at all for this page), so with the woff2 reachable the JS-off page and the hydrated page race the
- * font independently and one of them gets Geist's metrics (a ~3px width difference, 198 differing boxes on /component/tabs/).
- * That is font timing, not a style difference, so the woff2 files are aborted too (and Google's hosts).
- * `fonts-self-hosted.spec.ts` owns "the font really loads".
- */
-async function noWebFonts(page: Page) {
-  await page.route(/https:\/\/fonts\.(googleapis|gstatic)\.com\/|\.woff2(\?|$)/, (r) => r.abort());
-}
 
 /** Delay every stylesheet fetched from now on: on loopback a late sheet lands in a few ms and the unstyled frame is invisible. */
 async function delayCssFetches(page: Page) {
@@ -394,8 +385,7 @@ test.describe("2. hard load: the static page is the page", () => {
         const page = await ctx.newPage();
         await noWebFonts(page);
         if (js) await page.addInitScript(OBSERVE_INIT);
-        // goto-ok: the JavaScript-off variant never hydrates; the hydrated variant waits for it below (hydrated(page))
-        await page.goto(`${BASE}/component/${slug}/`, { waitUntil: "load" });
+        await gotoPrerendered(page, `${BASE}/component/${slug}/`, { waitUntil: "load" });
         if (js) {
           await hydrated(page);
           await page.waitForTimeout(500);
@@ -446,8 +436,7 @@ test.describe("3. client-side navigation: no route is painted with late styles",
       await noWebFonts(page);
       const css = await delayCssFetches(page);
       await page.addInitScript(OBSERVE_INIT);
-      // goto-ok: first-paint oracle: samples styles before hydration by construction
-      await page.goto(`${BASE}/docs`, { waitUntil: "domcontentloaded" });
+      await gotoPrerendered(page, `${BASE}/docs`, { waitUntil: "domcontentloaded" });
       await hydrated(page);
       await page.waitForTimeout(500);
       await installSnap(page);
@@ -503,8 +492,7 @@ test.describe("4. a popover's content is styled the moment it first mounts", () 
       await page.setViewportSize({ width: 1280, height: 900 });
       await noWebFonts(page);
       const css = await delayCssFetches(page);
-      // goto-ok: first-paint oracle: samples styles before hydration by construction
-      await page.goto(`${BASE}/component/${slug}/`, { waitUntil: "domcontentloaded" });
+      await gotoPrerendered(page, `${BASE}/component/${slug}/`, { waitUntil: "domcontentloaded" });
       await hydrated(page);
       await page.waitForTimeout(500);
       await installSnap(page);
@@ -590,8 +578,7 @@ test.describe("5b. a short VirtualGrid draws the same canvas on the server and a
       const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 }, javaScriptEnabled: js });
       const page = await ctx.newPage();
       await noWebFonts(page);
-      // goto-ok: the JavaScript-off variant never hydrates; the hydrated variant waits for it below (hydrated(page))
-      await page.goto(`${BASE}/component/virtual_grid/`, { waitUntil: "load" });
+      await gotoPrerendered(page, `${BASE}/component/virtual_grid/`, { waitUntil: "load" });
       if (js) {
         await hydrated(page);
         await page.waitForTimeout(500);

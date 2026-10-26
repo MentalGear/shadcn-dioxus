@@ -3,6 +3,7 @@ import type { Locator, Page } from "@playwright/test";
 import * as path from "path";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
+import { pageMetrics } from "./viewport-box";
 
 /**
  * Backlog rows 142 and 403: a phone reaches the theme picker from the header on EVERY page that has
@@ -60,14 +61,13 @@ const primaryToken = (page: Page) =>
 
 /** The page is no wider than the viewport: nothing the header (or anything else) adds makes it scroll sideways. */
 async function expectNoHorizontalOverflow(page: Page, width: number) {
+  const pm = await pageMetrics(page);
   const m = await page.evaluate(() => ({
-    scrollWidth: document.documentElement.scrollWidth,
-    innerWidth: window.innerWidth,
     header: document.querySelector(".dx-preview-navbar .dx-navbar-inner")!.scrollWidth,
     headerBox: document.querySelector(".dx-preview-navbar .dx-navbar-inner")!.getBoundingClientRect().width,
   }));
-  expect(m.innerWidth).toBe(width);
-  expect(m.scrollWidth).toBeLessThanOrEqual(m.innerWidth);
+  expect(pm.innerWidth).toBe(width);
+  expect(pm.scrollWidth).toBeLessThanOrEqual(pm.innerWidth);
   expect(m.header).toBeLessThanOrEqual(Math.ceil(m.headerBox));
 }
 

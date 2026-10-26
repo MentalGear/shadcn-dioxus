@@ -2,6 +2,7 @@ import { test, expect } from "./fixtures";
 import type { Page } from "@playwright/test";
 import { gotoHydrated } from "./hydration";
 import { BASE_URL } from "./base-url";
+import { pageMetrics } from "./viewport-box";
 
 /**
  * Backlog row 211: a chart must not flicker on load. The SSG paints the final
@@ -58,7 +59,7 @@ function installRecorder() {
   const t0 = performance.now();
   const onScreen = (el: Element) => {
     const r = el.getBoundingClientRect();
-    // viewport-ok: vertical extent of the visible page; the scrollbar gutter is horizontal only
+    // Vertical extent of the visible page; the scrollbar gutter is horizontal only (an allowlisted in-page read).
     return r.width > 0 && r.height > 0 && r.bottom > 0 && r.top < innerHeight;
   };
   const sig = (svg: Element) => {
@@ -107,14 +108,17 @@ type Rec = Window["__chartRec"];
 const rec = (page: Page): Promise<Rec> => page.evaluate(() => JSON.parse(JSON.stringify(window.__chartRec)));
 
 /** Indexes (document order) of the charts on screen right now. */
-const onScreenIndexes = (page: Page): Promise<number[]> =>
-  page.evaluate(() =>
-    Array.from(document.querySelectorAll('[data-slot="chart-svg"]'))
-      .map((svg, i) => ({ r: svg.getBoundingClientRect(), i }))
-      // viewport-ok: vertical extent of the visible page; the scrollbar gutter is horizontal only
-      .filter(({ r }) => r.width > 0 && r.height > 0 && r.bottom > 0 && r.top < innerHeight)
-      .map(({ i }) => i),
+const onScreenIndexes = async (page: Page): Promise<number[]> => {
+  const vh = (await pageMetrics(page)).innerHeight;
+  return page.evaluate(
+    (vh) =>
+      Array.from(document.querySelectorAll('[data-slot="chart-svg"]'))
+        .map((svg, i) => ({ r: svg.getBoundingClientRect(), i }))
+        .filter(({ r }) => r.width > 0 && r.height > 0 && r.bottom > 0 && r.top < vh)
+        .map(({ i }) => i),
+    vh,
   );
+};
 
 // One tab / component page per chart kind. The gallery's first card and a component page's first
 // demo both sit in the first screen at this viewport.
@@ -151,14 +155,14 @@ test.describe("Chart entry animation: a chart in the first paint never restarts"
 
 /** Scroll so the last chart of the page is centred; returns its index. */
 async function scrollLastChartIn(page: Page): Promise<number> {
-  return page.evaluate(() => {
+  const vh = (await pageMetrics(page)).innerHeight;
+  return page.evaluate((vh) => {
     const svgs = Array.from(document.querySelectorAll('[data-slot="chart-svg"]'));
     const last = svgs.length - 1;
     const r = svgs[last].getBoundingClientRect();
-    // viewport-ok: vertical extent of the visible page; the scrollbar gutter is horizontal only
-    window.scrollTo(0, scrollY + r.top - (innerHeight - r.height) / 2);
+    window.scrollTo(0, scrollY + r.top - (vh - r.height) / 2);
     return last;
-  });
+  }, vh);
 }
 
 test.describe("Chart entry animation: a chart below the fold animates once, when first seen", () => {

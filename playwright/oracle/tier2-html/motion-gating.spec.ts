@@ -38,6 +38,7 @@ import type { Page } from "@playwright/test";
 import { BASE_URL } from "../../base-url";
 import { demoRole } from "../../demo-frame";
 import { gotoHydrated } from "../../hydration";
+import { pageMetrics } from "../../viewport-box";
 
 const NAV = { timeout: 20 * 60 * 1000 };
 
@@ -247,11 +248,13 @@ test.describe("motion gating", () => {
 
     // Pick the chart furthest down; it is below the fold at the top of the page.
     const target = count - 1;
-    const geometry = () =>
-      svgs.nth(target).evaluate((el) => {
+    const geometry = async () => {
+      const vh = (await pageMetrics(page)).innerHeight;
+      return svgs.nth(target).evaluate((el, vh) => {
         const r = el.getBoundingClientRect();
-        return { top: r.top + scrollY, height: r.height, vh: innerHeight };
-      });
+        return { top: r.top + scrollY, height: r.height, vh };
+      }, vh);
+    };
     await page.evaluate(() => window.scrollTo(0, 0));
     const g = await geometry();
     expect(g.top, "the last chart starts below the first screen").toBeGreaterThan(g.vh);

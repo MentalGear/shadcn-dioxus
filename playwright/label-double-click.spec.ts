@@ -11,6 +11,7 @@ import { test, expect } from './fixtures';
 import { BASE_URL } from './base-url';
 import { demoFrame } from './demo-frame';
 import { gotoHydrated } from './hydration';
+import { staticBox } from "./animations";
 
 const GOTO_OPTS = { timeout: 20 * 60 * 1000 };
 const selection = (page: import('@playwright/test').Page) => page.evaluate(() => window.getSelection()?.toString() ?? '');
@@ -38,7 +39,7 @@ test('a double click on a label does not select its text', async ({ page }) => {
 test('a drag across a label still selects its text', async ({ page }) => {
   const label = await loadLabel(page);
   await page.evaluate(() => window.getSelection()?.removeAllRanges());
-  const box = (await label.boundingBox())!; // rest-ok: a static label, no animation
+  const box = await staticBox(label);
   const y = box.y + box.height / 2;
   await page.mouse.move(box.x + 1, y);
   await page.mouse.down();

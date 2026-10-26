@@ -6,7 +6,10 @@ use crate::collection::{
 };
 use crate::dioxus_elements::Key;
 use crate::direction::use_direction;
-use crate::{merge_attributes, use_animated_open, use_id_or, use_unique_id};
+use crate::{
+    merge_attributes, use_animated_open, use_controlled_state, use_id_or, use_unique_id,
+    ControlledState,
+};
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
 
@@ -43,8 +46,9 @@ struct AccordionContext {
     /// The resolved open set: the controlled `value` when given, else `internal`.
     value: Memo<Vec<String>>,
 
-    /// Called with the new open set after a trigger click or a find-in-page reveal.
-    on_value_change: Callback<Vec<String>>,
+    /// Writes `internal` and calls `on_value_change` with the new open set after a trigger click or a
+    /// find-in-page reveal (the `set` of [`use_controlled_state`]).
+    set_value: Callback<Vec<String>>,
 
     /// Whether multiple items can be open at once.
     allow_multiple_open: ReadSignal<bool>,
@@ -76,7 +80,7 @@ impl AccordionContext {
     pub fn new(
         internal: Signal<Vec<String>>,
         value: Memo<Vec<String>>,
-        on_value_change: Callback<Vec<String>>,
+        set_value: Callback<Vec<String>>,
         allow_multiple_open: ReadSignal<bool>,
         disabled: ReadSignal<bool>,
         collapsible: ReadSignal<bool>,
@@ -89,7 +93,7 @@ impl AccordionContext {
             next_id: Signal::new(0),
             internal,
             value,
-            on_value_change,
+            set_value,
             allow_multiple_open,
             disabled,
             collapsible,
@@ -150,8 +154,7 @@ impl AccordionContext {
     }
 
     fn commit(&mut self, next: Vec<String>) {
-        self.internal.set(next.clone());
-        self.on_value_change.call(next);
+        self.set_value.call(next);
     }
 
     pub fn is_open(&self, key: &str) -> bool {
@@ -303,19 +306,20 @@ pub struct AccordionProps {
 #[component]
 pub fn Accordion(props: AccordionProps) -> Element {
     let focus_id = use_unique_id();
-    let internal = use_signal(|| {
-        props
-            .value
-            .cloned()
-            .unwrap_or_else(|| props.default_value.clone())
-    });
-    let controlled = props.value;
-    let value = use_memo(move || controlled.cloned().unwrap_or_else(&*internal));
+    let ControlledState {
+        internal,
+        value,
+        set: set_value,
+    } = use_controlled_state(
+        props.value,
+        props.default_value.clone(),
+        props.on_value_change,
+    );
     let mut ctx = use_context_provider(|| {
         AccordionContext::new(
             internal,
             value,
-            props.on_value_change,
+            set_value,
             props.allow_multiple_open,
             props.disabled,
             props.collapsible,
@@ -728,7 +732,9 @@ impl Item {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_support::find_elements;
+    use crate::test_support::{find_elements, with_runtime};
+    use std::cell::RefCell;
+    use std::rc::Rc;
 
     fn render(app: fn() -> Element) -> String {
         let mut dom = VirtualDom::new(app);
@@ -810,6 +816,95 @@ mod tests {
                 }
             }
         }
+    }
+
+    /// A real `AccordionContext` with the state the `Accordion` component builds, plus the log of
+    /// every `on_value_change` call; must run inside `with_runtime`.
+    fn make_context(
+        controlled: Option<Vec<String>>,
+        default: Vec<String>,
+        collapsible: bool,
+    ) -> (AccordionContext, Rc<RefCell<Vec<Vec<String>>>>) {
+        let log = Rc::new(RefCell::new(Vec::new()));
+        let sink = log.clone();
+        let prop = use_signal(move || controlled.clone());
+        let state = use_controlled_state(
+            prop.into(),
+            default,
+            Callback::new(move |v: Vec<String>| sink.borrow_mut().push(v)),
+        );
+        let ctx = AccordionContext::new(
+            state.internal,
+            state.value,
+            state.set,
+            use_signal(|| false).into(),
+            use_signal(|| false).into(),
+            use_signal(move || collapsible).into(),
+            use_signal(|| false).into(),
+            use_signal(|| false).into(),
+            use_signal(|| AccordionChevron::End).into(),
+            use_signal(|| "focus".to_string()),
+        );
+        (ctx, log)
+    }
+
+    /// The uncontrolled open set (what the callbacks wrote), read at once: the resolved `value`
+    /// memo recomputes on the next render pass.
+    fn internal_set(ctx: &AccordionContext) -> Vec<String> {
+        ctx.internal.peek().clone()
+    }
+
+    #[test]
+    fn seeding_an_open_item_writes_the_state_without_on_value_change() {
+        with_runtime(|| {
+            let (mut ctx, log) = make_context(None, vec![], true);
+            ctx.seed_open("a");
+            assert_eq!(internal_set(&ctx), vec!["a".to_string()]);
+            assert!(log.borrow().is_empty(), "a seed is not a change");
+        });
+    }
+
+    #[test]
+    fn a_seed_does_not_override_a_controlled_value() {
+        with_runtime(|| {
+            let (mut ctx, log) = make_context(Some(vec!["b".into()]), vec![], true);
+            ctx.seed_open("a");
+            assert!(ctx.is_open("b") && !ctx.is_open("a"));
+            assert!(log.borrow().is_empty());
+        });
+    }
+
+    #[test]
+    fn opening_the_open_item_reports_the_unchanged_set() {
+        with_runtime(|| {
+            let (mut ctx, log) = make_context(None, vec!["a".into()], true);
+            ctx.set_open("a");
+            assert_eq!(internal_set(&ctx), vec!["a".to_string()]);
+            assert_eq!(*log.borrow(), vec![vec!["a".to_string()]]);
+        });
+    }
+
+    #[test]
+    fn a_controlled_click_reports_but_does_not_change_what_is_shown() {
+        with_runtime(|| {
+            let (mut ctx, log) = make_context(Some(vec!["b".into()]), vec![], true);
+            ctx.set_open("a");
+            assert!(
+                ctx.is_open("b") && !ctx.is_open("a"),
+                "the caller writes it back"
+            );
+            assert_eq!(*log.borrow(), vec![vec!["a".to_string()]]);
+        });
+    }
+
+    #[test]
+    fn the_last_open_item_of_a_non_collapsible_accordion_does_not_close() {
+        with_runtime(|| {
+            let (mut ctx, log) = make_context(None, vec!["a".into()], false);
+            ctx.set_closed("a");
+            assert_eq!(internal_set(&ctx), vec!["a".to_string()]);
+            assert!(log.borrow().is_empty());
+        });
     }
 
     #[test]

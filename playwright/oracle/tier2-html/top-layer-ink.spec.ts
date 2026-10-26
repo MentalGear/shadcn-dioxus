@@ -265,10 +265,10 @@ const SURFACES: Surface[] = [
     open: async (page) => {
       await goto(page, "hover_card");
       await demoRole(page, "button").hover();
-      await expect(page.locator(".dx-hover-card-content")).toBeVisible();
+      await expect(page.locator('.dx-hover-card-content[data-state="open"]')).toBeVisible();
     },
-    wrapper: (page) => page.locator(".dx-hover-card-content"),
-    text: (page) => page.locator(".dx-hover-card-content div").first(),
+    wrapper: (page) => page.locator('.dx-hover-card-content[data-state="open"]'),
+    text: (page) => page.locator('.dx-hover-card-content[data-state="open"] div').first(),
   },
   {
     // The load-bearing negative case: the tooltip is the theme's inverted floating surface

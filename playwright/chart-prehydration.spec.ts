@@ -7,11 +7,22 @@
  * difference; the card's own height and width are compared as well. Contents of the svg (marks, ticks, text) are a
  * function of the measured width and are not compared -- only the svg root's box is.
  *
+ * Both loads are in ONE font state, the fallback face (`noWebFonts`, `web-fonts.ts`; row 439). Geist is `font-display:
+ * optional`, so two independent loads race the ~100 ms window and, under load, one of them gets Geist and the other
+ * does not: a card description wraps to two lines on one side (+20 px of header on `/charts/`, +14 px of footer on
+ * `/charts/pie/`) and every card below moves. That is the font's timing, not a hydration shift; a tolerance cannot tell
+ * them apart, a shared font state can, and the state is asserted on both sides (`expectNoWebFont`).
+ *
  * Set `CHP_DUMP=1` to print every card's numbers (the row-124 measurement).
  */
 import { test, expect } from "./fixtures";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
+<<<<<<< HEAD
+import { expectNoWebFont, noWebFonts } from "./web-fonts";
+=======
+import { gotoPrerendered } from "./page-kinds";
+>>>>>>> origin/lane/spec-helpers-427
 
 type Box = { x: number; y: number; w: number; h: number };
 type Card = { key: string; parts: Record<string, Box> };
@@ -62,19 +73,22 @@ for (const route of ROUTES) {
       const viewport = { width, height: 900 };
       // Pre-hydration: no JavaScript at all.
       const noJs = await browser.newContext({ viewport, javaScriptEnabled: false });
+      await noWebFonts(noJs);
       const p1 = await noJs.newPage();
-      // goto-ok: JavaScript disabled in this context: the page can never hydrate
-      await p1.goto(`${BASE_URL}${route}`, { waitUntil: "load" });
+      await gotoPrerendered(p1, `${BASE_URL}${route}`, { waitUntil: "load" });
       await p1.waitForSelector('svg[data-slot="chart-svg"]');
+      await expectNoWebFont(p1, `${route} ${width}px JavaScript off`);
       const before: Card[] = await p1.evaluate(`(${COLLECT.toString()})()`);
       await noJs.close();
 
       const js = await browser.newContext({ viewport });
+      await noWebFonts(js);
       const p2 = await js.newPage();
       await gotoHydrated(p2, `${BASE_URL}${route}`);
       await p2.waitForSelector('svg[data-slot="chart-svg"][data-measured="true"]');
       await p2.evaluate(() => document.fonts.ready.then(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))));
       await p2.waitForTimeout(800);
+      await expectNoWebFont(p2, `${route} ${width}px hydrated`);
       const after: Card[] = await p2.evaluate(`(${COLLECT.toString()})()`);
       await js.close();
 

@@ -2,8 +2,8 @@ import { test, expect } from "./fixtures";
 import type { Locator, Page } from "@playwright/test";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
-import { awaitAnimationsSettled, measureAtRest } from "./animations";
-import { fixedViewportBox } from "./viewport-box";
+import { awaitAnimationsSettled, measureAtRest, readStatic } from "./animations";
+import { fixedViewportBox, pageMetrics } from "./viewport-box";
 
 // Row 268: Select scroll buttons. The `scroll` variant has 24 options, more than the popup's 18rem max-height shows.
 
@@ -161,12 +161,10 @@ test.describe("position=item-aligned", () => {
     await page.setViewportSize({ width: 1000, height: 1000 });
     await gotoHydrated(page, `${BASE_URL}/component/select/`);
     // Put the trigger mid-viewport so there is room above and below for the alignment to be exact.
-    await aligned(page).evaluate((el) => {
-      // rest-ok: the trigger does not animate
+    await readStatic(aligned(page), (el, vh) => {
       const r = el.getBoundingClientRect();
-      // viewport-ok: only scrolls the page, no overlay is bounded by it
-      window.scrollBy(0, r.top - window.innerHeight / 2);
-    });
+      window.scrollBy(0, r.top - vh / 2);
+    }, (await pageMetrics(page)).innerHeight);
     await aligned(page).click();
     await expect(alignedList(page)).toHaveAttribute("data-placed", "true");
     await awaitAnimationsSettled(alignedList(page));
@@ -188,12 +186,10 @@ test.describe("position=item-aligned", () => {
     await page.setViewportSize({ width: 800, height: 420 });
     await gotoHydrated(page, `${BASE_URL}/component/select/`);
     // Trigger near the bottom edge: the list cannot centre on it, so it is pushed up and the option scrolled.
-    await aligned(page).evaluate((el) => {
-      // rest-ok: the trigger does not animate
+    await readStatic(aligned(page), (el, vh) => {
       const r = el.getBoundingClientRect();
-      // viewport-ok: only scrolls the page, no overlay is bounded by it
-      window.scrollBy(0, r.top - (window.innerHeight - 60));
-    });
+      window.scrollBy(0, r.top - (vh - 60));
+    }, (await pageMetrics(page)).innerHeight);
     await aligned(page).click();
     await expect(alignedList(page)).toHaveAttribute("data-placed", "true");
     await awaitAnimationsSettled(alignedList(page));
@@ -224,18 +220,16 @@ test.describe("position=item-aligned", () => {
     test(`with no selection, a trigger at the ${edge} edge opens the whole list on its ${side} side`, async ({ page }) => {
       await page.setViewportSize({ width: 800, height: 420 });
       await gotoHydrated(page, `${BASE_URL}/component/select/`);
-      await placeholder(page).evaluate((el, edge) => {
+      await readStatic(placeholder(page), (el, { edge, vh }) => {
         // The demo sits near the page's end: room below it so the page can scroll it to the top edge
         // (a spacer, not body padding: the open select's scroll lock rewrites the body's style), and 80px,
         // not less, keeps it clear of the sticky site header, which would make the click scroll it back.
         const spacer = document.createElement("div");
         spacer.style.height = "100vh";
         document.body.appendChild(spacer);
-        // rest-ok: the trigger does not animate
         const r = el.getBoundingClientRect();
-        // viewport-ok: only scrolls the page, no overlay is bounded by it
-        window.scrollBy(0, edge === "bottom" ? r.top - (window.innerHeight - 60) : r.top - 80);
-      }, edge);
+        window.scrollBy(0, edge === "bottom" ? r.top - (vh - 60) : r.top - 80);
+      }, { edge, vh: (await pageMetrics(page)).innerHeight });
       await placeholder(page).click();
       await expect(placeholderList(page)).toHaveAttribute("data-placed", "true");
       await expect(placeholderList(page)).toHaveAttribute("data-side", side);

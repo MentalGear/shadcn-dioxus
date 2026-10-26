@@ -4,6 +4,7 @@ import { sampleCloseFade, assertFadesOutThenUnmounts } from "./assert-fade-out";
 import { BASE_URL } from "./base-url";
 import { assertSharedBackdrop, captureBackdrop, resolveOverlayMs } from "./assert-backdrop-fade";
 import { gotoHydrated } from "./hydration";
+import { readStatic } from "./animations";
 
 // Popover is NON-MODAL by default (dev-docs/backlog.md row 169, shadcn / Radix / Base UI parity).
 // Three demos share the one component page, told apart by their trigger label:
@@ -124,10 +125,10 @@ test("the trigger is Nova's default outline button", async ({ page }) => {
   await gotoHydrated(page, `${BASE_URL}/component/popover/`);
   const trigger = page.getByRole("button", { name: "Show Popover" });
   await expect(trigger).toBeVisible();
-  const box = await trigger.evaluate((el) => {
+  const box = await readStatic(trigger, (el) => {
     const cs = getComputedStyle(el);
     return {
-      height: el.getBoundingClientRect().height, // rest-ok: the trigger button, not the popover surface
+      height: el.getBoundingClientRect().height,
       border: cs.borderTopWidth,
       radius: cs.borderTopLeftRadius,
       weight: cs.fontWeight,
@@ -477,14 +478,12 @@ test.describe("Trigger icon size", () => {
     await gotoHydrated(page, DEFAULT_URL, { timeout: 20 * 60 * 1000 });
     const trigger = page.getByRole("button", { name: DEFAULT_TRIGGER });
     await expect(trigger).toBeVisible({ timeout: 60_000 });
-    const edge = await trigger.evaluate((e) => {
+    const edge = await readStatic(trigger, (e) => {
       const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
       svg.setAttribute("width", "24");
       svg.setAttribute("height", "24");
       e.prepend(svg);
-      // rest-ok: the trigger and its icon never animate; the panel is closed.
       const r = svg.getBoundingClientRect();
-      // rest-ok: the trigger never animates.
       return [r.width, r.height, e.getBoundingClientRect().height];
     });
     expect(edge[0]).toBeCloseTo(16, 0);
@@ -496,8 +495,7 @@ test.describe("Trigger icon size", () => {
     await gotoHydrated(page, `${BASE_URL}/component/date_picker/`, { timeout: 20 * 60 * 1000 });
     const chevron = page.locator("#component-preview-frame").first().getByRole("button", { name: "Show Calendar" }).locator("svg");
     await expect(chevron).toBeVisible({ timeout: 60_000 });
-    // rest-ok: the chevron is at rest while the picker is closed (it rotates only on open).
-    const w = await chevron.evaluate((e) => e.getBoundingClientRect().width);
+    const w = await readStatic(chevron, (e) => e.getBoundingClientRect().width);
     expect(w).toBeCloseTo(20, 0);
   });
 });
