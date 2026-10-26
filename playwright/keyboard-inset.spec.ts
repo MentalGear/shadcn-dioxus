@@ -51,9 +51,9 @@ async function stubVisualViewport(page: Page) {
       origRemove(t, f, o);
     };
     Object.defineProperties(stub, {
-      // viewport-ok: this IS the stub of the visual viewport, defined against the real layout viewport.
+      // The stub of the visual viewport, defined against the real layout viewport (an allowlisted in-page read: check-spec-viewport-bound).
       width: { get: () => window.innerWidth / state.scale },
-      // viewport-ok: as above; the keyboard is the part of the layout viewport the visual one lost.
+      // As above; the keyboard is the part of the layout viewport the visual one lost.
       height: { get: () => (window.innerHeight - state.kb) / state.scale },
       offsetTop: { get: () => state.offsetTop },
       offsetLeft: { get: () => 0 },

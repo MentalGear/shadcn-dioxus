@@ -27,7 +27,7 @@ import { type Page, type Locator } from "@playwright/test";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 import { fixedViewportBox } from "./viewport-box";
-import { readAtRest } from "./animations";
+import { readAtRest, readStatic } from "./animations";
 
 const URL = `${BASE_URL}/component/combobox/`;
 
@@ -99,10 +99,8 @@ async function placeInput(page: Page, where: "top" | "middle" | "bottom") {
         document.body.style.paddingBottom = "1600px";
     });
     const box = await fixedViewportBox(page);
-    const navBottom = await page.evaluate(() => {
-        const nav = document.querySelector(".dx-preview-navbar, nav[aria-label='Primary']");
-        return nav ? nav.getBoundingClientRect().bottom : 0; // rest-ok: the page's fixed navbar, not an overlay
-    });
+    const nav = page.locator(".dx-preview-navbar, nav[aria-label='Primary']").first();
+    const navBottom = (await nav.count()) > 0 ? await readStatic(nav, (el) => el.getBoundingClientRect().bottom) : 0;
     const r = await rectOf(input(page));
     const wanted =
         where === "top" ? navBottom + 8 : where === "middle" ? box.height / 2 - r.height / 2 : box.height - r.height - 8;

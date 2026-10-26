@@ -45,6 +45,7 @@ import { test, expect } from "./fixtures";
 import type { Locator, Page } from "@playwright/test";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
+import { gotoReference } from "./page-kinds";
 import { replayWheel, recordingsOfKind, TRANSLATE_X_EXPR } from "./wheel-replay";
 
 type Variant = "virtual_loop" | "virtual_loop_rtl" | "virtual_many" | "main" | "rewind" | "rtl" | "vertical";
@@ -614,8 +615,7 @@ test.describe("Carousel wheel band: only at a true end of the data", () => {
       ["rtl", "x", "max"],
       ["vertical", "y", "min"],
     ] as const) {
-      // goto-ok: about:blank is not the app
-      await page.goto("about:blank");
+      await gotoReference(page, "about:blank");
       const { content } = await open(page, variant);
       // Slide 1 rests at the physical right under RTL, at the top when vertical.
       const push = (sign: number) =>
@@ -660,8 +660,7 @@ test.describe("Carousel wheel band: only at a true end of the data", () => {
       ["virtual_loop", false],
       ["rewind", false],
     ] as const) {
-      // goto-ok: about:blank is not the app
-      await page.goto("about:blank");
+      await gotoReference(page, "about:blank");
       const { content } = await open(page, variant);
       const r = await replayWheel(content, rec, {
         sample: { band: TRANSLATE_X_EXPR },
@@ -894,8 +893,7 @@ test.describe("Carousel drag band: only at a true end of the data", () => {
       ["rtl", "x", "max"],
       ["vertical", "y", "min"],
     ] as const) {
-      // goto-ok: about:blank is not the app
-      await page.goto("about:blank");
+      await gotoReference(page, "about:blank");
       const { content } = await open(page, variant);
       const pitch = await content.evaluate((el) =>
         el.getAttribute("data-orientation") === "vertical" ? (el as HTMLElement).clientHeight : (el as HTMLElement).clientWidth,

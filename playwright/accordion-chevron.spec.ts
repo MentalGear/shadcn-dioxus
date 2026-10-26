@@ -6,6 +6,7 @@
 import { test, expect } from './fixtures';
 import { BASE_URL } from './base-url';
 import { gotoHydrated } from './hydration';
+import { readStatic } from "./animations";
 
 const GOTO_OPTS = { timeout: 20 * 60 * 1000 };
 
@@ -29,9 +30,9 @@ test('the docs page accordion and manual-install collapsible lead with a chevron
   await expect(trigger).toHaveAttribute('data-chevron', 'start');
   const icon = trigger.locator('> .dx-accordion-expand-icon');
   const side = async (t: typeof trigger) =>
-    t.evaluate((el) => {
-      const i = el.querySelector('.dx-accordion-expand-icon')!.getBoundingClientRect(); // rest-ok: compares positions inside one static row
-      const r = el.getBoundingClientRect(); // rest-ok: same row
+    readStatic(t, (el) => {
+      const i = el.querySelector('.dx-accordion-expand-icon')!.getBoundingClientRect();
+      const r = el.getBoundingClientRect();
       return { iconLeft: i.left - r.left, iconRight: r.right - i.right };
     });
   const closed = await side(trigger);
@@ -55,9 +56,9 @@ test('the default accordion keeps its trailing chevron', async ({ page }) => {
   await gotoHydrated(page, `${BASE_URL}/component/accordion/`, GOTO_OPTS);
   const trigger = page.locator('.dx-component-examples button.dx-accordion-trigger').first();
   await expect(trigger).toHaveAttribute('data-chevron', 'end');
-  const pos = await trigger.evaluate((el) => {
-    const i = el.querySelector('.dx-accordion-expand-icon')!.getBoundingClientRect(); // rest-ok: static row
-    const r = el.getBoundingClientRect(); // rest-ok: static row
+  const pos = await readStatic(trigger, (el) => {
+    const i = el.querySelector('.dx-accordion-expand-icon')!.getBoundingClientRect();
+    const r = el.getBoundingClientRect();
     return i.left - r.left > r.right - i.right;
   });
   expect(pos).toBe(true);

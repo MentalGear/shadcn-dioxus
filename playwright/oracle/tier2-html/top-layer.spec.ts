@@ -172,8 +172,8 @@ import { type Page } from "@playwright/test";
 import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "../../axe";
 import { BASE_URL } from "../../base-url";
 import { gotoHydrated } from "../../hydration";
-import { fixedViewportBox } from "../../viewport-box";
-import { readAtRest } from "../../animations";
+import { fixedViewportBox, pageMetrics } from "../../viewport-box";
+import { readAtRest, readStatic } from "../../animations";
 import { demoRole } from "../../demo-frame";
 
 const NAV_TIMEOUT = 20 * 60 * 1000; // first run compiles the app
@@ -236,8 +236,9 @@ async function escapesClip(
   contentSelector: string,
   ancestorSelector: string,
 ): Promise<{ escapes: boolean; reason?: string; x?: number; y?: number; hit?: string | null }> {
+  const viewport = await pageMetrics(page);
   return page.evaluate(
-    async ({ contentSelector, ancestorSelector }) => {
+    async ({ contentSelector, ancestorSelector, vw, vh }) => {
       const content = document.querySelector(contentSelector) as HTMLElement | null;
       const ancestor = document.querySelector(ancestorSelector) as HTMLElement | null;
       if (!content || !ancestor) {
@@ -284,12 +285,12 @@ async function escapesClip(
       const outsideAncestor = (x: number, y: number) =>
         x < a.left || x > a.right || y < a.top || y > a.bottom;
       const onScreen = (x: number, y: number) =>
-        x >= 0 && x < window.innerWidth && y >= 0 && y < window.innerHeight;
+        x >= 0 && x < vw && y >= 0 && y < vh;
       const probe = candidates.find(([x, y]) => outsideAncestor(x, y) && onScreen(x, y));
       if (!probe) {
         return {
           escapes: false,
-          reason: `no on-screen candidate in content's box (${JSON.stringify(c)}) falls outside the ancestor's box (${JSON.stringify(a)}) within the viewport (${window.innerWidth}x${window.innerHeight}) -- cannot distinguish escape from containment this way`,
+          reason: `no on-screen candidate in content's box (${JSON.stringify(c)}) falls outside the ancestor's box (${JSON.stringify(a)}) within the viewport (${vw}x${vh}) -- cannot distinguish escape from containment this way`,
         };
       }
       const [x, y] = probe;
@@ -302,7 +303,7 @@ async function escapesClip(
         hit: hit ? `${hit.tagName}#${hit.id || "(no id)"}` : null,
       };
     },
-    { contentSelector, ancestorSelector },
+    { contentSelector, ancestorSelector, vw: viewport.innerWidth, vh: viewport.innerHeight },
   );
 }
 
@@ -575,9 +576,8 @@ test.describe("Rule 10 — Toast top-layer stacking (a toast renders above a max
     await page.locator("#toast-stack-trigger").click();
     await expect(page.getByRole("alertdialog")).toBeVisible();
 
-    const hit = await page.evaluate(() => {
-      const sibling = document.getElementById("toast-stack-sibling")!;
-      const r = sibling.getBoundingClientRect(); // rest-ok: a page sibling under the overlay, not an animated surface
+    const hit = await readStatic(page.locator("#toast-stack-sibling"), (sibling) => {
+      const r = sibling.getBoundingClientRect();
       const el = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
       if (!el) return { tag: null, insideRegion: false };
       return { tag: `${el.tagName}#${el.id || "(no id)"}`, insideRegion: !!el.closest('[role="region"]') };
@@ -656,9 +656,8 @@ test.describe("Rule 4 — top-layer stacking (a popover opened after a high-z-in
     await page.locator("#stack-native-trigger").evaluate((el) => (el as HTMLElement).click());
     await expect(page.locator("#stack-native-content")).toBeVisible();
 
-    const hit = await page.evaluate(() => {
-      const sibling = document.getElementById("stack-sibling")!;
-      const r = sibling.getBoundingClientRect(); // rest-ok: a page sibling under the overlay, not an animated surface
+    const hit = await readStatic(page.locator("#stack-sibling"), (sibling) => {
+      const r = sibling.getBoundingClientRect();
       const el = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
       return el ? `${el.tagName}#${el.id || "(no id)"}` : null;
     });
@@ -671,9 +670,8 @@ test.describe("Rule 4 — top-layer stacking (a popover opened after a high-z-in
     await page.locator("#stack-popover-trigger").evaluate((el) => (el as HTMLElement).click());
     await expect(page.locator("#stack-popover-content")).toBeVisible();
 
-    const hit = await page.evaluate(() => {
-      const sibling = document.getElementById("stack-sibling")!;
-      const r = sibling.getBoundingClientRect(); // rest-ok: a page sibling under the overlay, not an animated surface
+    const hit = await readStatic(page.locator("#stack-sibling"), (sibling) => {
+      const r = sibling.getBoundingClientRect();
       const el = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
       return el ? `${el.tagName}#${el.id || "(no id)"}` : null;
     });
@@ -909,10 +907,9 @@ test.describe("Rule 8 — scroll tracking: an anchored overlay's content keeps i
     expect(inlineTop, "expected the JS fallback path to be active here").not.toBe("");
 
     const offsetOf = async () =>
-      page.evaluate(() => {
-        // rest-ok: the offset between two boxes read in one task after the open settled; the test is its stability under scrolling
+      readAtRest(page.locator("#stack-popover-content"), () => {
         const c = document.getElementById("stack-popover-content")!.getBoundingClientRect();
-        const t = document.getElementById("stack-popover-trigger")!.getBoundingClientRect(); // rest-ok: same task, same reason
+        const t = document.getElementById("stack-popover-trigger")!.getBoundingClientRect();
         return { top: c.top - t.bottom, left: c.left - t.left };
       });
 
@@ -1239,10 +1236,8 @@ async function pinNearTop(page: Page, locator: import("@playwright/test").Locato
   // and hit-tested by the nav -- Playwright then retries `hover()` until the
   // test times out (this needs main.css applied; see
   // `oracle/tier2-html/global-stylesheet.spec.ts`).
-  const navBottom = await page.evaluate(() => {
-    const nav = document.querySelector(".dx-preview-navbar, nav[aria-label='Primary']");
-    return nav ? nav.getBoundingClientRect().bottom : 0; // rest-ok: the page's fixed navbar, not an overlay
-  });
+  const nav = page.locator(".dx-preview-navbar, nav[aria-label='Primary']").first();
+  const navBottom = (await nav.count()) > 0 ? await readStatic(nav, (el) => el.getBoundingClientRect().bottom) : 0;
   await page.evaluate(
     ([top, offset]) => window.scrollTo({ top: window.scrollY + top - offset, left: 0 }),
     [rect.top, navBottom + 24] as const,

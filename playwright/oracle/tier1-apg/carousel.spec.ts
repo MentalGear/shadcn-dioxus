@@ -104,6 +104,7 @@ import { pathToFileURL } from "node:url";
 import { BASE_URL } from "../../base-url";
 import { expectNoAxeViolations } from "../../axe";
 import { gotoHydrated } from "../../hydration";
+import { gotoReference } from "../../page-kinds";
 
 const REFERENCE_ROOT = path.resolve(__dirname, "../reference/7e4034b/content/patterns");
 const referenceUrl = pathToFileURL(
@@ -166,8 +167,7 @@ test.describe("Reference: W3C's own Carousel example (carousel-1-prev-next.html)
     // default, so every test in this describe block that asserts "the
     // current slide is exactly N" would be flaky.
     await page.emulateMedia({ reducedMotion: "reduce" });
-    // goto-ok: vendored W3C APG reference page, not the app: it never sets html[data-hydrated]
-    await page.goto(referenceUrl);
+    await gotoReference(page, referenceUrl);
     const region = page.getByRole("region", { name: "Highlighted television shows" });
     await expect(region).toHaveAttribute("aria-roledescription", "carousel");
     const name = await region.evaluate((el) => el.getAttribute("aria-label") ?? "");
@@ -183,8 +183,7 @@ test.describe("Reference: W3C's own Carousel example (carousel-1-prev-next.html)
     // default, so every test in this describe block that asserts "the
     // current slide is exactly N" would be flaky.
     await page.emulateMedia({ reducedMotion: "reduce" });
-    // goto-ok: vendored W3C APG reference page, not the app: it never sets html[data-hydrated]
-    await page.goto(referenceUrl);
+    await gotoReference(page, referenceUrl);
     // Six slides in this fixture -- 1 of 6 .. 6 of 6. The reference shows
     // one slide at a time (a show/hide `.active` toggle, not a scrolling
     // strip -- dev-docs/archive/research/carousel-2026-09-19.md §2.1's own
@@ -210,8 +209,7 @@ test.describe("Reference: W3C's own Carousel example (carousel-1-prev-next.html)
     // default, so every test in this describe block that asserts "the
     // current slide is exactly N" would be flaky.
     await page.emulateMedia({ reducedMotion: "reduce" });
-    // goto-ok: vendored W3C APG reference page, not the app: it never sets html[data-hydrated]
-    await page.goto(referenceUrl);
+    await gotoReference(page, referenceUrl);
     const previous = page.getByRole("button", { name: /previous/i });
     const next = page.getByRole("button", { name: /next/i });
     await expect(previous).toHaveJSProperty("tagName", "BUTTON");
@@ -237,8 +235,7 @@ test.describe("Reference: W3C's own Carousel example (carousel-1-prev-next.html)
     // default, so every test in this describe block that asserts "the
     // current slide is exactly N" would be flaky.
     await page.emulateMedia({ reducedMotion: "reduce" });
-    // goto-ok: vendored W3C APG reference page, not the app: it never sets html[data-hydrated]
-    await page.goto(referenceUrl);
+    await gotoReference(page, referenceUrl);
     const previous = page.getByRole("button", { name: /previous/i });
     const next = page.getByRole("button", { name: /next/i });
     const firstSlide = page.getByRole("group", { name: "1 of 6" });
@@ -255,8 +252,7 @@ test.describe("Reference: W3C's own Carousel example (carousel-1-prev-next.html)
     // default, so every test in this describe block that asserts "the
     // current slide is exactly N" would be flaky.
     await page.emulateMedia({ reducedMotion: "reduce" });
-    // goto-ok: vendored W3C APG reference page, not the app: it never sets html[data-hydrated]
-    await page.goto(referenceUrl);
+    await gotoReference(page, referenceUrl);
     // Scoped to `#ex1` (the carousel widget itself, per this file's own
     // `libraryFrame`-style convention of scanning only the subject under
     // test): the unscoped page also contains this reference page's own
@@ -380,8 +376,7 @@ test.describe("Reference: W3C's own Carousel tabbed example (carousel-2-tablist.
     // put while these assertions run -- same reasoning as R1-R4's own
     // per-test comment above.
     await page.emulateMedia({ reducedMotion: "reduce" });
-    // goto-ok: vendored W3C APG reference page, not the app: it never sets html[data-hydrated]
-    await page.goto(tabbedReferenceUrl);
+    await gotoReference(page, tabbedReferenceUrl);
     const tablist = page.getByRole("tablist");
     await expect(tablist).toBeVisible();
     const name = await tablist.evaluate((el) => el.getAttribute("aria-label") ?? "");
@@ -390,8 +385,7 @@ test.describe("Reference: W3C's own Carousel tabbed example (carousel-2-tablist.
 
   test("R6: each tab has role=tab, a unique accessible name, aria-selected, roving tabindex, and aria-controls", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
-    // goto-ok: vendored W3C APG reference page, not the app: it never sets html[data-hydrated]
-    await page.goto(tabbedReferenceUrl);
+    await gotoReference(page, tabbedReferenceUrl);
     const tabs = page.getByRole("tab");
     await expect(tabs).toHaveCount(6);
     await expect(tabs.nth(0)).toHaveAttribute("aria-selected", "true");
@@ -420,8 +414,7 @@ test.describe("Reference: W3C's own Carousel tabbed example (carousel-2-tablist.
     // `dev-docs/archive/research/carousel-2026-09-19.md` §1.3 point 1): asserted
     // against the tested example, not the prose.
     await page.emulateMedia({ reducedMotion: "reduce" });
-    // goto-ok: vendored W3C APG reference page, not the app: it never sets html[data-hydrated]
-    await page.goto(tabbedReferenceUrl);
+    await gotoReference(page, tabbedReferenceUrl);
     const panels = page.locator('[role="tabpanel"]');
     await expect(panels).toHaveCount(6);
     for (let n = 1; n <= 6; n++) {
@@ -433,8 +426,7 @@ test.describe("Reference: W3C's own Carousel tabbed example (carousel-2-tablist.
 
   test("R8: ArrowRight/ArrowLeft move focus and automatically activate the newly focused tab (no Enter needed), and wrap at both ends; Home/End go to the first/last tab", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
-    // goto-ok: vendored W3C APG reference page, not the app: it never sets html[data-hydrated]
-    await page.goto(tabbedReferenceUrl);
+    await gotoReference(page, tabbedReferenceUrl);
     const tabs = page.getByRole("tab");
     const panel = (n: number) => page.locator(`[role="tabpanel"][aria-label="${n} of 6"]`);
 
@@ -468,8 +460,7 @@ test.describe("Reference: W3C's own Carousel tabbed example (carousel-2-tablist.
 
   test("R9: the tablist precedes the slide content in document order", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
-    // goto-ok: vendored W3C APG reference page, not the app: it never sets html[data-hydrated]
-    await page.goto(tabbedReferenceUrl);
+    await gotoReference(page, tabbedReferenceUrl);
     const tablist = page.getByRole("tablist");
     const firstPanel = page.locator('[role="tabpanel"]').first();
     expect(await precedes(tablist, firstPanel)).toBe(true);
@@ -477,8 +468,7 @@ test.describe("Reference: W3C's own Carousel tabbed example (carousel-2-tablist.
 
   test("axe: the tabbed reference example itself has no automatically detectable a11y issues", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
-    // goto-ok: vendored W3C APG reference page, not the app: it never sets html[data-hydrated]
-    await page.goto(tabbedReferenceUrl);
+    await gotoReference(page, tabbedReferenceUrl);
     // Scoped to `#ex1`, matching this file's own R1-R4 axe test and its
     // own comment about the vendored page's unrelated doc-chrome defect.
     await expectNoAxeViolations(page, "carousel tabbed reference (carousel-2-tablist.html)", {

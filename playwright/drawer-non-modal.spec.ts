@@ -11,6 +11,7 @@ import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 import { demoRole } from "./demo-frame";
 import { awaitAnimationsSettled, measureAtRest } from "./animations";
+import { pageMetrics } from "./viewport-box";
 
 const URL = `${BASE_URL}/component/drawer/`;
 const GOTO_OPTS = { timeout: 20 * 60 * 1000 };
@@ -66,7 +67,7 @@ test("the page behind stays interactive: its button takes the press", async ({ p
 
 test("the page scrolls while a non-modal drawer is open, and the drawer stays", async ({ page }) => {
   await open(page);
-  const scrollable = await page.evaluate(() => document.scrollingElement!.scrollHeight - window.innerHeight); // viewport-ok: page scroll extent
+  const { scrollExtent: scrollable } = await pageMetrics(page);
   test.skip(scrollable <= 40, "the demo page is not taller than the viewport");
   const before = await page.evaluate(() => window.scrollY);
   await page.mouse.move(195, 200);

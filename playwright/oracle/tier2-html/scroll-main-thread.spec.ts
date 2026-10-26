@@ -60,6 +60,7 @@ import type { CDPSession, Page } from "@playwright/test";
 import { BASE_URL } from "../../base-url";
 import { demoRole } from "../../demo-frame";
 import { gotoHydrated } from "../../hydration";
+import { pageMetrics } from "../../viewport-box";
 
 /** Installed before any page script. Everything is kept in `window.__scrollProbe`. */
 function installTimerShim() {
@@ -236,7 +237,10 @@ test.describe("scroll smoothness of / (counts)", () => {
     // which is time, not a count; see the research note and `scripts/measure-scroll.mjs`).
     await page.mouse.move(40, 400);
     const before = await metrics(cdp);
-    const atBottom = () => page.evaluate(() => scrollY >= document.scrollingElement!.scrollHeight - innerHeight - 4);
+    const atBottom = async () => {
+      const pm = await pageMetrics(page);
+      return pm.scrollY >= pm.scrollExtent - 4;
+    };
     let ticks = 0;
     for (; ticks < 1200 && !(ticks % 8 === 0 && (await atBottom())); ticks++) {
       await page.mouse.wheel(0, 200);
@@ -244,7 +248,7 @@ test.describe("scroll smoothness of / (counts)", () => {
     }
     await page.waitForTimeout(800); // let the last smooth-scroll animation land
     const after = await metrics(cdp);
-    const pageHeight = await page.evaluate(() => document.scrollingElement!.scrollHeight - innerHeight);
+    const { scrollExtent: pageHeight } = await pageMetrics(page);
     expect(await page.evaluate(() => scrollY), "the scripted scroll reached the bottom").toBeGreaterThan(pageHeight - 400);
     const skippedAtBottom = await page.evaluate(
       () => [...document.querySelectorAll(".dx-component-card-preview")].filter((e) => !(e as HTMLElement).checkVisibility({ contentVisibilityAuto: true })).length,

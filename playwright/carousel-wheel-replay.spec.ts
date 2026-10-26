@@ -44,6 +44,7 @@ import { type Page, type Locator } from "@playwright/test";
 import path from "node:path";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
+import { gotoReference } from "./page-kinds";
 import {
   loadRecordings,
   replayWheel,
@@ -114,8 +115,7 @@ const BENCH_URL = "file://" + path.resolve(__dirname, "fixtures", "carousel-over
 async function openBench(page: Page): Promise<{ track: Locator }> {
   // The bench links a Google Fonts stylesheet; keep the run hermetic and fast.
   await page.route("https://fonts.googleapis.com/**", (route) => route.abort());
-  // goto-ok: static benchmark fixture page, not the app: it never sets html[data-hydrated]
-  await page.goto(BENCH_URL, { waitUntil: "domcontentloaded" });
+  await gotoReference(page, BENCH_URL, { waitUntil: "domcontentloaded" });
   await page.locator('button.mode[data-mode="onewriter"]').click();
   await expect(page.locator('button.mode[data-mode="onewriter"]')).toHaveAttribute("aria-pressed", "true");
   const track = page.locator("#track");

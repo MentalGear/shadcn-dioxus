@@ -73,8 +73,9 @@ import { test, expect } from "../../fixtures";
 import { type Page } from "@playwright/test";
 import { BASE_URL } from "../../base-url";
 import { gotoHydrated } from "../../hydration";
-import { measureAtRest } from "../../animations";
+import { measureAtRest, readStatic } from "../../animations";
 import { demoRole } from "../../demo-frame";
+import { pageMetrics } from "../../viewport-box";
 
 const NAV_TIMEOUT = 20 * 60 * 1000; // first run compiles the app
 
@@ -89,14 +90,11 @@ const goto = (page: Page, name: string, extra = "") =>
 /** Sanity check: the route must actually have more content than fits in the
  * viewport, or "scrollY didn't move" would be true regardless of any lock. */
 async function assertPageIsScrollable(page: Page) {
-  const { scrollHeight, innerHeight } = await page.evaluate(() => ({
-    scrollHeight: document.documentElement.scrollHeight,
-    innerHeight: window.innerHeight,
-  }));
+  const pm = await pageMetrics(page);
   expect(
-    scrollHeight,
+    pm.scrollHeight,
     "fixture route must be taller than the viewport for this test to mean anything",
-  ).toBeGreaterThan(innerHeight);
+  ).toBeGreaterThan(pm.innerHeight);
 }
 
 /**
@@ -169,7 +167,7 @@ async function assertScrollIsUnlocked(page: Page) {
  * realistic right-aligned navbar action.
  */
 async function rightEdgeMarkerRight(page: Page): Promise<number> {
-  return page.evaluate(() => {
+  await page.evaluate(() => {
     let marker = document.getElementById("scroll-lock-shift-probe");
     if (!marker) {
       marker = document.createElement("div");
@@ -178,8 +176,8 @@ async function rightEdgeMarkerRight(page: Page): Promise<number> {
         "position:fixed; top:0; right:0; width:4px; height:4px; pointer-events:none; z-index:2147483647;";
       document.body.appendChild(marker);
     }
-    return marker.getBoundingClientRect().right; // rest-ok: a 4px probe element the page appends itself; it never animates
   });
+  return readStatic(page.locator("#scroll-lock-shift-probe"), (marker) => marker.getBoundingClientRect().right);
 }
 
 /**
@@ -547,12 +545,12 @@ test.describe("scrollbar-gutter reservation survives the lock itself, not just i
     await goto(page, "dialog");
     await assertPageIsScrollable(page);
 
-    const before = await page.evaluate(() => document.documentElement.clientWidth);
+    const before = (await pageMetrics(page)).clientWidth;
 
     await demoRole(page, "button").click();
     await expect(page.getByRole("dialog")).toBeVisible();
 
-    const duringOpen = await page.evaluate(() => document.documentElement.clientWidth);
+    const duringOpen = (await pageMetrics(page)).clientWidth;
 
     expect(
       duringOpen,
@@ -599,14 +597,14 @@ test.describe("Breakpoint flip: exact 1027px viewport with a classic scrollbar",
     await assertPageIsScrollable(page);
 
     const nav = page.locator("nav.dx-preview-navbar");
-    const widthBefore = await page.evaluate(() => document.documentElement.clientWidth);
+    const widthBefore = (await pageMetrics(page)).clientWidth;
     const navBefore = await measureAtRest(nav);
 
     await demoRole(page, "button").click();
     await expect(page.getByRole("dialog")).toBeVisible();
 
     expect(
-      await page.evaluate(() => document.documentElement.clientWidth),
+      (await pageMetrics(page)).clientWidth,
       "clientWidth must not change the instant the modal locks scroll, at 1027px, where a classic scrollbar's gutter shows",
     ).toBe(widthBefore);
     expect(
@@ -621,10 +619,10 @@ test.describe("Breakpoint flip: exact 1027px viewport with a classic scrollbar",
     // `assertScrollIsUnlocked`'s doc above for the same caveat) -- poll
     // rather than sampling once immediately.
     const deadline = Date.now() + 8000;
-    let widthAfter = await page.evaluate(() => document.documentElement.clientWidth);
+    let widthAfter = (await pageMetrics(page)).clientWidth;
     while (widthAfter !== widthBefore && Date.now() < deadline) {
       await page.waitForTimeout(200);
-      widthAfter = await page.evaluate(() => document.documentElement.clientWidth);
+      widthAfter = (await pageMetrics(page)).clientWidth;
     }
 
     expect(widthAfter, "clientWidth must return to its pre-lock value after the modal closes").toBe(

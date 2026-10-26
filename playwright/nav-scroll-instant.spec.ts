@@ -25,6 +25,7 @@ import { test, expect, devices } from "./fixtures";
 import type { Page } from "@playwright/test";
 import { baseUrlOr } from "./base-url";
 import { gotoHydrated } from "./hydration";
+import { pageMetrics } from "./viewport-box";
 
 const BASE = baseUrlOr("http://127.0.0.1:8080");
 
@@ -83,17 +84,16 @@ async function lastCardLink(page: Page) {
   await expect(link).toBeAttached();
   // Cards below are `content-visibility: auto`: bring it in, let the layout settle, bring it in again.
   for (let i = 0; i < 3; i++) {
-    // viewport-ok: vertical centring of a link in the scrolling page, not an overlay bound
-    const top = await link.evaluate((el) => el.getBoundingClientRect().top + window.scrollY - window.innerHeight / 2);
+    const vh = (await pageMetrics(page)).innerHeight;
+    const top = await link.evaluate((el, vh) => el.getBoundingClientRect().top + window.scrollY - vh / 2, vh);
     await instantScroll(page, top);
     await page.waitForTimeout(400);
   }
-  // viewport-ok: the link must be inside the page's scrolling viewport, not an overlay bound
-  const inView = await link.evaluate((el) => {
+  const viewH = (await pageMetrics(page)).innerHeight;
+  const inView = await link.evaluate((el, vh) => {
     const r = el.getBoundingClientRect();
-    // viewport-ok: inside the page's scrolling viewport, not an overlay bound
-    return r.top >= 0 && r.bottom <= window.innerHeight;
-  });
+    return r.top >= 0 && r.bottom <= vh;
+  }, viewH);
   expect(inView, "the last card's link is inside the viewport before the click").toBe(true);
   return link;
 }

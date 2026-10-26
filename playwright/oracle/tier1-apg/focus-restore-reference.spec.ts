@@ -35,6 +35,7 @@
 import { test, expect } from "../../fixtures";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import { gotoReference } from "../../page-kinds";
 
 const REFERENCE_ROOT = path.resolve(__dirname, "../reference/7e4034b/content/patterns");
 
@@ -48,8 +49,7 @@ const comboboxSelectOnlyUrl = pathToFileURL(
 
 test.describe("APG Menu Button pattern — Actions Menu Button Example", () => {
   test("CALIBRATION: W3C's own example returns focus to the menu button on Escape", async ({ page }) => {
-    // goto-ok: vendored W3C APG reference page, not the app: it never sets html[data-hydrated]
-    await page.goto(menuButtonActionsUrl);
+    await gotoReference(page, menuButtonActionsUrl);
 
     const button = page.locator("#menubutton1");
     await expect(button).toHaveAttribute("aria-haspopup", "true");
@@ -83,8 +83,7 @@ test.describe("APG Menu Button pattern — Actions Menu Button Example", () => {
 
 test.describe("APG Combobox pattern — Select-Only Combobox Example", () => {
   test("CALIBRATION: W3C's own example keeps/returns focus on the combobox on Escape", async ({ page }) => {
-    // goto-ok: vendored W3C APG reference page, not the app: it never sets html[data-hydrated]
-    await page.goto(comboboxSelectOnlyUrl);
+    await gotoReference(page, comboboxSelectOnlyUrl);
 
     const combo = page.locator("#combo1");
     await expect(combo).toHaveAttribute("role", "combobox");

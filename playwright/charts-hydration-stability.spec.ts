@@ -45,6 +45,7 @@
  */
 import { test, expect } from "./fixtures";
 import { BASE_URL } from "./base-url";
+import { gotoPrerendered } from "./page-kinds";
 
 type Box = { x: number; y: number; w: number; h: number };
 type BoxEvent = { t: number; f: number; id: number; cls: string; from: Box; to: Box };
@@ -135,8 +136,7 @@ for (const { route, scheme, widths } of GROUPS) {
 
     for (const width of ONLY.length ? ONLY : widths) {
       await page.setViewportSize({ width, height: HEIGHT });
-      // goto-ok: observes the page from commit to hydration, so it must not wait for the flag first
-      await page.goto(`${BASE_URL}${route}`, { waitUntil: "commit" });
+      await gotoPrerendered(page, `${BASE_URL}${route}`, { waitUntil: "commit" });
       await page.waitForSelector('html[data-hydrated="true"]', { state: "attached", timeout: 120_000 });
       await page.evaluate(() => document.fonts.ready.then(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))));
       await page.waitForTimeout(1500); // no input: whatever still moves by itself shows up in this window

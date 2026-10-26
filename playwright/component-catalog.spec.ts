@@ -27,6 +27,7 @@ import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { readCatalog } from "./catalog";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
+import { pageMetrics } from "./viewport-box";
 
 // --- the list, read from Rust --------------------------------------------------------------
 const ROWS = readCatalog().map((r) => ({ name: r.name, extra: r.origin === "Extra", reason: r.reason }));
@@ -223,8 +224,7 @@ test.describe("homepage gallery card", () => {
 test.describe("phone width (390px)", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  const noHorizontalScroll = (page: Page) =>
-    page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth);
+  const noHorizontalScroll = async (page: Page) => (await pageMetrics(page)).sidewaysOverflow <= 0;
 
   test("the longest extra's page header wraps without overflowing", async ({ page }) => {
     await openComponent(page, "drag_and_drop_list");
