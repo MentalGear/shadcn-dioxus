@@ -415,6 +415,7 @@ fn CalendarCaption(
     let text = attributes!(span { class: "dx-calendar-caption-text" });
     let hidden = attributes!(div {
         class: "dx-calendar-sr-only",
+        "data-dx-visually-hidden": "",
         role: "status",
         aria_live: "polite",
     });

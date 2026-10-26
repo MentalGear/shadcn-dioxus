@@ -17,55 +17,14 @@
  * DRAWER adds to an edge panel: the drag (a live inline `transform`, `touch-action`, the overdrag fill),
  * the handle, and nested stacking. */
 
-/* Drawer Root -- the wrapper `div` around the panel. On the web arm
- * (`<dialog>` + `showModal()`) it paints nothing: the scrim is the dialog's own
- * `::backdrop` (the shared rule in `dx-components-theme.css`, the same one `.dx-sheet` uses) and this
- * element only holds the `<dialog>` and its animation times `use_animated_open`'s
- * unmount hold. Without a `<dialog>` (non-web arm, `is_modal: false`) this element
- * IS the scrim, from the same tokens. */
-.dx-drawer-root {
-  position: fixed;
-  z-index: var(--dx-z-overlay);
-  backdrop-filter: blur(var(--dx-overlay-blur));
-  background: var(--dx-overlay-scrim);
-  inset: 0;
-  opacity: 0;
-  will-change: opacity;
-}
-
-.dx-drawer-root:has(> dialog) {
-  backdrop-filter: none;
-  background: transparent;
-}
-
-/* `overlay: false` (`data-dx-overlay="off"`, set on this element and on the `<dialog>`):
- * the theme's one `dialog[data-dx-overlay="off"]::backdrop` rule removes the web arm's
- * scrim; this one removes the scrim this element paints where there is no top layer. */
-.dx-drawer-root[data-dx-overlay="off"] {
-  backdrop-filter: none;
-  background: transparent;
-}
-
-/* The wrapper's fade is the theme's shared `dx-fade-in/out`. */
-.dx-drawer-root[data-state="closed"] {
-  animation: dx-fade-out var(--dx-overlay-duration) var(--dx-overlay-ease) forwards;
-  pointer-events: none;
-}
-
-.dx-drawer-root[data-state="open"] {
-  animation: dx-fade-in var(--dx-overlay-duration) var(--dx-overlay-ease) forwards;
-}
+/* The wrapper `div` `Drawer` renders around the `<dialog>` carries `data-dx-scrim` (`component.rs`): the
+ * theme's one "The modal scrim without a top layer" rule paints it where there is no top layer (non-web
+ * arm, `is_modal: false`), fades it with `data-state`, and drops it for `overlay: false`. Nothing to write here. */
 
 /* The scrim (this dialog's top-layer `::backdrop`) is the ONE shared rule in
  * `dx-components-theme.css` ("The modal scrim, once"): keyed on any `<dialog>` with a `dx-`
  * class, driven by `--dx-overlay-duration/-ease/-scrim/-blur`, fading in and out with the
  * panel. There is no `::backdrop` rule here to drift. */
-
-@media (prefers-reduced-motion: reduce) {
-  .dx-drawer-root {
-    animation-duration: var(--dx-motion-duration-reduced);
-  }
-}
 
 /* Drawer panel = the Edge panel recipe + this.
  *

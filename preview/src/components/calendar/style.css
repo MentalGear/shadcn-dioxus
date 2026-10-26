@@ -455,17 +455,6 @@ td:has(.dx-calendar-grid-cell[data-selection-end="true"]) {
     user-select: none;
 }
 
-/* The dropdown layouts keep the full "October 2026" as a live region (a select's own name is "Month",
-   which does not say where a prev/next click landed); same clip recipe as the other `-sr-only` classes. */
-.dx-calendar-sr-only {
-    position: absolute;
-    overflow: hidden;
-    width: 1px;
-    height: 1px;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-}
-
 /* Nova `dropdown_root` + `.cn-calendar-dropdown-root`: `relative rounded-(--cell-radius) border border-input`,
    and on focus `border-ring ring-3 ring-ring/50` (the Button recipe: ring-coloured edge plus the halo). */
 .dx-calendar-month-select-container,

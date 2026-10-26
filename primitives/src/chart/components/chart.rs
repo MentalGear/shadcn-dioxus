@@ -872,7 +872,7 @@ pub fn Chart(props: ChartProps) -> Element {
             // table: a `table` box cannot shrink below its min-content
             // width, and changing its `display` would strip its table
             // semantics in WebKit/VoiceOver.
-            div { "data-slot": "chart-data-wrapper",
+            div { "data-slot": "chart-data-wrapper", "data-dx-visually-hidden": "",
                 table { "data-slot": "chart-data",
                     caption { "{props.aria_label}" }
                     thead {

@@ -231,7 +231,7 @@ pub fn CodeBlockCopyButton(
             }
         }
         span {
-            class: "dx-code-block-sr-only",
+            "data-dx-visually-hidden": "",
             "aria-live": "polite",
             if copied() {
                 "Copied"

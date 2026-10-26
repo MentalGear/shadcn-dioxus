@@ -5,64 +5,9 @@
  * panel over 100ms; here both take `--dx-overlay-duration` (200ms), shared with
  * every other modal overlay, because 100ms reads as no transition at all. */
 
-/* Dialog Backdrop -- the wrapper `div` `DialogRoot` renders around the content.
- * On the web arm (`<dialog>` + `showModal()`) it paints nothing: the scrim is the
- * dialog's own `::backdrop` (the shared rule in `dx-components-theme.css`) and this element only holds
- * the `<dialog>` and its animation times `use_animated_open`'s unmount hold. On
- * the non-web arm and for `is_modal: false` the content is a plain `div` with no
- * top layer and no `::backdrop`, so there this element IS the scrim, from the
- * same tokens. */
-.dx-dialog-backdrop {
-  position: fixed;
-  z-index: var(--dx-z-overlay);
-  backdrop-filter: blur(var(--dx-overlay-blur));
-  background: var(--dx-overlay-scrim);
-  inset: 0;
-  opacity: 0;
-  will-change: opacity;
-}
-
-.dx-dialog-backdrop:has(> dialog) {
-  backdrop-filter: none;
-  background: transparent;
-}
-
-/* `overlay: false` (`data-dx-overlay="off"`, set on this element and on the `<dialog>`):
- * the theme's one `dialog[data-dx-overlay="off"]::backdrop` rule removes the web arm's
- * scrim; this one removes the scrim this element paints where there is no top layer. */
-.dx-dialog-backdrop[data-dx-overlay="off"] {
-  backdrop-filter: none;
-  background: transparent;
-}
-
-.dx-dialog-backdrop[data-state="closed"] {
-  animation: dx-dialog-backdrop-animate-out var(--dx-overlay-duration) var(--dx-overlay-ease) forwards;
-  pointer-events: none;
-}
-
-@keyframes dx-dialog-backdrop-animate-out {
-  0% {
-    opacity: 1;
-  }
-
-  100% {
-    opacity: 0;
-  }
-}
-
-.dx-dialog-backdrop[data-state="open"] {
-  animation: dx-dialog-backdrop-animate-in var(--dx-overlay-duration) var(--dx-overlay-ease) forwards;
-}
-
-@keyframes dx-dialog-backdrop-animate-in {
-  0% {
-    opacity: 0;
-  }
-
-  100% {
-    opacity: 1;
-  }
-}
+/* The wrapper `div` `DialogRoot` renders around the `<dialog>` carries `data-dx-scrim` (`component.rs`): the
+ * theme's one "The modal scrim without a top layer" rule paints it where there is no top layer (non-web
+ * arm, `is_modal: false`), fades it with `data-state`, and drops it for `overlay: false`. Nothing to write here. */
 
 /* The scrim (this dialog's top-layer `::backdrop`) is the ONE shared rule in
  * `dx-components-theme.css` ("The modal scrim, once"): keyed on any `<dialog>` with a `dx-`
@@ -108,10 +53,6 @@ dialog.dx-dialog[open][data-state="open"] {
 @media (prefers-reduced-motion: reduce) {
   dialog.dx-dialog {
     transition-duration: var(--dx-motion-duration-reduced);
-  }
-
-  .dx-dialog-backdrop {
-    animation-duration: var(--dx-motion-duration-reduced);
   }
 }
 

@@ -179,7 +179,7 @@ pub fn MessageScrollerButton(
                                 {children}
                             } else {
                                 ArrowDown { size: "16px", "aria-hidden": "true" }
-                                span { class: "dx-message-scroller-sr-only", "{label}" }
+                                span { "data-dx-visually-hidden": "", "{label}" }
                             }
                         }
                     }
