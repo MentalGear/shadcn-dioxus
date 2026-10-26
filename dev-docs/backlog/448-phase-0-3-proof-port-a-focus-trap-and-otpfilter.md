@@ -1,0 +1,31 @@
+---
+id: 448
+title: "Phase 0.3: proof port A (the 16 dead not(web) eval sites, focus-trap.ts, and the otpFilter behaviour for S11)"
+status: "BACKLOG. Awaiting the owner's approval of the row 434 step 3 plan."
+size: "L"
+area: overlays
+updated: 2026-10-26
+---
+
+# Row 448: Phase 0.3: proof port A (the 16 dead not(web) eval sites, focus-trap.ts, and the otpFilter behaviour for S11)
+
+## Item
+
+The first listener port and the first named behaviour: lane 3.DJ (delete the 16 eval sites in `#[cfg(not(feature = "web"))]` arms that compile only for Blitz, where eval is a no-op, plus `ts/focus-trap.ts`, its `js/` output and manifest line, the allow-TSV entry and `focus_trap_script`), then `otpFilter` for S11 (25 lines, an element target, `beforeinput` missing in 0.7.9: its `prevent` and `setValue` exercise `defaultAction` and `wrongPaint`, so its witnesses are red by construction; it also takes `insertFromPaste` and `insertReplacementText`, which fixes the live OTP paste defect of [row 474](./474-bug-input-otp-paste-loses-digits-to-maxlength.md)). It also builds the registry restructure (one Rust file and one vectors file per behaviour, a registry macro that collects the variants), the per-site effect typestate with explicit `site!("name")` ids (a `Site` only the macro can construct), the per-install effect set and the adapter for `otpFilter`. `hotkey` is not built here (round 6: L6's witness is expected green by construction for an in-app target and it most likely decomposes into a bridge `listen` plus an rsx `prevent_default`; `hotkey` is built by the first of 3.OV and 3.GS that needs it). L23 is not here (it keeps the primitive's behaviour, row 3.FC). Why: it proves the construct end to end on a real block and deletes dead JavaScript first.
+
+Part of the [row 434](./434-javascript-in-typescript-modules-not-rust-strings.md) step 3 plan; source: [`sync-js-root-2026-10-26.md`](../research/sync-js-root-2026-10-26.md) section 5.4 (phase 0).
+
+## Status / trigger
+
+BACKLOG. Awaiting the owner's approval of the row 434 step 3 plan.
+
+## Size
+
+L
+
+## Detail
+
+- **Files owned:** `dialog.rs`, `alert_dialog.rs`, `popover.rs`, `dropdown_menu.rs`, `menubar.rs`, `context_menu.rs` (the `not(web)` arms only), `lib.rs` (the focus-trap bundle constants only), `ts/focus-trap.ts`, `primitives/src/js/focus-trap.js` and its manifest line, `input_otp.rs` (S11's script and install only), `ts/behaviours/otp_filter.ts`, `bridge/behaviours/mod.rs` (the registry macro, replacing `bridge/behaviours.rs`), `bridge/behaviours/otp_filter.rs`, `primitives/conformance/behaviours/otp_filter.json`, `bridge/session.rs` (`use_behaviour` only), `ts/bridge.ts` (the adapter's per-install effect-set refusal), `primitives/tsconfig.json`. Must not touch `top_layer/`, the rest of `lib.rs` (L1, L2 and L6 are 3.OV's), `label.rs`, the rest of `input_otp.rs` (3.FC).
+- **Depends on:** [row 444](./444-gate-half-of-lane-3-0b-grants-bans-and-witness-presence.md), [row 446](./446-phase-0-6-witness-harness-and-the-first-witnesses.md) (the `otpFilter` witness `test.fixme` it turns green), [row 447](./447-phase-0-7-the-order-runtime.md) (`session.rs` order).
+- **Proof:** `witness(otpFilter, prevent)` and `witness(otpFilter, setValue)` go from `test.fixme` to red-then-passing expected failures; the input-otp, dialog, alert-dialog and menu specs on a release build; `check-bridge-behaviours`.
+- **Hours (inferred):** about 13 (unchanged by round 6; 11 before round 5: `hotkey`'s build leaves, `otpFilter`'s build and the `site!` macro enter; S11's 25 lines stay counted in 3.FC's relocated column).

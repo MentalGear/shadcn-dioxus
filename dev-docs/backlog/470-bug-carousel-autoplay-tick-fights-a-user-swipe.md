@@ -32,6 +32,6 @@ S-M
 ## Detail
 
 - **Files owned:** To be found by the reproduction.
-- **Depends on:** None. The plan's `scrollOwner` (row 457: a native swipe mints a transition on `touchstart`) subsumes it; a local fix is to pause the tick on `touchstart` and `pointerdown` over the scroller.
+- **Depends on:** None. The plan's `scrollOwner` (row 457: a native swipe is a transition the owner classifies by the realized default action, with the snap scroller's intent kind) subsumes it; a local fix is to pause the tick on `touchstart` and `pointerdown` over the scroller.
 - **Proof:** A Playwright spec that fails before the fix and passes after; run on the web build and, where the bug is renderer-dependent, the desktop-cadence build of [row 442](./442-desktop-cadence-harness-and-desktop-pass.md).
 - **Hours (inferred):** not estimated (size guess S-M).

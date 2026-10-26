@@ -11,7 +11,7 @@ updated: 2026-10-26
 
 ## Item
 
-W8: a Rust invariant ("end sentinel visible, else scroll to end") with native `overflow-anchor` as the accelerator where verified (Safari 27 is its floor) and the `stickToEnd` named behaviour (about 40 lines, a ResizeObserver callback writing `scrollTop` while the Rust-published mode is `following-bottom`) for the same-frame write on every engine, idempotent with A; `stickToEnd` owns its detach through `scrollOwner`; G opening position; `settle` jumps. The legacy arm already exists (3.FZ). Time-boxed with the named-behaviour exit.
+W8: a Rust invariant ("end sentinel visible, else scroll to end") with native `overflow-anchor` as the accelerator where verified (Safari 27 is its floor) and the `stickToEnd` named behaviour (about 40 lines, a ResizeObserver callback writing `scrollTop` while the Rust-published mode is `following-bottom`) for the same-frame write on every engine, idempotent with A; `stickToEnd` owns its detach, decided by the level (the `scrollOwner`'s level intent kind, so a wheel-up, find-in-page or screen-reader scroll-up detach it while anchoring does not); G opening position; `settle` jumps. The legacy arm already exists (3.FZ). Time-boxed with the named-behaviour exit.
 
 Part of the [row 434](./434-javascript-in-typescript-modules-not-rust-strings.md) step 3 plan; source: [`sync-js-root-2026-10-26.md`](../research/sync-js-root-2026-10-26.md) section 5.4 (the owner-measured ports) and section 4.
 
