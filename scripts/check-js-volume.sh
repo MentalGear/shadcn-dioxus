@@ -3,7 +3,7 @@
 # check-js-volume.sh  (backlog row 434; rule and replacements: dev-docs/js-interop.md)
 #
 # JavaScript volume can only shrink: Rust owns behaviour and browser access goes through the bridge in
-# `primitives/src/bridge/` (dev-docs/js-interop.md), never through a script string, a new `.js`/`.ts` file or an inline
+# `primitives/src/bridge/` (dev-docs/js-interop.md; ref-ok: lands with row 434 lane 3.0), never through a script string, a new `.js`/`.ts` file or an inline
 # script. The gate counts, per tracked file, the places JS can enter (eval sinks, JS held in Rust strings, hand-written
 # `.js`/`.ts` lines, `JsListeners::install` sites, inline `<script>` bytes) and fails when a count rises, against the
 # baseline AND against the baseline committed at the merge base with origin/main, so editing the baseline in the same
