@@ -1,7 +1,7 @@
 ---
 id: 470
 title: "Bug: the carousel autoplay tick fights a user swipe (the scroller is pulled forward and bounces back)"
-status: "BACKLOG. Found by board round 5; reproduce first. Independent of plan approval."
+status: "BACKLOG, owner direction 2026-10-26: stop autoplay on touchdown and on hover (\"just stop autoplay…"
 size: "S-M"
 area: components
 updated: 2026-10-26
@@ -23,7 +23,7 @@ Related to [row 434](./434-javascript-in-typescript-modules-not-rust-strings.md)
 
 ## Status / trigger
 
-BACKLOG. Found by board round 5; reproduce first. Independent of plan approval.
+BACKLOG, owner direction 2026-10-26: stop autoplay on touchdown and on hover ("just stop autoplay on touchdown / hover"). Hover already pauses (`stop_on_mouse_enter`); a pointerdown on the viewport (touch, pen or mouse drag) must count as interaction for `stop_on_interaction`, as embla-carousel-autoplay's `stopOnInteraction` does on pointer down. Found by board round 5.
 
 ## Size
 
