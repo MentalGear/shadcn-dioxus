@@ -28,17 +28,20 @@ Evidence labels: **V** = read in this repo or in the pinned crate source. **W** 
 
 | construction | blocks | lines (of 3,894) |
 |---|---:|---:|
-| A: platform does it (plus a Rust fallback behind a gate) | 2 | 573 |
+| A: platform does it (plus a Rust fallback behind a gate) | 3 (T8, T11, W8) | 1,638 |
 | B: rules as data, one interpreter | 9 (B1 event gates 1, B2 gestures 3, B3 publishers 1, B5 reveal/settle 4) | 1,038 |
 | G: Rust behind a paint-safe gate | 5 | 211 |
-| R: no real sync need, plain bridge verbs plus Rust | 3 | 465 |
-| **Residue: stays a bespoke module** | **3** (message scroller, carousel wheel band, its helper macros) | **1,607** |
+| R: no real sync need, plain bridge verbs plus Rust | 5 (W1, C3, V11, C5, C1) | 1,007 |
+| **Residue: stays a bespoke module** | **0** | **0** |
 
-The residue holds three genuine continuous loops tuned on real hardware. The message scroller is a port of shadcn's controller, and CSS `overflow-anchor` (Safari 27, September 2026) will later take its anchoring part. The carousel trackpad band is a heuristic state machine. Its logic could move to Rust once desktop latency is measured.
+**Revised 2026-10-26 (see [`sync-js-residue-2026-10-26.md`](./sync-js-residue-2026-10-26.md)).** An earlier version of this table kept three blocks as a residue: the message scroller, the carousel wheel band and its helper macros. Re-attacked, all three move:
+- **Message scroller (W8):** CSS `overflow-anchor` is Baseline newly available since 2026-09-14 (Safari 27), so it qualifies under this doc's own policy (section 2.1) *today*. Its anchoring becomes native scroll anchoring on a 1 px end sentinel and on the rows. Its mode machine moves to Rust, with a Rust `onresize` fallback for engines without anchoring.
+- **Carousel wheel band (C5):** it is passive, so a late answer is lag, never a wrong decision. Its classifier becomes a pure Rust state machine, fed a batched per-frame event stream and proven by `cargo test` against the committed trackpad recordings. Its exit, if a desktop measurement shows more than one extra frame of lag at p95, is the same crate as page-side wasm (C2).
+- **Helper macros (C1):** dissolve once their four users have moved.
 
-**The gate that keeps it closed:** the rule vocabulary is one Rust enum that matches the interpreter's switch one to one. No `preventDefault`, rAF loop or observer may appear outside the interpreter or the listed residue. Adding a rule kind needs a backlog row.
+**The gate that keeps it closed:** the rule vocabulary is one Rust enum that matches the interpreter's switch one to one. No `preventDefault`, rAF loop or observer may appear outside the bridge and the interpreter (the residue allowlist starts empty). Adding a rule kind needs a backlog row.
 
-**Biggest risk:** desktop and mobile are not in CI. Every (G) mapping and every desktop claim needs either a real desktop measurement or the "slow channel" test harness proposed in section 7.3.
+**Biggest risk:** desktop and mobile are not in CI. Every (G) mapping and every desktop claim needs either a real desktop measurement or the "slow channel" test harness proposed in section 5.6. The C5 lag measurement in particular needs a machine with WebView2 or WKWebView.
 
 ---
 
@@ -114,7 +117,7 @@ The invariant leaves four ways to satisfy it, plus one fallback:
 | **G** paint-safe gate (new) | Removes the deadline: CSS keeps the unsettled state invisible or pinned, so a late answer paints nothing wrong. | Rust |
 | **R** no real sync need | The block was never on a commit path (it only reads and reports, or runs a command). | Rust plus plain bridge verbs |
 | **C** run Rust in the page | C1: the Dioxus sync event path. C2: a Rust kernel compiled to page-side wasm. C3: worklets. | Rust |
-| residue | none of the above, within the support policy | a named TS module |
+| residue | none of the above, within the support policy (empty after the 2026-10-26 re-attack) | a named TS module |
 
 ### 2.1 (A) Platform-declarative first
 
@@ -136,7 +139,7 @@ Support from web-features 3.44.0 (W, `status.by_compat_key`; "low" = Baseline ne
 | scroll-driven animations | 115 | no | 26 | no | S14 depth (already feature-detected) |
 | `interpolate-size` / `calc-size()` | 129 | no | no | no | toast/questionnaire height: **not available** |
 | `field-sizing` | 123 | 152 | 26.2 | low 2026-06-16 | — |
-| `overflow-anchor` (scroll anchoring) | 56 | 66 | **27** | low 2026-09-14 | W8 anchoring, later |
+| `overflow-anchor` (scroll anchoring) | 56 | 66 | **27** | low 2026-09-14 | W8 anchoring (qualifies under the policy below; residue doc section 2) |
 | `hidden=until-found` | 102 | 148 | no (26.2 partial per row 153) | no | already feature-degraded |
 | view transitions | 111 | 144 | 18 | low 2025-10-14 | a size-glide alternative (section 5, V19) |
 | `@starting-style`, `transition-behavior` | 117 | 129 | 17.5 | low 2024 | enter/exit without JS where unmounting allows |
@@ -152,7 +155,7 @@ Spec facts (W, `w3.org/TR/css-anchor-position-1`):
 1. The visual-viewport (keyboard) exclusion of row 210.
 2. Publishing the placed side and the anchor offsets for arrows and transform-origin (`@position-try` accepts only inset, margin, sizing, alignment and position properties, not custom properties; anchored container queries are Chrome-only).
 3. Engines without anchor positioning.
-4. Anything gesture-, height-animation- or anchoring-related within a Baseline policy.
+4. Gestures and height animation within a Baseline policy (`interpolate-size` is Chrome-only). Scroll anchoring *is* covered: `overflow-anchor` is Baseline newly available since 2026-09-14.
 
 **Support policy A needs (proposal).**
 - **Web:** "Baseline newly available across Chrome, Firefox and Safari. Older engines must stay *correct* through a feature-detected fallback, but need not be frame-perfect."
@@ -175,13 +178,13 @@ State the rule reads is mirrored into attributes in the same render that changes
 | **B3 metrics publisher** | observe size/scroll of `el` (or of descendants matching `sel`); publish `--var = metric` (`gutter-inline/block`, `edge-distance t/b/s/e`, `border-box-block`); "commit before flag" (write, flush style, then set `data-sized`); rAF coalescing. | S14 (and the O3 fallback) |
 | **B5 reveal/settle** | target `sel` inside `container` (wait up to N frames to mount); align start/center/end/nearest; cover insets; optional `focus({preventScroll})`; scroll to a known position when unmounted; settle until stable for k frames or N max; cancel on wheel/touch/pointer/key; `scroll-step(by, smooth, suspend-snap-until-scrollend)`. | W3, W5, W7, C2 |
 
-**Expressiveness limits (I).** B works while a decision is a *fixed-arity predicate over local data*. It fails, and must stay a residue, where the decision is:
-- a stateful heuristic over a stream (the C5 trackpad-momentum classifier, W8's mode machine);
+**Expressiveness limits (I).** B works while a decision is a *fixed-arity predicate over local data*. It does not fit, and the logic goes to Rust instead (R, or G where a paint is at stake), where the decision is:
+- a stateful heuristic over a stream (the C5 trackpad-momentum classifier, W8's mode machine). Both are passive or paint-safe, so they can answer late (residue doc sections 2 and 3);
 - open-ended arithmetic whose form changes per component.
 
 The guard against vocabulary creep is that the DSL has no variables, loops or arithmetic expressions. Every predicate kind is a named enum variant with fixed parameters.
 
-**Keeping it closed (gate, section 6).** The Rust enum and the TS switch must agree one to one. Every variant needs a `bun test` unit and at least one Playwright spec that names it. A new variant needs a backlog row (reasoned allowlist). No `preventDefault`, rAF loop or Resize/Mutation/IntersectionObserver may appear in `.ts` outside `ts/rules/` and the listed residue.
+**Keeping it closed (gate, section 5.3).** The Rust enum and the TS switch must agree one to one. Every variant needs a `bun test` unit and at least one Playwright spec that names it. A new variant needs a backlog row (reasoned allowlist). No `preventDefault`, rAF loop or Resize/Mutation/IntersectionObserver may appear in `.ts` outside `ts/bridge.ts` and `ts/rules/` (the residue allowlist starts empty).
 
 ### 2.3 (G) Paint-safe gate: turn "same frame" into "bounded latency"
 
@@ -208,9 +211,9 @@ Same-frame is *sufficient* but not *necessary*. What is necessary is that **no f
   3. Strict-CSP apps need `wasm-unsafe-eval`.
   4. Every input still has to be extracted by JS glue.
 
-  **Verdict:** not now. It is the only route to "C5 logic in Rust *and* frame-exact on desktop", so it is kept as the exit for the residue.
+  **Verdict:** not now. It is the only route to "C5 logic in Rust *and* frame-exact on desktop", so it is kept as C5's exit, taken only if the desktop measurement in residue doc section 3.5 fails.
 - **C3, worklets and workers.** AnimationWorklet and the Layout API have not shipped. A paint worklet is Chromium-only and cannot cancel events. Workers have no DOM. Rejected.
-- **C4, "the bridge is microtask-synchronous on web" (V components, I end to end).** True today for UA-dispatched events and rendering-step callbacks. **Not a construction:** it fails on desktop/mobile and for script-dispatched events, and it would break if dioxus-web re-enabled its idle/rAF scheduling (the TODO at `lib.rs:250-262`). Its one use is to explain why G costs nothing on web, and why a Chromium-only CI cannot reveal desktop latency bugs (section 7.3).
+- **C4, "the bridge is microtask-synchronous on web" (V components, I end to end).** True today for UA-dispatched events and rendering-step callbacks. **Not a construction:** it fails on desktop/mobile and for script-dispatched events, and it would break if dioxus-web re-enabled its idle/rAF scheduling (the TODO at `lib.rs:250-262`). Its one use is to explain why G costs nothing on web, and why a Chromium-only CI cannot reveal desktop latency bugs (section 5.6).
 
 ---
 
@@ -234,12 +237,12 @@ Locations re-verified on `d10d34b5`. Drift from the audit is noted. "Falsify" is
 | W3 | `virtual/scroll_to.rs:190` | 58 | **B5** (+A) | `scroll-padding` on the container for the pinned covers (A, Baseline high) lets the first `scrollIntoView` land clear of headers. The settle loop stays as B5, because content-visibility chunks change height after render. **Falsify:** `overflow-anchor` would hold the item only if the browser picked it as the anchor node, which is not guaranteed and is Safari 27 only. `scrollIntoView` scrolls ancestors too: B5's first step is optional per caller. | High | `virtual-scroll-to`, `virtual-grid-pinning` |
 | W5 | `virtual/find.rs:135` | 26 | **B5** | The same settle verb, with a takeover token and cancel on input. | Medium | `virtual-list-find` |
 | W7 | `virtual_grid.rs:2087` | 38 | **B5** (+A) | Wait-for-mount, scroll to a known position when unmounted, `focus({preventScroll})`, nearest alignment against covers. **Falsify:** a plain `focus()` would honour `scroll-padding`, but it can also scroll the page (the measured problem of lane 2B / L20). Keep `preventScroll` in B5. | High (keyboard grid) | `virtual-grid.spec`, `virtual-grid-pinning`, `data_table.spec` |
-| W8 | `message_scroller.rs:148` (+ `message_scroller.js`, 1,065 lines) | 1,065 | **Residue** (A later) | Every listener is passive (V), so there is no class-(1) work. Its sync work is scroll anchoring: correct `scrollTop` in the same frame as a ResizeObserver change (prepend preservation, follow-bottom). That is a continuous loop, and the mode machine is a stateful heuristic (B limit). A: `overflow-anchor` reached Baseline low on 2026-09-14 (Safari 27). When the policy admits it, anchoring can move to CSS and the mode machine to Rust (R). Until then, type it as TS (audit lane 3D). | High | `message_scroller`, `message-scroller-api`, `message-scroller-timing`, `chat-*` |
-| C1 | `carousel/js_macros.rs:21,67` (audit 30) | 65 | **Residue** (shrinks) | Helper text spliced into C3, C4 and C5. `dxIsTrueEnd` moves to Rust with C3 (R). It stays inside C5, which remains a residue. `dxTrace` stays debug-only. | Low | `carousel-edge-*` |
+| W8 | `message_scroller.rs:148` (+ `message_scroller.js`, 1,065 lines) | 1,065 | **A + R** (+B5, G) | Every listener is passive (V), so there is no class-(1) work. Its sync work is scroll anchoring: correct `scrollTop` in the same frame as a ResizeObserver change (prepend preservation, follow-bottom). A: `overflow-anchor` is Baseline low since 2026-09-14 (Safari 27), so it qualifies under the section 2.1 policy now. Follow-bottom becomes native anchoring on a 1 px end sentinel (rows `overflow-anchor: none` while following). Prepend preservation becomes native anchoring on the rows. The anchored-turn spacer becomes a CSS `min-height` from a Rust-set variable. Jumps use B5, and the opening position uses G. The mode machine moves to Rust (R). Fallback without anchoring: Rust `onresize` plus `MountedData::scroll`, frame-exact on web (residue doc section 2). | High | `message_scroller`, `message-scroller-api`, `message-scroller-timing`, `chat-*` |
+| C1 | `carousel/js_macros.rs:21,67` (audit 30) | 65 | **R** (dissolves) | Helper text spliced into C2, C3, C4 and C5 (V). `dxIsTrueEnd` becomes a Rust-published `data-dx-true-end-min/max` pair that Rust itself reads for C3/C5. `dxTrace` becomes Rust tracing, plus the debug `window` records the specs read, written through the bridge. Once its four users have moved, `js_macros.rs` and its SSR test (`ssr_tests.rs:412`) go (residue doc section 4). | Low | `carousel-edge-*` |
 | C2 | `carousel/scroll.rs:77` | 114 | **B5** (`scroll-step`) | A command from Rust: `scrollBy(delta)` with snap suspended until `scrollend` or a timeout, `prefers-reduced-motion`. No commit path. **Falsify:** A via `scrollIntoView` on the target slide breaks `carousel-paging-inert` (it scrolls the page when the carousel is partly off-screen), so A is rejected. The procedure is generic enough for B5. | High | `carousel.spec`, `carousel-paging-inert`, `carousel-wheel-replay` |
 | C3 | `carousel/scroll.rs:230` | 411 | **R** | Its own doc: "One read … followed by nothing but a `dioxus.send` -- no DOM write at all" (`:225-229`). The idle gate, settle and pin decision are logic over passive events, so they move to Rust. The bridge supplies `listen` (scroll, scrollend, wheel, touch; coalesced per rAF) and a per-frame `sample` verb for the pin tick. The `__dxWhenIdle` handoff with C2 disappears, because Rust orders its own writes. **Falsify:** desktop IPC volume while scrolling, which the bridge coalesces per frame. Pin re-centring decided a frame late on desktop delays a settle but paints nothing wrong (I). | High | `carousel*.spec`, `carousel-wheel-replay`, `carousel-virtual-wheel` |
 | C4 | `carousel/drag.rs:99` | 545 | **B2** (+R) | Mouse/pen only, threshold, cancel committed `pointermove`, capture-phase click suppression, pointer capture, `scrollBy` output with snap suspended, rubber resistance at the true end. Spring-back becomes a CSS transition with a `linear()` spring (A). The release settle target moves to Rust (R). **Falsify:** the rAF spring was tuned on real hardware, and a CSS `linear()` approximation may feel different. If `carousel-edge-overdrag` or a hand check fails, the band physics stay a small residue inside B2's "resistance" variant. | High (feel) | `carousel-edge-overdrag`, `carousel-drag-free`, `carousel.spec` |
-| C5 | `carousel/wheel.rs:110` | 477 | **Residue** | Passive (V): **no class-(1) work at all.** A per-gesture ownership decision plus a trackpad-momentum release classifier (smooth decay, notch detection, re-push, six release rules). That is a stateful heuristic over a stream (B limit), with no platform equivalent. Its logic *could* be Rust (R): on web it would be frame-exact through microtasks, and on desktop a frame or more late, which is semantically acceptable for a passive effect. Do that only after a desktop measurement, or via C2. | High | `carousel-edge-wheel`, `carousel-wheel-replay` |
+| C5 | `carousel/wheel.rs:110` | 477 | **R** (exit C2) | Passive (V): **no class-(1) work at all.** A per-gesture ownership decision plus a trackpad-momentum release classifier (smooth decay, notch detection, re-push, six release rules). That is a stateful heuristic over a stream (B limit), with no platform equivalent, so it becomes a pure Rust state machine (`carousel/wheel_band.rs`). Input: a *batched* per-frame `sample` with every wheel event and its own timestamp (not coalesced, because the notch and decay rules compare consecutive events). Output: one CSS variable per frame, with the spring home as a CSS transition. `cargo test` replays `playwright/fixtures/carousel-wheel-recordings.json` against outputs captured once from today's JS. On web it is frame-exact through microtasks. On desktop it is up to a round trip late, which is lag, never a wrong decision. Exit: C2 if a desktop measurement shows more than one extra frame of lag at p95 (residue doc section 3). | High | `carousel-edge-wheel`, `carousel-wheel-replay` |
 | V11 | `preview/src/eager_head.rs:86,102,113` | 12 | **R** | A `Document` impl that inserts head elements through eval instead of `queue_effect`. This is ordering, not a commit decision. It becomes a bridge `head.insert` verb (or stays the trait default eval). | Medium | `oracle/tier2-html/global-stylesheet`, `stylesheets-present`, `first-paint-styles` |
 | V19 | `preview/src/components/questionnaire/component.rs:66` | 36 | **G** (Rust) | Rust knows when the item swaps. Read the old height (sync on web), then in one render pin `height: old` and swap. Force a style read (`get_client_rect` of an inner wrapper gives the new natural height and commits the pin as its own style change). Then render `height: new`, and the CSS transition runs. **Falsify:** on desktop the pin and the new height can land in one frame: use the bridge `commit` verb between them. A via `interpolate-size` is Chrome-only. View transitions (Baseline low 2025-10) would animate a snapshot cross-fade, which looks different and is rejected. | Medium | `questionnaire-height.spec.ts` |
 
@@ -267,14 +270,16 @@ Locations re-verified on `d10d34b5`. Drift from the audit is noted. "Falsify" is
 
 ## 4. What genuinely stays bespoke, and why
 
-| residue | lines | why no construction covers it within the policy | exit |
-|---|---:|---|---|
-| W8 message scroller | 1,065 | Same-frame scroll anchoring on resize (a continuous loop) plus a stateful mode machine (B limit). It is also an upstream port, and keeping it close to shadcn has its own value. | `overflow-anchor` is in all three engines since 2026-09-14. Once the policy admits it: anchoring to A, mode machine to R. |
-| C5 carousel wheel band | 477 | A trackpad-momentum classifier over a passive stream, tuned on hardware. No platform primitive. | R after a desktop latency measurement (it is passive, so lateness is a lag, not a wrong decision), or C2. |
-| C1 helper macros | 65 | Spliced into C5 (and into C3/C4 until those move). | Disappears with C5. |
-| (in (b)) L1's 250 ms cancel window | ~5 | A time-window predicate, used once. | `recent()` B1 predicate, if a second user appears. |
+**Revised 2026-10-26: nothing in class (d) stays bespoke.** An earlier version of this section kept W8, C5 and C1 as a residue. The re-attack is in [`sync-js-residue-2026-10-26.md`](./sync-js-residue-2026-10-26.md).
 
-Everything else in class (d) leaves bespoke JS. Class (c) (pre-wasm `PREPAINT_JS`, the modality writer, the inline copy buttons) is unaffected: it must run before wasm and is out of scope.
+| block | was | now | what it would take to be wrong (falsification) | exit if it is |
+|---|---|---|---|---|
+| W8 message scroller (1,065) | residue, "A later" | **A + R** (+B5, G): native `overflow-anchor` on an end sentinel and on the rows; mode machine, opening position and scroll intent in Rust; a Rust `onresize` fallback | Chromium or Safari 27 anchoring picks a wrong anchor or drifts under token-rate streaming (`message-scroller-timing`, `chat-*` at N=0 and N=2) | keep the sentinel, and let the Rust `onresize` path make the correction on every engine (frame-exact on web; on desktop the bridge's `commit` ordering) |
+| C5 carousel wheel band (477) | residue | **R**: a pure Rust classifier fed a batched per-frame event stream, output as one CSS variable | a desktop measurement shows more than one extra frame of lag at p95, a lost event, or replay divergence (residue doc section 3.5) | C2: the same crate compiled to page-side wasm, asynchronously compiled, called synchronously from the passive listener |
+| C1 helper macros (65) | residue, "shrinks" | **dissolves**: Rust-published `data-dx-true-end-min/max`, Rust tracing | none: it is text spliced into its four users (V) | — |
+| (in (b)) L1's 250 ms cancel window (~5) | tiny residue | unchanged | — | a `recent()` B1 predicate, if a second user appears |
+
+Everything in class (d) leaves bespoke JS. The JS left in the page is the bridge and the B interpreter. Class (c) (pre-wasm `PREPAINT_JS`, the modality writer, the inline copy buttons) is unaffected: it must run before wasm and is out of scope.
 
 ---
 
@@ -282,33 +287,34 @@ Everything else in class (d) leaves bespoke JS. Class (c) (pre-wasm `PREPAINT_JS
 
 ### 5.1 Layers (apply in this order per block)
 
-1. **R first, where the "sync" label is false.** The block only reads and reports, or runs a command: W1, C3, V11, plus the async (b) rows. Logic moves to Rust over the plain bridge verbs.
-2. **A where the platform decides, within the policy** (section 2.1): anchor positioning for T8/T11, `scroll-padding` for covers (W3/W7), scroll-driven fade depth (S14, already in place), `linear()` springs (C4).
+1. **R first, where the "sync" label is false.** The block only reads and reports, runs a command, or drives a passive effect that may answer late: W1, C3, V11, C5, C1, W8's mode machine, plus the async (b) rows. Logic moves to Rust over the plain bridge verbs.
+2. **A where the platform decides, within the policy** (section 2.1): anchor positioning for T8/T11, `overflow-anchor` scroll anchoring for W8, `scroll-padding` for covers (W3/W7), scroll-driven fade depth (S14, already in place), `linear()` springs (C4).
 3. **G for one-shot layout work:** a gate attribute plus Rust: T8's fallback and zone check, T9, T10, T11's fallback, S1, O3, V19. A new bridge `commit` verb (rAF plus forced style) supports the two-style-change orderings on desktop.
 4. **B for decisions at event or frame time and for continuous loops that fit a closed vocabulary:** B1 (S11 plus 10 (b) sites), B2 (L30, O5, C4, L21, V17), B3 (S14), B5 (W3, W5, W7, C2).
-5. **Residue:** W8, C5, C1, as typed TS modules through the existing bundle chain (the original step-3 plan, for these three only), each with its exit condition recorded.
+5. **No residue** (revised 2026-10-26). W8 is A + R (+B5, G), C5 is R with a measured exit to C2, and C1 dissolves (residue doc). The residue allowlist of the gate starts empty.
 
 **What this subsumes (I):**
-- 19 of 22 (d) blocks and 2,287 of 3,894 (d) lines.
+- All 22 (d) blocks and all 3,894 (d) lines (revised from 19 and 2,287).
 - All 13 class-(1) `preventDefault` sites, through B1/B2 (one implementation per predicate).
 - The geometry copies (the fixed probe pasted into `select/components/list.rs:102` and `scroll_clamp.rs:58`), which become one Rust helper.
 - The `__dxWhenIdle` / `__dxCancelSnapRestore` cross-eval expandos.
 - Most `listener-ok:` / `blocking-ok:` markers, because listeners live only in the interpreter.
 
-**What it does not subsume:** the three residue blocks; class (c); the desktop latency of G and R, which is bounded but unmeasured; the visual polish of C4's spring if `linear()` is not close enough.
+**What it does not subsume:** class (c); the desktop latency of G and R, which is bounded but unmeasured (C5's lag above all, which carries the C2 exit); the quality of Safari 27's new scroll anchoring for W8, which keeps the Rust `onresize` fallback as its exit; the visual polish of C4's spring if `linear()` is not close enough.
 
 ### 5.2 The bridge additions this needs (on top of row 434's listen/call/get/observe/match)
 
 - `transaction(ops[])`: several calls in one JS turn (T5, T7, L1, L16 ordering).
 - `commit()`: resolve after rAF plus a forced style flush (row-421 ordering on desktop).
 - `rules.install(el, rule)` / `rules.remove`: the B interpreter entry point. Rules can also be read from `data-dx-rule-*` attributes, for render-driven state.
-- `sample(el, fields, until)`: per-frame sampling while a condition holds (C3's pin tick), coalesced.
+- `sample(el, fields, until)`: per-frame sampling while a condition holds (C3's pin tick). It is coalesced or **batched** per field: C5 needs every wheel event of the frame with its own timestamp, because its notch and decay rules compare consecutive events (residue doc section 3.2).
+- `set(el, var, value)`: write a CSS variable on an element whose style Rust does not own (C5's band offset, W8's turn top).
 
 ### 5.3 The gate (`scripts/check-bridge-rules.sh`, new; and the row's planned `check-js-in-rust.sh`)
 
 1. The `Rule` enum in Rust (`primitives/src/bridge/rules.rs`) and the TS interpreter's discriminant switch (`primitives/src/ts/rules/*.ts`) list the same variants, with no default arm. The gate parses both.
 2. Every variant has a `bun test` case and is named by at least one Playwright spec (grep for a `rule:` tag).
-3. No `preventDefault`, `stopPropagation`, `requestAnimationFrame`, `ResizeObserver`, `MutationObserver` or `IntersectionObserver` in `primitives/src/**/*.ts` outside `ts/bridge.ts`, `ts/rules/` and the residue allowlist (`path<TAB>reason<TAB>row`, shrink-only, stale entries fail).
+3. No `preventDefault`, `stopPropagation`, `requestAnimationFrame`, `ResizeObserver`, `MutationObserver` or `IntersectionObserver` in `primitives/src/**/*.ts` outside `ts/bridge.ts`, `ts/rules/` and the residue allowlist (`path<TAB>reason<TAB>row`, shrink-only, stale entries fail). The allowlist starts empty. If the C5 JS path is kept behind a cfg until the desktop measurement, it is listed with its row and the measurement as its expiry.
 4. No such token in a Rust string at all: no JS in `.rs` except the class-(c) allowlist.
 5. A G-gated component must declare its gate attribute, and a first-frame spec must assert `opacity: 0` while the gate is pending.
 6. As CLAUDE.md requires, the new script goes into `run-gates.sh`'s list and into CLAUDE.md's gate sentence.
@@ -324,18 +330,20 @@ Everything else in class (d) leaves bespoke JS. Class (c) (pre-wasm `PREPAINT_JS
 | 2 | **3.GS gestures + toast** | L30, O5, O3, O1 (B1 reuse), L21, V17 | `ts/rules/pan.ts`, `ts/rules/publish.ts` (if the O3 fallback is needed), `bridge/rules.rs` (B2 region), `drawer.rs`, `toast.rs`, `pointer.rs`, photo-wall demo | `carousel/` | L | 10 |
 | 2 | **3.CM context menu A+G** | T11 (+ point-anchor element) | `context_menu.rs`, `top_layer/scroll_clamp.rs` | — | M | 4 |
 | 2 | **3.SF scroll fade** | S14 | `scroll_area.rs`, `ts/rules/publish.ts` (owned here if 3.GS does not need it; otherwise sequence after it) | — | S | 3 |
-| 3 | **3.CA carousel** | C2 (B5), C3 (R), C4 (B2 + R); C5 + C1 as a typed residue module | `carousel/*` | everything else | L | 12 |
-| 3 | **3.MS message scroller residue** | W8 to `.ts` (typed), exit recorded | `message_scroller.{rs,js→ts}` | — | M | 5 |
+| 3 | **3.CA carousel** | C2 (B5), C3 (R), C4 (B2 + R), and their C1 uses removed (`dxIsTrueEnd` to `data-dx-true-end-min/max`, `dxTrace` to Rust tracing) | `carousel/*` except the 3.WB files (`scroll.rs`, `drag.rs`, `root.rs`, `content.rs`, `virtual_content.rs`, `helpers.rs`, …) | `carousel/wheel.rs`, `carousel/wheel_band.rs` (3.WB), `js_macros.rs` | L | 13 |
+| 3 | **3.WB carousel wheel band** | C5 to a pure Rust classifier (`wheel_band.rs`), batched `sample` input, CSS-variable output, `cargo test` replay of the committed recordings, the desktop-measurement protocol written down | `carousel/wheel.rs`, `carousel/wheel_band.rs` (new), `playwright/fixtures/carousel-wheel-expected.json` (new) | the other `carousel/*` files (3.CA) | M | 10 |
+| 3 | **3.MS message scroller** | W8 to A + R (+B5, G): end sentinel and row anchoring in CSS, mode machine in Rust, `onresize` fallback; `message_scroller.js` deleted | `message_scroller.{rs,js}`, its `style.css` and component | — | L | 16 |
+| after 3 | **main loop** | delete `carousel/js_macros.rs`, rewrite `ssr_tests.rs:412` | those two files | — | S | 1 |
 
 The `bridge/rules.rs` enum is shared. Lanes append in separate marked regions (B1 / B2 / B5 / B3), and the main loop merges them. If that proves uncomfortable, 3.B1 creates the file with all four region headers first.
 
-**Total ≈ 64 agent-hours** (the audit's step 3 was ≈ 66), with a residue of 3 modules instead of 22 (I).
+**Total ≈ 86 agent-hours** (revised from ≈ 64; the audit's step 3 was ≈ 66), with **no residue module** instead of 22 (I). The extra 22 h buy W8 and C5 in Rust instead of typed TS.
 
 ### 5.5 Risks (in order)
 
 1. **Desktop/mobile are unmeasured and not in CI** (no gtk/webkit2gtk here). G latency, R event volume and B interpreter behaviour on WebView2/WKWebView/WebKitGTK are all inferred. Mitigation: the slow-channel harness (5.6) plus one manual desktop pass per batch on a machine with a webview.
 2. **Placement (3.PL)** is visible on every open. A-only must be proven against the existing geometry sweeps, the fallback under `stripAnchorSupportsBlock`, and the gate under a first-frame check. Focus into an `opacity:0` panel must keep `touch-open-focus`/`modal-initial-focus` green.
-3. **B vocabulary creep:** any request for "one more predicate" goes through a backlog row. If a predicate needs arithmetic, it is a residue, not a B variant.
+3. **B vocabulary creep:** any request for "one more predicate" goes through a backlog row. If a predicate needs arithmetic or state over a stream, the logic goes to Rust (R, or G where a paint is at stake), not into a B variant.
 4. **Gesture feel (B2, C4's spring):** hand checks on a trackpad and touch device, not only specs.
 5. **Row 421 ordering on desktop (O3, V19):** depends on the `commit` verb. If it misbehaves, O3 falls back to B3.
 6. **WebKitGTK anchor-positioning support** is unknown, so the G fallback cannot be dropped for Linux desktop until a probe confirms it.
