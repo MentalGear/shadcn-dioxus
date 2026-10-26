@@ -18,15 +18,7 @@ pub fn ContextMenu(props: ContextMenuProps) -> Element {
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/context_menu/style.css") }
         context_menu::ContextMenu {
-            modal: props.modal,
-            dir: props.dir,
-            disabled: props.disabled,
-            open: props.open,
-            default_open: props.default_open,
-            on_open_change: props.on_open_change,
-            roving_loop: props.roving_loop,
-            attributes: props.attributes,
-            {props.children}
+            ..props
         }
     }
 }
@@ -56,10 +48,13 @@ pub fn ContextMenuContent(props: ContextMenuContentProps) -> Element {
         class: "dx-context-menu-content",
         "data-dx-surface": "floating",
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/context_menu/style.css") }
-        context_menu::ContextMenuContent { id: props.id, attributes: merged, {props.children} }
+        context_menu::ContextMenuContent {
+            attributes: merged,
+            ..props
+        }
     }
 }
 
@@ -69,19 +64,12 @@ pub fn ContextMenuItem(props: ContextMenuItemProps) -> Element {
         class: "dx-context-menu-item",
         "data-dx-menu-item": "true",
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/context_menu/style.css") }
         context_menu::ContextMenuItem {
-            variant: props.variant,
-            inset: props.inset,
-            disabled: props.disabled,
-            value: props.value,
-            index: props.index,
-            text_value: props.text_value,
-            on_select: props.on_select,
             attributes: merged,
-            {props.children}
+            ..props
         }
     }
 }
@@ -94,12 +82,7 @@ pub fn ContextMenuSub(props: ContextMenuSubProps) -> Element {
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/context_menu/style.css") }
         context_menu::ContextMenuSub {
-            open: props.open,
-            default_open: props.default_open,
-            on_open_change: props.on_open_change,
-            roving_loop: props.roving_loop,
-            open_on_hover: props.open_on_hover,
-            {props.children}
+            ..props
         }
     }
 }
@@ -120,17 +103,14 @@ pub fn ContextMenuSubTrigger(props: ContextMenuSubTriggerProps) -> Element {
         class: "dx-context-menu-item dx-context-menu-sub-trigger",
         "data-dx-menu-item": "true",
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
+    let children = props.children.clone();
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/context_menu/style.css") }
         context_menu::ContextMenuSubTrigger {
-            inset: props.inset,
-            index: props.index,
-            id: props.id,
-            disabled: props.disabled,
-            text_value: props.text_value,
             attributes: merged,
-            {props.children}
+            ..props,
+            {children}
             ChevronRight {
                 class: "dx-context-menu-item-indicator dx-context-menu-sub-trigger-icon",
                 "data-dx-menu-item-indicator": "end",
@@ -150,10 +130,13 @@ pub fn ContextMenuSubContent(props: ContextMenuSubContentProps) -> Element {
         class: "dx-context-menu-content dx-context-menu-sub-content",
         "data-dx-surface": "floating",
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/context_menu/style.css") }
-        context_menu::ContextMenuSubContent { id: props.id, attributes: merged, {props.children} }
+        context_menu::ContextMenuSubContent {
+            attributes: merged,
+            ..props
+        }
     }
 }
 
@@ -165,19 +148,12 @@ pub fn ContextMenuSubItem(props: ContextMenuSubItemProps) -> Element {
         class: "dx-context-menu-item",
         "data-dx-menu-item": "true",
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/context_menu/style.css") }
         context_menu::ContextMenuSubItem {
-            variant: props.variant,
-            inset: props.inset,
-            disabled: props.disabled,
-            value: props.value,
-            index: props.index,
-            text_value: props.text_value,
-            on_select: props.on_select,
             attributes: merged,
-            {props.children}
+            ..props
         }
     }
 }
@@ -198,20 +174,14 @@ pub fn ContextMenuCheckboxItem(props: ContextMenuCheckboxItemProps) -> Element {
         class: "dx-context-menu-item dx-context-menu-checkable-item",
         "data-dx-menu-item": "true",
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
+    let children = props.children.clone();
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/context_menu/style.css") }
         context_menu::ContextMenuCheckboxItem {
-            inset: props.inset,
-            index: props.index,
-            checked: props.checked,
-            default_checked: props.default_checked,
-            on_checked_change: props.on_checked_change,
-            disabled: props.disabled,
-            text_value: props.text_value,
-            close_on_select: props.close_on_select,
             attributes: merged,
-            {props.children}
+            ..props,
+            {children}
             Check {
                 class: "dx-context-menu-item-indicator",
                 "data-dx-menu-item-indicator": "end",
@@ -226,15 +196,12 @@ pub fn ContextMenuCheckboxItem(props: ContextMenuCheckboxItemProps) -> Element {
 #[component]
 pub fn ContextMenuRadioGroup(props: ContextMenuRadioGroupProps) -> Element {
     let base = attributes!(div { class: "dx-context-menu-radio-group" });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/context_menu/style.css") }
         context_menu::ContextMenuRadioGroup {
-            value: props.value,
-            default_value: props.default_value,
-            on_value_change: props.on_value_change,
             attributes: merged,
-            {props.children}
+            ..props
         }
     }
 }
@@ -248,18 +215,14 @@ pub fn ContextMenuRadioItem(props: ContextMenuRadioItemProps) -> Element {
         class: "dx-context-menu-item dx-context-menu-checkable-item",
         "data-dx-menu-item": "true",
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
+    let children = props.children.clone();
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/context_menu/style.css") }
         context_menu::ContextMenuRadioItem {
-            inset: props.inset,
-            index: props.index,
-            value: props.value,
-            disabled: props.disabled,
-            text_value: props.text_value,
-            close_on_select: props.close_on_select,
             attributes: merged,
-            {props.children}
+            ..props,
+            {children}
             Check {
                 class: "dx-context-menu-item-indicator",
                 "data-dx-menu-item-indicator": "end",
@@ -305,10 +268,13 @@ pub fn ContextMenuGroup(props: ContextMenuGroupProps) -> Element {
     let base = attributes!(div {
         class: "dx-context-menu-group",
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/context_menu/style.css") }
-        context_menu::ContextMenuGroup { attributes: merged, {props.children} }
+        context_menu::ContextMenuGroup {
+            attributes: merged,
+            ..props
+        }
     }
 }
 
@@ -321,10 +287,13 @@ pub fn ContextMenuSeparator(props: ContextMenuSeparatorProps) -> Element {
         class: "dx-context-menu-separator",
         "data-dx-menu-separator": "true",
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/context_menu/style.css") }
-        context_menu::ContextMenuSeparator { attributes: merged }
+        context_menu::ContextMenuSeparator {
+            attributes: merged,
+            ..props
+        }
     }
 }
 
@@ -337,9 +306,12 @@ pub fn ContextMenuShortcut(props: ContextMenuShortcutProps) -> Element {
         class: "dx-context-menu-shortcut",
         "data-dx-menu-shortcut": "true",
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/context_menu/style.css") }
-        context_menu::ContextMenuShortcut { attributes: merged, {props.children} }
+        context_menu::ContextMenuShortcut {
+            attributes: merged,
+            ..props
+        }
     }
 }

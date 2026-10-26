@@ -7,17 +7,13 @@ pub fn Toolbar(props: ToolbarProps) -> Element {
     let base = attributes!(div {
         class: "dx-toolbar", "data-dx-root": "",
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/toolbar/style.css") }
         toolbar::Toolbar {
-            dir: props.dir,
-            aria_label: props.aria_label,
-            disabled: props.disabled,
-            horizontal: props.horizontal,
             attributes: merged,
-            {props.children}
+            ..props
         }
     }
 }
@@ -27,16 +23,13 @@ pub fn ToolbarButton(props: ToolbarButtonProps) -> Element {
     let base = attributes!(button {
         class: "dx-toolbar-button",
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/toolbar/style.css") }
         toolbar::ToolbarButton {
-            index: props.index,
-            disabled: props.disabled,
-            on_click: props.on_click,
             attributes: merged,
-            {props.children}
+            ..props
         }
     }
 }
@@ -46,14 +39,13 @@ pub fn ToolbarSeparator(props: ToolbarSeparatorProps) -> Element {
     let base = attributes!(div {
         class: "dx-toolbar-separator",
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/toolbar/style.css") }
         toolbar::ToolbarSeparator {
-            decorative: props.decorative,
-            horizontal: props.horizontal,
             attributes: merged,
+            ..props
         }
     }
 }

@@ -14,22 +14,12 @@ use dioxus_primitives::radio_group::{self, RadioGroupProps, RadioItemProps};
 #[component]
 pub fn RadioGroup(props: RadioGroupProps) -> Element {
     let base = attributes!(div { class: "dx-radio-group", "data-dx-root": "" });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/radio_group/style.css") }
         radio_group::RadioGroup {
-            dir: props.dir,
-            value: props.value,
-            default_value: props.default_value,
-            on_value_change: props.on_value_change,
-            disabled: props.disabled,
-            required: props.required,
-            name: props.name,
-            form: props.form,
-            horizontal: props.horizontal,
-            roving_loop: props.roving_loop,
             attributes: merged,
-            {props.children}
+            ..props
         }
     }
 }
@@ -44,7 +34,7 @@ pub fn RadioItem(props: RadioItemProps) -> Element {
     // button. Merges `class` the same way `../popover/component.rs`'s
     // `PopoverContent` does, for the same reason: a caller's own class
     // should extend, not replace, this theme's.
-    let class = if let Some(class) = props.class {
+    let class = if let Some(class) = props.class.clone() {
         format!("{} {}", "dx-radio-group-item", class)
     } else {
         "dx-radio-group-item".to_string()
@@ -53,13 +43,8 @@ pub fn RadioItem(props: RadioItemProps) -> Element {
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/radio_group/style.css") }
         radio_group::RadioItem {
-            id: props.id,
-            class,
-            value: props.value,
-            index: props.index,
-            disabled: props.disabled,
-            attributes: props.attributes,
-            {props.children}
+            class: Some(class),
+            ..props
         }
     }
 }

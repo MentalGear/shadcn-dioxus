@@ -11,21 +11,12 @@ pub fn VirtualList(props: VirtualListProps) -> Element {
     let base = attributes!(div {
         class: "dx-virtual-list-container"
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
 
     rsx! {
         dioxus_primitives::virtual_list::VirtualList {
-            count: props.count,
-            buffer: props.buffer,
-            estimate_size: props.estimate_size,
-            render_item: props.render_item,
-            item_key: props.item_key,
-            virtualize: props.virtualize,
-            auto_threshold: props.auto_threshold,
-            fade: props.fade,
-            text_value: props.text_value,
-            scroller: props.scroller,
             attributes: merged,
+            ..props
         }
     }
 }

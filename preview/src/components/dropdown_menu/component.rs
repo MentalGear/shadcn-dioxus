@@ -23,15 +23,8 @@ pub fn DropdownMenu(props: DropdownMenuProps) -> Element {
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/dropdown_menu/style.css") }
         dropdown_menu::DropdownMenu {
-            modal: props.modal,
-            dir: props.dir,
-            open: props.open,
-            default_open: props.default_open,
-            on_open_change: props.on_open_change,
-            disabled: props.disabled,
-            roving_loop: props.roving_loop,
             attributes: merged,
-            {props.children}
+            ..props
         }
     }
 }
@@ -41,11 +34,14 @@ pub fn DropdownMenuTrigger(props: DropdownMenuTriggerProps) -> Element {
     let base = attributes!(button {
         class: "dx-dropdown-menu-trigger",
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/dropdown_menu/style.css") }
-        dropdown_menu::DropdownMenuTrigger { id: props.id, as: props.r#as, attributes: merged, {props.children} }
+        dropdown_menu::DropdownMenuTrigger {
+            attributes: merged,
+            ..props
+        }
     }
 }
 
@@ -60,12 +56,8 @@ pub fn DropdownMenuContent(props: DropdownMenuContentProps) -> Element {
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/dropdown_menu/style.css") }
         dropdown_menu::DropdownMenuContent {
-            id: props.id,
-            side: props.side,
-            align: props.align,
-            side_offset: props.side_offset,
             attributes: merged,
-            {props.children}
+            ..props
         }
     }
 }
@@ -83,15 +75,8 @@ pub fn DropdownMenuItem<T: Clone + PartialEq + 'static>(
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/dropdown_menu/style.css") }
         dropdown_menu::DropdownMenuItem {
-            variant: props.variant,
-            inset: props.inset,
-            disabled: props.disabled,
-            value: props.value,
-            index: props.index,
-            text_value: props.text_value,
-            on_select: props.on_select,
             attributes: merged,
-            {props.children}
+            ..props
         }
     }
 }
@@ -107,12 +92,7 @@ pub fn DropdownMenuSub(props: DropdownMenuSubProps) -> Element {
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/dropdown_menu/style.css") }
         dropdown_menu::DropdownMenuSub {
-            open: props.open,
-            default_open: props.default_open,
-            on_open_change: props.on_open_change,
-            roving_loop: props.roving_loop,
-            open_on_hover: props.open_on_hover,
-            {props.children}
+            ..props
         }
     }
 }
@@ -135,18 +115,15 @@ pub fn DropdownMenuSubTrigger(props: DropdownMenuSubTriggerProps) -> Element {
         class: "dx-dropdown-menu-item dx-dropdown-menu-sub-trigger",
         "data-dx-menu-item": "true",
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
 
+    let children = props.children.clone();
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/dropdown_menu/style.css") }
         dropdown_menu::DropdownMenuSubTrigger {
-            inset: props.inset,
-            index: props.index,
-            id: props.id,
-            disabled: props.disabled,
-            text_value: props.text_value,
             attributes: merged,
-            {props.children}
+            ..props,
+            {children}
             ChevronRight {
                 class: "dx-dropdown-menu-item-indicator dx-dropdown-menu-sub-trigger-icon",
                 "data-dx-menu-item-indicator": "end",
@@ -167,11 +144,14 @@ pub fn DropdownMenuSubContent(props: DropdownMenuSubContentProps) -> Element {
         class: "dx-dropdown-menu-content dx-dropdown-menu-sub-content",
         "data-dx-surface": "floating",
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/dropdown_menu/style.css") }
-        dropdown_menu::DropdownMenuSubContent { id: props.id, attributes: merged, {props.children} }
+        dropdown_menu::DropdownMenuSubContent {
+            attributes: merged,
+            ..props
+        }
     }
 }
 
@@ -191,15 +171,8 @@ pub fn DropdownMenuSubItem<T: Clone + PartialEq + 'static>(
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/dropdown_menu/style.css") }
         dropdown_menu::DropdownMenuSubItem {
-            variant: props.variant,
-            inset: props.inset,
-            disabled: props.disabled,
-            value: props.value,
-            index: props.index,
-            text_value: props.text_value,
-            on_select: props.on_select,
             attributes: merged,
-            {props.children}
+            ..props
         }
     }
 }
@@ -220,21 +193,15 @@ pub fn DropdownMenuCheckboxItem(props: DropdownMenuCheckboxItemProps) -> Element
         class: "dx-dropdown-menu-item dx-dropdown-menu-checkable-item",
         "data-dx-menu-item": "true",
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
 
+    let children = props.children.clone();
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/dropdown_menu/style.css") }
         dropdown_menu::DropdownMenuCheckboxItem {
-            inset: props.inset,
-            index: props.index,
-            checked: props.checked,
-            default_checked: props.default_checked,
-            on_checked_change: props.on_checked_change,
-            disabled: props.disabled,
-            text_value: props.text_value,
-            close_on_select: props.close_on_select,
             attributes: merged,
-            {props.children}
+            ..props,
+            {children}
             Check {
                 class: "dx-dropdown-menu-item-indicator",
                 "data-dx-menu-item-indicator": "end",
@@ -251,16 +218,13 @@ pub fn DropdownMenuRadioGroup(props: DropdownMenuRadioGroupProps) -> Element {
     let base = attributes!(div {
         class: "dx-dropdown-menu-radio-group",
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/dropdown_menu/style.css") }
         dropdown_menu::DropdownMenuRadioGroup {
-            value: props.value,
-            default_value: props.default_value,
-            on_value_change: props.on_value_change,
             attributes: merged,
-            {props.children}
+            ..props
         }
     }
 }
@@ -275,19 +239,15 @@ pub fn DropdownMenuRadioItem(props: DropdownMenuRadioItemProps) -> Element {
         class: "dx-dropdown-menu-item dx-dropdown-menu-checkable-item",
         "data-dx-menu-item": "true",
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
 
+    let children = props.children.clone();
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/dropdown_menu/style.css") }
         dropdown_menu::DropdownMenuRadioItem {
-            inset: props.inset,
-            index: props.index,
-            value: props.value,
-            disabled: props.disabled,
-            text_value: props.text_value,
-            close_on_select: props.close_on_select,
             attributes: merged,
-            {props.children}
+            ..props,
+            {children}
             Check {
                 class: "dx-dropdown-menu-item-indicator",
                 "data-dx-menu-item-indicator": "end",
@@ -334,10 +294,13 @@ pub fn DropdownMenuGroup(props: DropdownMenuGroupProps) -> Element {
     let base = attributes!(div {
         class: "dx-dropdown-menu-group",
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/dropdown_menu/style.css") }
-        dropdown_menu::DropdownMenuGroup { attributes: merged, {props.children} }
+        dropdown_menu::DropdownMenuGroup {
+            attributes: merged,
+            ..props
+        }
     }
 }
 
@@ -350,10 +313,13 @@ pub fn DropdownMenuSeparator(props: DropdownMenuSeparatorProps) -> Element {
         class: "dx-dropdown-menu-separator",
         "data-dx-menu-separator": "true",
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/dropdown_menu/style.css") }
-        dropdown_menu::DropdownMenuSeparator { attributes: merged }
+        dropdown_menu::DropdownMenuSeparator {
+            attributes: merged,
+            ..props
+        }
     }
 }
 
@@ -366,9 +332,12 @@ pub fn DropdownMenuShortcut(props: DropdownMenuShortcutProps) -> Element {
         class: "dx-dropdown-menu-shortcut",
         "data-dx-menu-shortcut": "true",
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/dropdown_menu/style.css") }
-        dropdown_menu::DropdownMenuShortcut { attributes: merged, {props.children} }
+        dropdown_menu::DropdownMenuShortcut {
+            attributes: merged,
+            ..props
+        }
     }
 }

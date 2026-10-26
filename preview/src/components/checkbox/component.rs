@@ -22,19 +22,12 @@ use dioxus_primitives::merge_attributes;
 #[component]
 pub fn Checkbox(props: CheckboxProps) -> Element {
     let base = attributes!(input { class: "dx-checkbox", "data-dx-root": "" });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/checkbox/style.css") }
         checkbox::Checkbox {
-            checked: props.checked,
-            default_checked: props.default_checked,
-            required: props.required,
-            disabled: props.disabled,
-            name: props.name,
-            form: props.form,
-            value: props.value,
-            on_checked_change: props.on_checked_change,
             attributes: merged,
+            ..props,
             checkbox::CheckboxIndicator { class: "dx-checkbox-indicator",
                 // The primitive mounts these for checked AND indeterminate; CSS shows the
                 // glyph that matches the indicator's `data-state` (never both).

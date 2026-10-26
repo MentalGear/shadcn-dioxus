@@ -9,19 +9,13 @@ pub fn PopoverRoot(props: PopoverRootProps) -> Element {
     let base = attributes!(div {
         class: "dx-popover", "data-dx-root": ""
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/popover/style.css") }
         popover::PopoverRoot {
-            id: props.id,
-            is_modal: props.is_modal,
-            overlay: props.overlay,
-            open: props.open,
-            default_open: props.default_open,
-            on_open_change: props.on_open_change,
             attributes: merged,
-            {props.children}
+            ..props
         }
     }
 }
@@ -31,11 +25,14 @@ pub fn PopoverTrigger(props: PopoverTriggerProps) -> Element {
     let base = attributes!(button {
         class: "dx-popover-trigger"
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/popover/style.css") }
-        popover::PopoverTrigger { attributes: merged, {props.children} }
+        popover::PopoverTrigger {
+            attributes: merged,
+            ..props
+        }
     }
 }
 

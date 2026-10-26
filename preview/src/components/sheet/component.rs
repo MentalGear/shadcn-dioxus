@@ -202,20 +202,26 @@ pub fn SheetFooter(
 #[component]
 pub fn SheetTitle(props: DialogTitleProps) -> Element {
     let base = attributes!(div { class: "dx-sheet-title", "data-slot": "sheet-title" });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/sheet/style.css") }
-        dialog::DialogTitle { id: props.id, attributes: merged, {props.children} }
+        dialog::DialogTitle {
+            attributes: merged,
+            ..props
+        }
     }
 }
 
 #[component]
 pub fn SheetDescription(props: DialogDescriptionProps) -> Element {
     let base = attributes!(div { class: "dx-sheet-description", "data-slot": "sheet-description" });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/sheet/style.css") }
-        dialog::DialogDescription { id: props.id, attributes: merged, {props.children} }
+        dialog::DialogDescription {
+            attributes: merged,
+            ..props
+        }
     }
 }
 

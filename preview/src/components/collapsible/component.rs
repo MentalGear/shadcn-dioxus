@@ -11,15 +11,7 @@ pub fn Collapsible(props: CollapsibleProps) -> Element {
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/collapsible/style.css") }
         collapsible::Collapsible {
-            keep_mounted: props.keep_mounted,
-            hidden_until_found: props.hidden_until_found,
-            default_open: props.default_open,
-            disabled: props.disabled,
-            open: props.open,
-            on_open_change: props.on_open_change,
-            as: props.r#as,
-            attributes: props.attributes,
-            {props.children}
+            ..props
         }
     }
 }
@@ -29,14 +21,17 @@ pub fn CollapsibleTrigger(props: CollapsibleTriggerProps) -> Element {
     let base = attributes!(button {
         class: "dx-collapsible-trigger",
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
 
     let show_icon = props.r#as.is_none();
 
+    let children = props.children.clone();
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/collapsible/style.css") }
-        collapsible::CollapsibleTrigger { as: props.r#as, attributes: merged,
-            {props.children}
+        collapsible::CollapsibleTrigger {
+            attributes: merged,
+            ..props,
+            {children}
             if show_icon {
                 ChevronsUpDown {
                     size: "1rem",
@@ -50,10 +45,13 @@ pub fn CollapsibleTrigger(props: CollapsibleTriggerProps) -> Element {
 #[component]
 pub fn CollapsibleContent(props: CollapsibleContentProps) -> Element {
     let base = attributes!(div { class: "dx-collapsible-content" });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/collapsible/style.css") }
-        collapsible::CollapsibleContent { id: props.id, attributes: merged, {props.children} }
+        collapsible::CollapsibleContent {
+            attributes: merged,
+            ..props
+        }
     }
 }
 

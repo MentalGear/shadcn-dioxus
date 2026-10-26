@@ -141,11 +141,14 @@ pub fn TabList(props: TabListProps) -> Element {
     let base = attributes!(div {
         class: "dx-tabs-list"
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/tabs/style.css") }
-        tabs::TabList { attributes: merged, {props.children} }
+        tabs::TabList {
+            attributes: merged,
+            ..props
+        }
     }
 }
 
@@ -155,21 +158,17 @@ pub fn TabTrigger(props: TabTriggerProps) -> Element {
         class: format!(
             "{} {}",
             "dx-tabs-trigger",
-            props.class.unwrap_or_default()
+            props.class.clone().unwrap_or_default()
         )
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/tabs/style.css") }
         tabs::TabTrigger {
             class: None,
-            id: props.id,
-            value: props.value,
-            index: props.index,
-            disabled: props.disabled,
             attributes: merged,
-            {props.children}
+            ..props
         }
     }
 }
@@ -179,21 +178,19 @@ pub fn TabContent(props: TabContentProps) -> Element {
     let base = attributes!(div {
         class: format!(
             "{} {} {}",
-            props.class.unwrap_or_default(),
+            props.class.clone().unwrap_or_default(),
             "dx-tabs-content",
             "dx-tabs-content-themed"
         )
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/tabs/style.css") }
         tabs::TabContent {
             class: None,
-            value: props.value,
-            id: props.id,
             attributes: merged,
-            {props.children}
+            ..props
         }
     }
 }

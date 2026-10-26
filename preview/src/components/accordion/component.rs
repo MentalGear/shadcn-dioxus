@@ -10,22 +10,12 @@ use dioxus_primitives::merge_attributes;
 #[component]
 pub fn Accordion(props: AccordionProps) -> Element {
     let base = attributes!(div { class: "dx-accordion", "data-dx-root": "", width: "15rem" });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/accordion/style.css") }
         accordion::Accordion {
-            id: props.id,
-            allow_multiple_open: props.allow_multiple_open,
-            disabled: props.disabled,
-            collapsible: props.collapsible,
-            horizontal: props.horizontal,
-            hidden_until_found: props.hidden_until_found,
-            chevron: props.chevron,
-            default_value: props.default_value,
-            value: props.value,
-            on_value_change: props.on_value_change,
             attributes: merged,
-            {props.children}
+            ..props
         }
     }
 }
@@ -33,17 +23,12 @@ pub fn Accordion(props: AccordionProps) -> Element {
 #[component]
 pub fn AccordionItem(props: AccordionItemProps) -> Element {
     let base = attributes!(div { class: "dx-accordion-item" });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/accordion/style.css") }
         accordion::AccordionItem {
-            value: props.value,
-            disabled: props.disabled,
-            default_open: props.default_open,
-            on_change: props.on_change,
-            on_trigger_click: props.on_trigger_click,
             attributes: merged,
-            {props.children}
+            ..props
         }
     }
 }
@@ -51,13 +36,14 @@ pub fn AccordionItem(props: AccordionItemProps) -> Element {
 #[component]
 pub fn AccordionTrigger(props: AccordionTriggerProps) -> Element {
     let base = attributes!(button { class: "dx-accordion-trigger" });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
+    let children = props.children.clone();
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/accordion/style.css") }
         accordion::AccordionTrigger {
-            id: props.id,
             attributes: merged,
-            {props.children}
+            ..props,
+            {children}
             ChevronDown {
                 class: "dx-accordion-expand-icon",
                 size: "16px",
@@ -73,12 +59,13 @@ pub fn AccordionContent(props: AccordionContentProps) -> Element {
         class: "dx-accordion-content",
         style: "--collapsible-content-width: 140px",
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
+    let children = props.children.clone();
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/accordion/style.css") }
         accordion::AccordionContent {
-            id: props.id,
             attributes: merged,
+            ..props,
             // This inner wrapper is the direct (and only) child of the
             // animated grid container, so it is what `.dx-accordion-content
             // > *`'s `overflow: hidden; min-height: 0;` targets. It
@@ -93,7 +80,7 @@ pub fn AccordionContent(props: AccordionContentProps) -> Element {
             // entirely once the wrapper itself reaches 0. See the
             // close-animation root-cause comment in style.css.
             div { class: "dx-accordion-content-inner",
-                div { class: "dx-accordion-content-body", {props.children} }
+                div { class: "dx-accordion-content-body", {children} }
             }
         }
     }

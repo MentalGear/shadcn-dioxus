@@ -14,16 +14,12 @@ pub use dioxus_primitives::menu_item::MenuItemVariant;
 #[component]
 pub fn Menubar(props: MenubarProps) -> Element {
     let base = attributes!(div { class: "dx-menubar", "data-dx-root": "" });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/menubar/style.css") }
         menubar::Menubar {
-            dir: props.dir,
-            disabled: props.disabled,
-            roving_loop: props.roving_loop,
-            open_on_hover: props.open_on_hover,
             attributes: merged,
-            {props.children}
+            ..props
         }
     }
 }
@@ -31,14 +27,12 @@ pub fn Menubar(props: MenubarProps) -> Element {
 #[component]
 pub fn MenubarMenu(props: MenubarMenuProps) -> Element {
     let base = attributes!(div { class: "dx-menubar-menu" });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/menubar/style.css") }
         menubar::MenubarMenu {
-            index: props.index,
-            disabled: props.disabled,
             attributes: merged,
-            {props.children}
+            ..props
         }
     }
 }
@@ -46,10 +40,13 @@ pub fn MenubarMenu(props: MenubarMenuProps) -> Element {
 #[component]
 pub fn MenubarTrigger(props: MenubarTriggerProps) -> Element {
     let base = attributes!(button { class: "dx-menubar-trigger" });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/menubar/style.css") }
-        menubar::MenubarTrigger { id: props.id, attributes: merged, {props.children} }
+        menubar::MenubarTrigger {
+            attributes: merged,
+            ..props
+        }
     }
 }
 
@@ -59,10 +56,13 @@ pub fn MenubarContent(props: MenubarContentProps) -> Element {
         class: "dx-menubar-content",
         "data-dx-surface": "floating",
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/menubar/style.css") }
-        menubar::MenubarContent { id: props.id, attributes: merged, {props.children} }
+        menubar::MenubarContent {
+            attributes: merged,
+            ..props
+        }
     }
 }
 
@@ -72,19 +72,12 @@ pub fn MenubarItem(props: MenubarItemProps) -> Element {
         class: "dx-menubar-item",
         "data-dx-menu-item": "true",
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/menubar/style.css") }
         menubar::MenubarItem {
-            variant: props.variant,
-            inset: props.inset,
-            index: props.index,
-            value: props.value,
-            disabled: props.disabled,
-            text_value: props.text_value,
-            on_select: props.on_select,
             attributes: merged,
-            {props.children}
+            ..props
         }
     }
 }
@@ -106,20 +99,14 @@ pub fn MenubarCheckboxItem(props: MenubarCheckboxItemProps) -> Element {
         class: "dx-menubar-item dx-menubar-checkable-item",
         "data-dx-menu-item": "true",
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
+    let children = props.children.clone();
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/menubar/style.css") }
         menubar::MenubarCheckboxItem {
-            inset: props.inset,
-            index: props.index,
-            checked: props.checked,
-            default_checked: props.default_checked,
-            on_checked_change: props.on_checked_change,
-            disabled: props.disabled,
-            text_value: props.text_value,
-            close_on_select: props.close_on_select,
             attributes: merged,
-            {props.children}
+            ..props,
+            {children}
             Check {
                 class: "dx-menubar-item-indicator",
                 "data-dx-menu-item-indicator": "start",
@@ -134,15 +121,12 @@ pub fn MenubarCheckboxItem(props: MenubarCheckboxItemProps) -> Element {
 #[component]
 pub fn MenubarRadioGroup(props: MenubarRadioGroupProps) -> Element {
     let base = attributes!(div { class: "dx-menubar-radio-group" });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/menubar/style.css") }
         menubar::MenubarRadioGroup {
-            value: props.value,
-            default_value: props.default_value,
-            on_value_change: props.on_value_change,
             attributes: merged,
-            {props.children}
+            ..props
         }
     }
 }
@@ -156,18 +140,14 @@ pub fn MenubarRadioItem(props: MenubarRadioItemProps) -> Element {
         class: "dx-menubar-item dx-menubar-checkable-item",
         "data-dx-menu-item": "true",
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
+    let children = props.children.clone();
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/menubar/style.css") }
         menubar::MenubarRadioItem {
-            inset: props.inset,
-            index: props.index,
-            value: props.value,
-            disabled: props.disabled,
-            text_value: props.text_value,
-            close_on_select: props.close_on_select,
             attributes: merged,
-            {props.children}
+            ..props,
+            {children}
             Check {
                 class: "dx-menubar-item-indicator",
                 "data-dx-menu-item-indicator": "start",
@@ -213,10 +193,13 @@ pub fn MenubarGroup(props: MenubarGroupProps) -> Element {
     let base = attributes!(div {
         class: "dx-menubar-group",
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/menubar/style.css") }
-        menubar::MenubarGroup { attributes: merged, {props.children} }
+        menubar::MenubarGroup {
+            attributes: merged,
+            ..props
+        }
     }
 }
 
@@ -229,10 +212,13 @@ pub fn MenubarSeparator(props: MenubarSeparatorProps) -> Element {
         class: "dx-menubar-separator",
         "data-dx-menu-separator": "true",
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/menubar/style.css") }
-        menubar::MenubarSeparator { attributes: merged }
+        menubar::MenubarSeparator {
+            attributes: merged,
+            ..props
+        }
     }
 }
 
@@ -245,9 +231,12 @@ pub fn MenubarShortcut(props: MenubarShortcutProps) -> Element {
         class: "dx-menubar-shortcut",
         "data-dx-menu-shortcut": "true",
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/menubar/style.css") }
-        menubar::MenubarShortcut { attributes: merged, {props.children} }
+        menubar::MenubarShortcut {
+            attributes: merged,
+            ..props
+        }
     }
 }

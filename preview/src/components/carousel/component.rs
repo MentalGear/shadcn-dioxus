@@ -117,16 +117,13 @@ pub fn CarouselContent(props: CarouselContentProps) -> Element {
     let base = attributes!(div {
         class: "dx-carousel-content"
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/carousel/style.css") }
         carousel::CarouselContent {
-            gap: props.gap,
-            id: props.id,
-            draggable: props.draggable,
             attributes: merged,
-            {props.children}
+            ..props
         }
     }
 }
@@ -136,15 +133,13 @@ pub fn CarouselItem(props: CarouselItemProps) -> Element {
     let base = attributes!(div {
         class: "dx-carousel-item"
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/carousel/style.css") }
         carousel::CarouselItem {
-            index: props.index,
-            id: props.id,
             attributes: merged,
-            {props.children}
+            ..props
         }
     }
 }
@@ -156,18 +151,13 @@ pub fn CarouselVirtualContent<T: Clone + PartialEq + 'static>(
     let base = attributes!(div {
         class: "dx-carousel-content"
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/carousel/style.css") }
         carousel::CarouselVirtualContent::<T> {
-            id: props.id,
-            items: props.items,
-            render_item: props.render_item,
-            radius: props.radius,
-            virtualize: props.virtualize,
-            draggable: props.draggable,
             attributes: merged,
+            ..props
         }
     }
 }
@@ -177,11 +167,14 @@ pub fn CarouselPrevious(props: CarouselPreviousProps) -> Element {
     let base = attributes!(button {
         class: "dx-carousel-previous"
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/carousel/style.css") }
-        carousel::CarouselPrevious { attributes: merged, {props.children} }
+        carousel::CarouselPrevious {
+            attributes: merged,
+            ..props
+        }
     }
 }
 
@@ -190,11 +183,14 @@ pub fn CarouselNext(props: CarouselPreviousProps) -> Element {
     let base = attributes!(button {
         class: "dx-carousel-next"
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/carousel/style.css") }
-        carousel::CarouselNext { attributes: merged, {props.children} }
+        carousel::CarouselNext {
+            attributes: merged,
+            ..props
+        }
     }
 }
 
@@ -202,10 +198,7 @@ pub fn CarouselNext(props: CarouselPreviousProps) -> Element {
 pub fn CarouselAutoplay(props: CarouselAutoplayProps) -> Element {
     rsx! {
         carousel::CarouselAutoplay {
-            delay_ms: props.delay_ms,
-            stop_on_interaction: props.stop_on_interaction,
-            stop_on_mouse_enter: props.stop_on_mouse_enter,
-            default_playing: props.default_playing,
+            ..props
         }
     }
 }
@@ -215,11 +208,14 @@ pub fn CarouselRotationControl(props: CarouselRotationControlProps) -> Element {
     let base = attributes!(button {
         class: "dx-carousel-rotation-control"
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/carousel/style.css") }
-        carousel::CarouselRotationControl { attributes: merged, {props.children} }
+        carousel::CarouselRotationControl {
+            attributes: merged,
+            ..props
+        }
     }
 }
 
@@ -231,11 +227,14 @@ pub fn CarouselIndicators(props: CarouselIndicatorsProps) -> Element {
     let base = attributes!(div {
         class: "dx-carousel-indicators"
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/carousel/style.css") }
-        carousel::CarouselIndicators { attributes: merged, {props.children} }
+        carousel::CarouselIndicators {
+            attributes: merged,
+            ..props
+        }
     }
 }
 
@@ -245,10 +244,13 @@ pub fn CarouselIndicator(props: CarouselIndicatorProps) -> Element {
     let base = attributes!(button {
         class: "dx-carousel-indicator"
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/carousel/style.css") }
-        carousel::CarouselIndicator { index: props.index, attributes: merged, {props.children} }
+        carousel::CarouselIndicator {
+            attributes: merged,
+            ..props
+        }
     }
 }

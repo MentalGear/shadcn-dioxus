@@ -182,13 +182,13 @@ pub fn Command<T: Clone + PartialEq + 'static>(props: CommandProps<T>) -> Elemen
 #[component]
 pub fn CommandEmpty(props: CommandEmptyProps) -> Element {
     let base = attributes!(div { class: "dx-command-empty" });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/command/style.css") }
         command::CommandEmpty {
             attributes: merged,
-            {props.children}
+            ..props
         }
     }
 }
@@ -196,13 +196,12 @@ pub fn CommandEmpty(props: CommandEmptyProps) -> Element {
 #[component]
 pub fn CommandGroupLabel(props: CommandGroupLabelProps) -> Element {
     let base = attributes!(div { class: "dx-command-group-label" });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
 
     rsx! {
         command::CommandGroupLabel {
-            id: props.id,
             attributes: merged,
-            {props.children}
+            ..props
         }
     }
 }
@@ -210,19 +209,12 @@ pub fn CommandGroupLabel(props: CommandGroupLabelProps) -> Element {
 #[component]
 pub fn CommandItem<T: Clone + PartialEq + 'static>(props: CommandItemProps<T>) -> Element {
     let base = attributes!(div { class: "dx-command-item" });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
 
     rsx! {
         command::CommandItem::<T> {
-            value: props.value,
-            text_value: props.text_value,
-            disabled: props.disabled,
-            id: props.id,
-            index: props.index,
-            aria_label: props.aria_label,
-            shortcut: props.shortcut,
             attributes: merged,
-            {props.children}
+            ..props
         }
     }
 }

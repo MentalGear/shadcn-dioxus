@@ -153,10 +153,13 @@ pub fn AlertDialogTitle(props: AlertDialogTitleProps) -> Element {
     let base = attributes!(h2 {
         class: "dx-alert-dialog-title"
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/alert_dialog/style.css") }
-        alert_dialog::AlertDialogTitle { attributes: merged, {props.children} }
+        alert_dialog::AlertDialogTitle {
+            attributes: merged,
+            ..props
+        }
     }
 }
 
@@ -165,10 +168,13 @@ pub fn AlertDialogDescription(props: AlertDialogDescriptionProps) -> Element {
     let base = attributes!(p {
         class: "dx-alert-dialog-description"
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/alert_dialog/style.css") }
-        alert_dialog::AlertDialogDescription { attributes: merged, {props.children} }
+        alert_dialog::AlertDialogDescription {
+            attributes: merged,
+            ..props
+        }
     }
 }
 
@@ -177,10 +183,13 @@ pub fn AlertDialogActions(props: AlertDialogActionsProps) -> Element {
     let base = attributes!(div {
         class: "dx-alert-dialog-actions"
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/alert_dialog/style.css") }
-        alert_dialog::AlertDialogActions { attributes: merged, {props.children} }
+        alert_dialog::AlertDialogActions {
+            attributes: merged,
+            ..props
+        }
     }
 }
 
@@ -189,13 +198,12 @@ pub fn AlertDialogCancel(props: AlertDialogCancelProps) -> Element {
     let base = attributes!(button {
         class: "dx-alert-dialog-cancel"
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/alert_dialog/style.css") }
         alert_dialog::AlertDialogCancel {
-            on_click: props.on_click,
             attributes: merged,
-            {props.children}
+            ..props
         }
     }
 }

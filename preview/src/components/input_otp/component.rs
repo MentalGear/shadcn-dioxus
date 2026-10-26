@@ -15,22 +15,12 @@ pub use dioxus_primitives::input_otp::OtpPattern;
 #[component]
 pub fn InputOtp(props: InputOtpProps) -> Element {
     let base = attributes!(input { class: "dx-input-otp-input" });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/input_otp/style.css") }
         input_otp::InputOtp {
-            value: props.value,
-            default_value: props.default_value,
-            on_value_change: props.on_value_change,
-            on_complete: props.on_complete,
-            max_length: props.max_length,
-            pattern: props.pattern,
-            disabled: props.disabled,
-            required: props.required,
-            name: props.name,
-            id: props.id,
             attributes: merged,
-            {props.children}
+            ..props
         }
     }
 }
@@ -40,10 +30,13 @@ pub fn InputOtp(props: InputOtpProps) -> Element {
 #[component]
 pub fn InputOtpGroup(props: InputOtpGroupProps) -> Element {
     let base = attributes!(div { class: "dx-input-otp-group", "data-dx-root": "" });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/input_otp/style.css") }
-        input_otp::InputOtpGroup { attributes: merged, {props.children} }
+        input_otp::InputOtpGroup {
+            attributes: merged,
+            ..props
+        }
     }
 }
 
@@ -51,10 +44,13 @@ pub fn InputOtpGroup(props: InputOtpGroupProps) -> Element {
 #[component]
 pub fn InputOtpSlot(props: InputOtpSlotProps) -> Element {
     let base = attributes!(div { class: "dx-input-otp-slot" });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/input_otp/style.css") }
-        input_otp::InputOtpSlot { index: props.index, attributes: merged }
+        input_otp::InputOtpSlot {
+            attributes: merged,
+            ..props
+        }
     }
 }
 
@@ -66,13 +62,12 @@ pub fn InputOtpSlot(props: InputOtpSlotProps) -> Element {
 #[component]
 pub fn InputOtpSeparator(props: InputOtpSeparatorProps) -> Element {
     let base = attributes!(div { class: "dx-input-otp-separator", "data-dx-root": "" });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/input_otp/style.css") }
-        if let Some(children) = props.children {
-            input_otp::InputOtpSeparator { attributes: merged, {children} }
-        } else {
-            input_otp::InputOtpSeparator { attributes: merged }
+        input_otp::InputOtpSeparator {
+            attributes: merged,
+            ..props
         }
     }
 }
