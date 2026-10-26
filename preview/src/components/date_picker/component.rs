@@ -41,6 +41,7 @@ struct StyledDatePickerContext {
     calendar_format: CalendarFormat,
     apply_label: ReadSignal<String>,
     cancel_label: ReadSignal<String>,
+    read_only: ReadSignal<bool>,
 }
 
 fn default_apply_label() -> ReadSignal<String> {
@@ -98,7 +99,10 @@ pub struct DatePickerProps {
     #[props(default)]
     pub disabled: ReadSignal<bool>,
 
-    /// Whether the date picker is enable user input
+    /// Whether the picker refuses edits, like a native `readonly` input. The segments stay
+    /// focusable and selectable (the arrow keys still move between them), but typing, the Up, Down,
+    /// Home and End steps, Backspace and Delete change nothing, the calendar popover does not
+    /// open, and `on_value_change` is never called.
     #[props(default = ReadSignal::new(Signal::new(false)))]
     pub read_only: ReadSignal<bool>,
 
@@ -200,7 +204,10 @@ pub struct DateRangePickerProps {
     #[props(default)]
     pub disabled: ReadSignal<bool>,
 
-    /// Whether the date picker is enable user input
+    /// Whether the picker refuses edits, like a native `readonly` input. The segments stay
+    /// focusable and selectable (the arrow keys still move between them), but typing, the Up, Down,
+    /// Home and End steps, Backspace and Delete change nothing, the calendar popover does not
+    /// open, and `on_value_change` is never called.
     #[props(default = ReadSignal::new(Signal::new(false)))]
     pub read_only: ReadSignal<bool>,
 
@@ -301,6 +308,7 @@ pub fn DatePicker(props: DatePickerProps) -> Element {
         },
         apply_label: props.apply_label,
         cancel_label: props.cancel_label,
+        read_only: props.read_only,
     });
 
     rsx! {
@@ -369,6 +377,7 @@ pub fn DateRangePicker(props: DateRangePickerProps) -> Element {
         },
         apply_label: props.apply_label,
         cancel_label: props.cancel_label,
+        read_only: props.read_only,
     });
 
     rsx! {
@@ -632,7 +641,13 @@ pub(crate) fn DatePickerPopoverTrigger(props: PopoverTriggerProps) -> Element {
         class: "dx-date-picker-popover-trigger",
         aria_label: "Show Calendar",
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    // A read-only picker has no popover to open: the trigger stays focusable (like the segments)
+    // and says it does nothing, rather than being disabled out of the tab order.
+    let read_only = try_use_context::<StyledDatePickerContext>().is_some_and(|ctx| (ctx.read_only)());
+    let owned = attributes!(button {
+        aria_disabled: read_only.then_some("true"),
+    });
+    let merged = merge_attributes(vec![base, props.attributes, owned]);
     rsx! {
         PopoverTrigger {
             attributes: merged,

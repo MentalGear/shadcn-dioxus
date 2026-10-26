@@ -156,6 +156,39 @@ pub(super) fn push_commit_text_effects<T: SegmentInt + Copy + FromStr>(
     effects.push(DateSegmentEffect::EmitValue(value));
 }
 
+/// Whether a key edits the segment's value (a digit or other character, Backspace, Delete, the Up
+/// and Down steps, Home and End), as opposed to moving focus between segments.
+pub(super) fn is_edit_key(key: &Key) -> bool {
+    matches!(
+        key,
+        Key::Character(_)
+            | Key::Backspace
+            | Key::Delete
+            | Key::ArrowUp
+            | Key::ArrowDown
+            | Key::Home
+            | Key::End
+    )
+}
+
+/// What a read-only segment does with an edit key ([`is_edit_key`]): nothing, except that a
+/// typed character is swallowed (a space must not scroll the page, nor a letter reach a shortcut
+/// handler) unless a modifier makes it a shortcut. Focus keys never come here, so they work as
+/// they do in an editable segment.
+pub(super) fn read_only_key_effects<T>(
+    key: &Key,
+    modifiers: SegmentKeyModifiers,
+) -> Vec<DateSegmentEffect<T>> {
+    let SegmentKeyModifiers { ctrl, meta, alt } = modifiers;
+    match key {
+        Key::Character(_) if !(ctrl || meta || alt) => vec![
+            DateSegmentEffect::PreventDefault,
+            DateSegmentEffect::StopPropagation,
+        ],
+        _ => Vec::new(),
+    }
+}
+
 /// Keyboard modifiers relevant to a `DateSegment` keydown (shortcut passthrough
 /// and "clear all" detection).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -377,8 +410,9 @@ pub(super) fn DateSegment<T: Clone + Copy + SegmentInt + FromStr + Display + 'st
     let mut ctx = use_context::<BaseDatePickerContext>();
 
     use_effect(move || {
-        // If this item is not focused, always keep the value clamped
-        if !ctx.focus.is_focused(props.index.cloned()) {
+        // If this item is not focused, always keep the value clamped -- a read-only picker never
+        // rewrites its value, so it leaves an out-of-range one as the caller set it.
+        if !ctx.is_read_only() && !ctx.focus.is_focused(props.index.cloned()) {
             if let Some(value) = (props.value)() {
                 let clamped_value = value.clamp(props.min.cloned(), props.max.cloned());
                 if clamped_value != value {
@@ -394,26 +428,33 @@ pub(super) fn DateSegment<T: Clone + Copy + SegmentInt + FromStr + Display + 'st
         // segments sit in a row that mirrors with `dir`.
         let key = direction.ltr_equivalent(&event.key());
         let modifiers = event.modifiers();
-        let effects = date_segment_key_effects(
-            &key,
-            SegmentKeyModifiers {
-                ctrl: modifiers.ctrl(),
-                meta: modifiers.meta(),
-                alt: modifiers.alt(),
-            },
-            SegmentTextState {
-                current_text: &text_value(),
-                max_length: props.max_length,
-                reset: reset_value(),
-            },
-            SegmentValueBounds {
-                current_value: (props.value)(),
-                default: props.default,
-                min: props.min.cloned(),
-                max: props.max.cloned(),
-                wrap: props.wrap,
-            },
-        );
+        let modifiers = SegmentKeyModifiers {
+            ctrl: modifiers.ctrl(),
+            meta: modifiers.meta(),
+            alt: modifiers.alt(),
+        };
+        // A read-only segment keeps focus and its focus keys but turns every edit key into
+        // nothing (`read_only_key_effects`), before any value is computed.
+        let effects = if ctx.is_read_only() && is_edit_key(&key) {
+            read_only_key_effects(&key, modifiers)
+        } else {
+            date_segment_key_effects(
+                &key,
+                modifiers,
+                SegmentTextState {
+                    current_text: &text_value(),
+                    max_length: props.max_length,
+                    reset: reset_value(),
+                },
+                SegmentValueBounds {
+                    current_value: (props.value)(),
+                    default: props.default,
+                    min: props.min.cloned(),
+                    max: props.max.cloned(),
+                    wrap: props.wrap,
+                },
+            )
+        };
 
         for effect in effects {
             match effect {
@@ -481,7 +522,8 @@ pub(super) fn DateSegment<T: Clone + Copy + SegmentInt + FromStr + Display + 'st
         aria_valuenow: now_value().map(|v| v.to_string()),
         aria_valuetext: props.value_text.clone(),
         inputmode: "numeric",
-        contenteditable: !(ctx.read_only)(),
+        contenteditable: !ctx.is_read_only(),
+        aria_readonly: ctx.is_read_only().then_some("true"),
         tabindex: "0",
         "no-date": (props.value)().is_none(),
         "data-disabled": (ctx.disabled)(),

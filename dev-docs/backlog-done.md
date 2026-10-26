@@ -6,7 +6,7 @@ resolves here by id.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Done rows (359)
+## Done rows (365)
 
 | # | Item | Updated |
 |---|---|---|
@@ -332,6 +332,7 @@ resolves here by id.
 | [362](backlog/done/362-reorder-gesture-controlled-dnd.md) | Reorder gesture extracted, KeyOrder, DragAndDropList controlled mode with on_reorder | 2026-10-23 |
 | [363](backlog/done/363-datatable-row-reorder-and-columns.md) | DataTable: reorderable rows (drag handle) and a Columns menu (visibility, keyboard column order) | 2026-10-22 |
 | [364](backlog/done/364-togglegroup-value-keyed.md) | ToggleGroup: pressed state keyed by value, not index (optional) | 2026-10-22 |
+| [365](backlog/done/365-final-sweep-refactor-and-root-cause-review.md) | Final sweep: refactor review with the deconstruct-to-root and solve-by-construction exercise, proposals to the owner | 2026-10-25 |
 | [366](backlog/done/366-test-the-shipped-web-arm.md) | Gates: run cargo test on the shipped web arm too (ssr_parity differs between the plain and server feature sets) | 2026-10-22 |
 | [367](backlog/done/367-lane-build-disk-class.md) | Lane builds need 10.4 GB free because every lane-ssg copies 6.8 GB of template, 3.0 GB of it dead incremental state | 2026-10-23 |
 | [368](backlog/done/368-virtual-grid-row-axis-first-paint.md) | VirtualGrid: the row axis plans max(rows, viewport), so a short grid differs between server and first client frame | 2026-10-23 |
@@ -349,6 +350,7 @@ resolves here by id.
 | [382](backlog/done/382-rustdoc-warnings-to-zero.md) | Rustdoc warnings to zero: shrink the check-rustdoc baseline (87 entries) and make the gate strict | 2026-10-25 |
 | [384](backlog/done/384-burn-down-ratchet-baselines.md) | Burn down the ratchet baselines and the leftover TODO comments (props docs, history comments, dead refs) | 2026-10-25 |
 | [391](backlog/done/391-wrappers-forward-primitive-props.md) | Themed wrappers forward every primitive prop, enforced by a props-diff gate | 2026-10-24 |
+| [393](backlog/done/393-docs-contradict-code.md) | Fix the docs statements the code contradicts | 2026-10-25 |
 | [395](backlog/done/395-as-keeps-children.md) | `as` keeps the component's children and handlers (Radix asChild semantics) | 2026-10-24 |
 | [396](backlog/done/396-derive-item-index.md) | Derive item `index` from registration order | 2026-10-24 |
 | [397](backlog/done/397-docs-review-bugs.md) | Bugs the docs review found: ToggleGroup arrows, dead ScrollArea prop, DataTable sort, Sidebar Ctrl+B | 2026-10-24 |
@@ -369,5 +371,9 @@ resolves here by id.
 | [419](backlog/done/419-toast-close-target.md) | Toast close button: a bigger hit target and a hover style | 2026-10-25 |
 | [420](backlog/done/420-coarse-sizing-every-control.md) | Touch sizing covers every control: a coarse-aware control scale and one hit size | 2026-10-25 |
 | [421](backlog/done/421-toast-insert-no-glide.md) | Toast: a new toast's first measurement never plays as a glide (collapsed pile jumps on insert, Firefox) | 2026-10-25 |
+| [423](backlog/done/423-accordion-header-hover-underline.md) | An open Accordion header still underlines on hover; the header should never underline | 2026-10-25 |
+| [424](backlog/done/424-date-picker-read-only-still-edits.md) | DatePicker `read_only` still lets keys change the value and the popover pick a date | 2026-10-25 |
+| [425](backlog/done/425-hover-card-force-mount-no-effect.md) | HoverCard `force_mount` has no effect: the card is still rendered only while open | 2026-10-25 |
+| [439](backlog/done/439-chart-prehydration-geometry-flake.md) | chart-prehydration geometry flake: the two loads race font-display: optional | 2026-10-25 |
 
 <!-- END GENERATED -->

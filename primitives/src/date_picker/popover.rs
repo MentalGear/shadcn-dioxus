@@ -85,6 +85,14 @@ pub fn DatePickerPopover(props: DatePickerPopoverProps) -> Element {
     let ctx = use_context::<BaseDatePickerContext>();
     let mut open = ctx.open;
 
+    // A read-only picker has no popover to open: a trigger press asks for `true` and is refused
+    // below, and one that turns read-only while open is closed here.
+    use_effect(move || {
+        if ctx.is_read_only() && *open.peek() {
+            open.set(false);
+        }
+    });
+
     let PopoverRoot = props.popover_root;
 
     rsx! {
@@ -107,7 +115,11 @@ pub fn DatePickerPopover(props: DatePickerPopoverProps) -> Element {
             is_modal: props.is_modal,
             overlay: props.overlay,
             open: open(),
-            on_open_change: move |v| open.set(v),
+            on_open_change: move |v: bool| {
+                if !v || !ctx.is_read_only() {
+                    open.set(v);
+                }
+            },
             attributes: props.attributes,
             {props.children}
         }
@@ -251,6 +263,11 @@ pub fn DatePickerCalendar(props: DatePickerCalendarProps<CalendarProps>) -> Elem
         Calendar {
             selected_date: displayed,
             on_date_change: move |date: Option<Date>| {
+                // A read-only picker drops a pick (the popover cannot open, so this is a calendar
+                // composed outside it); the committed value is what the calendar shows.
+                if base_ctx.is_read_only() {
+                    return;
+                }
                 // `confirm`: the selection is staged, nothing is committed and nothing closes --
                 // Apply (or Cancel / Escape / an outside click) decides.
                 if ctx.staging.stage(base_ctx.confirm, date) {
@@ -352,6 +369,10 @@ pub fn DateRangePickerCalendar(props: DatePickerCalendarProps<RangeCalendarProps
             // `RangeCalendar` only reports a range once its END date is picked (the first click
             // just anchors it), so this is the "range is complete" moment -- never the start.
             on_range_change: move |range| {
+                // A read-only picker drops a pick, see `DatePickerCalendar`.
+                if base_ctx.is_read_only() {
+                    return;
+                }
                 // `confirm`: stage the completed range; Apply commits it.
                 if ctx.staging.stage(base_ctx.confirm, range) {
                     return;

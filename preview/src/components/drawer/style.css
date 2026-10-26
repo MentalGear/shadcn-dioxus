@@ -403,7 +403,7 @@
   border-radius: var(--dx-radius-lg);
   background-clip: padding-box;
   background-color: var(--light, var(--dx-background))
-    var(--dark, color-mix(in oklab, var(--dx-input) 30%, transparent));
+    var(--dark, color-mix(in oklab, var(--dx-input-fill) 30%, transparent));
   color: var(--dx-foreground);
   font-family: inherit;
   font-size: var(--dx-text-sm);
@@ -420,7 +420,7 @@
 @media (hover: hover) and (pointer: fine) {
   .dx-drawer-close:not([data-style]):hover {
     background-color: var(--light, var(--dx-muted))
-      var(--dark, color-mix(in oklab, var(--dx-input) 50%, transparent));
+      var(--dark, color-mix(in oklab, var(--dx-input-fill) 50%, transparent));
   }
 }
 

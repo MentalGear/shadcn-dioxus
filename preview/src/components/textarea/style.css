@@ -37,8 +37,8 @@
 /* Nova `disabled:bg-input/50 dark:disabled:bg-input/80`, Input's disabled fill; the ghost variant
  * has no fill to dim. After the variants' resting fills in source order and in specificity. */
 .dx-textarea[data-style]:disabled:not([data-style="ghost"]) {
-  background: var(--light, color-mix(in oklab, var(--dx-input) 50%, transparent))
-    var(--dark, color-mix(in oklab, var(--dx-input) 80%, transparent));
+  background: var(--light, color-mix(in oklab, var(--dx-input-fill) 50%, transparent))
+    var(--dark, color-mix(in oklab, var(--dx-input-fill) 80%, transparent));
 }
 
 .dx-textarea::placeholder {

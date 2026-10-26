@@ -28,7 +28,7 @@
  * inheritable corner variables on each direct child by POSITION, and every
  * joinable control's own stylesheet reads them with its normal radius as the
  * fallback (`.dx-button`, `.dx-input`, `.dx-select-trigger`, `.dx-native-select`,
- * `.dx-dropdown-menu-trigger`, `.dx-popover-trigger`):
+ * `.dx-dropdown-menu-trigger`, `.dx-popover-trigger`, `.dx-input-group`):
  *
  *   border-start-start-radius: var(--dx-group-radius-start-start, <own radius>);
  *
@@ -53,11 +53,25 @@
   --dx-group-radius-start-end: initial;
   --dx-group-radius-end-start: initial;
   --dx-group-radius-end-end: initial;
+  --dx-group-edge-inline-start: initial;
+  --dx-group-edge-block-start: initial;
+  --dx-group-ring: initial;
+  --dx-group-edge-top: initial;
+  --dx-group-edge-right: initial;
+  --dx-group-edge-bottom: initial;
+  --dx-group-edge-left: initial;
 }
 
 .dx-button-group:not([data-orientation="vertical"]) > :not(:first-child) {
   --dx-group-radius-start-start: 0;
   --dx-group-radius-end-start: 0;
+
+  /* The edge slots ("The seam" below). */
+  --dx-group-edge-inline-start: 0;
+  --dx-group-ring: 0;
+  --dx-group-edge-top: 1px;
+  --dx-group-edge-bottom: 1px;
+  --dx-group-edge-right: 1px;
 }
 
 .dx-button-group:not([data-orientation="vertical"]) > :not(:last-child) {
@@ -68,6 +82,13 @@
 .dx-button-group[data-orientation="vertical"] > :not(:first-child) {
   --dx-group-radius-start-start: 0;
   --dx-group-radius-start-end: 0;
+
+  /* The edge slots ("The seam" below). */
+  --dx-group-edge-block-start: 0;
+  --dx-group-ring: 0;
+  --dx-group-edge-bottom: 1px;
+  --dx-group-edge-left: 1px;
+  --dx-group-edge-right: 1px;
 }
 
 .dx-button-group[data-orientation="vertical"] > :not(:last-child) {
@@ -90,25 +111,43 @@
   --dx-group-radius-start-end: initial;
   --dx-group-radius-end-start: initial;
   --dx-group-radius-end-end: initial;
+  --dx-group-edge-inline-start: initial;
+  --dx-group-edge-block-start: initial;
+  --dx-group-ring: initial;
+  --dx-group-edge-top: initial;
+  --dx-group-edge-right: initial;
+  --dx-group-edge-bottom: initial;
+  --dx-group-edge-left: initial;
 }
 
 /*
- * The seam: the next child overlaps the previous one's last pixel, so two
- * 1px borders (or inset ring shadows) draw one line. The margin goes on the
- * group's OWN flex item -- the wrapper when there is one -- because that is
- * the box the group lays out, exactly like `gap`; a control inside a wrapper
- * could only hang out of it.
- */
-.dx-button-group:not([data-orientation="vertical"]) > :not(:first-child, .dx-button-group-separator) {
-  margin-inline-start: -1px;
+ * The seam. Children sit edge to edge (no overlap) and a child after another
+ * one leaves out its start edge, so every seam is the previous child's own
+ * end edge, painted ONCE over the surface like each outer edge -- Nova's
+ * `[&>*:not(:first-child)]:border-l-0`. Dark edges and fills are translucent
+ * (`--dx-input` is white at 15%, the field fill `--dx-input` at 30%), so any
+ * second layer on the seam's pixels would draw it heavier than the outer edge.
+ *
+ * The group publishes the edge as variables on the child, like the corners:
+ *   - `--dx-group-edge-inline-start` / `--dx-group-edge-block-start`: the start
+ *     border width, read by the controls whose edge is a real border
+ *     (`.dx-button`, `.dx-popover-trigger`), 1px as their fallback;
+ *   - `--dx-group-ring` and `--dx-group-edge-top|right|bottom|left`: read by the
+ *     controls whose edge is an inset box-shadow (`.dx-input`,
+ *     `.dx-select-trigger`, `.dx-native-select`, `.dx-dropdown-menu-trigger`,
+ *     `.dx-input-group`, `.dx-button-group-text`). Their shadow is a ring of
+ *     width `--dx-group-ring` (1px fallback) plus one shadow per side (0
+ *     fallback); a follower turns the ring off and draws the three sides it
+ *     keeps. The side shadows are physical, so RTL swaps left and right.
+ * A separator is a child too, so the control after it also leaves out its
+ * start edge: the separator is the line there. The follower rules publishing
+ * these sit with the corner rules above; RTL swaps the physical sides here.
+ */[dir="rtl"] .dx-button-group:not([data-orientation="vertical"]) > :not(:first-child) {
+  --dx-group-edge-left: 1px;
+  --dx-group-edge-right: initial;
 }
 
-.dx-button-group[data-orientation="vertical"] > :not(:first-child, .dx-button-group-separator) {
-  margin-block-start: -1px;
-}
-
-/* Raise the hovered / keyboard-focused child so its ring is not clipped by the
- * neighbour that overlaps it. */
+/* Raise the hovered / keyboard-focused child so its ring paints over its neighbours. */
 .dx-button-group > :is(:focus-visible, :has(:focus-visible)) {
   z-index: var(--dx-z-raise);
 }
@@ -134,7 +173,9 @@
   border-end-start-radius: var(--dx-group-radius-end-start, var(--dx-radius-lg));
   border-start-end-radius: var(--dx-group-radius-start-end, var(--dx-radius-lg));
   border-start-start-radius: var(--dx-group-radius-start-start, var(--dx-radius-lg));
-  box-shadow: inset 0 0 0 1px var(--dx-input);
+  box-shadow: inset 0 0 0 var(--dx-group-ring, 1px) var(--dx-input),
+    inset 0 var(--dx-group-edge-top, 0) 0 var(--dx-input), inset 0 calc(-1 * var(--dx-group-edge-bottom, 0px)) 0 var(--dx-input),
+    inset var(--dx-group-edge-left, 0) 0 0 var(--dx-input), inset calc(-1 * var(--dx-group-edge-right, 0px)) 0 0 var(--dx-input);
   color: var(--dx-foreground);
   font-size: var(--dx-text-sm);
   font-weight: 500;

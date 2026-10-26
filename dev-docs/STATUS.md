@@ -21,7 +21,7 @@ Merge queue batches 1-24 are on main (PRs #121-#150), batch 24 deployed as `9940
 
 ## In the queue
 
-Batch 25 (`queue/batch-25`): rows 355 (workspace lint table and Google Rust style items) and 421 (Firefox toast pile no longer jumps on insert), plus backlog rows 422 and 423. The Button Group seam lane waits for the owner's solid-edge follow-up.
+Batch 25 (deployed): rows 355 (workspace lint table and Google Rust style items) and 421 (Firefox toast pile no longer jumps on insert), plus backlog rows 422 and 423. Batch 26 (`queue/batch-26`): row 423 (no Accordion header underline on hover), row 422's approved outline, the Button Group solid input edges (row 348, owner accepted), the docs fixes of row 393, and the two code bugs they found: DatePicker `read_only` refuses every edit (424) and HoverCard `force_mount` keeps the closed card mounted (425).
 
 ## Running
 
@@ -31,12 +31,12 @@ Stage 3 (structure): 267 and 384 landed; 382 landed, 355 is in batch 25. Stage 4
 
 Owner order of 2026-10-24 (backlog thread), each stage reading the finished output of the one before:
 
-1. Open bugs: **423** (Accordion header hover underline).
+1. Open bugs: toast stack jump with mixed toast types (owner report 2026-10-25, toast thread reproducing).
 2. API shape, pre-1.0: **396**, **395**, **398**, **391**.
 3. Structure: **267** with **384**, at a quiet point in the queue; then **355** and **382**.
 4. Dependency review **371** (outcomes to the owner).
-5. One review pass: the code-quality review sweep together with **365**.
-6. Docs on the settled API: **393**, **392**, **394**, **422** (shared-section grouping, proposal first), **399** (now with demo renames and the focus-target readout), then the standing review **387**.
+5. Refactors from the **365** sweep (owner approved all ten 2026-10-25): rows **426-435**, small first, **435** (one menu engine, P10a first) last. Then the code-quality skill review **436** (owner: after the refactors).
+6. Docs on the settled API: **393**, **392**, **394**, **422** (Basic / Component-Specific section groups, outline approved), **399** (now with demo renames and the focus-target readout), then the standing review **387**.
 7. The 152b suite prune, then **383** last.
 
 Independent, in parallel at any point: 153, 268, 170.

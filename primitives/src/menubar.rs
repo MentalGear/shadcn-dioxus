@@ -265,8 +265,8 @@ pub struct MenubarMenuProps {
 /// # MenubarMenu
 ///
 /// The `MenubarMenu` component represents a single menu within a menubar. It contains a [`MenubarTrigger`]
-/// to open the menu and a [`MenubarContent`] that holds the menu items. Each menu must define an index
-/// to establish its position within the menubar.
+/// to open the menu and a [`MenubarContent`] that holds the menu items. Its `index` is optional and
+/// sets the menu's place in the keyboard order (default: tree order); it does not move the menu on screen.
 ///
 /// This must be used inside a [`Menubar`] component.
 ///

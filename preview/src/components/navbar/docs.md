@@ -3,11 +3,11 @@ The Navbar component can be used to display a navigation bar with collapsible se
 ## Component Structure
 
 ```rust
-// The Navbar component wraps the entire menu bar and contains the individual menus in the order of their index.
+// The Navbar component wraps the entire menu bar and contains the individual menus; their `index` sets the keyboard order, the on-screen order is the markup order.
 Navbar {
     // The NavbarNav contains the individual menus that can be opened.
     NavbarNav {
-        // The index of the menu, used to determine the order in which menus are displayed.
+        // The index of the menu: its place in the keyboard (arrow-key) order. It does not move the menu on screen.
         index: 0,
         // The menubar trigger is the element that will display the menu when activated.
         NavbarTrigger {

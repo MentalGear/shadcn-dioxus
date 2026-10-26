@@ -27,7 +27,8 @@ pub fn Demo() -> Element {
             ButtonGroup {
                 Button { variant: ButtonVariant::Outline, "Archive" }
                 Button { variant: ButtonVariant::Outline, "Report" }
-                ButtonGroupSeparator {}
+                // No separator: outline buttons already share an edge (shadcn's
+                // ButtonGroupSeparator is for unbordered variants).
                 Button { variant: ButtonVariant::Outline, "aria-label": "More", Ellipsis {} }
             }
         }

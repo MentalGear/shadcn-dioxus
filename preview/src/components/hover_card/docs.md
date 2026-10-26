@@ -34,6 +34,10 @@ HoverCard {
 
 Leaving the trigger before `delay` cancels the open. After the pointer leaves, the card closes `close_delay` later unless the pointer enters the card (or the trigger) again, so it can cross the gap between them. **Defaults:** `delay` 600 and `close_delay` 300 are Base UI's `PreviewCard.Trigger` values, used by both the primitive and this styled component, because shadcn's styled `hover-card.tsx` sets no delays of its own (only its demos pass `delay={10} closeDelay={100}`), so there is no styled default to mirror. **Keyboard focus is not delayed**: focusing the trigger opens the card at once, and blur or Escape close it at once. The timers belong to the component, so unmounting cancels them.
 
+## Force mount
+
+By default a closed card is not in the DOM: it is mounted when it opens and removed after its exit animation. `HoverCardContent { force_mount: true }` (Radix's `forceMount`) keeps it in the DOM while it is closed, hidden and with `data-state="closed"`, for an animation library that drives the card itself or for content that should exist in the markup. It opens and fades out like the default card.
+
 ## No click-only mode
 
 Unlike the menus (`NavigationMenu`, `Navbar`, `Menubar` and the dropdown /
