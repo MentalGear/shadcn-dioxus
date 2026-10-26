@@ -1,7 +1,7 @@
 ---
 id: 469
 title: "Bug: text typed before hydration is wiped by the first post-hydration render on the SSG site"
-status: "BACKLOG. Found by board round 5; reproduce first. Independent of plan approval."
+status: "QUESTION TO OWNER 2026-10-26: the owner asked where typing before hydration happens naturally…"
 size: "M"
 area: inputs
 updated: 2026-10-26
@@ -22,6 +22,8 @@ Text typed into an input before the wasm arrives is wiped by the first post-hydr
 Related to [row 434](./434-javascript-in-typescript-modules-not-rust-strings.md) but not part of it: the plan's construct subsumes this defect later, and the fix does not wait for the plan. Source: the last section of [`board-2026-10-26-r5/SYNTHESIS.md`](../research/board-2026-10-26-r5/SYNTHESIS.md) (live defects the board found in today's code).
 
 ## Status / trigger
+
+QUESTION TO OWNER 2026-10-26: the owner asked where typing before hydration happens naturally; answered in the backlog thread (browser autofill and back/forward form restoration fill inputs before the wasm loads, as does a fast typist on a slow phone). Starts on the owner's word.
 
 BACKLOG. Found by board round 5; reproduce first. Independent of plan approval.
 

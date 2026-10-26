@@ -1,10 +1,10 @@
 ---
 id: 307
 title: "iOS: the Color Panel opens but tapping its color box does not change the color"
-status: "WAITING ON OWNER: reproduce on an iPhone (owner report 2026-10-20: the Color Panel opens but…"
+status: "DONE 2026-10-26: the owner re-tested on an iPhone and the Color Panel picks colours; closed on the…"
 size: "M"
 area: overlays
-updated: 2026-10-24
+updated: 2026-10-26
 ---
 
 # Row 307: iOS: the Color Panel opens but tapping its color box does not change the color
@@ -14,6 +14,8 @@ updated: 2026-10-24
 On iOS (the preview deployed on the evening of 2026-10-19) the Color Panel opens, but tapping the color box, and probably other controls in the overlay, does not change the color.
 
 ## Status / trigger
+
+DONE 2026-10-26: the owner re-tested on an iPhone and the Color Panel picks colours; closed on the owner's word.
 
 **WAITING ON OWNER: reproduce on an iPhone (owner report 2026-10-20: the Color Panel opens but tapping its color box does not change the color); no cause is known and no fix has landed** (the sandbox has no WebKit). Start in `primitives/src/color_picker.rs` pointer handling and the `touch-action: none` drag surfaces in `preview/src/components/color_picker/style.css`; related iOS rows 28, 296, 305.
 

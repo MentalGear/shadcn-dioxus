@@ -6,7 +6,7 @@ resolves here by id.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Done rows (383)
+## Done rows (384)
 
 | # | Item | Updated |
 |---|---|---|
@@ -284,6 +284,7 @@ resolves here by id.
 | [303](backlog/done/303-charts-and-demos-pages-have-no-docs-sidebar.md) | Charts and Demos pages have no docs sidebar | 2026-10-20 |
 | [304](backlog/done/304-radial-chart-tooltips-share-the-gap-split-equally.md) | Radial chart tooltips share the gap, split equally per ring (lowest priority) | 2026-10-23 |
 | [306](backlog/done/306-select-and-combobox-show-no-selected-label-before.md) | Select and Combobox show no selected label before hydration | 2026-10-20 |
+| [307](backlog/done/307-ios-color-panel-does-not-pick-colors.md) | iOS: the Color Panel opens but tapping its color box does not change the color | 2026-10-26 |
 | [308](backlog/done/308-virtualgrid-scroll-trap-at-the-edges.md) | VirtualGrid traps page scroll at its edges; should VirtualList and VirtualGrid be unified? | 2026-10-20 |
 | [309](backlog/done/309-virtuallist-and-virtualgrid-share-one-engine.md) | VirtualList and VirtualGrid share one engine: DOM bridge, pinned focus, fade (two components, one engine) | 2026-10-24 |
 | [310](backlog/done/310-questionnaire-height-transition.md) | Questionnaire: animate the height between items instead of snapping | 2026-10-20 |

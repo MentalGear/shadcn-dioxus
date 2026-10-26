@@ -1,7 +1,7 @@
 ---
 id: 471
 title: "Bug: DataTransfer setters in rsx drag handlers are silent no-ops on desktop"
-status: "BACKLOG. Found by board round 5; reproduce first. Independent of plan approval."
+status: "APPROVED 2026-10-26 by the owner (\"Ok for the rest\", backlog thread); a batch 30 lane. BACKLOG.…"
 size: "S"
 area: primitives
 updated: 2026-10-26
@@ -22,6 +22,8 @@ Desktop drag events carry a `SerializedDataTransfer` whose `set_data`, `clear_da
 Related to [row 434](./434-javascript-in-typescript-modules-not-rust-strings.md) but not part of it: the plan's construct subsumes this defect later, and the fix does not wait for the plan. Source: the last section of [`board-2026-10-26-r5/SYNTHESIS.md`](../research/board-2026-10-26-r5/SYNTHESIS.md) (live defects the board found in today's code).
 
 ## Status / trigger
+
+APPROVED 2026-10-26 by the owner ("Ok for the rest", backlog thread); a batch 30 lane.
 
 BACKLOG. Found by board round 5; reproduce first. Independent of plan approval.
 

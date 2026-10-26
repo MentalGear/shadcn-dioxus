@@ -1,10 +1,10 @@
 ---
 id: 296
 title: "Combobox list drifts from its input on iOS after long scrolling"
-status: "WAITING ON OWNER: reproduce on an iPhone (owner report 2026-10-19); no fix has landed and the cause…"
+status: "OWNER RE-TEST 2026-10-26 (iPhone): still drifts; the list can also cover its input. Owner's…"
 size: "M + device check"
 area: overlays
-updated: 2026-10-24
+updated: 2026-10-26
 ---
 
 # Row 296: Combobox list drifts from its input on iOS after long scrolling
@@ -14,6 +14,8 @@ updated: 2026-10-24
 On iOS, after a lot of scrolling and the keyboard showing and hiding, the open combobox list stops tracking its input.
 
 ## Status / trigger
+
+OWNER RE-TEST 2026-10-26 (iPhone): still drifts; the list can also cover its input. Owner's reading: the keyboard limits the space and the list neither shrinks to the height left once the keyboard has fully slid in nor becomes scrollable. Menubar, Navigation Menu and Popover do not drift, so the direction is to place Combobox the way they do. A batch 30 debug lane compares the two paths.
 
 **WAITING ON OWNER: reproduce on an iPhone (owner report 2026-10-19); no fix has landed and the cause is inferred, not reproduced.** Direction in the Detail: skip the native-conformance shortcut in `use_anchor_position_fallback` on WebKit or touch-primary devices, re-place on `visualViewport` scroll, add a `scrollend`/`touchend` re-place; close it together with row 28. Related: rows 28, 10, done/210.
 

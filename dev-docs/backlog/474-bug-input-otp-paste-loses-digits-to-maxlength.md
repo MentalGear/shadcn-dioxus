@@ -1,7 +1,7 @@
 ---
 id: 474
 title: "Bug: Input OTP paste loses digits because maxlength truncates before the filter runs"
-status: "BACKLOG. Found by board round 6; reproduce first. Independent of plan approval."
+status: "APPROVED 2026-10-26 by the owner (\"Ok for the rest\", backlog thread); a batch 30 lane. BACKLOG.…"
 size: "S"
 area: inputs
 updated: 2026-10-26
@@ -22,6 +22,8 @@ The Input OTP filter's `beforeinput` test requires `typeof e.data === 'string'` 
 Related to [row 434](./434-javascript-in-typescript-modules-not-rust-strings.md) but not part of it: the plan's `otpFilter` (proof port A, [row 448](./448-phase-0-3-proof-port-a-focus-trap-and-otpfilter.md)) subsumes this defect, and a local fix does not wait for the plan.
 
 ## Status / trigger
+
+APPROVED 2026-10-26 by the owner ("Ok for the rest", backlog thread); a batch 30 lane.
 
 BACKLOG. Found by board round 6; reproduce first. Independent of plan approval.
 

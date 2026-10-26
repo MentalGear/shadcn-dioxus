@@ -1,7 +1,7 @@
 ---
 id: 475
 title: "Bug: Resizable and Slider on desktop: a previous drag's queued per-move frames can land in the next drag"
-status: "BACKLOG. Found by board round 7; reproduce first. Independent of plan approval."
+status: "APPROVED 2026-10-26 by the owner (\"Ok for the rest\", backlog thread); a batch 30 lane. BACKLOG.…"
 size: "S"
 area: components
 updated: 2026-10-26
@@ -18,6 +18,8 @@ Slider and Resizable start a drag in rsx (`move_interaction.rs:119`) and receive
 Related to [row 434](./434-javascript-in-typescript-modules-not-rust-strings.md) but not part of it: the plan's gesture epoch (a stream epoch minted at the drag's start by the rsx `pointerdown` and carried by every per-move frame, root doc section 2.2, order contract) subsumes this defect, and a local fix does not wait for the plan.
 
 ## Status / trigger
+
+APPROVED 2026-10-26 by the owner ("Ok for the rest", backlog thread); a batch 30 lane.
 
 BACKLOG. Found by board round 7; reproduce first. Independent of plan approval.
 

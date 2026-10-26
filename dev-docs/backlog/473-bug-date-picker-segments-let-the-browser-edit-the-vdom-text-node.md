@@ -1,7 +1,7 @@
 ---
 id: 473
 title: "Bug: date picker segments let the browser edit the text node the vdom also writes"
-status: "BACKLOG. Found by board round 6; reproduce first. Independent of plan approval."
+status: "APPROVED 2026-10-26 by the owner (\"Ok for the rest\", backlog thread); a batch 30 lane. BACKLOG.…"
 size: "M"
 area: components
 updated: 2026-10-26
@@ -22,6 +22,8 @@ Date picker segments are `contenteditable` spans whose text is a vdom child (`da
 Related to [row 434](./434-javascript-in-typescript-modules-not-rust-strings.md) but not part of it: the plan's contenteditable slot (root doc section 2.2) subsumes this defect later, and the fix does not wait for the plan.
 
 ## Status / trigger
+
+APPROVED 2026-10-26 by the owner ("Ok for the rest", backlog thread); a batch 30 lane.
 
 BACKLOG. Found by board round 6; reproduce first. Independent of plan approval.
 

@@ -1,10 +1,10 @@
 ---
 id: 390
 title: "Base and accent presets own disjoint variables; charts follow the accent"
-status: "DECIDED 2026-10-24 (owner): (1) each axis owns its own variables, disjoint and enforced; (2) charts…"
+status: "APPROVED 2026-10-26 by the owner (\"Ok for the rest\", backlog thread); a batch 30 lane. DECIDED…"
 size: "M"
 area: theme
-updated: 2026-10-24
+updated: 2026-10-26
 ---
 
 # Row 390: base and accent presets own disjoint variables
@@ -14,6 +14,8 @@ updated: 2026-10-24
 Owner report 2026-10-24: "check if there is clear, encoded distinction between accent and base color, because atm base color (gray) changing even chart colors different and by its own". There was none. `theme-presets.css` copied shadcn's `{...baseColor, ...accent}` merge as cascade order, so both axes wrote `--primary`, `--primary-foreground`, `--chart-1..5` and `--sidebar-primary(-foreground)`, and every accent also wrote `--secondary(-foreground)` as a fixed zinc grey. Charts came from three places: no preset = the library palette; the seven new-style bases = grey ramps; gray and slate (legacy shadcn data) = multicolour. An amber accent on a stone base got a zinc-tinted secondary.
 
 ## Status / trigger
+
+APPROVED 2026-10-26 by the owner ("Ok for the rest", backlog thread); a batch 30 lane.
 
 DECIDED 2026-10-24 (owner): (1) each axis owns its own variables, disjoint and enforced; (2) charts with no accent picked are the library palette under every base, an accent swaps in its hue ramp. BUILT on `lane/preset-split`.
 
