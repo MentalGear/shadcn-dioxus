@@ -23,27 +23,30 @@ thread_local! {
 }
 
 /// Appends `<style id="{id}">{css}</style>` to the document head through the platform's
-/// [`Document`](dioxus::document::Document), with no script of ours: the CSS is a `.css` file that
-/// stylelint reads (backlog row 434), included by the caller with `include_str!`.
+/// [`Document`](dioxus::document::Document): `Document::create_style`, the call `document::Style` ends
+/// in, with no script of ours. The CSS is a `.css` file that stylelint reads (backlog row 434), included
+/// by the caller with `include_str!`.
 ///
-/// This is `Document::create_head_element`, the call `document::Style` itself ends in. It is used
-/// instead of `document::Style` / `Document::create_style` for two reasons. A `Style` element must be
-/// rendered by a component, and the callers are plain functions run from `use_effect` in a dozen
-/// roots. And the web document inserts `create_style` from `queue_effect`, which `Runtime::remove_scope`
-/// drops when the scope is removed in the turn it first rendered, while a caller's once-per-page flag
-/// is already set (`preview/src/eager_head.rs` documents the class). `create_head_element` is
-/// synchronous, so the flag only ever records a tag that exists. The caller keeps its own once-per-page
-/// guard (a `thread_local` flag); this does not dedupe.
+/// It is not a `document::Style` element because a `Style` must be rendered by a component and the
+/// callers are plain functions run from `use_effect` in a dozen roots. The web document inserts
+/// `create_style` from `queue_effect`, so the tag lands after the render that asked for it; the
+/// preview's `EagerHeadDocument` (`preview/src/eager_head.rs`) inserts it at once. A scope removed in
+/// the turn it first rendered drops its queued effect, the class that file documents for every
+/// `document::Link` of the library, and the caller's once-per-page flag would then stay set: a missing
+/// cosmetic baseline (the gutter reservation, the raw toast's fallback box), never a broken overlay.
+/// The caller keeps its own once-per-page guard; this does not dedupe.
 ///
 /// Not for a sheet that a script reads in the same tick (`ensure_anchor_positioning_styles`'s
 /// measurement, `ensure_top_layer_ink_styles`'s show script): those prepend their own insertion to
 /// that script, see the doc above.
 pub(crate) fn insert_head_style(id: &'static str, css: &'static str) {
-    dioxus::document::document().create_head_element(
-        "style",
-        &[("id", id.to_string())],
-        Some(css.to_string()),
-    );
+    let props = dioxus::document::StyleProps::builder()
+        .additional_attributes(vec![crate::dioxus_core::Attribute::new(
+            "id", id, None, false,
+        )])
+        .children(dioxus::prelude::rsx! { "{css}" })
+        .build();
+    dioxus::document::document().create_style(props);
 }
 
 /// Installs the shared, engine-level anchor-positioning stylesheet described
