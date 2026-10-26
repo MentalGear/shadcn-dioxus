@@ -28,8 +28,8 @@
 //! `dev-docs/plan.md` Phase 4.4 describes for `popover="auto"` content -- see
 //! `top_layer.rs`'s module doc), and the UA stylesheet's `dialog:modal {
 //! position: fixed; inset: 0; margin: auto; }` actively re-centers it. So
-//! the web modal arm below carries the exact same `dx-anchor-popover`
-//! marker class and `position-anchor` style the non-modal arm already uses
+//! the web modal arm below carries the exact same `data-dx-anchored="popover"`
+//! attribute and `position-anchor` style the non-modal arm already uses
 //! (`PopoverTrigger`'s `anchor-name` is keyed off `ctx.content_id`
 //! regardless of `is_modal`, so it is correct for this arm too) --
 //! `top_layer.rs`'s shared, engine-injected
@@ -584,7 +584,7 @@ fn PopoverModalContent(
 /// arm -- the browser's own `showModal()` supplies the focus trap, focus restore,
 /// background inertness, and top-layer rendering.
 ///
-/// Carries `dx-anchor-popover`/`position-anchor` -- see this module's doc
+/// Carries `data-dx-anchored="popover"`/`position-anchor` -- see this module's doc
 /// comment ("trigger-anchored, not centered") for why a modal `Popover`
 /// needs this and modal `Dialog` (which *wants* the UA's viewport-centering)
 /// never does.
@@ -639,19 +639,17 @@ fn PopoverModalContent(
     // dialog.
     crate::use_dialog_backdrop_dismiss(id_signal, move || set_open.call(false));
 
-    // See `PopoverNonModalContent`'s identical marker-class comment below
-    // for why this is appended directly onto `class` rather than folded
-    // into `attributes`.
-    let class = format!(
-        "{} dx-anchor-popover",
-        class.unwrap_or_else(|| "dx-popover-content".to_string())
-    );
+    let class = class.unwrap_or_else(|| "dx-popover-content".to_string());
     // Folds the caller's own `style` together with the anchor binding into
     // one `style` attribute -- see `top_layer::anchored_content_attributes`'s
     // doc for why a bare `style: position_anchor_style(&id)` literal
     // alongside `..attributes` is the duplicate-`style` hazard
     // (`dev-docs/conformance-harness.md` hydration-parity Rule 4).
-    let attributes = crate::top_layer::anchored_content_attributes(&id, attributes);
+    let attributes = crate::top_layer::anchored_content_attributes(
+        crate::top_layer::AnchorKind::Popover,
+        &id,
+        attributes,
+    );
     // Owned by this component -- see the native arm's identical
     // construction above (`dev-docs/backlog.md` row 93).
     //
@@ -771,34 +769,17 @@ fn PopoverNonModalContent(
         ctx.set_open,
     );
 
-    // See `tooltip.rs`'s `TooltipContentRendered` for why this hand-written,
-    // never-`Styles::`-routed marker class exists: it is what the
-    // `@supports (anchor-name: --a)` block in `../../preview/src/components/
-    // popover/style.css` selects on, sidestepping `manganis-core`'s
-    // `css_module_parser` not scoping classes inside `@supports` bodies.
-    //
-    // Appended directly onto `class` (not merged into `attributes`, unlike
-    // the identical fix in `tooltip.rs`/`hover_card.rs`): this component,
-    // unlike those two, renders its consumer-supplied class through a
-    // dedicated `class: Option<String>` prop rather than folding it into
-    // `attributes` -- and that field is written into this element's `class`
-    // attribute *before* `..attributes` is spread below. Merging the marker
-    // into `attributes` instead would add a second, later `class` attribute
-    // that silently overwrites this one rather than combining with it (only
-    // `merge_attributes` itself concatenates same-named `class` attributes;
-    // plain rsx attribute lists do not): doing it that way renders
-    // `class="dx-anchor-popover"` alone, with `dx-popover-content`/its
-    // hashed preview variant dropped entirely.
-    let class = format!(
-        "{} dx-anchor-popover",
-        class.unwrap_or_else(|| "dx-popover-content".to_string())
-    );
+    let class = class.unwrap_or_else(|| "dx-popover-content".to_string());
     // Folds the caller's own `style` together with the anchor binding into
     // one `style` attribute -- see `top_layer::anchored_content_attributes`'s
     // doc for why a bare `style: position_anchor_style(&id)` literal
     // alongside `..attributes` is the duplicate-`style` hazard
     // (`dev-docs/conformance-harness.md` hydration-parity Rule 4).
-    let attributes = crate::top_layer::anchored_content_attributes(&id, attributes);
+    let attributes = crate::top_layer::anchored_content_attributes(
+        crate::top_layer::AnchorKind::Popover,
+        &id,
+        attributes,
+    );
     // Owned by this component -- top-layer wiring/aria/state must win
     // over a caller's own attributes (`dev-docs/backlog.md` row 93's
     // duplicate-attribute hazard).

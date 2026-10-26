@@ -621,16 +621,11 @@ fn HoverCardContentRendered(
     let handle_mouse_enter = move |_: Event<MouseData>| timers.hold();
     let handle_mouse_leave = move |_: Event<MouseData>| timers.pointer_leave();
 
-    // See `tooltip.rs`'s `TooltipContentRendered` for why this hand-written,
-    // never-`Styles::`-routed marker class exists: it is what the
-    // `@supports (anchor-name: --a)` block in `../../preview/src/components/
-    // hover_card/style.css` selects on, sidestepping `manganis-core`'s
-    // `css_module_parser` not scoping classes inside `@supports` bodies.
+    // `anchored_content_attributes` below writes `data-dx-anchored="hover-card"`, the attribute the
+    // engine's anchor stylesheet selects on (see `tooltip.rs`'s `TooltipContentRendered` for why an
+    // attribute and not a class).
     let attributes = merge_attributes(vec![
         attributes,
-        attributes!(div {
-            class: "dx-anchor-hover-card"
-        }),
         // Owned by this component -- role/top-layer wiring/positioning
         // state must win over a caller's own attributes
         // (`dev-docs/backlog.md` row 93's duplicate-attribute hazard).
@@ -648,7 +643,11 @@ fn HoverCardContentRendered(
     // doc for why a bare `style: position_anchor_style(&id)` literal
     // alongside `..attributes` is the duplicate-`style` hazard
     // (`dev-docs/conformance-harness.md` hydration-parity Rule 4).
-    let attributes = crate::top_layer::anchored_content_attributes(&id, attributes);
+    let attributes = crate::top_layer::anchored_content_attributes(
+        crate::top_layer::AnchorKind::HoverCard,
+        &id,
+        attributes,
+    );
 
     rsx! {
         div {

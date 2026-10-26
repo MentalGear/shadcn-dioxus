@@ -130,10 +130,10 @@
 //!
 //! [`NavigationMenuContent`]'s web-arm leaf promotes to the top layer
 //! broadly the way `NavbarContent` does --
-//! `crate::top_layer::anchored_content_attributes` with a
-//! `dx-anchor-navigation-menu` marker class (added next to every existing
-//! `dx-anchor-navbar` entry in `top_layer.rs`'s shared anchor-positioning
-//! stylesheet) + `crate::top_layer::use_anchor_position_fallback` -- except
+//! `crate::top_layer::anchored_content_attributes` with
+//! `AnchorKind::NavigationMenu` (the `data-dx-anchored` attribute the shared
+//! anchor-positioning stylesheet in `top_layer.rs` selects on) and
+//! `crate::top_layer::use_anchor_position_fallback` -- except
 //! `popover="manual"`, not `"auto"`: this module already owns its entire
 //! open/close lifecycle (hover-intent timers, the focus-leave debounce
 //! above, Escape, click), the same reasoning `crate::tooltip`/
@@ -1055,9 +1055,6 @@ fn NavigationMenuContentRendered(
     };
     let attributes = merge_attributes(vec![
         attributes,
-        attributes!(div {
-            class: "dx-anchor-navigation-menu"
-        }),
         labelledby,
         // Owned by this component -- top-layer wiring + state must win
         // over a caller's own attributes (`dev-docs/backlog.md` row 93's
@@ -1067,7 +1064,11 @@ fn NavigationMenuContentRendered(
             "data-state": if open() { "open" } else { "closed" },
         }),
     ]);
-    let attributes = crate::top_layer::anchored_content_attributes(&id, attributes);
+    let attributes = crate::top_layer::anchored_content_attributes(
+        crate::top_layer::AnchorKind::NavigationMenu,
+        &id,
+        attributes,
+    );
 
     rsx! {
         div {

@@ -42,29 +42,37 @@ thread_local! {
 /// `#[css_module]` stylesheet, because `manganis-core`'s `css_module_parser`
 /// does not scope classes referenced only inside `@supports`
 /// (`dev-docs/issues/css-module-supports-scoping.md`) -- so each copy would
-/// have to be a plain, unhashed `dx-anchor-*` marker class rather than a
-/// `Styles::`-routed one. A consuming page that lacked its copy
-/// would silently fall back to un-anchored positioning, and every `dx-anchor-*`-marked
-/// overlay would have to remember to duplicate this same block into its own
-/// page's stylesheet, or fail the identical way. Injecting this once, engine-side, from the same
-/// Rust module that defines the marker-class contract
-/// (`anchor_name_style`/`position_anchor_style` below) makes anchor
-/// positioning "just work" for `dx-anchor-tooltip`/`dx-anchor-hover-card`/
-/// `dx-anchor-popover`/`dx-anchor-dropdown-menu`/`dx-anchor-menubar`/
-/// `dx-anchor-navbar`/`dx-anchor-navigation-menu`/`dx-anchor-select`/
-/// `dx-anchor-combobox` (`select/components/list.rs`'s `SelectListRendered` and
-/// `combobox/components/list.rs`'s `ComboboxListRendered`; `dx-anchor-navbar`:
-/// `navbar.rs`'s `NavbarContentRendered`)
-/// content everywhere in the app, with no per-page CSS to remember.
+/// have to select on something that is not a `Styles::`-routed class. A
+/// consuming page that lacked its copy would silently fall back to
+/// un-anchored positioning, and every anchored overlay would have to
+/// remember to duplicate this same block into its own page's stylesheet, or
+/// fail the identical way. Injecting this once, engine-side, from the same
+/// Rust module that defines the anchor contract
+/// (`anchor_name_style`/`position_anchor_style`/`anchored_content_attributes`
+/// below) makes anchor positioning "just work" for every anchored overlay
+/// everywhere in the app, with no per-page CSS to remember.
+///
+/// ## One attribute, not a list of classes (backlog row 432)
+///
+/// Every rule below is scoped by `[data-dx-anchored]`, the one attribute
+/// `anchored_content_attributes` writes from a [`AnchorKind`] (the same
+/// shape as `data-dx-modality`: one writer, one reader). The stylesheet
+/// therefore never names a kind except where kinds really differ (a hover
+/// card's wider gap): a new anchored overlay is anchored by calling the
+/// function it must already call for its `position-anchor`, and there is no
+/// list here to forget it in. The selectors rank exactly as a class plus
+/// `[popover]` would (`[data-dx-anchored]:is([popover], :modal)` is
+/// `(0,2,0)`; `:where()` carries the hover-card exclusion at zero), so no
+/// component sheet's override is outranked by them.
+/// `scripts/check-anchor-marker.sh` keeps a marker class from coming back.
 ///
 /// Call this once per overlay content mount -- [`use_anchor_position_fallback`]
-/// does, since every current `dx-anchor-*` consumer (`tooltip.rs`,
+/// does, since every current anchored consumer (`tooltip.rs`,
 /// `hover_card.rs`, `popover.rs`, `dropdown_menu.rs`, `menubar.rs`,
 /// `navbar.rs`, `select/components/list.rs`, `combobox/components/list.rs`,
 /// and anything built on `crate::popover` like `ColorPicker`/`DatePicker`)
-/// already calls that hook. A future
-/// `dx-anchor-*` consumer that doesn't call that hook for some reason should
-/// call this directly instead.
+/// already calls that hook. A future anchored consumer that doesn't call
+/// that hook for some reason should call this directly instead.
 ///
 /// `:where(...)` (zero specificity) is used for the `[popover]` reset so it
 /// never has to out-specificity-fight a component's own rules -- author
@@ -141,35 +149,27 @@ pub(super) fn anchor_positioning_inject_js() -> String {
 /// why it is injected once and why `border`/`overflow` resets are
 /// deliberately not part of it.
 ///
-/// Every `.dx-anchor-popover[popover]` selector below has a
-/// `.dx-anchor-popover:modal` sibling: a modal `Popover`'s web arm
-/// is a real `<dialog>` opened with `showModal()`, so it carries the
-/// `dx-anchor-popover` marker class the same way the non-modal arm's
+/// Every `[data-dx-anchored][popover]` selector below also matches `:modal`
+/// (`:is([popover], :modal)`): a modal `Popover`'s web arm
+/// is a real `<dialog>` opened with `showModal()`, so it carries
+/// `data-dx-anchored="popover"` the same way the non-modal arm's
 /// `<dialog popover="auto">` does, but never the `popover` attribute itself
 /// (`showModal()` and the Popover API are two different top-layer
 /// mechanisms -- see `popover.rs`'s module doc). `:modal` is the CSS
 /// pseudo-class a `<dialog>` matches for as long as it is shown via
 /// `showModal()` -- the natural selector to key the exact same reset/
 /// `anchor()` treatment off for that arm, mirroring `[popover]`'s role for
-/// the Popover-API arms without needing a second marker class.
+/// the Popover-API arms without needing a second attribute. (The RTL rules are
+/// `[popover]` only: a modal dialog never matched them.)
 #[cfg(feature = "web")]
 const ANCHOR_POSITIONING_CSS_JS_LITERAL: &str = r#"`
-:where(.dx-anchor-tooltip[popover], .dx-anchor-hover-card[popover], .dx-anchor-popover[popover], .dx-anchor-popover:modal, .dx-anchor-dropdown-menu[popover],
-  .dx-anchor-menubar[popover], .dx-anchor-navbar[popover], .dx-anchor-navigation-menu[popover], .dx-anchor-select[popover], .dx-anchor-combobox[popover]) {
+:where([data-dx-anchored]:is([popover], :modal)) {
   margin: 0;
   inset: auto;
 }
 
 @supports (anchor-name: --a) {
-  .dx-anchor-tooltip[popover],
-  .dx-anchor-popover[popover],
-  .dx-anchor-popover:modal,
-  .dx-anchor-dropdown-menu[popover],
-  .dx-anchor-menubar[popover],
-  .dx-anchor-navbar[popover],
-  .dx-anchor-navigation-menu[popover],
-  .dx-anchor-select[popover],
-  .dx-anchor-combobox[popover] {
+  [data-dx-anchored]:where(:not([data-dx-anchored="hover-card"])):is([popover], :modal) {
     position: fixed;
     margin: 0;
     inset: auto;
@@ -183,7 +183,7 @@ const ANCHOR_POSITIONING_CSS_JS_LITERAL: &str = r#"`
        everywhere else. In Chromium, anchor-size() substitutes correctly
        when only referenced from inside a custom-property declaration and then read
        back through var() at a sizing property's use site -- so this is
-       safe to declare generically here, on the marker classes every
+       safe to declare generically here, on the data-dx-anchored attribute every
        anchored overlay already carries, without knowing anything about a
        specific component's styling intent (that stays in each component's
        own stylesheet, e.g. dx-select-list's min-width: var(--dx-anchor-
@@ -205,174 +205,88 @@ const ANCHOR_POSITIONING_CSS_JS_LITERAL: &str = r#"`
     --dx-anchor-width: anchor-size(width);
   }
 
-  .dx-anchor-tooltip[popover][data-side="top"],
-  .dx-anchor-popover[popover][data-side="top"],
-  .dx-anchor-popover:modal[data-side="top"],
-  .dx-anchor-dropdown-menu[popover][data-side="top"],
-  .dx-anchor-menubar[popover][data-side="top"],
-  .dx-anchor-navbar[popover][data-side="top"],
-  .dx-anchor-navigation-menu[popover][data-side="top"],
-  .dx-anchor-select[popover][data-side="top"],
-  .dx-anchor-combobox[popover][data-side="top"] {
+  [data-dx-anchored]:where(:not([data-dx-anchored="hover-card"])):is([popover], :modal)[data-side="top"] {
     bottom: anchor(top);
     left: anchor(center);
     margin-bottom: 8px;
     transform: translateX(-50%);
   }
 
-  .dx-anchor-tooltip[popover][data-side="right"],
-  .dx-anchor-popover[popover][data-side="right"],
-  .dx-anchor-popover:modal[data-side="right"],
-  .dx-anchor-dropdown-menu[popover][data-side="right"],
-  .dx-anchor-menubar[popover][data-side="right"],
-  .dx-anchor-navbar[popover][data-side="right"],
-  .dx-anchor-navigation-menu[popover][data-side="right"],
-  .dx-anchor-select[popover][data-side="right"],
-  .dx-anchor-combobox[popover][data-side="right"] {
+  [data-dx-anchored]:where(:not([data-dx-anchored="hover-card"])):is([popover], :modal)[data-side="right"] {
     top: anchor(center);
     left: anchor(right);
     margin-left: 8px;
     transform: translateY(-50%);
   }
 
-  .dx-anchor-tooltip[popover][data-side="bottom"],
-  .dx-anchor-popover[popover][data-side="bottom"],
-  .dx-anchor-popover:modal[data-side="bottom"],
-  .dx-anchor-dropdown-menu[popover][data-side="bottom"],
-  .dx-anchor-menubar[popover][data-side="bottom"],
-  .dx-anchor-navbar[popover][data-side="bottom"],
-  .dx-anchor-navigation-menu[popover][data-side="bottom"],
-  .dx-anchor-select[popover][data-side="bottom"],
-  .dx-anchor-combobox[popover][data-side="bottom"] {
+  [data-dx-anchored]:where(:not([data-dx-anchored="hover-card"])):is([popover], :modal)[data-side="bottom"] {
     top: anchor(bottom);
     left: anchor(center);
     margin-top: 8px;
     transform: translateX(-50%);
   }
 
-  .dx-anchor-tooltip[popover][data-side="left"],
-  .dx-anchor-popover[popover][data-side="left"],
-  .dx-anchor-popover:modal[data-side="left"],
-  .dx-anchor-dropdown-menu[popover][data-side="left"],
-  .dx-anchor-menubar[popover][data-side="left"],
-  .dx-anchor-navbar[popover][data-side="left"],
-  .dx-anchor-navigation-menu[popover][data-side="left"],
-  .dx-anchor-select[popover][data-side="left"],
-  .dx-anchor-combobox[popover][data-side="left"] {
+  [data-dx-anchored]:where(:not([data-dx-anchored="hover-card"])):is([popover], :modal)[data-side="left"] {
     top: anchor(center);
     right: anchor(left);
     margin-right: 8px;
     transform: translateY(-50%);
   }
 
-  .dx-anchor-hover-card[popover] {
+  [data-dx-anchored="hover-card"][popover] {
     position: fixed;
     margin: 0;
     inset: auto;
     position-try-fallbacks: flip-block, flip-inline;
-    /* See the anchor width contract comment on the shared marker-class
+    /* See the anchor width contract comment on the shared data-dx-anchored
        rule above (no backticks in this comment either -- same reason) --
        same reasoning, this selector just lives in its own rule because
        HoverCard uses a wider default gap. */
     --dx-anchor-width: anchor-size(width);
   }
 
-  .dx-anchor-hover-card[popover][data-side="top"] {
+  [data-dx-anchored="hover-card"][popover][data-side="top"] {
     bottom: anchor(top);
     left: anchor(center);
     margin-bottom: 10px;
     transform: translateX(-50%);
   }
 
-  .dx-anchor-hover-card[popover][data-side="right"] {
+  [data-dx-anchored="hover-card"][popover][data-side="right"] {
     top: anchor(center);
     left: anchor(right);
     margin-left: 10px;
     transform: translateY(-50%);
   }
 
-  .dx-anchor-hover-card[popover][data-side="bottom"] {
+  [data-dx-anchored="hover-card"][popover][data-side="bottom"] {
     top: anchor(bottom);
     left: anchor(center);
     margin-top: 10px;
     transform: translateX(-50%);
   }
 
-  .dx-anchor-hover-card[popover][data-side="left"] {
+  [data-dx-anchored="hover-card"][popover][data-side="left"] {
     top: anchor(center);
     right: anchor(left);
     margin-right: 10px;
     transform: translateY(-50%);
   }
 
-  .dx-anchor-tooltip[popover][data-side="top"][data-align="start"],
-  .dx-anchor-hover-card[popover][data-side="top"][data-align="start"],
-  .dx-anchor-popover[popover][data-side="top"][data-align="start"],
-  .dx-anchor-popover:modal[data-side="top"][data-align="start"],
-  .dx-anchor-dropdown-menu[popover][data-side="top"][data-align="start"],
-  .dx-anchor-menubar[popover][data-side="top"][data-align="start"],
-  .dx-anchor-navbar[popover][data-side="top"][data-align="start"],
-  .dx-anchor-navigation-menu[popover][data-side="top"][data-align="start"],
-  .dx-anchor-select[popover][data-side="top"][data-align="start"],
-  .dx-anchor-combobox[popover][data-side="top"][data-align="start"],
-  .dx-anchor-tooltip[popover][data-side="bottom"][data-align="start"],
-  .dx-anchor-hover-card[popover][data-side="bottom"][data-align="start"],
-  .dx-anchor-popover[popover][data-side="bottom"][data-align="start"],
-  .dx-anchor-popover:modal[data-side="bottom"][data-align="start"],
-  .dx-anchor-dropdown-menu[popover][data-side="bottom"][data-align="start"],
-  .dx-anchor-menubar[popover][data-side="bottom"][data-align="start"],
-  .dx-anchor-navbar[popover][data-side="bottom"][data-align="start"],
-  .dx-anchor-navigation-menu[popover][data-side="bottom"][data-align="start"],
-  .dx-anchor-select[popover][data-side="bottom"][data-align="start"],
-  .dx-anchor-combobox[popover][data-side="bottom"][data-align="start"] {
+  [data-dx-anchored]:is([popover], :modal)[data-side="top"][data-align="start"],
+  [data-dx-anchored]:is([popover], :modal)[data-side="bottom"][data-align="start"] {
     left: anchor(left);
     transform: none;
   }
 
-  .dx-anchor-tooltip[popover][data-side="top"][data-align="center"],
-  .dx-anchor-hover-card[popover][data-side="top"][data-align="center"],
-  .dx-anchor-popover[popover][data-side="top"][data-align="center"],
-  .dx-anchor-popover:modal[data-side="top"][data-align="center"],
-  .dx-anchor-dropdown-menu[popover][data-side="top"][data-align="center"],
-  .dx-anchor-menubar[popover][data-side="top"][data-align="center"],
-  .dx-anchor-navbar[popover][data-side="top"][data-align="center"],
-  .dx-anchor-navigation-menu[popover][data-side="top"][data-align="center"],
-  .dx-anchor-select[popover][data-side="top"][data-align="center"],
-  .dx-anchor-combobox[popover][data-side="top"][data-align="center"],
-  .dx-anchor-tooltip[popover][data-side="bottom"][data-align="center"],
-  .dx-anchor-hover-card[popover][data-side="bottom"][data-align="center"],
-  .dx-anchor-popover[popover][data-side="bottom"][data-align="center"],
-  .dx-anchor-popover:modal[data-side="bottom"][data-align="center"],
-  .dx-anchor-dropdown-menu[popover][data-side="bottom"][data-align="center"],
-  .dx-anchor-menubar[popover][data-side="bottom"][data-align="center"],
-  .dx-anchor-navbar[popover][data-side="bottom"][data-align="center"],
-  .dx-anchor-navigation-menu[popover][data-side="bottom"][data-align="center"],
-  .dx-anchor-select[popover][data-side="bottom"][data-align="center"],
-  .dx-anchor-combobox[popover][data-side="bottom"][data-align="center"] {
+  [data-dx-anchored]:is([popover], :modal)[data-side="top"][data-align="center"],
+  [data-dx-anchored]:is([popover], :modal)[data-side="bottom"][data-align="center"] {
     left: anchor(center);
     transform: translateX(-50%);
   }
 
-  .dx-anchor-tooltip[popover][data-side="top"][data-align="end"],
-  .dx-anchor-hover-card[popover][data-side="top"][data-align="end"],
-  .dx-anchor-popover[popover][data-side="top"][data-align="end"],
-  .dx-anchor-popover:modal[data-side="top"][data-align="end"],
-  .dx-anchor-dropdown-menu[popover][data-side="top"][data-align="end"],
-  .dx-anchor-menubar[popover][data-side="top"][data-align="end"],
-  .dx-anchor-navbar[popover][data-side="top"][data-align="end"],
-  .dx-anchor-navigation-menu[popover][data-side="top"][data-align="end"],
-  .dx-anchor-select[popover][data-side="top"][data-align="end"],
-  .dx-anchor-combobox[popover][data-side="top"][data-align="end"],
-  .dx-anchor-tooltip[popover][data-side="bottom"][data-align="end"],
-  .dx-anchor-hover-card[popover][data-side="bottom"][data-align="end"],
-  .dx-anchor-popover[popover][data-side="bottom"][data-align="end"],
-  .dx-anchor-popover:modal[data-side="bottom"][data-align="end"],
-  .dx-anchor-dropdown-menu[popover][data-side="bottom"][data-align="end"],
-  .dx-anchor-menubar[popover][data-side="bottom"][data-align="end"],
-  .dx-anchor-navbar[popover][data-side="bottom"][data-align="end"],
-  .dx-anchor-navigation-menu[popover][data-side="bottom"][data-align="end"],
-  .dx-anchor-select[popover][data-side="bottom"][data-align="end"],
-  .dx-anchor-combobox[popover][data-side="bottom"][data-align="end"] {
+  [data-dx-anchored]:is([popover], :modal)[data-side="top"][data-align="end"],
+  [data-dx-anchored]:is([popover], :modal)[data-side="bottom"][data-align="end"] {
     left: anchor(right);
     transform: translateX(-100%);
   }
@@ -382,122 +296,32 @@ const ANCHOR_POSITIONING_CSS_JS_LITERAL: &str = r#"`
      trigger's right edge and one aligned to end from its left. The panel is a
      DOM descendant of its trigger, so :dir() sees the page direction even in
      the top layer. (left/right sides align on the block axis, which direction does not touch.) */
-  .dx-anchor-tooltip[popover][data-side="top"][data-align="start"]:dir(rtl),
-  .dx-anchor-hover-card[popover][data-side="top"][data-align="start"]:dir(rtl),
-  .dx-anchor-popover[popover][data-side="top"][data-align="start"]:dir(rtl),
-  .dx-anchor-popover:modal[popover][data-side="top"][data-align="start"]:dir(rtl),
-  .dx-anchor-dropdown-menu[popover][data-side="top"][data-align="start"]:dir(rtl),
-  .dx-anchor-menubar[popover][data-side="top"][data-align="start"]:dir(rtl),
-  .dx-anchor-navbar[popover][data-side="top"][data-align="start"]:dir(rtl),
-  .dx-anchor-navigation-menu[popover][data-side="top"][data-align="start"]:dir(rtl),
-  .dx-anchor-select[popover][data-side="top"][data-align="start"]:dir(rtl),
-  .dx-anchor-combobox[popover][data-side="top"][data-align="start"]:dir(rtl),
-  .dx-anchor-tooltip[popover][data-side="bottom"][data-align="start"]:dir(rtl),
-  .dx-anchor-hover-card[popover][data-side="bottom"][data-align="start"]:dir(rtl),
-  .dx-anchor-popover[popover][data-side="bottom"][data-align="start"]:dir(rtl),
-  .dx-anchor-popover:modal[popover][data-side="bottom"][data-align="start"]:dir(rtl),
-  .dx-anchor-dropdown-menu[popover][data-side="bottom"][data-align="start"]:dir(rtl),
-  .dx-anchor-menubar[popover][data-side="bottom"][data-align="start"]:dir(rtl),
-  .dx-anchor-navbar[popover][data-side="bottom"][data-align="start"]:dir(rtl),
-  .dx-anchor-navigation-menu[popover][data-side="bottom"][data-align="start"]:dir(rtl),
-  .dx-anchor-select[popover][data-side="bottom"][data-align="start"]:dir(rtl),
-  .dx-anchor-combobox[popover][data-side="bottom"][data-align="start"]:dir(rtl) {
+  [data-dx-anchored][popover][data-side="top"][data-align="start"]:dir(rtl),
+  [data-dx-anchored][popover][data-side="bottom"][data-align="start"]:dir(rtl) {
     left: anchor(right);
     transform: translateX(-100%);
   }
 
-  .dx-anchor-tooltip[popover][data-side="top"][data-align="end"]:dir(rtl),
-  .dx-anchor-hover-card[popover][data-side="top"][data-align="end"]:dir(rtl),
-  .dx-anchor-popover[popover][data-side="top"][data-align="end"]:dir(rtl),
-  .dx-anchor-popover:modal[popover][data-side="top"][data-align="end"]:dir(rtl),
-  .dx-anchor-dropdown-menu[popover][data-side="top"][data-align="end"]:dir(rtl),
-  .dx-anchor-menubar[popover][data-side="top"][data-align="end"]:dir(rtl),
-  .dx-anchor-navbar[popover][data-side="top"][data-align="end"]:dir(rtl),
-  .dx-anchor-navigation-menu[popover][data-side="top"][data-align="end"]:dir(rtl),
-  .dx-anchor-select[popover][data-side="top"][data-align="end"]:dir(rtl),
-  .dx-anchor-combobox[popover][data-side="top"][data-align="end"]:dir(rtl),
-  .dx-anchor-tooltip[popover][data-side="bottom"][data-align="end"]:dir(rtl),
-  .dx-anchor-hover-card[popover][data-side="bottom"][data-align="end"]:dir(rtl),
-  .dx-anchor-popover[popover][data-side="bottom"][data-align="end"]:dir(rtl),
-  .dx-anchor-popover:modal[popover][data-side="bottom"][data-align="end"]:dir(rtl),
-  .dx-anchor-dropdown-menu[popover][data-side="bottom"][data-align="end"]:dir(rtl),
-  .dx-anchor-menubar[popover][data-side="bottom"][data-align="end"]:dir(rtl),
-  .dx-anchor-navbar[popover][data-side="bottom"][data-align="end"]:dir(rtl),
-  .dx-anchor-navigation-menu[popover][data-side="bottom"][data-align="end"]:dir(rtl),
-  .dx-anchor-select[popover][data-side="bottom"][data-align="end"]:dir(rtl),
-  .dx-anchor-combobox[popover][data-side="bottom"][data-align="end"]:dir(rtl) {
+  [data-dx-anchored][popover][data-side="top"][data-align="end"]:dir(rtl),
+  [data-dx-anchored][popover][data-side="bottom"][data-align="end"]:dir(rtl) {
     left: anchor(left);
     transform: none;
   }
 
-  .dx-anchor-tooltip[popover][data-side="left"][data-align="start"],
-  .dx-anchor-hover-card[popover][data-side="left"][data-align="start"],
-  .dx-anchor-popover[popover][data-side="left"][data-align="start"],
-  .dx-anchor-popover:modal[data-side="left"][data-align="start"],
-  .dx-anchor-dropdown-menu[popover][data-side="left"][data-align="start"],
-  .dx-anchor-menubar[popover][data-side="left"][data-align="start"],
-  .dx-anchor-navbar[popover][data-side="left"][data-align="start"],
-  .dx-anchor-navigation-menu[popover][data-side="left"][data-align="start"],
-  .dx-anchor-select[popover][data-side="left"][data-align="start"],
-  .dx-anchor-combobox[popover][data-side="left"][data-align="start"],
-  .dx-anchor-tooltip[popover][data-side="right"][data-align="start"],
-  .dx-anchor-hover-card[popover][data-side="right"][data-align="start"],
-  .dx-anchor-popover[popover][data-side="right"][data-align="start"],
-  .dx-anchor-popover:modal[data-side="right"][data-align="start"],
-  .dx-anchor-dropdown-menu[popover][data-side="right"][data-align="start"],
-  .dx-anchor-menubar[popover][data-side="right"][data-align="start"],
-  .dx-anchor-navbar[popover][data-side="right"][data-align="start"],
-  .dx-anchor-navigation-menu[popover][data-side="right"][data-align="start"],
-  .dx-anchor-select[popover][data-side="right"][data-align="start"],
-  .dx-anchor-combobox[popover][data-side="right"][data-align="start"] {
+  [data-dx-anchored]:is([popover], :modal)[data-side="left"][data-align="start"],
+  [data-dx-anchored]:is([popover], :modal)[data-side="right"][data-align="start"] {
     top: anchor(top);
     transform: none;
   }
 
-  .dx-anchor-tooltip[popover][data-side="left"][data-align="center"],
-  .dx-anchor-hover-card[popover][data-side="left"][data-align="center"],
-  .dx-anchor-popover[popover][data-side="left"][data-align="center"],
-  .dx-anchor-popover:modal[data-side="left"][data-align="center"],
-  .dx-anchor-dropdown-menu[popover][data-side="left"][data-align="center"],
-  .dx-anchor-menubar[popover][data-side="left"][data-align="center"],
-  .dx-anchor-navbar[popover][data-side="left"][data-align="center"],
-  .dx-anchor-navigation-menu[popover][data-side="left"][data-align="center"],
-  .dx-anchor-select[popover][data-side="left"][data-align="center"],
-  .dx-anchor-combobox[popover][data-side="left"][data-align="center"],
-  .dx-anchor-tooltip[popover][data-side="right"][data-align="center"],
-  .dx-anchor-hover-card[popover][data-side="right"][data-align="center"],
-  .dx-anchor-popover[popover][data-side="right"][data-align="center"],
-  .dx-anchor-popover:modal[data-side="right"][data-align="center"],
-  .dx-anchor-dropdown-menu[popover][data-side="right"][data-align="center"],
-  .dx-anchor-menubar[popover][data-side="right"][data-align="center"],
-  .dx-anchor-navbar[popover][data-side="right"][data-align="center"],
-  .dx-anchor-navigation-menu[popover][data-side="right"][data-align="center"],
-  .dx-anchor-select[popover][data-side="right"][data-align="center"],
-  .dx-anchor-combobox[popover][data-side="right"][data-align="center"] {
+  [data-dx-anchored]:is([popover], :modal)[data-side="left"][data-align="center"],
+  [data-dx-anchored]:is([popover], :modal)[data-side="right"][data-align="center"] {
     top: anchor(center);
     transform: translateY(-50%);
   }
 
-  .dx-anchor-tooltip[popover][data-side="left"][data-align="end"],
-  .dx-anchor-hover-card[popover][data-side="left"][data-align="end"],
-  .dx-anchor-popover[popover][data-side="left"][data-align="end"],
-  .dx-anchor-popover:modal[data-side="left"][data-align="end"],
-  .dx-anchor-dropdown-menu[popover][data-side="left"][data-align="end"],
-  .dx-anchor-menubar[popover][data-side="left"][data-align="end"],
-  .dx-anchor-navbar[popover][data-side="left"][data-align="end"],
-  .dx-anchor-navigation-menu[popover][data-side="left"][data-align="end"],
-  .dx-anchor-select[popover][data-side="left"][data-align="end"],
-  .dx-anchor-combobox[popover][data-side="left"][data-align="end"],
-  .dx-anchor-tooltip[popover][data-side="right"][data-align="end"],
-  .dx-anchor-hover-card[popover][data-side="right"][data-align="end"],
-  .dx-anchor-popover[popover][data-side="right"][data-align="end"],
-  .dx-anchor-popover:modal[data-side="right"][data-align="end"],
-  .dx-anchor-dropdown-menu[popover][data-side="right"][data-align="end"],
-  .dx-anchor-menubar[popover][data-side="right"][data-align="end"],
-  .dx-anchor-navbar[popover][data-side="right"][data-align="end"],
-  .dx-anchor-navigation-menu[popover][data-side="right"][data-align="end"],
-  .dx-anchor-select[popover][data-side="right"][data-align="end"],
-  .dx-anchor-combobox[popover][data-side="right"][data-align="end"] {
+  [data-dx-anchored]:is([popover], :modal)[data-side="left"][data-align="end"],
+  [data-dx-anchored]:is([popover], :modal)[data-side="right"][data-align="end"] {
     top: anchor(bottom);
     transform: translateY(-100%);
   }

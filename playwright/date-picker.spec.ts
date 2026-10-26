@@ -144,8 +144,8 @@ test("uses the CSS-anchor path, not the JS-measured fallback (no inline top/left
   // ColorPicker case.
   const inlineTop = await content(page).evaluate((el) => (el as HTMLElement).style.top);
   expect(inlineTop).toBe("");
-  const marker = await content(page).evaluate((el) => el.className.includes("dx-anchor-popover"));
-  expect(marker).toBe(true);
+  const marker = await content(page).evaluate((el) => el.getAttribute("data-dx-anchored"));
+  expect(marker).toBe("popover");
 });
 
 test("offset to trigger holds after scrolling (CSS anchor tracks scroll natively)", async ({ page }) => {

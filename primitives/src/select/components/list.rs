@@ -317,7 +317,7 @@ fn select_list_onkeydown(mut ctx: SelectContext) -> impl FnMut(KeyboardEvent) {
 ///   it is not a `pointerdown` -- so light dismiss never enters into the
 ///   `select.spec.ts` "tabbing out ... closes" cases).
 /// - **Animation**: does *not* use [`crate::top_layer::use_popover_sync`]
-///   bound to the raw `open` signal, unlike the other `dx-anchor-*`
+///   bound to the raw `open` signal, unlike the other anchored
 ///   consumers -- see [`crate::top_layer::use_popover_shown_while_mounted`]'s
 ///   doc for the animate-out race that binding would otherwise cause with
 ///   [`crate::use_animated_open`] (`SelectList`, above), and why this
@@ -429,13 +429,6 @@ fn SelectListRendered(
         }),
     );
 
-    // See `dropdown_menu.rs`'s `DropdownMenuContentRendered` for why this
-    // hand-written, never-`Styles::`-routed marker class exists: it is what
-    // the shared, engine-injected anchor-positioning stylesheet
-    // (`top_layer::ensure_anchor_positioning_styles`) selects on,
-    // sidestepping `manganis-core`'s `css_module_parser` not scoping
-    // classes inside `@supports` bodies.
-    //
     // axe `aria-input-field-name` (dev-docs/backlog.md row 34): an
     // ARIA `listbox` is an input field and needs an accessible name.
     // Default it from the trigger (whose own visible text is the
@@ -464,27 +457,25 @@ fn SelectListRendered(
             aria_labelledby: "{ctx.selectable.trigger_id}"
         })
     };
-    // The marker is what the engine's anchor stylesheet selects on, so only the popper placement
-    // carries it. An item-aligned list is placed by its own script (`use_item_aligned`) in viewport
-    // px, and writes `data-side` for its own CSS: with the marker, the engine's
-    // `.dx-anchor-select[popover][data-side=...]` rules (`bottom: anchor(top)`, `margin`,
-    // `transform: translateX(-50%)`, `position-try-fallbacks`) applied on top of it, so a list opened
+    // Only the popper placement is engine-anchored. An item-aligned list is placed by its own script
+    // (`use_item_aligned`) in viewport px, and writes `data-side` for its own CSS: with the engine's
+    // `[data-dx-anchored][popover][data-side=...]` rules (`bottom: anchor(top)`, `margin`,
+    // `transform: translateX(-50%)`, `position-try-fallbacks`) applied on top of it, a list opened
     // above its trigger was scroll-compensated by the page's scroll (`top: 8px` painted at 8px minus
     // `scrollY`), and one opened below was 8px low and half its width to the left.
-    let engine_marker: Vec<Attribute> = if (ctx.position)() == SelectPosition::Popper {
-        attributes!(div {
-            class: "dx-anchor-select"
-        })
+    let anchor_kind = if (ctx.position)() == SelectPosition::Popper {
+        crate::top_layer::AnchorKind::Select
     } else {
-        Vec::new()
+        crate::top_layer::AnchorKind::SelectItemAligned
     };
-    let attributes = merge_attributes(vec![attributes, engine_marker, labelledby]);
+    let attributes = merge_attributes(vec![attributes, labelledby]);
     // Folds the caller's own `style` together with the anchor binding into
     // one `style` attribute -- see `top_layer::anchored_content_attributes`'s
     // doc for why a bare `style: position_anchor_style(&id)` literal
     // alongside `..attributes` is the duplicate-`style` hazard
     // (`dev-docs/conformance-harness.md` hydration-parity Rule 4).
     let attributes = crate::top_layer::anchored_content_attributes(
+        anchor_kind,
         &ctx.selectable.trigger_id.cloned(),
         attributes,
     );

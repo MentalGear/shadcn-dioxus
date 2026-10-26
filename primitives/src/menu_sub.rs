@@ -19,12 +19,11 @@
 //! content does -- so that positioning call is identical for both and does
 //! belong here in spirit, but the actual `use_anchor_position_fallback`
 //! call still has to live in each file's own `#[cfg(feature = "web")]`
-//! leaf render function, because `top_layer.rs` hard-codes a fixed list
-//! of `dx-anchor-*`
-//! marker classes for its shared stylesheet, and both hosts' submenus reuse
-//! the existing `dx-anchor-dropdown-menu` entry rather than a class that
-//! doesn't exist in that list -- see each `*SubContentRendered`'s own doc
-//! for the full reasoning.
+//! leaf render function, because the engine's shared stylesheet is scoped
+//! by the `data-dx-anchored` attribute that `top_layer::anchored_content_attributes`
+//! writes from a `top_layer::AnchorKind`, and both hosts' submenus pass
+//! `AnchorKind::DropdownMenu` rather than a kind of their own -- see each
+//! `*SubContentRendered`'s own doc for the full reasoning.
 //!
 //! What *is* identical for both hosts, and lives here:
 //! - [`SubMenuState`]: the open/close state, own roving-focus collection,

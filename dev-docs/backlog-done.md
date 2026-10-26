@@ -6,7 +6,7 @@ resolves here by id.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Done rows (373)
+## Done rows (374)
 
 | # | Item | Updated |
 |---|---|---|
@@ -380,6 +380,7 @@ resolves here by id.
 | [429](backlog/done/429-one-gate-kit-css-walker-allowlist-engine.md) | One gate kit: a shared CSS walker and one allowlist engine for the check scripts | 2026-10-25 |
 | [430](backlog/done/430-component-manifests-derived-from-source.md) | Component manifests derived from source, not hand-kept | 2026-10-25 |
 | [431](backlog/done/431-one-test-harness-controlled-state-use-controlled.md) | One test runtime harness; controlled state only through use_controlled | 2026-10-25 |
+| [432](backlog/done/432-anchor-engine-one-attribute-not-marker-classes.md) | Anchor engine selects on one data attribute, not nine hand-kept marker classes | 2026-10-26 |
 | [433](backlog/done/433-slot-variables-derived-from-sheet.md) | Slot variables derived from the sheet, not documented by hand | 2026-10-26 |
 | [437](backlog/done/437-pipefail-early-exit-reader.md) | No early-exit reader on the right of a pipe in a pipefail script (grep -q, head, sed q, awk exit) | 2026-10-25 |
 | [439](backlog/done/439-chart-prehydration-geometry-flake.md) | chart-prehydration geometry flake: the two loads race font-display: optional | 2026-10-25 |

@@ -161,25 +161,16 @@ fn ComboboxListRendered(
         }),
     );
 
-    // See `dropdown_menu.rs`'s `DropdownMenuContentRendered` for why this
-    // hand-written, never-`Styles::`-routed marker class exists: it is what
-    // the shared, engine-injected anchor-positioning stylesheet
-    // (`top_layer::ensure_anchor_positioning_styles`) selects on,
-    // sidestepping `manganis-core`'s `css_module_parser` not scoping
-    // classes inside `@supports` bodies.
-    let attributes = merge_attributes(vec![
-        attributes,
-        attributes!(div {
-            class: "dx-anchor-combobox"
-        }),
-    ]);
     // Folds the caller's own `style` together with the anchor binding into
     // one `style` attribute -- see `top_layer::anchored_content_attributes`'s
     // doc for why a bare `style: position_anchor_style(&id)` literal
     // alongside `..attributes` is the duplicate-`style` hazard
     // (`dev-docs/conformance-harness.md` hydration-parity Rule 4).
-    let attributes =
-        crate::top_layer::anchored_content_attributes(&ctx.input_id.cloned(), attributes);
+    let attributes = crate::top_layer::anchored_content_attributes(
+        crate::top_layer::AnchorKind::Combobox,
+        &ctx.input_id.cloned(),
+        attributes,
+    );
     let owned = attributes!(div {
         role: "listbox",
         popover: crate::top_layer::PopoverKind::Manual.as_str(),
