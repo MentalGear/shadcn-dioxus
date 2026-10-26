@@ -251,17 +251,19 @@ impl AutoplayContext {
     /// Stop autoplay for good (until [`CarouselRotationControl`] is
     /// explicitly clicked again) if a [`CarouselAutoplay`] is present with
     /// `stop_on_interaction` enabled (its own default `true`) -- called
-    /// from every *manual, discrete* paging entry point:
+    /// from a pointer press on the track (the `onpointerdown` of
+    /// [`CarouselContent`]'s viewport: touch, pen or mouse, the start of a
+    /// swipe or drag) and from every manual paging entry point:
     /// [`CarouselPrevious`]/[`CarouselNext`], [`Carousel`]'s own root
     /// keyboard handler, [`CarouselIndicator`], and [`CarouselApi::scroll_to`].
     /// Mirrors embla-carousel's own `embla-carousel-autoplay` plugin
-    /// option of the same name.
+    /// option of the same name, which stops on embla's pointer down.
     ///
-    /// Deliberately **not** called from the native pointer-drag/wheel
-    /// scroll-tracking bridge (`use_carousel_scroll_tracking`) -- a
-    /// documented scope cut: only the discrete actions above count as
-    /// "interaction" for this purpose. See
-    /// [`CarouselAutoplayProps::stop_on_interaction`]'s own doc.
+    /// Not called from the scroll-tracking bridge (`use_carousel_scroll_tracking`)
+    /// or the wheel band: a scroll that has no press behind it (wheel,
+    /// trackpad, keyboard scrolling of the track) is not an interaction,
+    /// as in embla. See [`CarouselAutoplayProps::stop_on_interaction`]'s
+    /// own doc.
     pub(super) fn note_interaction(&self) {
         if (self.present)() && (self.stop_on_interaction)() {
             let mut playing = self.playing;

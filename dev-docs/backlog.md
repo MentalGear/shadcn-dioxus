@@ -40,7 +40,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (62)
+## Open rows (63)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -104,7 +104,8 @@ proposing one is closed as out of scope (row 337 is the first).
 | [467](backlog/467-port-legacy-removal-keyed-to-the-verdict.md) | Measured group: legacy removal, keyed to each port's verdict.json | BACKLOG. Awaiting the owner's approval of the row 434 step 3 plan. | S | primitives |
 | [468](backlog/468-bug-form-reset-leaves-controlled-input-out-of-sync.md) | Bug: form reset leaves a controlled text input showing empty while Rust keeps the old value | BACKLOG. Found by board round 5; reproduce first. Independent of plan approval. | S | inputs |
 | [469](backlog/469-bug-text-typed-before-hydration-is-wiped-on-the-ssg-site.md) | Bug: text typed before hydration is wiped by the first post-hydration render on the SSG site | BACKLOG. Found by board round 5; reproduce first. Independent of plan approval. | M | inputs |
-| [470](backlog/470-bug-carousel-autoplay-tick-fights-a-user-swipe.md) | Bug: the carousel autoplay tick fights a user swipe (the scroller is pulled forward and bounces back) | BACKLOG. Found by board round 5; reproduce first. Independent of plan approval. | S-M | components |
+| [470](backlog/470-bug-carousel-autoplay-tick-fights-a-user-swipe.md) | Bug: the carousel autoplay tick fights a user swipe (the scroller is pulled forward and bounces back) | FIXED on lane/carousel-touch-stop (owner direction 2026-10-26: "just stop autoplay on touchdown /… | S-M | components |
 | [471](backlog/471-bug-datatransfer-setters-are-no-ops-on-desktop.md) | Bug: DataTransfer setters in rsx drag handlers are silent no-ops on desktop | BACKLOG. Found by board round 5; reproduce first. Independent of plan approval. | S | primitives |
+| [472](backlog/472-chart-tooltip-fade.md) | Chart tooltips fade in and out with the theme's floating motion tokens | BACKLOG. Owner request 2026-10-26 (backlog thread): "chart tooltips should have a fade in/out… | S | components |
 
 <!-- END GENERATED -->

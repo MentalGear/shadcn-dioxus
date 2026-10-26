@@ -1,7 +1,7 @@
 ---
 id: 470
 title: "Bug: the carousel autoplay tick fights a user swipe (the scroller is pulled forward and bounces back)"
-status: "BACKLOG. Found by board round 5; reproduce first. Independent of plan approval."
+status: "FIXED on lane/carousel-touch-stop (owner direction 2026-10-26: \"just stop autoplay on touchdown /…"
 size: "S-M"
 area: components
 updated: 2026-10-26
@@ -23,7 +23,7 @@ Related to [row 434](./434-javascript-in-typescript-modules-not-rust-strings.md)
 
 ## Status / trigger
 
-BACKLOG. Found by board round 5; reproduce first. Independent of plan approval.
+FIXED on `lane/carousel-touch-stop` (owner direction 2026-10-26: "just stop autoplay on touchdown / hover"). A `pointerdown` (touch, pen or mouse) on the track's clipping viewport, in `CarouselContent` and `CarouselVirtualContent`, calls `AutoplayContext::note_interaction`, so `stop_on_interaction` stops rotation for good when a swipe or drag starts, before the first tick can race it; it is a plain rsx `onpointerdown`, no JavaScript. Hover already paused (`stop_on_mouse_enter`) and is unchanged. A wheel or trackpad scroll does not count, as in embla-carousel-autoplay. Proof: `playwright/carousel-rewind-autoplay.spec.ts`, "autoplay stops on a press on the track (row 470)", 4 of its 5 tests fail without the handler and all 5 pass with it (mouse press, mouse drag, CDP touch swipe, tap, and the wheel negative). Found by board round 5.
 
 ## Size
 
