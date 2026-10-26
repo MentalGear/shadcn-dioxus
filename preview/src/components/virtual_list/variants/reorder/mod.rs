@@ -10,6 +10,8 @@ use dioxus_primitives::drag_and_drop_list::reorder::{
     announce_cancel, announce_drop, announce_lift, announce_move, command_for_key,
     pointer_position, DropPosition, ReorderAxis, ReorderCommand, ReorderState,
 };
+use std::collections::HashMap;
+use std::rc::Rc;
 
 const COUNT: usize = 200;
 
@@ -29,6 +31,8 @@ struct Reorder {
     gesture: Signal<ReorderState>,
     announcement: Signal<String>,
     focus_id: Signal<Option<usize>>,
+    /// Each task handle's element by task id, written by the handle's `onmounted`.
+    handles: Signal<HashMap<usize, Rc<MountedData>>>,
 }
 
 impl Reorder {
@@ -129,6 +133,9 @@ fn Row(props: RowProps) -> Element {
     let handle = attributes!(button {
         class: "dx-vl-reorder-handle",
         "data-item-button": "{id}",
+        onmounted: move |event: MountedEvent| {
+            reorder.handles.write().insert(id, event.data());
+        },
         draggable: "true",
         aria_roledescription: "drag handle",
         aria_label: "Reorder task {id}",
@@ -231,11 +238,13 @@ pub fn Demo() -> Element {
     let gesture = use_signal(|| ReorderState::Idle);
     let announcement = use_signal(String::new);
     let focus_id = use_signal(|| None::<usize>);
+    let handles = use_signal(HashMap::new);
     let reorder = Reorder {
         order,
         gesture,
         announcement,
         focus_id,
+        handles,
     };
     let mut order_mut = order;
     // A deterministic shuffle, so the demo (and its spec) behave the same every time.
@@ -254,12 +263,13 @@ pub fn Demo() -> Element {
         let Some(id) = focus_id.read().to_owned() else {
             return;
         };
-        let eval = document::eval(
-            r#"const id = await dioxus.recv();
+        let Some(handle) = handles.peek().get(&id).cloned() else {
+            return;
+        };
+        spawn(async move {
             // focus-ok: returns focus to the handle of the task that was just moved or stepped to
-            document.querySelector('[data-item-button="' + id + '"]')?.focus();"#,
-        );
-        let _ = eval.send(id);
+            _ = handle.set_focus(true).await;
+        });
     });
     rsx! {
         div { class: "dx-virtual-list-demo", "data-vl-reorder-demo": "",

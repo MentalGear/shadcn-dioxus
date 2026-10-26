@@ -87,9 +87,13 @@ struct ContextMenuCtx {
     // `use_outside_dismiss` treats them as "inside".
     root_id: Signal<String>,
 
-    // Id of the trigger element, for `use_refocus_on_close_unless` (lib.rs)
-    // to return focus to on close. See dev-docs/plan.md Phase 3.1.
+    // Id of the trigger element: `ContextMenuContent`'s `aria-labelledby`.
     trigger_id: Signal<String>,
+
+    // The trigger element by handle, for `use_refocus_on_close_unless` (lib.rs) to return focus to
+    // on close (see dev-docs/plan.md Phase 3.1), and the last press the menu saw, which says
+    // whether that hand-back is skipped (touch, pen).
+    trigger: crate::TriggerHandle,
 
     // Set just before a close caused by interacting outside the menu (see
     // `use_outside_dismiss` below), so the refocus hook knows to leave focus
@@ -220,6 +224,7 @@ pub fn ContextMenu(props: ContextMenuProps) -> Element {
     let position = use_signal(|| (0, 0));
     let root_id = use_unique_id();
     let trigger_id = use_unique_id();
+    let trigger = crate::use_trigger_handle();
     let interacted_outside = use_signal(|| false);
     let long_press_just_fired = use_signal(|| false);
 
@@ -234,6 +239,7 @@ pub fn ContextMenu(props: ContextMenuProps) -> Element {
         focus,
         root_id,
         trigger_id,
+        trigger,
         interacted_outside,
         long_press_just_fired,
         submenu_open_count,
@@ -262,7 +268,7 @@ pub fn ContextMenu(props: ContextMenuProps) -> Element {
     // `interacted_outside`).
     crate::use_refocus_on_close_unless(
         ctx.open,
-        ctx.trigger_id,
+        ctx.trigger,
         ReadSignal::new(ctx.interacted_outside),
     );
 
@@ -276,6 +282,7 @@ pub fn ContextMenu(props: ContextMenuProps) -> Element {
     // unconditionally closing it here, on every target, has nothing to
     // conflict with.
     let handle_keydown = move |event: Event<KeyboardData>| {
+        ctx.trigger.press().key_pressed(&event);
         if open() && event.key() == Key::Escape {
             event.prevent_default();
             set_open.call(false);
@@ -313,6 +320,7 @@ pub fn ContextMenu(props: ContextMenuProps) -> Element {
     rsx! {
         div {
             onkeydown: handle_keydown,
+            onpointerdown: move |event: PointerEvent| ctx.trigger.press().pressed(&event),
             ..attributes,
             {props.children}
         }
@@ -506,6 +514,7 @@ pub fn ContextMenuTrigger(props: ContextMenuTriggerProps) -> Element {
             role: "button",
             aria_haspopup: crate::menu_semantics::MENU_TRIGGER_HASPOPUP,
             aria_expanded: (ctx.open)(),
+            onmounted: ctx.trigger.onmounted(),
             // Suppress iOS Safari's long-press behaviors (callout sheet, text
             // selection magnifier, gray tap-flash) and the system's own touch
             // gestures so our timer is the only thing that fires -- combined
@@ -1671,6 +1680,9 @@ pub fn ContextMenuSub(props: ContextMenuSubProps) -> Element {
     });
 
     use_context_provider(|| sub);
+    // The sub-trigger's element, for the submenu content's ArrowLeft/Escape hand-back.
+    let sub_trigger = crate::use_trigger_handle();
+    use_context_provider(|| crate::SubTriggerHandle(sub_trigger));
 
     rsx! {
         {props.children}
@@ -1753,7 +1765,12 @@ pub fn ContextMenuSubTrigger(props: ContextMenuSubTriggerProps) -> Element {
             .text_value(move || (props.text_value)()),
     );
     let focused = move || item.focused();
-    let onmounted = item.onmounted();
+    let mut register = item.onmounted();
+    let sub_trigger = use_context::<crate::SubTriggerHandle>().0;
+    let onmounted = move |event: MountedEvent| {
+        sub_trigger.set(event.data());
+        register(event);
+    };
 
     // The hover-intent timers are shared with this submenu's own content
     // (`ContextMenuSubContentRendered`) via `SubMenuState`, not private
@@ -2006,7 +2023,7 @@ fn ContextMenuSubContentRendered(
     ]);
     let attributes = crate::top_layer::anchored_content_attributes(&id, attributes);
 
-    let trigger_id = sub.trigger_id;
+    let sub_trigger = use_context::<crate::SubTriggerHandle>().0;
     // See `DropdownMenuSubContentRendered`'s identical `onkeydown` for the
     // full APG citation (Escape/ArrowLeft close-and-refocus,
     // ArrowDown/ArrowUp/Home/End scoped to `sub.focus`) -- `stop_propagation()`
@@ -2027,11 +2044,12 @@ fn ContextMenuSubContentRendered(
         if closes {
             sub.set_open.call(false);
             sub.focus.clear_focus();
-            let trigger_id = trigger_id.cloned();
-            // focus-ok: ArrowLeft/Escape in a submenu (keyboard only) hands focus to its trigger
-            dioxus::document::eval(&format!(
-                "var e=document.getElementById('{trigger_id}');if(e)e.focus()"
-            ));
+            if let Some(trigger) = sub_trigger.element() {
+                spawn(async move {
+                    // focus-ok: ArrowLeft/Escape in a submenu (keyboard only) hands focus to its trigger
+                    _ = trigger.set_focus(true).await;
+                });
+            }
         } else {
             match key {
                 Key::ArrowDown => sub.focus.focus_next(),
@@ -2148,7 +2166,7 @@ fn ContextMenuSubContentRendered(
     // identical call above for the general rationale.
     let mut typeahead = crate::typeahead::use_typeahead_state();
 
-    let trigger_id = sub.trigger_id;
+    let sub_trigger = use_context::<crate::SubTriggerHandle>().0;
     // See the web arm's identical construction (above) for why the close
     // key is resolved via `is_submenu_close_arrow_key` rather than a plain
     // `Key::ArrowLeft` literal.
@@ -2159,11 +2177,12 @@ fn ContextMenuSubContentRendered(
         if closes {
             sub.set_open.call(false);
             sub.focus.clear_focus();
-            let trigger_id = trigger_id.cloned();
-            // focus-ok: ArrowLeft/Escape in a submenu (keyboard only) hands focus to its trigger
-            dioxus::document::eval(&format!(
-                "var e=document.getElementById('{trigger_id}');if(e)e.focus()"
-            ));
+            if let Some(trigger) = sub_trigger.element() {
+                spawn(async move {
+                    // focus-ok: ArrowLeft/Escape in a submenu (keyboard only) hands focus to its trigger
+                    _ = trigger.set_focus(true).await;
+                });
+            }
         } else {
             match key {
                 Key::ArrowDown => sub.focus.focus_next(),

@@ -2,6 +2,47 @@
 
 use crate::selectable::{ListboxFocus, OptionState, RcPartialEqValue, SelectableContext};
 use dioxus::prelude::*;
+use std::collections::HashMap;
+use std::rc::Rc;
+
+/// The mounted elements focus moves between: the input, and a multi-select's chip remove buttons
+/// by chip index (`ComboboxChips` writes them, the input and the clear button read).
+#[derive(Clone, Copy, PartialEq)]
+pub(super) struct ComboboxHandles {
+    pub input: Signal<Option<Rc<MountedData>>>,
+    pub chips: Signal<HashMap<usize, Rc<MountedData>>>,
+}
+
+impl ComboboxHandles {
+    /// Move DOM focus to the input (a no-op until it has mounted).
+    pub fn focus_input(self) {
+        if let Some(input) = self.input.peek().clone() {
+            spawn(async move {
+                // focus-ok: the field's own controls (a chip, the clear button, its padding) hand focus to the input
+                _ = input.set_focus(true).await;
+            });
+        }
+    }
+
+    /// Move focus one chip toward `prev` (or from the input, when `current` is `None`): from the
+    /// input `prev` lands on the last of `count` chips; stepping past the last chip lands on the
+    /// input.
+    pub fn focus_chip(self, current: Option<usize>, prev: bool, count: usize) {
+        let at = current.unwrap_or(count);
+        let next = if prev { at.saturating_sub(1) } else { at + 1 };
+        let target = if next >= count {
+            self.input.peek().clone()
+        } else {
+            self.chips.peek().get(&next).cloned()
+        };
+        if let Some(target) = target {
+            spawn(async move {
+                // focus-ok: arrow keys walk the chip remove buttons and the input (the field's roving focus)
+                _ = target.set_focus(true).await;
+            });
+        }
+    }
+}
 
 /// The default case-insensitive substring filter.
 pub fn default_combobox_filter(query: &str, text: &str) -> bool {
@@ -56,6 +97,9 @@ pub(super) struct ComboboxContext {
     /// wiring. See `PopoverCtx::content_id`'s doc in `popover.rs` for the
     /// exact bug this guards against if the two ever named different ids.
     pub input_id: Signal<String>,
+
+    /// The mounted input and chip buttons, for moving focus between them.
+    pub handles: ComboboxHandles,
 
     /// Whether the user has edited the input's text since the popup opened.
     ///

@@ -4,7 +4,7 @@ title: "Cut JavaScript to what Rust cannot do: audit every eval block, move the 
 status: "BACKLOG. Approved as P9 of the row 365 sweep; the owner re-scoped it to Rust first on 2026-10-25.…"
 size: "L"
 area: primitives
-updated: 2026-10-25
+updated: 2026-10-26
 ---
 
 # Row 434: Cut JavaScript to what Rust cannot do
@@ -43,3 +43,7 @@ Source: [final sweep note, P9](../research/final-sweep-2026-10-25.md). One lane 
 ## Progress: step 2, lane 2C "scroll and measure" (2026-10-26)
 
 Branch `lane/js-measure-2c`. **Moved to Rust (3 of 6):** S2 (Select scroll buttons' can-scroll state, from the list's own `onscroll`/`onresize`), S3 (hover auto-scroll step, `get_scroll_offset` + `scroll(.., Instant)`) and S19 (NavigationMenu indicator, `get_client_rect` of the list and the open item, written through the indicator's own `style`). **Kept in JS, reasons in the audit rows:** S4 (needs list padding/border, layout height for the open animation's scale and `:hover`, none of which Rust can read; `scroll_to` is `scrollIntoView` and scrolls ancestors), L22 (needs per-host wiring in `navbar.rs`/`navigation_menu.rs`, not a hook-only change) and V6 (scroller handle lives in `SidebarContent`, `getComputedStyle`/`offsetParent` reads). Files touched outside the lane list, because only the list element can carry the handlers: `select/components/list.rs` (provides `ListScroll`, adds `onscroll`/`onresize`), and the `onmounted` of `NavigationMenuList`/`NavigationMenuItem`. Release build: `main-thread` select/combobox/navigation_menu open and close 0 long tasks (max interaction 16-40 ms against the 200 ms bound); hover auto-scroll on `/component/select/` 0 long tasks, 60 fps frames (p95 16.7 ms), 346 px in 1.5 s against the nominal 360 px/s. Desktop (two webview round trips per 16 ms tick for S3) was not measured. Pre-existing and unrelated: `native-dialog.spec.ts` 6e reads `viewport.innerHeight` inside a page callback (NaN), red on this branch's base.
+
+## Step 2 progress
+
+- **Lane 2B, focus by handle (branch `lane/js-focus-2b`, 2026-10-26):** L17 (DropdownMenu, ContextMenu; Select keeps the id script until its trigger adopts `TriggerHandle`), L19, S5, S6 and V15 moved to `MountedData::set_focus` (22 script lines removed, no new JS). L18 and L20 stay JS, with the reason in their audit rows: L20 measured (a plain `focus()` moves a half-visible carousel's page by 157 px where `preventScroll` moves it by 0), L18 needs `activeElement` (focus-within) that Rust cannot read. Two files outside the lane's list carry the combobox handle field (`combobox/context.rs`, `combobox/components/combobox.rs`). The row stays open: lanes 2A, 2C, 2D, 2E and step 3.
