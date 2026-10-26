@@ -1,14 +1,8 @@
 {
   "name": "sidebar",
   "description": "A sidebar component as a vertical interface panel fixed to the screen edge, enable quick access to different sections of an application",
-  "authors": [
-    "zhiyanzhaijie"
-  ],
-  "exclude": [
-    "variants",
-    "docs.md",
-    "component.json"
-  ],
+  "authors": ["zhiyanzhaijie"],
+  "exclude": ["variants", "docs.md", "component.json"],
   "cargoDependencies": [
     {
       "name": "dioxus-primitives",
@@ -26,7 +20,5 @@
     { "name": "skeleton", "git": "https://github.com/MentalGear/shadcn-dioxus" },
     { "name": "tooltip", "git": "https://github.com/MentalGear/shadcn-dioxus" }
   ],
-  "globalAssets": [
-    "../../../assets/dx-components-theme.css"
-  ]
+  "globalAssets": ["../../../assets/dx-components-theme.css"]
 }

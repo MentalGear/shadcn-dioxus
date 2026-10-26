@@ -49,7 +49,7 @@ verify() {
   errs="$(grep -E 'ssg error:|Failed to (get|parse) static routes' "$clean" || true)"
   if [ -n "$errs" ]; then
     problems+=("dx reported $(printf '%s\n' "$errs" | wc -l | tr -d ' ') failed render(s) (it still exits 0):")
-    while IFS= read -r line; do problems+=("    ${line:0:260}"); done < <(printf '%s\n' "$errs" | head -n 12)
+    while IFS= read -r line; do problems+=("    ${line:0:260}"); done < <(sed -n '1,12p' <<<"$errs")
   fi
 
   # 2. requested routes -> files

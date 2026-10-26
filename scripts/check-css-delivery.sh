@@ -60,9 +60,9 @@ if [ ! -f "$EAGER" ]; then
   fail "$EAGER is missing"
 else
   code=$(sed -E 's://.*$::' "$EAGER")
-  printf '%s\n' "$code" | grep -qE 'fn[[:space:]]+create_link' || fail "$EAGER no longer overrides create_link (the covered-sheet skip)"
-  printf '%s\n' "$code" | grep -q 'data-dx-css-bundle' || fail "$EAGER no longer consults link[data-dx-css-bundle]"
-  printf '%s\n' "$code" | grep -q 'data-covers' || fail "$EAGER no longer reads data-covers"
+  grep -qE 'fn[[:space:]]+create_link' <<<"$code" || fail "$EAGER no longer overrides create_link (the covered-sheet skip)"
+  grep -q 'data-dx-css-bundle' <<<"$code" || fail "$EAGER no longer consults link[data-dx-css-bundle]"
+  grep -q 'data-covers' <<<"$code" || fail "$EAGER no longer reads data-covers"
 fi
 
 # 4. fonts: preloaded latin files, display=optional (a shift-proof pair; either alone is not: see GlobalHead's doc).
@@ -73,13 +73,13 @@ else
   if [ -z "$head" ]; then
     fail "could not find 'fn GlobalHead()' in $MAIN"
   else
-    n=$(printf '%s\n' "$head" | grep -c 'rel: "preload"' || true)
+    n=$(grep -c 'rel: "preload"' <<<"$head" || true)
     [ "$n" -ge 2 ] || fail "GlobalHead must preload the Geist and Geist Mono latin woff2 files (found $n preload links): without them the face arrives after first paint"
-    printf '%s\n' "$head" | grep -q 'r#as: "font"' || fail "GlobalHead's font preloads must say r#as: \"font\""
-    printf '%s\n' "$head" | grep -q 'crossorigin: "anonymous"' || fail "GlobalHead's font preloads need crossorigin (a font preload without it is fetched twice and never used)"
-    printf '%s\n' "$head" | grep -q 'font-display:optional' || fail "GlobalHead's @font-face rules must say font-display:optional (swap re-wraps the page when Geist arrives: CLS 0.117 measured)"
-    printf '%s\n' "$head" | grep -q '@font-face' || fail "GlobalHead must write the @font-face rules from the same asset! URLs as the preloads"
-    if printf '%s\n' "$head" | grep -qE 'display[=:]swap|https?://'; then
+    grep -q 'r#as: "font"' <<<"$head" || fail "GlobalHead's font preloads must say r#as: \"font\""
+    grep -q 'crossorigin: "anonymous"' <<<"$head" || fail "GlobalHead's font preloads need crossorigin (a font preload without it is fetched twice and never used)"
+    grep -q 'font-display:optional' <<<"$head" || fail "GlobalHead's @font-face rules must say font-display:optional (swap re-wraps the page when Geist arrives: CLS 0.117 measured)"
+    grep -q '@font-face' <<<"$head" || fail "GlobalHead must write the @font-face rules from the same asset! URLs as the preloads"
+    if grep -qE 'display[=:]swap|https?://' <<<"$head"; then
       fail "GlobalHead asks for display swap or names a remote URL (fonts are self-hosted, row 162)"
     fi
   fi

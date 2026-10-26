@@ -46,23 +46,23 @@ import re
 import sys
 from pathlib import Path
 
+sys.path.insert(0, "scripts/lib")
+from allow import Allowlist  # noqa: E402
+from css import line_of, parse  # noqa: E402
+
 # (stylesheet path, fnmatch pattern on the @keyframes name, reason). Every entry must match at least one
 # keyframe that really sets `transform`, or the run fails as stale. Keep the reason about WHY this element can
 # never sit on an anchor's centring transform -- "it is old" is not a reason.
-ALLOW = [
+ALLOW = Allowlist("check-anchored-keyframes", [
     ("preview/src/components/chart/style.css", "dx-chart-*",
      "SVG mark grow-in (scaleX/scaleY/scale from 0 with a transform-origin on <rect>/<path>), inside the plot; never an overlay"),
     ("preview/src/components/progress/style.css", "dx-indeterminate*",
      "indeterminate bar sweeps inside its own clipped track (translateX with an explicit RTL twin); not an overlay"),
     ("preview/src/components/spinner/style.css", "dx-spinner-spin",
      "rotates an inline <svg> glyph in place; not an overlay"),
-]
+], fields=("path", "pattern"))
 
 errors = []
-
-def strip_css_comments(src: str) -> str:
-    # keep newlines so line numbers stay right
-    return re.sub(r"/\*.*?\*/", lambda m: "\n" * m.group(0).count("\n"), src, flags=re.S)
 
 stylesheets = []
 for root in ("preview/src", "preview/assets"):
@@ -73,33 +73,28 @@ for root in ("preview/src", "preview/assets"):
 
 TRANSFORM_RE = re.compile(r"(?<![\w-])(?:-(?:webkit|moz|ms|o)-)?transform\s*:")
 
-used = [0] * len(ALLOW)
+KF_NAME = re.compile(r"@keyframes\s+([\w-]+)$")
 n_keyframes = 0
 n_allowed = 0
 for css in stylesheets:
-    src = strip_css_comments(css.read_text())
+    sheet = parse(css.read_text())
+    src = sheet.text
     parsed = 0
-    for m in re.finditer(r"@keyframes\s+([\w-]+)\s*\{", src):
+    for node in sheet.walk():
+        m = KF_NAME.match(node.prelude)
+        if not m:
+            continue
         parsed += 1
-        depth, i = 1, m.end()
-        while depth and i < len(src):
-            depth += {"{": 1, "}": -1}.get(src[i], 0)
-            i += 1
-        body = src[m.end() : i - 1]
+        body = node.body
         name = m.group(1)
         hits = list(TRANSFORM_RE.finditer(body))
         if not hits:
             continue
-        allow_idx = next(
-            (k for k, (path, pat, _) in enumerate(ALLOW) if path == css.as_posix() and fnmatch.fnmatchcase(name, pat)),
-            None,
-        )
-        if allow_idx is not None:
-            used[allow_idx] += 1
+        if ALLOW.find(lambda e: e.path == css.as_posix() and fnmatch.fnmatchcase(name, e.pattern)):
             n_allowed += 1
             continue
         for t in hits:
-            line = src.count("\n", 0, m.end() + t.start()) + 1
+            line = line_of(src, node.body_start + t.start())
             errors.append(
                 f"{css}:{line}: @keyframes {name} sets `transform` -- an anchored overlay's own "
                 f"`transform: translateX(-50%)` is replaced for the whole animation (the panel plays "
@@ -111,14 +106,7 @@ for css in stylesheets:
     if stray:
         errors.append(f"{css}: {stray} `@keyframes` token(s) this script could not parse -- fix the parse, do not skip them")
 
-for (path, pat, reason), k in zip(ALLOW, used):
-    if not reason.strip():
-        errors.append(f"allowlist entry ({path}, {pat}) has no reason")
-    if not k:
-        errors.append(
-            f"stale allowlist entry ({path}, {pat}): no `transform` @keyframes matches it any more -- remove it "
-            f"from scripts/check-anchored-keyframes.sh"
-        )
+errors += ALLOW.problems()
 
 if not stylesheets or not n_keyframes:
     errors.append("no stylesheet or no @keyframes was found -- the scan in this script is broken")

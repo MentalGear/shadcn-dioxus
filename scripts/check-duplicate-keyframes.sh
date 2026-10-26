@@ -40,15 +40,14 @@ import re
 import sys
 from pathlib import Path
 
-# (path-glob::name-glob, reason). Each covers the DUPLICATE side of a cluster; the canonical one stays out.
-ALLOW = [
-    ("preview/src/components/alert_dialog/style.css::dx-alert-animate-*",
-     "pure opacity fade, identical to the theme's dx-fade-in/out; moves to the shared pair with the modal panels (row 145)"),
-    ("preview/src/components/command/style.css::dx-command-dialog-backdrop-*",
-     "pure opacity fade, identical to the theme's dx-fade-in/out; moves to the shared pair with the modal panels (row 145)"),
-    ("preview/src/components/dialog/style.css::dx-dialog-backdrop-animate-*",
-     "pure opacity fade, identical to the theme's dx-fade-in/out; moves to the shared pair with the modal panels (row 145)"),
-]
+sys.path.insert(0, "scripts/lib")
+from allow import Allowlist  # noqa: E402
+from css import parse  # noqa: E402
+
+# (path-glob::name-glob, reason). Each covers the DUPLICATE side of a cluster; the canonical one stays out. Empty since
+# row 426: the three modal wrappers' opacity fades went to the theme's `data-dx-scrim` rule, which uses `dx-fade-in/out`.
+ALLOW = Allowlist("check-duplicate-keyframes", [
+], fields=("pattern",))
 
 explicit = sys.argv[1:]
 if explicit:
@@ -64,11 +63,7 @@ if not files:
     print("check-duplicate-keyframes: no stylesheets found (run from a checkout)", file=sys.stderr)
     sys.exit(2)
 
-COMMENT = re.compile(r"/\*.*?\*/", re.S)
-START = re.compile(r"@(?:-webkit-)?keyframes\s+([\w-]+)\s*\{")
-
-def blank_comments(text):
-    return COMMENT.sub(lambda m: re.sub(r"[^\n]", " ", m.group(0)), text)
+START = re.compile(r"@(?:-webkit-)?keyframes\s+([\w-]+)$")
 
 def normalise(body):
     b = re.sub(r"\s+", "", body)
@@ -80,32 +75,23 @@ clusters = collections.defaultdict(list)  # body -> [(path, line, name)]
 parsed = 0
 errors = []
 for path in files:
-    raw = path.read_text(encoding="utf-8")
-    text = blank_comments(raw)
-    tokens = len(re.findall(r"@(?:-webkit-)?keyframes\b", text))
+    sheet = parse(path.read_text(encoding="utf-8"))
+    tokens = len(re.findall(r"@(?:-webkit-)?keyframes\b", sheet.text))
     n = 0
-    for m in START.finditer(text):
-        i, depth = m.end(), 1
-        while depth and i < len(text):
-            depth += (text[i] == "{") - (text[i] == "}")
-            i += 1
-        body = normalise(text[m.end():i - 1])
-        clusters[body].append((str(path), text.count("\n", 0, m.start()) + 1, m.group(1)))
+    for node in sheet.walk():
+        m = START.match(node.prelude)
+        if not m:
+            continue
+        clusters[normalise(node.body)].append((str(path), node.line, m.group(1)))
         n += 1
     if n != tokens:
         errors.append(f"{path}: parsed {n} @keyframes but the file has {tokens}; the parse needs to learn this spelling")
     parsed += n
 
-used = set()
-
 def covered(member):
     path, _, name = member
     key = f"{path}::{name}"
-    for idx, (pat, _) in enumerate(ALLOW):
-        if fnmatch.fnmatch(key, pat):
-            used.add(idx)
-            return True
-    return False
+    return bool(ALLOW.find_all(lambda e: fnmatch.fnmatch(key, e.pattern)))
 
 dups = 0
 for body, members in clusters.items():
@@ -119,10 +105,7 @@ for body, members in clusters.items():
                       f"definition (the theme's dx-fade-*, dx-pop-*, dx-drop-* for floating surfaces), "
                       f"or make the new body differ")
 
-if not explicit:
-    for idx, (pat, reason) in enumerate(ALLOW):
-        if idx not in used:
-            errors.append(f"stale allowlist entry `{pat}` ({reason}): it no longer covers a duplicate; delete it")
+errors += ALLOW.problems(stale=not explicit)
 
 if errors:
     for e in errors:

@@ -2415,18 +2415,6 @@ html[data-cv-settle] {
  * hero card of the Area/Bar/Line tabs spans every column). Page-level chrome
  * lives here rather than in a component stylesheet: nothing in it ships via
  * `dx components add`. */
-.dx-charts-sr-only {
-  position: absolute;
-  overflow: hidden;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  border: 0;
-  margin: -1px;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
 .dx-charts-page {
   width: 100%;
   max-width: var(--dx-content-width);

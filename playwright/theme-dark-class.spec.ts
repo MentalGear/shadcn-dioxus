@@ -4,6 +4,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
+import { gotoReference } from "./page-kinds";
 
 /**
  * shadcn's `.dark` class as the second spelling of `data-theme="dark"` (backlog row 158 (a)).
@@ -41,8 +42,7 @@ async function openHost(page: Page, htmlAttrs: string, pasted = "") {
 <body><div id="probe" style="background: var(--dx-background); width: 10px; height: 10px"></div></body></html>`,
     }),
   );
-  // goto-ok: HOST is a route-fulfilled static page, not the app: it never sets html[data-hydrated]
-  await page.goto(`${HOST}/`);
+  await gotoReference(page, `${HOST}/`);
 }
 
 const probe = (page: Page) =>

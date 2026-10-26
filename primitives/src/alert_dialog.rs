@@ -22,7 +22,7 @@
 
 #[cfg(not(feature = "web"))]
 use crate::use_global_escape_listener;
-use crate::{merge_attributes, use_animated_open, use_id_or, use_unique_id};
+use crate::{merge_attributes, use_animated_open, use_controlled, use_id_or, use_unique_id};
 #[cfg(not(feature = "web"))]
 use dioxus::document;
 use dioxus::prelude::*;
@@ -116,12 +116,7 @@ pub fn AlertDialogRoot(props: AlertDialogRootProps) -> Element {
 
     let labelledby = use_unique_id().to_string();
     let describedby = use_unique_id().to_string();
-    let mut open_signal = use_signal(|| props.default_open);
-    let set_open = use_callback(move |v: bool| {
-        open_signal.set(v);
-        props.on_open_change.call(v);
-    });
-    let open = use_memo(move || (props.open)().unwrap_or_else(&*open_signal));
+    let (open, set_open) = use_controlled(props.open, props.default_open, props.on_open_change);
     // See `scroll_lock::use_early_scroll_capture`'s doc / `DialogRoot`'s
     // identical call: captures scroll position before `showModal()` (called
     // from `AlertDialogContent`, mounted as a consequence of the same `open`

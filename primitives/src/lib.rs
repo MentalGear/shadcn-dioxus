@@ -252,21 +252,50 @@ pub(crate) struct Controlled<T: Clone + PartialEq + 'static> {
     pub(crate) on_change: Callback<T>,
 }
 
+/// The three pieces of a controlled-or-uncontrolled state, for a component that also needs the
+/// internal signal itself (the accordion seeds it at mount without calling `on_change`).
+#[derive(Clone, Copy)]
+pub(crate) struct ControlledState<T: Clone + PartialEq + 'static> {
+    /// What the component last set (or was seeded with); it also follows a controlled change, so a
+    /// state that goes from controlled to uncontrolled keeps what it showed.
+    pub(crate) internal: Signal<T>,
+    /// The resolved value: the controlled prop when `Some`, else `internal`.
+    pub(crate) value: Memo<T>,
+    /// Writes `internal` and calls `on_change`, whether or not the value changed.
+    pub(crate) set: Callback<T>,
+}
+
+/// [`use_controlled`] that also hands back the internal signal. The one place in the crate where
+/// "internal signal, memo of `prop.or(internal)`, callback that sets one and notifies" is written
+/// out; `scripts/check-test-harness-controlled.sh` fails a second copy.
+pub(crate) fn use_controlled_state<T: Clone + PartialEq + 'static>(
+    prop: ReadSignal<Option<T>>,
+    default: T,
+    on_change: Callback<T>,
+) -> ControlledState<T> {
+    let mut internal = use_signal(|| prop.cloned().unwrap_or(default));
+    let value = use_memo(move || prop.cloned().unwrap_or_else(&*internal));
+
+    let set = use_callback(move |x: T| {
+        internal.set(x.clone());
+        on_change.call(x);
+    });
+
+    ControlledState {
+        internal,
+        value,
+        set,
+    }
+}
+
 /// Allows some state to be either controlled or uncontrolled.
 pub fn use_controlled<T: Clone + PartialEq + 'static>(
     prop: ReadSignal<Option<T>>,
     default: T,
     on_change: Callback<T>,
 ) -> (Memo<T>, Callback<T>) {
-    let mut internal_value = use_signal(|| prop.cloned().unwrap_or(default));
-    let value = use_memo(move || prop.cloned().unwrap_or_else(&*internal_value));
-
-    let set_value = use_callback(move |x: T| {
-        internal_value.set(x.clone());
-        on_change.call(x);
-    });
-
-    (value, set_value)
+    let state = use_controlled_state(prop, default, on_change);
+    (state.value, state.set)
 }
 
 /// Run some cleanup code when the component is unmounted if the effect was run.
@@ -1870,5 +1899,94 @@ mod unique_id_tests {
                 }
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod controlled_state_tests {
+    use super::*;
+    use crate::test_support::with_runtime;
+    use std::cell::RefCell;
+    use std::rc::Rc;
+
+    /// A `Callback` that logs every value it is called with.
+    fn logging_callback(log: &Rc<RefCell<Vec<bool>>>) -> Callback<bool> {
+        let log = log.clone();
+        Callback::new(move |v: bool| log.borrow_mut().push(v))
+    }
+
+    // A memo recomputes on the next render pass, not inside the one a test runs in, so after a `set`
+    // these tests read the signal the callback wrote (`internal`) and the notification log.
+
+    #[test]
+    fn uncontrolled_starts_at_default_and_set_writes_and_notifies() {
+        let log = Rc::new(RefCell::new(Vec::new()));
+        let seen = log.clone();
+        with_runtime(move || {
+            let prop = use_signal(|| None::<bool>);
+            let state = use_controlled_state(prop.into(), true, logging_callback(&seen));
+            assert!(*state.value.peek(), "starts at the default");
+            state.set.call(false);
+            assert!(
+                !*state.internal.peek(),
+                "an uncontrolled set writes the state"
+            );
+        });
+        assert_eq!(*log.borrow(), vec![false]);
+    }
+
+    #[test]
+    fn set_notifies_even_when_the_value_is_unchanged() {
+        // Callers (a dialog's `on_open_change`, an accordion's `on_value_change`) rely on `set`
+        // being a plain "write and notify", not "notify on change": a click on the open item of a
+        // collapsible-off accordion still reports it.
+        let log = Rc::new(RefCell::new(Vec::new()));
+        let seen = log.clone();
+        with_runtime(move || {
+            let prop = use_signal(|| None::<bool>);
+            let state = use_controlled_state(prop.into(), false, logging_callback(&seen));
+            state.set.call(false);
+            state.set.call(false);
+            assert!(!*state.internal.peek());
+        });
+        assert_eq!(*log.borrow(), vec![false, false]);
+    }
+
+    #[test]
+    fn controlled_value_wins_and_a_set_notifies_and_seeds_the_fallback() {
+        let log = Rc::new(RefCell::new(Vec::new()));
+        let seen = log.clone();
+        with_runtime(move || {
+            let prop = use_signal(|| Some(true));
+            let state = use_controlled_state(prop.into(), false, logging_callback(&seen));
+            assert!(
+                *state.value.peek(),
+                "a controlled start shows the prop, not the default"
+            );
+            assert!(
+                *state.internal.peek(),
+                "and the fallback starts from the prop too"
+            );
+            state.set.call(false);
+            assert!(
+                *state.value.peek(),
+                "a controlled set leaves the shown value to the prop"
+            );
+            assert!(!*state.internal.peek(), "but the fallback follows the set");
+        });
+        assert_eq!(*log.borrow(), vec![false]);
+    }
+
+    #[test]
+    fn use_controlled_hands_back_the_value_and_set_of_the_state() {
+        let log = Rc::new(RefCell::new(Vec::new()));
+        let seen = log.clone();
+        with_runtime(move || {
+            let prop = use_signal(|| None::<bool>);
+            let (value, set) = use_controlled(prop.into(), false, logging_callback(&seen));
+            assert!(!*value.peek());
+            set.call(true);
+        });
+        assert_eq!(*log.borrow(), vec![true]);
     }
 }

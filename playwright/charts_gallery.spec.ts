@@ -3,7 +3,7 @@ import { type Locator } from "@playwright/test";
 import { gotoHydrated } from "./hydration";
 import { expectNoAxeViolations } from "./axe";
 import { BASE_URL } from "./base-url";
-import { fixedViewportBox } from "./viewport-box";
+import { fixedViewportBox, pageMetrics } from "./viewport-box";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -545,9 +545,7 @@ test("no horizontal page overflow; the tab row scrolls inside itself", async ({ 
   ] as const) {
     await page.setViewportSize({ width, height: 900 });
     await gotoHydrated(page, `${BASE_URL}/charts/area/`);
-    const overflow = await page.evaluate(
-      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
-    );
+    const { sidewaysOverflow: overflow } = await pageMetrics(page);
     expect(overflow, `page overflows horizontally at ${width}px`).toBeLessThanOrEqual(0);
     const { columns, content } = await page.evaluate(() => {
       const grid = document.querySelector(".dx-charts-grid")!;
@@ -693,9 +691,7 @@ test.describe("the charts and demos pages have the docs sidebar", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     for (const path of ["/charts/", "/demos/"]) {
       await gotoHydrated(page, `${BASE_URL}${path}`);
-      const overflow = await page.evaluate(
-        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
-      );
+      const { sidewaysOverflow: overflow } = await pageMetrics(page);
       expect(overflow, `${path} overflows horizontally at 390px`).toBeLessThanOrEqual(0);
       await page.locator(".dx-navbar-sidebar-trigger").click();
       await expect(page.getByRole("dialog").getByRole("link", { name: "Charts", exact: true })).toBeVisible();

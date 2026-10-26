@@ -865,7 +865,7 @@ pub struct CommandDialogProps {
 /// policy (`data-dx-autofocus`, see that component's doc) rather than anything
 /// this wrapper does itself.
 ///
-/// Carries two literal default classes (`dx-command-dialog-backdrop` on the
+/// Carries two literal default classes (`dx-command-dialog-backdrop` (with `data-dx-scrim`, the theme's no-top-layer scrim) on the
 /// root, `dx-command-dialog` on the content) so a themed layer has
 /// something to attach styling to without needing this wrapper to expose
 /// two separate attribute-forwarding props of its own -- the same
@@ -937,6 +937,7 @@ pub fn CommandDialog(props: CommandDialogProps) -> Element {
             default_open: props.default_open,
             on_open_change: props.on_open_change,
             class: "dx-command-dialog-backdrop",
+            "data-dx-scrim": "",
             crate::dialog::DialogContent {
                 class: "dx-command-dialog",
                 attributes: props.attributes,

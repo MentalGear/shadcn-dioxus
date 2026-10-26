@@ -51,14 +51,14 @@ if [ ! -f "$MODULE" ]; then
 else
   # Strip comments so the doc text that EXPLAINS queue_effect does not trip the check.
   code=$(sed -E 's://.*$::' "$MODULE")
-  printf '%s\n' "$code" | grep -qE 'impl[[:space:]]+Document[[:space:]]+for' \
+  grep -qE 'impl[[:space:]]+Document[[:space:]]+for' <<<"$code" \
     || fail "$MODULE no longer implements Document for its wrapper"
-  printf '%s\n' "$code" | grep -qE 'fn[[:space:]]+create_head_component' \
+  grep -qE 'fn[[:space:]]+create_head_component' <<<"$code" \
     || fail "$MODULE must delegate create_head_component (the fullstack hydration handshake)"
-  if printf '%s\n' "$code" | grep -qE 'queue_effect'; then
+  if grep -qE 'queue_effect' <<<"$code"; then
     fail "$MODULE uses queue_effect: a queued effect is dropped when its scope is removed, losing the <link> while the de-dup set still counts it"
   fi
-  printf '%s\n' "$code" | grep -qE 'pub[[:space:]]+fn[[:space:]]+use_eager_head_document' \
+  grep -qE 'pub[[:space:]]+fn[[:space:]]+use_eager_head_document' <<<"$code" \
     || fail "$MODULE must export use_eager_head_document"
 fi
 
@@ -70,13 +70,13 @@ else
   if [ -z "$app" ]; then
     fail "could not find 'pub fn App()' in $MAIN"
   else
-    printf '%s\n' "$app" | grep -q 'use_eager_head_document()' \
+    grep -q 'use_eager_head_document()' <<<"$app" \
       || fail "App must call use_eager_head_document() so no component's head element depends on the effect queue"
-    printf '%s\n' "$app" | grep -B1 'use_eager_head_document()' | grep -q 'cfg(not(feature = "server"))' \
+    grep -q 'cfg(not(feature = "server"))' <<<"$(grep -B1 'use_eager_head_document()' <<<"$app")" \
       || fail "App's use_eager_head_document() must sit under #[cfg(not(feature = \"server\"))] (the server keeps ServerDocument)"
     # It must come before the Router renders its first component.
-    install_line=$(printf '%s\n' "$app" | grep -n 'use_eager_head_document()' | head -1 | cut -d: -f1)
-    router_line=$(printf '%s\n' "$app" | grep -n 'Router::<Route>' | head -1 | cut -d: -f1)
+    install_line=$(grep -m1 -n 'use_eager_head_document()' <<<"$app" | cut -d: -f1)
+    router_line=$(grep -m1 -n 'Router::<Route>' <<<"$app" | cut -d: -f1)
     if [ -n "${install_line:-}" ] && [ -n "${router_line:-}" ] && [ "$install_line" -gt "$router_line" ]; then
       fail "App installs use_eager_head_document() after the Router: install it first, or the first routes' links use the effect queue"
     fi

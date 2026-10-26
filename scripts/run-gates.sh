@@ -84,6 +84,7 @@ gates=(
   "check-hooks-in-closures|scripts/check-hooks-in-closures.sh"
   "check-self-subscribing-effects|scripts/check-self-subscribing-effects.sh"
   "check-component-call|scripts/check-component-call.sh"
+  "check-test-harness-controlled|scripts/check-test-harness-controlled.sh"
   "check-attr-spread-collision|scripts/check-attr-spread-collision.sh"
   "check-direction-keys|scripts/check-direction-keys.sh"
   "check-render-keys|scripts/check-render-keys.sh"
@@ -93,6 +94,7 @@ gates=(
   "check-dynamic-style-shorthand|scripts/check-dynamic-style-shorthand.sh"
   "check-as-child|scripts/check-as-child.sh"
   "check-wrapper-props|scripts/check-wrapper-props.sh"
+  "check-wrapper-spread|scripts/check-wrapper-spread.sh"
   # group: Timers, listeners, motion and focus
   "check-uncleared-intervals|scripts/check-uncleared-intervals.sh"
   "check-blocking-scroll-listeners|scripts/check-blocking-scroll-listeners.sh"
@@ -139,6 +141,7 @@ gates=(
   "check-virtual-docs-parity|scripts/check-virtual-docs-parity.sh"
   "check-ssg-verify|scripts/check-ssg-verify.sh"
   # group: Registry and installed components
+  "check-component-manifests|scripts/check-component-manifests.sh"
   "check-component-catalog|scripts/check-component-catalog.sh"
   "check-installed-paths|scripts/check-installed-paths.sh"
   "check-registry-url|scripts/check-registry-url.sh"
@@ -165,8 +168,10 @@ gates=(
   "check-gates-doc|scripts/check-gates-doc.sh"
   "check-lane-lock|scripts/check-lane-lock.sh"
   "check-gate-reuse|scripts/check-gate-reuse.sh"
+  "check-gate-kit|scripts/check-gate-kit.sh"
   "check-lane-target|scripts/check-lane-target.sh"
   "check-merge-drivers|scripts/check-merge-drivers.sh"
+  "check-conflict-markers|scripts/check-conflict-markers.sh"
 
   # group: Rust build, lint, test and style
   # Every Rust file is rustfmt-formatted (`cargo fmt --all -- --check`). Never reused from the store: it takes under a second.

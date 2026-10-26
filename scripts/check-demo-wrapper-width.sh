@@ -83,8 +83,12 @@ import sys
 import glob
 import os
 
-def strip_comments(text):
-    return re.sub(r"/\*.*?\*/", "", text, flags=re.S)
+sys.path.insert(0, "scripts/lib")
+from css import rules as css_rules, strip_comments as _strip_comments  # noqa: E402
+
+def without_block_comments(text):
+    """The text of a Rust file without its block comments (the shared reader; not a stylesheet, so no string rules)."""
+    return _strip_comments(text, strings=False)
 
 def find_matching_brace(text, open_idx):
     """`text[open_idx]` must be '{'. Returns the index of its matching '}'."""
@@ -105,7 +109,7 @@ def extract_demo_root(src):
     element) or 'component' (uppercase call); `attrs_text` is the text of
     that element's own attribute list (up to its first child/nested brace,
     or its self-closing `}`)."""
-    text = strip_comments(src)
+    text = without_block_comments(src)
     m = re.search(r"pub\s+fn\s+Demo\s*\(\s*\)\s*->\s*Element\s*\{", text)
     if not m:
         return None
@@ -189,28 +193,17 @@ def selector_targets_class_itself(selector, class_name):
                 return True
     return False
 
-def css_rule_bodies_for_class(css_text, class_name):
+def css_rule_bodies_for_class(css_text, class_name, fragment=False):
     """Every declaration block that targets `.class_name` ITSELF (see
-    `selector_targets_class_itself`), anywhere in the file (base rule or a
-    `@media` override)."""
-    text = strip_comments(css_text)
-    bodies = []
-    pattern = re.compile(r"([^{}]+)\{")
-    pos = 0
-    while True:
-        m = pattern.search(text, pos)
-        if not m:
-            break
-        selector = m.group(1)
-        open_idx = m.end() - 1
-        close_idx = find_matching_brace(text, open_idx)
-        if selector_targets_class_itself(selector, class_name):
-            bodies.append(text[open_idx + 1:close_idx])
-        pos = m.end()
-    return bodies
+    `selector_targets_class_itself`), anywhere in the text (base rule or a
+    `@media` override). `fragment=True` reads CSS embedded in Rust source (a
+    raw string and the code around it), see scripts/lib/css.py."""
+    return [r.body for r in css_rules(css_text, fragment=fragment)
+            if selector_targets_class_itself(r.prelude, class_name)]
 
-def class_is_bug(css_text, class_name):
+def class_is_bug(css_text, class_name, rs_text=""):
     bodies = css_rule_bodies_for_class(css_text, class_name)
+    bodies += css_rule_bodies_for_class(rs_text, class_name, fragment=True)
     if not bodies:
         return None  # class not found in this stylesheet -- can't judge
     has_max_width = any(MAXWIDTH_RE.search(b) for b in bodies)
@@ -231,7 +224,7 @@ def resolve_component_root(folder, ident):
     comp_path = os.path.join(folder, "component.rs")
     if not os.path.isfile(comp_path):
         return None
-    src = strip_comments(open(comp_path, encoding="utf-8").read())
+    src = without_block_comments(open(comp_path, encoding="utf-8").read())
     m = re.search(r"pub\s+fn\s+" + re.escape(ident) + r"\s*\(", src)
     if not m:
         return None
@@ -312,9 +305,8 @@ for mod_path in sorted(glob.glob("preview/src/components/*/variants/*/mod.rs")):
     # r#"..."#` fed to a literal `style { {X} }` tag, e.g.
     # `drag_and_drop_list`'s `INLINE_STYLE`), since a demo-local CSS block
     # never lives in `style.css`.
-    combined_css = css_text + "\n" + strip_comments(src)
     for cls in class_str.split():
-        verdict = class_is_bug(combined_css, cls)
+        verdict = class_is_bug(css_text, cls, src)
         if verdict:
             errors.append(
                 f"{mod_path}: Demo root's `.{cls}` sets `max-width` with "

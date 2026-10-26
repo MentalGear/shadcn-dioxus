@@ -24,6 +24,7 @@ import { test, expect } from "./fixtures";
 import { type Page, type Locator } from "@playwright/test";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
+import { pageMetrics } from "./viewport-box";
 
 const NAV_TIMEOUT = 20 * 60 * 1000;
 const FIXTURE = `${BASE_URL}/component/top_layer/`;
@@ -197,7 +198,7 @@ test.describe("policy: only the anchor leaving the viewport closes", () => {
       page,
     }) => {
       const content = await s.open(page);
-      const { width, height } = page.viewportSize()!; // viewport-ok: restoring the size this test just changed
+      const { width, height } = (await pageMetrics(page)).viewportSize!;
       await page.setViewportSize({ width, height: Math.round(height * 0.55) });
       // what the browser does next: bring the focused field back into the remaining space
       await centre(s.anchor(page));
@@ -208,7 +209,7 @@ test.describe("policy: only the anchor leaving the viewport closes", () => {
 
   test("Combobox: typing with the keyboard up keeps the list (and its query) open", async ({ page }) => {
     const content = await ANCHOR[1].open(page);
-    const { width, height } = page.viewportSize()!; // viewport-ok: restoring the size this test just changed
+    const { width, height } = (await pageMetrics(page)).viewportSize!;
     await page.setViewportSize({ width, height: Math.round(height * 0.5) });
     await centre(page.locator("#clip-combobox-trigger"));
     await page.keyboard.type("a");

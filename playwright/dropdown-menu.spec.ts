@@ -4,6 +4,7 @@ import { BASE_URL } from './base-url';
 import { gotoHydrated } from './hydration';
 import { expectFadeKeepsTransform } from './assert-anchor-transform';
 import { measureAtRest } from "./animations";
+import { pageMetrics } from "./viewport-box";
 
 test('test', async ({ page }) => {
   await gotoHydrated(page, `${BASE_URL}/component/dropdown_menu/`);
@@ -74,7 +75,7 @@ test('open content is fit-content width, not full page width, and sits near its 
   if (!triggerBox || !box) {
     throw new Error(`expected both trigger and content boxes, got trigger=${triggerBox} content=${box}`);
   }
-  const viewport = page.viewportSize();
+  const viewport = (await pageMetrics(page)).viewportSize;
   const debug = JSON.stringify({ triggerBox, box, viewport });
   expect(box.width, debug).toBeLessThan((viewport?.width ?? 1280) * 0.6);
   // Left-aligned under its trigger (DropdownMenu's `side="bottom"

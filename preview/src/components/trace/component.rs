@@ -150,19 +150,12 @@ pub fn TraceCollapsible(props: CollapsibleProps) -> Element {
         "data-dx-root": "",
         "data-slot": "trace-collapsible",
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/trace/style.css") }
         collapsible::Collapsible {
-            keep_mounted: props.keep_mounted,
-            hidden_until_found: props.hidden_until_found,
-            default_open: props.default_open,
-            disabled: props.disabled,
-            open: props.open,
-            on_open_change: props.on_open_change,
-            as: props.r#as,
             attributes: merged,
-            {props.children}
+            ..props
         }
     }
 }
@@ -175,11 +168,14 @@ pub fn TraceCollapsibleTrigger(props: CollapsibleTriggerProps) -> Element {
         class: "dx-trace-collapsible-trigger",
         "data-slot": "trace-collapsible-trigger",
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
+    let children = props.children.clone();
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/trace/style.css") }
-        collapsible::CollapsibleTrigger { as: props.r#as, attributes: merged,
-            {props.children}
+        collapsible::CollapsibleTrigger {
+            attributes: merged,
+            ..props,
+            {children}
             TraceIcon { class: "dx-trace-chevron",
                 ChevronRight { size: "1rem" }
             }
@@ -194,12 +190,15 @@ pub fn TraceCollapsibleContent(props: CollapsibleContentProps) -> Element {
         class: "dx-trace-collapsible-content",
         "data-slot": "trace-collapsible-content",
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
+    let children = props.children.clone();
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/trace/style.css") }
-        collapsible::CollapsibleContent { id: props.id, attributes: merged,
+        collapsible::CollapsibleContent {
+            attributes: merged,
+            ..props,
             div { class: "dx-trace-collapsible-content-inner", "data-slot": "trace-collapsible-content-inner",
-                {props.children}
+                {children}
             }
         }
     }

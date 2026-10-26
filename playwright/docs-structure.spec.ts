@@ -22,6 +22,7 @@ import { test, expect } from "./fixtures";
 import { BASE_URL } from "./base-url";
 import { readCatalog } from "./catalog";
 import { gotoHydrated } from "./hydration";
+import { gotoPrerendered } from "./page-kinds";
 
 const NAMES = readCatalog().map((row) => row.name);
 const page_url = (name: string) => `${BASE_URL}/component/${name}/`;
@@ -33,8 +34,7 @@ test("every component page has one closed Installation section with one CLI comm
   test.setTimeout(10 * 60 * 1000);
   const problems: string[] = [];
   for (const name of NAMES) {
-    // goto-ok: reads prerendered markup only (no interaction), faster than waiting for hydration on every component
-    await page.goto(page_url(name), { waitUntil: "domcontentloaded" });
+    await gotoPrerendered(page, page_url(name), { waitUntil: "domcontentloaded" });
     const facts = await page.evaluate(() => {
       const article = document.querySelector("article.dx-component-page")!;
       const installation = [...article.querySelectorAll("h2")].filter((h) => h.textContent?.trim() === "Installation");
@@ -81,8 +81,7 @@ test("every docs.md section is a closed accordion item with its h2 wrapping the 
   const problems: string[] = [];
   let sections = 0;
   for (const name of NAMES) {
-    // goto-ok: reads prerendered markup only (no interaction), faster than waiting for hydration on every component
-    await page.goto(page_url(name), { waitUntil: "domcontentloaded" });
+    await gotoPrerendered(page, page_url(name), { waitUntil: "domcontentloaded" });
     const facts = await page.evaluate(() => {
       const accordion = document.querySelector("article.dx-component-page .dx-docs-accordion")!;
       const items = [...accordion.querySelectorAll<HTMLElement>(":scope > .dx-accordion-item")];

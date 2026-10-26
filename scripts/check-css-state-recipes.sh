@@ -48,8 +48,8 @@
 #                      `border-color` that is not `--dx-ring-invalid-color`: the destructive edge and halo
 #                      are one recipe, not a per-control mix of `--dx-destructive` percentages.
 #
-# EXCEPTIONS are in ALLOW below, each with its reason; an entry that no longer matches anything is
-# reported (not failed) so it can be deleted.
+# EXCEPTIONS are in ALLOW below, each with its reason; an entry that no longer matches anything fails the run as
+# stale (scripts/lib/allow.py). The sheets are read by scripts/lib/css.py, the one CSS reader of the gates.
 #
 # What this does NOT catch: whether a control that sets `outline: none` has a ring AT ALL (text controls
 # cannot be identified from CSS; `playwright/focus-ring.spec.ts` holds the field controls to the token),
@@ -69,6 +69,10 @@ import glob
 import re
 import sys
 
+sys.path.insert(0, "scripts/lib")
+from allow import Allowlist  # noqa: E402
+from css import blank_comments, rules as css_rules  # noqa: E402
+
 explicit = sys.argv[1:]
 files = explicit or sorted(glob.glob("preview/src/components/*/style.css"))
 if not files:
@@ -76,7 +80,7 @@ if not files:
     sys.exit(2)
 
 # (check, file suffix, substring of the selector or declaration value, reason)
-ALLOW = [
+ALLOW = Allowlist("check-css-state-recipes", [
     ("focus-shadow", "sidebar/style.css", "--dx-sidebar-ring",
      "shadcn's sidebar buttons ring with `focus-visible:ring-2 ring-sidebar-ring` (2px, the sidebar's own ring colour)"),
     ("focus-outline", "tabs/style.css", "1px solid var(--dx-ring-color)",
@@ -85,13 +89,7 @@ ALLOW = [
      "the destructive Button's focus border is destructive/40 (Nova `focus-visible:border-destructive/40`)"),
     ("focus-border", "alert_dialog/style.css", "--dx-destructive",
      "the alert dialog's action is a destructive Button; it takes the destructive Button's focus border"),
-]
-used = set()
-
-COMMENT = re.compile(r"/\*.*?\*/", re.S)
-
-def blank_comments(text):
-    return COMMENT.sub(lambda m: re.sub(r"[^\n]", " ", m.group(0)), text)
+], fields=("check", "suffix", "needle"))
 
 def strip_not(sel):
     """Drop every `:not( ... )` group (balanced), so a negated state is not read as the state."""
@@ -113,7 +111,6 @@ def strip_not(sel):
             i += 1
     return "".join(out)
 
-RULE = re.compile(r"([^{}]+)\{([^{}]*)\}")
 DECL = re.compile(r"(?<![\w-])([a-z-]+)\s*:\s*([^;]+)")
 DISABLED = re.compile(r":disabled|\[disabled|\[data-disabled|\[aria-disabled")
 FOCUS = re.compile(r":focus-visible|:focus-within")
@@ -128,12 +125,8 @@ TEXT_ENTRY = re.compile(
 MODALITY_RING = re.compile(r"var\(\s*--dx-ring-focus(?:-inset)?\s*[,)]")
 
 def allowed(check, path, selector, value):
-    for entry in ALLOW:
-        c, suffix, needle, _reason = entry
-        if c == check and path.endswith(suffix) and (needle == "" or needle in selector or needle in value):
-            used.add(id(entry))
-            return True
-    return False
+    return bool(ALLOW.find_all(lambda e: e.check == check and path.endswith(e.suffix)
+                               and (e.needle == "" or e.needle in selector or e.needle in value)))
 
 errors = []
 
@@ -144,16 +137,17 @@ def fail(check, path, line, selector, value, msg):
 
 for path in files:
     with open(path, encoding="utf-8") as fh:
-        text = blank_comments(fh.read())
+        raw = fh.read()
+    text = blank_comments(raw)
     for m in re.finditer(r"var\(--dx-ring\)", text):
         line = text.count("\n", 0, m.start()) + 1
         fail("legacy-ring", path, line, "var(--dx-ring)", "--dx-ring",
              "the legacy 2px ring; use var(--dx-ring-focus) (or --dx-ring-focus-inset in a clipping container)")
-    for m in RULE.finditer(text):
-        selector, body = m.group(1), m.group(2)
+    for r in css_rules(raw):
+        selector, body = r.prelude, r.body
         if not re.search(r"[.\[:#]", selector):
             continue  # @keyframes steps (`from`, `50%`)
-        line = text.count("\n", 0, m.start(2)) + 1
+        line = r.brace_line
         bare = strip_not(selector)
         decls = {k: " ".join(v.split()) for k, v in DECL.findall(body)}
 
@@ -207,10 +201,12 @@ if errors:
           f"and the \"State recipes\" section of preview/assets/dx-components-theme.css.", file=sys.stderr)
     sys.exit(1)
 
-stale = [e for e in ALLOW if id(e) not in used]
-if stale and not explicit:
-    for c, suffix, needle, reason in stale:
-        print(f"note: unused allowlist entry [{c}] {suffix} {needle!r} -- {reason}")
+problems = ALLOW.problems(stale=not explicit)
+if problems:
+    for p in problems:
+        print(f"check-css-state-recipes: {p}")
+    sys.exit(1)
+n_used = sum(1 for e in ALLOW if ALLOW.used(e))
 print(f"check-css-state-recipes: OK ({len(files)} stylesheet(s): focus, invalid and disabled use the recipe tokens; "
-      f"{len(used)} allowlist entr{'y' if len(used) == 1 else 'ies'} in use)")
+      f"{n_used} allowlist entr{'y' if n_used == 1 else 'ies'} in use)")
 PYEOF

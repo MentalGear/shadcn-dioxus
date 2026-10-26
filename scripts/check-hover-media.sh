@@ -54,7 +54,11 @@ import re
 import sys
 from pathlib import Path
 
-ALLOW = [
+sys.path.insert(0, "scripts/lib")
+from allow import Allowlist  # noqa: E402
+from css import parse, split_top  # noqa: E402
+
+ALLOW = Allowlist("check-hover-media", [
     ("preview/assets/main.css", ":not(:hover)",
      "the `@supports (scrollbar-width: auto)` REST state: scrollbars are transparent until the element is hovered. "
      "`:not(:hover)` matches everything on a touch device, which is the intent there (an overlay scrollbar), and "
@@ -62,16 +66,13 @@ ALLOW = [
     ("preview/src/components/scroll_area/style.css", "*.dx-scroll-area-auto-hide:not(:hover)",
      "the same scrollbar REST state as main.css's, scoped to `ScrollArea { always_show_scrollbars: false }` so an "
      "installed component carries it: transparent until hovered, its `:hover` partner is wrapped"),
-]
+], fields=("path", "pattern"))
 
 # (rust path, substring on the line, reason) for a `:hover` in a .rs file that is not CSS.
-RS_ALLOW = [
+RS_ALLOW = Allowlist("check-hover-media", [
     ("primitives/src/combobox/components/option.rs", "matches(':hover')",
      "JavaScript `Element.matches(':hover')` (is the pointer over this option right now), not a stylesheet rule"),
-]
-
-def strip_comments(src: str) -> str:
-    return re.sub(r"/\*.*?\*/", lambda m: "\n" * m.group(0).count("\n"), src, flags=re.S)
+], fields=("path", "substring"))
 
 def norm(s: str) -> str:
     return re.sub(r"\s+", " ", s.strip())
@@ -81,30 +82,6 @@ def is_hover_media(params: str) -> bool:
     if "," in p or " or " in p or "not " in p or "any-hover" in p:
         return False
     return bool(re.search(r"\(\s*hover\s*:\s*hover\s*\)", p) and re.search(r"\(\s*pointer\s*:\s*fine\s*\)", p))
-
-def split_top(sel):
-    out, depth, cur, q = [], 0, [], None
-    for c in sel:
-        if q:
-            cur.append(c)
-            if c == q:
-                q = None
-        elif c in "\"'":
-            q = c
-            cur.append(c)
-        elif c in "([":
-            depth += 1
-            cur.append(c)
-        elif c in ")]":
-            depth -= 1
-            cur.append(c)
-        elif c == "," and depth == 0:
-            out.append("".join(cur))
-            cur = []
-        else:
-            cur.append(c)
-    out.append("".join(cur))
-    return out
 
 def hover_kind(entry):
     pos = neg = False
@@ -137,82 +114,29 @@ def list_mix(entry):
                 return True
     return False
 
-def skip_str_find(src, i, chars):
-    """index of the first char in `chars` at/after i that is outside quotes and parentheses, or -1."""
-    q, par = None, 0
-    while i < len(src):
-        c = src[i]
-        if q:
-            if c == q:
-                q = None
-        elif c in "\"'":
-            q = c
-        elif c == "(":
-            par += 1
-        elif c == ")":
-            par -= 1
-        elif c in chars and par <= 0:
-            return i
-        i += 1
-    return -1
-
-def match_brace(src, i):
-    depth, q = 0, None
-    while i < len(src):
-        c = src[i]
-        if q:
-            if c == q:
-                q = None
-        elif c in "\"'":
-            q = c
-        elif c == "{":
-            depth += 1
-        elif c == "}":
-            depth -= 1
-            if depth == 0:
-                return i
-        i += 1
-    raise ValueError("unbalanced braces")
-
 errors = []
-used = [0] * len(ALLOW)
 counters = {"rules": 0, "wrapped": 0, "allowed": 0, "tokens": 0, "attributed": 0}
 
-def allow_idx(path, entry):
+def allow_entry(path, entry):
     n = norm(entry)
-    for k, (p, pat, _) in enumerate(ALLOW):
-        if p == path and fnmatch.fnmatchcase(n, pat):
-            return k
-    return None
+    return ALLOW.find(lambda e: e.path == path and fnmatch.fnmatchcase(n, e.pattern))
 
-def walk(path, src, start, end, hover):
-    i = start
-    while i < end:
-        while i < end and src[i].isspace():
-            i += 1
-        if i >= end:
-            break
-        stop = skip_str_find(src, i, "{;}")
-        if stop < 0 or stop >= end:
-            break
-        if src[stop] != "{":
-            i = stop + 1
+HOVER_AT = ("@media", "@supports", "@container", "@layer")
+
+def walk(path, nodes, hover):
+    """The blocks of one nesting level (the shared reader's tree): at-rules that can hold a style rule are descended
+    into, carrying whether an enclosing `@media` is exactly the hover query."""
+    for node in nodes:
+        prelude, line = node.prelude, node.line
+        if node.kind == "at":
+            counters["attributed"] += len(re.findall(r":hover(?![\w-])", prelude))
+            name = re.match(r"@[\w-]+", prelude).group(0)
+            if name in HOVER_AT:
+                inner = hover or (name == "@media" and is_hover_media(prelude[len("@media"):]))
+                walk(path, node.children, inner)
             continue
-        close = match_brace(src, stop)
-        prelude, line = src[i:stop], src.count("\n", 0, i) + 1
-        line += len(prelude) - len(prelude.lstrip("\n")) if False else 0
-        if prelude.lstrip().startswith("@"):
-            at = prelude.strip()
-            counters["attributed"] += len(re.findall(r":hover(?![\w-])", at))
-            name = re.match(r"@[\w-]+", at).group(0)
-            if name in ("@media", "@supports", "@container", "@layer"):
-                inner = hover or (name == "@media" and is_hover_media(at[len("@media"):]))
-                walk(path, src, stop + 1, close, inner)
-            i = close + 1
-            continue
-        body = src[stop + 1 : close]
         counters["rules"] += 1
-        if "{" in body:
+        if node.nested:
             errors.append(f"{path}:{line}: a `{{` inside the style rule `{norm(prelude)[:60]}` (nested CSS): this "
                           f"script does not follow it, so it could hide a `:hover`; write the rules flat")
         if "&" in prelude:
@@ -235,23 +159,17 @@ def walk(path, src, start, end, hover):
                                   f"`:is()`/`:where()`/`:has()` list; split it into a hover rule (in the media) and "
                                   f"a rule for the other states")
                 if not hover:
-                    idx = allow_idx(path, e)
-                    if idx is None:
+                    if allow_entry(path, e) is None:
                         errors.append(f"{path}:{line}: `{en[:90]}` has a `:hover` outside "
                                       f"`@media (hover: hover) and (pointer: fine)` (sticky hover on touch): wrap it, "
                                       f"keeping any focus/open-state selector in its own rule outside the media")
                     else:
-                        used[idx] += 1
                         counters["allowed"] += 1
             elif k == "neg" and not hover:
-                idx = allow_idx(path, e)
-                if idx is None:
+                if allow_entry(path, e) is None:
                     errors.append(f"{path}:{line}: `{en[:90]}` is a NEGATED `:hover` (the rest state, it matches "
                                   f"everything on touch): it must not be wrapped, so list it in ALLOW with a reason "
                                   f"in scripts/check-hover-media.sh")
-                else:
-                    used[idx] += 1
-        i = close + 1
 
 stylesheets = []
 for root in ("preview/src", "preview/assets"):
@@ -261,15 +179,13 @@ for root in ("preview/src", "preview/assets"):
         stylesheets.append(p)
 
 for css in stylesheets:
-    src = strip_comments(css.read_text())
-    counters["tokens"] += len(re.findall(r":hover(?![\w-])", src))
-    try:
-        walk(css.as_posix(), src, 0, len(src), False)
-    except ValueError as e:
-        errors.append(f"{css}: {e}")
+    sheet = parse(css.read_text())
+    counters["tokens"] += len(re.findall(r":hover(?![\w-])", sheet.text))
+    if sheet.problems:
+        errors.append(f"{css}: unbalanced braces ({sheet.problems[0][1]}, line {sheet.problems[0][0]})")
+    walk(css.as_posix(), sheet.nodes, False)
 
 # CSS inside Rust strings
-rs_used = [0] * len(RS_ALLOW)
 n_rs = 0
 for root in ("preview/src", "primitives/src"):
     for p in sorted(Path(root).rglob("*.rs")):
@@ -281,9 +197,7 @@ for root in ("preview/src", "primitives/src"):
             if text.lstrip().startswith("//") or not re.search(r":hover(?![\w-])", code):
                 continue
             n_rs += 1
-            k = next((k for k, (rp, sub, _) in enumerate(RS_ALLOW) if rp == p.as_posix() and sub in text), None)
-            if k is not None:
-                rs_used[k] += 1
+            if RS_ALLOW.find(lambda e: e.path == p.as_posix() and e.substring in text):
                 continue
             window = "\n".join(lines[max(0, ln - 80) : ln + 1]).replace("{{", "{").replace("}}", "}")
             ok = False
@@ -296,17 +210,8 @@ for root in ("preview/src", "primitives/src"):
                 errors.append(f"{p}:{ln + 1}: `:hover` in a Rust string that is not inside "
                               f"`@media (hover: hover) and (pointer: fine)` (sticky hover on touch)")
 
-for (path, pat, reason), k in zip(ALLOW, used):
-    if not reason.strip():
-        errors.append(f"allowlist entry ({path}, {pat}) has no reason")
-    if not k:
-        errors.append(f"stale allowlist entry ({path}, {pat}): no `:hover` selector needs it any more -- remove it "
-                      f"from scripts/check-hover-media.sh")
-for (path, sub, reason), k in zip(RS_ALLOW, rs_used):
-    if not reason.strip():
-        errors.append(f"RS_ALLOW entry ({path}, {sub}) has no reason")
-    if not k:
-        errors.append(f"stale RS_ALLOW entry ({path}, {sub}): no such line any more -- remove it")
+errors += ALLOW.problems()
+errors += [f"RS_ALLOW: {p}" for p in RS_ALLOW.problems()]
 
 if not stylesheets or not counters["rules"]:
     errors.append("no stylesheet or no rule was parsed -- the scan in this script is broken")

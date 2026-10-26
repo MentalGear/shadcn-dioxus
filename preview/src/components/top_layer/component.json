@@ -1,14 +1,8 @@
 {
   "name": "top_layer",
   "description": "Oracle fixture (not an installable component): every top-layer surface in the library -- Tooltip, HoverCard, Popover (non-modal and modal), ContextMenu, Menubar, DropdownMenu, Navbar, Select, Combobox, Toast and Dialog -- placed next to native <div popover>/<button popovertarget> and <dialog> references, under clipping, stacking, scroll, viewport-edge and inertness probes for playwright/oracle/tier2-html/top-layer.spec.ts and native-dialog.spec.ts.",
-  "authors": [
-    "Evan Almloff"
-  ],
-  "exclude": [
-    "variants",
-    "docs.md",
-    "component.json"
-  ],
+  "authors": ["Evan Almloff"],
+  "exclude": ["variants", "docs.md", "component.json"],
   "cargoDependencies": [
     {
       "name": "dioxus-primitives",
@@ -20,7 +14,5 @@
     { "name": "dialog", "git": "https://github.com/MentalGear/shadcn-dioxus" },
     { "name": "navigation_menu", "git": "https://github.com/MentalGear/shadcn-dioxus" }
   ],
-  "globalAssets": [
-    "../../../assets/dx-components-theme.css"
-  ]
+  "globalAssets": ["../../../assets/dx-components-theme.css"]
 }

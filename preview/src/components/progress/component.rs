@@ -10,14 +10,14 @@ use dioxus_primitives::progress::{self, ProgressLabelProps, ProgressProps, Progr
 #[component]
 pub fn Progress(props: ProgressProps) -> Element {
     let base = attributes!(div { class: "dx-progress", "data-dx-root": "" });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
+    let children = props.children.clone();
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/progress/style.css") }
         progress::Progress {
-            value: props.value,
-            max: props.max,
             attributes: merged,
-            {props.children}
+            ..props,
+            {children}
             div { class: "dx-progress-track",
                 progress::ProgressIndicator { class: "dx-progress-indicator" }
             }
@@ -29,10 +29,13 @@ pub fn Progress(props: ProgressProps) -> Element {
 #[component]
 pub fn ProgressLabel(props: ProgressLabelProps) -> Element {
     let base = attributes!(span { class: "dx-progress-label" });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/progress/style.css") }
-        progress::ProgressLabel { id: props.id, attributes: merged, {props.children} }
+        progress::ProgressLabel {
+            attributes: merged,
+            ..props
+        }
     }
 }
 
@@ -41,9 +44,12 @@ pub fn ProgressLabel(props: ProgressLabelProps) -> Element {
 #[component]
 pub fn ProgressValue(props: ProgressValueProps) -> Element {
     let base = attributes!(span { class: "dx-progress-value" });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/progress/style.css") }
-        progress::ProgressValue { attributes: merged }
+        progress::ProgressValue {
+            attributes: merged,
+            ..props
+        }
     }
 }

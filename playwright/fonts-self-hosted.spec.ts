@@ -6,6 +6,7 @@
 import { test, expect } from "./fixtures";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
+import { gotoPrerendered } from "./page-kinds";
 
 const ROUTES = ["/", "/component/form/", "/component/markdown/"];
 const GOOGLE = /(^|\.)(fonts\.googleapis\.com|fonts\.gstatic\.com)$/;
@@ -56,8 +57,7 @@ test("fonts come from our origin and the tokens drive body and code", async ({ p
 });
 
 test("the head preloads both self-hosted woff2 files (crossorigin) with font-display: optional", async ({ page }) => {
-  // goto-ok: reads the prerendered <head> only (preload links), no interaction
-  await page.goto(`${BASE_URL}/component/form/`, { waitUntil: "domcontentloaded" });
+  await gotoPrerendered(page, `${BASE_URL}/component/form/`, { waitUntil: "domcontentloaded" });
   const info = await page.evaluate(() => {
     const links = [...document.querySelectorAll<HTMLLinkElement>('link[rel="preload"][as="font"]')];
     return {

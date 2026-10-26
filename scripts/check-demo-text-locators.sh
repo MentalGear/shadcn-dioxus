@@ -23,29 +23,64 @@
 # unless the line, or the line directly above it, carries `copy-ok: <reason>` (a non-empty reason), or a
 # reasoned ALLOW entry covers it. A legitimate use is one where the name is NOT demo copy: a name that belongs
 # to the COMPONENT or the SITE (a Close button's `aria-label`, a toast's "close", the header's "Theme" button),
-# a vendored reference page (W3C's own example, not a demo), a conformance fixture whose labels were authored
-# for these very specs, or site content that has no demo frame (the home page, the dashboard). Say which.
+# a conformance fixture whose labels were authored for these very specs, or site content that has no demo frame (the
+# home page, the dashboard). Say which. A vendored reference page (W3C's own example, not a demo) needs no marker and no
+# entry (row 427): a locator inside a `test(...)` body that navigates with `gotoReference(page, url)`
+# (`playwright/page-kinds.ts`, which refuses a URL under the app's origin) is that page's own markup, so the exemption is
+# derived from the navigation helper.
 #
 # SCOPE: every `playwright/oracle/**/*.spec.ts` (except `oracle/reference/`), plus EXTRA_SPECS below. A
 # per-component spec that asserts its OWN component's labels (`dialog.spec.ts` checking a dialog's title) is
 # not a shared spec and not in scope.
 #
-# EXCEPTIONS are in ALLOW below, each with its reason (a needle of '' covers every hit in the file); an entry
-# that matches nothing fails the run, so it is deleted when its use goes away.
+# EXCEPTIONS are in ALLOW below (the shared allowlist engine, `scripts/lib/allow.py`), each with its reason (a needle of ''
+# covers every hit in the file); an entry that matches nothing fails the run, so it is deleted when its use goes away.
 #
-# Usage: scripts/check-demo-text-locators.sh [FILE ...]   (default: every spec in scope; explicit files are
-# for self-tests, and skip the allowlist stale-entry report)
+# Usage: scripts/check-demo-text-locators.sh [FILE ...]   (default: every spec in scope, then the self-test; --self-test
+# runs only the self-test; explicit files skip the allowlist stale-entry report)
 # Exit status: 0 when clean.
 
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
+self="$repo_root/scripts/check-demo-text-locators.sh"
+
+self_test() {
+  local dir fails=0 n=0
+  dir="$(mktemp -d)"
+  trap 'rm -rf "$dir"' RETURN
+  expect() {  # expect <0|1> <name> <body>
+    local want="$1" name="$2" body="$3" rc=0
+    printf '%s\n' "$body" >"$dir/$name.spec.ts"
+    bash "$self" "$dir/$name.spec.ts" >/dev/null 2>&1 || rc=$?
+    n=$((n + 1))
+    if [ "$rc" -ne "$want" ]; then
+      echo "check-demo-text-locators --self-test: FAIL $name: exit $rc, wanted $want" >&2
+      fails=$((fails + 1))
+    fi
+  }
+  expect 1 demo-text "test('x', async ({ page }) => { await gotoHydrated(page, u); await page.getByRole('button', { name: 'Show Dialog' }).click(); });"
+  expect 0 reference-text "test('x', async ({ page }) => { await gotoReference(page, u); await page.getByRole('button', { name: 'About' }).click(); });"
+  expect 1 text-beside-reference-test "test('r', async ({ page }) => { await gotoReference(page, u); });
+test('x', async ({ page }) => { await gotoHydrated(page, u); await page.getByText('Show Dialog').click(); });"
+  expect 1 reference-helper-spelled-bare "test('x', async ({ page }) => { await page.goto(u); await page.getByText('About').click(); });"
+  expect 1 reference-in-a-comment "test('x', async ({ page }) => { // gotoReference(page, u)
+  await page.getByText('About').click(); });"
+  expect 0 role-and-position "test('x', async ({ page }) => { await demoRole(page, 'button', 1).click(); });"
+  [ "$fails" -eq 0 ] || exit 1
+  echo "check-demo-text-locators --self-test: OK ($n fixtures; a text locator is exempt only inside a test body that calls gotoReference)"
+}
+
+if [ "${1:-}" = "--self-test" ]; then self_test; exit $?; fi
 
 python3 - "$@" <<'PYEOF'
 import os
 import re
 import sys
+
+sys.path.insert(0, "scripts/lib")
+from allow import Allowlist  # noqa: E402
 
 explicit = sys.argv[1:]
 
@@ -60,25 +95,11 @@ EXTRA_SPECS = [
 ]
 
 # (file suffix, substring of the code line ('' = every hit in the file), reason)
-ALLOW = [
+ALLOW = Allowlist("check-demo-text-locators", [
     ("oracle/hydration-parity.spec.ts", "name: displayName",
      "the heading name is the route's own component id (name.replace('_', ' ')), generated per route, not demo copy"),
-    ("oracle/tier1-apg/carousel.spec.ts", 'getByRole("region", { name: "Highlighted television shows" })',
-     "W3C's own vendored carousel example page (oracle/reference), not a demo"),
-    ("oracle/tier1-apg/carousel.spec.ts", "page.getByRole(\"button\", { name: /previous/i })",
-     "W3C's own vendored carousel example page (oracle/reference), not a demo"),
-    ("oracle/tier1-apg/carousel.spec.ts", "page.getByRole(\"button\", { name: /next/i })",
-     "W3C's own vendored carousel example page (oracle/reference), not a demo"),
-    ("oracle/tier1-apg/carousel.spec.ts", "page.getByRole(\"group\", { name:",
-     "W3C's own vendored carousel example page (oracle/reference): its slides are named 'n of 6'"),
-    ("oracle/tier1-apg/carousel.spec.ts", 'aria-label="${n} of',
-     "the carousel's own generated 'n of m' tabpanel names (W3C's vendored tabbed example, and the indicators variant's component-generated names), not demo copy"),
-    ("oracle/tier1-apg/disclosure-navigation.spec.ts", '{ name: "About" }',
-     "W3C's own vendored disclosure-navigation example page (oracle/reference), not a demo"),
-    ("oracle/tier1-apg/disclosure-navigation.spec.ts", '{ name: "Overview" }',
-     "W3C's own vendored disclosure-navigation example page (oracle/reference), not a demo"),
-    ("oracle/tier1-apg/disclosure-navigation.spec.ts", '{ name: "Mythical University" }',
-     "W3C's own vendored disclosure-navigation example page (oracle/reference), not a demo"),
+    ("oracle/tier1-apg/carousel.spec.ts", 'of 5"]',
+     "the indicators variant's component-generated 'n of 5' tabpanel names, not demo copy"),
     ("oracle/tier1-apg/select-only-combobox.spec.ts", "(library)",
      "the form conformance fixture's trigger_aria_label, authored for these specs in preview/src/components/form/component.rs"),
     ("oracle/tier2-html/form-participation.spec.ts", "(library)",
@@ -101,7 +122,7 @@ ALLOW = [
      "the /demos page's BlockColorPalette: site content with no demo frame"),
     ("oracle/tier2-html/touch-focus-zoom.spec.ts", "/Compose/",
      "the email client dashboard route: site content with no demo frame, the page under test IS this content"),
-]
+], fields=("suffix", "needle"))
 
 def collect():
     out = []
@@ -122,7 +143,6 @@ if not files:
     print("check-demo-text-locators: no specs found (run from a checkout)", file=sys.stderr)
     sys.exit(2)
 
-used = set()
 COMMENT_BLOCK = re.compile(r"/\*.*?\*/", re.S)
 COMMENT_LINE = re.compile(r"(?<![:\"'\w])//[^\n]*")
 
@@ -162,39 +182,52 @@ def matching_paren(code, open_idx):
         i += 1
     return n
 
+TEST_CALL = re.compile(r"\btest(?:\.(?:only|fixme|slow|skip))?\s*\(")
+GOTO_REFERENCE = re.compile(r"\bgotoReference\s*\(")
+
+def reference_ranges(code):
+    """Character ranges of the `test(...)` calls whose body navigates with `gotoReference(...)`: a vendored or
+    route-fulfilled page that is not the app, so its locators are its own markup, not demo copy."""
+    out = []
+    for m in TEST_CALL.finditer(code):
+        start = m.end() - 1
+        end = matching_paren(code, start)
+        if end < len(code) and GOTO_REFERENCE.search(code[start:end]):
+            out.append((start, end))
+    return out
+
 errors = []
 total = 0
+n_reference = 0
 for path in files:
     with open(path, encoding="utf-8") as fh:
         raw = fh.read()
     raw_lines = raw.split("\n")
     code = COMMENT_LINE.sub(blank, COMMENT_BLOCK.sub(blank, raw))
     code_lines = code.split("\n")
-    hits = []  # (line index, label)
+    hits = []  # (line index, label, offset)
     for rx, label in SIMPLE:
         for m in rx.finditer(code):
-            hits.append((code.count("\n", 0, m.start()), label))
+            hits.append((code.count("\n", 0, m.start()), label, m.start()))
     for m in GETBYROLE.finditer(code):
         start = m.end() - 1
         end = matching_paren(code, start)
         inner = code[start:end]
         if NAME_OPT.search(inner):
-            hits.append((code.count("\n", 0, m.start()), "getByRole(..., { name })"))
+            hits.append((code.count("\n", 0, m.start()), "getByRole(..., { name })", m.start()))
+    reference = reference_ranges(code)
     seen = set()
-    for ln, label in sorted(hits):
+    for ln, label, pos in sorted(hits):
         if (ln, label) in seen:
             continue
         seen.add((ln, label))
         total += 1
+        if any(lo <= pos < hi for lo, hi in reference):
+            n_reference += 1
+            continue
         if MARKER.search(raw_lines[ln]) or (ln > 0 and MARKER.search(raw_lines[ln - 1])):
             continue
-        ok = False
-        for entry in ALLOW:
-            suffix, needle, _reason = entry
-            if path.endswith(suffix) and needle in code_lines[ln]:
-                used.add(id(entry))
-                ok = True
-        if ok:
+        if ALLOW.find_all(lambda e: path.endswith(e.suffix) and e.needle in code_lines[ln]):
             continue
         errors.append(f"{path}:{ln + 1}: `{code_lines[ln].strip()[:100]}` locates by {label} (demo copy)")
 
@@ -203,15 +236,18 @@ if errors:
         print(e)
     print(f"\ncheck-demo-text-locators: {len(errors)} problem(s). Locate a demo's controls by role and position "
           f"(`demoRole(page, role, n)` / `popupItem(...)` in playwright/demo-frame.ts); if the name is NOT demo copy "
-          f"(a component's own aria-label, site chrome, a vendored reference page, a spec-authored fixture), add "
-          f"`// copy-ok: <reason>` on that line or the line above, or a reasoned ALLOW entry in this script.", file=sys.stderr)
+          f"(a component's own aria-label, site chrome, a spec-authored fixture), add "
+          f"`// copy-ok: <reason>` on that line or the line above, or a reasoned ALLOW entry in this script; a vendored "
+          f"reference page is navigated with `gotoReference(page, url)` in the same `test(...)` and needs neither.", file=sys.stderr)
     sys.exit(1)
 
-stale = [e for e in ALLOW if id(e) not in used]
-if stale and not explicit:
-    for suffix, needle, reason in stale:
-        print(f"FAIL: stale allowlist entry {suffix} {needle!r} -- {reason}")
+problems = ALLOW.problems(stale=not explicit)
+if problems:
+    for p in problems:
+        print(f"FAIL: {p}")
     sys.exit(1)
-print(f"check-demo-text-locators: OK ({len(files)} shared spec file(s): {total} text locator(s), each marked or allowlisted as "
-      f"not demo copy; {len(used)} allowlist entr{'y' if len(used) == 1 else 'ies'} in use)")
+print(f"check-demo-text-locators: OK ({len(files)} shared spec file(s): {total} text locator(s), {n_reference} of them on a "
+      f"gotoReference page, the rest marked or allowlisted as not demo copy; {len(ALLOW)} allowlist entr{'y' if len(ALLOW) == 1 else 'ies'})")
 PYEOF
+
+if [ "$#" -eq 0 ]; then self_test; fi

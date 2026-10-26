@@ -391,13 +391,12 @@ pub fn SelectMulti<T: Clone + PartialEq + 'static>(props: SelectMultiProps<T>) -
 #[component]
 pub fn SelectGroupLabel(props: SelectGroupLabelProps) -> Element {
     let base = attributes!(div { class: "dx-select-group-label" });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
 
     rsx! {
         select::SelectGroupLabel {
-            id: props.id,
             attributes: merged,
-            {props.children}
+            ..props
         }
     }
 }
@@ -405,19 +404,14 @@ pub fn SelectGroupLabel(props: SelectGroupLabelProps) -> Element {
 #[component]
 pub fn SelectOption<T: Clone + PartialEq + 'static>(props: SelectOptionProps<T>) -> Element {
     let base = attributes!(div { class: "dx-select-option" });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
 
+    let children = props.children.clone();
     rsx! {
         select::SelectOption::<T> {
-            value: props.value,
-            text_value: props.text_value,
-            disabled: props.disabled,
-            id: props.id,
-            index: props.index,
-            aria_label: props.aria_label,
-            aria_roledescription: props.aria_roledescription,
             attributes: merged,
-            {props.children}
+            ..props,
+            {children}
             select::SelectItemIndicator {
                 Check {
                     class: "dx-select-option-indicator",

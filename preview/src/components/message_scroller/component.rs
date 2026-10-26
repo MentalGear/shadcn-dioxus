@@ -25,13 +25,7 @@ pub use dioxus_primitives::message_scroller::{
 pub fn MessageScrollerProvider(props: MessageScrollerProviderProps) -> Element {
     rsx! {
         message_scroller::MessageScrollerProvider {
-            auto_scroll: props.auto_scroll,
-            default_scroll_position: props.default_scroll_position,
-            scroll_edge_threshold: props.scroll_edge_threshold,
-            scroll_previous_item_peek: props.scroll_previous_item_peek,
-            scroll_margin: props.scroll_margin,
-            virtualize: props.virtualize,
-            {props.children}
+            ..props
         }
     }
 }
@@ -43,11 +37,14 @@ pub fn MessageScroller(props: MessageScrollerProps) -> Element {
         class: "dx-message-scroller", "data-dx-root": "",
         "data-slot": "message-scroller",
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/message_scroller/style.css") }
-        message_scroller::MessageScroller { attributes: merged, {props.children} }
+        message_scroller::MessageScroller {
+            attributes: merged,
+            ..props
+        }
     }
 }
 
@@ -60,15 +57,13 @@ pub fn MessageScrollerViewport(props: MessageScrollerViewportProps) -> Element {
         class: "dx-message-scroller-viewport",
         "data-slot": "message-scroller-viewport",
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/message_scroller/style.css") }
         message_scroller::MessageScrollerViewport {
-            preserve_scroll_on_prepend: props.preserve_scroll_on_prepend,
-            fade: props.fade,
             attributes: merged,
-            {props.children}
+            ..props
         }
     }
 }
@@ -80,14 +75,13 @@ pub fn MessageScrollerContent(props: MessageScrollerContentProps) -> Element {
         class: "dx-message-scroller-content",
         "data-slot": "message-scroller-content",
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/message_scroller/style.css") }
         message_scroller::MessageScrollerContent {
-            spacer_class: props.spacer_class,
             attributes: merged,
-            {props.children}
+            ..props
         }
     }
 }
@@ -99,15 +93,13 @@ pub fn MessageScrollerItem(props: MessageScrollerItemProps) -> Element {
         class: "dx-message-scroller-item",
         "data-slot": "message-scroller-item",
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/message_scroller/style.css") }
         message_scroller::MessageScrollerItem {
-            message_id: props.message_id,
-            scroll_anchor: props.scroll_anchor,
             attributes: merged,
-            {props.children}
+            ..props
         }
     }
 }
@@ -121,15 +113,13 @@ pub fn MessageScrollerRows(props: MessageScrollerRowsProps) -> Element {
         class: "dx-message-scroller-chunk",
         "data-slot": "message-scroller-chunk",
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/message_scroller/style.css") }
         message_scroller::MessageScrollerRows {
-            count: props.count,
-            start: props.start,
-            render_row: props.render_row,
             attributes: merged,
+            ..props
         }
     }
 }
@@ -189,7 +179,7 @@ pub fn MessageScrollerButton(
                                 {children}
                             } else {
                                 ArrowDown { size: "16px", "aria-hidden": "true" }
-                                span { class: "dx-message-scroller-sr-only", "{label}" }
+                                span { "data-dx-visually-hidden": "", "{label}" }
                             }
                         }
                     }

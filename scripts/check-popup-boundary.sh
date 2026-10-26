@@ -63,6 +63,10 @@ import os
 import re
 import sys
 
+sys.path.insert(0, "scripts/lib")
+from allow import Allowlist  # noqa: E402
+from css import rules as css_rules, split_top  # noqa: E402
+
 COMPONENTS = "preview/src/components"
 LIST = os.environ.get("LIST") == "1"
 
@@ -72,7 +76,7 @@ OWN = "the ancestor is the component's own control and the subject its own icon/
 DIRECT = "a direct-child (`>`) rule: the matched child is one of the component's own items, and a popup panel is never a direct child of this host (it sits one wrapper deeper)"
 SVGINNER = "the subject is an SVG-internal element (`text`, `line`, `path`, `tspan`, ...) of the chart's own <svg>; HTML cannot be nested in it, so no popup is reachable"
 PENDING = "a free-content slot a user can put a link (and so a HoverCard/Popover trigger) in; the boundary is not on this selector yet -- add `:not(:where([popover], dialog) *)` to the subject and delete this entry"
-ALLOW = [
+ALLOW_ROWS = [
     ("alert", r"^\.dx-alert > svg$", DIRECT),
     ("attachment", r"\.dx-attachment-media", "the ancestor is the attachment's media tile, which holds one icon or one image"),
     ("avatar", r"^\.dx-avatar > \*$", DIRECT),
@@ -110,77 +114,9 @@ ALLOW = [
 ]
 
 
-def strip_comments(css):
-    return re.sub(r"/\*.*?\*/", lambda m: "\n" * m.group(0).count("\n"), css, flags=re.S)
-
-
 def parse_rules(css):
-    """[(prelude, line, [enclosing at-rule preludes])] for every style rule (quote/paren aware)."""
-    css = strip_comments(css)
-    rules, stack, buf = [], [], []
-    quote, paren, i, n = None, 0, 0, len(css)
-    while i < n:
-        ch = css[i]
-        if quote:
-            buf.append(ch)
-            if ch == "\\" and i + 1 < n:
-                buf.append(css[i + 1])
-                i += 1
-            elif ch == quote:
-                quote = None
-        elif ch in "\"'":
-            quote = ch
-            buf.append(ch)
-        elif ch == "(":
-            paren += 1
-            buf.append(ch)
-        elif ch == ")":
-            paren = max(0, paren - 1)
-            buf.append(ch)
-        elif paren > 0:
-            buf.append(ch)
-        elif ch == "{":
-            prelude = "".join(buf)
-            lead = len(prelude) - len(prelude.lstrip())
-            start = i - len(prelude) + lead
-            stack.append((prelude.strip(), css.count("\n", 0, start) + 1))
-            buf = []
-        elif ch == ";":
-            buf = []
-        elif ch == "}":
-            if stack:
-                prelude, line = stack.pop()
-                if not prelude.startswith("@"):
-                    rules.append((prelude, line, [p for p, _ in stack if p.startswith("@")]))
-            buf = []
-        else:
-            buf.append(ch)
-        i += 1
-    return rules
-
-
-def split_top(s, sep):
-    out, depth, cur, quote = [], 0, [], None
-    for ch in s:
-        if quote:
-            cur.append(ch)
-            if ch == quote:
-                quote = None
-        elif ch in "\"'":
-            quote = ch
-            cur.append(ch)
-        else:
-            if ch in "([":
-                depth += 1
-            elif ch in ")]":
-                depth -= 1
-            if ch == sep and depth == 0:
-                out.append("".join(cur))
-                cur = []
-            else:
-                cur.append(ch)
-    out.append("".join(cur))
-    return out
+    """[(prelude, line, [enclosing at-rule preludes])] for every style rule (the shared reader, row 429)."""
+    return [(r.prelude, r.line, r.at) for r in css_rules(css)]
 
 
 def compounds(sel):
@@ -281,26 +217,22 @@ except Exception as e:  # a parse failure must not read as "clean"
     print(f"check-popup-boundary: internal error: {e!r}", file=sys.stderr)
     sys.exit(2)
 
-used = [0] * len(ALLOW)
+ALLOW = Allowlist("check-popup-boundary", ALLOW_ROWS, fields=("comp", "rx"))
 bad = []
 for path, line, sel in sites:
     comp = path.split("/")[-2]
-    hit = None
-    for k, (f, sub, reason) in enumerate(ALLOW):
-        if f == comp and re.search(sub, sel):
-            hit = k
-            used[k] += 1
-            break
+    hit = ALLOW.find(lambda e: e.comp == comp and re.search(e.rx, sel))
     if LIST:
         print(f"{path}:{line}\t{'allowed' if hit is not None else 'FLAGGED'}\t{sel}")
     if hit is None:
         bad.append((path, line, sel))
 
-stale = [ALLOW[k] for k, n in enumerate(used) if n == 0]
-for f, sub, reason in ALLOW:
-    if not reason.strip():
-        print(f"check-popup-boundary: allowlist entry '{f} | {sub}' has no reason", file=sys.stderr)
-        sys.exit(1)
+stale = ALLOW.unused()
+table_problems = ALLOW.problems(stale=False)
+if table_problems:
+    for problem in table_problems:
+        print(f"check-popup-boundary: {problem}", file=sys.stderr)
+    sys.exit(1)
 
 if LIST:
     sys.exit(0)

@@ -38,6 +38,10 @@ import glob
 import re
 import sys
 
+sys.path.insert(0, "scripts/lib")
+from allow import Allowlist  # noqa: E402
+from css import blank_comments  # noqa: E402
+
 explicit = sys.argv[1:]
 files = explicit or sorted(
     glob.glob("preview/src/**/*.css", recursive=True)
@@ -50,14 +54,10 @@ if not files:
     sys.exit(2)
 
 # (file suffix, substring of the declaration, reason). Empty on purpose: see the header.
-ALLOW = [
-]
-used = set()
-
-BLOCK_COMMENT = re.compile(r"/\*.*?\*/", re.S)
+ALLOW = Allowlist("check-destructive-text", [], fields=("suffix", "needle"))
 
 def blank(text, path):
-    text = BLOCK_COMMENT.sub(lambda m: re.sub(r"[^\n]", " ", m.group(0)), text)
+    text = blank_comments(text, strings=not path.endswith(".rs"))
     if path.endswith(".rs"):
         # whole-line `//` comments only (a `//` inside a string, such as a URL, is code)
         text = re.sub(r"(?m)^(\s*)//.*$", lambda m: m.group(1), text)
@@ -79,12 +79,7 @@ def is_text_paint(name):
     return False
 
 def allowed(path, decl):
-    for entry in ALLOW:
-        suffix, needle, _reason = entry
-        if path.endswith(suffix) and needle in decl:
-            used.add(id(entry))
-            return True
-    return False
+    return bool(ALLOW.find_all(lambda e: path.endswith(e.suffix) and e.needle in decl))
 
 errors = []
 for path in files:
@@ -108,13 +103,13 @@ if errors:
           f"and `--dx-destructive-text` in preview/assets/dx-components-theme.css.", file=sys.stderr)
     sys.exit(1)
 
-stale = [e for e in ALLOW if id(e) not in used]
-if stale and not explicit:
-    for suffix, needle, reason in stale:
-        print(f"stale allowlist entry: {suffix} {needle!r} -- {reason}")
-    print("\ncheck-destructive-text: stale allowlist entries (the site no longer violates; delete the entry)",
-          file=sys.stderr)
+problems = ALLOW.problems(stale=not explicit)
+if problems:
+    for p in problems:
+        print(p)
+    print("\ncheck-destructive-text: bad allowlist (a site that no longer violates must leave it)", file=sys.stderr)
     sys.exit(1)
+n_used = sum(1 for e in ALLOW if ALLOW.used(e))
 print(f"check-destructive-text: OK ({len(files)} file(s): no text paint reads the fill-grade --dx-destructive; "
-      f"{len(used)} allowlist entr{'y' if len(used) == 1 else 'ies'} in use)")
+      f"{n_used} allowlist entr{'y' if n_used == 1 else 'ies'} in use)")
 PYEOF

@@ -8,18 +8,12 @@ use dioxus_primitives::merge_attributes;
 #[component]
 pub fn HoverCard(props: HoverCardProps) -> Element {
     let base = attributes!(div { class: "dx-hover-card" });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/hover_card/style.css") }
         hover_card::HoverCard {
-            open: props.open,
-            default_open: props.default_open,
-            on_open_change: props.on_open_change,
-            disabled: props.disabled,
-            delay: props.delay,
-            close_delay: props.close_delay,
             attributes: merged,
-            {props.children}
+            ..props
         }
     }
 }
@@ -27,10 +21,13 @@ pub fn HoverCard(props: HoverCardProps) -> Element {
 #[component]
 pub fn HoverCardTrigger(props: HoverCardTriggerProps) -> Element {
     let base = attributes!(button { class: "dx-hover-card-trigger" });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/hover_card/style.css") }
-        hover_card::HoverCardTrigger { id: props.id, attributes: merged, {props.children} }
+        hover_card::HoverCardTrigger {
+            attributes: merged,
+            ..props
+        }
     }
 }
 
@@ -40,16 +37,12 @@ pub fn HoverCardContent(props: HoverCardContentProps) -> Element {
         class: "dx-hover-card-content",
         "data-dx-surface": "floating",
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/hover_card/style.css") }
         hover_card::HoverCardContent {
-            side: props.side,
-            align: props.align,
-            id: props.id,
-            force_mount: props.force_mount,
             attributes: merged,
-            {props.children}
+            ..props
         }
     }
 }

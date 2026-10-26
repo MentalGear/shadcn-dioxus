@@ -24,6 +24,10 @@ cd "$repo_root"
 python3 - "$@" <<'PYEOF'
 import glob, re, sys
 
+sys.path.insert(0, "scripts/lib")
+from allow import Allowlist  # noqa: E402
+from css import blank_comments  # noqa: E402
+
 explicit = sys.argv[1:]
 files = explicit or sorted(glob.glob("preview/src/components/*/style.css") + glob.glob("preview/assets/*.css"))
 if not files:
@@ -31,7 +35,7 @@ if not files:
     sys.exit(2)
 
 # (file, substring of the mix body, reason)
-ALLOW = [
+ALLOW = Allowlist("check-hover-mix-space", [
     ("preview/src/components/button/style.css", "oklch(from var(--dx-primary-foreground)",
      "accent-preset primary hover steps toward the computed black/white contrast colour, not toward --dx-foreground; "
      "shadcn's primary hover is `/80` alpha and the preset-only recipe is guarded by theme-preset-contrast.spec.ts"),
@@ -39,12 +43,11 @@ ALLOW = [
      "text shimmer gradient stop between two shimmer colours; not a hover or state fill"),
     ("preview/assets/theme-presets.css", "var(--foreground) 26%",
      "preset border emphasis toward the preset's own background; a preset-scoped token, not a hover fill"),
-]
-used = set()
+], fields=("file", "substring"))
 violations = []
 for path in files:
     src = open(path, encoding="utf-8").read()
-    src = re.sub(r"/\*.*?\*/", lambda m: re.sub(r"[^\n]", " ", m.group(0)), src, flags=re.S)
+    src = blank_comments(src)
     for m in re.finditer(r"color-mix\(", src):
         i, depth = m.end(), 1
         while i < len(src) and depth:
@@ -56,9 +59,7 @@ for path in files:
         if re.search(r"\btransparent\b", body):
             continue
         line = src.count("\n", 0, m.start()) + 1
-        hit = next((a for a in ALLOW if a[0] == path and a[1] in body), None) if not explicit else None
-        if hit:
-            used.add(id(hit))
+        if not explicit and ALLOW.find(lambda e: e.file == path and e.substring in body):
             continue
         violations.append((path, line, " ".join(body.split())))
 
@@ -68,9 +69,10 @@ if violations:
     for p, l, b in violations:
         print(f"  {p}:{l}: color-mix({b[:110]})")
     sys.exit(1)
-if not explicit:
-    for e in ALLOW:
-        if id(e) not in used:
-            print(f"check-hover-mix-space: note: stale ALLOW entry {e[0]} ({e[1]})")
+problems = ALLOW.problems(stale=not explicit)
+if problems:
+    for p in problems:
+        print(f"check-hover-mix-space: {p}")
+    sys.exit(1)
 print(f"check-hover-mix-space: PASS ({len(files)} stylesheets)")
 PYEOF

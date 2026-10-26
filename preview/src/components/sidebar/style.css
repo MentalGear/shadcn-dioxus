@@ -26,23 +26,6 @@
  * allowlist). A floating sidebar's `ring-1` is drawn as a 1px border so
  * it can sit beside `--dx-shadow-sm` (which is `none` in dark and cannot share a `box-shadow`). */
 
-/* Screen-reader-only text, namespaced like everything else here: `pagination/style.css` keeps its own
- * byte-identical copy as `.dx-pagination-sr-only`. TODO(row 31a): one shared `dx-sr-only` utility class in
- * `preview/assets/dx-utilities.css` (a GENERATED file, see `scripts/generate-dx-utilities.js`) would collapse
- * the two. The class sits on elements the sidebar renders itself: the trigger's label and the wrapper around
- * the mobile sheet's title and description. */
-.dx-sidebar-sr-only {
-  position: absolute;
-  overflow: hidden;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  border: 0;
-  margin: -1px;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
 .dx-sidebar-wrapper {
   /* Nova's gap, group label and the container they track all use `ease-linear` at 200ms
    * (`duration-200 ease-linear`); one slot so the three never drift apart. */

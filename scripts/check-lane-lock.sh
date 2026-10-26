@@ -116,7 +116,7 @@ scenario no-fd-leak
 "$LL" -- sh -c 'sleep 30 >/dev/null 2>&1 & echo $! >> "$LANE_TGT/pids"; echo $! > "$LANE_TGT/sleeper"' 2>/dev/null
 sp="$(cat "$LANE_TGT/sleeper" 2>/dev/null)"
 [ -n "$sp" ] && kill -0 "$sp" 2>/dev/null || bad "the long-lived child is gone"
-if ls -l /proc/"$sp"/fd 2>/dev/null | grep -qE 'lockq|ssg\.lock'; then bad "the child holds a lock fd: $(ls -l /proc/"$sp"/fd | grep -E 'lockq|ssg.lock')"; fi
+if grep -qE 'lockq|ssg\.lock' <<<"$(ls -l /proc/"$sp"/fd 2>/dev/null)"; then bad "the child holds a lock fd: $(ls -l /proc/"$sp"/fd | grep -E 'lockq|ssg.lock')"; fi
 "$LL" -- sh -c "echo second > \"$LANE_TGT/second\"" 2>/dev/null & pids+=($!)
 waitfor 3 exists "$LANE_TGT/second" || bad "a long-lived child kept the slot after the wrapper exited"
 wait %% 2>/dev/null

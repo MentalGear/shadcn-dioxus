@@ -172,13 +172,13 @@ pub fn Combobox<T: Clone + PartialEq + 'static>(props: ComboboxProps<T>) -> Elem
 #[component]
 pub fn ComboboxEmpty(props: ComboboxEmptyProps) -> Element {
     let base = attributes!(div { class: "dx-combobox-empty" });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/combobox/style.css") }
         combobox::ComboboxEmpty {
             attributes: merged,
-            {props.children}
+            ..props
         }
     }
 }
@@ -186,20 +186,15 @@ pub fn ComboboxEmpty(props: ComboboxEmptyProps) -> Element {
 #[component]
 pub fn ComboboxOption<T: Clone + PartialEq + 'static>(props: ComboboxOptionProps<T>) -> Element {
     let base = attributes!(div { class: "dx-combobox-option" });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
 
+    let children = props.children.clone();
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/combobox/style.css") }
         combobox::ComboboxOption::<T> {
-            value: props.value,
-            text_value: props.text_value,
-            disabled: props.disabled,
-            id: props.id,
-            index: props.index,
-            aria_label: props.aria_label,
-            aria_roledescription: props.aria_roledescription,
             attributes: merged,
-            {props.children}
+            ..props,
+            {children}
             combobox::ComboboxItemIndicator {
                 Check {
                     class: "dx-combobox-option-indicator",
@@ -215,10 +210,13 @@ pub fn ComboboxOption<T: Clone + PartialEq + 'static>(props: ComboboxOptionProps
 #[component]
 pub fn ComboboxGroup(props: ComboboxGroupProps) -> Element {
     let base = attributes!(div { class: "dx-combobox-group" });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
 
     rsx! {
-        combobox::ComboboxGroup { id: props.id, attributes: merged, {props.children} }
+        combobox::ComboboxGroup {
+            attributes: merged,
+            ..props
+        }
     }
 }
 
@@ -226,10 +224,13 @@ pub fn ComboboxGroup(props: ComboboxGroupProps) -> Element {
 #[component]
 pub fn ComboboxGroupLabel(props: ComboboxGroupLabelProps) -> Element {
     let base = attributes!(div { class: "dx-combobox-group-label" });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
 
     rsx! {
-        combobox::ComboboxGroupLabel { id: props.id, attributes: merged, {props.children} }
+        combobox::ComboboxGroupLabel {
+            attributes: merged,
+            ..props
+        }
     }
 }
 

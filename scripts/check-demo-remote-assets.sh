@@ -65,6 +65,9 @@ done
 python3 - "$CHECK_STALE" "${ALLOW[@]}" -- "${ROOTS[@]}" <<'PY'
 import os, re, sys
 
+sys.path.insert(0, "scripts/lib")
+from css import strip_comments  # noqa: E402
+
 check_stale = sys.argv[1] == "1"  # only for the default roots: a self-test root has no avatar demo to match
 args = sys.argv[2:]
 sep = args.index("--")
@@ -91,9 +94,6 @@ rules = [
     ("known image/avatar host", re.compile(r'"(https?://' + IMG_HOSTS + r'[^"\s]*)"', re.I)),
 ]
 
-def strip_css_comments(text):
-    return re.sub(r'/\*.*?\*/', lambda m: "\n" * m.group(0).count("\n"), text, flags=re.S)
-
 found = {}
 for root in roots:
     for dirpath, _, files in os.walk(root):
@@ -103,7 +103,7 @@ for root in roots:
             path = os.path.join(dirpath, name)
             text = open(path, encoding="utf-8", errors="replace").read()
             if name.endswith((".css", ".html")):
-                text = strip_css_comments(text)
+                text = strip_comments(text, strings=name.endswith(".html"))
             for n, line in enumerate(text.splitlines(), 1):
                 if line.lstrip().startswith(("//", "*", "/*")):
                     continue  # a comment may quote a URL; that is not a request

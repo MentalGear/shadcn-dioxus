@@ -65,11 +65,15 @@ import os
 import re
 import sys
 
+sys.path.insert(0, "scripts/lib")
+from allow import Allowlist  # noqa: E402
+from css import strip_comments  # noqa: E402
+
 # --------------------------------------------------------------------------
 # Allowlist: name (or `prefix-*`) -> why it may be used without a definition
 # or fallback. Add an entry only with a reason a reviewer can check.
 # --------------------------------------------------------------------------
-ALLOWLIST = {
+ALLOWLIST_ROWS = {
     # Caller-provided slots: read with a default, set by a parent or the app.
     "--dx-button-line-height": "slot, button/docs.md (default 1.25rem, 1rem in xs)",
     "--dx-drawer-nest-scale": "slot, drawer/docs.md (parent shrink while a nested drawer is open)",
@@ -95,6 +99,7 @@ ALLOWLIST = {
     "--toast-swipe-x": "primitives/src/toast.rs TOAST_SWIPE_JS (`prop(axis)`), set only while dragged",
     "--toast-swipe-y": "primitives/src/toast.rs TOAST_SWIPE_JS (`prop(axis)`), set only while dragged",
 }
+ALLOWLIST = Allowlist("check-css-vars-defined", ALLOWLIST_ROWS.items(), fields=("name",))
 
 CSS_GLOBS = [
     "preview/src/**/*.css",
@@ -111,9 +116,6 @@ def files(globs):
     for g in globs:
         out.update(glob.glob(g, recursive=True))
     return sorted(out)
-
-def strip_css_comments(text):
-    return re.sub(r"/\*.*?\*/", lambda m: "\n" * m.group(0).count("\n"), text, flags=re.S)
 
 def strip_rs(text):
     """Drop `#[cfg(test)]` tails, full-line `//` comments and trailing `//`
@@ -136,7 +138,7 @@ def strip_rs(text):
 
 sources = []  # (path, text)
 for p in files(CSS_GLOBS):
-    sources.append((p, strip_css_comments(open(p, encoding="utf-8").read())))
+    sources.append((p, strip_comments(open(p, encoding="utf-8").read())))
 
 # A `#[cfg(test)] mod name;` declaration gates the whole file `name.rs` (or
 # `name/mod.rs`) behind tests -- e.g. preview/src/chart_parity.rs, which
@@ -171,7 +173,8 @@ for path, text in sources:
         prefixes.add(m.group(1))
 
 def allowed(name):
-    return name in ALLOWLIST
+    # Reached only for a name that is read and not declared, so an entry that is never reached is stale.
+    return ALLOWLIST.find(lambda e: e.name == name) is not None
 
 def declared(name):
     if name in defined:
@@ -206,12 +209,12 @@ for path, text in sources:
 for path, lineno, name in errors:
     print(f"{path}:{lineno}: `var({name})` is never declared (a fallback does not count)")
 
-stale = []
-for name in sorted(ALLOWLIST):
-    if declared(name):
-        stale.append(f"ALLOWLIST entry {name} is declared now; remove the entry")
-    elif name not in used:
-        stale.append(f"ALLOWLIST entry {name} is read nowhere; remove the entry")
+stale = [f"ALLOWLIST: {p}" for p in ALLOWLIST.problems(stale=False)]
+for entry in sorted(ALLOWLIST.unused()):
+    if declared(entry.name):
+        stale.append(f"ALLOWLIST entry {entry.name} is declared now; remove the entry")
+    else:
+        stale.append(f"ALLOWLIST entry {entry.name} is read nowhere; remove the entry")
 for line in stale:
     print(line)
 

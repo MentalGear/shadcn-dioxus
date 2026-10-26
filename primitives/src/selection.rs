@@ -114,6 +114,7 @@ fn remove_option_state(options: &mut Vec<OptionState>, id: &str) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_support::with_runtime;
     use dioxus::prelude::*;
 
     fn option(id: &str, index: usize) -> OptionState {
@@ -226,44 +227,6 @@ mod tests {
         let value = 42i32;
         let text = option_text_value(&value, None, "Select");
         assert_eq!(text, "");
-    }
-
-    /// Run a closure inside a Dioxus runtime context so `Signal` is available
-    /// (mirrors `virtual/virtualizer.rs`'s `with_runtime`). `sync_option` and
-    /// `remove_option` are thin `Signal<Vec<OptionState>>` wrappers around
-    /// `sync_option_state`/`remove_option_state`, so exercising *them*
-    /// specifically (not just the inner pure functions) needs a real signal.
-    fn with_runtime(f: impl Fn() + 'static) {
-        use std::cell::Cell;
-
-        let result = Rc::new(Cell::new(false));
-        let result2 = result.clone();
-        let test_fn = Rc::new(f);
-        let mut dom = VirtualDom::new_with_props(
-            |props: TestHarnessProps| {
-                (props.test_fn)();
-                props.result.set(true);
-                rsx! { div {} }
-            },
-            TestHarnessProps {
-                test_fn,
-                result: result2,
-            },
-        );
-        dom.rebuild_in_place();
-        assert!(result.get(), "Test component did not run");
-    }
-
-    #[derive(Clone, Props)]
-    struct TestHarnessProps {
-        test_fn: Rc<dyn Fn()>,
-        result: Rc<std::cell::Cell<bool>>,
-    }
-
-    impl PartialEq for TestHarnessProps {
-        fn eq(&self, _: &Self) -> bool {
-            true
-        }
     }
 
     #[test]

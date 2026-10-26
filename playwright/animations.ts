@@ -83,3 +83,51 @@ export async function readAtRest<R, A = undefined>(
   await awaitAnimationsSettled(locator);
   return (locator.evaluate as (fn: unknown, arg?: unknown) => Promise<R>).call(locator, read, arg);
 }
+
+/**
+ * Throws when the element, or an ancestor of it, has a running keyframe animation (a `CSSAnimation`: an enter or exit
+ * play, a spinner), the one thing that can leave its box somewhere other than where it rests. A CSS transition is
+ * interaction feedback (hover, the press wash and press scale of a control that was just clicked), not enter
+ * motion, so it does not count. The shared check of `staticBox` and `readStatic`.
+ */
+async function assertNoRunningAnimation(locator: Locator, who: string): Promise<void> {
+  await locator.waitFor({ state: "attached" });
+  const running = await locator.evaluate((el) =>
+    document
+      .getAnimations()
+      .filter((a) => {
+        if (!(a instanceof CSSAnimation)) return false;
+        if (a.playState !== "running" && (a.playState as string) !== "pending") return false;
+        const t = a.effect && (a.effect as KeyframeEffect).target;
+        return !!t && t.contains(el);
+      })
+      .map((a) => (a as CSSAnimation).animationName),
+  );
+  if (running.length > 0) {
+    throw new Error(`${who}: the element (or an ancestor) is animating (${running.join(", ")}); it is not a static box -- read it with measureAtRest/readAtRest`);
+  }
+}
+
+/**
+ * The geometry of something that does NOT animate (backlog row 427): a page button that triggers an overlay, the page's
+ * navbar, a static row or label, a probe element. It reads `locator.boundingBox()` like `measureAtRest`, but instead
+ * of waiting for motion to end it CHECKS that there is none (`assertNoRunningAnimation`), so "this does not animate" is
+ * a fact the test verifies, not a comment the gate trusts. `scripts/check-spec-at-rest.sh` accepts `measureAtRest`,
+ * `readAtRest`, `staticBox` and `readStatic` and nothing else.
+ */
+export async function staticBox(locator: Locator): Promise<RestBox> {
+  await assertNoRunningAnimation(locator, "staticBox");
+  const box = await locator.boundingBox();
+  if (!box) throw new Error("staticBox: the element has no box (not rendered or display:none)");
+  return box;
+}
+
+/** `staticBox` for any in-page read (`readAtRest`'s counterpart for an element that does not animate). */
+export async function readStatic<R, A = undefined>(
+  locator: Locator,
+  read: (el: Element, arg: A) => R | Promise<R>,
+  arg?: A,
+): Promise<R> {
+  await assertNoRunningAnimation(locator, "readStatic");
+  return (locator.evaluate as (fn: unknown, arg?: unknown) => Promise<R>).call(locator, read, arg);
+}

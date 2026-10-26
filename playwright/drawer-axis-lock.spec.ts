@@ -12,7 +12,7 @@
 import { test, expect } from './fixtures';
 import { BASE_URL } from './base-url';
 import { gotoHydrated } from './hydration';
-import { awaitAnimationsSettled } from './animations';
+import { awaitAnimationsSettled, measureAtRest } from './animations';
 
 const URL = `${BASE_URL}/component/drawer/`;
 const GOTO_OPTS = { timeout: 20 * 60 * 1000 };
@@ -135,7 +135,7 @@ for (const side of ['bottom', 'top', 'left', 'right'] as const) {
       test.skip(browserName !== 'chromium', 'CDP touch input is Chromium only');
       await open(page, side);
       const v = vertical(side);
-      const box = (await page.locator(CONTENT).boundingBox())!; // rest-ok: opened and settled
+      const box = await measureAtRest(page.locator(CONTENT));
       const cdp = await page.context().newCDPSession(page);
       const x0 = box.x + box.width / 2;
       const y0 = box.y + box.height / 2;

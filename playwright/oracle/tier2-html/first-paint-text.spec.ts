@@ -29,6 +29,7 @@ import type { Page } from "@playwright/test";
 import * as fs from "fs";
 import * as path from "path";
 import { baseUrlOr } from "../../base-url";
+import { gotoPrerendered } from "../../page-kinds";
 
 const BASE = baseUrlOr("http://127.0.0.1:8090");
 const PREVIEW = path.join(__dirname, "..", "..", "..", "preview");
@@ -102,8 +103,7 @@ test.describe("first-paint text: the static page carries every value's text", ()
       const read = async (js: boolean) => {
         const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 }, javaScriptEnabled: js, colorScheme: "light" });
         const page = await ctx.newPage();
-        // goto-ok: the JavaScript-off variant never hydrates; the hydrated one waits for it below
-        await page.goto(`${BASE}/component/${slug}/`, { waitUntil: "load" });
+        await gotoPrerendered(page, `${BASE}/component/${slug}/`, { waitUntil: "load" });
         if (js) {
           await page.waitForSelector('html[data-hydrated="true"]', { state: "attached", timeout: 90_000 });
           await page.waitForTimeout(500);
@@ -130,12 +130,10 @@ test.describe("first-paint text: the static page carries every value's text", ()
   test("the detector is not blind: a Select's value span and a Combobox input are inspected, with their text", async ({ browser }) => {
     const ctx = await browser.newContext({ javaScriptEnabled: false });
     const page = await ctx.newPage();
-    // goto-ok: JavaScript is off by design
-    await page.goto(`${BASE}/component/select/`, { waitUntil: "load" });
+    await gotoPrerendered(page, `${BASE}/component/select/`, { waitUntil: "load" });
     const selectTexts = Object.values(await readTexts(page));
     expect(selectTexts.some((t) => (t.text ?? "") !== "" && t.aria !== undefined), "a select trigger with text and a name").toBe(true);
-    // goto-ok: JavaScript is off by design
-    await page.goto(`${BASE}/component/combobox/`, { waitUntil: "load" });
+    await gotoPrerendered(page, `${BASE}/component/combobox/`, { waitUntil: "load" });
     const combo = Object.values(await readTexts(page));
     expect(combo.some((t) => (t.value ?? "") !== ""), "a preselected combobox input has its label in the server HTML").toBe(true);
     await ctx.close();

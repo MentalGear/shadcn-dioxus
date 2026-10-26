@@ -54,40 +54,21 @@ import re
 import sys
 from pathlib import Path
 
+sys.path.insert(0, "scripts/lib")
+from allow import Allowlist  # noqa: E402
+from css import parse, split_top as split_top_raw  # noqa: E402
+
 COMPOSITOR = {"transform", "translate", "scale", "rotate", "opacity", "animation-timing-function", "offset-path"}
 COMPOSITOR.discard("offset-path")  # not compositor-driven everywhere; keep the list to what every engine accelerates
 
 # (stylesheet path, fnmatch pattern on the @keyframes name, reason). Keep the reason about WHY this one cannot
 # be a transform/opacity animation -- "it is old" is not a reason.
-ALLOW = [
+ALLOW = Allowlist("check-infinite-animations", [
     ("preview/assets/dx-effects.css", "dx-shimmer-sweep",
      "the highlight is painted INSIDE the glyphs with `background-clip: text`, so the only thing that can move it "
      "is the background itself; a translated pseudo-element would move the glyphs with it. Paint-only (no style "
      "cascade or layout), opt-in per element, and `prefers-reduced-motion` turns it off"),
-]
-
-def strip_comments(src: str) -> str:
-    return re.sub(r"/\*.*?\*/", lambda m: "\n" * m.group(0).count("\n"), src, flags=re.S)
-
-def blocks(src: str, start: int):
-    """Yield (selector_text, body, body_start) for each `{...}` at depth 0 starting at `start`; nested blocks are returned inside body."""
-    i, n = start, len(src)
-    sel_start = i
-    while i < n:
-        c = src[i]
-        if c == "{":
-            depth, j = 1, i + 1
-            while depth and j < n:
-                depth += {"{": 1, "}": -1}.get(src[j], 0)
-                j += 1
-            yield src[sel_start:i].strip(), src[i + 1 : j - 1], i + 1
-            i = j
-            sel_start = i
-        elif c == ";":
-            i += 1
-            sel_start = i
-        else:
-            i += 1
+], fields=("path", "pattern"))
 
 stylesheets = []
 for root in ("preview/src", "preview/assets"):
@@ -107,23 +88,25 @@ reduced_rules = []   # (path, selector_text, {prop: [values]})   -- every rule i
 RED_RE = re.compile(r"prefers-reduced-motion\s*:\s*reduce")
 NOPREF_RE = re.compile(r"prefers-reduced-motion\s*:\s*no-preference")
 
-def walk(css: Path, src: str, start: int, end: int, infinite_rules, namers, media=()):
-    for sel, body, off in blocks(src[:end], start):
+def walk(css: Path, nodes, infinite_rules, namers, media=()):
+    """The blocks of one nesting level of the shared reader's tree (scripts/lib/css.py); a reported line is the
+    line of the block's `{`."""
+    for node in nodes:
+        sel, body = node.prelude, node.body
         m = KF_RE.search(sel)
         if m:
             props = set()
-            for fsel, fbody, _ in blocks(body, 0):
-                for d in DECL_RE.finditer(fbody):
+            for frame in node.children:
+                for d in DECL_RE.finditer(frame.body):
                     props.add(d.group(1))
-            line = src.count("\n", 0, off) + 1
-            keyframes.setdefault(m.group(1), []).append((css.as_posix(), line, props))
+            keyframes.setdefault(m.group(1), []).append((css.as_posix(), node.brace_line, props))
         elif sel.startswith("@"):
-            walk(css, src, off, off + len(body), infinite_rules, namers, media + (sel,))
+            walk(css, node.children, infinite_rules, namers, media + (sel,))
         else:
             decls = {}
             for d in DECL_RE.finditer(body):
                 decls.setdefault(d.group(1), []).append(d.group(2).strip())
-            line = src.count("\n", 0, off) + 1
+            line = node.brace_line
             anim = decls.get("animation", []) + decls.get("-webkit-animation", [])
             count = decls.get("animation-iteration-count", [])
             names_long = decls.get("animation-name", [])
@@ -161,9 +144,10 @@ KW = {
 infinite_refs = []   # (path, line, name)
 n_sheets_with = 0
 for css in stylesheets:
-    src = strip_comments(css.read_text())
+    sheet = parse(css.read_text())
+    src = sheet.text
     inf, namers = [], []
-    walk(css, src, 0, len(src), inf, namers)
+    walk(css, sheet.nodes, inf, namers)
     if inf:
         n_sheets_with += 1
         infinite_refs += inf
@@ -174,7 +158,7 @@ for css in stylesheets:
     if stray:
         errors.append(f"{css}: {stray} `@keyframes` token(s) this script could not parse -- fix the parse, do not skip them")
 
-used = [0] * len(ALLOW)
+n_allowed = 0
 checked = set()
 for path, line, name in infinite_refs:
     if name in checked:
@@ -190,10 +174,8 @@ for path, line, name in infinite_refs:
         bad |= {p for p in props if p not in COMPOSITOR}
     if not bad:
         continue
-    idx = next((k for k, (ap, pat, _) in enumerate(ALLOW)
-                if any(kp == ap for kp, _, _ in defs) and fnmatch.fnmatchcase(name, pat)), None)
-    if idx is not None:
-        used[idx] += 1
+    if ALLOW.find(lambda e: any(kp == e.path for kp, _, _ in defs) and fnmatch.fnmatchcase(name, e.pattern)):
+        n_allowed += 1
         continue
     kpath, kline, _ = defs[0]
     errors.append(
@@ -203,12 +185,7 @@ for path, line, name in infinite_refs:
         f"scripts/check-infinite-animations.sh with the reason it cannot be"
     )
 
-for (path, pat, reason), k in zip(ALLOW, used):
-    if not reason.strip():
-        errors.append(f"allowlist entry ({path}, {pat}) has no reason")
-    if not k:
-        errors.append(f"stale allowlist entry ({path}, {pat}): no infinite non-compositor @keyframes matches it any more -- "
-                      f"remove it from scripts/check-infinite-animations.sh")
+errors += ALLOW.problems()
 
 # ---- reduced motion: every infinite rule is stopped or replaced ---------------------------------------------
 THEME = "preview/assets/dx-components-theme.css"
@@ -217,20 +194,8 @@ HOST = "[data-dx-motion-key]"
 def norm(sel: str) -> str:
     return re.sub(r"\s+", " ", sel.replace("'", '"')).strip()
 
-def split_top(sel: str):
-    out, depth, cur = [], 0, ""
-    for ch in sel:
-        if ch in "([":
-            depth += 1
-        elif ch in ")]":
-            depth -= 1
-        if ch == "," and depth == 0:
-            out.append(cur)
-            cur = ""
-        else:
-            cur += ch
-    out.append(cur)
-    return [norm(x) for x in out if x.strip()]
+def selector_list(sel: str):
+    return [norm(x) for x in split_top_raw(sel) if x.strip()]
 
 def stops(decls) -> bool:
     for v in decls.get("animation", []) + decls.get("-webkit-animation", []):
@@ -245,7 +210,7 @@ def duration_only(decls) -> bool:
 
 # The theme's host rule: a reduced-motion rule whose selector list names the host and stops animations.
 host_rule = any(
-    p == THEME and HOST in split_top(sel) and stops(decls)
+    p == THEME and HOST in selector_list(sel) and stops(decls)
     for p, sel, decls in reduced_rules
 )
 
@@ -271,8 +236,8 @@ for path, line, sel, media in inf_rule_sels:
         and pp.parent.parent.as_posix() == "preview/src/components"
         and component_wired(pp.parent.name)
     )
-    for one in split_top(sel):
-        own = [d for p, rs, d in reduced_rules if p in (path, THEME) and one in split_top(rs)]
+    for one in selector_list(sel):
+        own = [d for p, rs, d in reduced_rules if p in (path, THEME) and one in selector_list(rs)]
         if any(stops(d) for d in own):
             covered_by_own.add((path, one))
         elif wired_host:
@@ -303,7 +268,7 @@ if errors:
     sys.exit(1)
 print(
     f"check-infinite-animations: OK -- {len(checked)} infinite @keyframes ({', '.join(sorted(checked))}) in "
-    f"{n_sheets_with} stylesheets; compositor-only except {sum(used)} allowlisted; reduced motion: "
+    f"{n_sheets_with} stylesheets; compositor-only except {n_allowed} allowlisted; reduced motion: "
     f"{len(covered_by_host)} loop selector(s) via the theme `{HOST}` rule, {len(covered_by_own)} via their own block"
 )
 PYEOF

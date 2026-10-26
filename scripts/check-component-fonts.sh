@@ -45,6 +45,9 @@ import glob
 import re
 import sys
 
+sys.path.insert(0, "scripts/lib")
+from css import blank_comments  # noqa: E402
+
 files = sys.argv[1:] or sorted(glob.glob("preview/src/components/*/style.css"))
 if not files:
     print("check-component-fonts: no stylesheets found (run from a checkout)", file=sys.stderr)
@@ -55,12 +58,6 @@ FAMILY_OK = re.compile(r"^(inherit|var\(\s*--dx-font-[a-z0-9-]+\s*(,\s*inherit\s
 SHORTHAND_OK = re.compile(r"^inherit$", re.I)
 
 DECL = re.compile(r"(?<![\w-])(font-family|font)\s*:\s*([^;{}]*)(?=[;}])", re.I)
-COMMENT = re.compile(r"/\*.*?\*/", re.S)
-
-def blank_comments(text):
-    # Replace comments with same-length whitespace (keeping newlines) so line numbers survive.
-    return COMMENT.sub(lambda m: re.sub(r"[^\n]", " ", m.group(0)), text)
-
 errors = []
 for path in files:
     with open(path, encoding="utf-8") as fh:

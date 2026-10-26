@@ -3,9 +3,6 @@
   "description": "A dialog component for displaying modal content.",
   "authors": ["Evan Almloff"],
   "exclude": ["variants", "docs.md", "component.json"],
-  "componentDependencies": [
-    { "name": "button", "git": "https://github.com/MentalGear/shadcn-dioxus" }
-  ],
   "cargoDependencies": [
     {
       "name": "dioxus-primitives",
@@ -15,6 +12,9 @@
       "name": "dioxus-icons",
       "version": "=0.1.0"
     }
+  ],
+  "componentDependencies": [
+    { "name": "button", "git": "https://github.com/MentalGear/shadcn-dioxus" }
   ],
   "globalAssets": ["../../../assets/dx-components-theme.css"]
 }

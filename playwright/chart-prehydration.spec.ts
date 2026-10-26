@@ -19,6 +19,7 @@ import { test, expect } from "./fixtures";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 import { expectNoWebFont, noWebFonts } from "./web-fonts";
+import { gotoPrerendered } from "./page-kinds";
 
 type Box = { x: number; y: number; w: number; h: number };
 type Card = { key: string; parts: Record<string, Box> };
@@ -71,8 +72,7 @@ for (const route of ROUTES) {
       const noJs = await browser.newContext({ viewport, javaScriptEnabled: false });
       await noWebFonts(noJs);
       const p1 = await noJs.newPage();
-      // goto-ok: JavaScript disabled in this context: the page can never hydrate
-      await p1.goto(`${BASE_URL}${route}`, { waitUntil: "load" });
+      await gotoPrerendered(p1, `${BASE_URL}${route}`, { waitUntil: "load" });
       await p1.waitForSelector('svg[data-slot="chart-svg"]');
       await expectNoWebFont(p1, `${route} ${width}px JavaScript off`);
       const before: Card[] = await p1.evaluate(`(${COLLECT.toString()})()`);

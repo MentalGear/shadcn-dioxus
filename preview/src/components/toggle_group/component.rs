@@ -141,16 +141,13 @@ pub fn ToggleItem(props: ToggleItemProps) -> Element {
     // are merged through `attributes` rather than risking one clobbering
     // the other.
     let base = attributes!(button { class: "dx-toggle-group-item" });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/toggle_group/style.css") }
         toggle_group::ToggleItem {
-            index: props.index,
-            value: props.value,
-            disabled: props.disabled,
             attributes: merged,
-            {props.children}
+            ..props
         }
     }
 }

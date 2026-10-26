@@ -7,15 +7,13 @@ pub fn Separator(props: SeparatorProps) -> Element {
     let base = attributes!(div {
         class: "dx-separator", "data-dx-root": "",
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/separator/style.css") }
         separator::Separator {
-            horizontal: props.horizontal,
-            decorative: props.decorative,
             attributes: merged,
-            {props.children}
+            ..props
         }
     }
 }

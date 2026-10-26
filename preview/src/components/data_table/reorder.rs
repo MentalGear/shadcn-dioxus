@@ -362,7 +362,7 @@ pub(crate) fn RowHandle(props: RowHandleProps) -> Element {
             onkeydown,
             GripVertical { class: "dx-data-table-handle-icon", "aria-hidden": "true", size: "16px" }
         }
-        span { id: "{hint_id}", class: "dx-data-table-sr-only", {INSTRUCTIONS} }
+        span { id: "{hint_id}", "data-dx-visually-hidden": "", {INSTRUCTIONS} }
     }
 }
 
