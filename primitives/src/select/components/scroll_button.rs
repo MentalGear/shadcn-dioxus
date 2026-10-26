@@ -1,22 +1,97 @@
 //! `SelectScrollUpButton` / `SelectScrollDownButton`: the edge buttons of a scrolling listbox.
 
+use dioxus::html::geometry::PixelsVector2D;
+use dioxus::html::ScrollBehavior;
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
+use std::rc::Rc;
 use std::time::Duration;
 
-use super::super::context::SelectContext;
-use crate::{
-    activity::use_motion,
-    interval::use_interval_while,
-    js_listener::{use_js_listeners, JsListeners},
-    merge_attributes,
-};
+use crate::{activity::use_motion, interval::use_interval_while, merge_attributes};
 
-/// Marks the subtree of a listbox that is actually rendered (`SelectListRendered`). While the
-/// list is closed `SelectList` renders its children inline, without the listbox, so a scroll
-/// button must render nothing there: it has no scroller to watch.
+/// What a scroll button needs to know about its list: where it is scrolled and how tall the
+/// content and the visible window are, all in layout pixels.
+#[derive(Clone, Copy, PartialEq)]
+struct ScrollMetrics {
+    top: f64,
+    scroll_height: f64,
+    client_height: f64,
+}
+
+impl ScrollMetrics {
+    fn can_scroll(self, edge: Edge) -> bool {
+        match edge {
+            Edge::Up => self.top > 1.0,
+            Edge::Down => self.top < self.scroll_height - self.client_height - 1.0,
+        }
+    }
+}
+
+/// The rendered listbox's scroll state, provided by `SelectListRendered` to its subtree. Its
+/// presence also marks the subtree of a listbox that is actually rendered: while the list is
+/// closed `SelectList` renders its children inline, without the listbox, so a scroll button
+/// must render nothing there (it has no scroller to watch).
+///
+/// The list feeds it from its own `onscroll` (exact: [`ScrollData`] carries the layout
+/// `scrollTop`/`scrollHeight`/`clientHeight`) and `onresize` (the popup growing or shrinking
+/// with its content); the buttons only read it. Nothing is injected into the page and no
+/// listener lives outside the element.
 #[derive(Clone, Copy)]
-pub(super) struct InRenderedList;
+pub(super) struct ListScroll {
+    list: Signal<Option<Rc<MountedData>>>,
+    metrics: Signal<Option<ScrollMetrics>>,
+}
+
+impl ListScroll {
+    /// `list` is the signal the listbox's `onmounted` fills.
+    pub(super) fn new(list: Signal<Option<Rc<MountedData>>>) -> Self {
+        Self {
+            list,
+            metrics: Signal::new(None),
+        }
+    }
+
+    /// The list scrolled (or was scrolled by a button, a key or the item-aligned placement).
+    pub(super) fn on_scroll(mut self, data: &ScrollData) {
+        let next = Some(ScrollMetrics {
+            top: data.scroll_top(),
+            scroll_height: f64::from(data.scroll_height()),
+            client_height: f64::from(data.client_height()),
+        });
+        if *self.metrics.peek() != next {
+            self.metrics.set(next);
+        }
+    }
+
+    /// The list's box changed (it fires once on mount, which is the first measurement).
+    ///
+    /// A resize carries the border-box height, not `clientHeight`, so the window is a border
+    /// width taller than it is: that errs toward "nothing to scroll" for a list that overflows
+    /// by only a pixel or two, and the first `onscroll` after replaces it with the exact value.
+    pub(super) fn on_resize(mut self, data: &ResizeData) {
+        let Ok(size) = data.get_border_box_size() else {
+            return;
+        };
+        let Some(list) = self.list.peek().clone() else {
+            return;
+        };
+        spawn(async move {
+            let (Ok(offset), Ok(scroll)) =
+                (list.get_scroll_offset().await, list.get_scroll_size().await)
+            else {
+                return;
+            };
+            let next = Some(ScrollMetrics {
+                top: offset.y,
+                scroll_height: scroll.height,
+                client_height: size.height,
+            });
+            if *self.metrics.peek() != next {
+                self.metrics.set(next);
+            }
+        });
+    }
+}
 
 /// Pixels the list scrolls per tick of a hovered button (about 360 px/s at the 16 ms period).
 const SCROLL_STEP_PX: i32 = 6;
@@ -74,7 +149,7 @@ pub fn SelectScrollDownButton(props: SelectScrollButtonProps) -> Element {
 
 fn scroll_button(edge: Edge, props: SelectScrollButtonProps) -> Element {
     // The hooks live in the inner component so their order never depends on the context.
-    if try_consume_context::<InRenderedList>().is_none() {
+    if try_consume_context::<ListScroll>().is_none() {
         return VNode::empty();
     }
     rsx! {
@@ -95,51 +170,37 @@ struct ScrollButtonInnerProps {
 #[component]
 fn ScrollButtonInner(props: ScrollButtonInnerProps) -> Element {
     let edge = props.edge;
-    let ctx = use_context::<SelectContext>();
-    let list_id = ctx.selectable.list_id;
-    let mut can_scroll = use_signal(|| false);
+    let list_scroll = use_context::<ListScroll>();
     let mut hovering = use_signal(|| false);
     let motion = use_motion();
 
-    // The scroll position is read in the page and only changes are sent: one passive `scroll`
-    // listener (removed with the component by `JsListeners`), no per-event round trip.
-    use_js_listeners(move || {
-        let id = list_id.cloned()?;
-        Some(
-            JsListeners::install(
-                "const id = await dioxus.recv();
-                 const up = (await dioxus.recv()) === 'up';
-                 const list = document.getElementById(id);
-                 if (!list) return;
-                 let last = null;
-                 const check = () => {
-                     const max = list.scrollHeight - list.clientHeight;
-                     const can = up ? list.scrollTop > 1 : list.scrollTop < max - 1;
-                     if (can !== last) { last = can; dioxus.send(can); }
-                 };
-                 listen(list, 'scroll', check, { passive: true });
-                 listen(window, 'resize', check, { passive: true });
-                 requestAnimationFrame(check);",
-            )
-            .arg(id)
-            .arg(edge.as_str())
-            .on_message(move |can: bool| can_scroll.set(can)),
-        )
-    });
+    let can_scroll =
+        use_memo(move || (list_scroll.metrics)().is_some_and(|metrics| metrics.can_scroll(edge)));
 
     // Hover auto-scroll is motion: it runs only while hovered, while there is room to scroll,
     // and while the button is visible (hidden tab / skipped card pause it).
     let active = use_memo(move || hovering() && can_scroll() && (motion.active())());
     use_interval_while(active, SCROLL_PERIOD, move || {
-        let Some(id) = list_id.cloned() else { return };
+        let Some(list) = list_scroll.list.peek().clone() else {
+            return;
+        };
         let delta = match edge {
             Edge::Up => -SCROLL_STEP_PX,
             Edge::Down => SCROLL_STEP_PX,
         };
-        // Not a listener: a one-shot scroll step.
-        document::eval(&format!(
-            "const l = document.getElementById({id:?}); if (l) l.scrollTop += {delta};"
-        ));
+        // One step: read where the list is (not where the last event said, which can be a tick
+        // old) and write the absolute position, both axes, so the untouched one stays put.
+        spawn(async move {
+            let Ok(at) = list.get_scroll_offset().await else {
+                return;
+            };
+            _ = list
+                .scroll(
+                    PixelsVector2D::new(at.x, at.y + f64::from(delta)),
+                    ScrollBehavior::Instant,
+                )
+                .await;
+        });
     });
     // Nothing left to scroll: the pointer is still over a hidden button, so stop tracking it.
     use_effect(move || {

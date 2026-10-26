@@ -9,7 +9,7 @@ use dioxus_attributes::attributes;
 use super::super::context::SelectContext;
 #[cfg(feature = "web")]
 use super::super::context::SelectPosition;
-use super::scroll_button::InRenderedList;
+use super::scroll_button::ListScroll;
 
 /// The props for the [`SelectList`] component
 #[derive(Props, Clone, PartialEq)]
@@ -333,8 +333,6 @@ fn SelectListRendered(
     children: Element,
 ) -> Element {
     let mut ctx: SelectContext = use_context();
-    // Scroll buttons render only inside this subtree (`scroll_button.rs`).
-    use_context_provider(|| InRenderedList);
     let open = ctx.selectable.open;
     // axe `aria-input-field-name` (dev-docs/backlog.md row 34): an
     // ARIA `listbox` is an input field and needs an accessible name.
@@ -345,6 +343,9 @@ fn SelectListRendered(
     // override, and `aria-labelledby` would otherwise take ARIA precedence
     // over that caller-supplied `aria-label` and silently shadow it.
     let mut listbox_ref: Signal<Option<std::rc::Rc<MountedData>>> = use_signal(|| None);
+    // Scroll buttons render only inside this subtree and read the list's scroll state
+    // (`scroll_button.rs`).
+    let list_scroll = use_context_provider(|| ListScroll::new(listbox_ref));
     // See `SelectContext::keep_trigger_focus`'s doc: an Alt+ArrowDown open
     // must leave DOM focus on the trigger, so this "nothing focused yet --
     // focus the listbox container" fallback must not fire for that open.
@@ -508,6 +509,8 @@ fn SelectListRendered(
             id: id.clone(),
 
             onmounted: move |evt| listbox_ref.set(Some(evt.data())),
+            onscroll: move |evt| list_scroll.on_scroll(&evt.data()),
+            onresize: move |evt| list_scroll.on_resize(&evt.data()),
             onkeydown,
             onblur: move |_| {
                 if focused() {
@@ -541,10 +544,11 @@ fn SelectListRendered(
     children: Element,
 ) -> Element {
     let mut ctx: SelectContext = use_context();
-    // Scroll buttons render only inside this subtree (`scroll_button.rs`).
-    use_context_provider(|| InRenderedList);
     let open = ctx.selectable.open;
     let mut listbox_ref: Signal<Option<std::rc::Rc<MountedData>>> = use_signal(|| None);
+    // Scroll buttons render only inside this subtree and read the list's scroll state
+    // (`scroll_button.rs`).
+    let list_scroll = use_context_provider(|| ListScroll::new(listbox_ref));
     // See `SelectContext::keep_trigger_focus`'s doc: an Alt+ArrowDown open
     // must leave DOM focus on the trigger, so this "nothing focused yet --
     // focus the listbox container" fallback must not fire for that open.
@@ -593,6 +597,8 @@ fn SelectListRendered(
             id,
 
             onmounted: move |evt| listbox_ref.set(Some(evt.data())),
+            onscroll: move |evt| list_scroll.on_scroll(&evt.data()),
+            onresize: move |evt| list_scroll.on_resize(&evt.data()),
             onkeydown,
             onblur: move |_| {
                 if focused() {
