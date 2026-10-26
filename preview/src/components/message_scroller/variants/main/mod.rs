@@ -45,10 +45,10 @@ and the reply grows into the room beneath. Once it fills the screen, following t
 so the newest words stay in view until you decide to read something else. \
 Scroll up at any time and the stream carries on below you without moving what you are reading.";
 
-/// A real timer for the simulated stream (this demo has no async runtime of
-/// its own; the browser's `setTimeout` is the clock).
+/// A real timer for the simulated stream: the primitives' `sleep` (`tokio` natively, `gloo_timers`
+/// on wasm).
 async fn sleep_ms(ms: u32) {
-    let _ = document::eval(&format!("await new Promise((r) => setTimeout(r, {ms}));")).await;
+    dioxus_primitives::sleep::sleep(std::time::Duration::from_millis(u64::from(ms))).await;
 }
 
 /// Reads `use_message_scroller_scrollable()`: the signal the controller feeds
