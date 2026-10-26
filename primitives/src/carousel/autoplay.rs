@@ -22,17 +22,20 @@ pub struct CarouselAutoplayProps {
     pub delay_ms: ReadSignal<u64>,
 
     /// Whether rotation stops for good (until [`CarouselRotationControl`]
-    /// is explicitly clicked again) after a manual paging action --
-    /// Previous/Next, the root keyboard handler, a [`CarouselIndicator`], or a
-    /// custom picker's own [`CarouselApi::scroll_to`]. Mirrors
-    /// `embla-carousel-autoplay`'s own `stopOnInteraction` option and its
-    /// default (`true`).
+    /// is explicitly clicked again) once the user interacts: a pointer
+    /// press (touch, pen or mouse) on the track, which is the start of a
+    /// swipe or drag, or a manual paging action -- Previous/Next, the root
+    /// keyboard handler, a [`CarouselIndicator`], or a custom picker's own
+    /// [`CarouselApi::scroll_to`]. Mirrors `embla-carousel-autoplay`'s own
+    /// `stopOnInteraction` option (which fires on embla's pointer down) and
+    /// its default (`true`).
     ///
-    /// **Scope note:** a native pointer-drag or wheel/trackpad scroll
-    /// does **not** count as "interaction" here -- only the discrete
-    /// paging actions above do. Wiring the drag/wheel bridges too is an
-    /// deliberate scope cut, not a silent gap: see `AutoplayContext::note_interaction`'s
-    /// own doc for exactly which call sites are wired.
+    /// The press is what counts, not the scroll it starts, so a swipe is
+    /// never raced by the next tick and a touch device, which has no hover,
+    /// is covered. A wheel or trackpad scroll does not count, as in embla:
+    /// it is not a press, and hovering the pointer over the carousel
+    /// already pauses it through [`CarouselAutoplayProps::stop_on_mouse_enter`].
+    /// See `AutoplayContext::note_interaction`'s own doc for the call sites.
     #[props(default = ReadSignal::new(Signal::new(true)))]
     pub stop_on_interaction: ReadSignal<bool>,
 

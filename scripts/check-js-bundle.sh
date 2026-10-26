@@ -2,7 +2,7 @@
 #
 # check-js-bundle.sh
 #
-# `primitives/src/js/*.js` is generated from `primitives/src/ts/*.ts` and committed (dioxus-primitives has no build
+# `primitives/src/js/**.js` is generated from `primitives/src/ts/**.ts` (one bundle per entry, mirrored path) and committed (dioxus-primitives has no build
 # script), so `primitives/src/js/bundle.manifest`, written only by `scripts/build-js-bundle.sh`, records the sha256 of
 # every `.ts` and `.js`: the gate fails on an edit of either side without a rebuild, an orphan, or a hand-edited
 # `.js`. When the installed `bun` is the recorded version it also rebuilds and requires identical bytes, otherwise it
@@ -44,22 +44,30 @@ while read -r kind sum name; do
   esac
 done < <(grep -E '^(ts|js) ' "$manifest")
 
-shopt -s nullglob
 declare -A seen_ts seen_js
-for f in "$ts_dir"/*.ts; do
-  n="$(basename "$f")"; seen_ts["$n"]=1
+entries=()
+# Every .ts below ts/ is hashed (an edit of a bundled module `ts/lib/register.ts` or of the generated
+# `behaviours.gen.ts` is as stale as one of the entry); an ENTRY is any `.ts` that is not a `.d.ts`, a `.gen.ts` or
+# under `lib/` or `types/` (the same rule as build-js-bundle.sh) and is the one that has a committed .js at the
+# mirrored path below js/.
+mapfile -t all_ts < <(cd "$ts_dir" && find . -name '*.ts' | sed 's|^\./||' | LC_ALL=C sort)
+for n in "${all_ts[@]}"; do
+  f="$ts_dir/$n"; seen_ts["$n"]=1
   [ -n "${want_ts[$n]:-}" ] || { err "$f is not in $manifest; run scripts/build-js-bundle.sh"; continue; }
   [ "$(sha256sum "$f" | cut -d' ' -f1)" = "${want_ts[$n]}" ] \
     || err "$f changed since $manifest was written: run scripts/build-js-bundle.sh and commit the .js and the manifest"
-  j="$js_dir/$(basename "$n" .ts).js"
+  case "$n" in *.d.ts|*.gen.ts|lib/*|types/*) continue ;; esac
+  entries+=("$n")
+  j="$js_dir/${n%.ts}.js"
   [ -f "$j" ] || err "$j (built from $f) is missing; run scripts/build-js-bundle.sh"
 done
-for f in "$js_dir"/*.js; do
-  n="$(basename "$f")"; seen_js["$n"]=1
-  [ -f "$ts_dir/$(basename "$n" .js).ts" ] || { err "$f has no $ts_dir/$(basename "$n" .js).ts source (a generated file must come from one)"; continue; }
+mapfile -t all_js < <(cd "$js_dir" && find . -name '*.js' | sed 's|^\./||' | LC_ALL=C sort)
+for n in "${all_js[@]}"; do
+  f="$js_dir/$n"; seen_js["$n"]=1
+  [ -f "$ts_dir/${n%.js}.ts" ] || { err "$f has no $ts_dir/${n%.js}.ts source (a generated file must come from one)"; continue; }
   [ -n "${want_js[$n]:-}" ] || { err "$f is not in $manifest; run scripts/build-js-bundle.sh"; continue; }
   [ "$(sha256sum "$f" | cut -d' ' -f1)" = "${want_js[$n]}" ] \
-    || err "$f does not match $manifest: it was edited by hand or rebuilt without writing the manifest; edit $ts_dir/$(basename "$n" .js).ts and run scripts/build-js-bundle.sh"
+    || err "$f does not match $manifest: it was edited by hand or rebuilt without writing the manifest; edit $ts_dir/${n%.js}.ts and run scripts/build-js-bundle.sh"
 done
 for n in "${!want_ts[@]}"; do [ -n "${seen_ts[$n]:-}" ] || err "$manifest lists $ts_dir/$n, which no longer exists"; done
 for n in "${!want_js[@]}"; do [ -n "${seen_js[$n]:-}" ] || err "$manifest lists $js_dir/$n, which no longer exists"; done
@@ -72,11 +80,12 @@ if command -v bun >/dev/null; then
   else
     tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
     rebuild="ok"
-    for f in "$ts_dir"/*.ts; do
-      n="$(basename "$f" .ts)"
-      if bun build "$f" --outfile "$tmp/$n.js" --minify-whitespace --minify-syntax >/dev/null 2>&1; then
-        cmp -s "$tmp/$n.js" "$js_dir/$n.js" \
-          || { err "bun $have_bun rebuilds $f into different bytes than the committed $js_dir/$n.js; run scripts/build-js-bundle.sh"; rebuild="FAILED"; }
+    for e in "${entries[@]}"; do
+      f="$ts_dir/$e"; n="${e%.ts}.js"
+      mkdir -p "$(dirname "$tmp/$n")"
+      if bun build "$f" --outfile "$tmp/$n" --minify-whitespace --minify-syntax >/dev/null 2>&1; then
+        cmp -s "$tmp/$n" "$js_dir/$n" \
+          || { err "bun $have_bun rebuilds $f into different bytes than the committed $js_dir/$n; run scripts/build-js-bundle.sh"; rebuild="FAILED"; }
       else
         err "bun $have_bun could not build $f"; rebuild="FAILED"
       fi
@@ -85,4 +94,4 @@ if command -v bun >/dev/null; then
 fi
 
 [ "$fail" -ne 0 ] && exit 1
-echo "check-js-bundle: OK -- ${#want_ts[@]} .ts source(s) match their committed .js and $manifest (deterministic rebuild: $rebuild)."
+echo "check-js-bundle: OK -- ${#want_ts[@]} .ts source(s) (${#entries[@]} entries) match their committed .js and $manifest (deterministic rebuild: $rebuild)."

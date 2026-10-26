@@ -1,10 +1,10 @@
 ---
 id: 386
 title: "Virtual Grid: hovering the sticky header row makes it see-through (a translucent row hover replaced the opaque cover)"
-status: "FIXED on lane/grid-header-hover, merge pending."
+status: "LANDED on main (merge acc07958, deployed by batch 28, main daf90a8f). FIXED on…"
 size: "S"
 area: components
-updated: 2026-10-24
+updated: 2026-10-26
 ---
 
 # Row 386: Virtual Grid header row hover
@@ -15,6 +15,8 @@ Owner report (2026-10-24): on a scrolled Virtual Grid, the pointer over the stic
 see-through, so body cell numbers paint through the header labels.
 
 ## Status / trigger
+
+LANDED on main (merge acc07958, deployed by batch 28, main daf90a8f).
 
 FIXED on `lane/grid-header-hover`, merge pending.
 

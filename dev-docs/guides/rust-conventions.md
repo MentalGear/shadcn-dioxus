@@ -1,6 +1,6 @@
 # Rust conventions
 
-Six conventions adopted from the Google Rust style guide (owner 2026-10-21, [row 355](../backlog/355-adopt-google-rust-style-guide-items.md)).
+Six conventions adopted from the Google Rust style guide (owner 2026-10-21, [row 355](../backlog/done/355-adopt-google-rust-style-guide-items.md)).
 They apply to `primitives/`, `cli/` and `preview/`. The lint-enforced items of the same row are lints, not prose: the
 `[workspace.lints]` table in the root `Cargo.toml` (every crate opts in with `lints.workspace = true`; `unsafe_code` is
 denied and every `#[allow]`/`#[expect]` carries a `reason`), the crate attributes at the root of `primitives` (`missing_docs`,

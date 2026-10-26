@@ -557,6 +557,7 @@ pub fn CarouselContent(props: CarouselContentProps) -> Element {
         }),
     ]);
 
+    let autoplay = ctx.autoplay;
     rsx! {
         // Clipping viewport (module doc's "Engine" section, and this
         // component's own "Edge rubber-band" doc above, have the full
@@ -585,6 +586,13 @@ pub fn CarouselContent(props: CarouselContentProps) -> Element {
         div {
             "data-slot": "carousel-viewport",
             style: "overflow: clip; display: flow-root;",
+            // A touch, pen or mouse press on the track counts as interaction
+            // for `stop_on_interaction` (embla-carousel-autoplay's own
+            // `pointerDown` trigger): autoplay stops before the swipe or drag
+            // moves anything, so the tick never races it (row 470). The
+            // buttons and indicators are siblings of this wrapper and count
+            // through their own paging entry points.
+            onpointerdown: move |_| autoplay.note_interaction(),
 
             div {
                 id,

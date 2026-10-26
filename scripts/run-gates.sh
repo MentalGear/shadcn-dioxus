@@ -99,6 +99,7 @@ gates=(
   "check-uncleared-intervals|scripts/check-uncleared-intervals.sh"
   "check-blocking-scroll-listeners|scripts/check-blocking-scroll-listeners.sh"
   "check-js-listeners|scripts/check-js-listeners.sh"
+  "check-bridge-behaviours|scripts/check-bridge-behaviours.sh"
   "check-js-volume|scripts/check-js-volume.sh"
   "check-motion-gating|scripts/check-motion-gating.sh"
   "check-infinite-animations|scripts/check-infinite-animations.sh"

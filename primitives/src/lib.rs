@@ -23,6 +23,7 @@ pub mod alert_dialog;
 mod as_child;
 pub mod aspect_ratio;
 pub mod avatar;
+pub mod bridge;
 #[cfg(feature = "calendar")]
 pub mod calendar;
 pub mod carousel;

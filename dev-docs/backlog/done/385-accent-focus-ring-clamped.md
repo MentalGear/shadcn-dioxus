@@ -1,10 +1,10 @@
 ---
 id: 385
 title: "The focus ring follows the picked accent, clamped to 3:1 per mode"
-status: "DECIDED 2026-10-24 (owner), BUILT on lane/accent-ring. With an accent picked the ring takes the…"
+status: "LANDED on main (merge 74c604ef, deployed by batch 28, main daf90a8f). DECIDED 2026-10-24 (owner)…"
 size: "S"
 area: theme
-updated: 2026-10-24
+updated: 2026-10-26
 ---
 
 # Row 385: the focus ring follows the picked accent
@@ -14,6 +14,8 @@ updated: 2026-10-24
 shadcn's accent presets set `--primary` (and secondary, charts, sidebar-primary) but never `--ring`, so the keyboard focus ring stayed the base colour's grey whatever accent the picker showed. The owner wants the ring to follow the accent ("clamped accent"): the accent's hue and chroma, lightness clamped per mode so every accent clears the 3:1 non-text minimum (WCAG 1.4.11); with no accent picked the ring stays exactly shadcn's (the base preset's or a host's `--ring`, else neutral's grey).
 
 ## Status / trigger
+
+LANDED on main (merge 74c604ef, deployed by batch 28, main daf90a8f).
 
 DECIDED 2026-10-24 (owner), BUILT on `lane/accent-ring`. With an accent picked the ring takes the accent's hue and chroma, lightness clamped to at most L 0.62 in light and at least L 0.6 in dark; with no accent it is untouched, to the byte.
 
