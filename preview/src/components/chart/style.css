@@ -1,3 +1,12 @@
+/* slot: --dx-chart-legend-item-basis  `flex-basis` of each legend item, so a legend wraps into columns (`25%` is
+ * four to a row). */
+
+/* slot-internal: --dx-chart-center-primary-max  The largest font size that fits the hole of a donut or gauge,
+ * written by the centre text from the chart's size. */
+
+/* slot-internal: --dx-chart-center-secondary-max  The largest caption font size that fits the hole, written by
+ * the centre text from the chart's size. */
+
 /*
  * Chart theme -- styles the primitive's unstyled `data-slot`/`data-series`
  * DOM (chart-api.md is the binding contract between the chart primitive

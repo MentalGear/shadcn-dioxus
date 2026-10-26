@@ -1,3 +1,8 @@
+/* slot: --dx-separator-margin  `margin` of the rule. */
+
+/* slot: --dx-separator-background  `background-color` of the rule. The size along the axis (`width` of a
+ * horizontal rule, `height` of a vertical one) is the orientation's, not a slot. */
+
 /* Nova separator (shadcn-ui/ui@295a1f1 registry/styles/style-nova.css, `.cn-separator`:
  * `bg-border shrink-0`; `.cn-separator-horizontal` `h-px w-full`; `.cn-separator-vertical` `h-full
  * w-px`, and `self-stretch` from registry/bases/radix/ui/separator.tsx so a vertical rule fills a

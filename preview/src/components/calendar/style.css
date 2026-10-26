@@ -1,3 +1,8 @@
+/* slot: --dx-calendar-border  The whole `border` of the calendar. A container that already is the card (a
+ * popover panel) sets `none`. */
+
+/* slot: --dx-calendar-background  Fill of the calendar. A container that already is the card sets `transparent`. */
+
 /* Nova calendar (shadcn-ui/ui@295a1f1 registry/styles/style-nova.css `.cn-calendar`,
  * `.cn-calendar-dropdown-root`, `.cn-calendar-caption-label`; structure and the day/range/today recipes
  * from registry/bases/base/ui/calendar.tsx). `.cn-calendar` is `p-2 [--cell-radius:var(--radius-md)]

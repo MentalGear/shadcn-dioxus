@@ -1,3 +1,5 @@
+/* slot: --dx-select-scroll-button-height  Height of the scroll arrows at the top and bottom of a long list. */
+
 /* Nova select (shadcn-ui/ui@295a1f1 registry/styles/style-nova.css,
  * `.cn-select-*`): a 32px trigger (`rounded-lg`, `input` border, transparent
  * in light / `input/30` in dark, `pl-2.5 pr-2`, gap-1.5, text-sm), content on

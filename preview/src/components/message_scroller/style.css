@@ -1,3 +1,7 @@
+/* slot: --dx-message-scroller-row-estimate  First-render height guess for a row the browser has not measured
+ * yet, when rows skip rendering (`data-virtualize="content-visibility"`); the real height is remembered after
+ * the first paint. */
+
 /* Nova message scroller (shadcn-ui/ui@295a1f1 registry/bases/base/ui/message-scroller.tsx
  * + registry/styles/style-nova.css `.cn-message-scroller-content`): a frame that
  * fills its parent, a bounded `overflow-y` viewport with a bottom edge fade, a

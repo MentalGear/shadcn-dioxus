@@ -138,6 +138,7 @@ gates=(
   "check-docs-no-demo-list|scripts/check-docs-no-demo-list.sh"
   "check-docs-own-components|scripts/check-docs-own-components.sh"
   "check-props-docs|scripts/check-props-docs.sh"
+  "check-slot-docs|scripts/check-slot-docs.sh"
   "check-virtual-docs-parity|scripts/check-virtual-docs-parity.sh"
   "check-ssg-verify|scripts/check-ssg-verify.sh"
   # group: Registry and installed components
