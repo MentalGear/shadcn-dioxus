@@ -34,7 +34,10 @@ fn main() {
             }
         }
         for note in &sheet.orphan_notes {
-            println!("ORPHAN\t{path}\t{}\t{}\t{}", note.name, note.line, note.text);
+            println!(
+                "ORPHAN\t{path}\t{}\t{}\t{}",
+                note.name, note.line, note.text
+            );
         }
         for note in &sheet.duplicate_notes {
             println!("DUP\t{path}\t{}\t{}", note.name, note.line);
