@@ -1,6 +1,6 @@
 # Dioxus best-practice review of the row 434 step 3 plan (2026-10-26)
 
-**Status.** This review reads the plan as it stood before boards 2 to 4; its findings were folded into the plan, which is now [`sync-js-root-2026-10-26.md`](./sync-js-root-2026-10-26.md) as amended by [round 4](./board-2026-10-26-r4/SYNTHESIS.md). Where a section here names an option as A, B or C (now scope 1, 2 and 3), lane R (now lane VR) or "step 0" (now the latency session), read the plan's terms block. The review is kept as written.
+**Status.** This review reads the plan as it stood before boards 2 to 5; its findings were folded into the plan, which is now [`sync-js-root-2026-10-26.md`](./sync-js-root-2026-10-26.md) as amended by [round 5](./board-2026-10-26-r5/SYNTHESIS.md) (the last; the paper review ends there). Where a section here names an option as A, B or C (now scope 1, 2 and 3), lane R (now lane VR) or "step 0" (now the latency session), read the plan's terms block. The review is kept as written.
 
 Independent review of `sync-js-root-2026-10-26.md` and the "Step 3" sections of backlog row 434, against official Dioxus guidance, dioxus-sdk, upstream DioxusLabs/components, the DioxusLabs/dioxus issue tracker, and comparable systems. Read-only: nothing was built or run, and the repo was only read (`/home/user/wt/b28`, branch `queue/batch-28`).
 

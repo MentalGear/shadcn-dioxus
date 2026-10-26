@@ -1,5 +1,7 @@
 # Adversarial board round 4: synthesis (2026-10-26)
 
+> Superseded in part by later rounds; the current plan is the root doc ([`sync-js-root-2026-10-26.md`](../sync-js-root-2026-10-26.md)), whose sections 2.2 and 2.3 decide.
+
 Three fresh members attacked the plan as folded after round 3 (`lane/js-plan-docs-r3`, 00108345). Reports in this folder: `admission.md`, `whole-core.md`, `coherence.md`.
 
 ## Trajectory
