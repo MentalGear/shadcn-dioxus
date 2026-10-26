@@ -10,11 +10,12 @@ or phase number, so those headings and ids stay where they are.
 
 | Path | What it is |
 |---|---|
-| [`STATUS.md`](./STATUS.md) | One page: rounds done, what is merged and deployed, what runs, the next round, owner inputs pending. The main loop keeps it current. |
+| [`STATUS.md`](./STATUS.md) | One page: where a fresh session picks up, what is merged and deployed, the ordered next rows, owner inputs pending. The main loop keeps it current. |
 | [`backlog.md`](./backlog.md) | Index of the **open** rows (generated; "`backlog.md` row N" in code and docs resolves to the row file). |
 | [`backlog-done.md`](./backlog-done.md) | Index of the **done** rows (landed, fixed, resolved, superseded), generated alongside. |
 | [`backlog/`](./backlog/) | The backlog itself, **one file per row**: `<NNN>-<slug>.md` (open) and `done/` (finished, trimmed to a summary plus the landing commit). Edit a row file, run `scripts/backlog-index.sh`, commit both; `scripts/check-backlog-index.sh` is the gate. |
-| [`research/backlog-order-2026-10-18.md`](./research/backlog-order-2026-10-18.md) | The execution order of the open rows (owner 2026-10-18). |
+| [`research/backlog-order-2026-10-18.md`](./research/backlog-order-2026-10-18.md) | The 2026-10-18 execution order, superseded: the current order is [`STATUS.md`](./STATUS.md), "Next" (owner 2026-10-26: rows that can land before the JavaScript plan first). |
+| [`research/sync-js-root-2026-10-26.md`](./research/sync-js-root-2026-10-26.md) | The decided JavaScript-to-Rust plan (row 434, approved 2026-10-26, scope 2), backlogged as rows 444-467; [`js-interop.md`](./js-interop.md) is its working form. |
 | [`decisions.md`](./decisions.md) | The current owner decisions, one line each with its date and row. |
 | [`plan.md`](./plan.md) | The original phased plan: phases 0-6 (finished phases are one line plus the PR), open decisions, definition of done. |
 

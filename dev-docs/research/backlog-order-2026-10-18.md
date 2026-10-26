@@ -1,3 +1,5 @@
+> **Superseded.** The current order is [`../STATUS.md`](../STATUS.md), "Next" (owner 2026-10-26: every row that can land before the JavaScript plan goes first). This page is the 2026-10-18 order, kept for its reasoning.
+
 # Backlog order (owner 2026-10-18: "they all need to be done: reorder them"; "do the test suite optimizations / subagents procedure first so the rest goes faster")
 
 Every open row is in scope. Order follows the gate procedure (`dev-docs/lane-rules.md`, "Gate procedure"): rounds of

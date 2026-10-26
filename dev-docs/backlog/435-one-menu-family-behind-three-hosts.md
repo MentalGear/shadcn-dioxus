@@ -1,10 +1,10 @@
 ---
 id: 435
 title: "One menu-family implementation behind three hosts (DropdownMenu, ContextMenu, Menubar)"
-status: "BACKLOG. Owner approved 2026-10-25 (row 365 sweep, P10)."
+status: "BACKLOG. Owner approved 2026-10-25 (row 365 sweep, P10). Ordered before the JavaScript plan (owner…"
 size: "L"
 area: primitives
-updated: 2026-10-25
+updated: 2026-10-26
 ---
 
 # Row 435: One menu-family implementation behind three hosts
@@ -15,7 +15,7 @@ DropdownMenu, ContextMenu and Menubar should behave the same wherever APG says t
 
 ## Status / trigger
 
-BACKLOG. Owner approved 2026-10-25 (row 365 sweep, P10).
+BACKLOG. Owner approved 2026-10-25 (row 365 sweep, P10). Ordered before the JavaScript plan (owner 2026-10-26: rows that can land before it go first), so the overlay port (row 456) ports one menu engine instead of three.
 
 ## Size
 

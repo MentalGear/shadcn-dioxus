@@ -19,7 +19,7 @@ Part of the [row 434](./434-javascript-in-typescript-modules-not-rust-strings.md
 
 ## Status / trigger
 
-APPROVED 2026-10-26 (owner: "okay for the plan"; scope 2, the recommended default, since no scope was named). Phase 0 of the row 434 step 3 plan; the next session starts it after the approved bug rows.
+APPROVED 2026-10-26 (owner: "okay for the plan"; scope 2, the recommended default, since no scope was named). Phase 0 of the row 434 step 3 plan; it starts once the rows ordered before the plan have landed (STATUS.md, "Next", owner 2026-10-26).
 
 ## Size
 

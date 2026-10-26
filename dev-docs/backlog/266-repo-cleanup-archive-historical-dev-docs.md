@@ -1,10 +1,10 @@
 ---
 id: 266
 title: "Repo cleanup: archive historical dev-docs, trim CLAUDE.md and the big dev docs, split backlog.md"
-status: "Left: deleting the stale remote branches (WAITING ON OWNER: his go), part (c) and part (d). (c) is…"
+status: "Left: deleting the stale remote branches (the owner said go on 2026-10-26, but this environment's…"
 size: "M-L"
 area: process
-updated: 2026-10-24
+updated: 2026-10-26
 ---
 
 # Row 266: Repo cleanup
@@ -17,7 +17,7 @@ properly refactor them."
 
 ## Status / trigger
 
-**Left: deleting the stale remote branches (WAITING ON OWNER: his go), part (c) and part (d).** (c) is a `cargo public-api` report for `dioxus-primitives` with a diff gate (needs nightly, and runs after row 267's split); (d) is the final independent review by one Opus agent, which row 365 now carries. The main cleanup landed in batch 15: `CLAUDE.md` 47 KB to 8 KB, generated `dev-docs/gates.md` (`check-gates-doc.sh`), the `check-rustdoc` ratchet, the archive moves (living docs 2.4 MB to 0.55 MB), `decisions.md`, `guides/rust-conventions.md`, the index split into `backlog.md` and `backlog-done.md`, and the guards `check-history-comments.sh` and `check-comment-refs.sh`.
+**Left: deleting the stale remote branches (the owner said go on 2026-10-26, but this environment's proxy refuses remote deletes, so the owner runs the command from their own machine with `/mnt/project-files/handoff/merged-remote-branches-2026-10-26.txt`), part (c) and part (d).** (c) is a `cargo public-api` report for `dioxus-primitives` with a diff gate (needs nightly, and runs after row 267's split); (d) is the final independent review by one Opus agent, which row 365 now carries. The main cleanup landed in batch 15: `CLAUDE.md` 47 KB to 8 KB, generated `dev-docs/gates.md` (`check-gates-doc.sh`), the `check-rustdoc` ratchet, the archive moves (living docs 2.4 MB to 0.55 MB), `decisions.md`, `guides/rust-conventions.md`, the index split into `backlog.md` and `backlog-done.md`, and the guards `check-history-comments.sh` and `check-comment-refs.sh`.
 
 ## Size
 
