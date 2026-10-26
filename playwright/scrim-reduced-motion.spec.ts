@@ -70,18 +70,21 @@ test.describe("modal scrim motion", () => {
     await gotoHydrated(page, `${BASE_URL}/component/dialog/`, { timeout: 20 * 60 * 1000 });
 
     // Record the wrapper's computed animation as its data-state turns "closed", before the
-    // dialog is removed. A MutationObserver reads the style at the moment of the change.
+    // dialog is removed. The wrapper mounts only with the open dialog, so the MutationObserver
+    // watches the demo frame's subtree and reads the style at the moment of the change.
     await page.evaluate(() => {
-      const wrapper = document.querySelector<HTMLElement>("#component-preview-frame [data-dx-scrim]");
-      if (!wrapper) throw new Error("no scrim wrapper in the demo frame");
+      const frame = document.querySelector<HTMLElement>("#component-preview-frame");
+      if (!frame) throw new Error("no demo frame");
       const w = window as unknown as { __scrimClosed?: { name: string; duration: string } | null };
       w.__scrimClosed = null;
-      new MutationObserver(() => {
-        if (wrapper.dataset.state === "closed" && !w.__scrimClosed) {
-          const cs = getComputedStyle(wrapper);
+      new MutationObserver((records) => {
+        for (const r of records) {
+          const el = r.target as HTMLElement;
+          if (!el.matches("[data-dx-scrim]") || el.dataset.state !== "closed" || w.__scrimClosed) continue;
+          const cs = getComputedStyle(el);
           w.__scrimClosed = { name: cs.animationName, duration: cs.animationDuration };
         }
-      }).observe(wrapper, { attributes: true, attributeFilter: ["data-state"] });
+      }).observe(frame, { subtree: true, attributes: true, attributeFilter: ["data-state"] });
     });
 
     await openDemoDialog(page);
