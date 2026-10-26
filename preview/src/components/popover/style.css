@@ -1,3 +1,27 @@
+/* slot: --dx-popover-trigger-padding  `padding` of the trigger. */
+
+/* slot: --dx-popover-trigger-border  `border` of the trigger. */
+
+/* slot: --dx-popover-trigger-border-color  `border-color` of the trigger; the default is the outline Button's
+ * edge (`--dx-border` in light, `--dx-input` in dark). */
+
+/* slot: --dx-popover-trigger-background-color  `background-color` of the trigger; the default is the outline
+ * Button's fill. */
+
+/* slot: --dx-popover-trigger-active-background-color  `background-color` of the trigger while hovered or `aria-
+ * expanded="true"`; the default is the outline Button's hover fill. */
+
+/* slot: --dx-popover-trigger-transition-property  `transition-property` of the trigger. */
+
+/* slot: --dx-popover-trigger-focus-radius  Corner radii of the trigger under `:focus-visible`; the default is
+ * the trigger's own radii. */
+
+/* slot: --dx-popover-trigger-focus-shadow  `box-shadow` of the trigger under `:focus-visible`. */
+
+/* slot: --dx-popover-content-width  `width` of the panel. */
+
+/* slot: --dx-popover-content-max-width  `max-width` of the panel. */
+
 /* Nova popover (shadcn-ui/ui@295a1f1 registry/styles/style-nova.css,
  * `.cn-popover-content`): `popover` fill and ink, a 1px `foreground/10` ring,
  * `rounded-lg`, p-2.5 / gap-2.5, text-sm, `shadow-md`, `w-72`, start-aligned,

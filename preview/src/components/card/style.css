@@ -1,3 +1,14 @@
+/* slot: --dx-card-padding-block  Block padding of the card (its spacing token by default). A card whose first or
+ * last child is edge to edge sets `0`. */
+
+/* slot: --dx-card-footer-direction  Flex direction of the footer row; `column` stacks its children. */
+
+/* slot: --dx-card-footer-align-items  Cross-axis alignment of the footer's children. */
+
+/* slot: --dx-card-footer-font-size  Font size of the footer; it inherits the card's by default. */
+
+/* slot: --dx-card-footer-gap  Gap between the footer's children. */
+
 /* Nova card (shadcn-ui/ui@295a1f1 registry/styles/style-nova.css, `.cn-card*`):
  * no border and no drop shadow -- a 1px `foreground/10` ring, 16px spacing
  * (12px at `data-size="sm"`), `rounded-xl`, `text-sm`. Nova also sets

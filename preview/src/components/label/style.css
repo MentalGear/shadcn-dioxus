@@ -1,3 +1,15 @@
+/* slot: --dx-label-gap  `gap` between the label text and what sits beside it. */
+
+/* slot: --dx-label-color  Text colour. */
+
+/* slot: --dx-label-font-size  `font-size`. */
+
+/* slot: --dx-label-font-weight  `font-weight`. */
+
+/* slot: --dx-label-line-height  `line-height`. */
+
+/* slot: --dx-label-opacity  `opacity`. */
+
 /* Label Styles
  *
  * shadcn's `Label` is `flex items-center gap-2 text-sm leading-none

@@ -1,3 +1,6 @@
+/* slot-internal: --dx-toggle-group-spacing  Gap between the items as a multiple of `0.25rem`, written by the
+ * component from its `spacing` prop. */
+
 /* Nova toggle group (shadcn-ui/ui apps/v4/registry/styles/style-nova.css, `.cn-toggle-group` +
  * `.cn-toggle-group-item`; registry/bases/base/ui/toggle-group.tsx for the classes).
  *

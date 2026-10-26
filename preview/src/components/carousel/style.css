@@ -1,3 +1,11 @@
+/* slot: --dx-carousel-nav-disabled-opacity  Opacity of a disabled previous or next arrow (the first or last
+ * slide of a carousel that does not loop). It inherits, so set it on `.dx-carousel` or any ancestor; the
+ * `nav_disabled_opacity` prop writes it. */
+
+/* slot: --dx-carousel-nav-disabled-visibility  `visible` or `hidden` for the same arrows. Set `hidden` together
+ * with an opacity of `0` to remove the arrow from the accessibility tree and the hit test; the prop does so for
+ * `0.0`. */
+
 /* Layout-critical properties (overflow/scroll-snap/flex-direction on
    `.dx-carousel-content`, `flex-basis`/`scroll-snap-align` on
    `.dx-carousel-item`) are structural and live on the primitive itself

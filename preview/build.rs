@@ -3,6 +3,9 @@ use dioxus::prelude::*;
 // The `#[derive(Props)]` scanner shared with the `scripts/check-props-docs.sh` gate (backlog row 165).
 #[path = "props_scan.rs"]
 mod props_scan;
+// The slot-variable scanner shared with the `scripts/check-slot-docs.sh` gate (backlog row 433).
+#[path = "slot_scan.rs"]
+mod slot_scan;
 
 fn main() {
     let out_dir = std::env::var("OUT_DIR").unwrap();
@@ -30,6 +33,10 @@ fn main() {
     // component's `variants/` directory, so adding a component -- which edits `CATALOG` in
     // `mod.rs` -- or a variant re-runs it. The trade-off below still holds for a new `.md` file
     // alone.)
+    //
+    // (Row 433: the one exception is each component's own `style.css`, registered by `render_slots_section`
+    // for the slot-variable table. That is safe for `dx serve`: a stylesheet edit is an asset hot reload that
+    // never starts cargo, and cargo's rerun leaves unchanged outputs alone (`write_if_changed`).)
     //
     // Known, accepted trade-off: a brand new `.md` file inside an EXISTING component (one this
     // script has never seen) isn't watched until something else causes it to rerun -- cargo has no
@@ -215,6 +222,9 @@ fn walk_markdown_dir(dir: &std::path::Path, out_dir: &std::path::Path) -> std::i
                 && dir.parent() == Some(std::path::Path::new("src/components"))
             {
                 let mut sections = process_docs_md_to_sections(&file.path());
+                if let Some(slots) = render_slots_section(&folder_name, &sections) {
+                    sections.push(slots);
+                }
                 sections.push(render_props_section(&folder_name, &sections));
                 write_if_changed(
                     &out_folder.join("docs_sections.rs"),
@@ -239,6 +249,10 @@ fn walk_markdown_dir(dir: &std::path::Path, out_dir: &std::path::Path) -> std::i
 /// The text of the props section's heading. The id is `docs-props-reference`, like every
 /// `split_docs_sections` row, and a `docs.md` that declares the same `##` fails the build.
 const PROPS_HEADING: &str = "Props reference";
+
+/// The text of the slot-variable section's heading; its id is `docs-styling-slot-variables`. A `docs.md` that
+/// declares `## Slot variables` or this heading fails the build and `scripts/check-slot-docs.sh`.
+const SLOTS_HEADING: &str = "Styling (slot variables)";
 
 /// One section of a component page's docs: a docs.md `##` section, the "Usage notes" intro or the
 /// generated "Props reference". `site/component_page.rs` renders each as one `AccordionItem` (its `DocsSection`
@@ -334,6 +348,62 @@ fn doc_html(doc: &str) -> String {
     });
     pulldown_cmark::html::push_html(&mut out, events);
     out
+}
+
+/// The "Styling (slot variables)" section of a component's docs page (backlog row 433): one table row per slot
+/// its `style.css` reads (`slot_scan`: a custom property of the component's own prefix, read with a fallback and
+/// never declared by the sheet), so the page cannot disagree with the sheet. The variable, its default (the
+/// fallback) and the property it feeds come from the read; the description is the sheet's own
+/// `/* slot: --name  text */` comment (`scripts/check-slot-docs.sh` fails a slot with none, so no cell is empty).
+/// A `/* slot-internal: .. */` variable, written by a script or by the component itself, is not a knob and stays
+/// off the page. `None` for a component whose sheet has no slot.
+fn render_slots_section(name: &str, sections: &[DocsSection]) -> Option<DocsSection> {
+    let path = std::path::PathBuf::from(format!("src/components/{name}/style.css"));
+    let css = std::fs::read_to_string(&path).ok()?;
+    println!("cargo:rerun-if-changed={}", path.display());
+    let id = format!("docs-{}", slugify(SLOTS_HEADING));
+    assert!(
+        !sections.iter().any(|s| s.id == id || s.id == "docs-slot-variables"),
+        "src/components/{name}/docs.md declares a slot-variable section, which build.rs generates from style.css"
+    );
+    let sheet = slot_scan::scan_sheet(name, &css);
+    let rows: Vec<&slot_scan::Slot> = sheet
+        .slots
+        .iter()
+        .filter(|slot| !slot.note.as_ref().is_some_and(|note| note.internal))
+        .collect();
+    if rows.is_empty() {
+        return None;
+    }
+    let mut body = String::from(
+        "<p>A component that composes this one retunes it by setting one of these custom properties on its own element, never by declaring the property on its own class: two stylesheets declaring one property on one element are decided by which sheet loads last, and that order differs from route to route. The component reads each variable with its own default, so a variable that is not set changes nothing. Custom properties inherit: set one on the exact element, not on an ancestor, or it reaches every nested instance too.</p>\n",
+    );
+    body.push_str(&format!(
+        "<div class=\"dx-docs-table-scroll\" role=\"region\" aria-label=\"Slot variables\" tabindex=\"0\"><table class=\"{TABLE} dx-docs-props-table\"><thead class=\"{THEAD}\"><tr class=\"{TR}\"><th class=\"{TH}\" scope=\"col\">Variable</th><th class=\"{TH}\" scope=\"col\">Default</th><th class=\"{TH}\" scope=\"col\">Property</th><th class=\"{TH}\" scope=\"col\">Description</th></tr></thead><tbody class=\"{TBODY}\">\n"
+    ));
+    for slot in rows {
+        let properties = slot
+            .properties
+            .iter()
+            .map(|p| format!("<code>{}</code>", html_escape(p)))
+            .collect::<Vec<_>>()
+            .join(", ");
+        let description = match slot.note.as_ref().map(|note| note.text.as_str()) {
+            Some(text) if !text.is_empty() => doc_html(text),
+            _ => "&mdash;".to_string(),
+        };
+        body.push_str(&format!(
+            "<tr class=\"{TR}\" data-slot-variable=\"{var}\"><td class=\"{TD}\"><code>{var}</code></td><td class=\"{TD}\"><code>{default}</code></td><td class=\"{TD}\">{properties}</td><td class=\"{TD}\">{description}</td></tr>\n",
+            var = html_escape(&slot.name),
+            default = html_escape(&slot.fallback),
+        ));
+    }
+    body.push_str("</tbody></table></div>\n");
+    Some(DocsSection {
+        id,
+        title_html: html_escape(SLOTS_HEADING),
+        html: body,
+    })
 }
 
 /// The "Props reference" section appended to a component's docs page: one table per

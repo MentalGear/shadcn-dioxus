@@ -1,3 +1,8 @@
+/* slot: --dx-sheet-background  `background` of the panel. */
+
+/* slot: --dx-sheet-width  `width` of a left or right panel. The panel's padding is the edge recipe's own `--dx-
+ * edge-padding`. */
+
 /* Nova sheet (shadcn-ui/ui@295a1f1 registry/styles/style-nova.css, `.cn-sheet-*`):
  * `.cn-sheet-content` = `bg-popover text-popover-foreground flex flex-col gap-4 bg-clip-padding
  * text-sm shadow-lg` with a 1px `border` on the edge facing the page; `-header` `gap-0.5 p-4`;

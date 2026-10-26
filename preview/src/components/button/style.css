@@ -1,3 +1,14 @@
+/* slot: --dx-button-background  Fill of the button at rest. Hover and `aria-expanded` keep the variant's own fill. */
+
+/* slot: --dx-button-color  Text and icon colour at rest. */
+
+/* slot: --dx-button-border-color  Edge colour at rest (the Outline variant's edge, transparent otherwise). The
+ * focus and invalid rings still win. */
+
+/* slot: --dx-button-transition-property  Which properties the colour transition animates. */
+
+/* slot: --dx-button-line-height  Line height of the label (`1.25rem`, `1rem` in the `xs` size). */
+
 /* Nova button (shadcn-ui/ui@295a1f1 registry/styles/style-nova.css,
  * `.cn-button*`): h-6/7/8/9 (xs/sm/default/lg), 10px side padding, `rounded-lg`
  * (`min(radius-md, 10|12px)` on xs/sm), 1px transparent border, no shadow on

@@ -11,7 +11,7 @@
 #   color: var(--dx-muted-foreground);        -> FAIL if the theme lacks it
 #   color: var(--dx-mutd-foreground, #666);   -> FAIL: a typo the fallback hides
 #   height: var(--dx-select-scroll-button-height, 1.5rem)
-#                                             -> ok: allowlisted caller slot
+#                                             -> ok: a component's own slot, derived from its sheet
 #
 # Why: an undefined custom property is not an error in CSS. `color:
 # var(--nope)` is "invalid at computed-value time" and silently computes to
@@ -42,9 +42,13 @@
 #     `--prefix-`; a `var(--prefix-{..})` use is satisfied by any definition
 #     or defined prefix that starts with `--prefix-`.
 #
-# THE ALLOWLIST (below) holds the names read on purpose with nothing in the
-# tree declaring them: caller-provided slots (a component reads
-# `var(--dx-<component>-<knob>, <default>)` so a parent or the app can tune it)
+# A COMPONENT'S SLOTS (row 433) are defined by construction: a component sheet reading
+# `var(--dx-<component>-<knob>, <default>)` under its own prefix, with nothing declaring it, is a slot a parent or
+# the app tunes. `preview/slot_scan.rs` (the scanner of the docs page's slot table, run through
+# `scripts/slot-scan/main.rs`) names them, and `check-slot-docs.sh` requires a description for each.
+#
+# THE ALLOWLIST (below) holds the other names read on purpose with nothing in the
+# tree declaring them: the theme's own effect-class slots (dx-effects.css)
 # and properties embedded JS writes under a computed name. Each entry names
 # where it is documented or written. The gate also fails on a stale entry --
 # one that is declared in the tree, or read nowhere -- so the list cannot outlive
@@ -58,6 +62,17 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
+# shellcheck source=scripts/lib/slot-scan.sh
+source scripts/lib/slot-scan.sh
+
+# A component's slot variables (`var(--dx-<component>-<name>, fallback)` under its own prefix, never declared by
+# its sheet) are caller-provided by construction, so the scanner of the docs page's slot table says which names
+# those are (backlog row 433) and they need no allowlist line.
+slot_tmp="$(mktemp -d)"
+trap 'rm -rf "$slot_tmp"' EXIT
+build_slot_scan "$slot_tmp"
+"$slot_tmp/slot-scan" preview/src/components/*/style.css 2>/dev/null | awk -F'\t' '$1=="SLOT"{print $3}' >"$slot_tmp/slots.txt"
+export SLOT_NAMES_FILE="$slot_tmp/slots.txt"
 
 python3 - <<'PYEOF'
 import glob
@@ -74,15 +89,8 @@ from css import strip_comments  # noqa: E402
 # or fallback. Add an entry only with a reason a reviewer can check.
 # --------------------------------------------------------------------------
 ALLOWLIST_ROWS = {
-    # Caller-provided slots: read with a default, set by a parent or the app.
-    "--dx-button-line-height": "slot, button/docs.md (default 1.25rem, 1rem in xs)",
-    "--dx-drawer-nest-scale": "slot, drawer/docs.md (parent shrink while a nested drawer is open)",
-    "--dx-drawer-nest-shift": "slot, drawer/docs.md (parent push while a nested drawer is open)",
-    "--dx-dropdown-menu-trigger-focus-ring": "slot, dropdown_menu/style.css header (parent restyles the ring)",
-    "--dx-label-font-size": "slot, label/docs.md",
-    "--dx-label-font-weight": "slot, label/docs.md",
-    "--dx-label-gap": "slot, label/docs.md",
-    "--dx-message-scroller-row-estimate": "slot, message_scroller/docs.md (first-render height guess)",
+    # Caller-provided slots of the THEME's own effect classes (dx-effects.css documents them in its headers). A
+    # component's slots are derived from its sheet by `preview/slot_scan.rs` and need no entry here (row 433).
     "--dx-scroll-fade-size": "slot, dx-effects.css scroll-fade header",
     "--dx-scroll-fade-t-size": "slot, dx-effects.css scroll-fade header (one edge)",
     "--dx-scroll-fade-b-size": "slot, dx-effects.css scroll-fade header (one edge)",
@@ -92,8 +100,6 @@ ALLOWLIST_ROWS = {
     "--dx-shimmer-color": "slot, dx-effects.css shimmer header",
     "--dx-shimmer-duration": "slot, dx-effects.css shimmer header",
     "--dx-shimmer-spread": "slot, dx-effects.css shimmer header",
-    "--dx-select-scroll-button-height": "slot, select/style.css (scroll arrow height, default 1.5rem)",
-    "--dx-skeleton-radius": "slot, skeleton/style.css (default --dx-radius-md)",
     # Written by embedded JS under a name the SETPROP pattern cannot read.
     "--front-toast-height": "primitives/src/toast.rs TOAST_SIZE_JS (`const FRONT`), unset until measured",
     "--toast-swipe-x": "primitives/src/toast.rs TOAST_SWIPE_JS (`prop(axis)`), set only while dragged",
@@ -164,6 +170,12 @@ DECL = re.compile(r"(?<![\w-])(" + NAME + r")\s*:")
 ATPROP = re.compile(r"@property\s+(" + NAME + r")")
 SETPROP = re.compile(r"setProperty\(\s*['\"](" + NAME + r")['\"]")
 DYN_DECL = re.compile(r"(?<![\w-])(--[A-Za-z0-9_-]*-)\{[^}]*\}\s*:")
+
+# Derived slots: read with a fallback under a component's own prefix, set by the caller (row 433).
+for line in open(os.environ["SLOT_NAMES_FILE"], encoding="utf-8"):
+    if line.strip():
+        defined.add(line.strip())
+SLOT_COUNT = len(defined)
 
 for path, text in sources:
     for rx in (DECL, ATPROP, SETPROP):
@@ -237,5 +249,6 @@ if errors:
     sys.exit(1)
 
 print(f"check-css-vars-defined: OK -- {total} var() uses checked, "
-      f"{len(defined)} custom properties defined, {len(ALLOWLIST)} allowlisted.")
+      f"{len(defined)} custom properties defined ({SLOT_COUNT} of them derived component slots), "
+      f"{len(ALLOWLIST)} allowlisted.")
 PYEOF

@@ -40,7 +40,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (41)
+## Open rows (40)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -80,7 +80,6 @@ proposing one is closed as out of scope (row 337 is the first).
 | [422](backlog/422-docs-page-shared-section-group.md) | Component pages: group the sections every page shares under one header, component-specific sections under another | BACKLOG, outline approved by the owner 2026-10-25 (backlog thread): build it as below. Docs stage… | M | docs |
 | [426](backlog/426-theme-owns-modal-scrim-and-visually-hidden-recipe.md) | Theme owns the no-top-layer modal scrim and the visually-hidden recipe | BACKLOG. Owner approved 2026-10-25 (row 365 sweep, P1). | S | components |
 | [432](backlog/432-anchor-engine-one-attribute-not-marker-classes.md) | Anchor engine selects on one data attribute, not nine hand-kept marker classes | BACKLOG. Owner approved 2026-10-25 (row 365 sweep, P7). | M | primitives |
-| [433](backlog/433-slot-variables-derived-from-sheet.md) | Slot variables derived from the sheet, not documented by hand | BACKLOG. Owner approved 2026-10-25 (row 365 sweep, P8). | S-M | docs |
 | [434](backlog/434-javascript-in-typescript-modules-not-rust-strings.md) | Cut JavaScript to what Rust cannot do: audit every eval block, move the rest into Rust, TypeScript only for the remainder | BACKLOG. Approved as P9 of the row 365 sweep; the owner re-scoped it to Rust first on 2026-10-25.… | L | primitives |
 | [435](backlog/435-one-menu-family-behind-three-hosts.md) | One menu-family implementation behind three hosts (DropdownMenu, ContextMenu, Menubar) | BACKLOG. Owner approved 2026-10-25 (row 365 sweep, P10). | L | primitives |
 | [436](backlog/436-code-quality-skill-review.md) | Code-quality skill review: code-review and simplify skills over the whole codebase, after the row 426-435 refactors | BACKLOG. It was in the plan next to row 365 but never had a row, so 365 ran without it. The owner… | M for the review. Each accepted finding… | process |

@@ -1,3 +1,12 @@
+/* slot: --dx-skeleton-width  `width` of the box. The box has zero specificity, so a class or an inline `style`
+ * that sizes the skeleton still wins. */
+
+/* slot: --dx-skeleton-height  `height` of the box. */
+
+/* slot: --dx-skeleton-flex  `flex` of the box. */
+
+/* slot: --dx-skeleton-radius  `border-radius` of the box. */
+
 /* Nova skeleton (shadcn-ui/ui@295a1f1 registry/styles/style-nova.css, `.cn-skeleton`:
  * `bg-muted rounded-md`; registry/bases/radix/ui/skeleton.tsx adds Tailwind's `animate-pulse`:
  * `pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite`, `50% { opacity: 0.5 }`). */

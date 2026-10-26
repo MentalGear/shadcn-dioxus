@@ -1,3 +1,7 @@
+/* slot: --dx-kbd-background  Fill of the key. An inverted surface (tooltip content) sets it to swap the pair. */
+
+/* slot: --dx-kbd-color  Text colour of the key. An inverted surface (tooltip content) sets it to swap the pair. */
+
 /* Nova kbd (shadcn-ui/ui@295a1f1 registry/styles/style-nova.css): `.cn-kbd` is
  * `bg-muted text-muted-foreground h-5 w-fit min-w-5 gap-1 rounded-sm px-1 font-sans text-xs
  * font-medium` with `[&_svg:not([class*='size-'])]:size-3`; `.cn-kbd-group` is `gap-1`. Nova inverts

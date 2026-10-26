@@ -1,10 +1,10 @@
 ---
 id: 433
 title: "Slot variables derived from the sheet, not documented by hand"
-status: "BACKLOG. Owner approved 2026-10-25 (row 365 sweep, P8)."
+status: "DONE 2026-10-26 (lane slot-docs-433). Owner approved 2026-10-25 (row 365 sweep, P8)."
 size: "S-M"
 area: docs
-updated: 2026-10-25
+updated: 2026-10-26
 ---
 
 # Row 433: Slot variables are derived from the sheet, not documented by hand
@@ -15,7 +15,7 @@ The slot variables a component reads (`var(--dx-label-gap, ...)`, the compositio
 
 ## Status / trigger
 
-BACKLOG. Owner approved 2026-10-25 (row 365 sweep, P8).
+DONE 2026-10-26 (lane `slot-docs-433`). Owner approved 2026-10-25 (row 365 sweep, P8).
 
 ## Size
 
@@ -31,3 +31,12 @@ Source: [final sweep note, P8](../research/final-sweep-2026-10-25.md). A scanner
 - **Subsumes:** the 11 undocumented reads, the ten hand tables, and the 19 allowlist entries. **Does not subsume:** slots in the theme's own tokens (the theme documents itself) and the custom properties set by JS, which stay as `slot-internal` entries.
 - **Gate:** in the style of `check-props-docs.sh`, a slot read with no description fails, and a `docs.md` may not declare its own `## Slot variables`, as it may not declare `## Props reference`.
 - **Inferred:** the 11 is a sizing figure, not a defect count. A slot read through another prefix (Field setting `--dx-label-*`) is counted under label.
+
+## Outcome
+
+- **Scanner:** `preview/slot_scan.rs` (std only, included by `#[path]` like `props_scan.rs`). A slot is a custom property read under the component's own prefix (`--dx-<dir with dashes>-`) with a fallback, never declared by the same sheet; its table row is the name, the first fallback and the properties the reads feed (the declaration the `var()` sits in, comments blanked first). `scripts/slot-scan/main.rs` is the binary the gates compile with a bare `rustc` (`scripts/lib/slot-scan.sh`).
+- **Page:** `preview/build.rs` `render_slots_section` adds "Styling (slot variables)" (`docs-styling-slot-variables`) to every component page whose sheet has a public slot, before "Props reference"; `style.css` is registered with `rerun-if-changed`. Row 422 groups it later.
+- **Description:** a `/* slot: --name  text */` comment in the sheet (a variable a script or the component itself writes says `/* slot-internal: --name  who writes it */` and stays off the page). The scan found **63 slots** in 20 sheets (the 60 of the sweep was a lower bound), all now described: 59 on the pages of 19 components, 4 internal (`--dx-drawer-drag`, `--dx-chart-center-primary-max` and `-secondary-max`, `--dx-toggle-group-spacing`).
+- **Hand lists gone:** the 10 `## Slot variables` sections (45 table rows) are deleted from `docs.md` (their prose survives as descriptions and one generic intro); the 11 undocumented reads are now rows; `check-css-vars-defined.sh` takes the derived slot names as defined, so 10 of its 22 allowlist entries went (12 remain: the 9 theme effect-class slots of `dx-effects.css`, which the theme documents itself, and the 3 JS-written toast names).
+- **Gate:** `scripts/check-slot-docs.sh` (in `run-gates.sh`, group Theme and component CSS; `gates.md` regenerated), strict with no allowlist: every slot has exactly one non-empty note; a note naming a variable that is not a slot of its sheet (declared there, read without a fallback, another prefix, or not read) fails; a `docs.md` may not declare `## Slot variables` or the generated heading (`build.rs` asserts the same). Its fixture self-test requires the exact report for one slot of each shape (documented, two-line, bare, internal, empty, declared, bare read, foreign prefix, duplicate, unread, a string that looks like a note).
+- **Not subsumed (as planned):** the theme's own tokens, and JS-written names read under a computed name (3 allowlist entries).
