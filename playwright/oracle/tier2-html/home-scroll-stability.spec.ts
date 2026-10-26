@@ -25,6 +25,7 @@ import { test, expect } from "../../fixtures";
 import type { Page } from "@playwright/test";
 import { BASE_URL } from "../../base-url";
 import { gotoHydrated } from "../../hydration";
+import { pageMetrics } from "../../viewport-box";
 
 test.describe("overview page scroll height", () => {
   test.skip(({ browserName }) => browserName !== "chromium", "content-visibility estimates are measured in Chromium");
@@ -42,7 +43,8 @@ test.describe("overview page scroll height", () => {
   async function scrollToBottom(page: Page) {
     const heights: number[] = [];
     for (let i = 0; i < 400; i++) {
-      const s = await page.evaluate(() => ({ y: scrollY, h: document.scrollingElement!.scrollHeight, vh: innerHeight }));
+      const pm = await pageMetrics(page);
+      const s = { y: pm.scrollY, h: pm.scrollHeight, vh: pm.innerHeight };
       heights.push(s.h);
       if (s.y + s.vh >= s.h - 2) break;
       await page.mouse.wheel(0, 400);

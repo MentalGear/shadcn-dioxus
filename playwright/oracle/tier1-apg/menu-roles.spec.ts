@@ -121,6 +121,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { BASE_URL } from "../../base-url";
 import { gotoHydrated } from "../../hydration";
+import { gotoReference } from "../../page-kinds";
 import { demoFrame, demoRole } from "../../demo-frame";
 
 const BASE = `${BASE_URL}/component/`;
@@ -200,8 +201,7 @@ test.describe("CALIBRATION — APG Menu Button pattern's own vendored example", 
   test("W3C's own example carries the exact role/haspopup/labelledby contract asserted below", async ({
     page,
   }) => {
-    // goto-ok: vendored W3C APG reference page, not the app: it never sets html[data-hydrated]
-    await page.goto(menuButtonActionsUrl);
+    await gotoReference(page, menuButtonActionsUrl);
 
     const button = page.locator("#menubutton1");
     await expect(button, 'trigger: aria-haspopup="true"').toHaveAttribute(

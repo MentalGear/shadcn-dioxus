@@ -49,6 +49,7 @@ import type { Locator, Page, PlaywrightTestArgs } from "@playwright/test";
 import { catalogNames, readBlockDemos } from "../../catalog";
 import { BASE_URL } from "../../base-url";
 import { gotoHydrated } from "../../hydration";
+import { gotoPrerendered } from "../../page-kinds";
 
 // --- the routes, read from Rust ------------------------------------------------------------------
 const COMPONENTS = catalogNames();
@@ -286,8 +287,7 @@ test.describe("demo forms never navigate", () => {
           for (const route of withForms) {
             const page = await context.newPage();
             const tracker = track(page);
-            // goto-ok: includes wasm-blocked and scripting-disabled contexts where the flag never appears; the spec settles itself
-            await page.goto(BASE_URL + route, { waitUntil: "domcontentloaded", timeout: 120_000 });
+            await gotoPrerendered(page, BASE_URL + route, { waitUntil: "domcontentloaded", timeout: 120_000 });
             tracker.reset();
             const r = await exerciseForms(page, tracker, route, variant !== "scripting disabled");
             controls += r.controls;
@@ -317,8 +317,7 @@ test.describe("demo forms never navigate", () => {
             const page = await context.newPage();
             await page.route(`${URL_OF(name)}`, (r) => r.fulfill({ contentType: "text/html", body: REF(attrs) }));
             const tracker = track(page);
-            // goto-ok: the scripting-off context never hydrates; the spec settles itself
-            await page.goto(URL_OF(name));
+            await gotoPrerendered(page, URL_OF(name));
             tracker.reset();
             const out = await probe(page, tracker, name, "#go", "click", () => page.locator("#go").click(), scripting);
             results[name] = out.navigated;

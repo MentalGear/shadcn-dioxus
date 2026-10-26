@@ -62,7 +62,7 @@ import { expectNoAxeViolations, type AxeRegionExclusion } from "./axe";
 import { readBlockDemos, readCatalog } from "./catalog";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
-import { fixedViewportBox } from "./viewport-box";
+import { fixedViewportBox, pageMetrics } from "./viewport-box";
 
 type Scheme = "light" | "dark";
 const SCHEMES: Scheme[] = ["light", "dark"];
@@ -280,8 +280,7 @@ const PHONE = { width: 390, height: 844 };
 /** The 390px reading itself: which boxes pass the viewport and are neither scrollable nor clipped by an ancestor. */
 async function readOverflow(page: Page) {
   const bound = (await fixedViewportBox(page)).width;
-  return page.evaluate((vw) => {
-    const de = document.documentElement;
+  const read = await page.evaluate((vw) => {
     const clipped = (e: Element) => {
       for (let p = e.parentElement; p && p !== document.body; p = p.parentElement) {
         if (/(auto|scroll|hidden|clip)/.test(getComputedStyle(p).overflowX)) return true;
@@ -296,9 +295,9 @@ async function readOverflow(page: Page) {
       const cls = (e.getAttribute("class") ?? "").split(/\s+/).slice(0, 2).join(".");
       offenders.push(`${e.tagName.toLowerCase()}${cls ? "." + cls : ""} (right ${Math.round(r.right)}, width ${Math.round(r.width)})`);
     }
-    // viewport-ok: page-level sideways scroll is `scrollWidth` vs the document's own `clientWidth`, not an overlay bound
-    return { vw, pageScroll: de.scrollWidth - de.clientWidth, offenders };
+    return { vw, offenders };
   }, bound);
+  return { vw: read.vw, pageScroll: (await pageMetrics(page)).sidewaysOverflow, offenders: read.offenders };
 }
 
 /**
@@ -328,8 +327,7 @@ async function probeOverflow(page: Page, route: Route, schemes: Scheme[]) {
     }
     // The cookie names the last scheme; the shared page keeps its own (ensureScheme reads `data-theme`).
   } else {
-    // viewport-ok: remembers the size to restore with `setViewportSize`, not a bound for any box
-    const desktop = page.viewportSize()!;
+    const desktop = (await pageMetrics(page)).viewportSize!;
     await page.setViewportSize(PHONE);
     await settle(page);
     for (const scheme of schemes) {

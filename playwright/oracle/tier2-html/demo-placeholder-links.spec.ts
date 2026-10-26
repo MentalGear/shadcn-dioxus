@@ -42,6 +42,8 @@ import * as fs from "fs";
 import * as path from "path";
 import { BASE_URL } from "../../base-url";
 import { gotoHydrated } from "../../hydration";
+import { gotoPrerendered } from "../../page-kinds";
+import { pageMetrics } from "../../viewport-box";
 
 const COMPONENTS_DIR = path.join(__dirname, "..", "..", "..", "preview", "src", "components");
 
@@ -127,10 +129,10 @@ async function activateAll(page: Page, scenario: Scenario): Promise<{ count: num
         await link.scrollIntoViewIfNeeded();
         // Scroll the page down a little, keeping the link on screen below the sticky nav (so Playwright's own
         // pre-click scroll has nothing to do), so a jump to the top would be a visible scroll change.
-        await link.evaluate((el) => {
-          const room = Math.min(120, el.getBoundingClientRect().top - 90, document.documentElement.scrollHeight - innerHeight - scrollY);
+        await link.evaluate((el, vh) => {
+          const room = Math.min(120, el.getBoundingClientRect().top - 90, document.documentElement.scrollHeight - vh - scrollY);
           if (room > 0) scrollBy(0, room);
-        });
+        }, (await pageMetrics(page)).innerHeight);
         if (!(await link.isVisible())) continue;
       }
       const before = await mark(page);
@@ -171,8 +173,7 @@ for (const { id, path: route } of PAGES) {
 test("before hydration (wasm blocked): a placeholder link in the served HTML goes nowhere", async ({ page }) => {
   test.setTimeout(NAV_TIMEOUT);
   await page.route(/\.wasm(\?.*)?$/, (r) => r.abort());
-  // goto-ok: wasm is aborted on purpose: this spec acts on the prerendered HTML before hydration
-  await page.goto(`${BASE_URL}/component/pagination/`, { waitUntil: "load", timeout: NAV_TIMEOUT });
+  await gotoPrerendered(page, `${BASE_URL}/component/pagination/`, { waitUntil: "load", timeout: NAV_TIMEOUT });
   const prerendered = await page.locator(LINKS).count();
   test.skip(prerendered === 0, "client-rendered build (dx serve): there is no prerendered HTML to click before hydration");
   const { count, moved } = await activateAll(page, { link: LINKS });

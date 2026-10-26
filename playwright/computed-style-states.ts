@@ -1,4 +1,6 @@
 import type { Page } from "@playwright/test";
+import { gotoPrerendered } from "./page-kinds";
+import { pageMetrics } from "./viewport-box";
 
 /**
  * Helper for `computed-style-snapshot.spec.ts` (dev-docs/backlog.md row 135):
@@ -102,8 +104,7 @@ export function emptyCoverage(): StateCoverage {
  * its fallback until `load`), then for the DOM to be quiet.
  */
 export async function gotoSettled(page: Page, url: string) {
-  // goto-ok: gotoSettled is its own settle (waits out the legacy redirect stub, images and DOM quiet); a hydration flag is not the signal
-  await page.goto(url, { waitUntil: "domcontentloaded" });
+  await gotoPrerendered(page, url, { waitUntil: "domcontentloaded" });
   await page.waitForFunction(() => !document.querySelector(".dx-component-demo-redirect"), null, { timeout: 60000 });
   await page.waitForTimeout(1000);
   await page.waitForFunction(() => Array.from(document.images).every((i) => i.complete), null, { timeout: 30000 });
@@ -798,7 +799,7 @@ async function movePointer(page: Page, x: number, y: number) {
 }
 
 async function park(page: Page) {
-  const vs = page.viewportSize() ?? { width: 1280, height: 720 };
+  const vs = (await pageMetrics(page)).viewportSize ?? { width: 1280, height: 720 };
   await page.mouse.move(vs.width - 1, Math.floor(vs.height / 2));
 }
 

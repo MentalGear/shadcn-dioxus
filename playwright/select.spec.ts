@@ -6,7 +6,8 @@ import { BASE_URL } from "./base-url";
 // navigating, on the SSG lane -- `gotoHydrated` so those interactions can't
 // land before hydration attaches listeners.
 import { gotoHydrated } from "./hydration";
-import { awaitAnimationsSettled, measureAtRest } from "./animations";
+import { awaitAnimationsSettled, measureAtRest, readAtRest } from "./animations";
+import { pageMetrics } from "./viewport-box";
 
 // dev-docs/backlog.md row 8: SelectTrigger's role is "combobox" (APG
 // select-only combobox pattern), not an implicit button -- see
@@ -340,7 +341,7 @@ test.describe("Listbox width tracks the trigger width (dev-docs/backlog.md row 4
         await awaitAnimationsSettled(listbox);
         const triggerBox = await measureAtRest(trigger);
         const listboxBox = await measureAtRest(listbox);
-        const viewport = page.viewportSize();
+        const viewport = (await pageMetrics(page)).viewportSize;
         if (!triggerBox || !listboxBox || !viewport) {
             throw new Error("expected trigger, listbox and viewport to all have a bounding box");
         }
@@ -444,12 +445,12 @@ test.describe("Trigger minimum width (dev-docs/backlog.md row 10)", () => {
         // `getByText`, which would resolve back to the option element
         // itself here, since the label is a bare text node rather than
         // its own wrapping element).
-        const labelRight = await option.evaluate((el) => {
+        const labelRight = await readAtRest(option, (el) => {
             const textNode = Array.from(el.childNodes).find((n) => n.nodeType === 3);
             if (!textNode) return null;
             const range = document.createRange();
             range.selectNodeContents(textNode);
-            return range.getBoundingClientRect().right; // rest-ok: read after measureAtRest(check) above settled the listbox
+            return range.getBoundingClientRect().right;
         });
         if (labelRight === null) throw new Error("expected the option to have a text-node label");
         expect(checkBox.x - labelRight, debug).toBeGreaterThan(10);

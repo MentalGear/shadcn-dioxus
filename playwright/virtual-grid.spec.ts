@@ -3,6 +3,7 @@ import type { Locator, Page } from "@playwright/test";
 import { BASE_URL } from "./base-url";
 import { demoFrame } from "./demo-frame";
 import { gotoHydrated } from "./hydration";
+import { pageMetrics } from "./viewport-box";
 
 // VirtualGrid (backlog row 244): the `main` demo is a 10,000-row x 50-column data grid with a sticky
 // header row and a pinned first column; the `gallery` demo is a VirtualWrapGrid of 5,000 generated
@@ -380,10 +381,7 @@ for (const [name, pick] of [["data grid", dataGrid], ["gallery", gallery]] as co
         return [s.overscrollBehaviorX, s.overscrollBehaviorY];
       });
       expect(overscroll).toEqual(["contain", "auto"]);
-      const pageScrollable = await page.evaluate(
-        // viewport-ok: page scroll extent, not an overlay box
-        () => document.documentElement.scrollHeight - window.innerHeight,
-      );
+      const { scrollExtent: pageScrollable } = await pageMetrics(page);
       expect(pageScrollable).toBeGreaterThan(1000);
 
       const hover = async () => {

@@ -1,6 +1,7 @@
 import { test, expect } from "./fixtures";
 import type { Page } from "@playwright/test";
 import { BASE_URL } from "./base-url";
+import { gotoPrerendered } from "./page-kinds";
 
 // Avatar loading semantics (backlog row 235), Base UI's: the fallback stands in for the picture in every state
 // but `loaded` -- while it loads, after an error, with no picture -- and only a loaded picture removes it, so
@@ -25,8 +26,7 @@ async function answerSlowImageAfter(page: Page, ms: number) {
 
 /** Navigate without waiting for the network to go idle (the slow image keeps it busy on purpose). */
 async function open(page: Page) {
-  // goto-ok: commit then its own hydration wait; networkidle never settles (the slow image is the subject)
-  await page.goto(URL, { waitUntil: "commit", timeout: 20 * 60 * 1000 });
+  await gotoPrerendered(page, URL, { waitUntil: "commit", timeout: 20 * 60 * 1000 });
   await page.waitForSelector('html[data-hydrated="true"]', { state: "attached", timeout: 5 * 60 * 1000 });
 }
 
