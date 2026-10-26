@@ -4,7 +4,7 @@ title: "Cut JavaScript to what Rust cannot do: audit every eval block, move the 
 status: "BACKLOG. Approved as P9 of the row 365 sweep; the owner re-scoped it to Rust first on 2026-10-25.…"
 size: "L"
 area: primitives
-updated: 2026-10-25
+updated: 2026-10-26
 ---
 
 # Row 434: Cut JavaScript to what Rust cannot do
@@ -39,3 +39,7 @@ Source: [final sweep note, P9](../research/final-sweep-2026-10-25.md). One lane 
 - **Subsumes:** the 46 blocks over time; the three-copy and two-copy identity checks; the regex-over-Rust complications of four gates; the `listener-ok` markers that sit inside eval strings. **Does not subsume:** one-line `eval` calls that read one value; the carousel needs its own plan because it builds its script with `concat!`/macros.
 - **Gate:** `check-js-in-rust.sh`: every eval site carries its audit class; an (a)-class eval, a raw string over N lines, or any `addEventListener` in a `.rs` file fails unless listed with a reason. The JS gates scan `.ts`.
 - **Risk:** timing-sensitive drift while moving (scroll bridge, find, wheel band). Each lane's proof is the specs of the components that use its block, on a release build. Typed access to Dioxus's eval channel (`dioxus.send`) needs a declaration file.
+
+## Step 2 progress
+
+- **Lane 2B, focus by handle (branch `lane/js-focus-2b`, 2026-10-26):** L17 (DropdownMenu, ContextMenu; Select keeps the id script until its trigger adopts `TriggerHandle`), L19, S5, S6 and V15 moved to `MountedData::set_focus` (22 script lines removed, no new JS). L18 and L20 stay JS, with the reason in their audit rows: L20 measured (a plain `focus()` moves a half-visible carousel's page by 157 px where `preventScroll` moves it by 0), L18 needs `activeElement` (focus-within) that Rust cannot read. Two files outside the lane's list carry the combobox handle field (`combobox/context.rs`, `combobox/components/combobox.rs`). The row stays open: lanes 2A, 2C, 2D, 2E and step 3.
