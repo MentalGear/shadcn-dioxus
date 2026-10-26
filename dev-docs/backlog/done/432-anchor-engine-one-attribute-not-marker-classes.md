@@ -23,7 +23,7 @@ M
 
 ## Detail
 
-Source: [final sweep note, P7](../research/final-sweep-2026-10-25.md). Primitives `top_layer`, nine overlay primitives, one browser spec run.
+Source: [final sweep note, P7](../../research/final-sweep-2026-10-25.md). Primitives `top_layer`, nine overlay primitives, one browser spec run.
 
 - **Where (verified):** `primitives/src/top_layer/styles.rs:157-158` and `:164-172` write the group `.dx-anchor-tooltip[popover], .dx-anchor-hover-card[popover], .dx-anchor-popover[popover], .dx-anchor-popover:modal, ... .dx-anchor-combobox[popover]`, then again once per `data-side` (`:208-261` and onward) and per `data-align`. Counts from `grep -o "dx-anchor-[a-z-]*"` over primitives: `dx-anchor-popover` 53, `dropdown-menu` 29, `navbar` 26, `tooltip` 25.
 - **Why the list exists:** the doc at `styles.rs:45-66` says a hashed CSS-module class would not match the engine's `@supports` rules (`dev-docs/issues/css-module-supports-scoping.md`), so every consumer carries a plain hand-written class.
