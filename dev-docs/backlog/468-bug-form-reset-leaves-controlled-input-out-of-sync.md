@@ -32,6 +32,6 @@ S
 ## Detail
 
 - **Files owned:** To be found by the reproduction.
-- **Depends on:** None. The plan's value owner (rows 447 and 458) subsumes it by construction; a local fix (an `onreset` that sets the signal) is allowed meanwhile.
+- **Depends on:** None. The plan's value owner (rows 447 and 458) subsumes it by construction: on `reset` it re-dispatches a real `input` on the control with the predicted post-reset level, so the owner's own rsx `oninput` sees it in order (Dioxus 0.7.9 also delivers `onreset`); a local fix (an `onreset` that sets the signal) is allowed meanwhile.
 - **Proof:** A Playwright spec that fails before the fix and passes after; run on the web build and, where the bug is renderer-dependent, the desktop-cadence build of [row 442](./442-desktop-cadence-harness-and-desktop-pass.md).
 - **Hours (inferred):** not estimated (size guess S).

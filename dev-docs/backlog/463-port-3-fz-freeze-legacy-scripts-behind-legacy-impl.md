@@ -4,6 +4,8 @@ title: "Measured group support: 3.FZ freeze (legacy message scroller and carouse
 status: "BACKLOG. Awaiting the owner's approval of the row 434 step 3 plan."
 size: "M"
 area: primitives
+js-grant: js_file=0 (the legacy scripts move into ts/legacy and keep counting; the main loop's grant row at the merge base is the number the gate reads)
+adds: []
 updated: 2026-10-26
 ---
 

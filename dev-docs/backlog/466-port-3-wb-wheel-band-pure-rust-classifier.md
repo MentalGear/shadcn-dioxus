@@ -4,6 +4,8 @@ title: "Measured port 3: 3.WB wheel band (C5 to a pure Rust classifier)"
 status: "BACKLOG. Awaiting the owner's approval of the row 434 step 3 plan."
 size: "M"
 area: components
+js-grant: none (a `wheelBand` entry would need the owner's lag or order verdict and its own row)
+adds: []
 updated: 2026-10-26
 ---
 

@@ -4,6 +4,8 @@ title: "Measured group: legacy removal, keyed to each port's verdict.json"
 status: "BACKLOG. Awaiting the owner's approval of the row 434 step 3 plan."
 size: "S"
 area: primitives
+js-grant: none
+adds: []
 updated: 2026-10-26
 ---
 
