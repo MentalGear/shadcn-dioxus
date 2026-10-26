@@ -14,7 +14,9 @@
 #  * A BEHAVIOUR IS PURE. A module under `ts/behaviours/` imports only `../lib/register` (and types), registers its
 #    own kind, defines `decide(`, and touches no `window`, `document`, `addEventListener`, timer, clock or `performance`:
 #    the listener, its phase and passivity, the lease and the epoch belong to the adapter in `bridge.ts`.
-#  * SMALL FILES. Line budgets for `bridge.ts`, each behaviour module, `lib/register.ts` and the ambient types.
+#  * SMALL FILES. Line budgets at the actual size plus a small margin for `bridge.ts`, `lib/register.ts` and the ambient
+#    types, and one entry per behaviour module in `BEHAVIOUR_BUDGETS` (a module with no entry fails: the budget is
+#    chosen when the behaviour is added, and raising one is a diff in this script that says why).
 #  * ONE PLACE FOR CANCELLING AND FRAMES. `preventDefault`, `stopPropagation`, `requestAnimationFrame` and the three
 #    observers appear in no `primitives/src/ts` file outside `ts/bridge.ts`, `ts/behaviours/` (generated files and
 #    `.d.ts` excluded) and a shrink-only residue allowlist (`scripts/check-bridge-behaviours.allow.tsv`,
@@ -23,8 +25,15 @@
 #  * A CLOSED SURFACE. No computed member access on a DOM-ish receiver (`el[name]`, `event[field]`, `target[prop]`),
 #    no `eval`, `new Function` or `JSON.parse` in `ts/`: names reach the DOM only through the closed tables
 #    (`EVENTS`, `FIELD_GETTERS`, `METHODS`, `PROPS`), and there is no data language to interpret.
-#  * ONE EVAL SINK. Nothing under `primitives/src/bridge/` but `transport.rs` names `document::eval`, and
-#    `js_listener.rs` (which runs on the bridge's scope) does not either.
+#  * ONE EVAL SINK, CLOSED. Nothing under `primitives/src/bridge/` but `transport.rs` names `document::eval`, and
+#    `js_listener.rs` (which runs on the bridge's scope) does not either. The transport runs a closed `Program` enum
+#    (`Serve`, `Pump`, `Legacy`) with its arguments as data, and its functions are `pub(in crate::bridge)`: no
+#    `pub(crate)` or `pub` function but `is_unsupported`, no `request` or `pump` that takes script text. The one
+#    caller-composed script body is `Program::Legacy`, constructed only in `bridge/legacy.rs`, and `legacy::` is used
+#    only by `js_listener.rs`: both go when the last bespoke script is ported.
+#  * NO ASYNC GESTURE VERBS. `focus`, `setPointerCapture` and `releasePointerCapture` are not rows of `METHODS` and not
+#    variants of `Method` (a call lands after the event's dispatch, too late for either), and there is no `commit` verb
+#    (not in the bundle's exports, not an `Op`, not a `Transaction` method).
 #  * THE BUNDLES. The committed `js/bridge.js` still assigns `window.__dxBridge` with every verb; no committed bundle
 #    has an import or export (each is evaluated as a script body).
 #
@@ -76,17 +85,24 @@ TS_ROOT = "primitives/src/ts"
 JS_ROOT = "primitives/src/js"
 RS_ROOT = "primitives/src/bridge"
 EVAL_OK = {"primitives/src/bridge/transport.rs"}
-VERBS = ["version", "channel", "scope", "serve", "pump", "call", "get", "set", "commit", "transaction",
+VERBS = ["version", "channel", "scope", "serve", "pump", "call", "get", "set", "transaction",
          "behaviours", "register"]
+TRANSPORT_RS = "primitives/src/bridge/transport.rs"
+LEGACY_RS = "primitives/src/bridge/legacy.rs"
+MOD_RS = "primitives/src/bridge/mod.rs"
+JS_LISTENER_RS = "primitives/src/js_listener.rs"
+PROGRAM_VARIANTS = ["Serve", "Pump", "Legacy"]
+GESTURE_METHODS = ["focus", "setPointerCapture", "releasePointerCapture"]
 FORBIDDEN = ["preventDefault", "stopPropagation", "requestAnimationFrame", "ResizeObserver", "MutationObserver",
              "IntersectionObserver"]
 # a behaviour's decide is pure: none of these may appear in a module under ts/behaviours/
 IMPURE = ["window", "document", "addEventListener", "removeEventListener", "setTimeout", "setInterval",
           "queueMicrotask", "Date", "performance", "localStorage", "fetch", "navigator", "location"]
-# line budgets: the file is small by construction, growth is a decision
-BUDGETS = [("primitives/src/ts/bridge.ts", 1100), ("primitives/src/ts/lib/register.ts", 40),
-           ("primitives/src/ts/types/bridge.d.ts", 200)]
-BEHAVIOUR_BUDGET = 150
+# line budgets: actual size plus a small margin, so growth is a decision (a diff here that says why)
+BUDGETS = [("primitives/src/ts/bridge.ts", 1080), ("primitives/src/ts/lib/register.ts", 16),
+           ("primitives/src/ts/types/bridge.d.ts", 150)]
+# one entry per behaviour module, chosen when the behaviour is added: the fixture is the test fixture of step 3.0
+BEHAVIOUR_BUDGETS = {"fixture": 26}
 LANE_RE = re.compile(r"\b3\.[A-Z][A-Z0-9]*\b")
 # computed member access on a receiver that may be a DOM object: names reach the DOM through the closed tables only
 COMPUTED = re.compile(r"\b_?(el|elem|element|target|event|ev|source|win|doc|document|window|W|host|node)\s*\[\s*[A-Za-z_\"'`]")
@@ -122,6 +138,12 @@ def scrub(text, strings=False):
     return "".join(out)
 
 
+def scrub_rs(text):
+    """Rust with `//` comment lines dropped and string literals emptied."""
+    code = "\n".join(l for l in text.split("\n") if not l.lstrip().startswith("//"))
+    return re.sub(r'"(?:\\.|[^"\\])*"', '""', code, flags=re.S)
+
+
 def kebab(name):
     return re.sub(r"(?<!^)(?=[A-Z])", "-", name).lower()
 
@@ -137,11 +159,14 @@ def load_tree():
         tree["js"][str(p)] = p.read_text(encoding="utf-8")
     for p in sorted(Path(RS_ROOT).rglob("*.rs")):
         tree["rs"][str(p)] = p.read_text(encoding="utf-8")
-    tree["rs"]["primitives/src/js_listener.rs"] = Path("primitives/src/js_listener.rs").read_text(encoding="utf-8")
+    tree["rs"][JS_LISTENER_RS] = Path(JS_LISTENER_RS).read_text(encoding="utf-8")
+    # every Rust file of the crate, for the checks of who may name the quarantined legacy path
+    tree["rs_all"] = {str(p): p.read_text(encoding="utf-8") for p in sorted(Path("primitives/src").rglob("*.rs"))}
     rows = set()
     for p in list(Path("dev-docs/backlog").glob("[0-9]*-*.md")) + list(Path("dev-docs/backlog/done").glob("[0-9]*-*.md")):
         rows.add(p.name.split("-", 1)[0].lstrip("0") or "0")
     tree["rows"] = rows
+    tree["budgets"] = dict(BEHAVIOUR_BUDGETS)
     return tree
 
 
@@ -250,8 +275,11 @@ def check(tree, run_tools):
                 errors.append(f"{path}: names `{token}`: `decide` is pure; the adapter in bridge.ts owns listeners, timers, "
                               f"the clock and the DOM")
         n = text.count("\n") + 1
-        if n > BEHAVIOUR_BUDGET:
-            errors.append(f"{path}: {n} lines, over the {BEHAVIOUR_BUDGET}-line budget of a behaviour module")
+        budgets = tree["budgets"]
+        if kind not in budgets:
+            errors.append(f"{path}: no entry in BEHAVIOUR_BUDGETS of scripts/{GATE}.sh: choose its line budget (actual plus a small margin)")
+        elif n > budgets[kind]:
+            errors.append(f"{path}: {n} lines, over its {budgets[kind]}-line budget (raising it is a decision: say why in this script)")
     for path, budget in BUDGETS:
         if path in tree["ts"] and tree["ts"][path].count("\n") + 1 > budget:
             errors.append(f"{path}: {tree['ts'][path].count(chr(10)) + 1} lines, over its {budget}-line budget "
@@ -308,6 +336,46 @@ def check(tree, run_tools):
         code = re.sub(r'"(?:\\.|[^"\\])*"', '""', code)
         if ev.search(code):
             errors.append(f"{path}: names `document::eval`; the bridge has ONE transport seam, {', '.join(sorted(EVAL_OK))}")
+
+    # 6b. the transport is a closed program list, its functions are private to the bridge, and the one
+    # caller-composed script (`Program::Legacy`) is quarantined
+    transport = scrub_rs(tree["rs"].get(TRANSPORT_RS, ""))
+    m = re.search(r"enum\s+Program\s*<[^>]*>\s*\{(.*?)\n\}", transport, re.S)
+    variants = re.findall(r"^\s{4}([A-Z][A-Za-z]*)\b", m.group(1), re.M) if m else []
+    if variants != PROGRAM_VARIANTS:
+        errors.append(f"{TRANSPORT_RS}: `Program` must be exactly {PROGRAM_VARIANTS}, found {variants}: what the transport runs is a closed list")
+    if not re.search(r"pub\(in crate::bridge\)\s+enum\s+Program", transport):
+        errors.append(f"{TRANSPORT_RS}: `Program` must be `pub(in crate::bridge)`")
+    for m in re.finditer(r"^pub(\(crate\))?\s+(async\s+)?fn\s+(\w+)", transport, re.M):
+        if m.group(3) != "is_unsupported":
+            errors.append(f"{TRANSPORT_RS}: `{m.group(3)}` is `pub{m.group(1) or ''}`: transport functions are `pub(in crate::bridge)`; only is_unsupported is public")
+    for name in ("request", "pump"):
+        if re.search(r"\bfn\s+%s\b" % name, transport):
+            errors.append(f"{TRANSPORT_RS}: `fn {name}`: the transport takes ops through `fire`/`ask` and a `Program`, never script text")
+    for path, text in sorted(tree["rs_all"].items()):
+        code = scrub_rs(text)
+        if path != TRANSPORT_RS and path != LEGACY_RS and re.search(r"\bProgram\s*::\s*Legacy\b", code):
+            errors.append(f"{path}: constructs `Program::Legacy`: only {LEGACY_RS} may (the quarantine of js_listener's scripts)")
+        if path not in (JS_LISTENER_RS, MOD_RS, LEGACY_RS) and re.search(r"\blegacy\s*::", code):
+            errors.append(f"{path}: uses `legacy::`: only js_listener.rs runs a caller-composed script (row 434 removes it)")
+    # no async gesture verb, no commit
+    mod_rs = scrub_rs(tree["rs"].get(MOD_RS, ""))
+    method = re.search(r"pub enum Method\s*\{(.*?)\n\}", mod_rs, re.S)
+    for bad in ("SetPointerCapture", "ReleasePointerCapture", "Focus", "Commit"):
+        if re.search(r"\b%s\b" % bad, mod_rs):
+            errors.append(f"{MOD_RS}: names `{bad}`: pointer capture, focus and commit are not bridge verbs")
+    if not method:
+        errors.append(f"{MOD_RS}: no `pub enum Method`")
+    bridge_code = scrub(tree["ts"].get(BRIDGE_TS, ""))
+    methods = re.search(r"const METHODS\b.*?\n\};", bridge_code, re.S)
+    if not methods:
+        errors.append(f"{BRIDGE_TS}: no METHODS table")
+    else:
+        for bad in GESTURE_METHODS:
+            if re.search(r"\n\s{2}\"?%s\"?\s*:" % bad, methods.group(0)):
+                errors.append(f"{BRIDGE_TS}: METHODS has a `{bad}` row: a call arrives after the event's dispatch; it is an rsx handler")
+    if re.search(r"\bcommit\s*[(:]", bridge_code):
+        errors.append(f"{BRIDGE_TS}: a `commit` verb: a frame wait does not order anything on desktop")
 
     # 7. the committed bundles
     js = F[BUNDLE]
@@ -382,6 +450,7 @@ def self_test(tree):
         ("a module importing the bridge", replace_in(FIX_TS, 'from "../lib/register"', 'from "../bridge"', "ts")),
         ("a module reading the document", replace_in(FIX_TS, "return {};", "return document.title ? {} : {};", "ts")),
         ("a module reading the clock", replace_in(FIX_TS, "return {};", "return Date.now() ? {} : {};", "ts")),
+        ("a module with no budget entry", lambda t: t["budgets"].pop("fixture")),
         ("a module over its line budget", lambda t: t["ts"].__setitem__(FIX_TS, t["ts"][FIX_TS] + "\n" * 200)),
         ("bridge.ts over its line budget", lambda t: t["ts"].__setitem__(BRIDGE_TS, t["ts"][BRIDGE_TS] + "\n" * 2000)),
         ("an unknown allowlist row", replace_in(ALLOW_TSV, "\t434", "\t99999")),
@@ -407,6 +476,31 @@ def self_test(tree):
             RS_SESSION, t["rs"][RS_SESSION] + "\nfn x() { let _ = document::eval(\"1\"); }\n")),
         ("document::eval in js_listener.rs", lambda t: t["rs"].__setitem__(
             "primitives/src/js_listener.rs", t["rs"]["primitives/src/js_listener.rs"] + "\nfn x() { document::eval(\"1\"); }\n")),
+    ]
+    TRANSPORT = "primitives/src/bridge/transport.rs"
+    muts += [
+        ("a fourth transport program", lambda t: t["rs"].__setitem__(
+            TRANSPORT, t["rs"][TRANSPORT].replace("    Legacy(&'a str),", "    Legacy(&'a str),\n    Raw,", 1))),
+        ("Program no longer private to the bridge", lambda t: t["rs"].__setitem__(
+            TRANSPORT, t["rs"][TRANSPORT].replace("pub(in crate::bridge) enum Program", "pub(crate) enum Program", 1))),
+        ("a pub(crate) transport function", lambda t: t["rs"].__setitem__(
+            TRANSPORT, t["rs"][TRANSPORT].replace("pub(in crate::bridge) fn fire", "pub(crate) fn fire", 1))),
+        ("a request(&str) in the transport", lambda t: t["rs"].__setitem__(
+            TRANSPORT, t["rs"][TRANSPORT] + "\nfn request(script: &str) {}\n")),
+        ("Program::Legacy built outside legacy.rs", lambda t: t["rs_all"].__setitem__(
+            RS_SESSION, t["rs_all"].get(RS_SESSION, "") + "\nfn x() { let _ = Program::Legacy(\"1\"); }\n")),
+        ("legacy:: used outside js_listener.rs", lambda t: t["rs_all"].__setitem__(
+            RS_SESSION, t["rs_all"].get(RS_SESSION, "") + "\nfn x() { legacy::open(\"1\"); }\n")),
+        ("a Focus method in Rust", lambda t: t["rs"].__setitem__(
+            MOD_RS, t["rs"][MOD_RS].replace("    Blur,", "    Blur,\n    Focus,", 1))),
+        ("a Commit op in Rust", lambda t: t["rs"].__setitem__(
+            MOD_RS, t["rs"][MOD_RS].replace("    Blur,", "    Blur,\n    Commit,", 1))),
+        ("a focus row in METHODS", lambda t: t["ts"].__setitem__(
+            BRIDGE_TS, t["ts"][BRIDGE_TS].replace("  blur: {", "  focus: { recv: \"e\", run: (el) => el.focus() },\n  blur: {", 1))),
+        ("a setPointerCapture row in METHODS", lambda t: t["ts"].__setitem__(
+            BRIDGE_TS, t["ts"][BRIDGE_TS].replace("  blur: {", "  setPointerCapture: { recv: \"e\", run: (el, a) => el.setPointerCapture(a[0]) },\n  blur: {", 1))),
+        ("a commit verb in bridge.ts", lambda t: t["ts"].__setitem__(
+            BRIDGE_TS, t["ts"][BRIDGE_TS] + "\nconst commit = () => 1;\nconst x = { commit() {} };\n")),
     ]
     for token in FORBIDDEN:
         muts.append((f"`{token}` in a stray ts file", lambda t, token=token: t["ts"].__setitem__(

@@ -12,7 +12,7 @@ const setup = () => {
 describe("install", () => {
   test("is idempotent: a second run keeps the first bridge", () => {
     const { win, bridge } = setup();
-    expect(bridge.version).toBe(2);
+    expect(bridge.version).toBe(3);
     const again = loadBridge(win);
     expect(again.bridge).toBe(bridge);
   });
@@ -130,20 +130,22 @@ describe("call", () => {
   test("is a closed list of methods with their arguments", () => {
     const { bridge, doc } = setup();
     const el = doc.add("p");
-    bridge.call({ kind: "id", id: "p" }, "focus", [{ preventScroll: true }]);
-    bridge.call("p", "setPointerCapture", [7]);
+    bridge.call({ kind: "id", id: "p" }, "blur", []);
     bridge.call("p", "scrollIntoView", [{ block: "nearest" }]);
     bridge.call("p", "setSelectionRange", [1, 3, "forward"]);
     bridge.call("p", "scrollIntoView", [{ block: "nearest", extra: "ignored", behavior: "teleport" }]);
     expect(el.calls).toEqual([
-      ["focus", [{ preventScroll: true }]],
-      ["setPointerCapture", [7]],
+      ["blur", []],
       ["scrollIntoView", [{ block: "nearest" }]],
       ["setSelectionRange", [1, 3]],
       ["scrollIntoView", [{ block: "nearest" }]],
     ]);
     expect(() => bridge.call("p", "remove", [])).toThrow("no such method");
     expect(() => bridge.call("p", "constructor", [])).toThrow("no such method");
+    // focus and pointer capture are effects of a gesture (rsx handler or behaviour), never async verbs
+    for (const verb of ["focus", "setPointerCapture", "releasePointerCapture"]) {
+      expect(() => bridge.call("p", verb, [])).toThrow("no such method");
+    }
   });
 
   test("popover and dialog methods tolerate the state they are called in", () => {
@@ -165,7 +167,7 @@ describe("call", () => {
 
   test("a missing element is a null result, not an error; window is a target", () => {
     const { win, bridge } = setup();
-    expect(bridge.call("nope", "focus", [])).toBeNull();
+    expect(bridge.call("nope", "blur", [])).toBeNull();
     let scrolled: unknown[] = [];
     win.scrollTo = (...a: unknown[]) => (scrolled = a);
     bridge.call({ kind: "window" }, "scrollTo", [{ top: 10, left: "x" }]);
@@ -259,39 +261,27 @@ describe("matchMedia", () => {
   });
 });
 
-describe("commit and transaction", () => {
-  test("commit resolves after a frame and a forced style flush", async () => {
-    const { win, bridge, doc } = setup();
-    let done = false;
-    bridge.commit().then(() => (done = true));
-    await ticks();
-    expect(done).toBe(false);
-    expect(doc.reads).toBe(0);
-    win.step();
-    await ticks();
-    expect(doc.reads).toBe(1);
-    expect(done).toBe(true);
-  });
-
-  test("a transaction runs its ops in one JS turn up to the first commit, in order, and reports errors per op", async () => {
-    const { win, bridge, doc } = setup();
+describe("transaction", () => {
+  test("runs its ops in one synchronous JS turn, in order, and reports errors per op", () => {
+    const { bridge, doc } = setup();
     const el = doc.add("t");
-    const run = bridge.transaction([
+    const results = bridge.transaction([
       { op: "call", target: "t", method: "showPopover" },
       { op: "get", target: "t", props: ["popoverOpen"] },
       { op: "call", target: "t", method: "nope" },
-      { op: "commit" },
       { op: "call", target: "t", method: "hidePopover" },
     ]);
-    // nothing has awaited yet: the ops before the commit already ran, the one after has not
-    expect(el.calls.map((c) => c[0])).toEqual(["showPopover"]);
-    win.step();
-    const results = await run;
     expect(el.calls.map((c) => c[0])).toEqual(["showPopover", "hidePopover"]);
     expect(results[0]).toEqual({ ok: null });
     expect(results[1]).toEqual({ ok: { popoverOpen: true } });
     expect((results[2] as any).err).toContain("no such method");
     expect(results[3]).toEqual({ ok: null });
+  });
+
+  test("there is no commit: a frame wait is not a verb", () => {
+    const { bridge } = setup();
+    expect(bridge.commit).toBeUndefined();
+    expect(bridge.transaction([{ op: "commit" }] as any)[0]).toHaveProperty("err");
   });
 });
 
@@ -580,32 +570,46 @@ describe("listen: initial", () => {
 describe("the bridge's exports", () => {
   test("every verb is on window.__dxBridge in the shipped bundle", () => {
     const { bridge } = setup();
-    for (const verb of ["channel", "scope", "serve", "pump", "call", "get", "set", "commit", "transaction"]) {
+    for (const verb of ["channel", "scope", "serve", "pump", "call", "get", "set", "transaction"]) {
       expect(typeof bridge[verb]).toBe("function");
     }
     expect(typeof bridge.register).toBe("function");
     expect(Object.keys(bridge.behaviours).sort()).toEqual([]);
     expect(bridge.rules).toBeUndefined();
-    expect(bridge.version).toBe(2);
+    expect(bridge.version).toBe(3);
   });
 });
 
 describe("pump (the ordered fire-and-forget channel)", () => {
-  test("runs op arrays in the order received, a commit holds the next message back", async () => {
-    const { win, bridge, doc } = setup();
+  test("runs messages in the order received, each to completion", async () => {
+    const { bridge, doc } = setup();
     const el = doc.add("p");
     const ch = makeChannel();
     bridge.pump(ch);
-    ch.push([{ op: "call", target: "p", method: "focus", args: [] }, { op: "commit" }]);
-    ch.push([{ op: "call", target: "p", method: "blur", args: [] }]);
-    await ticks();
-    expect(el.calls.map((c) => c[0])).toEqual(["focus"]);
-    win.step();
+    ch.push({ id: null, ops: [{ op: "call", target: "p", method: "blur", args: [] }, { op: "call", target: "p", method: "select", args: [] }] });
+    ch.push({ id: null, ops: [{ op: "call", target: "p", method: "blur", args: [] }] });
     await ticks(20);
-    expect(el.calls.map((c) => c[0])).toEqual(["focus", "blur"]);
+    expect(el.calls.map((c) => c[0])).toEqual(["blur", "select", "blur"]);
+    expect(ch.sent).toEqual([]);
   });
 
-  test("a failing op is logged and the pump keeps going", async () => {
+  test("a message with an id is answered on the same channel, in order, after the writes before it", async () => {
+    const { bridge, doc } = setup();
+    const el = doc.add("p");
+    const ch = makeChannel();
+    bridge.pump(ch);
+    ch.push({ id: null, ops: [{ op: "set", target: "p", name: "--dx-a", value: "3" }] });
+    ch.push({ id: 5, ops: [{ op: "get", target: "p", props: ["offsetWidth"] }, { op: "call", target: "nope", method: "nope" }] });
+    ch.push({ id: 6, ops: [{ op: "call", target: "p", method: "select", args: [] }] });
+    await ticks(20);
+    expect(el.customProps.get("--dx-a")).toBe("3");
+    expect(ch.sent).toEqual([
+      { id: 5, results: [{ ok: { offsetWidth: 100 } }, { err: expect.stringContaining("no such method") }] },
+      { id: 6, results: [{ ok: null }] },
+    ]);
+  });
+
+  test("a failing fire-and-forget op is logged and the pump keeps going", async () => {
     const { bridge, doc } = setup();
     const el = doc.add("p");
     const ch = makeChannel();
@@ -614,8 +618,8 @@ describe("pump (the ordered fire-and-forget channel)", () => {
     console.warn = (...a: unknown[]) => seen.push(a);
     try {
       bridge.pump(ch);
-      ch.push([{ op: "call", target: "p", method: "nope", args: [] }]);
-      ch.push([{ op: "call", target: "p", method: "blur", args: [] }]);
+      ch.push({ id: null, ops: [{ op: "call", target: "p", method: "nope", args: [] }] });
+      ch.push({ id: null, ops: [{ op: "call", target: "p", method: "blur", args: [] }] });
       await ticks(20);
     } finally {
       console.warn = warn;

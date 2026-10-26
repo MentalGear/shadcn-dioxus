@@ -25,7 +25,7 @@ use crate::js_listener::{receive, TEARDOWN};
 
 /// The options of a streaming listener. A streaming listener can never cancel an event, so it is
 /// always passive and there is no `passive` option (a decision made inside the event is a
-/// [`Behaviour`](super::Behaviour), which declares its own passivity).
+/// [`Behaviour`], which declares its own passivity).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize)]
 pub struct ListenOptions {
     /// Listen in the capture phase.
@@ -389,7 +389,7 @@ impl Session {
                 transport::ensure_module(behaviour.kind(), behaviour.module());
             }
         }
-        let eval = transport::open("await __dxB.serve(dioxus);");
+        let eval = transport::open(transport::Program::Serve);
         transport::send(&eval, &self.commands);
         // a lease is the page's fail-open: the session renews each behaviour that carries one
         let renew: Vec<Command> = self

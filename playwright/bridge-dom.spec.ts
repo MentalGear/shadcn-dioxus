@@ -57,19 +57,17 @@ test.describe("the bridge's verbs on a real page", () => {
     expect(await page.evaluate(() => { try { (window as any).__dxBridge.call("pop", "remove"); } catch (e) { return String(e); } })).toContain("no such method");
   });
 
-  test("call: focus preventScroll does not scroll, a plain focus does; setSelectionRange; scrollIntoView", async ({ page }) => {
+  test("call: setSelectionRange and scrollIntoView; focus, pointer capture and commit are not verbs", async ({ page }) => {
     await page.evaluate(() => { const f = document.createElement("button"); f.id = "farb"; f.textContent = "x"; document.getElementById("far")!.appendChild(f); });
     const r = await page.evaluate(() => {
       const b = (window as any).__dxBridge;
-      b.call("farb", "focus", [{ preventScroll: true }]);
-      const kept = window.scrollY;
-      const active = b.get({ kind: "document" }, ["activeElement"]).activeElement.id;
       b.call("inp", "setSelectionRange", [2, 5]);
       const inp = document.getElementById("inp") as HTMLInputElement;
       b.call("farb", "scrollIntoView", [{ block: "start" }]);
-      return { kept, active, sel: [inp.selectionStart, inp.selectionEnd], scrolled: window.scrollY > 1000 };
+      const refused = ["focus", "setPointerCapture", "releasePointerCapture"].map((m) => { try { b.call("farb", m, []); return "ran"; } catch (e) { return String(e).includes("no such method"); } });
+      return { sel: [inp.selectionStart, inp.selectionEnd], scrolled: window.scrollY > 1000, refused, commit: typeof b.commit };
     });
-    expect(r).toEqual({ kept: 0, active: "farb", sel: [2, 5], scrolled: true });
+    expect(r).toEqual({ sel: [2, 5], scrolled: true, refused: [true, true, true], commit: "undefined" });
   });
 
   test("get: computed style, geometry, attributes and the active element in one call", async ({ page }) => {
@@ -105,55 +103,52 @@ test.describe("the bridge's verbs on a real page", () => {
     expect(r[2]).toContain("custom properties");
   });
 
-  test("commit: a write before it is its own style change (a transition starts); without it there is nothing to transition from", async ({ page }) => {
-    const r = await page.evaluate(async () => {
-      const b = (window as any).__dxBridge;
-      const t = document.getElementById("t")!;
-      const settle = async () => {
-        t.style.transition = "none";
-        t.style.opacity = "1";
-        await (window as any).frames(2);
-      };
-      // write 0, then arm a transition and write 1, with nothing between: the browser never styled the 0,
-      // so there is no change to transition and the value is 1 at once
-      await settle();
-      t.style.opacity = "0";
-      t.style.transition = "opacity 10s linear";
-      t.style.opacity = "1";
-      const without = getComputedStyle(t).opacity;
-      // the same writes with a commit after the 0: the 0 was styled, and the 1 transitions away from it
-      await settle();
-      t.style.opacity = "0";
-      await b.commit();
-      t.style.transition = "opacity 10s linear";
-      t.style.opacity = "1";
-      const withCommit = getComputedStyle(t).opacity;
-      return { without, withCommit };
-    });
-    expect(r.without).toBe("1");
-    expect(Number(r.withCommit)).toBeLessThan(0.5);
-  });
-
-  test("transaction: the ops before a commit run in one turn, in order, errors per op", async ({ page }) => {
-    const r = await page.evaluate(async () => {
+  test("transaction: the ops run in the caller's turn, in order, errors per op", async ({ page }) => {
+    const r = await page.evaluate(() => {
       const b = (window as any).__dxBridge;
       let turn = "same";
       queueMicrotask(() => { turn = "later"; });
-      const p = b.transaction([
+      const out = b.transaction([
         { op: "call", target: "pop", method: "showPopover" },
         { op: "get", target: "pop", props: ["popoverOpen"] },
         { op: "call", target: "pop", method: "nope" },
         { op: "set", target: "t", name: "--dx-a", value: "1" },
-        { op: "commit" },
       ]);
       const during = document.getElementById("pop")!.matches(":popover-open") && turn === "same";
-      const out = await p;
       return { during, out };
     });
     expect(r.during).toBe(true);
     expect(r.out[1]).toEqual({ ok: { popoverOpen: true } });
     expect(r.out[2].err).toContain("no such method");
-    expect(r.out[4]).toEqual({ ok: null });
+    expect(r.out[3]).toEqual({ ok: null });
+  });
+});
+
+test.describe("the ordered channel on a real page", () => {
+  test.beforeEach(async ({ page }) => load(page));
+
+  test("one FIFO: a write is ordered before the read that follows it, the answer carries the message id", async ({ page }) => {
+    const r = await page.evaluate(async () => {
+      const b = (window as any).__dxBridge;
+      const queue: any[] = [];
+      let wake: (() => void) | null = null;
+      const sent: any[] = [];
+      const raw = {
+        send: (m: unknown) => sent.push(m),
+        recv: () => new Promise((resolve) => { const take = () => (queue.length ? resolve(queue.shift()) : (wake = take)); take(); }),
+      };
+      const push = (m: unknown) => { queue.push(m); wake?.(); wake = null; };
+      b.pump(raw);
+      push({ id: null, ops: [{ op: "set", target: "t", name: "--dx-a", value: "7" }, { op: "call", target: "nope", method: "nope" }] });
+      push({ id: 41, ops: [{ op: "get", target: "t", props: ["style:--dx-a", "offsetWidth"] }] });
+      push({ id: 42, ops: [{ op: "call", target: "pop", method: "showPopover" }, { op: "get", target: "pop", props: ["popoverOpen"] }] });
+      await (window as any).frames(2);
+      return sent;
+    });
+    expect(r.map((m: any) => m.id)).toEqual([41, 42]);
+    expect(r[0].results[0].ok["style:--dx-a"].trim()).toBe("7");
+    expect(r[0].results[0].ok.offsetWidth).toBe(100);
+    expect(r[1].results[1].ok).toEqual({ popoverOpen: true });
   });
 });
 
@@ -298,6 +293,29 @@ test.describe("subscriptions on a real page", () => {
     });
     // a passive behaviour cannot cancel a real wheel event; the non-passive one can; they are two listeners
     expect(r).toEqual({ passiveOnly: false, withCancelling: true, live: 2, hit: "a", msgs: 3, afterDispose: false, left: 0 });
+  });
+
+  test("a behaviour on an element ends when the element leaves the document, without Rust, and a new install starts clean", async ({ page }) => {
+    const r = await page.evaluate(async () => {
+      const b = (window as any).__dxBridge;
+      const s = b.scope((window as any).makeCh());
+      const t = document.getElementById("t")!;
+      const x = { kind: "fixture", event: "click", attr: "data-hit", value: "a", capture: false, cancel: false, leaseMs: 60000 };
+      const declared = { target: "element", event: "click", capture: false, passive: true, leaseMs: 60000 };
+      s.run({ cmd: "behaviour", target: "t", behaviour: x, declared, epoch: { key: "k", n: 1 } });
+      const live = (window as any).__dxJsListeners.live.size;
+      const parent = t.parentElement!;
+      t.remove();
+      await (window as any).frames(2);
+      const afterRemove = (window as any).__dxJsListeners.live.size;
+      parent.insertBefore(t, parent.firstChild);
+      t.click();
+      const hitWhileGone = t.getAttribute("data-hit");
+      s.run({ cmd: "behaviour", target: "t", behaviour: x, declared, epoch: { key: "k", n: 1 } });
+      t.click();
+      return { live, afterRemove, hitWhileGone, hit: t.getAttribute("data-hit") };
+    });
+    expect(r).toEqual({ live: 1, afterRemove: 0, hitWhileGone: null, hit: "a" });
   });
 
   test("a hot event reaches Rust once per frame with the latest fields", async ({ page }) => {

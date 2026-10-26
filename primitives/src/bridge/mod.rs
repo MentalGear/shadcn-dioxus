@@ -12,7 +12,7 @@
 //!
 //! | JS verb | Rust |
 //! |---|---|
-//! | `call(el, method, args)` | [`ElementExt`] methods ([`show_popover`](ElementExt::show_popover), [`hide_popover`](ElementExt::hide_popover), [`show_modal`](ElementExt::show_modal), [`set_pointer_capture`](ElementExt::set_pointer_capture), [`focus_prevent_scroll`](ElementExt::focus_prevent_scroll), ...) and [`Method`] |
+//! | `call(el, method, args)` | [`ElementExt`] methods ([`show_popover`](ElementExt::show_popover), [`hide_popover`](ElementExt::hide_popover), [`show_modal`](ElementExt::show_modal), [`scroll_into_view`](ElementExt::scroll_into_view), ...) and [`Method`] |
 //! | `get(el, props)` | [`ElementExt::get`] / [`get`] with [`Prop`], answered as [`Props`] |
 //! | `set(el, --var, value)` | [`ElementExt::set_var`] |
 //! | `listen(target, event, fields)` | [`use_event_listener`] (window, document or element), [`use_window_listener`], [`use_document_listener`], [`use_element_listener`], [`use_window_size`] |
@@ -20,7 +20,7 @@
 //! | `matchMedia(query)` | [`use_media_query`] |
 //! | `sample(el, fields, until)` | [`use_sample`], with coalesced and batched fields ([`SampleField`], [`Flush`]) |
 //! | `behaviour(target, kind, ...)` | [`use_behaviour`], [`Behaviour`] (see [`behaviours`]) |
-//! | `transaction(ops)`, `commit()` | [`Transaction`], [`commit`], [`show_popover_measured`], [`show_modal_measured`] |
+//! | `transaction(ops)` | [`Transaction`], [`show_popover_measured`], [`show_modal_measured`] |
 //!
 //! Elements are addressed by a [`Target`]: the window, the document, an element by `id` or by
 //! selector, or the active element. There is no JS handle across renderers, so an element that the
@@ -61,12 +61,16 @@
 //! under a Content-Security-Policy without `'unsafe-eval'` cannot use the bridge, `js_listener` or any
 //! other eval-driven primitive (upstream dioxus-primitives has the same limit).
 //!
-//! # One ordered write channel per webview
+//! # One FIFO channel per webview, flushed after the render
 //!
-//! Fire-and-forget verbs ([`ElementExt::call`], [`ElementExt::set_var`], [`Transaction::fire`]) share one
-//! long-lived eval per webview that runs what it receives in order; separate evals have no ordering on
-//! desktop. A read ([`get`], [`commit`]) is its own request, so two things that must be ordered against a
-//! read go in one [`Transaction`].
+//! Every verb on an element, fire-and-forget ([`ElementExt::call`], [`ElementExt::set_var`],
+//! [`Transaction::fire`]) or answered ([`get`], [`ElementExt::call_value`], [`Transaction::run`]), is a
+//! message on ONE long-lived eval per webview that runs what it receives in order and answers the
+//! asking messages on the same channel; separate evals have no ordering on desktop. So a write is
+//! ordered before the read that follows it, and a read and a write that must land in one JS turn go in
+//! one [`Transaction`]. A verb only queues its ops: one effect after the render that is running (or
+//! about to) sends the queue, so an element the render created is in the DOM when its op runs on the
+//! web. A verb called outside the Dioxus runtime does nothing, and an answered one is an error.
 //!
 //! # What the bridge can and cannot carry
 //!
@@ -74,8 +78,8 @@
 //! desktop and mobile (the per-renderer contract is a table in the transport module). So the bridge
 //! carries work that may be late (subscriptions, reads, calls). It cannot carry a decision made inside
 //! an event's dispatch or a read-then-write that must land in one frame; the first is a [`Behaviour`]
-//! that Rust publishes beforehand, the second a [`Transaction`]. `setPointerCapture` and `focus`
-//! through [`ElementExt::call`] are not usable at `pointerdown` for the same reason.
+//! that Rust publishes beforehand, the second a [`Transaction`]. Pointer capture and `focus` are not verbs
+//! for the same reason: a call lands after the event's dispatch, so they are rsx handlers.
 //!
 //! # Epochs
 //!
@@ -103,14 +107,14 @@
 //! message and every message a `js_listener` script sends. `"never"` instead drops every message to Rust
 //! (the answer that never arrives; commands from Rust still arrive), which is how a lane proves that a
 //! pending state still ends visible when Rust never answers. It does NOT delay `MountedData` reads, which
-//! are synchronous on web (code that must behave on desktop reads through [`get`] or follows its reads
-//! with [`commit`]), and it does not reproduce desktop's cadence (edits applied in a frame, one render
+//! are synchronous on web (code that must behave on desktop reads through [`get`]), and it does not reproduce desktop's cadence (edits applied in a frame, one render
 //! per frame, an eval from a handler before its render's edits); `channelDelay` in `bridge.ts` is the one
 //! seam where a "desktop cadence" mode would plug in, and until that mode and a real-webview pass exist
 //! a row says "web-verified; desktop inferred".
 
 pub mod behaviours;
 pub mod events;
+pub(crate) mod legacy;
 mod session;
 pub(crate) mod transport;
 
@@ -260,15 +264,6 @@ pub enum Method {
     ShowModal,
     /// `close(returnValue)` on a `<dialog>`.
     Close(Option<String>),
-    /// `setPointerCapture(pointerId)`.
-    SetPointerCapture(i32),
-    /// `releasePointerCapture(pointerId)`.
-    ReleasePointerCapture(i32),
-    /// `focus({ preventScroll })`.
-    Focus {
-        /// Do not scroll the focused element into view.
-        prevent_scroll: bool,
-    },
     /// `blur()`.
     Blur,
     /// `scrollIntoView(options)`.
@@ -326,11 +321,6 @@ impl Method {
             Method::ShowModal => ("showModal", vec![]),
             Method::Close(None) => ("close", vec![]),
             Method::Close(Some(value)) => ("close", vec![json!(value)]),
-            Method::SetPointerCapture(id) => ("setPointerCapture", vec![json!(id)]),
-            Method::ReleasePointerCapture(id) => ("releasePointerCapture", vec![json!(id)]),
-            Method::Focus { prevent_scroll } => {
-                ("focus", vec![json!({ "preventScroll": prevent_scroll })])
-            }
             Method::Blur => ("blur", vec![]),
             Method::ScrollIntoView(options) => ("scrollIntoView", vec![json!(options)]),
             Method::ScrollTo {
@@ -568,8 +558,6 @@ pub enum Op {
         #[serde(skip_serializing_if = "Option::is_none")]
         epoch: Option<Epoch>,
     },
-    /// [`commit`]: wait for a frame and a style flush before the next op.
-    Commit,
 }
 
 /// The result of one [`Op`].
@@ -594,8 +582,8 @@ pub enum OpResult {
     },
 }
 
-/// Several ops run in ONE JS turn, in order (up to the first [`commit`], which waits a frame): a
-/// write and the read that must see it, or two calls that must not be separated by a render.
+/// Several ops run in ONE JS turn, in order: a write and the read that must see it, or two calls that
+/// must not be separated by a render.
 ///
 /// ```rust,ignore
 /// let results = Transaction::new()
@@ -668,15 +656,8 @@ impl Transaction {
             Some(Op::Call { epoch: slot, .. })
             | Some(Op::Get { epoch: slot, .. })
             | Some(Op::Set { epoch: slot, .. }) => *slot = Some(epoch),
-            Some(Op::Commit) | None => {}
+            None => {}
         }
-        self
-    }
-
-    /// Adds a [`commit`]: the ops after it run after a frame and a forced style flush.
-    #[must_use]
-    pub fn commit(mut self) -> Self {
-        self.ops.push(Op::Commit);
         self
     }
 
@@ -687,30 +668,15 @@ impl Transaction {
 
     /// Runs the ops and waits for every result.
     pub async fn run(self) -> Result<Vec<OpResult>, BridgeError> {
-        transport::request(&format!("__dxBridge.transaction({})", to_json(&self.ops))).await
+        transport::ask(&self.ops).await
     }
 
     /// Sends the ops on the webview's ordered write channel without waiting for a result: they run after
     /// every earlier [`fire`](Self::fire), [`call`](ElementExt::call) and
     /// [`set_var`](ElementExt::set_var) of this webview, in order.
     pub fn fire(self) {
-        transport::pump(&self.ops);
+        transport::fire(&self.ops);
     }
-}
-
-fn to_json(value: &impl Serialize) -> String {
-    serde_json::to_string(value).unwrap_or_else(|_| "null".into())
-}
-
-/// The JS expression that calls `method` on `target`.
-fn call_expression(target: &Target, method: &Method) -> String {
-    let (name, args) = method.wire();
-    format!(
-        "__dxBridge.call({}, {}, {})",
-        to_json(target),
-        to_json(&name),
-        to_json(&args)
-    )
 }
 
 /// Reads `props` of `target` in one JS turn. The answer arrives asynchronously (a microtask on web,
@@ -719,21 +685,19 @@ pub async fn get(
     target: impl Into<Target>,
     props: impl IntoIterator<Item = Prop>,
 ) -> Result<Props, BridgeError> {
-    let props: Vec<String> = props.into_iter().map(|p| p.wire()).collect();
-    transport::request(&format!(
-        "__dxBridge.get({}, {})",
-        to_json(&target.into()),
-        to_json(&props)
-    ))
-    .await
+    let value = single(Transaction::new().get(target, props).run().await?)?;
+    serde_json::from_value(value).map_err(|e| BridgeError::Js(e.to_string()))
 }
 
-/// Resolves after the page's next animation frame and a forced style flush: whatever Rust wrote before
-/// is a style change of its own when this returns (the row-421 ordering, done from Rust).
-pub async fn commit() -> Result<(), BridgeError> {
-    transport::request::<Value>("__dxBridge.commit()")
-        .await
-        .map(|_| ())
+/// The value of the only op of a one-op transaction.
+fn single(results: Vec<OpResult>) -> Result<Value, BridgeError> {
+    match results.into_iter().next() {
+        Some(OpResult::Ok { ok, .. }) => Ok(ok),
+        Some(OpResult::Err { err }) => Err(BridgeError::Js(err)),
+        None => Err(BridgeError::Js(
+            "the transaction answered fewer ops than sent".into(),
+        )),
+    }
 }
 
 /// Shows the popover `target` and reads `props` of it in ONE JS turn: the values are those of the element
@@ -804,7 +768,7 @@ pub trait ElementExt {
         reason = "the future is awaited in place by the caller; it is never spawned across threads"
     )]
     async fn call_value(&self, method: Method) -> Result<Value, BridgeError> {
-        transport::request(&call_expression(&self.target(), &method)).await
+        single(Transaction::new().call(self.target(), method).run().await?)
     }
 
     /// Reads `props` in one JS turn.
@@ -848,23 +812,6 @@ pub trait ElementExt {
         self.call(Method::Close(None));
     }
 
-    /// `setPointerCapture(pointer_id)`.
-    fn set_pointer_capture(&self, pointer_id: i32) {
-        self.call(Method::SetPointerCapture(pointer_id));
-    }
-
-    /// `releasePointerCapture(pointer_id)`.
-    fn release_pointer_capture(&self, pointer_id: i32) {
-        self.call(Method::ReleasePointerCapture(pointer_id));
-    }
-
-    /// `focus({ preventScroll: true })`.
-    fn focus_prevent_scroll(&self) {
-        self.call(Method::Focus {
-            prevent_scroll: true,
-        });
-    }
-
     /// `scrollIntoView(options)`.
     fn scroll_into_view(&self, options: ScrollIntoView) {
         self.call(Method::ScrollIntoView(options));
@@ -898,6 +845,10 @@ impl ElementExt for String {
 mod tests {
     use super::*;
 
+    fn to_json(value: &impl Serialize) -> String {
+        serde_json::to_string(value).expect("serialises")
+    }
+
     #[test]
     fn a_target_is_a_tagged_object() {
         assert_eq!(to_json(&Target::Window), r#"{"kind":"window"}"#);
@@ -921,11 +872,6 @@ mod tests {
             Method::TogglePopover,
             Method::ShowModal,
             Method::Close(None),
-            Method::SetPointerCapture(1),
-            Method::ReleasePointerCapture(1),
-            Method::Focus {
-                prevent_scroll: true,
-            },
             Method::Blur,
             Method::ScrollIntoView(ScrollIntoView::default()),
             Method::ScrollTo {
@@ -956,17 +902,6 @@ mod tests {
 
     #[test]
     fn method_arguments_are_the_dom_arguments() {
-        assert_eq!(
-            Method::Focus {
-                prevent_scroll: true
-            }
-            .wire(),
-            ("focus", vec![json!({"preventScroll": true})])
-        );
-        assert_eq!(
-            Method::SetPointerCapture(7).wire(),
-            ("setPointerCapture", vec![json!(7)])
-        );
         assert_eq!(
             Method::ScrollIntoView(ScrollIntoView {
                 block: Some(ScrollAlign::Nearest),
@@ -1027,15 +962,13 @@ mod tests {
         let tx = Transaction::new()
             .call("p", Method::ShowPopover)
             .get("p", [Prop::Rect, Prop::PopoverOpen])
-            .set_var("p", "--dx-x", Some("1px".into()))
-            .commit();
+            .set_var("p", "--dx-x", Some("1px".into()));
         assert_eq!(
             serde_json::to_value(tx.ops()).expect("serialises"),
             json!([
                 {"op": "call", "target": {"kind": "id", "id": "p"}, "method": "showPopover", "args": []},
                 {"op": "get", "target": {"kind": "id", "id": "p"}, "props": ["rect", "popoverOpen"]},
                 {"op": "set", "target": {"kind": "id", "id": "p"}, "name": "--dx-x", "value": "1px"},
-                {"op": "commit"},
             ])
         );
     }
@@ -1133,14 +1066,6 @@ mod tests {
             }
         );
         assert_eq!(results[2], OpResult::Err { err: "boom".into() });
-    }
-
-    #[test]
-    fn a_call_is_an_expression_on_the_bridge() {
-        assert_eq!(
-            call_expression(&Target::id("a"), &Method::ShowPopover),
-            r#"__dxBridge.call({"kind":"id","id":"a"}, "showPopover", [])"#
-        );
     }
 
     /// The Rust `include_str!` embeds the committed bundle, which installs `window.__dxBridge`.

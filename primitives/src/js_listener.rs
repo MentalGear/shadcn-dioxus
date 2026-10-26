@@ -69,7 +69,7 @@ use dioxus::document::{Eval, EvalError};
 use dioxus::prelude::*;
 use serde::{de::DeserializeOwned, Serialize};
 
-use crate::bridge::transport;
+use crate::bridge::legacy;
 
 /// The message that ends a script. Sent by [`JsListeners`]'s `Drop` on the channel the script already
 /// has; a stray `.arg(..)` the body never read cannot be mistaken for it. The bridge's session loop
@@ -81,7 +81,7 @@ pub(crate) const TEARDOWN: &str = "__dx_listeners_off__";
 /// for as long as the registration is live, so a leak can be named from the browser console), the
 /// passive default of the scroll-blocking events, `{ once: true }` forgetting itself and the removal
 /// derived from the scope all live in `primitives/src/ts/bridge.ts`. `dioxus` here is already the
-/// bridge's channel (`transport::open`), so the slow-channel test mode covers this script's messages.
+/// bridge's channel (`legacy::open`), so the slow-channel test mode covers this script's messages.
 const PRELUDE: &str = r#"
 const __dxS = __dxB.scope(dioxus);
 const listen = __dxS.on;
@@ -119,13 +119,13 @@ impl JsListeners {
         script.push_str(TEARDOWN);
         script.push_str("') break; }\n} finally {\n __dxS.dispose();\n}");
         Self {
-            eval: transport::open(&script),
+            eval: legacy::open(&script),
         }
     }
 
     /// Sends the next parameter the script reads with `await dioxus.recv()`.
     pub fn arg(self, value: impl Serialize) -> Self {
-        transport::send(&self.eval, value);
+        legacy::send(&self.eval, value);
         self
     }
 
@@ -152,7 +152,7 @@ pub(crate) async fn receive<T: DeserializeOwned>(eval: &mut Eval, mut handler: i
             Ok(message) => handler(message),
             Err(EvalError::Serialization(_)) => {}
             Err(error) => {
-                transport::note_error(&error);
+                legacy::note_error(&error);
                 break;
             }
         }
@@ -188,7 +188,7 @@ impl JsListeners {
 
 impl Drop for JsListeners {
     fn drop(&mut self) {
-        transport::send(&self.eval, TEARDOWN);
+        legacy::send(&self.eval, TEARDOWN);
     }
 }
 

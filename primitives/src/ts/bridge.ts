@@ -12,7 +12,10 @@
 //                    never cancel an event, so it is always passive; a frame-rate event (`hot`) is
 //                    coalesced to one message per animation frame
 //   on               a listener running a JS handler, for `js_listener.rs`'s bespoke scripts
-//   call             a closed list of element methods (popover, dialog, pointer capture, focus, scroll...)
+//   call             a closed list of element methods (popover, dialog, scroll, selection...). Pointer capture and
+//                    focus are NOT verbs: a call lands after the event's dispatch, too late for either; they are
+//                    effects of a named behaviour or rsx handlers. There is no `commit` either (it was a frame wait
+//                    that does not order anything on desktop)
 //   get              a closed list of reads (geometry, computed style, window metrics, active element)
 //   set              a `--dx-*` CSS custom property on an element whose style Rust does not own
 //   observe          Resize, Intersection and Mutation observers
@@ -20,7 +23,7 @@
 //   sample           per-frame sampling while a condition holds; a field is coalesced (the last value of
 //                    the frame) or batched (every event with its own timestamp), flushed per frame or per
 //                    event task
-//   transaction      several ops in one JS turn; `commit` resolves after a frame plus a style flush
+//   transaction      several ops in one JS turn (a show and the read of its rects see one DOM state)
 //   behaviour        a NAMED behaviour from the registry (`ts/behaviours/<kind>.ts`), see below
 //   serve / pump     the loop a Rust `bridge::Session` runs, and the ordered write channel of a webview
 //
@@ -246,15 +249,6 @@ const METHODS: Record<string, { recv: Recv; run: (el: any, args: any[]) => unkno
       if (el.open) typeof args[0] === "string" ? el.close(args[0]) : el.close();
     },
   },
-  setPointerCapture: { recv: "e", run: (el, args) => el.setPointerCapture(Number(args[0]) | 0) },
-  releasePointerCapture: {
-    recv: "e",
-    run(el, args) {
-      const id = Number(args[0]) | 0;
-      if (el.hasPointerCapture?.(id)) el.releasePointerCapture(id);
-    },
-  },
-  focus: { recv: "e", run: (el, args) => el.focus({ preventScroll: !!(args[0] && args[0].preventScroll) }) },
   blur: { recv: "e", run: (el) => el.blur() },
   scrollIntoView: { recv: "e", run: (el, args) => el.scrollIntoView(scrollOptions(args[0])) },
   scrollTo: { recv: "we", run: (el, args) => el.scrollTo(scrollOptions(args[0])) },
@@ -466,24 +460,10 @@ function set(target: DxTargetish, name: string, value: string | null, epoch?: Dx
   return null;
 }
 
-// ---------------------------------------------------------------- commit and transaction
+// ---------------------------------------------------------------- transaction
 
-/** A forced style and layout flush: whatever was written before is a style change of its own. */
-function flush(): void {
-  void W.document.documentElement.offsetHeight;
-}
-
-function commit(): Promise<void> {
-  return new Promise((done) => {
-    W.requestAnimationFrame(() => {
-      flush();
-      done();
-    });
-  });
-}
-
-/** Runs `ops` in order. Everything up to the first `commit` runs in the caller's JS turn. */
-async function transaction(ops: DxOp[]): Promise<DxOpResult[]> {
+/** Runs `ops` in order, all in the caller's JS turn (so a show and the read of its rects see one DOM state). */
+function transaction(ops: DxOp[]): DxOpResult[] {
   const out: DxOpResult[] = [];
   for (const op of ops) {
     try {
@@ -504,10 +484,8 @@ async function transaction(ops: DxOp[]): Promise<DxOpResult[]> {
           result = value === STALE ? { ok: null, dropped: true } : { ok: null };
           break;
         }
-        case "commit":
-          await commit();
-          result = { ok: null };
-          break;
+        default:
+          throw new Error("no such op: " + String((op as { op?: unknown }).op));
       }
       const epoch = "epoch" in op ? op.epoch : null;
       if (epoch && "ok" in result) result.epoch = epoch;
@@ -692,13 +670,16 @@ function installBehaviour(sc: Scope, spec: Omit<BehaviourSpec, "cmd">): () => vo
     current.off();
   }
   const host = isEl(el) ? el : null;
+  // per-install state a behaviour carries between events (a gesture's origin, a counter): it lives and
+  // dies with the install, so a re-install, a lease expiry and an element disconnect all start clean
+  let memory: Record<string, unknown> = {};
   const handler = (event: any) => {
     const fields = pickAll(event, impl.fields);
     const state: Record<string, string | null> = {};
     for (const name of impl.reads ?? []) state[name] = host ? host.getAttribute(name) : null;
     let decision: DxDecision;
     try {
-      decision = impl.decide(b, fields, state) ?? {};
+      decision = impl.decide(b, fields, state, memory) ?? {};
     } catch (error) {
       // a behaviour that throws does nothing: the event goes on as if it were not installed
       warnOnce("throw:" + b.kind, b.kind + " threw: " + String(error));
@@ -716,6 +697,7 @@ function installBehaviour(sc: Scope, spec: Omit<BehaviourSpec, "cmd">): () => vo
         }
       }
     }
+    if (decision.remember) memory = { ...memory, ...decision.remember };
     if (decision.attrs && host) {
       for (const name of Object.keys(decision.attrs)) {
         if (ATTR_OK.test(name)) host.setAttribute(name, decision.attrs[name]);
@@ -726,11 +708,14 @@ function installBehaviour(sc: Scope, spec: Omit<BehaviourSpec, "cmd">): () => vo
   };
   const removeHandler = hubAdd(el, d.event, !!d.capture, !!d.passive, handler);
   let timer = 0;
+  let unwatch = () => {};
   const entry: Installed = {
     n,
     off() {
       if (timer) W.clearTimeout(timer);
       timer = 0;
+      unwatch();
+      memory = {};
       removeHandler();
       if (slots.get(key) === entry) slots.delete(key);
     },
@@ -741,6 +726,8 @@ function installBehaviour(sc: Scope, spec: Omit<BehaviourSpec, "cmd">): () => vo
     },
   };
   slots.set(key, entry);
+  // a behaviour tears down when its element leaves the document (window and document targets never do)
+  if (host) unwatch = watchElement(host, entry.off);
   entry.renew();
   sc.cleanup(entry.off);
   return entry.off;
@@ -1023,16 +1010,20 @@ async function serve(raw: DioxusChannel): Promise<void> {
 }
 
 /**
- * The ordered fire-and-forget channel of a webview: every message is an array of ops, run in the order
- * received (a `commit` holds the next message back). One per webview, so two writes from different
- * components keep their order even where separate evals would not (a desktop webview).
+ * The ONE ordered channel of a webview, for every write and every read Rust makes of an element: a message
+ * is `{ id, ops }`, its ops run in the order received (one message after the other, each in one JS turn),
+ * and a message with an `id` is answered with `{ id, results }` on the same channel. A message without an
+ * `id` is fire-and-forget: its failed ops are logged. One channel means a write is ordered before the
+ * read that follows it, which separate evals do not guarantee on desktop.
  */
 async function pump(raw: DioxusChannel): Promise<void> {
   const ch = channel(raw);
   for (;;) {
-    const ops = await ch.recv();
-    if (!Array.isArray(ops)) continue;
-    for (const result of await transaction(ops as DxOp[])) if ("err" in result) console.warn("dx bridge:", result.err);
+    const message = (await ch.recv()) as DxPumpMessage | null;
+    if (!message || !Array.isArray(message.ops)) continue;
+    const results = transaction(message.ops);
+    if (typeof message.id === "number") ch.send({ id: message.id, results });
+    else for (const result of results) if ("err" in result) console.warn("dx bridge:", result.err);
   }
 }
 
@@ -1044,7 +1035,7 @@ const callPublic: DxBridge["call"] = (target, method, args) => {
 
 if (!W.__dxBridge) {
   const bridge: DxBridge = {
-    version: 2,
+    version: 3,
     channel,
     scope,
     serve,
@@ -1052,7 +1043,6 @@ if (!W.__dxBridge) {
     call: callPublic,
     get,
     set: (target, name, value) => void set(target, name, value),
-    commit,
     transaction,
     behaviours,
     register,

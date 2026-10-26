@@ -29,6 +29,8 @@ interface DxDecision {
   attrs?: Record<string, string>;
   /** A message for Rust, sent after the event. */
   send?: unknown;
+  /** Per-install state: merged into the `memory` the next `decide` of this install receives. */
+  remember?: Record<string, unknown>;
 }
 
 /**
@@ -41,7 +43,7 @@ interface DxBehaviourImpl<B> {
   readonly fields: readonly string[];
   /** Attributes of the host element read at event time into `state`. */
   readonly reads?: readonly string[];
-  decide(behaviour: B, event: DxFields, state: Record<string, string | null>): DxDecision;
+  decide(behaviour: B, event: DxFields, state: Record<string, string | null>, memory: Record<string, unknown>): DxDecision;
 }
 
 /** A command a Rust session sends to `serve`. */
@@ -83,10 +85,12 @@ type DxSampleUntil =
 type DxOp =
   | { op: "call"; target: DxTargetish; method: string; args?: unknown[]; epoch?: DxEpoch | null }
   | { op: "get"; target: DxTargetish; props: string[]; epoch?: DxEpoch | null }
-  | { op: "set"; target: DxTargetish; name: string; value: string | null; epoch?: DxEpoch | null }
-  | { op: "commit" };
+  | { op: "set"; target: DxTargetish; name: string; value: string | null; epoch?: DxEpoch | null };
 /** `dropped`: an op of a newer epoch had already run on the target, so this one did nothing. A reply echoes the epoch it answers. */
 type DxOpResult = { ok: unknown; dropped?: true; epoch?: DxEpoch } | { err: string };
+
+/** A message of the ordered channel: `id` set asks for `{ id, results }` back, null is fire-and-forget. */
+type DxPumpMessage = { id: number | null; ops: DxOp[] };
 
 interface DxScope {
   /** The channel the scope's messages go through (the bridge-latency mode applies to it). */
@@ -114,8 +118,7 @@ interface DxBridge {
   call(target: DxTargetish, method: string, args?: unknown[]): unknown;
   get(target: DxTargetish, props: string[]): Record<string, unknown>;
   set(target: DxTargetish, name: string, value: string | null): void;
-  commit(): Promise<void>;
-  transaction(ops: DxOp[]): Promise<DxOpResult[]>;
+  transaction(ops: DxOp[]): DxOpResult[];
   /** The named behaviours loaded in this page, by kind. */
   behaviours: Record<string, DxBehaviourImpl<any>>;
   /** Called by a behaviour module as it is evaluated. */

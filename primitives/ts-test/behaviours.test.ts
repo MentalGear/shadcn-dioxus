@@ -50,7 +50,7 @@ describe("the registry and the generated kinds", () => {
     for (const kind of KINDS) {
       expect(vectors[kind]?.length).toBeGreaterThan(0);
       for (const v of vectors[kind]) {
-        expect(bridge.behaviours[kind].decide(v.behaviour, v.event, v.state)).toEqual(v.expect);
+        expect(bridge.behaviours[kind].decide(v.behaviour, v.event, v.state, v.memory ?? {})).toEqual(v.expect);
       }
     }
   });
@@ -250,6 +250,55 @@ describe("ref-counted registration", () => {
     for (const mo of win.MutationObserver.all) if (!mo.disconnected) mo.callback([]);
     expect(el.count()).toBe(0);
   });
+
+  test("the disconnect also ends the install itself: its lease timer and its slot, so a later install starts clean", () => {
+    const { bridge, el, win } = setup();
+    install(bridge.scope(makeChannel()), fixture({ leaseMs: 5000 }), 1);
+    el.isConnected = false;
+    for (const mo of win.MutationObserver.all) if (!mo.disconnected) mo.callback([]);
+    expect(win.timers.length).toBe(0);
+    el.isConnected = true;
+    install(bridge.scope(makeChannel()), fixture(), 1);
+    expect(el.count("click")).toBe(1);
+  });
+});
+
+describe("per-install memory", () => {
+  const memo = (bridge: any) =>
+    bridge.register("memo", {
+      fields: ["type"],
+      decide: (_b: any, _e: any, _s: any, memory: any) => ({ remember: { n: (memory.n ?? 0) + 1 }, send: { n: (memory.n ?? 0) + 1 } }),
+    });
+  const spec = { cmd: "behaviour", target: "host", behaviour: { kind: "memo" }, declared: { target: "element", event: "click", capture: false, passive: true } };
+
+  test("a decision's `remember` is what the next event of the same install receives, and a re-install starts empty", () => {
+    const { bridge, el } = setup();
+    memo(bridge);
+    const ch = makeChannel();
+    const s = bridge.scope(ch);
+    s.run({ ...spec, epoch: { key: "m", n: 1 } });
+    el.dispatch("click");
+    el.dispatch("click");
+    el.dispatch("click");
+    expect(ch.sent).toEqual([{ n: 1 }, { n: 2 }, { n: 3 }]);
+    s.run({ ...spec, epoch: { key: "m", n: 2 } });
+    el.dispatch("click");
+    expect(ch.sent[3]).toEqual({ n: 1 });
+  });
+
+  test("two installs on two elements do not share it", () => {
+    const { bridge, el, doc } = setup();
+    memo(bridge);
+    const other = doc.add("other");
+    const ch = makeChannel();
+    const s = bridge.scope(ch);
+    s.run({ ...spec, epoch: { key: "m", n: 1 } });
+    s.run({ ...spec, target: "other", epoch: { key: "m", n: 1 } });
+    el.dispatch("click");
+    el.dispatch("click");
+    other.dispatch("click");
+    expect(ch.sent).toEqual([{ n: 1 }, { n: 2 }, { n: 1 }]);
+  });
 });
 
 describe("epochs", () => {
@@ -284,10 +333,10 @@ describe("epochs", () => {
   test("an op carrying an older epoch is dropped and replies say so; replies echo the epoch", async () => {
     const { bridge, doc } = setup();
     const target = doc.add("t");
-    const out = await bridge.transaction([
+    const out = bridge.transaction([
       { op: "set", target: "t", name: "--dx-a", value: "2", epoch: { key: "k", n: 2 } },
       { op: "set", target: "t", name: "--dx-a", value: "1", epoch: { key: "k", n: 1 } },
-      { op: "call", target: "t", method: "focus", args: [], epoch: { key: "k", n: 1 } },
+      { op: "call", target: "t", method: "blur", args: [], epoch: { key: "k", n: 1 } },
       { op: "get", target: "t", props: ["offsetWidth"], epoch: { key: "k", n: 3 } },
       { op: "get", target: "t", props: ["offsetWidth"], epoch: { key: "other", n: 1 } },
     ]);
