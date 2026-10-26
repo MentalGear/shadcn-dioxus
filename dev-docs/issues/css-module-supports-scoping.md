@@ -12,7 +12,7 @@ Any CSS rule wrapped in `@supports { … }` inside a `#[css_module(...)]` styles
 Phase 4.4 gated the CSS Anchor Positioning rules for Tooltip/HoverCard/Popover behind `@supports (anchor-name: --a)`. The entire enhancement was dead code everywhere; elements fell back to the `[popover]` UA stylesheet (unexpected 3px border, `margin:auto` centering throwing content hundreds of px off-trigger). Root-caused by computed-style measurement; fixed in #16.
 
 ## Workaround convention (binding until upstream fixes the parser)
-Selectors used inside `@supports` must reference plain, hand-written marker classes (`dx-anchor-*`) that are never referenced outside `@supports`, so the scoping pass cannot rewrite their DOM side and they match by construction.
+Selectors used inside `@supports` must not be `Styles::`-routed classes. The anchor engine selects on the `data-dx-anchored` attribute (one writer, `top_layer::anchored_content_attributes`, backlog row 432; it used to be a hand-kept list of `dx-anchor-*` marker classes), which the scoping pass has nothing to rewrite, so it matches by construction; `scripts/check-anchor-marker.sh` keeps a marker class from coming back.
 
 ## Upstream fix
 `manganis-core::css_module_parser`: recurse into `@supports` (arguably any unknown block at-rule) like `@media`.

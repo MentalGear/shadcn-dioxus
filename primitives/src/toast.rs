@@ -825,8 +825,8 @@ if (!document.getElementById('dx-toast-base-styles')) {
 /// (`position: fixed; right: 20px; bottom: 20px`) via plain CSS, with no
 /// `anchor-name`/`position-anchor` involved, so neither
 /// `crate::top_layer::anchor_name_style` nor `use_anchor_position_fallback`
-/// is called here, and this component carries no `dx-anchor-*` marker
-/// class (that class only exists to opt an element into the shared,
+/// is called here, and this component carries no `data-dx-anchored`
+/// attribute (that attribute only exists to opt an element into the shared,
 /// engine-injected `@supports (anchor-name: --a)` block, which has nothing
 /// to contribute here).
 ///

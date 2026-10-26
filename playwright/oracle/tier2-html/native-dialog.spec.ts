@@ -323,7 +323,7 @@ test.describe("axe: nested dialogs open", () => {
  * `<dialog>` is promoted straight into the top layer by `showModal()`,
  * which is the containing-block problem backlog row 2 solves
  * for `popover="auto"` content (see `top_layer.rs`'s module doc) -- so the
- * web modal arm carries the same `dx-anchor-popover`/`position-anchor`
+ * web modal arm carries the same `data-dx-anchored="popover"`/`position-anchor`
  * wiring the non-modal arm uses, and `top_layer.rs`'s shared,
  * engine-injected anchor-positioning stylesheet matches `:modal` alongside
  * `[popover]` in every selector (including the `margin: 0; inset: auto;` UA

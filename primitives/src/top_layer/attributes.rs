@@ -49,6 +49,52 @@ pub(crate) fn position_anchor_style(id: &str) -> String {
     format!("position-anchor: --dxa-{id};")
 }
 
+/// Which anchored overlay a panel is: the value of the one attribute the engine's stylesheet selects
+/// on, `data-dx-anchored` (backlog row 432).
+///
+/// The engine's rules (`styles.rs`) select `[data-dx-anchored][popover]` and never name a kind, except
+/// where kinds genuinely differ (`HoverCard`'s wider gap). So a new anchored overlay is positioned by
+/// calling [`anchored_content_attributes`], which it must already call for its `position-anchor`; there is
+/// no list in the engine to add it to and no marker class to remember. `scripts/check-anchor-marker.sh`
+/// keeps it that way.
+#[cfg(feature = "web")]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum AnchorKind {
+    Tooltip,
+    HoverCard,
+    Popover,
+    DropdownMenu,
+    Menubar,
+    Navbar,
+    NavigationMenu,
+    /// A `Select` list placed by the engine (`SelectPosition::Popper`).
+    Select,
+    /// A `Select` list placed by its own script (`use_item_aligned`, item-aligned position): it still
+    /// binds `position-anchor`, but the engine's `anchor()` rules must not apply on top of its own
+    /// viewport-pixel placement, so it carries no attribute.
+    SelectItemAligned,
+    Combobox,
+}
+
+#[cfg(feature = "web")]
+impl AnchorKind {
+    /// The `data-dx-anchored` value, or `None` for a panel the engine must leave to its own script.
+    pub(crate) fn as_str(self) -> Option<&'static str> {
+        match self {
+            Self::Tooltip => Some("tooltip"),
+            Self::HoverCard => Some("hover-card"),
+            Self::Popover => Some("popover"),
+            Self::DropdownMenu => Some("dropdown-menu"),
+            Self::Menubar => Some("menubar"),
+            Self::Navbar => Some("navbar"),
+            Self::NavigationMenu => Some("navigation-menu"),
+            Self::Select => Some("select"),
+            Self::SelectItemAligned => None,
+            Self::Combobox => Some("combobox"),
+        }
+    }
+}
+
 /// Fold [`position_anchor_style`] and a caller's own `style` into exactly
 /// one `style` attribute, then merge the rest of `attributes` on top.
 ///
@@ -92,8 +138,16 @@ pub(crate) fn position_anchor_style(id: &str) -> String {
 /// this never needs a second, separate merge pass for those. A call site
 /// carries no `style: position_anchor_style(&id)` literal of its own; the
 /// returned list already carries that `style`.
+///
+/// This is also the ONE writer of `data-dx-anchored` (`kind`, see [`AnchorKind`]): the engine's stylesheet
+/// scopes every anchoring rule to that attribute, so an anchored panel is anchored by calling this, and a
+/// caller's own `data-dx-anchored` cannot unscope it (it is merged last, after `attributes`).
 #[cfg(feature = "web")]
-pub(crate) fn anchored_content_attributes(id: &str, attributes: Vec<Attribute>) -> Vec<Attribute> {
+pub(crate) fn anchored_content_attributes(
+    kind: AnchorKind,
+    id: &str,
+    attributes: Vec<Attribute>,
+) -> Vec<Attribute> {
     let (caller_style, rest) = crate::fold_style_attributes(attributes);
     let style = match caller_style {
         Some(caller_style) => format!("{} {caller_style}", position_anchor_style(id)),
@@ -102,6 +156,7 @@ pub(crate) fn anchored_content_attributes(id: &str, attributes: Vec<Attribute>) 
     crate::merge_attributes(vec![
         dioxus_attributes::attributes!(div { style: "{style}" }),
         rest,
+        dioxus_attributes::attributes!(div { "data-dx-anchored": kind.as_str() }),
     ])
 }
 

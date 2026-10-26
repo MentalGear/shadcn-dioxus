@@ -1971,15 +1971,10 @@ fn ContextMenuSubContentRendered(
         0,
     );
 
-    // Reuses the `dx-anchor-dropdown-menu` marker class -- see
-    // `DropdownMenuSubContentRendered`'s identical choice for why: this
-    // host has no `dx-anchor-context-menu` entry in `top_layer.rs`'s
-    // hand-enumerated marker-class list at all (its own root content is
-    // never anchored, so it never needed one), and a submenu needs none of
-    // its own. A submenu here is positioned by
-    // exactly the same `anchor()`/`position-try-fallbacks` rules as a
-    // `DropdownMenuContent`, so reusing that existing class is a correct
-    // fit.
+    // Passes `AnchorKind::DropdownMenu` -- see `DropdownMenuSubContentRendered`'s identical choice for
+    // why: this host's own root content is point-anchored and never anchored by the engine, and a
+    // submenu here is positioned by exactly the same `anchor()`/`position-try-fallbacks` rules as a
+    // `DropdownMenuContent`, so it reuses that kind.
     let labelledby: Vec<Attribute> = if has_own_accessible_name(&attributes) {
         Vec::new()
     } else {
@@ -1989,9 +1984,6 @@ fn ContextMenuSubContentRendered(
     };
     let attributes = merge_attributes(vec![
         attributes,
-        attributes!(div {
-            class: "dx-anchor-dropdown-menu"
-        }),
         labelledby,
         // Owned by this component -- menu semantics, top-layer wiring and
         // direction state must win over a caller's own attributes
@@ -2004,7 +1996,11 @@ fn ContextMenuSubContentRendered(
             "data-state": if open() { "open" } else { "closed" },
         }),
     ]);
-    let attributes = crate::top_layer::anchored_content_attributes(&id, attributes);
+    let attributes = crate::top_layer::anchored_content_attributes(
+        crate::top_layer::AnchorKind::DropdownMenu,
+        &id,
+        attributes,
+    );
 
     let trigger_id = sub.trigger_id;
     // See `DropdownMenuSubContentRendered`'s identical `onkeydown` for the

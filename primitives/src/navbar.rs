@@ -936,13 +936,6 @@ fn NavbarContentRendered(
         8,
     );
 
-    // See `menubar.rs`'s `MenubarContentRendered` for why this
-    // hand-written, never-`Styles::`-routed marker class exists: it is what
-    // the shared, engine-injected anchor-positioning stylesheet
-    // (`top_layer::ensure_anchor_positioning_styles`) selects on,
-    // sidestepping `manganis-core`'s `css_module_parser` not scoping
-    // classes inside `@supports` bodies.
-    //
     // dev-docs/backlog.md row 41: an APG menu requires an accessible name from
     // either aria-labelledby or aria-label -- labelled by this nav's own
     // trigger, mirroring `MenubarContent`'s identical row-25 pattern
@@ -965,9 +958,6 @@ fn NavbarContentRendered(
     };
     let attributes = merge_attributes(vec![
         attributes,
-        attributes!(div {
-            class: "dx-anchor-navbar"
-        }),
         labelledby,
         // Owned by this component -- menu semantics + top-layer wiring
         // must win over a caller's own attributes (`dev-docs/backlog.md` row
@@ -991,7 +981,11 @@ fn NavbarContentRendered(
     // is the exerciser: a bare literal beside the spread would emit two
     // `style` attributes (SSR keeps the anchor binding, the client the
     // caller's).
-    let attributes = crate::top_layer::anchored_content_attributes(&id, attributes);
+    let attributes = crate::top_layer::anchored_content_attributes(
+        crate::top_layer::AnchorKind::Navbar,
+        &id,
+        attributes,
+    );
 
     rsx! {
         div {

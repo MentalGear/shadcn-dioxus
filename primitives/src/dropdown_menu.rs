@@ -824,12 +824,6 @@ fn DropdownMenuContentRendered(
         ctx.set_open,
     );
 
-    // See `tooltip.rs`'s `TooltipContentRendered` for why this hand-written,
-    // never-`Styles::`-routed marker class exists: it is what the shared,
-    // engine-injected anchor-positioning stylesheet (`top_layer::
-    // ensure_anchor_positioning_styles`) selects on, sidestepping
-    // `manganis-core`'s `css_module_parser` not scoping classes inside
-    // `@supports` bodies (`dev-docs/issues/css-module-supports-scoping.md`).
     // dev-docs/backlog.md row 25: `aria-labelledby` is not a bare literal
     // alongside `..attributes` -- that is the duplicate-attribute hazard
     // `merge_attributes` exists to prevent (`dev-docs/conformance-harness.md`
@@ -845,9 +839,6 @@ fn DropdownMenuContentRendered(
         crate::menu_root::content_labelledby_attributes(&attributes, &ctx.trigger_id.cloned());
     let attributes = merge_attributes(vec![
         attributes,
-        attributes!(div {
-            class: "dx-anchor-dropdown-menu"
-        }),
         labelledby,
         // `role`/`popover`/`data-state` are owned by this component (menu
         // semantics + top-layer wiring), so they must win over a caller's
@@ -864,7 +855,11 @@ fn DropdownMenuContentRendered(
     // doc for why a bare `style: position_anchor_style(&id)` literal
     // alongside `..attributes` is the duplicate-`style` hazard
     // (`dev-docs/conformance-harness.md` hydration-parity Rule 4).
-    let attributes = crate::top_layer::anchored_content_attributes(&id, attributes);
+    let attributes = crate::top_layer::anchored_content_attributes(
+        crate::top_layer::AnchorKind::DropdownMenu,
+        &id,
+        attributes,
+    );
 
     rsx! {
         div {
@@ -1973,21 +1968,12 @@ fn DropdownMenuSubContentRendered(
         0,
     );
 
-    // Reuses the `dx-anchor-dropdown-menu` marker class rather than a new
-    // `dx-anchor-dropdown-menu-sub` one: `top_layer.rs`'s shared
-    // anchor-positioning stylesheet (`ensure_anchor_positioning_styles`)
-    // keys its `[data-side]` rules off a fixed, hand-enumerated list of
-    // `dx-anchor-*` marker classes, and a submenu needs no entry of its own
-    // in that list. A submenu is positioned by exactly
-    // the same `anchor()`/`position-try-fallbacks` rules as a top-level
-    // `DropdownMenuContent` -- both are plain `popover="auto"` menus
-    // anchored to a trigger, side/align/gap are the only per-call-site
-    // knobs `use_anchor_position_fallback` exposes -- so reusing the
-    // existing class is a correct fit, not a workaround standing in for a
-    // missing one. `context_menu.rs`'s `ContextMenuSubContentRendered`
-    // makes the identical choice for the same reason (its own host has no
-    // `dx-anchor-context-menu` entry in that list at all, since its
-    // top-level content is never anchored).
+    // Passes `AnchorKind::DropdownMenu`, the same kind as a top-level `DropdownMenuContent`: a submenu
+    // is positioned by exactly the same `anchor()`/`position-try-fallbacks` rules -- both are plain
+    // `popover="auto"` menus anchored to a trigger, and side/align/gap are the only per-call-site
+    // knobs `use_anchor_position_fallback` exposes -- so it needs no kind of its own.
+    // `context_menu.rs`'s `ContextMenuSubContentRendered` makes the identical choice (its root
+    // content is point-anchored and never calls `anchored_content_attributes`).
     let labelledby: Vec<Attribute> = if has_own_accessible_name(&attributes) {
         Vec::new()
     } else {
@@ -1997,9 +1983,6 @@ fn DropdownMenuSubContentRendered(
     };
     let attributes = merge_attributes(vec![
         attributes,
-        attributes!(div {
-            class: "dx-anchor-dropdown-menu"
-        }),
         labelledby,
         // Owned by this component -- menu semantics, top-layer wiring and
         // direction state must win over a caller's own attributes
@@ -2012,7 +1995,11 @@ fn DropdownMenuSubContentRendered(
             "data-direction": (ctx.direction)().as_str(),
         }),
     ]);
-    let attributes = crate::top_layer::anchored_content_attributes(&id, attributes);
+    let attributes = crate::top_layer::anchored_content_attributes(
+        crate::top_layer::AnchorKind::DropdownMenu,
+        &id,
+        attributes,
+    );
 
     let trigger_id = sub.trigger_id;
     // APG Menu and Menubar pattern, "Keyboard Interaction" (h2, same pinned
