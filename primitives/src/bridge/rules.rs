@@ -100,7 +100,8 @@ mod tests {
     fn the_attribute_mirrors_the_rule() {
         let (name, value) = fixture().attribute();
         assert_eq!(name, "data-dx-rule-fixture");
-        let back: Rule = serde_json::from_str(&value).expect("the attribute value is the rule's JSON");
+        let back: Rule =
+            serde_json::from_str(&value).expect("the attribute value is the rule's JSON");
         assert_eq!(back, fixture());
         assert_eq!(fixture().kind(), "fixture");
     }
@@ -116,8 +117,17 @@ mod tests {
         for v in vectors {
             let rule: Rule = serde_json::from_value(v["rule"].clone())
                 .unwrap_or_else(|e| panic!("{}: {e}", v["name"]));
-            assert_eq!(serde_json::to_value(&rule).expect("serialises"), v["rule"], "{}", v["name"]);
-            assert!(v["steps"].is_array() && v["expect"]["messages"].is_array(), "{}", v["name"]);
+            assert_eq!(
+                serde_json::to_value(&rule).expect("serialises"),
+                v["rule"],
+                "{}",
+                v["name"]
+            );
+            assert!(
+                v["steps"].is_array() && v["expect"]["messages"].is_array(),
+                "{}",
+                v["name"]
+            );
         }
     }
 

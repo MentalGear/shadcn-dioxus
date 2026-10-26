@@ -35,8 +35,8 @@
 
 use std::sync::atomic::{AtomicBool, Ordering};
 
+use crate::dioxus_core::{provide_root_context, try_consume_context};
 use dioxus::document::{self, Eval, EvalError};
-use dioxus::prelude::*;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 

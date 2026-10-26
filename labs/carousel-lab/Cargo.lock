@@ -894,6 +894,7 @@ dependencies = [
  "dioxus-attributes",
  "gloo-timers",
  "serde",
+ "serde_json",
  "time",
  "tokio",
  "tracing",

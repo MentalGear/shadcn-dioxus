@@ -341,7 +341,10 @@ impl Session {
 
     /// Runs the session; `handler` gets every message it streams, in a task owned by the calling
     /// component's scope. Drop the returned [`Subscription`] to end it.
-    pub fn open<T: DeserializeOwned + 'static>(self, handler: impl FnMut(T) + 'static) -> Subscription {
+    pub fn open<T: DeserializeOwned + 'static>(
+        self,
+        handler: impl FnMut(T) + 'static,
+    ) -> Subscription {
         let eval = transport::open("await __dxB.serve(dioxus);");
         transport::send(&eval, &self.commands);
         let mut task_eval = eval;
@@ -372,7 +375,8 @@ fn use_subscription<T: DeserializeOwned + 'static>(
 ) {
     let handler = use_callback(handler);
     crate::use_effect_with_cleanup(move || {
-        let subscription = build().map(|session| session.open(move |message: T| handler.call(message)));
+        let subscription =
+            build().map(|session| session.open(move |message: T| handler.call(message)));
         move || drop(subscription)
     });
 }
@@ -425,7 +429,13 @@ pub fn use_element_listener<T: DeserializeOwned + 'static>(
     fields: &'static [&'static str],
     handler: impl FnMut(T) + 'static,
 ) {
-    use_event_listener(move || id().map(Target::from), event, options, fields, handler);
+    use_event_listener(
+        move || id().map(Target::from),
+        event,
+        options,
+        fields,
+        handler,
+    );
 }
 
 /// Whether `query` matches, kept current. `false` until the page's first answer (which arrives right
@@ -686,9 +696,10 @@ mod tests {
             scroll_top: f64,
             wheel: Vec<serde_json::Value>,
         }
-        let frame: Sampled<Frame> =
-            serde_json::from_value(json!({"scrollTop": 7.0, "wheel": [{"timeStamp": 1}], "$done": true}))
-                .expect("sampled");
+        let frame: Sampled<Frame> = serde_json::from_value(
+            json!({"scrollTop": 7.0, "wheel": [{"timeStamp": 1}], "$done": true}),
+        )
+        .expect("sampled");
         assert!(frame.done);
         assert_eq!(frame.fields.wheel.len(), 1);
         let frame: Sampled<Frame> =

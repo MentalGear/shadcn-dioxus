@@ -237,7 +237,10 @@ mod tests {
             "touchmove",
             "DOMMouseScroll",
         ] {
-            assert!(crate::bridge::BRIDGE_JS.contains(&format!("{event}:1")), "{event}");
+            assert!(
+                crate::bridge::BRIDGE_JS.contains(&format!("{event}:1")),
+                "{event}"
+            );
         }
     }
 }

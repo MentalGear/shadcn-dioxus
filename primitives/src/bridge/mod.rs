@@ -643,7 +643,9 @@ pub async fn get(
 /// Resolves after the page's next animation frame and a forced style flush: whatever Rust wrote before
 /// is a style change of its own when this returns (the row-421 ordering, done from Rust).
 pub async fn commit() -> Result<(), BridgeError> {
-    transport::request::<Value>("__dxBridge.commit()").await.map(|_| ())
+    transport::request::<Value>("__dxBridge.commit()")
+        .await
+        .map(|_| ())
 }
 
 /// The bridge's verbs on an element, window or document, by [`Target`], or by element `id` for a
@@ -813,7 +815,10 @@ mod tests {
         // Every name is a key of `METHODS` in `ts/bridge.ts`.
         let js = include_str!("../ts/bridge.ts");
         for name in names {
-            assert!(js.contains(&format!("{name}(")) || js.contains(&format!("{name}:")), "{name}");
+            assert!(
+                js.contains(&format!("{name}(")) || js.contains(&format!("{name}:")),
+                "{name}"
+            );
         }
     }
 
@@ -863,7 +868,10 @@ mod tests {
 
     #[test]
     fn props_have_wire_names_and_props_read_back_by_them() {
-        assert_eq!(Prop::Style("padding-top".into()).wire(), "style:padding-top");
+        assert_eq!(
+            Prop::Style("padding-top".into()).wire(),
+            "style:padding-top"
+        );
         assert_eq!(Prop::Attr("data-state".into()).wire(), "attr:data-state");
         assert_eq!(Prop::OffsetWidth.wire(), "offsetWidth");
         let props: Props = serde_json::from_value(json!({
@@ -906,12 +914,7 @@ mod tests {
             serde_json::from_value(json!([{"ok": null}, {"ok": {"a": 1}}, {"err": "boom"}]))
                 .expect("results deserialize");
         assert_eq!(results[0], OpResult::Ok { ok: Value::Null });
-        assert_eq!(
-            results[2],
-            OpResult::Err {
-                err: "boom".into()
-            }
-        );
+        assert_eq!(results[2], OpResult::Err { err: "boom".into() });
     }
 
     #[test]
@@ -927,6 +930,9 @@ mod tests {
     fn the_bundle_installs_the_bridge() {
         assert!(BRIDGE_JS.contains("__dxBridge"));
         assert!(BRIDGE_JS.contains("__dxBridgeDelayFrames"));
-        assert!(!BRIDGE_JS.contains("export{"), "a bundle that is eval'd must not be a module");
+        assert!(
+            !BRIDGE_JS.contains("export{"),
+            "a bundle that is eval'd must not be a module"
+        );
     }
 }
