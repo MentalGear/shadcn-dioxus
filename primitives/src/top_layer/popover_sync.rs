@@ -67,8 +67,7 @@ impl PopoverKind {
 /// close — back into `set_open`, so the Rust signal never strands. This is
 /// the same defect class `dev-docs/reference/platform-rationale.md` Caveat 1
 /// documents for `<dialog>`'s one-way `showModal()`/`close()` binding;
-/// the eval-channel
-/// pattern that fixes it here is the same one already used by
+/// the fix here is a legacy eval listener (ported by row 434), as in
 /// `use_form_reset_listener` (`lib.rs`).
 ///
 /// The show/hide effect checks `:popover-open` before calling either
