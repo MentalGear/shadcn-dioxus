@@ -1,4 +1,0 @@
-# path<TAB>reason<TAB>row. The residue allowlist of scripts/check-bridge-rules.sh: a primitives/src/ts file other than bridge.ts and rules/ that still holds preventDefault, stopPropagation,
-# requestAnimationFrame, ResizeObserver, MutationObserver or IntersectionObserver. The target end state is EMPTY (no bespoke JS module survives step 3), so every reason must name the step 3 lane
-# that removes the entry (3.B1, 3.GS, 3.CA, 3.MS, 3.WB, ...); an entry whose file no longer holds a token is stale and fails. Shrink only: delete a line when its lane lands, never add one without a backlog row.
-primitives/src/ts/focus-trap.ts	the native (Blitz) arm Tab trap cancels Tab inside the keydown call; 3.B1 replaces it with the B1 focus-trap effect	434

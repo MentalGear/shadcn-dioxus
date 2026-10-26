@@ -12,7 +12,7 @@ const setup = () => {
 describe("install", () => {
   test("is idempotent: a second run keeps the first bridge", () => {
     const { win, bridge } = setup();
-    expect(bridge.version).toBe(1);
+    expect(bridge.version).toBe(2);
     const again = loadBridge(win);
     expect(again.bridge).toBe(bridge);
   });
@@ -101,11 +101,12 @@ describe("listen (streams named fields)", () => {
       target: { kind: "window" },
       event: "keydown",
       options: { capture: true },
-      fields: ["key", "target.id", "clientX", "target", "missing.deep"],
+      fields: ["key", "target.id", "clientX", "target.value", "target.scrollTop"],
     });
     win.dispatch("keydown", { key: "Escape", target: new FakeElement("t"), clientX: 12 });
-    expect(ch.sent).toEqual([{ key: "Escape", "target.id": "t", clientX: 12, target: null, "missing.deep": null }]);
-    expect(win.listeners[0].options).toEqual({ capture: true });
+    // a value that is not a string, number or bool is null; every listen is passive
+    expect(ch.sent).toEqual([{ key: "Escape", "target.id": "t", clientX: 12, "target.value": "", "target.scrollTop": 7 }]);
+    expect(win.listeners[0].options).toEqual({ capture: true, passive: true, once: false });
   });
 
   test("targets resolve by id, selector and the document", () => {
@@ -113,13 +114,13 @@ describe("listen (streams named fields)", () => {
     const a = doc.add("a");
     const ch = makeChannel();
     const s = bridge.scope(ch);
-    s.listen({ target: { kind: "id", id: "a" }, event: "click", fields: ["detail"] });
+    s.listen({ target: { kind: "id", id: "a" }, event: "click", fields: ["button"] });
     s.listen({ target: { kind: "selector", selector: "#a" }, event: "focus", fields: [] });
     s.listen({ target: { kind: "document" }, event: "visibilitychange", fields: [] });
     expect(a.count()).toBe(2);
     expect(doc.count("visibilitychange")).toBe(1);
-    a.dispatch("click", { detail: 2 });
-    expect(ch.sent).toEqual([{ detail: 2 }]);
+    a.dispatch("click", { button: 2 });
+    expect(ch.sent).toEqual([{ button: 2 }]);
     s.dispose();
     expect(a.count()).toBe(0);
   });
@@ -133,11 +134,13 @@ describe("call", () => {
     bridge.call("p", "setPointerCapture", [7]);
     bridge.call("p", "scrollIntoView", [{ block: "nearest" }]);
     bridge.call("p", "setSelectionRange", [1, 3, "forward"]);
+    bridge.call("p", "scrollIntoView", [{ block: "nearest", extra: "ignored", behavior: "teleport" }]);
     expect(el.calls).toEqual([
       ["focus", [{ preventScroll: true }]],
       ["setPointerCapture", [7]],
       ["scrollIntoView", [{ block: "nearest" }]],
-      ["setSelectionRange", [1, 3, "forward"]],
+      ["setSelectionRange", [1, 3]],
+      ["scrollIntoView", [{ block: "nearest" }]],
     ]);
     expect(() => bridge.call("p", "remove", [])).toThrow("no such method");
     expect(() => bridge.call("p", "constructor", [])).toThrow("no such method");
@@ -165,8 +168,10 @@ describe("call", () => {
     expect(bridge.call("nope", "focus", [])).toBeNull();
     let scrolled: unknown[] = [];
     win.scrollTo = (...a: unknown[]) => (scrolled = a);
-    bridge.call({ kind: "window" }, "scrollTo", [0, 10]);
-    expect(scrolled).toEqual([0, 10]);
+    bridge.call({ kind: "window" }, "scrollTo", [{ top: 10, left: "x" }]);
+    expect(scrolled).toEqual([{ top: 10 }]);
+    // an element-only method on the window is an error, not a property read
+    expect(() => bridge.call({ kind: "window" }, "showPopover", [])).toThrow("needs an element");
   });
 });
 
@@ -407,81 +412,6 @@ describe("set", () => {
   });
 });
 
-describe("rules", () => {
-  test("install owns the listener, remove undoes it, a scope removes what it installed", () => {
-    const { bridge, doc } = setup();
-    const el = doc.add("r");
-    const ch = makeChannel();
-    const s = bridge.scope(ch);
-    const rule = { kind: "fixture", event: "click", attr: "data-hit", value: "yes" };
-    bridge.rules.install("r", rule, s);
-    expect(el.count("click")).toBe(1);
-    el.dispatch("click");
-    el.dispatch("click");
-    expect(el.getAttribute("data-hit")).toBe("yes");
-    expect(ch.sent).toEqual([
-      { rule: "fixture", fired: 1 },
-      { rule: "fixture", fired: 2 },
-    ]);
-    bridge.rules.install("r", rule, s);
-    expect(el.count("click")).toBe(1);
-    s.dispose();
-    expect(el.count("click")).toBe(0);
-    bridge.rules.install("r", rule);
-    expect(el.count("click")).toBe(1);
-    bridge.rules.remove("r");
-    expect(el.count("click")).toBe(0);
-  });
-
-  test("data-dx-rule-* attributes are read and synced: added, changed and removed", () => {
-    const { bridge, doc } = setup();
-    const el = doc.add("r");
-    const a = JSON.stringify({ kind: "fixture", event: "click", attr: "data-a", value: "1" });
-    el.setAttribute("data-dx-rule-fixture", a);
-    el.setAttribute("data-dx-rule-broken", "{nope");
-    el.setAttribute("data-other", "x");
-    expect(bridge.rules.read("r")).toEqual([["data-dx-rule-fixture", JSON.parse(a)]]);
-    const s = bridge.scope(makeChannel());
-    bridge.rules.sync("r", s);
-    bridge.rules.sync("r", s);
-    expect(el.count("click")).toBe(1);
-    el.dispatch("click");
-    expect(el.getAttribute("data-a")).toBe("1");
-    el.setAttribute("data-dx-rule-fixture", JSON.stringify({ kind: "fixture", event: "keydown", attr: "data-a", value: "2" }));
-    bridge.rules.sync("r", s);
-    expect(el.count("click")).toBe(0);
-    expect(el.count("keydown")).toBe(1);
-    el.attrs.delete("data-dx-rule-fixture");
-    bridge.rules.sync("r", s);
-    expect(el.count()).toBe(0);
-  });
-
-  test("a kind this build has no case for installs nothing", () => {
-    const { bridge, doc } = setup();
-    const el = doc.add("r");
-    const warn = console.warn;
-    const seen: unknown[][] = [];
-    console.warn = (...a: unknown[]) => seen.push(a);
-    try {
-      bridge.rules.install("r", { kind: "from-the-future" });
-    } finally {
-      console.warn = warn;
-    }
-    expect(el.count()).toBe(0);
-    expect(seen[0]).toEqual(["dx bridge: unknown rule kind", "from-the-future"]);
-  });
-
-  test("session commands install a rule and sync attributes", () => {
-    const { bridge, doc } = setup();
-    const el = doc.add("r");
-    const s = bridge.scope(makeChannel());
-    s.run({ cmd: "rule", target: { kind: "id", id: "r" }, rule: { kind: "fixture", event: "click", attr: "x", value: "y" } });
-    expect(el.count("click")).toBe(1);
-    s.dispose();
-    expect(el.count()).toBe(0);
-  });
-});
-
 describe("the slow-channel mode", () => {
   test("is off by default: send is immediate", () => {
     const { bridge } = setup();
@@ -545,24 +475,24 @@ describe("the slow-channel mode", () => {
     const raw = makeChannel();
     const once = bridge.channel(raw);
     expect(bridge.channel(once)).toBe(once);
-    bridge.scope(once).listen({ target: { kind: "window" }, event: "blur", fields: ["type"] });
-    win.dispatch("blur");
+    bridge.scope(once).listen({ target: { kind: "window" }, event: "online", fields: ["type"] });
+    win.dispatch("online");
     win.step();
-    expect(raw.sent).toEqual([{ type: "blur" }]);
+    expect(raw.sent).toEqual([{ type: "online" }]);
   });
 
   test("a scope's listen messages go through it, and the mode can be switched off again", () => {
     const { win, bridge } = setup();
     const raw = makeChannel();
     const s = bridge.scope(raw);
-    s.listen({ target: { kind: "window" }, event: "blur", fields: ["type"] });
+    s.listen({ target: { kind: "window" }, event: "online", fields: ["type"] });
     win.__dxBridgeDelayFrames = 1;
-    win.dispatch("blur");
+    win.dispatch("online");
     expect(raw.sent).toEqual([]);
     win.step();
-    expect(raw.sent).toEqual([{ type: "blur" }]);
+    expect(raw.sent).toEqual([{ type: "online" }]);
     win.__dxBridgeDelayFrames = 0;
-    win.dispatch("blur");
+    win.dispatch("online");
     expect(raw.sent.length).toBe(2);
   });
 
@@ -631,16 +561,6 @@ describe("element lifetime", () => {
     expect(mo.disconnected).toBe(true);
     s.dispose();
   });
-
-  test("rules die with their element too", () => {
-    const { win, bridge, doc } = setup();
-    const el = doc.add("r");
-    bridge.rules.install("r", { kind: "fixture", event: "click", attr: "x", value: "y" });
-    expect(el.count("click")).toBe(1);
-    el.isConnected = false;
-    pageObserver(win).callback([]);
-    expect(el.count()).toBe(0);
-  });
 });
 
 describe("listen: initial", () => {
@@ -651,6 +571,7 @@ describe("listen: initial", () => {
     s.listen({ target: { kind: "window" }, event: "resize", fields: ["target.innerWidth", "target.innerHeight", "type"], initial: true });
     expect(ch.sent).toEqual([{ "target.innerWidth": 1024, "target.innerHeight": 768, type: "initial" }]);
     win.dispatch("resize", { target: win });
+    win.step(); // resize is a frame-rate event: one message per frame
     expect(ch.sent.length).toBe(2);
   });
 });
@@ -661,8 +582,10 @@ describe("the bridge's exports", () => {
     for (const verb of ["channel", "scope", "serve", "pump", "call", "get", "set", "commit", "transaction"]) {
       expect(typeof bridge[verb]).toBe("function");
     }
-    for (const verb of ["install", "remove", "read", "sync"]) expect(typeof bridge.rules[verb]).toBe("function");
-    expect(bridge.version).toBe(1);
+    expect(typeof bridge.register).toBe("function");
+    expect(Object.keys(bridge.behaviours).sort()).toEqual([]);
+    expect(bridge.rules).toBeUndefined();
+    expect(bridge.version).toBe(2);
   });
 });
 
@@ -701,13 +624,15 @@ describe("pump (the ordered fire-and-forget channel)", () => {
   });
 });
 
+const TEN = ["click", "keydown", "keyup", "focusin", "focusout", "pointerdown", "pointerup", "mousedown", "mouseup", "dblclick"];
+
 describe("a long-lived channel survives many messages", () => {
   test("serve takes a thousand commands in a row and still tears down", async () => {
     const { win, bridge } = setup();
     const ch = makeChannel();
     const done = bridge.serve(ch);
     for (let i = 0; i < 1000; i++) {
-      ch.push([{ cmd: "listen", target: { kind: "window" }, event: "e" + (i % 10), fields: [] }]);
+      ch.push([{ cmd: "listen", target: { kind: "window" }, event: TEN[i % 10], fields: [] }]);
       if (i % 50 === 0) await ticks();
     }
     for (let i = 0; i < 2000 && win.count() < 1000; i++) await ticks(5);
@@ -735,6 +660,7 @@ describe("serve (the loop of a Rust session)", () => {
     await ticks();
     expect(ch.sent).toEqual([{ matches: false }]);
     win.dispatch("resize");
+    win.step();
     expect(ch.sent.at(-1)).toEqual({ type: "resize" });
     ch.push("__dx_listeners_off__");
     await done;
@@ -747,5 +673,115 @@ describe("serve (the loop of a Rust session)", () => {
     const one = loadBridge(makeWindow());
     const two = loadBridge(makeWindow());
     expect(one.bridge).not.toBe(two.bridge);
+  });
+});
+
+describe("the closed surface", () => {
+  test("a name outside a table is an error, never a property read", () => {
+    const { win, bridge, doc } = setup();
+    doc.add("p");
+    // call: methods are rows of a table, with a receiver kind
+    for (const name of ["setTimeout", "constructor", "__proto__", "toString", "hasOwnProperty", "eval"]) {
+      expect(() => bridge.call({ kind: "window" }, name, ["alert(1)"])).toThrow("no such method");
+    }
+    // get: an unknown or inherited name reads as null
+    expect(bridge.get("p", ["constructor", "__proto__", "innerHTML", "ownerDocument"])).toEqual({
+      constructor: null,
+      __proto__: null,
+      innerHTML: null,
+      ownerDocument: null,
+    });
+    // a window metric read on an element, an element metric on the window: null
+    expect(bridge.get("p", ["innerWidth"])).toEqual({ innerWidth: null });
+    expect(bridge.get({ kind: "window" }, ["offsetWidth"])).toEqual({ offsetWidth: null });
+    // listen: events and fields are rows
+    const s = bridge.scope(makeChannel());
+    expect(() => s.listen({ target: { kind: "window" }, event: "constructor", fields: [] })).toThrow("no such event");
+    expect(() => s.listen({ target: { kind: "window" }, event: "keydown", fields: ["constructor"] })).toThrow("no such event field");
+    expect(() => s.listen({ target: "p", event: "resize", fields: [] })).toThrow("cannot be listened");
+    expect(() => s.observe({ target: "p", kind: "bogus" as any })).toThrow("no such observer");
+    expect(win.count()).toBe(0);
+    // a bad command from Rust is logged and the loop goes on
+    const warn = console.warn;
+    const seen: unknown[][] = [];
+    console.warn = (...a: unknown[]) => seen.push(a);
+    try {
+      s.run({ cmd: "listen", target: { kind: "window" }, event: "nope", fields: [] } as any);
+    } finally {
+      console.warn = warn;
+    }
+    expect(seen.length).toBe(1);
+  });
+
+  test("a streaming listener is always passive, whatever the event", () => {
+    const { win, bridge } = setup();
+    const s = bridge.scope(makeChannel());
+    s.listen({ target: { kind: "window" }, event: "wheel", fields: [] });
+    s.listen({ target: { kind: "window" }, event: "keydown", fields: [] });
+    expect(win.listeners.map((l: any) => l.options.passive)).toEqual([true, true]);
+  });
+});
+
+describe("hot events", () => {
+  test("a frame-rate event is coalesced to one message per frame, carrying the latest event's fields", () => {
+    const { win, bridge } = setup();
+    const ch = makeChannel();
+    const s = bridge.scope(ch);
+    s.listen({ target: { kind: "window" }, event: "pointermove", fields: ["clientX"] });
+    s.listen({ target: { kind: "window" }, event: "keydown", fields: ["key"] });
+    for (let x = 1; x <= 5; x++) win.dispatch("pointermove", { clientX: x });
+    win.dispatch("keydown", { key: "a" });
+    win.dispatch("keydown", { key: "b" });
+    // keydown is not hot: delivered at once, in order; pointermove waits for the frame
+    expect(ch.sent).toEqual([{ key: "a" }, { key: "b" }]);
+    win.step();
+    expect(ch.sent.slice(2)).toEqual([{ clientX: 5 }]);
+    win.step();
+    expect(ch.sent.length).toBe(3);
+  });
+
+  test("a pending frame is cancelled with the scope", () => {
+    const { win, bridge } = setup();
+    const ch = makeChannel();
+    const s = bridge.scope(ch);
+    s.listen({ target: { kind: "window" }, event: "scroll", fields: ["type"] });
+    win.dispatch("scroll");
+    s.dispose();
+    win.step();
+    expect(ch.sent).toEqual([]);
+  });
+});
+
+describe("sample, flush per task", () => {
+  test("a task-flushed field is delivered in a microtask of its own, the frame carries the rest", async () => {
+    const { win, bridge, doc } = setup();
+    const el = doc.add("w");
+    const ch = makeChannel();
+    const s = bridge.scope(ch);
+    s.sample({
+      target: "w",
+      fields: [
+        "scrollTop",
+        { name: "wheel", mode: "batched", event: "wheel", pick: ["deltaY"], flush: "task" },
+        { name: "moves", mode: "batched", event: "pointermove", pick: ["clientX"] },
+      ],
+      until: { kind: "forever" },
+    });
+    el.dispatch("wheel", { timeStamp: 1, deltaY: 3 });
+    el.dispatch("wheel", { timeStamp: 2, deltaY: 4 });
+    el.dispatch("pointermove", { timeStamp: 2, clientX: 9 });
+    expect(ch.sent).toEqual([]); // not before the end of the task
+    await ticks();
+    expect(ch.sent).toEqual([
+      {
+        wheel: [
+          { timeStamp: 1, deltaY: 3 },
+          { timeStamp: 2, deltaY: 4 },
+        ],
+      },
+    ]);
+    win.step();
+    expect(ch.sent[1]).toEqual({ scrollTop: 7, moves: [{ timeStamp: 2, clientX: 9 }] });
+    s.dispose();
   });
 });

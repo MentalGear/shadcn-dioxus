@@ -10,12 +10,15 @@
 # still belongs to its `.ts` source.
 #
 # Usage: scripts/build-js-bundle.sh
-#   Rebuilds every ENTRY primitives/src/ts/<name>.ts into primitives/src/js/<name>.js with
+#   Rebuilds every ENTRY primitives/src/ts/<path>.ts into primitives/src/js/<path>.js with
 #   `bun build --minify-whitespace --minify-syntax` (the flags lazy-js-bundle used) and rewrites
 #   primitives/src/js/bundle.manifest (the bun version plus the sha256 of each .ts and .js). Commit all three.
-#   An entry is a top-level `ts/<name>.ts` that is not a `.d.ts`; a file in a subdirectory (`ts/rules/`,
-#   `ts/types/`) is no entry, it is bundled into the entry that imports it, and the manifest records its
-#   sha256 as a `ts` line named by its path below `ts/` (so an edit of `rules/index.ts` without a rebuild is red).
+#   An ENTRY is any `.ts` below `ts/` that is not a `.d.ts`, not a generated `.gen.ts`, and not under `ts/lib/` or
+#   `ts/types/` (modules and types that are bundled into the entries that import them). Each entry has its OWN
+#   bundle at the mirrored path (`ts/behaviours/fixture.ts` -> `js/behaviours/fixture.js`), so a lane that adds one
+#   behaviour touches that one `.js` and its manifest lines, never `bridge.js`. The manifest records the sha256 of
+#   EVERY `.ts` as a `ts` line named by its path below `ts/` (so an edit of `lib/register.ts` or of
+#   `behaviours.gen.ts` without a rebuild is red) and of every entry's `.js` as a `js` line by its path below `js/`.
 #   Needs `bun` (https://bun.sh); the gate itself does not.
 
 set -euo pipefail
@@ -27,14 +30,13 @@ ts_dir=primitives/src/ts
 js_dir=primitives/src/js
 manifest=$js_dir/bundle.manifest
 
-shopt -s nullglob
-sources=()
-for f in "$ts_dir"/*.ts; do
-  case "$f" in *.d.ts) ;; *) sources+=("$f") ;; esac
-done
-[ "${#sources[@]}" -gt 0 ] || { echo "build-js-bundle: no .ts files in $ts_dir" >&2; exit 2; }
 # every .ts below ts/ (entries and the modules they import), by path relative to ts/
 mapfile -t all_ts < <(cd "$ts_dir" && find . -name '*.ts' | sed 's|^\./||' | LC_ALL=C sort)
+entries=()
+for rel in "${all_ts[@]}"; do
+  case "$rel" in *.d.ts|*.gen.ts|lib/*|types/*) ;; *) entries+=("$rel") ;; esac
+done
+[ "${#entries[@]}" -gt 0 ] || { echo "build-js-bundle: no entry .ts files in $ts_dir" >&2; exit 2; }
 
 mkdir -p "$js_dir"
 {
@@ -47,11 +49,13 @@ mkdir -p "$js_dir"
 for rel in "${all_ts[@]}"; do
   printf 'ts %s  %s\n' "$(sha256sum "$ts_dir/$rel" | cut -d' ' -f1)" "$rel" >> "$manifest.tmp"
 done
-for ts in "${sources[@]}"; do
-  name="$(basename "$ts" .ts)"
-  js="$js_dir/$name.js"
+for rel in "${entries[@]}"; do
+  ts="$ts_dir/$rel"
+  name="${rel%.ts}.js"
+  js="$js_dir/$name"
+  mkdir -p "$(dirname "$js")"
   bun build "$ts" --outfile "$js" --minify-whitespace --minify-syntax >/dev/null
-  printf 'js %s  %s\n' "$(sha256sum "$js" | cut -d' ' -f1)" "$name.js" >> "$manifest.tmp"
+  printf 'js %s  %s\n' "$(sha256sum "$js" | cut -d' ' -f1)" "$name" >> "$manifest.tmp"
   echo "build-js-bundle: $ts -> $js"
 done
 mv "$manifest.tmp" "$manifest"

@@ -1,154 +1,77 @@
 // The generic JS bridge (row 434 step 3): the one small typed glue layer between Rust and the browser
-// APIs Dioxus does not wrap. Generic verbs only, no component logic:
+// APIs Dioxus does not wrap. Generic verbs and a registry of named behaviours, no component logic.
 //
-//   scope(channel)   owns every listener, observer and rule it creates; `dispose()` undoes all of them
-//   listen / on      a listener on window, document or an element; `listen` streams named event fields to
-//                    Rust, `on` runs a JS handler (the shape of `js_listener.rs`'s `listen`)
-//   call             showPopover, hidePopover, showModal, close, setPointerCapture, focus({preventScroll}),
-//                    scrollIntoView, setSelectionRange ...: a closed list, never `el[name](...)`
-//   get              computed style, offset*, client*, scroll*, rect, activeElement, visualViewport
-//   observe          Resize, Intersection (rootMargin, threshold) and Mutation observers
+// THE SURFACE IS CLOSED. Rust sends closed enums (`EventKind`, `EventField`, `Method`, `Prop`,
+// `ObserverKind`, `Behaviour`), and this file maps each through a closed OWN-property table with a
+// receiver kind per row (`EVENTS`, `FIELD_GETTERS`, `METHODS`, `PROPS`). There is no `el[method](...)`,
+// no `event[field]` and no `target[prop]` keyed by a string from outside: a name that is not in a table
+// is an error, never a property read (otherwise `call(window, "setTimeout", ["code"])` would be an eval).
+//
+//   scope(channel)   owns every listener, observer, behaviour and loop it creates; `dispose()` undoes all
+//   listen           a STREAMING listener (window, document, element): named event fields to Rust. It can
+//                    never cancel an event, so it is always passive; a frame-rate event (`hot`) is
+//                    coalesced to one message per animation frame
+//   on               a listener running a JS handler, for `js_listener.rs`'s bespoke scripts
+//   call             a closed list of element methods (popover, dialog, pointer capture, focus, scroll...)
+//   get              a closed list of reads (geometry, computed style, window metrics, active element)
+//   set              a CSS custom property on an element whose style Rust does not own
+//   observe          Resize, Intersection and Mutation observers
 //   matchMedia       a subscription to a media query
-//   transaction      several ops in one JS turn
-//   commit           resolve after a frame plus a forced style flush
-//   sample           per-frame sampling while a condition holds; each field is coalesced (the last value of
-//                    the frame) or batched (every event of the frame with its own timestamp)
-//   set              writes a CSS custom property on an element whose style Rust does not own
-//   rules            install/remove/sync of the closed `Rule` set (see `rules/index.ts`)
-//   serve            the loop a Rust `bridge::Session` runs: setup commands in, events out
+//   sample           per-frame sampling while a condition holds; a field is coalesced (the last value of
+//                    the frame) or batched (every event with its own timestamp), flushed per frame or per
+//                    event task
+//   transaction      several ops in one JS turn; `commit` resolves after a frame plus a style flush
+//   behaviour        a NAMED behaviour from the registry (`ts/behaviours/<kind>.ts`), see below
+//   serve / pump     the loop a Rust `bridge::Session` runs, and the ordered write channel of a webview
 //
-// The file is a script, not a module: `primitives/src/bridge/mod.rs` evaluates the bundled
+// WHERE WORK GOES. An rsx handler decides synchronously on every renderer, so a target inside a Dioxus
+// element and an event Dioxus supports is an rsx handler. A window, document or outside target, an
+// event Dioxus lacks or the capture phase is a named behaviour. A continuous stream (scroll, resize,
+// pointermove, wheel) is `listen` / `observe` / `sample`: never a vdom handler, because on desktop every
+// vdom event is a blocking synchronous request and a frame-rate stream would queue behind itself.
+//
+// BEHAVIOURS. A behaviour is a PURE `decide(behaviour, event, state)` plus this file's thin adapter. Rust
+// declares target, event, phase and passivity (`DxDeclared`); the module declares only the closed event
+// fields and attribute reads it needs. The adapter owns the listener: the hub below registers ONE DOM
+// listener per (target, type, capture, passive) with a reference count, so a non-passive listener exists
+// only while some behaviour needs it. A decision's `prevent` / `stop` are applied only when Rust declared
+// the behaviour non-passive; `attrs` are limited to `data-*` / `aria-*`. Every install carries an epoch
+// (a stale install is dropped, an equal one renews) and may carry a lease (the listener removes itself
+// when Rust stops renewing: the fail-open path, WCAG 2.1.2). An op that carries an epoch is dropped the
+// same way, and its reply echoes it.
+//
+// The file is a script, not a module: `primitives/src/bridge/transport.rs` evaluates the bundled
 // `js/bridge.js` once per page and every verb is then reached as `window.__dxBridge`. All browser
 // globals are read through `window`, so a test can run the shipped file against a fake one.
 //
-// SLOW-CHANNEL TEST MODE: `window.__dxBridgeDelayFrames = N` defers every message through a bridge
-// `channel` by N animation frames, in both directions, to model a desktop webview (an IPC hop per
-// message) on a browser where the eval channel costs a microtask. Unset it costs one property read.
-// `"never"` drops every message to Rust (the answer that never arrives, backlog row 434: a pending
-// gate must still end visible); commands from Rust still arrive. A read that does not go through
-// `get` (Dioxus's `MountedData` on web is synchronous) is not delayed.
+// BRIDGE-LATENCY HARNESS (not a desktop model): `window.__dxBridgeDelayFrames = N` defers every message
+// through a bridge channel by N animation frames, in both directions, so a spec sees what a slow channel
+// does to Rust-side logic on a browser where the eval channel costs a microtask. `"never"` drops every
+// message to Rust (the answer that never arrives: a pending state must still end visible); commands from
+// Rust still arrive. It does not model desktop's cadence (edits applied in a frame, one render per
+// frame): `channelDelay` is the one seam where a "desktop cadence" mode would plug in.
 //
 // LIFETIMES: a registration on window or document lives until its scope ends (Rust sends the teardown
 // over the scope's own channel, never a new eval). A registration on an ELEMENT also ends when the
 // element leaves the document, without waiting for Rust (Dioxus has no merged `onunmounted`).
-//
-// A bridge message reaches Rust after the event's default action is committed and after the frame is
-// painted, so this layer carries only work that may be late. A decision inside the listener call
-// belongs to a rule (`rules/index.ts`), which Rust publishes beforehand.
 
 /// <reference path="./types/dioxus.d.ts" />
-import { applyRule, readRuleAttributes, RULE_ATTR_PREFIX } from "./rules/index";
-import type { Rule, RuleScope } from "./rules/types";
+/// <reference path="./types/bridge.d.ts" />
 
-type ListenOptions = { capture?: boolean; passive?: boolean; once?: boolean };
-type TargetSpec =
-  | { kind: "window" }
-  | { kind: "document" }
-  | { kind: "id"; id: string }
-  | { kind: "selector"; selector: string }
-  | { kind: "active" };
-type Targetish = TargetSpec | EventTarget | string | null | undefined;
+type Recv = "w" | "d" | "e" | "we" | "wd" | "de" | "wde";
+type Fields = Record<string, unknown>;
 
-type ListenSpec = {
-  target: Targetish;
-  event: string;
-  options?: ListenOptions;
-  fields?: string[];
-  /** Also send once at registration, as if an event `{ type: "initial", target, currentTarget }` fired. */
-  initial?: boolean;
-};
-type ObserveSpec =
-  | { target: Targetish; kind: "resize"; options?: { box?: ResizeObserverBoxOptions } }
-  | {
-      target: Targetish;
-      kind: "intersection";
-      options?: { root?: Targetish; rootMargin?: string; threshold?: number | number[] };
-    }
-  | {
-      target: Targetish;
-      kind: "mutation";
-      options?: {
-        attributes?: boolean;
-        attributeFilter?: string[];
-        childList?: boolean;
-        subtree?: boolean;
-        characterData?: boolean;
-      };
-    };
-type SampleUntil =
-  | { kind: "forever" }
-  | { kind: "frames"; n: number }
-  | { kind: "ms"; ms: number }
-  | { kind: "attr"; name: string; value?: string };
-/**
- * A sampled field. A string, or `{ name, mode: "coalesced" }` with `name` the property read by `get`, is
- * coalesced: the value at the frame's end, sent only when it changed. `{ name, mode: "batched", event, pick }`
- * is an event stream: every `event` the target gets between two frames, as `{ timeStamp, ...pick }`, in order,
- * delivered as the array `name` of that frame's one message.
- */
-type SampleField =
-  | string
-  | { name: string; mode?: "coalesced" }
-  | { name: string; mode: "batched"; event: string; pick?: string[]; capture?: boolean };
-type SampleSpec = { target: Targetish; fields: SampleField[]; until: SampleUntil; onlyChanged?: boolean };
+type ListenSpec = Extract<DxCommand, { cmd: "listen" }>;
+type ObserveSpec = Extract<DxCommand, { cmd: "observe" }>;
+type SampleSpec = Extract<DxCommand, { cmd: "sample" }>;
+type BehaviourSpec = Extract<DxCommand, { cmd: "behaviour" }>;
 
-/** A command a Rust session sends to `serve`. */
-type Command =
-  | ({ cmd: "listen" } & ListenSpec)
-  | ({ cmd: "observe" } & ObserveSpec)
-  | { cmd: "media"; query: string }
-  | ({ cmd: "sample" } & SampleSpec)
-  | { cmd: "rule"; target: Targetish; rule: Rule; key?: string }
-  | { cmd: "sync-rules"; target: Targetish };
-
-/** An op of a transaction. */
-type Op =
-  | { op: "call"; target: Targetish; method: string; args?: unknown[] }
-  | { op: "get"; target: Targetish; props: string[] }
-  | { op: "set"; target: Targetish; name: string; value: string | null }
-  | { op: "commit" };
-type OpResult = { ok: unknown } | { err: string };
-
-interface Scope extends RuleScope {
-  /** The channel the scope's messages go through (the slow-channel mode applies to it). */
-  readonly channel: DioxusChannel;
-  /** Ends the scope: every registration it made is undone, in reverse order. Idempotent. */
-  dispose(): void;
-  listen(spec: ListenSpec): () => void;
-  observe(spec: ObserveSpec): () => void;
+interface Scope extends DxScope {
+  listen(spec: Omit<ListenSpec, "cmd">): () => void;
+  observe(spec: Omit<ObserveSpec, "cmd">): () => void;
   media(query: string): () => void;
-  sample(spec: SampleSpec): () => void;
-  /** Runs one session command. */
-  run(command: Command): void;
-}
-
-interface Bridge {
-  version: number;
-  channel(raw: DioxusChannel): DioxusChannel;
-  scope(raw?: DioxusChannel): Scope;
-  serve(raw: DioxusChannel): Promise<void>;
-  pump(raw: DioxusChannel): Promise<void>;
-  call(target: Targetish, method: string, args?: unknown[]): unknown;
-  get(target: Targetish, props: string[]): Record<string, unknown>;
-  set(target: Targetish, name: string, value: string | null): void;
-  commit(): Promise<void>;
-  transaction(ops: Op[]): Promise<OpResult[]>;
-  rules: {
-    install(target: Targetish, rule: Rule, scope?: RuleScope, key?: string): () => void;
-    remove(target: Targetish, key?: string): void;
-    read(target: Targetish): [string, Rule][];
-    sync(target: Targetish, scope?: RuleScope): void;
-  };
-}
-
-declare global {
-  interface Window {
-    __dxBridge?: Bridge;
-    /** Test only: defer every bridge message by this many animation frames, in both directions. */
-    __dxBridgeDelayFrames?: number | "never";
-    /** `window.__dxJsListeners.live` maps a registration id to its event type while it is live. */
-    __dxJsListeners?: { n: number; live: Map<number, string> };
-  }
+  sample(spec: Omit<SampleSpec, "cmd">): () => void;
+  behaviour(spec: Omit<BehaviourSpec, "cmd">): () => void;
 }
 
 const W = window as any;
@@ -158,165 +81,240 @@ const TEARDOWN = "__dx_listeners_off__";
 /** The events whose non-passive listeners block scrolling: `passive: true` unless the caller says so. */
 const BLOCKING: Record<string, 1> = { wheel: 1, mousewheel: 1, touchstart: 1, touchmove: 1, DOMMouseScroll: 1 };
 
-// ---------------------------------------------------------------- the slow-channel mode
-
-const delayFrames = (): number => {
-  const mode = W.__dxBridgeDelayFrames;
-  return typeof mode === "number" ? mode | 0 : 0;
-};
-
-function afterFrames(n: number, fn: () => void): void {
-  if (n <= 0) fn();
-  else W.requestAnimationFrame(() => afterFrames(n - 1, fn));
+const hasOwn = (table: object, key: string): boolean => Object.prototype.hasOwnProperty.call(table, key);
+/** The row of a closed table, own properties only (`"constructor"` and `"__proto__"` are not rows). */
+function own<T>(table: Record<string, T>, key: unknown): T | undefined {
+  return typeof key === "string" && hasOwn(table, key) ? table[key] : undefined;
 }
-
-/** `raw` with the slow-channel mode applied to `send` and `recv`. Wrapping a wrapped channel returns it. */
-function channel(raw: DioxusChannel): DioxusChannel {
-  if ((raw as any).__dxWrapped) return raw;
-  return {
-    __dxWrapped: true,
-    send(message) {
-      if (W.__dxBridgeDelayFrames === "never") return;
-      const n = delayFrames();
-      if (n) afterFrames(n, () => raw.send(message));
-      else raw.send(message);
-    },
-    recv() {
-      return raw.recv().then((message) => {
-        const n = delayFrames();
-        return n ? new Promise((resolve) => afterFrames(n, () => resolve(message))) : message;
-      });
-    },
-  } as DioxusChannel;
-}
-
-// ---------------------------------------------------------------- targets
-
-function resolve(target: Targetish): any {
-  if (target == null) return null;
-  if (typeof target === "string") return W.document.getElementById(target);
-  if (typeof (target as EventTarget).addEventListener === "function") return target;
-  switch ((target as TargetSpec).kind) {
-    case "window":
-      return W;
-    case "document":
-      return W.document;
-    case "id":
-      return W.document.getElementById((target as { id: string }).id);
-    case "selector":
-      return W.document.querySelector((target as { selector: string }).selector);
-    case "active":
-      return W.document.activeElement;
-  }
-  return null;
-}
-
-/** The value at a dotted `path` of `source`, if it is JSON-shaped; an element or a function is `null`. */
-function pick(source: any, path: string): unknown {
-  let value = source;
-  for (const part of path.split(".")) {
-    if (value == null) return null;
-    value = value[part];
-  }
-  if (value === undefined) return null;
-  if (value === null) return null;
+const norm = (value: unknown): unknown => (value === undefined ? null : value);
+const prim = (value: unknown): unknown => {
   const type = typeof value;
   return type === "string" || type === "number" || type === "boolean" ? value : null;
+};
+
+// ---------------------------------------------------------------- the closed tables
+
+/**
+ * The events the bridge may listen to. `recv` says what it may be listened on: w window, d document,
+ * e element. `hot` marks a frame-rate event: `listen` coalesces it to one message per animation frame.
+ * Mirrors `bridge/events.rs`'s `EventKind` (a test compares the rows).
+ */
+const EVENTS: Record<string, { recv: Recv; hot?: 1 }> = {
+  "keydown": { recv: "wde" },
+  "keyup": { recv: "wde" },
+  "beforeinput": { recv: "e" },
+  "input": { recv: "e" },
+  "change": { recv: "e" },
+  "compositionstart": { recv: "e" },
+  "compositionend": { recv: "e" },
+  "click": { recv: "wde" },
+  "dblclick": { recv: "wde" },
+  "contextmenu": { recv: "wde" },
+  "pointerdown": { recv: "wde" },
+  "pointerup": { recv: "wde" },
+  "pointermove": { recv: "wde", hot: 1 },
+  "pointercancel": { recv: "wde" },
+  "mousedown": { recv: "wde" },
+  "mouseup": { recv: "wde" },
+  "mousemove": { recv: "wde", hot: 1 },
+  "touchstart": { recv: "wde" },
+  "touchmove": { recv: "wde", hot: 1 },
+  "touchend": { recv: "wde" },
+  "touchcancel": { recv: "wde" },
+  "wheel": { recv: "wde", hot: 1 },
+  "scroll": { recv: "wde", hot: 1 },
+  "resize": { recv: "w", hot: 1 },
+  "focusin": { recv: "wde" },
+  "focusout": { recv: "wde" },
+  "focus": { recv: "e" },
+  "blur": { recv: "e" },
+  "dragenter": { recv: "wde" },
+  "dragover": { recv: "wde", hot: 1 },
+  "dragleave": { recv: "wde" },
+  "drop": { recv: "wde" },
+  "copy": { recv: "wde" },
+  "cut": { recv: "wde" },
+  "paste": { recv: "wde" },
+  "visibilitychange": { recv: "d" },
+  "selectionchange": { recv: "d" },
+  "pagehide": { recv: "w" },
+  "pageshow": { recv: "w" },
+  "online": { recv: "w" },
+  "offline": { recv: "w" },
+  "hashchange": { recv: "w" },
+  "popstate": { recv: "w" },
+  "beforetoggle": { recv: "e" },
+  "toggle": { recv: "e" },
+  "close": { recv: "e" },
+  "cancel": { recv: "e" },
+  "transitionend": { recv: "e" },
+  "animationend": { recv: "e" },
+};
+
+/** The event fields the bridge may read, each one getter. Mirrors `bridge/events.rs`'s `EventField`. */
+const FIELD_GETTERS: Record<string, (event: any) => unknown> = {
+  "type": (e) => prim(e.type),
+  "key": (e) => prim(e.key),
+  "code": (e) => prim(e.code),
+  "shiftKey": (e) => prim(e.shiftKey),
+  "ctrlKey": (e) => prim(e.ctrlKey),
+  "altKey": (e) => prim(e.altKey),
+  "metaKey": (e) => prim(e.metaKey),
+  "repeat": (e) => prim(e.repeat),
+  "isComposing": (e) => prim(e.isComposing),
+  "defaultPrevented": (e) => prim(e.defaultPrevented),
+  "clientX": (e) => prim(e.clientX),
+  "clientY": (e) => prim(e.clientY),
+  "pointerId": (e) => prim(e.pointerId),
+  "pointerType": (e) => prim(e.pointerType),
+  "button": (e) => prim(e.button),
+  "buttons": (e) => prim(e.buttons),
+  "deltaX": (e) => prim(e.deltaX),
+  "deltaY": (e) => prim(e.deltaY),
+  "deltaMode": (e) => prim(e.deltaMode),
+  "timeStamp": (e) => prim(e.timeStamp),
+  "inputType": (e) => prim(e.inputType),
+  "data": (e) => prim(e.data),
+  "newState": (e) => prim(e.newState),
+  "oldState": (e) => prim(e.oldState),
+  "touchCount": (e) => prim(e.touches?.length),
+  "target.id": (e) => prim(e.target?.id),
+  "target.tagName": (e) => prim(e.target?.tagName),
+  "target.value": (e) => prim(e.target?.value),
+  "target.scrollTop": (e) => prim(e.target?.scrollTop),
+  "target.scrollLeft": (e) => prim(e.target?.scrollLeft),
+  "target.innerWidth": (e) => prim(e.target?.innerWidth),
+  "target.innerHeight": (e) => prim(e.target?.innerHeight),
+  "currentTarget.id": (e) => prim(e.currentTarget?.id),
+};
+
+const isWin = (el: any): boolean => el === W;
+const isDoc = (el: any): boolean => !!el && el === W.document;
+const isEl = (el: any): boolean => !!el && el.nodeType === 1;
+
+/** Whether `el` is a receiver the letters `recv` allow. */
+function receives(recv: Recv | "any", el: any): boolean {
+  if (recv === "any") return !!el;
+  return (recv.includes("w") && isWin(el)) || (recv.includes("d") && isDoc(el)) || (recv.includes("e") && isEl(el));
 }
 
-function pickAll(source: any, fields: string[]): Record<string, unknown> {
-  const out: Record<string, unknown> = {};
-  for (const field of fields) out[field] = pick(source, field);
+const clampNum = (value: unknown): number | undefined => (typeof value === "number" && isFinite(value) ? value : undefined);
+const oneOf = <T extends string>(value: unknown, allowed: readonly T[]): T | undefined =>
+  allowed.includes(value as T) ? (value as T) : undefined;
+
+/** A scroll options object rebuilt from its closed members. */
+function scrollOptions(raw: any): any {
+  const o = raw && typeof raw === "object" ? raw : {};
+  const out: any = {};
+  const left = clampNum(o.left);
+  const top = clampNum(o.top);
+  if (left !== undefined) out.left = left;
+  if (top !== undefined) out.top = top;
+  const behavior = oneOf(o.behavior, ["auto", "instant", "smooth"] as const);
+  if (behavior) out.behavior = behavior;
+  const block = oneOf(o.block, ["start", "center", "end", "nearest"] as const);
+  if (block) out.block = block;
+  const inline = oneOf(o.inline, ["start", "center", "end", "nearest"] as const);
+  if (inline) out.inline = inline;
   return out;
 }
 
-// ---------------------------------------------------------------- call
-
-const norm = (value: unknown): unknown => (value === undefined ? null : value);
-
-/** The methods Rust may call, each tolerant of the state it is called in (a popover that is already open is not an error). */
-const METHODS: Record<string, (el: any, args: any[]) => unknown> = {
-  showPopover(el) {
-    if (typeof el.showPopover === "function" && !el.matches(":popover-open")) el.showPopover();
+/** The methods Rust may call, each tolerant of the state it is called in. Mirrors `Method` in `bridge/mod.rs`. */
+const METHODS: Record<string, { recv: Recv; run: (el: any, args: any[]) => unknown }> = {
+  showPopover: {
+    recv: "e",
+    run(el) {
+      if (typeof el.showPopover === "function" && !el.matches(":popover-open")) el.showPopover();
+    },
   },
-  hidePopover(el) {
-    if (typeof el.hidePopover === "function" && el.matches(":popover-open")) el.hidePopover();
+  hidePopover: {
+    recv: "e",
+    run(el) {
+      if (typeof el.hidePopover === "function" && el.matches(":popover-open")) el.hidePopover();
+    },
   },
-  togglePopover: (el) => el.togglePopover(),
-  showModal(el) {
-    if (!el.open) el.showModal();
+  togglePopover: { recv: "e", run: (el) => el.togglePopover() },
+  showModal: {
+    recv: "e",
+    run(el) {
+      if (!el.open) el.showModal();
+    },
   },
-  close(el, args) {
-    if (el.open) el.close(...args);
+  close: {
+    recv: "e",
+    run(el, args) {
+      if (el.open) typeof args[0] === "string" ? el.close(args[0]) : el.close();
+    },
   },
-  setPointerCapture: (el, args) => el.setPointerCapture(args[0]),
-  releasePointerCapture(el, args) {
-    if (el.hasPointerCapture?.(args[0])) el.releasePointerCapture(args[0]);
+  setPointerCapture: { recv: "e", run: (el, args) => el.setPointerCapture(Number(args[0]) | 0) },
+  releasePointerCapture: {
+    recv: "e",
+    run(el, args) {
+      const id = Number(args[0]) | 0;
+      if (el.hasPointerCapture?.(id)) el.releasePointerCapture(id);
+    },
   },
-  focus: (el, args) => el.focus(...args),
-  blur: (el) => el.blur(),
-  scrollIntoView: (el, args) => el.scrollIntoView(...args),
-  scrollTo: (el, args) => el.scrollTo(...args),
-  scrollBy: (el, args) => el.scrollBy(...args),
-  setSelectionRange: (el, args) => el.setSelectionRange(...args),
-  select: (el) => el.select(),
+  focus: { recv: "e", run: (el, args) => el.focus({ preventScroll: !!(args[0] && args[0].preventScroll) }) },
+  blur: { recv: "e", run: (el) => el.blur() },
+  scrollIntoView: { recv: "e", run: (el, args) => el.scrollIntoView(scrollOptions(args[0])) },
+  scrollTo: { recv: "we", run: (el, args) => el.scrollTo(scrollOptions(args[0])) },
+  scrollBy: { recv: "we", run: (el, args) => el.scrollBy(scrollOptions(args[0])) },
+  setSelectionRange: {
+    recv: "e",
+    run: (el, args) => el.setSelectionRange(Number(args[0]) | 0, Number(args[1]) | 0),
+  },
+  select: { recv: "e", run: (el) => el.select() },
 };
-
-function call(target: Targetish, method: string, args: unknown[] = []): unknown {
-  const fn = Object.prototype.hasOwnProperty.call(METHODS, method) ? METHODS[method] : undefined;
-  if (!fn) throw new Error("bridge.call: no such method: " + method);
-  const el = resolve(target);
-  return el ? norm(fn(el, args)) : null;
-}
-
-// ---------------------------------------------------------------- get
-
-const NUMERIC = new Set([
-  "offsetWidth",
-  "offsetHeight",
-  "offsetTop",
-  "offsetLeft",
-  "clientWidth",
-  "clientHeight",
-  "clientTop",
-  "clientLeft",
-  "scrollWidth",
-  "scrollHeight",
-  "scrollTop",
-  "scrollLeft",
-  "innerWidth",
-  "innerHeight",
-  "scrollX",
-  "scrollY",
-  "devicePixelRatio",
-  "selectionStart",
-  "selectionEnd",
-]);
 
 const describe = (el: any): { id: string; tagName: string } | null =>
   el ? { id: el.id ?? "", tagName: el.tagName ?? "" } : null;
 
-function read(el: any, prop: string): unknown {
-  if (prop.startsWith("style:")) {
-    return el && el.nodeType === 1 ? W.getComputedStyle(el).getPropertyValue(prop.slice(6)) : null;
-  }
-  if (prop.startsWith("attr:")) return el?.getAttribute ? el.getAttribute(prop.slice(5)) : null;
-  if (prop.startsWith("matches:")) return !!el?.matches && el.matches(prop.slice(8));
-  if (NUMERIC.has(prop)) return el ? norm(el[prop]) : null;
-  switch (prop) {
-    case "rect": {
-      if (!el?.getBoundingClientRect) return null;
+/** The reads Rust may ask for. Mirrors `Prop` in `bridge/mod.rs`; `style:`, `attr:` and `matches:` take an argument. */
+const PROPS: Record<string, { recv: Recv | "any"; get: (el: any) => unknown }> = {
+  "offsetWidth": { recv: "e", get: (el) => el.offsetWidth },
+  "offsetHeight": { recv: "e", get: (el) => el.offsetHeight },
+  "offsetTop": { recv: "e", get: (el) => el.offsetTop },
+  "offsetLeft": { recv: "e", get: (el) => el.offsetLeft },
+  "clientWidth": { recv: "e", get: (el) => el.clientWidth },
+  "clientHeight": { recv: "e", get: (el) => el.clientHeight },
+  "clientTop": { recv: "e", get: (el) => el.clientTop },
+  "clientLeft": { recv: "e", get: (el) => el.clientLeft },
+  "scrollWidth": { recv: "e", get: (el) => el.scrollWidth },
+  "scrollHeight": { recv: "e", get: (el) => el.scrollHeight },
+  "scrollTop": { recv: "e", get: (el) => el.scrollTop },
+  "scrollLeft": { recv: "e", get: (el) => el.scrollLeft },
+  "innerWidth": { recv: "w", get: (el) => el.innerWidth },
+  "innerHeight": { recv: "w", get: (el) => el.innerHeight },
+  "scrollX": { recv: "w", get: (el) => el.scrollX },
+  "scrollY": { recv: "w", get: (el) => el.scrollY },
+  "devicePixelRatio": { recv: "w", get: (el) => el.devicePixelRatio },
+  "selectionStart": { recv: "e", get: (el) => el.selectionStart },
+  "selectionEnd": { recv: "e", get: (el) => el.selectionEnd },
+  "value": { recv: "e", get: (el) => el.value },
+  "checked": { recv: "e", get: (el) => el.checked },
+  "open": { recv: "e", get: (el) => !!el.open },
+  "popoverOpen": { recv: "e", get: (el) => !!el.matches && el.matches(":popover-open") },
+  "rect": {
+    recv: "e",
+    get(el) {
+      if (!el.getBoundingClientRect) return null;
       const r = el.getBoundingClientRect();
       return { x: r.x, y: r.y, width: r.width, height: r.height, top: r.top, left: r.left, right: r.right, bottom: r.bottom };
-    }
-    case "activeElement": {
-      const doc = el && el.nodeType === 9 ? el : (el?.ownerDocument ?? W.document);
+    },
+  },
+  "activeElement": {
+    recv: "any",
+    get(el) {
+      const doc = isDoc(el) ? el : (el.ownerDocument ?? W.document);
       const active = doc.activeElement;
-      const out = describe(active) as Record<string, unknown> | null;
-      if (out) out.within = !!el?.contains && el.nodeType === 1 && el.contains(active);
+      const out = describe(active) as Fields | null;
+      if (out) out.within = isEl(el) && !!el.contains && el.contains(active);
       return out;
-    }
-    case "visualViewport": {
+    },
+  },
+  "visualViewport": {
+    recv: "any",
+    get() {
       const v = W.visualViewport;
       return v
         ? {
@@ -329,34 +327,143 @@ function read(el: any, prop: string): unknown {
             scale: v.scale,
           }
         : null;
-    }
-    case "value":
-    case "checked":
-      return el ? norm(el[prop]) : null;
-    case "open":
-      return el ? !!el.open : null;
-    case "popoverOpen":
-      return !!el?.matches && el.matches(":popover-open");
+    },
+  },
+};
+
+// ---------------------------------------------------------------- the bridge-latency harness
+
+/** The frames a message is deferred by: the one seam where another test mode (desktop cadence) plugs in. */
+function channelDelay(): number | "never" {
+  const mode = W.__dxBridgeDelayFrames;
+  if (mode === "never") return "never";
+  return typeof mode === "number" ? mode | 0 : 0;
+}
+
+function afterFrames(n: number, fn: () => void): void {
+  if (n <= 0) fn();
+  else W.requestAnimationFrame(() => afterFrames(n - 1, fn));
+}
+
+/** `raw` with the harness applied to `send` and `recv`. Wrapping a wrapped channel returns it. */
+function channel(raw: DioxusChannel): DioxusChannel {
+  if ((raw as any).__dxWrapped) return raw;
+  return {
+    __dxWrapped: true,
+    send(message) {
+      const n = channelDelay();
+      if (n === "never") return;
+      if (n) afterFrames(n, () => raw.send(message));
+      else raw.send(message);
+    },
+    recv() {
+      return raw.recv().then((message) => {
+        const n = channelDelay();
+        return typeof n === "number" && n ? new Promise((resolve) => afterFrames(n, () => resolve(message))) : message;
+      });
+    },
+  } as DioxusChannel;
+}
+
+// ---------------------------------------------------------------- targets
+
+function resolve(target: DxTargetish): any {
+  if (target == null) return null;
+  if (typeof target === "string") return W.document.getElementById(target);
+  if (typeof (target as EventTarget).addEventListener === "function") return target;
+  const spec = target as DxTarget;
+  switch (spec.kind) {
+    case "window":
+      return W;
+    case "document":
+      return W.document;
+    case "id":
+      return W.document.getElementById(spec.id);
+    case "selector":
+      return W.document.querySelector(spec.selector);
+    case "active":
+      return W.document.activeElement;
   }
   return null;
 }
 
-function get(target: Targetish, props: string[]): Record<string, unknown> {
+function pickAll(source: any, fields: readonly string[]): Fields {
+  const out: Fields = {};
+  for (const field of fields) {
+    const getter = own(FIELD_GETTERS, field);
+    out[field] = getter ? getter(source) : null;
+  }
+  return out;
+}
+
+function checkFields(fields: readonly string[] | undefined): readonly string[] {
+  for (const field of fields ?? []) if (!own(FIELD_GETTERS, field)) throw new Error("bridge: no such event field: " + field);
+  return fields ?? [];
+}
+
+function checkEvent(event: unknown, el: any): { recv: Recv; hot?: 1 } {
+  const row = own(EVENTS, event);
+  if (!row) throw new Error("bridge: no such event: " + String(event));
+  if (!receives(row.recv, el)) throw new Error("bridge: " + String(event) + " cannot be listened on this target");
+  return row;
+}
+
+// ---------------------------------------------------------------- epochs
+
+const seenEpochs = new WeakMap<object, Map<string, number>>();
+
+/** True when an epoch newer than `epoch` has already been seen on `el` for its key; otherwise records it. */
+function stale(el: object | null, epoch: DxEpoch | null | undefined): boolean {
+  if (!epoch || !el) return false;
+  let seen = seenEpochs.get(el);
+  if (!seen) seenEpochs.set(el, (seen = new Map()));
+  const last = seen.get(epoch.key);
+  if (last !== undefined && epoch.n < last) return true;
+  seen.set(epoch.key, epoch.n);
+  return false;
+}
+
+// ---------------------------------------------------------------- call, get, set
+
+function call(target: DxTargetish, method: string, args: unknown[] = [], epoch?: DxEpoch | null): unknown {
+  const row = own(METHODS, method);
+  if (!row) throw new Error("bridge.call: no such method: " + method);
   const el = resolve(target);
-  const out: Record<string, unknown> = {};
+  if (!el) return null;
+  if (!receives(row.recv, el)) throw new Error("bridge.call: " + method + " needs an element");
+  if (stale(el, epoch)) return STALE;
+  return norm(row.run(el, args));
+}
+
+/** The sentinel a dropped (stale) op returns. */
+const STALE = Symbol("stale");
+
+function read(el: any, prop: string): unknown {
+  if (!el) return null;
+  if (prop.startsWith("style:")) return isEl(el) ? W.getComputedStyle(el).getPropertyValue(prop.slice(6)) : null;
+  if (prop.startsWith("attr:")) return isEl(el) ? el.getAttribute(prop.slice(5)) : null;
+  if (prop.startsWith("matches:")) return isEl(el) && !!el.matches && el.matches(prop.slice(8));
+  const row = own(PROPS, prop);
+  if (!row || !receives(row.recv, el)) return null;
+  return norm(row.get(el));
+}
+
+function get(target: DxTargetish, props: string[]): Fields {
+  const el = resolve(target);
+  const out: Fields = {};
   for (const prop of props) out[prop] = read(el, prop);
   return out;
 }
 
-// ---------------------------------------------------------------- set
-
 /** Writes (or, with `null`, removes) the CSS custom property `name` on an element whose style Rust does not own. */
-function set(target: Targetish, name: string, value: string | null): void {
+function set(target: DxTargetish, name: string, value: string | null, epoch?: DxEpoch | null): unknown {
   if (!name.startsWith("--")) throw new Error("bridge.set: only custom properties (--name): " + name);
   const el = resolve(target);
-  if (!el?.style) return;
+  if (!isEl(el) || !el.style) return null;
+  if (stale(el, epoch)) return STALE;
   if (value === null) el.style.removeProperty(name);
   else el.style.setProperty(name, value);
+  return null;
 }
 
 // ---------------------------------------------------------------- commit and transaction
@@ -376,95 +483,40 @@ function commit(): Promise<void> {
 }
 
 /** Runs `ops` in order. Everything up to the first `commit` runs in the caller's JS turn. */
-async function transaction(ops: Op[]): Promise<OpResult[]> {
-  const out: OpResult[] = [];
+async function transaction(ops: DxOp[]): Promise<DxOpResult[]> {
+  const out: DxOpResult[] = [];
   for (const op of ops) {
     try {
+      let result: DxOpResult;
       switch (op.op) {
-        case "call":
-          out.push({ ok: call(op.target, op.method, op.args) });
+        case "call": {
+          const value = call(op.target, op.method, op.args, op.epoch);
+          result = value === STALE ? { ok: null, dropped: true } : { ok: value };
           break;
-        case "get":
-          out.push({ ok: get(op.target, op.props) });
+        }
+        case "get": {
+          const el = resolve(op.target);
+          result = stale(el, op.epoch) ? { ok: null, dropped: true } : { ok: get(el, op.props) };
           break;
-        case "set":
-          set(op.target, op.name, op.value);
-          out.push({ ok: null });
+        }
+        case "set": {
+          const value = set(op.target, op.name, op.value, op.epoch);
+          result = value === STALE ? { ok: null, dropped: true } : { ok: null };
           break;
+        }
         case "commit":
           await commit();
-          out.push({ ok: null });
+          result = { ok: null };
           break;
       }
+      const epoch = "epoch" in op ? op.epoch : null;
+      if (epoch && "ok" in result) result.epoch = epoch;
+      out.push(result);
     } catch (error) {
       out.push({ err: String(error) });
     }
   }
   return out;
-}
-
-// ---------------------------------------------------------------- rules
-
-type Installed = { text: string; off: () => void };
-const installedRules = new WeakMap<object, Map<string, Installed>>();
-
-/** A scope that sends nothing, for a rule installed without one (it lives until `remove`). */
-const detachedScope = (): RuleScope => ({
-  on: (target, type, handler, options) => bareOn(target, type, handler, options),
-  cleanup() {},
-  send() {},
-});
-
-const rules: Bridge["rules"] = {
-  install(target, rule, scope, key) {
-    const el = resolve(target);
-    if (!el || el.nodeType !== 1) return () => {};
-    const slot = key ?? rule.kind;
-    return installRule(el, slot, rule, JSON.stringify(rule), scope ?? detachedScope(), !!scope);
-  },
-  remove(target, key) {
-    const el = resolve(target);
-    const slots = el && installedRules.get(el);
-    if (!slots) return;
-    for (const slot of key === undefined ? [...slots.keys()] : [key]) {
-      slots.get(slot)?.off();
-      slots.delete(slot);
-    }
-  },
-  read(target) {
-    const el = resolve(target);
-    return el && el.nodeType === 1 ? readRuleAttributes(el) : [];
-  },
-  sync(target, scope) {
-    const el = resolve(target);
-    if (!el || el.nodeType !== 1) return;
-    const wanted = new Map(readRuleAttributes(el));
-    const slots = installedRules.get(el);
-    for (const slot of slots ? [...slots.keys()] : []) {
-      if (slot.startsWith(RULE_ATTR_PREFIX) && !wanted.has(slot)) rules.remove(el, slot);
-    }
-    for (const [name, rule] of wanted) {
-      const text = el.getAttribute(name) ?? "";
-      if (installedRules.get(el)?.get(name)?.text === text) continue;
-      installRule(el, name, rule, text, scope ?? detachedScope(), !!scope);
-    }
-  },
-};
-
-function installRule(el: any, slot: string, rule: Rule, text: string, scope: RuleScope, owned: boolean): () => void {
-  let slots = installedRules.get(el);
-  if (!slots) installedRules.set(el, (slots = new Map()));
-  slots.get(slot)?.off();
-  const off = applyRule(rule, el, scope);
-  const entry: Installed = { text, off };
-  slots.set(slot, entry);
-  const remove = () => {
-    if (slots.get(slot) !== entry) return;
-    off();
-    slots.delete(slot);
-  };
-  if (owned) scope.cleanup(remove);
-  return remove;
 }
 
 // ---------------------------------------------------------------- the listener registry
@@ -483,7 +535,7 @@ function sweep(): void {
  * document. An element that is not in the document yet is not tracked. Returns the untracking function.
  */
 function watchElement(el: any, off: () => void): () => void {
-  if (!el || el.nodeType !== 1 || !el.isConnected) return () => {};
+  if (!isEl(el) || !el.isConnected) return () => {};
   const reg = { el, off };
   elementRegs.add(reg);
   if (!pageObserver) {
@@ -500,21 +552,25 @@ function watchElement(el: any, off: () => void): () => void {
   };
 }
 
+type OnOptions = { capture?: boolean; passive?: boolean; once?: boolean };
+
 /**
  * Registers `handler` on `target` and returns its `off`. The one place a listener is added: the
  * registration is recorded in `window.__dxJsListeners.live` while it is live, the scroll-blocking
  * events default to passive, and a `{ once: true }` registration forgets itself when it fires.
+ * `ended` runs once when the registration ends, however it ends.
  */
 function bareOn(
   target: any,
   type: string,
   handler: (event: any) => void,
-  options?: boolean | ListenOptions,
-  own?: (off: () => void) => void,
+  options?: boolean | OnOptions,
+  track?: (off: () => void) => void,
+  ended?: () => void,
 ): () => void {
   const el = resolve(target);
   if (!el) return () => {};
-  const o: ListenOptions = typeof options === "boolean" ? { capture: options } : Object.assign({}, options);
+  const o: OnOptions = typeof options === "boolean" ? { capture: options } : Object.assign({}, options);
   if (o.passive === undefined && BLOCKING[type]) o.passive = true;
   const reg = (W.__dxJsListeners = W.__dxJsListeners || { n: 0, live: new Map() });
   const id = ++reg.n;
@@ -526,6 +582,7 @@ function bareOn(
     el.removeEventListener(type, h, o);
     reg.live.delete(id);
     unwatch();
+    ended?.();
   };
   const h = o.once
     ? (event: any) => {
@@ -537,8 +594,147 @@ function bareOn(
   el.addEventListener(type, h, o);
   reg.live.set(id, type);
   unwatch = watchElement(el, off);
-  own?.(off);
+  track?.(off);
   return off;
+}
+
+// ---------------------------------------------------------------- the listener hub
+
+type HubEntry = { handlers: Set<(event: any) => void>; off: () => void };
+const hubs = new WeakMap<object, Map<string, HubEntry>>();
+
+/**
+ * Adds `handler` to the ONE DOM listener for (`el`, `type`, `capture`, `passive`), creating it with the
+ * first handler and removing it with the last: a non-passive listener lives only while a behaviour
+ * needs it. Returns the removal of this handler.
+ */
+function hubAdd(el: any, type: string, capture: boolean, passive: boolean, handler: (event: any) => void): () => void {
+  let map = hubs.get(el);
+  if (!map) hubs.set(el, (map = new Map()));
+  const key = type + "|" + (capture ? 1 : 0) + "|" + (passive ? 1 : 0);
+  let entry = map.get(key);
+  if (!entry) {
+    const handlers = new Set<(event: any) => void>();
+    const made: HubEntry = { handlers, off: () => {} };
+    const slots = map;
+    made.off = bareOn(
+      el,
+      type,
+      (event) => {
+        for (const h of [...handlers]) h(event);
+      },
+      { capture, passive },
+      undefined,
+      () => {
+        if (slots.get(key) === made) slots.delete(key);
+        handlers.clear();
+      },
+    );
+    map.set(key, made);
+    entry = made;
+  }
+  const mine = entry;
+  mine.handlers.add(handler);
+  return () => {
+    mine.handlers.delete(handler);
+    if (!mine.handlers.size) mine.off();
+  };
+}
+
+// ---------------------------------------------------------------- behaviours
+
+/** The behaviour modules loaded in this page, by kind (a null-prototype table: own keys only). */
+const behaviours: Record<string, DxBehaviourImpl<any>> = Object.create(null);
+
+function register(kind: string, impl: DxBehaviourImpl<any>): void {
+  if (typeof kind !== "string" || !impl || typeof impl.decide !== "function") throw new Error("bridge.register: bad behaviour");
+  checkFields(impl.fields);
+  behaviours[kind] = impl;
+}
+
+type Installed = { n: number; off: () => void; renew: () => void };
+const installed = new WeakMap<object, Map<string, Installed>>();
+const warned = new Set<string>();
+const warnOnce = (key: string, message: string) => {
+  if (warned.has(key)) return;
+  warned.add(key);
+  console.warn("dx bridge:", message);
+};
+
+/** What a decision may set: `data-*` and `aria-*` only. */
+const ATTR_OK = /^(data|aria)-[a-z0-9-]+$/;
+
+function installBehaviour(sc: Scope, spec: Omit<BehaviourSpec, "cmd">): () => void {
+  const el = resolve(spec.target);
+  const b = spec.behaviour;
+  const d = spec.declared;
+  if (!el) return () => {};
+  const impl = own(behaviours, b.kind);
+  if (!impl) throw new Error("bridge.behaviour: not loaded: " + String(b.kind));
+  const want = d.target === "window" ? "w" : d.target === "document" ? "d" : "e";
+  if (!receives(want, el)) throw new Error("bridge.behaviour: " + b.kind + " declared " + d.target + " but the target is not");
+  checkEvent(d.event, el);
+  const key = spec.epoch ? spec.epoch.key : "behaviour:" + b.kind;
+  let slots = installed.get(el);
+  if (!slots) installed.set(el, (slots = new Map()));
+  const current = slots.get(key);
+  const n = spec.epoch ? spec.epoch.n : current ? current.n + 1 : 0;
+  if (spec.epoch && stale(el, spec.epoch)) return () => {};
+  if (current) {
+    if (current.n === n && spec.epoch) {
+      current.renew();
+      return current.off;
+    }
+    current.off();
+  }
+  const host = isEl(el) ? el : null;
+  const handler = (event: any) => {
+    const fields = pickAll(event, impl.fields);
+    const state: Record<string, string | null> = {};
+    for (const name of impl.reads ?? []) state[name] = host ? host.getAttribute(name) : null;
+    let decision: DxDecision;
+    try {
+      decision = impl.decide(b, fields, state) ?? {};
+    } catch (error) {
+      // a behaviour that throws does nothing: the event goes on as if it were not installed
+      warnOnce("throw:" + b.kind, b.kind + " threw: " + String(error));
+      return;
+    }
+    if (decision.prevent || decision.stop) {
+      if (d.passive) warnOnce("passive:" + b.kind, b.kind + " asked to cancel an event Rust declared passive");
+      else {
+        if (decision.prevent) event.preventDefault();
+        if (decision.stop) event.stopPropagation();
+      }
+    }
+    if (decision.attrs && host) {
+      for (const name of Object.keys(decision.attrs)) {
+        if (ATTR_OK.test(name)) host.setAttribute(name, decision.attrs[name]);
+        else warnOnce("attr:" + b.kind + name, b.kind + " may not set " + name);
+      }
+    }
+    if (decision.send !== undefined) sc.send(decision.send);
+  };
+  const removeHandler = hubAdd(el, d.event, !!d.capture, !!d.passive, handler);
+  let timer = 0;
+  const entry: Installed = {
+    n,
+    off() {
+      if (timer) W.clearTimeout(timer);
+      timer = 0;
+      removeHandler();
+      if (slots.get(key) === entry) slots.delete(key);
+    },
+    renew() {
+      if (!d.leaseMs) return;
+      if (timer) W.clearTimeout(timer);
+      timer = W.setTimeout(entry.off, d.leaseMs);
+    },
+  };
+  slots.set(key, entry);
+  entry.renew();
+  sc.cleanup(entry.off);
+  return entry.off;
 }
 
 // ---------------------------------------------------------------- scope
@@ -575,15 +771,37 @@ function scope(raw?: DioxusChannel): Scope {
       offs.length = 0;
     },
     listen(spec) {
-      const fields = spec.fields ?? [];
-      const off = on(spec.target as any, spec.event, (event) => send(pickAll(event, fields)), spec.options);
       const el = resolve(spec.target);
-      if (spec.initial && el) send(pickAll({ type: "initial", target: el, currentTarget: el }, fields));
+      if (!el || done) return () => {};
+      const row = checkEvent(spec.event, el);
+      const fields = checkFields(spec.fields);
+      let pending: Fields | null = null;
+      let frame = 0;
+      const flushPending = () => {
+        frame = 0;
+        const message = pending;
+        pending = null;
+        if (message) send(message);
+      };
+      // a streaming listener cannot cancel an event: always passive
+      const off = on(
+        el,
+        spec.event,
+        (event) => {
+          const message = pickAll(event, fields);
+          if (!row.hot) return send(message);
+          pending = message;
+          if (!frame) frame = W.requestAnimationFrame(flushPending);
+        },
+        { capture: !!spec.options?.capture, passive: true, once: !!spec.options?.once },
+      );
+      if (row.hot) offs.push(() => frame && W.cancelAnimationFrame(frame));
+      if (spec.initial) send(pickAll({ type: "initial", target: el, currentTarget: el }, fields));
       return off;
     },
     observe(spec) {
       const el = resolve(spec.target);
-      if (!el || done) return () => {};
+      if (!isEl(el) || done) return () => {};
       let observer: { disconnect(): void };
       switch (spec.kind) {
         case "resize": {
@@ -597,12 +815,13 @@ function scope(raw?: DioxusChannel): Scope {
               borderHeight: box ? box.blockSize : e.contentRect.height,
             });
           });
-          ro.observe(el, spec.options);
+          const boxOption = oneOf(spec.options?.box, ["content-box", "border-box", "device-pixel-content-box"] as const);
+          ro.observe(el, boxOption ? { box: boxOption } : undefined);
           observer = ro;
           break;
         }
         case "intersection": {
-          const o = spec.options ?? {};
+          const o = (spec.options ?? {}) as { root?: DxTargetish; rootMargin?: string; threshold?: number | number[] };
           const io = new W.IntersectionObserver(
             (entries: IntersectionObserverEntry[]) => {
               const e = entries[entries.length - 1];
@@ -634,10 +853,20 @@ function scope(raw?: DioxusChannel): Scope {
             }
             send({ count: records.length, attributes, added, removed });
           });
-          mo.observe(el, spec.options ?? { attributes: true, childList: true, subtree: true });
+          const o = (spec.options ?? {}) as MutationObserverInit;
+          mo.observe(el, {
+            attributes: o.attributes,
+            attributeFilter: o.attributeFilter,
+            childList: o.childList,
+            subtree: o.subtree,
+            characterData: o.characterData,
+            ...(Object.keys(o).length ? {} : { attributes: true, childList: true, subtree: true }),
+          });
           observer = mo;
           break;
         }
+        default:
+          throw new Error("bridge.observe: no such observer: " + String((spec as { kind: unknown }).kind));
       }
       const off = () => observer.disconnect();
       offs.push(off);
@@ -647,7 +876,7 @@ function scope(raw?: DioxusChannel): Scope {
       if (done) return () => {};
       const mql = W.matchMedia(query);
       send({ matches: mql.matches });
-      return on(mql, "change", (event) => send({ matches: event.matches }));
+      return on(mql, "change", (event) => send({ matches: event.matches }), { passive: true });
     },
     sample(spec) {
       const el = resolve(spec.target);
@@ -655,26 +884,44 @@ function scope(raw?: DioxusChannel): Scope {
       const started = W.performance.now();
       const onlyChanged = spec.onlyChanged !== false;
       const reads: string[] = [];
-      const batches: { name: string; entries: Record<string, unknown>[] }[] = [];
+      type Batch = { name: string; entries: Fields[]; task: boolean; queued: boolean };
+      const batches: Batch[] = [];
       const stops: (() => void)[] = [];
+      let live = true;
       for (const f of spec.fields) {
         if (typeof f === "string") reads.push(f);
         else if (f.mode === "batched") {
-          const batch = { name: f.name, entries: [] as Record<string, unknown>[] };
+          checkEvent(f.event, el);
+          const pickFields = checkFields(f.pick);
+          const batch: Batch = { name: f.name, entries: [], task: f.flush === "task", queued: false };
           batches.push(batch);
-          const pickFields = f.pick ?? [];
           stops.push(
-            on(el, f.event, (event) => batch.entries.push({ timeStamp: event.timeStamp, ...pickAll(event, pickFields) }), {
-              capture: !!f.capture,
-            }),
+            on(
+              el,
+              f.event,
+              (event) => {
+                batch.entries.push({ timeStamp: event.timeStamp, ...pickAll(event, pickFields) });
+                if (!batch.task || batch.queued) return;
+                // flush per event task: the entries of this task go out in a microtask, not at the frame's end
+                batch.queued = true;
+                W.queueMicrotask(() => {
+                  batch.queued = false;
+                  if (!live || !batch.entries.length) return;
+                  const message: Fields = {};
+                  message[batch.name] = batch.entries.splice(0, batch.entries.length);
+                  send(message);
+                });
+              },
+              { capture: !!f.capture, passive: true },
+            ),
           );
         } else reads.push(f.name);
       }
+      const framed = batches.filter((b) => !b.task);
       let frames = 0;
       // a sample with no coalesced field has nothing to report until an event arrives
       let last = reads.length ? "" : "{}";
       let frame = 0;
-      let live = true;
       const holds = (): boolean => {
         const until = spec.until;
         switch (until.kind) {
@@ -700,12 +947,12 @@ function scope(raw?: DioxusChannel): Scope {
         frame = 0;
         if (!live) return;
         const going = holds();
-        const sample: Record<string, unknown> = {};
+        const sample: Fields = {};
         for (const field of reads) sample[field] = read(el, field);
         const text = JSON.stringify(sample);
-        const events = batches.some((b) => b.entries.length > 0);
-        // every batched field is always present in a message (an empty array when it saw nothing)
-        for (const b of batches) sample[b.name] = b.entries.splice(0, b.entries.length);
+        const events = framed.some((b) => b.entries.length > 0);
+        // every frame-flushed batched field is always present in a message (an empty array when it saw nothing)
+        for (const b of framed) sample[b.name] = b.entries.splice(0, b.entries.length);
         if (!onlyChanged || text !== last || events || !going) {
           last = text;
           send(going ? sample : Object.assign(sample, { $done: true }));
@@ -718,26 +965,31 @@ function scope(raw?: DioxusChannel): Scope {
       offs.push(end);
       return end;
     },
+    behaviour(spec) {
+      return done ? () => {} : installBehaviour(s, spec);
+    },
     run(command) {
-      switch (command.cmd) {
-        case "listen":
-          s.listen(command);
-          break;
-        case "observe":
-          s.observe(command);
-          break;
-        case "media":
-          s.media(command.query);
-          break;
-        case "sample":
-          s.sample(command);
-          break;
-        case "rule":
-          rules.install(command.target, command.rule, s, command.key);
-          break;
-        case "sync-rules":
-          rules.sync(command.target, s);
-          break;
+      try {
+        switch (command.cmd) {
+          case "listen":
+            s.listen(command);
+            break;
+          case "observe":
+            s.observe(command);
+            break;
+          case "media":
+            s.media(command.query);
+            break;
+          case "sample":
+            s.sample(command);
+            break;
+          case "behaviour":
+            s.behaviour(command);
+            break;
+        }
+      } catch (error) {
+        // a bad command is Rust's bug: say so in the console, keep serving the rest
+        console.warn("dx bridge:", String(error));
       }
     },
   };
@@ -746,7 +998,7 @@ function scope(raw?: DioxusChannel): Scope {
 
 /**
  * The loop of a Rust `bridge::Session`: the first message is the array of setup commands (later
- * arrays add more), the `TEARDOWN` string ends it, and everything registered is undone either way.
+ * arrays add more or renew), the `TEARDOWN` string ends it, and everything registered is undone either way.
  */
 async function serve(raw: DioxusChannel): Promise<void> {
   const s = scope(raw);
@@ -754,7 +1006,7 @@ async function serve(raw: DioxusChannel): Promise<void> {
     for (;;) {
       const message = await s.channel.recv();
       if (message === TEARDOWN) break;
-      if (Array.isArray(message)) for (const command of message) s.run(command as Command);
+      if (Array.isArray(message)) for (const command of message) s.run(command as DxCommand);
     }
   } finally {
     s.dispose();
@@ -771,12 +1023,31 @@ async function pump(raw: DioxusChannel): Promise<void> {
   for (;;) {
     const ops = await ch.recv();
     if (!Array.isArray(ops)) continue;
-    for (const result of await transaction(ops as Op[])) if ("err" in result) console.warn("dx bridge:", result.err);
+    for (const result of await transaction(ops as DxOp[])) if ("err" in result) console.warn("dx bridge:", result.err);
   }
 }
 
+/** `call` for a bespoke script: a dropped (stale) call answers null. */
+const callPublic: DxBridge["call"] = (target, method, args) => {
+  const value = call(target, method, args);
+  return value === STALE ? null : value;
+};
+
 if (!W.__dxBridge) {
-  const bridge: Bridge = { version: 1, channel, scope, serve, pump, call, get, set, commit, transaction, rules };
+  const bridge: DxBridge = {
+    version: 2,
+    channel,
+    scope,
+    serve,
+    pump,
+    call: callPublic,
+    get,
+    set: (target, name, value) => void set(target, name, value),
+    commit,
+    transaction,
+    behaviours,
+    register,
+  };
   W.__dxBridge = bridge;
 }
 

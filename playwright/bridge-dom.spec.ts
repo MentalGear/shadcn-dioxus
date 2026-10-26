@@ -9,6 +9,7 @@ import type { Page } from "@playwright/test";
 // on real popovers, observers, media queries, style flushes and events. No site is loaded: the page is `setContent`.
 
 const BRIDGE = readFileSync(join(__dirname, "../primitives/src/js/bridge.js"), "utf8");
+const FIXTURE = readFileSync(join(__dirname, "../primitives/src/js/behaviours/fixture.js"), "utf8");
 
 const HTML = `<!doctype html><meta name="viewport" content="width=device-width">
 <style>#t{width:100px;height:40px;transition:opacity 1s linear;opacity:1;color:rgb(1,2,3)}
@@ -22,6 +23,7 @@ const HTML = `<!doctype html><meta name="viewport" content="width=device-width">
 async function load(page: Page) {
   await page.setContent(HTML);
   await page.addScriptTag({ content: BRIDGE });
+  await page.addScriptTag({ content: FIXTURE });
   await page.evaluate(() => {
     // a stand-in for the `dioxus` object of one eval
     (window as any).makeCh = () => {
@@ -83,8 +85,9 @@ test.describe("the bridge's verbs on a real page", () => {
     expect(r.rect.width).toBe(100);
     expect(r.activeElement).toEqual({ id: "b", tagName: "BUTTON", within: true });
     expect(r.bogus).toBeNull();
-    const vv = await page.evaluate(() => (window as any).__dxBridge.get({ kind: "window" }, ["visualViewport", "innerWidth"]));
-    expect(vv.visualViewport.width).toBe(vv.innerWidth);
+    const vv = await page.evaluate(() => (window as any).__dxBridge.get({ kind: "window" }, ["visualViewport"]));
+    expect(vv.visualViewport.width).toBeGreaterThan(0);
+    expect(vv.visualViewport.scale).toBe(1);
   });
 
   test("set writes a custom property and refuses a real one", async ({ page }) => {
@@ -162,7 +165,7 @@ test.describe("subscriptions on a real page", () => {
       const b = (window as any).__dxBridge;
       const ch = (window as any).makeCh();
       const s = b.scope(ch);
-      s.listen({ target: { kind: "id", id: "b" }, event: "click", fields: ["type", "target.id", "detail"] });
+      s.listen({ target: { kind: "id", id: "b" }, event: "click", fields: ["type", "target.id", "button"] });
       s.listen({ target: { kind: "window" }, event: "keydown", options: { capture: true }, fields: ["key"] });
       document.getElementById("b")!.click();
       document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
@@ -182,7 +185,7 @@ test.describe("subscriptions on a real page", () => {
       document.getElementById("b")!.click();
       return { sent: ch.sent, live, defaultPrevented, after: (window as any).__dxJsListeners.live.size, afterSent: ch.sent.length };
     });
-    expect(r.sent).toEqual([{ type: "click", "target.id": "b", detail: 0 }, { key: "Escape" }]);
+    expect(r.sent).toEqual([{ type: "click", "target.id": "b", button: 0 }, { key: "Escape" }]);
     expect(r.live).toBe(2);
     expect(r.defaultPrevented).toBe("false,true");
     expect(r.after).toBe(0);
@@ -268,26 +271,48 @@ test.describe("subscriptions on a real page", () => {
     expect(sent[sent.length - 1].$done).toBe(true);
   });
 
-  test("a rule installed on a real element, synced from its attribute, and removed with its scope", async ({ page }) => {
+  test("a named behaviour cancels only when declared non-passive, shares one listener per kind, and goes with its scope", async ({ page }) => {
     const r = await page.evaluate(() => {
       const b = (window as any).__dxBridge;
       const ch = (window as any).makeCh();
       const s = b.scope(ch);
       const t = document.getElementById("t")!;
-      t.setAttribute("data-dx-rule-fixture", JSON.stringify({ kind: "fixture", event: "pointerdown", attr: "data-hit", value: "a" }));
-      b.rules.sync("t", s);
-      t.dispatchEvent(new PointerEvent("pointerdown"));
-      const first = [t.getAttribute("data-hit"), ch.sent.length];
-      t.setAttribute("data-dx-rule-fixture", JSON.stringify({ kind: "fixture", event: "keydown", attr: "data-hit", value: "b" }));
-      b.rules.sync("t", s);
-      t.dispatchEvent(new PointerEvent("pointerdown"));
-      t.dispatchEvent(new KeyboardEvent("keydown"));
-      const second = [t.getAttribute("data-hit"), ch.sent.length];
+      const fixture = (over: object) => ({ kind: "fixture", event: "wheel", attr: "data-hit", value: "a", capture: false, cancel: false, leaseMs: null, ...over });
+      const declare = (x: any) => ({ target: "element", event: x.event, capture: x.capture, passive: !x.cancel, leaseMs: x.leaseMs });
+      const install = (x: any, key: string, n: number) =>
+        s.run({ cmd: "behaviour", target: "t", behaviour: x, declared: declare(x), epoch: { key, n } });
+      const wheel = () => {
+        const e = new WheelEvent("wheel", { cancelable: true, bubbles: true });
+        t.dispatchEvent(e);
+        return e.defaultPrevented;
+      };
+      install(fixture({}), "p", 1);
+      const passiveOnly = wheel();
+      install(fixture({ cancel: true }), "c", 1);
+      const withCancelling = wheel();
+      const live = (window as any).__dxJsListeners.live.size;
+      const msgs = ch.sent.length;
       s.dispose();
-      t.dispatchEvent(new KeyboardEvent("keydown"));
-      return { first, second, after: ch.sent.length, read: b.rules.read("t").length };
+      const afterDispose = wheel();
+      return { passiveOnly, withCancelling, live, hit: t.getAttribute("data-hit"), msgs, afterDispose, left: (window as any).__dxJsListeners.live.size };
     });
-    expect(r).toEqual({ first: ["a", 1], second: ["b", 2], after: 2, read: 1 });
+    // a passive behaviour cannot cancel a real wheel event; the non-passive one can; they are two listeners
+    expect(r).toEqual({ passiveOnly: false, withCancelling: true, live: 2, hit: "a", msgs: 3, afterDispose: false, left: 0 });
+  });
+
+  test("a hot event reaches Rust once per frame with the latest fields", async ({ page }) => {
+    const sent = await page.evaluate(async () => {
+      const b = (window as any).__dxBridge;
+      const ch = (window as any).makeCh();
+      const s = b.scope(ch);
+      s.listen({ target: { kind: "id", id: "t" }, event: "wheel", fields: ["deltaY"] });
+      const t = document.getElementById("t")!;
+      for (const dy of [1, 2, 3, 4]) t.dispatchEvent(new WheelEvent("wheel", { deltaY: dy, bubbles: true }));
+      const during = ch.sent.length;
+      await (window as any).frames(2);
+      return { during, sent: ch.sent };
+    });
+    expect(sent).toEqual({ during: 0, sent: [{ deltaY: 4 }] });
   });
 });
 

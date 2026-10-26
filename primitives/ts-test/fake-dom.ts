@@ -190,6 +190,8 @@ export function makeWindow() {
   const frames: ((time: number) => void)[] = [];
   let now = 0;
   const media = new Map<string, FakeMedia>();
+  const timers: { id: number; at: number; fn: () => void }[] = [];
+  let timerId = 0;
   const win: any = new FakeTarget();
   Object.assign(win, {
     document,
@@ -209,6 +211,25 @@ export function makeWindow() {
       frames[id - 1] = () => {};
     },
     performance: { now: () => now },
+    queueMicrotask: (fn: () => void) => void Promise.resolve().then(fn),
+    setTimeout(fn: () => void, ms: number) {
+      timers.push({ id: ++timerId, at: now + ms, fn });
+      return timerId;
+    },
+    clearTimeout(id: number) {
+      const at = timers.findIndex((t) => t.id === id);
+      if (at >= 0) timers.splice(at, 1);
+    },
+    /** Live timers (a lease is one). */
+    timers,
+    /** Moves the clock and runs the timers that came due. */
+    advance(ms: number) {
+      now += ms;
+      for (const t of timers.filter((t) => t.at <= now)) {
+        timers.splice(timers.indexOf(t), 1);
+        t.fn();
+      }
+    },
     getComputedStyle: (el: any) => ({ getPropertyValue: (name: string) => el.styles?.[name] ?? "" }),
     matchMedia(query: string) {
       if (!media.has(query)) media.set(query, new FakeMedia(query, false));
@@ -268,3 +289,16 @@ export function makeChannel() {
 export const ticks = async (n = 5) => {
   for (let i = 0; i < n; i++) await Promise.resolve();
 };
+
+/** Runs a shipped behaviour module (`src/js/behaviours/<kind>.js`) against `win`, the way the transport does. */
+export function loadModule(win: any, rel: string) {
+  new Function("window", readFileSync(join(import.meta.dir, "../src/js", rel), "utf8"))(win);
+}
+
+/** A DOM event with the cancel calls recorded. */
+export function makeEvent(fields: Record<string, unknown> = {}) {
+  const event: any = { prevented: 0, stopped: 0, ...fields };
+  event.preventDefault = () => void event.prevented++;
+  event.stopPropagation = () => void event.stopped++;
+  return event;
+}

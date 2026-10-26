@@ -19,7 +19,7 @@ time = { version = "0.3.47", optional = true, features = ["std", "local-offset"]
 tracing.workspace = true
 serde = { version = "1.0.228", features = ["derive"] }
 # The bridge's JSON (`src/bridge/`): messages to and from `document::eval` are `serde_json` values; dioxus already depends on it.
-serde_json = "1"
+serde_json = "1.0.149"
 # Optional, switched on by the `color-picker` feature (ColorPicker).
 palette = { version = "0.7.6", optional = true, default-features = false, features = ["std"] }
 
