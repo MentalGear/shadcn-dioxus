@@ -23,7 +23,7 @@ S-M
 
 ## Detail
 
-Source: [final sweep note, P8](../research/final-sweep-2026-10-25.md). A scanner beside `preview/props_scan.rs`, `docs.md` edits, one gate.
+Source: [final sweep note, P8](../../research/final-sweep-2026-10-25.md). A scanner beside `preview/props_scan.rs`, `docs.md` edits, one gate.
 
 - **Measured (heuristic, a lower bound):** a scan of `preview/src/components/*/style.css` for own-prefix `var(--dx-<component>-<name>, fallback)` reads that the sheet itself does not declare found 60 slot reads, 11 with no mention in the component's `docs.md`: `calendar` (`--dx-calendar-background`, `-border`), `chart` (`--dx-chart-center-primary-max`, `-secondary-max`, `--dx-chart-legend-item-basis`), `kbd` (`--dx-kbd-background`, `-color`), `drawer` (`--dx-drawer-drag`), `dropdown_menu` (`--dx-dropdown-menu-trigger-focus-ring`), `select` (`--dx-select-scroll-button-height`), `toggle_group` (`--dx-toggle-group-spacing`). Some are set by script, which the scan cannot tell.
 - **Second hand list:** only 10 `docs.md` files have a "Slot variables" section (`label/docs.md:14-22` is the model). `check-css-vars-defined.sh:72-96` ALLOWLIST holds 19 slot names with reasons such as "slot, label/docs.md", plus three names written by JS.
