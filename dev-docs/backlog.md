@@ -40,7 +40,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (40)
+## Open rows (42)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -84,5 +84,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [438](backlog/438-blitz-native-renderer.md) | dioxus-native (Blitz) as a supported renderer: parked, research-gated, after row 434 | PARKED. Start when all of these hold: 1. Dioxus 0.8 is stable and the primitives build on it. 2.… | Estimates from the research: tier 0 M… | primitives |
 | [440](backlog/440-run-gates-per-run-log-dir.md) | run-gates.sh writes logs to a shared directory: two concurrent runs on one target overwrite each other's logs | BACKLOG. Found by the row 433 lane (2026-10-26). | S | tooling |
 | [441](backlog/441-reduced-motion-scrim.md) | The modal scrim fade ignores prefers-reduced-motion: the per-sheet rule never won on specificity | BACKLOG. Applying reduced motion changes what users with that setting see, so it waits for the… | S | components |
+| [442](backlog/442-desktop-cadence-harness-and-desktop-pass.md) | Desktop proof for the JS plan: a desktop-cadence web build, Playwright WebKit and Firefox, and a recorded desktop-pass stamp | BACKLOG. Filed 2026-10-26 from the row 434 step 3 adversarial board. The delay hook comes with lane… | M | tooling |
+| [443](backlog/443-owner-measurement-kit-perf-recorder-and-impl-switch.md) | The owner's measurement kit for the row 434 ports: __dxPerf, bridge delay and spin, and the ?dx-impl legacy switch | BACKLOG. Filed 2026-10-26 from the row 434 step 3 adversarial board. The bridge-delay and spin… | M | tooling |
 
 <!-- END GENERATED -->
