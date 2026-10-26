@@ -560,7 +560,7 @@ pub enum Op {
     Set {
         /// The element.
         target: Target,
-        /// The custom property, `--name`.
+        /// The custom property, `--dx-name`.
         name: String,
         /// The value; `None` removes the property.
         value: Option<String>,
@@ -772,7 +772,9 @@ async fn measured(
             serde_json::from_value(ok).map_err(|e| BridgeError::Js(e.to_string()))
         }
         Some(OpResult::Err { err }) => Err(BridgeError::Js(err)),
-        None => Err(BridgeError::Js("the transaction answered fewer ops than sent".into())),
+        None => Err(BridgeError::Js(
+            "the transaction answered fewer ops than sent".into(),
+        )),
     }
 }
 
@@ -814,8 +816,8 @@ pub trait ElementExt {
         get(self.target(), props).await
     }
 
-    /// Writes the CSS custom property `name` (`--name`) on the element, for an element whose style
-    /// Rust does not own; `None` removes it.
+    /// Writes the theme's CSS custom property `name` (`--dx-name`; the page refuses any other) on the
+    /// element, for an element whose style Rust does not own; `None` removes it.
     fn set_var(&self, name: &str, value: Option<&str>) {
         Transaction::new_op(Op::Set {
             target: self.target(),
@@ -1025,14 +1027,14 @@ mod tests {
         let tx = Transaction::new()
             .call("p", Method::ShowPopover)
             .get("p", [Prop::Rect, Prop::PopoverOpen])
-            .set_var("p", "--x", Some("1px".into()))
+            .set_var("p", "--dx-x", Some("1px".into()))
             .commit();
         assert_eq!(
             serde_json::to_value(tx.ops()).expect("serialises"),
             json!([
                 {"op": "call", "target": {"kind": "id", "id": "p"}, "method": "showPopover", "args": []},
                 {"op": "get", "target": {"kind": "id", "id": "p"}, "props": ["rect", "popoverOpen"]},
-                {"op": "set", "target": {"kind": "id", "id": "p"}, "name": "--x", "value": "1px"},
+                {"op": "set", "target": {"kind": "id", "id": "p"}, "name": "--dx-x", "value": "1px"},
                 {"op": "commit"},
             ])
         );
@@ -1104,9 +1106,16 @@ mod tests {
         let end = start + js[start..].find("\n};").expect("end of PROPS");
         let table = &js[start..end];
         for prop in &props {
-            assert!(table.contains(&format!("\n  \"{}\": {{", prop.wire())), "{}", prop.wire());
+            assert!(
+                table.contains(&format!("\n  \"{}\": {{", prop.wire())),
+                "{}",
+                prop.wire()
+            );
         }
-        let rows = table.lines().filter(|l| l.starts_with("  \"") && l.contains("\": {")).count();
+        let rows = table
+            .lines()
+            .filter(|l| l.starts_with("  \"") && l.contains("\": {"))
+            .count();
         assert_eq!(rows, props.len(), "PROPS has a row Rust does not name");
     }
 

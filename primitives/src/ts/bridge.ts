@@ -14,7 +14,7 @@
 //   on               a listener running a JS handler, for `js_listener.rs`'s bespoke scripts
 //   call             a closed list of element methods (popover, dialog, pointer capture, focus, scroll...)
 //   get              a closed list of reads (geometry, computed style, window metrics, active element)
-//   set              a CSS custom property on an element whose style Rust does not own
+//   set              a `--dx-*` CSS custom property on an element whose style Rust does not own
 //   observe          Resize, Intersection and Mutation observers
 //   matchMedia       a subscription to a media query
 //   sample           per-frame sampling while a condition holds; a field is coalesced (the last value of
@@ -457,7 +457,7 @@ function get(target: DxTargetish, props: string[]): Fields {
 
 /** Writes (or, with `null`, removes) the CSS custom property `name` on an element whose style Rust does not own. */
 function set(target: DxTargetish, name: string, value: string | null, epoch?: DxEpoch | null): unknown {
-  if (!name.startsWith("--")) throw new Error("bridge.set: only custom properties (--name): " + name);
+  if (!name.startsWith("--dx-")) throw new Error("bridge.set: only the theme's custom properties (--dx-name): " + name);
   const el = resolve(target);
   if (!isEl(el) || !el.style) return null;
   if (stale(el, epoch)) return STALE;
@@ -674,6 +674,10 @@ function installBehaviour(sc: Scope, spec: Omit<BehaviourSpec, "cmd">): () => vo
   const want = d.target === "window" ? "w" : d.target === "document" ? "d" : "e";
   if (!receives(want, el)) throw new Error("bridge.behaviour: " + b.kind + " declared " + d.target + " but the target is not");
   checkEvent(d.event, el);
+  // a capture listener runs before anything has decided, so `defaultPrevented` there is always false
+  if (d.capture && impl.fields.includes("defaultPrevented")) {
+    throw new Error("bridge.behaviour: " + b.kind + " reads defaultPrevented, which only a bubble-phase behaviour may");
+  }
   const key = spec.epoch ? spec.epoch.key : "behaviour:" + b.kind;
   let slots = installed.get(el);
   if (!slots) installed.set(el, (slots = new Map()));
@@ -704,7 +708,12 @@ function installBehaviour(sc: Scope, spec: Omit<BehaviourSpec, "cmd">): () => vo
       if (d.passive) warnOnce("passive:" + b.kind, b.kind + " asked to cancel an event Rust declared passive");
       else {
         if (decision.prevent) event.preventDefault();
-        if (decision.stop) event.stopPropagation();
+        // desktop never forwards stopPropagation and a window-level stop would starve Rust's own handlers:
+        // only an element-level capture behaviour may stop
+        if (decision.stop) {
+          if (d.capture && d.target === "element") event.stopPropagation();
+          else warnOnce("stop:" + b.kind, b.kind + " may stop propagation only at an element in the capture phase");
+        }
       }
     }
     if (decision.attrs && host) {

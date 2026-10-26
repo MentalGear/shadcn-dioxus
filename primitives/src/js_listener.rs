@@ -1,5 +1,10 @@
-//! `JsListeners` / `use_js_listeners`: the one sanctioned way to put a JS event listener on
-//! `window`, `document` or any other node from Rust.
+//! `JsListeners` / `use_js_listeners`: the LEGACY way to put a JS event listener on `window`,
+//! `document` or any other node from a script. **Not the way to write new behaviour**: new code
+//! uses an rsx handler, a named [`Behaviour`](crate::bridge::Behaviour) or the bridge's
+//! `listen` / `observe` / `sample` ([`crate::bridge`], `dev-docs/js-interop.md`), and
+//! `scripts/check-js-volume.sh` only lets the number of scripts shrink. This module is what the
+//! remaining bespoke scripts (row 434 ports them away) run on: it sits on the bridge's scope (one
+//! registry, one removal rule, one transport seam that owns the single `document::eval`).
 //!
 //! A listener added from a `document::eval` script is owned by the PAGE, not by the Dioxus scope
 //! that evaluated the script: dropping the component drops the task that listens to the eval,

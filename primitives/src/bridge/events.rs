@@ -243,7 +243,10 @@ mod tests {
                 kind.wire(),
                 kind.receivers().letters()
             );
-            assert!(BRIDGE_TS.contains(&row), "EVENTS row missing or different: {row}");
+            assert!(
+                BRIDGE_TS.contains(&row),
+                "EVENTS row missing or different: {row}"
+            );
             rows += 1;
         }
         let start = BRIDGE_TS.find("const EVENTS").expect("EVENTS table");
@@ -262,8 +265,13 @@ mod tests {
                 field.wire()
             );
         }
-        let start = BRIDGE_TS.find("const FIELD_GETTERS").expect("FIELD_GETTERS table");
-        let end = start + BRIDGE_TS[start..].find("\n};").expect("end of FIELD_GETTERS");
+        let start = BRIDGE_TS
+            .find("const FIELD_GETTERS")
+            .expect("FIELD_GETTERS table");
+        let end = start
+            + BRIDGE_TS[start..]
+                .find("\n};")
+                .expect("end of FIELD_GETTERS");
         assert_eq!(
             BRIDGE_TS[start..end].matches("\": (e) =>").count(),
             EventField::ALL.len(),

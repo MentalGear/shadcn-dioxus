@@ -93,12 +93,12 @@ test.describe("the bridge's verbs on a real page", () => {
   test("set writes a custom property and refuses a real one", async ({ page }) => {
     const r = await page.evaluate(() => {
       const b = (window as any).__dxBridge;
-      b.set("t", "--band", "12px");
-      const set = document.getElementById("t")!.style.getPropertyValue("--band");
-      b.set("t", "--band", null);
+      b.set("t", "--dx-band", "12px");
+      const set = document.getElementById("t")!.style.getPropertyValue("--dx-band");
+      b.set("t", "--dx-band", null);
       let err = "";
       try { b.set("t", "width", "1px"); } catch (e) { err = String(e); }
-      return [set, document.getElementById("t")!.style.getPropertyValue("--band"), err];
+      return [set, document.getElementById("t")!.style.getPropertyValue("--dx-band"), err];
     });
     expect(r[0]).toBe("12px");
     expect(r[1]).toBe("");
@@ -143,7 +143,7 @@ test.describe("the bridge's verbs on a real page", () => {
         { op: "call", target: "pop", method: "showPopover" },
         { op: "get", target: "pop", props: ["popoverOpen"] },
         { op: "call", target: "pop", method: "nope" },
-        { op: "set", target: "t", name: "--a", value: "1" },
+        { op: "set", target: "t", name: "--dx-a", value: "1" },
         { op: "commit" },
       ]);
       const during = document.getElementById("pop")!.matches(":popover-open") && turn === "same";

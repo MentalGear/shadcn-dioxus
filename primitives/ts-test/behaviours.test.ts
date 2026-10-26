@@ -177,6 +177,40 @@ describe("install", () => {
   });
 });
 
+describe("phase rules", () => {
+  test("stop is honoured only for a non-passive capture behaviour at an element; defaultPrevented only in the bubble phase", () => {
+    const { bridge, el } = setup();
+    bridge.register("stopper", { fields: ["type"], decide: () => ({ stop: true }) });
+    bridge.register("reader", { fields: ["defaultPrevented"], decide: () => ({}) });
+    const s = bridge.scope(makeChannel());
+    const run = (kind: string, event: string, capture: boolean, key: string) =>
+      s.run({
+        cmd: "behaviour",
+        target: "host",
+        behaviour: { kind },
+        declared: { target: "element", event, capture, passive: false },
+        epoch: { key, n: 1 },
+      });
+    const warn = console.warn;
+    const seen: string[] = [];
+    console.warn = (...a: unknown[]) => seen.push(String(a[1]));
+    try {
+      run("stopper", "keydown", false, "bubble");
+      run("stopper", "keyup", true, "capture");
+      const bubble = makeEvent();
+      el.dispatch("keydown", bubble);
+      const capture = makeEvent();
+      el.dispatch("keyup", capture);
+      expect([bubble.stopped, capture.stopped]).toEqual([0, 1]);
+      run("reader", "click", true, "r");
+    } finally {
+      console.warn = warn;
+    }
+    expect(seen.some((m) => m.includes("defaultPrevented"))).toBe(true);
+    expect(el.count("click")).toBe(0);
+  });
+});
+
 describe("ref-counted registration", () => {
   test("one DOM listener per (target, type, capture, passive); it goes with the last behaviour that needs it", () => {
     const { bridge, el, win } = setup();
@@ -251,13 +285,13 @@ describe("epochs", () => {
     const { bridge, doc } = setup();
     const target = doc.add("t");
     const out = await bridge.transaction([
-      { op: "set", target: "t", name: "--a", value: "2", epoch: { key: "k", n: 2 } },
-      { op: "set", target: "t", name: "--a", value: "1", epoch: { key: "k", n: 1 } },
+      { op: "set", target: "t", name: "--dx-a", value: "2", epoch: { key: "k", n: 2 } },
+      { op: "set", target: "t", name: "--dx-a", value: "1", epoch: { key: "k", n: 1 } },
       { op: "call", target: "t", method: "focus", args: [], epoch: { key: "k", n: 1 } },
       { op: "get", target: "t", props: ["offsetWidth"], epoch: { key: "k", n: 3 } },
       { op: "get", target: "t", props: ["offsetWidth"], epoch: { key: "other", n: 1 } },
     ]);
-    expect(target.customProps.get("--a")).toBe("2");
+    expect(target.customProps.get("--dx-a")).toBe("2");
     expect(target.calls).toEqual([]);
     expect(out).toEqual([
       { ok: null, epoch: { key: "k", n: 2 } },
@@ -291,7 +325,7 @@ describe("the lease (the fail-open path)", () => {
     expect(win.timers.length).toBe(0);
   });
 
-  test('"never": a channel that drops every message to Rust still lets the page decide and lease out', () => {
+  test('with "never" the page decides and leases out although no message reaches Rust', () => {
     const { bridge, el, win } = setup();
     win.__dxBridgeDelayFrames = "never";
     const ch = makeChannel();

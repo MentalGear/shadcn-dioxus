@@ -391,11 +391,13 @@ impl Session {
         }
         let eval = transport::open("await __dxB.serve(dioxus);");
         transport::send(&eval, &self.commands);
-        // a lease is the page's fail-open: while this session lives it renews every behaviour that has one
+        // a lease is the page's fail-open: the session renews each behaviour that carries one
         let renew: Vec<Command> = self
             .commands
             .iter()
-            .filter(|c| matches!(c, Command::Behaviour { declared, .. } if declared.lease_ms.is_some()))
+            .filter(
+                |c| matches!(c, Command::Behaviour { declared, .. } if declared.lease_ms.is_some()),
+            )
             .cloned()
             .collect();
         let renewal = renew
@@ -410,7 +412,10 @@ impl Session {
                 spawn(async move {
                     // motion-ok: a lease renewal is a heartbeat the page's fail-open depends on, not motion
                     loop {
-                        crate::sleep::sleep(std::time::Duration::from_millis(u64::from(lease / 2).max(1))).await;
+                        crate::sleep::sleep(std::time::Duration::from_millis(
+                            u64::from(lease / 2).max(1),
+                        ))
+                        .await;
                         transport::send(&renew_eval, &renew);
                     }
                 })
@@ -646,7 +651,7 @@ pub fn use_window_size() -> ReadSignal<WindowSize> {
 
 /// Installs the named behaviour `behaviour()` returns on the target `target()` names, for the life of
 /// the component. It is replaced when a signal either closure reads changes (a fresh [`Epoch`] makes
-/// the page drop a late command of the old install) and removed when the component unmounts. `handler`
+/// the page drop a late command of the replaced install) and removed when the component unmounts. `handler`
 /// gets what the behaviour's `decide` sends (nothing, for a behaviour that only sets attributes and
 /// cancels). Read [`behaviours`](super::behaviours) for what a behaviour is and when to use one instead
 /// of an rsx handler.
@@ -695,7 +700,14 @@ mod tests {
             .command(Command::Media {
                 query: "(hover: hover)".into(),
             })
-            .behaviour("a", fixture(), Epoch { key: "behaviour:fixture".into(), n: 3 });
+            .behaviour(
+                "a",
+                fixture(),
+                Epoch {
+                    key: "behaviour:fixture".into(),
+                    n: 3,
+                },
+            );
         assert_eq!(
             serde_json::to_value(session.commands()).expect("serialises"),
             json!([
@@ -756,8 +768,12 @@ mod tests {
             target: Target::id("a"),
             fields: vec![
                 SampleField::read(&super::super::Prop::ScrollTop),
-                SampleField::batched("wheel", EventKind::Wheel, [EventField::DeltaX, EventField::DeltaY])
-                    .flushed_per_task(),
+                SampleField::batched(
+                    "wheel",
+                    EventKind::Wheel,
+                    [EventField::DeltaX, EventField::DeltaY],
+                )
+                .flushed_per_task(),
             ],
             until: Until::Attr {
                 name: "data-moving".into(),

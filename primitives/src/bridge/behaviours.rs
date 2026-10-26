@@ -36,7 +36,11 @@ use super::events::EventKind;
 /// A named behaviour and its parameters. The wire form is `{"kind": "<kebab-case name>", ...params}`
 /// (camelCase parameter names), which is what `behaviours.gen.ts` types.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-#[serde(tag = "kind", rename_all = "kebab-case", rename_all_fields = "camelCase")]
+#[serde(
+    tag = "kind",
+    rename_all = "kebab-case",
+    rename_all_fields = "camelCase"
+)]
 pub enum Behaviour {
     /// The test fixture: on `event` it sets `attr` to `value` on the host element and tells Rust,
     /// unless the host carries `data-dx-fixture-block`. With `cancel` it also cancels the event (and is
@@ -189,7 +193,10 @@ pub fn render_gen() -> String {
         .iter()
         .map(|e| format!("\"{}\"", e.wire()))
         .collect();
-    out.push_str(&format!("export type EventName = {};\n\n", events.join(" | ")));
+    out.push_str(&format!(
+        "export type EventName = {};\n\n",
+        events.join(" | ")
+    ));
     let kinds: Vec<String> = samples
         .iter()
         .map(|b| format!("\"{}\"", b.kind()))
@@ -200,7 +207,10 @@ pub fn render_gen() -> String {
     ));
     for b in &samples {
         let info = b.info();
-        out.push_str(&format!("export interface {}Behaviour {{\n", pascal(info.kind)));
+        out.push_str(&format!(
+            "export interface {}Behaviour {{\n",
+            pascal(info.kind)
+        ));
         out.push_str(&format!("  kind: \"{}\";\n", info.kind));
         for (name, ty) in info.params {
             out.push_str(&format!("  {name}: {ty};\n"));
@@ -211,7 +221,10 @@ pub fn render_gen() -> String {
         .iter()
         .map(|b| format!("{}Behaviour", pascal(b.kind())))
         .collect();
-    out.push_str(&format!("\nexport type Behaviour = {};\n\n", union.join(" | ")));
+    out.push_str(&format!(
+        "\nexport type Behaviour = {};\n\n",
+        union.join(" | ")
+    ));
     out.push_str("/** What each kind declares at its sample parameters (the real declaration depends on them). */\n");
     out.push_str("export const DECLARED = {\n");
     for b in &samples {
@@ -268,12 +281,19 @@ mod tests {
             .filter(|l| {
                 l.starts_with("    ")
                     && !l.starts_with("     ")
-                    && l.trim_start().chars().next().is_some_and(char::is_uppercase)
+                    && l.trim_start()
+                        .chars()
+                        .next()
+                        .is_some_and(char::is_uppercase)
                     && l.trim_end().ends_with('{')
             })
             .count();
         let samples = Behaviour::samples();
-        assert_eq!(samples.len(), variants, "samples() must list every variant once");
+        assert_eq!(
+            samples.len(),
+            variants,
+            "samples() must list every variant once"
+        );
         let kinds: std::collections::HashSet<_> = samples.iter().map(Behaviour::kind).collect();
         assert_eq!(kinds.len(), samples.len(), "kinds are unique");
     }
@@ -283,7 +303,12 @@ mod tests {
     fn samples_serialise_to_their_declared_params() {
         for b in Behaviour::samples() {
             let value = serde_json::to_value(&b).expect("serialises");
-            let mut keys: Vec<&str> = value.as_object().expect("object").keys().map(String::as_str).collect();
+            let mut keys: Vec<&str> = value
+                .as_object()
+                .expect("object")
+                .keys()
+                .map(String::as_str)
+                .collect();
             keys.sort_unstable();
             let mut want: Vec<&str> = std::iter::once("kind")
                 .chain(b.info().params.iter().map(|(name, _)| *name))
@@ -291,7 +316,10 @@ mod tests {
             want.sort_unstable();
             // `leaseMs: None` is serialised as null, so every key is present
             assert_eq!(keys, want, "{}", b.kind());
-            assert_eq!(serde_json::from_value::<Behaviour>(value).expect("reads back"), b);
+            assert_eq!(
+                serde_json::from_value::<Behaviour>(value).expect("reads back"),
+                b
+            );
         }
     }
 
@@ -331,7 +359,8 @@ mod tests {
                 let parsed: Behaviour = serde_json::from_value(vector["behaviour"].clone())
                     .unwrap_or_else(|e| panic!("{kind}: {} does not parse: {e}", vector["name"]));
                 assert_eq!(parsed.kind(), kind);
-                let cancels = vector["expect"]["prevent"] == json!(true) || vector["expect"]["stop"] == json!(true);
+                let cancels = vector["expect"]["prevent"] == json!(true)
+                    || vector["expect"]["stop"] == json!(true);
                 if cancels {
                     assert!(
                         !parsed.declared().passive,
@@ -351,11 +380,9 @@ mod tests {
                    "capture": false, "cancel": false, "leaseMs": null})
         );
         assert!(serde_json::from_value::<Behaviour>(json!({"kind": "eval", "code": "x"})).is_err());
-        assert!(
-            serde_json::from_value::<Behaviour>(
-                json!({"kind": "fixture", "event": "not-an-event", "attr": "a", "value": "b"})
-            )
-            .is_err()
-        );
+        assert!(serde_json::from_value::<Behaviour>(
+            json!({"kind": "fixture", "event": "not-an-event", "attr": "a", "value": "b"})
+        )
+        .is_err());
     }
 }

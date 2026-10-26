@@ -396,17 +396,18 @@ describe("set", () => {
   test("writes and removes a custom property, refuses anything else, and works in a transaction", async () => {
     const { bridge, doc } = setup();
     const el = doc.add("v");
-    bridge.set("v", "--band", "12px");
-    expect(el.customProps.get("--band")).toBe("12px");
-    bridge.set({ kind: "id", id: "v" }, "--band", null);
-    expect(el.customProps.has("--band")).toBe(false);
+    bridge.set("v", "--dx-band", "12px");
+    expect(el.customProps.get("--dx-band")).toBe("12px");
+    bridge.set({ kind: "id", id: "v" }, "--dx-band", null);
+    expect(el.customProps.has("--dx-band")).toBe(false);
     expect(() => bridge.set("v", "width", "1px")).toThrow("custom properties");
-    bridge.set("missing", "--x", "1");
+    expect(() => bridge.set("v", "--other", "1px")).toThrow("--dx-");
+    bridge.set("missing", "--dx-x", "1");
     const out = await bridge.transaction([
-      { op: "set", target: "v", name: "--a", value: "1" },
+      { op: "set", target: "v", name: "--dx-a", value: "1" },
       { op: "set", target: "v", name: "color", value: "red" },
     ]);
-    expect(el.customProps.get("--a")).toBe("1");
+    expect(el.customProps.get("--dx-a")).toBe("1");
     expect(out[0]).toEqual({ ok: null });
     expect((out[1] as any).err).toContain("custom properties");
   });
