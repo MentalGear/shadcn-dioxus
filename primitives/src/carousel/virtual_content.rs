@@ -613,6 +613,7 @@ pub fn CarouselVirtualContent<T: Clone + PartialEq + 'static>(
         }
     });
 
+    let autoplay = ctx.autoplay;
     rsx! {
         // Clipping viewport -- see `CarouselContent`'s own "Edge
         // rubber-band" doc for the full construction; this wrapper is
@@ -620,6 +621,13 @@ pub fn CarouselVirtualContent<T: Clone + PartialEq + 'static>(
         div {
             "data-slot": "carousel-viewport",
             style: "overflow: clip; display: flow-root;",
+            // A touch, pen or mouse press on the track counts as interaction
+            // for `stop_on_interaction` (embla-carousel-autoplay's own
+            // `pointerDown` trigger): autoplay stops before the swipe or drag
+            // moves anything, so the tick never races it (row 470). The
+            // buttons and indicators are siblings of this wrapper and count
+            // through their own paging entry points.
+            onpointerdown: move |_| autoplay.note_interaction(),
 
             div {
                 id,

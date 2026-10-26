@@ -477,3 +477,106 @@ test.describe("Carousel: indicators (tablist/dot-picker) variant", () => {
     }
   });
 });
+
+/**
+ * `stop_on_interaction`: a press on the track (touch, pen or mouse: the start of a swipe or
+ * drag) stops rotation for good, before the gesture moves anything (backlog row 470). The
+ * rotation control's label reports the user's intent (`playing`), which neither hover nor focus
+ * touches, so it is what tells a stopped carousel from a merely paused one. The pointer is moved
+ * away after each gesture so hover cannot be what holds the rotation still.
+ */
+test.describe("Carousel: autoplay stops on a press on the track (row 470)", () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
+
+  const STOPPED = "Start automatic slide show";
+  const RUNNING = "Stop automatic slide show";
+  /** Longer than the demo's 1200 ms delay: a still-running tick would have fired by then. */
+  const PAST_ONE_DELAY_MS = 1800;
+
+  const setup = async (page: import("@playwright/test").Page) => {
+    await goto(page, "autoplay");
+    const frame = demoFrame(page, "autoplay");
+    const viewport = frame.locator('[data-slot="carousel-viewport"]');
+    const rotation = frame.getByRole("button", { name: /automatic slide show/i });
+    const selected = () =>
+      frame.locator('[role="group"][aria-roledescription="slide"][data-selected="true"]').first().getAttribute("aria-label");
+    await expect(rotation).toHaveAttribute("aria-label", RUNNING);
+    return { frame, viewport, rotation, selected };
+  };
+
+  /** The selected slide must not change over a full delay period once the gesture has settled. */
+  const expectStaysPut = async (page: import("@playwright/test").Page, selected: () => Promise<string | null>) => {
+    await page.waitForTimeout(700);
+    const settled = await selected();
+    await page.waitForTimeout(PAST_ONE_DELAY_MS);
+    expect(await selected()).toBe(settled);
+  };
+
+  test("a mouse press and drag on the track stops rotation, and moving away does not resume it", async ({ page }) => {
+    const { frame, viewport, rotation, selected } = await setup(page);
+    await dragBy(page, viewport, -120, 0);
+    await expect(rotation).toHaveAttribute("aria-label", STOPPED);
+    await page.mouse.move(5, 5);
+    await expect(frame.locator(".dx-carousel-content")).toHaveAttribute("aria-live", "polite");
+    await expectStaysPut(page, selected);
+    await expect(rotation).toHaveAttribute("aria-label", STOPPED);
+  });
+
+  test("a mouse press without a drag stops rotation", async ({ page }) => {
+    const { viewport, rotation, selected, frame } = await setup(page);
+    await viewport.scrollIntoViewIfNeeded();
+    const box = (await viewport.boundingBox())!;
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    await expect(rotation).toHaveAttribute("aria-label", STOPPED);
+    await page.mouse.up();
+    await page.mouse.move(5, 5);
+    await expect(frame.locator(".dx-carousel-content")).toHaveAttribute("aria-live", "polite");
+    await expectStaysPut(page, selected);
+  });
+
+  test("a touch swipe stops rotation at touch down, and the selected slide stays put after it settles", async ({ page }) => {
+    const { viewport, rotation, selected } = await setup(page);
+    await viewport.scrollIntoViewIfNeeded();
+    const box = (await viewport.boundingBox())!;
+    const y = box.y + box.height / 2;
+    const x0 = box.x + box.width * 0.8;
+    const cdp = await page.context().newCDPSession(page);
+    const touch = (type: string, x: number) =>
+      cdp.send("Input.dispatchTouchEvent", {
+        type,
+        touchPoints: type === "touchEnd" ? [] : [{ x, y, id: 1 }],
+      });
+    await touch("touchStart", x0);
+    // Before anything has moved: the press alone stops it.
+    await expect(rotation).toHaveAttribute("aria-label", STOPPED);
+    for (let s = 1; s <= 8; s++) {
+      await touch("touchMove", x0 - (box.width * 0.5 * s) / 8);
+      await page.waitForTimeout(16);
+    }
+    await touch("touchEnd", x0);
+    await page.mouse.move(5, 5);
+    await expectStaysPut(page, selected);
+    await expect(rotation).toHaveAttribute("aria-label", STOPPED);
+  });
+
+  test("a tap on the track stops rotation", async ({ page }) => {
+    const { viewport, rotation, selected } = await setup(page);
+    await viewport.scrollIntoViewIfNeeded();
+    const box = (await viewport.boundingBox())!;
+    await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
+    await expect(rotation).toHaveAttribute("aria-label", STOPPED);
+    await page.mouse.move(5, 5);
+    await expectStaysPut(page, selected);
+  });
+
+  test("a wheel scroll over the track does not stop rotation (as in embla)", async ({ page }) => {
+    const { viewport, rotation } = await setup(page);
+    await viewport.scrollIntoViewIfNeeded();
+    const box = (await viewport.boundingBox())!;
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.wheel(60, 0);
+    await page.waitForTimeout(300);
+    await expect(rotation).toHaveAttribute("aria-label", RUNNING);
+  });
+});

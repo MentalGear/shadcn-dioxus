@@ -128,7 +128,7 @@ Carousel { aria_label: "Featured photos",
 - `delay_ms`: time between slides. Default `4000`.
 - `default_playing`: whether rotation starts on mount. Default `true`.
 - `stop_on_mouse_enter`: pause while the pointer is over the carousel. Default `true`.
-- `stop_on_interaction`: stop rotation for good after the user pages manually (Previous, Next, the arrow keys, a `CarouselIndicator`, or `scroll_to`) until they press the rotation button again. Default `true`. Dragging or scrolling the track does not count.
+- `stop_on_interaction`: stop rotation for good when the user presses (touch, pen or mouse) on the track, which starts a swipe or drag, or pages manually (Previous, Next, the arrow keys, a `CarouselIndicator`, or `scroll_to`), until they press the rotation button again. Default `true`. A wheel or trackpad scroll does not count, as in Embla; hovering already pauses (`stop_on_mouse_enter`).
 
 Rotation also pauses while keyboard focus is inside the carousel. When focus leaves it does not resume by itself; press the rotation button. Without `loop`, rotation stops at the last slide; with `loop`, it wraps and keeps going.
 
