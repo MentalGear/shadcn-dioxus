@@ -21,7 +21,7 @@ Merge queue batches 1-24 are on main (PRs #121-#150), batch 24 deployed as `9940
 
 ## In the queue
 
-Batch 25 (deployed): rows 355 (workspace lint table and Google Rust style items) and 421 (Firefox toast pile no longer jumps on insert), plus backlog rows 422 and 423. Batch 26 (`queue/batch-26`): row 423 (no Accordion header underline on hover), row 422's approved outline, the Button Group solid input edges (row 348, owner accepted), the docs fixes of row 393, and the two code bugs they found: DatePicker `read_only` refuses every edit (424) and HoverCard `force_mount` keeps the closed card mounted (425).
+Batch 26 (deployed 2026-10-26, main 360ecc92): rows 423, 422's outline, 348 (solid input edges), 393 (docs fixes), 424 (DatePicker `read_only`), 425 (HoverCard `force_mount`) and 439 (chart-prehydration font race). Batch 27 (`queue/batch-27`): the first refactors from the row 365 sweep. 429 (one CSS walker and allowlist engine for the gates), 430 (generated component manifests), 427 (spec page and read kinds as helpers), 431 (one test harness, `use_controlled_state`), 428 (wrappers forward with `..props`) and 426 (the theme owns the scrim and visually-hidden recipes), plus 437 (no early-exit reader after a pipe under pipefail) and a conflict-marker gate. Batch 28 lanes in flight: 432, 433, and row 434 lanes 2B and 2C.
 
 ## Running
 
