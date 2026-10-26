@@ -1,7 +1,7 @@
 ---
 id: 468
 title: "Bug: form reset leaves a controlled text input showing empty while Rust keeps the old value"
-status: "APPROVED 2026-10-26 by the owner (\"Ok for the rest\", backlog thread); a batch 30 lane. BACKLOG.…"
+status: "APPROVED 2026-10-26 by the owner (\"Ok for the rest\", backlog thread); for the next session (owner…"
 size: "S"
 area: inputs
 updated: 2026-10-26
@@ -23,7 +23,7 @@ Related to [row 434](./434-javascript-in-typescript-modules-not-rust-strings.md)
 
 ## Status / trigger
 
-APPROVED 2026-10-26 by the owner ("Ok for the rest", backlog thread); a batch 30 lane.
+APPROVED 2026-10-26 by the owner ("Ok for the rest", backlog thread); for the next session (owner 2026-10-26: "We will do it all in a fresh session").
 
 BACKLOG. Found by board round 5; reproduce first. Independent of plan approval.
 

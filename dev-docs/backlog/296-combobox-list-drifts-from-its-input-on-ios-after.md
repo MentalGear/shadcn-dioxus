@@ -15,7 +15,7 @@ On iOS, after a lot of scrolling and the keyboard showing and hiding, the open c
 
 ## Status / trigger
 
-OWNER RE-TEST 2026-10-26 (iPhone): still drifts; the list can also cover its input. Owner's reading: the keyboard limits the space and the list neither shrinks to the height left once the keyboard has fully slid in nor becomes scrollable. Menubar, Navigation Menu and Popover do not drift, so the direction is to place Combobox the way they do. A batch 30 debug lane compares the two paths.
+OWNER RE-TEST 2026-10-26 (iPhone): still drifts; the list can also cover its input. Owner's reading: the keyboard limits the space and the list neither shrinks to the height left once the keyboard has fully slid in nor becomes scrollable. Menubar, Navigation Menu and Popover do not drift, so the direction is to place Combobox the way they do. The next session compares the two paths (owner 2026-10-26: fresh session).
 
 **WAITING ON OWNER: reproduce on an iPhone (owner report 2026-10-19); no fix has landed and the cause is inferred, not reproduced.** Direction in the Detail: skip the native-conformance shortcut in `use_anchor_position_fallback` on WebKit or touch-primary devices, re-place on `visualViewport` scroll, add a `scrollend`/`touchend` re-place; close it together with row 28. Related: rows 28, 10, done/210.
 

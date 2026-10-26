@@ -1,7 +1,7 @@
 ---
 id: 473
 title: "Bug: date picker segments let the browser edit the text node the vdom also writes"
-status: "APPROVED 2026-10-26 by the owner (\"Ok for the rest\", backlog thread); a batch 30 lane. BACKLOG.…"
+status: "APPROVED 2026-10-26 by the owner (\"Ok for the rest\", backlog thread); for the next session (owner…"
 size: "M"
 area: components
 updated: 2026-10-26
@@ -23,7 +23,7 @@ Related to [row 434](./434-javascript-in-typescript-modules-not-rust-strings.md)
 
 ## Status / trigger
 
-APPROVED 2026-10-26 by the owner ("Ok for the rest", backlog thread); a batch 30 lane.
+APPROVED 2026-10-26 by the owner ("Ok for the rest", backlog thread); for the next session (owner 2026-10-26: "We will do it all in a fresh session").
 
 BACKLOG. Found by board round 6; reproduce first. Independent of plan approval.
 

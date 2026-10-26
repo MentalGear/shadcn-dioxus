@@ -1,7 +1,7 @@
 ---
 id: 476
 title: "iOS: checkbox and radio taps lag about a second on the home page (Filter results demo, Radio Group card)"
-status: "BACKLOG. Owner report 2026-10-26 (iPhone); a batch 30 debug lane reproduces with touch emulation…"
+status: "BACKLOG. Owner report 2026-10-26 (iPhone); the next session reproduces with touch emulation and CPU…"
 size: "M"
 area: components
 updated: 2026-10-26
@@ -20,7 +20,7 @@ So the same control kind is fast in one place and slow in another, which points 
 
 ## Status / trigger
 
-BACKLOG. Owner report 2026-10-26 (iPhone); a batch 30 debug lane reproduces with touch emulation and CPU throttling first.
+BACKLOG. Owner report 2026-10-26 (iPhone); the next session reproduces with touch emulation and CPU throttling first.
 
 ## Size
 

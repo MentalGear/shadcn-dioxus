@@ -1,7 +1,7 @@
 ---
 id: 475
 title: "Bug: Resizable and Slider on desktop: a previous drag's queued per-move frames can land in the next drag"
-status: "APPROVED 2026-10-26 by the owner (\"Ok for the rest\", backlog thread); a batch 30 lane. BACKLOG.…"
+status: "APPROVED 2026-10-26 by the owner (\"Ok for the rest\", backlog thread); for the next session (owner…"
 size: "S"
 area: components
 updated: 2026-10-26
@@ -19,7 +19,7 @@ Related to [row 434](./434-javascript-in-typescript-modules-not-rust-strings.md)
 
 ## Status / trigger
 
-APPROVED 2026-10-26 by the owner ("Ok for the rest", backlog thread); a batch 30 lane.
+APPROVED 2026-10-26 by the owner ("Ok for the rest", backlog thread); for the next session (owner 2026-10-26: "We will do it all in a fresh session").
 
 BACKLOG. Found by board round 7; reproduce first. Independent of plan approval.
 
