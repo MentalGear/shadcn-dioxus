@@ -14,17 +14,11 @@ preview/src/components/code_block/variants/line_numbers/mod.rs	0	4	0	0	0	0
 preview/src/components/code_block/variants/main/mod.rs	0	9	0	0	0	0
 preview/src/components/form/component.rs	3	129	0	1	0	0
 preview/src/components/markdown/component.rs	6	0	0	0	0	0
-preview/src/components/markdown/variants/streaming/mod.rs	1	1	0	0	0	0
 preview/src/components/markdown/variants/xss/mod.rs	1	5	0	0	0	0
 preview/src/components/message/variants/code_block_chat/mod.rs	0	9	0	0	0	0
-preview/src/components/message/variants/message_pattern/mod.rs	1	1	0	0	0	0
-preview/src/components/message_scroller/variants/agent_chat/mod.rs	1	7	0	0	0	0
-preview/src/components/message_scroller/variants/full_chat/mod.rs	1	1	0	0	0	0
-preview/src/components/message_scroller/variants/main/mod.rs	1	1	0	0	0	0
-preview/src/components/message_scroller/variants/previous_context/mod.rs	1	1	0	0	0	0
+preview/src/components/message_scroller/variants/agent_chat/mod.rs	0	6	0	0	0	0
 preview/src/components/questionnaire/component.rs	0	34	0	1	0	0
 preview/src/components/sidebar/component.rs	0	11	0	2	0	0
-preview/src/components/toast/variants/promise/mod.rs	1	1	0	0	0	0
 preview/src/components/top_layer/component.rs	1	1	0	0	0	0
 preview/src/components/virtual_grid/variants/photo_wall/mod.rs	2	111	0	1	0	0
 preview/src/components/virtual_list/variants/content_visibility/mod.rs	1	19	0	0	0	0
@@ -84,13 +78,13 @@ primitives/src/pointer.rs	0	5	0	1	0	0
 primitives/src/popover.rs	1	10	0	0	0	0
 primitives/src/questionnaire.rs	2	12	0	0	0	0
 primitives/src/scroll_area.rs	0	29	0	1	0	0
-primitives/src/scroll_lock.rs	4	90	0	1	0	0
+primitives/src/scroll_lock.rs	2	82	0	1	0	0
 primitives/src/select/components/list.rs	0	75	0	1	0	0
-primitives/src/toast.rs	2	220	0	4	0	0
+primitives/src/toast.rs	1	166	0	3	0	0
 primitives/src/top_layer/anchor_fallback.rs	0	475	0	1	0	0
 primitives/src/top_layer/popover_sync.rs	2	21	0	2	0	0
 primitives/src/top_layer/scroll_clamp.rs	1	168	0	1	0	0
-primitives/src/top_layer/styles.rs	2	194	0	0	0	0
+primitives/src/top_layer/styles.rs	2	12	0	0	0	0
 primitives/src/ts/behaviours/behaviours.gen.ts	0	0	16	0	0	0	# raised: row 434 lane 3.0: the generic bridge (js_file 0->16)
 primitives/src/ts/behaviours/fixture.ts	0	0	13	0	0	0	# raised: row 434 lane 3.0: the generic bridge (js_file 0->13)
 primitives/src/ts/bridge.ts	0	0	859	0	0	0	# raised: row 434 lane 3.0: the generic bridge (js_file 868->874)

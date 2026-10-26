@@ -1,0 +1,34 @@
+/* The theme's popup-root rule (dx-components-theme.css, "Popup root") gives a dx- popup the
+   ROOT ink instead of its host's; this later, equally weak rule would out-rank it with
+   inherit, so it reads the same token and only an app without the theme inherits. */
+:where([popover]),
+:where(dialog) {
+  color: var(--dx-foreground, inherit);
+}
+
+/* The same rule, one level deeper. Neutralising the wrapper's own
+   UA color is not enough for a form control INSIDE it: button, input,
+   select and textarea each carry their own UA rule setting color directly
+   on the element (buttontext / fieldtext), and a directly-cascaded value
+   beats an inherited one just as it does for [popover]/dialog -- so an
+   ancestor's color: inherit can never reach them. Example: DatePicker's
+   calendar day-grid cells (.dx-calendar-grid-cell, real buttons) stay black
+   with only the wrapper rule above -- Calendar's own stylesheet is not
+   guaranteed to be loaded on the DatePicker route (an unrelated
+   composition concern), so those buttons can have no author color of any
+   kind to fall back to, only their own UA default. This rule gives every
+   top-layer-descendant form control the same DOM-tree-inherited inbox this
+   file's whole construction is about, independent of whether that
+   control's own stylesheet happens to be wired up. (Select/Combobox's
+   listboxes are plain div options, not form controls -- unaffected by this
+   rule either way; both carry their own explicit, intentionally different
+   color: var(--dx-popover-foreground) declared directly on the list, which
+   wins outright regardless of this rule.) Scoped to top-layer descendants
+   rather than applied app-wide: this closes the class where it actually
+   bites without silently restyling every ordinary button on the page.
+   Still :where(), so any component that sets its own color continues to
+   win outright. */
+:where([popover]) :where(button, input, select, textarea),
+:where(dialog) :where(button, input, select, textarea) {
+  color: inherit;
+}

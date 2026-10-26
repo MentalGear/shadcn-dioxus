@@ -1023,6 +1023,19 @@ html[data-theme="light"] [class~="dxc-system"] {
   animation: dx-fade-in var(--dx-overlay-duration) var(--dx-overlay-ease) forwards;
 }
 
+/* Reduced motion (backlog row 441): the wrapper scrim appears and leaves without its fade. The rule
+ * is ONE zero-specificity `:where()` placed after the two state rules above, so it wins by source
+ * order, where a per-sheet media rule lost on specificity to `[data-state]`.
+ * It shortens the duration to `--dx-motion-duration-reduced` and keeps the animation: `animation:
+ * none` would leave the rest state `opacity: 0` in place and the open scrim would never show.
+ * The `::backdrop` of a native `<dialog>` is not here: its `transition-duration` is already
+ * reduced by the media block in the modal-scrim section above. */
+@media (prefers-reduced-motion: reduce) {
+  :where([data-dx-scrim][data-state]) {
+    animation-duration: var(--dx-motion-duration-reduced);
+  }
+}
+
 /* ============================================================================
  * Visually hidden, once: `data-dx-visually-hidden`.
  *

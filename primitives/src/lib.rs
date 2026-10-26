@@ -83,7 +83,7 @@ pub mod select;
 mod selectable;
 mod selection;
 pub mod separator;
-mod sleep;
+pub mod sleep;
 pub mod slider;
 pub mod switch;
 pub mod table_rows;
@@ -462,10 +462,10 @@ impl RefocusTrigger for Signal<String> {
 /// A menu's trigger element, by handle: where focus goes back to on close, and the last press the
 /// menu saw.
 ///
-/// The trigger stores its `MountedData` with [`Self::onmounted`]; the menu's root element feeds
-/// [`Self::pointer_down`] and [`Self::key_down`] (both events bubble from the trigger and from the
-/// panel's items, which are DOM descendants of the root), so [`Self::refocus`] can apply the same
-/// rule the script applied to `<html data-dx-modality>`: no hand-back after a touch or pen. What
+/// The trigger stores its `MountedData` with [`Self::onmounted`]; the menu's root element feeds its
+/// `onpointerdown`/`onkeydown` to the press recorder from [`Self::press`] (both events bubble from
+/// the trigger and from the panel's items, which are DOM descendants of the root), so `refocus` can
+/// apply the same rule the script applied to `<html data-dx-modality>`: no hand-back after a touch or pen. What
 /// the handle cannot see is a modality set by something outside the menu before it opened (a
 /// controlled `open` flipped by a tap elsewhere): the press starts as "not touch".
 #[derive(Clone, Copy, PartialEq)]

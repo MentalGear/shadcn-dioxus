@@ -192,8 +192,8 @@ gates=(
   # `cargo test -p preview --features server`: the arm `dx build --ssg` ships, where `ssr_parity` and the web-only effects differ from the plain arm.
   "test-server|cargo test -p preview --features server"
   "check-rustdoc|scripts/check-rustdoc.sh"
-  # Stylelint over every stylesheet under `preview/src` and `preview/assets` (run with `pnpm exec`, which never downloads: a worktree without `node_modules` fails loudly).
-  "stylelint|cd preview && pnpm exec stylelint \"src/**/*.css\" \"assets/**/*.css\""
+  # Stylelint over every stylesheet under `preview/src`, `preview/assets` and `primitives/src` (the engine sheets the primitives insert: `top_layer/*.css`, `toast_base.css`, `scrollbar_gutter.css`, row 434; run with `pnpm exec`, which never downloads: a worktree without `node_modules` fails loudly). The primitives sheets use preview's config explicitly, since stylelint finds a config from the file's own directory.
+  "stylelint|cd preview && pnpm exec stylelint --config .stylelintrc.json \"src/**/*.css\" \"assets/**/*.css\" \"../primitives/src/**/*.css\""
 )
 
 if [ "$list" = 1 ]; then
