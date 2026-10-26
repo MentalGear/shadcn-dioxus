@@ -60,41 +60,27 @@
 //! });
 //! ```
 
-use dioxus::document::{self, Eval, EvalError};
+use dioxus::document::{Eval, EvalError};
 use dioxus::prelude::*;
 use serde::{de::DeserializeOwned, Serialize};
 
-/// The message that ends a script. Sent by [`JsListeners`]'s `Drop`; a stray `.arg(..)` the body
-/// never read cannot be mistaken for it.
-const TEARDOWN: &str = "__dx_listeners_off__";
+use crate::bridge::transport;
 
-/// Defines `listen` and `cleanup` and the bookkeeping behind them. `window.__dxJsListeners.live`
-/// maps a registration id to its event type for as long as the registration is live, so a leak
-/// can be named from the browser console.
+/// The message that ends a script. Sent by [`JsListeners`]'s `Drop` on the channel the script already
+/// has; a stray `.arg(..)` the body never read cannot be mistaken for it. The bridge's session loop
+/// ends on the same text.
+pub(crate) const TEARDOWN: &str = "__dx_listeners_off__";
+
+/// Opens the script's scope. `listen` and `cleanup` are the bridge's `scope.on` and `scope.cleanup`:
+/// the one listener registry (`window.__dxJsListeners.live` maps a registration id to its event type
+/// for as long as the registration is live, so a leak can be named from the browser console), the
+/// passive default of the scroll-blocking events, `{ once: true }` forgetting itself and the removal
+/// derived from the scope all live in `primitives/src/ts/bridge.ts`. `dioxus` here is already the
+/// bridge's channel (`transport::open`), so the slow-channel test mode covers this script's messages.
 const PRELUDE: &str = r#"
-const __dxOff = [];
-let __dxDone = false;
-const __dxBlocking = { wheel: 1, mousewheel: 1, touchstart: 1, touchmove: 1, DOMMouseScroll: 1 };
-const __dxReg = (window.__dxJsListeners = window.__dxJsListeners || { n: 0, live: new Map() });
-const cleanup = (fn) => { if (__dxDone) fn(); else __dxOff.push(fn); };
-const listen = (target, type, handler, options) => {
-    if (!target || __dxDone) return () => {};
-    const o = typeof options === 'boolean' ? { capture: options } : Object.assign({}, options);
-    if (o.passive === undefined && __dxBlocking[type]) o.passive = true;
-    const id = ++__dxReg.n;
-    let live = true;
-    const off = () => {
-        if (!live) return;
-        live = false;
-        target.removeEventListener(type, h, o);
-        __dxReg.live.delete(id);
-    };
-    const h = o.once ? (e) => { off(); return handler(e); } : handler;
-    target.addEventListener(type, h, o);
-    __dxReg.live.set(id, type);
-    __dxOff.push(off);
-    return off;
-};
+const __dxS = __dxB.scope(dioxus);
+const listen = __dxS.on;
+const cleanup = __dxS.cleanup;
 "#;
 
 /// A script whose event listeners live exactly as long as this value does.
@@ -126,18 +112,15 @@ impl JsListeners {
         script.push_str(body);
         script.push_str("\n })();\n for (;;) { if ((await dioxus.recv()) === '");
         script.push_str(TEARDOWN);
-        script.push_str("') break; }\n} finally {\n __dxDone = true;\n");
-        script.push_str(
-            " for (let i = __dxOff.length - 1; i >= 0; i--) { try { __dxOff[i](); } catch (_) {} }\n}",
-        );
+        script.push_str("') break; }\n} finally {\n __dxS.dispose();\n}");
         Self {
-            eval: document::eval(&script),
+            eval: transport::open(&script),
         }
     }
 
     /// Sends the next parameter the script reads with `await dioxus.recv()`.
     pub fn arg(self, value: impl Serialize) -> Self {
-        let _ = self.eval.send(value);
+        transport::send(&self.eval, value);
         self
     }
 
@@ -158,12 +141,15 @@ impl JsListeners {
 /// Hands every message `eval` receives to `handler` until the script ends. A message that does
 /// not deserialize as `T` is skipped, not taken as the end: one malformed message must not
 /// silence every later one.
-async fn receive<T: DeserializeOwned>(eval: &mut Eval, mut handler: impl FnMut(T)) {
+pub(crate) async fn receive<T: DeserializeOwned>(eval: &mut Eval, mut handler: impl FnMut(T)) {
     loop {
         match eval.recv::<T>().await {
             Ok(message) => handler(message),
             Err(EvalError::Serialization(_)) => {}
-            Err(_) => break,
+            Err(error) => {
+                transport::note_error(&error);
+                break;
+            }
         }
     }
 }
@@ -197,7 +183,7 @@ impl JsListeners {
 
 impl Drop for JsListeners {
     fn drop(&mut self) {
-        let _ = self.eval.send(TEARDOWN);
+        transport::send(&self.eval, TEARDOWN);
     }
 }
 
@@ -227,20 +213,23 @@ mod tests {
             .all(|c| c.is_ascii_alphanumeric() || c == '_'));
     }
 
-    /// `listen` hands back an `off` for an early removal, and `{ once: true }` registrations
-    /// unregister themselves when they fire (row 167: per-drag and per-request listeners inside
-    /// a longer-lived script).
+    /// `listen` and `cleanup` are the bridge scope's `on` and `cleanup`: the registry, the passive
+    /// default, `{ once: true }` forgetting itself and the derived removal are the bridge's
+    /// (`primitives/ts-test/bridge.test.ts` proves them against the shipped bundle).
     #[test]
-    fn listen_returns_an_early_off_and_forgets_fired_once_listeners() {
-        assert!(PRELUDE.contains("return off;"));
-        assert!(PRELUDE.contains("if (!target || __dxDone) return () => {};"));
-        assert!(PRELUDE.contains("o.once ? (e) => { off(); return handler(e); } : handler"));
+    fn listen_and_cleanup_are_the_bridge_scope() {
+        assert!(PRELUDE.contains("__dxB.scope(dioxus)"));
+        assert!(PRELUDE.contains("const listen = __dxS.on;"));
+        assert!(PRELUDE.contains("const cleanup = __dxS.cleanup;"));
+        let bridge = crate::bridge::BRIDGE_JS;
+        assert!(bridge.contains("__dxJsListeners"));
+        assert!(bridge.contains("o.once"));
     }
 
     /// The scroll-blocking events default to passive in `listen`; the set must cover exactly the
     /// ones `scripts/check-blocking-scroll-listeners.sh` knows about.
     #[test]
-    fn the_prelude_defaults_the_scroll_blocking_events_to_passive() {
+    fn the_bridge_defaults_the_scroll_blocking_events_to_passive() {
         for event in [
             "wheel",
             "mousewheel",
@@ -248,7 +237,7 @@ mod tests {
             "touchmove",
             "DOMMouseScroll",
         ] {
-            assert!(PRELUDE.contains(&format!("{event}: 1")), "{event}");
+            assert!(crate::bridge::BRIDGE_JS.contains(&format!("{event}:1")), "{event}");
         }
     }
 }

@@ -46,11 +46,17 @@ done < <(grep -E '^(ts|js) ' "$manifest")
 
 shopt -s nullglob
 declare -A seen_ts seen_js
-for f in "$ts_dir"/*.ts; do
-  n="$(basename "$f")"; seen_ts["$n"]=1
+entries=()
+# Every .ts below ts/ is hashed (an edit of a bundled module `ts/rules/index.ts` is as stale as one of the entry);
+# an ENTRY is a top-level non-`.d.ts` file and is the one that has a committed .js.
+mapfile -t all_ts < <(cd "$ts_dir" && find . -name '*.ts' | sed 's|^\./||' | LC_ALL=C sort)
+for n in "${all_ts[@]}"; do
+  f="$ts_dir/$n"; seen_ts["$n"]=1
   [ -n "${want_ts[$n]:-}" ] || { err "$f is not in $manifest; run scripts/build-js-bundle.sh"; continue; }
   [ "$(sha256sum "$f" | cut -d' ' -f1)" = "${want_ts[$n]}" ] \
     || err "$f changed since $manifest was written: run scripts/build-js-bundle.sh and commit the .js and the manifest"
+  case "$n" in */*|*.d.ts) continue ;; esac
+  entries+=("$n")
   j="$js_dir/$(basename "$n" .ts).js"
   [ -f "$j" ] || err "$j (built from $f) is missing; run scripts/build-js-bundle.sh"
 done
@@ -72,8 +78,8 @@ if command -v bun >/dev/null; then
   else
     tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
     rebuild="ok"
-    for f in "$ts_dir"/*.ts; do
-      n="$(basename "$f" .ts)"
+    for e in "${entries[@]}"; do
+      f="$ts_dir/$e"; n="$(basename "$e" .ts)"
       if bun build "$f" --outfile "$tmp/$n.js" --minify-whitespace --minify-syntax >/dev/null 2>&1; then
         cmp -s "$tmp/$n.js" "$js_dir/$n.js" \
           || { err "bun $have_bun rebuilds $f into different bytes than the committed $js_dir/$n.js; run scripts/build-js-bundle.sh"; rebuild="FAILED"; }
@@ -85,4 +91,4 @@ if command -v bun >/dev/null; then
 fi
 
 [ "$fail" -ne 0 ] && exit 1
-echo "check-js-bundle: OK -- ${#want_ts[@]} .ts source(s) match their committed .js and $manifest (deterministic rebuild: $rebuild)."
+echo "check-js-bundle: OK -- ${#want_ts[@]} .ts source(s) (${#entries[@]} entries) match their committed .js and $manifest (deterministic rebuild: $rebuild)."
