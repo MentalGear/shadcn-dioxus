@@ -1,7 +1,7 @@
 ---
 id: 449
 title: "Phase 0.4: proof port B (the reconciled-kinds executor, the popover hooks that return the attribute to spread, the owners' onbeforetoggle handlers)"
-status: "BACKLOG. Awaiting the owner's approval of the row 434 step 3 plan."
+status: "APPROVED 2026-10-26 (owner: \"okay for the plan\"; scope 2, the recommended default, since no scope…"
 size: "L"
 area: overlays
 js-grant: js_file=250 (inferred ceiling: executor.ts about 250, an internal and not a registry entry; the main loop's grant row at the merge base is the number the gate reads)
@@ -19,7 +19,7 @@ Part of the [row 434](./434-javascript-in-typescript-modules-not-rust-strings.md
 
 ## Status / trigger
 
-BACKLOG. Awaiting the owner's approval of the row 434 step 3 plan.
+APPROVED 2026-10-26 (owner: "okay for the plan"; scope 2, the recommended default, since no scope was named). Phase 0 of the row 434 step 3 plan; the next session starts it after the approved bug rows.
 
 ## Size
 

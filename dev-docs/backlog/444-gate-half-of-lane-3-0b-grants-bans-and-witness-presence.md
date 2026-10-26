@@ -1,7 +1,7 @@
 ---
 id: 444
 title: "Phase 0.1: the gate half of lane 3.0 (grant rows, sink and setter bans, FORBIDDEN_VERBS, gates over existing artefacts only)"
-status: "BACKLOG. Awaiting the owner's approval of the row 434 step 3 plan."
+status: "APPROVED 2026-10-26 (owner: \"okay for the plan\"; scope 2, the recommended default, since no scope…"
 size: "L"
 area: tooling
 js-grant: none
@@ -19,7 +19,7 @@ Part of the [row 434](./434-javascript-in-typescript-modules-not-rust-strings.md
 
 ## Status / trigger
 
-BACKLOG. Awaiting the owner's approval of the row 434 step 3 plan.
+APPROVED 2026-10-26 (owner: "okay for the plan"; scope 2, the recommended default, since no scope was named). Phase 0 of the row 434 step 3 plan; the next session starts it after the approved bug rows.
 
 ## Size
 

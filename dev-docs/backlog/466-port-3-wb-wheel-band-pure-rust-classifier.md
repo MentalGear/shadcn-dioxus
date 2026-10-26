@@ -1,7 +1,7 @@
 ---
 id: 466
 title: "Measured port 3: 3.WB wheel band (C5 to a pure Rust classifier)"
-status: "BACKLOG. Awaiting the owner's approval of the row 434 step 3 plan."
+status: "APPROVED 2026-10-26 (scope 2): after phase 0, taken as an ordinary row in order of JavaScript…"
 size: "M"
 area: components
 js-grant: none (a `wheelBand` entry would need the owner's lag or order verdict and its own row)
@@ -19,7 +19,7 @@ Part of the [row 434](./434-javascript-in-typescript-modules-not-rust-strings.md
 
 ## Status / trigger
 
-BACKLOG. Awaiting the owner's approval of the row 434 step 3 plan.
+APPROVED 2026-10-26 (scope 2): after phase 0, taken as an ordinary row in order of JavaScript removed per hour.
 
 ## Size
 

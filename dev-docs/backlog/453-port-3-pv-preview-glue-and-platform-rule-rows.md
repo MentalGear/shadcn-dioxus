@@ -1,7 +1,7 @@
 ---
 id: 453
 title: "Port 3.PV: preview glue (V3-V23) with the V14 allowlist row and the Ctrl/Cmd+B platform rule row"
-status: "BACKLOG. Awaiting the owner's approval of the row 434 step 3 plan."
+status: "APPROVED 2026-10-26 (scope 2): after phase 0, taken as an ordinary row in order of JavaScript…"
 size: "M"
 area: preview
 js-grant: none
@@ -19,7 +19,7 @@ Part of the [row 434](./434-javascript-in-typescript-modules-not-rust-strings.md
 
 ## Status / trigger
 
-BACKLOG. Awaiting the owner's approval of the row 434 step 3 plan.
+APPROVED 2026-10-26 (scope 2): after phase 0, taken as an ordinary row in order of JavaScript removed per hour.
 
 ## Size
 

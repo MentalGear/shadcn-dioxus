@@ -1,7 +1,7 @@
 ---
 id: 458
 title: "Port 3.FC: form and input primitives, label click, and the native slot owners"
-status: "BACKLOG. Awaiting the owner's approval of the row 434 step 3 plan."
+status: "APPROVED 2026-10-26 (scope 2): after phase 0, taken as an ordinary row in order of JavaScript…"
 size: "L"
 area: inputs
 js-grant: js_file=46 (relocated lines, root doc section 5.4; the main loop's grant row at the merge base is the number the gate reads)
@@ -19,7 +19,7 @@ Part of the [row 434](./434-javascript-in-typescript-modules-not-rust-strings.md
 
 ## Status / trigger
 
-BACKLOG. Awaiting the owner's approval of the row 434 step 3 plan.
+APPROVED 2026-10-26 (scope 2): after phase 0, taken as an ordinary row in order of JavaScript removed per hour.
 
 ## Size
 

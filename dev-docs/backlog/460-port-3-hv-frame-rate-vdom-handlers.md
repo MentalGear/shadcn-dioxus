@@ -1,7 +1,7 @@
 ---
 id: 460
 title: "Port 3.HV: frame-rate vdom handlers (the check-hot-events baseline)"
-status: "BACKLOG. Deferred and conditional (round 7): awaiting the owner's approval of the row 434 step 3…"
+status: "BACKLOG. Deferred and conditional (round 7): the row 434 step 3 plan is approved (2026-10-26, scope…"
 size: "M"
 area: primitives
 js-grant: none
@@ -19,7 +19,7 @@ Part of the [row 434](./434-javascript-in-typescript-modules-not-rust-strings.md
 
 ## Status / trigger
 
-BACKLOG. Deferred and conditional (round 7): awaiting the owner's approval of the row 434 step 3 plan, and built only if the owner wants it.
+BACKLOG. Deferred and conditional (round 7): the row 434 step 3 plan is approved (2026-10-26, scope 2), and built only if the owner wants it.
 
 ## Size
 

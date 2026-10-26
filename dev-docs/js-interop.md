@@ -4,8 +4,8 @@
 ([`research/sync-js-root-2026-10-26.md`](./research/sync-js-root-2026-10-26.md), amended by seven adversarial boards, the
 last being [round 7](./research/board-2026-10-26-r7/SYNTHESIS.md): converged in substance, not at zero; **the paper review
 is closed** and the next evidence is built code); this page is its agent-facing form. The plan is backlogged as rows 434
-(umbrella) and 444-467, with the live defects the boards found filed as bug rows 468-471 and 473-475, **awaiting the owner's
-approval and scope**. **Much of what it
+(umbrella) and 444-467, with the live defects the boards found filed as bug rows 468-471 and 473-475, **approved by the owner
+on 2026-10-26, scope 2**. **Much of what it
 describes is not built.** The next table says what is; the "today" column of the "I want to ..." table says what to do
 when the rule you need depends on something that is not.
 
@@ -24,7 +24,7 @@ when the rule you need depends on something that is not.
 | the pre-wasm class | `PREPAINT_JS` and the modality writer, copies kept identical by `check-theme-mode-writer` and `check-open-focus`; their baseline rows carry no reason and `PREPAINT_JS` has inline `listener-ok` markers | the same | one `.ts` generates the copies and the writer becomes a bridge-load internal (lane 3.PW); reasoned allowlist rows, no inline marker |
 | hooks that call scripts | `use_popover_sync`, `use_popover_shown_while_mounted`, `use_dialog_open_driver`, `use_global_escape_listener`, `use_global_keydown_listener`, `use_outside_dismiss`, `use_anchor_position_fallback`, `use_scroll_lock`, `use_move_interaction`, `use_js_listeners` | the same | each is ported by its lane; calling one adds nothing to the baseline |
 
-**Scope is the owner's decision** (root doc section 5.0, pending; scope 2 is the default): the construct (the sink, the
+**Scope 2, approved by the owner 2026-10-26** (root doc section 5.0): the construct (the sink, the
 ratchet, the deadline rule, admission, a legacy freeze, two proof ports: `otpFilter` and the executor) comes first; every other port is then a backlog
 row opened by yield. Nothing here asks you to port a block you are not editing. **The neighbour you copy is a legacy
 script. Call its hook; do not copy its string.**

@@ -1,7 +1,7 @@
 ---
 id: 459
 title: "Port 3.SL: scroll lock (L10, L11, L13)"
-status: "BACKLOG. Awaiting the owner's approval of the row 434 step 3 plan."
+status: "APPROVED 2026-10-26 (scope 2): after phase 0, taken as an ordinary row in order of JavaScript…"
 size: "M"
 area: overlays
 js-grant: js_file=94 (relocated lines, root doc section 5.4; the main loop's grant row at the merge base is the number the gate reads)
@@ -19,7 +19,7 @@ Part of the [row 434](./434-javascript-in-typescript-modules-not-rust-strings.md
 
 ## Status / trigger
 
-BACKLOG. Awaiting the owner's approval of the row 434 step 3 plan.
+APPROVED 2026-10-26 (scope 2): after phase 0, taken as an ordinary row in order of JavaScript removed per hour.
 
 ## Size
 

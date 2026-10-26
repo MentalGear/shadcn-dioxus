@@ -1,7 +1,7 @@
 ---
 id: 462
 title: "Port: roving focus (about 28 real DOM focus writes in 18 files through the focus owner), conditional on the focus-write witness"
-status: "BACKLOG. Conditional (round 7): exists only if the phase-0 focus-write witness is red; awaiting the…"
+status: "BACKLOG. Conditional (round 7): exists only if the phase-0 focus-write witness is red; the row 434…"
 size: "L"
 area: primitives
 js-grant: js_file=40 (inferred ceiling, only if built: the `roving` behaviour about 40 lines; the main loop's grant row at the merge base is the number the gate reads)
@@ -19,7 +19,7 @@ Part of the [row 434](./434-javascript-in-typescript-modules-not-rust-strings.md
 
 ## Status / trigger
 
-BACKLOG. Conditional (round 7): exists only if the phase-0 focus-write witness is red; awaiting the owner's approval of the row 434 step 3 plan.
+BACKLOG. Conditional (round 7): exists only if the phase-0 focus-write witness is red; the row 434 step 3 plan is approved (2026-10-26, scope 2).
 
 ## Size
 

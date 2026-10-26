@@ -22,6 +22,10 @@ the line here is the pointer, so when a row's text and this line disagree, the r
   its near-white light tint (a docs-page detail). 2026-10-20, 2026-10-21, 2026-10-22 (rows [351](./backlog/done/351-rtl-demos-always-come-last.md), [354](./backlog/done/354-remove-the-docs-header-language-switcher.md), [285](./backlog/done/285-docs-preview-card-light-mode-tint.md)).
 - No upstream engagement: local fixes and workarounds stay, nothing is filed with Dioxus or the forks. 2026-10-22 (rows [6](./backlog/done/006-upstream-engagement-where-fixes-land-open.md), [14](./backlog/done/014-nudge-dioxus-framework-issues-2962-onclose-4319.md)).
 
+- JavaScript: the row 434 step 3 plan is approved with scope 2: the construct and two proof ports first (phase 0, rows
+  444-450), then every other port as an ordinary row in order of JavaScript removed per hour; the uncertain ports go last,
+  one at a time, with the old version switchable so the owner measures each. 2026-10-26 (row [434](./backlog/434-javascript-in-typescript-modules-not-rust-strings.md), [`js-interop.md`](./js-interop.md)).
+
 ## Dependencies and supply chain
 
 - Markdown parsing is an optional `markdown` component with `pulldown-cmark` pinned `=x.y.z`, default features off, only

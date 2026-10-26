@@ -1,7 +1,7 @@
 ---
 id: 464
 title: "Measured port 1: 3.CA carousel (C1-C4, C6, L20) as Rust arms next to the frozen legacy arm"
-status: "BACKLOG. Awaiting the owner's approval of the row 434 step 3 plan."
+status: "APPROVED 2026-10-26 (scope 2): after phase 0, taken as an ordinary row in order of JavaScript…"
 size: "L"
 area: components
 js-grant: js_file=60 (inferred ceiling: the snap kind of scrollOwner; the main loop's grant row at the merge base is the number the gate reads)
@@ -19,7 +19,7 @@ Part of the [row 434](./434-javascript-in-typescript-modules-not-rust-strings.md
 
 ## Status / trigger
 
-BACKLOG. Awaiting the owner's approval of the row 434 step 3 plan.
+APPROVED 2026-10-26 (scope 2): after phase 0, taken as an ordinary row in order of JavaScript removed per hour.
 
 ## Size
 
