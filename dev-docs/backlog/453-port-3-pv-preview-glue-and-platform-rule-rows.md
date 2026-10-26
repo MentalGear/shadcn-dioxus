@@ -4,6 +4,8 @@ title: "Port 3.PV: preview glue (V3-V23) with the V14 allowlist row and the Ctrl
 status: "BACKLOG. Awaiting the owner's approval of the row 434 step 3 plan."
 size: "M"
 area: preview
+js-grant: none
+adds: []
 updated: 2026-10-26
 ---
 
@@ -11,7 +13,7 @@ updated: 2026-10-26
 
 ## Item
 
-Port the preview-only blocks: V3, V4 (class (c), stays), V6 (ported last, after `scrollOwner` exists), V7, V10, V12, V13, V14, V18, V19 (G, a bridge `observe` and a data attribute), V20, V21, V22 (a `hotkey` consumer), V23; V5, V8 and V9 take reasoned allowlist rows (item 0.1). V14 is a reasoned preview-only allowlist row, not a platform rule row: the `code_block` component takes a callback and carries no sink, and the preview's own clipboard writer is the allowlisted one (the library's `copyText` effect is category (b), activation-gated by class); V22's `prevent` for Ctrl/Cmd+B is a platform rule row on a registry `site!` (category (a), a UA-reserved shortcut: Firefox opens the Bookmarks sidebar).
+Port the preview-only blocks: V3, V4 (class (c), stays), V6 (ported last, after `scrollOwner` exists), V7, V10, V12, V13, V14, V18, V19 (G, a bridge `observe` and a data attribute), V20, V21, V22 (a `hotkey` consumer), V23; V5, V8 and V9 take reasoned allowlist rows (item 0.1). V14 is a reasoned preview-only allowlist row, not a platform rule row: the `code_block` component takes a callback and carries no sink, and the preview's own clipboard writer is the allowlisted one (a library `copyText` effect would be category (b), which is on the plan's exits list while no library code uses the clipboard); V22's `prevent` for Ctrl/Cmd+B is a platform rule row on a registry `site!` (category (a), a UA-reserved shortcut: Firefox opens the Bookmarks sidebar).
 
 Part of the [row 434](./434-javascript-in-typescript-modules-not-rust-strings.md) step 3 plan; source: [`sync-js-root-2026-10-26.md`](../research/sync-js-root-2026-10-26.md) section 5.4 (candidate rows) and the ledger of section 3.3.
 

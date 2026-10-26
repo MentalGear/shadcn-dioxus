@@ -1,5 +1,7 @@
 # Adversarial board round 6: synthesis (2026-10-26)
 
+*Superseded in part by later rounds; the current plan is the root doc, [`../sync-js-root-2026-10-26.md`](../sync-js-root-2026-10-26.md) (round 7 is [`../board-2026-10-26-r7/SYNTHESIS.md`](../board-2026-10-26-r7/SYNTHESIS.md)).*
+
 The owner extended the cap to seven rounds after round 5. Three fresh members attacked the plan as folded after round 5 (`lane/js-plan-docs-r5`, 45c7e0a2). Reports in this folder: `admission.md`, `order-slots.md`, `whole-core.md`.
 
 ## Trajectory

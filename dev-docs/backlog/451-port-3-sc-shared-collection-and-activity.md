@@ -4,6 +4,8 @@ title: "Port 3.SC: shared collection and activity scripts (S7, S15)"
 status: "BACKLOG. Awaiting the owner's approval of the row 434 step 3 plan."
 size: "S"
 area: primitives
+js-grant: none
+adds: []
 updated: 2026-10-26
 ---
 
@@ -25,7 +27,7 @@ S
 
 ## Detail
 
-- **Files owned:** `collection.rs`, `activity.rs`. Must not touch the rest.
+- **Files owned:** `collection.rs`, `activity.rs`. Must not touch the rest. `collection.rs:520` is the roving hub that the conditional roving-focus row ([row 462](./462-port-roving-focus-78-set-focus-sites.md)) would route through the focus owner, so that row waits for this one.
 - **Depends on:** [row 444](./444-gate-half-of-lane-3-0b-grants-bans-and-witness-presence.md) (grant rule) and [row 445](./445-phase-0-2-the-legacy-freeze.md) (legacy freeze); a candidate row also needs its own grant row, and an `adds:` row where it adds a behaviour.
 - **Proof:** The components that use them (specs of `collection`/`activity` consumers on a release build); `check-js-volume` baseline rows lowered.
 - **Hours (inferred):** 4 (inferred); removes about 118 lines (27-30 per hour).

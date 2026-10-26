@@ -4,6 +4,8 @@ title: "Port 3.PW: generate the pre-wasm copies from one TypeScript file (L15, V
 status: "BACKLOG. Awaiting the owner's approval of the row 434 step 3 plan."
 size: "S"
 area: build
+js-grant: none
+adds: []
 updated: 2026-10-26
 ---
 

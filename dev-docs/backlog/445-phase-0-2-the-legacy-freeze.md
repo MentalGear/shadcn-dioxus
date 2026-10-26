@@ -4,6 +4,8 @@ title: "Phase 0.2: freeze the legacy scripts and sinks (script hashes, per-site 
 status: "BACKLOG. Awaiting the owner's approval of the row 434 step 3 plan."
 size: "S"
 area: tooling
+js-grant: none
+adds: []
 updated: 2026-10-26
 ---
 
