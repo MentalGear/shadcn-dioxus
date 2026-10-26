@@ -21,6 +21,21 @@ The owner's principle (2026-10-25): the point of Dioxus is to drive the UI from 
 
 [`../research/js-audit-2026-10-25.md`](../research/js-audit-2026-10-25.md): 103 blocks, about 6,205 lines. (a) movable now 21 blocks / 624 lines (10%); (b) no Dioxus API 55 / 1,580 (25%); (c) before wasm 5 / 107 (2%); (d) JS on purpose 22 / 3,894 (63%). Upstream `main`/0.8.0-alpha.3 adds no element or window API, so no upgrade is waited for. Step 2: about 26 agent-hours in 5 lanes (2A styles and toast pause, 2B focus by handle, 2C scroll and measure, 2D virtual bridge experiment with a keep-JS exit, 2E demo sleeps). Step 3: about 66 agent-hours in 8 lanes over two batches (3.0 the typed channel and loading first).
 
+## Step 3 design: one small generic JS bridge (owner 2026-10-26)
+
+The owner asked for a uniform small JS glue layer to Rust instead of many bespoke scripts, which is also how Dioxus frames `document::eval` interop. So step 3 is no longer "every remaining block becomes a TypeScript module". Instead:
+
+- **Lane 3.0 builds the bridge.** One small typed module (`primitives/src/ts/bridge.ts`, through the existing bundle chain) with generic verbs only and no component logic. It covers listen, call, get, observe and match:
+  - `listen(target, type, options, fields)`: window, document or element; `capture`, `passive` and `once`; it streams the named event fields to Rust over the eval channel and grows out of `js_listener.rs`'s `listen`, which already owns removal.
+  - `call(el, method, args)`: `showPopover`, `hidePopover`, `showModal`, `close`, `setPointerCapture`, `focus({preventScroll})`, `scrollIntoView(opts)`, `setSelectionRange`.
+  - `get(el, props)`: computed style values, `offset*`, `activeElement`, `visualViewport`.
+  - `observe(el, kind)`: ResizeObserver, IntersectionObserver (with rootMargin and threshold), MutationObserver.
+  - `matchMedia(query)`: a subscription.
+  On the Rust side these are typed hooks and extension traits (`use_window_listener`, `el.show_popover()`, `use_media_query`), so the logic of every (b) block moves into Rust.
+- **What the bridge cannot carry stays as named JS modules, each with a measured reason.** Bridge messages reach Rust asynchronously, so two kinds of work can't go through it. The first is a decision that must happen inside the listener call, such as a conditional `preventDefault` (wheel band, drag, Escape inside nested layers, OTP filtering). The second is read-then-write in one frame (anchor placement, the virtual scroll bridge unless 2D shows otherwise, carousel drag and wheel). Those become TypeScript modules as originally planned. The audit's (d) rows say which apply.
+- **Expected effect:** class (b), about 25% of the JS, becomes Rust plus generic verbs. Class (d) shrinks to the parts that are genuinely synchronous. Class (c), pre-wasm, stays as is. Lane 3.0 is sized again once the bridge exists, and the per-cluster lanes then remove blocks against it.
+- **Gate:** besides `check-js-in-rust.sh`, any new `eval` must use a bridge verb, or be a named module listed with its (c) or (d) reason.
+
 ## Status / trigger
 
 BACKLOG. Approved as P9 of the row 365 sweep; the owner re-scoped it to Rust first on 2026-10-25. The audit (step 1) is read-only and can run at any time; the moves follow it.
