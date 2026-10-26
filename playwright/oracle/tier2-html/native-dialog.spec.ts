@@ -435,7 +435,9 @@ test.describe("Rule 6 — modal Popover", () => {
     await expect(content).toBeVisible();
 
     const viewport = await pageMetrics(page);
-    const measurement = await readAtRest(content, () => {
+    const measurement = await readAtRest(
+      content,
+      (_el, vp) => {
       const t = document.getElementById("popover-modal-anchor-trigger")!.getBoundingClientRect();
       const c = document.getElementById("popover-modal-anchor-content")!.getBoundingClientRect();
       return {
@@ -450,10 +452,12 @@ test.describe("Rule 6 — modal Popover", () => {
         offsetCenterX: c.left + c.width / 2 - (t.left + t.width / 2),
         contentTop: c.top,
         contentLeft: c.left,
-        viewportWidth: viewport.innerWidth,
-        viewportHeight: viewport.innerHeight,
+        viewportWidth: vp.width,
+        viewportHeight: vp.height,
       };
-    });
+      },
+      { width: viewport.innerWidth, height: viewport.innerHeight },
+    );
 
     const debug = JSON.stringify(measurement);
     // Trigger-anchored: content sits a small gap below the trigger,

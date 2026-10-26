@@ -320,7 +320,7 @@ pub fn Sidebar(
                 "data-sidebar": "sidebar",
                 "data-slot": "sidebar",
                 "data-mobile": "true",
-                div { class: "dx-sidebar-sr-only",
+                div { "data-dx-visually-hidden": "",
                     SheetHeader {
                         SheetTitle { "Sidebar" }
                         SheetDescription { "Displays the mobile sidebar." }
@@ -417,7 +417,7 @@ pub fn SidebarTrigger(
                     size: "1rem",
                 }
             }
-            span { class: "dx-sidebar-sr-only", "Toggle Sidebar" }
+            span { "data-dx-visually-hidden": "", "Toggle Sidebar" }
         }
     }
 }

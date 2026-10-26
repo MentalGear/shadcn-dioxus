@@ -975,6 +975,78 @@ html[data-theme="light"] [class~="dxc-system"] {
 }
 
 /* ============================================================================
+ * The modal scrim without a top layer, once: `data-dx-scrim`.
+ *
+ * The rule above paints the scrim of a native `<dialog>`, whose `::backdrop` lives in the top layer.
+ * Where there is none (the non-web arm, `is_modal: false`) the wrapper `div` that Dialog, AlertDialog,
+ * Sheet, Drawer and CommandDialog render around the panel IS the scrim, from the same `--dx-overlay-*`
+ * tokens. Each of those wrappers carries `data-dx-scrim` (the way a component root carries
+ * `data-dx-root`), and the five rules below replace the five-rule block each of the five sheets pasted
+ * (three of them with a byte-identical copy of `dx-fade-in/-out`). ZERO specificity, so an app can
+ * restyle it with any selector.
+ *
+ *   - On the web arm the wrapper has the `<dialog>` as a direct child and paints nothing (the
+ *     `::backdrop` above is the scrim): `:has(> dialog)` takes the fill and the blur away.
+ *   - `data-dx-overlay="off"` is set on the wrapper as well as on the `<dialog>` (`overlay: false`).
+ *   - `data-state` ("open" / "closed", set by the primitive's `use_animated_open`) fades it in and out
+ *     over `--dx-overlay-duration`, then `pointer-events: none` while it leaves. `opacity: 0` is the rest
+ *     state, so a wrapper with no `data-state` yet is invisible.
+ *   - `scripts/check-theme-baseline.sh` fails a component sheet that paints the scrim itself
+ *     (`background: var(--dx-overlay-scrim)`) and fails if any of these rules goes.
+ * ========================================================================== */
+:where([data-dx-scrim]) {
+  position: fixed;
+  z-index: var(--dx-z-overlay);
+  backdrop-filter: blur(var(--dx-overlay-blur));
+  background: var(--dx-overlay-scrim);
+  inset: 0;
+  opacity: 0;
+  will-change: opacity;
+}
+
+:where([data-dx-scrim]:has(> dialog)) {
+  backdrop-filter: none;
+  background: transparent;
+}
+
+:where([data-dx-scrim][data-dx-overlay="off"]) {
+  backdrop-filter: none;
+  background: transparent;
+}
+
+:where([data-dx-scrim][data-state="closed"]) {
+  animation: dx-fade-out var(--dx-overlay-duration) var(--dx-overlay-ease) forwards;
+  pointer-events: none;
+}
+
+:where([data-dx-scrim][data-state="open"]) {
+  animation: dx-fade-in var(--dx-overlay-duration) var(--dx-overlay-ease) forwards;
+}
+
+/* ============================================================================
+ * Visually hidden, once: `data-dx-visually-hidden`.
+ *
+ * Text for assistive technology that is not drawn: a live region, a dialog title a palette does not
+ * show, a "More" beside an ellipsis icon, the data table behind a chart. The element is clamped to a
+ * 1px clipped box (never `display: none` / `visibility: hidden`, which would remove it from the
+ * accessibility tree). One spelling (`clip-path: inset(50%)`, not the deprecated `clip`): a component sets
+ * the attribute on the element it owns and no sheet writes the recipe (`scripts/check-theme-baseline.sh`,
+ * backlog row 426). ZERO specificity, so a rule that has to
+ * win (a focus-visible skip link that shows itself) simply declares what it changes.
+ * ========================================================================== */
+:where([data-dx-visually-hidden]) {
+  position: absolute;
+  overflow: hidden;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  margin: -1px;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ============================================================================
  * The dialog box, once: no UA padding.
  *
  * The UA stylesheet gives every `<dialog>` `padding: 1em`, which is font-size dependent: a panel

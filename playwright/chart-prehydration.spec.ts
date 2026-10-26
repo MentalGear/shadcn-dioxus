@@ -18,11 +18,8 @@
 import { test, expect } from "./fixtures";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
-<<<<<<< HEAD
 import { expectNoWebFont, noWebFonts } from "./web-fonts";
-=======
 import { gotoPrerendered } from "./page-kinds";
->>>>>>> origin/lane/spec-helpers-427
 
 type Box = { x: number; y: number; w: number; h: number };
 type Card = { key: string; parts: Record<string, Box> };

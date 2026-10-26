@@ -233,7 +233,7 @@ pub fn PaginationEllipsis(
         span {
             ..merged,
             Ellipsis { size: "1rem" }
-            span { class: "dx-pagination-sr-only", "More pages" }
+            span { "data-dx-visually-hidden": "", "More pages" }
         }
     }
 }

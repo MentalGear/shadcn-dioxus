@@ -161,18 +161,6 @@
   rotate: 180deg;
 }
 
-.dx-message-scroller-sr-only {
-  position: absolute;
-  overflow: hidden;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  border: 0;
-  margin: -1px;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .dx-message-scroller-jump,
   .dx-message-scroller-jump:has(> [data-active="false"]) {

@@ -85,6 +85,7 @@ pub fn Sheet(props: SheetProps) -> Element {
         dialog::DialogRoot {
             disable_pointer_dismissal: props.disable_pointer_dismissal,
             class: "dx-sheet-root",
+            "data-dx-scrim": "",
             "data-slot": "sheet-root",
             id: props.id,
             is_modal: props.is_modal,
