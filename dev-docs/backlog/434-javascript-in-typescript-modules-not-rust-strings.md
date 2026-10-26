@@ -117,7 +117,7 @@ Every row below is status BACKLOG, **awaiting the owner's approval and scope for
 |---|---|---|---|
 | [468](./468-bug-form-reset-leaves-controlled-input-out-of-sync.md) | Bug: form reset leaves a controlled text input showing empty while Rust keeps the old value | not estimated | none |
 | [469](./469-bug-text-typed-before-hydration-is-wiped-on-the-ssg-site.md) | Bug: text typed before hydration is wiped by the first post-hydration render on the SSG site | not estimated | none |
-| [470](./470-bug-carousel-autoplay-tick-fights-a-user-swipe.md) | Bug: the carousel autoplay tick fights a user swipe (the scroller is pulled forward and bounces back) | not estimated | none |
+| [470](./done/470-bug-carousel-autoplay-tick-fights-a-user-swipe.md) | Bug: the carousel autoplay tick fights a user swipe (the scroller is pulled forward and bounces back) | not estimated | none |
 | [471](./471-bug-datatransfer-setters-are-no-ops-on-desktop.md) | Bug: DataTransfer setters in rsx drag handlers are silent no-ops on desktop | not estimated | none |
 | [473](./473-bug-date-picker-segments-let-the-browser-edit-the-vdom-text-node.md) | Bug: date picker segments let the browser edit the text node the vdom also writes (Backspace, Delete and Android IME are not cancelled) | not estimated | none |
 | [474](./474-bug-input-otp-paste-loses-digits-to-maxlength.md) | Bug: Input OTP paste loses digits because `maxlength` truncates before the filter runs | not estimated | none |
