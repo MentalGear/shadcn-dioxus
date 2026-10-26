@@ -22,6 +22,33 @@ thread_local! {
     static TOP_LAYER_INK_STYLES_INSTALLED: Cell<bool> = const { Cell::new(false) };
 }
 
+/// Appends `<style id="{id}">{css}</style>` to the document head through the platform's
+/// [`Document`](dioxus::document::Document): `Document::create_style`, the call `document::Style` ends
+/// in, with no script of ours. The CSS is a `.css` file that stylelint reads (backlog row 434), included
+/// by the caller with `include_str!`.
+///
+/// It is not a `document::Style` element because a `Style` must be rendered by a component and the
+/// callers are plain functions run from `use_effect` in a dozen roots. The web document inserts
+/// `create_style` from `queue_effect`, so the tag lands after the render that asked for it; the
+/// preview's `EagerHeadDocument` (`preview/src/eager_head.rs`) inserts it at once. A scope removed in
+/// the turn it first rendered drops its queued effect, the class that file documents for every
+/// `document::Link` of the library, and the caller's once-per-page flag would then stay set: a missing
+/// cosmetic baseline (the gutter reservation, the raw toast's fallback box), never a broken overlay.
+/// The caller keeps its own once-per-page guard; this does not dedupe.
+///
+/// Not for a sheet that a script reads in the same tick (`ensure_anchor_positioning_styles`'s
+/// measurement, `ensure_top_layer_ink_styles`'s show script): those prepend their own insertion to
+/// that script, see the doc above.
+pub(crate) fn insert_head_style(id: &'static str, css: &'static str) {
+    let props = dioxus::document::StyleProps::builder()
+        .additional_attributes(vec![crate::dioxus_core::Attribute::new(
+            "id", id, None, false,
+        )])
+        .children(dioxus::prelude::rsx! { "{css}" })
+        .build();
+    dioxus::document::document().create_style(props);
+}
+
 /// Installs the shared, engine-level anchor-positioning stylesheet described
 /// below, at most once per WASM instance -- mirrors
 /// `scroll_lock::ensure_scrollbar_gutter_baseline`'s idempotent
@@ -52,6 +79,15 @@ thread_local! {
 /// below) makes anchor positioning "just work" for every anchored overlay
 /// everywhere in the app, with no per-page CSS to remember.
 ///
+/// ## Why the insertion stays a script (backlog row 434)
+///
+/// The CSS text lives in `anchor.css`, where stylelint reads it. The tag is still appended by a script
+/// rather than by `document::Style` (or `Document::create_style`): on the web document those insert from
+/// `queue_effect`, after the render and with no order against the measurement effect, and the measurement
+/// is the very script that reads the anchored position straight after this tag (the cold-load case
+/// above). A `Style` element would also have to be rendered by a component, and the callers here are
+/// hooks (`use_anchor_position_fallback`, `use_popover_sync`, `use_dialog_open_driver`).
+///
 /// ## One attribute, not a list of classes (backlog row 432)
 ///
 /// Every rule below is scoped by `[data-dx-anchored]`, the one attribute
@@ -64,7 +100,7 @@ thread_local! {
 /// `[popover]` would (`[data-dx-anchored]:is([popover], :modal)` is
 /// `(0,2,0)`; `:where()` carries the hover-card exclusion at zero), so no
 /// component sheet's override is outranked by them.
-/// `scripts/check-anchor-marker.sh` keeps a marker class from coming back.
+/// `scripts/check-anchor-marker.sh` keeps a marker class from coming back (it reads `anchor.css`).
 ///
 /// Call this once per overlay content mount -- [`use_anchor_position_fallback`]
 /// does, since every current anchored consumer (`tooltip.rs`,
@@ -143,13 +179,14 @@ pub(super) fn anchor_positioning_inject_js() -> String {
     )
 }
 
-/// The shared anchor-positioning stylesheet's CSS text, as a JS backtick
-/// template-literal source (i.e. this string itself already includes the
-/// wrapping backticks) -- see [`ensure_anchor_positioning_styles`]'s doc for
-/// why it is injected once and why `border`/`overflow` resets are
-/// deliberately not part of it.
+/// The shared anchor-positioning stylesheet (`anchor.css`, linted by stylelint like every other
+/// sheet; backlog row 434) as a JS backtick template-literal source (this string itself includes the
+/// wrapping backticks, which is why `anchor.css` may hold no backtick, no `${` and no backslash: the
+/// unit test `injected_stylesheets_are_template_literal_safe` keeps that true) -- see
+/// [`ensure_anchor_positioning_styles`]'s doc for why it is injected once and why `border`/`overflow`
+/// resets are deliberately not part of it.
 ///
-/// Every `[data-dx-anchored][popover]` selector below also matches `:modal`
+/// Every `[data-dx-anchored][popover]` selector in `anchor.css` also matches `:modal`
 /// (`:is([popover], :modal)`): a modal `Popover`'s web arm
 /// is a real `<dialog>` opened with `showModal()`, so it carries
 /// `data-dx-anchored="popover"` the same way the non-modal arm's
@@ -162,171 +199,7 @@ pub(super) fn anchor_positioning_inject_js() -> String {
 /// the Popover-API arms without needing a second attribute. (The RTL rules are
 /// `[popover]` only: a modal dialog never matched them.)
 #[cfg(feature = "web")]
-const ANCHOR_POSITIONING_CSS_JS_LITERAL: &str = r#"`
-:where([data-dx-anchored]:is([popover], :modal)) {
-  margin: 0;
-  inset: auto;
-}
-
-@supports (anchor-name: --a) {
-  [data-dx-anchored]:where(:not([data-dx-anchored="hover-card"])):is([popover], :modal) {
-    position: fixed;
-    margin: 0;
-    inset: auto;
-    transform: none;
-    position-try-fallbacks: flip-block, flip-inline;
-    /* Anchor width contract (dev-docs/backlog.md row 47): publish
-       the trigger's width as the same --dx-anchor-width custom property
-       use_anchor_position_fallback's JS measurement writes on every
-       engine (see that function's doc, "Anchor width contract") -- a CSS-
-       native belt on a conforming engine, alongside that JS suspenders
-       everywhere else. In Chromium, anchor-size() substitutes correctly
-       when only referenced from inside a custom-property declaration and then read
-       back through var() at a sizing property's use site -- so this is
-       safe to declare generically here, on the data-dx-anchored attribute every
-       anchored overlay already carries, without knowing anything about a
-       specific component's styling intent (that stays in each component's
-       own stylesheet, e.g. dx-select-list's min-width: var(--dx-anchor-
-       width, 100%)). The JS write is authoritative regardless: it fires
-       unconditionally too, right after this rule takes effect, and is
-       what actually covers Firefox/WebKit and any engine that reaches
-       this file's use_anchor_position_fallback at all -- this declaration
-       is only for the sliver of time between paint and that effect's
-       first reposition() call, and for engines that resolve anchor-size()
-       in a custom property, this simply keeps agreeing with it. Note:
-       this comment (and the one on the hover-card rule below) must never
-       contain a backtick character -- this whole stylesheet is embedded
-       as one JS template-literal string in
-       ANCHOR_POSITIONING_CSS_JS_LITERAL below, and a stray backtick here
-       would terminate that literal early, producing broken JS (a runtime
-       "Invalid left-hand side expression in postfix operation", from
-       "--dx-anchor-width" being parsed as JS code instead of string
-       content once the literal closed early). */
-    --dx-anchor-width: anchor-size(width);
-  }
-
-  [data-dx-anchored]:where(:not([data-dx-anchored="hover-card"])):is([popover], :modal)[data-side="top"] {
-    bottom: anchor(top);
-    left: anchor(center);
-    margin-bottom: 8px;
-    transform: translateX(-50%);
-  }
-
-  [data-dx-anchored]:where(:not([data-dx-anchored="hover-card"])):is([popover], :modal)[data-side="right"] {
-    top: anchor(center);
-    left: anchor(right);
-    margin-left: 8px;
-    transform: translateY(-50%);
-  }
-
-  [data-dx-anchored]:where(:not([data-dx-anchored="hover-card"])):is([popover], :modal)[data-side="bottom"] {
-    top: anchor(bottom);
-    left: anchor(center);
-    margin-top: 8px;
-    transform: translateX(-50%);
-  }
-
-  [data-dx-anchored]:where(:not([data-dx-anchored="hover-card"])):is([popover], :modal)[data-side="left"] {
-    top: anchor(center);
-    right: anchor(left);
-    margin-right: 8px;
-    transform: translateY(-50%);
-  }
-
-  [data-dx-anchored="hover-card"][popover] {
-    position: fixed;
-    margin: 0;
-    inset: auto;
-    position-try-fallbacks: flip-block, flip-inline;
-    /* See the anchor width contract comment on the shared data-dx-anchored
-       rule above (no backticks in this comment either -- same reason) --
-       same reasoning, this selector just lives in its own rule because
-       HoverCard uses a wider default gap. */
-    --dx-anchor-width: anchor-size(width);
-  }
-
-  [data-dx-anchored="hover-card"][popover][data-side="top"] {
-    bottom: anchor(top);
-    left: anchor(center);
-    margin-bottom: 10px;
-    transform: translateX(-50%);
-  }
-
-  [data-dx-anchored="hover-card"][popover][data-side="right"] {
-    top: anchor(center);
-    left: anchor(right);
-    margin-left: 10px;
-    transform: translateY(-50%);
-  }
-
-  [data-dx-anchored="hover-card"][popover][data-side="bottom"] {
-    top: anchor(bottom);
-    left: anchor(center);
-    margin-top: 10px;
-    transform: translateX(-50%);
-  }
-
-  [data-dx-anchored="hover-card"][popover][data-side="left"] {
-    top: anchor(center);
-    right: anchor(left);
-    margin-right: 10px;
-    transform: translateY(-50%);
-  }
-
-  [data-dx-anchored]:is([popover], :modal)[data-side="top"][data-align="start"],
-  [data-dx-anchored]:is([popover], :modal)[data-side="bottom"][data-align="start"] {
-    left: anchor(left);
-    transform: none;
-  }
-
-  [data-dx-anchored]:is([popover], :modal)[data-side="top"][data-align="center"],
-  [data-dx-anchored]:is([popover], :modal)[data-side="bottom"][data-align="center"] {
-    left: anchor(center);
-    transform: translateX(-50%);
-  }
-
-  [data-dx-anchored]:is([popover], :modal)[data-side="top"][data-align="end"],
-  [data-dx-anchored]:is([popover], :modal)[data-side="bottom"][data-align="end"] {
-    left: anchor(right);
-    transform: translateX(-100%);
-  }
-
-  /* RTL (backlog row 137): align is logical -- start is the INLINE start
-     edge, so under dir=rtl a top/bottom panel aligned to start hangs from the
-     trigger's right edge and one aligned to end from its left. The panel is a
-     DOM descendant of its trigger, so :dir() sees the page direction even in
-     the top layer. (left/right sides align on the block axis, which direction does not touch.) */
-  [data-dx-anchored][popover][data-side="top"][data-align="start"]:dir(rtl),
-  [data-dx-anchored][popover][data-side="bottom"][data-align="start"]:dir(rtl) {
-    left: anchor(right);
-    transform: translateX(-100%);
-  }
-
-  [data-dx-anchored][popover][data-side="top"][data-align="end"]:dir(rtl),
-  [data-dx-anchored][popover][data-side="bottom"][data-align="end"]:dir(rtl) {
-    left: anchor(left);
-    transform: none;
-  }
-
-  [data-dx-anchored]:is([popover], :modal)[data-side="left"][data-align="start"],
-  [data-dx-anchored]:is([popover], :modal)[data-side="right"][data-align="start"] {
-    top: anchor(top);
-    transform: none;
-  }
-
-  [data-dx-anchored]:is([popover], :modal)[data-side="left"][data-align="center"],
-  [data-dx-anchored]:is([popover], :modal)[data-side="right"][data-align="center"] {
-    top: anchor(center);
-    transform: translateY(-50%);
-  }
-
-  [data-dx-anchored]:is([popover], :modal)[data-side="left"][data-align="end"],
-  [data-dx-anchored]:is([popover], :modal)[data-side="right"][data-align="end"] {
-    top: anchor(bottom);
-    transform: translateY(-100%);
-  }
-}
-`"#;
+const ANCHOR_POSITIONING_CSS_JS_LITERAL: &str = concat!("`", include_str!("anchor.css"), "`");
 
 /// Installs the shared top-layer ink-color baseline described below, at
 /// most once per WASM instance -- same idempotent style-tag-injection shape
@@ -452,7 +325,8 @@ pub(crate) fn ensure_top_layer_ink_styles() {
 
 /// The idempotent (JS-side `getElementById` guarded, so safe to run more
 /// than once) style-tag-injection script [`ensure_top_layer_ink_styles`]
-/// dispatches on its own, and [`use_popover_sync`]/
+/// dispatches on its own (its CSS is `ink.css`; the insertion stays a script for the reason in
+/// [`ensure_anchor_positioning_styles`]'s "Why the insertion stays a script"), and [`use_popover_sync`]/
 /// [`use_popover_shown_while_mounted`]/`lib.rs`'s `use_dialog_open_driver`
 /// each *also* prepend verbatim onto the front of their own "signal ->
 /// browser" show script -- same two-guard shape as
@@ -464,47 +338,37 @@ pub(crate) fn ensure_top_layer_ink_styles() {
 /// `use_dialog_open_driver` -- the third of the three exhaustive
 /// call sites, and the only one outside this file -- can prepend it too.
 #[cfg(feature = "web")]
-pub(crate) const TOP_LAYER_INK_STYLES_INJECT_JS: &str = r#"
+pub(crate) const TOP_LAYER_INK_STYLES_INJECT_JS: &str = concat!(
+    r#"
 if (!document.getElementById('dx-top-layer-ink-styles')) {
     const style = document.createElement('style');
     style.id = 'dx-top-layer-ink-styles';
-    style.textContent = `
-      /* The theme's popup-root rule (dx-components-theme.css, "Popup root") gives a \`dx-\` popup the
-         ROOT ink instead of its host's; this later, equally weak rule would out-rank it with
-         \`inherit\`, so it reads the same token and only an app without the theme inherits. */
-      :where([popover]), :where(dialog) {
-        color: var(--dx-foreground, inherit);
-      }
-
-      /* The same rule, one level deeper. Neutralising the wrapper's own
-         UA color is not enough for a form control INSIDE it: <button>,
-         <input>, <select> and <textarea> each carry their own UA rule
-         setting color directly on the element (buttontext / fieldtext), and
-         a directly-cascaded value beats an inherited one just as it does for
-         [popover]/dialog -- so an ancestor's \`color: inherit\` can never
-         reach them. Example: DatePicker's calendar day-grid
-         cells (\`.dx-calendar-grid-cell\`, real <button>s) stay black with
-         only the wrapper rule above -- \`Calendar\`'s own stylesheet
-         is not guaranteed to be loaded on the DatePicker route
-         (an unrelated composition concern), so those buttons can have no
-         author \`color\` of any kind to fall back to, only their own UA
-         default. This rule gives every top-layer-descendant form control
-         the same DOM-tree-inherited inbox this file's whole construction is
-         about, independent of whether that control's own stylesheet
-         happens to be wired up. (Select/Combobox's listboxes are plain
-         <div> options, not form controls -- unaffected by this rule either
-         way; both carry their own explicit, intentionally different
-         \`color: var(--dx-popover-foreground)\` declared directly on the list,
-         which wins outright regardless of this rule.) Scoped to
-         top-layer descendants rather than applied app-wide: this closes the
-         class where it actually bites without silently restyling every
-         ordinary button on the page. Still :where(), so any component that
-         sets its own color continues to win outright. */
-      :where([popover]) :where(button, input, select, textarea),
-      :where(dialog) :where(button, input, select, textarea) {
-        color: inherit;
-      }
-    `;
+    style.textContent = `"#,
+    include_str!("ink.css"),
+    r#"`;
     document.head.appendChild(style);
 }
-"#;
+"#
+);
+
+#[cfg(test)]
+mod tests {
+    /// Both sheets are spliced into a JS template literal (`anchor_positioning_inject_js`,
+    /// `TOP_LAYER_INK_STYLES_INJECT_JS`), which a backtick or `${` would end or evaluate and a
+    /// backslash would reinterpret: the sheet is read as CSS by the browser either way, so the
+    /// rule belongs to the file, not to a reviewer's memory.
+    #[test]
+    fn injected_stylesheets_are_template_literal_safe() {
+        for (name, css) in [
+            ("anchor.css", include_str!("anchor.css")),
+            ("ink.css", include_str!("ink.css")),
+        ] {
+            for forbidden in ["`", "${", "\\"] {
+                assert!(
+                    !css.contains(forbidden),
+                    "{name} contains {forbidden:?}, which breaks the JS template literal it is injected through"
+                );
+            }
+        }
+    }
+}

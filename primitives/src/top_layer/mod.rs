@@ -59,10 +59,6 @@ pub(crate) use popover_sync::*;
     expect(unused_imports, reason = "only the web build and the tests use it")
 )]
 pub(crate) use scroll_clamp::*;
-#[cfg_attr(
-    not(feature = "web"),
-    expect(unused_imports, reason = "only the web build uses it")
-)]
 pub(crate) use styles::*;
 
 #[cfg(all(test, feature = "web"))]

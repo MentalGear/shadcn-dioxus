@@ -2,7 +2,7 @@
 #
 # check-anchor-marker.sh  (backlog row 432)
 #
-# The anchor engine's stylesheet (`primitives/src/top_layer/styles.rs`) selects on ONE attribute, `data-dx-anchored`,
+# The anchor engine's stylesheet (`primitives/src/top_layer/anchor.css`) selects on ONE attribute, `data-dx-anchored`,
 # which `anchored_content_attributes` (`primitives/src/top_layer/attributes.rs`) writes from an `AnchorKind`: an anchored
 # overlay is anchored by calling the function it must already call for its `position-anchor`, and the engine names no
 # overlay, so a new one cannot be left unpositioned because it is missing from a list. Before, the engine enumerated ten
@@ -16,7 +16,7 @@
 #   2. no marker class: no `dx-anchor-<name>` class literal in Rust code, stylesheet code (comments are not read) or
 #      markup outside a `top_layer/` directory (the `--dx-anchor-width` / `--dx-anchor-offset-*` custom properties are
 #      not classes), and no `data-dx-anchored` WRITE in rsx outside `top_layer/` (one writer, like `data-dx-modality`);
-#   3. the engine stylesheet enumerates nothing: every rule of `ANCHOR_POSITIONING_CSS_JS_LITERAL` is scoped by
+#   3. the engine stylesheet enumerates nothing: every rule of `anchor.css` is scoped by
 #      `[data-dx-anchored`, names no `.dx-anchor-` class, and the only kind it names is `hover-card` (the one real
 #      per-kind difference, a wider gap); every `AnchorKind` value other than that one is therefore reached by the
 #      generic rules.
@@ -41,8 +41,7 @@ sys.path.insert(0, "scripts/lib")
 from allow import Allowlist  # noqa: E402
 from css import rules as css_rules, split_top, strip_comments  # noqa: E402
 
-STYLES = "primitives/src/top_layer/styles.rs"
-LITERAL = re.compile(r'const ANCHOR_POSITIONING_CSS_JS_LITERAL: &str = r#"`(.*?)`"#;', re.S)
+STYLES = "primitives/src/top_layer/anchor.css"
 ENGINE_ATTR = "[data-dx-anchored"
 PER_KIND = {"hover-card"}
 
@@ -90,10 +89,9 @@ def check_marker_class(path, text):
 
 
 def check_engine(text):
-    m = LITERAL.search(text)
-    if not m:
-        return [f"{STYLES}: ANCHOR_POSITIONING_CSS_JS_LITERAL not found (the gate reads the engine stylesheet from it)"]
-    rs = css_rules(m.group(1))
+    if not text.strip():
+        return [f"{STYLES}: empty or missing (the gate reads the engine stylesheet from it)"]
+    rs = css_rules(text)
     if not rs:
         return [f"{STYLES}: the engine stylesheet parsed to no rules"]
     out = []
@@ -148,7 +146,8 @@ def self_test():
         ("engine rule that names a class", check_engine(engine.replace("[data-dx-anchored=\"hover-card\"][popover] {", ".dx-anchor-hover-card[popover] {", 1)), True),
         ("engine rule not scoped by the attribute", check_engine(engine.replace(":where([data-dx-anchored]:is([popover], :modal)) {", ":where([popover]) {", 1)), True),
         ("engine rule that names a kind", check_engine(engine.replace("[data-dx-anchored][popover][data-side=\"top\"][data-align=\"start\"]:dir(rtl)", "[data-dx-anchored=\"tooltip\"][popover][data-side=\"top\"][data-align=\"start\"]:dir(rtl)", 1)), True),
-        ("engine literal missing", check_engine("fn nothing() {}"), True),
+        ("engine stylesheet empty", check_engine(""), True),
+        ("engine stylesheet not css", check_engine("fn nothing() {}"), True),
     ]
     bad = 0
     for name, errs, want_red in cases:

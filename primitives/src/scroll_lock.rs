@@ -308,16 +308,14 @@ use dioxus::prelude::*;
 use crate::js_listener::JsListeners;
 
 thread_local! {
-    /// Whether [`ensure_scrollbar_gutter_baseline`]'s `document::eval` has
-    /// already been scheduled once in this WASM instance. `use_scroll_lock`
+    /// Whether [`ensure_scrollbar_gutter_baseline`] has already inserted its
+    /// `<style>` once in this WASM instance. `use_scroll_lock`
     /// is called afresh every time a modal/menu opens (this crate's
     /// `*Content` components mount lazily -- see the component doc below),
     /// so without this guard the baseline install would re-run, harmlessly
     /// but wastefully, on every single open for the rest of the session.
-    /// The JS side is *also* idempotent on its own (it checks for its
-    /// `<style>` tag by id before creating one) as a second guard, since
-    /// this flag alone would not survive e.g. a hot-reload that resets Rust
-    /// statics but leaves the already-injected style tag in the live DOM.
+    /// A hot-reload that resets Rust statics but leaves the already-inserted
+    /// tag in the live DOM inserts an identical second one, which is harmless.
     static SCROLLBAR_GUTTER_BASELINE_INSTALLED: Cell<bool> = const { Cell::new(false) };
 
     /// The one page-wide lock (backlog row 375). See [`ScrollLockInner`].
@@ -347,17 +345,10 @@ pub(crate) fn ensure_scrollbar_gutter_baseline() {
     if SCROLLBAR_GUTTER_BASELINE_INSTALLED.with(|installed| installed.replace(true)) {
         return;
     }
-    let eval = document::eval(
-        r#"
-        if (!document.getElementById('dx-scrollbar-gutter-baseline')) {
-            const style = document.createElement('style');
-            style.id = 'dx-scrollbar-gutter-baseline';
-            style.textContent = ':where(html) { scrollbar-gutter: stable; overflow-y: auto; }';
-            document.head.appendChild(style);
-        }
-        "#,
+    crate::top_layer::insert_head_style(
+        "dx-scrollbar-gutter-baseline",
+        include_str!("scrollbar_gutter.css"),
     );
-    let _ = eval;
 }
 
 /// The script that blocks page scroll while a lock is held (module docs, "How this hook blocks scrolling").
@@ -682,6 +673,9 @@ pub(crate) fn use_modal_closed() -> ModalClosed {
     use_hook(|| ModalClosed(try_consume_context::<ModalClosedRelease>().map(|r| r.0)))
 }
 
+/// How long the final release waits for a lock handed over in the same click: one 60 Hz frame.
+const RELEASE_DELAY: std::time::Duration = std::time::Duration::from_millis(16);
+
 /// Gives back this instance's share of the lock, if it holds one. The last release removes
 /// the block listeners (dropping [`JsListeners`]) and restores the pre-lock scroll position,
 /// one frame later: a surface that closes in the same click that opens another (a menu item
@@ -704,11 +698,9 @@ fn release(state: &ScrollLockState, acquired: &Cell<bool>) {
     // The root scope's task: this runs from an unmount cleanup too, whose own scope is going.
     // interval-ok: one bounded wait for a frame, not a timer
     crate::dioxus_core::spawn_forever(async move {
-        let mut frame = document::eval(
-            "await new Promise((r) => { requestAnimationFrame(() => r()); setTimeout(r, 50); });
-            dioxus.send(true);",
-        );
-        let _ = frame.recv::<bool>().await;
+        // One frame, as a task: there is no JS timer to clear, and a hidden tab, where no frame
+        // ever comes, still releases.
+        crate::sleep::sleep(RELEASE_DELAY).await;
         finish_release(&state, epoch);
     });
 }
