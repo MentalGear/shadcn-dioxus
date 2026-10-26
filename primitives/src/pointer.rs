@@ -121,8 +121,6 @@ fn remove_pointer(pointer_id: i32) {
 mod tests {
     use super::*;
     use crate::test_support::with_runtime;
-    use std::cell::Cell;
-    use std::rc::Rc;
 
     #[test]
     fn upsert_pointer_updates_existing_pointer() {

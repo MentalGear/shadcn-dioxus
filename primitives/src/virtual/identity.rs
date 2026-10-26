@@ -85,8 +85,7 @@ pub(crate) fn engine_row_keys(
 mod tests {
     use super::*;
     use crate::test_support::with_runtime;
-    use dioxus::prelude::*;
-    use std::cell::{Cell, RefCell};
+    use std::cell::RefCell;
     use std::rc::Rc;
 
     /// The key-OFF half of `playwright/item-key.spec.ts` ("without item_key a row is its slot"),

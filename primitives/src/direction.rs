@@ -200,8 +200,6 @@ pub fn use_direction(local: Option<Direction>) -> Direction {
 mod tests {
     use super::*;
     use crate::test_support::with_runtime;
-    use std::cell::Cell;
-    use std::rc::Rc;
 
     #[test]
     fn resolve_horizontal_ltr_unchanged() {

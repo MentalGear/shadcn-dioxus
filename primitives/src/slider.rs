@@ -949,7 +949,6 @@ impl SliderContext {
 mod tests {
     use super::*;
     use crate::test_support::with_runtime;
-    use std::cell::Cell;
 
     #[test]
     fn closest_thumb_uses_raw_collision_position() {

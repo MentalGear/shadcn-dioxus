@@ -1,7 +1,5 @@
 use super::*;
-use crate::test_support::find_element;
-use crate::test_support::with_runtime;
-use std::cell::Cell;
+use crate::test_support::{find_element, with_runtime};
 use time::macros::date;
 
 #[test]

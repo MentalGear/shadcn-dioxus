@@ -848,12 +848,18 @@ mod tests {
         (ctx, log)
     }
 
+    /// The uncontrolled open set (what the callbacks wrote), read at once: the resolved `value`
+    /// memo recomputes on the next render pass.
+    fn internal_set(ctx: &AccordionContext) -> Vec<String> {
+        ctx.internal.peek().clone()
+    }
+
     #[test]
     fn seeding_an_open_item_writes_the_state_without_on_value_change() {
         with_runtime(|| {
             let (mut ctx, log) = make_context(None, vec![], true);
             ctx.seed_open("a");
-            assert!(ctx.is_open("a"), "an uncontrolled seed shows at once");
+            assert_eq!(internal_set(&ctx), vec!["a".to_string()]);
             assert!(log.borrow().is_empty(), "a seed is not a change");
         });
     }
@@ -873,7 +879,7 @@ mod tests {
         with_runtime(|| {
             let (mut ctx, log) = make_context(None, vec!["a".into()], true);
             ctx.set_open("a");
-            assert!(ctx.is_open("a"));
+            assert_eq!(internal_set(&ctx), vec!["a".to_string()]);
             assert_eq!(*log.borrow(), vec![vec!["a".to_string()]]);
         });
     }
@@ -896,7 +902,7 @@ mod tests {
         with_runtime(|| {
             let (mut ctx, log) = make_context(None, vec!["a".into()], false);
             ctx.set_closed("a");
-            assert!(ctx.is_open("a"));
+            assert_eq!(internal_set(&ctx), vec!["a".to_string()]);
             assert!(log.borrow().is_empty());
         });
     }

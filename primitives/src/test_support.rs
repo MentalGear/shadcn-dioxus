@@ -304,9 +304,8 @@ pub fn with_runtime<R: 'static>(f: impl Fn() -> R + 'static) -> R {
         HarnessProps { body },
     );
     dom.rebuild_in_place();
-    slot.borrow_mut()
-        .take()
-        .expect("the harness component did not run")
+    let result = slot.borrow_mut().take();
+    result.expect("the harness component did not run")
 }
 
 #[cfg(test)]
