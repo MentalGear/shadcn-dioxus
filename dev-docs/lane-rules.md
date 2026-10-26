@@ -294,6 +294,10 @@ with `fixedViewportBox(page)`, demo controls located by role and position never 
 written once in the header of its `scripts/check-*.sh` and summarised in [`gates.md`](./gates.md); read the gate's page
 entry before you write the construction it forbids, not after it goes red.
 
+**Interactive behaviour: read [`js-interop.md`](./js-interop.md) first.** Rust first, browser access only through the
+bridge (`primitives/src/bridge/`), no JS in Rust strings, and the JS volume only shrinks (`check-js-volume.sh`); a lane
+that touches JS quotes `scripts/check-js-volume.sh --report` before and after and every `RATCHET RAISES` entry in its report.
+
 The one convention every lane meets in every file: **code describes only its current state**
 ([`history-in-comments.md`](./history-in-comments.md)). A comment, test title, demo string or name you write states
 what the code does and why, in present tense, with the backlog row; what happened (the bug, the date, the commit, the
