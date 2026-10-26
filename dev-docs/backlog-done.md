@@ -6,7 +6,7 @@ resolves here by id.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Done rows (374)
+## Done rows (375)
 
 | # | Item | Updated |
 |---|---|---|
@@ -384,5 +384,6 @@ resolves here by id.
 | [433](backlog/done/433-slot-variables-derived-from-sheet.md) | Slot variables derived from the sheet, not documented by hand | 2026-10-26 |
 | [437](backlog/done/437-pipefail-early-exit-reader.md) | No early-exit reader on the right of a pipe in a pipefail script (grep -q, head, sed q, awk exit) | 2026-10-25 |
 | [439](backlog/done/439-chart-prehydration-geometry-flake.md) | chart-prehydration geometry flake: the two loads race font-display: optional | 2026-10-25 |
+| [441](backlog/done/441-reduced-motion-scrim.md) | The modal scrim fade ignores prefers-reduced-motion: the per-sheet rule never won on specificity | 2026-10-26 |
 
 <!-- END GENERATED -->
