@@ -346,8 +346,8 @@ use super::*;
 /// the current, live `getBoundingClientRect()`/viewport size), so a resize
 /// that changes which side fits gets the same flip treatment the initial
 /// placement does. All listeners are removed -- via the same
-/// `dioxus.recv()`-gated teardown every other eval-channel hook in this
-/// crate uses (see `use_popover_sync` above) -- when `open` goes false or
+/// `dioxus.recv()`-gated teardown of `use_popover_sync` above (a legacy eval
+/// script, ported by row 434) -- when `open` goes false or
 /// this component unmounts; nothing is left listening on `window` (or
 /// `visualViewport`) past the overlay's own lifetime.
 /// Deliberately narrow: no `ResizeObserver` on the trigger or content
@@ -941,8 +941,7 @@ pub(crate) fn use_anchor_position_fallback(
             // collapses any number of scroll/resize events firing before
             // the next paint (from either source) into a single
             // `reposition()` call. Registered through `listen`, so they are
-            // removed on close/unmount exactly as every other eval-channel
-            // listener in this file (`JsListeners`' derived teardown).
+            // removed on close/unmount by `JsListeners`' derived teardown.
             let rafScheduled = false;
             const onTrack = () => {{
                 if (rafScheduled) return;
