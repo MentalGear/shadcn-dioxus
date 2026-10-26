@@ -132,8 +132,8 @@
 //! broadly the way `NavbarContent` does --
 //! `crate::top_layer::anchored_content_attributes` with
 //! `AnchorKind::NavigationMenu` (the `data-dx-anchored` attribute the shared
-//! anchor-positioning stylesheet in `top_layer.rs` selects on)
-//! + `crate::top_layer::use_anchor_position_fallback` -- except
+//! anchor-positioning stylesheet in `top_layer.rs` selects on) and
+//! `crate::top_layer::use_anchor_position_fallback` -- except
 //! `popover="manual"`, not `"auto"`: this module already owns its entire
 //! open/close lifecycle (hover-intent timers, the focus-leave debounce
 //! above, Escape, click), the same reasoning `crate::tooltip`/

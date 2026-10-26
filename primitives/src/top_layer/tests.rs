@@ -44,7 +44,8 @@ fn style_attrs(attrs: &[Attribute]) -> Vec<(&'static str, String)> {
 
 #[test]
 fn no_caller_style_yields_just_the_anchor_binding() {
-    let result = anchored_content_attributes("x", vec![other("role", "tooltip")]);
+    let result =
+        anchored_content_attributes(AnchorKind::Tooltip, "x", vec![other("role", "tooltip")]);
     let styles = style_attrs(&result);
     assert_eq!(
         styles.len(),
@@ -56,9 +57,49 @@ fn no_caller_style_yields_just_the_anchor_binding() {
     assert!(result.iter().any(|a| a.name == "role"));
 }
 
+/// The values of every `data-dx-anchored` attribute in the list.
+fn anchored_attrs(attrs: &[Attribute]) -> Vec<String> {
+    attrs
+        .iter()
+        .filter(|a| a.name == "data-dx-anchored")
+        .filter_map(|a| match &a.value {
+            Text(s) => Some(s.clone()),
+            _ => None,
+        })
+        .collect()
+}
+
+#[test]
+fn the_kind_is_written_as_the_one_engine_attribute() {
+    let result = anchored_content_attributes(AnchorKind::HoverCard, "x", Vec::new());
+    assert_eq!(anchored_attrs(&result), ["hover-card"]);
+}
+
+#[test]
+fn a_caller_cannot_unscope_or_retarget_the_engine_attribute() {
+    let result = anchored_content_attributes(
+        AnchorKind::Popover,
+        "x",
+        vec![other("data-dx-anchored", "tooltip")],
+    );
+    assert_eq!(anchored_attrs(&result), ["popover"]);
+}
+
+#[test]
+fn a_self_placed_select_list_carries_no_engine_attribute() {
+    let result = anchored_content_attributes(AnchorKind::SelectItemAligned, "x", Vec::new());
+    assert!(anchored_attrs(&result).is_empty());
+    // It still binds its anchor, only the engine's `anchor()` rules are withheld.
+    assert_eq!(style_attrs(&result)[0].1, "position-anchor: --dxa-x;");
+}
+
 #[test]
 fn plain_caller_style_is_folded_after_the_anchor_binding() {
-    let result = anchored_content_attributes("x", vec![plain_style("min-height: 100px;")]);
+    let result = anchored_content_attributes(
+        AnchorKind::Tooltip,
+        "x",
+        vec![plain_style("min-height: 100px;")],
+    );
     let styles = style_attrs(&result);
     assert_eq!(
         styles.len(),
@@ -76,7 +117,11 @@ fn plain_caller_style_is_folded_after_the_anchor_binding() {
 
 #[test]
 fn shorthand_caller_style_is_folded_after_the_anchor_binding() {
-    let result = anchored_content_attributes("x", vec![shorthand_style("padding", "1rem")]);
+    let result = anchored_content_attributes(
+        AnchorKind::Tooltip,
+        "x",
+        vec![shorthand_style("padding", "1rem")],
+    );
     let styles = style_attrs(&result);
     assert_eq!(
         styles.len(),
@@ -97,6 +142,7 @@ fn shorthand_and_plain_caller_style_both_fold_into_the_one_attribute() {
     // `position-anchor` literal -- three style-contributing values that
     // must all end up in the one served `style="..."`.
     let result = anchored_content_attributes(
+        AnchorKind::Tooltip,
         "x",
         vec![
             plain_style("min-height: 100px;"),
