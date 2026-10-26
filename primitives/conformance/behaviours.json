@@ -1,0 +1,25 @@
+{
+  "fixture": [
+    {
+      "name": "sets the attribute and tells Rust",
+      "behaviour": { "kind": "fixture", "event": "click", "attr": "data-dx-fixture", "value": "on" },
+      "event": { "type": "click" },
+      "state": { "data-dx-fixture-block": null },
+      "expect": { "attrs": { "data-dx-fixture": "on" }, "send": { "behaviour": "fixture", "event": "click" } }
+    },
+    {
+      "name": "stands down while the host carries the block attribute",
+      "behaviour": { "kind": "fixture", "event": "click", "attr": "data-dx-fixture", "value": "on" },
+      "event": { "type": "click" },
+      "state": { "data-dx-fixture-block": "" },
+      "expect": {}
+    },
+    {
+      "name": "a cancelling fixture asks to prevent (honoured only because it is declared non-passive)",
+      "behaviour": { "kind": "fixture", "event": "keydown", "attr": "aria-busy", "value": "true", "cancel": true, "capture": true },
+      "event": { "type": "keydown" },
+      "state": { "data-dx-fixture-block": null },
+      "expect": { "prevent": true, "attrs": { "aria-busy": "true" }, "send": { "behaviour": "fixture", "event": "keydown" } }
+    }
+  ]
+}
