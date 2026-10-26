@@ -373,7 +373,7 @@ def check(tree, run_tools):
     else:
         for bad in GESTURE_METHODS:
             if re.search(r"\n\s{2}\"?%s\"?\s*:" % bad, methods.group(0)):
-                errors.append(f"{BRIDGE_TS}: METHODS has a `{bad}` row: a call arrives after the event's dispatch; it is an rsx handler")
+                errors.append(f"{BRIDGE_TS}: METHODS has a `{bad}` row: a call arrives after the event's dispatch; it is an effect of a named behaviour")
     if re.search(r"\bcommit\s*[(:]", bridge_code):
         errors.append(f"{BRIDGE_TS}: a `commit` verb: a frame wait does not order anything on desktop")
 

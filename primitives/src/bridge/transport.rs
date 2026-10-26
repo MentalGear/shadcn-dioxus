@@ -18,14 +18,23 @@
 //! | DOM edits of a render apply | at the end of the render's turn | in a `requestAnimationFrame`, at most one render per frame |
 //! | an eval issued from a handler runs | before that render's edits | before that render's edits (they wait for the frame) |
 //! | `MountedData` reads | synchronous | an IPC round trip |
-//! | a vdom event handler | synchronous | a blocking synchronous request per event |
+//! | a vdom event handler | synchronous | a blocking synchronous request per event, routed to a vdom that may be one render ahead of the DOM |
+//! | the ack gate | none: effects run after the render's edits | `poll_vdom` does not run the vdom (so no effect) while the last render's edits are unacknowledged |
+//! | Rust to page | a call | one `evaluate_script` per message, with the JSON inside the script text; the pump's FIFO is the webview's order of those calls |
+//! | a bridge flush (an effect) | after the render | after the render's edits are applied and acknowledged, so a handler's write waits for the frame |
+//! | an exception while applying edits (rAF) | the render is lost | the ack is never sent and the runtime stalls for good: only the page's own fail-opens (leases, the watchdog) recover |
 //!
 //! Consequences the verbs are built around:
 //!
 //! * A decision inside an event's dispatch cannot wait for Rust on any renderer: it is a named
 //!   [`Behaviour`](super::Behaviour) that Rust published beforehand.
 //! * Pointer capture and `focus` are not verbs: a call arrives after the event's dispatch, and capture or
-//!   focus after that moment is too late for the gesture or the focus handoff. They are rsx handlers.
+//!   focus after that moment is too late for the gesture or the focus handoff. They are effects of a named
+//!   behaviour (Dioxus has no pointer-capture API, and its `set_focus` is a webview query that runs after
+//!   the handler); no behaviour does either yet.
+//! * Only element operations share the pump. Each [`Session`](super::Session) is its own eval, as is each
+//!   `js_listener` script and each module load, so there is no order between a session's commands and a
+//!   pump message beyond the order of the `evaluate_script` calls.
 //! * Show-then-measure is one [`Transaction`](super::Transaction) (see
 //!   [`show_popover_measured`](super::show_popover_measured)): the rects come back from the same JS turn
 //!   that showed the element, so no render or frame can fall between the show and the read.
@@ -48,7 +57,7 @@
 //! * **The slow-channel mode.** Every `dioxus` object a body sees is already the bridge's `channel`
 //!   wrapper, so `window.__dxBridgeDelayFrames` covers every message, in both directions, without a
 //!   caller doing anything.
-//! * **One FIFO channel.** The pump is ONE long-lived eval per webview. Every element write and read
+//! * **One FIFO channel for element operations.** The pump is ONE long-lived eval per webview. Every element write and read
 //!   ([`fire`], [`ask`]) is a message `{ id, ops }` on it, run in the order received and answered
 //!   `{ id, results }` when it asked, because ordering inside one channel is the only ordering Dioxus
 //!   gives; separate evals have none on desktop, so a read is ordered after the writes before it.
@@ -57,8 +66,8 @@
 //!   mutations are written) sends the whole outbox. The element an op names is then in the DOM on the web, and
 //!   the first verb of a webview creates the pump in that effect, never inside a drop handler.
 //! * **Teardown never starts an eval.** Dropping a subscription sends one message on the channel it
-//!   already has (DioxusLabs/dioxus#4064: a new eval inside `use_drop` failed an assertion). The pump is
-//!   created at the first bridge use of a webview, so that first use must not be inside a drop handler.
+//!   already has (DioxusLabs/dioxus#4064: a new eval inside `use_drop` failed an assertion). A verb in a
+//!   drop handler only queues ops, and the pump is created by the flush effect, never in the handler.
 //! * **"Unsupported".** A renderer without JavaScript (Blitz) answers `EvalError::Unsupported`;
 //!   [`is_unsupported`] turns true the first time the platform says so, requests fail with
 //!   [`BridgeError::Unsupported`] and subscriptions end quietly, so a

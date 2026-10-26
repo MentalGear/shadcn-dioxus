@@ -14,7 +14,7 @@
 //   on               a listener running a JS handler, for `js_listener.rs`'s bespoke scripts
 //   call             a closed list of element methods (popover, dialog, scroll, selection...). Pointer capture and
 //                    focus are NOT verbs: a call lands after the event's dispatch, too late for either; they are
-//                    effects of a named behaviour or rsx handlers. There is no `commit` either (it was a frame wait
+//                    effects of a named behaviour. There is no `commit` either (it was a frame wait
 //                    that does not order anything on desktop)
 //   get              a closed list of reads (geometry, computed style, window metrics, active element)
 //   set              a `--dx-*` CSS custom property on an element whose style Rust does not own
@@ -501,6 +501,9 @@ function transaction(ops: DxOp[]): DxOpResult[] {
 
 /** Registrations on an element, ended by `sweep` when the element leaves the document. */
 const elementRegs = new Set<{ el: any; off: () => void }>();
+// SEAM (not built, row 434 step 3.0b): the command reconciler is ONE document-scoped observer installed with
+// the bridge at boot (`subtree`, `childList`, an attribute filter), not one per element; it would share this
+// observer's registry (`elementRegs`) rather than add another.
 let pageObserver: { disconnect(): void } | null = null;
 
 function sweep(): void {

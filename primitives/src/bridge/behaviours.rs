@@ -25,7 +25,8 @@
 //!   target replaces the first.
 //! * **Epoch and fail-open.** Every install carries an [`Epoch`](super::Epoch): an install older than
 //!   one the target already saw is dropped (a restarted session's late command cannot undo its
-//!   successor), an equal one renews. A variant may declare a lease: the page removes the listener
+//!   successor), an equal one renews. A variant may declare a lease, and a non-passive one always has one
+//!   ([`CANCEL_LEASE_MS`] unless it names its own): the page removes the listener
 //!   itself when Rust stops renewing, so a hung or dead Rust side leaves the page's native behaviour
 //!   (WCAG 2.1.2), and the session renews while it lives.
 
@@ -90,8 +91,23 @@ pub struct Declared {
     pub capture: bool,
     /// `false` only for a behaviour that cancels events.
     pub passive: bool,
-    /// The fail-open lease, if any.
+    /// The fail-open lease; always set for a non-passive behaviour (see [`CANCEL_LEASE_MS`]).
     pub lease_ms: Option<u32>,
+}
+
+/// The lease of a behaviour that cancels events and declares none of its own: the page removes the
+/// listener this long after Rust last renewed it, and the session renews at half of it. Sized above
+/// one desktop render plus its acknowledgement, so a healthy session never lapses.
+pub const CANCEL_LEASE_MS: u32 = 3000;
+
+/// A behaviour that can cancel an event always has a lease (WCAG 2.1.2: a hung Rust side must not leave
+/// the page unable to take its native action), by construction rather than by remembering to declare one.
+fn lease_for(passive: bool, declared: Option<u32>) -> Option<u32> {
+    if passive {
+        declared
+    } else {
+        Some(declared.unwrap_or(CANCEL_LEASE_MS))
+    }
 }
 
 /// The static description of a variant, for the generator and the gates.
@@ -140,7 +156,7 @@ impl Behaviour {
                 event: *event,
                 capture: *capture,
                 passive: !*cancel,
-                lease_ms: *lease_ms,
+                lease_ms: lease_for(!*cancel, *lease_ms),
             },
         }
     }
@@ -337,6 +353,26 @@ mod tests {
         assert!(fixture(false).declared().passive);
         assert!(!fixture(true).declared().passive);
         assert!(fixture(true).declared().capture);
+    }
+
+    /// A behaviour that cancels always carries a lease, a passive one only when it asks for one.
+    #[test]
+    fn a_cancelling_behaviour_always_has_a_lease() {
+        let fixture = |cancel, lease_ms| Behaviour::Fixture {
+            event: EventKind::Keydown,
+            attr: "data-x".into(),
+            value: "y".into(),
+            capture: true,
+            cancel,
+            lease_ms,
+        };
+        assert_eq!(
+            fixture(true, None).declared().lease_ms,
+            Some(CANCEL_LEASE_MS)
+        );
+        assert_eq!(fixture(true, Some(900)).declared().lease_ms, Some(900));
+        assert_eq!(fixture(false, None).declared().lease_ms, None);
+        assert_eq!(fixture(false, Some(900)).declared().lease_ms, Some(900));
     }
 
     /// Every kind has vectors, each vector's `behaviour` parses as a `Behaviour` of that kind, and its

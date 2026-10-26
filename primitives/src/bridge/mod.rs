@@ -61,7 +61,7 @@
 //! under a Content-Security-Policy without `'unsafe-eval'` cannot use the bridge, `js_listener` or any
 //! other eval-driven primitive (upstream dioxus-primitives has the same limit).
 //!
-//! # One FIFO channel per webview, flushed after the render
+//! # One FIFO channel for element operations, flushed after the render
 //!
 //! Every verb on an element, fire-and-forget ([`ElementExt::call`], [`ElementExt::set_var`],
 //! [`Transaction::fire`]) or answered ([`get`], [`ElementExt::call_value`], [`Transaction::run`]), is a
@@ -70,7 +70,10 @@
 //! ordered before the read that follows it, and a read and a write that must land in one JS turn go in
 //! one [`Transaction`]. A verb only queues its ops: one effect after the render that is running (or
 //! about to) sends the queue, so an element the render created is in the DOM when its op runs on the
-//! web. A verb called outside the Dioxus runtime does nothing, and an answered one is an error.
+//! web. A verb called outside the Dioxus runtime does nothing, and an answered one is an error. Only
+//! element operations are on this channel: each [`Session`] is its own eval (its order against the pump is
+//! the order of the platform's script evaluations), and a stream is at most one message per frame per
+//! stream with no acknowledgement.
 //!
 //! # What the bridge can and cannot carry
 //!
@@ -79,7 +82,7 @@
 //! carries work that may be late (subscriptions, reads, calls). It cannot carry a decision made inside
 //! an event's dispatch or a read-then-write that must land in one frame; the first is a [`Behaviour`]
 //! that Rust publishes beforehand, the second a [`Transaction`]. Pointer capture and `focus` are not verbs
-//! for the same reason: a call lands after the event's dispatch, so they are rsx handlers.
+//! for the same reason: a call lands after the event's dispatch, so they are effects of a named behaviour.
 //!
 //! # Epochs
 //!
