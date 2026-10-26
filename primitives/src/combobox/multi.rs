@@ -21,37 +21,6 @@ use crate::{
     use_controlled, use_form_reset_listener, use_id_or, use_unique_id, Controlled,
 };
 
-/// Moves DOM focus to the element with the given id.
-const FOCUS_ID_JS: &str = r#"
-const id = await dioxus.recv();
-const el = document.getElementById(id);
-if (el) el.focus();
-"#;
-
-/// Moves focus between the chips' remove buttons and the input.
-///
-/// Receives `[current_button_id_or_empty, "prev" | "next", input_id]`; the chips are the
-/// input's enclosing `[data-dx-combobox-chips]` field.
-/// From the input (no current button) `prev` lands on the last chip; `next`
-/// past the last chip lands on the input.
-const CHIP_NAV_JS: &str = r#"
-const [current, nav, inputId] = await dioxus.recv();
-const input = document.getElementById(inputId);
-const root = input && input.closest('[data-dx-combobox-chips]');
-if (!root) return;
-const buttons = [...root.querySelectorAll('[data-dx-combobox-chip-remove]')];
-let i = current ? buttons.findIndex((b) => b.id === current) : buttons.length;
-i += nav === 'prev' ? -1 : 1;
-if (i < 0) i = 0;
-const target = i >= buttons.length ? document.getElementById(inputId) : buttons[i];
-if (target) target.focus();
-"#;
-
-fn focus_id(id: String) {
-    let eval = document::eval(FOCUS_ID_JS);
-    let _ = eval.send(id);
-}
-
 /// Props for [`ComboboxMulti`].
 #[derive(Props, Clone, PartialEq)]
 pub struct ComboboxMultiProps<T: Clone + PartialEq + ToString + 'static> {
@@ -273,7 +242,8 @@ pub fn ComboboxChips(props: ComboboxChipsProps) -> Element {
     let multi = ctx.is_multi();
     let selected: Vec<RcPartialEqValue> = ctx.selectable.values.read().clone();
     let disabled = (ctx.selectable.disabled)();
-    let input_id = ctx.input_id;
+    let mut handles = ctx.handles;
+    let count = selected.len();
 
     let owned = attributes!(div {
         // The popup anchors to this field, not to the input inside it (the input drops its own anchor in a multi-select).
@@ -289,7 +259,7 @@ pub fn ComboboxChips(props: ComboboxChipsProps) -> Element {
             onpointerdown: move |event| {
                 // Pressing the field's own padding must not blur the input.
                 event.prevent_default();
-                focus_id(input_id.cloned());
+                handles.focus_input();
             },
             ..merged,
             if multi {
@@ -312,6 +282,9 @@ pub fn ComboboxChips(props: ComboboxChipsProps) -> Element {
                                     aria_label: remove_name,
                                     disabled,
                                     "data-dx-combobox-chip-remove": "true",
+                                    onmounted: move |event: MountedEvent| {
+                                        handles.chips.write().insert(n, event.data());
+                                    },
                                     onpointerdown: move |event| {
                                         event.prevent_default();
                                         event.stop_propagation();
@@ -322,22 +295,21 @@ pub fn ComboboxChips(props: ComboboxChipsProps) -> Element {
                                             if let ComboboxModel::Multi { remove, .. } = ctx.model {
                                                 remove.call(value.clone());
                                             }
-                                            focus_id(input_id.cloned());
+                                            handles.focus_input();
                                         }
                                     },
                                     onkeydown: {
                                         let value = value.clone();
-                                        let button_id = button_id.clone();
                                         move |event: KeyboardEvent| {
                                             let key = event.key();
                                             if matches!(key, Key::Backspace | Key::Delete) {
                                                 if let ComboboxModel::Multi { remove, .. } = ctx.model {
                                                     remove.call(value.clone());
                                                 }
-                                                focus_id(input_id.cloned());
+                                                handles.focus_input();
                                                 event.prevent_default();
                                             } else if let Some(nav) = direction.resolve_horizontal(&key) {
-                                                chip_nav(button_id.clone(), nav, input_id.cloned());
+                                                handles.focus_chip(Some(n), nav == HorizontalNav::Prev, count);
                                                 event.prevent_default();
                                             }
                                         }
@@ -352,16 +324,6 @@ pub fn ComboboxChips(props: ComboboxChipsProps) -> Element {
             {props.children}
         }
     }
-}
-
-/// Move focus one chip toward `nav` (or from the input when `current` is empty).
-pub(super) fn chip_nav(current: String, nav: HorizontalNav, input_id: String) {
-    let eval = document::eval(CHIP_NAV_JS);
-    let nav = match nav {
-        HorizontalNav::Prev => "prev",
-        HorizontalNav::Next => "next",
-    };
-    let _ = eval.send((current, nav.to_string(), input_id));
 }
 
 /// Props for [`ComboboxClear`].
@@ -381,7 +343,7 @@ pub struct ComboboxClearProps {
 #[component]
 pub fn ComboboxClear(props: ComboboxClearProps) -> Element {
     let mut ctx = use_context::<ComboboxContext>();
-    let input_id = ctx.input_id;
+    let handles = ctx.handles;
     if ctx.selectable.values.read().is_empty() {
         return rsx! {};
     }
@@ -403,7 +365,7 @@ pub fn ComboboxClear(props: ComboboxClearProps) -> Element {
             },
             onclick: move |_| {
                 ctx.clear();
-                focus_id(input_id.cloned());
+                handles.focus_input();
             },
             ..merged,
             {props.children}
