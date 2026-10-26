@@ -6,7 +6,7 @@ resolves here by id.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Done rows (368)
+## Done rows (369)
 
 | # | Item | Updated |
 |---|---|---|
@@ -378,5 +378,6 @@ resolves here by id.
 | [430](backlog/done/430-component-manifests-derived-from-source.md) | Component manifests derived from source, not hand-kept | 2026-10-25 |
 | [431](backlog/done/431-one-test-harness-controlled-state-use-controlled.md) | One test runtime harness; controlled state only through use_controlled | 2026-10-25 |
 | [437](backlog/done/437-pipefail-early-exit-reader.md) | No early-exit reader on the right of a pipe in a pipefail script (grep -q, head, sed q, awk exit) | 2026-10-25 |
+| [439](backlog/done/439-chart-prehydration-geometry-flake.md) | chart-prehydration geometry flake: the two loads race font-display: optional | 2026-10-25 |
 
 <!-- END GENERATED -->

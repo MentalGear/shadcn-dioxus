@@ -1,21 +1,29 @@
 ---
 id: 434
-title: "JavaScript lives in TypeScript modules, not in Rust raw strings"
-status: "BACKLOG. Owner approved 2026-10-25 (row 365 sweep, P9)."
+title: "Cut JavaScript to what Rust cannot do: audit every eval block, move the rest into Rust, TypeScript only for the remainder"
+status: "BACKLOG. Approved as P9 of the row 365 sweep; the owner re-scoped it to Rust first on 2026-10-25.…"
 size: "L"
 area: primitives
 updated: 2026-10-25
 ---
 
-# Row 434: JavaScript lives in TypeScript modules, not in Rust strings
+# Row 434: Cut JavaScript to what Rust cannot do
 
 ## Item
 
-About 46 blocks (about 2,420 lines) of JavaScript sit in Rust raw strings passed to `document::eval`, so the JS-quality gates regex Rust, and the modality writer and `PREPAINT_JS` exist as identical copies that gates compare. Construction: every non-trivial script is a function in `primitives/src/ts/<module>.ts`, typed, and bundled into the committed `primitives/src/js/<module>.js` by the existing bundle chain, then included with `include_str!`. Rust calls `window.__dx.fn(args)` through one eval wrapper. The copies become one file, and a raw-string JS block longer than N lines fails the gate.
+The owner's principle (2026-10-25): the point of Dioxus is to drive the UI from Rust/wasm, so JavaScript is the exception, not the default. The library has no `web-sys` dependency; every browser API Dioxus does not wrap goes through `document::eval`, the one route that works on web, desktop and mobile. 72 files carry eval. The owner chose **Rust first** over "Rust plus web-sys" (one code path per feature, every renderer) and over the original TypeScript move.
+
+1. **Audit** every eval block and classify it: (a) Dioxus already has it in Rust (`MountedData::get_client_rect`, `scroll_to`, `set_focus`, event data, signals, `onvisible`/`onresize` where they exist), so move it; (b) Dioxus has no Rust API (`showPopover`/`showModal`, `matchMedia`, pointer capture, listener options such as passive/capture, `scrollend`, `getAnimations`), so it stays JS; (c) must run before wasm (`PREPAINT_JS`, the modality writer), so it stays JS; (d) JS on purpose for latency (one-frame measure-and-place in the anchor engine, scroll bridge, virtual find), so it stays only with a measured reason.
+2. **Move** every (a) block to Rust, per cluster, with the components' specs on a release build as the proof (timing-sensitive paths compare long tasks before and after).
+3. **What stays** (b, c, d) moves into typed `primitives/src/ts/` modules through the existing bundle chain (the original P9 construction), and the copies become one file.
+
+## Audit result (2026-10-25)
+
+[`../research/js-audit-2026-10-25.md`](../research/js-audit-2026-10-25.md): 103 blocks, about 6,205 lines. (a) movable now 21 blocks / 624 lines (10%); (b) no Dioxus API 55 / 1,580 (25%); (c) before wasm 5 / 107 (2%); (d) JS on purpose 22 / 3,894 (63%). Upstream `main`/0.8.0-alpha.3 adds no element or window API, so no upgrade is waited for. Step 2: about 26 agent-hours in 5 lanes (2A styles and toast pause, 2B focus by handle, 2C scroll and measure, 2D virtual bridge experiment with a keep-JS exit, 2E demo sleeps). Step 3: about 66 agent-hours in 8 lanes over two batches (3.0 the typed channel and loading first).
 
 ## Status / trigger
 
-BACKLOG. Owner approved 2026-10-25 (row 365 sweep, P9).
+BACKLOG. Approved as P9 of the row 365 sweep; the owner re-scoped it to Rust first on 2026-10-25. The audit (step 1) is read-only and can run at any time; the moves follow it.
 
 ## Size
 
@@ -29,5 +37,5 @@ Source: [final sweep note, P9](../research/final-sweep-2026-10-25.md). One lane 
 - **The chain exists:** `primitives/src/ts/` holds one file (`focus-trap.ts`), with `scripts/build-js-bundle.sh`, `primitives/src/js/bundle.manifest` and `check-js-bundle.sh` (committed `.js`, sha256 manifest).
 - **Cost shows up as exceptions and copies:** `listener-ok:` 18, `blocking-ok:` 4, `interval-ok:` 3 markers. The modality writer exists in three byte-identical copies (`modality.rs`, `PREPAINT_JS`, `preview/index.html`) that `check-open-focus.sh:34,115` compares; `PREPAINT_JS` exists in two that `check-theme-mode-writer.sh:132` compares.
 - **Subsumes:** the 46 blocks over time; the three-copy and two-copy identity checks; the regex-over-Rust complications of four gates; the `listener-ok` markers that sit inside eval strings. **Does not subsume:** one-line `eval` calls that read one value; the carousel needs its own plan because it builds its script with `concat!`/macros.
-- **Gate:** `check-js-in-rust.sh`: a raw string over N lines, or any `addEventListener` in a `.rs` file, fails unless listed. The JS gates scan `.ts`.
+- **Gate:** `check-js-in-rust.sh`: every eval site carries its audit class; an (a)-class eval, a raw string over N lines, or any `addEventListener` in a `.rs` file fails unless listed with a reason. The JS gates scan `.ts`.
 - **Risk:** timing-sensitive drift while moving (scroll bridge, find, wheel band). Each lane's proof is the specs of the components that use its block, on a release build. Typed access to Dioxus's eval channel (`dioxus.send`) needs a declaration file.
