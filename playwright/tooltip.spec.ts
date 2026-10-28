@@ -236,3 +236,71 @@ test.describe("Rich content layout (row 292)", () => {
     for (const s of mounted) expect(s.display).toBe(openDisplay);
   });
 });
+
+// dev-docs/backlog.md row 478 -- Base UI's tooltip defaults: a press on the trigger closes the tooltip
+// (`closeOnClick`) and the focus that press moves onto the trigger does not reopen it, a touch pointer
+// never opens it, and the panel sits 4px from the trigger (shadcn base-nova `sideOffset={4}`).
+test.describe("Base UI defaults (backlog row 478)", () => {
+  const URL = `${BASE_URL}/component/tooltip/`;
+  const button = (page: Page, name: string) => page.getByRole("button", { name, exact: true });
+  const surface = (page: Page) => page.getByRole("tooltip");
+
+  test("a press on the trigger closes the open tooltip and keeps it closed", async ({ page }) => {
+    await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
+    const trigger = button(page, "Default (0)");
+    await trigger.hover();
+    await expect(surface(page)).toBeVisible();
+
+    await page.mouse.down();
+    await expect(surface(page), "the press closes the tooltip").toHaveCount(0);
+    await page.mouse.up();
+    await page.waitForTimeout(400);
+    await expect(trigger, "the press focused the trigger").toBeFocused();
+    await expect(surface(page), "the focus the press moved onto the trigger does not reopen it").toHaveCount(0);
+
+    // Keyboard focus still opens it at once.
+    await page.mouse.move(0, 0);
+    await page.keyboard.press("Tab");
+    await page.keyboard.press("Shift+Tab");
+    await expect(trigger).toBeFocused();
+    await expect(surface(page), "keyboard focus opens the tooltip").toBeVisible();
+  });
+
+  test("a pointerenter of a touch pointer does not start the open; a mouse pointerenter does", async ({ page }) => {
+    await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
+    const trigger = button(page, "Default (0)");
+    await trigger.dispatchEvent("pointerenter", { pointerType: "touch", pointerId: 7, isPrimary: true });
+    await page.waitForTimeout(500);
+    await expect(surface(page), "a touch pointerenter opens nothing (delay 0 would open at once)").toHaveCount(0);
+
+    await trigger.dispatchEvent("pointerenter", { pointerType: "mouse", pointerId: 1, isPrimary: true });
+    await expect(surface(page), "a mouse pointerenter opens it").toBeVisible();
+  });
+
+  test.describe("on a touch screen", () => {
+    test.use({ hasTouch: true });
+
+    test("a tap does not open the tooltip, by hover or by the focus it moves onto the trigger", async ({ page }) => {
+      await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
+      await button(page, "Default (0)").tap();
+      await page.waitForTimeout(600);
+      await expect(surface(page)).toHaveCount(0);
+    });
+  });
+
+  test("the panel sits 4px from the trigger", async ({ page }) => {
+    await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
+    const trigger = button(page, "Default (0)");
+    await trigger.hover();
+    const tooltip = surface(page);
+    await expect(tooltip).toBeVisible();
+    await awaitAnimationsSettled(tooltip);
+    const [t, p] = [await measureAtRest(trigger), await measureAtRest(tooltip)];
+    // The default side is `top`; the gap is read along whichever axis separates the two boxes.
+    const vertical = Math.max(t.y - (p.y + p.height), p.y - (t.y + t.height));
+    const horizontal = Math.max(t.x - (p.x + p.width), p.x - (t.x + t.width));
+    const gap = Math.max(vertical, horizontal);
+    expect(gap, "side offset 4px").toBeGreaterThan(3.5);
+    expect(gap, "side offset 4px").toBeLessThan(4.5);
+  });
+});

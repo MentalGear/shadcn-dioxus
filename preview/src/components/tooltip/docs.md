@@ -41,6 +41,10 @@ Tooltip {
 
 With a delay above 0, nothing opens until it has passed, so sweeping across a toolbar flashes no tooltip, and leaving the trigger before then cancels the open. **Keyboard focus is not delayed**: focusing the trigger opens the tooltip at once, and blur or Escape close it at once. The timers belong to the component, so unmounting cancels them. There is no provider that skips the delay for the next tooltip; set `delay` on each tooltip instead.
 
+## Touch and press
+
+Hover is a mouse's (and a pen's): a touch pointer never opens a tooltip, and a tap does not open one through the focus it moves onto the trigger either (only keyboard focus opens a tooltip). Pressing the trigger closes an open tooltip, as Base UI's `closeOnClick` does. The tooltip sits 4 px from the trigger, shadcn's `sideOffset={4}`.
+
 ## No click-only mode
 
 Unlike the menus (`NavigationMenu`, `Navbar`, `Menubar` and the dropdown /

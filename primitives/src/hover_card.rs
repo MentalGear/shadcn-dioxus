@@ -426,8 +426,14 @@ pub fn HoverCardTrigger(props: HoverCardTriggerProps) -> Element {
     rsx! {
         div {
             id,
-            // Mouse events: delayed by `delay` / `close_delay`
-            onmouseenter: move |_| ctx.timers.pointer_enter(),
+            // Pointer events: delayed by `delay` / `close_delay`. Hover is a mouse's (and a pen's):
+            // a tap fires compatibility `mouseenter` events, so the open side reads
+            // `pointerenter` and ignores `touch` (Base UI `useHoverReferenceInteraction`, row 478).
+            onpointerenter: move |event: PointerEvent| {
+                if event.pointer_type() != "touch" {
+                    ctx.timers.pointer_enter();
+                }
+            },
             onmouseleave: move |_| ctx.timers.pointer_leave(),
 
             // Focus events: keyboard, so immediate

@@ -249,10 +249,35 @@ pub fn TooltipTrigger(props: TooltipTriggerProps) -> Element {
 
     // Pointer events wait `delay` / `close_delay`; focus, blur and Escape are
     // keyboard-driven and never do (`HoverTimers`' doc).
-    let handle_mouse_enter = move |_: Event<MouseData>| ctx.timers.pointer_enter();
+    //
+    // Hover is a mouse's (and a pen's): a tap fires compatibility `mouseenter` events that
+    // carry no pointer type, so the open side reads `pointerenter` and ignores `touch`
+    // (Base UI `useHoverReferenceInteraction`, backlog row 478).
+    let handle_pointer_enter = move |event: PointerEvent| {
+        if event.pointer_type() != "touch" {
+            ctx.timers.pointer_enter();
+        }
+    };
     let handle_mouse_leave = move |_: Event<MouseData>| ctx.timers.pointer_leave();
-    let handle_focus = move |_: Event<FocusData>| ctx.timers.focus();
-    let handle_blur = move |_: Event<FocusData>| ctx.timers.blur();
+
+    // A press on the trigger closes the tooltip (Base UI `closeOnClick`). The focus that the
+    // same press moves onto the trigger must not reopen it: only keyboard focus opens a
+    // tooltip (Base UI `useFocus` `visibleOnly`), so the press marks the next focus as its own.
+    let mut pressed = use_signal(|| false);
+    let handle_pointer_down = move |_: PointerEvent| {
+        pressed.set(true);
+        ctx.timers.dismiss();
+    };
+    let handle_pointer_up = move |_: PointerEvent| pressed.set(false);
+    let handle_focus = move |_: Event<FocusData>| {
+        if !*pressed.peek() {
+            ctx.timers.focus();
+        }
+    };
+    let handle_blur = move |_: Event<FocusData>| {
+        pressed.set(false);
+        ctx.timers.blur();
+    };
 
     // Handle keyboard events
     let handle_keydown = move |event: Event<KeyboardData>| {
@@ -266,8 +291,11 @@ pub fn TooltipTrigger(props: TooltipTriggerProps) -> Element {
         id: props.id.clone(),
         tabindex: "0",
         "aria-describedby": ctx.tooltip_id.cloned(),
-        onmouseenter: handle_mouse_enter,
+        onpointerenter: handle_pointer_enter,
         onmouseleave: handle_mouse_leave,
+        onpointerdown: handle_pointer_down,
+        onpointerup: handle_pointer_up,
+        onpointercancel: handle_pointer_up,
         onfocus: handle_focus,
         onblur: handle_blur,
         onkeydown: handle_keydown,
@@ -455,7 +483,7 @@ fn TooltipContentRendered(
     // doc. `anchor_id` is this content's own `id`: `TooltipTrigger`'s
     // `anchor-name` is keyed off `ctx.tooltip_id`, which `TooltipContent`
     // (below) keeps synced to this same id.
-    crate::top_layer::use_anchor_position_fallback(id.clone(), id.clone(), open, side, align, 8);
+    crate::top_layer::use_anchor_position_fallback(id.clone(), id.clone(), open, side, align, 4);
     // The arrow reads the engine's placement contract (`data-placed-side`, `--dx-anchor-offset-x/-y`,
     // published by `use_anchor_position_fallback` at every reposition): no measurement of its own.
     // Any scroll closes a tooltip (`top_layer::use_close_on_scroll`'s doc).
