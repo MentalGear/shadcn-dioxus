@@ -429,6 +429,7 @@ test.describe('slider in a form', () => {
   test('on_value_commit fires once on pointer release, not while dragging', async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/slider/`, { timeout: 20 * 60 * 1000 });
     const thumb = volume(page);
+    await thumb.scrollIntoViewIfNeeded();
     const box = await thumb.boundingBox();
     if (!box) throw new Error('volume thumb has no bounding box');
     const track = await page.locator('#slider-form [data-orientation="horizontal"]:has([role="slider"][aria-label="Volume"])').first().boundingBox();
