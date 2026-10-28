@@ -398,7 +398,7 @@ test.describe('Axe automated scan', () => {
 // `oracle/tier1-apg/menu-submenu.spec.ts`'s "hover:" tests on `main`.
 // ---------------------------------------------------------------------------
 test.describe('DropdownMenuSub open_on_hover: false (click activation)', () => {
-  const HOVER_SETTLE_MS = 1000; // >> SUBMENU_OPEN_INTENT_DELAY / SUBMENU_CLOSE_GRACE_DELAY (200ms each)
+  const HOVER_SETTLE_MS = 1000; // >> SUBMENU_OPEN_INTENT_DELAY (100ms) + SUBMENU_CLOSE_GRACE_DELAY (0)
 
   async function openMenu(page: import('@playwright/test').Page) {
     await gotoHydrated(page, `${BASE_URL}/component/dropdown_menu/`, { timeout: 20 * 60 * 1000 });
@@ -486,6 +486,38 @@ test.describe('DropdownMenuSub open_on_hover: false (click activation)', () => {
     const sub = page.getByRole('menuitem', { name: 'More tools' });
     await sub.hover();
     await expect(sub).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  // Base UI's submenu hover contract (row 478): `SubmenuTrigger` `delay` 100 ms, `closeDelay` 0. Both are
+  // timed in the page from the pointer event to the `aria-expanded` write, and asserted only as an
+  // upper bound that the previous 200 ms values could not meet (a timer plus the render is never
+  // shorter than its delay), so a slow debug build cannot turn it red.
+  test('default hover delays are Base UI\'s: open under 200 ms after the pointer rests, close under 200 ms after it leaves', async ({ page }) => {
+    await gotoHydrated(page, `${BASE_URL}/component/dropdown_menu/`, { timeout: 20 * 60 * 1000 });
+    await page.getByRole('button', { name: 'Open Menu' }).click();
+    const sub = page.getByRole('menuitem', { name: 'More tools' });
+    await sub.evaluate((el) => {
+      const t: Record<string, number> = {};
+      (window as unknown as { __subTimes: Record<string, number> }).__subTimes = t;
+      document.addEventListener('mouseover', (e) => {
+        if (el.contains(e.target as Node)) t.enter ??= performance.now();
+      }, true);
+      document.addEventListener('mouseout', (e) => {
+        if (t.open && !t.leave && el.contains(e.target as Node)) t.leave = performance.now();
+      }, true);
+      new MutationObserver(() => {
+        const expanded = el.getAttribute('aria-expanded') === 'true';
+        if (expanded) t.open ??= performance.now();
+        else if (t.open) t.closed ??= performance.now();
+      }).observe(el, { attributes: true, attributeFilter: ['aria-expanded'] });
+    });
+    await sub.hover();
+    await expect(sub).toHaveAttribute('aria-expanded', 'true');
+    await page.getByRole('menuitem', { name: 'Edit' }).hover(); // a sibling item: not the submenu
+    await expect(sub).toHaveAttribute('aria-expanded', 'false');
+    const t = await page.evaluate(() => (window as unknown as { __subTimes: Record<string, number> }).__subTimes);
+    expect(t.open - t.enter, 'hover to open').toBeLessThan(200);
+    expect(t.closed - t.leave, 'leave to close').toBeLessThan(200);
   });
 });
 

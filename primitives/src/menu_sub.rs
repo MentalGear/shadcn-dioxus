@@ -94,28 +94,27 @@ use crate::use_unique_id;
 /// see `playwright/oracle/reference/README.md`) and is silent on pointer
 /// hover entirely -- opening on hover is a widely-implemented UX
 /// convention (Radix, native OS menus), not an APG normative requirement,
-/// so this delay is this crate's own choice, not a citation (see
-/// `dev-docs/archive/rounds/component-backlog.md` row 68's "budget as fresh design work
-/// against Radix `Sub`/`Portal` semantics"). A short delay, not an instant
-/// open, keeps a pointer merely passing over the trigger on its way
-/// elsewhere from flashing open every submenu it crosses -- the exact
-/// defect an instant hover-open produces. Only applies while
-/// [`SubMenuState::open_on_hover`] is `true` (the default); Base UI's
-/// equivalent knob is `SubmenuTrigger`'s `delay` prop (default 100 ms) --
-/// not exposed here, this constant stays the one value.
-pub(crate) const SUBMENU_OPEN_INTENT_DELAY: Duration = Duration::from_millis(200);
+/// so the value is Base UI's: `SubmenuTrigger`'s `delay` default of 100 ms
+/// (`menu/submenu-trigger/MenuSubmenuTrigger.mjs`, backlog row 478). A short
+/// delay, not an instant open, keeps a pointer merely passing over the
+/// trigger on its way elsewhere from flashing open every submenu it crosses
+/// -- the exact defect an instant hover-open produces. Only applies while
+/// [`SubMenuState::open_on_hover`] is `true` (the default); the prop is not
+/// exposed, this constant stays the one value.
+pub(crate) const SUBMENU_OPEN_INTENT_DELAY: Duration = Duration::from_millis(100);
 
 /// Grace delay before a pointer leaving a sub-trigger (without entering its
 /// own submenu content) closes it.
 ///
-/// Without this, the physical gap between a trigger and its anchored
-/// content -- however small; see each `*SubContentRendered`'s zero-gap
-/// anchor choice, which exists specifically to shrink this window -- would
-/// make an ordinary diagonal mouse move from the trigger toward its own
-/// submenu register as "the pointer left," closing the submenu out from
-/// under the pointer before it ever arrives. Same non-normative status as
+/// Base UI's `SubmenuTrigger` `closeDelay` default is 0 ms
+/// (`menu/submenu-trigger/MenuSubmenuTrigger.mjs`, backlog row 478), so the
+/// close is a timer task that runs after the current pointer events are
+/// dispatched: a pointer that leaves the trigger and enters the submenu in
+/// the same move (each `*SubContentRendered` anchors with a zero gap, which
+/// abuts the two elements) cancels it first, and one that went anywhere else
+/// closes the submenu at once. Same non-normative status as
 /// [`SUBMENU_OPEN_INTENT_DELAY`] above.
-pub(crate) const SUBMENU_CLOSE_GRACE_DELAY: Duration = Duration::from_millis(200);
+pub(crate) const SUBMENU_CLOSE_GRACE_DELAY: Duration = Duration::ZERO;
 
 /// Whether `key` is this pattern's direction-aware submenu **open** arrow
 /// key -- `ArrowRight` in LTR, `ArrowLeft` in RTL. Callers combine this with
@@ -249,7 +248,7 @@ pub(crate) struct SubMenuState {
     /// `onmouseenter` could cancel it. A pointer that leaves the trigger
     /// and moves into the submenu content (the *expected* path to select an
     /// item) never touches the trigger again, so the close the trigger
-    /// scheduled on its way out would fire unconditionally ~200ms later and
+    /// scheduled on its way out would fire unconditionally a moment later and
     /// close the submenu out from under a pointer legitimately hovering
     /// it, making its items unselectable by mouse. Sharing this one
     /// `DelayedAction` and having `*SubContentRendered` cancel it on its

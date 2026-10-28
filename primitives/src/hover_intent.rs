@@ -14,11 +14,11 @@
 //! - **the open index** and its ONE write path ([`HoverIntent::set_open`]), which also
 //!   clears the "opened by hover" marker, so the marker can only ever describe a panel the
 //!   pointer opened and nothing since has re-decided;
-//! - **the open-intent timer** ([`HOVER_OPEN_INTENT_DELAY`]): resting on a trigger while
+//! - **the open-intent timer** ([`HoverDelays::open`]): resting on a trigger while
 //!   nothing is open opens it after the delay. While *something* is open, moving to a
 //!   sibling trigger switches at once (Radix: `isOpenDelayed` is only true when nothing is
 //!   open);
-//! - **the close-grace timer** ([`HOVER_CLOSE_GRACE_DELAY`]): the pointer leaving the
+//! - **the close-grace timer** ([`HoverDelays::close`]): the pointer leaving the
 //!   region (trigger + panel) of the open item starts it, and entering the region again --
 //!   including the panel across the gap between it and its trigger -- cancels it. It
 //!   closes whatever opened the panel (hover, click or keyboard), as Radix does;
@@ -46,8 +46,11 @@
 //! `packages/react/navigation-menu/src/navigation-menu.tsx`): the trigger's and the
 //! content's `onPointerLeave` both call `startCloseTimer` (150 ms), and `onPointerEnter` of
 //! either clears it; `onTriggerEnter` opens after `delayDuration` (200 ms) only while
-//! nothing is open. This crate keeps its own, slightly longer close grace (300 ms) -- the
-//! panel is separated from its trigger by a gap, and a slow diagonal is more forgiving.
+//! nothing is open. A host picks its [`HoverDelays`]: [`HoverDelays::NAVBAR`] keeps this
+//! crate's own, slightly longer close grace (300 ms, the panel is separated from its trigger
+//! by a gap and a slow diagonal is more forgiving), [`HoverDelays::BASE_UI_NAVIGATION_MENU`]
+//! is Base UI's `NavigationMenu.Root` `delay` and `closeDelay` (50 ms each,
+//! `navigation-menu/root/NavigationMenuRoot.mjs`, backlog row 478).
 
 use std::time::Duration;
 
@@ -56,16 +59,33 @@ use dioxus::prelude::*;
 use crate::js_listener::{use_js_listeners, JsListeners};
 use crate::menu_sub::{use_delayed_action, DelayedAction};
 
-/// Hover-intent delay before a pointer resting on a trigger opens its panel (nothing
-/// open yet). Numerically the same as this theme's `--dx-motion-duration-base` token
-/// (`preview/assets/dx-components-theme.css`) -- not read from it (this is a plain Rust
-/// constant, not CSS), but deliberately kept in step with it.
-pub(crate) const HOVER_OPEN_INTENT_DELAY: Duration = Duration::from_millis(150);
+/// The two hover-intent delays of one host.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) struct HoverDelays {
+    /// How long a pointer resting on a trigger waits before it opens its panel (nothing open
+    /// yet).
+    pub(crate) open: Duration,
+    /// How long a pointer leaving a trigger or its panel (without entering the other) waits
+    /// before the panel closes.
+    pub(crate) close: Duration,
+}
 
-/// Grace delay before a pointer leaving a trigger or its panel (without entering the
-/// other) closes the panel. Numerically the same as this theme's
-/// `--dx-motion-duration-slower` token, for the same reason as [`HOVER_OPEN_INTENT_DELAY`].
-pub(crate) const HOVER_CLOSE_GRACE_DELAY: Duration = Duration::from_millis(300);
+impl HoverDelays {
+    /// Navbar: 150 ms open intent, 300 ms close grace. Numerically the same as this theme's
+    /// `--dx-motion-duration-base` and `--dx-motion-duration-slower` tokens
+    /// (`preview/assets/dx-components-theme.css`) -- not read from them (these are plain Rust
+    /// constants, not CSS), but deliberately kept in step.
+    pub(crate) const NAVBAR: Self = Self {
+        open: Duration::from_millis(150),
+        close: Duration::from_millis(300),
+    };
+
+    /// NavigationMenu: Base UI's `NavigationMenu.Root` `delay` and `closeDelay` defaults.
+    pub(crate) const BASE_UI_NAVIGATION_MENU: Self = Self {
+        open: Duration::from_millis(50),
+        close: Duration::from_millis(50),
+    };
+}
 
 /// The hover-intent state of one hover-opened, one-at-a-time menu. `Copy`, so it travels
 /// in the host's context struct like any other signal handle.
@@ -75,18 +95,29 @@ pub(crate) struct HoverIntent {
     opened_by_hover: Signal<bool>,
     open_timer: DelayedAction,
     close_timer: DelayedAction,
+    delays: HoverDelays,
     enabled: ReadSignal<bool>,
     set_open: Callback<Option<usize>>,
     /// The last pointer event the page saw came from a touch or a pen, not a mouse.
     non_mouse: Signal<bool>,
 }
 
-/// Create a [`HoverIntent`] around the host's `open` index signal. A hook (it calls
-/// `use_signal` and `use_callback`): call it unconditionally, once per render, directly
-/// in the host's component body. `enabled` is the host's `open_on_hover` prop.
+/// Create a [`HoverIntent`] around the host's `open` index signal with the
+/// [`HoverDelays::NAVBAR`] delays. A hook (it calls `use_signal` and `use_callback`): call it
+/// unconditionally, once per render, directly in the host's component body. `enabled` is the
+/// host's `open_on_hover` prop.
 pub(crate) fn use_hover_intent(
+    open: Signal<Option<usize>>,
+    enabled: ReadSignal<bool>,
+) -> HoverIntent {
+    use_hover_intent_with_delays(open, enabled, HoverDelays::NAVBAR)
+}
+
+/// [`use_hover_intent`] with the host's own [`HoverDelays`].
+pub(crate) fn use_hover_intent_with_delays(
     mut open: Signal<Option<usize>>,
     enabled: ReadSignal<bool>,
+    delays: HoverDelays,
 ) -> HoverIntent {
     let mut opened_by_hover = use_signal(|| false);
     let set_open = use_callback(move |index: Option<usize>| {
@@ -119,6 +150,7 @@ pub(crate) fn use_hover_intent(
         opened_by_hover,
         open_timer,
         close_timer,
+        delays,
         enabled,
         set_open,
         non_mouse,
@@ -168,7 +200,7 @@ impl HoverIntent {
             self.open_timer.cancel();
             hover.open_by_hover(index);
         } else {
-            self.open_timer.schedule(HOVER_OPEN_INTENT_DELAY, move || {
+            self.open_timer.schedule(self.delays.open, move || {
                 if !hover.touch_pointer() {
                     hover.open_by_hover(index);
                 }
@@ -192,7 +224,7 @@ impl HoverIntent {
     }
 
     /// The pointer left the region (trigger or panel) of item `index`. If `index` is the
-    /// open item, it closes after [`HOVER_CLOSE_GRACE_DELAY`] unless the pointer re-enters.
+    /// open item, it closes after [`HoverDelays::close`] unless the pointer re-enters.
     pub(crate) fn leave(&mut self, index: usize) {
         if !(self.enabled)() {
             return;
@@ -203,7 +235,7 @@ impl HoverIntent {
         }
         let open = self.open;
         let set_open = self.set_open;
-        self.close_timer.schedule(HOVER_CLOSE_GRACE_DELAY, move || {
+        self.close_timer.schedule(self.delays.close, move || {
             if *open.peek() == Some(index) {
                 set_open.call(None);
             }

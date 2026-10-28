@@ -44,8 +44,8 @@ served below a base path, prefix each `href` with it yourself.
 ## Open on hover, or click only
 
 By default a trigger opens its panel when the pointer rests on it for a
-moment (150 ms), and the panel closes again when the pointer leaves the
-trigger and the panel. Pass `open_on_hover: false` to the `NavigationMenu` for
+moment (50 ms, Base UI's `delay`), and the panel closes again 50 ms
+(Base UI's `closeDelay`) after the pointer leaves the trigger and the panel. Pass `open_on_hover: false` to the `NavigationMenu` for
 **click activation** instead:
 
 ```rust

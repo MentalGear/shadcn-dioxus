@@ -159,7 +159,7 @@ use crate::collection::{
     CollectionPlacement, CollectionState, ItemIndex,
 };
 use crate::direction::{use_direction, use_direction_signal, Direction};
-use crate::hover_intent::{use_hover_intent, HoverIntent};
+use crate::hover_intent::{use_hover_intent_with_delays, HoverDelays, HoverIntent};
 use crate::menu_sub::{use_delayed_action, DelayedAction};
 use crate::{
     has_own_accessible_name, merge_attributes, use_animated_open, use_id_or, use_unique_id,
@@ -293,7 +293,11 @@ pub struct NavigationMenuProps {
 #[component]
 pub fn NavigationMenu(props: NavigationMenuProps) -> Element {
     let open = use_signal(|| None);
-    let hover = use_hover_intent(open, props.open_on_hover);
+    let hover = use_hover_intent_with_delays(
+        open,
+        props.open_on_hover,
+        HoverDelays::BASE_UI_NAVIGATION_MENU,
+    );
     let set_open = hover.set_open();
 
     // Non-looping (matches the reference implementation's clamped
