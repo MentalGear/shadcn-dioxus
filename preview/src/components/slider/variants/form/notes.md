@@ -1,0 +1,1 @@
+With a `name`, a `Slider` submits its value and a `RangeSlider` one value per thumb (start first) through hidden inputs, and the form's reset restores `default_value`. `on_value_commit` fires when a drag ends or on each keyboard step, not on every move of a drag. `min_steps_between_thumbs` keeps the range's thumbs that many steps apart (10 here, so at least 10 units).

@@ -24,6 +24,12 @@ pub struct TabsProps {
     #[props(default)]
     pub disabled: ReadSignal<bool>,
 
+    /// Whether moving focus onto a tab also activates it (automatic activation). The default,
+    /// `false`, is manual activation: arrow keys only move focus and `Enter`, `Space` or a click
+    /// activates. See `dioxus_primitives::tabs::TabsProps::activate_on_focus`.
+    #[props(default)]
+    pub activate_on_focus: ReadSignal<bool>,
+
     /// Whether the tabs are horizontal (the default, shadcn's `orientation="horizontal"`).
     /// `false` lays the list out as a column beside the panels (shadcn's
     /// `orientation="vertical"`), moves focus with `ArrowUp`/`ArrowDown`, and sets
@@ -127,6 +133,7 @@ pub fn Tabs(props: TabsProps) -> Element {
             default_value: props.default_value,
             on_value_change: props.on_value_change,
             disabled: props.disabled,
+            activate_on_focus: props.activate_on_focus,
             horizontal: props.horizontal,
             roving_loop: props.roving_loop,
             hidden_until_found: props.hidden_until_found,

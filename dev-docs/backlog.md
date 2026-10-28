@@ -114,6 +114,6 @@ proposing one is closed as out of scope (row 337 is the first).
 | [479](backlog/479-scroll-lock-method-and-the-touch-carve-out.md) | Scroll-lock method: Base UI's overflow:hidden with scrollbar-gutter, and no lock for touch-opened anchored popups | BACKLOG. Owner decided 2026-10-28: Menubar is not modal (no scroll lock), and anchored overlays… | M | overlays |
 | [480](backlog/480-re-diff-keyboard-inset-against-base-ui-1-9-0.md) | Re-diff primitives/src/keyboard_inset.rs against Base UI 1.9.0 | PARTLY LANDED 2026-10-28 (lane keyboard-inset-480; device check pending). Two 1.6.0 -&gt; 1.9.0… | M | overlays |
 | [481](backlog/481-state-attributes-one-helper-emits-data-state-and-presence.md) | State attributes: one helper emits data-state and Base UI presence attributes | BACKLOG. From the scan of 2026-10-28. | M | primitives |
-| [482](backlog/482-control-gaps-slider-form-participation-read-only-and-small-attributes.md) | Control gaps: Slider form participation, read_only, Toggle data-pressed, Tabs activate_on_focus | BACKLOG. From the scan of 2026-10-28. | S-M | components |
+| [482](backlog/482-control-gaps-slider-form-participation-read-only-and-small-attributes.md) | Control gaps: Slider form participation, read_only, Toggle data-pressed, Tabs activate_on_focus | IMPLEMENTED on lane/control-gaps-482, awaiting the merge batch (2026-10-28). Items 1 to 4 are… | S-M | components |
 
 <!-- END GENERATED -->

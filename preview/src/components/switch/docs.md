@@ -21,3 +21,7 @@ Switch {
 ## Outside its form
 
 Pass `form: "form-id".to_string()` (the HTML `form` attribute) and the control's hidden mirror input belongs to that `<form>` even when it is rendered elsewhere in the page: it submits with it and the form's reset restores it. Leave it out and the nearest ancestor `<form>` owns it.
+
+## Read-only
+
+`read_only: true` keeps the switch focusable and announced but unchangeable: a click or Space does nothing, the element carries `aria-readonly="true"` and a `data-readonly` presence attribute (absent when the switch is writable), and its value still submits with a form. It differs from `disabled`, which leaves the tab order, is not announced as editable and submits nothing. A form reset still restores the default. See the `read_only` variant.

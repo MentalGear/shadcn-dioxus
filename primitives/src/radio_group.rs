@@ -20,6 +20,7 @@ struct RadioGroupCtx {
     // State
     disabled: ReadSignal<bool>,
     required: ReadSignal<bool>,
+    read_only: ReadSignal<bool>,
     name: ReadSignal<String>,
     form: ReadSignal<Option<String>>,
     /// The value the group resets to on `<form reset>`. Mirrors
@@ -70,6 +71,10 @@ impl RadioGroupCtx {
     }
 
     fn select_focused_value(&mut self) {
+        // A read-only group moves focus with the arrow keys but never changes its selection.
+        if (self.read_only)() {
+            return;
+        }
         if let Some(current_focus) = self.focus.focused_index() {
             let value = { self.values.read().get(&current_focus).cloned() };
             if let Some(value) = value {
@@ -108,6 +113,14 @@ pub struct RadioGroupProps {
     /// Whether the radio group is required in a form.
     #[props(default)]
     pub required: ReadSignal<bool>,
+
+    /// Whether the radio group is read-only: its items stay focusable (arrow keys still move
+    /// focus) and the group is announced (`aria-readonly`), but a click, Space or an arrow key
+    /// does not change the selection, and the selected value still submits with a form.
+    /// Distinct from `disabled`, which removes the items from the tab order and from the
+    /// submission.
+    #[props(default)]
+    pub read_only: ReadSignal<bool>,
 
     /// The name attribute for form submission.
     #[props(default)]
@@ -179,6 +192,8 @@ pub struct RadioGroupProps {
 /// - `data-orientation`: Indicates the orientation of the radio group. Values are `horizontal` or `vertical`.
 /// - `data-disabled`: Indicates if the radio group is disabled. Values are `true` or `false`.
 /// - `data-direction`: The resolved text direction. Values are `ltr` or `rtl`.
+/// - `data-readonly`: Present (empty) while the group is read-only, absent otherwise. The group
+///   also carries `aria-readonly="true"` then.
 #[component]
 pub fn RadioGroup(props: RadioGroupProps) -> Element {
     let direction = use_direction(props.dir);
@@ -205,6 +220,7 @@ pub fn RadioGroup(props: RadioGroupProps) -> Element {
         set_value,
         disabled: props.disabled,
         required: props.required,
+        read_only: props.read_only,
         name: props.name,
         form: props.form,
         default_value: default_value.into(),
@@ -221,6 +237,8 @@ pub fn RadioGroup(props: RadioGroupProps) -> Element {
         "data-disabled": (props.disabled)(),
         "data-direction": direction.as_str(),
         aria_required: props.required,
+        aria_readonly: (props.read_only)().then_some("true"),
+        "data-readonly": (props.read_only)().then_some(""),
     });
     let merged = merge_attributes(vec![props.attributes.clone(), owned]);
 
@@ -303,6 +321,7 @@ pub struct RadioItemProps {
 /// The [`RadioItem`] component defines the following data attributes you can use to control styling:
 /// - `data-state`: Indicates the state of the radio item. Values are `checked` or `unchecked`.
 /// - `data-disabled`: Indicates if the radio item is disabled. Values are `true` or `false`.
+/// - `data-readonly`: Present (empty) while the group is read-only, absent otherwise.
 #[component]
 pub fn RadioItem(props: RadioItemProps) -> Element {
     let mut ctx: RadioGroupCtx = use_context();
@@ -365,6 +384,7 @@ pub fn RadioItem(props: RadioItemProps) -> Element {
         aria_checked: checked,
         "data-state": if checked() { "checked" } else { "unchecked" },
         "data-disabled": disabled(),
+        "data-readonly": (ctx.read_only)().then_some(""),
     });
     let merged = merge_attributes(vec![
         order.marker_attribute(),
@@ -380,6 +400,9 @@ pub fn RadioItem(props: RadioItemProps) -> Element {
             disabled: disabled(),
 
             onclick: move |_| {
+                if (ctx.read_only)() {
+                    return;
+                }
                 let value = (props.value)().clone();
                 ctx.set_value(value);
             },
@@ -452,6 +475,41 @@ mod tests {
                 RadioItem { value: "scale", "Scale" }
             }
         }
+    }
+
+    /// A read-only group is announced and marked on the group and its items; a writable one
+    /// carries neither attribute.
+    #[test]
+    fn read_only_marks_the_group_and_its_items() {
+        let mut dom = VirtualDom::new(|| {
+            rsx! {
+                RadioGroup { read_only: true, default_value: "a",
+                    RadioItem { value: "a", "A" }
+                }
+                RadioGroup { default_value: "a",
+                    RadioItem { value: "a", "A" }
+                }
+            }
+        });
+        dom.rebuild_in_place();
+        let html = dioxus_ssr::render(&dom);
+        let groups = crate::test_support::find_elements(&html, |a| {
+            a.get("role").map(String::as_str) == Some("radiogroup")
+        });
+        assert_eq!(groups.len(), 2, "{html}");
+        assert_eq!(
+            groups[0].attrs.get("aria-readonly").map(String::as_str),
+            Some("true")
+        );
+        assert!(groups[0].attrs.contains_key("data-readonly"), "{html}");
+        assert!(!groups[1].attrs.contains_key("aria-readonly"), "{html}");
+        assert!(!groups[1].attrs.contains_key("data-readonly"), "{html}");
+        let items = crate::test_support::find_elements(&html, |a| {
+            a.get("role").map(String::as_str) == Some("radio")
+        });
+        assert_eq!(items.len(), 2, "{html}");
+        assert!(items[0].attrs.contains_key("data-readonly"), "{html}");
+        assert!(!items[1].attrs.contains_key("data-readonly"), "{html}");
     }
 
     /// Only the default RadioItem's hidden radio is server-rendered with the `checked` content
