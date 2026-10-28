@@ -4,7 +4,7 @@ title: "One menu-family implementation behind three hosts (DropdownMenu, Context
 status: "BACKLOG. Owner approved 2026-10-25 (row 365 sweep, P10). Ordered before the JavaScript plan (owner…"
 size: "L"
 area: primitives
-updated: 2026-10-26
+updated: 2026-10-28
 ---
 
 # Row 435: One menu-family implementation behind three hosts
@@ -33,4 +33,5 @@ Source: [final sweep note, P10](../research/final-sweep-2026-10-25.md). The risk
 - **Subsumes:** the three `value` types, the two selection models, the typeahead rule, and the web/native arm duplication of the shared parts. **Does not subsume:** `Navbar` and `NavigationMenu` (row 53 scoped them out; measured overlap 24-29%), positioning (`top_layer` keeps one call per host), and the host triggers.
 - **Reverses row 53.** Row 53 decided not to build one shared menu component. The owner approved this proposal on 2026-10-25 ("All ten"), so that keep-separate decision is reversed.
 - **Sequence:** P10a lands first. It unifies only the item `value` typing and the selection model (S-M) and leaves the host structure alone, so it does not depend on the row-53 reversal. P10b, the full merge, follows it.
+- **Scan of 2026-10-28:** the placement call per host is unchanged by [row 477](./477-anchored-overlays-placed-in-document-coordinates.md), so the two are independent. The shared item gets Base UI's defaults from [row 478](./478-overlay-defaults-to-base-ui.md) (checkable items keep the menu open; open on press), which are cheaper to land once, here.
 - **Gate:** one parity spec iterating the three hosts (click, keyboard and touch-tap selection; close-on-select; typeahead on a valued item). A line-overlap check is not worth a gate.

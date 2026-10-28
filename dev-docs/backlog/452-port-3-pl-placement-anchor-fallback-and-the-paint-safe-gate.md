@@ -6,7 +6,7 @@ size: "L"
 area: overlays
 js-grant: js_file=24 (relocated lines, root doc section 5.4; the main loop's grant row at the merge base is the number the gate reads)
 adds: []
-updated: 2026-10-26
+updated: 2026-10-28
 ---
 
 # Row 452: Port 3.PL: placement (T1, T2, T8-T12, S1), the paint-safe gate and the boot probe
@@ -27,6 +27,7 @@ L
 
 ## Detail
 
+- **Row 477 lands first (2026-10-28).** The anchored-panel placement is rewritten there (absolute top-layer panel, document coordinates, transform-only, no `visualViewport` offset tracking, no close-on-scroll as a workaround), so this row ports that smaller rule rather than the tracking code; re-count the removed and relocated lines of T8-T12 against the post-477 files before taking the row. See [row 477](./477-anchored-overlays-placed-in-document-coordinates.md).
 - **Files owned:** `top_layer/{anchor_fallback,scroll_clamp,styles,mod,attributes}.rs`, `select/components/list.rs`, `context_menu.rs` (the T11 call site only), the theme/engine CSS for anchoring and the gate, the popover/select/combobox component sheets. Must not touch `lib.rs`, `menu_sub.rs`, `navigation_menu.rs`, `modality.rs`; const names that `lib.rs` splices (`OPEN_FOCUS_JS`) stay stable.
 - **Depends on:** [row 449](./449-phase-0-4-proof-port-b-the-executor-and-popover-spreads.md) (the executor), [row 444](./444-gate-half-of-lane-3-0b-grants-bans-and-witness-presence.md), [row 445](./445-phase-0-2-the-legacy-freeze.md); a grant row.
 - **Proof:** The boot-probe spec, a nested-submenu and a reopen x3 spec, the first-frame spec (this row's, not phase 0's), `g-latency`, top-layer and select specs on a release build; Firefox and WebKit via [row 442](./442-desktop-cadence-harness-and-desktop-pass.md).
