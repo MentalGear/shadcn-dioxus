@@ -665,6 +665,7 @@ fn ContextMenuContentRendered(
     let mut ctx: ContextMenuCtx = use_context();
     let open = ctx.open;
     let (x, y) = (ctx.position)();
+    let (cx, cy) = (ctx.client_position)();
 
     // Drive `showPopover()`/`hidePopover()` from `open`. Unlike
     // `DropdownMenuContentRendered`'s use of this same helper, the callback
@@ -810,15 +811,16 @@ fn ContextMenuContentRendered(
     rsx! {
         div {
             id: id.clone(),
-            // The placement script's starting state (`top_layer::use_point_anchor_placement`):
-            // absolute in the top layer at the press point, moved by `transform` alone.
-            position: "absolute",
+            // Fixed at the press point until the placement script takes the panel over
+            // (`top_layer::use_point_anchor_placement`) and makes it absolute in document
+            // coordinates: a focus move into a panel that is not placed yet must not scroll the
+            // document to it.
+            position: "fixed",
             margin: "0",
-            top: "0",
-            left: "0",
+            top: "{cy}px",
+            left: "{cx}px",
             right: "auto",
             bottom: "auto",
-            transform: "translate({x}px, {y}px)",
             pointer_events: open().then_some("auto"),
             onkeydown,
             onblur: move |_| {
