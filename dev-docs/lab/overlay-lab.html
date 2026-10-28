@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Overlay Placement Lab</title>
+<title>Overlay Lab v5</title>
 <style>
 :root{--bg:#ffffff;--fg:#09090b;--muted:#6b6b76;--card:#ffffff;--popover:#ffffff;--border:#e4e4e7;--input:#c9c9d1;--secondary:#f4f4f5;--accent:#2563eb;--accent-fg:#ffffff;--pass:#15803d;--pass-bg:#dcfce7;--fail:#b91c1c;--fail-bg:#fee2e2;--warn:#92400e;--warn-bg:#fef3c7;--none:#52525b;--none-bg:#f4f4f5;--shadow:0 8px 24px rgb(0 0 0 / .18);color-scheme:light}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#09090b;--fg:#fafafa;--muted:#a1a1aa;--card:#111113;--popover:#1a1a1d;--border:#27272a;--input:#3f3f46;--secondary:#1c1c1f;--accent:#60a5fa;--accent-fg:#09090b;--pass:#4ade80;--pass-bg:#052e16;--fail:#f87171;--fail-bg:#450a0a;--warn:#fbbf24;--warn-bg:#422006;--none:#a1a1aa;--none-bg:#1c1c1f;--shadow:0 8px 24px rgb(0 0 0 / .6);color-scheme:dark}}
@@ -62,323 +62,102 @@ textarea.field{min-height:90px;resize:vertical}
 .bar .row{margin:0}
 .bar .btn.primary{flex:1 1 200px;min-height:46px;font-size:15px}
 #send-status{font-size:12.5px;color:var(--muted);margin-top:4px;overflow-wrap:anywhere}
-/* ---- popovers ---- */
-.pop{margin:0;inset:auto;padding:4px;border:1px solid var(--border);border-radius:8px;background:var(--popover);color:var(--fg);box-shadow:var(--shadow);overflow:auto;font-size:14px}
+/* ---- v5 ---- */
+[hidden]{display:none!important}
+.pop{margin:0;inset:auto;max-width:calc(100vw - 16px);padding:4px;border:1px solid var(--border);border-radius:8px;background:var(--popover);color:var(--fg);box-shadow:var(--shadow);overflow:auto;font-size:14px}
+.pop.roomy{padding:10px}
+#cb-r{z-index:1000}
 .opt{display:block;padding:7px 10px;border-radius:6px;min-height:34px;line-height:20px;cursor:pointer}
 .opt:hover{background:var(--secondary)}
 .opt[aria-selected="true"]{font-weight:700;background:var(--secondary)}
-/* T1 */
-#t1-input{anchor-name:--t1}
-#t1-list{position:fixed;width:var(--dx-anchor-width,260px);max-height:min(288px,var(--dx-available-height,288px));overflow-y:auto}
-#t1-list[data-arm="css"]{position-anchor:--t1;top:anchor(bottom);left:anchor(left);margin-top:4px;position-try-fallbacks:flip-block}
-@supports (width: anchor-size(width)){#t1-list[data-arm="css"]{width:anchor-size(width)}}
-/* T2 */
-#t2-btn{anchor-name:--t2}
-#t2-panel{position:fixed;width:min(300px,calc(100vw - 32px));position-anchor:--t2;top:anchor(bottom);left:anchor(left);margin-top:8px;position-try-fallbacks:flip-block,flip-inline;padding:10px}
-/* T8 */
-.cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-items:end}
-.col{min-width:0}
-.col .btn{width:100%}
-.p8{position:fixed;font-size:13px}
-.p8-cb{width:var(--dx-anchor-width,200px);max-height:min(288px,var(--dx-available-height,288px));overflow-y:auto}
-.p8-pp{width:min(300px,calc(100vw - 32px));padding:10px}
-.p8 .vtag{font:700 10px/1.2 system-ui,sans-serif;letter-spacing:.03em;text-transform:uppercase;padding:2px 6px;margin:0 0 4px;border-radius:4px;display:inline-block;color:var(--bg);background:var(--vc)}
-.p8[data-v8="e"]{--vc:var(--accent);outline:2px solid var(--vc)}
-.p8[data-v8="l"]{--vc:var(--pass);outline:2px solid var(--vc)}
-.p8[data-v8="a"]{--vc:var(--warn);outline:2px solid var(--vc)}
-.p8[data-v8="l"] .vtag{margin-left:30px}
-.p8[data-v8="a"] .vtag{margin-left:64px}
-.lg-e{color:var(--accent)}.lg-l{color:var(--pass)}.lg-a{color:var(--warn)}
-.p8.ghost{pointer-events:none;opacity:.62;outline-style:dashed;box-shadow:none}
-.p8.hidden-ghost{visibility:hidden}
-/* T9 */
-#t9-row{max-width:420px}
-.p9{--vc:var(--accent);font-size:13px;width:var(--dx-anchor-width,200px);max-height:min(300px,var(--dx-available-height,300px));overflow-y:auto;outline:2px solid var(--vc);z-index:2147483000}
-.p9 .vtag{font:700 10px/1.2 system-ui,sans-serif;letter-spacing:.03em;text-transform:uppercase;padding:2px 6px;margin:0 0 4px;border-radius:4px;display:inline-block;color:var(--bg);background:var(--vc)}
-/* T3 / T4 */
-#t3-area{min-height:200px;border:2px dashed var(--input);border-radius:12px;display:grid;place-items:center;text-align:center;padding:16px;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation;cursor:context-menu}
-#t3-pt{position:fixed;inset:auto;left:0;top:0;width:0;height:0;margin:0;padding:0;border:0;background:none;overflow:visible;pointer-events:none;anchor-name:--pt}
-#t3-menu{position:fixed;width:176px;max-width:calc(100vw - 16px);position-anchor:--pt;top:anchor(top);left:anchor(left);position-try-fallbacks:flip-block,flip-inline,flip-block flip-inline}
-#t3-more{anchor-name:--t4item}
+#sel-p .opt{height:32px;min-height:0;line-height:18px;padding:7px 10px}
 .mi{display:block;width:100%;text-align:left;font:inherit;font-size:14px;padding:8px 10px;min-height:36px;border:0;border-radius:6px;background:none;color:var(--fg);cursor:pointer}
 .mi:hover,.mi:focus-visible{background:var(--secondary)}
-.sub-pop{position:fixed;width:150px;margin-left:2px;top:anchor(top);left:anchor(right);position-try-fallbacks:flip-inline,flip-block,flip-block flip-inline}
-#t4-sub{position-anchor:--t4item}
-#t4-ctl-btn{anchor-name:--t4ctl}
-#t4-ctl-sub{position-anchor:--t4ctl}
-/* T5: the top is written by script (a literal calc(anchor()) or px); only the left comes from the sheet */
-#t5-trig{anchor-name:--t5;min-width:200px;display:flex;justify-content:space-between}
-#t5-list{position:fixed;position-anchor:--t5;display:none;flex-direction:column;overflow:hidden auto;min-width:var(--dx-anchor-width,100%);max-height:var(--dx-available-height,18rem)}
-#t5-list:popover-open{display:flex}
-@supports (anchor-name: --a){#t5-list{left:anchor(left)}}
-#t5-list .opt{flex:none;height:32px;min-height:0;padding:0 10px;line-height:32px}
-#t5-list .opt.tall{height:52px;line-height:52px}
-#t5-list .lab{flex:none;height:24px;line-height:24px;font-size:11px;font-weight:700;color:var(--muted);padding:0 10px;text-transform:uppercase}
-/* T6 */
-#t6-area{position:relative;height:max(1500px,190vh);border:1px dashed var(--border);border-radius:8px;margin:8px 0}
-#t6-area button{position:absolute;left:16px;width:170px}
-@position-try --t6b{position-area:bottom;max-height:calc(100% - 16px)}
-@position-try --t6t{position-area:top;max-height:calc(100% - 16px)}
-#t6-panel{position:fixed;position-area:bottom;position-try-order:most-height;position-try-fallbacks:--t6b,--t6t;margin-block:8px;overflow-y:auto;min-width:anchor-size(width);width:260px;justify-self:anchor-center}
-#t6-panel .opt{height:34px}
+#cm-area{min-height:180px;border:2px dashed var(--input);border-radius:12px;display:grid;place-items:center;text-align:center;padding:16px;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;cursor:context-menu}
+#sel-btn{min-width:200px;display:flex;justify-content:space-between;align-items:center}
+.vrow .vs{font-size:12.5px;color:var(--muted)}
 html{scrollbar-gutter:stable}
 html.dx-lock,html.dx-lock body{overflow:hidden;overscroll-behavior:none}
-.chipw{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
-@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
 <main class="wrap" id="lab">
   <div class="top">
-    <div>
-      <h1>Overlay Placement Lab</h1>
-      <div class="sub">Row 477 placement redesign, lab v4: tests the assumptions behind it on a real device.</div>
-    </div>
+    <div><h1>Overlay Lab v5</h1><div class="sub mono" id="env"></div></div>
     <button class="btn sm" id="theme-btn" type="button">Theme: auto</button>
   </div>
-
-  <div class="note" id="frame-note">
-    <b id="frame-title">Checking whether this page is framed&hellip;</b>
-    <span id="frame-readout"></span>
-    <span class="sub">The <code>interactive-widget</code> viewport option (resizes-content / overlays-content) cannot be tested when a host owns the viewport meta; only the default keyboard behaviour is observed.</span>
+  <div class="note">
+    <b>Placement rule P versus Floating UI (R)</b>
+    Open a panel, scroll the page, then tap Smooth, Stutter or Detached for what you saw.
+    <div class="row"><label><input type="checkbox" id="meas" checked> Measure while open</label> <span class="sub">(untick to check whether any stutter persists without measuring)</span></div>
   </div>
 
-  <div class="summary" id="summary" aria-label="Verdict summary"></div>
+  <div class="spacer" style="height:420px">scroll room</div>
 
-  <!-- T0 -->
-  <section class="card" id="t0">
-    <div class="ch"><h2>T0 &middot; Feature readout and runtime probe</h2><span class="chip" data-chip="t0" data-v="none">NOT RUN</span></div>
-    <p class="what">Which CSS anchor-positioning and popover features this engine supports (<code>CSS.supports</code>, literal values only, never <code>var()</code>), then a runtime probe: a tiny box is placed with each <code>top</code> formula next to a fixed anchor and its real rect is compared with where the formula promises it lands. The probe runs twice, as a top-layer popover and as a plain fixed box, to separate a parse gap from a top-layer integration gap.</p>
-    <p class="how"><b>Phone:</b> open the keyboard (tap a field in T1) and watch <code>vv.height</code> shrink while <code>innerHeight</code> may not. <b>Desktop:</b> pinch or Ctrl+wheel to see <code>scale</code> change.</p>
-    <ul class="feats" id="t0-feats"></ul>
-    <div class="row"><button class="btn sm" id="t0-reprobe" type="button">Run the probe again</button></div>
-    <div class="tw"><table><thead><tr><th>Formula</th><th>Where</th><th>CSS.supports</th><th>Accepted inline</th><th>Landed top</th><th>Expected</th><th>Result</th></tr></thead><tbody id="t0-probe-body"></tbody></table></div>
-    <div class="kv" id="t0-live"></div>
-    <div class="vt" id="vt-t0"></div>
+  <section class="card" id="c-combobox">
+    <div class="ch"><h2>1. Combobox</h2>
+      <div class="seg" role="radiogroup" aria-label="Arm"><input type="radio" name="arm" id="arm-p" value="P" checked><label for="arm-p">P</label><input type="radio" name="arm" id="arm-r" value="R"><label for="arm-r">R (Floating UI)</label></div>
+    </div>
+    <p class="how">Tap the field so the keyboard opens, then drag the page up and down slowly and fast.</p>
+    <input class="field" id="cb-in" role="combobox" aria-expanded="false" aria-controls="cb-p" autocomplete="off" placeholder="Pick a fruit">
+    <div class="row vrow" data-card="combobox"></div>
+    <div class="pop" id="cb-p" popover="manual" role="listbox" style="position:absolute;inset:auto;margin:0;top:0;left:0"></div>
   </section>
+  <div class="spacer" style="height:340px">scroll room</div>
 
-  <!-- T1 -->
-  <section class="card" id="t1">
-    <div class="ch"><h2>T1 &middot; Combobox under the keyboard</h2></div>
-    <p class="what">A text input anchors a 12-fruit list. <b>CSS + outcome check</b> is the shipped engine: anchor() + flip-block places it, and a port of <code>anchor_fallback.rs</code> measures the result and hands over to its JS placer (sticky) when the engine has no anchor positioning or the CSS result is off its promised spot, outside the visual viewport or on the input. <b>JS-event</b> is that same JS placer forced on, re-placing on scroll, resize, visualViewport events and a ResizeObserver (rAF-throttled). <b>JS-sampled</b> forces the JS placer and re-places every frame in which a signature of viewport, anchor and panel changes. Every frame records gap to the input (expected 4px), drift, who placed it, and px of the list below the visible viewport (the keyboard).</p>
-    <p class="how"><b>Phone:</b> pick an arm, put the input low on screen, tap it (keyboard opens, list opens). Type to filter, then scroll the page with a finger while the keyboard stays up. Repeat for each arm. <b>Desktop:</b> no keyboard: only drift is meaningful; scroll and resize the window with the list open.</p>
-    <div class="row">
-      <div class="seg" role="radiogroup" aria-label="T1 arm">
-        <input type="radio" name="t1arm" id="t1-arm-css" value="css" checked><label for="t1-arm-css">CSS + outcome check</label>
-        <input type="radio" name="t1arm" id="t1-arm-jsev" value="jsev"><label for="t1-arm-jsev">JS-event</label>
-        <input type="radio" name="t1arm" id="t1-arm-jssamp" value="jssamp"><label for="t1-arm-jssamp">JS-sampled</label>
-      </div>
-      <span id="t1-pos"></span>
-      <button class="btn sm" id="t1-close" type="button">Close list</button>
-      <button class="btn sm" id="t1-reset" type="button">Reset stats</button>
-    </div>
-    <div class="spacer" style="height:34vh">scroll space above the input</div>
-    <label for="t1-input" class="sub">Fruit</label>
-    <input class="field" id="t1-input" type="text" placeholder="Type a fruit..." autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done">
-    <div id="t1-list" class="pop" popover="manual" role="listbox" aria-label="Fruit"></div>
-    <div class="spacer" style="height:42vh">scroll space below the input</div>
-    <div class="tw"><table><thead><tr><th>Arm</th><th>Verdict</th><th>Frames</th><th>Placed by</th><th>Drift max / med px</th><th>First frame</th><th>Covered max px</th><th>Overlap fr.</th><th>Min vv.h</th><th>Max vv.top</th><th>Why JS took over</th></tr></thead><tbody id="t1-body"></tbody></table></div>
-    <div class="vt" id="vt-t1">PASS needs max drift &lt;= 2 px and covered = 0 over the session.</div>
-  </section>
-
-  <!-- T2 -->
-  <section class="card" id="t2">
-    <div class="ch"><h2>T2 &middot; Popover with a text field</h2><span class="chip" data-chip="t2" data-v="none">NOT RUN</span></div>
-    <p class="what">Control for the earlier observation. A button anchors a panel that contains a text input, placed by CSS (anchor(bottom) + flip-block, flip-inline) with the same outcome check and JS hand-over as T1. Same per-frame metrics against the button (expected gap 8px).</p>
-    <p class="how"><b>Phone:</b> put the button low, open the panel, tap the field inside (keyboard), then scroll. <b>Desktop:</b> open and scroll/resize.</p>
-    <div class="row"><button class="btn primary" id="t2-btn" type="button">Open popover</button><span id="t2-pos"></span><button class="btn sm" id="t2-reset" type="button">Reset stats</button></div>
-    <div id="t2-panel" class="pop" popover="manual" role="dialog" aria-label="Popover with field">
-      <label for="t2-input" class="sub">Name</label>
-      <input class="field" id="t2-input" type="text" placeholder="Type here" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
-      <div class="row"><button class="btn sm" id="t2-close" type="button">Close</button></div>
-    </div>
-    <div class="spacer" style="height:30vh">scroll space</div>
-    <div class="vt" id="vt-t2">PASS needs drift &lt;= 2 px, nothing under the keyboard, no overlap with the button.</div>
-  </section>
-
-  <!-- T8 -->
-  <section class="card" id="t8">
-    <div class="ch"><h2>T8 &middot; Keyboard drift: Combobox vs Popover, by visualViewport offset handling</h2><span class="chip" data-chip="t8" data-v="none">NOT RUN</span></div>
-    <p class="what">Settles why a Combobox list drifts on iOS while a Popover holding a field does not, when both are on the JS placer. The Combobox host (an in-page input that takes focus) and the Popover host (a button, with the field inside the fixed panel) sit side by side. Each host opens <b>three panels at once</b>, all anchored to the same element and measured every frame: <b>(i)</b> offsets handled as <code>anchor_fallback.rs</code> does today (rects minus <code>vv.offset*</code>, written back plus the offset), <b>(ii)</b> offsets never used (pure layout coordinates), <b>(iii)</b> offsets added to layout rects (double count). The solid panel is the one you interact with; the other two are dashed, click-through ghosts (hide them if they distract, they are still measured). Per frame: <code>vv.offsetTop/height</code>, anchor rect, panel rect, gap, whether the panel is pinned by <code>top</code> or <code>bottom</code>, how far the fixed box landed from what was written, and whether the anchor was still moving (lag) or at rest (a stuck panel), and whether a re-placement ever ran after the anchor's last move. <b>Pin</b> is an experiment knob: the engine pins a panel that sits above its anchor by its <code>bottom</code> edge and every other panel by its <code>top</code>; forcing one side on every panel shows whether the pin side, rather than the host, decides who drifts.</p>
-    <p class="how"><b>Phone:</b> pick the live variant and the Popover kind, move the row low, tap the Combobox input (keyboard), type, then scroll the page with a finger while the keyboard stays up. Do the same with the Popover (tap the button, then the field inside). Repeat per live variant if you like; all three are recorded every time. <b>Desktop:</b> no keyboard; only drift on scroll is meaningful.</p>
-    <div class="row">
-      <div class="seg" role="radiogroup" aria-label="T8 live variant">
-        <input type="radio" name="t8v" id="t8-v-e" value="e" checked><label for="t8-v-e">Live: (i) engine</label>
-        <input type="radio" name="t8v" id="t8-v-l" value="l"><label for="t8-v-l">(ii) layout only</label>
-        <input type="radio" name="t8v" id="t8-v-a" value="a"><label for="t8-v-a">(iii) add</label>
-      </div>
-      <div class="seg" role="radiogroup" aria-label="T8 pin side">
-        <input type="radio" name="t8p" id="t8-p-auto" value="auto" checked><label for="t8-p-auto">Pin: as engine</label>
-        <input type="radio" name="t8p" id="t8-p-top" value="top"><label for="t8-p-top">always top</label>
-        <input type="radio" name="t8p" id="t8-p-bottom" value="bottom"><label for="t8-p-bottom">always bottom</label>
-      </div>
-      <div class="seg" role="radiogroup" aria-label="T8 popover kind">
-        <input type="radio" name="t8k" id="t8-k-auto" value="auto" checked><label for="t8-k-auto">Popover: auto</label>
-        <input type="radio" name="t8k" id="t8-k-manual" value="manual"><label for="t8-k-manual">manual</label>
-      </div>
-    </div>
-    <div class="row">
-      <label><input type="checkbox" id="t8-ghosts" checked> Show the two ghost panels</label>
-      <span id="t8-pos"></span>
-      <button class="btn sm" id="t8-close" type="button">Close all</button>
-      <button class="btn sm" id="t8-reset" type="button">Reset stats</button>
-    </div>
-    <div class="row sub"><span>Panel outlines:</span><b class="lg-e">(i) engine, blue</b><b class="lg-l">(ii) layout only, green</b><b class="lg-a">(iii) add, amber</b><span>(the tags on the panels read (i), (ii), (iii))</span></div>
-    <div class="spacer" style="height:36vh">scroll space above</div>
-    <div class="cols" id="t8-row">
-      <div class="col"><label for="t8-input" class="sub">Combobox host (in-page input)</label>
-        <input class="field" id="t8-input" type="text" placeholder="Fruit..." autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done"></div>
-      <div class="col"><span class="sub">Popover host (field inside the panel)</span>
-        <button class="btn primary" id="t8-btn" type="button" style="min-height:44px">Open popover</button></div>
-    </div>
-    <div id="t8-panels"></div>
-    <div class="spacer" style="height:46vh">scroll space below</div>
-    <div class="tw"><table><thead><tr><th>Host</th><th>Variant</th><th>Verdict</th><th>Frames</th><th>Drift max / med</th><th>Gap min&ndash;max</th><th>Drift at rest</th><th>Drift while moving</th><th>Stale at rest</th><th>Drift pinned top / bottom</th><th>Fixed landed &Delta; max</th><th>CB bottom shift</th><th>Covered max</th><th>vv.top max (frames &gt;0)</th><th>Min vv.h</th></tr></thead><tbody id="t8-body"></tbody></table></div>
-    <div class="kv" id="t8-live"></div>
-    <div class="vt" id="vt-t8">Open the Combobox and the Popover with the keyboard up and scroll. PASS needs the shipped variant (i) to hold the gap (drift &lt;= 2 px) on both hosts.</div>
-  </section>
-
-  <!-- T9 -->
-  <section class="card" id="t9">
-    <div class="ch"><h2>T9 &middot; Document-coordinate placement (Base UI hypothesis)</h2><span class="chip" data-chip="t9" data-v="none">NOT RUN</span></div>
-    <p class="what">Tests whether a list placed in <b>document coordinates</b> stays attached on iOS with the keyboard up, with no tracking code at all. Five ways to place the same list under one field, all measured every frame like T8: <b>A</b> the shipped engine (top layer, <code>position: fixed</code>, tracked with visualViewport offsets); <b>B</b> a top-layer popover with <code>position: absolute</code>, placed once when it opens; <b>C</b> a plain <code>div</code> in <code>body</code> with <code>position: absolute</code>, placed once; <b>D</b> Floating UI with <code>strategy: absolute</code> and <code>autoUpdate</code> (what Base UI does); <b>E</b> Floating UI with <code>strategy: fixed</code> (what Radix does). B and C listen to nothing but window resize. D and E need the Floating UI script from jsdelivr; if it does not load the arm says <i>unavailable</i>.</p>
-    <p class="how"><b>Phone:</b> Pick an arm, tap the field so the keyboard opens, then drag the page up and down. Press Looks attached or Detached. Do it for each arm. <b>Desktop:</b> no keyboard; scroll the page with the list open.</p>
-    <div class="row">
-      <div class="seg" role="radiogroup" aria-label="T9 arm">
-        <input type="radio" name="t9arm" id="t9-a-a" value="a" checked><label for="t9-a-a">A fixed-js</label>
-        <input type="radio" name="t9arm" id="t9-a-b" value="b"><label for="t9-a-b">B toplayer-abs-once</label>
-        <input type="radio" name="t9arm" id="t9-a-c" value="c"><label for="t9-a-c">C body-abs-once</label>
-        <input type="radio" name="t9arm" id="t9-a-d" value="d"><label for="t9-a-d">D floating-ui-abs</label>
-        <input type="radio" name="t9arm" id="t9-a-e" value="e"><label for="t9-a-e">E floating-ui-fixed</label>
-      </div>
-    </div>
-    <div class="row">
-      <button class="btn sm" id="t9-yes" type="button">Looks attached</button>
-      <button class="btn sm" id="t9-no" type="button">Detached</button>
-      <span id="t9-pos"></span>
-      <button class="btn sm" id="t9-close" type="button">Close</button>
-      <button class="btn sm" id="t9-reset" type="button">Reset stats</button>
-    </div>
-    <div class="spacer" style="height:36vh">scroll space above</div>
-    <div id="t9-row"><label for="t9-input" class="sub">Field (the list opens below it)</label>
-      <input class="field" id="t9-input" type="text" placeholder="Fruit..." autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done"></div>
-    <div id="t9-panels"></div>
-    <div class="spacer" style="height:46vh">scroll space below</div>
-    <div class="tw"><table><thead><tr><th>Arm</th><th>Verdict</th><th>Frames</th><th>Drift max / med</th><th>Gap min&ndash;max</th><th>Drift at rest</th><th>Drift while moving</th><th>Fixed landed &Delta; max</th><th>vv.top max (frames &gt;0)</th><th>Min vv.h</th><th>Looks attached / Detached</th></tr></thead><tbody id="t9-body"></tbody></table></div>
-    <div class="kv" id="t9-live"></div>
-    <div class="vt" id="vt-t9">Open each arm with the keyboard up and drag the page. PASS needs every placed-in-the-document arm (B to E) to hold the gap (drift &lt;= 2 px).</div>
-  </section>
-
-  <!-- T3 -->
-  <section class="card" id="t3">
-    <div class="ch"><h2>T3 &middot; Context menu at the pointer (point anchor)</h2><span class="chip" data-chip="t3" data-v="none">NOT RUN</span></div>
-    <p class="what">A persistent 0x0 <code>popover=manual</code> anchor is moved to the pointer; the menu is a popover anchored to it with top/left:anchor() and flip-block/flip-inline fallbacks. If anchor positioning is missing, or no menu corner lands on the pointer inside the visual viewport, the JS placer puts a corner on the pointer, flips when it does not fit and clamps into the visual viewport. Records which corner lands on the pointer, who placed it, whether the menu stays inside the visual viewport, and whether the first-frame rect differs from the settled one (flash).</p>
-    <p class="how"><b>Phone:</b> long-press (500 ms, 10 px tolerance) in the box. Also try near every edge and corner, and after a pinch-zoom/pan. <b>Desktop:</b> right-click. Open it at least 3 times, including near the edges. A menu wider than the room on both sides of the pointer cannot be kept on screen by flips alone; that shows up as "outside visual viewport".</p>
-    <div id="t3-area" tabindex="0">Right-click or long-press anywhere in this box</div>
-    <div class="row">
-      <label><input type="checkbox" id="t3-corr"> Add visualViewport offset (WebKit correction)</label>
-      <label><input type="checkbox" id="t3-lock" checked> Block page scroll while the menu is open (the component's default, modal)</label>
-      <span class="sub" id="t3-corr-hint"></span>
-    </div>
-    <div class="row">
-      <button class="btn sm" id="t3-ok" type="button">Menu corner is at my finger/cursor</button>
-      <button class="btn sm" id="t3-bad" type="button">Menu is offset</button>
-      <button class="btn sm" id="t3-reset" type="button">Reset</button>
-    </div>
-    <div class="kv" id="t3-live"></div>
-    <div class="tw"><table><thead><tr><th>#</th><th>Path</th><th>Placed by</th><th>Corner</th><th>Delta px</th><th>Raw / corr.</th><th>In vv</th><th>Flash px</th><th>Corr on</th></tr></thead><tbody id="t3-body"></tbody></table></div>
-    <div class="vt" id="vt-t3"></div>
-    <div id="t3-pt" popover="manual" aria-hidden="true"></div>
-    <div id="t3-menu" class="pop" popover="manual" role="menu" aria-label="Context menu">
-      <button class="mi" type="button" role="menuitem" id="t3-i1">Back</button>
-      <button class="mi" type="button" role="menuitem" id="t3-i2">Reload</button>
-      <button class="mi" type="button" role="menuitem" id="t3-more" aria-haspopup="menu">More &#9656;</button>
-      <button class="mi" type="button" role="menuitem" id="t3-i4">Close</button>
+  <section class="card" id="c-popover">
+    <div class="ch"><h2>2. Popover with a text field</h2></div>
+    <p class="how">Open it, tap the field inside, scroll.</p>
+    <div class="row"><button class="btn" id="pp-btn" type="button">Open popover</button></div>
+    <div class="row vrow" data-card="popover"></div>
+    <div class="pop roomy" id="pp-p" popover="manual" style="position:absolute;inset:auto;margin:0;top:0;left:0">
+      <label class="sub" for="pp-in">Width</label><input class="field" id="pp-in" value="100%"><p class="sub">Tap the field to bring up the keyboard.</p>
     </div>
   </section>
+  <div class="spacer" style="height:340px">scroll room</div>
 
-  <!-- T4 -->
-  <section class="card" id="t4">
-    <div class="ch"><h2>T4 &middot; Nested top-layer anchor (submenu)</h2><span class="chip" data-chip="t4" data-v="none">NOT RUN</span></div>
-    <p class="what">The T3 menu's "More" item carries <code>anchor-name</code>; a submenu popover is anchored to it (anchor inside a top-layer popover) by CSS, with the same outcome check and JS hand-over as T1. Expected: submenu's left edge 2px right of the item and top-aligned (or the flipped equivalents). A control with the anchor in the normal page (not in the top layer) is measured the same way.</p>
-    <p class="how"><b>Both:</b> press "Open the menu here", then tap/click "More". Then press the control button. Compare the two.</p>
-    <div class="row"><button class="btn primary" id="t4-open-menu" type="button">Open the menu here</button><button class="btn" id="t4-ctl-btn" type="button">Control: open submenu (page anchor)</button></div>
-    <div id="t4-sub" class="pop sub-pop" popover="manual" role="menu" aria-label="Submenu"><button class="mi" type="button" role="menuitem" id="t4-s1">Sub item A</button><button class="mi" type="button" role="menuitem" id="t4-s2">Sub item B</button><button class="mi" type="button" role="menuitem" id="t4-s3">Sub item C</button></div>
-    <div id="t4-ctl-sub" class="pop sub-pop" popover="manual" role="menu" aria-label="Control submenu"><button class="mi" type="button" role="menuitem" id="t4-c1">Ctl item A</button><button class="mi" type="button" role="menuitem" id="t4-c2">Ctl item B</button></div>
-    <div class="tw"><table><thead><tr><th>Case</th><th>Adjacent</th><th>Placed by</th><th>dx px</th><th>dy px</th><th>Side</th><th>Align</th><th>In vv</th></tr></thead><tbody id="t4-body"></tbody></table></div>
-    <div class="vt" id="vt-t4"></div>
+  <section class="card" id="c-dropdown">
+    <div class="ch"><h2>3. Dropdown menu</h2></div>
+    <p class="how">Open it, scroll with it open, move the button toward the bottom edge.</p>
+    <div class="row"><button class="btn" id="dd-btn" type="button">Open menu</button></div>
+    <div class="row vrow" data-card="dropdown"></div>
+    <div class="pop" id="dd-p" popover="manual" role="menu" style="position:absolute;inset:auto;margin:0;top:0;left:0"></div>
+  </section>
+  <div class="spacer" style="height:340px">scroll room</div>
+
+  <section class="card" id="c-context">
+    <div class="ch"><h2>4. Context menu</h2></div>
+    <p class="how">Long-press (or right-click) the box. The menu corner opens at the finger and the page is locked while it is open.</p>
+    <div id="cm-area">Long-press here</div>
+    <div class="row vrow" data-card="context"></div>
+    <div class="pop" id="cm-p" popover="manual" role="menu" style="position:absolute;inset:auto;margin:0;top:0;left:0"></div>
+  </section>
+  <div class="spacer" style="height:340px">scroll room</div>
+
+  <section class="card" id="c-select">
+    <div class="ch"><h2>5. Select, item-aligned</h2></div>
+    <p class="how">Open it: the selected option should sit exactly over the trigger text. The page is locked while it is open.</p>
+    <div class="row"><button class="btn" id="sel-btn" type="button"><span id="sel-txt">Option 12</span><span aria-hidden="true">&#9662;</span></button></div>
+    <div class="row vrow" data-card="select"></div>
+    <div class="pop" id="sel-p" popover="manual" role="listbox" style="position:absolute;inset:auto;margin:0;top:0;left:0"></div>
+  </section>
+  <div class="spacer" style="height:520px">scroll room</div>
+
+  <section class="card" id="c-res">
+    <div class="ch"><h2>Results</h2><span class="sub">filled when a panel closes</span></div>
+    <div class="tw"><table><thead><tr><th>Card</th><th>Arm</th><th>Frames</th><th>Drift max / med px</th><th>Long (moving / all)</th><th>Writes (scroll)</th><th>Flips</th><th>Max vvTop</th><th>Min vvH</th><th>Extra</th></tr></thead><tbody id="res-body"><tr><td colspan="10" class="sub">No panel closed yet.</td></tr></tbody></table></div>
   </section>
 
-  <!-- T5 -->
-  <section class="card" id="t5">
-    <div class="ch"><h2>T5 &middot; Item-aligned Select as a generalised placement</h2></div>
-    <p class="what">The generalised model is <code>Placement { content_anchor: selected option, side: Over, align: center, gap: 0 }</code>: the list opens over the trigger so the selected option's centre lands on the trigger's centre. 40 options in 5 groups with non-uniform row heights. <b>Model, CSS first</b>: JS measures the option's centre offset <i>c</i> inside the list and writes <code>top: calc(anchor(center) - c px)</code> with <i>c</i> as a literal number (no <code>var()</code>, no <code>clamp()</code>); the outcome check measures where the list landed and hands over to the JS placer (sticky) if the declaration is rejected, lands off target by more than 2 px, or leaves the visual viewport. <b>Clamp is a separate step</b>: when the unclamped top would leave the margins, JS writes a literal clamped top and the generic "keep the content anchor nearest its target" step scrolls the list. <b>Model, JS only</b>: the same formula forced onto the JS placer. <b>Legacy</b>: the shipped <code>ITEM_ALIGNED_JS</code> (no scroll tracking; the real Select closes on scroll). Every open also computes what the legacy script would produce from the same geometry and records the difference.</p>
-    <p class="how"><b>All arms:</b> move the trigger to the top, middle and bottom of the screen and select first / middle / last. Error is the selected option centre minus trigger centre; a list clamped at a screen edge cannot always align.</p>
-    <div class="row">
-      <div class="seg" role="radiogroup" aria-label="T5 arm">
-        <input type="radio" name="t5arm" id="t5-arm-mc" value="mc" checked><label for="t5-arm-mc">Model, CSS first</label>
-        <input type="radio" name="t5arm" id="t5-arm-mj" value="mj"><label for="t5-arm-mj">Model, JS only</label>
-        <input type="radio" name="t5arm" id="t5-arm-lg" value="lg"><label for="t5-arm-lg">Legacy</label>
-      </div>
-      <div class="seg" role="radiogroup" aria-label="T5 list size">
-        <input type="radio" name="t5n" id="t5-n40" value="40" checked><label for="t5-n40">40 options</label>
-        <input type="radio" name="t5n" id="t5-n12" value="12"><label for="t5-n12">12 options</label>
-      </div>
-    </div>
-    <div class="row"><button class="btn sm" id="t5-sel-first" type="button">Select first and open</button><button class="btn sm" id="t5-sel-mid" type="button">Select middle and open</button><button class="btn sm" id="t5-sel-last" type="button">Select last and open</button></div>
-    <div class="row"><span class="sub">Trigger on screen:</span><span id="t5-pos"></span></div>
-    <div class="row"><button class="btn" id="t5-trig" type="button" aria-haspopup="listbox"><span id="t5-val">Option 13</span><span aria-hidden="true">&#9662;</span></button><button class="btn sm" id="t5-reset" type="button">Reset</button></div>
-    <div id="t5-list" class="pop" popover="manual" role="listbox" aria-label="Options"></div>
-    <div class="tw"><table><thead><tr><th>Arm / size</th><th>Verdict</th><th>Opens</th><th>Max |err| px (reachable)</th><th>Max jump px</th><th>Range-limited</th><th>Not in vv</th><th>Max &Delta; vs legacy</th><th>Placed by</th><th>Last</th></tr></thead><tbody id="t5-body"></tbody></table></div>
-    <div class="vt" id="vt-t5">PASS: |err| &lt;= 2 px whenever alignment is reachable (a list pinned at a screen edge whose scroll range cannot move the option that far is "range-limited" and only has to keep the option visible), first frame equals settled (&lt;= 2 px), list inside the visual viewport, and top / left / scroll within 2 px of what the legacy script computes.</div>
-  </section>
-
-  <!-- T6 -->
-  <section class="card" id="t6">
-    <div class="ch"><h2>T6 &middot; Oversize panel</h2><span class="chip" data-chip="t6" data-v="none">NOT RUN</span></div>
-    <p class="what">A panel taller than either side of its anchor, placed by CSS: <code>position-area</code> + <code>@position-try --t6b/--t6t</code> with <code>max-height: calc(100% - 16px)</code>, <code>position-try-order: most-height</code>, <code>margin-block: 8px</code>, overflow-y:auto. The JS placer takes over (and switches <code>position-area</code> off) when anchor positioning is missing or the CSS result is off its promised spot or outside the visual viewport. Records who placed it, the side chosen, height, room each side, inside-viewport and anchor overlap. Known caveat: most-height prefers the larger side even when the preferred (bottom) side fits; use "6 items" to expose it.</p>
-    <p class="how"><b>Both:</b> scroll the tall area, open each anchor with the panel at 30 and at 6 items. The buttons scroll an anchor to a spot on the screen.</p>
-    <div class="row">
-      <div class="seg" role="radiogroup" aria-label="T6 items">
-        <input type="radio" name="t6n" id="t6-n30" value="30" checked><label for="t6-n30">30 items</label>
-        <input type="radio" name="t6n" id="t6-n6" value="6"><label for="t6-n6">6 items</label>
-      </div>
-      <button class="btn sm" id="t6-go1" type="button">Anchor 1 to top</button><button class="btn sm" id="t6-go2" type="button">Anchor 2 to middle</button><button class="btn sm" id="t6-go3" type="button">Anchor 3 to bottom</button>
-      <button class="btn sm" id="t6-close" type="button">Close</button><button class="btn sm" id="t6-reset" type="button">Reset</button>
-    </div>
-    <div id="t6-area">
-      <button class="btn" id="t6-a1" type="button" style="top:10%;anchor-name:--t6a1">Anchor 1 (10%)</button>
-      <button class="btn" id="t6-a2" type="button" style="top:50%;anchor-name:--t6a2">Anchor 2 (50%)</button>
-      <button class="btn" id="t6-a3" type="button" style="top:90%;anchor-name:--t6a3">Anchor 3 (90%)</button>
-    </div>
-    <div id="t6-panel" class="pop" popover="manual" role="listbox" aria-label="Oversize"></div>
-    <div class="tw"><table><thead><tr><th>#</th><th>Anchor</th><th>Items</th><th>When</th><th>Placed by</th><th>Side</th><th>Height</th><th>Natural</th><th>Room b / a</th><th>In vv</th><th>Caveat</th><th>OK</th></tr></thead><tbody id="t6-body"></tbody></table></div>
-    <div class="vt" id="vt-t6"></div>
-  </section>
-
-  <!-- T7 -->
-  <section class="card" id="t7">
-    <div class="ch"><h2>T7 &middot; Pinch-zoom</h2><span class="chip" data-chip="t7" data-v="none">NOT RUN</span></div>
-    <p class="what">Frames recorded by T1, T2 and T8 while <code>visualViewport.scale</code> &gt; 1.2: attachment drift and the fraction of the panel inside the visual viewport.</p>
-    <p class="how"><b>Phone:</b> pinch-zoom to about 2x (if the frame allows it), then open the T2 popover and the T1 combobox, pan around, and come back here. <b>Desktop:</b> Ctrl+wheel or trackpad pinch. Stays NOT RUN if no frame at scale &gt; 1.2 was seen.</p>
-    <div class="kv" id="t7-live"></div>
-    <div class="tw"><table><thead><tr><th>Source</th><th>Zoomed frames</th><th>Max scale</th><th>Drift max / med px</th><th>Visible fraction min</th></tr></thead><tbody id="t7-body"></tbody></table></div>
-    <div class="vt" id="vt-t7"></div>
-  </section>
-
-  <section class="card" id="tsend">
+  <section class="card">
     <div class="ch"><h2>Notes and results</h2></div>
     <label for="note" class="sub">What did you see?</label>
-    <textarea class="field" id="note" placeholder="Anything odd: flicker, detached lists, lists under the keyboard, which arm looked right..."></textarea>
+    <textarea class="field" id="note" placeholder="Stutter, detached panels, panels under the keyboard, which arm looked right..."></textarea>
     <div class="row"><button class="btn sm" id="json-btn" type="button">Show results JSON</button></div>
     <div id="copy-wrap" hidden>
       <label for="copy-area" class="sub">Results JSON (select all and copy)</label>
       <textarea class="field" id="copy-area" readonly style="min-height:120px;font-family:ui-monospace,Menlo,monospace;font-size:12px"></textarea>
     </div>
-    <details id="log-details"><summary class="sub" style="cursor:pointer;min-height:34px;display:flex;align-items:center">Event log (last 60)</summary>
-      <div class="row"><button class="btn sm" id="log-clear" type="button">Clear log</button></div>
-      <pre id="log-pre"></pre>
-    </details>
   </section>
 
   <div class="bar">
@@ -391,1136 +170,297 @@ html.dx-lock,html.dx-lock body{overflow:hidden;overscroll-behavior:none}
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@floating-ui/core@1.6.9/dist/floating-ui.core.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@floating-ui/dom@1.6.13/dist/floating-ui.dom.umd.min.js"></script>
-
 <script>
 (function () {
 'use strict';
-var LAB_VERSION = 4;
+var LAB_VERSION = 5, MAXF = 9000, STRIDE = 7, MF = new Float64Array(MAXF * STRIDE);
 var $ = function (id) { return document.getElementById(id); };
-var r1 = function (n) { return Math.round(n * 10) / 10; };
-var r2 = function (n) { return Math.round(n * 100) / 100; };
-var f1 = function (n) { return n == null || !isFinite(n) ? '-' : String(r1(n)); };
-var clamp = function (n, a, b) { return Math.min(Math.max(n, a), b); };
-var T0 = performance.now();
-var LOG = [], logDirty = false;
-function log(test, ev, d) {
-  var e = { t: Math.round(performance.now() - T0), test: test, ev: ev };
-  if (d !== undefined) e.d = d;
-  LOG.push(e); if (LOG.length > 2000) LOG.splice(0, 1000); logDirty = true;
-}
-var isOpen = function (el) { try { return el.matches(':popover-open'); } catch (e) { return false; } };
-function show(el) { if (isOpen(el)) return; try { el.showPopover(); } catch (e) { log('pop', 'showPopover-error', { id: el.id, m: String(e && e.message || e).slice(0, 80) }); } }
-function hide(el) { if (!isOpen(el)) return; try { el.hidePopover(); } catch (e) { /* already closed */ } }
-function frames(n, cb) { var f = function () { if (--n <= 0) cb(); else requestAnimationFrame(f); }; requestAnimationFrame(f); }
-var dirty = true; function touch() { dirty = true; }
-var FRAMED = (function () { try { return window.top !== window; } catch (e) { return true; } })();
-
-/* ---------- stats ---------- */
-function Acc() { this.v = []; this.n = 0; this.max = 0; this.min = Infinity; }
-Acc.prototype.add = function (x) { this.n++; if (x > this.max) this.max = x; if (x < this.min) this.min = x; if (this.v.length < 3000) this.v.push(x); else this.v[this.n % 3000] = x; };
-Acc.prototype.med = function () { if (!this.v.length) return 0; var s = this.v.slice().sort(function (a, b) { return a - b; }), m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
-
-/* ---------- verdicts ---------- */
-var LABEL = { pass: 'PASS', fail: 'FAIL', warn: 'WARN', none: 'NOT RUN' };
-var RES = {};
-function setVerdict(id, key, text, extra) {
-  RES[id] = Object.assign({ verdict: LABEL[key], text: text }, extra || {});
-  var els = document.querySelectorAll('[data-chip="' + id + '"]');
-  for (var i = 0; i < els.length; i++) { els[i].textContent = LABEL[key]; els[i].setAttribute('data-v', key); }
-  var vt = $('vt-' + id); if (vt && text) vt.textContent = text;
-}
-var SUMMARY = [['t0', 'T0 Features'], ['t1css', 'T1 CSS + check'], ['t1jsev', 'T1 JS-event'], ['t1jssamp', 'T1 JS-sampled'], ['t2', 'T2 Popover+field'], ['t8', 'T8 vv offsets'], ['t9', 'T9 Doc coords'], ['t3', 'T3 Context menu'], ['t4', 'T4 Submenu'], ['t5mc', 'T5 Over: CSS first'], ['t5mj', 'T5 Over: JS only'], ['t5lg', 'T5 Over: legacy'], ['t6', 'T6 Oversize'], ['t7', 'T7 Pinch-zoom']];
-var GO = { t0: 't0', t1css: 't1', t1jsev: 't1', t1jssamp: 't1', t2: 't2', t8: 't8', t9: 't9', t3: 't3', t4: 't4', t5mc: 't5', t5mj: 't5', t5lg: 't5', t6: 't6', t7: 't7' };
-$('summary').innerHTML = SUMMARY.map(function (s) { return '<button class="sum" type="button" id="sum-' + s[0] + '" data-go="' + GO[s[0]] + '"><span>' + s[1] + '</span><span class="chip" data-chip="' + s[0] + '" data-v="none">NOT RUN</span></button>'; }).join('');
-$('summary').addEventListener('click', function (e) { var b = e.target.closest('[data-go]'); if (b) $(b.getAttribute('data-go')).scrollIntoView({ block: 'start' }); });
-
-/* ---------- viewport helpers ---------- */
-function vvRect() {
-  var v = window.visualViewport;
-  if (!v) return { l: 0, t: 0, r: innerWidth, b: innerHeight, w: innerWidth, h: innerHeight, s: 1 };
-  return { l: v.offsetLeft, t: v.offsetTop, r: v.offsetLeft + v.width, b: v.offsetTop + v.height, w: v.width, h: v.height, s: v.scale };
-}
-function vm() { // mirrors VIEWPORT_METRICS_JS
-  var vv = window.visualViewport, root = document.documentElement, p = window.__fcb;
-  if (!p || !p.isConnected) { p = document.createElement('div'); p.setAttribute('aria-hidden', 'true'); p.setAttribute('data-dx-fixed-cb', ''); p.style.cssText = 'position:fixed;inset:0;visibility:hidden;pointer-events:none;'; (document.body || root).appendChild(p); window.__fcb = p; }
-  var cb = p.getBoundingClientRect();
-  var cw = Math.min(root.clientWidth || innerWidth, cb.width || Infinity), ch = Math.min(root.clientHeight || innerHeight, cb.height || Infinity);
-  return { width: vv ? Math.min(vv.width, cw) : cw, height: vv ? Math.min(vv.height, ch) : ch, offsetLeft: vv ? vv.offsetLeft : 0, offsetTop: vv ? vv.offsetTop : 0, cbBottom: cb.bottom, cbHeight: cb.height };
-}
-function vvSnap() {
-  var v = window.visualViewport; if (!v) return null;
-  return { width: r1(v.width), height: r1(v.height), offsetLeft: r1(v.offsetLeft), offsetTop: r1(v.offsetTop), scale: r2(v.scale), pageLeft: r1(v.pageLeft), pageTop: r1(v.pageTop) };
-}
-function placeAt(el, frac) { var r = el.getBoundingClientRect(), v = vvRect(); window.scrollBy(0, r.top + r.height / 2 - (v.t + v.h * frac)); }
-function posButtons(host, target) {
-  var h = $(host), defs = [['top', 'Top', 0.14], ['mid', 'Middle', 0.5], ['low', 'Low', 0.82]];
-  h.innerHTML = defs.map(function (d) { return '<button class="btn sm" type="button" id="' + host + '-' + d[0] + '">' + d[1] + '</button>'; }).join(' ');
-  defs.forEach(function (d) { $(host + '-' + d[0]).addEventListener('click', function () { placeAt($(target), d[2]); }); });
-}
-var rectArr = function (r) { return [r1(r.left), r1(r.top), r1(r.width), r1(r.height)]; };
-function resetEl(el) { el.removeAttribute('style'); el.removeAttribute('data-placed-side'); }
-var sup = function (p, v) { try { return !!(window.CSS && CSS.supports(p, v)); } catch (e) { return false; } };
-var ANCHOR_OK = sup('anchor-name', '--a') && sup('top', 'anchor(bottom)');
-
-/* ---------- per-frame sampler (measures after the frame's rAF callbacks ran) ---------- */
-function Sampler(pre, measure) {
-  // Measures the state that is about to be painted: a ResizeObserver on a sentinel whose width flips inside the rAF callback
-  // is notified after that frame's layout, i.e. after every other rAF handler (including the JS arms' re-placement) ran.
-  var on = false, flip = false, ro = null, ch = null, s = document.createElement('div');
-  s.setAttribute('aria-hidden', 'true'); s.style.cssText = 'position:fixed;left:-20px;top:0;width:1px;height:1px;pointer-events:none;visibility:hidden;';
-  (document.body || document.documentElement).appendChild(s);
-  function after() { if (!on) return; try { measure(); } catch (e) { log('lab', 'measure-error', String(e && e.message || e).slice(0, 100)); } touch(); loop(); }
-  if (typeof ResizeObserver === 'function') { ro = new ResizeObserver(after); ro.observe(s); } else { ch = new MessageChannel(); ch.port1.onmessage = after; }
-  function loop() { if (!on) return; requestAnimationFrame(function () { if (!on) return; if (pre) pre(); if (ro) { flip = !flip; s.style.width = (flip ? 2 : 1) + 'px'; } else ch.port2.postMessage(0); }); }
-  return { start: function () { if (on) return; on = true; loop(); }, stop: function () { on = false; } };
-}
-
-function measureAttach(L, A, exp) {
-  var l = L.getBoundingClientRect(), a = A.getBoundingClientRect(), v = vvRect();
-  var below = (l.top + l.height / 2) > (a.top + a.height / 2);
-  var gap = below ? l.top - a.bottom : a.top - l.bottom;
-  var ix = Math.min(l.right, a.right) - Math.max(l.left, a.left), iy = Math.min(l.bottom, a.bottom) - Math.max(l.top, a.top);
-  var vx = Math.max(0, Math.min(l.right, v.r) - Math.max(l.left, v.l)), vy = Math.max(0, Math.min(l.bottom, v.b) - Math.max(l.top, v.t));
-  var area = l.width * l.height;
-  return { gap: gap, drift: Math.abs(gap - exp), covered: (a.bottom > v.t && a.top < v.b) ? Math.max(0, l.bottom - v.b) : 0, overlap: ix > 1 && iy > 1, vis: area > 0 ? vx * vy / area : 1, scale: v.s, side: below ? 'below' : 'above', offTop: v.t, vh: v.h };
-}
-function mkStat() { return { frames: 0, drift: new Acc(), covMax: 0, overlapN: 0, placed: {}, first: null, firstPending: false, vvMinH: 1e9, offTopMax: 0, opens: 0, zoom: { n: 0, drift: new Acc(), vis: new Acc(), scaleMax: 1 }, lastBadT: 0, why: '' }; }
-function record(S, m, pb, test, tag) {
-  S.frames++; S.drift.add(m.drift); if (m.covered > S.covMax) S.covMax = m.covered; if (m.overlap) S.overlapN++;
-  S.placed[pb] = (S.placed[pb] || 0) + 1; if (m.vh < S.vvMinH) S.vvMinH = m.vh; if (m.offTop > S.offTopMax) S.offTopMax = m.offTop;
-  if (S.firstPending) { S.first = m.drift; S.firstPending = false; }
-  if (m.scale > 1.2) { S.zoom.n++; S.zoom.drift.add(m.drift); S.zoom.vis.add(m.vis); if (m.scale > S.zoom.scaleMax) S.zoom.scaleMax = m.scale; }
-  var now = performance.now();
-  if ((m.drift > 2 || m.covered > 0.5 || m.overlap) && now - S.lastBadT > 400) { S.lastBadT = now; log(test, 'bad-frame', { arm: tag, gap: r1(m.gap), drift: r1(m.drift), cov: r1(m.covered), ov: m.overlap, vvT: r1(m.offTop), vvH: r1(m.vh) }); }
-}
-function statSum(S) { return { frames: S.frames, opens: S.opens, placed: S.placed, driftMax: r1(S.drift.max), driftMed: r1(S.drift.med()), firstFrameDrift: S.first == null ? null : r1(S.first), coveredMax: r1(S.covMax), overlapFrames: S.overlapN, vvMinHeight: S.vvMinH > 1e8 ? null : r1(S.vvMinH), vvMaxOffsetTop: r1(S.offTopMax), whyJs: S.why || null, zoom: { frames: S.zoom.n, scaleMax: r2(S.zoom.scaleMax), driftMax: r1(S.zoom.drift.max), driftMed: r1(S.zoom.drift.med()), visMin: S.zoom.vis.n ? r2(S.zoom.vis.min) : null } }; }
-
-/* ======================= the JS placer: a port of anchor_fallback.rs ======================= */
-/* Engine({content, trigger, side, align, gap, mode, cssFirst, events, onFallback})
-   cssFirst: the shipped engine's contract: keep a CSS placement that sits on a contract spot AND honours the exclusion zone
-             (inside the visual viewport, off the anchor); otherwise commit to the JS path (sticky for the rest of the open).
-   !cssFirst: an explicit JS arm: the JS path from the first call.
-   mode: how visualViewport.offsetLeft/Top are treated:
-     'engine'  rects minus the offset on read, plus the offset on write (anchor_fallback.rs today)
-     'layout'  the offset is never used (pure layout coordinates)
-     'add'     rects used as they are, the offset added on write (a double count if rects are layout-relative)
-   events: install the scroll / resize / visualViewport / ResizeObserver tracking (anchor_fallback.rs) after the first placement. */
-var EM = 4;
-function Engine(o) {
-  var content = o.content, trigger = o.trigger, side = o.side, align = o.align || 'start', gap = o.gap || 0, mode = o.mode || 'engine';
-  var opposite = { top: 'bottom', bottom: 'top', left: 'right', right: 'left' }[side];
-  var vertical = side === 'top' || side === 'bottom';
-  var usingFallback = false, enteredFb = false, tear = [], rafOn = false;
-  var st = { placedBy: 'CSS', chosen: side, pin: null, wTop: null, wBottom: null, cbAtWrite: null, at: 0, n: 0, why: '' };
-
-  function restingRect(el) {
-    var anims = el.getAnimations().filter(function (a) { return a.currentTime !== null && a.effect && isFinite(a.effect.getComputedTiming().endTime); });
-    var saved = anims.map(function (a) { return a.currentTime; });
-    anims.forEach(function (a) { a.currentTime = a.effect.getComputedTiming().endTime; });
-    var r = el.getBoundingClientRect();
-    anims.forEach(function (a, i) { a.currentTime = saved[i]; });
-    return r;
-  }
-  function reposition() {
-    if (!content || !trigger || !content.isConnected) return;
-    var s = content.style;
-    st.at = performance.now(); st.n++;
-    var t = trigger.getBoundingClientRect();
-    s.setProperty('--dx-anchor-width', t.width + 'px');
-    var keepScroll = content.scrollTop;
-    s.removeProperty('--dx-available-height'); s.removeProperty('--dx-available-width');
-    if (usingFallback) { s.maxHeight = ''; s.maxWidth = ''; s.overflowY = ''; s.overflowX = ''; s.boxSizing = ''; }
-    var c = restingRect(content);
-    var cw = content.offsetWidth, ch = content.offsetHeight;
-    var vp = vm(), vw = vp.width, vh = vp.height;
-    var sub = mode === 'engine', wr = mode !== 'layout';
-    var oT = sub ? vp.offsetTop : 0, oL = sub ? vp.offsetLeft : 0, wT = wr ? vp.offsetTop : 0, wL = wr ? vp.offsetLeft : 0;
-    var tTop = t.top - oT, tBottom = t.bottom - oT, tLeft = t.left - oL, tRight = t.right - oL, cTop = c.top - oT, cLeft = c.left - oL;
-    var room = { bottom: vh - EM - (tBottom + gap), top: tTop - gap - EM, right: vw - EM - (tRight + gap), left: tLeft - gap - EM };
-    function chooseSide() {
-      var fits = function (x) { return vertical ? ch <= room[x] : cw <= room[x]; };
-      if (fits(side)) return side;
-      return (fits(opposite) || room[opposite] > room[side]) ? opposite : side;
-    }
-    var chosen = chooseSide();
-    function availableFor(x) { return vertical ? { h: Math.max(0, room[x]), w: Math.max(0, vw - 2 * EM) } : { h: Math.max(0, vh - 2 * EM), w: Math.max(0, room[x]) }; }
-    function publish(a) { s.setProperty('--dx-available-height', a.h + 'px'); s.setProperty('--dx-available-width', a.w + 'px'); }
-    var rtl = getComputedStyle(content).direction === 'rtl';
-    var hAlign = rtl && align === 'start' ? 'end' : (rtl && align === 'end' ? 'start' : align);
-    function place(es) {
-      var top, left;
-      if (es === 'top') top = tTop - gap - ch; else if (es === 'bottom') top = tBottom + gap;
-      else if (align === 'start') top = tTop; else if (align === 'end') top = tBottom - ch; else top = tTop + (tBottom - tTop) / 2 - ch / 2;
-      if (es === 'left') left = tLeft - gap - cw; else if (es === 'right') left = tRight + gap;
-      else if (hAlign === 'start') left = tLeft; else if (hAlign === 'end') left = tRight - cw; else left = tLeft + (tRight - tLeft) / 2 - cw / 2;
-      return { top: top, left: left };
-    }
-    function publishPlacement(placedSide, left, top) {
-      content.setAttribute('data-placed-side', placedSide);
-      s.setProperty('--dx-anchor-offset-x', r1(tLeft + (tRight - tLeft) / 2 - left) + 'px');
-      s.setProperty('--dx-anchor-offset-y', r1(tTop + (tBottom - tTop) / 2 - top) + 'px');
-    }
-    var primary = place(side), flipped = place(opposite);
-    var matches = function (pos) { return Math.abs(cTop - pos.top) <= 2 && Math.abs(cLeft - pos.left) <= 2; };
-    if (!usingFallback) {
-      if (matches(primary) || matches(flipped)) {
-        var cBottom = cTop + ch, cRight = cLeft + cw;
-        var outside = cTop < -1 || cLeft < -1 || cBottom > vh + 1 || cRight > vw + 1;
-        var overlaps = cLeft < tRight - 1 && cRight > tLeft + 1 && cTop < tBottom - 1 && cBottom > tTop + 1;
-        if (!outside && !overlaps) {
-          var cssSide = matches(primary) ? side : opposite;
-          publish(availableFor(cssSide)); publishPlacement(cssSide, cLeft, cTop);
-          st.placedBy = 'CSS'; st.chosen = cssSide; st.pin = null; st.wTop = st.wBottom = null;
-          return;
-        }
-        st.why = outside ? 'CSS result outside the visual viewport' : 'CSS result overlaps the anchor';
-      } else {
-        st.why = ANCHOR_OK ? 'CSS rect not at the promised spot (top ' + f1(cTop - primary.top) + ', left ' + f1(cLeft - primary.left) + ' px off)' : 'anchor positioning unsupported';
-        log('engine', 'css-miss', { id: content.id, c: [r1(cTop), r1(cLeft), cw, ch], primary: [r1(primary.top), r1(primary.left)], flipped: [r1(flipped.top), r1(flipped.left)], t: [r1(tTop), r1(tBottom)], vh: r1(vh), n: st.n });
-      }
-    }
-    usingFallback = true;
-    st.placedBy = o.cssFirst ? 'JS-fallback' : 'JS';
-    if (!enteredFb) { enteredFb = true; if (o.onFallback) o.onFallback(content); }
-    s.position = 'fixed'; s.margin = '0';
-    // measure-then-move: park at the viewport origin and read the true size there
-    s.inset = 'auto'; s.left = wL + 'px'; s.top = wT + 'px';
-    cw = content.offsetWidth; ch = content.offsetHeight;
-    chosen = chooseSide();
-    var avail = availableFor(chosen);
-    if (ch > avail.h || cw > avail.w) s.boxSizing = 'border-box';
-    if (ch > avail.h) { s.maxHeight = avail.h + 'px'; s.overflowY = 'auto'; }
-    if (cw > avail.w && !vertical) { s.maxWidth = avail.w + 'px'; s.overflowX = 'auto'; }
-    publish(avail);
-    ch = content.offsetHeight; cw = content.offsetWidth;
-    var target = place(chosen);
-    if (vertical) {
-      if (target.left < EM) target = { top: target.top, left: EM };
-      else if (target.left + cw > vw - EM) target = { top: target.top, left: Math.max(EM, vw - EM - cw) };
-    } else if (target.top < EM) target = { top: EM, left: target.left };
-    else if (target.top + ch > vh - EM) target = { top: Math.max(EM, vh - EM - ch), left: target.left };
-    s.position = 'fixed'; s.margin = '0'; s.inset = 'auto'; s.transform = 'none'; s.setProperty('position-try-fallbacks', 'none');
-    var pinMode = o.pin ? o.pin() : 'auto';   // 'auto' = the engine (a panel above its anchor is pinned by its bottom edge), or forced for the experiment
-    if (pinMode === 'bottom' || (pinMode === 'auto' && chosen === 'top')) {
-      var bottomPx = vp.cbBottom - (target.top + ch + wT);
-      s.top = 'auto'; s.bottom = bottomPx + 'px';
-      st.pin = 'bottom'; st.wBottom = bottomPx; st.wTop = null; st.cbAtWrite = vp.cbBottom;
-    } else {
-      var topPx = target.top + wT;
-      s.bottom = 'auto'; s.top = topPx + 'px';
-      st.pin = 'top'; st.wTop = topPx; st.wBottom = null; st.cbAtWrite = vp.cbBottom;
-    }
-    s.left = (target.left + wL) + 'px';
-    publishPlacement(chosen, target.left, target.top);
-    st.chosen = chosen;
-    if (content.scrollTop !== keepScroll) content.scrollTop = keepScroll;
-  }
-  function onTrack() { if (rafOn) return; rafOn = true; requestAnimationFrame(function () { rafOn = false; reposition(); }); }
-  function listen(target, type, fn, opts) { if (!target) return; target.addEventListener(type, fn, opts); tear.push(function () { target.removeEventListener(type, fn, opts); }); }
-  function settle() {
-    var last = [content.offsetWidth, content.offsetHeight], streak = 0, frame = 0;
-    var tick = function () { frame++; reposition(); var w = content.offsetWidth, h = content.offsetHeight; streak = (w === last[0] && h === last[1]) ? streak + 1 : 0; last = [w, h]; if (streak < 2 && frame < 30) requestAnimationFrame(tick); };
-    requestAnimationFrame(tick);
-  }
-  var api = {
-    open: function () {
-      api.close(); usingFallback = !o.cssFirst; enteredFb = false; st.n = 0; st.why = o.cssFirst ? '' : 'explicit JS arm';
-      reposition();
-      if (usingFallback && o.events !== false) settle();
-      if (o.events !== false) {
-        listen(window, 'scroll', function (e) { if (e.target !== document && content.contains(e.target)) return; onTrack(); }, { capture: true, passive: true });
-        listen(window, 'resize', onTrack, { passive: true });
-        listen(window.visualViewport, 'resize', onTrack, { passive: true });
-        listen(window.visualViewport, 'scroll', onTrack, { passive: true });
-        if (typeof ResizeObserver === 'function') { var ro = new ResizeObserver(onTrack); ro.observe(content); tear.push(function () { ro.disconnect(); }); }
-      }
-      return st;
-    },
-    close: function () { while (tear.length) tear.pop()(); },
-    reposition: reposition,
-    state: function () { return st; }
-  };
-  return api;
-}
-
-/* "close when the ANCHOR leaves the viewport" policy of use_close_on_scroll (CLOSE_ON_SCROLL_JS, AnchorLeavesViewport) */
-function watchAnchorLeave(anchor, content, onClose) {
-  var QUIET = 300, quietUntil = performance.now() + QUIET, seen = false, timer = 0, tear = [], sent = false;
-  var quiet = function () { quietUntil = performance.now() + QUIET; };
-  var mine = function (n) { return n instanceof Node && ((content && content.contains(n)) || (anchor && anchor.contains(n))); };
-  function on(t, type, fn, o) { if (!t) return; t.addEventListener(type, fn, o); tear.push(function () { t.removeEventListener(type, fn, o); }); }
-  on(document, 'focusin', function (e) { if (mine(e.target)) quiet(); }, true);
-  on(document, 'keydown', function (e) { if (mine(e.target)) quiet(); }, true);
-  on(window.visualViewport, 'resize', quiet, { passive: true });
-  on(window.visualViewport, 'scroll', quiet, { passive: true });
-  if (typeof IntersectionObserver === 'function') {
-    var obs = new IntersectionObserver(function (entries) {
-      entries.forEach(function (en) {
-        if (en.isIntersecting) { seen = true; return; }
-        if (!seen || sent) return;
-        var wait = quietUntil - performance.now();
-        if (wait <= 0) { sent = true; onClose(); }
-        else if (!timer) timer = setTimeout(function () { timer = 0; obs.unobserve(anchor); obs.observe(anchor); }, wait + 50);
-      });
-    });
-    obs.observe(anchor); tear.push(function () { clearTimeout(timer); obs.disconnect(); });
-  }
-  return function () { while (tear.length) tear.pop()(); };
-}
-
-/* ======================= T0 ======================= */
+var vv = window.visualViewport, dpr = window.devicePixelRatio || 1, T0 = performance.now();
+var rnd = function (v) { return Math.round(v * dpr) / dpr; };
+var r1 = function (v) { return Math.round(v * 10) / 10; };
+var clamp = function (v, a, b) { return Math.max(a, Math.min(v, b)); };
+var FRAMED = (function () { try { return window.top !== window.self; } catch (e) { return true; } })();
+var CSSAP = !!(window.CSS && CSS.supports && CSS.supports('anchor-name', '--a'));
 var UA = navigator.userAgent;
-function parseUA() {
-  var o = { isWebKit: UA.indexOf('AppleWebKit') >= 0 && UA.indexOf('Chrome') < 0 }, m;
-  if ((m = UA.match(/(iPhone|iPad|iPod).*? OS (\d+)[_.](\d+)/))) o.iosOsToken = m[2] + '.' + m[3];
-  if ((m = UA.match(/Version\/(\d+(?:\.\d+)*)/))) o.safariVersion = m[1];
-  if ((m = UA.match(/(Chrome|CriOS|FxiOS|Edg|Firefox)\/(\d+)/))) o.engineTag = m[1] + ' ' + m[2];
+function shortUA() {
+  var m, os = '?', br = '?';
+  if (/iP(hone|ad)/.test(UA) && (m = UA.match(/OS (\d+)[_.](\d+)/))) os = 'iOS ' + m[1] + '.' + m[2];
+  else if ((m = UA.match(/Android (\d+)/))) os = 'Android ' + m[1];
+  else if (/Windows/.test(UA)) os = 'Windows'; else if (/Mac OS X/.test(UA)) os = 'macOS'; else if (/Linux/.test(UA)) os = 'Linux';
+  if ((m = UA.match(/(Edg|Firefox|FxiOS|CriOS)\/(\d+)/))) br = m[1] + ' ' + m[2];
+  else if ((m = UA.match(/Chrome\/(\d+)/))) br = 'Chrome ' + m[1];
+  else if ((m = UA.match(/Version\/(\d+)[^ ]* .*Safari/))) br = 'Safari ' + m[1];
+  return os + ', ' + br;
+}
+$('env').textContent = shortUA() + ' | ' + (FRAMED ? 'framed' : 'top-level') + ' | CSS anchor positioning: ' + (CSSAP ? 'yes' : 'no') + ' | lab v' + LAB_VERSION;
+
+/* ===== geometry: everything in document coordinates ===== */
+var probe = document.createElement('div');
+probe.style.cssText = 'position:fixed;top:0;left:0;width:0;height:0;visibility:hidden;pointer-events:none';
+document.body.appendChild(probe);
+/* Visible region in document coordinates plus the document origin (rect coords of the document box). */
+function vis() {
+  var p = probe.getBoundingClientRect(), h = document.documentElement.getBoundingClientRect();
+  var t = p.top + (vv ? vv.offsetTop : 0), l = p.left + (vv ? vv.offsetLeft : 0);
+  return { t: t - h.top, b: t + (vv ? vv.height : innerHeight) - h.top, l: l - h.left, r: l + (vv ? vv.width : innerWidth) - h.left, ox: h.left, oy: h.top };
+}
+function adoc(c, v) {
+  if (c.pt) return { l: c.pt.x, t: c.pt.y, b: c.pt.y, w: 0 };
+  var r = c.anchor.getBoundingClientRect();
+  return { l: r.left - v.ox, t: r.top - v.oy, b: r.bottom - v.oy, w: r.width };
+}
+
+/* ===== panel controller ===== */
+var cur = null, raf = 0, pf = false, lastMove = 0, lk = null;
+function W(c, el, p, v) { /* the only style writer: counts changes */
+  var s = el._s || (el._s = {});
+  if (s[p] === v) return;
+  s[p] = v; el.style[p] = v; c.writes++;
+  if (c.live && performance.now() - lastMove < 120) c.wScroll++;
+}
+function samp(c) { if (vv) { if (vv.offsetTop > c.maxTop) c.maxTop = vv.offsetTop; if (vv.height < c.minH) c.minH = vv.height; } }
+function place(c, force) { /* rule P: choose a side, write only when it changes */
+  var v = vis(), d = adoc(c, v), pr = c.pref, ot = pr === 'bottom' ? 'top' : 'bottom', s = c.side, want;
+  var sp = { bottom: v.b - d.b - c.gap - 8, top: d.t - c.gap - v.t - 8 };
+  if (!s) want = (sp[pr] >= c.nat || sp[pr] >= sp[ot]) ? pr : ot;
+  else if (s === pr) want = (sp[pr] < c.nat && sp[ot] > sp[pr] + 24) ? ot : pr;
+  else want = (sp[pr] >= c.nat + 24 || sp[pr] > sp[ot] + 24) ? pr : ot;
+  if (want !== s) { c.side = want; if (s) c.flips++; force = true; }
+  if (!force) return;
+  var y = want === 'bottom' ? d.b + c.gap : d.t - c.gap;
+  W(c, c.el, 'transform', 'translate(' + rnd(c.x) + 'px, ' + rnd(y) + 'px)' + (c.flipX ? ' translateX(-100%)' : '') + (want === 'top' ? ' translateY(-100%)' : ''));
+  W(c, c.el, 'maxHeight', Math.round(clamp(sp[want], 60, c.cap)) + 'px');
+}
+function placeSel(c) { /* item-aligned: selected option text over the trigger text */
+  var v = vis(), d = adoc(c, v), el = c.el, o = el.children[selIdx], off = o.offsetTop + el.clientTop, full = el.offsetHeight;
+  var yd = d.t + (d.b - d.t - o.offsetHeight) / 2 - off, y = Math.max(yd, v.t + 8), h = Math.min(full, v.b - 8 - y);
+  if (h < 120) { h = 120; y = v.b - 8 - h; }
+  W(c, el, 'maxHeight', Math.round(h) + 'px');
+  W(c, el, 'transform', 'translate(' + rnd(c.x) + 'px, ' + rnd(y) + 'px)');
+  el.scrollTop = Math.max(0, y - yd); c.writes++; c.opt = o; c.side = 'aligned';
+}
+function openR(c) { /* Base UI mirror: floating-ui/react-dom styles */
+  var el = c.el, F = FloatingUIDOM, prev = null;
+  el.removeAttribute('style'); el._s = {}; el.hidden = false;
+  W(c, el, 'position', 'absolute'); W(c, el, 'top', '0'); W(c, el, 'left', '0'); W(c, el, 'width', c.width() + 'px');
+  function upd() {
+    F.computePosition(c.anchor, el, { strategy: 'absolute', placement: 'bottom-start', middleware: [F.offset(c.gap), F.flip(), F.shift({ padding: 8 }), F.size({ padding: 8, apply: function (a) { W(c, el, 'maxHeight', Math.round(Math.min(c.cap, a.availableHeight)) + 'px'); } })] }).then(function (r) {
+      if (cur !== c) return;
+      if (prev && prev !== r.placement) c.flips++;
+      prev = r.placement; c.side = r.placement.indexOf('top') === 0 ? 'top' : 'bottom';
+      W(c, el, 'transform', 'translate(' + rnd(r.x) + 'px, ' + rnd(r.y) + 'px)');
+      c.live = true;
+    });
+  }
+  c.stop = F.autoUpdate(c.anchor, el, upd);
+}
+function lock() {
+  lk = { x: window.scrollX, y: window.scrollY };
+  document.documentElement.classList.add('dx-lock'); window.scrollTo(lk.x, lk.y);
+  document.addEventListener('touchmove', tmove, { passive: false });
+}
+function tmove(e) { if (!cur || !cur.el.contains(e.target)) e.preventDefault(); }
+function unlock() {
+  if (!lk) return;
+  document.documentElement.classList.remove('dx-lock'); document.removeEventListener('touchmove', tmove);
+  window.scrollTo(lk.x, lk.y); lk = null;
+}
+function outside(e) {
+  var c = cur, t = e.target;
+  if (!c || c.el.contains(t) || (c.anchor && c.anchor.contains(t)) || (t.closest && t.closest('.vrow'))) return;
+  close();
+}
+function open(o) {
+  close();
+  var c = cur = o, el = c.el;
+  c.writes = c.wScroll = c.flips = 0; c.side = null; c.maxTop = 0; c.minH = 1e9; c.t0 = performance.now(); el._s = {};
+  if (c.lock) lock();
+  if (c.arm === 'R') openR(c);
+  else {
+    ['transform', 'max-height', 'width'].forEach(function (p) { el.style.removeProperty(p); });
+    el.showPopover();
+    if (c.width) W(c, el, 'width', c.width() + 'px');
+    var v = vis(), d = adoc(c, v), w = el.offsetWidth;
+    c.nat = Math.min(el.offsetHeight, c.cap);
+    c.x = c.pt ? d.l : clamp(d.l, v.l + 8, Math.max(v.l + 8, v.r - w - 8));
+    if (c.pt && d.l + w > v.r - 4) c.flipX = true;
+    (c.placeFn || place)(c, true);
+  }
+  if (c.after) c.after(c);
+  if (c.arm !== 'R') c.live = true;
+  samp(c);
+  if (c.outside) document.addEventListener('pointerdown', outside, true);
+  if ($('meas').checked) mStart(c);
+  return c;
+}
+function close() {
+  var c = cur; if (!c) return;
+  cur = null; cancelAnimationFrame(c.mraf); cancelAnimationFrame(raf); raf = 0; pf = false;
+  document.removeEventListener('pointerdown', outside, true);
+  if (c.stop) c.stop();
+  if (c.arm === 'R') c.el.hidden = true; else if (c.el.matches(':popover-open')) c.el.hidePopover();
+  unlock(); finish(c);
+}
+function sched(force) {
+  pf = pf || force;
+  if (raf) return;
+  raf = requestAnimationFrame(function () { raf = 0; var f = pf; pf = false; if (cur && cur.arm === 'P' && !cur.placeFn) { samp(cur); place(cur, f); } });
+}
+function onMove() { lastMove = performance.now(); if (cur) { samp(cur); if (cur.arm === 'P' && !cur.placeFn) sched(false); } }
+function onResize() { if (cur) { samp(cur); if (cur.arm === 'P' && !cur.placeFn) sched(true); } }
+window.addEventListener('scroll', onMove, { passive: true });
+if (vv) { vv.addEventListener('scroll', onMove, { passive: true }); vv.addEventListener('resize', onResize); }
+document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+
+/* ===== measurement: reads only while a panel is open ===== */
+function gapMetric(a, p) { return (p.top + p.bottom) > (a.top + a.bottom) ? p.top - a.bottom : a.top - p.bottom; }
+function mStart(c) {
+  c.m = true; c.mn = 0;
+  (function tick(now) {
+    if (cur !== c) return;
+    c.mraf = requestAnimationFrame(tick);
+    if (c.mn >= MAXF || (c.arm === 'R' && !c.live)) return;
+    var a = c.anchor ? c.anchor.getBoundingClientRect() : null, p = c.el.getBoundingClientRect(), i = c.mn++ * STRIDE;
+    MF[i] = now; MF[i + 1] = c.metric ? c.metric(a, p) : 0; MF[i + 2] = vv ? vv.offsetTop : 0; MF[i + 3] = vv ? vv.height : innerHeight;
+    MF[i + 4] = now - lastMove < 120 ? 1 : 0; MF[i + 5] = c.writes; MF[i + 6] = c.wScroll;
+    samp(c);
+  })(performance.now());
+}
+var RUNS = [], VERD = [];
+function median(a) { if (!a.length) return null; var s = a.slice().sort(function (x, y) { return x - y; }); return s[s.length >> 1]; }
+function finish(c) {
+  samp(c);
+  var r = { card: c.card, arm: c.arm, measured: !!c.m, ms: Math.round(performance.now() - c.t0), writes: c.writes, writesScroll: c.wScroll, sideChanges: c.flips, side: c.side, maxVvTop: r1(c.maxTop), minVvH: c.minH > 1e8 ? null : r1(c.minH) };
+  if (c.corner != null) r.cornerPx = r1(c.corner);
+  if (c.align != null) r.alignPx = r1(c.align);
+  if (c.m) {
+    var n = c.mn, ex = c.expect != null ? c.expect : MF[1], dr = [], idx = [], i, d, dt, mv = 0, lg = 0, lm = 0, mx = 0;
+    for (i = 0; i < n; i++) {
+      d = c.metric ? Math.abs(MF[i * STRIDE + 1] - ex) : 0; dt = i ? MF[i * STRIDE] - MF[(i - 1) * STRIDE] : 0;
+      dr.push(d); idx.push(i);
+      if (MF[i * STRIDE + 4]) { mv++; if (dt > 24) lm++; }
+      if (dt > 24) lg++;
+      if (dt > mx) mx = dt;
+    }
+    idx.sort(function (a, b) { return (dr[b] - dr[a]) || ((b ? MF[b * STRIDE] - MF[(b - 1) * STRIDE] : 0) - (a ? MF[a * STRIDE] - MF[(a - 1) * STRIDE] : 0)); });
+    r.frames = n; r.truncated = n >= MAXF; r.movingFrames = mv; r.longFrames = lg; r.longMoving = lm; r.maxDt = r1(mx);
+    r.driftMax = c.metric ? r1(Math.max.apply(null, dr.length ? dr : [0])) : null; r.driftMed = c.metric ? r1(median(dr)) : null;
+    r.worst = idx.slice(0, 40).map(function (k) { var o = k * STRIDE; return { t: Math.round(MF[o] - MF[0]), drift: r1(dr[k]), dt: k ? r1(MF[o] - MF[o - STRIDE]) : 0, vvTop: r1(MF[o + 2]), moving: MF[o + 4], writes: MF[o + 5] }; });
+  }
+  RUNS.push(r); if (RUNS.length > 60) RUNS.shift();
+  renderRes();
+}
+function renderRes() {
+  $('res-body').innerHTML = RUNS.slice(-12).reverse().map(function (r) {
+    var ex = r.cornerPx != null ? 'corner ' + r.cornerPx + ' px' : r.alignPx != null ? 'align ' + r.alignPx + ' px' : '';
+    return '<tr><td>' + r.card + '</td><td>' + r.arm + '</td>' + (r.measured
+      ? '<td>' + r.frames + '</td><td>' + (r.driftMax == null ? '-' : r.driftMax + ' / ' + r.driftMed) + '</td><td>' + r.longMoving + ' / ' + r.longFrames + '</td>'
+      : '<td colspan="3">measure off</td>') + '<td>' + r.writes + ' (' + r.writesScroll + ')</td><td>' + r.sideChanges + '</td><td>' + r.maxVvTop + '</td><td>' + r.minVvH + '</td><td>' + ex + '</td></tr>';
+  }).join('');
+}
+var CARDS = { combobox: ['P', 'R'], popover: ['P'], dropdown: ['P'], context: ['P'], select: ['P'] };
+function summaries() {
+  var out = {};
+  Object.keys(CARDS).forEach(function (k) { out[k] = {}; CARDS[k].forEach(function (a) { out[k][a] = { runs: 0, measuredRuns: 0, frames: 0, driftMax: 0, driftMedMedian: null, longFrames: 0, longMoving: 0, writes: 0, writesScroll: 0, sideChanges: 0, maxVvTop: 0, minVvH: null, cornerPx: [], alignPx: [], worst: [], _med: [] }; }); });
+  RUNS.forEach(function (r) {
+    var s = out[r.card][r.arm]; s.runs++; s.writes += r.writes; s.writesScroll += r.writesScroll; s.sideChanges += r.sideChanges;
+    s.maxVvTop = Math.max(s.maxVvTop, r.maxVvTop); if (r.minVvH != null) s.minVvH = s.minVvH == null ? r.minVvH : Math.min(s.minVvH, r.minVvH);
+    if (r.cornerPx != null) s.cornerPx.push(r.cornerPx); if (r.alignPx != null) s.alignPx.push(r.alignPx);
+    if (r.measured) { s.measuredRuns++; s.frames += r.frames; s.longFrames += r.longFrames; s.longMoving += r.longMoving; if (r.driftMax != null) { s.driftMax = Math.max(s.driftMax, r.driftMax); s._med.push(r.driftMed); } s.worst = s.worst.concat(r.worst); }
+  });
+  Object.keys(out).forEach(function (k) { Object.keys(out[k]).forEach(function (a) {
+    var s = out[k][a]; s.driftMedMedian = median(s._med); delete s._med;
+    s.worst.sort(function (x, y) { return (y.drift - x.drift) || (y.dt - x.dt); }); s.worst = s.worst.slice(0, 40);
+  }); });
+  return out;
+}
+
+/* ===== cards ===== */
+function armOf(card) { return card === 'combobox' && $('arm-r').checked ? 'R' : 'P'; }
+Array.prototype.forEach.call(document.querySelectorAll('.vrow'), function (row) {
+  row.innerHTML = '<button class="btn sm" type="button" data-close>Close</button><button class="btn sm" type="button" data-v="Smooth">Smooth</button><button class="btn sm" type="button" data-v="Stutter">Stutter</button><button class="btn sm" type="button" data-v="Detached">Detached</button><span class="vs"></span>';
+});
+$('lab').addEventListener('mousedown', function (e) { if (e.target.closest && e.target.closest('.vrow button')) e.preventDefault(); });
+$('lab').addEventListener('click', function (e) {
+  var b = e.target.closest && e.target.closest('.vrow button'); if (!b) return;
+  var card = b.parentNode.dataset.card;
+  if (b.hasAttribute('data-close')) { if (cur && cur.card === card) close(); if (card === 'combobox') $('cb-in').blur(); return; }
+  VERD.push({ card: card, arm: armOf(card), verdict: b.dataset.v, t: Math.round(performance.now() - T0), vvOffsetTop: vv ? r1(vv.offsetTop) : 0 });
+  b.parentNode.querySelector('.vs').textContent = 'Recorded: ' + b.dataset.v + ' (' + VERD.filter(function (x) { return x.card === card; }).length + ')';
+});
+function panel(card, el, anchor, gap, cap, wfn, extra) {
+  var o = { card: card, arm: 'P', el: el, anchor: anchor, gap: gap, pref: 'bottom', cap: cap, width: wfn, metric: gapMetric, expect: gap };
+  for (var k in extra) o[k] = extra[k];
   return o;
 }
-var UAP = parseUA();
-// CSS.supports strings carry literal values only: a var() reference always "parses", so it proves nothing.
-var FEATS = [
-  ['anchor-name: --a', function () { return sup('anchor-name', '--a'); }, 1],
-  ['position-anchor: --a', function () { return sup('position-anchor', '--a'); }, 1],
-  ['position-area: bottom', function () { return sup('position-area', 'bottom'); }, 0],
-  ['position-try-fallbacks: flip-block', function () { return sup('position-try-fallbacks', 'flip-block'); }, 1],
-  ['position-try-order: most-height', function () { return sup('position-try-order', 'most-height'); }, 0],
-  ['top: anchor(bottom)', function () { return sup('top', 'anchor(bottom)'); }, 1],
-  ['top: anchor(center)', function () { return sup('top', 'anchor(center)'); }, 0],
-  ['top: calc(anchor(center) - 10px)', function () { return sup('top', 'calc(anchor(center) - 10px)'); }, 0],
-  ['top: clamp(8px, calc(anchor(center) - 10px), calc(100% - 8px))', function () { return sup('top', 'clamp(8px, calc(anchor(center) - 10px), calc(100% - 8px))'); }, 0],
-  ['width: anchor-size(width)', function () { return sup('width', 'anchor-size(width)'); }, 0],
-  ['position-visibility: anchors-visible', function () { return sup('position-visibility', 'anchors-visible'); }, 0],
-  ['scroll-initial-target: nearest', function () { return sup('scroll-initial-target', 'nearest'); }, 0],
-  ['scroll-snap-align: center', function () { return sup('scroll-snap-align', 'center'); }, 0],
-  ['popover in HTMLElement.prototype', function () { return 'popover' in HTMLElement.prototype; }, 1],
-  ['navigator.virtualKeyboard', function () { return !!navigator.virtualKeyboard; }, 0],
-  ['window.visualViewport', function () { return !!window.visualViewport; }, 0],
-  [':popover-open selector', function () { try { document.body.matches(':popover-open'); return true; } catch (e) { return false; } }, 1]
-];
-var FEAT = {}, FEAT_MISS = { core: [], opt: [] };
-(function () {
-  $('t0-feats').innerHTML = FEATS.map(function (f) {
-    var ok = false; try { ok = !!f[1](); } catch (e) { ok = false; }
-    FEAT[f[0]] = ok; if (!ok) (f[2] ? FEAT_MISS.core : FEAT_MISS.opt).push(f[0]);
-    return '<li><span class="mono">' + f[0] + (f[2] ? '' : ' <span class="sub">(optional)</span>') + '</span><b class="yn" data-y="' + (ok ? 1 : 0) + '">' + (ok ? 'yes' : 'no') + '</b></li>';
-  }).join('');
-})();
-
-/* Runtime probe: a tiny box placed by each formula next to a fixed anchor; its real rect says where the engine put it. */
-var PROBE_DEFS = [
-  ['top: anchor(center)', 'anchor(center)', function (a) { return a.cy; }],
-  ['top: calc(anchor(center) - 10px)', 'calc(anchor(center) - 10px)', function (a) { return a.cy - 10; }],
-  ['top: clamp(8px, calc(anchor(center) - 10px), calc(100% - 8px))', 'clamp(8px, calc(anchor(center) - 10px), calc(100% - 8px))', function (a) { return a.cy - 10; }],
-  ['top: anchor(50%)', 'anchor(50%)', function (a) { return a.cy; }],
-  ['top: calc(anchor(50%) - 10px)', 'calc(anchor(50%) - 10px)', function (a) { return a.cy - 10; }],
-  ['top: anchor(bottom)', 'anchor(bottom)', function (a) { return a.bottom; }]
-];
-var PROBE = { rows: [], ran: false };
-var ANCHOR_CENTER = 'center';
-function runProbe() {
-  var rows = [], A = { cy: 135, bottom: 150 };
-  [true, false].forEach(function (topLayer) {
-    PROBE_DEFS.forEach(function (d) {
-      var anchor = document.createElement('div'), box = document.createElement('div'), landed = null, accepted = false, err = '';
-      anchor.setAttribute('aria-hidden', 'true');
-      anchor.style.cssText = 'position:fixed;left:24px;top:120px;width:40px;height:30px;margin:0;padding:0;border:0;visibility:hidden;pointer-events:none;anchor-name:--lab-probe;';
-      box.setAttribute('aria-hidden', 'true');
-      box.style.cssText = 'position:fixed;inset:auto;margin:0;padding:0;border:0;width:12px;height:8px;visibility:hidden;pointer-events:none;overflow:visible;position-anchor:--lab-probe;left:anchor(right);';
-      if (topLayer) box.setAttribute('popover', 'manual');
-      document.body.appendChild(anchor); document.body.appendChild(box);
-      try {
-        box.style.top = d[1]; accepted = box.style.top !== '';
-        if (topLayer) box.showPopover();
-        landed = box.getBoundingClientRect().top;
-        if (topLayer) box.hidePopover();
-      } catch (e) { err = String(e && e.message || e).slice(0, 60); }
-      box.remove(); anchor.remove();
-      var exp = d[2](A), delta = landed == null ? null : landed - exp;
-      rows.push({ formula: d[0], where: topLayer ? 'top layer' : 'plain fixed', supports: sup('top', d[1]), accepted: accepted, landed: landed == null ? null : r1(landed), expected: exp, delta: delta == null ? null : r1(delta), ok: accepted && delta != null && Math.abs(delta) <= 2, err: err });
-    });
-  });
-  PROBE.rows = rows; PROBE.ran = true;
-  var okOf = function (f, w) { return rows.some(function (r) { return r.formula === f && r.where === w && r.ok; }); };
-  ANCHOR_CENTER = okOf('top: calc(anchor(center) - 10px)', 'top layer') ? 'center' : (okOf('top: calc(anchor(50%) - 10px)', 'top layer') ? '50%' : 'center');
-  PROBE.centerToken = ANCHOR_CENTER;
-  $('t0-probe-body').innerHTML = rows.map(function (r) {
-    return '<tr><td class="mono">' + r.formula + '</td><td>' + r.where + '</td><td>' + (r.supports ? 'yes' : 'no') + '</td><td>' + (r.accepted ? 'yes' : 'no') + '</td><td>' + (r.landed == null ? '-' : r.landed) + '</td><td>' + r.expected + '</td><td><span class="chip" data-v="' + (r.ok ? 'pass' : 'fail') + '">' + (r.ok ? 'LANDS' : (r.accepted ? 'OFF ' + f1(r.delta) : 'REJECTED')) + '</span></td></tr>';
-  }).join('');
-  finishT0(); touch();
-}
-function finishT0() {
-  var bad = PROBE.rows.filter(function (r) { return !r.ok; });
-  var parseNoLand = PROBE.rows.filter(function (r) { return r.supports && !r.ok; }).map(function (r) { return r.formula + ' (' + r.where + ')'; });
-  var ex = { missingCore: FEAT_MISS.core, missingOptional: FEAT_MISS.opt, probe: PROBE.rows, centerToken: ANCHOR_CENTER, parsesButFails: parseNoLand };
-  if (FEAT_MISS.core.length) setVerdict('t0', 'fail', 'Core feature(s) missing: ' + FEAT_MISS.core.join(', ') + '. Every CSS arm hands over to the JS placer here. Runtime probe: ' + (bad.length ? bad.length + ' of ' + PROBE.rows.length + ' formula placements do not land.' : 'all land.'), ex);
-  else if (parseNoLand.length) setVerdict('t0', 'warn', 'Anchor positioning present, but ' + parseNoLand.length + ' formula(s) parse and then land wrong: ' + parseNoLand.slice(0, 4).join('; ') + (parseNoLand.length > 4 ? '...' : '') + '. A parse check is not enough; the outcome check is.', ex);
-  else if (bad.length) setVerdict('t0', 'warn', bad.length + ' of ' + PROBE.rows.length + ' formula placements do not land (rejected at parse): ' + bad.slice(0, 4).map(function (r) { return r.formula + ' (' + r.where + ')'; }).join('; ') + '.', ex);
-  else if (FEAT_MISS.opt.length) setVerdict('t0', 'warn', 'Core present, every probed formula lands. Optional missing: ' + FEAT_MISS.opt.join(', '), ex);
-  else setVerdict('t0', 'pass', 'All probed features are supported and every probed formula lands.', ex);
-}
-$('t0-reprobe').addEventListener('click', runProbe);
-var LIVE = { vvMinH: 1e9, vvMaxTop: 0, vvMaxScale: 1, ihMin: 1e9 };
-function kv(host, rows) { $(host).innerHTML = rows.map(function (r) { return '<div><span>' + r[0] + '</span><b>' + r[1] + '</b></div>'; }).join(''); }
-function renderLive() {
-  var v = window.visualViewport;
-  if (v) { LIVE.vvMinH = Math.min(LIVE.vvMinH, v.height); LIVE.vvMaxTop = Math.max(LIVE.vvMaxTop, v.offsetTop); LIVE.vvMaxScale = Math.max(LIVE.vvMaxScale, v.scale); }
-  LIVE.ihMin = Math.min(LIVE.ihMin, innerHeight);
-  var s = vvSnap() || {};
-  kv('t0-live', [
-    ['window.top !== window (framed)', String(FRAMED)], ['devicePixelRatio', String(window.devicePixelRatio)],
-    ['innerWidth x innerHeight', innerWidth + ' x ' + innerHeight], ['clientWidth x clientHeight', document.documentElement.clientWidth + ' x ' + document.documentElement.clientHeight],
-    ['vv width x height', f1(s.width) + ' x ' + f1(s.height)], ['vv offsetLeft / offsetTop', f1(s.offsetLeft) + ' / ' + f1(s.offsetTop)],
-    ['vv scale', f1(s.scale)], ['vv pageLeft / pageTop', f1(s.pageLeft) + ' / ' + f1(s.pageTop)],
-    ['scrollY', f1(window.scrollY)], ['min vv.height seen', f1(LIVE.vvMinH > 1e8 ? null : LIVE.vvMinH)],
-    ['min innerHeight seen', String(LIVE.ihMin)], ['max vv.offsetTop seen', f1(LIVE.vvMaxTop)],
-    ['screen', screen.width + ' x ' + screen.height], ['platform / touch points', (navigator.platform || '?') + ' / ' + (navigator.maxTouchPoints || 0)],
-    ['UA engine tag', UAP.engineTag || '-'], ['iOS (UA token, frozen)', UAP.iosOsToken || '-'], ['Safari Version/', UAP.safariVersion || '-'],
-    ['isWebKit (context_menu.rs test)', String(UAP.isWebKit)],
-    ['virtualKeyboard.overlaysContent', navigator.virtualKeyboard ? String(navigator.virtualKeyboard.overlaysContent) : 'n/a']
-  ]);
-  kv('t7-live', [['vv scale now', f1(s.scale)], ['max scale seen', f1(r2(LIVE.vvMaxScale))]]);
-}
-if (FRAMED) {
-  $('frame-title').textContent = 'Running inside a host frame (for example the Claude viewer): keyboard and viewport behaviour can differ from a top-level page.';
-  $('frame-readout').textContent = ' window.top !== window: true. ';
-} else {
-  $('frame-title').textContent = 'Top-level page: viewport and keyboard behaviour here is the browser’s own.';
-  $('frame-readout').textContent = ' window.top !== window: false. ';
-}
-var lastVvLog = 0;
-function onVv(ev) { renderLive(); touch(); var n = performance.now(); if (n - lastVvLog > 250) { lastVvLog = n; log('vv', ev, vvSnap()); } }
-if (window.visualViewport) { visualViewport.addEventListener('resize', function () { onVv('resize'); }); visualViewport.addEventListener('scroll', function () { onVv('scroll'); }); }
-window.addEventListener('scroll', function () { renderLive(); }, { passive: true });
-window.addEventListener('resize', function () { renderLive(); });
-setInterval(renderLive, 500); renderLive();
-runProbe();
-
-/* ======================= T1 ======================= */
-var FR = ['Apple', 'Apricot', 'Banana', 'Blackberry', 'Blueberry', 'Cherry', 'Grape', 'Kiwi', 'Lemon', 'Mango', 'Orange', 'Peach'];
-var I1 = $('t1-input'), L1 = $('t1-list');
-var S1 = { css: mkStat(), jsev: mkStat(), jssamp: mkStat() }, arm1 = 'css', lastSig = '', E1 = null;
-var armOf1 = function () { return document.querySelector('input[name="t1arm"]:checked').value; };
-function renderList1() {
-  var q = I1.value.trim().toLowerCase(), items = FR.filter(function (f) { return !q || f.toLowerCase().indexOf(q) >= 0; });
-  L1.innerHTML = items.length ? items.map(function (f) { return '<div role="option" class="opt" data-v="' + f + '">' + f + '</div>'; }).join('') : '<div class="opt">No matches</div>';
-}
-function open1() {
-  if (isOpen(L1)) return;
-  arm1 = armOf1(); resetEl(L1); L1.setAttribute('data-arm', arm1); renderList1(); show(L1);
-  S1[arm1].opens++; S1[arm1].firstPending = true; lastSig = '';
-  E1 = Engine({ content: L1, trigger: I1, side: 'bottom', align: 'start', gap: 4, mode: 'engine', cssFirst: arm1 === 'css', events: arm1 !== 'jssamp' });
-  E1.open();
-  log('t1', 'open', { arm: arm1, vv: vvSnap(), placedBy: E1.state().placedBy }); samp1.start(); touch();
-}
-function close1() { if (!isOpen(L1)) return; if (E1) E1.close(); hide(L1); samp1.stop(); log('t1', 'close', { arm: arm1 }); touch(); }
-function sig1() { var v = vvRect(), a = I1.getBoundingClientRect(); return [v.l, v.t, v.w, v.h, v.s, a.left, a.top, a.width, a.height, L1.offsetWidth, L1.offsetHeight].map(function (n) { return Math.round(n * 2); }).join(','); }
-var samp1 = Sampler(function () { if (arm1 === 'jssamp' && E1 && isOpen(L1)) { var s = sig1(); if (s !== lastSig) { E1.reposition(); lastSig = sig1(); } } }, function () {
-  if (!isOpen(L1) || !E1) return;
-  var m = measureAttach(L1, I1, 4), st = E1.state(), pb = arm1 === 'css' ? st.placedBy : 'JS';
-  record(S1[arm1], m, pb, 't1', arm1); if (arm1 === 'css' && st.placedBy !== 'CSS') S1.css.why = st.why;
+/* 1 combobox */
+var FRUIT = ['Apple', 'Apricot', 'Banana', 'Blueberry', 'Cherry', 'Grape', 'Kiwi', 'Lemon', 'Mango', 'Orange', 'Peach', 'Pear'];
+var cbIn = $('cb-in'), cbP = $('cb-p'), cbR = document.createElement('div');
+cbR.className = 'pop'; cbR.id = 'cb-r'; cbR.hidden = true; cbR.setAttribute('role', 'listbox'); document.body.appendChild(cbR);
+[cbP, cbR].forEach(function (el) {
+  el.innerHTML = FRUIT.map(function (f) { return '<div class="opt" role="option">' + f + '</div>'; }).join('') + '<div class="opt empty" hidden>No results</div>';
+  el.addEventListener('mousedown', function (e) { e.preventDefault(); });
+  el.addEventListener('click', function (e) { var o = e.target.closest('.opt'); if (o && !o.classList.contains('empty')) { cbIn.value = o.textContent; cbFilter(); close(); } });
 });
-I1.addEventListener('focus', open1);
-I1.addEventListener('input', function () { renderList1(); open1(); });
-I1.addEventListener('keydown', function (e) { if (e.key === 'Escape') close1(); });
-I1.addEventListener('focusout', function (e) { if (!e.relatedTarget || !L1.contains(e.relatedTarget)) close1(); });
-L1.addEventListener('pointerdown', function (e) { e.preventDefault(); });
-L1.addEventListener('click', function (e) { var o = e.target.closest('[data-v]'); if (o) { I1.value = o.getAttribute('data-v'); close1(); } });
-$('t1-close').addEventListener('click', close1);
-$('t1-reset').addEventListener('click', function () { close1(); S1 = { css: mkStat(), jsev: mkStat(), jssamp: mkStat() }; log('t1', 'reset'); touch(); });
-Array.prototype.forEach.call(document.querySelectorAll('input[name="t1arm"]'), function (r) { r.addEventListener('change', function () { var was = isOpen(L1); close1(); log('t1', 'arm', { arm: armOf1() }); if (was && document.activeElement === I1) open1(); }); });
-posButtons('t1-pos', 't1-input');
-function verdictArm(S) {
-  if (S.frames < 8) return ['none', 'NOT RUN'];
-  var bad = S.drift.max > 2 || S.covMax > 0.5 || S.overlapN > 0;
-  return [bad ? 'fail' : 'pass', 'max drift ' + f1(S.drift.max) + ' px, covered ' + f1(S.covMax) + ' px, overlap frames ' + S.overlapN + ', placed by ' + (Object.keys(S.placed).map(function (p) { return p + ' ' + S.placed[p]; }).join(', ') || '-')];
+function cbFilter() {
+  var q = cbIn.value.trim().toLowerCase(), hit = 0;
+  [cbP, cbR].forEach(function (el) { hit = 0; Array.prototype.forEach.call(el.children, function (o) { if (o.classList.contains('empty')) return; var s = !q || o.textContent.toLowerCase().indexOf(q) >= 0; o.hidden = !s; if (s) hit++; }); el.lastChild.hidden = hit > 0; });
 }
-function renderT1() {
-  var names = { css: 'CSS + outcome check', jsev: 'JS-event', jssamp: 'JS-sampled' }, out = [];
-  ['css', 'jsev', 'jssamp'].forEach(function (k) {
-    var S = S1[k], v = verdictArm(S), id = 't1' + k;
-    setVerdict(id, v[0], null, Object.assign({ text: v[1] }, statSum(S)));
-    var pl = Object.keys(S.placed).map(function (p) { return p + ' ' + S.placed[p]; }).join(', ') || '-';
-    out.push('<tr><td>' + names[k] + '</td><td><span class="chip" data-v="' + v[0] + '">' + LABEL[v[0]] + '</span></td><td>' + S.frames + '</td><td>' + pl + '</td><td>' + f1(S.drift.max) + ' / ' + f1(S.drift.med()) + '</td><td>' + f1(S.first) + '</td><td>' + f1(S.covMax) + '</td><td>' + S.overlapN + '</td><td>' + (S.vvMinH > 1e8 ? '-' : f1(S.vvMinH)) + '</td><td>' + f1(S.offTopMax) + '</td><td>' + (S.why || '-') + '</td></tr>');
-  });
-  $('t1-body').innerHTML = out.join('');
+function cbOpen() {
+  var arm = armOf('combobox');
+  if (cur && cur.card === 'combobox' && cur.arm === arm) return;
+  if (arm === 'R' && typeof FloatingUIDOM === 'undefined') { $('send-status').textContent = 'Floating UI did not load (offline?): arm R is unavailable.'; return; }
+  cbFilter();
+  open(panel('combobox', arm === 'R' ? cbR : cbP, cbIn, 4, 288, function () { return cbIn.offsetWidth; }, { arm: arm }));
 }
-
-/* ======================= T2 ======================= */
-var B2 = $('t2-btn'), P2 = $('t2-panel'), S2 = mkStat(), E2 = null;
-var samp2 = Sampler(null, function () { if (!isOpen(P2) || !E2) return; var st = E2.state(); record(S2, measureAttach(P2, B2, 8), st.placedBy, 't2', 'css'); if (st.placedBy !== 'CSS') S2.why = st.why; });
-function open2() {
-  if (isOpen(P2)) return; resetEl(P2); show(P2); S2.opens++; S2.firstPending = true;
-  E2 = Engine({ content: P2, trigger: B2, side: 'bottom', align: 'start', gap: 8, mode: 'engine', cssFirst: true });
-  E2.open(); log('t2', 'open', { vv: vvSnap(), placedBy: E2.state().placedBy }); samp2.start(); touch();
-}
-function close2() { if (!isOpen(P2)) return; if (E2) E2.close(); hide(P2); samp2.stop(); log('t2', 'close'); touch(); }
-B2.addEventListener('click', function () { if (isOpen(P2)) close2(); else open2(); });
-$('t2-close').addEventListener('click', close2);
-$('t2-reset').addEventListener('click', function () { close2(); S2 = mkStat(); touch(); });
-P2.addEventListener('keydown', function (e) { if (e.key === 'Escape') { close2(); B2.focus(); } });
-posButtons('t2-pos', 't2-btn');
-function renderT2() {
-  if (S2.frames < 8) { setVerdict('t2', 'none', 'Open the popover (and tap the field) to record frames.', statSum(S2)); return; }
-  var pl = Object.keys(S2.placed).map(function (p) { return p + ' ' + S2.placed[p]; }).join(', ');
-  var txt = S2.frames + ' frames (placed by ' + pl + '), drift max ' + f1(S2.drift.max) + ' / med ' + f1(S2.drift.med()) + ' px, covered max ' + f1(S2.covMax) + ' px, overlap frames ' + S2.overlapN + ', min vv.h ' + f1(S2.vvMinH) + ', max vv.top ' + f1(S2.offTopMax) + '.' + (S2.why ? ' JS took over: ' + S2.why + '.' : '');
-  var key = S2.drift.max > 2 ? 'fail' : (S2.covMax > 0.5 || S2.overlapN ? 'warn' : 'pass');
-  setVerdict('t2', key, txt + (key === 'warn' ? ' Attached correctly but under the keyboard / overlapping.' : ''), statSum(S2));
-}
-
-/* ======================= T8 ======================= */
-var VN = { e: '(i) engine', l: '(ii) layout only', a: '(iii) add' }, VS = { e: '(i)', l: '(ii)', a: '(iii)' }, HN = { cb: 'Combobox', pp: 'Popover+field' };
-var VK = ['e', 'l', 'a'], HK = ['cb', 'pp'];
-var H8 = { cb: { anchor: $('t8-input'), gap: 4, panels: {}, lastTop: null, movedAt: 0, open: false, stop: null }, pp: { anchor: $('t8-btn'), gap: 8, panels: {}, lastTop: null, movedAt: 0, open: false, stop: null } };
-var E8 = { cb: {}, pp: {} };
-function mkCell() { var c = mkStat(); c.gapMin = 1e9; c.gapMax = -1e9; c.rest = new Acc(); c.move = new Acc(); c.apply = new Acc(); c.cbShift = new Acc(); c.pinTop = 0; c.pinBottom = 0; c.driftTop = new Acc(); c.driftBottom = new Acc(); c.stale = 0; c.vvTopMax = 0; c.vvTopFrames = 0; c.ring = []; return c; }
-function mkS8() { var s = { cb: {}, pp: {} }; HK.forEach(function (h) { VK.forEach(function (v) { s[h][v] = mkCell(); }); }); return s; }
-var S8 = mkS8(), X8 = { cbAnchorClose: 0, ppAnchorClose: 0, ppAutoDismiss: 0, ppDismissDuringScroll: 0, lastScrollAt: 0 };
-(function buildPanels8() {
-  var host = $('t8-panels'), html = '';
-  VK.forEach(function (v) {
-    html += '<div id="t8-cb-' + v + '" class="pop p8 p8-cb ghost" data-v8="' + v + '" popover="manual" role="listbox" aria-label="Fruit ' + VN[v] + '"></div>';
-    html += '<div id="t8-pp-' + v + '" class="pop p8 p8-pp ghost" data-v8="' + v + '" popover="manual" role="dialog" tabindex="-1" aria-label="Popover ' + VN[v] + '"><span class="vtag">' + VS[v] + '</span><div><label class="sub" for="t8-f-' + v + '">Name</label><input class="field" id="t8-f-' + v + '" type="text" placeholder="Type here" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"></div><div class="row"><button class="btn sm" type="button" data-close8="1">Close</button></div></div>';
-  });
-  host.innerHTML = html;
-  VK.forEach(function (v) { H8.cb.panels[v] = $('t8-cb-' + v); H8.pp.panels[v] = $('t8-pp-' + v); });
-})();
-var liveV = function () { return document.querySelector('input[name="t8v"]:checked').value; };
-var ppKind = function () { return document.querySelector('input[name="t8k"]:checked').value; };
-function renderList8() {
-  var q = H8.cb.anchor.value.trim().toLowerCase(), items = FR.filter(function (f) { return !q || f.toLowerCase().indexOf(q) >= 0; });
-  VK.forEach(function (v) {
-    H8.cb.panels[v].innerHTML = '<span class="vtag">' + VS[v] + '</span>' + (items.length ? items.map(function (f) { return '<div role="option" class="opt" data-v="' + f + '">' + f + '</div>'; }).join('') : '<div class="opt">No matches</div>');
-  });
-}
-function styleGhosts8(h) {
-  var live = liveV(), showG = $('t8-ghosts').checked;
-  VK.forEach(function (v) {
-    var P = H8[h].panels[v], g = v !== live;
-    P.classList.toggle('ghost', g); P.classList.toggle('hidden-ghost', g && !showG);
-    if (g) { P.setAttribute('inert', ''); P.setAttribute('aria-hidden', 'true'); } else { P.removeAttribute('inert'); P.removeAttribute('aria-hidden'); }
-  });
-}
-function openHost8(h) {
-  if (H8[h].open) return;
-  var H = H8[h], live = liveV();
-  styleGhosts8(h);
-  if (h === 'cb') renderList8();
-  // the live panel is shown first, so a popover=auto panel is the one a light dismiss acts on
-  var order = [live].concat(VK.filter(function (v) { return v !== live; }));
-  order.forEach(function (v) {
-    var P = H.panels[v]; resetEl(P);
-    if (h === 'pp') P.setAttribute('popover', v === live ? ppKind() : 'manual');
-    show(P);
-    E8[h][v] = Engine({ content: P, trigger: H.anchor, side: 'bottom', align: 'start', gap: H.gap, mode: { e: 'engine', l: 'layout', a: 'add' }[v], cssFirst: false, events: true, pin: function () { return document.querySelector('input[name="t8p"]:checked').value; } });
-    E8[h][v].open(); S8[h][v].opens++; S8[h][v].firstPending = true;
-  });
-  H.open = true; H.lastTop = null;
-  H.stop = watchAnchorLeave(H.anchor, H.panels[live], function () { X8[h + 'AnchorClose']++; log('t8', 'anchor-left-viewport-close', { host: h }); closeHost8(h); touch(); });
-  log('t8', 'open', { host: h, live: live, kind: h === 'pp' ? ppKind() : 'manual', vv: vvSnap() });
-  samp8.start(); touch();
-}
-function closeHost8(h) {
-  var H = H8[h]; if (!H.open) return;
-  H.open = false; if (H.stop) { H.stop(); H.stop = null; }
-  VK.forEach(function (v) { if (E8[h][v]) E8[h][v].close(); hide(H.panels[v]); });
-  log('t8', 'close', { host: h }); if (!H8.cb.open && !H8.pp.open) samp8.stop(); touch();
-}
-var samp8 = Sampler(null, function () {
-  var now = performance.now();
-  HK.forEach(function (h) {
-    var H = H8[h]; if (!H.open) return;
-    var ar = H.anchor.getBoundingClientRect(), moved = H.lastTop == null || Math.abs(ar.top - H.lastTop) > 0.3; H.lastTop = ar.top; if (moved) H.movedAt = now;
-    var atRest = now - H.movedAt > 250, vp = vvRect(), cbNow = vm().cbBottom;
-    VK.forEach(function (v) {
-      var P = H.panels[v], eng = E8[h][v]; if (!eng || !isOpen(P)) return;
-      var m = measureAttach(P, H.anchor, H.gap), st = eng.state(), S = S8[h][v], pr = P.getBoundingClientRect();
-      record(S, m, 'JS', 't8', h + v);
-      if (m.gap < S.gapMin) S.gapMin = m.gap; if (m.gap > S.gapMax) S.gapMax = m.gap;
-      (atRest ? S.rest : S.move).add(m.drift);
-      if (atRest && st.at < H.movedAt - 20) S.stale++;
-      if (st.pin === 'top' && st.wTop != null) { S.pinTop++; S.driftTop.add(m.drift); S.apply.add(Math.abs(pr.top - st.wTop)); }
-      else if (st.pin === 'bottom' && st.wBottom != null) { S.pinBottom++; S.driftBottom.add(m.drift); S.apply.add(Math.abs(pr.bottom - (cbNow - st.wBottom))); S.cbShift.add(Math.abs(cbNow - st.cbAtWrite)); }
-      if (vp.t > 0.5) S.vvTopFrames++; if (vp.t > S.vvTopMax) S.vvTopMax = vp.t;
-      S.ring.push([Math.round(now - T0), r1(vp.t), r1(vp.h), r1(ar.top), r1(ar.bottom), r1(pr.top), r1(pr.bottom), r1(m.gap), st.pin === 'bottom' ? 'b' : 't', Math.round(window.scrollY), r1(cbNow), innerHeight]);
-      if (S.ring.length > 80) S.ring.shift();
-    });
-  });
+['focus', 'click'].forEach(function (ev) { cbIn.addEventListener(ev, cbOpen); });
+cbIn.addEventListener('input', function () {
+  cbFilter(); cbOpen();
+  if (cur && cur.card === 'combobox' && cur.arm === 'P') { cur.nat = Math.min(cur.el.scrollHeight + 2, cur.cap); sched(false); }
 });
-// Combobox host
-var I8 = H8.cb.anchor, B8 = H8.pp.anchor;
-I8.addEventListener('focus', function () { openHost8('cb'); });
-I8.addEventListener('input', function () { if (H8.cb.open) renderList8(); else openHost8('cb'); });
-I8.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeHost8('cb'); });
-I8.addEventListener('focusout', function (e) { var inP = e.relatedTarget && VK.some(function (v) { return H8.cb.panels[v].contains(e.relatedTarget); }); if (!inP) closeHost8('cb'); });
-VK.forEach(function (v) {
-  H8.cb.panels[v].addEventListener('pointerdown', function (e) { e.preventDefault(); });
-  H8.cb.panels[v].addEventListener('click', function (e) { var o = e.target.closest('[data-v]'); if (o && o.getAttribute('data-v')) { I8.value = o.getAttribute('data-v'); closeHost8('cb'); } });
-  H8.pp.panels[v].addEventListener('click', function (e) { if (e.target.closest('[data-close8]')) closeHost8('pp'); });
-  H8.pp.panels[v].addEventListener('keydown', function (e) { if (e.key === 'Escape') { closeHost8('pp'); B8.focus(); } });
-  // a native light dismiss of the popover=auto panel closes it without the page's say-so: count it, then sync the ghosts
-  H8.pp.panels[v].addEventListener('toggle', function (e) {
-    if (e.newState !== 'closed' || !H8.pp.open || v !== liveV() || ppKind() !== 'auto') return;
-    X8.ppAutoDismiss++; if (performance.now() - X8.lastScrollAt < 600) X8.ppDismissDuringScroll++;
-    log('t8', 'popover-auto-light-dismissed', { sinceScrollMs: Math.round(performance.now() - X8.lastScrollAt) }); closeHost8('pp'); touch();
-  });
+Array.prototype.forEach.call(document.querySelectorAll('input[name=arm]'), function (r) {
+  r.addEventListener('change', function () { if (cur && cur.card === 'combobox') { close(); if (document.activeElement === cbIn) cbOpen(); } });
 });
-window.addEventListener('scroll', function () { X8.lastScrollAt = performance.now(); }, { passive: true, capture: true });
-var wasOpen8 = false;
-B8.addEventListener('pointerdown', function () { wasOpen8 = H8.pp.open; });
-B8.addEventListener('click', function () {
-  var was = wasOpen8; wasOpen8 = false;
-  if (was || H8.pp.open) { closeHost8('pp'); return; }
-  openHost8('pp');
-  var P = H8.pp.panels[liveV()], coarse = window.matchMedia && matchMedia('(pointer: coarse)').matches;
-  // the shipped Popover: touch and pen opens focus the panel (no keyboard), keyboard and mouse opens focus the first control
-  try { (coarse ? P : P.querySelector('input')).focus({ preventScroll: true }); } catch (e) { /* ignore */ }
+/* 2 popover, 3 dropdown */
+$('pp-btn').addEventListener('click', function () {
+  if (cur && cur.card === 'popover') return close();
+  open(panel('popover', $('pp-p'), $('pp-btn'), 8, 400, function () { return 280; }, { outside: true }));
 });
-$('t8-close').addEventListener('click', function () { closeHost8('cb'); closeHost8('pp'); });
-$('t8-reset').addEventListener('click', function () { closeHost8('cb'); closeHost8('pp'); S8 = mkS8(); X8.cbAnchorClose = X8.ppAnchorClose = X8.ppAutoDismiss = X8.ppDismissDuringScroll = 0; log('t8', 'reset'); touch(); });
-Array.prototype.forEach.call(document.querySelectorAll('input[name="t8v"],input[name="t8k"],input[name="t8p"]'), function (r) { r.addEventListener('change', function () { var cb = H8.cb.open, pp = H8.pp.open; closeHost8('cb'); closeHost8('pp'); if (cb && document.activeElement === I8) openHost8('cb'); else if (pp) openHost8('pp'); }); });
-$('t8-ghosts').addEventListener('change', function () { HK.forEach(styleGhosts8); });
-posButtons('t8-pos', 't8-row');
-function cellSum(S) { return { frames: S.frames, opens: S.opens, driftMax: r1(S.drift.max), driftMed: r1(S.drift.med()), gapMin: S.frames ? r1(S.gapMin) : null, gapMax: S.frames ? r1(S.gapMax) : null, driftAtRestMax: r1(S.rest.max), restFrames: S.rest.n, driftMovingMax: r1(S.move.max), movingFrames: S.move.n, pinnedTopFrames: S.pinTop, pinnedBottomFrames: S.pinBottom, driftPinnedTopMax: r1(S.driftTop.max), driftPinnedBottomMax: r1(S.driftBottom.max), staleAtRestFrames: S.stale, fixedLandedDeltaMax: r1(S.apply.max), cbBottomShiftMax: r1(S.cbShift.max), coveredMax: r1(S.covMax), vvTopMax: r1(S.vvTopMax), vvTopPositiveFrames: S.vvTopFrames, vvMinHeight: S.vvMinH > 1e8 ? null : r1(S.vvMinH), zoom: statSum(S).zoom, ring: S.ring }; }
-function renderT8() {
-  var rows = [], ex = { cells: {}, counters: { comboboxAnchorLeftViewportCloses: X8.cbAnchorClose, popoverAnchorLeftViewportCloses: X8.ppAnchorClose, popoverAutoLightDismissals: X8.ppAutoDismiss, ofWhichWithin600msOfAScroll: X8.ppDismissDuringScroll }, ringColumns: ['tMs', 'vvOffsetTop', 'vvHeight', 'anchorTop', 'anchorBottom', 'panelTop', 'panelBottom', 'gap', 'pin(t=top,b=bottom)', 'scrollY', 'fixedCbBottom', 'innerHeight'] };
-  HK.forEach(function (h) {
-    ex.cells[h] = {};
-    VK.forEach(function (v) {
-      var S = S8[h][v], ok = S.frames >= 8, key = !ok ? 'none' : (S.drift.max > 2 ? 'fail' : (S.covMax > 0.5 || S.overlapN ? 'warn' : 'pass'));
-      ex.cells[h][v] = Object.assign({ verdict: LABEL[key] }, cellSum(S));
-      rows.push('<tr><td>' + HN[h] + '</td><td>' + VN[v] + '</td><td><span class="chip" data-v="' + key + '">' + LABEL[key] + '</span></td><td>' + S.frames + '</td><td>' + f1(S.drift.max) + ' / ' + f1(S.drift.med()) + '</td><td>' + (S.frames ? f1(S.gapMin) + ' to ' + f1(S.gapMax) : '-') + '</td><td>' + f1(S.rest.max) + ' (' + S.rest.n + ')</td><td>' + f1(S.move.max) + ' (' + S.move.n + ')</td><td>' + S.stale + '</td><td>' + f1(S.driftTop.max) + ' (' + S.pinTop + ') / ' + f1(S.driftBottom.max) + ' (' + S.pinBottom + ')</td><td>' + f1(S.apply.max) + '</td><td>' + f1(S.cbShift.max) + '</td><td>' + f1(S.covMax) + '</td><td>' + f1(S.vvTopMax) + ' (' + S.vvTopFrames + ')</td><td>' + (S.vvMinH > 1e8 ? '-' : f1(S.vvMinH)) + '</td></tr>');
-    });
-  });
-  $('t8-body').innerHTML = rows.join('');
-  kv('t8-live', [['Combobox list closed by "anchor left viewport"', String(X8.cbAnchorClose)], ['Popover closed by "anchor left viewport"', String(X8.ppAnchorClose)], ['Popover (auto) light-dismissed by the browser', X8.ppAutoDismiss + ' (' + X8.ppDismissDuringScroll + ' within 600 ms of a scroll)']]);
-  var parts = [], hostsRun = 0, engineBad = [], fixedBy = [], notes = [];
-  HK.forEach(function (h) {
-    var cells = VK.map(function (v) { return { v: v, S: S8[h][v] }; }).filter(function (c) { return c.S.frames >= 8; });
-    if (!cells.length) { parts.push(HN[h] + ': not run.'); return; }
-    hostsRun++;
-    var good = cells.filter(function (c) { return c.S.drift.max <= 2; }).map(function (c) { return VN[c.v]; });
-    parts.push(HN[h] + ': ' + cells.map(function (c) { return VN[c.v] + ' drift max ' + f1(c.S.drift.max) + ' px'; }).join(', ') + (good.length ? ' -> kept the gap constant: ' + good.join(' and ') + '.' : ' -> no variant kept the gap constant.'));
-    var eng = S8[h].e;
-    if (eng.frames >= 8 && eng.drift.max > 2) { engineBad.push(HN[h]); if (good.length) fixedBy.push(HN[h] + ' by ' + good.join(' / ')); }
-    var worst = cells.reduce(function (a, c) { return c.S.rest.max > a.S.rest.max ? c : a; }, cells[0]);
-    if (worst.S.rest.max > 2) notes.push(HN[h] + ' ' + VN[worst.v] + ' stays off by ' + f1(worst.S.rest.max) + ' px with the anchor at rest (a stuck panel, not scroll lag).');
-    else if (worst.S.move.max > 2) notes.push(HN[h] + ': drift only while the anchor moves (max ' + f1(worst.S.move.max) + ' px), none at rest: lag, not a wrong frame.');
-    var stl = cells.reduce(function (a, c) { return Math.max(a, c.S.stale); }, 0); if (stl > 0) notes.push(HN[h] + ': up to ' + stl + ' frames with the anchor at rest where no re-placement had run since its last move (a missing event, not wrong arithmetic).');
-    var dT = cells.reduce(function (a, c) { return Math.max(a, c.S.driftTop.max); }, 0), dB = cells.reduce(function (a, c) { return Math.max(a, c.S.driftBottom.max); }, 0);
-    if (dT > 2 || dB > 2) notes.push(HN[h] + ': drift pinned by top ' + f1(dT) + ' px, pinned by bottom ' + f1(dB) + ' px' + (dB > 2 && dT <= 2 ? ' (only bottom-pinned panels drift)' : (dT > 2 && dB <= 2 ? ' (only top-pinned panels drift)' : '')) + '.');
-    var ap = cells.reduce(function (a, c) { return Math.max(a, c.S.apply.max); }, 0); if (ap > 2) notes.push(HN[h] + ': the fixed box landed up to ' + f1(ap) + ' px from the px it was given (fixed frame differs from the rect frame).');
-    var cs = cells.reduce(function (a, c) { return Math.max(a, c.S.cbShift.max); }, 0); if (cs > 2) notes.push(HN[h] + ': the fixed containing block bottom moved ' + f1(cs) + ' px after a bottom-pinned write.');
-    var vt = cells.reduce(function (a, c) { return Math.max(a, c.S.vvTopMax); }, 0);
-    notes.push(HN[h] + ': vv.offsetTop max ' + f1(vt) + (vt > 0.5 ? '' : ' (never panned, so offset handling was not exercised on this host)') + '.');
-  });
-  if (X8.ppAutoDismiss) notes.push('The Popover (auto) was light-dismissed by the browser ' + X8.ppAutoDismiss + ' time(s), ' + X8.ppDismissDuringScroll + ' within 600 ms of a scroll: a closed popover cannot drift.');
-  var eC = S8.cb.e, lC = S8.cb.l, eP = S8.pp.e;
-  if (eC.frames >= 8 && S8.cb.l.frames >= 8 && Math.abs(eC.drift.max - lC.drift.max) <= 1 && eC.drift.max > 2) notes.push('Variants (i) and (ii) drift alike: the offset cancels when written back, so offset arithmetic is not the cause.');
-  if (eC.frames >= 8 && eP.frames >= 8 && eC.drift.max > 2 && eP.drift.max <= 2) notes.push('Combobox drifts and Popover does not under the same engine variant: the difference is in the host (where focus lives, pin side, dismissal), not in offset handling.');
-  var key = !hostsRun ? 'none' : (engineBad.length ? 'fail' : (hostsRun < 2 ? 'warn' : 'pass'));
-  var head = key === 'none' ? 'Open the Combobox and the Popover with the keyboard up and scroll the page.' : (engineBad.length ? 'The shipped variant (i) drifted on: ' + engineBad.join(', ') + (fixedBy.length ? '; another variant held: ' + fixedBy.join('; ') : '; no other variant held either') + '.' : 'Variant (i) held the gap' + (hostsRun < 2 ? ' on the host run so far; run the other host too.' : ' on both hosts.'));
-  setVerdict('t8', key, head + ' ' + parts.join(' ') + ' ' + notes.join(' '), ex);
-}
-
-/* ======================= T9 ======================= */
-var AN9 = { a: 'A fixed-js', b: 'B toplayer-abs-once', c: 'C body-abs-once', d: 'D floating-ui-abs', e: 'E floating-ui-fixed' };
-var AK9 = ['a', 'b', 'c', 'd', 'e'];
-var I9 = $('t9-input'), GAP9 = 4;
-var S9 = {}, V9 = [], U9 = { d: false, e: false }, O9 = { arm: null, panel: null, eng: null, stop: null, lastTop: null, movedAt: 0 };
-var FUI = window.FloatingUIDOM || null;
-function mkS9() { AK9.forEach(function (k) { S9[k] = mkCell(); }); }
-mkS9();
-log('t9', 'floating-ui', { loaded: !!FUI, keys: FUI ? Object.keys(FUI).slice(0, 12) : null });
-var arm9 = function () { return document.querySelector('input[name="t9arm"]:checked').value; };
-function panelHtml9(k) {
-  return '<span class="vtag">' + k.toUpperCase() + '</span>' + FR.slice(0, 8).map(function (f) { return '<div role="option" class="opt" data-v="' + f + '">' + f + '</div>'; }).join('');
-}
-function mkPanel9(k, popover) {
-  var P = document.createElement('div');
-  P.id = 't9-panel-' + k; P.className = 'pop p9'; P.setAttribute('role', 'listbox'); P.setAttribute('aria-label', 'Fruit ' + AN9[k]); P.setAttribute('data-arm9', k);
-  if (popover) P.setAttribute('popover', 'manual');
-  P.innerHTML = panelHtml9(k);
-  P.addEventListener('pointerdown', function (e) { e.preventDefault(); });
-  P.addEventListener('click', function (e) { var o = e.target.closest('[data-v]'); if (o) { I9.value = o.getAttribute('data-v'); close9(); } });
-  return P;
-}
-// document coordinates of the anchor's bottom-left, in the frame getBoundingClientRect uses plus the layout viewport's scroll offset
-function docPos9(P) {
-  var r = I9.getBoundingClientRect();
-  P.style.setProperty('--dx-anchor-width', r.width + 'px');
-  P.style.left = (r.left + window.scrollX) + 'px';
-  P.style.top = (r.bottom + GAP9 + window.scrollY) + 'px';
-}
-function fuiStart9(P, strategy) {
-  var closed = false;
-  var update = function () {
-    if (closed || !P.isConnected) return;
-    P.style.setProperty('--dx-anchor-width', I9.getBoundingClientRect().width + 'px');
-    FUI.computePosition(I9, P, { strategy: strategy, placement: 'bottom-start', middleware: [FUI.offset(GAP9), FUI.flip(), FUI.shift({ padding: 8 })] }).then(function (p) {
-      if (closed) return;
-      Object.assign(P.style, { position: p.strategy, left: p.x + 'px', top: p.y + 'px' });
-    });
-  };
-  P.style.position = strategy; P.style.left = '0px'; P.style.top = '0px';
-  var stop = FUI.autoUpdate(I9, P, update);
-  return function () { closed = true; stop(); };
-}
-function open9() {
-  if (O9.panel) return;
-  var k = arm9(), P, S = S9[k];
-  if ((k === 'd' || k === 'e') && !(FUI && FUI.computePosition && FUI.autoUpdate)) {
-    U9[k] = true; log('t9', 'unavailable', { arm: k }); touch(); return;
-  }
-  O9.arm = k; O9.lastTop = null; O9.eng = null; O9.stop = null;
-  var popover = k === 'a' || k === 'b', host = popover ? $('t9-panels') : document.body;
-  P = mkPanel9(k, popover); host.appendChild(P); O9.panel = P;
-  S.opens++; S.firstPending = true;
-  if (k === 'a') {
-    show(P);
-    O9.eng = Engine({ content: P, trigger: I9, side: 'bottom', align: 'start', gap: GAP9, mode: 'engine', cssFirst: false, events: true });
-    O9.eng.open();
-  } else if (k === 'b' || k === 'c') {
-    var place = function () { docPos9(P); };
-    P.style.position = 'absolute'; P.style.inset = 'auto'; P.style.margin = '0';
-    if (k === 'c') P.style.zIndex = '2147483000';
-    place(); if (k === 'b') show(P);
-    window.addEventListener('resize', place, { passive: true });
-    O9.stop = function () { window.removeEventListener('resize', place); };
-  } else {
-    O9.stop = fuiStart9(P, k === 'd' ? 'absolute' : 'fixed');
-  }
-  log('t9', 'open', { arm: k, vv: vvSnap() });
-  samp9.start(); touch();
-}
-function close9() {
-  var P = O9.panel; if (!P) return;
-  if (O9.eng) O9.eng.close();
-  if (O9.stop) O9.stop();
-  hide(P); P.remove();
-  O9.panel = null; O9.eng = null; O9.stop = null;
-  log('t9', 'close', { arm: O9.arm }); samp9.stop(); touch();
-}
-var samp9 = Sampler(null, function () {
-  var P = O9.panel, k = O9.arm; if (!P || !P.isConnected) return;
-  var now = performance.now(), ar = I9.getBoundingClientRect(), moved = O9.lastTop == null || Math.abs(ar.top - O9.lastTop) > 0.3;
-  O9.lastTop = ar.top; if (moved) O9.movedAt = now;
-  var atRest = now - O9.movedAt > 250, vp = vvRect(), S = S9[k];
-  var m = measureAttach(P, I9, GAP9), pr = P.getBoundingClientRect();
-  record(S, m, k === 'a' ? 'JS' : 'document', 't9', k);
-  if (m.gap < S.gapMin) S.gapMin = m.gap; if (m.gap > S.gapMax) S.gapMax = m.gap;
-  (atRest ? S.rest : S.move).add(m.drift);
-  if (k === 'a' && O9.eng) {
-    var st = O9.eng.state(), cbNow = vm().cbBottom;
-    if (st.pin === 'top' && st.wTop != null) { S.pinTop++; S.apply.add(Math.abs(pr.top - st.wTop)); }
-    else if (st.pin === 'bottom' && st.wBottom != null) { S.pinBottom++; S.apply.add(Math.abs(pr.bottom - (cbNow - st.wBottom))); }
-  }
-  if (vp.t > 0.5) S.vvTopFrames++; if (vp.t > S.vvTopMax) S.vvTopMax = vp.t;
-  S.ring.push([Math.round(now - T0), r1(vp.t), r1(vp.h), r1(ar.top), r1(ar.bottom), r1(pr.top), r1(pr.bottom), r1(m.gap), Math.round(window.scrollY)]);
-  if (S.ring.length > 80) S.ring.shift();
+$('dd-p').innerHTML = ['Profile', 'Billing', 'Settings', 'Keyboard shortcuts', 'Team', 'Invite users', 'Support', 'Log out'].map(function (t) { return '<button class="mi" type="button" role="menuitem">' + t + '</button>'; }).join('');
+$('dd-p').addEventListener('click', function (e) { if (e.target.closest('.mi')) close(); });
+$('dd-btn').addEventListener('click', function () {
+  if (cur && cur.card === 'dropdown') return close();
+  var b = $('dd-btn');
+  open(panel('dropdown', $('dd-p'), b, 4, 400, function () { return Math.max(b.offsetWidth, 180); }, { outside: true }));
 });
-I9.addEventListener('focus', open9);
-I9.addEventListener('input', function () { if (!O9.panel) open9(); });
-I9.addEventListener('keydown', function (e) { if (e.key === 'Escape') close9(); });
-I9.addEventListener('focusout', function (e) { if (!(e.relatedTarget && O9.panel && O9.panel.contains(e.relatedTarget))) close9(); });
-I9.addEventListener('pointerdown', function () { if (!O9.panel && document.activeElement === I9) open9(); });
-$('t9-close').addEventListener('click', close9);
-$('t9-reset').addEventListener('click', function () { close9(); mkS9(); V9.length = 0; U9.d = U9.e = false; log('t9', 'reset'); touch(); });
-Array.prototype.forEach.call(document.querySelectorAll('input[name="t9arm"]'), function (r) { r.addEventListener('change', function () { var was = !!O9.panel; close9(); U9.d = U9.e = false; log('t9', 'arm', { arm: arm9() }); if (was && document.activeElement === I9) open9(); touch(); }); });
-[['t9-yes', 'attached'], ['t9-no', 'detached']].forEach(function (d) {
-  var b = $(d[0]);
-  // keep the field focused (and the keyboard up) while the button is pressed
-  b.addEventListener('mousedown', function (e) { e.preventDefault(); });
-  b.addEventListener('pointerdown', function (e) { if (e.pointerType !== 'touch') e.preventDefault(); });
-  b.addEventListener('click', function () {
-    var v = window.visualViewport, rec = { arm: O9.panel ? O9.arm : arm9(), verdict: d[1], t: Math.round(performance.now() - T0), vvOffsetTop: v ? r1(v.offsetTop) : null, panelOpen: !!O9.panel };
-    V9.push(rec); log('t9', 'human-verdict', rec); touch();
-  });
+/* 4 context menu: point anchor from pageX/pageY */
+$('cm-p').innerHTML = ['Back', 'Forward', 'Reload', 'Save as...', 'Print', 'Inspect'].map(function (t) { return '<button class="mi" type="button" role="menuitem">' + t + '</button>'; }).join('');
+$('cm-p').addEventListener('click', function (e) { if (e.target.closest('.mi') && performance.now() - cur.t0 > 400) close(); });
+function cmOpen(x, y) {
+  open({ card: 'context', arm: 'P', el: $('cm-p'), pt: { x: x, y: y }, gap: 0, pref: 'bottom', cap: 400, width: function () { return 176; }, lock: true, outside: true,
+    after: function (c) { var r = c.el.getBoundingClientRect(), v = vis(); c.corner = Math.hypot((c.flipX ? r.right : r.left) - v.ox - x, (c.side === 'top' ? r.bottom : r.top) - v.oy - y); } });
+}
+var area = $('cm-area'), lp = null;
+function lpClear() { if (lp) { clearTimeout(lp.id); lp = null; } }
+area.addEventListener('contextmenu', function (e) { e.preventDefault(); if (cur && cur.card === 'context' && performance.now() - cur.t0 < 900) return; cmOpen(e.pageX, e.pageY); });
+area.addEventListener('touchstart', function (e) { lpClear(); var t = e.touches[0], x = t.pageX, y = t.pageY; lp = { cx: t.clientX, cy: t.clientY, id: setTimeout(function () { lp = null; cmOpen(x, y); }, 450) }; }, { passive: true });
+area.addEventListener('touchmove', function (e) { var t = e.touches[0]; if (lp && Math.hypot(t.clientX - lp.cx, t.clientY - lp.cy) > 10) lpClear(); }, { passive: true });
+['touchend', 'touchcancel'].forEach(function (ev) { area.addEventListener(ev, lpClear); });
+/* 5 select, item-aligned */
+var selIdx = 11, selP = $('sel-p');
+selP.innerHTML = Array.apply(null, Array(40)).map(function (_, i) { return '<div class="opt" role="option"' + (i === selIdx ? ' aria-selected="true"' : '') + '>Option ' + (i + 1) + '</div>'; }).join('');
+selP.addEventListener('click', function (e) {
+  var o = e.target.closest('.opt'); if (!o) return;
+  selP.children[selIdx].removeAttribute('aria-selected'); selIdx = Array.prototype.indexOf.call(selP.children, o); o.setAttribute('aria-selected', 'true');
+  $('sel-txt').textContent = o.textContent; close();
 });
-posButtons('t9-pos', 't9-row');
-var humanOf9 = function (k) { var y = 0, n = 0; V9.forEach(function (v) { if (v.arm === k) { if (v.verdict === 'attached') y++; else n++; } }); return { attached: y, detached: n }; };
-function renderT9() {
-  var rows = [], ex = { arms: {}, humanVerdicts: V9.slice(-60), floatingUi: { loaded: !!FUI, core: '1.6.9', dom: '1.6.13' }, ringColumns: ['tMs', 'vvOffsetTop', 'vvHeight', 'anchorTop', 'anchorBottom', 'panelTop', 'panelBottom', 'gap', 'scrollY'] };
-  var ran = [], bad = [], good = [], hum = {};
-  AK9.forEach(function (k) {
-    var S = S9[k], ok = S.frames >= 8, h = humanOf9(k), un = (k === 'd' || k === 'e') && (!FUI || U9[k]);
-    var key = !ok ? 'none' : (S.drift.max > 2 || h.detached > h.attached ? 'fail' : (S.covMax > 0.5 || S.overlapN ? 'warn' : 'pass'));
-    ex.arms[k] = Object.assign({ name: AN9[k], verdict: LABEL[key], unavailable: un, human: h }, cellSum(S));
-    if (ok) { ran.push(k); (key === 'fail' ? bad : good).push(k); }
-    hum[k] = h;
-    rows.push('<tr><td>' + AN9[k] + '</td><td>' + (un && !ok ? '<span class="chip" data-v="none">UNAVAILABLE</span>' : '<span class="chip" data-v="' + key + '">' + LABEL[key] + '</span>') + '</td><td>' + S.frames + '</td><td>' + f1(S.drift.max) + ' / ' + f1(S.drift.med()) + '</td><td>' + (S.frames ? f1(S.gapMin) + ' to ' + f1(S.gapMax) : '-') + '</td><td>' + f1(S.rest.max) + ' (' + S.rest.n + ')</td><td>' + f1(S.move.max) + ' (' + S.move.n + ')</td><td>' + (k === 'a' ? f1(S.apply.max) : '-') + '</td><td>' + f1(S.vvTopMax) + ' (' + S.vvTopFrames + ')</td><td>' + (S.vvMinH > 1e8 ? '-' : f1(S.vvMinH)) + '</td><td>' + h.attached + ' / ' + h.detached + '</td></tr>');
-  });
-  $('t9-body').innerHTML = rows.join('');
-  kv('t9-live', [['Floating UI script', FUI ? 'loaded' : 'not loaded (arms D, E unavailable)'], ['Human verdicts recorded', String(V9.length)], ['Open now', O9.panel ? AN9[O9.arm] : '-']]);
-  var docRan = ran.filter(function (k) { return k !== 'a'; }), docBad = bad.filter(function (k) { return k !== 'a'; });
-  var key = !ran.length ? 'none' : (docBad.length ? 'fail' : (docRan.length ? 'pass' : 'warn'));
-  var txt = !ran.length ? 'Open each arm with the keyboard up and drag the page.' : ran.map(function (k) { var S = S9[k], h = hum[k]; return AN9[k] + ': drift max ' + f1(S.drift.max) + ' px (rest ' + f1(S.rest.max) + ', moving ' + f1(S.move.max) + '), vv.top max ' + f1(S.vvTopMax) + ', people said ' + h.attached + ' attached / ' + h.detached + ' detached'; }).join('; ') + '.';
-  if (ran.length) {
-    if (!docRan.length) txt += ' Only the fixed-js control has run; try B to E.';
-    else if (!docBad.length) txt += (bad.indexOf('a') >= 0 ? ' The fixed-js control drifted while the document-coordinate arms held: the hypothesis holds.' : ' Every document-coordinate arm that ran held the gap.');
-    else txt += ' Drifted or called detached: ' + docBad.map(function (k) { return AN9[k]; }).join(', ') + '.';
-  }
-  if ((U9.d || U9.e || !FUI) && (S9.d.frames < 8 || S9.e.frames < 8)) txt += ' Floating UI arms unavailable (script did not load).';
-  setVerdict('t9', key, txt, ex);
-}
-
-/* ======================= T3 ======================= */
-var AREA = $('t3-area'), PT = $('t3-pt'), M3 = $('t3-menu'), SUB = $('t4-sub');
-var T3 = { opens: [], count: 0, owner: [], lastOpenT: 0, lastPath: '', paths: {} };
-$('t3-corr').checked = UAP.isWebKit;
-$('t3-corr-hint').textContent = 'context_menu.rs applies it on this UA: ' + (UAP.isWebKit ? 'yes (box pre-checked)' : 'no (box unchecked)');
-function rectOf(el) { var r = el.getBoundingClientRect(); return { left: r.left, top: r.top, right: r.right, bottom: r.bottom, w: r.width, h: r.height }; }
-// CSS first; when no menu corner is on the pointer inside the visual viewport, the JS placer puts one there.
-function placeMenu(x, y) {
-  var r = M3.getBoundingClientRect(), v = vvRect(), w = r.width, h = r.height;
-  var corners = [[r.left, r.top], [r.right, r.top], [r.left, r.bottom], [r.right, r.bottom]];
-  var atPointer = corners.some(function (c) { return Math.hypot(c[0] - x, c[1] - y) <= 2; });
-  var inside = r.left >= v.l - 1 && r.right <= v.r + 1 && r.top >= v.t - 1 && r.bottom <= v.b + 1;
-  if (atPointer && inside) return { by: 'CSS', why: '' };
-  var why = !ANCHOR_OK ? 'anchor positioning unsupported' : (atPointer ? 'CSS result outside the visual viewport' : 'no corner on the pointer');
-  var left = x, top = y;
-  if (left + w > v.r - EM) left = x - w;
-  if (top + h > v.b - EM) top = y - h;
-  left = clamp(left, v.l + EM, Math.max(v.l + EM, v.r - EM - w)); top = clamp(top, v.t + EM, Math.max(v.t + EM, v.b - EM - h));
-  var s = M3.style; s.position = 'fixed'; s.inset = 'auto'; s.margin = '0'; s.transform = 'none'; s.setProperty('position-try-fallbacks', 'none'); s.left = left + 'px'; s.top = top + 'px';
-  return { by: 'JS-fallback', why: why };
-}
-function openMenu(path, cx, cy, opt) {
-  opt = opt || {};
-  var now = performance.now();
-  if (now - T3.lastOpenT < 450 && path !== T3.lastPath && T3.lastPath !== 't4-button' && path !== 't4-button') { log('t3', 'dup-suppressed', { path: path, first: T3.lastPath }); return; }
-  T3.lastOpenT = now; T3.lastPath = path;
-  var v = window.visualViewport, corr = $('t3-corr').checked && !opt.noCorr;
-  var ox = corr && v ? v.offsetLeft : 0, oy = corr && v ? v.offsetTop : 0, x = cx + ox, y = cy + oy;
-  closeSub(); hide(M3); resetEl(M3);
-  PT.style.left = x + 'px'; PT.style.top = y + 'px';
-  show(PT); show(M3);
-  var placed = placeMenu(x, y);
-  lockScroll();
-  T3.openedAt = now;
-  var idx = opt.count === false ? 0 : ++T3.count;
-  if (opt.count !== false) T3.paths[path] = (T3.paths[path] || 0) + 1;
-  var r0 = rectOf(M3);
-  log('t3', 'open', { path: path, cx: r1(cx), cy: r1(cy), corr: corr, vv: vvSnap(), n: idx, by: placed.by, why: placed.why });
-  requestAnimationFrame(function () {
-    var a = rectOf(M3);
-    frames(3, function () {
-      var b = rectOf(M3), vv = vvRect(), pr = M3.getBoundingClientRect();
-      var cs = { TL: [b.left, b.top], TR: [b.right, b.top], BL: [b.left, b.bottom], BR: [b.right, b.bottom] }, best = null;
-      Object.keys(cs).forEach(function (k) { var d = Math.hypot(cs[k][0] - x, cs[k][1] - y); if (!best || d < best.d) best = { k: k, d: d, p: cs[k] }; });
-      var rawD = Math.hypot(best.p[0] - cx, best.p[1] - cy), corrD = Math.hypot(best.p[0] - (cx + (v ? v.offsetLeft : 0)), best.p[1] - (cy + (v ? v.offsetTop : 0)));
-      var inVV = pr.left >= vv.l - 0.5 && pr.right <= vv.r + 0.5 && pr.top >= vv.t - 0.5 && pr.bottom <= vv.b + 0.5;
-      var flash = Math.max(Math.abs(a.left - b.left), Math.abs(a.top - b.top), Math.abs(a.w - b.w), Math.abs(a.h - b.h));
-      var rec = { n: idx, path: path, by: placed.by, why: placed.why, corner: best.k, delta: r1(best.d), raw: r1(rawD), corrD: r1(corrD), inVV: inVV, flash: r1(flash), syncDelta: r1(Math.max(Math.abs(r0.left - b.left), Math.abs(r0.top - b.top))), corr: corr, x: r1(x), y: r1(y), vvOff: v ? [r1(v.offsetLeft), r1(v.offsetTop)] : [0, 0], vvScale: v ? r2(v.scale) : 1, menu: [r1(b.left), r1(b.top), r1(b.w), r1(b.h)] };
-      if (opt.count !== false) { T3.opens.push(rec); if (T3.opens.length > 40) T3.opens.shift(); }
-      log('t3', 'settled', { n: idx, corner: rec.corner, delta: rec.delta, inVV: inVV, flash: rec.flash, by: rec.by });
-      touch();
-    });
-  });
-}
-var LK = { on: false, y: 0, t: 0, leak: 0, max: 0, n: 0 };
-var inMenu = function (t) { return M3.contains(t) || SUB.contains(t); };
-document.addEventListener('touchmove', function (e) { if (LK.on && !inMenu(e.target) && e.cancelable) e.preventDefault(); }, { passive: false });
-document.addEventListener('wheel', function (e) { if (LK.on && !inMenu(e.target)) e.preventDefault(); }, { passive: false });
-// A scroll in the first 350 ms after the lock is applied is the lock's own layout settling (a page scrolled to its very end is
-// clamped once overflow:hidden lands); it re-bases the reference. Later movement is a leak.
-window.addEventListener('scroll', function () { if (!LK.on) return; if (performance.now() - LK.t < 350) LK.y = window.scrollY; else LK.leak = Math.max(LK.leak, Math.abs(window.scrollY - LK.y)); }, { passive: true });
-function lockScroll() {
-  if (LK.on || !$('t3-lock').checked) return;
-  var y0 = window.scrollY; document.documentElement.classList.add('dx-lock'); void document.documentElement.offsetHeight;
-  // the reference is taken once the lock is applied: applying it can itself clamp a page scrolled to its very end
-  LK.on = true; LK.t = performance.now(); LK.leak = 0; LK.y = window.scrollY; LK.n++; log('t3', 'lock', { y: r1(LK.y), appliedShift: r1(LK.y - y0) });
-}
-function unlockScroll() { if (!LK.on) return; LK.on = false; LK.max = Math.max(LK.max, LK.leak); document.documentElement.classList.remove('dx-lock'); log('t3', 'unlock', { leak: r1(LK.leak) }); touch(); }
-function closeMenu() { closeSub(); hide(M3); hide(PT); unlockScroll(); }
-AREA.addEventListener('contextmenu', function (e) {
-  e.preventDefault();
-  log('t3', 'contextmenu-event', { cx: r1(e.clientX), cy: r1(e.clientY), dPage: r1(e.pageX - window.scrollX - e.clientX), pointerType: e.pointerType || '', detail: e.detail });
-  openMenu('contextmenu', e.clientX, e.clientY);
+$('sel-btn').addEventListener('click', function () {
+  if (cur && cur.card === 'select') return close();
+  var b = $('sel-btn'), c = { card: 'select', arm: 'P', el: selP, anchor: b, gap: 0, pref: 'bottom', cap: 1e5, width: function () { return Math.max(b.offsetWidth, 200); }, lock: true, outside: true, placeFn: placeSel };
+  c.metric = function (a) { var q = c.opt.getBoundingClientRect(); return ((q.top + q.bottom) - (a.top + a.bottom)) / 2; };
+  c.after = function () { c.align = Math.abs(c.metric(b.getBoundingClientRect())); };
+  open(c);
 });
-var lp = { timer: 0, x: 0, y: 0, fired: false };
-AREA.addEventListener('touchstart', function (e) {
-  clearTimeout(lp.timer); lp.fired = false;
-  if (e.touches.length !== 1) return;
-  var t = e.touches[0]; lp.x = t.clientX; lp.y = t.clientY;
-  lp.timer = setTimeout(function () { lp.fired = true; log('t3', 'longpress-timer', { cx: r1(lp.x), cy: r1(lp.y), dPage: r1(t.pageX - window.scrollX - t.clientX) }); openMenu('touch-longpress', lp.x, lp.y); }, 500);
-}, { passive: true });
-AREA.addEventListener('touchmove', function (e) { var t = e.touches[0]; if (t && Math.hypot(t.clientX - lp.x, t.clientY - lp.y) > 10) clearTimeout(lp.timer); }, { passive: true });
-var endTouch = function (e) { clearTimeout(lp.timer); if (lp.fired && e.cancelable) e.preventDefault(); };
-AREA.addEventListener('touchend', endTouch, { passive: false });
-AREA.addEventListener('touchcancel', function () { clearTimeout(lp.timer); }, { passive: true });
-document.addEventListener('pointerdown', function (e) { if (!isOpen(M3)) return; if (M3.contains(e.target) || SUB.contains(e.target) || e.target.id === 't4-open-menu') return; closeMenu(); }, true);
-document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { closeMenu(); hide($('t4-ctl-sub')); } });
-M3.addEventListener('click', function (e) {
-  if (performance.now() - T3.openedAt < 350) return;
-  var b = e.target.closest('.mi'); if (!b) return;
-  if (b.id === 't3-more') { toggleSub(); return; }
-  closeMenu();
-});
-$('t3-ok').addEventListener('click', function () { T3.owner.push({ ok: true, corr: $('t3-corr').checked, n: T3.count }); log('t3', 'owner-ok', { corr: $('t3-corr').checked }); touch(); });
-$('t3-bad').addEventListener('click', function () { T3.owner.push({ ok: false, corr: $('t3-corr').checked, n: T3.count }); log('t3', 'owner-offset', { corr: $('t3-corr').checked }); touch(); });
-$('t3-reset').addEventListener('click', function () { closeMenu(); T3.opens = []; T3.count = 0; T3.owner = []; T3.paths = {}; LK.max = 0; LK.n = 0; touch(); });
-function renderT3() {
-  var O = T3.opens;
-  $('t3-body').innerHTML = O.slice(-8).map(function (o) { return '<tr><td>' + o.n + '</td><td>' + o.path + '</td><td>' + o.by + '</td><td>' + o.corner + '</td><td>' + f1(o.delta) + '</td><td>' + f1(o.raw) + ' / ' + f1(o.corrD) + '</td><td>' + (o.inVV ? 'yes' : 'NO') + '</td><td>' + f1(o.flash) + '</td><td>' + (o.corr ? 'yes' : 'no') + '</td></tr>'; }).join('');
-  kv('t3-live', [['Opens counted', String(T3.count)], ['Paths', Object.keys(T3.paths).map(function (p) { return p + ' x' + T3.paths[p]; }).join(', ') || '-'], ['Owner: at finger / offset', T3.owner.filter(function (o) { return o.ok; }).length + ' / ' + T3.owner.filter(function (o) { return !o.ok; }).length]]);
-  if (!O.length) { setVerdict('t3', 'none', 'Right-click or long-press in the box. Open it at least 3 times, near the edges.', { opens: 0 }); return; }
-  var badD = O.filter(function (o) { return o.delta > 2; }).length, badV = O.filter(function (o) { return !o.inVV; }).length, badF = O.filter(function (o) { return o.flash > 2; }).length;
-  var ownerNo = T3.owner.filter(function (o) { return !o.ok; }).length, by = {};
-  O.forEach(function (o) { by[o.by] = (by[o.by] || 0) + 1; });
-  var leak = Math.max(LK.max, LK.on ? LK.leak : 0);
-  var key = (badD || badV || badF || ownerNo || leak > 1) ? 'fail' : (O.length < 3 ? 'warn' : 'pass');
-  var txt = O.length + ' opens (' + Object.keys(T3.paths).map(function (p) { return p + ' x' + T3.paths[p]; }).join(', ') + '; placed by ' + Object.keys(by).map(function (k) { return k + ' ' + by[k]; }).join(', ') + '): corner off-pointer ' + badD + ', outside visual viewport ' + badV + ', flash>2px ' + badF + ', owner "offset" ' + ownerNo + '. Max delta ' + f1(Math.max.apply(null, O.map(function (o) { return o.delta; }))) + ' px.' + ' Scroll lock: ' + LK.n + ' locked opens, page moved ' + f1(leak) + ' px while locked.' + (O.length < 3 ? ' Open it at least 3 times.' : '');
-  setVerdict('t3', key, txt, { scrollLock: { lockedOpens: LK.n, leakMaxPx: r1(leak) }, opens: O.length, paths: T3.paths, placedBy: by, badDelta: badD, outsideVV: badV, flash: badF, owner: T3.owner.slice(-10), recent: O.slice(-12) });
-}
-
-/* ======================= T4 ======================= */
-var T4 = { rows: {} }, CSUB = $('t4-ctl-sub');
-function measureSub(item, sub, gap) {
-  var i = item.getBoundingClientRect(), s = sub.getBoundingClientRect(), v = vvRect();
-  var dxR = s.left - (i.right + gap), dxL = (i.left - gap) - s.right, useR = Math.abs(dxR) <= Math.abs(dxL), dx = useR ? dxR : dxL;
-  var dyT = s.top - i.top, dyB = s.bottom - i.bottom, useT = Math.abs(dyT) <= Math.abs(dyB), dy = useT ? dyT : dyB;
-  return { dx: r1(dx), dy: r1(dy), side: useR ? 'right' : 'left', align: useT ? 'top' : 'bottom', adjacent: Math.abs(dx) <= 2 && Math.abs(dy) <= 2, inVV: s.left >= v.l - 0.5 && s.right <= v.r + 0.5 && s.top >= v.t - 0.5 && s.bottom <= v.b + 0.5, sub: rectArr(s), item: rectArr(i) };
-}
-function openSubFor(key, item, sub) {
-  hide(sub); resetEl(sub); show(sub);
-  var eng = Engine({ content: sub, trigger: item, side: 'right', align: 'start', gap: 2, mode: 'engine', cssFirst: true, events: false });
-  eng.open(); var st = eng.state(), by = st.placedBy, why = st.why;
-  frames(3, function () { if (!isOpen(sub)) return; var m = measureSub(item, sub, 2); m.by = by; m.why = why; T4.rows[key] = m; log('t4', key, { dx: m.dx, dy: m.dy, adj: m.adjacent, by: by }); touch(); });
-}
-function closeSub() { hide(SUB); }
-function toggleSub() { if (isOpen(SUB)) closeSub(); else openSubFor('nested', $('t3-more'), SUB); }
-$('t4-open-menu').addEventListener('click', function () { var r = $('t4-open-menu').getBoundingClientRect(); openMenu('t4-button', r.left + 20, r.bottom + 4, { noCorr: true, count: false }); });
-$('t4-ctl-btn').addEventListener('click', function () { if (isOpen(CSUB)) hide(CSUB); else openSubFor('control', $('t4-ctl-btn'), CSUB); });
-SUB.addEventListener('click', closeMenu);
-CSUB.addEventListener('click', function () { hide(CSUB); });
-function renderT4() {
-  var rows = [['nested', 'Nested (anchor inside top-layer menu)'], ['control', 'Control (anchor in page)']];
-  $('t4-body').innerHTML = rows.map(function (r) { var m = T4.rows[r[0]]; return m ? '<tr><td>' + r[1] + '</td><td>' + (m.adjacent ? 'yes' : 'NO') + '</td><td>' + m.by + '</td><td>' + f1(m.dx) + '</td><td>' + f1(m.dy) + '</td><td>' + m.side + '</td><td>' + m.align + '</td><td>' + (m.inVV ? 'yes' : 'NO') + '</td></tr>' : '<tr><td>' + r[1] + '</td><td colspan="7">not run</td></tr>'; }).join('');
-  var n = T4.rows.nested, c = T4.rows.control;
-  if (!n) { setVerdict('t4', 'none', 'Press "Open the menu here", then "More". ' + (c ? 'Control: ' + (c.adjacent ? 'adjacent' : 'NOT adjacent') + ' (dx ' + f1(c.dx) + ', dy ' + f1(c.dy) + ', ' + c.by + ').' : ''), { control: c || null }); return; }
-  setVerdict('t4', n.adjacent ? (n.inVV ? 'pass' : 'warn') : 'fail', 'Nested: placed by ' + n.by + ', dx ' + f1(n.dx) + ' px, dy ' + f1(n.dy) + ' px (' + n.side + ', ' + n.align + '-aligned)' + (n.inVV ? '' : ', outside the visual viewport') + (n.why ? ' [JS took over: ' + n.why + ']' : '') + '. Control: ' + (c ? 'placed by ' + c.by + ', ' + (c.adjacent ? 'adjacent' : 'NOT adjacent') + ' (dx ' + f1(c.dx) + ', dy ' + f1(c.dy) + ')' : 'not run') + '.', { nested: n, control: c || null });
-}
-
-/* ======================= T5: Placement { content_anchor: selected option, side: Over, align: center, gap: 0 } ======================= */
-var B5 = $('t5-trig'), L5 = $('t5-list'), sel5 = 12, M5 = null;
-var MARGIN5 = 8;
-var size5 = function () { return +document.querySelector('input[name="t5n"]:checked').value; };
-var armOf5 = function () { return document.querySelector('input[name="t5arm"]:checked').value; };
-function optionsHtml5() {
-  var n = size5(), per = n > 20 ? 8 : 4, g = ['Fruit', 'Veg', 'Grain', 'Dairy', 'Other'], h = '', k = 0;
-  for (var gi = 0; k < n; gi++) { h += '<div class="lab">' + g[gi] + '</div>'; for (var j = 0; j < per && k < n; j++, k++) h += '<div role="option" class="opt' + (k % 7 === 3 ? ' tall' : '') + '" data-i="' + k + '"' + (k === sel5 ? ' aria-selected="true"' : '') + '>Option ' + (k + 1) + '</div>'; }
-  return h;
-}
-// A component renders its list afresh on every open (scrollTop 0, new boxes): the list element is replaced per open for the same reason.
-function fresh5() {
-  stopModel5(); hide(L5); var n = L5.cloneNode(false); n.removeAttribute('style'); n.removeAttribute('data-arm'); n.innerHTML = optionsHtml5();
-  n.addEventListener('click', function (e) { var o = e.target.closest('.opt'); if (o) { setSel5(+o.getAttribute('data-i')); closeList5(); } });
-  n.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeList5(); });
-  n.addEventListener('toggle', function (e) { if (e.newState === 'closed') stopModel5(); });
-  L5.replaceWith(n); L5 = n;
-}
-function setSel5(i) { sel5 = i; $('t5-val').textContent = 'Option ' + (i + 1); }
-fresh5(); setSel5(12);
-var offsetIn5 = function (el) { var y = 0; for (var n = el; n && n !== L5; n = n.offsetParent) y += n.offsetTop; return y; };
-function stopModel5() { if (M5) { M5.stop(); M5 = null; } }
-function closeList5() { stopModel5(); hide(L5); }
-
-/* The generalised placer. The content anchor (the selected option) sits `c` px below the list's top edge when the list is not
-   scrolled. Wanted: top = triggerCentre - c. CSS arm: `top: calc(anchor(center) - c px)` with c written as a literal number.
-   The clamp into the visual viewport is a separate JS step (a literal px top), and when it bites the generic step scrolls the
-   content so the content anchor stays as near its target as the scroll range allows. */
-function Model5(list, mode) {
-  var usingFallback = mode === 'mj', tear = [], rafOn = false;
-  var st = { placedBy: '', why: usingFallback ? 'explicit JS arm' : '', cssAccepted: null, cssDelta: null, clamped: false, n: 0 };
-  function reposition() {
-    if (!list.isConnected || !isOpen(list)) return;
-    st.n++;
-    var s = list.style, t = B5.getBoundingClientRect(), vp = vm(), off = vp.offsetTop, offL = vp.offsetLeft;
-    s.maxHeight = 'none'; s.setProperty('--dx-anchor-width', t.width + 'px');
-    var ch0 = list.offsetHeight, cw = list.offsetWidth, avail = Math.max(0, vp.height - 2 * MARGIN5), ch = Math.min(ch0, avail);
-    s.maxHeight = avail + 'px';
-    var sel = list.querySelector('[aria-selected="true"]'), optTop = offsetIn5(sel) + list.clientTop, optH = sel.offsetHeight, c0 = optTop + optH / 2;
-    var tc = t.top + t.height / 2, desired = tc - c0, lo = off + MARGIN5, hi = off + vp.height - MARGIN5 - ch;
-    var clamped = desired < lo - 0.01 || desired > hi + 0.01;
-    var top = clamped ? Math.min(Math.max(desired, lo), Math.max(lo, hi)) : desired;
-    var left = clamp(t.left, offL + MARGIN5, Math.max(offL + MARGIN5, offL + vp.width - MARGIN5 - cw)), leftClamped = Math.abs(left - t.left) > 0.5;
-    st.clamped = clamped;
-    if (!usingFallback && !clamped && !leftClamped) {
-      s.bottom = 'auto'; s.left = ''; s.top = 'calc(anchor(' + ANCHOR_CENTER + ') - ' + r2(c0) + 'px)';
-      if (s.top === '') { usingFallback = true; st.why = 'top: calc(anchor(' + ANCHOR_CENTER + ') - Npx) rejected at parse'; st.cssAccepted = false; }
-      else {
-        list.scrollTop = 0;
-        var r = list.getBoundingClientRect(), d = r.top - desired, dl = r.left - t.left;
-        var inband = r.top >= off - 1 && r.bottom <= off + vp.height + 1 && r.left >= offL - 1 && r.right <= offL + vp.width + 1;
-        st.cssDelta = r1(d); st.cssAccepted = Math.abs(d) <= 2 && Math.abs(dl) <= 2 && inband;
-        if (st.cssAccepted) { st.placedBy = 'CSS'; return; }
-        usingFallback = true; st.why = !inband ? 'CSS result outside the visual viewport' : 'CSS landed ' + f1(d) + ' px (top) / ' + f1(dl) + ' px (left) off target';
-      }
-    }
-    var maxS = list.scrollHeight - list.clientHeight;
-    s.bottom = 'auto'; s.top = top + 'px'; s.left = left + 'px';
-    list.scrollTop = clamped ? clamp(top + c0 - tc, 0, maxS) : 0;
-    st.placedBy = usingFallback ? (mode === 'mj' ? 'JS' : 'JS-fallback') : 'CSS+JS-clamp';
-    list.dataset.placed = 'true';
-  }
-  function onTrack() { if (rafOn) return; rafOn = true; requestAnimationFrame(function () { rafOn = false; reposition(); }); }
-  function on(t, type, fn, o) { if (!t) return; t.addEventListener(type, fn, o); tear.push(function () { t.removeEventListener(type, fn, o); }); }
-  on(window, 'scroll', function (e) { if (e.target !== document && list.contains(e.target)) return; onTrack(); }, { capture: true, passive: true });
-  on(window, 'resize', onTrack, { passive: true });
-  on(window.visualViewport, 'resize', onTrack, { passive: true });
-  on(window.visualViewport, 'scroll', onTrack, { passive: true });
-  reposition();
-  return { state: function () { return st; }, reposition: reposition, stop: function () { while (tear.length) tear.pop()(); } };
-}
-
-/* The shipped ITEM_ALIGNED_JS (select/components/list.rs), verbatim arithmetic. `apply` writes it; `expect` computes it without
-   touching the list's position, so every open can be compared with what the legacy script would have produced. */
-function legacyCompute(apply) {
-  var list = L5, MARGIN = 8, GAP = 4, trigger = B5;
-  vm(); var box = window.__fcb.getBoundingClientRect(), vv = window.visualViewport;
-  var vw = box.width, vh = Math.min(box.height, vv ? vv.height : Infinity), t = trigger.getBoundingClientRect();
-  var selected = list.querySelector('[role="option"][aria-selected="true"]');
-  var keepMax = list.style.maxHeight, keepScroll = list.scrollTop, keepVar = list.style.getPropertyValue('--dx-available-height');
-  list.style.setProperty('--dx-anchor-width', t.width + 'px');
-  list.style.maxHeight = 'none';
-  var ch0 = list.offsetHeight, scrollH = list.scrollHeight, border = list.offsetHeight - list.clientHeight, cw = list.offsetWidth;
-  list.style.maxHeight = keepMax; list.scrollTop = keepScroll;
-  if (keepVar === '') list.style.removeProperty('--dx-available-height'); else list.style.setProperty('--dx-available-height', keepVar);
-  var ch = Math.min(ch0, Math.max(0, vh - 2 * MARGIN));
-  var maxScroll = scrollH - (ch - border);
-  var optTop = offsetIn5(selected) + list.clientTop, optH = selected.offsetHeight, want = t.top + t.height / 2 - optH / 2;
-  var top = want - optTop, scroll = 0, lo = MARGIN, hi = vh - MARGIN - ch;
-  if (top < lo || top > hi) { top = Math.min(Math.max(top, lo), Math.max(lo, hi)); scroll = Math.min(Math.max(optTop - (want - top) - list.clientTop, 0), maxScroll); }
-  top = Math.min(Math.max(top, MARGIN), Math.max(MARGIN, vh - MARGIN - ch));
-  var left = t.left; left = Math.min(Math.max(left, MARGIN), Math.max(MARGIN, vw - MARGIN - cw));
-  if (apply) { list.style.setProperty('--dx-available-height', Math.max(0, vh - 2 * MARGIN) + 'px'); list.style.top = top + 'px'; list.style.left = left + 'px'; list.scrollTop = scroll; list.dataset.placed = 'true'; }
-  return { top: top, left: left, scroll: scroll };
-}
-function m5() {
-  var l = L5.getBoundingClientRect(), t = B5.getBoundingClientRect(), s = L5.querySelector('[aria-selected="true"]').getBoundingClientRect(), v = vvRect();
-  var leg = legacyCompute(false);
-  return { err: (s.top + s.height / 2) - (t.top + t.height / 2), top: l.top, left: l.left, h: l.height, scroll: L5.scrollTop, inVp: l.top >= v.t - 0.5 && l.bottom <= v.b + 0.5 && l.left >= v.l - 0.5 && l.right <= v.r + 0.5, selVis: s.top >= l.top - 0.5 && s.bottom <= l.bottom + 0.5, clamped: l.top <= v.t + 9 || l.bottom >= v.b - 9, maxS: L5.scrollHeight - L5.clientHeight, trigY: (t.top + t.height / 2 - v.t) / v.h, leg: leg };
-}
-var T5 = { mc: [], mj: [], lg: [] };
-function open5() {
-  if (isOpen(L5)) { closeList5(); return; }
-  var arm = armOf5(); fresh5(); L5.setAttribute('data-arm', arm); show(L5);
-  if (arm === 'lg') { legacyCompute(true); window.addEventListener('resize', legacyResize, { passive: true }); } else M5 = Model5(L5, arm);
-  var by = arm === 'lg' ? 'legacy' : M5.state().placedBy, why = arm === 'lg' ? '' : M5.state().why, cssAcc = arm === 'lg' ? null : M5.state().cssAccepted;
-  requestAnimationFrame(function () {
-    var r1_ = m5();
-    frames(3, function () {
-      if (!isOpen(L5)) return;
-      var r3 = m5(), stt = M5 ? M5.state() : null;
-      var vsLeg = Math.max(Math.abs(r3.top - r3.leg.top), Math.abs(r3.left - r3.leg.left), Math.abs(r3.scroll - r3.leg.scroll));
-      var rec = { arm: arm, n: size5(), sel: sel5, err1: r1(r1_.err), err: r1(r3.err), jump: r1(Math.max(Math.abs(r1_.err - r3.err), Math.abs(r1_.top - r3.top))), clamped: r3.clamped, limited: r3.clamped && !(r3.scroll + r3.err >= -1 && r3.scroll + r3.err <= r3.maxS + 1), inVp: r3.inVp, selVis: r3.selVis, trigY: r2(r3.trigY), h: r1(r3.h), scroll: Math.round(r3.scroll), by: stt ? stt.placedBy : by, why: stt ? stt.why : why, cssAccepted: stt ? stt.cssAccepted : cssAcc, cssDelta: stt ? stt.cssDelta : null, vsLegacy: r1(vsLeg), legacy: { top: r1(r3.leg.top), left: r1(r3.leg.left), scroll: Math.round(r3.leg.scroll) }, top: r1(r3.top), left: r1(r3.left) };
-      T5[arm].push(rec); if (T5[arm].length > 40) T5[arm].shift();
-      log('t5', 'open', rec); touch();
-    });
-  });
-}
-function legacyResize() { if (isOpen(L5) && L5.getAttribute('data-arm') === 'lg') legacyCompute(true); else window.removeEventListener('resize', legacyResize); }
-B5.addEventListener('click', open5);
-document.addEventListener('pointerdown', function (e) { if (isOpen(L5) && !L5.contains(e.target) && e.target !== B5 && !B5.contains(e.target)) closeList5(); }, true);
-function selOpen(i) { closeList5(); setSel5(i); requestAnimationFrame(open5); }
-$('t5-sel-first').addEventListener('click', function () { selOpen(0); });
-$('t5-sel-mid').addEventListener('click', function () { selOpen(Math.round((size5() - 1) / 2)); });
-$('t5-sel-last').addEventListener('click', function () { selOpen(size5() - 1); });
-Array.prototype.forEach.call(document.querySelectorAll('input[name="t5arm"],input[name="t5n"]'), function (r) { r.addEventListener('change', function () { closeList5(); if (sel5 > size5() - 1) setSel5(Math.round((size5() - 1) / 2)); }); });
-$('t5-reset').addEventListener('click', function () { closeList5(); T5 = { mc: [], mj: [], lg: [] }; touch(); });
-posButtons('t5-pos', 't5-trig');
-function sum5(R) {
-  var o = { n: R.length, hard: 0, maxErr: 0, maxJump: 0, lim: 0, notVp: 0, maxLeg: 0, by: {} };
-  R.forEach(function (r) {
-    if (!r.limited) o.maxErr = Math.max(o.maxErr, Math.abs(r.err));
-    o.maxJump = Math.max(o.maxJump, r.jump); if (r.limited) o.lim++; if (!r.inVp) o.notVp++; o.maxLeg = Math.max(o.maxLeg, r.vsLegacy); o.by[r.by] = (o.by[r.by] || 0) + 1;
-    if (r.jump > 2 || !r.inVp || !r.selVis || (!r.limited && Math.abs(r.err) > 2) || r.vsLegacy > 2) o.hard++;
-  });
-  o.key = o.hard ? 'fail' : 'pass'; return o;
-}
-function renderT5() {
-  var rows = [], names = { mc: 'Model, CSS first', mj: 'Model, JS only', lg: 'Legacy' };
-  ['mc', 'mj', 'lg'].forEach(function (arm) {
-    var parts = [], worst = 'none', ex = { opens: T5[arm].length, bySize: {} };
-    [40, 12].forEach(function (n) {
-      var R = T5[arm].filter(function (r) { return r.n === n; }); if (!R.length) return;
-      var o = sum5(R), last = R[R.length - 1]; if (o.key === 'fail' || worst === 'fail') worst = 'fail'; else worst = 'pass';
-      var by = Object.keys(o.by).map(function (k) { return k + ' ' + o.by[k]; }).join(', ');
-      parts.push(n + ' options: ' + LABEL[o.key] + ' (' + o.n + ' opens, not-OK ' + o.hard + ', max |err| ' + f1(o.maxErr) + ' px, jump ' + f1(o.maxJump) + ', range-limited ' + o.lim + ', outside vv ' + o.notVp + ', max diff vs legacy ' + f1(o.maxLeg) + ' px, placed by ' + by + ')');
-      var whys = R.filter(function (r) { return r.why && r.by !== 'CSS'; }).map(function (r) { return r.why; });
-      ex.bySize[n] = { verdict: LABEL[o.key], opens: o.n, notOk: o.hard, maxErrReachable: r1(o.maxErr), maxJump: r1(o.maxJump), rangeLimited: o.lim, notInVv: o.notVp, maxDiffVsLegacy: r1(o.maxLeg), placedBy: o.by, whyNotCss: whys.length ? whys[whys.length - 1] : null, recent: R.slice(-8) };
-      rows.push('<tr><td>' + names[arm] + ' / ' + n + '</td><td><span class="chip" data-v="' + o.key + '">' + LABEL[o.key] + '</span></td><td>' + o.n + '</td><td>' + f1(o.maxErr) + '</td><td>' + f1(o.maxJump) + '</td><td>' + o.lim + '</td><td>' + o.notVp + '</td><td>' + f1(o.maxLeg) + '</td><td>' + by + '</td><td>sel ' + (last.sel + 1) + ', err ' + f1(last.err) + ', trig@' + last.trigY + (last.why && last.by !== 'CSS' ? ', ' + last.why : '') + '</td></tr>');
-    });
-    setVerdict('t5' + arm, worst, parts.join(' | ') || null, ex);
-  });
-  $('t5-body').innerHTML = rows.join('') || '<tr><td colspan="10">not run</td></tr>';
-}
-
-/* ======================= T6 ======================= */
-var P6 = $('t6-panel'), T6 = { runs: [], cur: null, eng: null }, t6Timer = 0;
-function build6() { var n = +document.querySelector('input[name="t6n"]:checked').value; P6.innerHTML = Array.from({ length: n }, function (_, i) { return '<div role="option" class="opt">Item ' + (i + 1) + '</div>'; }).join(''); return n; }
-function m6(A) {
-  var l = P6.getBoundingClientRect(), a = A.getBoundingClientRect(), v = vvRect(), G = 8, vhL = document.documentElement.clientHeight;
-  var below = vhL - a.bottom - 2 * G, above = a.top - 2 * G, nat = P6.scrollHeight + (P6.offsetHeight - P6.clientHeight);
-  var fitB = nat <= below, fitA = nat <= above, bigger = below >= above ? 'bottom' : 'top';
-  var side = l.top >= a.bottom - 0.5 ? 'bottom' : (l.bottom <= a.top + 0.5 ? 'top' : 'OVERLAP'), roomS = side === 'bottom' ? below : above;
-  var hOk = Math.abs(l.height - Math.min(nat, roomS)) <= 1.5, inVp = l.top >= v.t - 0.5 && l.bottom <= v.b + 0.5;
-  var sideOk = side !== 'OVERLAP' && ((fitB || fitA) ? (side === 'bottom' ? fitB : fitA) : side === bigger);
-  var caveat = side === 'top' && fitB;
-  return { side: side, h: r1(l.height), nat: Math.round(nat), below: Math.round(below), above: Math.round(above), inVp: inVp, caveat: caveat, ok: sideOk && hOk && inVp && l.height <= roomS + 1.5, overlap: side === 'OVERLAP' };
-}
-function closeP6() { if (T6.eng) { T6.eng.close(); T6.eng = null; } hide(P6); }
-function open6(n) {
-  var A = $('t6-a' + n); closeP6(); var items = build6();
-  resetEl(P6); P6.style.setProperty('position-anchor', '--t6a' + n); show(P6);
-  T6.eng = Engine({ content: P6, trigger: A, side: 'bottom', align: 'center', gap: 8, mode: 'engine', cssFirst: true, events: true, onFallback: function (c) { c.style.setProperty('position-area', 'none'); c.style.setProperty('position-try-order', 'normal'); c.style.justifySelf = 'auto'; c.style.minWidth = '0'; } });
-  T6.eng.open();
-  T6.cur = { n: n, A: A, items: items };
-  frames(3, function () { if (!isOpen(P6)) return; push6('open'); });
-}
-function push6(when) { var c = T6.cur, a = c.A.getBoundingClientRect(), v = vvRect(); if (a.bottom < v.t || a.top > v.b) return; var m = m6(c.A); m.when = when; m.anchor = c.n; m.items = c.items; m.by = T6.eng ? T6.eng.state().placedBy : '-'; m.why = T6.eng ? T6.eng.state().why : ''; m.idx = T6.runs.length + 1; T6.runs.push(m); if (T6.runs.length > 40) T6.runs.shift(); log('t6', 'open', m); touch(); }
-[1, 2, 3].forEach(function (n) { $('t6-a' + n).addEventListener('click', function () { if (isOpen(P6) && T6.cur && T6.cur.n === n) closeP6(); else open6(n); }); });
-window.addEventListener('scroll', function () { if (!isOpen(P6)) return; clearTimeout(t6Timer); t6Timer = setTimeout(function () { if (isOpen(P6)) push6('scroll'); }, 250); }, { passive: true });
-$('t6-close').addEventListener('click', closeP6);
-$('t6-reset').addEventListener('click', function () { closeP6(); T6.runs = []; touch(); });
-Array.prototype.forEach.call(document.querySelectorAll('input[name="t6n"]'), function (r) { r.addEventListener('change', closeP6); });
-[[1, 0.14], [2, 0.5], [3, 0.84]].forEach(function (d) { $('t6-go' + d[0]).addEventListener('click', function () { placeAt($('t6-a' + d[0]), d[1]); }); });
-function renderT6() {
-  var R = T6.runs;
-  $('t6-body').innerHTML = R.slice(-8).map(function (m) { return '<tr><td>' + m.idx + '</td><td>' + m.anchor + '</td><td>' + m.items + '</td><td>' + m.when + '</td><td>' + m.by + '</td><td>' + m.side + '</td><td>' + f1(m.h) + '</td><td>' + m.nat + '</td><td>' + m.below + ' / ' + m.above + '</td><td>' + (m.inVp ? 'yes' : 'NO') + '</td><td>' + (m.caveat ? 'YES' : 'no') + '</td><td>' + (m.ok ? 'yes' : 'NO') + '</td></tr>'; }).join('');
-  if (!R.length) { setVerdict('t6', 'none', 'Open an anchor. Try all three anchors at 30 and 6 items.', { runs: 0 }); return; }
-  var bad = R.filter(function (m) { return !m.ok; }).length, cav = R.filter(function (m) { return m.caveat; }).length, ov = R.filter(function (m) { return m.overlap; }).length, by = {};
-  R.forEach(function (m) { by[m.by] = (by[m.by] || 0) + 1; });
-  var key = bad ? 'fail' : (cav ? 'warn' : 'pass');
-  setVerdict('t6', key, R.length + ' measurements (placed by ' + Object.keys(by).map(function (k) { return k + ' ' + by[k]; }).join(', ') + '): not-OK ' + bad + ', overlapping the anchor ' + ov + ', most-height caveat (top chosen although bottom fits) ' + cav + '.', { runs: R.length, placedBy: by, notOk: bad, overlapAnchor: ov, caveat: cav, recent: R.slice(-12) });
-}
-
-/* ======================= T7 ======================= */
-function renderT7() {
-  var srcs = [['T1 CSS + check', S1.css], ['T1 JS-event', S1.jsev], ['T1 JS-sampled', S1.jssamp], ['T2 popover', S2]];
-  HK.forEach(function (h) { VK.forEach(function (v) { srcs.push(['T8 ' + HN[h] + ' ' + VN[v], S8[h][v]]); }); });
-  var total = 0, bad = 0, lowVis = 0, rows = [], ex = [];
-  srcs.forEach(function (s) {
-    var z = s[1].zoom; total += z.n;
-    if (z.n >= 3) { if (z.drift.max > 2) bad++; if (z.vis.min < 0.95) lowVis++; }
-    rows.push('<tr><td>' + s[0] + '</td><td>' + z.n + '</td><td>' + (z.n ? f1(r2(z.scaleMax)) : '-') + '</td><td>' + (z.n ? f1(z.drift.max) + ' / ' + f1(z.drift.med()) : '-') + '</td><td>' + (z.n ? r2(z.vis.min) : '-') + '</td></tr>');
-    if (z.n) ex.push({ source: s[0], frames: z.n, scaleMax: r2(z.scaleMax), driftMax: r1(z.drift.max), driftMed: r1(z.drift.med()), visMin: r2(z.vis.min) });
-  });
-  $('t7-body').innerHTML = rows.join('');
-  if (!total) { setVerdict('t7', 'none', 'No frame recorded at scale > 1.2 yet. Pinch-zoom to ~2x, open the T2 popover and the T1 combobox.', { sources: ex }); return; }
-  setVerdict('t7', bad ? 'fail' : (lowVis ? 'warn' : 'pass'), total + ' zoomed frames. ' + (bad ? 'Drift above 2 px in ' + bad + ' source(s). ' : 'Drift within 2 px. ') + (lowVis ? 'Panel partly outside the visual viewport in ' + lowVis + ' source(s) (visible fraction < 0.95).' : 'Panel fully visible.'), { sources: ex });
-}
-
-/* ======================= render loop ======================= */
-function renderAll() { renderT1(); renderT2(); renderT8(); renderT9(); renderT3(); renderT4(); renderT5(); renderT6(); renderT7(); }
-setInterval(function () {
-  if (dirty) { dirty = false; try { renderAll(); } catch (e) { log('lab', 'render-error', String(e && e.message || e).slice(0, 120)); } }
-  if (logDirty && $('log-details').open) { logDirty = false; $('log-pre').textContent = LOG.slice(-60).map(function (e) { return e.t + 'ms ' + e.test + ' ' + e.ev + (e.d !== undefined ? ' ' + JSON.stringify(e.d) : ''); }).join('\n'); }
-}, 250);
-$('log-clear').addEventListener('click', function () { LOG.length = 0; logDirty = true; });
-$('log-details').addEventListener('toggle', function () { logDirty = true; });
-renderAll(); finishT0();
 
 /* theme */
 (function () {
@@ -1538,31 +478,20 @@ function updateSendUI() {
 }
 (function () {
   var p = null;
-  try { p = hasClaude ? window.claude.use('db') : null; } catch (e) { p = null; log('send', 'use-threw', String(e && e.message || e).slice(0, 100)); }
-  Promise.resolve(p).then(function (d) { db = d || null; log('send', 'db', { available: !!db, hasClaude: hasClaude }); updateSendUI(); }, function (e) { db = null; log('send', 'db-rejected', { code: e && e.code }); updateSendUI(); });
+  try { p = hasClaude ? window.claude.use('db') : null; } catch (e) { p = null; }
+  Promise.resolve(p).then(function (d) { db = d || null; updateSendUI(); }, function () { db = null; updateSendUI(); });
 })();
-function summaries() {
-  var out = {}; Object.keys(RES).forEach(function (k) { out[k] = RES[k]; });
-  out.t1 = { arms: { css: statSum(S1.css), jsev: statSum(S1.jsev), jssamp: statSum(S1.jssamp) } };
-  if (out.t2) out.t2.stats = statSum(S2);
-  out.t0 = Object.assign({}, out.t0, { probe: PROBE.rows, centerToken: ANCHOR_CENTER });
-  return out;
-}
-function logExport(n) { return LOG.slice(-n).map(function (e) { var o = { t: e.t, test: e.test, ev: e.ev }; if (e.d !== undefined) { var s = JSON.stringify(e.d); o.d = s.length > 240 ? s.slice(0, 240) : e.d; } return o; }); }
 function buildDoc() {
-  renderAll();
-  var doc = {
-    labVersion: LAB_VERSION, sentAt: new Date().toISOString(), sessionMs: Math.round(performance.now() - T0), ua: UA,
-    platform: { platform: navigator.platform || null, vendor: navigator.vendor || null, language: navigator.language || null, maxTouchPoints: navigator.maxTouchPoints || 0, hardwareConcurrency: navigator.hardwareConcurrency || null, uaData: navigator.userAgentData ? { mobile: navigator.userAgentData.mobile, platform: navigator.userAgentData.platform } : null, parsed: UAP },
-    isFramed: FRAMED, hasClaude: hasClaude, dpr: window.devicePixelRatio,
-    screen: { width: screen.width, height: screen.height, availWidth: screen.availWidth, availHeight: screen.availHeight },
-    inner: { width: innerWidth, height: innerHeight, clientWidth: document.documentElement.clientWidth, clientHeight: document.documentElement.clientHeight },
-    visualViewport: vvSnap(), live: { minVvHeight: LIVE.vvMinH > 1e8 ? null : r1(LIVE.vvMinH), minInnerHeight: LIVE.ihMin, maxVvOffsetTop: r1(LIVE.vvMaxTop), maxScale: r2(LIVE.vvMaxScale) },
-    theme: document.documentElement.getAttribute('data-theme') || 'auto',
-    features: FEAT, results: summaries(), log: logExport(300), note: ($('note').value || '').slice(0, 4000)
+  return {
+    labVersion: LAB_VERSION, sentAt: new Date().toISOString(), sessionMs: Math.round(performance.now() - T0),
+    env: { ua: UA, uaShort: shortUA(), isFramed: FRAMED, cssAnchorPositioning: CSSAP, hasClaude: hasClaude, dpr: dpr, measureOn: $('meas').checked, maxTouchPoints: navigator.maxTouchPoints || 0, platform: navigator.platform || null,
+      screen: { width: screen.width, height: screen.height }, inner: { width: innerWidth, height: innerHeight },
+      visualViewport: vv ? { width: vv.width, height: vv.height, offsetTop: r1(vv.offsetTop), offsetLeft: r1(vv.offsetLeft), scale: vv.scale } : null,
+      theme: document.documentElement.getAttribute('data-theme') || 'auto', floatingUi: typeof FloatingUIDOM !== 'undefined' },
+    cards: summaries(), verdicts: VERD,
+    runs: RUNS.map(function (r) { var o = {}; for (var k in r) if (k !== 'worst') o[k] = r[k]; return o; }),
+    note: ($('note').value || '').slice(0, 4000)
   };
-  var n = 300; while (JSON.stringify(doc).length > 190000 && n > 20) { n = Math.floor(n / 2); doc.log = logExport(n); }
-  return doc;
 }
 $('send-btn').addEventListener('click', function () {
   if (!db || sending) return;
@@ -1571,9 +500,9 @@ $('send-btn').addEventListener('click', function () {
   try { doc = buildDoc(); } catch (e) { sending = false; $('send-btn').disabled = false; setStatus('Could not build the results: ' + (e && e.message || e)); return; }
   var size = JSON.stringify(doc).length;
   Promise.resolve().then(function () { return db.collection('runs').doc(id).set(doc); }).then(function () {
-    sending = false; $('send-btn').disabled = false; setStatus('Sent ✓ (id ' + id + ', ' + Math.round(size / 1024) + ' KB)'); log('send', 'ok', { id: id, bytes: size });
+    sending = false; $('send-btn').disabled = false; setStatus('Sent ✓ (id ' + id + ', ' + Math.round(size / 1024) + ' KB)');
   }, function (e) {
-    sending = false; $('send-btn').disabled = false; setStatus('Send failed: ' + ((e && e.code) || 'error') + ': ' + ((e && e.message) || String(e))); log('send', 'fail', { code: e && e.code });
+    sending = false; $('send-btn').disabled = false; setStatus('Send failed: ' + ((e && e.code) || 'error') + ': ' + ((e && e.message) || String(e)));
   });
 });
 function showJson(select) {
@@ -1590,7 +519,6 @@ $('copy-btn').addEventListener('click', function () {
   if (!navigator.clipboard || !navigator.clipboard.writeText) { fallback('no clipboard API'); return; }
   navigator.clipboard.writeText(txt).then(function () { setStatus('Copied ' + Math.round(txt.length / 1024) + ' KB of results to the clipboard.'); }, function (e) { fallback((e && e.name) || 'blocked'); });
 });
-log('lab', 'loaded', { v: LAB_VERSION, framed: FRAMED, hasClaude: hasClaude, ua: UA.slice(0, 120) });
 })();
 </script>
 </body>
