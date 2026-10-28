@@ -63,6 +63,26 @@ test("keyboard: type, Enter toggles and keeps the popup open, text is cleared", 
     await expect(listbox(page).getByRole("option")).toHaveCount(7);
 });
 
+test("Home and End move the caret; Escape on a closed list clears every chip", async ({ page }) => {
+    const root = await open(page, "multiple");
+    const input = root.getByRole("combobox", { name: "Choose frameworks" });
+    await input.click();
+    await page.keyboard.type("abc");
+    await page.keyboard.press("Home");
+    expect(await input.evaluate((el: HTMLInputElement) => el.selectionStart), "Home moves the caret to the start").toBe(0);
+    await page.keyboard.press("End");
+    expect(await input.evaluate((el: HTMLInputElement) => el.selectionStart), "End moves the caret to the end").toBe(3);
+    await expect(chipLabels(root), "Home and End leave the selection alone").toHaveText(["Next.js", "Astro"]);
+
+    // Escape on the open list closes it and keeps the chips; the next Escape, on the closed list, clears them.
+    await page.keyboard.press("Escape");
+    await expect(listbox(page)).toHaveCount(0);
+    await expect(chipLabels(root)).toHaveText(["Next.js", "Astro"]);
+    await page.keyboard.press("Escape");
+    await expect(chips(root)).toHaveCount(0);
+    await expect(root.getByTestId("combobox-multiple-value")).toHaveText("");
+});
+
 test("only the multi-select list is aria-multiselectable", async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/combobox/`, GOTO_OPTS);
     const single = page.getByRole("combobox", { name: "Select framework", exact: true });

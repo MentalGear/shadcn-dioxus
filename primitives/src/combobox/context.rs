@@ -272,10 +272,6 @@ impl ComboboxContext {
         self.selectable.focus_first_where(self.predicate());
     }
 
-    pub fn focus_last_visible(&mut self) {
-        self.selectable.focus_last_where(self.predicate());
-    }
-
     pub fn select_focused(&mut self) {
         // The values memo has not recomputed yet at this point, so "did the pick change them" cannot
         // be read back; a highlighted option is what makes Enter a pick.
