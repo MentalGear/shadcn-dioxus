@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Overlay Lab v5</title>
+<title>Overlay Lab v6</title>
 <style>
 :root{--bg:#ffffff;--fg:#09090b;--muted:#6b6b76;--card:#ffffff;--popover:#ffffff;--border:#e4e4e7;--input:#c9c9d1;--secondary:#f4f4f5;--accent:#2563eb;--accent-fg:#ffffff;--pass:#15803d;--pass-bg:#dcfce7;--fail:#b91c1c;--fail-bg:#fee2e2;--warn:#92400e;--warn-bg:#fef3c7;--none:#52525b;--none-bg:#f4f4f5;--shadow:0 8px 24px rgb(0 0 0 / .18);color-scheme:light}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#09090b;--fg:#fafafa;--muted:#a1a1aa;--card:#111113;--popover:#1a1a1d;--border:#27272a;--input:#3f3f46;--secondary:#1c1c1f;--accent:#60a5fa;--accent-fg:#09090b;--pass:#4ade80;--pass-bg:#052e16;--fail:#f87171;--fail-bg:#450a0a;--warn:#fbbf24;--warn-bg:#422006;--none:#a1a1aa;--none-bg:#1c1c1f;--shadow:0 8px 24px rgb(0 0 0 / .6);color-scheme:dark}}
@@ -84,7 +84,7 @@ html.dx-lock,html.dx-lock body{overflow:hidden;overscroll-behavior:none}
 <body>
 <main class="wrap" id="lab">
   <div class="top">
-    <div><h1>Overlay Lab v5</h1><div class="sub mono" id="env"></div></div>
+    <div><h1>Overlay Lab v6</h1><div class="sub mono" id="env"></div></div>
     <button class="btn sm" id="theme-btn" type="button">Theme: auto</button>
   </div>
   <div class="note">
@@ -173,7 +173,7 @@ html.dx-lock,html.dx-lock body{overflow:hidden;overscroll-behavior:none}
 <script>
 (function () {
 'use strict';
-var LAB_VERSION = 5, MAXF = 9000, STRIDE = 7, MF = new Float64Array(MAXF * STRIDE);
+var LAB_VERSION = 6, MAXF = 9000, STRIDE = 7, MF = new Float64Array(MAXF * STRIDE);
 var $ = function (id) { return document.getElementById(id); };
 var vv = window.visualViewport, dpr = window.devicePixelRatio || 1, T0 = performance.now();
 var rnd = function (v) { return Math.round(v * dpr) / dpr; };
@@ -211,7 +211,7 @@ function adoc(c, v) {
 }
 
 /* ===== panel controller ===== */
-var cur = null, raf = 0, pf = false, lastMove = 0, lk = null;
+var cur = null, raf = 0, pf = false, lastMove = 0, lk = null, ptr = null;
 function W(c, el, p, v) { /* the only style writer: counts changes */
   var s = el._s || (el._s = {});
   if (s[p] === v) return;
@@ -265,11 +265,19 @@ function unlock() {
   document.documentElement.classList.remove('dx-lock'); document.removeEventListener('touchmove', tmove);
   window.scrollTo(lk.x, lk.y); lk = null;
 }
-function outside(e) {
-  var c = cur, t = e.target;
+function outside(t) {
+  var c = cur;
   if (!c || c.el.contains(t) || (c.anchor && c.anchor.contains(t)) || (t.closest && t.closest('.vrow'))) return;
   close();
 }
+/* A tap, not a touch that starts a scroll: pointerdown records the target, pointerup decides.
+   Listeners exist only while a panel is open, so a press that began before the panel opened has no record. */
+function pdown(e) { ptr = { id: e.pointerId, x: e.clientX, y: e.clientY, target: e.target }; }
+function pup(e) {
+  var p = ptr; ptr = null;
+  if (p && p.id === e.pointerId && Math.hypot(e.clientX - p.x, e.clientY - p.y) < 10) outside(p.target);
+}
+function pcancel(e) { if (ptr && ptr.id === e.pointerId) ptr = null; }
 function open(o) {
   close();
   var c = cur = o, el = c.el;
@@ -289,14 +297,14 @@ function open(o) {
   if (c.after) c.after(c);
   if (c.arm !== 'R') c.live = true;
   samp(c);
-  if (c.outside) document.addEventListener('pointerdown', outside, true);
+  if (c.outside) { document.addEventListener('pointerdown', pdown, true); document.addEventListener('pointerup', pup, true); document.addEventListener('pointercancel', pcancel, true); }
   if ($('meas').checked) mStart(c);
   return c;
 }
 function close() {
   var c = cur; if (!c) return;
-  cur = null; cancelAnimationFrame(c.mraf); cancelAnimationFrame(raf); raf = 0; pf = false;
-  document.removeEventListener('pointerdown', outside, true);
+  cur = null; ptr = null; cancelAnimationFrame(c.mraf); cancelAnimationFrame(raf); raf = 0; pf = false;
+  document.removeEventListener('pointerdown', pdown, true); document.removeEventListener('pointerup', pup, true); document.removeEventListener('pointercancel', pcancel, true);
   if (c.stop) c.stop();
   if (c.arm === 'R') c.el.hidden = true; else if (c.el.matches(':popover-open')) c.el.hidePopover();
   unlock(); finish(c);
