@@ -85,7 +85,7 @@ test.describe("Carousel: loop_mode Rewind (explicit opt-in wraparound)", () => {
     await expect(slide(1)).toHaveAttribute("data-selected", "true");
   });
 
-  test("under RTL, loop_mode Rewind wraps both directions with the swapped arrow keys", async ({ page }) => {
+  test("under RTL, loop_mode Rewind wraps both directions, and the arrow keys are not swapped", async ({ page }) => {
     await goto(page, "rewind");
     const frame = demoFrame(page, "rewind");
     const region = frame.getByRole("region", { name: "Rewind-loop gallery (RTL)", exact: true });
@@ -105,14 +105,14 @@ test.describe("Carousel: loop_mode Rewind (explicit opt-in wraparound)", () => {
     await next.click();
     await expect(slide(1)).toHaveAttribute("data-selected", "true");
 
-    // RTL root keyboard: ArrowLeft means next (swapped), so it should wrap
-    // from the last slide back to the first too.
+    // RTL root keyboard: ArrowRight means next (the keys do not swap), so it
+    // should wrap from the last slide back to the first too.
     for (let i = 0; i < 3; i++) {
       await next.click();
     }
     await expect(slide(4)).toHaveAttribute("data-selected", "true");
     await next.focus();
-    await page.keyboard.press("ArrowLeft");
+    await page.keyboard.press("ArrowRight");
     await expect(slide(1)).toHaveAttribute("data-selected", "true");
   });
 

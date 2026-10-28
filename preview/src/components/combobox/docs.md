@@ -15,6 +15,10 @@ one is marked and scrolled into view. Filtering starts with the first edit, and 
 input's own text is the query. Escape, blurring, or picking an option ends the edit and puts the
 selected label back.
 
+Home and End always move the caret in the input; they never move the list highlight (arrow keys do).
+Escape on an open list closes it; Escape on a closed list clears the selection (and the input with it, or
+every chip of a multiple), as Base UI's Combobox does.
+
 ## Component Structure
 
 ```rust

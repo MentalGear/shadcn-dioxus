@@ -70,10 +70,10 @@
 //! ends are real, reachable boundaries, not merely visual ones). A root-level
 //! `ArrowLeft`/`ArrowRight` (or `ArrowUp`/`ArrowDown` for
 //! [`CarouselOrientation::Vertical`]) key is a Radix/shadcn-style
-//! addition, not an APG requirement (research §1.2/§1.5) -- RTL-swapped
-//! via [`crate::direction`], Radix's convention rather than shadcn's own
-//! (shadcn's `handleKeyDown` never swaps; it relies on embla's engine
-//! silently compensating underneath it, which this crate does not have).
+//! addition, not an APG requirement (research §1.2/§1.5) -- never swapped
+//! under RTL, as in shadcn (its `handleKeyDown` maps `ArrowLeft` to
+//! `scrollPrev` and `ArrowRight` to `scrollNext` without reading the
+//! direction; backlog row 478).
 
 use crate::sleep::sleep;
 use crate::{

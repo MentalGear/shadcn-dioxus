@@ -55,14 +55,16 @@
 //!
 //! # Close semantics
 //!
-//! Radix's `onSelect` default, which shadcn inherits: selecting a checkable
-//! item **closes the menu**. Every checkable item has a
-//! `close_on_select` prop (default `true`) to opt out and keep the menu open
-//! after a toggle -- the behaviour APG describes as optional for Space ("When
-//! focus is on a menuitemcheckbox, changes the state without closing the
-//! menu", `content/patterns/menubar/menu-and-menubar-pattern.html`, "Keyboard
-//! Interaction", pinned commit `7e4034b262bc0d25332e330d8a582aaf34113829`),
-//! and the default of Base UI (the shadcn Nova registry's primitive).
+//! Base UI's `closeOnClick = false` for `MenuCheckboxItem` and
+//! `MenuRadioItem` (the shadcn `base-nova` registry's primitive): toggling or
+//! choosing a checkable item **keeps the menu open**, so several items can be
+//! set in one visit -- the behaviour APG describes for Space ("When focus is
+//! on a menuitemcheckbox, changes the state without closing the menu",
+//! `content/patterns/menubar/menu-and-menubar-pattern.html`, "Keyboard
+//! Interaction", pinned commit `7e4034b262bc0d25332e330d8a582aaf34113829`).
+//! Every checkable item has a `close_on_select` prop (default `false`); set it
+//! `true` for Radix's `onSelect` behaviour, where selecting closes the menu.
+//! A plain item always closes (backlog row 478).
 //!
 //! # Controlled or uncontrolled
 //!
@@ -223,10 +225,10 @@ pub struct MenuCheckboxItemProps {
     #[props(default)]
     pub text_value: ReadSignal<Option<String>>,
 
-    /// Whether toggling the item closes the menu. Defaults to `true`, Radix's
-    /// `onSelect` default; set `false` to keep the menu open so several
-    /// items can be toggled in one visit.
-    #[props(default = ReadSignal::new(Signal::new(true)))]
+    /// Whether toggling the item closes the menu. Defaults to `false`, Base UI's
+    /// `closeOnClick`, so several items can be toggled in one visit; set `true`
+    /// for Radix's `onSelect` behaviour.
+    #[props(default)]
     pub close_on_select: ReadSignal<bool>,
 
     /// Reserves the leading indicator slot without drawing anything -- shadcn's
@@ -272,9 +274,9 @@ pub struct MenuRadioItemProps {
     #[props(default)]
     pub text_value: ReadSignal<Option<String>>,
 
-    /// Whether choosing the item closes the menu. Defaults to `true`,
-    /// Radix's `onSelect` default; set `false` to keep the menu open.
-    #[props(default = ReadSignal::new(Signal::new(true)))]
+    /// Whether choosing the item closes the menu. Defaults to `false`, Base UI's
+    /// `closeOnClick`; set `true` for Radix's `onSelect` behaviour.
+    #[props(default)]
     pub close_on_select: ReadSignal<bool>,
 
     /// Reserves the leading indicator slot without drawing anything -- shadcn's

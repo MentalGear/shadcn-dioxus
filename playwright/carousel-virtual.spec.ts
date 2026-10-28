@@ -365,20 +365,22 @@ test.describe("CarouselVirtualContent: a11y", () => {
     });
   });
 
-  test("virtual_loop_rtl: seamless loop wraps under RTL with the swapped arrow keys too", async ({ page }) => {
+  test("virtual_loop_rtl: seamless loop pages under RTL, and the arrow keys are not swapped", async ({ page }) => {
     // Cheap RTL coverage of the identical seamless-loop path -- not a full duplicate
     // of every `virtual_loop` test above, just the one thing RTL could
-    // plausibly break: the key-swap composed with physical wraparound.
+    // plausibly break: the unswapped keys composed with physical wraparound.
     await goto(page, "virtual_loop_rtl");
     const frame = demoFrame(page, "virtual_loop_rtl");
     const next = frame.getByRole("button", { name: "Next slide" });
     const label = () => frame.locator('[data-selected="true"]').getAttribute("aria-label");
 
     await expect.poll(label).toBe("1 of 12");
-    // RTL: ArrowLeft is the swapped "next" key (Direction::resolve_horizontal).
+    // RTL: ArrowRight is still the "next" key (`carousel_key_intent` never reads the direction).
     await next.focus();
-    await page.keyboard.press("ArrowLeft");
+    await page.keyboard.press("ArrowRight");
     await expect.poll(label).toBe("2 of 12");
+    await page.keyboard.press("ArrowLeft");
+    await expect.poll(label).toBe("1 of 12");
 
     await expectNoAxeViolations(page, "carousel: virtual_loop_rtl variant", {
       include: "#component-preview-frame-virtual_loop_rtl",

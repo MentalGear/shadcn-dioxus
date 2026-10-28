@@ -97,7 +97,6 @@ pub fn DataTableColumnsMenu(props: DataTableColumnsMenuProps) -> Element {
                             let id = item.id.clone();
                             move |checked: bool| on_visible_change.call((id.clone(), checked))
                         },
-                        close_on_select: false,
                         text_value: item.label.clone(),
                         attributes: {
                             let id = item.id.clone();

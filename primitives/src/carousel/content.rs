@@ -90,9 +90,8 @@ pub(super) fn snap_type_value(orientation: CarouselOrientation, drag_free: bool)
 /// under [`CarouselOrientation::Horizontal`] the physical direction that
 /// reveals the next slide mirrors under `dir="rtl"` -- swipe-left-for-next
 /// in LTR, swipe-right-for-next in RTL, the same familiar split a
-/// right-to-left photo gallery or story viewer already has, and the same
-/// direction [`Carousel`]'s own root-level `ArrowLeft`/`ArrowRight`
-/// keyboard handling already swaps under RTL. No direction branch exists
+/// right-to-left photo gallery or story viewer already has (the
+/// root-level `ArrowLeft`/`ArrowRight` keys do not swap). No direction branch exists
 /// in the drag code itself for this -- see `CAROUSEL_DRAG_JS`'s own doc
 /// for why none is needed.
 ///

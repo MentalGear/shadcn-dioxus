@@ -384,22 +384,25 @@ pub(super) fn is_mount_settle(is_first: bool, has_items: bool) -> bool {
 /// [`HorizontalNav`] is [`crate::direction`]'s own "which arrow key means
 /// which paging intent" result type; reused here as a plain `Prev`/`Next`
 /// result rather than duplicating an identical two-variant enum under a
-/// new name -- nothing about its own definition or `resolve_horizontal`'s
-/// doc restricts it to a *horizontal* caller; only its name does, and
-/// this function's own doc is where that reuse is recorded. For
-/// [`CarouselOrientation::Horizontal`] this defers entirely to
-/// [`Direction::resolve_horizontal`], so it swaps under `dir="rtl"`
-/// exactly the way `tabs.rs`'s roving focus does. For
-/// [`CarouselOrientation::Vertical`], `ArrowUp`/`ArrowDown` are used
-/// unconditionally -- direction never affects a vertical axis (see
-/// `Direction::resolve_horizontal`'s own doc).
+/// new name -- nothing about its own definition restricts it to a
+/// *horizontal* caller; only its name does, and this function's own doc is
+/// where that reuse is recorded. For [`CarouselOrientation::Horizontal`],
+/// `ArrowLeft` is `Prev` and `ArrowRight` is `Next` in every text direction:
+/// shadcn's `handleKeyDown` maps the keys to `scrollPrev`/`scrollNext` and
+/// never reads the direction (backlog row 478), so a key never swaps under
+/// `dir="rtl"` (unlike `tabs.rs`'s roving focus, which does, and
+/// [`CarouselIndicators`], which is a tablist). For
+/// [`CarouselOrientation::Vertical`], `ArrowUp`/`ArrowDown` are used.
 pub(super) fn carousel_key_intent(
     key: &Key,
     orientation: CarouselOrientation,
-    direction: Direction,
 ) -> Option<HorizontalNav> {
     match orientation {
-        CarouselOrientation::Horizontal => direction.resolve_horizontal(key),
+        CarouselOrientation::Horizontal => match key {
+            Key::ArrowLeft => Some(HorizontalNav::Prev),
+            Key::ArrowRight => Some(HorizontalNav::Next),
+            _ => None,
+        },
         CarouselOrientation::Vertical => match key {
             Key::ArrowUp => Some(HorizontalNav::Prev),
             Key::ArrowDown => Some(HorizontalNav::Next),

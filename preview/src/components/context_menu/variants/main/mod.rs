@@ -13,10 +13,10 @@ use dioxus::prelude::*;
 //
 // shadcn's own context-menu demo ends with two checkbox items and a radio
 // group ("People"), so they follow the same way, at indices 5-8 --
-// after everything the specs above pin. They use the primitive's default
-// close behaviour (selecting closes the menu, Radix's `onSelect` default), so
-// this is the demo that shows it; the `checkboxes` and `radio_group` variants
-// show `close_on_select: false`. They are controlled, which a default-closing
+// after everything the specs above pin. They set `close_on_select: true`
+// (Radix's `onSelect` behaviour, selecting closes the menu), so this is the
+// demo that shows the opt-in; the `checkboxes` and `radio_group` variants keep
+// the menu open, the default. They are controlled, which a closing
 // demo has to be: an uncontrolled item's state lives in the item, and the
 // content unmounts when the menu closes. Their labels start
 // with S/P/C, never D/E, so the typeahead rows in
@@ -88,12 +88,14 @@ pub fn Demo() -> Element {
                 ContextMenuCheckboxItem {
                     checked: Some(show_bookmarks()),
                     on_checked_change: move |checked| show_bookmarks.set(checked),
+                    close_on_select: true,
                     text_value: "Show Bookmarks",
                     "Show Bookmarks"
                 }
                 ContextMenuCheckboxItem {
                     checked: Some(show_full_urls()),
                     on_checked_change: move |checked| show_full_urls.set(checked),
+                    close_on_select: true,
                     text_value: "Show Full URLs",
                     "Show Full URLs"
                 }
@@ -103,10 +105,12 @@ pub fn Demo() -> Element {
                     on_value_change: move |value| person.set(value),
                     ContextMenuRadioItem {
                         value: "pedro".to_string(),
+                        close_on_select: true,
                         "Pedro Duarte"
                     }
                     ContextMenuRadioItem {
                         value: "colm".to_string(),
+                        close_on_select: true,
                         "Colm Tuite"
                     }
                 }
