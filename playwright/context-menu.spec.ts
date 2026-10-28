@@ -793,6 +793,9 @@ test.describe('ContextMenuSub open_on_hover: false (click activation)', () => {
   test('default (open_on_hover: true): hovering More tools opens it', async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/context_menu/`, { timeout: 20 * 60 * 1000 });
     await page.getByRole('button', { name: 'right click here' }).click({ button: 'right' });
+    // The menu is absolute in the document: a hover that starts while it is still animating is retried by
+    // Playwright with `scrollIntoView({ block: 'start' })`, which scrolls the page under it.
+    await awaitAnimationsSettled(page.getByRole('menu'));
     const sub = page.getByRole('menuitem', { name: 'More tools' });
     await sub.hover();
     await expect(sub).toHaveAttribute('aria-expanded', 'true');

@@ -113,7 +113,7 @@ function reposition() {
 
     const natH = content.scrollHeight + ch - content.clientHeight;
     const natW = content.scrollWidth + cw - content.clientWidth;
-    const nat = V ? natH : natW;
+    const nat = V ? Math.min(natH, ownH) : Math.min(natW, ownW);
     const sp = room(SIDE), so = room(OPP);
     side = !side ? (sp >= nat || sp >= so ? SIDE : OPP)
         : side === SIDE ? (sp < nat && so > sp + 24 ? OPP : SIDE)
