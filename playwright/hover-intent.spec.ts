@@ -114,6 +114,9 @@ for (const menu of MENUS) {
       await expectOpen(menu.isOpen(page), true);
       const link = menu.panelLink(page);
       await expect(link).toBeVisible();
+      // The panel is absolute in the document: a hover that starts while it animates is retried by Playwright
+      // with `scrollIntoView({ block: 'start' })`, which scrolls the page and flips the panel from the pointer.
+      await awaitAnimationsSettled(link);
       await link.hover();
       await page.waitForTimeout(500);
       await expectOpen(menu.isOpen(page), true);
