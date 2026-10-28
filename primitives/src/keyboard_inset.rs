@@ -238,7 +238,9 @@ mod tests {
     fn the_script_adds_scroll_room_only_for_what_the_keyboard_covers() {
         let s = script();
         assert!(!s.contains("SLACK"));
-        assert!(s.contains("const overlap = Math.max(0, sc.getBoundingClientRect().bottom - visBottom);"));
+        assert!(s.contains(
+            "const overlap = Math.max(0, sc.getBoundingClientRect().bottom - visBottom);"
+        ));
         assert!(s.contains("if (overlap > 0) addSlack(sc, overlap); else restoreSlack();"));
         assert!(s.contains("Math.max(parseFloat(getComputedStyle(el).paddingBottom) || 0, MARGIN)"));
     }
