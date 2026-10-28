@@ -6,7 +6,7 @@ use super::*;
 /// Matches [`crate::resizable::ResizableDirection`]'s own
 /// horizontal/vertical shape and `data-orientation` convention. Vertical
 /// is the same component with an axis-swapped CSS declaration and
-/// scroll-delta axis, and `ArrowUp`/`ArrowDown` in place of the RTL-aware
+/// scroll-delta axis, and `ArrowUp`/`ArrowDown` in place of the
 /// `ArrowLeft`/`ArrowRight` pair, so it is supported alongside the
 /// horizontal shape -- see the module doc's "Scope" section.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -16,8 +16,8 @@ pub enum CarouselOrientation {
     #[default]
     Horizontal,
     /// Slides are arranged top-to-bottom and paged with
-    /// `ArrowUp`/`ArrowDown` -- never RTL-aware (see the private
-    /// `carousel_key_intent`, this module's own key-resolution function).
+    /// `ArrowUp`/`ArrowDown` (see the private `carousel_key_intent`, this
+    /// module's own key-resolution function).
     Vertical,
 }
 

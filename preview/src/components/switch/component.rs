@@ -42,6 +42,11 @@ pub struct SwitchProps {
     #[props(default)]
     pub required: ReadSignal<bool>,
 
+    /// Whether the switch is read-only: focusable and announced (`aria-readonly`), but a click or
+    /// Space does not change it, and its value still submits with a form.
+    #[props(default)]
+    pub read_only: ReadSignal<bool>,
+
     /// The name attribute for form submission.
     #[props(default)]
     pub name: ReadSignal<String>,
@@ -84,6 +89,7 @@ pub fn Switch(props: SwitchProps) -> Element {
             default_checked: props.default_checked,
             disabled: props.disabled,
             required: props.required,
+            read_only: props.read_only,
             name: props.name,
             form: props.form,
             value: props.value,

@@ -6,7 +6,7 @@ use dioxus::prelude::*;
 /// Controlled (`checked` + `on_checked_change`) -- an uncontrolled item's
 /// state lives in the item, and the menu content unmounts when it closes, so
 /// state that must survive a close has to be held by the caller -- and
-/// keeping the menu open after each toggle (`close_on_select: false`). The
+/// keeping the menu open after each toggle (the default). The
 /// plain items are `inset: true`
 /// (shadcn's `inset`) so, in the one menu that mixes both, their labels sit
 /// on the same inline-start edge as the checkable items' -- the menubar
@@ -34,14 +34,12 @@ pub fn Demo() -> Element {
                     MenubarCheckboxItem {
                         checked: Some(bookmarks_bar()),
                         on_checked_change: move |checked| bookmarks_bar.set(checked),
-                        close_on_select: false,
                         text_value: "Always Show Bookmarks Bar",
                         "Always Show Bookmarks Bar"
                     }
                     MenubarCheckboxItem {
                         checked: Some(full_urls()),
                         on_checked_change: move |checked| full_urls.set(checked),
-                        close_on_select: false,
                         text_value: "Always Show Full URLs",
                         "Always Show Full URLs"
                     }
@@ -64,21 +62,18 @@ pub fn Demo() -> Element {
                     MenubarCheckboxItem {
                         checked: Some(strikethrough()),
                         on_checked_change: move |checked| strikethrough.set(checked),
-                        close_on_select: false,
                         text_value: "Strikethrough",
                         "Strikethrough"
                     }
                     MenubarCheckboxItem {
                         checked: Some(code()),
                         on_checked_change: move |checked| code.set(checked),
-                        close_on_select: false,
                         text_value: "Code",
                         "Code"
                     }
                     MenubarCheckboxItem {
                         checked: Some(superscript()),
                         on_checked_change: move |checked| superscript.set(checked),
-                        close_on_select: false,
                         text_value: "Superscript",
                         "Superscript"
                     }

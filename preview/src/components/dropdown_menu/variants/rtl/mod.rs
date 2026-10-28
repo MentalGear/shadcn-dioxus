@@ -71,6 +71,7 @@ pub fn Demo() -> Element {
                         DropdownMenuCheckboxItem {
                             checked: Some(pinned()),
                             on_checked_change: move |checked| pinned.set(checked),
+                            close_on_select: true,
                             text_value: "Pinned",
                             "Pinned"
                         }
@@ -80,10 +81,12 @@ pub fn Demo() -> Element {
                             on_value_change: move |value| order.set(value),
                             DropdownMenuRadioItem {
                                 value: "ascending".to_string(),
+                                close_on_select: true,
                                 "Ascending"
                             }
                             DropdownMenuRadioItem {
                                 value: "descending".to_string(),
+                                close_on_select: true,
                                 "Descending"
                             }
                         }

@@ -1,1 +1,1 @@
-Three independent toggles, the last one disabled. They are controlled and set `close_on_select: false`, so several can be toggled in one visit.
+Three independent toggles, the last one disabled. They are controlled and the menu stays open after a toggle (the default), so several can be toggled in one visit; "Minimap" sets `close_on_select: true` and closes it.

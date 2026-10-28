@@ -6,8 +6,8 @@ use dioxus_primitives::direction::{Direction, DirectionProvider};
 
 /// `virtual_loop` under `dir="rtl"` -- closes the one integration gap that
 /// variant and the plain `rtl` variant don't each cover on their own: RTL's
-/// own key-swap composed with the seamless virtual loop's own physical
-/// paging. See `rtl/mod.rs`'s own doc for the general RTL-fixture shape
+/// own unswapped arrow keys composed with the seamless virtual loop's own
+/// physical paging. See `rtl/mod.rs`'s own doc for the general RTL-fixture shape
 /// this follows.
 #[component]
 pub fn Demo() -> Element {

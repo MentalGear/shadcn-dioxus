@@ -177,75 +177,37 @@ fn mount_settle_is_false_on_a_real_navigation_after_mount() {
 }
 
 #[test]
-fn carousel_key_intent_horizontal_ltr_matches_physical_keys() {
+fn carousel_key_intent_horizontal_arrows_never_swap() {
     assert_eq!(
-        carousel_key_intent(
-            &Key::ArrowLeft,
-            CarouselOrientation::Horizontal,
-            Direction::Ltr
-        ),
+        carousel_key_intent(&Key::ArrowLeft, CarouselOrientation::Horizontal),
         Some(HorizontalNav::Prev)
     );
     assert_eq!(
-        carousel_key_intent(
-            &Key::ArrowRight,
-            CarouselOrientation::Horizontal,
-            Direction::Ltr
-        ),
+        carousel_key_intent(&Key::ArrowRight, CarouselOrientation::Horizontal),
         Some(HorizontalNav::Next)
     );
 }
 
 #[test]
-fn carousel_key_intent_horizontal_rtl_swaps_physical_keys() {
+fn carousel_key_intent_vertical_uses_up_and_down() {
     assert_eq!(
-        carousel_key_intent(
-            &Key::ArrowLeft,
-            CarouselOrientation::Horizontal,
-            Direction::Rtl
-        ),
-        Some(HorizontalNav::Next)
-    );
-    assert_eq!(
-        carousel_key_intent(
-            &Key::ArrowRight,
-            CarouselOrientation::Horizontal,
-            Direction::Rtl
-        ),
+        carousel_key_intent(&Key::ArrowUp, CarouselOrientation::Vertical),
         Some(HorizontalNav::Prev)
     );
-}
-
-#[test]
-fn carousel_key_intent_vertical_ignores_direction() {
-    for direction in [Direction::Ltr, Direction::Rtl] {
-        assert_eq!(
-            carousel_key_intent(&Key::ArrowUp, CarouselOrientation::Vertical, direction),
-            Some(HorizontalNav::Prev)
-        );
-        assert_eq!(
-            carousel_key_intent(&Key::ArrowDown, CarouselOrientation::Vertical, direction),
-            Some(HorizontalNav::Next)
-        );
-    }
+    assert_eq!(
+        carousel_key_intent(&Key::ArrowDown, CarouselOrientation::Vertical),
+        Some(HorizontalNav::Next)
+    );
 }
 
 #[test]
 fn carousel_key_intent_vertical_ignores_horizontal_arrow_keys() {
     assert_eq!(
-        carousel_key_intent(
-            &Key::ArrowLeft,
-            CarouselOrientation::Vertical,
-            Direction::Ltr
-        ),
+        carousel_key_intent(&Key::ArrowLeft, CarouselOrientation::Vertical),
         None
     );
     assert_eq!(
-        carousel_key_intent(
-            &Key::ArrowRight,
-            CarouselOrientation::Vertical,
-            Direction::Ltr
-        ),
+        carousel_key_intent(&Key::ArrowRight, CarouselOrientation::Vertical),
         None
     );
 }
@@ -256,14 +218,8 @@ fn carousel_key_intent_ignores_unrelated_keys() {
         CarouselOrientation::Horizontal,
         CarouselOrientation::Vertical,
     ] {
-        assert_eq!(
-            carousel_key_intent(&Key::Home, orientation, Direction::Ltr),
-            None
-        );
-        assert_eq!(
-            carousel_key_intent(&Key::Enter, orientation, Direction::Ltr),
-            None
-        );
+        assert_eq!(carousel_key_intent(&Key::Home, orientation), None);
+        assert_eq!(carousel_key_intent(&Key::Enter, orientation), None);
     }
 }
 

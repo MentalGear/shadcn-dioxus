@@ -35,13 +35,21 @@ Tabs {
 
 `Tabs` takes `horizontal: bool`, `true` by default (shadcn's `orientation="horizontal"`). `horizontal: false` is shadcn's `orientation="vertical"`: the list becomes a column beside the panels (`flex-col`, as tall as its triggers, triggers full width and start-aligned), and the root reports `data-orientation="vertical"`. The list always carries `aria-orientation` (`horizontal` or `vertical`).
 
-Keyboard follows WAI-ARIA: in a horizontal list `ArrowLeft`/`ArrowRight` move focus (swapped under RTL) and `ArrowUp`/`ArrowDown` do nothing; in a vertical list `ArrowUp`/`ArrowDown` move focus (never affected by direction) and `ArrowLeft`/`ArrowRight` do nothing. `Home`/`End` work in both, and focus wraps unless `roving_loop` is false. Focus only moves; `Enter` or `Space` activates the focused tab, as in the rest of this library. The vertical `line` bar sits on the end edge, the side that faces the panel, in RTL too. See the `vertical` and `vertical_line` variants.
+Keyboard follows WAI-ARIA: in a horizontal list `ArrowLeft`/`ArrowRight` move focus (swapped under RTL) and `ArrowUp`/`ArrowDown` do nothing; in a vertical list `ArrowUp`/`ArrowDown` move focus (never affected by direction) and `ArrowLeft`/`ArrowRight` do nothing. `Home`/`End` work in both, and focus wraps unless `roving_loop` is false. By default focus only moves and `Enter` or `Space` activates the focused tab (see "Activation" below). The vertical `line` bar sits on the end edge, the side that faces the panel, in RTL too. See the `vertical` and `vertical_line` variants.
 
 ```rust
 Tabs { horizontal: false, variant: TabsVariant::Line, default_value: "a".to_string(), /* ... */ }
 ```
 
 **Behaviour change:** `horizontal` used to default to `false` (vertical) in the primitive, although the styled component always rendered a row; it now defaults to `true`, so a `Tabs` that omitted it is a horizontal tab list with `ArrowLeft`/`ArrowRight`. Pass `horizontal: false` for the old keyboard.
+
+## Activation
+
+By default activation is manual: the arrow keys, `Home` and `End` only move focus, and `Enter`, `Space` or a click activates the focused tab. That suits panels that are slow to render or load data. `activate_on_focus: true` is automatic activation: a tab that receives focus (from the keyboard, or from a click) is activated at once, so an arrow key walks through the panels. A disabled tab is skipped by focus and never activated. See the `activate_on_focus` variant.
+
+```rust
+Tabs { activate_on_focus: true, default_value: "a".to_string(), /* ... */ }
+```
 
 ## Sizes
 

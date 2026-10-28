@@ -402,10 +402,8 @@ pub(super) const CAROUSEL_DRAG_JS: &str = concat!(carousel_true_end_js!(), carou
         // zero-point and sign this module's own doc already warns
         // disagree across browsers, `scrollBy`'s relative
         // delta does not. So this formula never branches on direction --
-        // and still gets the well-known RTL swap for free, the same way
-        // this module's own keyboard handler does (`carousel_key_intent`/
-        // `Direction::resolve_horizontal`, no scrollBy/scrollLeft
-        // involved there either): dragging is direct manipulation (the
+        // and still gets the well-known RTL swap for free (the keyboard
+        // handler, `carousel_key_intent`, does not swap): dragging is direct manipulation (the
         // content tracks the pointer 1:1), and content tracking the
         // pointer is itself a physical, dir-independent relationship --
         // it is *which physical direction reveals 'the next slide'* that

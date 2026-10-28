@@ -24,6 +24,12 @@ pub struct SwitchProps {
     #[props(default)]
     pub required: ReadSignal<bool>,
 
+    /// Whether the switch is read-only: it stays focusable and is announced (`aria-readonly`),
+    /// but a click or Space does not change its state, and its value still submits with a form.
+    /// Distinct from `disabled`, which removes it from the tab order and from the submission.
+    #[props(default)]
+    pub read_only: ReadSignal<bool>,
+
     /// The name attribute for form submission.
     #[props(default)]
     pub name: ReadSignal<String>,
@@ -77,6 +83,8 @@ pub struct SwitchProps {
 /// The [`Switch`] component defines the following data attributes you can use to control styling:
 /// - `data-state`: Indicates the state of the switch. Values are `checked` or `unchecked`.
 /// - `data-disabled`: Indicates if the switch is disabled. Values are `true` or `false`.
+/// - `data-readonly`: Present (empty) while the switch is read-only, absent otherwise. The
+///   element also carries `aria-readonly="true"` then.
 #[component]
 pub fn Switch(props: SwitchProps) -> Element {
     let (checked, set_checked) = use_controlled(
@@ -111,6 +119,8 @@ pub fn Switch(props: SwitchProps) -> Element {
         "data-state": if checked() { "checked" } else { "unchecked" },
         // Only add data-disabled when actually disabled
         "data-disabled": if (props.disabled)() { "true" } else { "false" },
+        aria_readonly: (props.read_only)().then_some("true"),
+        "data-readonly": (props.read_only)().then_some(""),
     });
     let merged = merge_attributes(vec![defaults, props.attributes.clone(), owned]);
 
@@ -122,6 +132,9 @@ pub fn Switch(props: SwitchProps) -> Element {
             onmounted: move |evt| button_ref.set(Some(evt.data())),
             onpointerdown: move |evt| press.pressed(&evt),
             onclick: move |_| {
+                if (props.read_only)() {
+                    return;
+                }
                 let new_checked = !checked();
                 set_checked.call(new_checked);
                 // Safari click-focus remedy for a mouse press; never after a touch or pen press
@@ -220,6 +233,30 @@ mod tests {
             Switch { default_checked: true, name: "a", SwitchThumb {} }
             Switch { name: "b", SwitchThumb {} }
         }
+    }
+
+    /// A read-only Switch is announced and marked; a writable one carries neither attribute.
+    #[test]
+    fn read_only_sets_aria_readonly_and_data_readonly() {
+        let mut dom = VirtualDom::new(|| {
+            rsx! {
+                Switch { read_only: true, name: "a", SwitchThumb {} }
+                Switch { name: "b", SwitchThumb {} }
+            }
+        });
+        dom.rebuild_in_place();
+        let html = dioxus_ssr::render(&dom);
+        let switches = crate::test_support::find_elements(&html, |a| {
+            a.get("role").map(String::as_str) == Some("switch")
+        });
+        assert_eq!(switches.len(), 2, "{html}");
+        assert_eq!(
+            switches[0].attrs.get("aria-readonly").map(String::as_str),
+            Some("true")
+        );
+        assert!(switches[0].attrs.contains_key("data-readonly"), "{html}");
+        assert!(!switches[1].attrs.contains_key("aria-readonly"), "{html}");
+        assert!(!switches[1].attrs.contains_key("data-readonly"), "{html}");
     }
 
     /// A default-checked Switch's hidden input is server-rendered with the `checked` content

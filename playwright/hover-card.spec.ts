@@ -186,3 +186,16 @@ test.describe("delay / close_delay (backlog row 166)", () => {
     await expect(openSurface(page)).toHaveCount(0, { timeout: 500 });
   });
 });
+
+// dev-docs/backlog.md row 478 -- hover is a mouse's (and a pen's): a touch pointer does not start the open
+// (Base UI `useHoverReferenceInteraction`).
+test("a pointerenter of a touch pointer does not start the open; a mouse pointerenter does", async ({ page }) => {
+  await gotoHydrated(page, `${BASE_URL}/component/hover_card/`, { timeout: 20 * 60 * 1000 });
+  const trigger = page.getByRole("button", { name: "Dioxus" });
+  await trigger.dispatchEvent("pointerenter", { pointerType: "touch", pointerId: 7, isPrimary: true });
+  await page.waitForTimeout(1000); // past the default 600 ms delay
+  await expect(page.getByRole("tooltip")).toHaveCount(0);
+
+  await trigger.dispatchEvent("pointerenter", { pointerType: "mouse", pointerId: 1, isPrimary: true });
+  await expect(page.getByRole("tooltip")).toBeVisible();
+});

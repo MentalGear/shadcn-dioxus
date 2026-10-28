@@ -38,7 +38,8 @@ export async function startProbe(page: Page): Promise<void> {
       attributes: true,
       attributeFilter: ["data-state"],
     });
-    for (const type of ["mouseover", "mouseout", "focusin", "focusout"]) {
+    // `pointerover` precedes `mouseover` for the same hover: a delay-0 surface can open between the two.
+    for (const type of ["pointerover", "mouseover", "mouseout", "focusin", "focusout"]) {
       document.addEventListener(type, () => log.push({ t: performance.now(), what: type }), true);
     }
   });
@@ -58,7 +59,7 @@ export async function clearProbe(page: Page): Promise<void> {
 
 /**
  * Milliseconds from the first `from` entry to the first `to` entry after it, or `null` when either
- * is missing. Entries are `mouseover` / `mouseout` / `focusin` / `focusout` / `surface:open` /
+ * is missing. Entries are `pointerover` / `mouseover` / `mouseout` / `focusin` / `focusout` / `surface:open` /
  * `surface:closed`.
  */
 export function elapsed(log: ProbeEntry[], from: string, to: string): number | null {

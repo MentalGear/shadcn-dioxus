@@ -95,9 +95,10 @@ ContextMenuContent {
         // closes, so an uncontrolled item starts over on every open.
         checked: Some(show_status_bar()),
         on_checked_change: move |checked| show_status_bar.set(checked),
-        // Selecting closes the menu by default (Radix's `onSelect` default).
-        // `false` keeps it open so several items can be toggled in one visit.
-        close_on_select: false,
+        // The menu stays open after a toggle by default (Base UI's
+        // `closeOnClick = false`), so several items can be set in one visit.
+        // `true` closes it on selection (Radix's `onSelect` behaviour).
+        close_on_select: true,
         // A checkbox item has no `value`: set `text_value` to make it a
         // typeahead target.
         text_value: "Status Bar",
