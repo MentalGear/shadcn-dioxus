@@ -897,20 +897,6 @@ fn MenubarContentRendered(
         crate::ContentAlign::Start,
         8,
     );
-    // The menubar never locks the page: any scroll closes the open menu
-    // (`top_layer::use_close_on_scroll`'s doc).
-    crate::top_layer::use_close_on_scroll(
-        id.clone(),
-        id.clone(),
-        open,
-        crate::top_layer::ScrollClose::AnyScroll,
-        Callback::new(move |_: bool| {
-            if (ctx.open_menu)() == Some(index.cloned()) {
-                ctx.set_open_menu.call(None);
-            }
-        }),
-    );
-
     // dev-docs/backlog.md row 25: an APG menu requires an accessible name from
     // either aria-labelledby or aria-label -- labelled by this menu's own
     // trigger, mirroring `DropdownMenuContent`'s identical pattern

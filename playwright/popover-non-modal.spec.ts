@@ -109,9 +109,9 @@ async function scrollAndSettle(page: Page, act: () => Promise<void>): Promise<nu
 }
 
 /**
- * How far the page may scroll with the anchor still in view. A non-modal popover closes when its anchor scrolls out
- * of the viewport (`top_layer::use_close_on_scroll`, `ScrollClose::AnchorLeavesViewport`), so a test about the page
- * scrolling UNDER an open popover scrolls less than this.
+ * How far the page may scroll with the anchor still in view. A non-modal popover stays open while the page scrolls
+ * (it is placed in document coordinates, backlog row 477); a test about the page scrolling UNDER an open popover
+ * scrolls less than this so the trigger stays reachable.
  */
 const scrollKeepingAnchor = (page: Page) =>
   readStatic(trigger(page), (el) => Math.floor(el.getBoundingClientRect().top - 40));

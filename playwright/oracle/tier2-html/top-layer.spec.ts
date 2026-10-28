@@ -900,11 +900,11 @@ test.describe("Rule 8 — scroll tracking: an anchored overlay's content keeps i
 
     // Confirm this really is the fallback path (the case this rule exists
     // to cover): the fallback is the only thing that ever writes an
-    // inline `top` on this element (see `use_anchor_position_fallback`).
-    const inlineTop = await page.locator("#stack-popover-content").evaluate(
-      (el) => (el as HTMLElement).style.top,
+    // inline `position` on this element (see `use_anchor_position_fallback`).
+    const inlinePosition = await page.locator("#stack-popover-content").evaluate(
+      (el) => (el as HTMLElement).style.position,
     );
-    expect(inlineTop, "expected the JS fallback path to be active here").not.toBe("");
+    expect(inlinePosition, "expected the JS fallback path to be active here").not.toBe("");
 
     const offsetOf = async () =>
       readAtRest(page.locator("#stack-popover-content"), () => {
@@ -932,7 +932,7 @@ test.describe("Rule 8 — scroll tracking: an anchored overlay's content keeps i
     // flip-block` correctly opens it ABOVE the trigger (offset -428), and the scroll then frees enough room below
     // that it flips back (offset +8) -- a 436px jump that reads as "frozen / drifted" but is the flip, not a tracking
     // failure. On a release SSG build: viewport 720 gives -428 then 8; 900/1000/1100 give 8 then 8, exactly
-    // tracked on the CSS-anchor path (empty inline `top`). dev-docs/backlog.md rows 21/106.
+    // tracked on the CSS-anchor path (empty inline `position`). dev-docs/backlog.md rows 21/106.
     await page.setViewportSize({ width: 1280, height: 1000 });
     // dev-docs/backlog.md row 109: SSG lane -- `gotoHydrated`, see this
     // file's own `gotoFixture` doc.
@@ -963,12 +963,12 @@ test.describe("Rule 8 — scroll tracking: an anchored overlay's content keeps i
     const content = page.getByRole("dialog");
     await expect(content).toBeVisible();
 
-    // Confirm this really is the CSS-anchor path (no inline `top` -- the
+    // Confirm this really is the CSS-anchor path (no inline `position` -- the
     // fallback never engaged), so this test cannot pass merely because the
     // JS fallback's own tracking (already covered above) papered over a
     // CSS-anchor regression here.
-    const inlineTop = await content.evaluate((el) => (el as HTMLElement).style.top);
-    expect(inlineTop, "expected the CSS-anchor path to be active here").toBe("");
+    const inlinePosition = await content.evaluate((el) => (el as HTMLElement).style.position);
+    expect(inlinePosition, "expected the CSS-anchor path to be active here").toBe("");
 
     // Let the open-state fade-in settle before taking the "before" reading:
     // `dx-color-picker-popover-fade-in` (`.15s ease-out`,
@@ -1005,23 +1005,14 @@ test.describe("Rule 8 — scroll tracking: an anchored overlay's content keeps i
  * trigger through a scroll); this rule adds the two shapes `ContextMenu` and
  * `Menubar` take:
  *
- *   - `ContextMenu` opens at a raw click point with **no** anchor at all
- *     (`ContextMenuContentRendered`, `context_menu.rs` -- deliberately not
- *     anchored: CSS anchors need an element). A `position: fixed` div's
- *     containing block is the viewport (absent a transformed ancestor), so
- *     the content stays at the click's *viewport-relative* position and
- *     does not move on screen as the page scrolls underneath it -- the same
- *     thing a native OS context menu does, and what Radix's own
- *     `ContextMenu` does. Promoting it to the top layer via
- *     `popover="manual"` does not change this: a top-layer element's
- *     containing block is *also* the viewport, so the inline `top`/`left`
- *     pixel values set at open time keep meaning exactly what they mean for
- *     a `position: fixed` div.
- *   - `Menubar` menus, by contrast, anchor each menu's content to its own
- *     trigger (`MenubarContentRendered`, `menubar.rs`) -- the same shape
- *     `DropdownMenu`'s Rule 8 case exercises -- and so must keep tracking
- *     that trigger through a scroll exactly as Rule 8 already checks for
- *     `Popover`.
+ *   - `ContextMenu` opens at a raw press point with **no** anchor element
+ *     (`ContextMenuContentRendered`, `context_menu.rs`). The point is a document point
+ *     (`pageX`/`pageY`) and the menu is absolute in the top layer, so it stays at that point of
+ *     the document: when the page scrolls it moves with the page, as the content under the press
+ *     does (backlog row 477).
+ *   - `Menubar` menus anchor each menu's content to its own trigger (`MenubarContentRendered`,
+ *     `menubar.rs`) and stay open while the page scrolls, following the trigger exactly as Rule 8
+ *     checks for `Popover`.
  *
  * Fixture: the "Point-positioned vs. anchored scroll behavior" section of
  * `TopLayerFixture` -- both controls sit normally in-flow, away from any
@@ -1030,40 +1021,48 @@ test.describe("Rule 8 — scroll tracking: an anchored overlay's content keeps i
  * what happens to already-open content during a scroll).
  */
 test.describe("Rule 9 — point-positioned vs. anchored scroll behavior", () => {
-  test("ContextMenu content stays at its click's viewport position while the page scrolls (does not track the page)", async ({ page }) => {
+  test("ContextMenu content stays at its press point of the document while the page scrolls", async ({ page }) => {
     await gotoFixture(page);
     await page.locator("#scroll-context-menu-trigger").scrollIntoViewIfNeeded();
     await page.locator("#scroll-context-menu-trigger").click({ button: "right" });
     await expect(page.locator("#scroll-context-menu-content")).toBeVisible();
 
-    const rectOfContent = () => rectOf(page, "#scroll-context-menu-content");
-    const before = await rectOfContent();
+    const docRect = () =>
+      readAtRest(page.locator("#scroll-context-menu-content"), (el) => {
+        const r = (el as HTMLElement).getBoundingClientRect();
+        return { top: r.top + window.scrollY, left: r.left + window.scrollX };
+      });
+    const before = await docRect();
     await page.evaluate(() => window.scrollBy(0, 120));
-    // No positioning logic runs on scroll for this component at all (no
-    // fallback, no listener) -- a short settle is still given so this
-    // assertion cannot pass merely because it ran before a paint.
     await page.waitForTimeout(150);
-    const after = await rectOfContent();
+    const after = await docRect();
 
     const debug = JSON.stringify({ before, after });
-    // Viewport-relative position unchanged -- the content did not move on
-    // screen, i.e. it did *not* track the page's scroll.
     expect(after.top, debug).toBeCloseTo(before.top, 0);
     expect(after.left, debug).toBeCloseTo(before.left, 0);
   });
 
-  // Row 193: a menubar never locks the page, so an open menu does not follow its trigger through a
-  // scroll -- any scroll (past the helper's 300 ms quiet window after the open) closes it
-  // (`top_layer::use_close_on_scroll`, `playwright/close-on-scroll.spec.ts` for the full policy).
-  test("Menubar content closes on a scroll instead of following its trigger", async ({ page }) => {
+  test("Menubar content stays open and follows its trigger through a scroll", async ({ page }) => {
     await gotoFixture(page);
     await page.locator("#scroll-menubar-trigger").scrollIntoViewIfNeeded();
     await page.locator("#scroll-menubar-trigger").click();
     await expect(page.locator("#scroll-menubar-content")).toBeVisible();
     await page.waitForTimeout(450); // past the quiet window that follows an open
 
+    const offsetOf = () =>
+      readAtRest(page.locator("#scroll-menubar-content"), () => {
+        const c = document.getElementById("scroll-menubar-content")!.getBoundingClientRect();
+        const t = document.getElementById("scroll-menubar-trigger")!.getBoundingClientRect();
+        return { top: c.top - t.bottom, left: c.left - t.left };
+      });
+    const before = await offsetOf();
     await page.evaluate(() => window.scrollBy(0, 120));
-    await expect(page.locator("#scroll-menubar-content")).toHaveCount(0);
+    await page.waitForTimeout(150);
+    await expect(page.locator("#scroll-menubar-content")).toBeVisible();
+    const after = await offsetOf();
+    const debug = JSON.stringify({ before, after });
+    expect(after.top, debug).toBeCloseTo(before.top, 0);
+    expect(after.left, debug).toBeCloseTo(before.left, 0);
   });
 });
 
@@ -1108,7 +1107,7 @@ test.describe("Rule 9 — point-positioned vs. anchored scroll behavior", () => 
  * `select/components/list.rs`) -- Tooltip, HoverCard, Popover,
  * DropdownMenu, Menubar, Select, Combobox. `ContextMenu`'s root content is deliberately
  * excluded: per Rule 9's own doc above and `context_menu.rs` (its root content is
- * clamped by `use_point_anchor_clamp`, not `use_anchor_position_fallback`), it opens at
+ * clamped by `use_point_anchor_placement`, not `use_anchor_position_fallback`), it opens at
  * a raw click point with no anchor at all, so it has no "own anchor rect"
  * to overlap and neither of the two gaps can apply to it.
  *
@@ -1610,7 +1609,7 @@ test.describe("Rule 11 — anchored-overlay self-overlap contract", () => {
      *     execution for Navbar; dev-docs/backlog.md rows 36/41).
      *   - Popover is the sole survivor, and is enough: its content really
      *     does stop tracking after the strip (stays at
-     *     `style.top === ""`, i.e. no re-measurement ever happens) --
+     *     `style.position === ""`, i.e. no re-measurement ever happens) --
      *     `expect(...).not.toBe("")` below is the direct, mechanism-level
      *     assertion for that (rather than an overlap/viewport check alone,
      *     which this exact fixture's geometry can pass by coincidence even
@@ -1762,10 +1761,10 @@ test.describe("Rule 11 — anchored-overlay self-overlap contract", () => {
         await expect(kase.content(page)).toBeVisible();
 
         // Confirm CSS Anchor Positioning was genuinely doing the work at
-        // open (no inline `top` -- the fallback never engaged; same check
+        // open (no inline `position` -- the fallback never engaged; same check
         // Rule 8 makes for its own CSS-anchor-path case above).
-        const inlineTopAtOpen = await kase.content(page).evaluate((el) => (el as HTMLElement).style.top);
-        expect(inlineTopAtOpen, `expected the CSS-anchor path to be active at open for ${kase.name}`).toBe("");
+        const inlinePositionAtOpen = await kase.content(page).evaluate((el) => (el as HTMLElement).style.position);
+        expect(inlinePositionAtOpen, `expected the CSS-anchor path to be active at open for ${kase.name}`).toBe("");
 
         await stripAnchorSupportsBlock(page);
         await simulateOnScreenKeyboard(page);
@@ -1773,15 +1772,15 @@ test.describe("Rule 11 — anchored-overlay self-overlap contract", () => {
         // The direct, mechanism-level assertion: did anything re-measure at
         // all? If gap 2 were open the answer would be no -- no listener
         // is ever attached, since this content conformed (via CSS) at open --
-        // so `style.top` stays exactly `""` forever, regardless of whether
+        // so `style.position` stays exactly `""` forever, regardless of whether
         // this fixture's particular geometry also happens to overlap or
         // leave the viewport (see this section's header doc for why an
         // overlap/viewport check alone isn't sufficient here).
-        const inlineTopAfter = await kase.content(page).evaluate((el) => (el as HTMLElement).style.top);
+        const inlinePositionAfter = await kase.content(page).evaluate((el) => (el as HTMLElement).style.position);
         expect(
-          inlineTopAfter,
+          inlinePositionAfter,
           `expected the fix's tracking to have re-measured and taken over once CSS Anchor Positioning ` +
-            `stopped resolving mid-open for ${kase.name}, but style.top is still ${JSON.stringify(inlineTopAfter)}`,
+            `stopped resolving mid-open for ${kase.name}, but style.position is still ${JSON.stringify(inlinePositionAfter)}`,
         ).not.toBe("");
 
         const trigger = await rectOfLocator(kase.trigger(page));

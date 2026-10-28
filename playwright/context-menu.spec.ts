@@ -30,12 +30,12 @@ test('menu lands at the tap coordinates on touch long-press', async ({ page }) =
   // Pin the trigger to a fixed on-screen position instead of pushing it
   // down with padding on <main>/<body>. This test's whole point is a tap
   // point guaranteed to be nowhere near any viewport edge (so
-  // `use_point_anchor_clamp`, top_layer.rs, never has a reason to act and
+  // `use_point_anchor_placement`, top_layer.rs, never has a reason to act and
   // this test stays a clean "no clamping" baseline) -- but padding only
   // *adds* to whatever height the surrounding page content already has,
   // and that height isn't this test's to control or assume (300px of
   // padding-top can put the trigger's center past the bottom edge of a
-  // 720px-tall viewport, where `use_point_anchor_clamp` rightly pulls the
+  // 720px-tall viewport, where `use_point_anchor_placement` rightly pulls the
   // menu back on-screen, and `top + ch > vh - EDGE_MARGIN` is correctly
   // true). Anchoring the trigger's position directly, rather than adding
   // to an unmeasured ambient height, makes the "nowhere near an edge"
@@ -125,7 +125,7 @@ test('clamps the menu into the viewport for a mouse right-click near a corner', 
   const box = await measureAtRest(contextMenu);
   if (!box) throw new Error('menu has no bounding box');
 
-  // EDGE_MARGIN (top_layer.rs's `use_point_anchor_clamp`) is 4px; allow 1px
+  // EDGE_MARGIN (top_layer/anchor_fallback.rs's placement script) is 4px; allow 1px
   // of rounding slack on each side of the assertion.
   const EDGE_MARGIN = 4;
   expect(box.x).toBeGreaterThanOrEqual(EDGE_MARGIN - 1);
