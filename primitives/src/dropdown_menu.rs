@@ -1959,9 +1959,8 @@ fn DropdownMenuSubContentRendered(
     // inside the *same* logical menu, so there is no affordance need for a
     // visible gap the way a top-level menu wants one below its button --
     // and a zero gap directly abuts the two elements, shrinking the
-    // physical dead zone that the close delay (`SUBMENU_CLOSE_GRACE_DELAY`,
-    // `crate::menu_sub`) would otherwise have to cover for a diagonal mouse move
-    // from trigger into content.
+    // physical dead zone `SUBMENU_CLOSE_GRACE_DELAY` (`crate::menu_sub`)
+    // exists to cover for a diagonal mouse move from trigger into content.
     // Side: the inline-axis-forward direction -- `Right` in LTR, `Left` in
     // RTL (Radix `menu.tsx` L1245: `side={dir===RTL?'left':'right'}`). The
     // position-try-fallbacks flip (see the comment above) still applies on

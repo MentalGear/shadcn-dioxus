@@ -26,41 +26,12 @@ function nav(page: Page) {
   return page.getByRole('navigation', { name: 'Component navigation menu' });
 }
 
-// Base UI's NavigationMenu hover contract (row 478): `delay` 50 ms, `closeDelay` 50 ms. Timed in the page from
-// the pointer event to the `aria-expanded` write and asserted only as an upper bound the previous 150 ms / 300 ms
-// values could not meet (a timer plus the render is never shorter than its delay).
-test('hover delays are Base UI\'s: open under 150 ms after the pointer rests, close under 300 ms after it leaves', async ({ page }) => {
-  await gotoHydrated(page, URL, GOTO);
-  const trigger = nav(page).getByRole('button', { name: 'Getting started' });
-  await trigger.evaluate((el) => {
-    const t: Record<string, number> = {};
-    (window as unknown as { __navTimes: Record<string, number> }).__navTimes = t;
-    document.addEventListener('mouseover', (e) => {
-      if (el.contains(e.target as Node)) t.enter ??= performance.now();
-    }, true);
-    document.addEventListener('mouseout', (e) => {
-      if (t.open && !t.leave && el.contains(e.target as Node)) t.leave = performance.now();
-    }, true);
-    new MutationObserver(() => {
-      if (el.getAttribute('aria-expanded') === 'true') t.open ??= performance.now();
-      else if (t.open) t.closed ??= performance.now();
-    }).observe(el, { attributes: true, attributeFilter: ['aria-expanded'] });
-  });
-  await trigger.hover();
-  await expect(trigger).toHaveAttribute('aria-expanded', 'true');
-  await page.getByRole('heading', { level: 1 }).hover();
-  await expect(trigger).toHaveAttribute('aria-expanded', 'false');
-  const t = await page.evaluate(() => (window as unknown as { __navTimes: Record<string, number> }).__navTimes);
-  expect(t.open - t.enter, 'hover to open').toBeLessThan(150);
-  expect(t.closed - t.leave, 'leave to close').toBeLessThan(300);
-});
-
 test('hover opens the panel', async ({ page }) => {
   await gotoHydrated(page, URL, GOTO);
   const trigger = nav(page).getByRole('button', { name: 'Getting started' });
   await expect(trigger).toHaveAttribute('aria-expanded', 'false');
   await trigger.hover();
-  // the NavigationMenu open-intent delay (HoverDelays::BASE_UI_NAVIGATION_MENU, 50ms) --
+  // primitives/src/navigation_menu.rs's HOVER_OPEN_INTENT_DELAY (150ms) --
   // expect()'s own auto-retry tolerates the delay without this test
   // asserting its exact length (a tight "still closed immediately after
   // hover" window would be flaky under load, not a real methodology
@@ -69,7 +40,7 @@ test('hover opens the panel', async ({ page }) => {
   await expect(trigger).toHaveAttribute('aria-expanded', 'true');
 });
 
-// dev-docs/backlog.md row 189. Hover opens the panel after the open-intent delay; the click a user
+// dev-docs/backlog.md row 189. Hover opens the panel after the 150ms intent delay; the click a user
 // then makes on the same trigger must not TOGGLE it shut (the panel would flash open then closed).
 // A click on a panel the pointer opened confirms it (it stays open); the click after that is an
 // ordinary toggle. (Radix itself closes here and only blocks hover re-opening; Base UI's
@@ -134,7 +105,7 @@ test('pointer leaving the trigger and its content closes the panel', async ({ pa
   // Move the pointer well outside both the trigger and its (top-layer
   // promoted) content -- the page's own h1 is a safe, always-present target.
   await page.getByRole('heading', { level: 1 }).hover();
-  // the close grace (HoverDelays::BASE_UI_NAVIGATION_MENU, 50ms).
+  // primitives/src/navigation_menu.rs's HOVER_CLOSE_GRACE_DELAY (300ms).
   await expect(trigger).toHaveAttribute('aria-expanded', 'false');
 });
 
@@ -488,7 +459,7 @@ test.describe('Axe automated scan', () => {
 // test above.
 // ---------------------------------------------------------------------------
 test.describe('open_on_hover: false (click activation)', () => {
-  const HOVER_SETTLE_MS = 1000; // >> the 50ms open and 50ms close delays
+  const HOVER_SETTLE_MS = 1000; // >> HOVER_OPEN_INTENT_DELAY (150ms) + HOVER_CLOSE_GRACE_DELAY (300ms)
 
   function clickNav(page: Page) {
     return page.getByRole('navigation', { name: 'Click-only navigation menu' });
@@ -520,7 +491,7 @@ test.describe('open_on_hover: false (click activation)', () => {
     await expect(guides).toHaveAttribute('aria-expanded', 'true');
 
     // Away from both the trigger and the panel -- with hover on this would
-    // close after the 50ms close grace; wait well past it.
+    // close after HOVER_CLOSE_GRACE_DELAY (300ms); wait well past it.
     await page.getByRole('heading', { level: 1 }).hover();
     await page.waitForTimeout(HOVER_SETTLE_MS);
     await expect(guides).toHaveAttribute('aria-expanded', 'true');

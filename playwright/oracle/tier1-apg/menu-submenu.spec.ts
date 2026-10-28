@@ -129,9 +129,9 @@ const submenuItem = (page: Page, n: number) => submenuOf(page).getByRole("menuit
 const goto = (page: Page, name: string) =>
   gotoHydrated(page, `${BASE}${name}/`, { timeout: 20 * 60 * 1000 });
 
-// `crate::menu_sub::SUBMENU_OPEN_INTENT_DELAY` is 100ms and
-// `SUBMENU_CLOSE_GRACE_DELAY` is 0 (`primitives/src/menu_sub.rs`) -- generous
-// margins below so this file's own timing never races the implementation's.
+// `crate::menu_sub::SUBMENU_OPEN_INTENT_DELAY`/`SUBMENU_CLOSE_GRACE_DELAY`
+// are both 200ms (`primitives/src/menu_sub.rs`) -- generous margins below
+// so this file's own timing never races the implementation's.
 const PAST_INTENT_DELAY_MS = 500;
 
 /**
@@ -171,8 +171,8 @@ async function hoverAndTimeOpen(subTrigger: Locator): Promise<{ elapsedMs: numbe
   expect(r.open, "the page saw aria-expanded flip to true").not.toBeNull();
   return { elapsedMs: (r.open as number) - (r.over as number) };
 }
-// A little under crate::menu_sub::SUBMENU_OPEN_INTENT_DELAY (100 ms) for timer granularity.
-const MIN_INTENT_DELAY_MS = 80;
+// A little under crate::menu_sub::SUBMENU_OPEN_INTENT_DELAY (200 ms) for timer granularity.
+const MIN_INTENT_DELAY_MS = 180;
 
 test.describe("APG Menu and Menubar pattern — DropdownMenu.Sub", () => {
   test.beforeEach(async ({ page }) => {
@@ -370,7 +370,7 @@ test.describe("APG Menu and Menubar pattern — DropdownMenu.Sub", () => {
   // a pointer that leaves the trigger and moves into the submenu's own
   // content (the expected way to reach a submenu item) never touches the
   // trigger again, so a timer that only the trigger can cancel would fire
-  // a moment later and close the submenu out from under the pointer, while it
+  // ~200ms later and close the submenu out from under the pointer, while it
   // still hovers the content. The hover timers therefore live on the shared
   // `SubMenuState` (`primitives/src/menu_sub.rs`) so `*SubContentRendered`
   // can cancel/reschedule the same timer from its own `onmouseenter`/
