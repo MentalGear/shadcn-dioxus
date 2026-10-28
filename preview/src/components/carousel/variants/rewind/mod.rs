@@ -14,7 +14,7 @@ use dioxus_primitives::direction::{Direction, DirectionProvider};
 /// `is_rewind_wrap` doc.
 ///
 /// Two rows -- LTR (5 slides) and RTL (4 slides) -- cover both directions
-/// and the RTL key-swap together.
+/// and the RTL arrow keys together.
 #[component]
 pub fn Demo() -> Element {
     rsx! {

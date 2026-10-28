@@ -6,9 +6,9 @@ use dioxus_primitives::direction::{Direction, DirectionProvider};
 
 /// RTL fixture (dev-docs/backlog.md row 13's own convention -- see
 /// `tabs/variants/rtl/mod.rs`'s doc for the general shape). `ArrowLeft`
-/// moves to the *next* slide and `ArrowRight` to the *previous* one
-/// (Radix's roving-focus convention -- see the primitive's own module
-/// doc, "Accessibility"). Scrolling itself needs no RTL-specific
+/// moves to the *previous* slide and `ArrowRight` to the *next* one, as in
+/// LTR: the keys do not swap (shadcn's carousel -- see the primitive's own
+/// module doc, "Accessibility"). Scrolling itself needs no RTL-specific
 /// handling at all: slide order in the DOM never changes, and the
 /// browser's own `scrollIntoView` already resolves the correct physical
 /// position under `dir="rtl"`.

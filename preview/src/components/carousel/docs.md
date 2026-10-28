@@ -147,7 +147,7 @@ Carousel { aria_label: "Featured photos",
 }
 ```
 
-`CarouselIndicators` is a `tablist`, each `CarouselIndicator` a `tab` linked to its slide. The left and right arrow keys (mirrored in RTL), Home and End move between the dots and show the slide immediately. Focus wraps at the ends.
+`CarouselIndicators` is a `tablist`, each `CarouselIndicator` a `tab` linked to its slide. The left and right arrow keys (mirrored in RTL, as the tabs pattern does), Home and End move between the dots and show the slide immediately. Focus wraps at the ends.
 
 If you want your own picker design instead, build it with `use_carousel()` (see API).
 
@@ -209,7 +209,7 @@ Style the active dot from the `data-active` attribute in your stylesheet, not wi
 - The root is a labelled region with `aria-roledescription="carousel"`; each slide has `aria-roledescription="slide"` and is named "n of m" by default. With `CarouselIndicators`, slides become tab panels.
 - Previous and Next are real buttons and become genuinely `disabled` at the ends when the carousel does not loop. Hiding them with `nav_disabled_opacity: 0.0` changes how they look and removes them from the accessibility tree once faded; the `disabled` attribute is still what carries the state.
 - If the arrow that has focus becomes disabled, because that press paged to the end, focus moves to the track (the `CarouselContent`), where the arrow keys keep working. Chromium otherwise drops focus to the top of the page, and a browser that leaves it on the disabled button leaves it somewhere keys no longer reach; a hidden arrow cannot hold focus at all. It moves to the track rather than to the other arrow because the other arrow can itself be disabled. Only focus that was actually on the arrow moves: a mouse click that did not focus it leaves focus where it was.
-- With focus inside the carousel, `ArrowLeft` and `ArrowRight` go to the previous and next slide (swapped in RTL). A vertical carousel uses `ArrowUp` and `ArrowDown` instead.
+- With focus inside the carousel, `ArrowLeft` and `ArrowRight` go to the previous and next slide, in every text direction as in shadcn: the keys are not swapped in RTL, so there `ArrowLeft` moves to the previous slide, which sits on the right. A vertical carousel uses `ArrowUp` and `ArrowDown` instead.
 - With `CarouselIndicators`, the dots follow the tabs pattern: arrow keys, Home and End move focus and select immediately.
 - With `CarouselAutoplay`, the track's `aria-live` is `off` while rotating and `polite` once stopped. Put `CarouselRotationControl` first so it is the first focusable element.
 - `prefers-reduced-motion: reduce` keeps autoplay off at mount and disables the rubber-band effects described below.
