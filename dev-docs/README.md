@@ -61,6 +61,7 @@ or phase number, so those headings and ids stay where they are.
 | `round3-2026-10-05.md` | Round 3 evidence (listener inventory, VirtualList numbers, fonts, stylesheet delivery), cited by row 170 and `motion.md`. |
 | `collection-model-2026-10-22.md` | The shared collection model (rows 360-364). |
 | `shadcn-demo-parity-audit-2026-10-11.md` | Row 188, the owner's demo-parity audit. |
+| `radix-vs-base-ui-2026-10-28.md` | The Radix-versus-Base-UI scan of every component, the iPhone overlay root cause and the placement rule (rows 477-482, 296). |
 | `dependency-audit-2026-10-14.md`, `dependency-evaluation.md`, `dependency-scanners.md` | Rows 217 and 371 (what users compile and trust), behind the [supply-chain playbook](./supply-chain/README.md). |
 
 ## Archive (`archive/`: finished, historical; check the date before acting on anything here)

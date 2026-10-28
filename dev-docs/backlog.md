@@ -40,7 +40,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (65)
+## Open rows (71)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -55,7 +55,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [266](backlog/266-repo-cleanup-archive-historical-dev-docs.md) | Repo cleanup: archive historical dev-docs, trim CLAUDE.md and the big dev docs, split backlog.md | Left: deleting the stale remote branches (the owner said go on 2026-10-26, but this environment's… | M-L | process |
 | [268](backlog/268-select-scroll-buttons-and-item-aligned-position.md) | Select scroll buttons and position=item-aligned | Only the native (Blitz) arm is left: position=item-aligned emits data-position there and nothing… | S (native arm only) | select |
 | [295](backlog/295-press-feedback-on-touch-taps-already-on-by.md) | Press feedback on touch taps: already on by default, so check why taps don't show it | WAITING ON OWNER: iPhone re-test of press feedback on /component/tabs/, /component/menubar/… | S (or none) | theme |
-| [296](backlog/296-combobox-list-drifts-from-its-input-on-ios-after.md) | Combobox list drifts from its input on iOS after long scrolling | OWNER RE-TEST 2026-10-26 (iPhone): still drifts; the list can also cover its input. Owner's… | M + device check | overlays |
+| [296](backlog/296-combobox-list-drifts-from-its-input-on-ios-after.md) | Combobox list drifts from its input on iOS after long scrolling | ROOT CAUSE FOUND 2026-10-28 (owner's iPhone runs of the device lab, iOS 18.7 Safari); fixed by row… | M + device check | overlays |
 | [305](backlog/305-side-drawer-scrolling-its-content-also-drags-the.md) | Side drawer: scrolling its content also drags the drawer sideways (iOS) | WAITING ON OWNER: iPhone re-test of the side drawer (scroll its content, the drawer must not drag… | S–M | primitives |
 | [371](backlog/371-dependency-evaluation-keep-lift-drop.md) | Dependency evaluation: keep, feature-gate, replace, lift or drop (rule of 2026-10-23) | BACKLOG: unparked by the owner 2026-10-24, stage 4 of the adopted order (after the structure rows… | S each outcome | build |
 | [372](backlog/372-scroll-fade-overlay-scrollbar-hybrid.md) | Scroll fade: transition the edge depths (landed) and paint the fade as gradients where the scrollbar is an overlay (deferred) | WAITING ON OWNER: part 1, the overlay-scrollbar hybrid, is deferred ("leave mask for now"); reopen… | M | primitives |
@@ -109,5 +109,11 @@ proposing one is closed as out of scope (row 337 is the first).
 | [474](backlog/474-bug-input-otp-paste-loses-digits-to-maxlength.md) | Bug: Input OTP paste loses digits because maxlength truncates before the filter runs | APPROVED 2026-10-26 by the owner ("Ok for the rest", backlog thread); for the next session (owner… | S | inputs |
 | [475](backlog/475-bug-resizable-and-slider-drag-frames-leak-into-the-next-drag-on-desktop.md) | Bug: Resizable and Slider on desktop: a previous drag's queued per-move frames can land in the next drag | APPROVED 2026-10-26 by the owner ("Ok for the rest", backlog thread); for the next session (owner… | S | components |
 | [476](backlog/476-ios-checkbox-and-radio-taps-lag-on-the-home-page.md) | iOS: checkbox and radio taps lag about a second on the home page (Filter results demo, Radio Group card) | BACKLOG. Owner report 2026-10-26 (iPhone); the next session reproduces with touch emulation and CPU… | M | components |
+| [477](backlog/477-anchored-overlays-placed-in-document-coordinates.md) | Anchored overlays are placed in document coordinates (absolute top-layer panels, transform-only), CSS anchoring kept where supported | BACKLOG. Measured on the owner's iPhone (iOS 18.7 Safari) on 2026-10-28; the owner's verdict on the… | L | overlays |
+| [478](backlog/478-overlay-defaults-to-base-ui.md) | Overlay and control defaults follow Base UI (menu check items, Combobox keys, Tooltip, NavigationMenu timing, Select, carousel RTL) | BACKLOG. OWNER QUESTION open: the Select default (Detail). From the scan of 2026-10-28. Each item… | S each | overlays |
+| [479](backlog/479-scroll-lock-method-and-the-touch-carve-out.md) | Scroll-lock method: Base UI's overflow:hidden with scrollbar-gutter, and no lock for touch-opened anchored popups | BACKLOG. OWNER QUESTION open: Menubar modal (Detail). From the scan of 2026-10-28. Row 477 removes… | M | overlays |
+| [480](backlog/480-re-diff-keyboard-inset-against-base-ui-1-9-0.md) | Re-diff primitives/src/keyboard_inset.rs against Base UI 1.9.0 | BACKLOG. From the scan of 2026-10-28. | M | overlays |
+| [481](backlog/481-state-attributes-one-helper-emits-data-state-and-presence.md) | State attributes: one helper emits data-state and Base UI presence attributes | BACKLOG. From the scan of 2026-10-28. | M | primitives |
+| [482](backlog/482-control-gaps-slider-form-participation-read-only-and-small-attributes.md) | Control gaps: Slider form participation, read_only, Toggle data-pressed, Tabs activate_on_focus | BACKLOG. From the scan of 2026-10-28. | S-M | components |
 
 <!-- END GENERATED -->

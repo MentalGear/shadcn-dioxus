@@ -6,7 +6,7 @@ size: "L"
 area: overlays
 js-grant: js_file=124 (relocated lines, root doc section 5.4; the main loop's grant row at the merge base is the number the gate reads)
 adds: [openFocus]
-updated: 2026-10-26
+updated: 2026-10-28
 ---
 
 # Row 456: Port 3.OV: overlay core (L1-L3, L5-L9, L16-L17, L22, L26) with openFocus
@@ -27,6 +27,7 @@ L
 
 ## Detail
 
+- **Row 477 lands first (2026-10-28).** Outside dismiss on touch becomes a tap (pointerdown while open, pointerup within 10 px, pointercancel drops it) in `use_outside_dismiss`, and the scroll-close machinery goes; port that behaviour, not the pointerdown-plus-focusin form. Row 478 also changes Tooltip, HoverCard and menu defaults that this row's L22 touches. See [row 477](./477-anchored-overlays-placed-in-document-coordinates.md) and [row 478](./478-overlay-defaults-to-base-ui.md).
 - **Files owned:** `lib.rs` (after phase 0), `dialog.rs` (L6's `DialogContentNonModal` caller only), `menu_sub.rs`, `navigation_menu.rs`, `navbar.rs`, `hover_intent.rs`, `date_picker/context.rs`, Select's trigger file (one line), `modality.rs` (the `dxOpenFocus`/`dxCloseFocus` lines; 3.PW edits the writer after this lane), `ts/behaviours/open_focus.ts`, `bridge/behaviours/open_focus.rs`, `primitives/conformance/behaviours/open_focus.json`, `ts/behaviours/hotkey.ts`, `bridge/behaviours/hotkey.rs` and `primitives/conformance/behaviours/hotkey.json` (only if L6's witness is red and 3.GS has not built them). Must not touch `top_layer/*`.
 - **Depends on:** [row 449](./449-phase-0-4-proof-port-b-the-executor-and-popover-spreads.md) (modal executor), [row 448](./448-phase-0-3-proof-port-a-focus-trap-and-otpfilter.md) (`lib.rs` order), [row 447](./447-phase-0-7-the-order-runtime.md) (focus owner), [row 444](./444-gate-half-of-lane-3-0b-grants-bans-and-witness-presence.md); an `adds: [openFocus]` row (and `[hotkey]` if L6's witness is red and this row builds it first).
 - **Proof:** The witness per `openFocus` effect; nested-layer and Escape specs, `touch-open-focus.spec.ts`, native-dialog specs on a release build.

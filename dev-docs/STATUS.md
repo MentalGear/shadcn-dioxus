@@ -4,7 +4,7 @@
 the page as stale and check `git log` and the flag files named here.** What each batch contained is in `git log` and the
 backlog row files, not here: this page says only what is deployed, what runs, what is next and what waits for the owner.
 
-Last updated: **2026-10-26**. Several sessions work in parallel; who holds what is on the `claims` branch (`CLAIMS.md`).
+Last updated: **2026-10-28**. Several sessions work in parallel; who holds what is on the `claims` branch (`CLAIMS.md`).
 Preview site: https://mentalgear.github.io/shadcn-dioxus/ (deployed from main `4afa18c2`, PR #155, merge queue batch 29).
 
 ## Where a fresh session picks up
@@ -38,8 +38,8 @@ then the final review. Rows in one step are independent unless a row says otherw
 
 1. Bugs and approved fixes (owner 2026-10-26), each reproduced first: **468** (form reset desync), **474** (Input OTP
    paste), **473** (date picker segments), **471** and **475** (desktop only; reasoned from code, since the sandbox has no
-   desktop build), **390** (theme preset split; the one item that changes CSS users write), **296** (iPhone Combobox drift:
-   place it the way Menubar and Popover are placed), **476** (iPhone checkbox and radio tap lag on the home page) and
+   desktop build), **390** (theme preset split; the one item that changes CSS users write), **477** (anchored overlays placed in document coordinates;
+   measured on the owner's iPhone 2026-10-28, closes **296**, the iPhone Combobox drift, and comes before 452 and 456), **476** (iPhone checkbox and radio tap lag on the home page) and
    **472** (chart tooltip fade). **469** only on the owner's word.
 2. Structure: **435** (one menu engine behind DropdownMenu, ContextMenu and Menubar; before the plan, so the overlay port,
    row 456, ports one engine instead of three), then **436** (code-quality review of the refactored code).
@@ -47,7 +47,8 @@ then the final review. Rows in one step are independent unless a row says otherw
    directory) and **266** part (c) (`cargo public-api` report with a diff gate).
 4. Docs on the settled API: **392**, **394**, **399**, **422**, then the standing review **387**.
 5. Tests: the **152** suite prune (before the plan adds its specs).
-6. At any point: **153**, **268**, **170**.
+6. At any point: **153**, **268**, **170**, and the Radix-versus-Base-UI scan rows ([`research/radix-vs-base-ui-2026-10-28.md`](./research/radix-vs-base-ui-2026-10-28.md)): **478** (overlay defaults), **479**
+   (scroll-lock method), **480** (keyboard inset re-diff), **481** (state attributes) and **482** (control gaps).
 
 **The JavaScript plan** (row **434**; approved 2026-10-26 with scope 2). The whole plan is recorded, not only its first
 step: the decided plan is [`research/sync-js-root-2026-10-26.md`](./research/sync-js-root-2026-10-26.md) (with
@@ -77,7 +78,11 @@ ports), its working form is [`js-interop.md`](./js-interop.md), and every item h
   (GitHub Actions pinned to SHAs).
 - For the measured ports (row 443): which devices the owner has (Mac, iPhone and iOS version, Windows or Android).
 - Row 469: start or drop (pre-hydration typing: autofill, back/forward form restoration, fast typing on a slow phone).
-- iPhone re-tests: rows 28, 30, 295 and 305 (307 is closed; 296 is in Next).
+- iPhone re-tests: rows 28, 30, 295 and 305 (307 is closed; 296 is fixed by 477, which is in Next).
+- Owner questions from the Radix-versus-Base-UI scan (2026-10-28): (1) Select default: both shadcn variants default to
+  item-aligned, ours to popper (row 478, row 268); (2) Menubar modal: Base UI locks scroll and shows a backdrop, ours is
+  unlocked, the Radix model (row 479); (3) `as` (Radix `asChild` semantics, row 395) against base-nova's `render` prop for
+  badge, item, sidebar, breadcrumb, attachment, bubble and marker; the main loop recommends keeping `as`.
 - Enable private vulnerability reporting on the repository ([`SECURITY.md`](../SECURITY.md) names it).
 - Remote branch deletion: the owner said go (2026-10-26), but this environment's proxy refuses deletes; the owner runs
   the command from their own machine (`/mnt/project-files/handoff/merged-remote-branches-2026-10-26.txt`, 262 merged
