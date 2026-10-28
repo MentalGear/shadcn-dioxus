@@ -19,6 +19,9 @@ struct TabsContext {
     set_value: Callback<String>,
     disabled: ReadSignal<bool>,
 
+    // Whether moving focus onto a tab also activates it
+    activate_on_focus: ReadSignal<bool>,
+
     // Whether inactive panels stay mounted as `hidden="until-found"`
     hidden_until_found: ReadSignal<bool>,
 
@@ -53,6 +56,15 @@ pub struct TabsProps {
     /// Whether the tabs are disabled.
     #[props(default)]
     pub disabled: ReadSignal<bool>,
+
+    /// Whether moving focus onto a tab also activates it (automatic activation): an arrow key,
+    /// `Home` or `End` selects the tab it lands on, as Radix does by default.
+    ///
+    /// Defaults to false, which is manual activation: focus only moves, and `Enter`, `Space` or a
+    /// click activates the focused tab. Manual activation suits panels that are slow to render or
+    /// that load data; automatic activation suits panels that appear instantly.
+    #[props(default)]
+    pub activate_on_focus: ReadSignal<bool>,
 
     /// Whether the tabs are horizontal (the default). `false` is the vertical orientation: the
     /// list's [`TabTrigger`]s move focus with `ArrowUp`/`ArrowDown` instead of
@@ -159,6 +171,7 @@ pub fn Tabs(props: TabsProps) -> Element {
         value: value.into(),
         set_value,
         disabled: props.disabled,
+        activate_on_focus: props.activate_on_focus,
         hidden_until_found: props.hidden_until_found,
 
         focus,
@@ -379,14 +392,26 @@ pub fn TabTrigger(props: TabTriggerProps) -> Element {
             disabled: disabled(),
 
             onmounted,
-            onclick: move |_| {
+            onclick: {
                 let value = props.value.clone();
-                if !selected() {
-                    ctx.set_value.call(value);
+                move |_| {
+                    if !selected() {
+                        ctx.set_value.call(value.clone());
+                    }
                 }
             },
 
-            onfocus: move |_| ctx.focus.set_focus(Some(index())),
+            onfocus: {
+                let value = props.value.clone();
+                move |_| {
+                    ctx.focus.set_focus(Some(index()));
+                    // Automatic activation: a focus that lands on an inactive, enabled tab
+                    // selects it.
+                    if (ctx.activate_on_focus)() && !disabled() && !selected() {
+                        ctx.set_value.call(value.clone());
+                    }
+                }
+            },
 
             onkeydown: move |event: Event<KeyboardData>| {
                 let key = event.key();
