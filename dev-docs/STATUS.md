@@ -79,10 +79,11 @@ ports), its working form is [`js-interop.md`](./js-interop.md), and every item h
 - For the measured ports (row 443): which devices the owner has (Mac, iPhone and iOS version, Windows or Android).
 - Row 469: start or drop (pre-hydration typing: autofill, back/forward form restoration, fast typing on a slow phone).
 - iPhone re-tests: rows 28, 30, 295 and 305 (307 is closed; 296 is fixed by 477, which is in Next).
-- Owner questions from the Radix-versus-Base-UI scan (2026-10-28): (1) Select default: both shadcn variants default to
-  item-aligned, ours to popper (row 478, row 268); (2) Menubar modal: Base UI locks scroll and shows a backdrop, ours is
-  unlocked, the Radix model (row 479); (3) `as` (Radix `asChild` semantics, row 395) against base-nova's `render` prop for
-  badge, item, sidebar, breadcrumb, attachment, bubble and marker; the main loop recommends keeping `as`.
+- Owner question from the Radix-versus-Base-UI scan (2026-10-28): (3) `as` (Radix `asChild` semantics, row 395) against
+  base-nova's `render` prop for badge, item, sidebar, breadcrumb, attachment, bubble and marker; the main loop recommends
+  keeping `as`.
+- Decided 2026-10-28: Select defaults to item-aligned (row 478); overlays stay open while scrolling and Menubar does not
+  lock (rows 477, 479).
 - Enable private vulnerability reporting on the repository ([`SECURITY.md`](../SECURITY.md) names it).
 - Remote branch deletion: the owner said go (2026-10-26), but this environment's proxy refuses deletes; the owner runs
   the command from their own machine (`/mnt/project-files/handoff/merged-remote-branches-2026-10-26.txt`, 262 merged
