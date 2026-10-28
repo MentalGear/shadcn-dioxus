@@ -66,7 +66,7 @@ primitives/src/drawer.rs	0	136	0	3	0	0
 primitives/src/hover_intent.rs	0	10	0	1	0	0
 primitives/src/input_otp.rs	1	59	0	2	0	0
 primitives/src/js_listener.rs	1	7	0	0	0	0
-primitives/src/keyboard_inset.rs	0	90	0	1	0	0
+primitives/src/keyboard_inset.rs	0	88	0	1	0	0
 primitives/src/label.rs	0	8	0	1	0	0
 primitives/src/lib.rs	5	211	0	5	0	0
 primitives/src/menu_sub.rs	0	7	0	1	0	0

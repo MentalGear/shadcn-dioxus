@@ -79,8 +79,8 @@ async function keyboard(page: Page, kb: Kb) {
   await page.evaluate((k) => (window as any).__dxKb.set(k), kb);
 }
 
-/** The largest inline `padding-bottom` among the focused field's ancestors: the helper's scroll slack
- * (a demo's own inline padding is 0 to 16px; the slack is at least 48px). */
+/** The largest inline `padding-bottom` among the focused field's ancestors: the helper's scroll room
+ * (a demo's own inline padding is 0 to 16px; the helper adds `overlap + 16px` or nothing). */
 const slackPx = (page: Page) =>
   page.evaluate(() => {
     let max = 0;
@@ -334,12 +334,44 @@ for (const c of CASES) {
       // `preventScroll`: the browser's own focus scroll would make this pass without the helper.
       await field.evaluate((el) => (el as HTMLElement).focus({ preventScroll: true }));
       await expectFieldVisible(page, panel, field);
-      // The slack that let it reach the middle is inline padding on a scroller, gone with the keyboard.
-      const padded = await slackPx(page);
-      expect(padded).toBeGreaterThanOrEqual(48);
+      // The panel ends above the keyboard (the stylesheet contract), so nothing is covered and the
+      // helper adds no scroll room: no inline padding grows beyond a demo's own.
+      expect(await slackPx(page)).toBeLessThan(48);
       await keyboard(page, { height: 0 });
       await page.locator("#kb-above").evaluate((el) => el.remove());
-      await expect.poll(() => slackPx(page)).toBeLessThan(48);
+      await expectAtRest(panel, rest);
+    });
+
+    test("a scroller the keyboard covers gets exactly the covered height plus 16px of scroll room, removed with the keyboard", async ({
+      page,
+    }) => {
+      const panel = await openIt(page);
+      const field = c.field(panel);
+      const rest = await panelState(panel);
+      // A scroller that is taller than the visible band: its bottom edge lies under the keyboard.
+      await field.evaluate((el) => {
+        const box = document.createElement("div");
+        box.id = "kb-scroller";
+        box.style.cssText = "flex: none; box-sizing: border-box; height: 1200px; overflow-y: auto; padding-bottom: 4px;";
+        el.parentElement!.insertBefore(box, el);
+        box.appendChild(el);
+      });
+      const scrollerLocator = panel.locator("#kb-scroller");
+      await keyboard(page, { height: 336 });
+      await expect(panel).toHaveAttribute("data-dx-keyboard", "open");
+      await field.evaluate((el) => (el as HTMLElement).focus({ preventScroll: true }));
+      // Scroll room = what the keyboard covers of the scroller + max(its own padding, 16px).
+      await expect
+        .poll(async () => {
+          const b = await band(page);
+          const bottom = (await rectOf(scrollerLocator)).bottom;
+          const padding = await scrollerLocator.evaluate((el) => parseFloat((el as HTMLElement).style.paddingBottom || "0"));
+          return Math.abs(padding - (Math.max(0, bottom - b.bottom) + 16)) <= 1.5;
+        })
+        .toBe(true);
+      await keyboard(page, { height: 0 });
+      await expect.poll(() => scrollerLocator.evaluate((el) => (el as HTMLElement).style.paddingBottom)).toBe("4px");
+      await scrollerLocator.evaluate((box) => box.replaceWith(...Array.from(box.childNodes)));
       await expectAtRest(panel, rest);
     });
 
