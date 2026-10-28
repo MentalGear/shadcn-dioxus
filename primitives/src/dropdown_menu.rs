@@ -1150,10 +1150,10 @@ pub type DropdownMenuRadioItemProps = MenuRadioItemProps;
 ///
 /// Controlled with `checked` + `on_checked_change`, or uncontrolled with
 /// `default_checked`. Clicking it, or pressing Enter or Space while it has
-/// focus, toggles it. Like Radix's `onSelect` default, that **closes the
-/// menu**; set `close_on_select: false` to keep the menu open so several
-/// items can be toggled in one visit (the optional APG behaviour for Space:
-/// "changes the state without closing the menu"). Disabled items cannot be
+/// focus, toggles it. Like Base UI's `closeOnClick = false`, that **keeps the
+/// menu open** so several items can be toggled in one visit (APG: "changes the
+/// state without closing the menu"); set `close_on_select: true` for Radix's
+/// `onSelect` behaviour, which closes it. Disabled items cannot be
 /// toggled and are skipped by arrow keys and typeahead. A checkbox item has
 /// no `value`, so give it a `text_value` to make it a typeahead target.
 ///
@@ -1175,7 +1175,6 @@ pub type DropdownMenuRadioItemProps = MenuRadioItemProps;
 ///                 DropdownMenuCheckboxItem {
 ///                     checked: Some(show_status_bar()),
 ///                     on_checked_change: move |checked| show_status_bar.set(checked),
-///                     close_on_select: false,
 ///                     text_value: "Status Bar",
 ///                     "Status Bar"
 ///                 }
@@ -1252,8 +1251,8 @@ pub fn DropdownMenuRadioGroup(props: DropdownMenuRadioGroupProps) -> Element {
 /// `DropdownMenuRadioItem`. Renders `role="menuitemradio"` with an
 /// always-present `aria-checked`; it is checked while the group's value
 /// equals its own `value`, and choosing it (click, Enter or Space) sets the
-/// group's value and, like Radix's `onSelect` default, **closes the menu**
-/// unless `close_on_select` is `false`. Falls back to `value` as its
+/// group's value and, like Base UI's `closeOnClick = false`, **keeps the menu
+/// open** unless `close_on_select` is `true`. Falls back to `value` as its
 /// typeahead label. Disabled items cannot be chosen and are skipped by arrow
 /// keys and typeahead.
 ///

@@ -5,16 +5,16 @@ use dioxus::prelude::*;
 /// disabled. Controlled (`checked` + `on_checked_change`) -- an uncontrolled
 /// item's state lives in the item, and the menu content unmounts when it
 /// closes, so state that must survive a close has to be held by the caller --
-/// and keeping the menu open after each toggle (`close_on_select: false`) so
-/// several can be toggled in one visit. The primitive's own default is
-/// Radix's `onSelect` one (selecting closes the menu); `main` shows that.
+/// and keeping the menu open after each toggle (the default, Base UI's
+/// `closeOnClick = false`) so several can be toggled in one visit; `main`
+/// shows the `close_on_select: true` opt-in.
 /// `text_value` is set because a checkbox item has no `value` to make it a
 /// typeahead target.
 ///
 /// A "More options" submenu holds two more checkbox items, to show that a
 /// checkable item works inside a submenu (it registers in that submenu's own
 /// roving-focus collection, not the root's): "Word Wrap" keeps the menu open
-/// like the rest; "Minimap" uses the primitive's default, so choosing it
+/// like the rest; "Minimap" sets `close_on_select: true`, so choosing it
 /// closes the whole menu tree.
 ///
 /// The labels ("Right click for checkboxes"/"Show Bookmarks Bar"/...) differ
@@ -36,21 +36,18 @@ pub fn Demo() -> Element {
                 ContextMenuCheckboxItem {
                     checked: Some(bookmarks()),
                     on_checked_change: move |checked| bookmarks.set(checked),
-                    close_on_select: false,
                     text_value: "Show Bookmarks Bar",
                     "Show Bookmarks Bar"
                 }
                 ContextMenuCheckboxItem {
                     checked: Some(full_urls()),
                     on_checked_change: move |checked| full_urls.set(checked),
-                    close_on_select: false,
                     text_value: "Show Full URLs",
                     "Show Full URLs"
                 }
                 ContextMenuCheckboxItem {
                     checked: Some(developer_tools()),
                     on_checked_change: move |checked| developer_tools.set(checked),
-                    close_on_select: false,
                     disabled: true,
                     text_value: "Show Developer Tools",
                     "Show Developer Tools"
@@ -64,13 +61,13 @@ pub fn Demo() -> Element {
                         ContextMenuCheckboxItem {
                             checked: Some(word_wrap()),
                             on_checked_change: move |checked| word_wrap.set(checked),
-                            close_on_select: false,
                             text_value: "Word Wrap",
                             "Word Wrap"
                         }
                         ContextMenuCheckboxItem {
                             checked: Some(minimap()),
                             on_checked_change: move |checked| minimap.set(checked),
+                            close_on_select: true,
                             text_value: "Minimap",
                             "Minimap"
                         }
