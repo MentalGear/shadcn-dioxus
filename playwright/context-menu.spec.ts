@@ -306,17 +306,20 @@ test('touch tap outside closes the open menu', async ({ page }) => {
   await page.evaluate(({ x, y }) => {
     const target = document.elementFromPoint(x, y);
     if (!target) throw new Error('no element at outside point');
-    target.dispatchEvent(new PointerEvent('pointerdown', {
-      pointerId: 5050,
-      pointerType: 'touch',
-      isPrimary: true,
-      clientX: x,
-      clientY: y,
-      button: 0,
-      buttons: 1,
-      bubbles: true,
-      cancelable: true,
-    }));
+    // A touch dismiss is a tap: the press is recorded on pointerdown and decided on pointerup.
+    for (const type of ['pointerdown', 'pointerup']) {
+      target.dispatchEvent(new PointerEvent(type, {
+        pointerId: 5050,
+        pointerType: 'touch',
+        isPrimary: true,
+        clientX: x,
+        clientY: y,
+        button: 0,
+        buttons: type === 'pointerdown' ? 1 : 0,
+        bubbles: true,
+        cancelable: true,
+      }));
+    }
   }, { x: farX, y: farY });
 
   await expect(contextMenu).toHaveCount(0);

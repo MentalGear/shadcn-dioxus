@@ -108,6 +108,8 @@ const trigger = document.querySelector('[style*="anchor-name: --dxa-' + triggerI
 if (!list || !trigger) return;
 const MARGIN = 8;
 const GAP = 4;
+const put = writer(list);
+const origin = originOf(list);
 const clamp = (n, lo, hi) => Math.min(Math.max(n, lo), Math.max(lo, hi));
 const offsetIn = (el) => {
     let y = 0;
@@ -151,8 +153,7 @@ const place = () => {
     }
     top = clamp(top, lo, hi);
     const left = clamp(getComputedStyle(list).direction === 'rtl' ? a.r - cw : a.l, v.l + MARGIN, v.r - MARGIN - cw);
-    const dpr = window.devicePixelRatio || 1;
-    list.style.transform = 'translate(' + Math.round(left * dpr) / dpr + 'px, ' + Math.round(top * dpr) / dpr + 'px)';
+    setPlacement(put, snap(left), snap(top), false, false, origin);
     list.scrollTop = scroll;
     list.dataset.placed = 'true';
 };

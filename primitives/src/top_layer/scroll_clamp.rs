@@ -27,6 +27,15 @@ use super::*;
 /// (`visualViewport.offsetTop` is the visual viewport's top from the layout viewport's in every
 /// engine).
 ///
+/// **`setPlacement(put, x, y, up, back, origin)`** writes the placement `transform` (`translate(x, y)`,
+/// plus `translateY(-100%)` when `up` and `translateX(-100%)` when `back`) and moves the panel's
+/// `transform-origin` with it. The theme's open animation scales about the origin AFTER this
+/// translation (`translate`, `rotate`, `scale`, then `transform`), so an origin left on the panel's
+/// own box would scale the translation too and the panel would fly in from a point 5% nearer the
+/// document origin. `originOf(el)` reads the stylesheet's origin as percentages of the box, before
+/// any inline origin is written; `snap(n)` quantises a coordinate to 1/64 px, the layout unit, so
+/// float noise never reads as a change.
+///
 /// **`writer(el)`** returns `put(property, value)`, which sets an inline property only when it
 /// differs from the last value `put` wrote, so a frame that changes nothing writes nothing.
 #[cfg_attr(
@@ -59,6 +68,17 @@ function visible() {
 function docRect(el, v) {
     const r = el.getBoundingClientRect();
     return { l: r.left - v.ox, t: r.top - v.oy, r: r.right - v.ox, b: r.bottom - v.oy };
+}
+function snap(n) {
+    return Math.round(n * 64) / 64;
+}
+function originOf(el) {
+    const o = getComputedStyle(el).transformOrigin.split(' ').map(parseFloat);
+    return [100 * o[0] / (el.offsetWidth || 1) || 50, 100 * o[1] / (el.offsetHeight || 1) || 0];
+}
+function setPlacement(put, x, y, up, back, origin) {
+    put('transform', 'translate(' + x + 'px, ' + y + 'px)' + (up ? ' translateY(-100%)' : '') + (back ? ' translateX(-100%)' : ''));
+    put('transform-origin', 'calc(' + origin[0] + '% + ' + x + 'px' + (back ? ' - 100%' : '') + ') calc(' + origin[1] + '% + ' + y + 'px' + (up ? ' - 100%' : '') + ')');
 }
 function writer(el) {
     const memo = {};

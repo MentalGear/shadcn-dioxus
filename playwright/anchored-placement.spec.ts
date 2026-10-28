@@ -22,7 +22,6 @@ import { type Page } from "@playwright/test";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 import { readAtRest } from "./animations";
-import { fixedViewportBox } from "./viewport-box";
 import { stripAnchorSupportsBlock } from "./no-anchor-engine";
 
 const FIXTURE = `${BASE_URL}/component/top_layer/`;
@@ -235,21 +234,27 @@ test.describe("outside dismiss on touch is a tap", () => {
     test(`${overlay.name}: a touch scroll that starts outside leaves it open, a tap outside closes it`, async ({ page }) => {
       await prepare(page, overlay, false);
       const content = page.locator(`#${overlay.contentId}`);
-      const box = await fixedViewportBox(page);
-      const outside = { x: 12, y: Math.round(box.height) - 24 };
+      const outside = { x: 6, y: 300 };
       const cdp = await page.context().newCDPSession(page);
-      await cdp.send("Input.synthesizeScrollGesture", {
-        x: outside.x,
-        y: outside.y,
-        yDistance: -160,
-        speed: 600,
-        gestureSourceType: "touch",
-      });
+      const touch = (type: string, y?: number) =>
+        cdp.send("Input.dispatchTouchEvent", {
+          type,
+          touchPoints: y === undefined ? [] : [{ x: outside.x, y }],
+        });
+      const scrolledBefore = await page.evaluate(() => window.scrollY);
+      // a finger that starts outside and drags: the browser takes the gesture to scroll and cancels the pointer
+      await touch("touchStart", outside.y);
+      for (let i = 1; i <= 8; i++) {
+        await touch("touchMove", outside.y - i * 20);
+        await page.waitForTimeout(16);
+      }
+      await touch("touchEnd");
       await settle(page);
+      expect(await page.evaluate(() => window.scrollY), "the drag scrolled the page").not.toBe(scrolledBefore);
       await expect(content, "a touch scroll that began outside must not close it").toBeVisible();
       // a press that lifts in place is a tap
-      await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: outside.x, y: outside.y }] });
-      await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+      await touch("touchStart", outside.y);
+      await touch("touchEnd");
       await expect(content, "a tap outside closes it").toBeHidden();
     });
   }

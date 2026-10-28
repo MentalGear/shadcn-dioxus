@@ -48,14 +48,15 @@ const cs = getComputedStyle(content);
 const rtl = cs.direction === 'rtl';
 const ownH = parseFloat(cs.maxHeight) || Infinity;
 const ownW = parseFloat(cs.maxWidth) || Infinity;
-const dpr = window.devicePixelRatio || 1;
 const put = writer(content);
+let origin = [50, 0];
 let placed = false;
 let side = null;
 
 // Hands the panel to this script: absolute in the top layer, moved by `transform` alone.
 function take() {
     placed = true;
+    origin = originOf(content);
     put('position', 'absolute');
     put('inset', 'auto');
     put('margin', '0');
@@ -121,14 +122,13 @@ function reposition() {
     if (pt && V && x + cw > v.r - M) x = a.l - cw;
     if (V) x = Math.max(v.l + M, Math.min(x, v.r - M - cw));
     else y = Math.max(v.t + M, Math.min(y, v.b - M - ch));
-    const rnd = (n) => Math.round(n * dpr) / dpr;
-    put('transform', 'translate(' + rnd(side === 'left' ? a.l - GAP : x) + 'px, ' + rnd(side === 'top' ? a.t - GAP : y) + 'px)'
-        + (side === 'top' ? ' translateY(-100%)' : '') + (side === 'left' ? ' translateX(-100%)' : ''));
+    setPlacement(put, snap(side === 'left' ? a.l - GAP : x), snap(side === 'top' ? a.t - GAP : y),
+        side === 'top', side === 'left', origin);
 
     const hc = Math.round(Math.max(V ? room(side) : v.b - v.t - 2 * M, 0));
-    const wc = Math.round(Math.max(room(side), 0));
+    const wc = Math.round(Math.max(V ? v.r - v.l - 2 * M : room(side), 0));
     const tall = hc < Math.min(natH, ownH);
-    const wide = !V && wc < Math.min(natW, ownW);
+    const wide = wc < Math.min(natW, ownW);
     put('max-height', tall ? hc + 'px' : '');
     put('overflow-y', tall ? 'auto' : '');
     put('max-width', wide ? wc + 'px' : '');

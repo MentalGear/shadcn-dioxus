@@ -139,6 +139,9 @@ test('the plain top-level link is a real link', async ({ page }) => {
   await expect(page).toHaveURL(/\/docs/);
 });
 
+// The settled `transform` of a panel is its placement (`translate(x, y)`, a pure translation matrix) or the identity.
+const PLACEMENT_ONLY = /^(none|matrix\(1, 0, 0, 1, -?[\d.]+, -?[\d.]+\))$/;
+
 test.describe('Open animation never reflows the content', () => {
   // The invariant (backlog row 77): hovering to show menus must not reflow
   // the menu items' text, which means the width is never animated.
@@ -240,7 +243,7 @@ test.describe('Open animation never reflows the content', () => {
     // engine-injected rule (or the JS anchor-positioning fallback's own
     // inline `transform: none` -- see the guard comment above) were
     // still winning, this would also read as identity instead.
-    expect(['none', 'matrix(1, 0, 0, 1, 0, 0)']).toContain(settledTransform);
+    expect(settledTransform).toMatch(PLACEMENT_ONLY);
 
     // Flip `data-state` directly on the real, mounted element (bypassing
     // this primitive's own hover/focus lifecycle entirely) to isolate
@@ -268,8 +271,8 @@ test.describe('Open animation never reflows the content', () => {
     // `scale(0.98)` / `translateY(var(--dx-space-2))`, never the identity ("1" / "none" / "0px 0px").
     expect(settledClosed!.scale).toBe('0.98');
     expect(['none', '0px 0px', '0px']).not.toContain(settledClosed!.translate);
-    // ...and the element's own `transform` is not touched by it.
-    expect(settledClosed!.transform).toBe('none');
+    // ...and the element's own `transform` is not touched by it: it stays the placement translation.
+    expect(settledClosed!.transform).toMatch(PLACEMENT_ONLY);
   });
 });
 
