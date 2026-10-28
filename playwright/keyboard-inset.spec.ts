@@ -349,13 +349,12 @@ for (const c of CASES) {
       const field = c.field(panel);
       const rest = await panelState(panel);
       // A scroller that is taller than the visible band: its bottom edge lies under the keyboard.
-      const scroller = await field.evaluateHandle((el) => {
+      await field.evaluate((el) => {
         const box = document.createElement("div");
         box.id = "kb-scroller";
-        box.style.cssText = "flex: none; height: 1200px; overflow-y: auto; padding-bottom: 4px;";
+        box.style.cssText = "flex: none; box-sizing: border-box; height: 1200px; overflow-y: auto; padding-bottom: 4px;";
         el.parentElement!.insertBefore(box, el);
         box.appendChild(el);
-        return box;
       });
       const scrollerLocator = panel.locator("#kb-scroller");
       await keyboard(page, { height: 336 });
@@ -372,7 +371,7 @@ for (const c of CASES) {
         .toBe(true);
       await keyboard(page, { height: 0 });
       await expect.poll(() => scrollerLocator.evaluate((el) => (el as HTMLElement).style.paddingBottom)).toBe("4px");
-      await scroller.dispose();
+      await scrollerLocator.evaluate((box) => box.replaceWith(...Array.from(box.childNodes)));
       await expectAtRest(panel, rest);
     });
 
