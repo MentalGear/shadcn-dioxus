@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Overlay Lab v6</title>
+<title>Overlay Lab v7</title>
 <style>
 :root{--bg:#ffffff;--fg:#09090b;--muted:#6b6b76;--card:#ffffff;--popover:#ffffff;--border:#e4e4e7;--input:#c9c9d1;--secondary:#f4f4f5;--accent:#2563eb;--accent-fg:#ffffff;--pass:#15803d;--pass-bg:#dcfce7;--fail:#b91c1c;--fail-bg:#fee2e2;--warn:#92400e;--warn-bg:#fef3c7;--none:#52525b;--none-bg:#f4f4f5;--shadow:0 8px 24px rgb(0 0 0 / .18);color-scheme:light}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#09090b;--fg:#fafafa;--muted:#a1a1aa;--card:#111113;--popover:#1a1a1d;--border:#27272a;--input:#3f3f46;--secondary:#1c1c1f;--accent:#60a5fa;--accent-fg:#09090b;--pass:#4ade80;--pass-bg:#052e16;--fail:#f87171;--fail-bg:#450a0a;--warn:#fbbf24;--warn-bg:#422006;--none:#a1a1aa;--none-bg:#1c1c1f;--shadow:0 8px 24px rgb(0 0 0 / .6);color-scheme:dark}}
@@ -84,13 +84,13 @@ html.dx-lock,html.dx-lock body{overflow:hidden;overscroll-behavior:none}
 <body>
 <main class="wrap" id="lab">
   <div class="top">
-    <div><h1>Overlay Lab v6</h1><div class="sub mono" id="env"></div></div>
+    <div><h1>Overlay Lab v7</h1><div class="sub mono" id="env"></div></div>
     <button class="btn sm" id="theme-btn" type="button">Theme: auto</button>
   </div>
   <div class="note">
     <b>Placement rule P versus Floating UI (R)</b>
     Open a panel, scroll the page, then tap Smooth, Stutter or Detached for what you saw.
-    <div class="row"><label><input type="checkbox" id="meas" checked> Measure while open</label> <span class="sub">(untick to check whether any stutter persists without measuring)</span></div>
+    <div class="row"><label><input type="checkbox" id="meas" checked> Measure while open</label> <label><input type="checkbox" id="live-h" checked> Live list height while scrolling</label> <span class="sub">(untick to check whether any stutter persists without measuring)</span></div>
   </div>
 
   <div class="spacer" style="height:420px">scroll room</div>
@@ -173,7 +173,7 @@ html.dx-lock,html.dx-lock body{overflow:hidden;overscroll-behavior:none}
 <script>
 (function () {
 'use strict';
-var LAB_VERSION = 6, MAXF = 9000, STRIDE = 7, MF = new Float64Array(MAXF * STRIDE);
+var LAB_VERSION = 7, MAXF = 9000, STRIDE = 7, MF = new Float64Array(MAXF * STRIDE);
 var $ = function (id) { return document.getElementById(id); };
 var vv = window.visualViewport, dpr = window.devicePixelRatio || 1, T0 = performance.now();
 var rnd = function (v) { return Math.round(v * dpr) / dpr; };
@@ -226,7 +226,7 @@ function place(c, force) { /* rule P: choose a side, write only when it changes 
   else if (s === pr) want = (sp[pr] < c.nat && sp[ot] > sp[pr] + 24) ? ot : pr;
   else want = (sp[pr] >= c.nat + 24 || sp[pr] > sp[ot] + 24) ? pr : ot;
   if (want !== s) { c.side = want; if (s) c.flips++; force = true; }
-  if (!force) return;
+  if (!force) { if (c.liveH) W(c, c.el, 'maxHeight', Math.round(clamp(sp[want], 60, c.cap)) + 'px'); return; } /* live height: never a transform */
   var y = want === 'bottom' ? d.b + c.gap : d.t - c.gap;
   W(c, c.el, 'transform', 'translate(' + rnd(c.x) + 'px, ' + rnd(y) + 'px)' + (c.flipX ? ' translateX(-100%)' : '') + (want === 'top' ? ' translateY(-100%)' : ''));
   W(c, c.el, 'maxHeight', Math.round(clamp(sp[want], 60, c.cap)) + 'px');
@@ -281,7 +281,7 @@ function pcancel(e) { if (ptr && ptr.id === e.pointerId) ptr = null; }
 function open(o) {
   close();
   var c = cur = o, el = c.el;
-  c.writes = c.wScroll = c.flips = 0; c.side = null; c.maxTop = 0; c.minH = 1e9; c.t0 = performance.now(); el._s = {};
+  c.writes = c.wScroll = c.flips = 0; c.side = null; c.liveH = $('live-h').checked; c.maxTop = 0; c.minH = 1e9; c.t0 = performance.now(); el._s = {};
   if (c.lock) lock();
   if (c.arm === 'R') openR(c);
   else {
@@ -338,7 +338,7 @@ var RUNS = [], VERD = [];
 function median(a) { if (!a.length) return null; var s = a.slice().sort(function (x, y) { return x - y; }); return s[s.length >> 1]; }
 function finish(c) {
   samp(c);
-  var r = { card: c.card, arm: c.arm, measured: !!c.m, ms: Math.round(performance.now() - c.t0), writes: c.writes, writesScroll: c.wScroll, sideChanges: c.flips, side: c.side, maxVvTop: r1(c.maxTop), minVvH: c.minH > 1e8 ? null : r1(c.minH) };
+  var r = { card: c.card, arm: c.arm, measured: !!c.m, liveHeight: !!c.liveH, ms: Math.round(performance.now() - c.t0), writes: c.writes, writesScroll: c.wScroll, sideChanges: c.flips, side: c.side, maxVvTop: r1(c.maxTop), minVvH: c.minH > 1e8 ? null : r1(c.minH) };
   if (c.corner != null) r.cornerPx = r1(c.corner);
   if (c.align != null) r.alignPx = r1(c.align);
   if (c.m) {
@@ -492,7 +492,7 @@ function updateSendUI() {
 function buildDoc() {
   return {
     labVersion: LAB_VERSION, sentAt: new Date().toISOString(), sessionMs: Math.round(performance.now() - T0),
-    env: { ua: UA, uaShort: shortUA(), isFramed: FRAMED, cssAnchorPositioning: CSSAP, hasClaude: hasClaude, dpr: dpr, measureOn: $('meas').checked, maxTouchPoints: navigator.maxTouchPoints || 0, platform: navigator.platform || null,
+    env: { ua: UA, uaShort: shortUA(), isFramed: FRAMED, cssAnchorPositioning: CSSAP, hasClaude: hasClaude, dpr: dpr, measureOn: $('meas').checked, liveHeight: $('live-h').checked, maxTouchPoints: navigator.maxTouchPoints || 0, platform: navigator.platform || null,
       screen: { width: screen.width, height: screen.height }, inner: { width: innerWidth, height: innerHeight },
       visualViewport: vv ? { width: vv.width, height: vv.height, offsetTop: r1(vv.offsetTop), offsetLeft: r1(vv.offsetLeft), scale: vv.scale } : null,
       theme: document.documentElement.getAttribute('data-theme') || 'auto', floatingUi: typeof FloatingUIDOM !== 'undefined' },
