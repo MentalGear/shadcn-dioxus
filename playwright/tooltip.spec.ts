@@ -133,7 +133,7 @@ test.describe("delay / close_delay (backlog row 166)", () => {
     await button(page, "Default (0)").hover();
     await expect(surface(page)).toBeVisible();
     // Less than the default's 600 ms; no tighter bound, which would be a debug-build timing claim.
-    expect(elapsed(await readProbe(page), "mouseover", "surface:open")!).toBeLessThan(600);
+    expect(elapsed(await readProbe(page), "pointerover", "surface:open")!).toBeLessThan(600);
   });
 
   test("keyboard focus opens at once even with a delay", async ({ page }) => {
@@ -243,7 +243,7 @@ test.describe("Rich content layout (row 292)", () => {
 test.describe("Base UI defaults (backlog row 478)", () => {
   const URL = `${BASE_URL}/component/tooltip/`;
   const button = (page: Page, name: string) => page.getByRole("button", { name, exact: true });
-  const surface = (page: Page) => page.getByRole("tooltip");
+  const surface = (page: Page) => page.locator('[role="tooltip"][data-state="open"]');
 
   test("a press on the trigger closes the open tooltip and keeps it closed", async ({ page }) => {
     await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });

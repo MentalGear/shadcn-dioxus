@@ -486,7 +486,7 @@ test("Home and End move the caret in the input, never the list highlight, while 
     await expect(highlighted, "Home leaves the highlight where it was").toHaveText(before!);
 
     await page.keyboard.press("End");
-    expect(await caret(trigger), "End puts the caret after the last character").toEqual([10, 10]);
+    expect(await caret(trigger), "End puts the caret after the last character of SvelteKit").toEqual([9, 9]);
     await expect(highlighted, "End leaves the highlight where it was").toHaveText(before!);
     await expect(content(page), "the list stays open").toBeVisible();
 });

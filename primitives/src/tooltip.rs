@@ -262,13 +262,16 @@ pub fn TooltipTrigger(props: TooltipTriggerProps) -> Element {
 
     // A press on the trigger closes the tooltip (Base UI `closeOnClick`). The focus that the
     // same press moves onto the trigger must not reopen it: only keyboard focus opens a
-    // tooltip (Base UI `useFocus` `visibleOnly`), so the press marks the next focus as its own.
+    // tooltip (Base UI `useFocus` `visibleOnly`), so the press marks the next focus as its own and
+    // the `click` that ends the press (after the focus, also for a touch tap, whose compatibility
+    // mouse events follow `pointerup`) or a cancelled pointer clears the mark.
     let mut pressed = use_signal(|| false);
     let handle_pointer_down = move |_: PointerEvent| {
         pressed.set(true);
         ctx.timers.dismiss();
     };
-    let handle_pointer_up = move |_: PointerEvent| pressed.set(false);
+    let handle_press_end = move |_: Event<MouseData>| pressed.set(false);
+    let handle_pointer_cancel = move |_: PointerEvent| pressed.set(false);
     let handle_focus = move |_: Event<FocusData>| {
         if !*pressed.peek() {
             ctx.timers.focus();
@@ -294,8 +297,8 @@ pub fn TooltipTrigger(props: TooltipTriggerProps) -> Element {
         onpointerenter: handle_pointer_enter,
         onmouseleave: handle_mouse_leave,
         onpointerdown: handle_pointer_down,
-        onpointerup: handle_pointer_up,
-        onpointercancel: handle_pointer_up,
+        onclick: handle_press_end,
+        onpointercancel: handle_pointer_cancel,
         onfocus: handle_focus,
         onblur: handle_blur,
         onkeydown: handle_keydown,
