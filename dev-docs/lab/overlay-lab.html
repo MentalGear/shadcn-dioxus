@@ -91,6 +91,10 @@ textarea.field{min-height:90px;resize:vertical}
 .lg-e{color:var(--accent)}.lg-l{color:var(--pass)}.lg-a{color:var(--warn)}
 .p8.ghost{pointer-events:none;opacity:.62;outline-style:dashed;box-shadow:none}
 .p8.hidden-ghost{visibility:hidden}
+/* T9 */
+#t9-row{max-width:420px}
+.p9{--vc:var(--accent);font-size:13px;width:var(--dx-anchor-width,200px);max-height:min(300px,var(--dx-available-height,300px));overflow-y:auto;outline:2px solid var(--vc);z-index:2147483000}
+.p9 .vtag{font:700 10px/1.2 system-ui,sans-serif;letter-spacing:.03em;text-transform:uppercase;padding:2px 6px;margin:0 0 4px;border-radius:4px;display:inline-block;color:var(--bg);background:var(--vc)}
 /* T3 / T4 */
 #t3-area{min-height:200px;border:2px dashed var(--input);border-radius:12px;display:grid;place-items:center;text-align:center;padding:16px;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation;cursor:context-menu}
 #t3-pt{position:fixed;inset:auto;left:0;top:0;width:0;height:0;margin:0;padding:0;border:0;background:none;overflow:visible;pointer-events:none;anchor-name:--pt}
@@ -128,7 +132,7 @@ html.dx-lock,html.dx-lock body{overflow:hidden;overscroll-behavior:none}
   <div class="top">
     <div>
       <h1>Overlay Placement Lab</h1>
-      <div class="sub">Row 477 placement redesign, lab v3: tests the assumptions behind it on a real device.</div>
+      <div class="sub">Row 477 placement redesign, lab v4: tests the assumptions behind it on a real device.</div>
     </div>
     <button class="btn sm" id="theme-btn" type="button">Theme: auto</button>
   </div>
@@ -232,6 +236,37 @@ html.dx-lock,html.dx-lock body{overflow:hidden;overscroll-behavior:none}
     <div class="tw"><table><thead><tr><th>Host</th><th>Variant</th><th>Verdict</th><th>Frames</th><th>Drift max / med</th><th>Gap min&ndash;max</th><th>Drift at rest</th><th>Drift while moving</th><th>Stale at rest</th><th>Drift pinned top / bottom</th><th>Fixed landed &Delta; max</th><th>CB bottom shift</th><th>Covered max</th><th>vv.top max (frames &gt;0)</th><th>Min vv.h</th></tr></thead><tbody id="t8-body"></tbody></table></div>
     <div class="kv" id="t8-live"></div>
     <div class="vt" id="vt-t8">Open the Combobox and the Popover with the keyboard up and scroll. PASS needs the shipped variant (i) to hold the gap (drift &lt;= 2 px) on both hosts.</div>
+  </section>
+
+  <!-- T9 -->
+  <section class="card" id="t9">
+    <div class="ch"><h2>T9 &middot; Document-coordinate placement (Base UI hypothesis)</h2><span class="chip" data-chip="t9" data-v="none">NOT RUN</span></div>
+    <p class="what">Tests whether a list placed in <b>document coordinates</b> stays attached on iOS with the keyboard up, with no tracking code at all. Five ways to place the same list under one field, all measured every frame like T8: <b>A</b> the shipped engine (top layer, <code>position: fixed</code>, tracked with visualViewport offsets); <b>B</b> a top-layer popover with <code>position: absolute</code>, placed once when it opens; <b>C</b> a plain <code>div</code> in <code>body</code> with <code>position: absolute</code>, placed once; <b>D</b> Floating UI with <code>strategy: absolute</code> and <code>autoUpdate</code> (what Base UI does); <b>E</b> Floating UI with <code>strategy: fixed</code> (what Radix does). B and C listen to nothing but window resize. D and E need the Floating UI script from jsdelivr; if it does not load the arm says <i>unavailable</i>.</p>
+    <p class="how"><b>Phone:</b> Pick an arm, tap the field so the keyboard opens, then drag the page up and down. Press Looks attached or Detached. Do it for each arm. <b>Desktop:</b> no keyboard; scroll the page with the list open.</p>
+    <div class="row">
+      <div class="seg" role="radiogroup" aria-label="T9 arm">
+        <input type="radio" name="t9arm" id="t9-a-a" value="a" checked><label for="t9-a-a">A fixed-js</label>
+        <input type="radio" name="t9arm" id="t9-a-b" value="b"><label for="t9-a-b">B toplayer-abs-once</label>
+        <input type="radio" name="t9arm" id="t9-a-c" value="c"><label for="t9-a-c">C body-abs-once</label>
+        <input type="radio" name="t9arm" id="t9-a-d" value="d"><label for="t9-a-d">D floating-ui-abs</label>
+        <input type="radio" name="t9arm" id="t9-a-e" value="e"><label for="t9-a-e">E floating-ui-fixed</label>
+      </div>
+    </div>
+    <div class="row">
+      <button class="btn sm" id="t9-yes" type="button">Looks attached</button>
+      <button class="btn sm" id="t9-no" type="button">Detached</button>
+      <span id="t9-pos"></span>
+      <button class="btn sm" id="t9-close" type="button">Close</button>
+      <button class="btn sm" id="t9-reset" type="button">Reset stats</button>
+    </div>
+    <div class="spacer" style="height:36vh">scroll space above</div>
+    <div id="t9-row"><label for="t9-input" class="sub">Field (the list opens below it)</label>
+      <input class="field" id="t9-input" type="text" placeholder="Fruit..." autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done"></div>
+    <div id="t9-panels"></div>
+    <div class="spacer" style="height:46vh">scroll space below</div>
+    <div class="tw"><table><thead><tr><th>Arm</th><th>Verdict</th><th>Frames</th><th>Drift max / med</th><th>Gap min&ndash;max</th><th>Drift at rest</th><th>Drift while moving</th><th>Fixed landed &Delta; max</th><th>vv.top max (frames &gt;0)</th><th>Min vv.h</th><th>Looks attached / Detached</th></tr></thead><tbody id="t9-body"></tbody></table></div>
+    <div class="kv" id="t9-live"></div>
+    <div class="vt" id="vt-t9">Open each arm with the keyboard up and drag the page. PASS needs every placed-in-the-document arm (B to E) to hold the gap (drift &lt;= 2 px).</div>
   </section>
 
   <!-- T3 -->
@@ -354,11 +389,13 @@ html.dx-lock,html.dx-lock body{overflow:hidden;overscroll-behavior:none}
     <div id="send-status" role="status" aria-live="polite">Connecting to Claude&hellip;</div>
   </div>
 </main>
+<script src="https://cdn.jsdelivr.net/npm/@floating-ui/core@1.6.9/dist/floating-ui.core.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@floating-ui/dom@1.6.13/dist/floating-ui.dom.umd.min.js"></script>
 
 <script>
 (function () {
 'use strict';
-var LAB_VERSION = 3;
+var LAB_VERSION = 4;
 var $ = function (id) { return document.getElementById(id); };
 var r1 = function (n) { return Math.round(n * 10) / 10; };
 var r2 = function (n) { return Math.round(n * 100) / 100; };
@@ -392,8 +429,8 @@ function setVerdict(id, key, text, extra) {
   for (var i = 0; i < els.length; i++) { els[i].textContent = LABEL[key]; els[i].setAttribute('data-v', key); }
   var vt = $('vt-' + id); if (vt && text) vt.textContent = text;
 }
-var SUMMARY = [['t0', 'T0 Features'], ['t1css', 'T1 CSS + check'], ['t1jsev', 'T1 JS-event'], ['t1jssamp', 'T1 JS-sampled'], ['t2', 'T2 Popover+field'], ['t8', 'T8 vv offsets'], ['t3', 'T3 Context menu'], ['t4', 'T4 Submenu'], ['t5mc', 'T5 Over: CSS first'], ['t5mj', 'T5 Over: JS only'], ['t5lg', 'T5 Over: legacy'], ['t6', 'T6 Oversize'], ['t7', 'T7 Pinch-zoom']];
-var GO = { t0: 't0', t1css: 't1', t1jsev: 't1', t1jssamp: 't1', t2: 't2', t8: 't8', t3: 't3', t4: 't4', t5mc: 't5', t5mj: 't5', t5lg: 't5', t6: 't6', t7: 't7' };
+var SUMMARY = [['t0', 'T0 Features'], ['t1css', 'T1 CSS + check'], ['t1jsev', 'T1 JS-event'], ['t1jssamp', 'T1 JS-sampled'], ['t2', 'T2 Popover+field'], ['t8', 'T8 vv offsets'], ['t9', 'T9 Doc coords'], ['t3', 'T3 Context menu'], ['t4', 'T4 Submenu'], ['t5mc', 'T5 Over: CSS first'], ['t5mj', 'T5 Over: JS only'], ['t5lg', 'T5 Over: legacy'], ['t6', 'T6 Oversize'], ['t7', 'T7 Pinch-zoom']];
+var GO = { t0: 't0', t1css: 't1', t1jsev: 't1', t1jssamp: 't1', t2: 't2', t8: 't8', t9: 't9', t3: 't3', t4: 't4', t5mc: 't5', t5mj: 't5', t5lg: 't5', t6: 't6', t7: 't7' };
 $('summary').innerHTML = SUMMARY.map(function (s) { return '<button class="sum" type="button" id="sum-' + s[0] + '" data-go="' + GO[s[0]] + '"><span>' + s[1] + '</span><span class="chip" data-chip="' + s[0] + '" data-v="none">NOT RUN</span></button>'; }).join('');
 $('summary').addEventListener('click', function (e) { var b = e.target.closest('[data-go]'); if (b) $(b.getAttribute('data-go')).scrollIntoView({ block: 'start' }); });
 
@@ -986,6 +1023,147 @@ function renderT8() {
   setVerdict('t8', key, head + ' ' + parts.join(' ') + ' ' + notes.join(' '), ex);
 }
 
+/* ======================= T9 ======================= */
+var AN9 = { a: 'A fixed-js', b: 'B toplayer-abs-once', c: 'C body-abs-once', d: 'D floating-ui-abs', e: 'E floating-ui-fixed' };
+var AK9 = ['a', 'b', 'c', 'd', 'e'];
+var I9 = $('t9-input'), GAP9 = 4;
+var S9 = {}, V9 = [], U9 = { d: false, e: false }, O9 = { arm: null, panel: null, eng: null, stop: null, lastTop: null, movedAt: 0 };
+var FUI = window.FloatingUIDOM || null;
+function mkS9() { AK9.forEach(function (k) { S9[k] = mkCell(); }); }
+mkS9();
+log('t9', 'floating-ui', { loaded: !!FUI, keys: FUI ? Object.keys(FUI).slice(0, 12) : null });
+var arm9 = function () { return document.querySelector('input[name="t9arm"]:checked').value; };
+function panelHtml9(k) {
+  return '<span class="vtag">' + k.toUpperCase() + '</span>' + FR.slice(0, 8).map(function (f) { return '<div role="option" class="opt" data-v="' + f + '">' + f + '</div>'; }).join('');
+}
+function mkPanel9(k, popover) {
+  var P = document.createElement('div');
+  P.id = 't9-panel-' + k; P.className = 'pop p9'; P.setAttribute('role', 'listbox'); P.setAttribute('aria-label', 'Fruit ' + AN9[k]); P.setAttribute('data-arm9', k);
+  if (popover) P.setAttribute('popover', 'manual');
+  P.innerHTML = panelHtml9(k);
+  P.addEventListener('pointerdown', function (e) { e.preventDefault(); });
+  P.addEventListener('click', function (e) { var o = e.target.closest('[data-v]'); if (o) { I9.value = o.getAttribute('data-v'); close9(); } });
+  return P;
+}
+// document coordinates of the anchor's bottom-left, in the frame getBoundingClientRect uses plus the layout viewport's scroll offset
+function docPos9(P) {
+  var r = I9.getBoundingClientRect();
+  P.style.setProperty('--dx-anchor-width', r.width + 'px');
+  P.style.left = (r.left + window.scrollX) + 'px';
+  P.style.top = (r.bottom + GAP9 + window.scrollY) + 'px';
+}
+function fuiStart9(P, strategy) {
+  var closed = false;
+  var update = function () {
+    if (closed || !P.isConnected) return;
+    P.style.setProperty('--dx-anchor-width', I9.getBoundingClientRect().width + 'px');
+    FUI.computePosition(I9, P, { strategy: strategy, placement: 'bottom-start', middleware: [FUI.offset(GAP9), FUI.flip(), FUI.shift({ padding: 8 })] }).then(function (p) {
+      if (closed) return;
+      Object.assign(P.style, { position: p.strategy, left: p.x + 'px', top: p.y + 'px' });
+    });
+  };
+  P.style.position = strategy; P.style.left = '0px'; P.style.top = '0px';
+  var stop = FUI.autoUpdate(I9, P, update);
+  return function () { closed = true; stop(); };
+}
+function open9() {
+  if (O9.panel) return;
+  var k = arm9(), P, S = S9[k];
+  if ((k === 'd' || k === 'e') && !(FUI && FUI.computePosition && FUI.autoUpdate)) {
+    U9[k] = true; log('t9', 'unavailable', { arm: k }); touch(); return;
+  }
+  O9.arm = k; O9.lastTop = null; O9.eng = null; O9.stop = null;
+  var popover = k === 'a' || k === 'b', host = popover ? $('t9-panels') : document.body;
+  P = mkPanel9(k, popover); host.appendChild(P); O9.panel = P;
+  S.opens++; S.firstPending = true;
+  if (k === 'a') {
+    show(P);
+    O9.eng = Engine({ content: P, trigger: I9, side: 'bottom', align: 'start', gap: GAP9, mode: 'engine', cssFirst: false, events: true });
+    O9.eng.open();
+  } else if (k === 'b' || k === 'c') {
+    var place = function () { docPos9(P); };
+    P.style.position = 'absolute'; P.style.inset = 'auto'; P.style.margin = '0';
+    if (k === 'c') P.style.zIndex = '2147483000';
+    place(); if (k === 'b') show(P);
+    window.addEventListener('resize', place, { passive: true });
+    O9.stop = function () { window.removeEventListener('resize', place); };
+  } else {
+    O9.stop = fuiStart9(P, k === 'd' ? 'absolute' : 'fixed');
+  }
+  log('t9', 'open', { arm: k, vv: vvSnap() });
+  samp9.start(); touch();
+}
+function close9() {
+  var P = O9.panel; if (!P) return;
+  if (O9.eng) O9.eng.close();
+  if (O9.stop) O9.stop();
+  hide(P); P.remove();
+  O9.panel = null; O9.eng = null; O9.stop = null;
+  log('t9', 'close', { arm: O9.arm }); samp9.stop(); touch();
+}
+var samp9 = Sampler(null, function () {
+  var P = O9.panel, k = O9.arm; if (!P || !P.isConnected) return;
+  var now = performance.now(), ar = I9.getBoundingClientRect(), moved = O9.lastTop == null || Math.abs(ar.top - O9.lastTop) > 0.3;
+  O9.lastTop = ar.top; if (moved) O9.movedAt = now;
+  var atRest = now - O9.movedAt > 250, vp = vvRect(), S = S9[k];
+  var m = measureAttach(P, I9, GAP9), pr = P.getBoundingClientRect();
+  record(S, m, k === 'a' ? 'JS' : 'document', 't9', k);
+  if (m.gap < S.gapMin) S.gapMin = m.gap; if (m.gap > S.gapMax) S.gapMax = m.gap;
+  (atRest ? S.rest : S.move).add(m.drift);
+  if (k === 'a' && O9.eng) {
+    var st = O9.eng.state(), cbNow = vm().cbBottom;
+    if (st.pin === 'top' && st.wTop != null) { S.pinTop++; S.apply.add(Math.abs(pr.top - st.wTop)); }
+    else if (st.pin === 'bottom' && st.wBottom != null) { S.pinBottom++; S.apply.add(Math.abs(pr.bottom - (cbNow - st.wBottom))); }
+  }
+  if (vp.t > 0.5) S.vvTopFrames++; if (vp.t > S.vvTopMax) S.vvTopMax = vp.t;
+  S.ring.push([Math.round(now - T0), r1(vp.t), r1(vp.h), r1(ar.top), r1(ar.bottom), r1(pr.top), r1(pr.bottom), r1(m.gap), Math.round(window.scrollY)]);
+  if (S.ring.length > 80) S.ring.shift();
+});
+I9.addEventListener('focus', open9);
+I9.addEventListener('input', function () { if (!O9.panel) open9(); });
+I9.addEventListener('keydown', function (e) { if (e.key === 'Escape') close9(); });
+I9.addEventListener('focusout', function (e) { if (!(e.relatedTarget && O9.panel && O9.panel.contains(e.relatedTarget))) close9(); });
+I9.addEventListener('pointerdown', function () { if (!O9.panel && document.activeElement === I9) open9(); });
+$('t9-close').addEventListener('click', close9);
+$('t9-reset').addEventListener('click', function () { close9(); mkS9(); V9.length = 0; U9.d = U9.e = false; log('t9', 'reset'); touch(); });
+Array.prototype.forEach.call(document.querySelectorAll('input[name="t9arm"]'), function (r) { r.addEventListener('change', function () { var was = !!O9.panel; close9(); U9.d = U9.e = false; log('t9', 'arm', { arm: arm9() }); if (was && document.activeElement === I9) open9(); touch(); }); });
+[['t9-yes', 'attached'], ['t9-no', 'detached']].forEach(function (d) {
+  var b = $(d[0]);
+  // keep the field focused (and the keyboard up) while the button is pressed
+  b.addEventListener('mousedown', function (e) { e.preventDefault(); });
+  b.addEventListener('pointerdown', function (e) { if (e.pointerType !== 'touch') e.preventDefault(); });
+  b.addEventListener('click', function () {
+    var v = window.visualViewport, rec = { arm: O9.panel ? O9.arm : arm9(), verdict: d[1], t: Math.round(performance.now() - T0), vvOffsetTop: v ? r1(v.offsetTop) : null, panelOpen: !!O9.panel };
+    V9.push(rec); log('t9', 'human-verdict', rec); touch();
+  });
+});
+posButtons('t9-pos', 't9-row');
+var humanOf9 = function (k) { var y = 0, n = 0; V9.forEach(function (v) { if (v.arm === k) { if (v.verdict === 'attached') y++; else n++; } }); return { attached: y, detached: n }; };
+function renderT9() {
+  var rows = [], ex = { arms: {}, humanVerdicts: V9.slice(-60), floatingUi: { loaded: !!FUI, core: '1.6.9', dom: '1.6.13' }, ringColumns: ['tMs', 'vvOffsetTop', 'vvHeight', 'anchorTop', 'anchorBottom', 'panelTop', 'panelBottom', 'gap', 'scrollY'] };
+  var ran = [], bad = [], good = [], hum = {};
+  AK9.forEach(function (k) {
+    var S = S9[k], ok = S.frames >= 8, h = humanOf9(k), un = (k === 'd' || k === 'e') && (!FUI || U9[k]);
+    var key = !ok ? 'none' : (S.drift.max > 2 || h.detached > h.attached ? 'fail' : (S.covMax > 0.5 || S.overlapN ? 'warn' : 'pass'));
+    ex.arms[k] = Object.assign({ name: AN9[k], verdict: LABEL[key], unavailable: un, human: h }, cellSum(S));
+    if (ok) { ran.push(k); (key === 'fail' ? bad : good).push(k); }
+    hum[k] = h;
+    rows.push('<tr><td>' + AN9[k] + '</td><td>' + (un && !ok ? '<span class="chip" data-v="none">UNAVAILABLE</span>' : '<span class="chip" data-v="' + key + '">' + LABEL[key] + '</span>') + '</td><td>' + S.frames + '</td><td>' + f1(S.drift.max) + ' / ' + f1(S.drift.med()) + '</td><td>' + (S.frames ? f1(S.gapMin) + ' to ' + f1(S.gapMax) : '-') + '</td><td>' + f1(S.rest.max) + ' (' + S.rest.n + ')</td><td>' + f1(S.move.max) + ' (' + S.move.n + ')</td><td>' + (k === 'a' ? f1(S.apply.max) : '-') + '</td><td>' + f1(S.vvTopMax) + ' (' + S.vvTopFrames + ')</td><td>' + (S.vvMinH > 1e8 ? '-' : f1(S.vvMinH)) + '</td><td>' + h.attached + ' / ' + h.detached + '</td></tr>');
+  });
+  $('t9-body').innerHTML = rows.join('');
+  kv('t9-live', [['Floating UI script', FUI ? 'loaded' : 'not loaded (arms D, E unavailable)'], ['Human verdicts recorded', String(V9.length)], ['Open now', O9.panel ? AN9[O9.arm] : '-']]);
+  var docRan = ran.filter(function (k) { return k !== 'a'; }), docBad = bad.filter(function (k) { return k !== 'a'; });
+  var key = !ran.length ? 'none' : (docBad.length ? 'fail' : (docRan.length ? 'pass' : 'warn'));
+  var txt = !ran.length ? 'Open each arm with the keyboard up and drag the page.' : ran.map(function (k) { var S = S9[k], h = hum[k]; return AN9[k] + ': drift max ' + f1(S.drift.max) + ' px (rest ' + f1(S.rest.max) + ', moving ' + f1(S.move.max) + '), vv.top max ' + f1(S.vvTopMax) + ', people said ' + h.attached + ' attached / ' + h.detached + ' detached'; }).join('; ') + '.';
+  if (ran.length) {
+    if (!docRan.length) txt += ' Only the fixed-js control has run; try B to E.';
+    else if (!docBad.length) txt += (bad.indexOf('a') >= 0 ? ' The fixed-js control drifted while the document-coordinate arms held: the hypothesis holds.' : ' Every document-coordinate arm that ran held the gap.');
+    else txt += ' Drifted or called detached: ' + docBad.map(function (k) { return AN9[k]; }).join(', ') + '.';
+  }
+  if ((U9.d || U9.e || !FUI) && (S9.d.frames < 8 || S9.e.frames < 8)) txt += ' Floating UI arms unavailable (script did not load).';
+  setVerdict('t9', key, txt, ex);
+}
+
 /* ======================= T3 ======================= */
 var AREA = $('t3-area'), PT = $('t3-pt'), M3 = $('t3-menu'), SUB = $('t4-sub');
 var T3 = { opens: [], count: 0, owner: [], lastOpenT: 0, lastPath: '', paths: {} };
@@ -1335,7 +1513,7 @@ function renderT7() {
 }
 
 /* ======================= render loop ======================= */
-function renderAll() { renderT1(); renderT2(); renderT8(); renderT3(); renderT4(); renderT5(); renderT6(); renderT7(); }
+function renderAll() { renderT1(); renderT2(); renderT8(); renderT9(); renderT3(); renderT4(); renderT5(); renderT6(); renderT7(); }
 setInterval(function () {
   if (dirty) { dirty = false; try { renderAll(); } catch (e) { log('lab', 'render-error', String(e && e.message || e).slice(0, 120)); } }
   if (logDirty && $('log-details').open) { logDirty = false; $('log-pre').textContent = LOG.slice(-60).map(function (e) { return e.t + 'ms ' + e.test + ' ' + e.ev + (e.d !== undefined ? ' ' + JSON.stringify(e.d) : ''); }).join('\n'); }
