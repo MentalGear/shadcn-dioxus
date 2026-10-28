@@ -52,6 +52,8 @@ const put = writer(content);
 let origin = [50, 0];
 let placed = false;
 let side = null;
+let capped = false;
+let naturalWidth = 0;
 
 // Hands the panel to this script: absolute in the top layer, moved by `transform` alone.
 function take() {
@@ -112,7 +114,10 @@ function reposition() {
     }
 
     const natH = content.scrollHeight + ch - content.clientHeight;
-    const natW = content.scrollWidth + cw - content.clientWidth;
+    // Capped to a width, wrapping content reports the cap as its width: the natural width is the one
+    // measured while it was uncapped.
+    if (!capped) naturalWidth = content.scrollWidth + cw - content.clientWidth;
+    const natW = naturalWidth;
     const nat = V ? Math.min(natH, ownH) : Math.min(natW, ownW);
     const sp = room(SIDE), so = room(OPP);
     side = !side ? (sp >= nat || sp >= so ? SIDE : OPP)
@@ -129,6 +134,7 @@ function reposition() {
     const wc = Math.round(Math.max(V ? v.r - v.l - 2 * M : room(side), 0));
     const tall = hc < Math.min(natH, ownH);
     const wide = wc < Math.min(natW, ownW);
+    capped = wide;
     put('max-height', tall ? hc + 'px' : '');
     put('overflow-y', tall ? 'auto' : '');
     put('max-width', wide ? wc + 'px' : '');
