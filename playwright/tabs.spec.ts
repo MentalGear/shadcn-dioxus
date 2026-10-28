@@ -429,3 +429,42 @@ test.describe("the docs demo frame keeps its own chrome", () => {
     expect(await panel.evaluate((el) => getComputedStyle(el).backgroundColor)).not.toBe("rgba(0, 0, 0, 0)");
   });
 });
+
+// `activate_on_focus` (row 482): focus moving onto a tab activates it, with no Enter.
+test.describe("activate_on_focus", () => {
+  test("an arrow key, Home and End activate the tab they focus", async ({ page }) => {
+    await gotoHydrated(page, `${BASE_URL}/component/tabs/`);
+    const frame = page.locator("#component-preview-frame-activate_on_focus");
+    const account = frame.getByRole("tab", { name: "Account" });
+    const billing = frame.getByRole("tab", { name: "Billing" });
+    const team = frame.getByRole("tab", { name: "Team" });
+    await expect(account).toHaveAttribute("aria-selected", "true");
+
+    await account.focus();
+    await page.keyboard.press("ArrowRight");
+    await expect(billing).toBeFocused();
+    await expect(billing).toHaveAttribute("aria-selected", "true");
+    await expect(frame.getByRole("tabpanel")).toContainText("Review your plan");
+
+    await page.keyboard.press("End");
+    await expect(team).toBeFocused();
+    await expect(team).toHaveAttribute("aria-selected", "true");
+    await expect(account).toHaveAttribute("aria-selected", "false");
+
+    await page.keyboard.press("Home");
+    await expect(account).toHaveAttribute("aria-selected", "true");
+    await expect(frame.getByRole("tabpanel")).toContainText("Update your name");
+  });
+
+  test("the default stays manual: arrow keys move focus only", async ({ page }) => {
+    await gotoHydrated(page, `${BASE_URL}/component/tabs/`);
+    const frame = page.locator("#component-preview-frame");
+    const tab1 = frame.getByRole("tab", { name: "Tab 1" });
+    const tab2 = frame.getByRole("tab", { name: "Tab 2" });
+    await tab1.focus();
+    await page.keyboard.press("ArrowRight");
+    await expect(tab2).toBeFocused();
+    await expect(tab2).toHaveAttribute("aria-selected", "false");
+    await expect(tab1).toHaveAttribute("aria-selected", "true");
+  });
+});

@@ -73,3 +73,23 @@ test.describe("size (row 155 group 7)", () => {
     }
   });
 });
+
+// `read_only` (row 482): focusable and announced, but a click or Space changes nothing.
+test('a read-only switch keeps its state, stays focusable and is announced', async ({ page }) => {
+  await gotoHydrated(page, `${BASE_URL}/component/switch/`, { timeout: 20 * 60 * 1000, waitUntil: 'networkidle' });
+  const sw = page.locator('#component-preview-frame-read_only #switch-read-only');
+  await expect(sw).toHaveAttribute('data-state', 'checked');
+  await expect(sw).toHaveAttribute('aria-readonly', 'true');
+  await expect(sw).toHaveAttribute('data-readonly', '');
+  await expect(sw).toBeEnabled();
+
+  await sw.click();
+  await expect(sw).toBeFocused();
+  await expect(sw).toHaveAttribute('data-state', 'checked');
+  await page.keyboard.press('Space');
+  await expect(sw).toHaveAttribute('data-state', 'checked');
+  // A writable switch carries neither attribute.
+  const writable = page.locator('#component-preview-frame').getByRole('switch', { name: 'Airplane Mode', exact: true });
+  await expect(writable).not.toHaveAttribute('aria-readonly');
+  await expect(writable).not.toHaveAttribute('data-readonly');
+});
