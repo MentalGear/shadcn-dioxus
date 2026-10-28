@@ -14,7 +14,7 @@ pub fn Demo() -> Element {
         DemoForm {
             id: "slider-form",
             show_status: false,
-            style: "display: grid; gap: 1rem; width: 100%; max-width: 24rem;",
+            style: "display: grid; gap: 3rem; width: 100%; max-width: 24rem;",
             Slider {
                 label: "Volume",
                 name: "volume",

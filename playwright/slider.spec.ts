@@ -437,6 +437,8 @@ test.describe('slider in a form', () => {
 
     await page.mouse.move(start.x, start.y);
     await page.mouse.down();
+    // The drag begins once the press has resolved the track rect; moves sent before that are not a drag.
+    await expect(thumb).toHaveAttribute('data-dragging', 'true');
     await page.mouse.move(track.x + track.width * 0.6, start.y, { steps: 10 });
     await expect.poll(async () => Number(await thumb.getAttribute('aria-valuenow'))).toBeGreaterThan(50);
     // Mid-drag the value has moved, and nothing is committed yet.
