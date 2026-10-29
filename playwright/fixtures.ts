@@ -28,9 +28,63 @@
  * (`carousel-rewind-autoplay.spec.ts`'s hover-stops-rotation test and `top-layer.spec.ts`'s `pinNearTop`)
  * are unstable: an ambient smooth rule is a product defect, not a harness problem.
  *
- * The module stays as the one import point so a future
- * suite-wide fixture has a single place to live.
+ * WHAT THE FIXTURE DOES (backlog row 483). Every `locator.click()`, `hover()`, `tap()` and `dblclick()` whose target is
+ * inside an anchored panel (`[data-dx-anchored]`) first waits for that panel's animations to finish
+ * (`awaitAnchoredPanelSettled`, animations.ts): a retried action on a still-animating absolute panel scrolls the page
+ * and can flip the panel away from the pointer. A spec never settles by hand. A spec that measures the open animation
+ * itself, or acts on purpose while it runs, opts out with `test.use({ settleAnchoredPanels: false })` (a file, a
+ * `describe` or one test). Pages made by `browser.newContext()` are covered too: the wait is installed on the
+ * `Locator` class of the worker, once, not on the `page` fixture.
  */
-import { test, expect, devices } from "@playwright/test";
+import { test as base, expect, devices } from "@playwright/test";
+import type { Locator } from "@playwright/test";
+import { awaitAnchoredPanelSettled } from "./animations";
 
-export { test, expect, devices };
+const ACTIONS = ["click", "hover", "tap", "dblclick"] as const;
+const INSTALLED = Symbol.for("dx.anchoredPanelSettle");
+
+/** Whether the running test settles anchored panels; set per test by the `_anchoredPanelSettle` fixture (a worker runs one test at a time). */
+let settleEnabled = true;
+
+type ActionOptions = { timeout?: number } | undefined;
+
+/** Wraps the four actions on the `Locator` class; idempotent per worker process. */
+function installSettle(proto: Record<string | symbol, unknown>): void {
+  if (proto[INSTALLED]) return;
+  proto[INSTALLED] = true;
+  for (const action of ACTIONS) {
+    const original = proto[action] as (this: Locator, options?: ActionOptions) => Promise<void>;
+    proto[action] = async function (this: Locator, options?: ActionOptions): Promise<void> {
+      if (settleEnabled) await awaitAnchoredPanelSettled(this, options?.timeout);
+      return original.call(this, options);
+    };
+  }
+}
+
+export const test = base.extend<
+  { settleAnchoredPanels: boolean; _anchoredPanelSettle: void },
+  { _locatorSettle: void }
+>({
+  // The `Locator` class is not exported at runtime; one throwaway page in the worker's browser yields it.
+  _locatorSettle: [
+    async ({ browser }, use) => {
+      const context = await browser.newContext();
+      const page = await context.newPage();
+      installSettle(Object.getPrototypeOf(page.locator("html")));
+      await context.close();
+      await use();
+    },
+    { scope: "worker", auto: true },
+  ],
+  settleAnchoredPanels: [true, { option: true }],
+  _anchoredPanelSettle: [
+    async ({ settleAnchoredPanels }, use) => {
+      settleEnabled = settleAnchoredPanels;
+      await use();
+      settleEnabled = true;
+    },
+    { auto: true },
+  ],
+});
+
+export { expect, devices };

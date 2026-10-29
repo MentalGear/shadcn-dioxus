@@ -6,9 +6,9 @@
 # `playwright/fixtures.ts`, never straight from "@playwright/test".
 #
 # fixtures.ts is the suite's one import point for the runtime `test`/`expect`/
-# `devices`, and today a plain re-export (a suite-wide `scroll-behavior: auto
-# !important` override would hide the ambient-smooth navigation bug from every
-# spec, rows 110 and 228). The gate exists so a suite-wide fixture reaches
+# `devices`, and carries the suite-wide fixtures: the anchored-panel settle (row 483:
+# every click/hover/tap/dblclick inside `[data-dx-anchored]` waits for the panel's
+# animations). The gate exists so a suite-wide fixture reaches
 # every spec: a fixture only reaches tests declared through the extended `test`
 # object, so a spec that imports the stock one silently opts out. Type-only imports
 # (`import type { Page } ...`, `import { type Page } ...`) are fine.

@@ -53,20 +53,49 @@ export async function awaitAnimationsSettled(locator: Locator): Promise<void> {
 }
 
 /**
- * `locator.hover()` / `locator.click()` on an item of an anchored panel that has just opened, after the item's
- * animations settled. An anchored panel is absolute in the document (backlog row 477), so the page scroll
- * Playwright adds to a retried action ("element is not stable" while the open animation runs, then
- * `scrollIntoView` on the retry) carries the panel with it and can flip it to the other side of its trigger,
- * out from under the pointer. Acting on a settled item takes the first attempt, which scrolls nothing.
+ * Resolves once every finite animation inside the anchored panel(s) that contain `locator`'s element has finished
+ * (`getAnimations({ subtree: true })` on each `[data-dx-anchored]` ancestor, backlog row 432), and at once when the
+ * element is in no anchored panel. The shared fixture (`fixtures.ts`) runs it before every click, hover, tap and
+ * double click, so no spec settles by hand.
+ *
+ * WHY: an anchored panel is absolute in the document (backlog row 477), so the page scroll Playwright adds to a
+ * retried action ("element is not stable" while the open animation runs, then `scrollIntoView` on the retry) carries
+ * the panel with it and can flip it to the other side of its trigger, out from under the pointer. Acting on a settled
+ * panel takes the first attempt, which scrolls nothing. A real user is not affected: nothing scrolls the page on a click.
+ *
+ * Best effort by construction: it never throws. An element that is not there (or not unique) is left to the action,
+ * whose own wait and error say so; a panel that is still animating after 10 s is acted on anyway.
  */
-export async function hoverSettled(locator: Locator): Promise<void> {
-  await awaitAnimationsSettled(locator);
-  await locator.hover();
-}
-
-export async function clickSettled(locator: Locator): Promise<void> {
-  await awaitAnimationsSettled(locator);
-  await locator.click();
+export async function awaitAnchoredPanelSettled(locator: Locator, timeout?: number): Promise<void> {
+  const settle = () =>
+    locator.evaluateAll(async (els) => {
+      if (els.length !== 1) return els.length;
+      const panels: Element[] = [];
+      for (let p = els[0].closest("[data-dx-anchored]"); p; p = p.parentElement?.closest("[data-dx-anchored]") ?? null) panels.push(p);
+      if (panels.length === 0) return 1;
+      const frame = () => new Promise<void>((r) => requestAnimationFrame(() => r()));
+      // Two rAFs: the animation objects of a panel that just mounted do not exist until the next style recalc.
+      await frame();
+      await frame();
+      const deadline = performance.now() + 10_000;
+      for (;;) {
+        const unsettled = panels
+          .flatMap((panel) => panel.getAnimations({ subtree: true }))
+          .filter((a) => (a.playState === "running" || (a.playState as string) === "pending") && a.effect?.getComputedTiming().iterations !== Infinity);
+        if (unsettled.length === 0 || performance.now() > deadline) return 1;
+        await Promise.all(unsettled.map((a) => a.finished.catch(() => undefined)));
+        await frame();
+      }
+    });
+  try {
+    // `evaluateAll` does not wait; a panel item the click is about to wait for is waited for here, so the click finds it settled.
+    if ((await settle()) === 0) {
+      await locator.waitFor({ state: "attached", ...(timeout === undefined ? {} : { timeout }) });
+      await settle();
+    }
+  } catch {
+    // Left to the action: its own timeout or strict-mode error is the one the spec should see.
+  }
 }
 
 /**
