@@ -247,6 +247,7 @@ fn use_select_root(
             keep_trigger_focus.set(false);
         }
     });
+    let touch_open = use_signal(|| false);
     let ctx = use_context_provider(|| SelectContext {
         selectable,
         label,
@@ -258,7 +259,7 @@ fn use_select_root(
         required,
         direction,
         position,
-        touch_open: use_signal(|| false),
+        touch_open,
     });
 
     (ctx, open)
