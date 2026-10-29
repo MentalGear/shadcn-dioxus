@@ -5,11 +5,12 @@ the page as stale and check `git log` and the flag files named here.** What each
 backlog row files, not here: this page says only what is deployed, what runs, what is next and what waits for the owner.
 
 Last updated: **2026-10-29**. Several sessions work in parallel; who holds what is on the `claims` branch (`CLAIMS.md`).
-Preview site: https://mentalgear.github.io/shadcn-dioxus/ (deployed from main `4afa18c2`, PR #155, merge queue batch 29).
+Preview site: https://mentalgear.github.io/shadcn-dioxus/ (deployed from main `7d50e068`, PR #156, deploy commit `3896d87c`).
 
 ## Where a fresh session picks up
 
-Nothing runs and nothing is in the merge queue: every lane of the last session landed in batch 29 and is deployed. A new
+Nothing runs and nothing is in the merge queue: rows 477-482 (overlay placement, Base UI defaults, scroll lock, keyboard inset,
+state attributes, control gaps) landed in PR #156 and are deployed; their owner iPhone checks are open (row Status lines). A new
 session reads this page, then takes the first open row of "Next" below; each row file under [`backlog/`](./backlog/)
 says what to build, which files, its proof and its size. The rules are [`../CLAUDE.md`](../CLAUDE.md) and
 [`lane-rules.md`](./lane-rules.md); the owner's decisions are [`decisions.md`](./decisions.md).
@@ -25,8 +26,9 @@ batch of 4-5 into `queue/batch-N`, runs ONE full `scripts/run-gates.sh`, the rel
 
 ## Merged and deployed
 
-Merge queue batches 1-29 are on main (PRs #121-#155); batch 29 is deployed (main `4afa18c2`, release suite 3945
-passed, install smoke 82/82). What each batch carried is in `git log` and the row files under
+Merge queue batches 1-29 are on main (PRs #121-#155); PR #156 (rows 477-482, merged by session
+`session_01MsL6RCeq7QSe81nNBiuKP1` at the owner's request) is deployed (main `7d50e068`, release suite 4019 passed, 0 failed,
+install smoke 82/82). What each batch carried is in `git log` and the row files under
 [`backlog/done/`](./backlog/done/).
 
 ## Next
