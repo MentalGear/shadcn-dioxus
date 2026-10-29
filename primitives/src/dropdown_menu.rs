@@ -74,10 +74,6 @@ struct DropdownMenuContext {
     // exact bug this guards against if the two ever named different ids.
     content_id: Signal<String>,
 
-    // Whether the open menu should lock page scrolling. See
-    // dev-docs/plan.md Phase 3.2.
-    modal: ReadSignal<bool>,
-
     // Set just before a close caused by something *outside* the menu
     // (trigger/item blur), so `use_refocus_on_close_unless` (lib.rs) knows
     // not to yank focus back to the trigger for those closes. Reset to
@@ -144,11 +140,6 @@ pub struct DropdownMenuProps {
     /// Whether the dropdown menu is disabled. If true, the menu will not open and items will not be selectable.
     #[props(default)]
     pub disabled: ReadSignal<bool>,
-
-    /// Whether the open menu should lock page scrolling, matching Radix's
-    /// default. See dev-docs/plan.md Phase 3.2.
-    #[props(default = ReadSignal::new(Signal::new(true)))]
-    pub modal: ReadSignal<bool>,
 
     /// Whether focus should loop around when reaching the end.
     #[props(default = ReadSignal::new(Signal::new(true)))]
@@ -226,11 +217,6 @@ pub struct DropdownMenuProps {
 /// - `data-disabled`: Indicates if the dropdown menu is disabled. values are `true` or `false`.
 #[component]
 pub fn DropdownMenu(props: DropdownMenuProps) -> Element {
-    // See `DialogRoot`'s identical call for why this must be at the root,
-    // not only inside `use_scroll_lock` (reached via `ScrollLockGuard`,
-    // which mounts lazily inside `DropdownMenuContent`'s own open guard).
-    use_effect(crate::scroll_lock::ensure_scrollbar_gutter_baseline);
-
     let (open, set_open) = use_controlled(props.open, props.default_open, props.on_open_change);
     let direction = use_direction(props.dir);
     let direction_signal = use_direction_signal(direction);
@@ -256,7 +242,6 @@ pub fn DropdownMenu(props: DropdownMenuProps) -> Element {
         trigger_id,
         trigger,
         content_id,
-        modal: props.modal,
         interacted_outside,
         submenu_open_count,
         direction: direction_signal,
@@ -688,16 +673,6 @@ pub fn DropdownMenuContent(props: DropdownMenuContentProps) -> Element {
     // Mirrors `MenubarContent`'s identical call (`menubar.rs`).
     use_deferred_collection_focus(ctx.focus, ctx.initial_focus, render);
 
-    // Lock page scroll while the menu is open and modal, matching Radix's
-    // default. See dev-docs/plan.md Phase 3.2. `DropdownMenuContent` itself
-    // never unmounts (only the rendered content below does, via `render()`),
-    // so the lock is held by `ScrollLockGuard` -- a child mounted inside
-    // that same conditional -- rather than by this component directly; see
-    // that guard's doc comment.
-    let modal = ctx.modal;
-    let open = ctx.open;
-    let scroll_lock_active = use_memo(move || modal() && open());
-
     rsx! {
         if render() {
             DropdownMenuContentRendered {
@@ -706,7 +681,6 @@ pub fn DropdownMenuContent(props: DropdownMenuContentProps) -> Element {
                 align: props.align,
                 side_offset: props.side_offset,
                 attributes: props.attributes,
-                scroll_lock_active,
                 children: props.children,
             }
         }
@@ -754,8 +728,6 @@ fn DropdownMenuContentRendered(
     side_offset: u32,
     /// Extra HTML attributes for the menu's content element.
     attributes: Vec<Attribute>,
-    /// Whether page scrolling is locked while the menu is open. True only for an open modal menu.
-    scroll_lock_active: Memo<bool>,
     /// The menu items.
     children: Element,
 ) -> Element {
@@ -816,18 +788,6 @@ fn DropdownMenuContentRendered(
         align,
         side_offset,
     );
-    // A menu that does NOT lock the page (`modal: false`) closes on any
-    // scroll instead (`top_layer::use_close_on_scroll`'s doc); a locking one
-    // keeps its `ScrollLockGuard` below.
-    let scroll_close_active = use_memo(move || open() && !scroll_lock_active());
-    crate::top_layer::use_close_on_scroll(
-        id.clone(),
-        id.clone(),
-        scroll_close_active,
-        crate::top_layer::ScrollClose::AnyScroll,
-        ctx.set_open,
-    );
-
     // dev-docs/backlog.md row 25: `aria-labelledby` is not a bare literal
     // alongside `..attributes` -- that is the duplicate-attribute hazard
     // `merge_attributes` exists to prevent (`dev-docs/conformance-harness.md`
@@ -875,7 +835,6 @@ fn DropdownMenuContentRendered(
             // `menu_root::keep_focus_on_pointerdown`.
             onpointerdown: crate::menu_root::keep_focus_on_pointerdown,
             ..attributes,
-            crate::scroll_lock::ScrollLockGuard { active: scroll_lock_active }
             {children}
         }
     }
@@ -900,8 +859,6 @@ fn DropdownMenuContentRendered(
     side_offset: u32,
     /// Extra HTML attributes for the menu's content element.
     attributes: Vec<Attribute>,
-    /// Whether page scrolling is locked while the menu is open. True only for an open modal menu.
-    scroll_lock_active: Memo<bool>,
     /// The menu items.
     children: Element,
 ) -> Element {
@@ -948,7 +905,6 @@ fn DropdownMenuContentRendered(
             // `menu_root::keep_focus_on_pointerdown`.
             onpointerdown: crate::menu_root::keep_focus_on_pointerdown,
             ..attributes,
-            crate::scroll_lock::ScrollLockGuard { active: scroll_lock_active }
             {children}
         }
     }

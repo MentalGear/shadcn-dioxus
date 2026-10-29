@@ -31,76 +31,54 @@
 //!    incremented the counter, and releases based on that -- independent of
 //!    `active`'s value at unmount.
 //!
-//! ## How this hook blocks scrolling: event interception, `<html>` and `<body>` untouched
-//! The lock blocks the scroll *input*, not the scroll *capability*. The
-//! constraints below rule out every simpler alternative (see
-//! `playwright/oracle/tier3-radix/scroll-lock.spec.ts`), and they are
-//! non-obvious, so a change to this file must not silently reintroduce one
-//! of them.
+//! ## Who locks
+//! Only the modal surfaces take this lock: `Dialog`, `AlertDialog` (and so `Sheet` and `Drawer`),
+//! a `Popover` with `is_modal: true`, and `ContextMenu`. An anchored overlay
+//! (`DropdownMenu`, `Menubar`, `Select`, a default `Popover`, and the rest) leaves the page
+//! scrollable and stays open while it scrolls: an open panel may not be fully in view, and the
+//! user must be able to scroll to it.
 //!
-//! **Why not `overflow: hidden`** (on `<html>` and `<body>`, or on `<html>`'s
-//! `overflow-y` alone). It reliably blocks wheel/keyboard scroll
-//! (`dev-docs/archive/research/phase4-spike-findings.md` "Round 2"), but
-//! removing a classic (non-overlay) scrollbar without reserving its space
-//! shifts the whole page horizontally by that width the instant the lock
-//! engages. [`ensure_scrollbar_gutter_baseline`] (below) reserves it, but
-//! `scrollbar-gutter`'s reservation on `<html>`, on Chromium,
-//! requires `overflow-y` to remain **exactly**
-//! `auto` (or `scroll`) at every instant -- switching it to `hidden`, even
-//! momentarily, drops the reservation for as long as it stays `hidden`.
-//! `playwright/oracle/tier3-radix/scroll-lock.spec.ts`'s "scrollbar-gutter
-//! reservation survives the lock itself" test pins this.
+//! ## How the lock blocks scrolling: Base UI's `useScrollLock`
+//! The method is Base UI's (`@base-ui/utils` `useScrollLock`, three branches). The element that
+//! scrolls the viewport is `<html>` when `<html>` establishes its own scroll container (the baseline
+//! below makes it one) and `<body>` otherwise; an `overflow` set on the other element would not lock
+//! the page. Wheel, touch, keyboard and scrollbar scrolling all stop at once, with no event listener
+//! on `window` to decide per event: a scroll container inside the surface (a long menu, a code block,
+//! a scrollable dialog body) keeps scrolling by itself and cannot chain into the page. A scripted
+//! `window.scrollTo()` still moves the page, as it does under any `overflow: hidden`.
 //!
-//! **Why not a compensated `<body>` freeze** (`position: fixed; top:
-//! -{scrollY}px; left: 0; right: 0;` on `<body>`, `<html>`'s `overflow`
-//! untouched -- Construction A of
-//! `dev-docs/archive/research/phase4-spike-findings.md` "Round 2"). It blocks
-//! scroll through a real mechanism -- taking `<body>` out of flow via
-//! `position: fixed` collapses `<html>`'s own scrollable content to nothing,
-//! and `<html>`'s `scrollTop` clamps to `0` immediately as a structural
-//! consequence, not an event-interception race -- and never touches
-//! `overflow-y`, but it still defeats the gutter. On Chromium,
-//! `scrollbar-gutter: stable` on the *root* scroller keeps its reservation
-//! only while the root keeps genuinely overflowing -- `overflow-y: auto`
-//! alone is necessary but not sufficient -- and a `<body>` freeze (by
-//! design) removes all of `<body>`'s contribution to `<html>`'s scrollable
-//! content, whether via `position: fixed` or by simply reducing its `height`
-//! in normal flow. The identical `scrollbar-gutter: stable` on an ordinary
-//! (non-root) scrolling `<div>` keeps its reservation even after its content
-//! shrinks below its own height. (A probe that measures a
-//! `position: fixed` marker's on-screen edge would miss it, because a
-//! `scrollbar-gutter` regression on the *root* also moves that edge; only
-//! asserting `document.documentElement.clientWidth` against the *root*
-//! scroller in isolation, the way this repo's oracle does, catches it.)
+//! 1. **Overlay scrollbars, and iOS** (`window.innerWidth - <html>.clientWidth` is 0, or an iOS
+//!    user agent): the scroller gets `overflow: hidden`. The scrollbar takes no width, so there is
+//!    nothing to keep and no layout shift.
+//! 2. **A classic scrollbar, and an engine whose `scrollbar-gutter: stable` survives hidden
+//!    overflow** (a probe sets both on the scroller and compares `<html>.clientWidth` under `scroll` and
+//!    `hidden`; Firefox passes): `scrollbar-gutter: stable` (`both-edges` when the page asked for it)
+//!    on `<html>` plus `overflow: hidden`; the gutter keeps the scrollbar's width.
+//! 3. **A classic scrollbar, and an engine that drops the gutter under hidden overflow** (Chromium,
+//!    the default browser of Windows and Linux): hiding the root's overflow would give the page the
+//!    scrollbar's width, so the root stays `overflow: scroll` (when the page overflows) with the
+//!    gutter, and `<body>` is clipped to the viewport (`position: relative`, `100dvh` by `100vw` less
+//!    the scrollbar and the body margin, `overflow: hidden`) with its scroll offset moved from the
+//!    root, so the page has nothing left to scroll and the scrollbar stays in place, inert. While
+//!    this branch is held `window.scrollY` reads 0; the offset comes back on release. A window resize
+//!    re-computes this branch (and branch 2) one frame later.
 //!
-//! **What the lock does instead.** If anything that changes `<html>`'s
-//! computed `overflow` *or* reduces its genuine overflow amount defeats
-//! `scrollbar-gutter: stable` on this engine, the only lever that cannot
-//! trip either failure mode is to never pull it at all -- block the scroll
-//! *input* instead of the scroll *capability*. A set of `window`-level,
-//! capturing (`{ capture: true, passive: false }`) `wheel`, `keydown` and
-//! `touchmove` listeners (plus a passive `touchstart` that remembers where
-//! the gesture began) call `preventDefault()` on an event that would
-//! otherwise reach the document root -- and nothing else. They exist
-//! **only while a lock is held**: the outermost lock installs them through
-//! [`crate::js_listener::JsListeners`] and the last release drops that
-//! value, which removes every one of them (`window.__dxScrollLocked`
-//! mirrors "held" for tests). `clientWidth` stays bit-for-bit
-//! constant through a full lock/unlock cycle, because nothing about
-//! `<html>`/`<body>`'s style ever changes; wheel and the keyboard's
-//! Page/Home/End/Arrow scroll keys are fully blocked while locked and fully
-//! restored on unlock.
+//! The script restores the exact previous inline values of both elements, so an app's stylesheet and
+//! inline styles survive a lock cycle. `playwright/oracle/tier3-radix/scroll-lock.spec.ts` pins
+//! `clientWidth`, the sticky nav and a `position: fixed; right: 0` probe constant through a lock
+//! cycle in the headless run (branch 1) and in `playwright/xvfb.local.config.ts`'s classic scrollbar
+//! (branch 3 on Chromium). Not ported from Base UI: the wait for an app-held lock to clear (a
+//! `MutationObserver`; a page that is already locked stays locked and is restored as it was) and its
+//! WebKit pinch-zoom skip.
 //!
-//! **Why they must not outlive the lock (backlog rows 149 and 159).**
-//! Installed once, at the first lock ever taken on the page, and kept for
-//! the rest of the visit behind a boolean, a non-passive `wheel`/`touchmove`
-//! listener on `window` makes the compositor wait for the main thread
-//! before it may scroll, so after the first Dialog, Popover or menu had
-//! opened once, *every* wheel tick on the page would pay that wait again
-//! (backlog rows 149 and 159; measurements in
-//! `dev-docs/archive/research/scroll-jank-2026-10-04.md` section 7.3).
-//! `DOMDebugger.getEventListeners(window)` after one open-and-close must
-//! show no `wheel`/`touchmove` left.
+//! **One script for the whole page, none between locks.** The outermost lock installs the script
+//! through [`crate::js_listener::JsListeners`] and the last release drops it, which restores the
+//! styles (`window.__dxScrollLocked` mirrors "held" for tests). No listener stays on `window`
+//! between locks, and the script adds no wheel, touch or key listener at all (only a `resize` one
+//! while branch 2 or 3 is held), so a held lock does not make
+//! the compositor wait for the main thread before it scrolls a container inside the surface
+//! (backlog rows 149 and 159: a non-passive `wheel`/`touchmove` listener on `window` taxes every
+//! scroll on the page; `DOMDebugger.getEventListeners(window)` after an open-and-close shows none left).
 //!
 //! **When the lock releases.** At the real close of the surface, never at the
 //! state flip: a modal `<dialog>` keeps playing its exit animation, still in the
@@ -114,167 +92,46 @@
 //! (a surface that is not a `<dialog>`, a dialog removed while open), and both
 //! paths are idempotent.
 //!
-//! This follows Radix's own reference implementation:
-//! `@radix-ui/react-dialog` et al. delegate to `react-remove-scroll`, which
-//! itself blocks scroll via wheel/touch/key *event interception*, not
-//! `overflow: hidden`.
-//!
-//! **Not blocked unconditionally -- deliberately, as this crate's own
-//! components require:**
-//! - **A scroll/key event whose target has a scrollable ancestor that can
-//!   still consume it** (walked from `event.target` up to, but not
-//!   including, `<body>`/`<html>`, checking `overflow-y` computes to
-//!   `auto`/`scroll`/`overlay`, `scrollHeight > clientHeight`, and the
-//!   relevant edge hasn't already been reached) is let through untouched.
-//!   The axis follows the gesture's dominant delta (`deltaX` vs `deltaY`
-//!   for wheel, the touch's dx vs dy), checking `overflow-x`/`scrollLeft`
-//!   for a horizontal one -- a vertical-only check would block every purely
-//!   horizontal wheel/touch scroll (a code block or wide table inside a
-//!   locked dialog/sheet/drawer).
-//!   Wheeling over an unrelated `position: fixed`,
-//!   independently `overflow-y: auto` scrollable box (the shape every
-//!   `popover`-attributed element in this crate's web arm has by the
-//!   WHATWG UA popover stylesheet -- `Tooltip`/`HoverCard`/non-modal
-//!   `Popover`/menu content) scrolls *that* box and leaves
-//!   `window.scrollY` at `0`, both before and after. Without this check, a
-//!   long dropdown menu or popover would lose the ability to scroll its own
-//!   overflowing content the instant its own lock engaged.
-//! - **A key event whose target is a text-editable control** (`<input>`,
-//!   `<textarea>`, `<select>`, or `[contenteditable]`) is never touched --
-//!   Home/End/arrow keys have their ordinary cursor-movement meaning there,
-//!   which must keep working inside any locked surface's own form fields.
-//! - **A key event whose target (or an ancestor, via the scrollable-ancestor
-//!   walk stopping short) carries an ARIA `role` attribute is never
-//!   touched.** Every
-//!   keyboard-navigable widget in this crate that could plausibly sit
-//!   inside a locked surface -- `RadioGroup` (`role="radio"`), `Tabs`
-//!   (`role="tab"`), `Slider` (`role="slider"`), `Menubar`/`DropdownMenu`/
-//!   `ContextMenu` (`role="menuitem"`/`"option"`), `TagGroup`
-//!   (`role="gridcell"`), `Toolbar` (`role="toolbar"`) -- implements its own
-//!   Page/Home/End/arrow-key handling on an element that carries a `role`.
-//!   This hook's listeners never call `stopPropagation()`, so those
-//!   widgets' own handlers always still run regardless; the `role` check
-//!   only decides whether *this* listener additionally suppresses the
-//!   browser's own default action for that key on that element, which for
-//!   a `role`-bearing custom widget is never scrolling the page (their own
-//!   handler already does whatever the key should do) and skipping it here
-//!   avoids ever second-guessing a widget's own keyboard model.
-//! - **The Space key is deliberately never included** in the blocked key
-//!   set at all (unlike Page/Home/End/arrow keys). Space's browser-default
-//!   action is context-dependent -- "scroll the page" only when focus is on
-//!   `<body>` or a plain, non-interactive element, but "activate the
-//!   focused control" (a real `.click()`) when focus is on a button or
-//!   similar. Every surface that calls this hook holds a focus trap while
-//!   open, so focus inside a locked surface is essentially never on `<body>`
-//!   -- meaning Space's only realistic default action while locked is
-//!   activation, which must never be suppressed (a real hazard: see
-//!   `dev-docs/archive/research/phase4-spike-findings.md`, Round 1,
-//!   experiment 4's note on a dialog's own focused Close button).
-//!
-//! **What it does not attempt:** no `padding-right`
-//! compensation (it does not work, `dev-docs/archive/research/phase4-spike-findings.md`, Round 2, for
-//! exactly the `position: fixed` marker shape this crate's own overlays and
-//! a realistic right-aligned navbar action both have); no iOS
-//! momentum-scroll handling (see "Known limitation" below); touch is
-//! handled by the same scroll-chain-aware check on `touchmove` (blocks a
-//! drag gesture that would otherwise pan the background), but a fling's
-//! post-release inertial scrolling on iOS Safari is a platform behavior no
-//! `preventDefault()` placement reaches once the gesture has already ended,
-//! same limitation `react-remove-scroll` documents for itself.
+//! **iOS.** Branch 1, as in Base UI: only the overflow is hidden. Whether that stops the inertial
+//! scroll of a fling that began before the lock engaged is a device check (row 479), not a
+//! Playwright one.
 //!
 //! ## Permanent `scrollbar-gutter: stable` baseline
-//! From `dev-docs/archive/research/phase4-spike-findings.md`, "Round 2 -- solved by
-//! construction", Construction A/C. The defect it prevents: naively removing scroll
-//! capability never compensates for a classic (non-overlay) scrollbar's
-//! width on its own, so doing so shifts everything horizontally by that
-//! width the instant a lock engages -- 15px under a forced real
-//! scrollbar (`playwright/xvfb.local.config.ts`), invisible under this
-//! repo's default headless Chromium, which renders 0-width overlay
-//! scrollbars regardless of how tall the page is. Most users' actual
-//! browsers (Windows/Linux Chrome and Firefox defaults, and other engines)
-//! render classic, space-reserving scrollbars, so this is a real
-//! shift that is silent in the default test run -- see
-//! `playwright/oracle/tier3-radix/scroll-lock.spec.ts`'s
-//! `assertNoHorizontalShift`.
+//! [`ensure_scrollbar_gutter_baseline`] installs `scrollbar-gutter: stable` and `overflow-y: auto`
+//! on `<html>` **permanently** -- once, idempotently, the first time any scroll-lock-capable
+//! primitive mounts on the page -- and never toggles it again. Page chrome that is laid out against
+//! the root (`position: fixed` overlays, the sticky top nav) then sees the same width before,
+//! during and after every lock, and an overlay-scrollbar platform pays the one fixed gutter that a
+//! classic-scrollbar platform pays anyway (`stable` reserves its width unconditionally), instead of
+//! gaining and losing it on every lock cycle. The call is made from each primitive's *root*
+//! component (`DialogRoot`, `AlertDialogRoot`, `PopoverRoot`, `ContextMenu`), not only
+//! from [`use_scroll_lock`]: those roots mount as soon as the primitive appears, while the
+//! `*Content`/`ScrollLockGuard` components that call `use_scroll_lock` mount lazily, once the
+//! surface first opens, and installing the baseline that late would make the first open on a page
+//! double as the moment the reservation appears. The lock does not depend on the baseline: branches 2
+//! and 3 set the gutter themselves.
 //!
-//! [`ensure_scrollbar_gutter_baseline`] installs `scrollbar-gutter: stable`
-//! on `<html>` **permanently** -- once, idempotently, the first time any
-//! scroll-lock-capable primitive mounts on the page -- and never toggles it
-//! again, in either direction, for any reason. The lock mechanism above
-//! never touches `<html>`/`<body>` at all, so
-//! there is no moment in the lock's lifecycle where this
-//! baseline's own precondition (`overflow-y` computing to `auto`/`scroll`
-//! on `<html>`, *and* `<html>` genuinely still overflowing -- both
-//! required, as above) could stop holding. That call is made from
-//! each primitive's *root* component (`DialogRoot`, `AlertDialogRoot`,
-//! `PopoverRoot`, `DropdownMenu`, `ContextMenu`), not only from
-//! [`use_scroll_lock`] here: those roots mount as soon as the primitive
-//! appears at all, while the `*Content`/`ScrollLockGuard` components that
-//! call `use_scroll_lock` mount lazily, only once the surface first opens --
-//! installing the baseline that late would make the very first open on a
-//! page double as the moment the gutter reservation appears, i.e. exactly
-//! the one-time shift a *permanent* baseline exists to avoid. Two
-//! constructions are rejected (full detail and measurements in the findings
-//! doc):
-//! 1. **The textbook `padding-right` recipe** (`react-remove-scroll` and
-//!    similar: measure `innerWidth - documentElement.clientWidth`, add it as
-//!    `padding-right` on `<body>`). It does not work for `position: fixed`
-//!    elements: a fixed-position box (a realistic right-aligned navbar
-//!    action, or this crate's own `Popover`/menu content) is positioned
-//!    against the *initial containing block*, whose size tracks the true
-//!    viewport net of the real scrollbar and is not influenced by any
-//!    element's padding, so it still shifts the full scrollbar width.
-//! 2. **A transient `scrollbar-gutter: stable` toggle**, applied together
-//!    with `overflow: hidden` only for the duration of the lock. This fixes
-//!    the classic-scrollbar case, but Chromium reserves `stable`'s gutter
-//!    width unconditionally the instant the property takes effect,
-//!    regardless of whether the platform was otherwise showing an overlay
-//!    scrollbar -- so on an overlay-scrollbar platform (this repo's default
-//!    headless Chromium included), turning it on *at lock time* introduces
-//!    exactly the shift being fixed, just newly, on the other kind of
-//!    platform, and reverts it again on unlock -- a shift on every open and
-//!    every close, oscillating.
+//! The textbook `padding-right` recipe (`react-remove-scroll`: measure the scrollbar, add it as
+//! `padding-right` on `<body>`) is not used: a `position: fixed` box (a right-aligned navbar
+//! action, this crate's own `Popover`/menu content) is positioned against the initial containing
+//! block, which no element's padding reaches, so it still shifts by the full scrollbar width.
 //!
-//! Applying it *permanently* rather than transiently means overlay-scrollbar
-//! platforms pay the same fixed one-time gutter reservation classic-scrollbar
-//! platforms always pay anyway (this is `scrollbar-gutter: stable`'s
-//! documented, unconditional behavior), instead of oscillating on every
-//! lock cycle.
-//!
-//! The baseline is installed via a plain (non-`!important`) `:where(html) {
-//! scrollbar-gutter: stable; overflow-y: auto; }` rule in an injected
-//! `<style>` tag, not an inline style, and specifically through
-//! `:where()`'s zero specificity: any author rule touching `html`/`:root` --
-//! even a bare element selector -- wins outright, so an app that already
-//! declares its own `scrollbar-gutter` or `overflow-y` on the root is left
-//! alone.
-//!
-//! **Old-engine note:** `scrollbar-gutter` is unsupported on older
-//! WebKit/Safari. There, the injected rule is inert (an unrecognized
-//! property is dropped), so those engines get no scrollbar-gap
-//! compensation -- never worse than without the baseline. The
-//! scroll-blocking mechanism does not depend on `scrollbar-gutter` at all,
-//! so scroll blocking keeps working there regardless.
-//!
-//! ## Known limitation
-//! No iOS momentum-scroll handling: this hook can block the touch drag that
-//! *initiates* a scroll gesture, but a fling's post-release inertial
-//! scrolling on iOS Safari is a platform behavior no event listener reaches
-//! once the gesture has ended. Radix delegates this same case to
-//! `react-remove-scroll`, which this crate has no equivalent of. See
-//! dev-docs/reference/platform-rationale.md §5.
+//! The baseline is a plain (non-`!important`) `:where(html) { scrollbar-gutter: stable;
+//! overflow-y: auto; }` rule in an injected `<style>` tag, not an inline style, and specifically
+//! through `:where()`'s zero specificity: any author rule touching `html`/`:root` -- even a bare
+//! element selector -- wins outright, so an app that already declares its own `scrollbar-gutter`
+//! or `overflow-y` on the root is left alone.
 //!
 //! ## Scroll-position capture and restore, and `use_early_scroll_capture`
 //! This hook captures `window.scrollX`/`scrollY` before locking and
-//! restores them on unlock. That is independent of *how* scrolling is
-//! blocked, and exists for a separate reason: opening a native `<dialog>`
+//! restores them on unlock. Opening a native `<dialog>`
 //! (`DialogContent`/`AlertDialogContent`'s modal arm, `crate::dialog`)
 //! reliably shifts `window.scrollY` by several hundred pixels the instant
 //! `showModal()` runs (under a forced classic scrollbar,
 //! `playwright/xvfb.local.config.ts`, on the dialog demo page, in both
 //! Chromium and Firefox; most likely the browser's default
-//! scroll-into-view-on-focus behavior for the dialog's autofocus target).
-//! Because this hook's own
+//! scroll-into-view-on-focus behavior for the dialog's autofocus target), and `overflow: hidden`
+//! does not stop a script-driven or focus-driven scroll. Because this hook's own
 //! lock-acquisition effect and the dialog's `showModal()`-driving effect
 //! (`crate::use_dialog_open_driver`) are two separate effects that, per
 //! Dioxus's normal same-commit effect ordering, may run in either order
@@ -285,19 +142,16 @@
 //! so its capture is dispatched, and therefore executes, before
 //! `showModal()` gets a chance to move anything.
 //!
-//! [`use_scroll_lock`]'s own lock-acquisition effect still captures a
+//! [`use_scroll_lock`]'s own lock-acquisition script still captures a
 //! scroll position too (`get_or_insert`, never clobbering an earlier,
 //! more-trustworthy capture from [`use_early_scroll_capture`]) -- both so
-//! every other caller of this hook (`Popover`, `DropdownMenu`,
-//! `ContextMenu`, none of which have a native `showModal()` of their own to
-//! race) has a capture at all, and as the value restored on unlock.
-//! Restoring to a value that could itself already reflect the dialog's own
+//! every other caller of this hook (`Popover`, `ContextMenu`, none of which
+//! have a native `showModal()` of their own to race) has a capture at all, and as the value
+//! restored on unlock. Restoring to a value that could itself already reflect the dialog's own
 //! post-jump position (possible only in the specific race where
 //! `use_early_scroll_capture` hasn't resolved yet and this hook's own
 //! fallback capture reads a jumped `scrollY`) is still strictly no worse
-//! than not restoring at all, and does not affect `Popover`/`DropdownMenu`/
-//! `ContextMenu`, none of which have any focus-driven scroll of their own to
-//! correct for. This hook does not prevent the dialog's own initial jump.
+//! than not restoring at all. This hook does not prevent the dialog's own initial jump.
 
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
@@ -329,7 +183,7 @@ thread_local! {
 ///
 /// Called from an unconditional `use_effect` in each scroll-lock-capable
 /// primitive's *root* component (`DialogRoot`, `AlertDialogRoot`,
-/// `PopoverRoot`, `DropdownMenu`, `ContextMenu`) rather than only from
+/// `PopoverRoot`, `ContextMenu`) rather than only from
 /// [`use_scroll_lock`] below: those roots mount as soon as the primitive
 /// appears on the page at all, while the `*Content`/`ScrollLockGuard`
 /// components that call `use_scroll_lock` mount lazily, only once the
@@ -351,95 +205,65 @@ pub(crate) fn ensure_scrollbar_gutter_baseline() {
     );
 }
 
-/// The script that blocks page scroll while a lock is held (module docs, "How this hook blocks scrolling").
-/// Run through [`JsListeners::install`] by the outermost lock and torn down, listeners and
-/// all, when the last lock releases: it contains no `removeEventListener`, because `listen`
-/// derives the removal. It first sends `[scrollX, scrollY]` so the position can be restored
-/// on release.
-const SCROLL_BLOCK_JS: &str = r#"
+/// The script that locks the page while a lock is held (module docs, "How the lock blocks scrolling").
+/// Run through [`JsListeners::install`] by the outermost lock and torn down when the last lock
+/// releases: `cleanup` hands the styles back. It first sends `[scrollX, scrollY]` so the position
+/// can be restored on release.
+///
+/// `__dxScrollLockN` counts the scripts alive and `__dxScrollLocked` mirrors "a lock is held". The
+/// Rust side keeps one page-wide lock, but a new one can start before the previous script's teardown
+/// has run: the first script applies the styles, the last one restores them. `gutterSurvives` is
+/// Base UI's `supportsStableScrollbarGutter` probe, `lock` its three branches.
+const SCROLL_LOCK_JS: &str = r#"
     dioxus.send([window.scrollX, window.scrollY]);
-    // `__dxScrollLocked` mirrors "a lock is held" (counted defensively; the Rust side keeps
-    // one page-wide lock, so at most one copy runs); the listeners exist only while it is true.
+    if (!window.__dxScrollLockN) {
+        const w = window, html = document.documentElement, body = document.body;
+        const P = ['overflowX', 'overflowY', 'scrollbarGutter', 'scrollBehavior', 'position', 'height', 'width', 'boxSizing'];
+        const snap = (el) => P.map((p) => el.style[p]);
+        const put = (el, v) => P.forEach((p, i) => { el.style[p] = v[i]; });
+        const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        const gutterSurvives = (el) => {
+            if (!(w.CSS && CSS.supports('scrollbar-gutter', 'stable'))) return false;
+            const [g, y] = [html.style.scrollbarGutter, el.style.overflowY];
+            html.style.scrollbarGutter = 'stable';
+            el.style.overflowY = 'scroll';
+            const shown = html.clientWidth;
+            el.style.overflowY = 'hidden';
+            const same = shown === html.clientWidth;
+            el.style.overflowY = y;
+            html.style.scrollbarGutter = g;
+            return same;
+        };
+        let undo = () => {}, inset = true, frame = 0;
+        const lock = () => {
+            const hc = getComputedStyle(html), bc = getComputedStyle(body);
+            const el = hc.overflowX !== 'visible' || hc.overflowY !== 'visible' ? html : body;
+            const [hv, bv, top, left] = [snap(html), snap(body), html.scrollTop, html.scrollLeft];
+            undo = () => put(html, hv) || put(body, bv);
+            const hide = () => { el.style.overflowX = el.style.overflowY = 'hidden'; };
+            if (ios || w.innerWidth - html.clientWidth <= 0) return (inset = false) || hide();
+            const gutter = hc.scrollbarGutter.includes('both') ? 'stable both-edges' : 'stable';
+            if (gutterSurvives(el)) return (html.style.scrollbarGutter = gutter) && hide();
+            const sw = Math.max(0, w.innerWidth - body.clientWidth), sh = Math.max(0, w.innerHeight - body.clientHeight);
+            const my = parseFloat(bc.marginTop) + parseFloat(bc.marginBottom), mx = parseFloat(bc.marginLeft) + parseFloat(bc.marginRight);
+            const canY = html.scrollHeight > html.clientHeight || /scroll/.test(hc.overflowY + bc.overflowY);
+            const canX = html.scrollWidth > html.clientWidth || /scroll/.test(hc.overflowX + bc.overflowX);
+            Object.assign(html.style, { scrollbarGutter: gutter, scrollBehavior: 'unset', overflowX: canX ? 'scroll' : 'hidden', overflowY: canY ? 'scroll' : 'hidden' });
+            Object.assign(body.style, { position: 'relative', boxSizing: 'border-box', overflowX: 'hidden', overflowY: 'hidden',
+                height: `calc(100dvh - ${my + sh}px)`, width: `calc(100vw - ${mx + sw}px)` });
+            [body.scrollTop, body.scrollLeft] = [top, left];
+            undo = () => { put(html, hv); put(body, bv); [html.scrollTop, html.scrollLeft] = [top, left]; };
+        };
+        lock();
+        if (inset) listen(window, 'resize', () => { undo(); cancelAnimationFrame(frame); frame = requestAnimationFrame(lock); });
+        window.__dxScrollUnlock = () => { cancelAnimationFrame(frame); undo(); };
+    }
     window.__dxScrollLockN = (window.__dxScrollLockN || 0) + 1;
     window.__dxScrollLocked = true;
     cleanup(() => {
-        window.__dxScrollLockN = Math.max(0, (window.__dxScrollLockN || 0) - 1);
-        window.__dxScrollLocked = window.__dxScrollLockN > 0;
+        window.__dxScrollLocked = (window.__dxScrollLockN = Math.max(0, window.__dxScrollLockN - 1)) > 0;
+        if (!window.__dxScrollLocked && window.__dxScrollUnlock) { window.__dxScrollUnlock(); window.__dxScrollUnlock = null; }
     });
-
-    const dxHasRole = (el) => !!(el && el.getAttribute && el.getAttribute('role'));
-    const dxIsFormControl = (el) => {
-        if (!el) return false;
-        const tag = el.tagName;
-        return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el.isContentEditable;
-    };
-    // Walks from `el` up to (but not including) <body>/<html>
-    // looking for a scroll container that can still consume `delta`
-    // along one axis (`horizontal` picks overflow-x/scrollLeft, else
-    // overflow-y/scrollTop) -- see the module docs' "Not blocked
-    // unconditionally" section for why this exists. The axis matters:
-    // a purely horizontal wheel/touch gesture has no vertical delta,
-    // so a vertical-only check never finds a horizontally scrollable
-    // region (a code block, a wide table) and blocks it.
-    const dxFindScrollableAncestor = (el, delta, horizontal) => {
-        while (el && el !== document.body && el !== document.documentElement) {
-            if (el.nodeType === 1) {
-                const style = getComputedStyle(el);
-                if (horizontal) {
-                    if (/(auto|scroll|overlay)/.test(style.overflowX) && el.scrollWidth > el.clientWidth) {
-                        // scrollLeft is 0 at the start edge and runs
-                        // negative in RTL, so normalise to "distance
-                        // scrolled from the start edge".
-                        const max = el.scrollWidth - el.clientWidth;
-                        const rtl = style.direction === 'rtl';
-                        const fromLeft = rtl ? el.scrollLeft + max : el.scrollLeft;
-                        if (delta < 0 && fromLeft > 0) return el;
-                        if (delta > 0 && fromLeft < max - 1) return el;
-                    }
-                } else if (/(auto|scroll|overlay)/.test(style.overflowY) && el.scrollHeight > el.clientHeight) {
-                    if (delta < 0 && el.scrollTop > 0) return el;
-                    if (delta > 0 && el.scrollTop + el.clientHeight < el.scrollHeight - 1) return el;
-                }
-            }
-            el = el.parentElement;
-        }
-        return null;
-    };
-
-    // blocking-ok: this lock exists to cancel the wheel; the listener is installed only while a lock is held and removed with it
-    listen(window, 'wheel', (e) => {
-        const horizontal = Math.abs(e.deltaX) > Math.abs(e.deltaY);
-        if (dxFindScrollableAncestor(e.target, horizontal ? e.deltaX : e.deltaY, horizontal)) return;
-        e.preventDefault();
-    }, { passive: false, capture: true });
-
-    // Space is deliberately excluded -- see the module docs'
-    // "Not blocked unconditionally" section.
-    const DX_SCROLL_KEYS = { PageUp: -1, PageDown: 1, Home: -1, End: 1, ArrowUp: -1, ArrowDown: 1 };
-    listen(window, 'keydown', (e) => {
-        if (!(e.key in DX_SCROLL_KEYS)) return;
-        if (dxIsFormControl(e.target) || dxHasRole(e.target)) return;
-        if (dxFindScrollableAncestor(e.target, DX_SCROLL_KEYS[e.key], false)) return;
-        e.preventDefault();
-    }, { passive: false, capture: true });
-
-    let dxTouchStartX = null;
-    let dxTouchStartY = null;
-    listen(window, 'touchstart', (e) => {
-        const one = e.touches && e.touches.length === 1;
-        dxTouchStartX = one ? e.touches[0].clientX : null;
-        dxTouchStartY = one ? e.touches[0].clientY : null;
-    }, { passive: true, capture: true });
-    // blocking-ok: same as the wheel listener above -- held only while a lock is held
-    listen(window, 'touchmove', (e) => {
-        if (dxTouchStartY === null) return;
-        if (!e.touches || e.touches.length !== 1) return;
-        const dx = dxTouchStartX - e.touches[0].clientX;
-        const dy = dxTouchStartY - e.touches[0].clientY;
-        const horizontal = Math.abs(dx) > Math.abs(dy);
-        if (dxFindScrollableAncestor(e.target, horizontal ? dx : dy, horizontal)) return;
-        e.preventDefault();
-    }, { passive: false, capture: true });
 "#;
 
 /// The page's lock count, and the page scroll position captured just before the
@@ -455,10 +279,10 @@ const SCROLL_BLOCK_JS: &str = r#"
 struct ScrollLockInner {
     count: usize,
     original_scroll: Option<(f64, f64)>,
-    /// The block listeners, alive from the 0 -> 1 transition of `count` until a 1 -> 0 one
-    /// that is not followed by a new lock within a frame (see [`release`]). Dropping it is
-    /// what removes them from `window`.
-    listeners: Option<JsListeners>,
+    /// The lock script, alive from the 0 -> 1 transition of `count` until a 1 -> 0 one that is
+    /// not followed by a new lock within a frame (see [`release`]). Dropping it is what gives the
+    /// viewport scroller its overflow back.
+    script: Option<JsListeners>,
     /// Bumped by every 1 -> 0 and 0 -> 1 transition, so a deferred final release can tell
     /// that a lock was taken (and possibly released again) while it waited.
     epoch: u64,
@@ -495,7 +319,7 @@ fn use_scroll_lock_state() -> ScrollLockState {
 /// captured position is the one worth keeping) or if this cycle's position
 /// was already captured (guards a redundant capture racing with
 /// [`use_scroll_lock`]'s own, which only captures when this hasn't already
-/// run -- see there). Popover/DropdownMenu/ContextMenu have no equivalent
+/// run -- see there). Popover and ContextMenu have no equivalent
 /// call: none of them have a native `showModal()` of their own to race, so
 /// [`use_scroll_lock`]'s own capture is early enough for them as-is.
 pub(crate) fn use_early_scroll_capture(open: Memo<bool>) {
@@ -526,19 +350,15 @@ pub(crate) fn use_early_scroll_capture(open: Memo<bool>) {
     });
 }
 
-/// Prevents the page from scrolling while `active` is true, via the
-/// event-interception mechanism described in the module docs ("How this hook
-/// blocks scrolling") -- `<html>`/`<body>` are never touched in any way, so the permanent
-/// `scrollbar-gutter: stable` baseline ([`ensure_scrollbar_gutter_baseline`])
-/// keeps reserving the same width before, during, and after every lock
-/// cycle, on an engine where that reservation depends on `<html>` never
-/// having its `overflow` changed *or* its genuine overflow amount reduced.
+/// Prevents the page from scrolling while `active` is true, by hiding the overflow of the
+/// viewport scroller as the module docs describe ("How the lock blocks scrolling"); the
+/// scrollbar's width stays reserved, so the page does not shift.
 ///
 /// Every lock on the page -- a nested dialog, a sibling dialog opened by the click
 /// that closed another, a menu item's dialog -- shares one counter
-/// ([`ScrollLockInner`]): only the count's 0 -> 1 transition installs the block
-/// listeners, and only a 1 -> 0 transition not followed by a new lock within a
-/// frame removes them. That
+/// ([`ScrollLockInner`]): only the count's 0 -> 1 transition installs the lock
+/// script, and only a 1 -> 0 transition not followed by a new lock within a
+/// frame removes it. That
 /// means a still-open outer modal is never affected by an inner one
 /// closing, and there is no window in which the page is briefly, visibly
 /// unlocked between an inner modal's close and an outer modal's
@@ -557,8 +377,7 @@ pub(crate) fn use_scroll_lock(active: Memo<bool>) {
 
     // Permanent baseline (see module docs) -- unconditional, run once per
     // WASM instance, and never re-run or reverted by the lock/unlock toggle
-    // below. The scroll-blocking listeners are NOT part of it: they exist only
-    // while a lock is held.
+    // below. The lock script is NOT part of it: it exists only while a lock is held.
     use_effect(ensure_scrollbar_gutter_baseline);
 
     // Whether *this* hook instance is the one that incremented the shared
@@ -598,20 +417,20 @@ pub(crate) fn use_scroll_lock(active: Memo<bool>) {
             return;
         }
         lock_acquired.set(true);
-        let needs_listeners = {
+        let needs_script = {
             let mut inner = lock_state.0.borrow_mut();
             inner.count += 1;
             if inner.count == 1 {
                 // Cancels a final release still waiting for its frame: the lock was handed
-                // over, so the listeners and the saved position stay as they are.
+                // over, so the script and the saved position stay as they are.
                 inner.epoch += 1;
             }
-            inner.listeners.is_none()
+            inner.script.is_none()
         };
-        if needs_listeners {
+        if needs_script {
             let position_state = lock_state.clone();
-            let listeners =
-                JsListeners::install(SCROLL_BLOCK_JS).on_message(move |(x, y): (f64, f64)| {
+            let script =
+                JsListeners::install(SCROLL_LOCK_JS).on_message(move |(x, y): (f64, f64)| {
                     // Don't clobber an earlier, pre-jump capture --
                     // `use_early_scroll_capture` (called from `DialogRoot`/
                     // `AlertDialogRoot`) may already have run by now with a
@@ -622,7 +441,7 @@ pub(crate) fn use_scroll_lock(active: Memo<bool>) {
                         .original_scroll
                         .get_or_insert((x, y));
                 });
-            lock_state.0.borrow_mut().listeners = Some(listeners);
+            lock_state.0.borrow_mut().script = Some(script);
         }
     });
 
@@ -677,8 +496,8 @@ pub(crate) fn use_modal_closed() -> ModalClosed {
 const RELEASE_DELAY: std::time::Duration = std::time::Duration::from_millis(16);
 
 /// Gives back this instance's share of the lock, if it holds one. The last release removes
-/// the block listeners (dropping [`JsListeners`]) and restores the pre-lock scroll position,
-/// one frame later: a surface that closes in the same click that opens another (a menu item
+/// the lock script (dropping [`JsListeners`], which restores the viewport scroller's styles) and
+/// restores the pre-lock scroll position, one frame later: a surface that closes in the same click that opens another (a menu item
 /// that opens a dialog) may release before the new one has locked, and the hand-over must not
 /// unlock or scroll the page in between. A lock taken in that frame cancels the final release.
 fn release(state: &ScrollLockState, acquired: &Cell<bool>) {
@@ -701,22 +520,27 @@ fn release(state: &ScrollLockState, acquired: &Cell<bool>) {
         // One frame, as a task: there is no JS timer to clear, and a hidden tab, where no frame
         // ever comes, still releases.
         crate::sleep::sleep(RELEASE_DELAY).await;
-        finish_release(&state, epoch);
+        finish_release(&state, epoch).await;
     });
 }
 
-/// The deferred half of [`release`]: unlocks the page unless a lock was taken since `epoch`.
-fn finish_release(state: &ScrollLockState, epoch: u64) {
-    let (listeners, restore) = {
+/// The deferred half of [`release`]: unlocks the page unless a lock was taken since `epoch`, then
+/// puts the page back where it was.
+async fn finish_release(state: &ScrollLockState, epoch: u64) {
+    let (script, restore) = {
         let mut inner = state.0.borrow_mut();
         if inner.count > 0 || inner.epoch != epoch {
             return;
         }
-        (inner.listeners.take(), inner.original_scroll.take())
+        (inner.script.take(), inner.original_scroll.take())
     };
-    // Removes `wheel`/`keydown`/`touchstart`/`touchmove` from `window`.
-    drop(listeners);
+    // Its teardown, a message to the page, hands the styles back (and, for a clipped `<body>`, the
+    // scroll offset the page had when the lock engaged).
+    drop(script);
     if let Some((x, y)) = restore.filter(|(x, y)| x.is_finite() && y.is_finite()) {
+        // The restore follows the teardown: a task later, never before it, or the teardown's own
+        // offset would win.
+        crate::sleep::sleep(std::time::Duration::ZERO).await;
         // Restores whatever page position was in effect just before the lock engaged --
         // see the module docs ("Scroll-position capture and restore") for why this
         // exists: a page-scroll jump (seen on both Chromium and Firefox, most
@@ -733,7 +557,7 @@ fn finish_release(state: &ScrollLockState, epoch: u64) {
 /// Mount-scoped host for [`use_scroll_lock`], for a `*Content` component
 /// that (unlike `DialogContent`/`AlertDialogContent`/
 /// `PopoverContentRendered`) does not itself unmount when its surface
-/// closes -- `DropdownMenuContent`/`ContextMenuContent` render their own
+/// closes -- `ContextMenuContent` renders its own
 /// `if render() { div { ... } }` internally rather than being conditionally
 /// rendered by a parent, so the *component function* stays mounted for the
 /// whole lifetime of the menu, open or closed, and `use_scroll_lock` called
