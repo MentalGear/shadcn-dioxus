@@ -54,8 +54,10 @@ test("test", async ({ page }) => {
     // Assert the selected value is displayed in the button
     await expect(selectTrigger).toHaveText("Apple");
 
-    // Reopen the select menu
+    // Reopen the select menu; a mouse press opens it one task after the pointerdown, and it opens
+    // on the selected option
     await selectTrigger.click();
+    await expect(firstOption).toBeFocused();
 
     // Assert typeahead functionality works
     await page.keyboard.type("Ban");
