@@ -112,6 +112,13 @@ pub fn SelectTrigger(props: SelectTriggerProps) -> Element {
     // `use_id_or(ctx.dialog_labelledby, props.id)` (`dialog.rs`).
     let id = use_id_or(ctx.selectable.trigger_id, props.id);
     let mut press = use_signal(|| TriggerPress::None);
+    // A mouse press whose `click` never reached the trigger (the button was released over the list)
+    // must not swallow the next click once the list is closed.
+    use_effect(move || {
+        if !open() {
+            press.set(TriggerPress::None);
+        }
+    });
 
     // Merged (caller-wins, deduped) rather than set here and then spread
     // over by `..props.attributes` below: a caller `id`/`aria_label`/etc.

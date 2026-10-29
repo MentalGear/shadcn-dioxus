@@ -931,6 +931,22 @@ fn sync_item(items: &mut Vec<CollectionItemState>, item: CollectionItemState) {
     items.insert(insert_at, item);
 }
 
+/// Where a step past either end of `indices` lands: the opposite end when the list loops, else the
+/// item it started on (an end stops the arrow keys; clearing the focus there would drop the roving
+/// focus back to the container). `None` when `current` is not one of the available `indices`.
+fn end_of_list(
+    indices: &[usize],
+    current: usize,
+    roving_loop: bool,
+    opposite_end: Option<&usize>,
+) -> Option<usize> {
+    if roving_loop {
+        opposite_end.copied()
+    } else {
+        indices.binary_search(&current).ok().map(|_| current)
+    }
+}
+
 fn next_index_after(indices: &[usize], current: Option<usize>, roving_loop: bool) -> Option<usize> {
     match current {
         Some(current) => {
@@ -938,7 +954,7 @@ fn next_index_after(indices: &[usize], current: Option<usize>, roving_loop: bool
             indices
                 .get(next_position)
                 .copied()
-                .or_else(|| roving_loop.then(|| indices.first().copied()).flatten())
+                .or_else(|| end_of_list(indices, current, roving_loop, indices.first()))
         }
         None => indices.first().copied(),
     }
@@ -955,7 +971,7 @@ fn prev_index_before(
             prev_position
                 .checked_sub(1)
                 .and_then(|position| indices.get(position).copied())
-                .or_else(|| roving_loop.then(|| indices.last().copied()).flatten())
+                .or_else(|| end_of_list(indices, current, roving_loop, indices.last()))
         }
         None if roving_loop => indices.last().copied(),
         None => indices.first().copied(),
@@ -968,6 +984,18 @@ mod tests {
 
     use super::*;
     use crate::test_support::find_elements;
+
+    #[test]
+    fn a_step_past_an_end_stops_unless_the_list_loops() {
+        let indices = [1, 3, 5];
+        assert_eq!(next_index_after(&indices, Some(5), false), Some(5));
+        assert_eq!(next_index_after(&indices, Some(5), true), Some(1));
+        assert_eq!(prev_index_before(&indices, Some(1), false), Some(1));
+        assert_eq!(prev_index_before(&indices, Some(1), true), Some(5));
+        assert_eq!(next_index_after(&indices, Some(4), false), Some(5));
+        // A current item that is not available has no end to stop at.
+        assert_eq!(next_index_after(&indices, Some(6), false), None);
+    }
 
     thread_local! {
         static COLLECTION: Cell<Option<CollectionState>> = const { Cell::new(None) };

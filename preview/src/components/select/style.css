@@ -57,6 +57,13 @@
   transition: background-color var(--dx-motion-duration-fast) var(--dx-motion-ease-out);
 }
 
+/* A mouse press opens the list, which is placed from the trigger's rect at that moment: the trigger keeps its
+   size while pressed (the theme's press feedback would shrink it, and the list would take the shrunken width
+   and position). The pressed wash stays. */
+.dx-select-trigger:active {
+  scale: none;
+}
+
 .dx-select-trigger[data-size="sm"] {
   --dx-select-trigger-height: var(--dx-control-height-sm);
   --dx-select-trigger-radius: var(--dx-radius-md);
