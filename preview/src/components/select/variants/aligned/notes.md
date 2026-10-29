@@ -1,1 +1,1 @@
-`position: SelectPosition::ItemAligned`: the list opens over the trigger with the selected option on the trigger's line. With no value selected there is nothing to align, so the whole list opens below the trigger and flips above it when it does not fit.
+`position: SelectPosition::ItemAligned`, the default: the list opens over the trigger with the selected option on the trigger's line. With no value selected there is nothing to align, so the whole list opens below the trigger and flips above it when it does not fit. A Select opened by touch is placed as popper instead.

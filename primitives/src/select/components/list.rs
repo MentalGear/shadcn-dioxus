@@ -78,6 +78,15 @@ pub fn SelectList(props: SelectListProps) -> Element {
     let listbox = use_listbox_container(props.id, ctx.selectable);
     let render = listbox.render;
 
+    // A touch open's popper placement lasts until the list unmounts (the exit animation keeps the
+    // placement it opened with); the next open decides afresh.
+    let mut touch_open = ctx.touch_open;
+    use_effect(move || {
+        if !render() {
+            touch_open.set(false);
+        }
+    });
+
     rsx! {
         if render() {
             SelectListRendered {
@@ -174,7 +183,7 @@ fn use_item_aligned(id: String, ctx: SelectContext) {
     use crate::js_listener::{use_js_listeners, JsListeners};
     let open = ctx.selectable.open;
     use_js_listeners(move || {
-        if !open() || (ctx.position)() != SelectPosition::ItemAligned {
+        if !open() || ctx.placement() != SelectPosition::ItemAligned {
             return None;
         }
         Some(
@@ -242,23 +251,9 @@ fn select_list_onkeydown(mut ctx: SelectContext) -> impl FnMut(KeyboardEvent) {
                 event.stop_propagation();
             }
             Key::Escape => {
-                // Web arm: the listbox's own `popover="auto"` (see
-                // `SelectListRendered` below) owns Escape dismissal
-                // natively (WHATWG HTML light dismiss), and its own
-                // restore-focus-on-hide step returns focus to the trigger
-                // for free (the "previously focused element" recorded when
-                // `showPopover()` was called) -- returning here before
-                // `prevent_default()` leaves the key's default action alone
-                // so that native algorithm still runs, matching
-                // `DropdownMenu`'s identical Escape carve-out
-                // (`dropdown_menu.rs`) and for the same reason: calling
-                // both `set_open` *and* `prevent_default` unconditionally
-                // here would race it. Native (Blitz) arm: closes
-                // here directly (Blitz has no popover-API light dismiss to
-                // defer to).
-                if cfg!(feature = "web") {
-                    return;
-                }
+                // Both arms close here: the web arm's popover is `manual` (see
+                // `SelectListRendered`), so the browser's Escape light dismiss does not run. The
+                // default is cancelled so the key does not also close an enclosing dialog.
                 ctx.set_open(false);
                 event.prevent_default();
                 event.stop_propagation();
@@ -268,54 +263,35 @@ fn select_list_onkeydown(mut ctx: SelectContext) -> impl FnMut(KeyboardEvent) {
     }
 }
 
-/// Web arm: promote the listbox to the top
-/// layer via `popover="auto"` so it escapes clipping/transformed ancestors,
-/// the same construction as `Tooltip`/`HoverCard`/`Popover`/
-/// `DropdownMenu`/`Menubar` (dev-docs/plan.md Phase 4.4). Anchored to `SelectTrigger` below/start-aligned, matching the
-/// themed `top: 100%; left: 0` placement
-/// (`../../../../preview/src/components/select/style.css`).
+/// Web arm: promote the listbox to the top layer via `popover="manual"` so it escapes
+/// clipping/transformed ancestors, the same construction as `Tooltip`/`HoverCard`/`Combobox`
+/// (dev-docs/plan.md Phase 4.4). The placement is the engine's anchored popper, or the item-aligned
+/// script (`use_item_aligned`), per [`SelectContext::placement`].
 ///
-/// ## `auto`
+/// ## `manual`, not `auto`
 ///
-/// This listbox holds real DOM focus while open (`listbox_ref.set_focus`
-/// below, and individual `SelectOption`s via the roving-tabindex collection
-/// -- `collection.rs`'s `control_mount_focus`) and closes itself on
-/// `onblur` (below) when that focus leaves the whole widget -- the
-/// question is whether `showPopover()` fights that self-driven blur-close.
-/// It does not:
+/// The trigger opens the list on `pointerdown` for a mouse, so the list becomes `:popover-open`
+/// between a gesture's `pointerdown` and `pointerup`. An `auto` popover opened there is hidden by
+/// that same gesture's `pointerup` (the opening-gesture contract in
+/// [`crate::top_layer::PopoverKind::Auto`]; with the popper placement the release lands outside the
+/// list). A `manual` popover is never light-dismissed, so this component owns every dismissal:
 ///
-/// - **Escape**: `select_list_onkeydown` above defers to native light
-///   dismiss on this arm (the same carve-out `DropdownMenu` uses). WHATWG's
-///   popover hide algorithm restores focus to the "previously focused
-///   element" recorded when `showPopover()` ran -- here, `SelectTrigger`,
-///   since that is whatever had focus at the moment the trigger's own click
-///   opened this popover -- *for free*, satisfying the guarded
-///   "Escape -> trigger" oracle without any Rust-side `.focus()` call on
-///   this path. `use_refocus_on_close_unless`
-///   (`select.rs`) still independently focuses the trigger on
-///   every `open` "closes" transition regardless of cause; by the time it
-///   runs here, native has already moved focus there, so its own
-///   `.focus()` call is a same-element no-op, not a fight.
-/// - **Outside pointerdown**: light dismiss and this listbox's own
-///   `onblur` (or an individual option's, `option.rs`) both react to the
-///   same interaction and both land on the same outcome --
-///   `interacted_outside = true`, `open = false` -- calling `set_open`
-///   twice with the same value is idempotent, not a double-fire bug. The
-///   native restore-focus step is a no-op here too: by the time
-///   `hidePopover()`'s algorithm runs (mid pointerdown, before the click's
-///   own default focus-shift action), a real outside interaction hasn't
-///   moved focus away *yet* on this exact tick in the case that does
-///   matter for the guarded suite (Tab, which `SelectOption`'s/
-///   this component's `onblur` handle on their own -- Tab
-///   does not close the popover as a WHATWG light-dismiss trigger at all,
-///   it is not a `pointerdown` -- so light dismiss never enters into the
-///   `select.spec.ts` "tabbing out ... closes" cases).
-/// - **Animation**: does *not* use [`crate::top_layer::use_popover_sync`]
-///   bound to the raw `open` signal, unlike the other anchored
-///   consumers -- see [`crate::top_layer::use_popover_shown_while_mounted`]'s
-///   doc for the animate-out race that binding would otherwise cause with
-///   [`crate::use_animated_open`] (`SelectList`, above), and why this
-///   mount/unmount-scoped variant avoids it.
+/// - **Escape**: `select_list_onkeydown` (focus on the list or an option) and `SelectTrigger`'s
+///   `onkeydown` (focus on the trigger after an Alt+ArrowDown open) close it; the default is
+///   cancelled so an enclosing dialog stays open.
+/// - **An outside press or focus**: [`crate::use_outside_dismiss`] on the list (a mouse press at
+///   once, a touch or pen press as a tap, so a page scroll that starts outside leaves the list
+///   open), plus this listbox's own `onblur` and an individual option's (`option.rs`) when focus
+///   leaves the whole widget. All land on `interacted_outside = true`, `open = false`, which is
+///   idempotent when more than one fires.
+/// - **Animation**: does *not* use [`crate::top_layer::use_popover_sync`] bound to the raw `open`
+///   signal, unlike the other anchored consumers -- see
+///   [`crate::top_layer::use_popover_shown_while_mounted`]'s doc for the animate-out race that
+///   binding would otherwise cause with [`crate::use_animated_open`] (`SelectList`, above), and why
+///   this mount/unmount-scoped variant avoids it.
+///
+/// Page scroll is not locked while the list is open and the panel stays attached to the trigger as
+/// the page scrolls (row 477's placement); the list scrolls inside its own `overflow` (row 478).
 #[cfg(feature = "web")]
 #[component]
 fn SelectListRendered(
@@ -360,37 +336,26 @@ fn SelectListRendered(
 
     let onkeydown = select_list_onkeydown(ctx);
 
-    // Lock page scroll while the listbox is open, matching Radix Select's
-    // default (dev-docs/backlog.md row 9). Mirrors `DropdownMenuContentRendered`'s
-    // identical `scroll_lock_active`/`ScrollLockGuard` shape
-    // (`dropdown_menu.rs`) -- opt-out via `ctx.scroll_lock`
-    // (`Select`/`SelectMulti`'s `scroll_lock` prop) rather than `modal`,
-    // since a select-only combobox's listbox has no non-modal mode to gate
-    // this on.
-    let scroll_lock_active = use_memo(move || (ctx.scroll_lock)() && open());
-
     crate::top_layer::use_popover_shown_while_mounted(
         id.clone(),
         open,
         Callback::new(move |is_open: bool| {
             if !is_open {
-                // Native light dismiss (Escape or outside pointerdown)
-                // fired. Mirrors `DropdownMenuContentRendered`'s identical
-                // belt-and-suspenders: the item/listbox that actually held
-                // DOM focus is also blurred by the browser's own
-                // `[popover]:not(:popover-open) { display: none }` UA rule
-                // taking effect, which already runs this same
-                // `interacted_outside`/`clear_focus`/`set_open` sequence via
-                // this component's or `SelectOption`'s own `onblur` in the
-                // common case -- this is a backstop for the rare native-only
-                // close that wouldn't otherwise produce a blur (see this
-                // component's doc, "Outside pointerdown").
+                // The popover hid by other means than `open` going false (the browser's own
+                // hide, e.g. a removed anchor): clear the roving focus like a blur-close does.
                 ctx.selectable.interacted_outside.set(true);
                 ctx.selectable.collection.clear_focus();
             }
             ctx.set_open(is_open);
         }),
     );
+    // The popover is `manual`: an outside press or focus dismisses through this hook, a touch
+    // press as a tap (see the component doc).
+    let list_id = use_memo(use_reactive!(|id| id));
+    crate::use_outside_dismiss(list_id, move || {
+        ctx.selectable.interacted_outside.set(true);
+        ctx.set_open(false);
+    });
     // JS-measured static positioning fallback for engines without CSS
     // Anchor Positioning -- see `top_layer::use_anchor_position_fallback`'s
     // doc. `side`/`align`/gap match this component's themed CSS
@@ -398,7 +363,7 @@ fn SelectListRendered(
     // font size): anchored below the trigger, left-aligned with it, the
     // same bottom/start convention `DropdownMenu`/`Menubar` already use.
     // Item-aligned places the list itself (`use_item_aligned`), so the popper engine sits out.
-    let popper_open = use_memo(move || open() && (ctx.position)() == SelectPosition::Popper);
+    let popper_open = use_memo(move || open() && ctx.placement() == SelectPosition::Popper);
     crate::top_layer::use_anchor_position_fallback(
         id.clone(),
         ctx.selectable.trigger_id.cloned(),
@@ -442,7 +407,7 @@ fn SelectListRendered(
     // `[data-dx-anchored][popover][data-side=...]` rules (`bottom: anchor(top)`, `margin`,
     // `transform: translateX(-50%)`, `position-try-fallbacks`) would apply on top of that
     // placement, so the list carries no engine attribute.
-    let anchor_kind = if (ctx.position)() == SelectPosition::Popper {
+    let anchor_kind = if ctx.placement() == SelectPosition::Popper {
         crate::top_layer::AnchorKind::Select
     } else {
         crate::top_layer::AnchorKind::SelectItemAligned
@@ -466,11 +431,11 @@ fn SelectListRendered(
         role: "listbox",
         tabindex: if focused() { "0" } else { "-1" },
         aria_multiselectable: ctx.multi(),
-        popover: crate::top_layer::PopoverKind::Auto.as_str(),
+        popover: crate::top_layer::PopoverKind::Manual.as_str(),
         dir: (ctx.direction)().as_str(),
         "data-state": if open() { "open" } else { "closed" },
         "data-direction": (ctx.direction)().as_str(),
-        "data-position": (ctx.position)().as_str(),
+        "data-position": ctx.placement().as_str(),
     });
     let attributes = merge_attributes(vec![attributes, owned]);
 
@@ -490,7 +455,6 @@ fn SelectListRendered(
             },
 
             ..attributes,
-            crate::scroll_lock::ScrollLockGuard { active: scroll_lock_active }
             {children}
         }
     }
@@ -498,11 +462,7 @@ fn SelectListRendered(
 
 /// Native (Blitz) arm: Blitz has no popover-API support at all
 /// (`dev-docs/reference/platform-rationale.md` Caveat 2), so this stays the
-/// functional floor, a plain, always-in-flow `div`. Scroll-lock is the one
-/// addition to this arm (dev-docs/backlog.md row 9) -- mirrors
-/// `DropdownMenuContentRendered`'s identical native arm
-/// (`dropdown_menu.rs`), which mounts `ScrollLockGuard` unconditionally on
-/// both arms rather than only the web one.
+/// functional floor, a plain, always-in-flow `div`.
 #[cfg(not(feature = "web"))]
 #[component]
 fn SelectListRendered(
@@ -538,8 +498,6 @@ fn SelectListRendered(
     });
 
     let onkeydown = select_list_onkeydown(ctx);
-    // See the web arm's identical `scroll_lock_active` (dev-docs/backlog.md row 9).
-    let scroll_lock_active = use_memo(move || (ctx.scroll_lock)() && open());
     // See the web arm's identical construction (dev-docs/backlog.md row 34) for
     // why this is conditional and routed through `merge_attributes` rather
     // than a bare literal alongside `..attributes`.
@@ -558,7 +516,7 @@ fn SelectListRendered(
         dir: (ctx.direction)().as_str(),
         "data-state": if open() { "open" } else { "closed" },
         "data-direction": (ctx.direction)().as_str(),
-        "data-position": (ctx.position)().as_str(),
+        "data-position": ctx.placement().as_str(),
     });
     let attributes = merge_attributes(vec![attributes, labelledby, owned]);
 
@@ -578,7 +536,6 @@ fn SelectListRendered(
             },
 
             ..attributes,
-            crate::scroll_lock::ScrollLockGuard { active: scroll_lock_active }
             {children}
         }
     }

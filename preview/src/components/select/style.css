@@ -57,6 +57,13 @@
   transition: background-color var(--dx-motion-duration-fast) var(--dx-motion-ease-out);
 }
 
+/* A mouse press opens the list, which is placed from the trigger's rect at that moment: the trigger keeps its
+   size while pressed (the theme's press feedback would shrink it, and the list would take the shrunken width
+   and position). The pressed wash stays. */
+.dx-select-trigger:active {
+  scale: none;
+}
+
 .dx-select-trigger[data-size="sm"] {
   --dx-select-trigger-height: var(--dx-control-height-sm);
   --dx-select-trigger-radius: var(--dx-radius-md);
@@ -179,10 +186,11 @@
 }
 
 /*
- * `position="item-aligned"` (Radix's default mode): the primitive's script puts the selected option
- * over the trigger and writes `top`/`left` in px, keeping the list inside the viewport. The popper
- * engine sits out, so the list resets the UA popover's `inset`/`margin` itself and takes the
- * trigger's width as its floor (`--dx-anchor-width`, written by the same script).
+ * `position="item-aligned"` (the default placement; a touch open uses the popper rules above): the
+ * primitive's script puts the selected option over the trigger by writing a `transform` in document
+ * px, keeping the list inside the viewport. The popper engine sits out, so the list resets the UA
+ * popover's `inset`/`margin` itself and takes the trigger's width as its floor (`--dx-anchor-width`,
+ * written by the same script).
  */
 .dx-select-list[data-position="item-aligned"] {
   position: fixed;

@@ -1,13 +1,14 @@
 /**
  * Anchored panels stay open and scrollable while the page scrolls (backlog row 477, owner decision):
  * the page carries a panel placed in document coordinates, so scrolling is no reason to close it.
- * `use_close_on_scroll` in `primitives/src/top_layer/scroll_clamp.rs` remains for the surfaces that still
- * ask for it (Tooltip, as Radix's does; HoverCard and NavigationMenu until their own change drops the call).
+ * `use_close_on_scroll` in `primitives/src/top_layer/scroll_clamp.rs` remains for the Tooltip alone, as
+ * Radix's does.
  *
- *   - ANY scroll closes it: Tooltip, HoverCard, NavigationMenu.
+ *   - ANY scroll closes it: Tooltip.
  *   - Scrolling never closes it, not even with the anchor scrolled out of view: Menubar, Popover and the
- *     DatePicker / ColorPicker popovers built on it, Combobox. A Combobox list holds a typed query and a
- *     phone keyboard scrolls and resizes the page while it is used.
+ *     DatePicker / ColorPicker popovers built on it, Combobox, HoverCard and NavigationMenu (opened by
+ *     focus and click: a hover-opened panel closes when the page scrolls the pointer off its trigger).
+ *     A Combobox list holds a typed query and a phone keyboard scrolls and resizes the page while it is used.
  *
  * Per surface: open, scroll a little, scroll the anchor out, and the keyboard-open simulation (visual-viewport
  * resize / focus-caused scroll).
@@ -62,7 +63,7 @@ const fixtureSurface = (
   name: string,
   triggerId: string,
   contentId: string,
-  how: "hover" | "click",
+  how: "hover" | "click" | "focus",
 ): Surface => ({
   name,
   anchor: (page) => page.locator(`#${triggerId}`),
@@ -72,6 +73,7 @@ const fixtureSurface = (
     const trigger = page.locator(`#${triggerId}`);
     await centre(trigger);
     if (how === "hover") await trigger.hover();
+    else if (how === "focus") await trigger.focus();
     else await trigger.click();
     const content = page.locator(`#${contentId}`);
     await expect(content).toBeVisible();
@@ -99,8 +101,6 @@ const demoSurface = (name: string, url: string, trigger: (page: Page) => Locator
 /** Policy: any scroll closes. */
 const ANY: Surface[] = [
   fixtureSurface("Tooltip", "clip-tooltip-trigger", "clip-tooltip-content", "hover"),
-  fixtureSurface("HoverCard", "clip-hovercard-trigger", "clip-hovercard-content", "hover"),
-  fixtureSurface("NavigationMenu", "clip-navigation-menu-trigger", "clip-navigation-menu-content", "hover"),
 ];
 
 /** Policy: scrolling never closes it. */
@@ -108,6 +108,8 @@ const STAYS: Surface[] = [
   fixtureSurface("Menubar", "clip-menubar-trigger", "clip-menubar-content", "click"),
   fixtureSurface("Popover (non-modal)", "clip-popover-trigger", "clip-popover-content", "click"),
   fixtureSurface("Combobox", "clip-combobox-trigger", "clip-combobox-content", "click"),
+  fixtureSurface("HoverCard", "clip-hovercard-trigger", "clip-hovercard-content", "focus"),
+  fixtureSurface("NavigationMenu", "clip-navigation-menu-trigger", "clip-navigation-menu-content", "click"),
   demoSurface(
     "ColorPicker popover",
     `${BASE_URL}/component/color_picker/`,

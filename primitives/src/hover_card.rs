@@ -590,7 +590,7 @@ fn HoverCardContentRendered(
     id: String,
     /// Whether the card is open. On the web, its popover is kept shown while this is true.
     open: Memo<bool>,
-    /// Sets the open state. On the web, it is called when the browser or a scroll closes the card.
+    /// Sets the open state. On the web, it is called when the browser closes the card.
     set_open: Callback<bool>,
     /// Whether the card is open. Sets its `data-state`.
     is_open: bool,
@@ -610,14 +610,6 @@ fn HoverCardContentRendered(
     // `anchor-name` is keyed off `ctx.content_id`, which this component
     // (below) keeps synced to this same id.
     crate::top_layer::use_anchor_position_fallback(id.clone(), id.clone(), open, side, align, 10);
-    // Any scroll closes a hover card (`top_layer::use_close_on_scroll`'s doc).
-    crate::top_layer::use_close_on_scroll(
-        id.clone(),
-        id.clone(),
-        open,
-        crate::top_layer::ScrollClose::AnyScroll,
-        set_open,
-    );
 
     // Entering the card holds it open (cancels a pending close); leaving it
     // starts the same `close_delay` as leaving the trigger. Both share the
@@ -689,7 +681,7 @@ fn HoverCardContentRendered(
     // both arms.
     /// Whether the card is open. On the web, its popover is kept shown while this is true.
     open: Memo<bool>,
-    /// Sets the open state. On the web, it is called when the browser or a scroll closes the card.
+    /// Sets the open state. On the web, it is called when the browser closes the card.
     set_open: Callback<bool>,
     /// Whether the card is open. Sets its `data-state`.
     is_open: bool,

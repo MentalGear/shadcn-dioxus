@@ -94,9 +94,9 @@ function writer(el) {
 #[cfg(feature = "web")]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum ScrollClose {
-    /// Any document or scroll-container scroll closes it. Only a Tooltip (and the surfaces that
-    /// still ask for it) closes on scroll: an anchored panel otherwise stays open and scrollable,
-    /// because the page carries it (`PLACEMENT_HELPERS_JS`).
+    /// Any document or scroll-container scroll closes it. Only a Tooltip closes on scroll (as
+    /// Radix's does): every other anchored panel stays open and scrollable, because the page
+    /// carries it (`PLACEMENT_HELPERS_JS`).
     AnyScroll,
 }
 

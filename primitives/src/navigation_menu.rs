@@ -1030,18 +1030,6 @@ fn NavigationMenuContentRendered(
         crate::ContentAlign::Start,
         8,
     );
-    // Any scroll closes an open navigation panel (`top_layer::use_close_on_scroll`'s doc).
-    crate::top_layer::use_close_on_scroll(
-        id.clone(),
-        id.clone(),
-        open,
-        crate::top_layer::ScrollClose::AnyScroll,
-        Callback::new(move |_: bool| {
-            if (ctx.open)() == Some(index.cloned()) {
-                ctx.set_open.call(None);
-            }
-        }),
-    );
 
     // An APG-adjacent panel still needs an accessible name; labelled by its
     // own trigger unless the caller already named it some other way --

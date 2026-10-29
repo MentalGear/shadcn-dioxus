@@ -6,7 +6,7 @@ import { BASE_URL } from "./base-url";
 // navigating, on the SSG lane -- `gotoHydrated` so those interactions can't
 // land before hydration attaches listeners.
 import { gotoHydrated } from "./hydration";
-import { awaitAnimationsSettled, measureAtRest, readAtRest } from "./animations";
+import { awaitAnimationsSettled, measureAtRest, readAtRest, staticBox } from "./animations";
 import { pageMetrics } from "./viewport-box";
 
 // dev-docs/backlog.md row 8: SelectTrigger's role is "combobox" (APG
@@ -54,8 +54,10 @@ test("test", async ({ page }) => {
     // Assert the selected value is displayed in the button
     await expect(selectTrigger).toHaveText("Apple");
 
-    // Reopen the select menu
+    // Reopen the select menu; a mouse press opens it one task after the pointerdown, and it opens
+    // on the selected option
     await selectTrigger.click();
+    await expect(firstOption).toBeFocused();
 
     // Assert typeahead functionality works
     await page.keyboard.type("Ban");
@@ -540,5 +542,202 @@ test("touch: a single-select tap is consumed by the option, never the page under
         expect(clicks, "the tap's click lands on the tapped option").toEqual([expect.stringContaining("Banana")]);
     } finally {
         await context.close();
+    }
+});
+
+// Row 478: the Select defaults follow Base UI and shadcn. The default placement is item-aligned (a touch
+// open is popper), the keys stop at the ends, a mouse opens on press, and the page is not locked.
+test.describe("defaults (row 478)", () => {
+    const listbox = (page: Page) => page.locator('[role="listbox"]').first();
+
+    /** Scrolls the trigger to mid-viewport, so the aligned list has room above and below. */
+    async function centreTrigger(trigger: ReturnType<typeof singleSelectTrigger>) {
+        await trigger.evaluate((el) => el.scrollIntoView({ block: "center" }));
+    }
+
+    async function select(page: Page, trigger: ReturnType<typeof singleSelectTrigger>, name: string) {
+        await trigger.click();
+        await listbox(page).getByRole("option", { name }).click();
+        await expect(listbox(page)).toHaveCount(0);
+    }
+
+    test("a mouse-opened Select is item-aligned: the selected option sits over the trigger", async ({ page }) => {
+        await page.setViewportSize({ width: 1000, height: 900 });
+        await gotoHydrated(page, `${BASE_URL}/component/select/`, { timeout: 20 * 60 * 1000 });
+        const trigger = singleSelectTrigger(page);
+        await centreTrigger(trigger);
+        await select(page, trigger, "banana");
+        await trigger.click();
+        const list = listbox(page);
+        await expect(list).toHaveAttribute("data-state", "open");
+        await expect(list).toHaveAttribute("data-position", "item-aligned");
+        await expect(list).toHaveAttribute("data-placed", "true");
+        await awaitAnimationsSettled(list);
+        const t = await measureAtRest(trigger);
+        const o = await measureAtRest(list.getByRole("option", { name: "banana" }));
+        expect(Math.abs(o.y + o.height / 2 - (t.y + t.height / 2)), "option centre on trigger centre").toBeLessThanOrEqual(2);
+    });
+
+    test("a touch-opened Select is placed as popper, below the trigger", async ({ browser, browserName }) => {
+        test.skip(browserName === "firefox", "Firefox does not support mobile contexts");
+        const { defaultBrowserType: _defaultBrowserType, ...iphone } = devices["iPhone 13"];
+        const context = await browser.newContext(iphone);
+        try {
+            const page = await context.newPage();
+            await gotoHydrated(page, `${BASE_URL}/component/select/`, { timeout: 20 * 60 * 1000 });
+            const trigger = singleSelectTrigger(page).first();
+            await centreTrigger(trigger);
+            await trigger.tap();
+            await listbox(page).getByRole("option", { name: "banana" }).tap();
+            await expect(listbox(page)).toHaveCount(0);
+            await trigger.tap();
+            const list = listbox(page);
+            await expect(list).toHaveAttribute("data-state", "open");
+            await expect(list).toHaveAttribute("data-position", "popper");
+            await expect(list).not.toHaveAttribute("data-placed", "true");
+            await awaitAnimationsSettled(list);
+            const t = await measureAtRest(trigger);
+            const l = await measureAtRest(list);
+            const clear = l.y >= t.y + t.height - 1 || l.y + l.height <= t.y + 1;
+            expect(clear, `the list does not cover the trigger: trigger ${JSON.stringify(t)} list ${JSON.stringify(l)}`).toBe(true);
+            // A later keyboard open of the same Select is item-aligned again.
+            await page.keyboard.press("Escape");
+            await expect(list).toHaveCount(0);
+            await trigger.focus();
+            await page.keyboard.press("Enter");
+            await expect(listbox(page)).toHaveAttribute("data-position", "item-aligned");
+        } finally {
+            await context.close();
+        }
+    });
+
+    test("a touch that scrolls the page from the trigger does not open it; a tap does", async ({ browser, browserName }) => {
+        test.skip(browserName !== "chromium", "drives CDP touch events");
+        const { defaultBrowserType: _defaultBrowserType, ...iphone } = devices["iPhone 13"];
+        const context = await browser.newContext(iphone);
+        try {
+            const page = await context.newPage();
+            await gotoHydrated(page, `${BASE_URL}/component/select/`, { timeout: 20 * 60 * 1000 });
+            const trigger = singleSelectTrigger(page).first();
+            await centreTrigger(trigger);
+            await page.evaluate(() => (document.body.style.paddingBottom = "3000px"));
+            const box = await staticBox(trigger);
+            const x = box.x + box.width / 2;
+            const y = box.y + box.height / 2;
+            const scrollBefore = await page.evaluate(() => window.scrollY);
+            const cdp = await context.newCDPSession(page);
+            await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x, y }] });
+            for (let step = 1; step <= 8; step++) {
+                await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x, y: y - step * 15 }] });
+            }
+            await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+            await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(scrollBefore);
+            await page.waitForTimeout(300);
+            await expect(listbox(page)).toHaveCount(0);
+            await centreTrigger(trigger);
+            await trigger.tap();
+            await expect(listbox(page)).toHaveAttribute("data-state", "open");
+        } finally {
+            await context.close();
+        }
+    });
+
+    test("the arrow keys, Home and End stop at the ends instead of wrapping", async ({ page }) => {
+        await gotoHydrated(page, `${BASE_URL}/component/select/`, { timeout: 20 * 60 * 1000 });
+        const trigger = singleSelectTrigger(page);
+        await trigger.focus();
+        await page.keyboard.press("ArrowDown");
+        const list = listbox(page);
+        const first = list.getByRole("option", { name: "apple" });
+        const last = list.getByRole("option", { name: "other" });
+        await expect(first).toBeFocused();
+        await page.keyboard.press("ArrowUp");
+        await expect(first).toBeFocused();
+        await page.keyboard.press("End");
+        await expect(last).toBeFocused();
+        await page.keyboard.press("ArrowDown");
+        await expect(last).toBeFocused();
+        await page.keyboard.press("Home");
+        await expect(first).toBeFocused();
+    });
+
+    test("a mouse press opens the list before the button is released, and the release keeps it open", async ({ page }) => {
+        await page.setViewportSize({ width: 1000, height: 900 });
+        await gotoHydrated(page, `${BASE_URL}/component/select/`, { timeout: 20 * 60 * 1000 });
+        const trigger = singleSelectTrigger(page);
+        await centreTrigger(trigger);
+        const press = async () => {
+            const box = await staticBox(trigger);
+            await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+            await page.mouse.down();
+        };
+        // Nothing selected: the list opens below the trigger, so the release lands outside it.
+        await press();
+        await expect(listbox(page)).toHaveAttribute("data-state", "open");
+        await page.mouse.up();
+        await page.waitForTimeout(400);
+        await expect(listbox(page)).toHaveAttribute("data-state", "open");
+        await page.keyboard.press("ArrowDown");
+        await page.keyboard.press("Enter");
+        await expect(trigger).toHaveText("Apple");
+
+        // A selection: the list opens with that option under the pointer. Releasing there picks nothing.
+        await press();
+        await expect(listbox(page)).toHaveAttribute("data-state", "open");
+        await page.mouse.up();
+        await page.waitForTimeout(400);
+        await expect(listbox(page)).toHaveAttribute("data-state", "open");
+        await expect(trigger).toHaveText("Apple");
+        await expect(listbox(page).getByRole("option", { name: "apple" })).toHaveAttribute("aria-selected", "true");
+    });
+
+    test("an outside mouse press closes the list; Escape closes it from the trigger after an Alt+ArrowDown open", async ({ page }) => {
+        await gotoHydrated(page, `${BASE_URL}/component/select/`, { timeout: 20 * 60 * 1000 });
+        const trigger = singleSelectTrigger(page);
+        await trigger.click();
+        await expect(listbox(page)).toHaveAttribute("data-state", "open");
+        await page.mouse.click(2, 2);
+        await expect(listbox(page)).toHaveCount(0);
+
+        await trigger.focus();
+        await page.keyboard.press("Alt+ArrowDown");
+        await expect(listbox(page)).toHaveAttribute("data-state", "open");
+        await expect(trigger).toBeFocused();
+        await page.keyboard.press("Escape");
+        await expect(listbox(page)).toHaveCount(0);
+    });
+
+    for (const [name, triggerName, listName] of [
+        ["item-aligned", "Aligned zone select", "Aligned zone options"],
+        ["popper", "Popper zone select", "Popper zone options"],
+    ] as const) {
+        test(`the page scrolls while a ${name} Select is open and the panel stays attached`, async ({ page }) => {
+            await page.setViewportSize({ width: 1000, height: 1000 });
+            await gotoHydrated(page, `${BASE_URL}/component/select/`, { timeout: 20 * 60 * 1000 });
+            const trigger = page.getByRole("combobox", { name: triggerName });
+            const list = page.getByRole("listbox", { name: listName });
+            await page.evaluate(() => (document.body.style.paddingBottom = "3000px"));
+            await trigger.evaluate((el) => el.scrollIntoView({ block: "center" }));
+            await trigger.click();
+            await expect(list).toHaveAttribute("data-state", "open");
+            await awaitAnimationsSettled(list);
+            const offset = async () => {
+                const t = await measureAtRest(trigger);
+                const l = await measureAtRest(list);
+                return { dy: l.y - t.y, dx: l.x - t.x, ty: t.y };
+            };
+            const before = await offset();
+            const scrollBefore = await page.evaluate(() => window.scrollY);
+            // The pointer is outside the list, so the wheel scrolls the page.
+            await page.mouse.move(4, 400);
+            await page.mouse.wheel(0, 120);
+            await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(scrollBefore + 50);
+            await page.waitForTimeout(300);
+            await expect(list).toHaveAttribute("data-state", "open");
+            const after = await offset();
+            expect(after.ty, "the page moved the trigger").toBeLessThan(before.ty - 50);
+            expect(Math.abs(after.dy - before.dy), "list stays at the same offset from the trigger").toBeLessThanOrEqual(1);
+            expect(Math.abs(after.dx - before.dx)).toBeLessThanOrEqual(1);
+        });
     }
 });

@@ -6,7 +6,7 @@ const ZONES: [&str; 24] = [
     "UTC+0", "UTC+1", "UTC+2", "UTC+3", "UTC+4", "UTC+5", "UTC+6", "UTC+7", "UTC+8", "UTC+9", "UTC+10", "UTC+11",
 ];
 
-/// `position: SelectPosition::ItemAligned` (shadcn's `position="item-aligned"`): the list opens over the trigger
+/// `position: SelectPosition::ItemAligned`, the default (shadcn's `position="item-aligned"`): the list opens over the trigger
 /// with the selected option on the trigger's line, shifted and scrolled to stay inside the viewport. The second
 /// select has no value, so its whole list opens below the trigger and flips above it when there is no room.
 #[component]
