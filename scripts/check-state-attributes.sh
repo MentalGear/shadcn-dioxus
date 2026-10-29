@@ -66,7 +66,7 @@ CALL_RE = re.compile(
     r"|state_attrs::(disabled|open_valued)\(")
 
 
-def strip_comments(src):
+def rust_code_only(src):
     """Rust source with comments blanked (newlines kept); string and char literals left alone."""
     out = []
     i, n = 0, len(src)
@@ -118,7 +118,7 @@ def strip_comments(src):
 
 def live(src):
     """Comment-free source up to the first `#[cfg(test)]` (tests close every file)."""
-    src = strip_comments(src)
+    src = rust_code_only(src)
     m = re.search(r"^[ \t]*#\[cfg\(test\)\]", src, re.M)
     return src if m is None else src[:m.start()]
 
