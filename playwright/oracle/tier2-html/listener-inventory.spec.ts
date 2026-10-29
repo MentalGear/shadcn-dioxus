@@ -28,9 +28,10 @@
  *      `touchstart` / `touchmove` listener is on those targets (row 149's symptom stated on its own, so a
  *      baseline that already carried one cannot hide it).
  *   3. SCROLL LOCK TIMING (the Dialog, with its exit slowed to 1.2 s so the window is deterministic):
- *      while the dialog is still animating out (`dialog[open]` still there) the page does not scroll and the
- *      wheel is cancelled; the lock lets go at the dialog's real `close()` -- not before it, and before the
- *      dialog unmounts (`use_animated_open`'s ~250 ms hold) -- after which a wheel scrolls the page again.
+ *      while the dialog is still animating out (`dialog[open]` still there) a wheel does not scroll the page
+ *      (the lock is `overflow: hidden`, which cancels no event); the lock lets go at the dialog's real
+ *      `close()` -- not before it, and before the dialog unmounts (`use_animated_open`'s ~250 ms hold) --
+ *      after which a wheel scrolls the page again.
  *   4. NO WIDTH SHIFT: under a forced classic scrollbar (`--hide-scrollbars` dropped: the default headless
  *      Chromium has 0-width overlay scrollbars, which hide this class of bug), `documentElement.clientWidth`
  *      is the same on every frame from before the open, through the open, the exit and the close.
@@ -310,7 +311,7 @@ test.describe("scroll lock (row 149)", () => {
     await page.addStyleTag({ content: ":root { --dx-overlay-duration: 1200ms !important; }" });
   }
 
-  /** Records `close()` calls, the lock flag and wheel outcomes, with one clock. */
+  /** Records `close()` calls, the lock flag and wheel events, with one clock. */
   async function installTimeline(page: Page) {
     await page.evaluate(() => {
       const w = window as unknown as { __tl: [number, string][]; __tlStart: number };
@@ -322,12 +323,8 @@ test.describe("scroll lock (row 149)", () => {
         log("dialog.close()");
         return close.apply(this, args);
       };
-      // Bubble-phase, passive: runs after the lock's capture listener, so `defaultPrevented` is its verdict.
-      window.addEventListener(
-        "wheel",
-        (e) => log(`wheel ${e.defaultPrevented ? "cancelled" : "free"} dialogOpen=${!!document.querySelector("dialog[open]")}`),
-        { passive: true },
-      );
+      // Passive: records the wheel and the dialog state without ever being a blocking listener itself.
+      window.addEventListener("wheel", () => log(`wheel dialogOpen=${!!document.querySelector("dialog[open]")}`), { passive: true });
       const flag = window as unknown as { __dxScrollLocked?: boolean };
       let v = flag.__dxScrollLocked;
       Object.defineProperty(window, "__dxScrollLocked", {
@@ -381,8 +378,8 @@ test.describe("scroll lock (row 149)", () => {
     const release = tl.find(([, what]) => what.startsWith("lock=false"))![1];
     expect(release, `released at unmount, not at close(): ${JSON.stringify(tl)}`).toContain("dialogConnected=true");
     const midExitWheel = tl.find(([, what]) => what.startsWith("wheel"))!;
-    expect(midExitWheel[1], JSON.stringify(tl)).toBe("wheel cancelled dialogOpen=true");
-    expect(tl.filter(([, what]) => what.startsWith("wheel")).at(-1)![1], JSON.stringify(tl)).toMatch(/^wheel free dialogOpen=false/);
+    expect(midExitWheel[1], JSON.stringify(tl)).toBe("wheel dialogOpen=true");
+    expect(tl.filter(([, what]) => what.startsWith("wheel")).at(-1)![1], JSON.stringify(tl)).toBe("wheel dialogOpen=false");
   });
 
   // The default headless Chromium has 0-width overlay scrollbars even for a tall page, which hides a lock
