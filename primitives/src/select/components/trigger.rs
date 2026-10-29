@@ -85,8 +85,8 @@ pub struct SelectTriggerProps {
 ///
 /// ## Opening
 ///
-/// A mouse opens the list on `pointerdown` (Base UI opens on `mousedown`, Radix on `pointerdown`), so
-/// a press-drag-release picks an option; the `click` that follows is ignored. A touch or pen opens on
+/// A mouse opens the list on the press (Base UI opens on `mousedown`, Radix on `pointerdown`), one task
+/// after the `pointerdown`, so a press-drag-release picks an option; the `click` that follows is ignored. A touch or pen opens on
 /// the tap (`click`), so a scroll that starts on the trigger (the browser cancels the pointer and
 /// sends no click) leaves the list closed. A touch open places the list as
 /// [`SelectPosition::Popper`](super::super::SelectPosition::Popper).
