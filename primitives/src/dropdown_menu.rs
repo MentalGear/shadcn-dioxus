@@ -816,18 +816,6 @@ fn DropdownMenuContentRendered(
         align,
         side_offset,
     );
-    // A menu that does NOT lock the page (`modal: false`) closes on any
-    // scroll instead (`top_layer::use_close_on_scroll`'s doc); a locking one
-    // keeps its `ScrollLockGuard` below.
-    let scroll_close_active = use_memo(move || open() && !scroll_lock_active());
-    crate::top_layer::use_close_on_scroll(
-        id.clone(),
-        id.clone(),
-        scroll_close_active,
-        crate::top_layer::ScrollClose::AnyScroll,
-        ctx.set_open,
-    );
-
     // dev-docs/backlog.md row 25: `aria-labelledby` is not a bare literal
     // alongside `..attributes` -- that is the duplicate-attribute hazard
     // `merge_attributes` exists to prevent (`dev-docs/conformance-harness.md`

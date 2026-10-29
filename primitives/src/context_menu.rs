@@ -49,23 +49,6 @@ const LONG_PRESS_DURATION: Duration = Duration::from_millis(500);
 /// Pointer drift (in CSS pixels, squared) that cancels an in-flight long press.
 const LONG_PRESS_MOVE_TOLERANCE_SQ: f64 = 100.0;
 
-/// `position: fixed` needs layout-viewport coords. In Safari, `clientX/Y` is
-/// visual-viewport relative (off by the pan offset under pinch-zoom), so we add
-/// `visualViewport.offsetLeft/Top` — the same trick Floating UI does for
-/// `strategy: 'fixed'` on WebKit. Chrome reports `clientX/Y` in layout-viewport
-/// coords (matching `position: fixed`), so the correction must not be applied
-/// there — it would double-count the pan offset and shift the menu by 2× the
-/// pan distance.
-async fn visual_viewport_offset() -> (f64, f64) {
-    let mut eval = dioxus::document::eval(
-        "const vv = window.visualViewport; \
-         const ua = navigator.userAgent; \
-         const isWebKit = ua.includes('AppleWebKit') && !ua.includes('Chrome'); \
-         dioxus.send(isWebKit ? [vv ? vv.offsetLeft : 0, vv ? vv.offsetTop : 0] : [0, 0]);",
-    );
-    eval.recv::<(f64, f64)>().await.unwrap_or((0.0, 0.0))
-}
-
 #[derive(Clone, Copy)]
 struct ContextMenuCtx {
     // State
@@ -77,8 +60,10 @@ struct ContextMenuCtx {
     // dev-docs/plan.md Phase 3.2.
     modal: ReadSignal<bool>,
 
-    // Position of the context menu
+    // Where the menu opened, as the press's `pageX`/`pageY` (document coordinates, the frame the
+    // placement script works in) and, for the native arm, as `clientX`/`clientY`.
     position: Signal<(i32, i32)>,
+    client_position: Signal<(i32, i32)>,
 
     // Focus state
     focus: CollectionState,
@@ -222,6 +207,7 @@ pub fn ContextMenu(props: ContextMenuProps) -> Element {
     let direction = use_direction(props.dir);
     let direction_signal = use_direction_signal(direction);
     let position = use_signal(|| (0, 0));
+    let client_position = use_signal(|| (0, 0));
     let root_id = use_unique_id();
     let trigger_id = use_unique_id();
     let trigger = crate::use_trigger_handle();
@@ -236,6 +222,7 @@ pub fn ContextMenu(props: ContextMenuProps) -> Element {
         disabled: props.disabled,
         modal: props.modal,
         position,
+        client_position,
         focus,
         root_id,
         trigger_id,
@@ -429,14 +416,13 @@ pub fn ContextMenuTrigger(props: ContextMenuTriggerProps) -> Element {
                 event.prevent_default();
                 return;
             }
-            let p = event.data().client_coordinates();
-            let set_open = ctx.set_open;
+            let data = event.data();
+            let (page, client) = (data.page_coordinates(), data.client_coordinates());
             let mut position = ctx.position;
-            spawn(async move {
-                let (off_x, off_y) = visual_viewport_offset().await;
-                position.set(((p.x + off_x) as i32, (p.y + off_y) as i32));
-                set_open.call(true);
-            });
+            let mut client_position = ctx.client_position;
+            position.set((page.x as i32, page.y as i32));
+            client_position.set((client.x as i32, client.y as i32));
+            ctx.set_open.call(true);
             event.prevent_default();
         }
     };
@@ -449,14 +435,16 @@ pub fn ContextMenuTrigger(props: ContextMenuTriggerProps) -> Element {
         }
         cancel_long_press(long_press_task, long_press_start);
         let p = event.client_coordinates();
+        let page = event.page_coordinates();
         long_press_start.set(Some((p.x, p.y)));
         let set_open = ctx.set_open;
         let mut position = ctx.position;
+        let mut client_position = ctx.client_position;
         let task = spawn(async move {
             sleep(LONG_PRESS_DURATION).await;
             long_press_task.set(None);
-            let (off_x, off_y) = visual_viewport_offset().await;
-            position.set(((p.x + off_x) as i32, (p.y + off_y) as i32));
+            position.set((page.x as i32, page.y as i32));
+            client_position.set((p.x as i32, p.y as i32));
             set_open.call(true);
             // Stay armed long enough to catch Android's compat `contextmenu`,
             // then disarm so future mouse right-clicks aren't suppressed.
@@ -630,24 +618,17 @@ pub fn ContextMenuContent(props: ContextMenuContentProps) -> Element {
     }
 }
 
-/// Web arm: promote the point-opened menu to the
-/// top layer via `popover="manual"` so its `position: fixed; left/top`
-/// coordinates escape clipping/transformed ancestors the same way
-/// `DropdownMenuContentRendered` already does for the anchored menu case
-/// (`dropdown_menu.rs`) -- see that file's doc for the general mechanism.
+/// Web arm: promote the point-opened menu to the top layer via `popover="manual"`, so it escapes
+/// clipping and transformed ancestors the same way `DropdownMenuContentRendered` does
+/// (`dropdown_menu.rs`).
 ///
-/// `manual`, not `auto`, deliberately: `ContextMenu` opens at a raw click
-/// point, not next to a persistent trigger element, so there is no
-/// `anchor-name` to key positioning off of -- `position_anchor_style`/
-/// `anchor_name_style` (`top_layer.rs`) are not used here at all, and the
-/// `left`/`top` inline styles (computed from the click's client
-/// coordinates, unrelated to CSS Anchor Positioning) are all it needs: once
-/// promoted to the top layer, `position: fixed` is relative to the
-/// viewport regardless of any transformed ancestor -- which is exactly the
-/// clipping bug the top layer avoids (a `transform`-ed ancestor otherwise
-/// becomes the containing block for a `position: fixed` descendant, per
-/// CSS's own rules, clipping/mispositioning it inside `overflow: hidden`
-/// ancestors like this file's `#clip-box` oracle fixture).
+/// The menu opens at a document point (`ContextMenuCtx::position`, the press's `pageX`/`pageY`),
+/// with no trigger element to anchor to (`anchor-name`/`position-anchor` are never wired up for
+/// it). `top_layer::use_point_anchor_placement` places it with the same script as every anchored
+/// overlay (rule P, backlog row 477): the point is a zero-size anchor, the menu is absolute in the
+/// top layer and moved by `transform`, so it stays at that point of the document when the page
+/// scrolls, opens upward or leftward when the room below or to the right is short, and is capped
+/// to the room left.
 ///
 /// `manual` (not `auto`) is also the dismissal decision: `auto`'s native
 /// light dismiss (Escape,
@@ -669,32 +650,6 @@ pub fn ContextMenuContent(props: ContextMenuContentProps) -> Element {
 /// (Escape and outside pointerdown are no-ops to the platform for it), so
 /// `use_outside_dismiss`/the root `Escape` handler below stay the *only*
 /// dismissal path.
-///
-/// ## Viewport clamping (`dev-docs/backlog.md` row 10, item 5.2)
-///
-/// The click/long-press coordinates this content is positioned at
-/// (`ContextMenuCtx::position`, set by `ContextMenuTrigger`'s mouse and
-/// touch handlers) are never clamped at the point they're captured -- a
-/// right-click or long-press near a viewport edge places this content's
-/// `left`/`top` off-screen with nothing to correct it. Every *other*
-/// overlay in this crate gets exactly this kind of correction from
-/// `top_layer::use_anchor_position_fallback`'s shift/size clamp
-/// (`dev-docs/backlog.md` row 10's own residual scope), but that function is
-/// keyed on an anchor element -- it resolves a trigger via
-/// `document.querySelector('[style*="anchor-name: ..."]')` and every one of
-/// its flip/shift/size-clamp branches reasons in terms of that trigger's
-/// rect. This content has no such element (see the `manual`-vs-`auto`
-/// section above: no `anchor-name` is ever wired up for it), so that path
-/// is structurally unreachable here -- not a gap in that function, a
-/// different shape of overlay entirely. `top_layer::use_point_anchor_clamp`
-/// (called below, right after `use_popover_sync`) is the "virtual-anchor"
-/// construction `dev-docs/backlog.md` row 10 calls out for exactly this case:
-/// it measures this content's own rendered size once it's promoted to the
-/// top layer and clamps the raw `(x, y)` point into the viewport with the
-/// same `EDGE_MARGIN`/max-height-clamp semantics, rather than an anchor
-/// rect. See that function's own doc for why it is a small, parallel
-/// script rather than a branch threaded through
-/// `use_anchor_position_fallback` itself.
 #[cfg(feature = "web")]
 #[component]
 fn ContextMenuContentRendered(
@@ -710,6 +665,7 @@ fn ContextMenuContentRendered(
     let mut ctx: ContextMenuCtx = use_context();
     let open = ctx.open;
     let (x, y) = (ctx.position)();
+    let (cx, cy) = (ctx.client_position)();
 
     // Drive `showPopover()`/`hidePopover()` from `open`. Unlike
     // `DropdownMenuContentRendered`'s use of this same helper, the callback
@@ -741,18 +697,7 @@ fn ContextMenuContentRendered(
     // (same ordering requirement `use_anchor_position_fallback` documents
     // for itself at its own call sites), so the content is already promoted
     // to the top layer and has a real rendered size to measure.
-    crate::top_layer::use_point_anchor_clamp(id.clone(), x, y, open);
-    // A context menu that does NOT lock the page (`modal: false`) closes on
-    // any scroll: it stays where it was opened, so it would otherwise float
-    // detached over the scrolled page. No anchor element (`""`).
-    let scroll_close_active = use_memo(move || open() && !scroll_lock_active());
-    crate::top_layer::use_close_on_scroll(
-        id.clone(),
-        String::new(),
-        scroll_close_active,
-        crate::top_layer::ScrollClose::AnyScroll,
-        ctx.set_open,
-    );
+    crate::top_layer::use_point_anchor_placement(id.clone(), x, y, open);
 
     // dev-docs/backlog.md row 11 (typeahead): one buffer for this
     // menu's own items -- see `DropdownMenu`'s identical call
@@ -815,10 +760,8 @@ fn ContextMenuContentRendered(
         ctx.set_open.call(false);
     });
 
-    // A `position: fixed` menu pinned to a click point drifts away from the
-    // click target as soon as the page scrolls. Native context menus block
-    // scroll while open; match that by suppressing wheel/touchmove outside
-    // the menu without mutating page-level overflow styles.
+    // Native context menus block scroll while open; match that by suppressing
+    // wheel/touchmove outside the menu without mutating page-level overflow styles.
     crate::js_listener::use_js_listeners(move || {
         if !open() {
             return None;
@@ -868,9 +811,16 @@ fn ContextMenuContentRendered(
     rsx! {
         div {
             id: id.clone(),
+            // Fixed at the press point until the placement script takes the panel over
+            // (`top_layer::use_point_anchor_placement`) and makes it absolute in document
+            // coordinates: a focus move into a panel that is not placed yet must not scroll the
+            // document to it.
             position: "fixed",
-            left: "{x}px",
-            top: "{y}px",
+            margin: "0",
+            top: "{cy}px",
+            left: "{cx}px",
+            right: "auto",
+            bottom: "auto",
             pointer_events: open().then_some("auto"),
             onkeydown,
             onblur: move |_| {
@@ -904,7 +854,7 @@ fn ContextMenuContentRendered(
 ) -> Element {
     let mut ctx: ContextMenuCtx = use_context();
     let open = ctx.open;
-    let (x, y) = (ctx.position)();
+    let (x, y) = (ctx.client_position)();
 
     // dev-docs/backlog.md row 11 (typeahead): see the web arm's
     // identical call above for the general rationale.

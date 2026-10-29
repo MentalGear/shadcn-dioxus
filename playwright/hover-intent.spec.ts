@@ -2,6 +2,7 @@ import { test, expect } from './fixtures';
 import type { Locator, Page } from '@playwright/test';
 import { BASE_URL } from './base-url';
 import { gotoHydrated } from './hydration';
+import { hoverSettled } from './animations';
 
 // A menu opened by pointer hover is a pointer *intent*: when the pointer is no longer over the
 // trigger or its panel, the menu closes after a short grace delay (Radix NavigationMenu:
@@ -113,7 +114,7 @@ for (const menu of MENUS) {
       await expectOpen(menu.isOpen(page), true);
       const link = menu.panelLink(page);
       await expect(link).toBeVisible();
-      await link.hover();
+      await hoverSettled(link);
       await page.waitForTimeout(500);
       await expectOpen(menu.isOpen(page), true);
 
@@ -127,7 +128,7 @@ for (const menu of MENUS) {
       await menu.trigger(page).focus();
       await page.keyboard.press('ArrowDown');
       await expectOpen(menu.isOpen(page), true);
-      await menu.panelLink(page).hover();
+      await hoverSettled(menu.panelLink(page));
       await page.getByRole('heading', { level: 1 }).first().hover();
       await expectOpen(menu.isOpen(page), false, CLOSE_WITHIN_MS);
     });

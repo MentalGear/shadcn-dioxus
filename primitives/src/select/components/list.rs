@@ -92,48 +92,44 @@ pub fn SelectList(props: SelectListProps) -> Element {
     }
 }
 
-/// The item-aligned placement script. Reads the geometry it needs in untransformed layout units
+/// The item-aligned placement script, in document coordinates (`PLACEMENT_HELPERS_JS` is spliced in
+/// front of it). The list is absolute in the top layer and moved by `transform` alone, so the page
+/// carries it when it scrolls. It reads the geometry it needs in untransformed layout units
 /// (`offsetTop`/`offsetHeight`, never a rect of the list: the pop-in animates `scale`), puts the
-/// selected option's centre on the trigger's centre, then keeps the list inside the visual
-/// viewport by moving it and, past that, scrolling the option away from the trigger line. With no
-/// selected option there is nothing to align, so the whole list sits below the trigger and flips
-/// above it on collision, the popper's rule (`data-side` names the side for the CSS).
+/// selected option's centre on the trigger's centre, then keeps the list inside the visible region
+/// by moving it and, past that, scrolling the option away from the trigger line. With no selected
+/// option there is nothing to align, so the whole list sits below the trigger and flips above it on
+/// collision, the popper's rule (`data-side` names the side for the CSS).
 #[cfg(feature = "web")]
 const ITEM_ALIGNED_JS: &str = r#"
-const id = await dioxus.recv();
-const triggerId = await dioxus.recv();
+const [id, triggerId] = await dioxus.recv();
 const list = document.getElementById(id);
 const trigger = document.querySelector('[style*="anchor-name: --dxa-' + triggerId + ';"]');
 if (!list || !trigger) return;
 const MARGIN = 8;
 const GAP = 4;
+const put = writer(list);
+const origin = originOf(list);
+const clamp = (n, lo, hi) => Math.min(Math.max(n, lo), Math.max(lo, hi));
 const offsetIn = (el) => {
     let y = 0;
     for (let n = el; n && n !== list; n = n.offsetParent) y += n.offsetTop;
     return y;
 };
 const place = () => {
-    // The box a fixed element resolves against (a `position: fixed; inset: 0` probe): the root's
-    // client size is wider by the reserved scrollbar gutter.
-    const probe = document.createElement('div');
-    probe.style.cssText = 'position:fixed;inset:0;visibility:hidden;pointer-events:none;';
-    document.documentElement.appendChild(probe);
-    const box = probe.getBoundingClientRect();
-    probe.remove();
-    const vv = window.visualViewport;
-    const vw = box.width;
-    const vh = Math.min(box.height, vv ? vv.height : Infinity);
-    const t = trigger.getBoundingClientRect();
+    const v = visible();
+    const a = docRect(trigger, v);
     const selected = list.querySelector('[role="option"][aria-selected="true"]');
-    list.style.setProperty('--dx-anchor-width', t.width + 'px');
-    list.style.setProperty('--dx-available-height', Math.max(0, vh - 2 * MARGIN) + 'px');
+    for (const [prop, value] of [['position', 'absolute'], ['inset', 'auto'], ['margin', '0'], ['top', '0'], ['left', '0']]) {
+        list.style.setProperty(prop, value);
+    }
+    list.style.setProperty('--dx-anchor-width', a.r - a.l + 'px');
+    list.style.setProperty('--dx-available-height', Math.max(0, v.b - v.t - 2 * MARGIN) + 'px');
     let ch = list.offsetHeight;
-    // No selected option: below the trigger unless the list does not fit there and the room above is
-    // larger, then capped to the chosen side's room so it never covers the trigger.
     let side = null;
     if (!selected) {
-        const below = vh - MARGIN - (t.bottom + GAP);
-        const above = t.top - GAP - MARGIN;
+        const below = v.b - MARGIN - (a.b + GAP);
+        const above = a.t - GAP - v.t - MARGIN;
         side = ch <= below || below >= above ? 'bottom' : 'top';
         list.style.setProperty('--dx-available-height', Math.max(0, side === 'bottom' ? below : above) + 'px');
         ch = list.offsetHeight;
@@ -143,27 +139,21 @@ const place = () => {
     }
     const cw = list.offsetWidth;
     const maxScroll = list.scrollHeight - list.clientHeight;
-    const border = list.offsetHeight - list.clientHeight;
-    // y of the option's top inside the list's border box when the list is scrolled to `s`.
     const optTop = selected ? offsetIn(selected) + list.clientTop : 0;
     const optH = selected ? selected.offsetHeight : 0;
-    const want = t.top + t.height / 2 - optH / 2;
-    let top = selected ? want - optTop : side === 'bottom' ? t.bottom + GAP : t.top - GAP - ch;
+    const want = (a.t + a.b) / 2 - optH / 2;
+    let top = selected ? want - optTop : side === 'bottom' ? a.b + GAP : a.t - GAP - ch;
     let scroll = 0;
-    if (selected) {
-        const lo = MARGIN, hi = vh - MARGIN - ch;
-        if (top < lo || top > hi) {
-            top = Math.min(Math.max(top, lo), Math.max(lo, hi));
-            // The panel cannot go further: scroll the list so the option still lands as close as it can.
-            scroll = Math.min(Math.max(optTop - (want - top) - list.clientTop, 0), maxScroll);
-        }
+    const lo = v.t + MARGIN;
+    const hi = v.b - MARGIN - ch;
+    if (selected && (top < lo || top > hi)) {
+        top = clamp(top, lo, hi);
+        // The panel cannot go further: scroll the list so the option still lands as close as it can.
+        scroll = clamp(optTop - (want - top) - list.clientTop, 0, maxScroll);
     }
-    top = Math.min(Math.max(top, MARGIN), Math.max(MARGIN, vh - MARGIN - ch));
-    const rtl = getComputedStyle(list).direction === 'rtl';
-    let left = rtl ? t.right - cw : t.left;
-    left = Math.min(Math.max(left, MARGIN), Math.max(MARGIN, vw - MARGIN - cw));
-    list.style.top = top + 'px';
-    list.style.left = left + 'px';
+    top = clamp(top, lo, hi);
+    const left = clamp(getComputedStyle(list).direction === 'rtl' ? a.r - cw : a.l, v.l + MARGIN, v.r - MARGIN - cw);
+    setPlacement(put, snap(left), snap(top), false, false, origin);
     list.scrollTop = scroll;
     list.dataset.placed = 'true';
 };
@@ -175,6 +165,7 @@ const start = () => {
 };
 start();
 listen(window, 'resize', place, { passive: true });
+listen(window.visualViewport, 'resize', place, { passive: true });
 "#;
 
 /// Places the listbox for `position="item-aligned"`; does nothing for the popper placement.
@@ -187,9 +178,12 @@ fn use_item_aligned(id: String, ctx: SelectContext) {
             return None;
         }
         Some(
-            JsListeners::install(ITEM_ALIGNED_JS)
-                .arg(id.clone())
-                .arg(ctx.selectable.trigger_id.cloned()),
+            JsListeners::install(&format!(
+                "{}{}",
+                crate::top_layer::PLACEMENT_HELPERS_JS,
+                ITEM_ALIGNED_JS
+            ))
+            .arg((id.clone(), ctx.selectable.trigger_id.cloned())),
         )
     });
 }
@@ -415,20 +409,6 @@ fn SelectListRendered(
     );
     // `position="item-aligned"`: the selected option over the trigger, inside the viewport.
     use_item_aligned(id.clone(), ctx);
-    // A Select that does NOT lock the page (`scroll_lock: false`) closes on
-    // any scroll (`top_layer::use_close_on_scroll`'s doc); a locking one
-    // keeps its `ScrollLockGuard`.
-    let scroll_close_active = use_memo(move || open() && !scroll_lock_active());
-    crate::top_layer::use_close_on_scroll(
-        id.clone(),
-        ctx.selectable.trigger_id.cloned(),
-        scroll_close_active,
-        crate::top_layer::ScrollClose::AnyScroll,
-        Callback::new(move |is_open: bool| {
-            ctx.set_open(is_open);
-        }),
-    );
-
     // axe `aria-input-field-name` (dev-docs/backlog.md row 34): an
     // ARIA `listbox` is an input field and needs an accessible name.
     // Default it from the trigger (whose own visible text is the
@@ -458,11 +438,10 @@ fn SelectListRendered(
         })
     };
     // Only the popper placement is engine-anchored. An item-aligned list is placed by its own script
-    // (`use_item_aligned`) in viewport px, and writes `data-side` for its own CSS: with the engine's
+    // (`use_item_aligned`) in document px and writes `data-side` for its own CSS; the engine's
     // `[data-dx-anchored][popover][data-side=...]` rules (`bottom: anchor(top)`, `margin`,
-    // `transform: translateX(-50%)`, `position-try-fallbacks`) applied on top of it, a list opened
-    // above its trigger was scroll-compensated by the page's scroll (`top: 8px` painted at 8px minus
-    // `scrollY`), and one opened below was 8px low and half its width to the left.
+    // `transform: translateX(-50%)`, `position-try-fallbacks`) would apply on top of that
+    // placement, so the list carries no engine attribute.
     let anchor_kind = if (ctx.position)() == SelectPosition::Popper {
         crate::top_layer::AnchorKind::Select
     } else {

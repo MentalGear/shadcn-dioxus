@@ -5,6 +5,7 @@ import * as path from "path";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 import { demoFrame, demoRole, demoRoles, popupItem } from "./demo-frame";
+import { clickSettled, hoverSettled } from "./animations";
 
 /**
  * The picked accent on active and selected states (backlog row 389). With `<html data-theme-accent>` set, the
@@ -634,7 +635,7 @@ test.describe("accent on active and selected states (row 389)", () => {
     await demoRole(page, "button", 0).click();
     const item = popupItem(page, "menu", "menuitem", 0);
     await expect(item).toBeVisible();
-    await item.hover();
+    await hoverSettled(item);
     await checkStates(page, [
       {
         label: "dropdown menu highlighted item",
@@ -648,11 +649,11 @@ test.describe("accent on active and selected states (row 389)", () => {
 
     await gotoHydrated(page, `${BASE_URL}/component/select/`);
     await demoRole(page, "combobox", 0).click();
-    await popupItem(page, "listbox", "option", 0).click();
+    await clickSettled(popupItem(page, "listbox", "option", 0));
     await demoRole(page, "combobox", 0).click();
     const option = popupItem(page, "listbox", "option", 1);
     await expect(option).toBeVisible();
-    await option.hover();
+    await hoverSettled(option);
     await checkStates(page, [
       {
         label: "select highlighted option",

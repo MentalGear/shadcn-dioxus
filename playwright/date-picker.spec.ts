@@ -138,12 +138,12 @@ test("uses the CSS-anchor path, not the JS-measured fallback (no inline top/left
   await expect(content(page)).toBeVisible();
 
   // `use_anchor_position_fallback` (primitives/src/top_layer/anchor_fallback.rs) is the
-  // only thing that ever writes an inline `top` on this element -- an
+  // only thing that ever writes an inline `position` on this element -- an
   // empty style here confirms the CSS-native `anchor()` path engaged
   // first, the same signal top-layer.spec.ts Rule 8 checks for its
   // ColorPicker case.
-  const inlineTop = await content(page).evaluate((el) => (el as HTMLElement).style.top);
-  expect(inlineTop).toBe("");
+  const inlinePosition = await content(page).evaluate((el) => (el as HTMLElement).style.position);
+  expect(inlinePosition).toBe("");
   const marker = await content(page).evaluate((el) => el.getAttribute("data-dx-anchored"));
   expect(marker).toBe("popover");
 });

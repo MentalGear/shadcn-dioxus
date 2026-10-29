@@ -376,8 +376,17 @@ fn use_global_keydown_listener(key: &'static str, on_escape: impl FnMut() + Clon
     });
 }
 
-/// Light-dismiss when pointerdown/focusin lands outside the element with the given `id`.
+/// Light-dismiss when a press or focus lands outside the element with the given `id`.
 /// `id` should be the id of the popover/dialog root that contains every "inside" element.
+///
+/// A mouse press outside dismisses on `pointerdown`. A touch or pen press is a tap: `pointerdown`
+/// is recorded while the panel is open (a press that began before it opened has no record, so the
+/// long press that opens a context menu never closes it), `pointerup` within 10 px dismisses, and
+/// `pointercancel` (the browser took the gesture to scroll) drops it. A scroll that starts outside
+/// a panel on a phone therefore leaves it open. Focus moving outside the root dismisses too (e.g.
+/// tabbing away), except focus landing on an *ancestor* of the root: clicking the popover's own
+/// non-focusable background blurs the focused control and the browser moves focus to the nearest
+/// focusable ancestor, which is not a real focus-out.
 fn use_outside_dismiss(
     id: impl Readable<Target = String> + Copy + 'static,
     on_dismiss: impl FnMut() + Clone + 'static,
@@ -387,24 +396,24 @@ fn use_outside_dismiss(
         Some(
             JsListeners::install(
                 "const id = await dioxus.recv();
-                // A pointer press outside the root is always a dismiss, even when it
-                // lands on an ancestor element that wraps the popover (e.g. a scroll
-                // container around it).
-                const onPointer = e => {
-                    const root = document.getElementById(id);
-                    if (root && !root.contains(e.target)) dioxus.send(true);
-                };
-                // Focus moving outside the root dismisses too (e.g. tabbing away), but
-                // ignore focus that lands on an *ancestor* of the root. Clicking the
-                // popover's own non-focusable background blurs the focused control and
-                // the browser moves focus to the nearest focusable ancestor, which
-                // still contains the popover — that is not a real focus-out.
-                const onFocus = e => {
-                    const root = document.getElementById(id);
-                    if (root && !root.contains(e.target) && !e.target.contains(root)) dioxus.send(true);
-                };
-                listen(document, 'pointerdown', onPointer, true);
-                listen(document, 'focusin', onFocus, true);",
+                const root = () => document.getElementById(id);
+                const outside = n => { const r = root(); return r && !r.contains(n); };
+                let press = null;
+                listen(document, 'pointerdown', e => {
+                    if (e.pointerType === 'mouse') { if (outside(e.target)) dioxus.send(true); }
+                    else press = { id: e.pointerId, x: e.clientX, y: e.clientY, target: e.target };
+                }, true);
+                listen(document, 'pointerup', e => {
+                    const p = press;
+                    press = null;
+                    if (p && p.id === e.pointerId && Math.hypot(e.clientX - p.x, e.clientY - p.y) < 10
+                        && outside(p.target)) dioxus.send(true);
+                }, true);
+                listen(document, 'pointercancel', e => { if (press && press.id === e.pointerId) press = null; }, true);
+                listen(document, 'focusin', e => {
+                    const r = root();
+                    if (r && !r.contains(e.target) && !e.target.contains(r)) dioxus.send(true);
+                }, true);",
             )
             .arg(id.cloned())
             .on_message(move |_: bool| on_dismiss()),

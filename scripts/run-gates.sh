@@ -116,6 +116,7 @@ gates=(
   "check-press-under|scripts/check-press-under.sh"
   "check-anchored-keyframes|scripts/check-anchored-keyframes.sh"
   "check-anchor-marker|scripts/check-anchor-marker.sh"
+  "check-anchored-placement|scripts/check-anchored-placement.sh"
   "check-duplicate-keyframes|scripts/check-duplicate-keyframes.sh"
   "check-theme-baseline|scripts/check-theme-baseline.sh"
   "check-theme-preset-axes|scripts/check-theme-preset-axes.sh"

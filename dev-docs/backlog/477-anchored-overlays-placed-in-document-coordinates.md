@@ -1,7 +1,7 @@
 ---
 id: 477
 title: "Anchored overlays are placed in document coordinates (absolute top-layer panels, transform-only), CSS anchoring kept where supported"
-status: "BACKLOG. Measured on the owner's iPhone (iOS 18.7 Safari) on 2026-10-28; the owner's verdict on the…"
+status: "IMPLEMENTED on lane/placement-477, device run open. Measured on the owner's iPhone (iOS 18.7…"
 size: "L"
 area: overlays
 updated: 2026-10-28
@@ -15,7 +15,16 @@ Every anchored overlay (Popover, Tooltip, HoverCard, DropdownMenu, ContextMenu, 
 
 ## Status / trigger
 
-BACKLOG. Measured on the owner's iPhone (iOS 18.7 Safari) on 2026-10-28; the owner's verdict on the lab runs: "all works as it should and version P is the best". Ordered before rows [452](./452-port-3-pl-placement-anchor-fallback-and-the-paint-safe-gate.md) and [456](./456-port-3-ov-overlay-core-escape-dismiss-open-focus.md): this row changes what they port. Source: [`radix-vs-base-ui-2026-10-28.md`](../research/radix-vs-base-ui-2026-10-28.md).
+IMPLEMENTED on lane/placement-477, device run open. Measured on the owner's iPhone (iOS 18.7 Safari) on 2026-10-28; the owner's verdict on the lab runs: "all works as it should and version P is the best". Ordered before rows [452](./452-port-3-pl-placement-anchor-fallback-and-the-paint-safe-gate.md) and [456](./456-port-3-ov-overlay-core-escape-dismiss-open-focus.md): this row changes what they port. Source: [`radix-vs-base-ui-2026-10-28.md`](../research/radix-vs-base-ui-2026-10-28.md).
+
+IMPLEMENTED on branch `lane/placement-477` (2026-10-28), proof open: the device run on the iPhone. What landed:
+
+- `primitives/src/top_layer/anchor_fallback.rs`: one placement script (`PLACE_JS`) for every anchored overlay and for the ContextMenu point (`use_placement`, `Anchor::{Element, Point}`); `scroll_clamp.rs`: the shared geometry (`PLACEMENT_HELPERS_JS`: `visible()`, `docRect()`, `writer()`), `use_point_anchor_placement`, and `use_close_on_scroll` cut to the one `AnyScroll` policy. The `visualViewport` offset tracking, the settle loop, the measure-at-full-width probe and the `AnchorLeavesViewport` policy are gone. CSS anchor positioning (`anchor.css`, `position: fixed` + `anchor()`) stays the first placement; the script takes a panel over when it matches no contract spot, lies outside the visible region or covers the anchor, and keeps it for that open.
+- `select/components/list.rs` (item-aligned) and `context_menu.rs` (`pageX`/`pageY`, the `visual_viewport_offset` eval is gone) use the same helpers. `lib.rs` `use_outside_dismiss`: a mouse press dismisses on `pointerdown`, a touch or pen press is a tap (`pointerup` within 10 px, `pointercancel` drops it).
+- Anchored overlays no longer close on scroll: the call is removed from Popover, Menubar, DropdownMenu, Combobox, Select and ContextMenu. `use_close_on_scroll` stays for Tooltip, HoverCard and NavigationMenu (their files belong to other lanes; HoverCard and NavigationMenu drop the call under the owner decision, then the hook can go).
+- Proof so far: `playwright/anchored-placement.spec.ts` (phone viewport, pinch zoom plus wheel pan, Chromium's and iOS WebKit's rect frame, engine and script path, gap within 1 px; transform-only writes; context menu document point; touch scroll vs tap) passes on the new build and fails 6 of its pan cases on the base build; `scripts/check-anchored-placement.sh` is the gate of the Gate idea. JS in Rust strings 4,356 -> 3,878 lines.
+- Spec class: an anchored panel is absolute in the document, so the `scrollIntoView` that Playwright adds to an action retried while the open animation runs ("element is not stable") scrolls the page, re-chooses the side and moves the panel from under the pointer (a fixed panel was immune). Specs that hover or click an item of a just-opened panel go through `hoverSettled` / `clickSettled` (`playwright/animations.ts`), which wait the animations out first so the first attempt is the only one.
+- Open: the iPhone device run (keyboard up, scrolling with each overlay open); the release-build run of the timing specs; DropdownMenu and Select still lock page scroll (row 479), which is why a touch drag outside them ends in the platform's own light dismiss.
 
 ## Size
 

@@ -1,6 +1,5 @@
 # check-js-volume baseline (scripts/lib/ratchet.py): shrink-only per-file counts, regenerate with --update-baseline.
 # path	sink	js_lit	js_file	install	inline_script	comment_eval
-#! total-raised: row 434 lane 3.0: the generic bridge (total 7826->7858)
 labs/carousel-lab/src/main.rs	2	0	0	0	0	0
 preview/build.rs	0	12	0	0	0	0
 preview/index.html	0	0	0	0	7467	0
@@ -39,11 +38,11 @@ preview/src/utilities_docs.rs	0	12	0	0	0	0
 primitives/src/activity.rs	0	108	0	1	0	0
 primitives/src/alert_dialog.rs	1	10	0	0	0	0
 primitives/src/avatar.rs	1	13	0	0	0	0
-primitives/src/bridge/behaviours.rs	2	3	0	0	0	0	# raised: row 434 lane 3.0: the generic bridge (sink 0->2, js_lit 0->3)
-primitives/src/bridge/events.rs	1	0	0	0	0	0	# raised: row 434 lane 3.0: the generic bridge (sink 0->1)
-primitives/src/bridge/mod.rs	2	0	0	0	0	0	# raised: row 434 lane 3.0: the generic bridge (sink 0->2)
-primitives/src/bridge/session.rs	1	0	0	0	0	0	# raised: row 434 lane 3.0: the generic bridge (sink 0->1)
-primitives/src/bridge/transport.rs	4	6	0	0	0	0	# raised: row 434 lane 3.0: the generic bridge (sink 0->4, js_lit 0->7)
+primitives/src/bridge/behaviours.rs	2	3	0	0	0	0
+primitives/src/bridge/events.rs	1	0	0	0	0	0
+primitives/src/bridge/mod.rs	2	0	0	0	0	0
+primitives/src/bridge/session.rs	1	0	0	0	0	0
+primitives/src/bridge/transport.rs	4	6	0	0	0	0
 primitives/src/carousel/autoplay.rs	1	1	0	0	0	0
 primitives/src/carousel/context.rs	1	1	0	0	0	0
 primitives/src/carousel/drag.rs	0	537	0	1	0	0
@@ -57,7 +56,7 @@ primitives/src/checkbox.rs	2	17	0	0	0	0
 primitives/src/collapsible.rs	0	5	0	1	0	0
 primitives/src/collection.rs	1	6	0	0	0	0
 primitives/src/combobox/components/option.rs	1	22	0	0	0	0
-primitives/src/context_menu.rs	1	12	0	2	0	0
+primitives/src/context_menu.rs	0	10	0	2	0	0
 primitives/src/date_picker/context.rs	1	5	0	0	0	0
 primitives/src/default_checked.rs	2	4	0	0	0	0
 primitives/src/dialog.rs	1	10	0	0	0	0
@@ -79,23 +78,23 @@ primitives/src/popover.rs	1	10	0	0	0	0
 primitives/src/questionnaire.rs	2	12	0	0	0	0
 primitives/src/scroll_area.rs	0	29	0	1	0	0
 primitives/src/scroll_lock.rs	2	82	0	1	0	0
-primitives/src/select/components/list.rs	0	75	0	1	0	0
+primitives/src/select/components/list.rs	0	65	0	1	0	0
 primitives/src/toast.rs	1	166	0	3	0	0
-primitives/src/top_layer/anchor_fallback.rs	0	475	0	1	0	0
+primitives/src/top_layer/anchor_fallback.rs	0	127	0	1	0	0
 primitives/src/top_layer/popover_sync.rs	2	21	0	2	0	0
-primitives/src/top_layer/scroll_clamp.rs	1	168	0	1	0	0
+primitives/src/top_layer/scroll_clamp.rs	0	69	0	1	0	0
 primitives/src/top_layer/styles.rs	2	12	0	0	0	0
-primitives/src/ts/behaviours/behaviours.gen.ts	0	0	16	0	0	0	# raised: row 434 lane 3.0: the generic bridge (js_file 0->16)
-primitives/src/ts/behaviours/fixture.ts	0	0	13	0	0	0	# raised: row 434 lane 3.0: the generic bridge (js_file 0->13)
-primitives/src/ts/bridge.ts	0	0	859	0	0	0	# raised: row 434 lane 3.0: the generic bridge (js_file 868->874)
+primitives/src/ts/behaviours/behaviours.gen.ts	0	0	16	0	0	0
+primitives/src/ts/behaviours/fixture.ts	0	0	13	0	0	0
+primitives/src/ts/bridge.ts	0	0	859	0	0	0
 primitives/src/ts/focus-trap.ts	0	0	93	0	0	0
-primitives/src/ts/lib/register.ts	0	0	6	0	0	0	# raised: row 434 lane 3.0: the generic bridge (js_file 0->6)
-primitives/src/ts/types/bridge.d.ts	0	0	89	0	0	0	# raised: row 434 lane 3.0: the generic bridge (js_file 0->89)
-primitives/src/ts/types/dioxus.d.ts	0	0	5	0	0	0	# raised: row 434 lane 3.0: the generic bridge (js_file 0->5)
+primitives/src/ts/lib/register.ts	0	0	6	0	0	0
+primitives/src/ts/types/bridge.d.ts	0	0	89	0	0	0
+primitives/src/ts/types/dioxus.d.ts	0	0	5	0	0	0
 primitives/src/virtual/bridge.rs	2	50	0	1	0	0
 primitives/src/virtual/find.rs	1	36	0	1	0	0
 primitives/src/virtual/scroll_to.rs	1	56	0	0	0	0
 primitives/src/virtual_grid.rs	3	65	0	0	0	0
-primitives/ts-test/behaviours.test.ts	0	0	361	0	0	0	# raised: row 434 lane 3.0: the generic bridge (js_file 316->361)
-primitives/ts-test/bridge.test.ts	0	0	730	0	0	0	# raised: row 434 lane 3.0: the generic bridge (js_file 727->730)
-primitives/ts-test/fake-dom.ts	0	0	274	0	0	0	# raised: row 434 lane 3.0: the generic bridge (js_file 0->274)
+primitives/ts-test/behaviours.test.ts	0	0	361	0	0	0
+primitives/ts-test/bridge.test.ts	0	0	730	0	0	0
+primitives/ts-test/fake-dom.ts	0	0	274	0	0	0
