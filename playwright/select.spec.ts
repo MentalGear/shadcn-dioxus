@@ -6,7 +6,7 @@ import { BASE_URL } from "./base-url";
 // navigating, on the SSG lane -- `gotoHydrated` so those interactions can't
 // land before hydration attaches listeners.
 import { gotoHydrated } from "./hydration";
-import { awaitAnimationsSettled, measureAtRest, readAtRest } from "./animations";
+import { awaitAnimationsSettled, measureAtRest, readAtRest, staticBox } from "./animations";
 import { pageMetrics } from "./viewport-box";
 
 // dev-docs/backlog.md row 8: SelectTrigger's role is "combobox" (APG
@@ -619,8 +619,7 @@ test.describe("defaults (row 478)", () => {
             const trigger = singleSelectTrigger(page).first();
             await centreTrigger(trigger);
             await page.evaluate(() => (document.body.style.paddingBottom = "3000px"));
-            const box = await trigger.boundingBox();
-            if (!box) throw new Error("trigger has no box");
+            const box = await staticBox(trigger);
             const x = box.x + box.width / 2;
             const y = box.y + box.height / 2;
             const scrollBefore = await page.evaluate(() => window.scrollY);
@@ -666,8 +665,7 @@ test.describe("defaults (row 478)", () => {
         const trigger = singleSelectTrigger(page);
         await centreTrigger(trigger);
         const press = async () => {
-            const box = await trigger.boundingBox();
-            if (!box) throw new Error("trigger has no box");
+            const box = await staticBox(trigger);
             await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
             await page.mouse.down();
         };
