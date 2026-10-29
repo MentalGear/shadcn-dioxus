@@ -3,6 +3,7 @@
 use crate::dioxus_elements::geometry::ClientPoint;
 use crate::merge_attributes;
 use crate::move_interaction::{use_move_interaction, MoveEvent};
+use crate::state_attrs;
 use dioxus::html::geometry::euclid::Size2D;
 use dioxus::html::geometry::PixelsSize;
 use dioxus::prelude::*;
@@ -175,7 +176,7 @@ pub fn ColorPicker(props: ColorPickerProps) -> Element {
     });
     let owned = attributes!(div {
         role: "group",
-        "data-disabled": (props.disabled)(),
+        ..state_attrs::disabled((props.disabled)()),
     });
     let merged = merge_attributes(vec![defaults, props.attributes.clone(), owned]);
 
@@ -433,7 +434,7 @@ pub fn AreaThumb(props: AreaThumbProps) -> Element {
         aria_label: "Color area"
     });
     let owned = attributes!(div {
-        "data-dragging": area_ctx.dragging,
+        ..state_attrs::valued(state_attrs::Flag::Dragging, area_ctx.dragging),
         style,
         tabindex: 0,
     });

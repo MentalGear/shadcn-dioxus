@@ -4,6 +4,7 @@
 use crate::direction::{use_direction, use_direction_signal, Direction};
 use crate::merge_attributes;
 use crate::move_interaction::{use_move_interaction, MoveEvent};
+use crate::state_attrs;
 use crate::{use_controlled, use_form_reset_listener, use_unique_id};
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
@@ -560,7 +561,7 @@ fn SliderImpl(props: SliderImplProps) -> Element {
     // with these literals on the same element (backlog row 93).
     let owned = attributes!(div {
         role: "group",
-        "data-disabled": props.disabled,
+        ..state_attrs::disabled(props.disabled),
         "data-orientation": orientation,
         "data-direction": direction.as_str(),
     });
@@ -714,7 +715,7 @@ pub fn SliderTrack(props: SliderTrackProps) -> Element {
     };
 
     let owned = attributes!(div {
-        "data-disabled": ctx.disabled,
+        ..state_attrs::disabled(ctx.disabled),
         "data-orientation": orientation,
     });
     let merged = merge_attributes(vec![props.attributes.clone(), owned]);
@@ -810,7 +811,7 @@ pub fn SliderRange(props: SliderRangeProps) -> Element {
     });
 
     let owned = attributes!(div {
-        "data-disabled": ctx.disabled,
+        ..state_attrs::disabled(ctx.disabled),
         "data-orientation": orientation,
         style,
     });
@@ -945,9 +946,9 @@ pub fn SliderThumb(props: SliderThumbProps) -> Element {
         aria_valuemax: vmax,
         aria_valuenow: value,
         aria_orientation: orientation,
-        "data-disabled": ctx.disabled,
+        ..state_attrs::disabled(ctx.disabled),
         "data-orientation": orientation,
-        "data-dragging": ctx.dragging,
+        ..state_attrs::valued(state_attrs::Flag::Dragging, ctx.dragging),
         "data-index": index as i64,
         "data-direction": (ctx.direction)().as_str(),
         style,

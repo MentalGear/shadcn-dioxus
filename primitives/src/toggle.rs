@@ -1,5 +1,6 @@
 //! Defines the [`Toggle`] component for creating toggle buttons.
 
+use crate::state_attrs;
 use crate::{merge_attributes, use_controlled};
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
@@ -95,9 +96,8 @@ pub fn Toggle(props: ToggleProps) -> Element {
     let defaults = attributes!(button { r#type: "button" });
     let owned = attributes!(button {
         aria_pressed: pressed,
-        "data-state": if pressed() { "on" } else { "off" },
-        "data-pressed": pressed().then_some(""),
-        "data-disabled": props.disabled,
+        ..state_attrs::pressed(pressed()),
+        ..state_attrs::disabled(props.disabled),
     });
     let merged = merge_attributes(vec![defaults, props.attributes.clone(), owned]);
 

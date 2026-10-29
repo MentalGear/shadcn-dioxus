@@ -1,6 +1,7 @@
 //! Defines the [`TagGroup`] and [`TagGroupMulti`] components and their sub-components.
 
 use crate::direction::{use_direction, Direction};
+use crate::state_attrs;
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
 
@@ -1019,8 +1020,8 @@ pub fn TagOption<T: Clone + PartialEq + 'static>(props: TagOptionProps<T>) -> El
         aria_rowindex: (index.cloned() as i32) + 1,
         aria_selected: (state.selectable)().then_some(selected()),
         aria_disabled: disabled(),
-        "data-selected": selected(),
-        "data-disabled": disabled(),
+        ..state_attrs::valued(state_attrs::Flag::Selected, selected()),
+        ..state_attrs::disabled(disabled()),
     });
     let merged = merge_attributes(vec![props.attributes.clone(), owned]);
 

@@ -54,6 +54,7 @@
 //! `aria-hidden="true"` presentational layer and contribute nothing to the
 //! accessibility tree.
 
+use crate::state_attrs;
 use crate::{
     merge_attributes, use_controlled, use_form_reset_listener, use_id_or, use_previous,
     use_unique_id,
@@ -732,8 +733,8 @@ pub fn InputOtpSlot(props: InputOtpSlotProps) -> Element {
     let disabled = ctx.disabled;
 
     let owned = attributes!(div {
-        "data-active": active(),
-        "data-disabled": disabled(),
+        ..state_attrs::valued(state_attrs::Flag::Active, active()),
+        ..state_attrs::disabled(disabled()),
         "data-slot-index": "{index}",
     });
     let merged = merge_attributes(vec![props.attributes.clone(), owned]);

@@ -2,6 +2,7 @@ use dioxus::prelude::*;
 use dioxus_icons::lucide::{ChevronLeft, ChevronRight, Ellipsis};
 use dioxus_primitives::dioxus_attributes::attributes;
 use dioxus_primitives::merge_attributes;
+use dioxus_primitives::state_attrs;
 
 // dev-docs/backlog.md row 32: see checkbox/component.rs's
 // header comment for the full delivery-mechanism rationale (asset!() +
@@ -125,7 +126,7 @@ pub fn PaginationLink(props: PaginationLinkProps) -> Element {
     // caller default -- owned-wins, merged after the caller's own
     // attributes.
     let owned = attributes!(a {
-        "data-active": props.is_active,
+        ..state_attrs::valued(state_attrs::Flag::Active, props.is_active),
         "data-size": props.size.class(),
         "data-kind": data_kind,
         aria_current: aria_current,

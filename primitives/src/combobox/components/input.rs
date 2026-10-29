@@ -1,5 +1,6 @@
 //! Combobox input component.
 
+use crate::state_attrs;
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
 
@@ -160,7 +161,7 @@ pub fn ComboboxInput(props: ComboboxInputProps) -> Element {
         aria_controls: ctx.selectable.list_id,
         aria_activedescendant: active_descendant(),
 
-        "data-state": if open() { "open" } else { "closed" },
+        ..state_attrs::trigger_open(open()),
     });
     let merged = merge_attributes(vec![defaults, props.attributes.clone(), owned]);
 

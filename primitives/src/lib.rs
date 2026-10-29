@@ -85,6 +85,7 @@ mod selection;
 pub mod separator;
 pub mod sleep;
 pub mod slider;
+pub mod state_attrs;
 pub mod switch;
 pub mod table_rows;
 pub mod tabs;

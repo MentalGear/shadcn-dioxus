@@ -1,5 +1,6 @@
 //! Main Select and SelectMulti component implementations.
 
+use crate::state_attrs;
 use core::panic;
 use std::time::Duration;
 
@@ -314,6 +315,7 @@ fn use_select_root(
 ///
 /// The [`Select`] component defines the following data attributes you can use to control styling:
 /// - `data-state`: Indicates the current state of the select. Values are `open` or `closed`.
+/// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
 #[component]
 pub fn Select<T: Clone + PartialEq + 'static>(props: SelectProps<T>) -> Element {
     // Snapshot before `use_single_selectable_value` consumes it: the hidden
@@ -377,8 +379,8 @@ pub fn Select<T: Clone + PartialEq + 'static>(props: SelectProps<T>) -> Element 
     use_form_reset_listener(hidden_select_id, move || reset_to_default.call(()));
 
     let owned = attributes!(div {
-        "data-state": if open() { "open" } else { "closed" },
-        "data-disabled": (props.disabled)(),
+        ..state_attrs::open(open()),
+        ..state_attrs::disabled((props.disabled)()),
         "data-direction": (ctx.direction)().as_str(),
     });
     let merged = merge_attributes(vec![props.attributes.clone(), owned]);
@@ -500,6 +502,7 @@ pub fn Select<T: Clone + PartialEq + 'static>(props: SelectProps<T>) -> Element 
 ///
 /// The [`SelectMulti`] component defines the following data attributes you can use to control styling:
 /// - `data-state`: Indicates the current state of the select. Values are `open` or `closed`.
+/// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
 #[component]
 pub fn SelectMulti<T: Clone + PartialEq + 'static>(props: SelectMultiProps<T>) -> Element {
     // Snapshot before `use_controlled` consumes it: the hidden mirror
@@ -575,8 +578,8 @@ pub fn SelectMulti<T: Clone + PartialEq + 'static>(props: SelectMultiProps<T>) -
     });
 
     let owned = attributes!(div {
-        "data-state": if open() { "open" } else { "closed" },
-        "data-disabled": (props.disabled)(),
+        ..state_attrs::open(open()),
+        ..state_attrs::disabled((props.disabled)()),
         "data-direction": (ctx.direction)().as_str(),
     });
     let merged = merge_attributes(vec![props.attributes.clone(), owned]);

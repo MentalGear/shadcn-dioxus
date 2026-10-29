@@ -7,6 +7,7 @@
 //! independent state machine (`crate::menu_sub`) both this file and
 //! `context_menu.rs`'s equivalent build on.
 
+use crate::state_attrs;
 use crate::AsChild;
 use crate::{
     collection::{
@@ -214,6 +215,7 @@ pub struct DropdownMenuProps {
 ///
 /// The [`DropdownMenu`] component defines the following data attributes you can use to control styling:
 /// - `data-state`: Indicates the current state of the dropdown menu. values are `open` or `closed`.
+/// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
 /// - `data-disabled`: Indicates if the dropdown menu is disabled. values are `true` or `false`.
 #[component]
 pub fn DropdownMenu(props: DropdownMenuProps) -> Element {
@@ -401,8 +403,8 @@ pub fn DropdownMenu(props: DropdownMenuProps) -> Element {
         attributes!(div {
             id: root_id.cloned(),
             dir: (ctx.direction)().as_str(),
-            "data-state": if open() { "open" } else { "closed" },
-            "data-disabled": (props.disabled)(),
+            ..state_attrs::open(open()),
+            ..state_attrs::disabled((props.disabled)()),
             "data-direction": (ctx.direction)().as_str(),
         }),
         props.attributes,
@@ -483,6 +485,8 @@ pub struct DropdownMenuTriggerProps {
 ///
 /// The [`DropdownMenuTrigger`] component defines the following data attributes you can use to control styling:
 /// - `data-state`: Indicates the current state of the dropdown menu. values are `open` or `closed`.
+/// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
+/// - `data-popup-open`: Present (empty) while the popup this trigger controls is open.
 /// - `data-disabled`: Indicates if the dropdown menu is disabled. values are `true` or `false`.
 #[component]
 pub fn DropdownMenuTrigger(props: DropdownMenuTriggerProps) -> Element {
@@ -493,7 +497,6 @@ pub fn DropdownMenuTrigger(props: DropdownMenuTriggerProps) -> Element {
 
     let open = ctx.open;
     let disabled = ctx.disabled;
-    let data_state = if open() { "open" } else { "closed" };
 
     // dev-docs/backlog.md row 36: `ctx.trigger_id` is the same signal
     // `DropdownMenuContent`'s `aria-labelledby` (below) and
@@ -509,8 +512,8 @@ pub fn DropdownMenuTrigger(props: DropdownMenuTriggerProps) -> Element {
     let base = attributes!(button {
         id: id.cloned(),
         r#type: "button",
-        "data-state": data_state,
-        "data-disabled": disabled,
+        ..state_attrs::trigger_open(open),
+        ..state_attrs::disabled(disabled),
         disabled: disabled,
         aria_expanded: open,
         aria_haspopup: crate::menu_semantics::MENU_TRIGGER_HASPOPUP,
@@ -651,6 +654,7 @@ pub struct DropdownMenuContentProps {
 ///
 /// The [`DropdownMenuContent`] component defines the following data attributes you can use to control styling:
 /// - `data-state`: Indicates the current state of the dropdown menu. values are `open` or `closed`.
+/// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
 #[component]
 pub fn DropdownMenuContent(props: DropdownMenuContentProps) -> Element {
     let mut ctx: DropdownMenuContext = use_context();
@@ -811,7 +815,7 @@ fn DropdownMenuContentRendered(
         attributes!(div {
             role: crate::menu_semantics::MENU_ROLE,
             popover: crate::top_layer::PopoverKind::Auto.as_str(),
-            "data-state": if open() { "open" } else { "closed" },
+            ..state_attrs::open(open()),
         }),
     ]);
     // Folds the caller's own `style` together with the anchor binding into
@@ -881,7 +885,7 @@ fn DropdownMenuContentRendered(
         // construction above (`dev-docs/backlog.md` row 93).
         attributes!(div {
             role: crate::menu_semantics::MENU_ROLE,
-            "data-state": if open() { "open" } else { "closed" },
+            ..state_attrs::open(open()),
         }),
     ]);
 
@@ -1002,6 +1006,7 @@ pub struct DropdownMenuItemProps<T: Clone + PartialEq + 'static> {
 ///
 /// The [`DropdownMenuItem`] component defines the following data attributes you can use to control styling:
 /// - `data-disabled`: Indicates whether the item is disabled. Values are `true` or `false`.
+/// - `data-highlighted`: Present (empty) while this item holds the roving focus, absent otherwise.
 #[component]
 pub fn DropdownMenuItem<T: Clone + PartialEq + 'static>(
     props: DropdownMenuItemProps<T>,
@@ -1043,7 +1048,8 @@ pub fn DropdownMenuItem<T: Clone + PartialEq + 'static>(
             // defect (dev-docs/backlog.md row 39). `ContextMenuItem` and
             // `MenubarItem` set it too.
             aria_disabled: disabled(),
-            "data-disabled": disabled(),
+            ..state_attrs::disabled(disabled()),
+            ..state_attrs::presence(state_attrs::Flag::Highlighted, focused()),
             tabindex: if focused() { "0" } else { "-1" },
         }),
         menu_item::item_style_attributes(props.variant, props.inset),
@@ -1144,7 +1150,9 @@ pub type DropdownMenuRadioItemProps = MenuRadioItemProps;
 ///
 /// The [`DropdownMenuCheckboxItem`] component defines the following data attributes you can use to control styling:
 /// - `data-state`: Whether the item is checked. Values are `checked` or `unchecked`.
+/// - `data-checked` / `data-unchecked`: Present (empty) while checked / unchecked, absent otherwise.
 /// - `data-disabled`: Indicates whether the item is disabled. Values are `true` or `false`.
+/// - `data-highlighted`: Present (empty) while this item holds the roving focus, absent otherwise.
 #[component]
 pub fn DropdownMenuCheckboxItem(props: DropdownMenuCheckboxItemProps) -> Element {
     let state = menu_item::use_checkbox_state(
@@ -1218,7 +1226,9 @@ pub fn DropdownMenuRadioGroup(props: DropdownMenuRadioGroupProps) -> Element {
 ///
 /// The [`DropdownMenuRadioItem`] component defines the following data attributes you can use to control styling:
 /// - `data-state`: Whether the item is checked. Values are `checked` or `unchecked`.
+/// - `data-checked` / `data-unchecked`: Present (empty) while checked / unchecked, absent otherwise.
 /// - `data-disabled`: Indicates whether the item is disabled. Values are `true` or `false`.
+/// - `data-highlighted`: Present (empty) while this item holds the roving focus, absent otherwise.
 #[component]
 pub fn DropdownMenuRadioItem(props: DropdownMenuRadioItemProps) -> Element {
     let state = menu_item::use_radio_state(props.value);
@@ -1357,7 +1367,7 @@ fn dropdown_checkable_item(state: CheckableState, common: CheckableCommon) -> El
     let attributes = merge_attributes(vec![
         order.marker_attribute(),
         attributes,
-        state.owned_attributes(disabled(), inset, if focused() { "0" } else { "-1" }),
+        state.owned_attributes(disabled(), inset, focused()),
     ]);
 
     rsx! {
@@ -1652,6 +1662,8 @@ pub struct DropdownMenuSubTriggerProps {
 /// attributes you can use to control styling:
 /// - `data-state`: Indicates whether the submenu is open. Values are
 ///   `open` or `closed`.
+/// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
+/// - `data-popup-open`: Present (empty) while the popup this trigger controls is open.
 /// - `data-disabled`: Indicates if the sub-trigger is disabled. Values are
 ///   `true` or `false`.
 #[component]
@@ -1696,8 +1708,9 @@ pub fn DropdownMenuSubTrigger(props: DropdownMenuSubTriggerProps) -> Element {
         aria_expanded: sub.open,
         aria_controls: sub.content_id.cloned(),
         aria_disabled: disabled(),
-        "data-disabled": disabled(),
-        "data-state": if (sub.open)() { "open" } else { "closed" },
+        ..state_attrs::disabled(disabled()),
+        ..state_attrs::presence(state_attrs::Flag::Highlighted, focused()),
+        ..state_attrs::trigger_open((sub.open)()),
         tabindex: if focused() { "0" } else { "-1" },
 
         onmounted,
@@ -1812,6 +1825,7 @@ pub struct DropdownMenuSubContentProps {
 /// attributes you can use to control styling:
 /// - `data-state`: Indicates the current state of the submenu. Values are
 ///   `open` or `closed`.
+/// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
 #[component]
 pub fn DropdownMenuSubContent(props: DropdownMenuSubContentProps) -> Element {
     let mut sub: crate::menu_sub::SubMenuState = use_context();
@@ -1958,7 +1972,7 @@ fn DropdownMenuSubContentRendered(
             role: crate::menu_semantics::MENU_ROLE,
             popover: crate::top_layer::PopoverKind::Auto.as_str(),
             dir: (ctx.direction)().as_str(),
-            "data-state": if open() { "open" } else { "closed" },
+            ..state_attrs::open(open()),
             "data-direction": (ctx.direction)().as_str(),
         }),
     ]);
@@ -2105,7 +2119,7 @@ fn DropdownMenuSubContentRendered(
         attributes!(div {
             role: crate::menu_semantics::MENU_ROLE,
             dir: (ctx.direction)().as_str(),
-            "data-state": if open() { "open" } else { "closed" },
+            ..state_attrs::open(open()),
             "data-direction": (ctx.direction)().as_str(),
         }),
     ]);
@@ -2233,6 +2247,7 @@ pub struct DropdownMenuSubItemProps<T: Clone + PartialEq + 'static> {
 /// attributes you can use to control styling:
 /// - `data-disabled`: Indicates whether the item is disabled. Values are
 ///   `true` or `false`.
+/// - `data-highlighted`: Present (empty) while this item holds the roving focus, absent otherwise.
 #[component]
 pub fn DropdownMenuSubItem<T: Clone + PartialEq + 'static>(
     props: DropdownMenuSubItemProps<T>,
@@ -2265,7 +2280,8 @@ pub fn DropdownMenuSubItem<T: Clone + PartialEq + 'static>(
         attributes!(div {
             role: crate::menu_semantics::MENU_ITEM_ROLE,
             aria_disabled: disabled(),
-            "data-disabled": disabled(),
+            ..state_attrs::disabled(disabled()),
+            ..state_attrs::presence(state_attrs::Flag::Highlighted, focused()),
             tabindex: if focused() { "0" } else { "-1" },
         }),
         menu_item::item_style_attributes(props.variant, props.inset),

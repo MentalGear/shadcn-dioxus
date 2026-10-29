@@ -6,6 +6,7 @@ use crate::collection::{
 };
 use crate::dioxus_elements::Key;
 use crate::direction::use_direction;
+use crate::state_attrs;
 use crate::{
     merge_attributes, use_animated_open, use_controlled_state, use_id_or, use_unique_id,
     ControlledState,
@@ -331,7 +332,7 @@ pub fn Accordion(props: AccordionProps) -> Element {
     });
 
     let owned = attributes!(div {
-        "data-disabled": (props.disabled)(),
+        ..state_attrs::disabled((props.disabled)()),
         "data-chevron": (props.chevron)().as_str(),
     });
     let merged = merge_attributes(vec![props.attributes.clone(), owned]);
@@ -422,6 +423,7 @@ pub struct AccordionItemProps {
 ///
 /// The [`AccordionItem`] component defines the following data attributes you can use to control styling:
 /// - `data-open`: Indicates if the accordion item is open. values are `true` or `false`.
+/// - `data-closed`: Present (empty) while the item is closed, absent otherwise (`data-open` stays valued, `true` or `false`).
 /// - `data-disabled`: Indicates if the accordion is disabled. values are `true` or `false`.
 #[component]
 pub fn AccordionItem(props: AccordionItemProps) -> Element {
@@ -452,8 +454,8 @@ pub fn AccordionItem(props: AccordionItemProps) -> Element {
     });
 
     let owned = attributes!(div {
-        "data-open": ctx.is_open(&item.key()),
-        "data-disabled": ctx.is_disabled() || item.is_disabled(),
+        ..state_attrs::open_valued(ctx.is_open(&item.key())),
+        ..state_attrs::disabled(ctx.is_disabled() || item.is_disabled()),
     });
     let merged = merge_attributes(vec![props.attributes.clone(), owned]);
 
@@ -515,6 +517,7 @@ pub struct AccordionContentProps {
 ///
 /// The [`AccordionContent`] component defines the following data attributes you can use to control styling:
 /// - `data-open`: Indicates if the accordion item is open. values are `true` or `false`.
+/// - `data-closed`: Present (empty) while the item is closed, absent otherwise (`data-open` stays valued, `true` or `false`).
 /// - `data-closing`: Present (`true`) only while the close animation runs: the item is closed but
 ///   the content has not been removed (or re-hidden) yet. Style the close animation on this, not on
 ///   `data-open="false"`, which is also what a closed `hidden="until-found"` panel looks like.
@@ -563,7 +566,7 @@ pub fn AccordionContent(props: AccordionContentProps) -> Element {
     });
 
     let mut owned = attributes!(div {
-        "data-open": open,
+        ..state_attrs::open_valued(open()),
         "data-closing": closing.then_some("true"),
         "data-revealed": (open() && revealed()).then_some("true"),
     });
@@ -628,6 +631,12 @@ pub struct AccordionTriggerProps {
 ///     }
 /// }
 /// ```
+///
+/// ## Styling
+///
+/// The [`AccordionTrigger`] component defines the following data attributes you can use to control styling:
+/// - `data-panel-open`: Present (empty) while the item's panel is open, absent otherwise.
+/// - `data-chevron`: Which end of the trigger the chevron sits on, `start` or `end`.
 #[component]
 pub fn AccordionTrigger(props: AccordionTriggerProps) -> Element {
     let mut ctx: AccordionContext = use_context();
@@ -650,6 +659,7 @@ pub fn AccordionTrigger(props: AccordionTriggerProps) -> Element {
         tabindex: "0",
         aria_controls: item.aria_id(),
         aria_expanded: ctx.is_open(&item.key()),
+        ..state_attrs::panel_open(ctx.is_open(&item.key())),
         "data-chevron": (ctx.chevron)().as_str(),
     });
     owned.extend(order.marker_attribute());
