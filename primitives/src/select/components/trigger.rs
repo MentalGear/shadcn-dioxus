@@ -275,9 +275,6 @@ pub fn SelectTrigger(props: SelectTriggerProps) -> Element {
                         return;
                     }
                     press.set(TriggerPress::Mouse);
-                    // The press moves no focus: the list takes it as it mounts, and a mousedown
-                    // that followed would hand it back to the trigger and blur-close the list.
-                    event.prevent_default();
                     if open() {
                         ctx.set_open(false);
                     } else {
@@ -285,6 +282,16 @@ pub fn SelectTrigger(props: SelectTriggerProps) -> Element {
                     }
                 } else {
                     press.set(TriggerPress::Other);
+                }
+            },
+            // The press moves no focus: the list takes it as it mounts, and the `mousedown`'s
+            // default would hand it back to the trigger and blur-close the list. The default is
+            // cancelled here rather than on the `pointerdown`, which would also suppress the
+            // `mousedown` the browser's focus-visible heuristic reads to learn the pointer is in use
+            // (a script focus on an option would then paint its keyboard ring).
+            onmousedown: move |event| {
+                if press() == TriggerPress::Mouse {
+                    event.prevent_default();
                 }
             },
             onclick: move |_| {
