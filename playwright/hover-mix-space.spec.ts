@@ -2,6 +2,7 @@ import { test, expect } from "./fixtures";
 import type { Locator, Page } from "@playwright/test";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
+import { hoverSettled } from "./animations";
 
 // Row 260 (row 243): every hover / pressed fill that steps a colour toward the ink reads the theme's
 // `--dx-hover-mix-space` (shadcn's `in oklch`), so each one must equal the formula evaluated IN THE PAGE from the
@@ -94,7 +95,7 @@ for (const scheme of ["light", "dark"] as const) {
     await nav.getByRole("button", { name: "Getting started" }).hover();
     const card = page.locator(".dx-navigation-menu-featured").first();
     await expect(card).toBeVisible();
-    await card.hover();
+    await hoverSettled(card);
     const surface = () => resolveIn(card, "var(--dx-navigation-menu-featured-surface)");
     await expectFill(page, card, surface, step("var(--dx-muted)", 8), "featured hover");
   });

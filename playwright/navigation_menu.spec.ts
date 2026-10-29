@@ -5,7 +5,7 @@ import { BASE_URL } from './base-url';
 import { gotoHydrated } from './hydration';
 import { fixedViewportBox } from './viewport-box';
 import { expectFadeKeepsTransform } from './assert-anchor-transform';
-import { measureAtRest, readAtRest } from "./animations";
+import { hoverSettled, measureAtRest, readAtRest } from "./animations";
 
 const URL = `${BASE_URL}/component/navigation_menu/`;
 const GOTO = { timeout: 20 * 60 * 1000 }; // Increase timeout to 20 minutes
@@ -124,7 +124,7 @@ test('pointer entering the content cancels the close', async ({ page }) => {
   // Leave the trigger for the content itself (not somewhere else) --
   // NavigationMenuTrigger/NavigationMenuContent's own onmouseenter cancels
   // the pending close (see this primitive's module doc, "Hover intent").
-  await featuredLink.hover();
+  await hoverSettled(featuredLink);
   await expect(trigger).toHaveAttribute('aria-expanded', 'true');
 });
 
