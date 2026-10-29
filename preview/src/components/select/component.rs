@@ -93,21 +93,17 @@ pub struct SelectProps<T: Clone + PartialEq + 'static = String> {
     #[props(default)]
     pub required: ReadSignal<bool>,
 
-    /// Whether focus should loop around when reaching the end.
-    #[props(default = ReadSignal::new(Signal::new(true)))]
+    /// Whether focus should loop around when reaching the end. Off by default, as in shadcn.
+    #[props(default = ReadSignal::new(Signal::new(false)))]
     pub roving_loop: ReadSignal<bool>,
 
     /// Timeout in milliseconds before clearing the typeahead buffer.
     #[props(default = ReadSignal::new(Signal::new(Duration::from_millis(1000))))]
     pub typeahead_timeout: ReadSignal<Duration>,
 
-    /// Whether opening the listbox locks page scroll (dev-docs/backlog.md row
-    /// 9). See `dioxus_primitives::select::SelectProps::scroll_lock`.
-    #[props(default = ReadSignal::new(Signal::new(true)))]
-    pub scroll_lock: ReadSignal<bool>,
-
-    /// Where the list is placed: below the trigger (`Popper`, the default) or with the selected
-    /// option over the trigger (`ItemAligned`, shadcn's `position="item-aligned"`).
+    /// Where the list is placed: with the selected option over the trigger (`ItemAligned`, the
+    /// default, shadcn's `position="item-aligned"`) or below the trigger (`Popper`). A touch open
+    /// is always placed as popper.
     #[props(default)]
     pub position: ReadSignal<select::SelectPosition>,
 
@@ -199,21 +195,17 @@ pub struct SelectMultiProps<T: Clone + PartialEq + 'static = String> {
     #[props(default)]
     pub name: ReadSignal<String>,
 
-    /// Whether focus should loop around when reaching the end.
-    #[props(default = ReadSignal::new(Signal::new(true)))]
+    /// Whether focus should loop around when reaching the end. Off by default, as in shadcn.
+    #[props(default = ReadSignal::new(Signal::new(false)))]
     pub roving_loop: ReadSignal<bool>,
 
     /// Timeout in milliseconds before clearing the typeahead buffer.
     #[props(default = ReadSignal::new(Signal::new(Duration::from_millis(1000))))]
     pub typeahead_timeout: ReadSignal<Duration>,
 
-    /// Whether opening the listbox locks page scroll (dev-docs/backlog.md row
-    /// 9). See `dioxus_primitives::select::SelectMultiProps::scroll_lock`.
-    #[props(default = ReadSignal::new(Signal::new(true)))]
-    pub scroll_lock: ReadSignal<bool>,
-
-    /// Where the list is placed: below the trigger (`Popper`, the default) or with the selected
-    /// option over the trigger (`ItemAligned`, shadcn's `position="item-aligned"`).
+    /// Where the list is placed: with the selected option over the trigger (`ItemAligned`, the
+    /// default, shadcn's `position="item-aligned"`) or below the trigger (`Popper`). A touch open
+    /// is always placed as popper.
     #[props(default)]
     pub position: ReadSignal<select::SelectPosition>,
 
@@ -294,7 +286,6 @@ pub fn Select<T: Clone + PartialEq + 'static>(props: SelectProps<T>) -> Element 
             required: props.required,
             roving_loop: props.roving_loop,
             typeahead_timeout: props.typeahead_timeout,
-            scroll_lock: props.scroll_lock,
             position: props.position,
             attributes: merged,
             select::SelectTrigger {
@@ -352,7 +343,6 @@ pub fn SelectMulti<T: Clone + PartialEq + 'static>(props: SelectMultiProps<T>) -
             name: props.name,
             roving_loop: props.roving_loop,
             typeahead_timeout: props.typeahead_timeout,
-            scroll_lock: props.scroll_lock,
             position: props.position,
             attributes: merged,
             select::SelectTrigger {

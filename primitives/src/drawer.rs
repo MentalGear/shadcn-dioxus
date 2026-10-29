@@ -147,6 +147,7 @@ use crate::dialog::{
     DialogContent, DialogCtx, DialogDescription, DialogDescriptionProps, DialogRoot, DialogTitle,
     DialogTitleProps,
 };
+use crate::state_attrs;
 use crate::{merge_attributes, use_id_or, use_unique_id, AsChild};
 use dioxus::core::use_drop;
 use dioxus::prelude::*;
@@ -872,6 +873,7 @@ pub struct DrawerRootProps {
 /// [`DrawerContent`] defines the following data attributes you can use to
 /// control styling:
 /// - `data-state`: `"open"` or `"closed"`.
+/// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
 /// - `data-side`: `"top"`, `"right"`, `"bottom"`, or `"left"` -- the RESOLVED side
 ///   (never `"auto"`; see [`EdgeSide::Auto`]).
 /// - `data-dragging`: `"true"` while an active pointer drag is in
@@ -1173,8 +1175,8 @@ pub fn DrawerContent(props: DrawerContentProps) -> Element {
     let content_base = attributes!(div {
         "data-dx-drawer": "content",
         "data-side": side.cloned().as_str(),
-        "data-state": if is_open { "open" } else { "closed" },
-        "data-dragging": if dragging() { "true" } else { "false" },
+        ..state_attrs::open(is_open),
+        ..state_attrs::valued(state_attrs::Flag::Dragging, dragging()),
         "data-nested-open": if open_children() > 0 { "true" } else { "false" },
         "data-snap": snap_state,
         style: style,

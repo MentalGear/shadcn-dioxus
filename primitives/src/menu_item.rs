@@ -55,14 +55,16 @@
 //!
 //! # Close semantics
 //!
-//! Radix's `onSelect` default, which shadcn inherits: selecting a checkable
-//! item **closes the menu**. Every checkable item has a
-//! `close_on_select` prop (default `true`) to opt out and keep the menu open
-//! after a toggle -- the behaviour APG describes as optional for Space ("When
-//! focus is on a menuitemcheckbox, changes the state without closing the
-//! menu", `content/patterns/menubar/menu-and-menubar-pattern.html`, "Keyboard
-//! Interaction", pinned commit `7e4034b262bc0d25332e330d8a582aaf34113829`),
-//! and the default of Base UI (the shadcn Nova registry's primitive).
+//! Base UI's `closeOnClick = false` for `MenuCheckboxItem` and
+//! `MenuRadioItem` (the shadcn `base-nova` registry's primitive): toggling or
+//! choosing a checkable item **keeps the menu open**, so several items can be
+//! set in one visit -- the behaviour APG describes for Space ("When focus is
+//! on a menuitemcheckbox, changes the state without closing the menu",
+//! `content/patterns/menubar/menu-and-menubar-pattern.html`, "Keyboard
+//! Interaction", pinned commit `7e4034b262bc0d25332e330d8a582aaf34113829`).
+//! Every checkable item has a `close_on_select` prop (default `false`); set it
+//! `true` for Radix's `onSelect` behaviour, where selecting closes the menu.
+//! A plain item always closes (backlog row 478).
 //!
 //! # Controlled or uncontrolled
 //!
@@ -82,6 +84,7 @@
 //! `value` as its label; a checkbox item has no `value`, so it is
 //! searchable only when `text_value` is set.
 
+use crate::state_attrs;
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
 
@@ -223,10 +226,10 @@ pub struct MenuCheckboxItemProps {
     #[props(default)]
     pub text_value: ReadSignal<Option<String>>,
 
-    /// Whether toggling the item closes the menu. Defaults to `true`, Radix's
-    /// `onSelect` default; set `false` to keep the menu open so several
-    /// items can be toggled in one visit.
-    #[props(default = ReadSignal::new(Signal::new(true)))]
+    /// Whether toggling the item closes the menu. Defaults to `false`, Base UI's
+    /// `closeOnClick`, so several items can be toggled in one visit; set `true`
+    /// for Radix's `onSelect` behaviour.
+    #[props(default)]
     pub close_on_select: ReadSignal<bool>,
 
     /// Reserves the leading indicator slot without drawing anything -- shadcn's
@@ -272,9 +275,9 @@ pub struct MenuRadioItemProps {
     #[props(default)]
     pub text_value: ReadSignal<Option<String>>,
 
-    /// Whether choosing the item closes the menu. Defaults to `true`,
-    /// Radix's `onSelect` default; set `false` to keep the menu open.
-    #[props(default = ReadSignal::new(Signal::new(true)))]
+    /// Whether choosing the item closes the menu. Defaults to `false`, Base UI's
+    /// `closeOnClick`; set `true` for Radix's `onSelect` behaviour.
+    #[props(default)]
     pub close_on_select: ReadSignal<bool>,
 
     /// Reserves the leading indicator slot without drawing anything -- shadcn's
@@ -376,17 +379,18 @@ impl CheckableState {
         &self,
         disabled: bool,
         inset: bool,
-        tabindex: &'static str,
+        focused: bool,
     ) -> Vec<Attribute> {
         let checked = self.checked();
         merge_attributes(vec![
             attributes!(div {
                 role: self.kind.role(),
                 aria_checked: if checked { "true" } else { "false" },
-                "data-state": if checked { "checked" } else { "unchecked" },
+                ..state_attrs::checked(checked),
                 aria_disabled: disabled,
-                "data-disabled": disabled,
-                tabindex: tabindex,
+                ..state_attrs::disabled(disabled),
+                ..state_attrs::presence(state_attrs::Flag::Highlighted, focused),
+                tabindex: if focused { "0" } else { "-1" },
             }),
             item_style_attributes(MenuItemVariant::Default, inset),
         ])
@@ -663,6 +667,43 @@ mod tests {
         assert_eq!(count("aria-checked="), 4, "{host}: {html}");
         assert_eq!(count(r#"data-state="checked""#), 2, "{host}: {html}");
         assert_eq!(count(r#"data-state="unchecked""#), 2, "{host}: {html}");
+    }
+
+    /// A checkable item holding the roving focus is `data-highlighted` (a presence attribute, absent
+    /// otherwise) and `data-checked` / `data-unchecked` beside `data-state`.
+    #[test]
+    fn a_checkable_item_renders_highlighted_and_checked_as_presence() {
+        let names = |focused: bool, checked: bool| {
+            crate::test_support::with_runtime(move || {
+                let state = CheckableState {
+                    kind: CheckableKind::Checkbox,
+                    checked: use_memo(move || checked),
+                    activate: Callback::new(|()| {}),
+                    text_fallback: None,
+                };
+                let mut names: Vec<String> = state
+                    .owned_attributes(false, false, focused)
+                    .iter()
+                    .map(|a| a.name.to_string())
+                    .filter(|n| n.starts_with("data-"))
+                    .collect();
+                names.sort();
+                names
+            })
+        };
+        let focused = names(true, true);
+        assert!(
+            focused.contains(&"data-highlighted".to_string()),
+            "{focused:?}"
+        );
+        assert!(focused.contains(&"data-checked".to_string()), "{focused:?}");
+        assert!(
+            !focused.contains(&"data-unchecked".to_string()),
+            "{focused:?}"
+        );
+        let idle = names(false, false);
+        assert!(!idle.contains(&"data-highlighted".to_string()), "{idle:?}");
+        assert!(idle.contains(&"data-unchecked".to_string()), "{idle:?}");
     }
 
     #[test]

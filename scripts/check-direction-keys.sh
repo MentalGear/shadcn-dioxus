@@ -32,6 +32,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
 allowlist=(
   "primitives/src/move_interaction.rs|produces PHYSICAL deltas (a pointer moving right is +x); its consumers mirror them: slider.rs and resizable.rs read use_direction, and color_picker.rs's saturation/lightness area is a physical 2-D plane"
+  "primitives/src/carousel/helpers.rs|the carousel's root keys are deliberately NOT mirrored: shadcn's handleKeyDown maps ArrowLeft to scrollPrev and ArrowRight to scrollNext in every direction (backlog row 478); drag mirrors by physical delta in the page, and the indicator dots (indicators.rs) read the direction"
   "primitives/src/color_picker.rs|the colour area and hue strip are physical planes (saturation grows to the right in every direction, as in native colour inputs): nothing to flip"
 )
 

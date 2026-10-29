@@ -67,3 +67,23 @@ test('the box and its indicator keep one constant size whether or not it is chec
   }
   expect(checked.checkbox, 'checking does not move or resize the checkbox').toEqual(unchecked.checkbox);
 });
+
+// `read_only` (row 482): focusable and announced, but a click or Space changes nothing.
+test('a read-only checkbox keeps its state, stays focusable and is announced', async ({ page }) => {
+  await gotoHydrated(page, `${BASE_URL}/component/checkbox/`, { timeout: 20 * 60 * 1000 });
+  const box = page.locator('#component-preview-frame-read_only #checkbox-read-only');
+  await expect(box).toHaveAttribute('aria-checked', 'true');
+  await expect(box).toHaveAttribute('aria-readonly', 'true');
+  await expect(box).toHaveAttribute('data-readonly', '');
+  await expect(box).toBeEnabled();
+
+  await box.click();
+  await expect(box).toBeFocused();
+  await expect(box).toHaveAttribute('aria-checked', 'true');
+  await page.keyboard.press('Space');
+  await expect(box).toHaveAttribute('aria-checked', 'true');
+  // A writable checkbox carries neither attribute.
+  const writable = page.locator('#component-preview-frame #tos-check');
+  await expect(writable).not.toHaveAttribute('aria-readonly');
+  await expect(writable).not.toHaveAttribute('data-readonly');
+});

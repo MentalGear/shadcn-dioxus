@@ -6,7 +6,7 @@ use dioxus::prelude::*;
 
 /// shadcn's "With Radio Group" example: one position out of three under a
 /// "Panel Position" heading, the last one disabled. Controlled (`value` +
-/// `on_value_change`), and every item sets `close_on_select: false` so the
+/// `on_value_change`), and the items keep the menu open (the default) so the
 /// checked item can be seen to move without reopening the menu. The group is
 /// named by its heading (`aria-labelledby`). A radio item falls back to its
 /// `value` as its typeahead label, so no `text_value` is needed.
@@ -28,17 +28,14 @@ pub fn Demo() -> Element {
                     on_value_change: move |value| position.set(value),
                     DropdownMenuRadioItem {
                         value: "top".to_string(),
-                        close_on_select: false,
                         "Top"
                     }
                     DropdownMenuRadioItem {
                         value: "bottom".to_string(),
-                        close_on_select: false,
                         "Bottom"
                     }
                     DropdownMenuRadioItem {
                         value: "right".to_string(),
-                        close_on_select: false,
                         disabled: true,
                         "Right"
                     }

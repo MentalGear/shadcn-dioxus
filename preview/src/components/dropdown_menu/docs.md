@@ -97,9 +97,10 @@ DropdownMenuContent {
         // closes, so an uncontrolled item starts over on every open.
         checked: Some(show_status_bar()),
         on_checked_change: move |checked| show_status_bar.set(checked),
-        // Selecting closes the menu by default (Radix's `onSelect` default).
-        // `false` keeps it open so several items can be toggled in one visit.
-        close_on_select: false,
+        // The menu stays open after a toggle by default (Base UI's
+        // `closeOnClick = false`), so several items can be set in one visit.
+        // `true` closes it on selection (Radix's `onSelect` behaviour).
+        close_on_select: true,
         // A checkbox item has no `value`: set `text_value` to make it a
         // typeahead target.
         text_value: "Status Bar",
@@ -155,6 +156,10 @@ See the `shortcuts` and `destructive` variants.
 ## Placement
 
 `DropdownMenuContent` opens below its trigger, start-aligned with it, 4px away. `side` (`ContentSide::Top`, `Right`, `Bottom` or `Left`), `align` (`ContentAlign::Start`, `Center` or `End`) and `side_offset` (the gap, in px) move it. A side without room flips to the opposite one, and the side the menu was actually placed on is on the content as `data-placed-side`. See the `placement` variant.
+
+## Page scrolling
+
+The page stays scrollable while a `DropdownMenu` is open, and the menu stays open while the page scrolls: it is anchored to its trigger, may not be fully in view when it opens, and the user must be able to scroll to it. The menu takes no scroll lock and has no `modal` prop; outside a press on the page closes it. Only the modal surfaces (`Dialog`, `AlertDialog`, `Sheet`, `Drawer`, a `Popover` with `is_modal: true`) and `ContextMenu` lock the page.
 
 ## Direction / RTL
 

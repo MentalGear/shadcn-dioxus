@@ -1,5 +1,6 @@
 //! Defines the [`Toggle`] component for creating toggle buttons.
 
+use crate::state_attrs;
 use crate::{merge_attributes, use_controlled};
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
@@ -73,6 +74,7 @@ pub struct ToggleProps {
 ///
 /// The [`Toggle`] component defines the following data attributes you can use to control styling:
 /// - `data-state`: Indicates the state of the toggle. Values are `on` or `off`.
+/// - `data-pressed`: Present (empty) while the toggle is pressed, absent otherwise.
 /// - `data-disabled`: Indicates if the toggle is disabled. Values are `true` or `false`.
 #[component]
 pub fn Toggle(props: ToggleProps) -> Element {
@@ -94,8 +96,8 @@ pub fn Toggle(props: ToggleProps) -> Element {
     let defaults = attributes!(button { r#type: "button" });
     let owned = attributes!(button {
         aria_pressed: pressed,
-        "data-state": if pressed() { "on" } else { "off" },
-        "data-disabled": props.disabled,
+        ..state_attrs::pressed(pressed()),
+        ..state_attrs::disabled(props.disabled),
     });
     let merged = merge_attributes(vec![defaults, props.attributes.clone(), owned]);
 
@@ -147,6 +149,30 @@ mod tests {
         rsx! {
             Toggle { pressed: None, "B" }
         }
+    }
+
+    #[test]
+    fn data_pressed_is_present_only_while_pressed() {
+        let mut dom = VirtualDom::new(|| {
+            rsx! {
+                Toggle { pressed: None, default_pressed: true, "on" }
+                Toggle { pressed: None, "off" }
+            }
+        });
+        dom.rebuild_in_place();
+        let html = dioxus_ssr::render(&dom);
+        let toggles = crate::test_support::find_elements(&html, |a| a.contains_key("aria-pressed"));
+        assert_eq!(toggles.len(), 2, "{html}");
+        assert!(toggles[0].attrs.contains_key("data-pressed"), "{html}");
+        assert_eq!(
+            toggles[0].attrs.get("data-state").map(String::as_str),
+            Some("on")
+        );
+        assert!(!toggles[1].attrs.contains_key("data-pressed"), "{html}");
+        assert_eq!(
+            toggles[1].attrs.get("data-state").map(String::as_str),
+            Some("off")
+        );
     }
 
     #[test]

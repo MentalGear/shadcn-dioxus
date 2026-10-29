@@ -1,5 +1,6 @@
 //! ComboboxList component.
 
+use crate::state_attrs;
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
 
@@ -146,21 +147,6 @@ fn ComboboxListRendered(
         crate::ContentAlign::Start,
         4,
     );
-    // Closes when the INPUT leaves the viewport, not on any scroll: the list
-    // holds a typed query, and a phone keyboard scrolls and resizes the page
-    // while it is used -- "any scroll" would close it the moment it is
-    // tapped. A focus-driven scroll reveals the input, it never hides it
-    // (`top_layer::use_close_on_scroll`'s doc).
-    crate::top_layer::use_close_on_scroll(
-        id.clone(),
-        ctx.input_id.cloned(),
-        open,
-        crate::top_layer::ScrollClose::AnchorLeavesViewport,
-        Callback::new(move |is_open: bool| {
-            selectable.set_open(is_open);
-        }),
-    );
-
     // Folds the caller's own `style` together with the anchor binding into
     // one `style` attribute -- see `top_layer::anchored_content_attributes`'s
     // doc for why a bare `style: position_anchor_style(&id)` literal
@@ -175,7 +161,7 @@ fn ComboboxListRendered(
         role: "listbox",
         popover: crate::top_layer::PopoverKind::Manual.as_str(),
         aria_multiselectable: ctx.is_multi().then_some("true"),
-        "data-state": if open() { "open" } else { "closed" },
+        ..state_attrs::open(open()),
     });
     let attributes = merge_attributes(vec![attributes, owned]);
 
@@ -209,7 +195,7 @@ fn ComboboxListRendered(
     let owned = attributes!(div {
         role: "listbox",
         aria_multiselectable: ctx.is_multi().then_some("true"),
-        "data-state": if open() { "open" } else { "closed" },
+        ..state_attrs::open(open()),
     });
     let attributes = merge_attributes(vec![attributes, owned]);
 

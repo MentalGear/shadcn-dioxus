@@ -9,6 +9,7 @@ use dioxus::prelude::*;
 use dioxus_primitives::AsChild;
 use dioxus_icons::lucide::PanelLeft;
 use dioxus_primitives::dioxus_attributes::attributes;
+use dioxus_primitives::state_attrs;
 use dioxus_primitives::js_listener::{use_js_listeners, JsListeners};
 use dioxus_primitives::merge_attributes;
 use dioxus_primitives::use_controlled;
@@ -343,25 +344,27 @@ pub fn Sidebar(
     });
     let container_attrs = merge_attributes(vec![container_base, attributes]);
 
+    // axe `region` (dev-docs/backlog.md row 38) -- see the identical comment on the
+    // `collapsible == SidebarCollapsible::None` branch above; this desktop-expanded/-collapsed branch is the
+    // one both call sites (the block route's `sidebar` demo and the dashboard email client's sidebar) actually render.
+    let desktop_attrs = attributes!(div {
+        class: "dx-sidebar-desktop",
+        "data-collapsible": collapsible_str,
+        "data-variant": variant.as_str(),
+        "data-side": side.as_str(),
+        "data-slot": "sidebar",
+        role: "complementary",
+        aria_label: "Sidebar",
+        ..state_attrs::state(state().as_str()),
+    });
+
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/sidebar/style.css") }
         // Eager: the mobile branch mounts `Sheet` only below the breakpoint, so on a desktop first render its
         // `Link` would be inserted late (a runtime switch to mobile) -- not render-blocking.
         document::Link { rel: "stylesheet", href: asset!("/src/components/sheet/style.css") }
         div {
-            class: "dx-sidebar-desktop",
-            "data-state": state().as_str(),
-            "data-collapsible": collapsible_str,
-            "data-variant": variant.as_str(),
-            "data-side": side.as_str(),
-            "data-slot": "sidebar",
-            // axe `region` (dev-docs/backlog.md row 38) -- see the identical
-            // comment on the `collapsible == SidebarCollapsible::None`
-            // branch above; this desktop-expanded/-collapsed branch is the
-            // one both call sites (the block route's `sidebar` demo and the
-            // dashboard email client's sidebar) actually render.
-            role: "complementary",
-            aria_label: "Sidebar",
+            ..desktop_attrs,
             div { class: "dx-sidebar-gap", "data-slot": "sidebar-gap" }
             div {
                 ..container_attrs,
@@ -738,7 +741,7 @@ pub fn SidebarMenuButton(
         "data-sidebar": "menu-button",
         "data-size": size.as_str(),
         "data-variant": variant.as_str(),
-        "data-active": if is_active { "true" } else { "false" },
+        ..state_attrs::valued(state_attrs::Flag::Active, is_active),
         // The ONE opt-out from another component's default trigger recipe (`:not([data-style])` in
         // dropdown_menu/ and collapsible/ style.css, the signal drawer/ and button/ use too): a sidebar
         // button is composed as `DropdownMenuTrigger as` / `CollapsibleTrigger as`, which render it
@@ -938,7 +941,7 @@ pub fn SidebarMenuSubButton(
         "data-slot": "sidebar-menu-sub-button",
         "data-sidebar": "menu-sub-button",
         "data-size": size.as_str(),
-        "data-active": if is_active { "true" } else { "false" },
+        ..state_attrs::valued(state_attrs::Flag::Active, is_active),
     });
     let merged = merge_attributes(vec![base, attributes]);
 

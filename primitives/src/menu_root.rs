@@ -44,7 +44,7 @@
 //!   exact reason `crate::menu_sub`'s own doc gives for its own submenu
 //!   content: the engine's shared stylesheet is scoped by the `data-dx-anchored`
 //!   attribute `top_layer::anchored_content_attributes` writes, so the actual
-//!   `use_anchor_position_fallback`/`use_point_anchor_clamp` call still has
+//!   `use_anchor_position_fallback`/`use_point_anchor_placement` call still has
 //!   to live in each file's own `#[cfg(feature = "web")]` leaf render
 //!   function -- this module only factors the lifecycle gate that runs
 //!   *before* that host-private positioning call, never the call itself.

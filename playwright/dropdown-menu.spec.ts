@@ -132,11 +132,12 @@ test('a raw .focus() call on a plain item does not close the menu (row 85)', asy
 // geometry by `menu-indicator-gap.spec.ts`.
 //
 // The `checkboxes` and `radio_group` variants keep the menu open after a
-// toggle (`close_on_select: false`) so several toggles fit in one visit -- the
-// APG-optional behaviour for Space ("changes the state without closing the
-// menu", menu-and-menubar-pattern.html, "Keyboard Interaction"). The `rtl`
-// variant's "Pinned"/"Ascending" items use the primitive's default, Radix's
-// `onSelect` default: selecting closes the menu.
+// toggle (the default, Base UI's `closeOnClick = false`) so several toggles
+// fit in one visit -- the APG behaviour for Space ("changes the state without
+// closing the menu", menu-and-menubar-pattern.html, "Keyboard Interaction").
+// The `rtl` variant's "Pinned"/"Ascending" items and the `checkboxes`
+// variant's "Minimap" set `close_on_select: true` (Radix's `onSelect`
+// behaviour): selecting closes the menu.
 const block = (variant: string) => `${BASE_URL}/component/block/?name=dropdown_menu&variant=${variant}&`;
 
 test.describe('Checkable items', () => {
@@ -165,7 +166,7 @@ test.describe('Checkable items', () => {
     await panel.click();
     await expect(panel).toHaveAttribute('aria-checked', 'true');
     await expect(page.getByText('Status bar true, panel true')).toBeVisible();
-    await expect(trigger, 'close_on_select: false keeps the menu open').toHaveAttribute('data-state', 'open');
+    await expect(trigger, 'the default keeps the menu open').toHaveAttribute('data-state', 'open');
 
     await statusBar.click();
     await expect(statusBar).toHaveAttribute('aria-checked', 'false');
@@ -192,7 +193,7 @@ test.describe('Checkable items', () => {
     await expect(panel).toBeFocused();
 
     // APG (Optional): Space on a menuitemcheckbox "changes the state without
-    // closing the menu" -- what close_on_select: false gives.
+    // closing the menu" -- what the default gives.
     await page.keyboard.press('Space');
     await expect(panel).toHaveAttribute('aria-checked', 'true');
     await expect(trigger).toHaveAttribute('data-state', 'open');
@@ -236,7 +237,7 @@ test.describe('Checkable items', () => {
     await page.keyboard.press('Space');
     await expect(wordWrap).toHaveAttribute('aria-checked', 'true');
     await expect(page.getByText('word wrap true')).toBeVisible();
-    await expect(trigger, 'close_on_select: false keeps the whole menu open').toHaveAttribute('data-state', 'open');
+    await expect(trigger, 'the default keeps the whole menu open').toHaveAttribute('data-state', 'open');
     await expect(wordWrap, 'focus stays on the toggled item').toBeFocused();
 
     // Escape/ArrowLeft hands focus back to the sub-trigger; the root's own
@@ -248,7 +249,7 @@ test.describe('Checkable items', () => {
     await expect(statusBar).toBeFocused();
   });
 
-  test('a checkbox item inside a submenu: a click toggles it, and by default it closes the whole menu tree', async ({ page }) => {
+  test('a checkbox item inside a submenu: a click toggles it, and close_on_select: true closes the whole menu tree', async ({ page }) => {
     await gotoHydrated(page, block('checkboxes'));
     const trigger = page.getByRole('button', { name: 'Checkboxes' });
     await trigger.click();
@@ -262,10 +263,10 @@ test.describe('Checkable items', () => {
     await expect(wordWrap).toHaveAttribute('aria-checked', 'true');
     await expect(trigger).toHaveAttribute('data-state', 'open');
 
-    // `Minimap` uses the primitive's default: choosing it closes the menu --
+    // `Minimap` sets `close_on_select: true`: choosing it closes the menu --
     // the entire tree, submenu included, like `DropdownMenuSubItem`.
     await minimap.click();
-    await expect(trigger, 'the default close takes the whole tree with it').toHaveAttribute('data-state', 'closed');
+    await expect(trigger, 'close_on_select: true takes the whole tree with it').toHaveAttribute('data-state', 'closed');
     await expect(page.getByRole('menu')).toHaveCount(0);
     await expect(page.getByText('minimap true')).toBeVisible();
   });
@@ -296,7 +297,7 @@ test.describe('Checkable items', () => {
     await expect(bottom).toHaveAttribute('aria-checked', 'false');
     await expect(page.getByText('Panel position top')).toBeVisible();
     expect(await checkedCount(), 'still exactly one radio checked after a choice').toBe(1);
-    await expect(trigger, 'close_on_select: false keeps the menu open').toHaveAttribute('data-state', 'open');
+    await expect(trigger, 'the default keeps the menu open').toHaveAttribute('data-state', 'open');
 
     await right.click({ force: true });
     await expect(right, 'a disabled radio cannot be chosen').toHaveAttribute('aria-checked', 'false');
@@ -335,7 +336,7 @@ test.describe('Checkable items', () => {
     await expect(bottom, "typeahead 'r' must not land on the disabled Right").toBeFocused();
   });
 
-  test('by default (Radix onSelect default) choosing a checkable item closes the menu and the new state is kept', async ({ page }) => {
+  test('with close_on_select: true (Radix onSelect behaviour) choosing a checkable item closes the menu and the new state is kept', async ({ page }) => {
     await gotoHydrated(page, block('rtl'));
     const trigger = page.getByRole('button', { name: 'Launch Menu' });
     await trigger.click();
@@ -344,7 +345,7 @@ test.describe('Checkable items', () => {
     const pinned = page.getByRole('menuitemcheckbox', { name: 'Pinned' });
     await expect(pinned).toHaveAttribute('aria-checked', 'true');
     await pinned.click();
-    await expect(trigger, 'a checkbox item closes the menu by default').toHaveAttribute('data-state', 'closed');
+    await expect(trigger, 'a checkbox item with close_on_select: true closes the menu').toHaveAttribute('data-state', 'closed');
     await expect(trigger, 'focus returns to the trigger like any other close').toBeFocused();
 
     await trigger.click();

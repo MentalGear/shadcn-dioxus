@@ -11,6 +11,7 @@
 use crate::direction::{use_direction, use_direction_signal, Direction};
 use crate::merge_attributes;
 use crate::move_interaction::{use_move_interaction, MoveEvent, MoveInteraction};
+use crate::state_attrs;
 use crate::{use_controlled, use_unique_id};
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
@@ -467,7 +468,7 @@ pub fn ResizablePanelGroup(props: ResizablePanelGroupProps) -> Element {
     // back in with nothing left to collide with.
     let owned = attributes!(div {
         "data-orientation": orientation,
-        "data-disabled": ctx.disabled,
+        ..state_attrs::disabled(ctx.disabled),
         "data-direction": text_direction.as_str(),
         style,
     });
@@ -741,8 +742,8 @@ pub fn ResizableHandle(props: ResizableHandleProps) -> Element {
         tabindex,
         aria_orientation,
         "data-orientation": data_orientation,
-        "data-disabled": handle_disabled,
-        "data-state": data_state,
+        ..state_attrs::disabled(handle_disabled),
+        ..state_attrs::state(data_state()),
         aria_valuenow: size_now,
         aria_valuemin: value_min,
         aria_valuemax: value_max,

@@ -1,19 +1,17 @@
 /**
- * Non-modal anchored panels close when the page scrolls away from them (backlog row 193): one helper,
- * `use_close_on_scroll` in `primitives/src/top_layer/scroll_clamp.rs`, two policies.
+ * Anchored panels stay open and scrollable while the page scrolls (backlog row 477, owner decision):
+ * the page carries a panel placed in document coordinates, so scrolling is no reason to close it.
+ * `use_close_on_scroll` in `primitives/src/top_layer/scroll_clamp.rs` remains for the Tooltip alone, as
+ * Radix's does.
  *
- *   - ANY scroll closes it: Tooltip, HoverCard, Menubar, NavigationMenu (and Select / DropdownMenu /
- *     ContextMenu when their `scroll_lock` / `modal` is off -- every shipped demo keeps the default
- *     lock, which is why those three have no case here: no existing page can open them unlocked).
- *   - Only the ANCHOR LEAVING THE VIEWPORT closes it: Popover and the DatePicker / ColorPicker
- *     popovers built on it (they can hold half-entered input), and Combobox. Combobox is here rather than
- *     under "any scroll" because its list holds a typed query and a phone keyboard
- *     scrolls and resizes the page while it is being used, so "any scroll" would close it the moment
- *     it is tapped. "Anchor leaves the viewport" cannot be tripped by a focus-driven scroll: that
- *     scroll reveals the field, it never hides it.
+ *   - ANY scroll closes it: Tooltip.
+ *   - Scrolling never closes it, not even with the anchor scrolled out of view: Menubar, Popover and the
+ *     DatePicker / ColorPicker popovers built on it, Combobox, HoverCard and NavigationMenu (opened by
+ *     focus and click: a hover-opened panel closes when the page scrolls the pointer off its trigger).
+ *     A Combobox list holds a typed query and a phone keyboard scrolls and resizes the page while it is used.
  *
- * Per surface: open, scroll a little (policy dependent), scroll the anchor out (closed), and the
- * keyboard-open simulation (visual-viewport resize / focus-caused scroll: stays open).
+ * Per surface: open, scroll a little, scroll the anchor out, and the keyboard-open simulation (visual-viewport
+ * resize / focus-caused scroll).
  *
  * Simulation limits: Chromium only; a reduced viewport height stands in for the keyboard (it shrinks
  * the layout viewport as well as the visual one, which iOS does not -- `Emulation.setPageScaleFactor`
@@ -65,7 +63,7 @@ const fixtureSurface = (
   name: string,
   triggerId: string,
   contentId: string,
-  how: "hover" | "click",
+  how: "hover" | "click" | "focus",
 ): Surface => ({
   name,
   anchor: (page) => page.locator(`#${triggerId}`),
@@ -75,6 +73,7 @@ const fixtureSurface = (
     const trigger = page.locator(`#${triggerId}`);
     await centre(trigger);
     if (how === "hover") await trigger.hover();
+    else if (how === "focus") await trigger.focus();
     else await trigger.click();
     const content = page.locator(`#${contentId}`);
     await expect(content).toBeVisible();
@@ -102,15 +101,15 @@ const demoSurface = (name: string, url: string, trigger: (page: Page) => Locator
 /** Policy: any scroll closes. */
 const ANY: Surface[] = [
   fixtureSurface("Tooltip", "clip-tooltip-trigger", "clip-tooltip-content", "hover"),
-  fixtureSurface("HoverCard", "clip-hovercard-trigger", "clip-hovercard-content", "hover"),
-  fixtureSurface("Menubar", "clip-menubar-trigger", "clip-menubar-content", "click"),
-  fixtureSurface("NavigationMenu", "clip-navigation-menu-trigger", "clip-navigation-menu-content", "hover"),
 ];
 
-/** Policy: only the anchor leaving the viewport closes. */
-const ANCHOR: Surface[] = [
+/** Policy: scrolling never closes it. */
+const STAYS: Surface[] = [
+  fixtureSurface("Menubar", "clip-menubar-trigger", "clip-menubar-content", "click"),
   fixtureSurface("Popover (non-modal)", "clip-popover-trigger", "clip-popover-content", "click"),
   fixtureSurface("Combobox", "clip-combobox-trigger", "clip-combobox-content", "click"),
+  fixtureSurface("HoverCard", "clip-hovercard-trigger", "clip-hovercard-content", "focus"),
+  fixtureSurface("NavigationMenu", "clip-navigation-menu-trigger", "clip-navigation-menu-content", "click"),
   demoSurface(
     "ColorPicker popover",
     `${BASE_URL}/component/color_picker/`,
@@ -176,8 +175,8 @@ test.describe("policy: any scroll closes", () => {
   });
 });
 
-test.describe("policy: only the anchor leaving the viewport closes", () => {
-  for (const s of ANCHOR) {
+test.describe("policy: scrolling never closes it", () => {
+  for (const s of STAYS) {
     test(`${s.name}: a small scroll that keeps the anchor in view leaves it open`, async ({ page }) => {
       const content = await s.open(page);
       await scrollBy(page, 30);
@@ -188,10 +187,11 @@ test.describe("policy: only the anchor leaving the viewport closes", () => {
       await expect(content).toBeVisible();
     });
 
-    test(`${s.name}: scrolling the anchor out closes it`, async ({ page }) => {
+    test(`${s.name}: scrolling the anchor out of view leaves it open`, async ({ page }) => {
       const content = await s.open(page);
       await scrollAnchorOut(page, s.anchor(page));
-      await expect(content).toHaveCount(0);
+      await page.waitForTimeout(PAST_QUIET);
+      await expect(content).toBeVisible();
     });
 
     test(`${s.name}: a visual-viewport resize (keyboard) with the anchor still in view leaves it open`, async ({
@@ -208,7 +208,7 @@ test.describe("policy: only the anchor leaving the viewport closes", () => {
   }
 
   test("Combobox: typing with the keyboard up keeps the list (and its query) open", async ({ page }) => {
-    const content = await ANCHOR[1].open(page);
+    const content = await STAYS[2].open(page);
     const { width, height } = (await pageMetrics(page)).viewportSize!;
     await page.setViewportSize({ width, height: Math.round(height * 0.5) });
     await centre(page.locator("#clip-combobox-trigger"));

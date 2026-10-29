@@ -1,5 +1,6 @@
 //! Combobox input component.
 
+use crate::state_attrs;
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
 
@@ -74,16 +75,8 @@ pub fn ComboboxInput(props: ComboboxInputProps) -> Element {
             event.prevent_default();
             event.stop_propagation();
         }
-        Key::Home if open() => {
-            ctx.focus_first_visible();
-            event.prevent_default();
-            event.stop_propagation();
-        }
-        Key::End if open() => {
-            ctx.focus_last_visible();
-            event.prevent_default();
-            event.stop_propagation();
-        }
+        // Home and End are not handled: they move the caret in the text field, open or closed,
+        // and never the list highlight (Base UI `ComboboxInput`, row 478).
         Key::Enter if open() => {
             ctx.select_focused();
             event.prevent_default();
@@ -120,6 +113,14 @@ pub fn ComboboxInput(props: ComboboxInputProps) -> Element {
             // matching `ContextMenuContentRendered`'s identical `manual`
             // reasoning (`context_menu.rs`).
             ctx.set_open(false);
+            event.prevent_default();
+            event.stop_propagation();
+        }
+        // Escape on a closed list clears the selection (every chip of a multi-select); the closed
+        // input then shows no label. A surrounding dialog keeps its Escape for the press that has
+        // nothing left to clear (Base UI `ComboboxInput`, row 478).
+        Key::Escape if !ctx.selectable.values.peek().is_empty() => {
+            ctx.clear();
             event.prevent_default();
             event.stop_propagation();
         }
@@ -160,7 +161,7 @@ pub fn ComboboxInput(props: ComboboxInputProps) -> Element {
         aria_controls: ctx.selectable.list_id,
         aria_activedescendant: active_descendant(),
 
-        "data-state": if open() { "open" } else { "closed" },
+        ..state_attrs::trigger_open(open()),
     });
     let merged = merge_attributes(vec![defaults, props.attributes.clone(), owned]);
 

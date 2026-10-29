@@ -1,5 +1,6 @@
 //! Main Select and SelectMulti component implementations.
 
+use crate::state_attrs;
 use core::panic;
 use std::time::Duration;
 
@@ -69,27 +70,20 @@ pub struct SelectProps<T: Clone + PartialEq + 'static = String> {
     #[props(default)]
     pub required: ReadSignal<bool>,
 
-    /// Whether focus should loop around when reaching the end.
-    #[props(default = ReadSignal::new(Signal::new(true)))]
+    /// Whether focus should loop around when reaching the end. Off by default: neither Base UI
+    /// (`loopFocus=false` in the list navigation a Select uses) nor Radix wraps.
+    #[props(default = ReadSignal::new(Signal::new(false)))]
     pub roving_loop: ReadSignal<bool>,
 
     /// Timeout in milliseconds before clearing typeahead buffer
     #[props(default = ReadSignal::new(Signal::new(Duration::from_millis(1000))))]
     pub typeahead_timeout: ReadSignal<Duration>,
 
-    /// Whether opening the listbox locks page scroll, matching Radix
-    /// Select's default (dev-docs/backlog.md row 9). Reuses this crate's shared
-    /// `scroll_lock` mechanism the same way `DropdownMenu`/`ContextMenu`'s
-    /// `modal` prop does -- see `SelectList`'s `SelectListRendered` for the
-    /// `ScrollLockGuard` mount. Opt-out, not opt-in: pass `false` to keep
-    /// the page scrollable behind an open listbox.
-    #[props(default = ReadSignal::new(Signal::new(true)))]
-    pub scroll_lock: ReadSignal<bool>,
-
-    /// Where the listbox is placed: [`SelectPosition::Popper`] (below the trigger, the default) or
-    /// [`SelectPosition::ItemAligned`] (the selected option over the trigger, Radix's default
-    /// mode). Item-aligned keeps the list inside the viewport: it shifts and shortens it, and
-    /// scrolls the selected option into place first.
+    /// Where the listbox is placed: [`SelectPosition::ItemAligned`] (the selected option over the
+    /// trigger, the default of both shadcn variants) or [`SelectPosition::Popper`] (below the
+    /// trigger). Item-aligned keeps the list inside the viewport: it shifts and shortens it, and
+    /// scrolls the selected option into place first. A Select opened by touch is always placed as
+    /// popper (Base UI's rule).
     #[props(default)]
     pub position: ReadSignal<SelectPosition>,
 
@@ -151,25 +145,20 @@ pub struct SelectMultiProps<T: Clone + PartialEq + 'static = String> {
     #[props(default)]
     pub name: ReadSignal<String>,
 
-    /// Whether focus should loop around when reaching the end.
-    #[props(default = ReadSignal::new(Signal::new(true)))]
+    /// Whether focus should loop around when reaching the end. Off by default: neither Base UI
+    /// (`loopFocus=false` in the list navigation a Select uses) nor Radix wraps.
+    #[props(default = ReadSignal::new(Signal::new(false)))]
     pub roving_loop: ReadSignal<bool>,
 
     /// Timeout in milliseconds before clearing typeahead buffer
     #[props(default = ReadSignal::new(Signal::new(Duration::from_millis(1000))))]
     pub typeahead_timeout: ReadSignal<Duration>,
 
-    /// Whether opening the listbox locks page scroll, matching Radix
-    /// Select's default (dev-docs/backlog.md row 9). See [`SelectProps::scroll_lock`]
-    /// -- `SelectMulti` shares `SelectList`/`SelectListRendered` with
-    /// [`Select`], so the same opt-out applies here.
-    #[props(default = ReadSignal::new(Signal::new(true)))]
-    pub scroll_lock: ReadSignal<bool>,
-
-    /// Where the listbox is placed: [`SelectPosition::Popper`] (below the trigger, the default) or
-    /// [`SelectPosition::ItemAligned`] (the selected option over the trigger, Radix's default
-    /// mode). Item-aligned keeps the list inside the viewport: it shifts and shortens it, and
-    /// scrolls the selected option into place first.
+    /// Where the listbox is placed: [`SelectPosition::ItemAligned`] (the selected option over the
+    /// trigger, the default of both shadcn variants) or [`SelectPosition::Popper`] (below the
+    /// trigger). Item-aligned keeps the list inside the viewport: it shifts and shortens it, and
+    /// scrolls the selected option into place first. A Select opened by touch is always placed as
+    /// popper (Base UI's rule).
     #[props(default)]
     pub position: ReadSignal<SelectPosition>,
 
@@ -195,8 +184,6 @@ struct SelectRootConfig {
     /// See `SelectContext::required`'s doc -- `SelectMulti` (no `required`
     /// prop of its own) wires a constant `false` signal in here.
     required: ReadSignal<bool>,
-    /// See `SelectContext::scroll_lock`'s doc.
-    scroll_lock: ReadSignal<bool>,
     /// See `SelectContext::direction`'s doc.
     direction: ReadSignal<Direction>,
     /// See `SelectContext::position`'s doc.
@@ -232,7 +219,6 @@ fn use_select_root(
         label,
         typeahead_timeout,
         required,
-        scroll_lock,
         direction,
         position,
     } = config;
@@ -262,6 +248,7 @@ fn use_select_root(
             keep_trigger_focus.set(false);
         }
     });
+    let touch_open = use_signal(|| false);
     let ctx = use_context_provider(|| SelectContext {
         selectable,
         label,
@@ -271,9 +258,9 @@ fn use_select_root(
         typeahead_timeout,
         keep_trigger_focus,
         required,
-        scroll_lock,
         direction,
         position,
+        touch_open,
     });
 
     (ctx, open)
@@ -328,18 +315,9 @@ fn use_select_root(
 ///
 /// The [`Select`] component defines the following data attributes you can use to control styling:
 /// - `data-state`: Indicates the current state of the select. Values are `open` or `closed`.
+/// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
 #[component]
 pub fn Select<T: Clone + PartialEq + 'static>(props: SelectProps<T>) -> Element {
-    // See `DropdownMenu`'s identical call (`dropdown_menu.rs`) for why this
-    // must run from the *root* component rather than only inside
-    // `use_scroll_lock` (reached via `ScrollLockGuard`, which mounts lazily
-    // inside `SelectListRendered`'s own open guard, `list.rs`):
-    // `Select`/`SelectMulti` mount as soon as the component appears on the
-    // page at all, so installing the permanent baseline here -- rather than
-    // waiting for the very first open -- avoids that first open doubling as
-    // the moment the gutter reservation appears (dev-docs/backlog.md row 9).
-    use_effect(crate::scroll_lock::ensure_scrollbar_gutter_baseline);
-
     // Snapshot before `use_single_selectable_value` consumes it: the hidden
     // mirror `<select>` below needs it to mark the option matching the
     // default value `initial_selected` (-> `.defaultSelected`), which is
@@ -374,7 +352,6 @@ pub fn Select<T: Clone + PartialEq + 'static>(props: SelectProps<T>) -> Element 
             label: use_label_callback(props.item_to_label, "select"),
             typeahead_timeout: props.typeahead_timeout,
             required: props.required,
-            scroll_lock: props.scroll_lock,
             direction: direction_signal,
             position: props.position,
         },
@@ -402,8 +379,8 @@ pub fn Select<T: Clone + PartialEq + 'static>(props: SelectProps<T>) -> Element 
     use_form_reset_listener(hidden_select_id, move || reset_to_default.call(()));
 
     let owned = attributes!(div {
-        "data-state": if open() { "open" } else { "closed" },
-        "data-disabled": (props.disabled)(),
+        ..state_attrs::open(open()),
+        ..state_attrs::disabled((props.disabled)()),
         "data-direction": (ctx.direction)().as_str(),
     });
     let merged = merge_attributes(vec![props.attributes.clone(), owned]);
@@ -525,12 +502,9 @@ pub fn Select<T: Clone + PartialEq + 'static>(props: SelectProps<T>) -> Element 
 ///
 /// The [`SelectMulti`] component defines the following data attributes you can use to control styling:
 /// - `data-state`: Indicates the current state of the select. Values are `open` or `closed`.
+/// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
 #[component]
 pub fn SelectMulti<T: Clone + PartialEq + 'static>(props: SelectMultiProps<T>) -> Element {
-    // See `Select`'s identical call, just above, for why this must run from
-    // the root component (dev-docs/backlog.md row 9).
-    use_effect(crate::scroll_lock::ensure_scrollbar_gutter_baseline);
-
     // Snapshot before `use_controlled` consumes it: the hidden mirror
     // `<select multiple>` marks these options `initial_selected`, and the
     // form-reset listener restores the selection to them.
@@ -583,7 +557,6 @@ pub fn SelectMulti<T: Clone + PartialEq + 'static>(props: SelectMultiProps<T>) -
             // `required` prop, so this is a constant `false` rather than
             // anything forwarded from `props`.
             required: ReadSignal::new(Signal::new(false)),
-            scroll_lock: props.scroll_lock,
             direction: direction_signal,
             position: props.position,
         },
@@ -605,8 +578,8 @@ pub fn SelectMulti<T: Clone + PartialEq + 'static>(props: SelectMultiProps<T>) -
     });
 
     let owned = attributes!(div {
-        "data-state": if open() { "open" } else { "closed" },
-        "data-disabled": (props.disabled)(),
+        ..state_attrs::open(open()),
+        ..state_attrs::disabled((props.disabled)()),
         "data-direction": (ctx.direction)().as_str(),
     });
     let merged = merge_attributes(vec![props.attributes.clone(), owned]);

@@ -1,6 +1,7 @@
 //! Defines the [`Checkbox`] component and its subcomponents, which manage checkbox inputs with controlled state.
 
 use crate::default_checked::use_default_checked;
+use crate::state_attrs;
 use crate::{merge_attributes, use_controlled, use_form_reset_listener, use_unique_id};
 use dioxus::{document::eval, prelude::*};
 use dioxus_attributes::attributes;
@@ -57,6 +58,7 @@ impl Not for CheckboxState {
 struct CheckboxCtx {
     checked: Memo<CheckboxState>,
     disabled: ReadSignal<bool>,
+    read_only: ReadSignal<bool>,
 }
 
 /// The props for the [`Checkbox`] component.
@@ -76,6 +78,12 @@ pub struct CheckboxProps {
     /// Whether the checkbox is disabled.
     #[props(default)]
     pub disabled: ReadSignal<bool>,
+
+    /// Whether the checkbox is read-only: it stays focusable and is announced (`aria-readonly`),
+    /// but a click or Space does not change its state, and its value still submits with a form.
+    /// Distinct from `disabled`, which removes it from the tab order and from the submission.
+    #[props(default)]
+    pub read_only: ReadSignal<bool>,
 
     /// The name of the checkbox, used in forms.
     #[props(default)]
@@ -130,7 +138,10 @@ pub struct CheckboxProps {
 ///
 /// The [`Checkbox`] component defines the following data attributes you can use to control styling:
 /// - `data-state`: The state of the checkbox. Possible values are `checked`, `indeterminate`, or `unchecked`.
+/// - `data-checked` / `data-unchecked` / `data-indeterminate`: Present (empty) in the matching state, absent otherwise.
 /// - `data-disabled`: Indicates if the checkbox is disabled. values are `true` or `false`.
+/// - `data-readonly`: Present (empty) while the checkbox is read-only, absent otherwise. The
+///   element also carries `aria-readonly="true"` then.
 #[component]
 pub fn Checkbox(props: CheckboxProps) -> Element {
     let (checked, set_checked) = use_controlled(
@@ -142,6 +153,7 @@ pub fn Checkbox(props: CheckboxProps) -> Element {
     use_context_provider(|| CheckboxCtx {
         checked,
         disabled: props.disabled,
+        read_only: props.read_only,
     });
 
     // Safari and Firefox on macOS do not focus <button> on click by default
@@ -159,8 +171,10 @@ pub fn Checkbox(props: CheckboxProps) -> Element {
         role: "checkbox",
         aria_checked: checked().to_aria_checked(),
         aria_required: props.required,
-        "data-state": checked().to_data_state(),
-        "data-disabled": props.disabled,
+        ..state_attrs::checked(checked()),
+        ..state_attrs::disabled(props.disabled),
+        aria_readonly: (props.read_only)().then_some("true"),
+        ..state_attrs::readonly(props.read_only),
     });
     let merged = merge_attributes(vec![defaults, props.attributes.clone(), owned]);
 
@@ -172,6 +186,9 @@ pub fn Checkbox(props: CheckboxProps) -> Element {
             onmounted: move |evt| button_ref.set(Some(evt.data())),
             onpointerdown: move |evt| press.pressed(&evt),
             onclick: move |_| {
+                if (props.read_only)() {
+                    return;
+                }
                 let new_checked = !checked();
                 set_checked.call(new_checked);
                 // Safari does not focus a clicked button; a mouse click focuses it here. Not after a
@@ -241,6 +258,7 @@ pub fn Checkbox(props: CheckboxProps) -> Element {
 ///
 /// The [`CheckboxIndicator`] component defines the following data attributes you can use to control styling:
 /// - `data-state`: The state of the checkbox. Possible values are `checked`, `indeterminate`, or `unchecked`.
+/// - `data-checked` / `data-unchecked` / `data-indeterminate`: Present (empty) in the matching state, absent otherwise.
 /// - `data-disabled`: Indicates if the checkbox is disabled. values are `true` or `false`.
 #[component]
 pub fn CheckboxIndicator(
@@ -252,8 +270,9 @@ pub fn CheckboxIndicator(
     let checked = (ctx.checked)();
 
     let owned = attributes!(span {
-        "data-state": checked.to_data_state(),
-        "data-disabled": ctx.disabled,
+        ..state_attrs::checked(checked),
+        ..state_attrs::disabled(ctx.disabled),
+        ..state_attrs::readonly(ctx.read_only),
     });
     let merged = merge_attributes(vec![attributes, owned]);
 
@@ -367,6 +386,30 @@ mod tests {
             Checkbox { default_checked: CheckboxState::Indeterminate, name: "b" }
             Checkbox { name: "c" }
         }
+    }
+
+    /// A read-only Checkbox is announced and marked; a writable one carries neither attribute.
+    #[test]
+    fn read_only_sets_aria_readonly_and_data_readonly() {
+        let mut dom = VirtualDom::new(|| {
+            rsx! {
+                Checkbox { read_only: true, name: "a" }
+                Checkbox { name: "b" }
+            }
+        });
+        dom.rebuild_in_place();
+        let html = dioxus_ssr::render(&dom);
+        let boxes = crate::test_support::find_elements(&html, |a| {
+            a.get("role").map(String::as_str) == Some("checkbox")
+        });
+        assert_eq!(boxes.len(), 2, "{html}");
+        assert_eq!(
+            boxes[0].attrs.get("aria-readonly").map(String::as_str),
+            Some("true")
+        );
+        assert!(boxes[0].attrs.contains_key("data-readonly"), "{html}");
+        assert!(!boxes[1].attrs.contains_key("aria-readonly"), "{html}");
+        assert!(!boxes[1].attrs.contains_key("data-readonly"), "{html}");
     }
 
     /// A default-checked Checkbox's hidden input is server-rendered with the `checked` content

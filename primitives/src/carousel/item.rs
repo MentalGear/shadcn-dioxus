@@ -1,4 +1,5 @@
 use super::*;
+use crate::state_attrs;
 
 /// The props for the [`CarouselItem`] component.
 #[derive(Props, Clone, PartialEq)]
@@ -207,7 +208,7 @@ pub fn CarouselItem(props: CarouselItemProps) -> Element {
             role: role,
             aria_roledescription: "slide",
             style: style.clone(),
-            "data-selected": is_selected,
+            ..state_attrs::valued(state_attrs::Flag::Selected, is_selected),
             // The stable data index and this child's logical position --
             // see `use_carousel_scroll_tracking`'s own doc for why every
             // JS bridge reads these rather than a child's array position.

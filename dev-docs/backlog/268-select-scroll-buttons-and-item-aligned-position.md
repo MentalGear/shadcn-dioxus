@@ -4,7 +4,7 @@ title: "Select scroll buttons and position=item-aligned"
 status: "Only the native (Blitz) arm is left: position=item-aligned emits data-position there and nothing…"
 size: "S (native arm only)"
 area: select
-updated: 2026-10-24
+updated: 2026-10-28
 ---
 
 # Row 268: Select scroll buttons and position=item-aligned
@@ -22,6 +22,8 @@ Two Select parts shadcn has and this Select does not. Split out of row 188 by th
 S (native arm only)
 
 ## Detail
+
+**2026-10-28.** The web arm's item-aligned placement moves to row 477's rule (document coordinates, selected option over the trigger, clamped to the visible region; measured 0 px alignment on the iPhone). Whether item-aligned becomes the default (both shadcn variants; Base UI falls back to popper for touch opens) is an owner question, recorded in [row 478](./478-overlay-defaults-to-base-ui.md).
 
 **Scroll buttons (S-M).** Styled `SelectScrollUpButton` / `SelectScrollDownButton`, sticky inside the list, shown only while the list can scroll in that direction. The scroll listener is passive and goes through `primitives/src/js_listener.rs` `listen` (gate: `check-js-listeners.sh`); hover auto-scroll is motion and is gated by `use_motion` (`check-motion-gating.sh`). Needs a select spec: buttons appear at the right end, hovering scrolls, leaving stops, reduced motion and hidden-tab pause.
 

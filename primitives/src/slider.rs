@@ -4,7 +4,8 @@
 use crate::direction::{use_direction, use_direction_signal, Direction};
 use crate::merge_attributes;
 use crate::move_interaction::{use_move_interaction, MoveEvent};
-use crate::use_controlled;
+use crate::state_attrs;
+use crate::{use_controlled, use_form_reset_listener, use_unique_id};
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
 use std::ops::Range;
@@ -47,6 +48,22 @@ fn normalize_range(range: Range<f64>) -> Range<f64> {
 
 fn snap_value(value: f64, step: f64) -> f64 {
     (value / step).round() * step
+}
+
+/// The number of fractional digits in `step`, so a submitted value prints without float noise
+/// (a 0.1 step lands on `0.3`, not `0.30000000000000004`).
+fn step_decimals(step: f64) -> usize {
+    format!("{step}")
+        .split_once('.')
+        .map_or(0, |(_, fraction)| fraction.len())
+        .min(12)
+}
+
+/// A thumb value as the hidden form input carries it: rounded to the step's precision.
+fn format_value(value: f64, step: f64) -> String {
+    // `+ 0.0` turns a negative zero into `0`.
+    let value = value + 0.0;
+    format!("{value:.*}", step_decimals(step))
 }
 
 fn closest_thumb_for(raw: f64, thumbs: &[f64]) -> usize {
@@ -139,6 +156,23 @@ pub struct SliderProps {
     #[props(default)]
     pub on_value_change: Callback<f64>,
 
+    /// Callback fired when the user finishes a change: on pointer release after a drag or a
+    /// click on the track that moved the value, and on each keyboard step. It does not fire on
+    /// every move of a drag, nor when the value is set from outside or by a form reset.
+    #[props(default)]
+    pub on_value_commit: Callback<f64>,
+
+    /// The name submitted with a form: the slider renders a hidden `<input>` carrying its value
+    /// under this name. An empty name submits nothing.
+    #[props(default)]
+    pub name: ReadSignal<String>,
+
+    /// The `id` of a `<form>` the hidden input belongs to (the HTML `form` attribute), so a
+    /// slider rendered outside its `<form>` still submits and resets with it. `None` leaves the
+    /// input's owner to the DOM ancestor.
+    #[props(default)]
+    pub form: ReadSignal<Option<String>>,
+
     /// The label for the slider (for accessibility)
     pub label: ReadSignal<Option<String>>,
 
@@ -178,6 +212,12 @@ pub struct SliderProps {
 /// }
 /// ```
 ///
+/// ## Forms
+///
+/// With a `name`, the slider submits its value with the nearest `<form>` (or the one named by
+/// `form`) through a hidden `<input>`; a [`RangeSlider`] submits one per thumb under the same
+/// name. A form reset restores `default_value`.
+///
 /// ## Styling
 ///
 /// The [`Slider`] component defines the following data attributes you can use to control styling:
@@ -190,11 +230,23 @@ pub fn Slider(props: SliderProps) -> Element {
 
     let thumbs = use_memo(move || vec![value()]);
     let set_thumb = use_callback(move |(_idx, v): (usize, f64)| set_value.call(v));
+    let default_value = props.default_value;
+    let reset = use_callback(move |()| set_value.call(default_value));
+    let on_commit = use_callback(move |next: Vec<f64>| {
+        if let Some(v) = next.first() {
+            props.on_value_commit.call(*v);
+        }
+    });
 
     rsx! {
         SliderImpl {
             thumbs,
             set_thumb,
+            reset,
+            on_commit,
+            min_steps: ReadSignal::new(Signal::new(0u32)),
+            name: props.name,
+            form: props.form,
             min: props.min,
             max: props.max,
             step: props.step,
@@ -251,6 +303,29 @@ pub struct RangeSliderProps {
     #[props(default)]
     pub on_value_change: Callback<Range<f64>>,
 
+    /// Callback fired when the user finishes a change: on pointer release after a drag or a
+    /// click on the track that moved a thumb, and on each keyboard step. It does not fire on
+    /// every move of a drag, nor when the value is set from outside or by a form reset.
+    #[props(default)]
+    pub on_value_commit: Callback<Range<f64>>,
+
+    /// The minimum number of steps between the two thumbs: the start thumb stops that many steps
+    /// short of the end thumb, and the end thumb the same distance past the start thumb.
+    /// Defaults to 0, which lets the thumbs meet.
+    #[props(default)]
+    pub min_steps_between_thumbs: ReadSignal<u32>,
+
+    /// The name submitted with a form: the range slider renders one hidden `<input>` per thumb,
+    /// both under this name (the start value first). An empty name submits nothing.
+    #[props(default)]
+    pub name: ReadSignal<String>,
+
+    /// The `id` of a `<form>` the hidden inputs belong to (the HTML `form` attribute), so a
+    /// range slider rendered outside its `<form>` still submits and resets with it. `None`
+    /// leaves the inputs' owner to the DOM ancestor.
+    #[props(default)]
+    pub form: ReadSignal<Option<String>>,
+
     /// The label for the range slider (for accessibility)
     pub label: ReadSignal<Option<String>>,
 
@@ -294,6 +369,11 @@ pub struct RangeSliderProps {
 /// }
 /// ```
 ///
+/// ## Forms
+///
+/// With a `name`, the range slider submits both thumb values, start first, under that name with
+/// the nearest `<form>` (or the one named by `form`). A form reset restores `default_value`.
+///
 /// ## Styling
 ///
 /// The [`RangeSlider`] component defines the following data attributes you can use to control styling:
@@ -301,11 +381,9 @@ pub struct RangeSliderProps {
 /// - `data-orientation`: Indicates the orientation of the slider. Values are `horizontal` or `vertical`.
 #[component]
 pub fn RangeSlider(props: RangeSliderProps) -> Element {
-    let (raw_value, set_value) = use_controlled(
-        props.value,
-        normalize_range(props.default_value),
-        props.on_value_change,
-    );
+    let default_value = normalize_range(props.default_value.clone());
+    let (raw_value, set_value) =
+        use_controlled(props.value, default_value.clone(), props.on_value_change);
     let value = use_memo(move || normalize_range(raw_value()));
 
     let thumbs = use_memo(move || {
@@ -322,11 +400,22 @@ pub fn RangeSlider(props: RangeSliderProps) -> Element {
         };
         set_value.call(next);
     });
+    let reset = use_callback(move |()| set_value.call(default_value.clone()));
+    let on_commit = use_callback(move |next: Vec<f64>| {
+        if let [start, end] = next.as_slice() {
+            props.on_value_commit.call(*start..*end);
+        }
+    });
 
     rsx! {
         SliderImpl {
             thumbs,
             set_thumb,
+            reset,
+            on_commit,
+            min_steps: props.min_steps_between_thumbs,
+            name: props.name,
+            form: props.form,
             min: props.min,
             max: props.max,
             step: props.step,
@@ -345,6 +434,13 @@ pub fn RangeSlider(props: RangeSliderProps) -> Element {
 struct SliderImplProps {
     thumbs: Memo<Vec<f64>>,
     set_thumb: Callback<(usize, f64)>,
+    /// Restores the default value (a form reset).
+    reset: Callback<()>,
+    /// Receives every thumb's value when the user finishes a change.
+    on_commit: Callback<Vec<f64>>,
+    min_steps: ReadSignal<u32>,
+    name: ReadSignal<String>,
+    form: ReadSignal<Option<String>>,
     min: ReadSignal<f64>,
     max: ReadSignal<f64>,
     step: ReadSignal<f64>,
@@ -386,6 +482,28 @@ fn SliderImpl(props: SliderImplProps) -> Element {
         dragging: dragging.into(),
         active_thumb,
         label: props.label,
+        min_steps: props.min_steps,
+        commit: props.on_commit,
+    });
+
+    // The hidden inputs carry the value into a form. The first one's id lets the form-reset
+    // listener find the owning form; a reset restores the default through `props.reset`.
+    let hidden_input_id = use_unique_id();
+    use_form_reset_listener(hidden_input_id, move || props.reset.call(()));
+
+    // The thumb values at the start of a press, to commit only a press that moved a value, and
+    // whether the previous render saw a drag in progress, to commit when it ends.
+    let mut press_start = use_hook(|| CopyValue::new(Vec::<f64>::new()));
+    let mut was_dragging = use_hook(|| CopyValue::new(false));
+    use_effect(move || {
+        let now = dragging();
+        if was_dragging.cloned() && !now {
+            let last = ctx.thumbs.peek().clone();
+            if last != press_start.cloned() {
+                ctx.commit.call(last);
+            }
+        }
+        was_dragging.set(now);
     });
 
     let mut movement = use_move_interaction(dragging);
@@ -443,7 +561,7 @@ fn SliderImpl(props: SliderImplProps) -> Element {
     // with these literals on the same element (backlog row 93).
     let owned = attributes!(div {
         role: "group",
-        "data-disabled": props.disabled,
+        ..state_attrs::disabled(props.disabled),
         "data-orientation": orientation,
         "data-direction": direction.as_str(),
     });
@@ -510,6 +628,7 @@ fn SliderImpl(props: SliderImplProps) -> Element {
                         // Seed granular state from the live thumb values, then write the
                         // unclamped raw position into the active slot for fluid drag.
                         let mut current = (ctx.thumbs)();
+                        press_start.set(current.clone());
                         if let Some(slot) = current.get_mut(idx) {
                             *slot = raw;
                         }
@@ -525,6 +644,18 @@ fn SliderImpl(props: SliderImplProps) -> Element {
             ..merged,
 
             {props.children}
+
+            for (i, thumb) in (ctx.thumbs)().into_iter().enumerate() {
+                input {
+                    key: "{i}",
+                    id: (i == 0).then(|| hidden_input_id.cloned()),
+                    r#type: "hidden",
+                    name: props.name,
+                    form: props.form,
+                    value: format_value(thumb, (ctx.step)()),
+                    disabled: props.disabled,
+                }
+            }
         }
     }
 }
@@ -584,7 +715,7 @@ pub fn SliderTrack(props: SliderTrackProps) -> Element {
     };
 
     let owned = attributes!(div {
-        "data-disabled": ctx.disabled,
+        ..state_attrs::disabled(ctx.disabled),
         "data-orientation": orientation,
     });
     let merged = merge_attributes(vec![props.attributes.clone(), owned]);
@@ -680,7 +811,7 @@ pub fn SliderRange(props: SliderRangeProps) -> Element {
     });
 
     let owned = attributes!(div {
-        "data-disabled": ctx.disabled,
+        ..state_attrs::disabled(ctx.disabled),
         "data-orientation": orientation,
         style,
     });
@@ -765,13 +896,8 @@ pub fn SliderThumb(props: SliderThumbProps) -> Element {
     // Thumb's own value plus the bounds it can reach: in range mode each thumb is capped by
     // its neighbor; otherwise it's [min, max].
     let bounds = use_memo(move || {
-        let t = (ctx.thumbs)();
-        let value = t.get(index).copied().unwrap_or(0.0);
-        let (vmin, vmax) = match (t.len(), index) {
-            (2, 0) => ((ctx.min)(), t[1]),
-            (2, _) => (t[0], (ctx.max)()),
-            _ => ((ctx.min)(), (ctx.max)()),
-        };
+        let value = (ctx.thumbs)().get(index).copied().unwrap_or(0.0);
+        let (vmin, vmax) = ctx.bounds_for(index);
         (value, vmin, vmax)
     });
     let value = use_memo(move || bounds().0);
@@ -820,9 +946,9 @@ pub fn SliderThumb(props: SliderThumbProps) -> Element {
         aria_valuemax: vmax,
         aria_valuenow: value,
         aria_orientation: orientation,
-        "data-disabled": ctx.disabled,
+        ..state_attrs::disabled(ctx.disabled),
         "data-orientation": orientation,
-        "data-dragging": ctx.dragging,
+        ..state_attrs::valued(state_attrs::Flag::Dragging, ctx.dragging),
         "data-index": index as i64,
         "data-direction": (ctx.direction)().as_str(),
         style,
@@ -854,7 +980,7 @@ pub fn SliderThumb(props: SliderThumbProps) -> Element {
                 let (_, vmin, vmax) = bounds();
                 if let Some(target) = home_end_target(&evt.key(), vmin, vmax) {
                     evt.prevent_default();
-                    ctx.set_thumb.call((index, ctx.clamp_for(index, target)));
+                    ctx.set_and_commit(index, ctx.clamp_for(index, target));
                     return;
                 }
 
@@ -875,7 +1001,7 @@ pub fn SliderThumb(props: SliderThumbProps) -> Element {
                 let new_value = value() + delta_x + move_event.delta_y;
 
                 // Clamp (against neighbor in range mode) and snap, then commit.
-                ctx.set_thumb.call((index, ctx.clamp_for(index, new_value)));
+                ctx.set_and_commit(index, ctx.clamp_for(index, new_value));
             },
             ..merged,
             {props.children}
@@ -897,9 +1023,38 @@ struct SliderContext {
     dragging: ReadSignal<bool>,
     active_thumb: Signal<usize>,
     label: ReadSignal<Option<String>>,
+    /// The minimum number of steps between the two thumbs of a range slider.
+    min_steps: ReadSignal<u32>,
+    /// Receives every thumb's value when the user finishes a change.
+    commit: Callback<Vec<f64>>,
 }
 
 impl SliderContext {
+    /// The lowest and highest value the given thumb can reach: the global min/max and, in range
+    /// mode, the neighbouring thumb held `min_steps` steps away.
+    fn bounds_for(&self, index: usize) -> (f64, f64) {
+        let t = (self.thumbs)();
+        let (lo, hi) = ((self.min)(), (self.max)());
+        let gap = f64::from((self.min_steps)()) * (self.step)();
+        match (t.len(), index) {
+            (2, 0) => (lo, (t[1] - gap).max(lo)),
+            (2, _) => ((t[0] + gap).min(hi), hi),
+            _ => (lo, hi),
+        }
+    }
+
+    /// Applies `next` to the given thumb and reports the finished change to `on_value_commit`
+    /// when it differs from the thumb's current value. For a keyboard step.
+    fn set_and_commit(&self, index: usize, next: f64) {
+        let mut all = (self.thumbs)();
+        let changed = all.get(index).is_some_and(|current| *current != next);
+        self.set_thumb.call((index, next));
+        if changed {
+            all[index] = next;
+            self.commit.call(all);
+        }
+    }
+
     fn range(&self) -> [f64; 2] {
         if !self.inverted {
             [(self.min)(), (self.max)()]
@@ -928,13 +1083,7 @@ impl SliderContext {
     /// (e.g. a neighbor thumb was set to a fractional value), the result is rounded toward
     /// the bound instead of past it.
     fn clamp_for(&self, index: usize, raw: f64) -> f64 {
-        let t = (self.thumbs)();
-        let (lo, hi) = ((self.min)(), (self.max)());
-        let (lo, hi) = match (t.len(), index) {
-            (2, 0) => (lo, t[1]),
-            (2, _) => (t[0], hi),
-            _ => (lo, hi),
-        };
+        let (lo, hi) = self.bounds_for(index);
         clamp_to_step_bounds(raw, lo, hi, (self.step)())
     }
 
@@ -949,6 +1098,74 @@ impl SliderContext {
 mod tests {
     use super::*;
     use crate::test_support::with_runtime;
+
+    #[component]
+    fn FormSliders() -> Element {
+        rsx! {
+            Slider { name: "volume", default_value: 30.0,
+                SliderTrack {
+                    SliderThumb {}
+                }
+            }
+            RangeSlider { name: "price", default_value: 20.0..80.0,
+                SliderTrack {
+                    SliderThumb { index: 0usize }
+                    SliderThumb { index: 1usize }
+                }
+            }
+        }
+    }
+
+    /// A named slider submits through one hidden input per thumb, in thumb order, carrying the
+    /// thumb's current value.
+    #[test]
+    fn named_sliders_render_one_hidden_input_per_thumb() {
+        let mut dom = VirtualDom::new(FormSliders);
+        dom.rebuild_in_place();
+        let html = dioxus_ssr::render(&dom);
+        let inputs: Vec<(String, String)> = crate::test_support::find_elements(&html, |a| {
+            a.get("type").map(String::as_str) == Some("hidden")
+        })
+        .into_iter()
+        .map(|el| (el.attrs["name"].clone(), el.attrs["value"].clone()))
+        .collect();
+        assert_eq!(
+            inputs,
+            [
+                ("volume".to_string(), "30".to_string()),
+                ("price".to_string(), "20".to_string()),
+                ("price".to_string(), "80".to_string()),
+            ],
+            "{html}"
+        );
+    }
+
+    #[test]
+    fn hidden_input_values_print_at_the_step_precision() {
+        assert_eq!(format_value(50.0, 1.0), "50");
+        assert_eq!(format_value(0.1 * 3.0, 0.1), "0.3");
+        assert_eq!(format_value(2.5, 0.5), "2.5");
+        assert_eq!(format_value(-0.0, 1.0), "0");
+        assert_eq!(step_decimals(0.25), 2);
+        assert_eq!(step_decimals(10.0), 0);
+    }
+
+    #[test]
+    fn min_steps_hold_the_thumbs_apart() {
+        with_runtime(|| {
+            let ctx = make_context_with_gap(0.0, 100.0, 10.0, false, vec![20.0, 80.0], 2);
+            // Two steps of 10 keep the thumbs 20 apart.
+            assert_eq!(ctx.bounds_for(0), (0.0, 60.0));
+            assert_eq!(ctx.bounds_for(1), (40.0, 100.0));
+            assert_eq!(ctx.clamp_for(0, 90.0), 60.0);
+            assert_eq!(ctx.clamp_for(1, 0.0), 40.0);
+
+            // A gap wider than the room left never inverts a thumb's bounds.
+            let tight = make_context_with_gap(0.0, 100.0, 10.0, false, vec![0.0, 10.0], 5);
+            assert_eq!(tight.bounds_for(0), (0.0, 0.0));
+            assert_eq!(tight.bounds_for(1), (50.0, 100.0));
+        });
+    }
 
     #[test]
     fn closest_thumb_uses_raw_collision_position() {
@@ -1049,6 +1266,17 @@ mod tests {
         inverted: bool,
         thumbs: Vec<f64>,
     ) -> SliderContext {
+        make_context_with_gap(min, max, step, inverted, thumbs, 0)
+    }
+
+    fn make_context_with_gap(
+        min: f64,
+        max: f64,
+        step: f64,
+        inverted: bool,
+        thumbs: Vec<f64>,
+        min_steps: u32,
+    ) -> SliderContext {
         let min_sig = use_signal(|| min);
         let max_sig = use_signal(|| max);
         let step_sig = use_signal(|| step);
@@ -1058,6 +1286,8 @@ mod tests {
         let active_thumb = use_signal(|| 0usize);
         let thumbs_memo = use_memo(move || thumbs.clone());
         SliderContext {
+            min_steps: use_signal(|| min_steps).into(),
+            commit: Callback::new(|_: Vec<f64>| {}),
             thumbs: thumbs_memo,
             set_thumb: Callback::new(|_: (usize, f64)| {}),
             min: min_sig.into(),

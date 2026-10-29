@@ -1,4 +1,5 @@
 use super::*;
+use crate::state_attrs;
 
 /// The props for the [`CarouselVirtualContent`] component.
 #[derive(Props, Clone, PartialEq)]
@@ -590,24 +591,27 @@ pub fn CarouselVirtualContent<T: Clone + PartialEq + 'static>(
             align_now.as_str(),
             item_gap_padding(orientation_now)
         );
+        let slide_attributes = attributes!(div {
+            role,
+            aria_roledescription: "slide",
+            aria_label: label,
+            style: item_style,
+            "data-index": data_index,
+            "data-position": position,
+            inert,
+            ..state_attrs::valued(state_attrs::Flag::Selected, is_selected),
+        });
         rsx! {
             div {
                 key: "{position}",
                 id: slide_id,
-                role,
-                aria_roledescription: "slide",
-                aria_label: label,
-                style: item_style,
-                "data-selected": is_selected,
-                "data-index": data_index,
-                "data-position": position,
-                inert,
                 onfocusin: move |_| focused_item.set(Some(data_index)),
                 onfocusout: move |_| {
                     if (focused_item)() == Some(data_index) {
                         focused_item.set(None);
                     }
                 },
+                ..slide_attributes,
                 {content}
             }
         }

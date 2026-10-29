@@ -373,3 +373,94 @@ test.describe('Axe automated scan', () => {
     await expectNoAxeViolations(page, 'slider: value changed', { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });
 });
+
+// Form participation, `on_value_commit` and `min_steps_between_thumbs` (row 482): the `form` variant is a
+// <form> with a named Slider (volume, default 30) and a named RangeSlider (price, default 20..80, thumbs at
+// least 10 steps apart) and an <output> that names the last committed value.
+test.describe('slider in a form', () => {
+  const formEntries = (page: Page) =>
+    page.locator('#slider-form').evaluate((f: HTMLFormElement) => [...new FormData(f)].map(([k, v]) => [k, String(v)]));
+  const volume = (page: Page) => page.locator('#slider-form').getByRole('slider', { name: 'Volume' });
+  const price = (page: Page, n: number) => page.locator('#slider-form').getByRole('slider', { name: 'Price' }).nth(n);
+  const committed = (page: Page) => page.locator('#slider-form-committed');
+
+  test('each thumb submits its value under the slider name', async ({ page }) => {
+    await gotoHydrated(page, `${BASE_URL}/component/slider/`, { timeout: 20 * 60 * 1000 });
+    expect(await formEntries(page)).toEqual([['volume', '30'], ['price', '20'], ['price', '80']]);
+
+    await volume(page).focus();
+    await page.keyboard.press('ArrowRight');
+    await expect(volume(page)).toHaveAttribute('aria-valuenow', '31');
+    expect(await formEntries(page)).toEqual([['volume', '31'], ['price', '20'], ['price', '80']]);
+  });
+
+  test('a form reset restores the defaults', async ({ page }) => {
+    await gotoHydrated(page, `${BASE_URL}/component/slider/`, { timeout: 20 * 60 * 1000 });
+    await volume(page).focus();
+    await page.keyboard.press('Shift+ArrowRight');
+    await expect(volume(page)).toHaveAttribute('aria-valuenow', '40');
+    await price(page, 0).focus();
+    await page.keyboard.press('ArrowRight');
+    await expect(price(page, 0)).toHaveAttribute('aria-valuenow', '21');
+    expect(await formEntries(page)).toEqual([['volume', '40'], ['price', '21'], ['price', '80']]);
+
+    await page.locator('#slider-form').getByRole('button', { name: 'Reset' }).click();
+    await expect(volume(page)).toHaveAttribute('aria-valuenow', '30');
+    await expect(price(page, 0)).toHaveAttribute('aria-valuenow', '20');
+    await expect(price(page, 1)).toHaveAttribute('aria-valuenow', '80');
+    await expect.poll(() => formEntries(page)).toEqual([['volume', '30'], ['price', '20'], ['price', '80']]);
+  });
+
+  test('on_value_commit fires for a keyboard step, not for a reset', async ({ page }) => {
+    await gotoHydrated(page, `${BASE_URL}/component/slider/`, { timeout: 20 * 60 * 1000 });
+    await expect(committed(page)).toHaveText('none');
+    await volume(page).focus();
+    await page.keyboard.press('ArrowRight');
+    await expect(committed(page)).toHaveText('volume 31');
+    await price(page, 1).focus();
+    await page.keyboard.press('ArrowLeft');
+    await expect(committed(page)).toHaveText('price 20-79');
+
+    await page.locator('#slider-form').getByRole('button', { name: 'Reset' }).click();
+    await expect(volume(page)).toHaveAttribute('aria-valuenow', '30');
+    await expect(committed(page)).toHaveText('price 20-79');
+  });
+
+  test('on_value_commit fires once on pointer release, not while dragging', async ({ page }) => {
+    await gotoHydrated(page, `${BASE_URL}/component/slider/`, { timeout: 20 * 60 * 1000 });
+    const thumb = volume(page);
+    await thumb.scrollIntoViewIfNeeded();
+    const box = await thumb.boundingBox();
+    if (!box) throw new Error('volume thumb has no bounding box');
+    const track = await page.locator('#slider-form [data-orientation="horizontal"]:has([role="slider"][aria-label="Volume"])').first().boundingBox();
+    if (!track) throw new Error('volume track has no bounding box');
+    const start = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+
+    await page.mouse.move(start.x, start.y);
+    await page.mouse.down();
+    // The drag begins once the press has resolved the track rect; moves sent before that are not a drag.
+    await expect(thumb).toHaveAttribute('data-dragging', 'true');
+    await page.mouse.move(track.x + track.width * 0.6, start.y, { steps: 10 });
+    await expect.poll(async () => Number(await thumb.getAttribute('aria-valuenow'))).toBeGreaterThan(50);
+    // Mid-drag the value has moved, and nothing is committed yet.
+    await expect(committed(page)).toHaveText('none');
+
+    await page.mouse.up();
+    const finished = await thumb.getAttribute('aria-valuenow');
+    await expect(committed(page)).toHaveText(`volume ${finished}`);
+  });
+
+  test('min_steps_between_thumbs keeps the thumbs 10 steps apart', async ({ page }) => {
+    await gotoHydrated(page, `${BASE_URL}/component/slider/`, { timeout: 20 * 60 * 1000 });
+    await price(page, 0).focus();
+    await page.keyboard.press('End');
+    // The start thumb stops 10 short of the end thumb (80).
+    await expect(price(page, 0)).toHaveAttribute('aria-valuenow', '70');
+    await expect(price(page, 0)).toHaveAttribute('aria-valuemax', '70');
+    await expect(price(page, 1)).toHaveAttribute('aria-valuemin', '80');
+    await price(page, 1).focus();
+    await page.keyboard.press('Home');
+    await expect(price(page, 1)).toHaveAttribute('aria-valuenow', '80');
+    expect(await formEntries(page)).toEqual([['volume', '30'], ['price', '70'], ['price', '80']]);
+  });
+});

@@ -173,7 +173,7 @@ pub fn TopLayerFixture() -> Element {
                         }
                     }
 
-                    // Select's web arm is `popover="auto"`
+                    // Select's web arm is `popover="manual"`
                     // (`SelectListRendered`, `list.rs`). The case is red
                     // against a plain div, which clips at the 60px ancestor
                     // like the others.
@@ -884,46 +884,6 @@ pub fn TopLayerFixture() -> Element {
                         PopoverTrigger { id: "popover-modal-anchor-trigger", "Modal popover anchor trigger" }
                         PopoverContent { id: "popover-modal-anchor-content", "data-dx-surface": "floating",
                             "Modal popover anchored content."
-                        }
-                    }
-                }
-            }
-
-            section { class: Styles::dx_top_layer_section,
-                h2 { "Select scroll_lock opt-out (dev-docs/backlog.md rows 9/72)" }
-                p { class: Styles::dx_top_layer_hint,
-                    "The "
-                    code { "scroll_lock: ReadSignal<bool>" }
-                    " prop (default "
-                    code { "true" }
-                    ") on "
-                    code { "Select" }
-                    "/"
-                    code { "SelectMulti" }
-                    " opts out of the page scroll lock. The trigger below sets "
-                    code { "scroll_lock=false" }
-                    " explicitly, so opening its "
-                    "listbox must leave page scroll unlocked (a wheel event "
-                    "still scrolls the page), unlike every other overlay on "
-                    "this page and unlike Select's own default-"
-                    code { "true" }
-                    " instance ("
-                    code { "playwright/oracle/tier3-radix/scroll-lock.spec.ts" }
-                    "'s default case, on Select's own gallery page)."
-                }
-                Select::<String> {
-                    id: "scroll-lock-select-root",
-                    item_to_label: |value: String| value,
-                    scroll_lock: ReadSignal::new(Signal::new(false)),
-                    SelectTrigger {
-                        id: "scroll-lock-select-trigger",
-                        SelectValue { placeholder: "Scroll-unlocked select" }
-                    }
-                    SelectList {
-                        id: "scroll-lock-select-content",
-                        SelectOption::<String> {
-                            value: "one",
-                            "Option one"
                         }
                     }
                 }

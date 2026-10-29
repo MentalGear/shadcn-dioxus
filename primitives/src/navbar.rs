@@ -1,5 +1,6 @@
 //! Defines the [`Navbar`] component and its sub-components.
 
+use crate::state_attrs;
 use crate::{
     collection::{
         collection_item, use_collection_provider, use_deferred_collection_focus, use_item,
@@ -203,7 +204,7 @@ pub fn Navbar(props: NavbarProps) -> Element {
             // explicitly disclaims.
             role: "menubar",
             dir: direction.as_str(),
-            "data-disabled": (props.disabled)(),
+            ..state_attrs::disabled((props.disabled)()),
             "data-direction": direction.as_str(),
             tabindex: (!ctx.focus.any_focused()).then_some("0"),
         }),
@@ -401,6 +402,7 @@ pub struct NavbarNavProps {
 ///
 /// The [`NavbarNav`] component defines the following data attributes you can use to control styling:
 /// - `data-state`: Indicates if the nav is open or closed. Values are `open` or `closed`.
+/// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
 /// - `data-disabled`: Indicates if the nav is disabled. Values are `true` or `false`.
 #[component]
 pub fn NavbarNav(props: NavbarNavProps) -> Element {
@@ -445,8 +447,8 @@ pub fn NavbarNav(props: NavbarNavProps) -> Element {
             // of "role of either `menu` or `menubar`", not a hand-written
             // literal.
             role: crate::menu_semantics::MENU_ROLE,
-            "data-state": if is_open() { "open" } else { "closed" },
-            "data-disabled": (ctx.disabled)() || (props.disabled)(),
+            ..state_attrs::open(is_open()),
+            ..state_attrs::disabled((ctx.disabled)() || (props.disabled)()),
         }),
     ]);
 
@@ -799,6 +801,7 @@ pub struct NavbarContentProps {
 ///
 /// The [`NavbarContent`] component defines the following data attributes you can use to control styling:
 /// - `data-state`: Indicates if the nav is open or closed. Values are `open` or `closed`.
+/// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
 /// - `data-open-menu-direction`: Indicates the direction of the open menu relative to this content. Values are `start`, `end`, `open`, or `closed`.
 #[component]
 pub fn NavbarContent(props: NavbarContentProps) -> Element {
@@ -968,7 +971,7 @@ fn NavbarContentRendered(
             // (`menubar.rs`), which this mirrors.
             role: crate::menu_semantics::MENU_ROLE,
             popover: crate::top_layer::PopoverKind::Auto.as_str(),
-            "data-state": if open() { "open" } else { "closed" },
+            ..state_attrs::open(open()),
             "data-open-menu-direction": "{open_direction}",
         }),
     ]);
@@ -1036,7 +1039,7 @@ fn NavbarContentRendered(
             // identical native-arm `crate::menu_semantics::MENU_ROLE`
             // (`menubar.rs`), which this mirrors.
             role: crate::menu_semantics::MENU_ROLE,
-            "data-state": if (nav_ctx.is_open)() { "open" } else { "closed" },
+            ..state_attrs::open((nav_ctx.is_open)()),
             "data-open-menu-direction": "{open_direction}",
         }),
     ]);
@@ -1270,7 +1273,7 @@ pub fn NavbarItem(mut props: NavbarItemProps) -> Element {
             // semantics at all, so `data-disabled` alone would leave this
             // item looking, to assistive tech, like a normal active link.
             aria_disabled: is_disabled,
-            "data-disabled": is_disabled,
+            ..state_attrs::disabled(is_disabled),
             tabindex: tabindex,
         }),
     ]);

@@ -1,5 +1,6 @@
 //! SelectList component implementation.
 
+use crate::state_attrs;
 use crate::{
     has_own_accessible_name, listbox::use_listbox_container, merge_attributes, use_effect,
 };
@@ -78,6 +79,15 @@ pub fn SelectList(props: SelectListProps) -> Element {
     let listbox = use_listbox_container(props.id, ctx.selectable);
     let render = listbox.render;
 
+    // A touch open's popper placement lasts until the list unmounts (the exit animation keeps the
+    // placement it opened with); the next open decides afresh.
+    let mut touch_open = ctx.touch_open;
+    use_effect(move || {
+        if !render() {
+            touch_open.set(false);
+        }
+    });
+
     rsx! {
         if render() {
             SelectListRendered {
@@ -92,48 +102,44 @@ pub fn SelectList(props: SelectListProps) -> Element {
     }
 }
 
-/// The item-aligned placement script. Reads the geometry it needs in untransformed layout units
+/// The item-aligned placement script, in document coordinates (`PLACEMENT_HELPERS_JS` is spliced in
+/// front of it). The list is absolute in the top layer and moved by `transform` alone, so the page
+/// carries it when it scrolls. It reads the geometry it needs in untransformed layout units
 /// (`offsetTop`/`offsetHeight`, never a rect of the list: the pop-in animates `scale`), puts the
-/// selected option's centre on the trigger's centre, then keeps the list inside the visual
-/// viewport by moving it and, past that, scrolling the option away from the trigger line. With no
-/// selected option there is nothing to align, so the whole list sits below the trigger and flips
-/// above it on collision, the popper's rule (`data-side` names the side for the CSS).
+/// selected option's centre on the trigger's centre, then keeps the list inside the visible region
+/// by moving it and, past that, scrolling the option away from the trigger line. With no selected
+/// option there is nothing to align, so the whole list sits below the trigger and flips above it on
+/// collision, the popper's rule (`data-side` names the side for the CSS).
 #[cfg(feature = "web")]
 const ITEM_ALIGNED_JS: &str = r#"
-const id = await dioxus.recv();
-const triggerId = await dioxus.recv();
+const [id, triggerId] = await dioxus.recv();
 const list = document.getElementById(id);
 const trigger = document.querySelector('[style*="anchor-name: --dxa-' + triggerId + ';"]');
 if (!list || !trigger) return;
 const MARGIN = 8;
 const GAP = 4;
+const put = writer(list);
+const origin = originOf(list);
+const clamp = (n, lo, hi) => Math.min(Math.max(n, lo), Math.max(lo, hi));
 const offsetIn = (el) => {
     let y = 0;
     for (let n = el; n && n !== list; n = n.offsetParent) y += n.offsetTop;
     return y;
 };
 const place = () => {
-    // The box a fixed element resolves against (a `position: fixed; inset: 0` probe): the root's
-    // client size is wider by the reserved scrollbar gutter.
-    const probe = document.createElement('div');
-    probe.style.cssText = 'position:fixed;inset:0;visibility:hidden;pointer-events:none;';
-    document.documentElement.appendChild(probe);
-    const box = probe.getBoundingClientRect();
-    probe.remove();
-    const vv = window.visualViewport;
-    const vw = box.width;
-    const vh = Math.min(box.height, vv ? vv.height : Infinity);
-    const t = trigger.getBoundingClientRect();
+    const v = visible();
+    const a = docRect(trigger, v);
     const selected = list.querySelector('[role="option"][aria-selected="true"]');
-    list.style.setProperty('--dx-anchor-width', t.width + 'px');
-    list.style.setProperty('--dx-available-height', Math.max(0, vh - 2 * MARGIN) + 'px');
+    for (const [prop, value] of [['position', 'absolute'], ['inset', 'auto'], ['margin', '0'], ['top', '0'], ['left', '0']]) {
+        list.style.setProperty(prop, value);
+    }
+    list.style.setProperty('--dx-anchor-width', a.r - a.l + 'px');
+    list.style.setProperty('--dx-available-height', Math.max(0, v.b - v.t - 2 * MARGIN) + 'px');
     let ch = list.offsetHeight;
-    // No selected option: below the trigger unless the list does not fit there and the room above is
-    // larger, then capped to the chosen side's room so it never covers the trigger.
     let side = null;
     if (!selected) {
-        const below = vh - MARGIN - (t.bottom + GAP);
-        const above = t.top - GAP - MARGIN;
+        const below = v.b - MARGIN - (a.b + GAP);
+        const above = a.t - GAP - v.t - MARGIN;
         side = ch <= below || below >= above ? 'bottom' : 'top';
         list.style.setProperty('--dx-available-height', Math.max(0, side === 'bottom' ? below : above) + 'px');
         ch = list.offsetHeight;
@@ -143,27 +149,21 @@ const place = () => {
     }
     const cw = list.offsetWidth;
     const maxScroll = list.scrollHeight - list.clientHeight;
-    const border = list.offsetHeight - list.clientHeight;
-    // y of the option's top inside the list's border box when the list is scrolled to `s`.
     const optTop = selected ? offsetIn(selected) + list.clientTop : 0;
     const optH = selected ? selected.offsetHeight : 0;
-    const want = t.top + t.height / 2 - optH / 2;
-    let top = selected ? want - optTop : side === 'bottom' ? t.bottom + GAP : t.top - GAP - ch;
+    const want = (a.t + a.b) / 2 - optH / 2;
+    let top = selected ? want - optTop : side === 'bottom' ? a.b + GAP : a.t - GAP - ch;
     let scroll = 0;
-    if (selected) {
-        const lo = MARGIN, hi = vh - MARGIN - ch;
-        if (top < lo || top > hi) {
-            top = Math.min(Math.max(top, lo), Math.max(lo, hi));
-            // The panel cannot go further: scroll the list so the option still lands as close as it can.
-            scroll = Math.min(Math.max(optTop - (want - top) - list.clientTop, 0), maxScroll);
-        }
+    const lo = v.t + MARGIN;
+    const hi = v.b - MARGIN - ch;
+    if (selected && (top < lo || top > hi)) {
+        top = clamp(top, lo, hi);
+        // The panel cannot go further: scroll the list so the option still lands as close as it can.
+        scroll = clamp(optTop - (want - top) - list.clientTop, 0, maxScroll);
     }
-    top = Math.min(Math.max(top, MARGIN), Math.max(MARGIN, vh - MARGIN - ch));
-    const rtl = getComputedStyle(list).direction === 'rtl';
-    let left = rtl ? t.right - cw : t.left;
-    left = Math.min(Math.max(left, MARGIN), Math.max(MARGIN, vw - MARGIN - cw));
-    list.style.top = top + 'px';
-    list.style.left = left + 'px';
+    top = clamp(top, lo, hi);
+    const left = clamp(getComputedStyle(list).direction === 'rtl' ? a.r - cw : a.l, v.l + MARGIN, v.r - MARGIN - cw);
+    setPlacement(put, snap(left), snap(top), false, false, origin);
     list.scrollTop = scroll;
     list.dataset.placed = 'true';
 };
@@ -175,6 +175,7 @@ const start = () => {
 };
 start();
 listen(window, 'resize', place, { passive: true });
+listen(window.visualViewport, 'resize', place, { passive: true });
 "#;
 
 /// Places the listbox for `position="item-aligned"`; does nothing for the popper placement.
@@ -183,13 +184,16 @@ fn use_item_aligned(id: String, ctx: SelectContext) {
     use crate::js_listener::{use_js_listeners, JsListeners};
     let open = ctx.selectable.open;
     use_js_listeners(move || {
-        if !open() || (ctx.position)() != SelectPosition::ItemAligned {
+        if !open() || ctx.placement() != SelectPosition::ItemAligned {
             return None;
         }
         Some(
-            JsListeners::install(ITEM_ALIGNED_JS)
-                .arg(id.clone())
-                .arg(ctx.selectable.trigger_id.cloned()),
+            JsListeners::install(&format!(
+                "{}{}",
+                crate::top_layer::PLACEMENT_HELPERS_JS,
+                ITEM_ALIGNED_JS
+            ))
+            .arg((id.clone(), ctx.selectable.trigger_id.cloned())),
         )
     });
 }
@@ -248,23 +252,9 @@ fn select_list_onkeydown(mut ctx: SelectContext) -> impl FnMut(KeyboardEvent) {
                 event.stop_propagation();
             }
             Key::Escape => {
-                // Web arm: the listbox's own `popover="auto"` (see
-                // `SelectListRendered` below) owns Escape dismissal
-                // natively (WHATWG HTML light dismiss), and its own
-                // restore-focus-on-hide step returns focus to the trigger
-                // for free (the "previously focused element" recorded when
-                // `showPopover()` was called) -- returning here before
-                // `prevent_default()` leaves the key's default action alone
-                // so that native algorithm still runs, matching
-                // `DropdownMenu`'s identical Escape carve-out
-                // (`dropdown_menu.rs`) and for the same reason: calling
-                // both `set_open` *and* `prevent_default` unconditionally
-                // here would race it. Native (Blitz) arm: closes
-                // here directly (Blitz has no popover-API light dismiss to
-                // defer to).
-                if cfg!(feature = "web") {
-                    return;
-                }
+                // Both arms close here: the web arm's popover is `manual` (see
+                // `SelectListRendered`), so the browser's Escape light dismiss does not run. The
+                // default is cancelled so the key does not also close an enclosing dialog.
                 ctx.set_open(false);
                 event.prevent_default();
                 event.stop_propagation();
@@ -274,54 +264,35 @@ fn select_list_onkeydown(mut ctx: SelectContext) -> impl FnMut(KeyboardEvent) {
     }
 }
 
-/// Web arm: promote the listbox to the top
-/// layer via `popover="auto"` so it escapes clipping/transformed ancestors,
-/// the same construction as `Tooltip`/`HoverCard`/`Popover`/
-/// `DropdownMenu`/`Menubar` (dev-docs/plan.md Phase 4.4). Anchored to `SelectTrigger` below/start-aligned, matching the
-/// themed `top: 100%; left: 0` placement
-/// (`../../../../preview/src/components/select/style.css`).
+/// Web arm: promote the listbox to the top layer via `popover="manual"` so it escapes
+/// clipping/transformed ancestors, the same construction as `Tooltip`/`HoverCard`/`Combobox`
+/// (dev-docs/plan.md Phase 4.4). The placement is the engine's anchored popper, or the item-aligned
+/// script (`use_item_aligned`), per [`SelectContext::placement`].
 ///
-/// ## `auto`
+/// ## `manual`, not `auto`
 ///
-/// This listbox holds real DOM focus while open (`listbox_ref.set_focus`
-/// below, and individual `SelectOption`s via the roving-tabindex collection
-/// -- `collection.rs`'s `control_mount_focus`) and closes itself on
-/// `onblur` (below) when that focus leaves the whole widget -- the
-/// question is whether `showPopover()` fights that self-driven blur-close.
-/// It does not:
+/// The trigger opens the list on `pointerdown` for a mouse, so the list becomes `:popover-open`
+/// between a gesture's `pointerdown` and `pointerup`. An `auto` popover opened there is hidden by
+/// that same gesture's `pointerup` (the opening-gesture contract in
+/// [`crate::top_layer::PopoverKind::Auto`]; with the popper placement the release lands outside the
+/// list). A `manual` popover is never light-dismissed, so this component owns every dismissal:
 ///
-/// - **Escape**: `select_list_onkeydown` above defers to native light
-///   dismiss on this arm (the same carve-out `DropdownMenu` uses). WHATWG's
-///   popover hide algorithm restores focus to the "previously focused
-///   element" recorded when `showPopover()` ran -- here, `SelectTrigger`,
-///   since that is whatever had focus at the moment the trigger's own click
-///   opened this popover -- *for free*, satisfying the guarded
-///   "Escape -> trigger" oracle without any Rust-side `.focus()` call on
-///   this path. `use_refocus_on_close_unless`
-///   (`select.rs`) still independently focuses the trigger on
-///   every `open` "closes" transition regardless of cause; by the time it
-///   runs here, native has already moved focus there, so its own
-///   `.focus()` call is a same-element no-op, not a fight.
-/// - **Outside pointerdown**: light dismiss and this listbox's own
-///   `onblur` (or an individual option's, `option.rs`) both react to the
-///   same interaction and both land on the same outcome --
-///   `interacted_outside = true`, `open = false` -- calling `set_open`
-///   twice with the same value is idempotent, not a double-fire bug. The
-///   native restore-focus step is a no-op here too: by the time
-///   `hidePopover()`'s algorithm runs (mid pointerdown, before the click's
-///   own default focus-shift action), a real outside interaction hasn't
-///   moved focus away *yet* on this exact tick in the case that does
-///   matter for the guarded suite (Tab, which `SelectOption`'s/
-///   this component's `onblur` handle on their own -- Tab
-///   does not close the popover as a WHATWG light-dismiss trigger at all,
-///   it is not a `pointerdown` -- so light dismiss never enters into the
-///   `select.spec.ts` "tabbing out ... closes" cases).
-/// - **Animation**: does *not* use [`crate::top_layer::use_popover_sync`]
-///   bound to the raw `open` signal, unlike the other anchored
-///   consumers -- see [`crate::top_layer::use_popover_shown_while_mounted`]'s
-///   doc for the animate-out race that binding would otherwise cause with
-///   [`crate::use_animated_open`] (`SelectList`, above), and why this
-///   mount/unmount-scoped variant avoids it.
+/// - **Escape**: `select_list_onkeydown` (focus on the list or an option) and `SelectTrigger`'s
+///   `onkeydown` (focus on the trigger after an Alt+ArrowDown open) close it; the default is
+///   cancelled so an enclosing dialog stays open.
+/// - **An outside press or focus**: [`crate::use_outside_dismiss`] on the list (a mouse press at
+///   once, a touch or pen press as a tap, so a page scroll that starts outside leaves the list
+///   open), plus this listbox's own `onblur` and an individual option's (`option.rs`) when focus
+///   leaves the whole widget. All land on `interacted_outside = true`, `open = false`, which is
+///   idempotent when more than one fires.
+/// - **Animation**: does *not* use [`crate::top_layer::use_popover_sync`] bound to the raw `open`
+///   signal, unlike the other anchored consumers -- see
+///   [`crate::top_layer::use_popover_shown_while_mounted`]'s doc for the animate-out race that
+///   binding would otherwise cause with [`crate::use_animated_open`] (`SelectList`, above), and why
+///   this mount/unmount-scoped variant avoids it.
+///
+/// Page scroll is not locked while the list is open and the panel stays attached to the trigger as
+/// the page scrolls (row 477's placement); the list scrolls inside its own `overflow` (row 478).
 #[cfg(feature = "web")]
 #[component]
 fn SelectListRendered(
@@ -366,37 +337,26 @@ fn SelectListRendered(
 
     let onkeydown = select_list_onkeydown(ctx);
 
-    // Lock page scroll while the listbox is open, matching Radix Select's
-    // default (dev-docs/backlog.md row 9). Mirrors `DropdownMenuContentRendered`'s
-    // identical `scroll_lock_active`/`ScrollLockGuard` shape
-    // (`dropdown_menu.rs`) -- opt-out via `ctx.scroll_lock`
-    // (`Select`/`SelectMulti`'s `scroll_lock` prop) rather than `modal`,
-    // since a select-only combobox's listbox has no non-modal mode to gate
-    // this on.
-    let scroll_lock_active = use_memo(move || (ctx.scroll_lock)() && open());
-
     crate::top_layer::use_popover_shown_while_mounted(
         id.clone(),
         open,
         Callback::new(move |is_open: bool| {
             if !is_open {
-                // Native light dismiss (Escape or outside pointerdown)
-                // fired. Mirrors `DropdownMenuContentRendered`'s identical
-                // belt-and-suspenders: the item/listbox that actually held
-                // DOM focus is also blurred by the browser's own
-                // `[popover]:not(:popover-open) { display: none }` UA rule
-                // taking effect, which already runs this same
-                // `interacted_outside`/`clear_focus`/`set_open` sequence via
-                // this component's or `SelectOption`'s own `onblur` in the
-                // common case -- this is a backstop for the rare native-only
-                // close that wouldn't otherwise produce a blur (see this
-                // component's doc, "Outside pointerdown").
+                // The popover hid by other means than `open` going false (the browser's own
+                // hide, e.g. a removed anchor): clear the roving focus like a blur-close does.
                 ctx.selectable.interacted_outside.set(true);
                 ctx.selectable.collection.clear_focus();
             }
             ctx.set_open(is_open);
         }),
     );
+    // The popover is `manual`: an outside press or focus dismisses through this hook, a touch
+    // press as a tap (see the component doc).
+    let list_id = use_memo(use_reactive!(|id| id));
+    crate::use_outside_dismiss(list_id, move || {
+        ctx.selectable.interacted_outside.set(true);
+        ctx.set_open(false);
+    });
     // JS-measured static positioning fallback for engines without CSS
     // Anchor Positioning -- see `top_layer::use_anchor_position_fallback`'s
     // doc. `side`/`align`/gap match this component's themed CSS
@@ -404,7 +364,7 @@ fn SelectListRendered(
     // font size): anchored below the trigger, left-aligned with it, the
     // same bottom/start convention `DropdownMenu`/`Menubar` already use.
     // Item-aligned places the list itself (`use_item_aligned`), so the popper engine sits out.
-    let popper_open = use_memo(move || open() && (ctx.position)() == SelectPosition::Popper);
+    let popper_open = use_memo(move || open() && ctx.placement() == SelectPosition::Popper);
     crate::top_layer::use_anchor_position_fallback(
         id.clone(),
         ctx.selectable.trigger_id.cloned(),
@@ -415,20 +375,6 @@ fn SelectListRendered(
     );
     // `position="item-aligned"`: the selected option over the trigger, inside the viewport.
     use_item_aligned(id.clone(), ctx);
-    // A Select that does NOT lock the page (`scroll_lock: false`) closes on
-    // any scroll (`top_layer::use_close_on_scroll`'s doc); a locking one
-    // keeps its `ScrollLockGuard`.
-    let scroll_close_active = use_memo(move || open() && !scroll_lock_active());
-    crate::top_layer::use_close_on_scroll(
-        id.clone(),
-        ctx.selectable.trigger_id.cloned(),
-        scroll_close_active,
-        crate::top_layer::ScrollClose::AnyScroll,
-        Callback::new(move |is_open: bool| {
-            ctx.set_open(is_open);
-        }),
-    );
-
     // axe `aria-input-field-name` (dev-docs/backlog.md row 34): an
     // ARIA `listbox` is an input field and needs an accessible name.
     // Default it from the trigger (whose own visible text is the
@@ -458,12 +404,11 @@ fn SelectListRendered(
         })
     };
     // Only the popper placement is engine-anchored. An item-aligned list is placed by its own script
-    // (`use_item_aligned`) in viewport px, and writes `data-side` for its own CSS: with the engine's
+    // (`use_item_aligned`) in document px and writes `data-side` for its own CSS; the engine's
     // `[data-dx-anchored][popover][data-side=...]` rules (`bottom: anchor(top)`, `margin`,
-    // `transform: translateX(-50%)`, `position-try-fallbacks`) applied on top of it, a list opened
-    // above its trigger was scroll-compensated by the page's scroll (`top: 8px` painted at 8px minus
-    // `scrollY`), and one opened below was 8px low and half its width to the left.
-    let anchor_kind = if (ctx.position)() == SelectPosition::Popper {
+    // `transform: translateX(-50%)`, `position-try-fallbacks`) would apply on top of that
+    // placement, so the list carries no engine attribute.
+    let anchor_kind = if ctx.placement() == SelectPosition::Popper {
         crate::top_layer::AnchorKind::Select
     } else {
         crate::top_layer::AnchorKind::SelectItemAligned
@@ -487,11 +432,11 @@ fn SelectListRendered(
         role: "listbox",
         tabindex: if focused() { "0" } else { "-1" },
         aria_multiselectable: ctx.multi(),
-        popover: crate::top_layer::PopoverKind::Auto.as_str(),
+        popover: crate::top_layer::PopoverKind::Manual.as_str(),
         dir: (ctx.direction)().as_str(),
-        "data-state": if open() { "open" } else { "closed" },
+        ..state_attrs::open(open()),
         "data-direction": (ctx.direction)().as_str(),
-        "data-position": (ctx.position)().as_str(),
+        "data-position": ctx.placement().as_str(),
     });
     let attributes = merge_attributes(vec![attributes, owned]);
 
@@ -511,7 +456,6 @@ fn SelectListRendered(
             },
 
             ..attributes,
-            crate::scroll_lock::ScrollLockGuard { active: scroll_lock_active }
             {children}
         }
     }
@@ -519,11 +463,7 @@ fn SelectListRendered(
 
 /// Native (Blitz) arm: Blitz has no popover-API support at all
 /// (`dev-docs/reference/platform-rationale.md` Caveat 2), so this stays the
-/// functional floor, a plain, always-in-flow `div`. Scroll-lock is the one
-/// addition to this arm (dev-docs/backlog.md row 9) -- mirrors
-/// `DropdownMenuContentRendered`'s identical native arm
-/// (`dropdown_menu.rs`), which mounts `ScrollLockGuard` unconditionally on
-/// both arms rather than only the web one.
+/// functional floor, a plain, always-in-flow `div`.
 #[cfg(not(feature = "web"))]
 #[component]
 fn SelectListRendered(
@@ -559,8 +499,6 @@ fn SelectListRendered(
     });
 
     let onkeydown = select_list_onkeydown(ctx);
-    // See the web arm's identical `scroll_lock_active` (dev-docs/backlog.md row 9).
-    let scroll_lock_active = use_memo(move || (ctx.scroll_lock)() && open());
     // See the web arm's identical construction (dev-docs/backlog.md row 34) for
     // why this is conditional and routed through `merge_attributes` rather
     // than a bare literal alongside `..attributes`.
@@ -577,9 +515,9 @@ fn SelectListRendered(
         tabindex: if focused() { "0" } else { "-1" },
         aria_multiselectable: ctx.multi(),
         dir: (ctx.direction)().as_str(),
-        "data-state": if open() { "open" } else { "closed" },
+        ..state_attrs::open(open()),
         "data-direction": (ctx.direction)().as_str(),
-        "data-position": (ctx.position)().as_str(),
+        "data-position": ctx.placement().as_str(),
     });
     let attributes = merge_attributes(vec![attributes, labelledby, owned]);
 
@@ -599,7 +537,6 @@ fn SelectListRendered(
             },
 
             ..attributes,
-            crate::scroll_lock::ScrollLockGuard { active: scroll_lock_active }
             {children}
         }
     }

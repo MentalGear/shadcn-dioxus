@@ -177,3 +177,18 @@ test.describe('Axe automated scan', () => {
     await expectNoAxeViolations(page, 'toggle: on', { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });
 });
+
+// `data-pressed` (row 482): a presence attribute next to `aria-pressed` and `data-state`.
+test('data-pressed is present only while the toggle is pressed', async ({ page }) => {
+  await gotoHydrated(page, `${BASE_URL}/component/toggle/`, { timeout: 20 * 60 * 1000, waitUntil: 'networkidle' });
+  const toggle = page.locator('#component-preview-frame').getByRole('button', { name: 'Toggle bookmark', exact: true });
+  await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+  await expect(toggle).not.toHaveAttribute('data-pressed');
+  await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+  await expect(toggle).toHaveAttribute('data-state', 'on');
+  await expect(toggle).toHaveAttribute('data-pressed', '');
+  await toggle.click();
+  await expect(toggle).not.toHaveAttribute('data-pressed');
+  await expect(toggle).toHaveAttribute('data-state', 'off');
+});

@@ -117,10 +117,11 @@ test("a raw .focus() call on the trigger does not close its own open content (ro
 // `menu-indicator-gap.spec.ts`.
 //
 // The `checkboxes` and `radio_group` variants keep the menu open after a
-// toggle (`close_on_select: false`) -- the APG-optional behaviour for Space
-// ("changes the state without closing the menu", menu-and-menubar-pattern.html,
-// "Keyboard Interaction"). The `rtl` variant's "Pinned"/"Ascending" items use
-// the primitive's default, Radix's `onSelect` default: selecting closes the menu.
+// toggle (the default, Base UI's `closeOnClick = false`) -- the APG behaviour
+// for Space ("changes the state without closing the menu",
+// menu-and-menubar-pattern.html, "Keyboard Interaction"). The `rtl` variant's
+// "Pinned"/"Ascending" items set `close_on_select: true` (Radix's `onSelect`
+// behaviour): selecting closes the menu.
 const block = (variant: string) => `${BASE_URL}/component/block/?name=menubar&variant=${variant}&`;
 
 /** The open popup of the menu that contains `inner` (the popup, not its always-rendered `role="menu"` wrapper). */
@@ -146,7 +147,7 @@ test.describe("Checkable items", () => {
 
     await bookmarks.click();
     await expect(bookmarks).toHaveAttribute("aria-checked", "true");
-    await expect(view, "close_on_select: false keeps the menu open").toHaveAttribute("data-state", "open");
+    await expect(view, "the default keeps the menu open").toHaveAttribute("data-state", "open");
     await fullUrls.click();
     await expect(fullUrls).toHaveAttribute("aria-checked", "false");
     await expect(view).toHaveAttribute("data-state", "open");
@@ -173,7 +174,7 @@ test.describe("Checkable items", () => {
     await expect(bookmarks).toBeFocused();
 
     // APG (Optional): Space on a menuitemcheckbox "changes the state without
-    // closing the menu" -- what close_on_select: false gives.
+    // closing the menu" -- what the default gives.
     await page.keyboard.press("Space");
     await expect(bookmarks).toHaveAttribute("aria-checked", "true");
     await expect(view).toHaveAttribute("data-state", "open");
@@ -211,7 +212,7 @@ test.describe("Checkable items", () => {
     await expect(checked(), "still exactly one radio checked after a choice").toHaveCount(1);
     await expect(
       popupHaving(page, group),
-      "close_on_select: false keeps the menu open",
+      "the default keeps the menu open",
     ).toHaveAttribute("data-state", "open");
 
     // The second menu's group is separate, and still on its own value.
@@ -250,7 +251,7 @@ test.describe("Checkable items", () => {
     await expect(benoit, "typeahead 'b' reaches Benoit via its value").toBeFocused();
   });
 
-  test("by default (Radix onSelect default) choosing a checkable item closes the menu, and the new state is kept; by keyboard focus returns to its trigger", async ({ page }) => {
+  test("with close_on_select: true (Radix onSelect behaviour) choosing a checkable item closes the menu, and the new state is kept; by keyboard focus returns to its trigger", async ({ page }) => {
     await gotoHydrated(page, block("rtl"));
     const options = page.getByRole("menuitem", { name: "Options" });
     await options.click();
@@ -264,7 +265,7 @@ test.describe("Checkable items", () => {
     // the menu's own trigger. Selection commits on pointerdown, so the
     // mousedown that follows must not focus the item being unmounted.
     await pinned.click();
-    await expect(optionsMenu, "a checkbox item closes the menu by default").toHaveCount(0);
+    await expect(optionsMenu, "a checkbox item with close_on_select: true closes the menu").toHaveCount(0);
     await expect(options, "a pointer selection returns focus to the trigger").toBeFocused();
     await options.click();
     await expect(pinned, "the (controlled) state survived the close").toHaveAttribute("aria-checked", "false");

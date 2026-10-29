@@ -321,8 +321,8 @@ test.describe("Carousel: root-level keyboard paging (LTR)", () => {
   });
 });
 
-test.describe("Carousel: root-level keyboard paging (RTL, swapped per Radix's convention)", () => {
-  test("ArrowLeft moves to the next slide and ArrowRight moves back -- the opposite of LTR", async ({ page }) => {
+test.describe("Carousel: root-level keyboard paging (RTL, not swapped -- shadcn's handleKeyDown never reads the direction)", () => {
+  test("ArrowRight moves to the next slide and ArrowLeft moves back -- the same as LTR", async ({ page }) => {
     await goto(page, "rtl");
     const frame = demoFrame(page, "rtl");
     const next = frame.getByRole("button", { name: "Next slide" });
@@ -331,17 +331,17 @@ test.describe("Carousel: root-level keyboard paging (RTL, swapped per Radix's co
     await next.focus();
     await expect(slide(1)).toHaveAttribute("data-selected", "true");
 
-    await page.keyboard.press("ArrowLeft");
+    await page.keyboard.press("ArrowRight");
     await expect(slide(2)).toHaveAttribute("data-selected", "true");
 
-    await page.keyboard.press("ArrowLeft");
+    await page.keyboard.press("ArrowRight");
     await expect(slide(3)).toHaveAttribute("data-selected", "true");
 
-    await page.keyboard.press("ArrowRight");
+    await page.keyboard.press("ArrowLeft");
     await expect(slide(2)).toHaveAttribute("data-selected", "true");
   });
 
-  test("Next/Previous accessible names are unaffected by direction (only the arrow-key mapping swaps)", async ({ page }) => {
+  test("Next/Previous accessible names are unaffected by direction (the arrow keys do not swap either)", async ({ page }) => {
     await goto(page, "rtl");
     const frame = demoFrame(page, "rtl");
     await expect(frame.getByRole("button", { name: "Previous slide" })).toBeVisible();
@@ -552,15 +552,14 @@ test.describe("Carousel: pointer drag (mouse/pen)", () => {
     await expect(slide(1)).toHaveAttribute("data-selected", "true");
   });
 
-  test("drag works under dir=rtl -- the physical direction that means 'next' mirrors, matching the keyboard's own RTL swap", async ({ page }) => {
+  test("drag works under dir=rtl -- the physical direction that means 'next' mirrors, while the arrow keys keep their LTR meaning", async ({ page }) => {
     await goto(page, "rtl");
     const frame = demoFrame(page, "rtl");
     const content = frame.locator(".dx-carousel-content");
     const slide = (n: number) => frame.getByRole("group", { name: `${n} of 4` });
 
     // Rightward, not leftward -- see primitives/src/carousel/content.rs's own
-    // "Pointer drag" doc for why this mirrors LTR (the same swap
-    // `ArrowLeft`/`ArrowRight` already gets at the carousel root).
+    // "Pointer drag" doc for why this mirrors LTR.
     const pitch = await slidePitch(slide(1));
     await dragBy(page, content, pitch * 0.7, 0);
 

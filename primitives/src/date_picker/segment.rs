@@ -1,4 +1,5 @@
 use super::*;
+use crate::state_attrs;
 
 /// The integer types a [`DateSegment`] edits (`i32` years, `u8` months and days): ordered,
 /// copyable, with `+` and `-` for the arrow-key step. A local trait, so the module needs no
@@ -526,7 +527,7 @@ pub(super) fn DateSegment<T: Clone + Copy + SegmentInt + FromStr + Display + 'st
         aria_readonly: ctx.is_read_only().then_some("true"),
         tabindex: "0",
         "no-date": (props.value)().is_none(),
-        "data-disabled": (ctx.disabled)(),
+        ..state_attrs::disabled((ctx.disabled)()),
     });
     let merged = merge_attributes(vec![defaults, props.attributes.clone(), owned]);
 

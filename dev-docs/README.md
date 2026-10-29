@@ -29,6 +29,7 @@ or phase number, so those headings and ids stay where they are.
 | [`dev-loop.md`](./dev-loop.md) | The measured fast dev loop: edit, wait, inspect, one spec, suite. |
 | [`dx-serve-hot-reload.md`](./dx-serve-hot-reload.md) | How to trust (and not trust) a `dx serve` result when verifying a UI fix. |
 | [`agent-model-fit.md`](./agent-model-fit.md) | Which agent model fits which lane. |
+| [`state-attributes.md`](./state-attributes.md) | The `data-*` state vocabulary: the one helper (`primitives/src/state_attrs.rs`) that emits Radix's `data-state` and Base UI's presence attributes together, the legacy valued booleans, and the gate (`check-state-attributes`). Read before adding a state attribute to a component. |
 | [`history-in-comments.md`](./history-in-comments.md) | The rule that comments describe the current state and link history by backlog row, and the ratchets that hold it. |
 | [`preview-composition.md`](./preview-composition.md) | The one architectural rule of `preview/` (themed wrappers only), enforced by `scripts/check-preview-composition.sh`. |
 | [`motion.md`](./motion.md) | How animation works: tokens, reduced motion, compositor-only loops, visibility gating. Also on the site's `/docs`. |
@@ -61,6 +62,7 @@ or phase number, so those headings and ids stay where they are.
 | `round3-2026-10-05.md` | Round 3 evidence (listener inventory, VirtualList numbers, fonts, stylesheet delivery), cited by row 170 and `motion.md`. |
 | `collection-model-2026-10-22.md` | The shared collection model (rows 360-364). |
 | `shadcn-demo-parity-audit-2026-10-11.md` | Row 188, the owner's demo-parity audit. |
+| `radix-vs-base-ui-2026-10-28.md` | The Radix-versus-Base-UI scan of every component, the iPhone overlay root cause and the placement rule (rows 477-482, 296). |
 | `dependency-audit-2026-10-14.md`, `dependency-evaluation.md`, `dependency-scanners.md` | Rows 217 and 371 (what users compile and trust), behind the [supply-chain playbook](./supply-chain/README.md). |
 
 ## Archive (`archive/`: finished, historical; check the date before acting on anything here)

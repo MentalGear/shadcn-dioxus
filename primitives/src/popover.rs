@@ -41,6 +41,7 @@
 
 // Only the native (Blitz) modal arm evaluates script itself (its focus trap); the web arm's
 // open driver is the shared `crate::use_dialog_open_driver`.
+use crate::state_attrs;
 #[cfg(not(feature = "web"))]
 use dioxus::document;
 use dioxus::prelude::*;
@@ -216,6 +217,7 @@ pub struct PopoverRootProps {
 ///
 /// The [`PopoverRoot`] component defines the following data attributes you can use to control styling:
 /// - `data-state`: Indicates if the popover is open or closed. Values are `open` or `closed`.
+/// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
 #[component]
 pub fn PopoverRoot(props: PopoverRootProps) -> Element {
     // See `DialogRoot`'s identical call for why this must be at the root,
@@ -265,7 +267,7 @@ pub fn PopoverRoot(props: PopoverRootProps) -> Element {
     let attributes = merge_attributes(vec![
         props.attributes,
         attributes!(div {
-            "data-state": if open() { "open" } else { "closed" },
+            ..state_attrs::open(open()),
         }),
     ]);
 
@@ -368,6 +370,7 @@ pub struct PopoverContentProps {
 ///
 /// The [`PopoverContent`] component defines the following data attributes you can use to control styling:
 /// - `data-state`: Indicates if the popover is open or closed. Values are `open` or `closed`.
+/// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
 /// - `data-side`: Indicates the side where the popover is positioned relative to the trigger. Possible values are `top`, `right`, `bottom`, and `left`.
 /// - `data-align`: Indicates the alignment of the popover relative to the trigger. Possible values are `start`, `center`, and `end`.
 #[component]
@@ -551,7 +554,7 @@ fn PopoverModalContent(
             aria_modal: "true",
             aria_labelledby: ctx.labelledby,
             aria_hidden: (!is_open).then_some("true"),
-            "data-state": if is_open { "open" } else { "closed" },
+            ..state_attrs::open(is_open),
             "data-side": side.as_str(),
             "data-align": align.as_str(),
             "data-dx-overlay": overlay_off.then_some("off"),
@@ -665,7 +668,7 @@ fn PopoverModalContent(
             aria_modal: "true",
             aria_labelledby: ctx.labelledby,
             aria_hidden: (!is_open).then_some("true"),
-            "data-state": if is_open { "open" } else { "closed" },
+            ..state_attrs::open(is_open),
             "data-side": side.as_str(),
             "data-align": align.as_str(),
             "data-dx-overlay": overlay_off.then_some("off"),
@@ -757,18 +760,6 @@ fn PopoverNonModalContent(
         align,
         8,
     );
-    // A non-modal popover does not lock the page, and can hold half-entered
-    // input (DatePicker / ColorPicker are built on it): it closes when its
-    // anchor scrolls out of the viewport, not on any scroll
-    // (`top_layer::use_close_on_scroll`'s doc).
-    crate::top_layer::use_close_on_scroll(
-        id.clone(),
-        id.clone(),
-        ctx.open,
-        crate::top_layer::ScrollClose::AnchorLeavesViewport,
-        ctx.set_open,
-    );
-
     let class = class.unwrap_or_else(|| "dx-popover-content".to_string());
     // Folds the caller's own `style` together with the anchor binding into
     // one `style` attribute -- see `top_layer::anchored_content_attributes`'s
@@ -789,7 +780,7 @@ fn PopoverNonModalContent(
             popover: crate::top_layer::PopoverKind::Auto.as_str(),
             aria_labelledby: ctx.labelledby,
             aria_hidden: (!is_open).then_some("true"),
-            "data-state": if is_open { "open" } else { "closed" },
+            ..state_attrs::open(is_open),
             "data-side": side.as_str(),
             "data-align": align.as_str(),
         }),
@@ -839,7 +830,7 @@ fn PopoverNonModalContent(
             role: "dialog",
             aria_labelledby: ctx.labelledby,
             aria_hidden: (!is_open).then_some("true"),
-            "data-state": if is_open { "open" } else { "closed" },
+            ..state_attrs::open(is_open),
             "data-side": side.as_str(),
             "data-align": align.as_str(),
         }),
@@ -960,6 +951,7 @@ pub fn PopoverTrigger(props: PopoverTriggerProps) -> Element {
             type: "button",
             aria_haspopup: "dialog",
             aria_expanded: (ctx.open)(),
+            ..state_attrs::popup_open((ctx.open)()),
         }),
         attributes,
     ]);

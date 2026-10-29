@@ -1,4 +1,5 @@
 use super::*;
+use crate::state_attrs;
 
 /// The context provided by the [`RangeCalendar`] component to its children.
 #[derive(Copy, Clone)]
@@ -223,7 +224,7 @@ pub fn RangeCalendar(props: RangeCalendarProps) -> Element {
     });
     let owned = attributes!(div {
         role: "application",
-        "data-disabled": (props.disabled)(),
+        ..state_attrs::disabled((props.disabled)()),
         "data-direction": direction.as_str(),
     });
     let merged = merge_attributes(vec![defaults, props.attributes.clone(), owned]);

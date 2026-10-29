@@ -32,6 +32,7 @@
 use dioxus::prelude::*;
 use dioxus_primitives::dioxus_attributes::attributes;
 use dioxus_primitives::merge_attributes;
+use dioxus_primitives::state_attrs;
 pub use dioxus_primitives::table_rows::{VirtualizeMode, DEFAULT_AUTO_THRESHOLD};
 use dioxus_primitives::table_rows::{use_table_scroller, TableRows as TableRowsPrimitive};
 
@@ -164,13 +165,12 @@ pub struct TableRowProps {
 /// `<tr>`.
 #[component]
 pub fn TableRow(props: TableRowProps) -> Element {
-    let data_state: Option<&'static str> = if (props.selected)() { Some("selected") } else { None };
     let base = attributes!(tr { class: "dx-table-row", "data-slot": "table-row" });
     // `data-state` is state the wrapper computes from `props.selected`, not a
     // caller-overridable default, so it is merged in LAST (owned wins) rather
     // than folded into `base` -- see the merge-precedence policy in
     // dev-docs/issues/duplicate-attribute-findings.md.
-    let owned = attributes!(tr { "data-state": data_state });
+    let owned = attributes!(tr { ..state_attrs::selected((props.selected)()) });
     let merged = merge_attributes(vec![base, props.attributes, owned]);
 
     rsx! {
@@ -288,7 +288,7 @@ pub fn TableRows(props: TableRowsProps) -> Element {
     let row_attributes = Callback::new(move |idx: usize| {
         let base = attributes!(tr { class: "dx-table-row", "data-slot": "table-row" });
         let selected = row_selected.is_some_and(|f| f(idx));
-        let state = attributes!(tr { "data-state": selected.then_some("selected") });
+        let state = attributes!(tr { ..state_attrs::selected(selected) });
         let theirs = row_attributes.map(|f| f(idx)).unwrap_or_default();
         merge_attributes(vec![base, theirs, state])
     });

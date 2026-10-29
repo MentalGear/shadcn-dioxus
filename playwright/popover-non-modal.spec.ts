@@ -109,18 +109,17 @@ async function scrollAndSettle(page: Page, act: () => Promise<void>): Promise<nu
 }
 
 /**
- * How far the page may scroll with the anchor still in view. A non-modal popover closes when its anchor scrolls out
- * of the viewport (`top_layer::use_close_on_scroll`, `ScrollClose::AnchorLeavesViewport`), so a test about the page
- * scrolling UNDER an open popover scrolls less than this.
+ * How far the page may scroll with the anchor still in view. A non-modal popover stays open while the page scrolls
+ * (it is placed in document coordinates, backlog row 477); a test about the page scrolling UNDER an open popover
+ * scrolls less than this so the trigger stays reachable.
  */
 const scrollKeepingAnchor = (page: Page) =>
   readStatic(trigger(page), (el) => Math.floor(el.getBoundingClientRect().top - 40));
 
 /**
  * Dispatches a cancelable wheel event on the body and reports whether anything called
- * `preventDefault()` on it -- the scroll lock's window-level capture listener does exactly that.
- * Independent of what the compositor would do with a real wheel, so it is the probe that tells a
- * lock from "the page happened to be scrollable".
+ * `preventDefault()` on it. The scroll lock hides the viewport scroller's overflow and listens to no wheel, so
+ * a `true` is a stray blocking listener; whether the page scrolls is read from a real wheel instead.
  */
 const wheelIsPrevented = (page: Page) =>
   page.evaluate(() => {
@@ -301,13 +300,17 @@ test.describe("modal Popover (is_modal: true) is available -- and the probes can
   test("the modal variant is :modal, holds the scroll lock while open and releases it on Escape", async ({ page }) => {
     await gotoHydrated(page, MODAL_URL, { timeout: NAV_TIMEOUT });
     await ensureScrollable(page);
-    expect(await wheelIsPrevented(page), "no lock before opening").toBe(false);
+    expect(await wheelIsPrevented(page), "no wheel listener before opening").toBe(false);
 
     await page.getByRole("button", { name: "Open modal popover" }).click();
     await expect(dialog(page)).toBeVisible();
     expect(await dialog(page).evaluate((el) => el.matches(":modal"))).toBe(true);
     expect((await lockFootprint(page)).locked, "the modal arm sets the lock marker").toBe(true);
-    expect(await wheelIsPrevented(page), "the modal arm's lock prevents wheel scrolling").toBe(true);
+    const scrollYBefore = await page.evaluate(() => window.scrollY);
+    await page.mouse.move(400, 300);
+    await page.mouse.wheel(0, 400);
+    await page.waitForTimeout(200);
+    expect(await page.evaluate(() => window.scrollY), "the modal arm's lock stops a wheel scroll").toBe(scrollYBefore);
 
     await page.keyboard.press("Escape");
     await expect(dialog(page)).toHaveCount(0);

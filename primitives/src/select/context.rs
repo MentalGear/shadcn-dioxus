@@ -11,14 +11,18 @@ use crate::direction::Direction;
 use crate::selectable::{ListboxFocus, RcPartialEqValue, SelectableContext};
 
 /// Where a [`Select`](super::components::select::Select)'s listbox is placed (Radix's `position`).
+///
+/// A Select opened by touch is placed as [`SelectPosition::Popper`] whatever this says (Base UI's
+/// rule: a finger would cover the option that sits over the trigger, and the list below the
+/// trigger is the layout a tap expects).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum SelectPosition {
-    /// Anchored below the trigger (flipping above when it does not fit): the popper placement,
-    /// shadcn's current default.
-    #[default]
+    /// Anchored below the trigger (flipping above when it does not fit): the popper placement.
     Popper,
     /// The selected option sits over the trigger and the listbox stays inside the viewport:
-    /// Radix's `item-aligned` mode.
+    /// Radix's `item-aligned` mode, the default of both shadcn variants (`base-nova`
+    /// `alignItemWithTrigger`, `new-york-v4` `position="item-aligned"`).
+    #[default]
     ItemAligned,
 }
 
@@ -69,13 +73,6 @@ pub(super) struct SelectContext {
     /// the two root components provided this context.
     pub required: ReadSignal<bool>,
 
-    /// Mirrors [`super::components::select::SelectProps::scroll_lock`] (and
-    /// `SelectMultiProps::scroll_lock`) into the context so
-    /// `SelectListRendered` (`list.rs`) can gate its `ScrollLockGuard` on it
-    /// (dev-docs/backlog.md row 9). Defaults to `true` (Radix parity) via both
-    /// props' own `#[props(default = ...)]`.
-    pub scroll_lock: ReadSignal<bool>,
-
     /// Text direction, emitted as `dir`/`data-direction` on the trigger and
     /// the listbox content. Neither this crate's trigger nor its listbox
     /// has an `ArrowLeft`/`ArrowRight`-driven navigation to flip (both are
@@ -84,13 +81,32 @@ pub(super) struct SelectContext {
     /// mode and does not apply to this crate's anchor-positioned popper.
     pub direction: ReadSignal<Direction>,
 
-    /// Where the listbox is placed: see [`SelectPosition`].
+    /// Where the listbox is placed: see [`SelectPosition`] and [`Self::placement`].
     pub position: ReadSignal<SelectPosition>,
+
+    /// Whether the current (or last) open was a touch tap on the trigger. Set by
+    /// [`Self::open_for_pointer`], cleared by every other open ([`Self::set_open`]) and when the
+    /// list unmounts, so it never outlives the open it describes (the exit animation keeps the
+    /// placement the list opened with).
+    pub touch_open: Signal<bool>,
 }
 
 impl SelectContext {
     pub fn set_open(&mut self, open: bool) {
+        if open {
+            self.touch_open.set(false);
+        }
         self.selectable.set_open(open);
+    }
+
+    /// The placement this open uses: the `position` prop, except that a touch open is always
+    /// [`SelectPosition::Popper`]. Tracked.
+    pub fn placement(&self) -> SelectPosition {
+        if *self.touch_open.read() {
+            SelectPosition::Popper
+        } else {
+            (self.position)()
+        }
     }
 
     /// The path Enter and Space on `SelectTrigger` both route through: open
@@ -108,12 +124,12 @@ impl SelectContext {
             .set(Some(ListboxFocus::SELECTED_OR_FIRST));
     }
 
-    /// The pointer (click or tap) open: the currently selected option is highlighted and focused,
-    /// and scrolled into view, exactly as a keyboard open does (Base UI: a Select opens on its
-    /// `selectedIndex` for every modality; a Menu, by contrast, highlights its first item for a
-    /// keyboard open only). With nothing selected, or in a multi-select, a pointer open highlights nothing and
-    /// leaves DOM focus on the listbox container.
-    pub fn open_for_pointer(&mut self) {
+    /// The pointer (press or tap) open, `touch` for a tap: the currently selected option is
+    /// highlighted and focused, and scrolled into view, exactly as a keyboard open does (Base UI: a
+    /// Select opens on its `selectedIndex` for every modality; a Menu, by contrast, highlights its
+    /// first item for a keyboard open only). With nothing selected, or in a multi-select, a pointer
+    /// open highlights nothing and leaves DOM focus on the listbox container.
+    pub fn open_for_pointer(&mut self, touch: bool) {
         // Single-select only: a multi-select has no one selected option to open on, and its
         // pointer open keeps its focus on the listbox (ArrowDown then reaches the first option).
         if !self.multi() {
@@ -122,6 +138,7 @@ impl SelectContext {
                 .set(Some(ListboxFocus::SELECTED));
         }
         self.set_open(true);
+        self.touch_open.set(touch);
     }
 
     /// The selected values' text in selection order, joined by `", "`; `None` while nothing is selected.

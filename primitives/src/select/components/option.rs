@@ -1,5 +1,6 @@
 //! SelectOption and SelectItemIndicator component implementations.
 
+use crate::state_attrs;
 use crate::{
     collection::{collection_item, use_item, use_item_index},
     listbox::{ListboxContext, ListboxItemIndicator},
@@ -139,7 +140,9 @@ pub fn SelectOption<T: PartialEq + Clone + 'static>(props: SelectOptionProps<T>)
         tabindex: if (option.focused)() { "0" } else { "-1" },
         aria_selected: (option.selected)(),
         aria_disabled: (option.disabled)(),
-        "data-disabled": (option.disabled)(),
+        ..state_attrs::disabled((option.disabled)()),
+        ..state_attrs::presence(state_attrs::Flag::Selected, (option.selected)()),
+        ..state_attrs::presence(state_attrs::Flag::Highlighted, (option.focused)()),
     });
     let merged = merge_attributes(vec![
         order.marker_attribute(),

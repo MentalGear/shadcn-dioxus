@@ -53,6 +53,23 @@ export async function awaitAnimationsSettled(locator: Locator): Promise<void> {
 }
 
 /**
+ * `locator.hover()` / `locator.click()` on an item of an anchored panel that has just opened, after the item's
+ * animations settled. An anchored panel is absolute in the document (backlog row 477), so the page scroll
+ * Playwright adds to a retried action ("element is not stable" while the open animation runs, then
+ * `scrollIntoView` on the retry) carries the panel with it and can flip it to the other side of its trigger,
+ * out from under the pointer. Acting on a settled item takes the first attempt, which scrolls nothing.
+ */
+export async function hoverSettled(locator: Locator): Promise<void> {
+  await awaitAnimationsSettled(locator);
+  await locator.hover();
+}
+
+export async function clickSettled(locator: Locator): Promise<void> {
+  await awaitAnimationsSettled(locator);
+  await locator.click();
+}
+
+/**
  * The ONE way a spec reads the geometry of something that animates on enter (backlog row 222): waits for
  * `awaitAnimationsSettled`, THEN reads `locator.boundingBox()`. `boundingBox()` includes transforms, so a read
  * during `dx-pop-in` (scale 0.95 -> 1), a sheet's slide or a dialog's 200 ms enter is a race against the

@@ -1,5 +1,6 @@
 //! Defines the [`Progress`] component and its sub-components.
 
+use crate::state_attrs;
 use crate::{merge_attributes, use_id_or, use_unique_id};
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
@@ -59,6 +60,9 @@ pub struct ProgressProps {
 ///
 /// The [`Progress`] component defines the following data attributes you can use to control styling:
 /// - `data-state`: Indicates the state of the progress. Values are `loading` or `indeterminate`.
+/// - `data-indeterminate`: Present (empty) while no value is set, absent otherwise.
+/// - `data-progressing`: Present (empty) while a value below the maximum is set, absent otherwise.
+/// - `data-complete`: Present (empty) once the value reaches the maximum, absent otherwise.
 /// - `data-value`: The current progress value between 0 and max.
 /// - `data-max`: The maximum progress value.
 ///
@@ -107,7 +111,7 @@ pub fn Progress(props: ProgressProps) -> Element {
             "aria-valuemin": 0,
             "aria-valuemax": props.max,
             "aria-valuenow": props.value.cloned(),
-            "data-state": state,
+            ..state_attrs::progress(props.value.cloned(), (props.max)()),
             "data-value": props.value.cloned().map(|v| v.to_string()),
             "data-max": props.max,
             style: percentage().map(|p| format!("--progress-value: {p}%")),

@@ -68,10 +68,11 @@ pub struct CarouselProps {
     #[props(default)]
     pub on_value_change: Callback<usize>,
 
-    /// The text direction for the root-level `ArrowLeft`/`ArrowRight`
-    /// paging keys. Defaults to the nearest
-    /// [`crate::direction::DirectionProvider`], or LTR if there is none.
-    /// See [`crate::direction::use_direction`].
+    /// The text direction of the carousel: it lays the slides out right to
+    /// left under RTL and mirrors the drag direction, but the root-level
+    /// `ArrowLeft`/`ArrowRight` paging keys never swap. Defaults to the
+    /// nearest [`crate::direction::DirectionProvider`], or LTR if there is
+    /// none. See [`crate::direction::use_direction`].
     pub dir: Option<Direction>,
 
     /// The opacity of a disabled [`CarouselPrevious`]/[`CarouselNext`] -- the
@@ -106,7 +107,7 @@ pub struct CarouselProps {
 ///
 /// A slideshow of [`CarouselItem`]s the user pages through with
 /// [`CarouselPrevious`]/[`CarouselNext`] buttons, `ArrowLeft`/`ArrowRight`
-/// (RTL-aware) at the root, or by dragging/scrolling the track natively.
+/// at the root, or by dragging/scrolling the track natively.
 /// Implements the APG Carousel pattern's "basic" (prev/next, no picker)
 /// style -- see the module doc's "Scope" section.
 ///
@@ -157,9 +158,8 @@ pub struct CarouselProps {
 /// [`CarouselOrientation::Vertical`]) page the carousel whenever focus is
 /// anywhere inside it -- a Radix/shadcn-style addition, not an APG
 /// requirement (the reference never binds arrow keys at the carousel-root
-/// level at all), RTL-swapped like every other roving/orientable
-/// primitive in this crate once focus is inside a
-/// [`CarouselOrientation::Horizontal`] carousel. As with every native
+/// level at all). `ArrowLeft` is always the previous slide and `ArrowRight`
+/// the next, also under RTL, as in shadcn's carousel. As with every native
 /// `<button>`, activating [`CarouselPrevious`]/[`CarouselNext`] with
 /// `Enter`/`Space` never moves focus.
 ///
@@ -475,7 +475,7 @@ pub fn Carousel(props: CarouselProps) -> Element {
 
     let onkeydown = move |event: Event<KeyboardData>| {
         let key = event.key();
-        let Some(intent) = carousel_key_intent(&key, orientation(), direction) else {
+        let Some(intent) = carousel_key_intent(&key, orientation()) else {
             return;
         };
         // See `CarouselContext::loop_wraps`'s own doc -- the identical

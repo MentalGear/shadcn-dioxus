@@ -111,7 +111,7 @@ import { type Locator, type Page } from "@playwright/test";
 import { BASE_URL } from "../../base-url";
 import { gotoHydrated } from "../../hydration";
 import { demoFrame, demoRole } from "../../demo-frame";
-import { measureAtRest } from "../../animations";
+import { awaitAnimationsSettled, measureAtRest } from "../../animations";
 
 const BASE = `${BASE_URL}/component/`;
 // Demo items are located by role and position (backlog row 220), never by their copy.
@@ -159,6 +159,9 @@ async function hoverAndTimeOpen(subTrigger: Locator): Promise<{ elapsedMs: numbe
     };
     w.__intentProbe = probe;
   });
+  // The menu is absolute in the document: a hover that starts while it animates is retried by Playwright with
+  // `scrollIntoView({ block: 'start' })`, which scrolls the page under it.
+  await awaitAnimationsSettled(subTrigger);
   await subTrigger.hover();
   await expect(subTrigger, "opens once the intent delay elapses").toHaveAttribute("aria-expanded", "true");
   const r = await subTrigger.evaluate(() => {

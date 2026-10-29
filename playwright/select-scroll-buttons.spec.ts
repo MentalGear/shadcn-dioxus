@@ -138,7 +138,7 @@ test("under reduced motion the buttons show and hovering scrolls", async ({ page
   await expect(up(page)).toHaveAttribute("data-visible", "true");
 });
 
-// Row 268: position="item-aligned". The `aligned` variant opens with "UTC+5" selected in the 24-option list.
+// Row 268: position="item-aligned", the default (row 478). The `aligned` variant opens with "UTC+5" selected in the 24-option list.
 test.describe("position=item-aligned", () => {
   const aligned = (page: Page) => page.getByRole("combobox", { name: "Aligned zone select" });
   const alignedList = (page: Page) => page.getByRole("listbox", { name: "Aligned zone options" });
@@ -222,8 +222,8 @@ test.describe("position=item-aligned", () => {
       await gotoHydrated(page, `${BASE_URL}/component/select/`);
       await readStatic(placeholder(page), (el, { edge, vh }) => {
         // The demo sits near the page's end: room below it so the page can scroll it to the top edge
-        // (a spacer, not body padding: the open select's scroll lock rewrites the body's style), and 80px,
-        // not less, keeps it clear of the sticky site header, which would make the click scroll it back.
+        // (a spacer), and 80px, not less, keeps it clear of the sticky site header, which would make the
+        // click scroll it back.
         const spacer = document.createElement("div");
         spacer.style.height = "100vh";
         document.body.appendChild(spacer);
@@ -260,9 +260,11 @@ test.describe("position=item-aligned", () => {
     await openAligned(page);
     await alignedList(page).getByRole("option", { name: "UTC+8" }).click();
     await expect(aligned(page)).toContainText("UTC+8");
-    await trigger(page).scrollIntoViewIfNeeded();
-    await trigger(page).click();
-    await expect(list(page)).toHaveAttribute("data-position", "popper");
-    await expect(list(page)).not.toHaveAttribute("data-placed", "true");
+    const popper = page.getByRole("combobox", { name: "Popper zone select" });
+    const popperList = page.getByRole("listbox", { name: "Popper zone options" });
+    await popper.scrollIntoViewIfNeeded();
+    await popper.click();
+    await expect(popperList).toHaveAttribute("data-position", "popper");
+    await expect(popperList).not.toHaveAttribute("data-placed", "true");
   });
 });

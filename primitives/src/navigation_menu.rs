@@ -148,6 +148,7 @@
 //! `NavbarContent`, renders through `use_animated_open` and needs its exit
 //! animation not to be cut short by an instant `hidePopover()`).
 
+use crate::state_attrs;
 use std::rc::Rc;
 use std::time::Duration;
 
@@ -332,7 +333,7 @@ pub fn NavigationMenu(props: NavigationMenuProps) -> Element {
     let attributes = merge_attributes(vec![
         props.attributes,
         attributes!(nav {
-            "data-disabled": (props.disabled)(),
+            ..state_attrs::disabled((props.disabled)()),
         }),
     ]);
 
@@ -457,7 +458,7 @@ pub fn NavigationMenuIndicator(props: NavigationMenuIndicatorProps) -> Element {
         attributes!(li {
             role: "presentation",
             aria_hidden: "true",
-            "data-state": if open().is_some() { "visible" } else { "hidden" },
+            ..state_attrs::state(if open().is_some() { "visible" } else { "hidden" }),
         }),
     ]);
 
@@ -546,8 +547,10 @@ pub struct NavigationMenuItemProps {
 /// attributes you can use to control styling:
 /// - `data-state`: Indicates if this item's panel is open or closed.
 ///   Values are `open` or `closed`.
+/// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
 /// - `data-disabled`: Indicates if the item is disabled. Values are `true`
 ///   or `false`.
+/// - `data-highlighted`: Present (empty) while this item holds the roving focus, absent otherwise.
 #[component]
 pub fn NavigationMenuItem(props: NavigationMenuItemProps) -> Element {
     let mut ctx: NavigationMenuContext = use_context();
@@ -606,8 +609,8 @@ pub fn NavigationMenuItem(props: NavigationMenuItemProps) -> Element {
     let attributes = merge_attributes(vec![
         props.attributes,
         attributes!(li {
-            "data-state": if is_open() { "open" } else { "closed" },
-            "data-disabled": (ctx.disabled)() || (props.disabled)(),
+            ..state_attrs::open(is_open()),
+            ..state_attrs::disabled((ctx.disabled)() || (props.disabled)()),
         }),
     ]);
 
@@ -707,8 +710,8 @@ pub fn NavigationMenuTrigger(props: NavigationMenuTriggerProps) -> Element {
             type: "button",
             aria_expanded: is_open(),
             aria_controls: item_ctx.content_id.cloned(),
-            "data-state": if is_open() { "open" } else { "closed" },
-            "data-disabled": disabled(),
+            ..state_attrs::trigger_open(is_open()),
+            ..state_attrs::disabled(disabled()),
         }),
     ]);
 
@@ -861,6 +864,7 @@ pub struct NavigationMenuContentProps {
 /// attributes you can use to control styling:
 /// - `data-state`: Indicates if this panel is open or closed. Values are
 ///   `open` or `closed`.
+/// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
 #[component]
 pub fn NavigationMenuContent(props: NavigationMenuContentProps) -> Element {
     let mut item_ctx: NavigationMenuItemContext = use_context();
@@ -1030,18 +1034,6 @@ fn NavigationMenuContentRendered(
         crate::ContentAlign::Start,
         8,
     );
-    // Any scroll closes an open navigation panel (`top_layer::use_close_on_scroll`'s doc).
-    crate::top_layer::use_close_on_scroll(
-        id.clone(),
-        id.clone(),
-        open,
-        crate::top_layer::ScrollClose::AnyScroll,
-        Callback::new(move |_: bool| {
-            if (ctx.open)() == Some(index.cloned()) {
-                ctx.set_open.call(None);
-            }
-        }),
-    );
 
     // An APG-adjacent panel still needs an accessible name; labelled by its
     // own trigger unless the caller already named it some other way --
@@ -1061,7 +1053,7 @@ fn NavigationMenuContentRendered(
         // duplicate-attribute hazard).
         attributes!(div {
             popover: crate::top_layer::PopoverKind::Manual.as_str(),
-            "data-state": if open() { "open" } else { "closed" },
+            ..state_attrs::open(open()),
         }),
     ]);
     let attributes = crate::top_layer::anchored_content_attributes(
@@ -1150,7 +1142,7 @@ fn NavigationMenuContentRendered(
         // Owned by this component -- see the web arm's identical
         // construction above (`dev-docs/backlog.md` row 93).
         attributes!(div {
-            "data-state": if (item_ctx.is_open)() { "open" } else { "closed" },
+            ..state_attrs::open((item_ctx.is_open)()),
         }),
     ]);
 
@@ -1282,8 +1274,8 @@ pub fn NavigationMenuLink(props: NavigationMenuLinkProps) -> Element {
             // same fix as `NavbarItem`/`DropdownMenuItem` (dev-docs/backlog.md
             // row 39).
             aria_disabled: disabled(),
-            "data-active": props.active,
-            "data-disabled": disabled(),
+            ..state_attrs::valued(state_attrs::Flag::Active, props.active),
+            ..state_attrs::disabled(disabled()),
         }),
     ]);
 

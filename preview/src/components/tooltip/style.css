@@ -2,6 +2,8 @@
 
 /* slot: --dx-tooltip-width  `width` of the tooltip's root. */
 
+/* slot: --dx-tooltip-side-offset  Distance between the trigger and the panel (default 0.25rem). */
+
 /* Tooltip Styles */
 
 /* typography-inherit(dx-tooltip): the root only wraps the caller's trigger content, which follows the surrounding text like any inline element (the panel is reset by the popup-root rule) */
@@ -104,7 +106,7 @@
   position: absolute;
   bottom: 100%;
   left: 50%;
-  margin-bottom: var(--dx-space-2);
+  margin-bottom: var(--dx-tooltip-side-offset, 0.25rem);
   transform: translateX(-50%);
 }
 
@@ -117,7 +119,7 @@
   position: absolute;
   top: 50%;
   left: 100%;
-  margin-left: var(--dx-space-2);
+  margin-left: var(--dx-tooltip-side-offset, 0.25rem);
   transform: translateY(-50%);
 }
 
@@ -135,7 +137,7 @@
   position: absolute;
   top: 100%;
   left: 50%;
-  margin-top: var(--dx-space-2);
+  margin-top: var(--dx-tooltip-side-offset, 0.25rem);
   transform: translateX(-50%);
 }
 
@@ -148,13 +150,32 @@
   position: absolute;
   top: 50%;
   right: 100%;
-  margin-right: var(--dx-space-2);
+  margin-right: var(--dx-tooltip-side-offset, 0.25rem);
   transform: translateY(-50%);
 }
 
 .dx-tooltip-content:is([data-placed-side="left"], :not([data-placed-side])[data-side="left"])::after {
   top: var(--dx-tooltip-arrow-cross-y);
   right: calc(-1 * var(--dx-tooltip-arrow-size) / 2 + var(--dx-tooltip-arrow-shift));
+}
+
+/* The engine's anchored placement (`primitives/src/top_layer/anchor.css`) sets an 8px margin per side
+   at specificity 0,3,0; the tooltip's offset is 4px, shadcn's `TooltipContent sideOffset={4}`
+   (backlog row 478). The JS fallback placement takes the same 4px. */
+.dx-tooltip-content[data-dx-anchored][popover][data-side="top"] {
+  margin-bottom: var(--dx-tooltip-side-offset, 0.25rem);
+}
+
+.dx-tooltip-content[data-dx-anchored][popover][data-side="right"] {
+  margin-left: var(--dx-tooltip-side-offset, 0.25rem);
+}
+
+.dx-tooltip-content[data-dx-anchored][popover][data-side="bottom"] {
+  margin-top: var(--dx-tooltip-side-offset, 0.25rem);
+}
+
+.dx-tooltip-content[data-dx-anchored][popover][data-side="left"] {
+  margin-right: var(--dx-tooltip-side-offset, 0.25rem);
 }
 
 /* Alignment styles for top and bottom */

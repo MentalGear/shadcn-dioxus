@@ -2,6 +2,7 @@ import { test, expect } from "./fixtures";
 import type { Page } from "@playwright/test";
 import { gotoHydrated } from "./hydration";
 import { BASE_URL } from "./base-url";
+import { clickSettled } from "./animations";
 
 // The docs sidebar lists the components A-Z by default and by category on request (backlog
 // row 234; `preview/src/docs_nav.rs`). The SSG emits the default, so the remembered choice is applied before
@@ -283,7 +284,9 @@ test("picking a category switches to Category order and puts that group's label 
   await expect(az(page)).toBeVisible();
 
   await jumpTrigger(page).click();
-  await page.getByRole("menuitem", { name: "Overlays" }).click();
+  // The menu panel is absolute in the document (row 477), so Playwright's retried scrollIntoView while the open
+  // animation runs would scroll the page; a click on the settled item is the first attempt and scrolls nothing.
+  await clickSettled(page.getByRole("menuitem", { name: "Overlays" }));
 
   await expect(option(page, "category")).toHaveAttribute("aria-pressed", "true");
   await expect(option(page, "az")).toHaveAttribute("aria-pressed", "false");

@@ -30,12 +30,12 @@ test('menu lands at the tap coordinates on touch long-press', async ({ page }) =
   // Pin the trigger to a fixed on-screen position instead of pushing it
   // down with padding on <main>/<body>. This test's whole point is a tap
   // point guaranteed to be nowhere near any viewport edge (so
-  // `use_point_anchor_clamp`, top_layer.rs, never has a reason to act and
+  // `use_point_anchor_placement`, top_layer.rs, never has a reason to act and
   // this test stays a clean "no clamping" baseline) -- but padding only
   // *adds* to whatever height the surrounding page content already has,
   // and that height isn't this test's to control or assume (300px of
   // padding-top can put the trigger's center past the bottom edge of a
-  // 720px-tall viewport, where `use_point_anchor_clamp` rightly pulls the
+  // 720px-tall viewport, where `use_point_anchor_placement` rightly pulls the
   // menu back on-screen, and `top + ch > vh - EDGE_MARGIN` is correctly
   // true). Anchoring the trigger's position directly, rather than adding
   // to an unmeasured ambient height, makes the "nowhere near an edge"
@@ -125,7 +125,7 @@ test('clamps the menu into the viewport for a mouse right-click near a corner', 
   const box = await measureAtRest(contextMenu);
   if (!box) throw new Error('menu has no bounding box');
 
-  // EDGE_MARGIN (top_layer.rs's `use_point_anchor_clamp`) is 4px; allow 1px
+  // EDGE_MARGIN (top_layer/anchor_fallback.rs's placement script) is 4px; allow 1px
   // of rounding slack on each side of the assertion.
   const EDGE_MARGIN = 4;
   expect(box.x).toBeGreaterThanOrEqual(EDGE_MARGIN - 1);
@@ -306,17 +306,20 @@ test('touch tap outside closes the open menu', async ({ page }) => {
   await page.evaluate(({ x, y }) => {
     const target = document.elementFromPoint(x, y);
     if (!target) throw new Error('no element at outside point');
-    target.dispatchEvent(new PointerEvent('pointerdown', {
-      pointerId: 5050,
-      pointerType: 'touch',
-      isPrimary: true,
-      clientX: x,
-      clientY: y,
-      button: 0,
-      buttons: 1,
-      bubbles: true,
-      cancelable: true,
-    }));
+    // A touch dismiss is a tap: the press is recorded on pointerdown and decided on pointerup.
+    for (const type of ['pointerdown', 'pointerup']) {
+      target.dispatchEvent(new PointerEvent(type, {
+        pointerId: 5050,
+        pointerType: 'touch',
+        isPrimary: true,
+        clientX: x,
+        clientY: y,
+        button: 0,
+        buttons: type === 'pointerdown' ? 1 : 0,
+        bubbles: true,
+        cancelable: true,
+      }));
+    }
   }, { x: farX, y: farY });
 
   await expect(contextMenu).toHaveCount(0);
@@ -464,10 +467,11 @@ test('keyboard navigation', async ({ page }) => {
 // `menu-indicator-gap.spec.ts`.
 //
 // The `checkboxes` and `radio_group` variants keep the menu open after a
-// toggle (`close_on_select: false`) -- the APG-optional behaviour for Space
-// ("changes the state without closing the menu", menu-and-menubar-pattern.html,
-// "Keyboard Interaction"). `main`'s "Show Bookmarks"/"Pedro Duarte" items use
-// the primitive's default, Radix's `onSelect` default: selecting closes the menu.
+// toggle (the default, Base UI's `closeOnClick = false`) -- the APG behaviour
+// for Space ("changes the state without closing the menu",
+// menu-and-menubar-pattern.html, "Keyboard Interaction"). `main`'s "Show
+// Bookmarks"/"Pedro Duarte" items and the `checkboxes` variant's "Minimap" set
+// `close_on_select: true` (Radix's `onSelect` behaviour): selecting closes the menu.
 const block = (variant: string) => `${BASE_URL}/component/block/?name=context_menu&variant=${variant}&`;
 
 test.describe('Checkable items', () => {
@@ -493,7 +497,7 @@ test.describe('Checkable items', () => {
     await fullUrls.click();
     await expect(fullUrls).toHaveAttribute('aria-checked', 'true');
     await expect(page.getByText('Bookmarks true, full URLs true')).toBeVisible();
-    await expect(menu, 'close_on_select: false keeps the menu open').toHaveAttribute('data-state', 'open');
+    await expect(menu, 'the default keeps the menu open').toHaveAttribute('data-state', 'open');
 
     await bookmarks.click();
     await expect(bookmarks).toHaveAttribute('aria-checked', 'false');
@@ -526,7 +530,7 @@ test.describe('Checkable items', () => {
     await expect(fullUrls).toBeFocused();
 
     // APG (Optional): Space on a menuitemcheckbox "changes the state without
-    // closing the menu" -- what close_on_select: false gives.
+    // closing the menu" -- what the default gives.
     await page.keyboard.press('Space');
     await expect(fullUrls).toHaveAttribute('aria-checked', 'true');
     await expect(menu).toHaveAttribute('data-state', 'open');
@@ -564,7 +568,7 @@ test.describe('Checkable items', () => {
     await page.keyboard.press('Space');
     await expect(wordWrap).toHaveAttribute('aria-checked', 'true');
     await expect(page.getByText('word wrap true')).toBeVisible();
-    await expect(menu.first(), 'close_on_select: false keeps the whole menu open').toHaveAttribute('data-state', 'open');
+    await expect(menu.first(), 'the default keeps the whole menu open').toHaveAttribute('data-state', 'open');
     await expect(wordWrap, 'focus stays on the toggled item').toBeFocused();
 
     // ArrowLeft hands focus back to the sub-trigger; the root's own roving
@@ -575,7 +579,7 @@ test.describe('Checkable items', () => {
     await expect(bookmarks).toBeFocused();
   });
 
-  test('a checkbox item inside a submenu: a click toggles it, and by default it closes the whole menu tree', async ({ page }) => {
+  test('a checkbox item inside a submenu: a click toggles it, and close_on_select: true closes the whole menu tree', async ({ page }) => {
     await gotoHydrated(page, block('checkboxes'));
     await page.getByRole('button', { name: 'Right click for checkboxes' }).click({ button: 'right' });
     await page.getByRole('menuitem', { name: 'More options' }).click();
@@ -587,10 +591,10 @@ test.describe('Checkable items', () => {
     await expect(wordWrap).toHaveAttribute('aria-checked', 'true');
     await expect(minimap, 'the submenu stays open').toBeVisible();
 
-    // `Minimap` uses the primitive's default: choosing it closes the menu --
+    // `Minimap` sets `close_on_select: true`: choosing it closes the menu --
     // the entire tree, submenu included, like `ContextMenuSubItem`.
     await minimap.click();
-    await expect(page.getByRole('menu'), 'the default close takes the whole tree with it').toHaveCount(0);
+    await expect(page.getByRole('menu'), 'close_on_select: true takes the whole tree with it').toHaveCount(0);
     await expect(page.getByText('minimap true')).toBeVisible();
   });
 
@@ -616,7 +620,7 @@ test.describe('Checkable items', () => {
     await expect(people.getByRole('menuitemradio', { name: 'Pedro Duarte' })).toHaveAttribute('aria-checked', 'false');
     await expect(checked(people)).toHaveCount(1);
     await expect(theme.getByRole('menuitemradio', { name: 'Light' }), "the other group is untouched").toHaveAttribute('aria-checked', 'true');
-    await expect(page.getByRole('menu'), 'close_on_select: false keeps the menu open').toHaveAttribute('data-state', 'open');
+    await expect(page.getByRole('menu'), 'the default keeps the menu open').toHaveAttribute('data-state', 'open');
   });
 
   test('radio groups: Space and Enter choose in place across both groups, typeahead falls back to the value', async ({ page }) => {
@@ -648,7 +652,7 @@ test.describe('Checkable items', () => {
     await expect(dark, "typeahead 'd' reaches Dark via its value").toBeFocused();
   });
 
-  test('by default (Radix onSelect default) choosing a checkable item closes the menu and the new state is kept', async ({ page }) => {
+  test('with close_on_select: true (Radix onSelect behaviour) choosing a checkable item closes the menu and the new state is kept', async ({ page }) => {
     await gotoHydrated(page, block('main'));
     const trigger = page.getByRole('button', { name: 'right click here' });
     await trigger.click({ button: 'right' });
@@ -658,7 +662,7 @@ test.describe('Checkable items', () => {
     const bookmarks = page.getByRole('menuitemcheckbox', { name: 'Show Bookmarks' });
     await expect(bookmarks).toHaveAttribute('aria-checked', 'true');
     await bookmarks.click();
-    await expect(menu, 'a checkbox item closes the menu by default').toHaveCount(0);
+    await expect(menu, 'a checkbox item with close_on_select: true closes the menu').toHaveCount(0);
 
     await trigger.click({ button: 'right' });
     await expect(bookmarks, 'the (controlled) state survived the close').toHaveAttribute('aria-checked', 'false');
@@ -790,6 +794,9 @@ test.describe('ContextMenuSub open_on_hover: false (click activation)', () => {
   test('default (open_on_hover: true): hovering More tools opens it', async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/context_menu/`, { timeout: 20 * 60 * 1000 });
     await page.getByRole('button', { name: 'right click here' }).click({ button: 'right' });
+    // The menu is absolute in the document: a hover that starts while it is still animating is retried by
+    // Playwright with `scrollIntoView({ block: 'start' })`, which scrolls the page under it.
+    await awaitAnimationsSettled(page.getByRole('menu'));
     const sub = page.getByRole('menuitem', { name: 'More tools' });
     await sub.hover();
     await expect(sub).toHaveAttribute('aria-expanded', 'true');

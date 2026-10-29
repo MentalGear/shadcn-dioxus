@@ -104,6 +104,8 @@ ALLOWLIST_ROWS = {
     "--front-toast-height": "primitives/src/toast.rs TOAST_SIZE_JS (`const FRONT`), unset until measured",
     "--toast-swipe-x": "primitives/src/toast.rs TOAST_SWIPE_JS (`prop(axis)`), set only while dragged",
     "--toast-swipe-y": "primitives/src/toast.rs TOAST_SWIPE_JS (`prop(axis)`), set only while dragged",
+    "--dx-anchor-offset-x": "primitives/src/top_layer/anchor_fallback.rs PLACE_JS (`publish` writes it through `put`)",
+    "--dx-anchor-offset-y": "primitives/src/top_layer/anchor_fallback.rs PLACE_JS (`publish` writes it through `put`)",
 }
 ALLOWLIST = Allowlist("check-css-vars-defined", ALLOWLIST_ROWS.items(), fields=("name",))
 

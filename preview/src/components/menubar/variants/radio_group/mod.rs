@@ -4,7 +4,7 @@ use dioxus::prelude::*;
 /// shadcn's "With Radio" example: a profile-switching menu and a "Theme" menu,
 /// each a radio group with one checked item, controlled (`value` +
 /// `on_value_change`) and keeping the menu open after a choice
-/// (`close_on_select: false`) so the checked item can be seen to move. Each
+/// (the default) so the checked item can be seen to move. Each
 /// group is named by its heading (`aria-labelledby`). A radio item falls
 /// back to its `value` as its typeahead label.
 ///
@@ -31,17 +31,14 @@ pub fn Demo() -> Element {
                         on_value_change: move |value| account.set(value),
                         MenubarRadioItem {
                             value: "andy".to_string(),
-                            close_on_select: false,
                             "Andy"
                         }
                         MenubarRadioItem {
                             value: "benoit".to_string(),
-                            close_on_select: false,
                             "Benoit"
                         }
                         MenubarRadioItem {
                             value: "luis".to_string(),
-                            close_on_select: false,
                             "Luis"
                         }
                     }
@@ -56,17 +53,14 @@ pub fn Demo() -> Element {
                         on_value_change: move |value| theme.set(value),
                         MenubarRadioItem {
                             value: "light".to_string(),
-                            close_on_select: false,
                             "Light"
                         }
                         MenubarRadioItem {
                             value: "dark".to_string(),
-                            close_on_select: false,
                             "Dark"
                         }
                         MenubarRadioItem {
                             value: "system".to_string(),
-                            close_on_select: false,
                             "System"
                         }
                     }

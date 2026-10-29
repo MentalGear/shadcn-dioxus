@@ -25,23 +25,32 @@
 //! (always with a `0px` fallback: the variable is absent without a keyboard).
 //!
 //! The field the user is typing in is brought into view: when it takes focus, or the keyboard
-//! finishes opening, and it is not already comfortably inside the visible part of its scroll
-//! container, the nearest vertical scroller (else the panel) gets `padding-bottom +=
-//! overlap + 48px` of scroll slack (so the last field can reach the middle) and is scrolled so the
-//! field sits in the centre of the visible band. Everything is undone when the keyboard closes or the
-//! panel unmounts.
+//! finishes opening, the nearest vertical scroller (else the panel) gets scroll room for the part of
+//! it the keyboard covers (`padding-bottom += overlap`, over a floor of 16px under the content; none
+//! when the scroller already ends above the keyboard, which the stylesheet contract above arranges
+//! for a panel), and the field is scrolled to the centre of the visible band unless it is already
+//! comfortably inside it. Everything is undone when the keyboard closes or the panel unmounts.
 //!
-//! **What counts as a keyboard.** Lifted from Base UI 1.6.0 (MIT),
+//! **What counts as a keyboard.** Lifted from Base UI 1.9.0 (MIT),
 //! `drawer/virtual-keyboard-provider/DrawerVirtualKeyboardProvider.js`
-//! (`KEYBOARD_RESIZE_THRESHOLD = 60`, `KEYBOARD_SCROLL_SLACK = 48`): the keyboard is open when
+//! (`KEYBOARD_RESIZE_THRESHOLD = 60`, `KEYBOARD_VISIBILITY_MARGIN = 16`): the keyboard is open when
 //! `innerHeight - visualViewport.height` exceeds 60 and `visualViewport.scale === 1`. A smaller change is browser chrome (a collapsing URL bar);
-//! a pinch-zoomed page is not a keyboard, and the logic is suspended while zoomed. Adapted: the
-//! inset is published as a stylesheet contract on the panel (not on a provider's viewport element),
-//! a top offset is published beside it so a centred panel can be placed inside the visible band, the
-//! field is scrolled only when it is not already visible, and none of vaul's imperative `bottom` /
-//! `height` writes or body `position: fixed` lock is used. Base UI's touch-tap focus trick (focus
-//! synchronously in `touchend` behind a `translateY(-2000px)`) is deliberately NOT ported: it is
-//! only needed if a real iPhone shows the page jumping.
+//! a pinch-zoomed page is not a keyboard, and the logic is suspended while zoomed. The layout
+//! viewport is read again on a window `resize` (a browser that resizes it after the visual viewport
+//! events stop). Adapted: the inset is published as a stylesheet contract on the panel (not on a
+//! provider's viewport element), a top offset is published beside it so a centred panel can be
+//! placed inside the visible band, the field is scrolled only when it is not already visible, and
+//! none of vaul's imperative `bottom` / `height` writes or body `position: fixed` lock is used.
+//!
+//! **Not ported from Base UI 1.9.0** (backlog row 480), because each is script this file may not
+//! grow (`dev-docs/js-interop.md`, `check-js-volume.sh`) or needs a real iPhone first: the touch-tap
+//! focus trick (`KEYBOARD_TAP_BLOCKED`, focus synchronously in `touchend` behind a
+//! `translateY(-2000px)`); the settle-watching realign passes (`KEYBOARD_REALIGN_INTERVAL = 150`,
+//! `KEYBOARD_SETTLE_FRAME_LIMIT = 60`) that re-run the alignment while WebKit's native reveal or a
+//! layout transition changes the destination; pinning the page scroll while a modal's keyboard is
+//! up; the focus pre-emption for the keyboard's previous/next arrows; and the probe that keeps the
+//! keyboard detected in a browser whose layout viewport shrinks with it (there `innerHeight` follows
+//! `visualViewport.height`, the contract is absent and the browser places the panel itself).
 //!
 //! This is not part of `use_dialog_open_driver` / `use_popover_sync`: those own open-time focus and
 //! anchored placement. The styled Drawer, Dialog, Sheet and AlertDialog call it.
@@ -57,9 +66,8 @@ const panel = document.getElementById(await dioxus.recv());
 const vv = window.visualViewport;
 if (!panel || !vv) return;
 
-// Base UI 1.6.0 DrawerVirtualKeyboardProvider: KEYBOARD_RESIZE_THRESHOLD / KEYBOARD_SCROLL_SLACK.
+// Base UI 1.9.0 DrawerVirtualKeyboardProvider: KEYBOARD_RESIZE_THRESHOLD / KEYBOARD_VISIBILITY_MARGIN.
 const THRESHOLD = __THRESHOLD__;
-const SLACK = __SLACK__;
 const MARGIN = __MARGIN__;
 const NOT_TEXT = /^(checkbox|radio|button|submit|reset|range|file|color|image|hidden)$/;
 const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -79,7 +87,7 @@ const scrollerOf = (field) => {
 
 let isOpen = false;
 let lastInset = -1;
-let slack = null; // { el, padding, anchor }: what to restore
+let slack = null; // { el, padding, anchor, base }: what to restore, and the padding it adds to
 let frame = 0;
 
 const restoreSlack = () => {
@@ -92,14 +100,14 @@ const restoreSlack = () => {
 const addSlack = (el, px) => {
     if (!slack || slack.el !== el) {
         restoreSlack();
-        slack = { el, padding: el.style.paddingBottom, anchor: el.style.overflowAnchor, base: parseFloat(getComputedStyle(el).paddingBottom) || 0 };
+        slack = { el, padding: el.style.paddingBottom, anchor: el.style.overflowAnchor, base: Math.max(parseFloat(getComputedStyle(el).paddingBottom) || 0, MARGIN) };
     }
     el.style.overflowAnchor = 'none';
     el.style.paddingBottom = (slack.base + px) + 'px';
 };
 
 // Bring the focused field to the centre of the visible band of its scroller, if it is not
-// already comfortably inside it.
+// already comfortably inside it. Scroll room is added only for what the keyboard covers.
 const reveal = () => {
     frame = 0;
     const field = document.activeElement;
@@ -107,15 +115,13 @@ const reveal = () => {
     const sc = scrollerOf(field);
     const visTop = vv.offsetTop;
     const visBottom = vv.offsetTop + vv.height;
-    let s = sc.getBoundingClientRect();
-    let r = field.getBoundingClientRect();
-    const inside = () => r.top >= Math.max(s.top, visTop) + MARGIN && r.bottom <= Math.min(s.bottom, visBottom) - MARGIN;
-    if (inside()) return;
-    addSlack(sc, Math.max(0, s.bottom - visBottom) + SLACK);
-    s = sc.getBoundingClientRect();
-    r = field.getBoundingClientRect();
+    const overlap = Math.max(0, sc.getBoundingClientRect().bottom - visBottom);
+    if (overlap > 0) addSlack(sc, overlap); else restoreSlack();
+    const s = sc.getBoundingClientRect();
+    const r = field.getBoundingClientRect();
     const bandTop = Math.max(s.top, visTop) + MARGIN;
     const bandBottom = Math.min(s.bottom, visBottom) - MARGIN;
+    if (r.top >= bandTop && r.bottom <= bandBottom) return;
     const delta = (r.top + r.bottom) / 2 - (bandTop + bandBottom) / 2;
     sc.scrollBy({ top: delta, behavior: reduced() ? 'auto' : 'smooth' });
 };
@@ -148,6 +154,7 @@ const update = () => {
 
 listen(vv, 'resize', update, { passive: true });
 listen(vv, 'scroll', update, { passive: true });
+listen(window, 'resize', update, { passive: true });
 listen(document, 'focusin', (e) => { if (isField(e.target)) { update(); scheduleReveal(); } }, { capture: true, passive: true });
 cleanup(() => { if (frame) cancelAnimationFrame(frame); clear(); });
 update();
@@ -156,17 +163,15 @@ update();
 /// Base UI's `KEYBOARD_RESIZE_THRESHOLD`: the least `innerHeight - visualViewport.height`, in px,
 /// that is the keyboard and not browser chrome.
 pub const KEYBOARD_RESIZE_THRESHOLD_PX: u32 = 60;
-/// Base UI's `KEYBOARD_SCROLL_SLACK`: the extra scroll room, in px, added under the focused field's
-/// scroller so the last field can reach the middle of the visible area.
-pub const KEYBOARD_SCROLL_SLACK_PX: u32 = 48;
-/// The gap, in px, kept between the focused field and the edges of the visible band.
-const FIELD_MARGIN_PX: u32 = 16;
+/// Base UI's `KEYBOARD_VISIBILITY_MARGIN`: the gap, in px, kept between the focused field and the
+/// edges of the visible band, and the least padding under a scroller's content once the keyboard
+/// covers part of it.
+pub const KEYBOARD_VISIBILITY_MARGIN_PX: u32 = 16;
 
 fn script() -> String {
     KEYBOARD_INSET_JS
         .replace("__THRESHOLD__", &KEYBOARD_RESIZE_THRESHOLD_PX.to_string())
-        .replace("__SLACK__", &KEYBOARD_SCROLL_SLACK_PX.to_string())
-        .replace("__MARGIN__", &FIELD_MARGIN_PX.to_string())
+        .replace("__MARGIN__", &KEYBOARD_VISIBILITY_MARGIN_PX.to_string())
 }
 
 /// The element id of a modal panel, for [`KeyboardInset`]: the caller's own `id` when it set one,
@@ -224,10 +229,20 @@ mod tests {
     #[test]
     fn the_script_has_no_unsubstituted_placeholder() {
         let s = script();
-        assert!(
-            !s.contains("__THRESHOLD__") && !s.contains("__SLACK__") && !s.contains("__MARGIN__")
-        );
-        assert!(s.contains("const THRESHOLD = 60;") && s.contains("const SLACK = 48;"));
+        assert!(!s.contains("__THRESHOLD__") && !s.contains("__MARGIN__"));
+        assert!(s.contains("const THRESHOLD = 60;") && s.contains("const MARGIN = 16;"));
+    }
+
+    /// Scroll room is exactly what the keyboard covers over a floor of the margin: no fixed extra.
+    #[test]
+    fn the_script_adds_scroll_room_only_for_what_the_keyboard_covers() {
+        let s = script();
+        assert!(!s.contains("SLACK"));
+        assert!(s.contains(
+            "const overlap = Math.max(0, sc.getBoundingClientRect().bottom - visBottom);"
+        ));
+        assert!(s.contains("if (overlap > 0) addSlack(sc, overlap); else restoreSlack();"));
+        assert!(s.contains("Math.max(parseFloat(getComputedStyle(el).paddingBottom) || 0, MARGIN)"));
     }
 
     /// The contract a stylesheet reads: the names are the public API of this module.
@@ -264,6 +279,7 @@ mod tests {
         let s = script();
         assert!(!s.contains("addEventListener"));
         assert!(s.contains("listen(vv, 'resize'") && s.contains("listen(vv, 'scroll'"));
+        assert!(s.contains("listen(window, 'resize'"));
         assert!(s.contains("listen(document, 'focusin'"));
     }
 }

@@ -3,6 +3,7 @@ use crate::components::separator::Separator;
 use dioxus::prelude::*;
 use dioxus_primitives::dioxus_attributes::attributes;
 use dioxus_primitives::merge_attributes;
+use dioxus_primitives::state_attrs;
 
 /// How a [`Field`]'s label/description stack against its control.
 #[derive(Copy, Clone, PartialEq, Default)]
@@ -63,8 +64,8 @@ pub fn Field(
     let owned = attributes!(div {
         role: "group",
         "data-orientation": orientation.class(),
-        "data-invalid": invalid,
-        "data-disabled": disabled,
+        ..state_attrs::valued(state_attrs::Flag::Invalid, invalid),
+        ..state_attrs::disabled(disabled),
     });
     let merged = merge_attributes(vec![base, attributes, owned]);
 

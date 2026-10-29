@@ -469,6 +469,45 @@ test("Escape restores the selected label after editing", async ({ page }) => {
     await expect(trigger).toHaveValue("SvelteKit");
 });
 
+test("Home and End move the caret in the input, never the list highlight, while the list is open", async ({ page }) => {
+    await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
+    await page.waitForLoadState('networkidle');
+    const trigger = await selectSvelte(page);
+
+    await trigger.click();
+    await expect(content(page)).toBeVisible();
+    await page.keyboard.press("ArrowDown");
+    const highlighted = list(page).locator("[role='option'][data-highlighted='true']");
+    await expect(highlighted).toHaveCount(1);
+    const before = await highlighted.textContent();
+
+    await page.keyboard.press("Home");
+    expect(await caret(trigger), "Home puts the caret at the start of the text").toEqual([0, 0]);
+    await expect(highlighted, "Home leaves the highlight where it was").toHaveText(before!);
+
+    await page.keyboard.press("End");
+    expect(await caret(trigger), "End puts the caret after the last character of SvelteKit").toEqual([9, 9]);
+    await expect(highlighted, "End leaves the highlight where it was").toHaveText(before!);
+    await expect(content(page), "the list stays open").toBeVisible();
+});
+
+test("Escape on a closed list clears the input and the selection; Escape on an open list only closes it", async ({ page }) => {
+    await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
+    await page.waitForLoadState('networkidle');
+    const trigger = await selectSvelte(page);
+
+    await page.keyboard.press("Escape");
+    await expect(trigger, "the closed input is cleared").toHaveValue("");
+    await expect(page.locator("[role='listbox']")).toHaveCount(0);
+
+    await trigger.click();
+    await expect(list(page).getByRole("option")).toHaveCount(7);
+    await expect(list(page).locator("[role='option'][aria-selected='true']"), "no option stays selected").toHaveCount(0);
+    await page.keyboard.press("Escape");
+    await expect(content(page)).toHaveCount(0);
+    await expect(trigger).toHaveValue("");
+});
+
 test("blurring without a new pick restores the selected label", async ({ page }) => {
     await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
     await page.waitForLoadState('networkidle');
@@ -497,7 +536,7 @@ test("reopening scrolls the selected option into view", async ({ page }) => {
 
     const trigger = input(page);
     await trigger.click();
-    await page.keyboard.press("End"); // open: highlights the last option
+    await page.keyboard.press("ArrowUp"); // open with nothing active: highlights the last option
     await page.keyboard.press("Enter");
     await expect(trigger).toHaveValue("Dioxus");
     await expect(page.locator("[role='listbox']")).toHaveCount(0);
@@ -516,7 +555,7 @@ test("reopening scrolls the selected option into view", async ({ page }) => {
     expect(await list(page).evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
 
     // Keyboard navigation keeps the active option in view as well.
-    await page.keyboard.press("Home");
+    await page.keyboard.press("ArrowDown"); // wraps from the last option to the first
     await expect(list(page).getByRole("option", { name: "Next.js" })).toHaveAttribute("data-highlighted", "true");
     await expect.poll(async () => {
         const [l, o] = [await measureAtRest(list(page)), await measureAtRest(list(page).getByRole("option", { name: "Next.js" }))];
