@@ -3,6 +3,15 @@
 Backlog [row 481](./backlog/481-state-attributes-one-helper-emits-data-state-and-presence.md). Source of the vocabulary:
 [`research/radix-vs-base-ui-2026-10-28.md`](./research/radix-vs-base-ui-2026-10-28.md), appendix B.
 
+**Owner decision (2026-10-29): Base UI's state-attribute model is the long-term vocabulary.** ARIA attributes where one exists
+(`aria-checked`, `aria-expanded`, `aria-pressed`, `aria-selected`, `aria-disabled`); presence attributes (present when true, absent
+when false) for every other boolean state; valued attributes only for genuinely multi-valued states (`data-side`,
+`data-orientation`); no `="false"` attributes; and `data-state` retired at the end. A converter from Base UI selectors to this
+format is rejected: users would have to run it, it would not remove the valued-boolean trap, some names have no one-to-one
+mapping, and it is upkeep. The conversion is [row 484](./backlog/484-convert-remaining-valued-boolean-state-attributes-to-presence.md)
+(valued booleans to presence, Accordion and Collapsible `data-open` first) and [row 485](./backlog/485-retire-data-state-css-moves-to-aria-and-presence.md)
+(retire `data-state`). Until they land, the valued booleans and `data-state` in the tables below are still emitted.
+
 ## The rule
 
 A component never writes a state attribute (`data-state`, `data-checked`, `data-open`, `data-disabled`, ...) by hand. It spreads

@@ -4,7 +4,7 @@
 the page as stale and check `git log` and the flag files named here.** What each batch contained is in `git log` and the
 backlog row files, not here: this page says only what is deployed, what runs, what is next and what waits for the owner.
 
-Last updated: **2026-10-28**. Several sessions work in parallel; who holds what is on the `claims` branch (`CLAIMS.md`).
+Last updated: **2026-10-29**. Several sessions work in parallel; who holds what is on the `claims` branch (`CLAIMS.md`).
 Preview site: https://mentalgear.github.io/shadcn-dioxus/ (deployed from main `4afa18c2`, PR #155, merge queue batch 29).
 
 ## Where a fresh session picks up
@@ -48,7 +48,7 @@ then the final review. Rows in one step are independent unless a row says otherw
 4. Docs on the settled API: **392**, **394**, **399**, **422**, then the standing review **387**.
 5. Tests: the **152** suite prune (before the plan adds its specs).
 6. At any point: **153**, **268**, **170**, and the Radix-versus-Base-UI scan rows ([`research/radix-vs-base-ui-2026-10-28.md`](./research/radix-vs-base-ui-2026-10-28.md)): **478** (overlay defaults), **479**
-   (scroll-lock method), **480** (keyboard inset re-diff), **481** (state attributes) and **482** (control gaps).
+   (scroll-lock method), **480** (keyboard inset re-diff), **481** (state attributes), **482** (control gaps), **484** (valued booleans to presence attributes, Base UI vocabulary) and **485** (retire `data-state`, after 484).
 
 **The JavaScript plan** (row **434**; approved 2026-10-26 with scope 2). The whole plan is recorded, not only its first
 step: the decided plan is [`research/sync-js-root-2026-10-26.md`](./research/sync-js-root-2026-10-26.md) (with

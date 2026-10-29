@@ -15,7 +15,7 @@ Components emit the Radix vocabulary (`data-state="checked"`), while shadcn's `b
 
 ## Status / trigger
 
-IN PROGRESS (2026-10-29), lane `state-attributes-481`. Landed: `primitives/src/state_attrs.rs` (the helper), every component under `primitives/src` (chart excepted) and the preview wrappers that emit state attributes themselves go through it, `scripts/check-state-attributes.sh` (the gate, with a shrink-only baseline of the legacy valued calls), and [`dev-docs/state-attributes.md`](../state-attributes.md) (the vocabulary and the per-attribute table). `data-state` is emitted unchanged beside the new presence attributes; no CSS or spec moved.
+IN PROGRESS (2026-10-29), lane `state-attributes-481`. Landed: `primitives/src/state_attrs.rs` (the helper), every component under `primitives/src` (chart excepted) and the preview wrappers that emit state attributes themselves go through it, `scripts/check-state-attributes.sh` (the gate, with a shrink-only baseline of the legacy valued calls), and [`dev-docs/state-attributes.md`](../state-attributes.md) (the vocabulary and the per-attribute table). `data-state` is emitted unchanged beside the new presence attributes; no CSS or spec moved. Completion is rows 484 (valued booleans to presence, Accordion/Collapsible data-open first) and 485 (retire data-state), owner decision 2026-10-29: Base UI's vocabulary is the long-term model.
 
 Open: the valued booleans (`data-disabled` and the others the gate counts in `scripts/check-state-attributes.baseline.tsv`) stay `true|false` until the stylesheets and specs that select `="true"` / assert `data-disabled="false"` move to presence; then `data-state` last. `SwitchThumb` has no context to read yet, so it renders no state attribute.
 
