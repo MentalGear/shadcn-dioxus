@@ -1,6 +1,7 @@
 //! SelectTrigger component implementation.
 
 use crate::selectable::ListboxFocus;
+use crate::state_attrs;
 use crate::{has_own_accessible_name, merge_attributes, use_id_or};
 use dioxus::html::input_data::MouseButton;
 use dioxus::prelude::*;
@@ -184,6 +185,7 @@ pub fn SelectTrigger(props: SelectTriggerProps) -> Element {
             role: "combobox",
             aria_haspopup: "listbox",
             aria_expanded: open(),
+            ..state_attrs::popup_open(open()),
             aria_controls: ctx.selectable.list_id,
             // "The combobox element has aria-autocomplete set to a value
             // that corresponds to its autocomplete behavior" -- "none" is

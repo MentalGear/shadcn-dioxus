@@ -1,4 +1,5 @@
 use super::*;
+use crate::state_attrs;
 
 /// The context provided by the [`DatePicker`] component to its children.
 #[derive(Copy, Clone)]
@@ -169,8 +170,9 @@ pub fn DatePicker(props: DatePickerProps) -> Element {
     let defaults = attributes!(div { aria_label: "Date" });
     let owned = attributes!(div {
         role: "group",
-        "data-disabled": (props.disabled)(),
+        ..state_attrs::disabled((props.disabled)()),
         "data-read-only": (props.read_only)().then_some("true"),
+        ..state_attrs::readonly(props.read_only),
     });
     let merged = merge_attributes(vec![defaults, props.attributes.clone(), owned]);
 
@@ -377,8 +379,9 @@ pub fn DateRangePicker(props: DateRangePickerProps) -> Element {
     });
     let owned = attributes!(div {
         role: "group",
-        "data-disabled": (props.disabled)(),
+        ..state_attrs::disabled((props.disabled)()),
         "data-read-only": (props.read_only)().then_some("true"),
+        ..state_attrs::readonly(props.read_only),
     });
     let merged = merge_attributes(vec![defaults, props.attributes.clone(), owned]);
 

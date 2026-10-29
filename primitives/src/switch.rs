@@ -1,6 +1,7 @@
 //! Defines the [`Switch`] component and its sub-components.
 
 use crate::default_checked::use_default_checked;
+use crate::state_attrs;
 use crate::{merge_attributes, use_controlled, use_form_reset_listener, use_unique_id};
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
@@ -82,6 +83,7 @@ pub struct SwitchProps {
 ///
 /// The [`Switch`] component defines the following data attributes you can use to control styling:
 /// - `data-state`: Indicates the state of the switch. Values are `checked` or `unchecked`.
+/// - `data-checked` / `data-unchecked`: Present (empty) while checked / unchecked, absent otherwise.
 /// - `data-disabled`: Indicates if the switch is disabled. Values are `true` or `false`.
 /// - `data-readonly`: Present (empty) while the switch is read-only, absent otherwise. The
 ///   element also carries `aria-readonly="true"` then.
@@ -116,11 +118,11 @@ pub fn Switch(props: SwitchProps) -> Element {
         role: "switch",
         aria_checked: checked,
         aria_required: props.required,
-        "data-state": if checked() { "checked" } else { "unchecked" },
+        ..state_attrs::checked(checked()),
         // Only add data-disabled when actually disabled
-        "data-disabled": if (props.disabled)() { "true" } else { "false" },
+        ..state_attrs::disabled(props.disabled),
         aria_readonly: (props.read_only)().then_some("true"),
-        "data-readonly": (props.read_only)().then_some(""),
+        ..state_attrs::readonly(props.read_only),
     });
     let merged = merge_attributes(vec![defaults, props.attributes.clone(), owned]);
 

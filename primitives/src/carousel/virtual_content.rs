@@ -1,4 +1,5 @@
 use super::*;
+use crate::state_attrs;
 
 /// The props for the [`CarouselVirtualContent`] component.
 #[derive(Props, Clone, PartialEq)]
@@ -598,7 +599,6 @@ pub fn CarouselVirtualContent<T: Clone + PartialEq + 'static>(
                 aria_roledescription: "slide",
                 aria_label: label,
                 style: item_style,
-                "data-selected": is_selected,
                 "data-index": data_index,
                 "data-position": position,
                 inert,
@@ -608,6 +608,7 @@ pub fn CarouselVirtualContent<T: Clone + PartialEq + 'static>(
                         focused_item.set(None);
                     }
                 },
+                ..state_attrs::valued(state_attrs::Flag::Selected, is_selected),
                 {content}
             }
         }

@@ -1,5 +1,6 @@
 //! Defines the [`Avatar`] component and its subcomponents, which manage user profile images with fallback options.
 
+use crate::state_attrs;
 use std::time::Duration;
 
 use dioxus::{document, prelude::*};
@@ -143,12 +144,12 @@ pub fn Avatar(props: AvatarProps) -> Element {
 
     let owned = attributes!(span {
         role: "img",
-        "data-state": match state() {
+        ..state_attrs::state(match state() {
             AvatarState::Loading => "loading",
             AvatarState::Loaded => "loaded",
             AvatarState::Error => "error",
             AvatarState::Empty => "empty",
-        },
+        }),
     });
     // The loading placeholder pulses: paused while off-screen or in a hidden tab
     // (`crate::activity`); an avatar that is not loading subscribes to nothing.

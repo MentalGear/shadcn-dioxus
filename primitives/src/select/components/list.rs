@@ -1,5 +1,6 @@
 //! SelectList component implementation.
 
+use crate::state_attrs;
 use crate::{
     has_own_accessible_name, listbox::use_listbox_container, merge_attributes, use_effect,
 };
@@ -433,7 +434,7 @@ fn SelectListRendered(
         aria_multiselectable: ctx.multi(),
         popover: crate::top_layer::PopoverKind::Manual.as_str(),
         dir: (ctx.direction)().as_str(),
-        "data-state": if open() { "open" } else { "closed" },
+        ..state_attrs::open(open()),
         "data-direction": (ctx.direction)().as_str(),
         "data-position": ctx.placement().as_str(),
     });
@@ -514,7 +515,7 @@ fn SelectListRendered(
         tabindex: if focused() { "0" } else { "-1" },
         aria_multiselectable: ctx.multi(),
         dir: (ctx.direction)().as_str(),
-        "data-state": if open() { "open" } else { "closed" },
+        ..state_attrs::open(open()),
         "data-direction": (ctx.direction)().as_str(),
         "data-position": ctx.placement().as_str(),
     });

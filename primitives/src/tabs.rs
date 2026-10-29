@@ -1,5 +1,6 @@
 //! Defines the [`Tabs`] component and its sub-components.
 
+use crate::state_attrs;
 use crate::{
     collapsible::{hidden_attribute, use_beforematch, PanelHidden},
     collection::{
@@ -183,7 +184,7 @@ pub fn Tabs(props: TabsProps) -> Element {
 
     let owned = attributes!(div {
         "data-orientation": if (props.horizontal)() { "horizontal" } else { "vertical" },
-        "data-disabled": (props.disabled)(),
+        ..state_attrs::disabled((props.disabled)()),
         "data-direction": direction.as_str(),
     });
     let merged = merge_attributes(vec![props.attributes.clone(), owned]);
@@ -346,6 +347,7 @@ pub struct TabTriggerProps {
 ///
 /// The [`TabTrigger`] component defines the following data attributes you can use to control styling:
 /// - `data-state`: Indicates the state of the tab trigger. Values are `active` or `inactive`.
+/// - `data-active`: Present (empty) while this tab is the active one, absent otherwise.
 /// - `data-disabled`: Indicates if the tab trigger is disabled. Values are `true` or `false`.
 #[component]
 pub fn TabTrigger(props: TabTriggerProps) -> Element {
@@ -375,8 +377,8 @@ pub fn TabTrigger(props: TabTriggerProps) -> Element {
         tabindex: tab_index,
         aria_selected: selected,
         aria_controls: (ctx.tab_content_ids)().get(&props.value).cloned(),
-        "data-state": if selected() { "active" } else { "inactive" },
-        "data-disabled": disabled(),
+        ..state_attrs::active(selected()),
+        ..state_attrs::disabled(disabled()),
     });
     let merged = merge_attributes(vec![
         order.marker_attribute(),
@@ -506,6 +508,7 @@ pub struct TabContentProps {
 ///
 /// The [`TabContent`] component defines the following data attributes you can use to control styling:
 /// - `data-state`: Indicates the state of the tab panel. Values are `active` or `inactive`.
+/// - `data-hidden`: Present (empty) while this panel is not the active one, absent otherwise.
 ///
 /// An inactive panel carries the `hidden` attribute (`hidden="until-found"` with
 /// [`TabsProps::hidden_until_found`]). A stylesheet that sets `display` on this element overrides the
@@ -541,7 +544,7 @@ pub fn TabContent(props: TabContentProps) -> Element {
     let mut owned = attributes!(div {
         role: "tabpanel",
         tabindex: "0",
-        "data-state": if selected() { "active" } else { "inactive" },
+        ..state_attrs::panel_hidden(selected()),
     });
     owned.push(hidden_attribute(hidden));
     let merged = merge_attributes(vec![props.attributes.clone(), owned]);

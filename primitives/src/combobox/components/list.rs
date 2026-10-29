@@ -1,5 +1,6 @@
 //! ComboboxList component.
 
+use crate::state_attrs;
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
 
@@ -160,7 +161,7 @@ fn ComboboxListRendered(
         role: "listbox",
         popover: crate::top_layer::PopoverKind::Manual.as_str(),
         aria_multiselectable: ctx.is_multi().then_some("true"),
-        "data-state": if open() { "open" } else { "closed" },
+        ..state_attrs::open(open()),
     });
     let attributes = merge_attributes(vec![attributes, owned]);
 
@@ -194,7 +195,7 @@ fn ComboboxListRendered(
     let owned = attributes!(div {
         role: "listbox",
         aria_multiselectable: ctx.is_multi().then_some("true"),
-        "data-state": if open() { "open" } else { "closed" },
+        ..state_attrs::open(open()),
     });
     let attributes = merge_attributes(vec![attributes, owned]);
 

@@ -1,6 +1,7 @@
 //! Defines the [`Collapsible`] component and its sub-components.
 
 use crate::dioxus_core::AttributeValue;
+use crate::state_attrs;
 use crate::{merge_attributes, use_controlled, use_id_or, use_unique_id, AsChild};
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
@@ -191,6 +192,7 @@ pub struct CollapsibleProps {
 ///
 /// The [`Collapsible`] component defines the following data attributes you can use to control styling:
 /// - `data-open`: Indicates if the collapsible is open. Values are `true` or `false`.
+/// - `data-closed`: Present (empty) while the collapsible is closed, absent otherwise (`data-open` stays valued, `true` or `false`).
 /// - `data-disabled`: Indicates if the collapsible is disabled. values are `true` or `false`.
 #[component]
 pub fn Collapsible(props: CollapsibleProps) -> Element {
@@ -207,8 +209,8 @@ pub fn Collapsible(props: CollapsibleProps) -> Element {
     });
 
     let base = attributes!(div {
-        "data-open": open,
-        "data-disabled": props.disabled,
+        ..state_attrs::open_valued(open),
+        ..state_attrs::disabled(props.disabled),
     });
     let merged = merge_attributes(vec![base, props.attributes]);
 
@@ -272,6 +274,7 @@ pub struct CollapsibleContentProps {
 ///
 /// The [`CollapsibleContent`] component defines the following data attributes you can use to control styling:
 /// - `data-open`: Indicates if the collapsible is open. Values are `true` or `false`.
+/// - `data-closed`: Present (empty) while the collapsible is closed, absent otherwise (`data-open` stays valued, `true` or `false`).
 /// - `data-disabled`: Indicates if the collapsible is disabled. values are `true` or `false`.
 ///
 /// Closed content that stays mounted (`keep_mounted`, `hidden_until_found`) carries the `hidden`
@@ -303,8 +306,8 @@ pub fn CollapsibleContent(props: CollapsibleContentProps) -> Element {
     });
 
     let mut owned = attributes!(div {
-        "data-open": open,
-        "data-disabled": ctx.disabled,
+        ..state_attrs::open_valued(open),
+        ..state_attrs::disabled(ctx.disabled),
     });
     owned.push(hidden_attribute(hidden));
     let merged = merge_attributes(vec![props.attributes.clone(), owned]);
@@ -371,6 +374,8 @@ pub struct CollapsibleTriggerProps {
 ///
 /// The [`CollapsibleTrigger`] component defines the following data attributes you can use to control styling:
 /// - `data-open`: Indicates if the collapsible is open. Values are `true` or `false`.
+/// - `data-closed`: Present (empty) while the collapsible is closed, absent otherwise (`data-open` stays valued, `true` or `false`).
+/// - `data-panel-open`: Present (empty) while the panel this trigger controls is open, absent otherwise.
 /// - `data-disabled`: Indicates if the collapsible is disabled. values are `true` or `false`.
 #[component]
 pub fn CollapsibleTrigger(props: CollapsibleTriggerProps) -> Element {
@@ -380,11 +385,12 @@ pub fn CollapsibleTrigger(props: CollapsibleTriggerProps) -> Element {
 
     let base = attributes!(button {
         r#type: "button",
-        "data-open": open,
-        "data-disabled": ctx.disabled,
+        ..state_attrs::open_valued(open),
+        ..state_attrs::disabled(ctx.disabled),
         disabled: ctx.disabled,
         "aria-controls": ctx.aria_controls_id,
         "aria-expanded": open,
+        ..state_attrs::panel_open(open),
         onclick: move |_| {
             let new_open = !open();
             ctx.set_open.call(new_open);

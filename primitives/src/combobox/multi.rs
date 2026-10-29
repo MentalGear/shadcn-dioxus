@@ -9,6 +9,7 @@
 //! are unreachable from a single-select root rather than guarded at each call
 //! site.
 
+use crate::state_attrs;
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
 
@@ -169,8 +170,8 @@ pub fn ComboboxMulti<T: Clone + PartialEq + ToString + 'static>(
     use_form_reset_listener(reset_id, move || set_values.call(default_values.clone()));
 
     let owned = attributes!(div {
-        "data-state": if open() { "open" } else { "closed" },
-        "data-disabled": (props.disabled)(),
+        ..state_attrs::open(open()),
+        ..state_attrs::disabled((props.disabled)()),
         "data-multiple": "true",
     });
     let merged = merge_attributes(vec![props.attributes.clone(), owned]);
@@ -249,7 +250,7 @@ pub fn ComboboxChips(props: ComboboxChipsProps) -> Element {
         // The popup anchors to this field, not to the input inside it (the input drops its own anchor in a multi-select).
         style: crate::top_layer::anchor_name_style(&ctx.input_id.cloned()),
         "data-dx-combobox-chips": "true",
-        "data-disabled": disabled,
+        ..state_attrs::disabled(disabled),
     });
     let merged = merge_attributes(vec![props.attributes.clone(), owned]);
 

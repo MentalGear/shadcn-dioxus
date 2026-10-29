@@ -1,5 +1,6 @@
 //! Defines the [`RadioGroup`] component and its sub-components.
 
+use crate::state_attrs;
 use std::collections::HashMap;
 
 use crate::default_checked::use_default_checked;
@@ -234,11 +235,11 @@ pub fn RadioGroup(props: RadioGroupProps) -> Element {
     let owned = attributes!(div {
         role: "radiogroup",
         "data-orientation": if (props.horizontal)() { "horizontal" } else { "vertical" },
-        "data-disabled": (props.disabled)(),
+        ..state_attrs::disabled((props.disabled)()),
         "data-direction": direction.as_str(),
         aria_required: props.required,
         aria_readonly: (props.read_only)().then_some("true"),
-        "data-readonly": (props.read_only)().then_some(""),
+        ..state_attrs::readonly(props.read_only),
     });
     let merged = merge_attributes(vec![props.attributes.clone(), owned]);
 
@@ -320,6 +321,7 @@ pub struct RadioItemProps {
 ///
 /// The [`RadioItem`] component defines the following data attributes you can use to control styling:
 /// - `data-state`: Indicates the state of the radio item. Values are `checked` or `unchecked`.
+/// - `data-checked` / `data-unchecked`: Present (empty) while checked / unchecked, absent otherwise.
 /// - `data-disabled`: Indicates if the radio item is disabled. Values are `true` or `false`.
 /// - `data-readonly`: Present (empty) while the group is read-only, absent otherwise.
 #[component]
@@ -382,9 +384,9 @@ pub fn RadioItem(props: RadioItemProps) -> Element {
         role: "radio",
         tabindex: tab_index,
         aria_checked: checked,
-        "data-state": if checked() { "checked" } else { "unchecked" },
-        "data-disabled": disabled(),
-        "data-readonly": (ctx.read_only)().then_some(""),
+        ..state_attrs::checked(checked()),
+        ..state_attrs::disabled(disabled()),
+        ..state_attrs::readonly(ctx.read_only),
     });
     let merged = merge_attributes(vec![
         order.marker_attribute(),

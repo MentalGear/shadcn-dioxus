@@ -1,4 +1,5 @@
 use super::*;
+use crate::state_attrs;
 
 /// The props for the [`Calendar`] component.
 #[derive(Props, Clone, PartialEq)]
@@ -175,7 +176,7 @@ pub fn Calendar(props: CalendarProps) -> Element {
     });
     let owned = attributes!(div {
         role: "application",
-        "data-disabled": (props.disabled)(),
+        ..state_attrs::disabled((props.disabled)()),
         "data-direction": direction.as_str(),
     });
     let merged = merge_attributes(vec![defaults, props.attributes.clone(), owned]);

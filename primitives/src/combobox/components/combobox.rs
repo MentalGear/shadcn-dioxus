@@ -1,5 +1,6 @@
 //! Root combobox component.
 
+use crate::state_attrs;
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
 use std::collections::HashMap;
@@ -210,8 +211,8 @@ pub fn Combobox<T: Clone + PartialEq + 'static>(props: ComboboxProps<T>) -> Elem
     );
 
     let owned = attributes!(div {
-        "data-state": if open() { "open" } else { "closed" },
-        "data-disabled": (props.disabled)(),
+        ..state_attrs::open(open()),
+        ..state_attrs::disabled((props.disabled)()),
     });
     let merged = merge_attributes(vec![props.attributes.clone(), owned]);
 

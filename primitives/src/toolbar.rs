@@ -3,6 +3,7 @@
 use crate::collection::{collection_item, use_collection_provider, use_item, CollectionState};
 use crate::direction::{use_direction, use_direction_signal, Direction, HorizontalNav};
 use crate::merge_attributes;
+use crate::state_attrs;
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
 
@@ -117,7 +118,7 @@ pub fn Toolbar(props: ToolbarProps) -> Element {
         // APG toolbar: a vertical toolbar says so (the role's implicit orientation is horizontal).
         aria_orientation: ctx.orientation(),
         "data-orientation": ctx.orientation(),
-        "data-disabled": (props.disabled)(),
+        ..state_attrs::disabled((props.disabled)()),
         "data-direction": direction.as_str(),
     });
     let merged = merge_attributes(vec![props.attributes.clone(), owned]);
@@ -205,7 +206,7 @@ pub fn ToolbarButton(props: ToolbarButtonProps) -> Element {
     let defaults = attributes!(button { r#type: "button" });
     let owned = attributes!(button {
         tabindex: "0",
-        "data-disabled": disabled(),
+        ..state_attrs::disabled(disabled()),
     });
     let merged = merge_attributes(vec![defaults, props.attributes.clone(), owned]);
 

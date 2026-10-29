@@ -102,6 +102,7 @@
 //! needs pinning), and find-in-page, selection and the accessibility tree reach every cell.
 //! [`VirtualJustifiedGrid`] is always windowed and has no placeholders.
 
+use crate::state_attrs;
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
 
@@ -753,8 +754,8 @@ fn VirtualGridContentVisibility(
                             role: "row",
                             "aria-rowindex": row + 1 + header_rows,
                             "aria-selected": selected_token(row_selected, row_key, row),
-                            "data-state": selected_state(row_selected, row_key, row),
                             style: "display: flex; width: {width}px; min-width: 100%; height: {height}px;",
+                            ..selected_state(row_selected, row_key, row),
                             {widths.iter().enumerate().map(|(column, &size)| {
                                 let pin = pinning.at(column);
                                 let style = pin.map_or_else(|| in_flow(size), pinned_cell_style);
@@ -1018,8 +1019,8 @@ fn VirtualGridWindowed(
                             role: "row",
                             "aria-rowindex": row.index() + 1 + header_rows,
                             "aria-selected": selected_token(row_selected, row_key, row.index()),
-                            "data-state": selected_state(row_selected, row_key, row.index()),
                             style: "position: absolute; inset-inline-start: 0; top: {row.start()}px; display: flex; width: {width}px; min-width: 100%; height: {row.size()}px;",
+                            ..selected_state(row_selected, row_key, row.index()),
                             {(0..start_count).map(|column| cell(row.index(), column, 0, 0))}
                             div { style: "position: relative; flex: none; width: {pane_width}px;",
                                 // An iterator of keyed elements, not a `for` around an
@@ -1921,10 +1922,8 @@ fn selected_state(
     row_selected: Option<Callback<String, bool>>,
     row_key: Option<Callback<usize, String>>,
     index: usize,
-) -> Option<&'static str> {
-    row_is_selected(row_selected, row_key, index)
-        .filter(|on| *on)
-        .map(|_| "selected")
+) -> Vec<Attribute> {
+    state_attrs::selected(row_is_selected(row_selected, row_key, index).unwrap_or(false))
 }
 
 /// Keeps the one-tab-stop promise when cells hold controls (APG grid, "focus the widget"

@@ -1,6 +1,7 @@
 //! Defines the [`Checkbox`] component and its subcomponents, which manage checkbox inputs with controlled state.
 
 use crate::default_checked::use_default_checked;
+use crate::state_attrs;
 use crate::{merge_attributes, use_controlled, use_form_reset_listener, use_unique_id};
 use dioxus::{document::eval, prelude::*};
 use dioxus_attributes::attributes;
@@ -137,6 +138,7 @@ pub struct CheckboxProps {
 ///
 /// The [`Checkbox`] component defines the following data attributes you can use to control styling:
 /// - `data-state`: The state of the checkbox. Possible values are `checked`, `indeterminate`, or `unchecked`.
+/// - `data-checked` / `data-unchecked` / `data-indeterminate`: Present (empty) in the matching state, absent otherwise.
 /// - `data-disabled`: Indicates if the checkbox is disabled. values are `true` or `false`.
 /// - `data-readonly`: Present (empty) while the checkbox is read-only, absent otherwise. The
 ///   element also carries `aria-readonly="true"` then.
@@ -169,10 +171,10 @@ pub fn Checkbox(props: CheckboxProps) -> Element {
         role: "checkbox",
         aria_checked: checked().to_aria_checked(),
         aria_required: props.required,
-        "data-state": checked().to_data_state(),
-        "data-disabled": props.disabled,
+        ..state_attrs::checked(checked()),
+        ..state_attrs::disabled(props.disabled),
         aria_readonly: (props.read_only)().then_some("true"),
-        "data-readonly": (props.read_only)().then_some(""),
+        ..state_attrs::readonly(props.read_only),
     });
     let merged = merge_attributes(vec![defaults, props.attributes.clone(), owned]);
 
@@ -256,6 +258,7 @@ pub fn Checkbox(props: CheckboxProps) -> Element {
 ///
 /// The [`CheckboxIndicator`] component defines the following data attributes you can use to control styling:
 /// - `data-state`: The state of the checkbox. Possible values are `checked`, `indeterminate`, or `unchecked`.
+/// - `data-checked` / `data-unchecked` / `data-indeterminate`: Present (empty) in the matching state, absent otherwise.
 /// - `data-disabled`: Indicates if the checkbox is disabled. values are `true` or `false`.
 #[component]
 pub fn CheckboxIndicator(
@@ -267,9 +270,9 @@ pub fn CheckboxIndicator(
     let checked = (ctx.checked)();
 
     let owned = attributes!(span {
-        "data-state": checked.to_data_state(),
-        "data-disabled": ctx.disabled,
-        "data-readonly": (ctx.read_only)().then_some(""),
+        ..state_attrs::checked(checked),
+        ..state_attrs::disabled(ctx.disabled),
+        ..state_attrs::readonly(ctx.read_only),
     });
     let merged = merge_attributes(vec![attributes, owned]);
 

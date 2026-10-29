@@ -1,6 +1,7 @@
 //! Defines the [`Tooltip`] component and its sub-components, which provide contextual information when hovering or focusing on elements.
 
 use crate::hover_card::{use_hover_timers, HoverTimers};
+use crate::state_attrs;
 use crate::{
     merge_attributes, use_animated_open, use_controlled, use_id_or, use_unique_id, AsChild,
     ContentAlign, ContentSide,
@@ -135,6 +136,7 @@ pub struct TooltipProps {
 ///
 /// The [`Tooltip`] component defines the following data attributes you can use to control styling:
 /// - `data-state`: Indicates the current state of the tooltip. Values are `open` or `closed`.
+/// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
 /// - `data-disabled`: Indicates if the tooltip is disabled. Values are `true` or `false`.
 #[component]
 pub fn Tooltip(props: TooltipProps) -> Element {
@@ -183,8 +185,8 @@ pub fn Tooltip(props: TooltipProps) -> Element {
     let attributes = merge_attributes(vec![
         props.attributes,
         attributes!(div {
-            "data-state": if open() { "open" } else { "closed" },
-            "data-disabled": (props.disabled)(),
+            ..state_attrs::open(open()),
+            ..state_attrs::disabled((props.disabled)()),
         }),
     ]);
 
@@ -302,6 +304,7 @@ pub fn TooltipTrigger(props: TooltipTriggerProps) -> Element {
         onfocus: handle_focus,
         onblur: handle_blur,
         onkeydown: handle_keydown,
+        ..state_attrs::popup_open((ctx.open)()),
     });
     let merged = merge_attributes(vec![base, props.attributes]);
     // Ties the trigger to the content's `position-anchor` so the content's
@@ -385,6 +388,7 @@ pub struct TooltipContentProps {
 ///
 /// The [`TooltipContent`] component defines the following data attributes you can use to control styling:
 /// - `data-state`: Indicates the current state of the tooltip. Values are `open` or `closed`.
+/// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
 /// - `data-side`: Indicates which side of the trigger the tooltip is positioned. Values are `top`, `right`, `bottom`, or `left`.
 /// - `data-align`: Indicates the alignment of the tooltip. Values are `start`, `center`, or `end`.
 #[component]
@@ -512,7 +516,7 @@ fn TooltipContentRendered(
         attributes!(div {
             role: "tooltip",
             popover: crate::top_layer::PopoverKind::Manual.as_str(),
-            "data-state": if open.cloned() { "open" } else { "closed" },
+            ..state_attrs::open(open.cloned()),
             "data-side": side.as_str(),
             "data-align": align.as_str(),
         }),
@@ -577,7 +581,7 @@ fn TooltipContentRendered(
         attributes,
         attributes!(div {
             role: "tooltip",
-            "data-state": if open.cloned() { "open" } else { "closed" },
+            ..state_attrs::open(open.cloned()),
             "data-side": side.as_str(),
             "data-align": align.as_str(),
         }),

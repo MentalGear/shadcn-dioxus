@@ -8,6 +8,7 @@ use dioxus_primitives::dioxus_attributes::attributes;
 use dioxus_primitives::drawer::{use_resolved_edge_side, EdgeSide};
 use dioxus_primitives::keyboard_inset::{use_keyboard_panel, KeyboardInset};
 use dioxus_primitives::merge_attributes;
+use dioxus_primitives::state_attrs;
 
 /// The side a [`Sheet`] slides in from. One type for both edge panels: this is
 /// [`EdgeSide`], the same enum `Drawer` takes (`DrawerSide` is its other alias). The
@@ -129,7 +130,7 @@ fn SheetPanel(
         "data-slot": "sheet-content",
         "data-dx-surface": "edge",
         "data-side": side.as_str(),
-        "data-state": if ctx.is_open() { "open" } else { "closed" },
+        ..state_attrs::open(ctx.is_open()),
     });
     let content_attributes = merge_attributes(vec![content_base, attributes]);
 

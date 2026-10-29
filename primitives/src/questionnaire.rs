@@ -30,6 +30,7 @@
 //! reads the answers from the event rather than navigating, and a dialog-method form outside a `<dialog>`
 //! cannot navigate even before hydration or with scripting off.
 
+use crate::state_attrs;
 use std::collections::HashSet;
 
 use crate::direction::{use_direction, Direction};
@@ -732,12 +733,12 @@ pub fn QuestionnaireItem(props: QuestionnaireItemProps) -> Element {
         aria_describedby: (!described.is_empty()).then(|| described.join(" ")),
         aria_invalid: invalid.then_some("true"),
         aria_keyshortcuts: key_shortcuts,
-        "data-active": active.then_some("true"),
+        ..state_attrs::presence_true(state_attrs::Flag::Active, active),
         "data-status": status.as_str(),
-        "data-invalid": invalid.then_some("true"),
+        ..state_attrs::presence_true(state_attrs::Flag::Invalid, invalid),
         "data-required": required.then_some("true"),
         "data-multiple": multiple.then_some("true"),
-        "data-disabled": disabled.then_some("true"),
+        ..state_attrs::presence_true(state_attrs::Flag::Disabled, disabled),
         onfocus: move |_| ctx.claim_focus(KeyTarget::Item(focus_name.clone())),
     });
     let merged = merge_attributes(vec![base, props.attributes]);
@@ -876,10 +877,10 @@ pub fn QuestionnaireChoice(props: QuestionnaireChoiceProps) -> Element {
     use_context_provider(|| ChoiceCtx { value });
     let state = choice_state(&ctx, &item.name.read(), &value.read());
     let base = attributes!(label {
-        "data-checked": state.checked.then_some("true"),
-        "data-unchecked": (!state.checked).then_some("true"),
-        "data-disabled": state.disabled.then_some("true"),
-        "data-invalid": state.invalid.then_some("true"),
+        ..state_attrs::presence(state_attrs::Flag::Checked, state.checked),
+        ..state_attrs::presence(state_attrs::Flag::Unchecked, !state.checked),
+        ..state_attrs::presence_true(state_attrs::Flag::Disabled, state.disabled),
+        ..state_attrs::presence_true(state_attrs::Flag::Invalid, state.invalid),
         "data-type": if state.multiple { "checkbox" } else { "radio" },
         "data-shortcut": state.shortcut.clone(),
     });
@@ -917,8 +918,8 @@ pub fn QuestionnaireChoiceInput(props: QuestionnaireChoiceInputProps) -> Element
         required: state.required,
         aria_invalid: state.invalid.then_some("true"),
         aria_keyshortcuts: state.key_shortcuts.clone(),
-        "data-checked": state.checked.then_some("true"),
-        "data-unchecked": (!state.checked).then_some("true"),
+        ..state_attrs::presence(state_attrs::Flag::Checked, state.checked),
+        ..state_attrs::presence(state_attrs::Flag::Unchecked, !state.checked),
         onfocus: move |_| {
             ctx.claim_focus(KeyTarget::Answer {
                 item: focus_item.clone(),
@@ -1089,7 +1090,7 @@ pub fn QuestionnaireError(props: QuestionnaireErrorProps) -> Element {
         id: id,
         hidden: !invalid,
         role: invalid.then_some("alert"),
-        "data-invalid": invalid.then_some("true"),
+        ..state_attrs::presence_true(state_attrs::Flag::Invalid, invalid),
     });
     let merged = merge_attributes(vec![base, props.attributes]);
     let message = if required {

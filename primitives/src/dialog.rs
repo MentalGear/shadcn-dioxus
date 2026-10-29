@@ -75,6 +75,7 @@
 //! position, clipped to a `content-visibility` ancestor, the moment it left the
 //! top layer).
 
+use crate::state_attrs;
 #[cfg(not(feature = "web"))]
 use dioxus::document;
 use dioxus::prelude::*;
@@ -224,6 +225,7 @@ pub struct DialogRootProps {
 ///
 /// The [`DialogRoot`] component defines the following data attributes you can use to control styling:
 /// - `data-state`: Indicates if the dialog is open or closed. It can be either "open" or "closed".
+/// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
 #[component]
 pub fn DialogRoot(props: DialogRootProps) -> Element {
     // Installs the permanent scrollbar-gutter baseline as early as possible
@@ -263,7 +265,7 @@ pub fn DialogRoot(props: DialogRootProps) -> Element {
         props.attributes,
         attributes!(div {
             aria_hidden: (!open()).then_some("true"),
-            "data-state": if open() { "open" } else { "closed" },
+            ..state_attrs::open(open()),
             // On the root too, because without a top layer (the non-web arm,
             // `is_modal: false`) this wrapper is what a stylesheet paints the scrim on.
             "data-dx-overlay": overlay_off(props.overlay),
@@ -361,6 +363,7 @@ pub struct DialogContentProps {
 ///
 /// The [`DialogRoot`] component defines the following data attributes you can use to control styling:
 /// - `data-state`: Indicates if the dialog is open or closed. It can be either "open" or "closed".
+/// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
 #[component]
 pub fn DialogContent(props: DialogContentProps) -> Element {
     let ctx: DialogCtx = use_context();
@@ -599,7 +602,7 @@ fn DialogContentModal(
             // `<dialog>` open (and modal) while it animates out
             // (`crate::use_dialog_open_driver`), so `[open]` does not say "closing" and a
             // stylesheet keys the exit on `[data-state="closed"]` instead.
-            "data-state": if open() { "open" } else { "closed" },
+            ..state_attrs::open(open()),
             "data-dx-overlay": overlay_off(ctx.overlay),
         }),
     ]);

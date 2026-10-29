@@ -8,6 +8,7 @@
 //! `dropdown_menu.rs`'s equivalent build on.
 
 use crate::sleep::sleep;
+use crate::state_attrs;
 use crate::{
     collection::{
         collection_item, use_collection_provider, use_deferred_collection_focus, use_item,
@@ -194,6 +195,7 @@ pub struct ContextMenuProps {
 ///
 /// The [`ContextMenu`] component defines the following data attributes you can use to control styling:
 /// - `data-state`: Indicates if the state of the context menu. Values are `open` or `closed`.
+/// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
 /// - `data-disabled`: Indicates if the context menu is disabled. values are `true` or `false`.
 /// - `data-direction`: The resolved text direction. Values are `ltr` or `rtl`.
 #[component]
@@ -297,8 +299,8 @@ pub fn ContextMenu(props: ContextMenuProps) -> Element {
             id: root_id,
             tabindex: 0,
             dir: direction.as_str(),
-            "data-state": if open() { "open" } else { "closed" },
-            "data-disabled": (props.disabled)(),
+            ..state_attrs::open(open()),
+            ..state_attrs::disabled((props.disabled)()),
             "data-direction": direction.as_str(),
         }),
         props.attributes,
@@ -586,6 +588,7 @@ pub struct ContextMenuContentProps {
 ///
 /// The [`ContextMenuContent`] component defines the following data attributes you can use to control styling:
 /// - `data-state`: Indicates if the state of the context menu. Values are `open` or `closed`.
+/// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
 #[component]
 pub fn ContextMenuContent(props: ContextMenuContentProps) -> Element {
     let ctx: ContextMenuCtx = use_context();
@@ -804,7 +807,7 @@ fn ContextMenuContentRendered(
             aria_orientation: "vertical",
             popover: crate::top_layer::PopoverKind::Manual.as_str(),
             tabindex: if focused() { "0" } else { "-1" },
-            "data-state": if open() { "open" } else { "closed" },
+            ..state_attrs::open(open()),
         }),
     ]);
 
@@ -945,7 +948,7 @@ fn ContextMenuContentRendered(
             role: crate::menu_semantics::MENU_ROLE,
             aria_orientation: "vertical",
             tabindex: if focused() { "0" } else { "-1" },
-            "data-state": if open() { "open" } else { "closed" },
+            ..state_attrs::open(open()),
         }),
     ]);
 
@@ -1067,6 +1070,7 @@ pub struct ContextMenuItemProps {
 ///
 /// The [`ContextMenuItem`] component defines the following data attributes you can use to control styling:
 /// - `data-disabled`: Indicates if the item is disabled. Possible values are `true` or `false`.
+/// - `data-highlighted`: Present (empty) while this item holds the roving focus, absent otherwise.
 #[component]
 pub fn ContextMenuItem(props: ContextMenuItemProps) -> Element {
     let mut ctx: ContextMenuCtx = use_context();
@@ -1116,7 +1120,8 @@ pub fn ContextMenuItem(props: ContextMenuItemProps) -> Element {
             role: crate::menu_semantics::MENU_ITEM_ROLE,
             tabindex: tab_index,
             aria_disabled: disabled(),
-            "data-disabled": disabled(),
+            ..state_attrs::disabled(disabled()),
+            ..state_attrs::presence(state_attrs::Flag::Highlighted, focused()),
         }),
         menu_item::item_style_attributes(props.variant, props.inset),
     ]);
@@ -1217,7 +1222,9 @@ pub type ContextMenuRadioItemProps = MenuRadioItemProps;
 ///
 /// The [`ContextMenuCheckboxItem`] component defines the following data attributes you can use to control styling:
 /// - `data-state`: Whether the item is checked. Values are `checked` or `unchecked`.
+/// - `data-checked` / `data-unchecked`: Present (empty) while checked / unchecked, absent otherwise.
 /// - `data-disabled`: Indicates if the item is disabled. Possible values are `true` or `false`.
+/// - `data-highlighted`: Present (empty) while this item holds the roving focus, absent otherwise.
 #[component]
 pub fn ContextMenuCheckboxItem(props: ContextMenuCheckboxItemProps) -> Element {
     let state = menu_item::use_checkbox_state(
@@ -1291,7 +1298,9 @@ pub fn ContextMenuRadioGroup(props: ContextMenuRadioGroupProps) -> Element {
 ///
 /// The [`ContextMenuRadioItem`] component defines the following data attributes you can use to control styling:
 /// - `data-state`: Whether the item is checked. Values are `checked` or `unchecked`.
+/// - `data-checked` / `data-unchecked`: Present (empty) while checked / unchecked, absent otherwise.
 /// - `data-disabled`: Indicates if the item is disabled. Possible values are `true` or `false`.
+/// - `data-highlighted`: Present (empty) while this item holds the roving focus, absent otherwise.
 #[component]
 pub fn ContextMenuRadioItem(props: ContextMenuRadioItemProps) -> Element {
     let state = menu_item::use_radio_state(props.value);
@@ -1435,7 +1444,7 @@ fn context_checkable_item(state: CheckableState, common: CheckableCommon) -> Ele
     let attributes = merge_attributes(vec![
         order.marker_attribute(),
         attributes,
-        state.owned_attributes(disabled(), inset, if focused() { "0" } else { "-1" }),
+        state.owned_attributes(disabled(), inset, focused()),
     ]);
 
     rsx! {
@@ -1695,6 +1704,8 @@ pub struct ContextMenuSubTriggerProps {
 /// attributes you can use to control styling:
 /// - `data-state`: Indicates whether the submenu is open. Values are
 ///   `open` or `closed`.
+/// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
+/// - `data-popup-open`: Present (empty) while the popup this trigger controls is open.
 /// - `data-disabled`: Indicates if the sub-trigger is disabled. Values are
 ///   `true` or `false`.
 #[component]
@@ -1736,8 +1747,9 @@ pub fn ContextMenuSubTrigger(props: ContextMenuSubTriggerProps) -> Element {
         aria_expanded: sub.open,
         aria_controls: sub.content_id.cloned(),
         aria_disabled: disabled(),
-        "data-disabled": disabled(),
-        "data-state": if (sub.open)() { "open" } else { "closed" },
+        ..state_attrs::disabled(disabled()),
+        ..state_attrs::presence(state_attrs::Flag::Highlighted, focused()),
+        ..state_attrs::trigger_open((sub.open)()),
         tabindex: if focused() { "0" } else { "-1" },
 
         onmounted,
@@ -1837,6 +1849,7 @@ pub struct ContextMenuSubContentProps {
 /// attributes you can use to control styling:
 /// - `data-state`: Indicates the current state of the submenu. Values are
 ///   `open` or `closed`.
+/// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
 #[component]
 pub fn ContextMenuSubContent(props: ContextMenuSubContentProps) -> Element {
     let mut sub: crate::menu_sub::SubMenuState = use_context();
@@ -1959,7 +1972,7 @@ fn ContextMenuSubContentRendered(
             popover: crate::top_layer::PopoverKind::Auto.as_str(),
             dir: (ctx.direction)().as_str(),
             "data-direction": (ctx.direction)().as_str(),
-            "data-state": if open() { "open" } else { "closed" },
+            ..state_attrs::open(open()),
         }),
     ]);
     let attributes = crate::top_layer::anchored_content_attributes(
@@ -2099,7 +2112,7 @@ fn ContextMenuSubContentRendered(
         attributes!(div {
             role: crate::menu_semantics::MENU_ROLE,
             dir: (ctx.direction)().as_str(),
-            "data-state": if open() { "open" } else { "closed" },
+            ..state_attrs::open(open()),
             "data-direction": (ctx.direction)().as_str(),
         }),
     ]);
@@ -2239,6 +2252,7 @@ pub struct ContextMenuSubItemProps {
 /// attributes you can use to control styling:
 /// - `data-disabled`: Indicates if the item is disabled. Possible values
 ///   are `true` or `false`.
+/// - `data-highlighted`: Present (empty) while this item holds the roving focus, absent otherwise.
 #[component]
 pub fn ContextMenuSubItem(props: ContextMenuSubItemProps) -> Element {
     let mut ctx: ContextMenuCtx = use_context();
@@ -2297,7 +2311,8 @@ pub fn ContextMenuSubItem(props: ContextMenuSubItemProps) -> Element {
             role: crate::menu_semantics::MENU_ITEM_ROLE,
             tabindex: tab_index,
             aria_disabled: disabled(),
-            "data-disabled": disabled(),
+            ..state_attrs::disabled(disabled()),
+            ..state_attrs::presence(state_attrs::Flag::Highlighted, focused()),
         }),
         menu_item::item_style_attributes(props.variant, props.inset),
     ]);

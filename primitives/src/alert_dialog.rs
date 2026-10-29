@@ -20,6 +20,7 @@
 //!   discourages light-dismissing an alert dialog), and the web arm has no
 //!   equivalent either.
 
+use crate::state_attrs;
 #[cfg(not(feature = "web"))]
 use crate::use_global_escape_listener;
 use crate::{merge_attributes, use_animated_open, use_controlled, use_id_or, use_unique_id};
@@ -107,6 +108,7 @@ pub struct AlertDialogRootProps {
 ///
 /// The [`AlertDialogRoot`] component defines the following data attributes you can use to control styling:
 /// - `data-state`: Indicates if the alert dialog is open or closed. It can be either "open" or "closed".
+/// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
 #[component]
 pub fn AlertDialogRoot(props: AlertDialogRootProps) -> Element {
     // See `DialogRoot`'s identical call for why this must be at the root,
@@ -139,7 +141,7 @@ pub fn AlertDialogRoot(props: AlertDialogRootProps) -> Element {
     let attributes = merge_attributes(vec![
         props.attributes,
         attributes!(div {
-            "data-state": if open() { "open" } else { "closed" },
+            ..state_attrs::open(open()),
             // On the root too: without a top layer this wrapper is what a stylesheet paints the scrim on.
             "data-dx-overlay": crate::dialog::overlay_off(props.overlay),
         }),
@@ -344,7 +346,7 @@ pub fn AlertDialogContent(props: AlertDialogContentProps) -> Element {
             aria_describedby: ctx.describedby.clone(),
             // The dialog's own state: closing keeps it open (modal) while it animates out, so a
             // stylesheet keys the exit on `[data-state="closed"]`. See `crate::use_dialog_open_driver`.
-            "data-state": if open() { "open" } else { "closed" },
+            ..state_attrs::open(open()),
             "data-dx-overlay": crate::dialog::overlay_off(ctx.overlay),
         }),
     ]);

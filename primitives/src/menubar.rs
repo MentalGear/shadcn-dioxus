@@ -1,5 +1,6 @@
 //! Defines the [`Menubar`] component and its sub-components.
 
+use crate::state_attrs;
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
 
@@ -172,7 +173,7 @@ pub fn Menubar(props: MenubarProps) -> Element {
         attributes!(div {
             role: "menubar",
             dir: direction.as_str(),
-            "data-disabled": (props.disabled)(),
+            ..state_attrs::disabled((props.disabled)()),
             "data-direction": direction.as_str(),
             tabindex: (!ctx.focus.any_focused()).then_some("0"),
         }),
@@ -328,6 +329,7 @@ pub struct MenubarMenuProps {
 ///
 /// The [`MenubarMenu`] component defines the following data attributes you can use to control styling:
 /// - `data-state`: Indicates if the menu is open or closed. Values are `open` or `closed`.
+/// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
 /// - `data-disabled`: Indicates if the menu is disabled. Values are `true` or `false`.
 #[component]
 pub fn MenubarMenu(props: MenubarMenuProps) -> Element {
@@ -391,8 +393,8 @@ pub fn MenubarMenu(props: MenubarMenuProps) -> Element {
         attributes!(div {
             id: root_id.cloned(),
             role: crate::menu_semantics::MENU_ROLE,
-            "data-state": if is_open() { "open" } else { "closed" },
-            "data-disabled": (ctx.disabled)() || (props.disabled)(),
+            ..state_attrs::open(is_open()),
+            ..state_attrs::disabled((ctx.disabled)() || (props.disabled)()),
         }),
         props.attributes,
     ]);
@@ -754,6 +756,7 @@ pub struct MenubarContentProps {
 ///
 /// The [`MenubarContent`] component defines the following data attributes you can use to control styling:
 /// - `data-state`: Indicates if the menu is open or closed. Values are `open` or `closed`.
+/// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
 #[component]
 pub fn MenubarContent(props: MenubarContentProps) -> Element {
     let mut menu_ctx: MenubarMenuContext = use_context();
@@ -924,7 +927,7 @@ fn MenubarContentRendered(
         attributes!(div {
             role: crate::menu_semantics::MENU_ROLE,
             popover: crate::top_layer::PopoverKind::Auto.as_str(),
-            "data-state": if open() { "open" } else { "closed" },
+            ..state_attrs::open(open()),
         }),
     ]);
     // Folds the caller's own `style` together with the anchor binding into
@@ -991,7 +994,7 @@ fn MenubarContentRendered(
         // construction above (`dev-docs/backlog.md` row 93).
         attributes!(div {
             role: crate::menu_semantics::MENU_ROLE,
-            "data-state": if (menu_ctx.is_open)() { "open" } else { "closed" },
+            ..state_attrs::open((menu_ctx.is_open)()),
         }),
     ]);
 
@@ -1118,6 +1121,7 @@ pub struct MenubarItemProps {
 ///
 /// The [`MenubarItem`] component defines the following data attributes you can use to control styling:
 /// - `data-disabled`: Indicates if the item is disabled. Values are `true` or `false`.
+/// - `data-highlighted`: Present (empty) while this item holds the roving focus, absent otherwise.
 #[component]
 pub fn MenubarItem(props: MenubarItemProps) -> Element {
     let mut ctx: MenubarContext = use_context();
@@ -1155,7 +1159,8 @@ pub fn MenubarItem(props: MenubarItemProps) -> Element {
             // tells assistive tech this item is disabled; `ContextMenuItem`
             // (`context_menu.rs`) sets this too.
             aria_disabled: disabled(),
-            "data-disabled": disabled(),
+            ..state_attrs::disabled(disabled()),
+            ..state_attrs::presence(state_attrs::Flag::Highlighted, focused()),
             tabindex: if focused() { "0" } else { "-1" },
         }),
         menu_item::item_style_attributes(props.variant, props.inset),
@@ -1281,7 +1286,9 @@ pub type MenubarRadioItemProps = MenuRadioItemProps;
 ///
 /// The [`MenubarCheckboxItem`] component defines the following data attributes you can use to control styling:
 /// - `data-state`: Whether the item is checked. Values are `checked` or `unchecked`.
+/// - `data-checked` / `data-unchecked`: Present (empty) while checked / unchecked, absent otherwise.
 /// - `data-disabled`: Indicates if the item is disabled. Values are `true` or `false`.
+/// - `data-highlighted`: Present (empty) while this item holds the roving focus, absent otherwise.
 #[component]
 pub fn MenubarCheckboxItem(props: MenubarCheckboxItemProps) -> Element {
     let state = menu_item::use_checkbox_state(
@@ -1356,7 +1363,9 @@ pub fn MenubarRadioGroup(props: MenubarRadioGroupProps) -> Element {
 ///
 /// The [`MenubarRadioItem`] component defines the following data attributes you can use to control styling:
 /// - `data-state`: Whether the item is checked. Values are `checked` or `unchecked`.
+/// - `data-checked` / `data-unchecked`: Present (empty) while checked / unchecked, absent otherwise.
 /// - `data-disabled`: Indicates if the item is disabled. Values are `true` or `false`.
+/// - `data-highlighted`: Present (empty) while this item holds the roving focus, absent otherwise.
 #[component]
 pub fn MenubarRadioItem(props: MenubarRadioItemProps) -> Element {
     let state = menu_item::use_radio_state(props.value);
@@ -1493,7 +1502,7 @@ fn menubar_checkable_item(state: CheckableState, common: CheckableCommon) -> Ele
     let attributes = merge_attributes(vec![
         order.marker_attribute(),
         attributes,
-        state.owned_attributes(disabled(), inset, if focused() { "0" } else { "-1" }),
+        state.owned_attributes(disabled(), inset, focused()),
     ]);
 
     rsx! {

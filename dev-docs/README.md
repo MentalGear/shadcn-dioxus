@@ -29,6 +29,7 @@ or phase number, so those headings and ids stay where they are.
 | [`dev-loop.md`](./dev-loop.md) | The measured fast dev loop: edit, wait, inspect, one spec, suite. |
 | [`dx-serve-hot-reload.md`](./dx-serve-hot-reload.md) | How to trust (and not trust) a `dx serve` result when verifying a UI fix. |
 | [`agent-model-fit.md`](./agent-model-fit.md) | Which agent model fits which lane. |
+| [`state-attributes.md`](./state-attributes.md) | The `data-*` state vocabulary: the one helper (`primitives/src/state_attrs.rs`) that emits Radix's `data-state` and Base UI's presence attributes together, the legacy valued booleans, and the gate (`check-state-attributes`). Read before adding a state attribute to a component. |
 | [`history-in-comments.md`](./history-in-comments.md) | The rule that comments describe the current state and link history by backlog row, and the ratchets that hold it. |
 | [`preview-composition.md`](./preview-composition.md) | The one architectural rule of `preview/` (themed wrappers only), enforced by `scripts/check-preview-composition.sh`. |
 | [`motion.md`](./motion.md) | How animation works: tokens, reduced motion, compositor-only loops, visibility gating. Also on the site's `/docs`. |

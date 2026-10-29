@@ -1,6 +1,7 @@
 //! Defines the [`HoverCard`] component and its subcomponents.
 
 use crate::menu_sub::{use_delayed_action, DelayedAction};
+use crate::state_attrs;
 use crate::{
     merge_attributes, use_animated_open, use_controlled, use_id_or, use_unique_id, ContentAlign,
     ContentSide,
@@ -275,6 +276,7 @@ pub struct HoverCardProps {
 ///
 /// The [`HoverCard`] component defines the following data attributes you can use to control styling:
 /// - `data-state`: Indicates the current state of the hover card. Values are `open` or `closed`.
+/// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
 /// - `data-disabled`: Indicates whether the item is disabled. Values are `true` or `false`.
 #[component]
 pub fn HoverCard(props: HoverCardProps) -> Element {
@@ -309,8 +311,8 @@ pub fn HoverCard(props: HoverCardProps) -> Element {
     let attributes = merge_attributes(vec![
         props.attributes,
         attributes!(div {
-            "data-state": if open() { "open" } else { "closed" },
-            "data-disabled": (props.disabled)(),
+            ..state_attrs::open(open()),
+            ..state_attrs::disabled((props.disabled)()),
         }),
     ]);
 
@@ -420,6 +422,7 @@ pub fn HoverCardTrigger(props: HoverCardTriggerProps) -> Element {
             tabindex: "0", // Make the trigger focusable
             role: "button",
             aria_describedby: (ctx.open)().then(|| ctx.content_id.cloned()),
+            ..state_attrs::popup_open((ctx.open)()),
         }),
     ]);
 
@@ -519,6 +522,7 @@ pub struct HoverCardContentProps {
 ///
 /// The [`HoverCardContent`] component defines the following data attributes you can use to control styling:
 /// - `data-state`: Indicates the current state of the hover card. Values are `open` or `closed`.
+/// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
 /// - `data-side`: Indicates the side of the trigger where the hover card is placed. Values are `top`, `right`, `bottom`, or `left`.
 /// - `data-align`: Indicates the alignment of the hover card relative to the trigger. Values are `start`, `center`, or `end`.
 #[component]
@@ -630,7 +634,7 @@ fn HoverCardContentRendered(
         attributes!(div {
             role: "tooltip",
             popover: crate::top_layer::PopoverKind::Manual.as_str(),
-            "data-state": if is_open { "open" } else { "closed" },
+            ..state_attrs::open(is_open),
             "data-side": side.as_str(),
             "data-align": align.as_str(),
             hidden: dormant,
@@ -709,7 +713,7 @@ fn HoverCardContentRendered(
         attributes,
         attributes!(div {
             role: "tooltip",
-            "data-state": if is_open { "open" } else { "closed" },
+            ..state_attrs::open(is_open),
             "data-side": side.as_str(),
             "data-align": align.as_str(),
             hidden: dormant,

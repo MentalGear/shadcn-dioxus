@@ -87,6 +87,7 @@
 //! dispatcher that would actually fire the action on that key combo is a
 //! separate, unscoped feature -- not built here, per the plan doc.
 
+use crate::state_attrs;
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
 
@@ -332,7 +333,7 @@ pub fn Command<T: Clone + PartialEq + 'static>(props: CommandProps<T>) -> Elemen
     let attributes = merge_attributes(vec![
         props.attributes,
         attributes!(div {
-            "data-disabled": (props.disabled)(),
+            ..state_attrs::disabled((props.disabled)()),
         }),
     ]);
 
@@ -765,9 +766,9 @@ pub fn CommandItem<T: PartialEq + Clone + 'static>(props: CommandItemProps<T>) -
             role: "option",
             aria_selected: (option.selected)(),
             aria_disabled: (option.disabled)(),
-            "data-highlighted": (option.focused)(),
-            "data-disabled": (option.disabled)(),
-            "data-selected": (option.selected)(),
+            ..state_attrs::valued(state_attrs::Flag::Highlighted, (option.focused)()),
+            ..state_attrs::disabled((option.disabled)()),
+            ..state_attrs::valued(state_attrs::Flag::Selected, (option.selected)()),
         }),
     ]);
 

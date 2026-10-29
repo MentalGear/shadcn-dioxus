@@ -4,6 +4,7 @@ use dioxus_primitives::AsChild;
 use dioxus_primitives::activity::use_motion_when;
 use dioxus_primitives::dioxus_attributes::attributes;
 use dioxus_primitives::merge_attributes;
+use dioxus_primitives::state_attrs;
 use dioxus_primitives::scroll_area::{ScrollArea, ScrollDirection, ScrollFade};
 
 /// The upload lifecycle of an [`Attachment`]. `Uploading` and `Processing`
@@ -129,7 +130,7 @@ pub fn Attachment(
     // `data-state` / `data-size` / `data-orientation` reflect this wrapper's own
     // typed props, not caller defaults -- owned-wins.
     let owned = attributes!(div {
-        "data-state": state().class(),
+        ..state_attrs::state(state().class()),
         "data-size": size.class(),
         "data-orientation": orientation.class(),
     });

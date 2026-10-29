@@ -87,6 +87,7 @@ gates=(
   "check-test-harness-controlled|scripts/check-test-harness-controlled.sh"
   "check-attr-spread-collision|scripts/check-attr-spread-collision.sh"
   "check-direction-keys|scripts/check-direction-keys.sh"
+  "check-state-attributes|scripts/check-state-attributes.sh"
   "check-render-keys|scripts/check-render-keys.sh"
   "check-render-clock|scripts/check-render-clock.sh"
   "check-collection-derive|scripts/check-collection-derive.sh"
