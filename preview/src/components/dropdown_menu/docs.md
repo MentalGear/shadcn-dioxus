@@ -157,6 +157,10 @@ See the `shortcuts` and `destructive` variants.
 
 `DropdownMenuContent` opens below its trigger, start-aligned with it, 4px away. `side` (`ContentSide::Top`, `Right`, `Bottom` or `Left`), `align` (`ContentAlign::Start`, `Center` or `End`) and `side_offset` (the gap, in px) move it. A side without room flips to the opposite one, and the side the menu was actually placed on is on the content as `data-placed-side`. See the `placement` variant.
 
+## Page scrolling
+
+The page stays scrollable while a `DropdownMenu` is open, and the menu stays open while the page scrolls: it is anchored to its trigger, may not be fully in view when it opens, and the user must be able to scroll to it. The menu takes no scroll lock and has no `modal` prop; outside a press on the page closes it. Only the modal surfaces (`Dialog`, `AlertDialog`, `Sheet`, `Drawer`, a `Popover` with `is_modal: true`) and `ContextMenu` lock the page.
+
 ## Direction / RTL
 
 `DropdownMenu` accepts a `dir: Option<Direction>` prop, inherited by every `DropdownMenuSub`. Under RTL: the submenu open key is `ArrowLeft` instead of `ArrowRight`, the close key `ArrowRight` instead of `ArrowLeft` (`Escape` always closes regardless of direction), and each `DropdownMenuSubContent` opens to the left of its trigger instead of the right. See the `rtl` variant.

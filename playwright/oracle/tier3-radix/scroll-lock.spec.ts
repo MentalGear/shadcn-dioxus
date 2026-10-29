@@ -5,63 +5,52 @@
  *
  * Rule: while a modal surface is open, the page behind it must not scroll.
  * No W3C standard specifies this -- it is a UX convention several mature
- * libraries implement. Radix's implementation is `react-remove-scroll`
- * (https://github.com/theKashey/react-remove-scroll), which every
- * Radix Dialog/AlertDialog/DropdownMenu/etc. wraps its content in via
- * `RemoveScroll` when the surface is modal. `@radix-ui/react-dialog`'s
- * `DialogContent` passes `RemoveScroll.Root` unconditionally (gated on
- * `modal`); `@radix-ui/react-dropdown-menu` and `@radix-ui/react-context-menu`
- * take an explicit `modal` prop (default `true`) that gates the same
- * behavior on their menu content -- the shape this file's `modal` prop on
- * `DropdownMenu`/`ContextMenu` mirrors.
+ * libraries implement. Base UI's `useScrollLock` (`@base-ui/utils`) sets
+ * `overflow: hidden` on the element that scrolls the viewport and keeps a
+ * classic scrollbar's width with `scrollbar-gutter: stable`; Radix's
+ * `react-remove-scroll` intercepts wheel/touch/key events instead. This
+ * repo follows Base UI's method, implemented at `primitives/src/scroll_lock.rs`
+ * (see that file's header for the adaptation notes, the nesting-aware counter
+ * and the release timing).
  *
- * Source for our own implementation:
- * `dignifiedquire/dx-components` (MIT OR Apache-2.0)
- * `primitives/src/scroll_lock.rs` @ 5af3cc292559a0e8d73c7b9a827c4ca08ef34d99 (history-ok: pinned upstream revision),
- * adapted per dev-docs/reference/platform-rationale.md §5 and implemented at
- * `primitives/src/scroll_lock.rs` in this repo -- see that file's header for
- * the full adaptation note (a Rust-side nesting-aware counter in place of
- * the dq base's JS global, reproducing sarendipitee/dx-components'
- * `overlay.rs` unlock-flash guard).
+ * WHO LOCKS (owner decision, backlog row 479): Dialog, AlertDialog
+ * (and so Sheet and Drawer), a Popover with `is_modal: true`, and ContextMenu.
+ * An anchored overlay -- DropdownMenu, Menubar, Select, a default Popover --
+ * leaves the page scrollable and stays open while the page scrolls; "DropdownMenu
+ * leaves the page scrollable" below pins that for the dropdown.
  *
  * Fixture: the nested-dialog case uses the dialog demo's "Open Nested Dialog"
  * button (`preview/src/components/dialog/variants/main/mod.rs`,
  * dev-docs/plan.md Phase 3.2).
  *
  * Select does not lock (dev-docs/backlog.md row 478): its page-scroll behaviour is asserted in
- * `playwright/select.spec.ts`. `Menubar` is correctly excluded throughout -- it is never modal.
+ * `playwright/select.spec.ts`.
  *
- * KNOWN GAP, both in the dq base and here (see
- * dev-docs/reference/platform-rationale.md §5): no iOS momentum-scroll handling.
- * Radix delegates that to `react-remove-scroll`, which this crate has no
- * equivalent of, and this file does not test for it -- only that
- * `window.scrollY` doesn't move while locked, on a desktop Chromium
- * mouse-wheel attempt. It also does not (and, per the note on
- * `assertScrollIsLocked` below, should not) assert that a scripted
- * `window.scrollTo()` call is blocked -- the lock's event interception never clamps
- * that, in this implementation or Radix's.
+ * `assertScrollIsLocked` checks the page against a mouse wheel and (in the
+ * touch block) a touch pan. It does not assert that a scripted
+ * `window.scrollTo()` call is blocked: under `overflow: hidden` a script can
+ * still move the page, and the dialog's own `showModal()` focus scroll relies
+ * on that being restored (see "Dialog does not leave the page permanently
+ * scrolled"). iOS momentum scroll is a device check, not a Playwright one.
  *
- * LAYOUT-SHIFT ASSERTIONS (below, `assertNoHorizontalShift`): scroll-gap
- * compensation is exercised too, per
- * `dev-docs/archive/research/phase4-spike-findings.md` "Round 2 -- solved by construction".
- * A lock that changed `<html>`'s `overflow` (or its overflow amount) would remove a classic
- * (non-overlay) scrollbar's reserved space and shift everything horizontally by the
- * scrollbar's width the instant the lock engages (15px under a forced real
- * scrollbar, see `playwright/xvfb.local.config.ts`). That shift is invisible under this repo's default headless
- * Chromium, which renders 0-width overlay scrollbars even for a genuinely scrollable
- * page -- so `assertNoHorizontalShift` is trivially satisfied there and only
- * bites for real when run under `xvfb.local.config.ts`. Both runs matter:
- * headless proves the lock doesn't *introduce* a shift on overlay-scrollbar
- * platforms (a transient `scrollbar-gutter` toggle is falsified for exactly
- * this reason -- see the findings doc), and the Xvfb run proves it
- * leaves classic-scrollbar platforms unshifted.
+ * LAYOUT-SHIFT ASSERTIONS (below, `assertNoHorizontalShift`): a lock that hid
+ * `<html>`'s overflow without reserving a classic (non-overlay) scrollbar's
+ * space would shift everything horizontally by the scrollbar's width the
+ * instant the lock engages (15px under a forced real scrollbar, see
+ * `playwright/xvfb.local.config.ts`). That shift is invisible under this repo's
+ * default headless Chromium, which renders 0-width overlay scrollbars even for a
+ * genuinely scrollable page -- so `assertNoHorizontalShift` is trivially
+ * satisfied there and only bites for real when run under `xvfb.local.config.ts`.
+ * Both runs matter: headless proves the lock doesn't *introduce* a shift on
+ * overlay-scrollbar platforms (a gutter reserved at lock time would), and the
+ * Xvfb run proves it leaves classic-scrollbar platforms unshifted.
  */
 
 import { test, expect } from "../../fixtures";
 import { type Page } from "@playwright/test";
 import { BASE_URL } from "../../base-url";
 import { gotoHydrated } from "../../hydration";
-import { measureAtRest, readStatic } from "../../animations";
+import { measureAtRest, readStatic, staticBox } from "../../animations";
 import { demoRole } from "../../demo-frame";
 import { pageMetrics } from "../../viewport-box";
 
@@ -89,17 +78,14 @@ async function assertPageIsScrollable(page: Page) {
  * Attempts to scroll the page the way a person actually would -- a mouse
  * wheel over the page -- and asserts `window.scrollY` did not move.
  *
- * Deliberately does NOT also try `window.scrollTo()`: the lock (event
- * interception, like Radix's
- * `react-remove-scroll`; see scroll_lock.rs's module doc) blocks wheel-, touch-, and
- * keyboard-initiated scrolling, but does not clamp a direct, scripted
- * `scrollTo()`/`scrollTop =` call, which every browser still honors
- * regardless of overflow. On this page, with
- * the lock held, `page.mouse.wheel()` leaves `scrollY` at 0,
- * while `window.scrollTo()` still moves it. Radix's own lock has the same
- * property (`react-remove-scroll` intercepts wheel/touch/key events; it does
- * not override `Element.scrollTo`), so asserting against a scripted
- * `scrollTo()` here would fail a correct implementation, not just ours.
+ * Deliberately does NOT also try `window.scrollTo()`: the lock (`overflow:
+ * hidden` on the viewport scroller; see scroll_lock.rs's module doc) stops
+ * wheel-, touch-, keyboard- and scrollbar-initiated scrolling, but a direct,
+ * scripted `scrollTo()`/`scrollTop =` call is honored by every browser
+ * regardless of overflow. On this page, with the lock held,
+ * `page.mouse.wheel()` leaves `scrollY` alone, while `window.scrollTo()` still
+ * moves it, so asserting against a scripted `scrollTo()` here would fail a
+ * correct implementation.
  */
 async function assertScrollIsLocked(page: Page) {
   const before = await page.evaluate(() => window.scrollY);
@@ -309,8 +295,30 @@ test.describe("Popover (non-modal default) never takes the scroll lock", () => {
   });
 });
 
-test.describe("DropdownMenu locks and releases page scroll", () => {
-  test("scroll is locked while open (modal by default) and restored after Escape", async ({
+/**
+ * A touch pan of the page: a real one-finger drag through CDP (`Input.dispatchTouchEvent`) starting at (x, y)
+ * and moving the finger up by `distance` px, which scrolls the page down when nothing locks it. Needs a
+ * `hasTouch` context.
+ */
+async function touchScrollPage(page: Page, x: number, y: number, distance: number) {
+  const cdp = await page.context().newCDPSession(page);
+  const send = (type: string, points: { x: number; y: number }[]) =>
+    cdp.send("Input.dispatchTouchEvent", { type, touchPoints: points.map((p, i) => ({ ...p, id: i + 1 })) });
+  await send("touchStart", [{ x, y }]);
+  for (let step = 1; step <= 10; step++) {
+    await send("touchMove", [{ x, y: y - (distance * step) / 10 }]);
+    await page.waitForTimeout(16);
+  }
+  await send("touchEnd", []);
+  await cdp.detach();
+  await page.waitForTimeout(300);
+}
+
+const lockMarker = (page: Page) =>
+  page.evaluate(() => (window as unknown as { __dxScrollLocked?: boolean }).__dxScrollLocked === true);
+
+test.describe("DropdownMenu leaves the page scrollable", () => {
+  test("a wheel scroll moves the page while the menu is open, the menu stays open, no lock is taken", async ({
     page,
   }) => {
     await goto(page, "dropdown_menu");
@@ -322,13 +330,33 @@ test.describe("DropdownMenu locks and releases page scroll", () => {
     await expect(trigger).toHaveAttribute("data-state", "open");
     await assertNoHorizontalShift(page, rightBefore, "while the dropdown menu is open");
 
-    await assertScrollIsLocked(page);
+    await assertScrollIsUnlocked(page);
+    await expect(trigger, "scrolling the page leaves an anchored menu open").toHaveAttribute("data-state", "open");
+    expect(await lockMarker(page), "a dropdown menu must not take the scroll lock").toBe(false);
 
     await page.keyboard.press("Escape");
     await expect(trigger).toHaveAttribute("data-state", "closed");
+    await assertNoHorizontalShift(page, rightBefore, "after the dropdown menu closes");
+  });
 
-    await assertScrollIsUnlocked(page);
-    await assertNoHorizontalShift(page, rightBefore, "after the dropdown menu closes and scroll unlocks");
+  test.describe("on a touch device", () => {
+    test.use({ hasTouch: true });
+
+    test("a touch pan moves the page while the menu is open and the menu stays open", async ({ page }) => {
+      await goto(page, "dropdown_menu");
+      await assertPageIsScrollable(page);
+
+      const trigger = demoRole(page, "button");
+      await trigger.tap();
+      await expect(trigger).toHaveAttribute("data-state", "open");
+
+      await page.evaluate(() => window.scrollTo(0, 0));
+      // Pan from a point of the main column that is not under the menu (the sidebar scrolls by itself).
+      await touchScrollPage(page, 1000, 650, 300);
+      expect(await page.evaluate(() => window.scrollY), "the touch pan moved the page").toBeGreaterThan(0);
+      await expect(trigger, "scrolling the page leaves an anchored menu open").toHaveAttribute("data-state", "open");
+      expect(await lockMarker(page), "a dropdown menu must not take the scroll lock").toBe(false);
+    });
   });
 });
 
@@ -352,6 +380,88 @@ test.describe("ContextMenu locks and releases page scroll", () => {
     await assertScrollIsUnlocked(page);
     await assertNoHorizontalShift(page, rightBefore, "after the context menu closes and scroll unlocks");
   });
+
+  test("the page keeps its scroll position through the lock", async ({ page }) => {
+    await goto(page, "context_menu");
+    await assertPageIsScrollable(page);
+    const trigger = demoRole(page, "button");
+    // Scroll the page so the trigger is still in view, then press at its centre with the mouse (a
+    // `locator.click()` would scroll the page itself first).
+    const top = await readStatic(trigger, (el) => el.getBoundingClientRect().top + window.scrollY);
+    const scrolled = Math.max(60, Math.round(top) - 200);
+    await page.evaluate((y) => window.scrollTo(0, y), scrolled);
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(scrolled);
+    const box = await staticBox(trigger);
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2, { button: "right" });
+    await expect(page.getByRole("menu")).toHaveAttribute("data-state", "open");
+    await assertScrollIsLocked(page);
+
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("menu")).toHaveCount(0);
+    await expect.poll(() => lockMarker(page)).toBe(false);
+    expect(await page.evaluate(() => window.scrollY), "restored to the position it had").toBe(scrolled);
+  });
+
+  test.describe("on a touch device", () => {
+    test.use({ hasTouch: true });
+
+    test("a touch pan does not move the page while the menu is open, and does after it closes", async ({ page }) => {
+      await goto(page, "context_menu");
+      await assertPageIsScrollable(page);
+      await page.evaluate(() => window.scrollTo(0, 0));
+
+      await demoRole(page, "button").click({ button: "right" });
+      await expect(page.getByRole("menu")).toHaveAttribute("data-state", "open");
+      await touchScrollPage(page, 1000, 650, 300);
+      expect(await page.evaluate(() => window.scrollY), "the touch pan must not move the locked page").toBe(0);
+
+      await page.keyboard.press("Escape");
+      await expect(page.getByRole("menu")).toHaveCount(0);
+      await expect.poll(() => lockMarker(page)).toBe(false);
+      await touchScrollPage(page, 1000, 650, 300);
+      expect(await page.evaluate(() => window.scrollY), "the touch pan moves the unlocked page").toBeGreaterThan(0);
+    });
+  });
+});
+
+test.describe("Dialog locks on a touch device and gives the page's own styles back", () => {
+  test.describe("touch", () => {
+    test.use({ hasTouch: true });
+
+    test("a touch pan does not move the page while the dialog is open", async ({ page }) => {
+      await goto(page, "dialog");
+      await assertPageIsScrollable(page);
+      await page.evaluate(() => window.scrollTo(0, 0));
+
+      await demoRole(page, "button").tap();
+      await expect(page.getByRole("dialog")).toBeVisible();
+      await touchScrollPage(page, 1000, 650, 300);
+      expect(await page.evaluate(() => window.scrollY), "the touch pan must not move the locked page").toBe(0);
+    });
+  });
+
+  test("the viewport scroller's inline styles are the same before and after a lock cycle", async ({ page }) => {
+    await goto(page, "dialog");
+    await assertPageIsScrollable(page);
+    const styles = () =>
+      page.evaluate(() => ({
+        // An emptied `style` attribute reads as "" where an untouched one is null: the same styles.
+        html: document.documentElement.getAttribute("style") || "",
+        body: document.body.getAttribute("style") || "",
+      }));
+    const before = await styles();
+    expect(before.html + before.body, "no lock style before the lock").not.toContain("overflow");
+
+    await demoRole(page, "button").click();
+    await expect(page.getByRole("dialog")).toBeVisible();
+    const during = await styles();
+    expect(during.html + during.body, "the lock hides overflow inline").toContain("overflow");
+
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await expect.poll(() => lockMarker(page)).toBe(false);
+    expect(await styles(), "no inline style is left behind by the lock").toEqual(before);
+  });
 });
 
 test.describe("Dialog does not leave the page permanently scrolled after a lock cycle", () => {
@@ -361,7 +471,7 @@ test.describe("Dialog does not leave the page permanently scrolled after a lock 
    * *vertical scroll position*, `window.scrollY`, across a full open-and-
    * close cycle. A modal `<dialog>`'s `showModal()` can move the page by
    * several hundred pixels the instant it runs (its own default
-   * scroll-into-view-on-focus behavior, which the lock's event interception does not
+   * scroll-into-view-on-focus behavior, which the lock does not
    * suppress), and a lock/unlock cycle that does not restore
    * `scrollY`/`scrollX` would leave it there: every dialog interaction would
    * permanently scroll the user's page away from where they left it, most
@@ -416,22 +526,15 @@ test.describe("scrollbar-gutter reservation survives the lock itself, not just i
    * NOT the same thing `assertNoHorizontalShift` above checks (a
    * `position: fixed` marker's on-screen edge). This checks
    * `document.documentElement.clientWidth` directly:
-   * `ensure_scrollbar_gutter_baseline` (`scroll_lock.rs`) installs
-   * `scrollbar-gutter: stable` once, permanently, specifically so a classic
-   * scrollbar's width is reserved *before* any lock ever engages. But
-   * `scrollbar-gutter` only has an effect while `overflow` computes to
-   * `auto` or `scroll`, so a lock that sets `overflow: hidden` on
-   * `<html>` (neither) would void it: `clientWidth` would read 1012px
-   * unlocked (1027px viewport minus a real ~15px scrollbar) and jump to the
-   * full 1027px the instant a `Dialog` opened and locked scroll
-   * (`playwright/xvfb.local.config.ts`, a real classic scrollbar).
-   *
-   * Hence the lock touches neither `<html>`'s `overflow` nor `<body>`'s
-   * position (see `primitives/src/scroll_lock.rs`'s module docs, "How this
-   * hook blocks scrolling"): it intercepts the scroll *input* instead, so no
-   * style of `<html>`/`<body>` ever changes and the permanent baseline's own
-   * precondition (`overflow` computing to `auto`/`scroll` on `<html>`) always
-   * holds.
+   * The lock hides `<html>`'s overflow, which removes a classic
+   * scrollbar's width from the page unless a `scrollbar-gutter: stable`
+   * keeps it (`scroll_lock.rs`, "How the lock blocks scrolling"): without
+   * the gutter `clientWidth` would read 1012px unlocked (1027px viewport
+   * minus a real ~15px scrollbar) and jump to the full 1027px the instant a
+   * `Dialog` opened and locked scroll (`playwright/xvfb.local.config.ts`, a
+   * real classic scrollbar). The lock sets the gutter itself when a classic
+   * scrollbar is showing, and the permanent baseline
+   * (`ensure_scrollbar_gutter_baseline`) has it in place before any lock.
    */
   test("Dialog: opening a modal does not widen clientWidth by the scrollbar's reserved gutter", async ({
     page,
@@ -475,7 +578,7 @@ test.describe("Breakpoint flip: exact 1027px viewport with a classic scrollbar",
    * `clientWidth`, which reads as "the nav disappeared" when it happens
    * during a modal's open animation).
    *
-   * A lock that sets `overflow: hidden` on `<html>` fails both assertions
+   * A lock that hides `<html>`'s overflow without keeping the gutter fails both assertions
    * under `xvfb.local.config.ts` (real classic scrollbar): `clientWidth`
    * jumps 1012 -> 1027 on open, and the nav's bounding rect widens/moves to
    * match. Both assertions hold under `oracle.local.config.ts` (headless,
