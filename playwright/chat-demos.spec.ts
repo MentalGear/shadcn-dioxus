@@ -22,7 +22,6 @@ import type { Locator, Page } from "@playwright/test";
 import { expectNoAxeViolations } from "./axe";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
-import { clickSettled } from "./animations";
 
 const GOTO_OPTS = { timeout: 20 * 60 * 1000 };
 const url = (name: string) => `${BASE_URL}/component/${name}/`;
@@ -103,7 +102,7 @@ test.describe("message_scroller: commands", () => {
     const items = page.getByRole("menuitem");
     await expect(items).toHaveCount(4);
     await expect(items.first()).toContainText("We're seeing activation dip after works...");
-    await clickSettled(items.first());
+    await items.first().click();
 
     await expect.poll(() => rowInView(vp, "command-activation"), { timeout: 10_000 }).toBe(true);
     const after = await stable(vp);
@@ -118,12 +117,12 @@ test.describe("message_scroller: commands", () => {
     await expect(vp).not.toHaveAttribute("data-pending-scroll");
 
     await root.getByRole("button", { name: "Jump to..." }).click();
-    await clickSettled(page.getByRole("menuitem").nth(1)); // "What should I compare ..."
+    await page.getByRole("menuitem").nth(1).click(); // "What should I compare ..."
     await expect.poll(() => offsetOf(vp, "command-compare"), { timeout: 10_000 }).toBeLessThanOrEqual(24);
     const mid = await stable(vp);
 
     await root.getByRole("button", { name: "Jump to..." }).click();
-    await clickSettled(page.getByRole("menuitem").nth(0));
+    await page.getByRole("menuitem").nth(0).click();
     await expect.poll(() => stable(vp), { timeout: 10_000 }).toBeLessThan(mid);
   });
 
@@ -354,7 +353,7 @@ test.describe("message_scroller: animation", () => {
 
     // Pick "Pop" and send the next turn.
     await root.getByRole("combobox", { name: "Animation preset" }).click();
-    await clickSettled(page.getByRole("option", { name: "Pop" }));
+    await page.getByRole("option", { name: "Pop" }).click();
     await send.click();
     await expect(userRow("m1")).toHaveClass(/dx-demo-enter-pop/);
     // The earlier row did not take on the new preset.
@@ -393,7 +392,7 @@ test.describe("message_scroller: full_chat", () => {
     const items = page.getByRole("menuitem");
     await expect(items).toHaveCount(4);
     await expect(items.nth(1)).toHaveText("Create Image");
-    await clickSettled(items.nth(1));
+    await items.nth(1).click();
     await expect(root.getByRole("status").last()).toContainText('Picked "Create Image"');
 
     // Send plays the queued user message and streams the reply.
