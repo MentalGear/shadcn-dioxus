@@ -57,8 +57,8 @@
 //! 3. **A classic scrollbar, and an engine that drops the gutter under hidden overflow** (Chromium,
 //!    the default browser of Windows and Linux): hiding the root's overflow would give the page the
 //!    scrollbar's width, so the root stays `overflow: scroll` (when the page overflows) with the
-//!    gutter, and `<body>` is clipped to the viewport (`position: relative`, `100dvh` by `100vw` less
-//!    the scrollbar and the body margin, `overflow: hidden`) with its scroll offset moved from the
+//!    gutter, and `<body>` is clipped to the visible viewport (`position: relative`, the size of
+//!    `<html>`'s client box less the body margin, `overflow: hidden`) with its scroll offset moved from the
 //!    root, so the page has nothing left to scroll and the scrollbar stays in place, inert. While
 //!    this branch is held `window.scrollY` reads 0; the offset comes back on release. A window resize
 //!    re-computes this branch (and branch 2) one frame later.
@@ -244,13 +244,13 @@ const SCROLL_LOCK_JS: &str = r#"
             if (ios || w.innerWidth - html.clientWidth <= 0) return (inset = false) || hide();
             const gutter = hc.scrollbarGutter.includes('both') ? 'stable both-edges' : 'stable';
             if (gutterSurvives(el)) return (html.style.scrollbarGutter = gutter) && hide();
-            const sw = Math.max(0, w.innerWidth - body.clientWidth), sh = Math.max(0, w.innerHeight - body.clientHeight);
-            const my = parseFloat(bc.marginTop) + parseFloat(bc.marginBottom), mx = parseFloat(bc.marginLeft) + parseFloat(bc.marginRight);
+            const mx = parseFloat(bc.marginLeft) + parseFloat(bc.marginRight), my = parseFloat(bc.marginTop) + parseFloat(bc.marginBottom);
+            const [bw, bh] = [html.clientWidth - mx, html.clientHeight - my];
             const canY = html.scrollHeight > html.clientHeight || /scroll/.test(hc.overflowY + bc.overflowY);
             const canX = html.scrollWidth > html.clientWidth || /scroll/.test(hc.overflowX + bc.overflowX);
             Object.assign(html.style, { scrollbarGutter: gutter, scrollBehavior: 'unset', overflowX: canX ? 'scroll' : 'hidden', overflowY: canY ? 'scroll' : 'hidden' });
             Object.assign(body.style, { position: 'relative', boxSizing: 'border-box', overflowX: 'hidden', overflowY: 'hidden',
-                height: `calc(100dvh - ${my + sh}px)`, width: `calc(100vw - ${mx + sw}px)` });
+                height: `${bh}px`, width: `${bw}px` });
             [body.scrollTop, body.scrollLeft] = [top, left];
             undo = () => { put(html, hv); put(body, bv); [html.scrollTop, html.scrollLeft] = [top, left]; };
         };
