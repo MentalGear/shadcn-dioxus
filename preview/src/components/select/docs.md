@@ -40,14 +40,31 @@ way (`data-visible`): a passive `scroll` listener through `js_listener.rs` repor
 mouse scrolls the list (6 px per 16 ms tick) through `use_interval_while`, gated by `use_motion`, so a hidden tab or a
 skipped card pauses it; leaving, or reaching the end, stops it. See the `scroll` variant.
 
-`position: SelectPosition::ItemAligned` (shadcn's `position="item-aligned"`) opens the list over the trigger with the
-selected option on the trigger's line, moved and then scrolled to stay inside the viewport. With no selected option
-there is nothing to align: the whole list opens below the trigger and flips above it when it does not fit there and the
-room above is larger, capped to that side's room (`data-side` on the list). See the `aligned` variant.
+## Position
+
+`position` is `SelectPosition::ItemAligned` by default, as in both shadcn variants (`base-nova` `alignItemWithTrigger`,
+`new-york-v4` `position="item-aligned"`): the list opens over the trigger with the selected option on the trigger's
+line, moved and then scrolled to stay inside the viewport. With no selected option there is nothing to align: the whole
+list opens below the trigger and flips above it when it does not fit there and the room above is larger, capped to
+that side's room (`data-side` on the list). `SelectPosition::Popper` opens the list below the trigger and flips it above
+when there is no room. A Select opened by touch is always placed as popper, as Base UI does: the finger would cover the
+option that sits over the trigger. See the `aligned` and `popper` variants.
+
+The panel is placed in document coordinates, so it stays attached to the trigger while the page scrolls. A Select does
+not lock page scroll; the page scrolls while the list is open.
+
+## Opening and keys
+
+A mouse opens the list on press (`pointerdown`), as both upstreams do; releasing the button over an option does not pick
+it (an option is picked by a press that starts on it). A touch or pen opens it on the tap (`click`), so a scroll that
+starts on the trigger leaves it closed. Enter, Space, ArrowDown and ArrowUp open it from the keyboard.
+
+ArrowUp, ArrowDown, Home and End move the highlight and stop at the first and last option: neither Radix nor Base UI
+wraps. `roving_loop: true` makes the arrow keys wrap.
 
 ## Open focus
 
-A click or tap opens a single `Select` on its selected option, focused and scrolled into view, the same as a keyboard open (Base UI opens on the selected index for every modality). With nothing selected, or in `SelectMulti`, a pointer open leaves focus on the listbox and ArrowDown reaches the first option. A `DropdownMenu` / `ContextMenu` does the opposite on purpose: a keyboard open focuses the first item, a pointer open highlights none.
+A press or tap opens a single `Select` on its selected option, focused and scrolled into view, the same as a keyboard open (Base UI opens on the selected index for every modality). With nothing selected, or in `SelectMulti`, a pointer open leaves focus on the listbox and ArrowDown reaches the first option. A `DropdownMenu` / `ContextMenu` does the opposite on purpose: a keyboard open focuses the first item, a pointer open highlights none.
 
 ## Size
 

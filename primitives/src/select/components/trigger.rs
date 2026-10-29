@@ -2,10 +2,25 @@
 
 use crate::selectable::ListboxFocus;
 use crate::{has_own_accessible_name, merge_attributes, use_id_or};
+use dioxus::html::input_data::MouseButton;
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
 
 use super::super::context::SelectContext;
+
+/// The press that precedes the next `click` on the trigger: a `click` carries no pointer type, so the
+/// `pointerdown` records it.
+#[derive(Clone, Copy, PartialEq)]
+enum TriggerPress {
+    /// No press seen (a click made by script or a keyboard activation).
+    None,
+    /// A mouse press that already opened or closed the list: its `click` does nothing more.
+    Mouse,
+    /// A touch press: the `click` opens the list placed as popper.
+    Touch,
+    /// A pen press, or a mouse button other than the primary one: the `click` toggles the list.
+    Other,
+}
 
 /// The props for the [`SelectTrigger`] component
 #[derive(Props, Clone, PartialEq)]
@@ -68,6 +83,14 @@ pub struct SelectTriggerProps {
 /// ```
 ///
 ///
+/// ## Opening
+///
+/// A mouse opens the list on `pointerdown` (Base UI opens on `mousedown`, Radix on `pointerdown`), so
+/// a press-drag-release picks an option; the `click` that follows is ignored. A touch or pen opens on
+/// the tap (`click`), so a scroll that starts on the trigger (the browser cancels the pointer and
+/// sends no click) leaves the list closed. A touch open places the list as
+/// [`SelectPosition::Popper`](super::super::SelectPosition::Popper).
+///
 /// ## Styling
 ///
 /// The [`SelectTrigger`] component defines a span with a `data-placeholder` attribute if a placeholder is set.
@@ -88,6 +111,7 @@ pub fn SelectTrigger(props: SelectTriggerProps) -> Element {
     // `content_id`) -- mirrors `DialogTitle`'s identical
     // `use_id_or(ctx.dialog_labelledby, props.id)` (`dialog.rs`).
     let id = use_id_or(ctx.selectable.trigger_id, props.id);
+    let mut press = use_signal(|| TriggerPress::None);
 
     // Merged (caller-wins, deduped) rather than set here and then spread
     // over by `..props.attributes` below: a caller `id`/`aria_label`/etc.
@@ -235,11 +259,37 @@ pub fn SelectTrigger(props: SelectTriggerProps) -> Element {
 
     rsx! {
         button {
+            onpointerdown: move |event| {
+                let kind = event.pointer_type();
+                if kind == "touch" {
+                    press.set(TriggerPress::Touch);
+                } else if kind == "mouse" && event.trigger_button() == Some(MouseButton::Primary) {
+                    if (ctx.selectable.disabled)() {
+                        return;
+                    }
+                    press.set(TriggerPress::Mouse);
+                    // The press moves no focus: the list takes it as it mounts, and a mousedown
+                    // that followed would hand it back to the trigger and blur-close the list.
+                    event.prevent_default();
+                    if open() {
+                        ctx.set_open(false);
+                    } else {
+                        ctx.open_for_pointer(false);
+                    }
+                } else {
+                    press.set(TriggerPress::Other);
+                }
+            },
             onclick: move |_| {
+                let pressed = press();
+                press.set(TriggerPress::None);
+                if pressed == TriggerPress::Mouse {
+                    return;
+                }
                 if open() {
                     ctx.set_open(false);
                 } else {
-                    ctx.open_for_pointer();
+                    ctx.open_for_pointer(pressed == TriggerPress::Touch);
                 }
             },
             onkeydown: move |event| {
@@ -261,6 +311,13 @@ pub fn SelectTrigger(props: SelectTriggerProps) -> Element {
                         } else {
                             ctx.selectable.initial_focus.set(Some(ListboxFocus::FIRST));
                         }
+                        event.prevent_default();
+                        event.stop_propagation();
+                    }
+                    // The list is a `manual` popover: no browser Escape dismissal, so a trigger that
+                    // keeps focus (the Alt+ArrowDown open) closes it itself.
+                    Key::Escape if open() => {
+                        ctx.set_open(false);
                         event.prevent_default();
                         event.stop_propagation();
                     }

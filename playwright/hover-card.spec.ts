@@ -176,14 +176,18 @@ test.describe("delay / close_delay (backlog row 166)", () => {
     expect(elapsed(await readProbe(page), "mouseout", "surface:closed")!).toBeGreaterThanOrEqual(300 - SLOP);
   });
 
-  test("a scroll closes an open card (close-on-scroll)", async ({ page }) => {
+  // Row 478: a page scroll is no reason to close an anchored panel. Opened by focus, so the pointer
+  // is not on the trigger and no hover-out ends the card.
+  test("a page scroll leaves a focus-opened card open", async ({ page }) => {
     await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
     await page.evaluate(() => (document.body.style.paddingBottom = "3000px"));
-    await trigger(page, "Quick (10 / 100)").hover();
+    await page.mouse.move(0, 0);
+    await trigger(page, "Quick (10 / 100)").focus();
     await expect(surface(page)).toBeVisible();
-    await page.waitForTimeout(450); // past the helper's quiet window after an open
+    await page.waitForTimeout(450); // let the open settle
     await page.evaluate(() => window.scrollBy(0, 200));
-    await expect(openSurface(page)).toHaveCount(0, { timeout: 500 });
+    await page.waitForTimeout(600);
+    await expect(openSurface(page)).toHaveCount(1);
   });
 });
 

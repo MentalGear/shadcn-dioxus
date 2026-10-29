@@ -1,0 +1,1 @@
+`position: SelectPosition::Popper`: the list opens below the trigger and flips above it when it does not fit, whatever is selected. The default is `ItemAligned`, and a Select opened by touch is placed as popper whatever `position` says.

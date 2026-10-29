@@ -28,20 +28,8 @@
  * button (`preview/src/components/dialog/variants/main/mod.rs`,
  * dev-docs/plan.md Phase 3.2).
  *
- * Select (dev-docs/backlog.md row 9): `Select`'s open listbox is wired to
- * this same scroll lock -- see "Select locks and releases page scroll"
- * below. Neither source fork covers it, so this file's Select case is this
- * repo's own construction, opt-out via a `scroll_lock` prop (default
- * `true`, matching Radix) on `Select`/`SelectMulti` rather than the `modal`
- * prop `DropdownMenu`/`ContextMenu` use -- a select-only combobox's listbox
- * has no non-modal mode to gate this on.
- * `Menubar` is correctly excluded throughout -- it is never modal.
- *
- * The `scroll_lock=false` opt-out itself has a fixture and a case too
- * (dev-docs/backlog.md row 72) -- see "Select scroll_lock=false opt-out
- * releases page scroll" below, against a labelled instance on the
- * `top_layer` fixture page
- * (`preview/src/components/top_layer/component.rs`).
+ * Select does not lock (dev-docs/backlog.md row 478): its page-scroll behaviour is asserted in
+ * `playwright/select.spec.ts`. `Menubar` is correctly excluded throughout -- it is never modal.
  *
  * KNOWN GAP, both in the dq base and here (see
  * dev-docs/reference/platform-rationale.md §5): no iOS momentum-scroll handling.
@@ -363,100 +351,6 @@ test.describe("ContextMenu locks and releases page scroll", () => {
 
     await assertScrollIsUnlocked(page);
     await assertNoHorizontalShift(page, rightBefore, "after the context menu closes and scroll unlocks");
-  });
-});
-
-/**
- * dev-docs/backlog.md row 9: `Select`'s open listbox locks page scroll too,
- * via the same `ScrollLockGuard`/`use_scroll_lock` mechanism as every other
- * `test.describe` block above -- see this file's header doc for how it's
- * wired (opt-out `scroll_lock` prop, default `true`, on `Select`/
- * `SelectMulti`, mounted from `SelectListRendered`, `primitives/src/select/
- * components/list.rs`).
- */
-test.describe("Select locks and releases page scroll", () => {
-  test("scroll is locked while the listbox is open (default scroll_lock=true) and restored after Escape", async ({
-    page,
-  }) => {
-    await goto(page, "select");
-    await assertPageIsScrollable(page);
-    const rightBefore = await rightEdgeMarkerRight(page);
-
-    // Same role/locator convention as select.spec.ts's `singleSelectTrigger`
-    // -- dev-docs/backlog.md row 8: the trigger has role="combobox".
-    const trigger = demoRole(page, "combobox");
-    await trigger.click();
-    const listbox = page.getByRole("listbox");
-    await expect(listbox).toHaveAttribute("data-state", "open");
-    await assertNoHorizontalShift(page, rightBefore, "while the select listbox is open");
-
-    // A wheel attempt while the listbox is open must not scroll the page,
-    // same contract as every other overlay above.
-    await assertScrollIsLocked(page);
-
-    await page.keyboard.press("Escape");
-    await expect(listbox).toHaveCount(0);
-
-    await assertScrollIsUnlocked(page);
-    await assertNoHorizontalShift(page, rightBefore, "after the select listbox closes and scroll unlocks");
-  });
-
-  /**
-   * dev-docs/backlog.md rows 9/72: the `scroll_lock=false` opt-out itself has its own
-   * fixture: `preview/src/components/top_layer/component.rs`'s "Select scroll_lock
-   * opt-out" section holds a labelled, distinct `Select` instance with
-   * `scroll_lock: false` explicitly set -- the `top_layer` fixture page is used
-   * here (not `select`'s own gallery page, which the default-`true` case above
-   * already uses) because it is already taller than the viewport (every other
-   * overlay section on it), satisfying `assertPageIsScrollable` for free, and it
-   * gives this instance its own trigger id with no risk of colliding with the
-   * default-Select case's own role/text-based locator above.
-   */
-  test("scroll_lock=false leaves the page scrollable while the listbox is open", async ({ page }) => {
-    await goto(page, "top_layer");
-    await assertPageIsScrollable(page);
-    const rightBefore = await rightEdgeMarkerRight(page);
-
-    // `.evaluate((el) => el.click())`, not Playwright's own `.click()` --
-    // same technique `top-layer.spec.ts` uses for its own
-    // fixed/off-screen triggers (e.g. `#stack-popover-trigger`,
-    // `#edge-bottom-popover-trigger`): this fixture's "Select
-    // scroll_lock opt-out" section is the LAST thing on the page, so a real
-    // `.click()`'s own actionability auto-scroll (`scrollIntoViewIfNeeded`)
-    // lands the page at its maximum scrollY, leaving no further room for the
-    // wheel-scroll assertion below to move `window.scrollY` at all,
-    // regardless of whether the lock was actually suppressed (a
-    // test-methodology hazard; see `dev-docs/dx-serve-hot-reload.md` for the
-    // general class).
-    // Clicking via raw JS bypasses that auto-scroll entirely, leaving the
-    // page at its initial scrollY (0) with the whole page below still free
-    // to scroll into.
-    const trigger = page.locator("#scroll-lock-select-trigger");
-    await trigger.evaluate((el) => (el as HTMLElement).click());
-    const listbox = page.locator("#scroll-lock-select-content");
-    await expect(listbox).toHaveAttribute("data-state", "open");
-    await assertNoHorizontalShift(page, rightBefore, "while the scroll_lock=false listbox is open");
-
-    // The opt-out itself: reuses `assertScrollIsUnlocked` as-is (it resets
-    // scrollY to 0 and wheel-scrolls on each attempt, exactly the shape
-    // this case needs, and already retries against the same settling delay
-    // this assertion would otherwise have to duplicate: a
-    // bespoke single-shot `wheel()` -> immediate
-    // `scrollY` read here is genuinely racy: `window.scrollY` does not
-    // always update synchronously the instant `page.mouse.wheel()`
-    // resolves, occasionally landing a couple hundred ms later even
-    // outside this sandbox's own CPU contention -- the same class of
-    // settling delay `assertScrollIsUnlocked`'s own doc and Rule 8's
-    // `waitForTimeout` in `top-layer.spec.ts` already document elsewhere).
-    // Unlike every *other* call to this helper in this file (which follows
-    // a real lock releasing), here nothing was ever locking in the first
-    // place -- proving the identical thing: a wheel scroll succeeds while
-    // this listbox is open, `scroll_lock: false` suppresses the lock
-    // rather than merely being accepted and ignored.
-    await assertScrollIsUnlocked(page);
-
-    await page.keyboard.press("Escape");
-    await expect(listbox).toHaveCount(0);
   });
 });
 
