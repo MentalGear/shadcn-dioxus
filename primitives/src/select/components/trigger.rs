@@ -278,20 +278,17 @@ pub fn SelectTrigger(props: SelectTriggerProps) -> Element {
                     if open() {
                         ctx.set_open(false);
                     } else {
-                        ctx.open_for_pointer(false);
+                        // One task later, after the press's `mousedown` has moved focus onto the
+                        // trigger: the list takes focus from the trigger then, and nothing hands
+                        // it back. The press has also marked the page as pointer-driven by then,
+                        // so the option the list focuses paints no keyboard ring.
+                        spawn(async move {
+                            crate::sleep::sleep(std::time::Duration::ZERO).await;
+                            ctx.open_for_pointer(false);
+                        });
                     }
                 } else {
                     press.set(TriggerPress::Other);
-                }
-            },
-            // The press moves no focus: the list takes it as it mounts, and the `mousedown`'s
-            // default would hand it back to the trigger and blur-close the list. The default is
-            // cancelled here rather than on the `pointerdown`, which would also suppress the
-            // `mousedown` the browser's focus-visible heuristic reads to learn the pointer is in use
-            // (a script focus on an option would then paint its keyboard ring).
-            onmousedown: move |event| {
-                if press() == TriggerPress::Mouse {
-                    event.prevent_default();
                 }
             },
             onclick: move |_| {
