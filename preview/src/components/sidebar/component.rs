@@ -344,25 +344,27 @@ pub fn Sidebar(
     });
     let container_attrs = merge_attributes(vec![container_base, attributes]);
 
+    // axe `region` (dev-docs/backlog.md row 38) -- see the identical comment on the
+    // `collapsible == SidebarCollapsible::None` branch above; this desktop-expanded/-collapsed branch is the
+    // one both call sites (the block route's `sidebar` demo and the dashboard email client's sidebar) actually render.
+    let desktop_attrs = attributes!(div {
+        class: "dx-sidebar-desktop",
+        "data-collapsible": collapsible_str,
+        "data-variant": variant.as_str(),
+        "data-side": side.as_str(),
+        "data-slot": "sidebar",
+        role: "complementary",
+        aria_label: "Sidebar",
+        ..state_attrs::state(state().as_str()),
+    });
+
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/sidebar/style.css") }
         // Eager: the mobile branch mounts `Sheet` only below the breakpoint, so on a desktop first render its
         // `Link` would be inserted late (a runtime switch to mobile) -- not render-blocking.
         document::Link { rel: "stylesheet", href: asset!("/src/components/sheet/style.css") }
         div {
-            class: "dx-sidebar-desktop",
-            "data-collapsible": collapsible_str,
-            "data-variant": variant.as_str(),
-            "data-side": side.as_str(),
-            "data-slot": "sidebar",
-            // axe `region` (dev-docs/backlog.md row 38) -- see the identical
-            // comment on the `collapsible == SidebarCollapsible::None`
-            // branch above; this desktop-expanded/-collapsed branch is the
-            // one both call sites (the block route's `sidebar` demo and the
-            // dashboard email client's sidebar) actually render.
-            role: "complementary",
-            aria_label: "Sidebar",
-            ..state_attrs::state(state().as_str()),
+            ..desktop_attrs,
             div { class: "dx-sidebar-gap", "data-slot": "sidebar-gap" }
             div {
                 ..container_attrs,

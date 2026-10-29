@@ -751,11 +751,13 @@ fn VirtualGridContentVisibility(
                     rsx! {
                         div {
                             key: "{render_key(row_key, row)}",
-                            role: "row",
-                            "aria-rowindex": row + 1 + header_rows,
-                            "aria-selected": selected_token(row_selected, row_key, row),
-                            style: "display: flex; width: {width}px; min-width: 100%; height: {height}px;",
-                            ..selected_state(row_selected, row_key, row),
+                            ..row_attributes(
+                                row_selected,
+                                row_key,
+                                row,
+                                row + 1 + header_rows,
+                                format!("display: flex; width: {width}px; min-width: 100%; height: {height}px;"),
+                            ),
                             {widths.iter().enumerate().map(|(column, &size)| {
                                 let pin = pinning.at(column);
                                 let style = pin.map_or_else(|| in_flow(size), pinned_cell_style);
@@ -1016,11 +1018,13 @@ fn VirtualGridWindowed(
                     for row in plan.rows {
                         div {
                             key: "{render_key(row_key, row.index())}",
-                            role: "row",
-                            "aria-rowindex": row.index() + 1 + header_rows,
-                            "aria-selected": selected_token(row_selected, row_key, row.index()),
-                            style: "position: absolute; inset-inline-start: 0; top: {row.start()}px; display: flex; width: {width}px; min-width: 100%; height: {row.size()}px;",
-                            ..selected_state(row_selected, row_key, row.index()),
+                            ..row_attributes(
+                                row_selected,
+                                row_key,
+                                row.index(),
+                                row.index() + 1 + header_rows,
+                                format!("position: absolute; inset-inline-start: 0; top: {}px; display: flex; width: {width}px; min-width: 100%; height: {}px;", row.start(), row.size()),
+                            ),
                             {(0..start_count).map(|column| cell(row.index(), column, 0, 0))}
                             div { style: "position: relative; flex: none; width: {pane_width}px;",
                                 // An iterator of keyed elements, not a `for` around an
@@ -1915,6 +1919,23 @@ fn selected_token(
     index: usize,
 ) -> Option<&'static str> {
     row_is_selected(row_selected, row_key, index).map(|on| if on { "true" } else { "false" })
+}
+
+/// The attributes of a body row: its role, position, selection and style.
+fn row_attributes(
+    row_selected: Option<Callback<String, bool>>,
+    row_key: Option<Callback<usize, String>>,
+    index: usize,
+    row_index: usize,
+    style: String,
+) -> Vec<Attribute> {
+    attributes!(div {
+        role: "row",
+        "aria-rowindex": row_index,
+        "aria-selected": selected_token(row_selected, row_key, index),
+        style: style,
+        ..selected_state(row_selected, row_key, index),
+    })
 }
 
 /// The row's `data-state`: `selected` for a selected row, nothing otherwise.
