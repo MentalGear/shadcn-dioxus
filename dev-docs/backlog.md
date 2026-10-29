@@ -40,7 +40,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (72)
+## Open rows (74)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -116,5 +116,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [481](backlog/481-state-attributes-one-helper-emits-data-state-and-presence.md) | State attributes: one helper emits data-state and Base UI presence attributes | IN PROGRESS (2026-10-29), lane state-attributes-481. Landed: primitives/src/state_attrs.rs (the… | M | primitives |
 | [482](backlog/482-control-gaps-slider-form-participation-read-only-and-small-attributes.md) | Control gaps: Slider form participation, read_only, Toggle data-pressed, Tabs activate_on_focus | IMPLEMENTED on lane/control-gaps-482, awaiting the merge batch (2026-10-28). Items 1 to 4 are… | S-M | components |
 | [483](backlog/483-playwright-anchored-panel-settle-fixture.md) | Playwright waits for a just-opened anchored panel to settle before acting inside it (fixture, not per spec) | BACKLOG. Scheduled as the first job after the session branch merges into main (owner 2026-10-29).… | M | tests |
+| [484](backlog/484-convert-remaining-valued-boolean-state-attributes-to-presence.md) | Convert the remaining valued boolean state attributes to presence attributes (Base UI vocabulary) | BACKLOG, owner decision 2026-10-29. Row 485 (retire data-state) depends on this row: every state… | M | primitives |
+| [485](backlog/485-retire-data-state-css-moves-to-aria-and-presence.md) | Retire data-state: our CSS styles from ARIA and presence attributes | BACKLOG, owner decision 2026-10-29. Depends on row 484, which converts the valued booleans to… | M-L | styling |
 
 <!-- END GENERATED -->
