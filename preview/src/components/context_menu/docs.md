@@ -151,6 +151,10 @@ ContextMenuContent {
 
 See the `groups` and `destructive` variants.
 
+## Page scrolling
+
+An open `ContextMenu` locks page scrolling (wheel, touch, keyboard and scrollbar), as a native context menu does. The scrollbar keeps its width, so nothing shifts, and the page returns to the position it had when the menu closes. `DropdownMenu` does not lock; see its note.
+
 ## Direction / RTL
 
 `ContextMenu` accepts a `dir: Option<Direction>` prop, inherited by every `ContextMenuSub`. Same open/close-key and side flip as `DropdownMenu`'s -- see that component's note. See the `rtl` variant.
