@@ -1138,10 +1138,12 @@ html[data-theme="light"] [class~="dxc-system"] {
  * `scripts/check-theme-baseline.sh` (arm 1) fails a component stylesheet that declares
  * `manipulation`.
  *
- * The element list is `main.css`'s catch-all list (button, link, form controls, `summary`, anything
+ * The element list is `main.css`'s catch-all list (button, link, form controls, `label`, `summary`, anything
  * focusable by `tabindex`, and the interactive ARIA widget roles) plus the roles our primitives render
  * that the list does not name (`menuitemcheckbox`/`menuitemradio`, and `spinbutton`, which the date picker's
- * segments carry at `tabindex="-1"`), intersected with the `dx-` class namespace: scoped to our own
+ * segments carry at `tabindex="-1"`). A `label` is a tap target of its own: the text beside a checkbox,
+ * radio or switch is what a thumb hits, and its `touch-action` is what the browser reads for that tap,
+ * not the control's (the control is a different element). Intersected with the `dx-` class namespace: scoped to our own
  * components, like the box-model rule, because this file is copied into the app of every
  * `dx components add` user and must not change THEIR plain `<button>`s. Every `:where()` holds one
  * compound selector, so the rule has ZERO specificity: a component or app that needs another value
@@ -1183,6 +1185,8 @@ html[data-theme="light"] [class~="dxc-system"] {
 :where([role="radio"][class*=" dx-"]),
 :where([role="slider"][class^="dx-"]),
 :where([role="slider"][class*=" dx-"]),
+:where(label[class^="dx-"]),
+:where(label[class*=" dx-"]),
 :where([role="spinbutton"][class^="dx-"]),
 :where([role="spinbutton"][class*=" dx-"]) {
   touch-action: manipulation;
