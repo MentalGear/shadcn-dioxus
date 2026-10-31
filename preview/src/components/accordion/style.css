@@ -85,7 +85,9 @@
  * Opened because the browser revealed it for a find-in-page or `#fragment`
  * match (`hidden_until_found`): it is already at full size and the browser has
  * already scrolled to the match inside it, so animating it open from 0fr would
- * collapse the match out from under the scroll.
+ * collapse the match out from under the scroll. An item open at mount
+ * (`default_open`) is marked the same way: it is in the server HTML at full
+ * size, and animating it open from 0fr on load would move the page below it.
  */
 .dx-accordion-content[data-open="true"][data-revealed] {
   animation: none;

@@ -522,8 +522,9 @@ pub struct AccordionContentProps {
 ///   the content has not been removed (or re-hidden) yet. Style the close animation on this, not on
 ///   `data-open="false"`, which is also what a closed `hidden="until-found"` panel looks like.
 /// - `data-revealed`: Present (`true`) while the item is open because the browser revealed it for a
-///   find-in-page or `#fragment` match. It is already at full size and scrolled to, so it should
-///   not play the open animation.
+///   find-in-page or `#fragment` match, or because it was open at mount (`default_open`). It is
+///   already at full size (and scrolled to), so it should not play the open animation. A later close
+///   removes it, so a re-open animates.
 #[component]
 pub fn AccordionContent(props: AccordionContentProps) -> Element {
     let item: Item = use_context();
@@ -551,7 +552,9 @@ pub fn AccordionContent(props: AccordionContentProps) -> Element {
 
     // The browser un-hides the content itself; open the item to match. `set_open` closes the
     // other items unless multiple may be open, same as the trigger.
-    let mut revealed = use_signal(|| false);
+    // An item that is open at mount (`default_open`) is already at full size in the server HTML, so it does
+    // not play the open animation on load either: that animation would move everything below it.
+    let mut revealed = use_signal(|| *open.peek());
     use_beforematch(id, until_found, move || {
         if !ctx.is_open(&item.key()) {
             revealed.set(true);

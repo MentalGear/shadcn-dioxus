@@ -1,5 +1,34 @@
 Line charts show how values change across an ordered set of categories, such as months or dates. This page is a gallery of line configurations built from the [Chart](/component/chart/) package; install `chart` and you have everything. The Chart page explains the shared `ChartConfig` and `ChartDatum` model, colors and accessibility.
 
+## Component Structure
+
+```rust
+// Card is the frame the demos use; a chart works without it.
+Card {
+    CardHeader {
+        CardTitle { "Visitors" }
+        CardDescription { "January - June 2024" }
+    }
+    CardContent {
+        // ChartContainer, Chart, ChartTooltip and ChartLegend come from the Chart package this page
+        // depends on; this page adds no piece of its own. Chart reads its kind from the container.
+        ChartContainer { config, data, kind: ChartKind::Line,
+            Chart {
+                aria_label: "Visitors by month",
+                // Line-specific settings (dots, labels) live in `line: LineOptions { .. }`.
+                curve: Curve::Natural,
+            }
+            ChartTooltip { hide_label: true }
+            // ChartLegend lists one swatch and label per series; add it once there is more than one.
+            ChartLegend {}
+        }
+    }
+    CardFooter { "Showing total visitors for the last 6 months" }
+}
+```
+
+The pieces are siblings inside the container, as on the [Chart](/component/chart/) page.
+
 ## Quick start
 
 ```rust

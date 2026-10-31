@@ -1,5 +1,34 @@
 Radial charts draw each value as a bar wrapped around a circle, which suits a handful of progress-style measures or a single gauge. They are the other arc-based member of the [Chart](/component/chart/) family: `kind: ChartKind::RadialBar` plus a `RadialOptions` value. Like [Pie chart](/component/pie_chart/), there is nothing extra to install; `chart` is everything a radial chart needs.
 
+## Component Structure
+
+```rust
+// Card is the frame the demos use; a chart works without it.
+Card {
+    CardHeader {
+        CardTitle { "Visitors" }
+        CardDescription { "January - June 2024" }
+    }
+    CardContent {
+        // ChartContainer, Chart, ChartTooltip and ChartLegend come from the Chart package this page
+        // depends on; this page adds no piece of its own. Chart reads its kind from the container.
+        ChartContainer { config, data, kind: ChartKind::RadialBar,
+            Chart {
+                aria_label: "Visitors by browser",
+                // Rings, angles and the track behind them are `radial: RadialOptions { .. }`.
+                radial: RadialOptions { background: true, ..Default::default() },
+            }
+            ChartTooltip { hide_label: true }
+            // ChartLegend lists one swatch and label per series; add it once there is more than one.
+            ChartLegend {}
+        }
+    }
+    CardFooter { "Showing total visitors for the last 6 months" }
+}
+```
+
+Each `ChartDatum` is its own concentric ring, first one innermost. The pieces are siblings inside the container, as on the [Chart](/component/chart/) page.
+
 ## Quick start
 
 ```rust

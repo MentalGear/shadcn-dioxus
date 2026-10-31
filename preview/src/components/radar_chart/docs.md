@@ -1,5 +1,34 @@
 Radar charts compare several measures for the same item by laying categories out around a circle and drawing one polygon per series. This page covers what is specific to `kind: ChartKind::Radar`: the grid options, how series are drawn, and hover. Everything else (`ChartConfig`, colors, the data table, keyboard behavior) is shared with every chart; see [Chart](/component/chart/).
 
+## Component Structure
+
+```rust
+// Card is the frame the demos use; a chart works without it.
+Card {
+    CardHeader {
+        CardTitle { "Visitors" }
+        CardDescription { "January - June 2024" }
+    }
+    CardContent {
+        // ChartContainer, Chart, ChartTooltip and ChartLegend come from the Chart package this page
+        // depends on; this page adds no piece of its own. Chart reads its kind from the container.
+        ChartContainer { config, data, kind: ChartKind::Radar,
+            Chart {
+                aria_label: "Visitors by month",
+                // The polygon, grid and axis settings are `radar: RadarOptions { .. }`.
+                radar: RadarOptions { fill_opacity: vec![0.6], ..Default::default() },
+            }
+            ChartTooltip {}
+            // ChartLegend lists one swatch and label per series; add it once there is more than one.
+            ChartLegend {}
+        }
+    }
+    CardFooter { "Showing total visitors for the last 6 months" }
+}
+```
+
+Each `ChartDatum` is one axis around the circle and each series one polygon. The pieces are siblings inside the container, as on the [Chart](/component/chart/) page.
+
 ## Quick start
 
 ```rust
