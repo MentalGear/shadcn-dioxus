@@ -126,6 +126,19 @@ fn ComboboxListRendered(
     let mut selectable = ctx.selectable;
     let open = selectable.open;
 
+    // Escape closes the open list wherever focus is (the dismiss core). A press elsewhere is
+    // deliberately not a dismissal here (a page control may act on the options while the list
+    // stays open, `combobox.spec.ts` "dynamic option removal"), and the input's `onblur` is the
+    // focus arm.
+    let list_id = use_signal(|| id.clone());
+    crate::dismiss::use_dismiss(
+        list_id,
+        crate::dismiss::Scope::Element,
+        crate::dismiss::Policy::ESCAPE,
+        Some(open.into()),
+        move |_| selectable.set_open(false),
+    );
+
     crate::top_layer::use_popover_shown_while_mounted(
         id.clone(),
         open,

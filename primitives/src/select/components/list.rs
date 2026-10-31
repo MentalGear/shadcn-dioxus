@@ -251,10 +251,10 @@ fn select_list_onkeydown(mut ctx: SelectContext) -> impl FnMut(KeyboardEvent) {
                 event.prevent_default();
                 event.stop_propagation();
             }
+            // The web arm's Escape is the dismiss core's (`SelectListRendered`); the arm without
+            // script keeps this one as its functional floor.
+            #[cfg(not(feature = "web"))]
             Key::Escape => {
-                // Both arms close here: the web arm's popover is `manual` (see
-                // `SelectListRendered`), so the browser's Escape light dismiss does not run. The
-                // default is cancelled so the key does not also close an enclosing dialog.
                 ctx.set_open(false);
                 event.prevent_default();
                 event.stop_propagation();
@@ -277,14 +277,14 @@ fn select_list_onkeydown(mut ctx: SelectContext) -> impl FnMut(KeyboardEvent) {
 /// [`crate::top_layer::PopoverKind::Auto`]; with the popper placement the release lands outside the
 /// list). A `manual` popover is never light-dismissed, so this component owns every dismissal:
 ///
-/// - **Escape**: `select_list_onkeydown` (focus on the list or an option) and `SelectTrigger`'s
-///   `onkeydown` (focus on the trigger after an Alt+ArrowDown open) close it; the default is
-///   cancelled so an enclosing dialog stays open.
-/// - **An outside press or focus**: [`crate::use_outside_dismiss`] on the list (a mouse press at
+/// - **Escape**, **an outside press** and **focus leaving**: the dismiss core
+///   ([`crate::dismiss::Policy::ESCAPE_PRESS_AND_FOCUS`]) on the list. Escape closes the list
+///   wherever focus is (on the list or an option, or on the trigger after an Alt+ArrowDown open)
+///   and cancels the key, so an enclosing dialog stays open; a mouse press outside dismisses at
 ///   once, a touch or pen press as a tap, so a page scroll that starts outside leaves the list
-///   open), plus this listbox's own `onblur` and an individual option's (`option.rs`) when focus
-///   leaves the whole widget. All land on `interacted_outside = true`, `open = false`, which is
-///   idempotent when more than one fires.
+///   open. This listbox's own `onblur` and an individual option's (`option.rs`) also close it when
+///   focus leaves the whole widget. An outside press or focus leaving lands on
+///   `interacted_outside = true`, `open = false`, which is idempotent when more than one fires.
 /// - **Animation**: does *not* use [`crate::top_layer::use_popover_sync`] bound to the raw `open`
 ///   signal, unlike the other anchored consumers -- see
 ///   [`crate::top_layer::use_popover_shown_while_mounted`]'s doc for the animate-out race that
@@ -353,10 +353,20 @@ fn SelectListRendered(
     // The popover is `manual`: an outside press or focus dismisses through this hook, a touch
     // press as a tap (see the component doc).
     let list_id = use_memo(use_reactive!(|id| id));
-    crate::use_outside_dismiss(list_id, move || {
-        ctx.selectable.interacted_outside.set(true);
-        ctx.set_open(false);
-    });
+    crate::dismiss::use_dismiss(
+        list_id,
+        crate::dismiss::Scope::Element,
+        crate::dismiss::Policy::ESCAPE_PRESS_AND_FOCUS,
+        Some(open.into()),
+        move |cause| {
+            // Escape hands focus back to the trigger; an outside press or focus leaving leaves it
+            // where the user put it (`SelectRoot`'s `use_refocus_on_close_unless`).
+            if cause.interacted_outside() {
+                ctx.selectable.interacted_outside.set(true);
+            }
+            ctx.set_open(false);
+        },
+    );
     // JS-measured static positioning fallback for engines without CSS
     // Anchor Positioning -- see `top_layer::use_anchor_position_fallback`'s
     // doc. `side`/`align`/gap match this component's themed CSS

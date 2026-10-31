@@ -284,14 +284,6 @@ pub fn TooltipTrigger(props: TooltipTriggerProps) -> Element {
         ctx.timers.blur();
     };
 
-    // Handle keyboard events
-    let handle_keydown = move |event: Event<KeyboardData>| {
-        if event.key() == Key::Escape && (ctx.open)() {
-            event.prevent_default();
-            ctx.timers.dismiss();
-        }
-    };
-
     let base = attributes!(div {
         id: props.id.clone(),
         tabindex: "0",
@@ -303,7 +295,6 @@ pub fn TooltipTrigger(props: TooltipTriggerProps) -> Element {
         onpointercancel: handle_pointer_cancel,
         onfocus: handle_focus,
         onblur: handle_blur,
-        onkeydown: handle_keydown,
         ..state_attrs::popup_open((ctx.open)()),
     });
     let merged = merge_attributes(vec![base, props.attributes]);
@@ -466,6 +457,20 @@ pub fn TooltipContent(props: TooltipContentProps) -> Element {
 /// into the signal in case anything ever closes this natively -- it never
 /// does for `manual` (see `PopoverKind::Manual`'s doc), but the callback
 /// shape stays symmetric with every other call site.
+/// Escape closes an open tooltip wherever focus is (the dismiss core, [`crate::dismiss::Policy::ESCAPE`]):
+/// a hover surface has no press or focus arm, because the pointer leaving or the trigger blurring
+/// already closes it.
+fn use_tooltip_dismiss(id: &str, open: Memo<bool>, timers: HoverTimers) {
+    let id = use_signal(|| id.to_string());
+    crate::dismiss::use_dismiss(
+        id,
+        crate::dismiss::Scope::Element,
+        crate::dismiss::Policy::ESCAPE,
+        Some(open.into()),
+        move |_| timers.dismiss(),
+    );
+}
+
 #[cfg(feature = "web")]
 #[component]
 fn TooltipContentRendered(
@@ -536,6 +541,7 @@ fn TooltipContentRendered(
     // pointer can travel onto the tooltip, which holds it open; leaving it
     // starts the same close as leaving the trigger.
     let timers = use_context::<TooltipCtx>().timers;
+    use_tooltip_dismiss(&id, open, timers);
 
     rsx! {
         div {
@@ -587,6 +593,7 @@ fn TooltipContentRendered(
         }),
     ]);
     let timers = use_context::<TooltipCtx>().timers;
+    use_tooltip_dismiss(&id, open, timers);
 
     rsx! {
         div {

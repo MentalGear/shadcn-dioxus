@@ -2,11 +2,11 @@
 #![warn(missing_docs)]
 #![deny(clippy::unwrap_used, clippy::return_self_not_must_use)]
 
+#[cfg(test)]
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-use dioxus::core::{current_scope_id, use_drop};
 use dioxus::prelude::*;
 #[cfg(not(feature = "web"))]
 use dioxus::prelude::{asset, manganis, Asset};
@@ -42,6 +42,7 @@ pub mod date_picker;
 pub mod default_checked;
 pub mod dialog;
 pub mod direction;
+mod dismiss;
 pub mod drag_and_drop_list;
 pub mod drawer;
 pub mod dropdown_menu;
@@ -327,99 +328,74 @@ fn use_effect_with_cleanup<F: FnMut() -> C + 'static, C: FnOnce() + 'static>(mut
     }))
 }
 
-/// A stack of escape listeners to allow only the top-most listener to be called.
-#[derive(Clone)]
-struct EscapeListenerStack(Rc<RefCell<Vec<ScopeId>>>);
-
-fn use_global_escape_listener(mut on_escape: impl FnMut() + Clone + 'static) {
-    let scope_id = current_scope_id();
-    let stack = use_hook(move || {
-        // Get or create the escape listener stack
-        let stack: EscapeListenerStack = try_consume_context()
-            .unwrap_or_else(|| provide_context(EscapeListenerStack(Default::default())));
-        // Push the current scope onto the stack
-        stack.0.borrow_mut().push(scope_id);
-        stack
-    });
-    // Remove the current scope id from the stack when we unmount
-    use_drop({
-        let stack = stack.clone();
-        move || {
-            let mut stack = stack.0.borrow_mut();
-            stack.retain(|id| *id != scope_id);
-        }
-    });
-    use_global_keydown_listener("Escape", move || {
-        // Only call the listener if this component is on top of the stack
-        let stack = stack.0.borrow();
-        if stack.last() == Some(&scope_id) {
-            on_escape();
-        }
+/// The page half of the dismiss core ([`dismiss`]): one listener script per layer, parameterised by
+/// the layer's [`dismiss::Policy`].
+///
+/// - **Escape** (`escape` is `close` or `native`): every layer that takes part registers on
+///   `window.__dxDismissLayers`, ordered by the `seq` it was given when it opened, so the order is
+///   one list on the page and the decision is made inside the key's dispatch. Only the topmost
+///   layer reacts: a `close` layer cancels the key's default action (so an enclosing `<dialog>`
+///   does not also take it as a `cancel`) and tells Rust; a `native` layer (a modal `<dialog>`, a
+///   `popover="auto"`) leaves the key to the browser, and the layers under it ignore it.
+/// - **A press outside** (`press`): a mouse press dismisses on `pointerdown`. A touch or pen press is
+///   a tap: `pointerdown` is recorded while the layer is open (a press that began before it opened
+///   has no record, so the long press that opens a context menu never closes it), `pointerup`
+///   within 10 px dismisses, and `pointercancel` (the browser took the gesture to scroll) drops it.
+/// - **Focus leaving** (`focus`): `focusin` on something outside the root, except an *ancestor* of
+///   it: clicking the root's own non-focusable background blurs the focused control and the browser
+///   moves focus to the nearest focusable ancestor, which is not a real focus-out.
+///
+/// The root is the element with `id`, or its nearest ancestor matching `closest`. A message is
+/// `outside`, `focus`, `escape` or `escape-within` (focus was inside the root when Escape came).
+const DISMISS_JS: &str = "const o = await dioxus.recv();
+const layers = (window.__dxDismissLayers = window.__dxDismissLayers || []);
+const root = () => { const el = document.getElementById(o.id); return el && o.closest ? el.closest(o.closest) : el; };
+const outside = n => { const r = root(); return r && !r.contains(n); }; let press = null;
+if (o.escape !== 'ignore') {
+    layers.push(o), layers.sort((a, b) => a.seq - b.seq), cleanup(() => layers.splice(layers.indexOf(o), 1));
+    listen(document, 'keydown', e => {
+        if (e.key !== 'Escape' || layers[layers.length - 1] !== o || o.escape === 'native') return;
+        e.preventDefault(), dioxus.send(root() && root().contains(document.activeElement) ? 'escape-within' : 'escape');
     });
 }
+if (o.press) {
+    listen(document, 'pointerdown', e => {
+        if (e.pointerType !== 'mouse') press = { id: e.pointerId, x: e.clientX, y: e.clientY, target: e.target };
+        else if (outside(e.target)) dioxus.send('outside');
+    }, true);
+    listen(document, 'pointerup', e => {
+        const p = press; press = null;
+        if (p && p.id === e.pointerId && Math.hypot(e.clientX - p.x, e.clientY - p.y) < 10 && outside(p.target)) dioxus.send('outside');
+    }, true);
+    listen(document, 'pointercancel', e => { if (press && press.id === e.pointerId) press = null; }, true);
+}
+if (o.focus) listen(document, 'focusin', e => {
+    const r = root(); if (r && !r.contains(e.target) && !e.target.contains(r)) dioxus.send('focus');
+}, true);";
 
-fn use_global_keydown_listener(key: &'static str, on_escape: impl FnMut() + Clone + 'static) {
-    use_js_listeners(move || {
-        let mut on_escape = on_escape.clone();
-        Some(
-            JsListeners::install(
-                "const targetKey = await dioxus.recv();
-                listen(document, 'keydown', (event) => {
-                    if (event.key === targetKey) {
-                        event.preventDefault();
-                        dioxus.send(true);
-                    }
-                });",
-            )
-            .arg(key)
-            .on_message(move |_: bool| on_escape()),
-        )
-    });
+/// Install [`DISMISS_JS`] for one layer; the returned value removes its listeners and its place in
+/// the Escape order when dropped.
+fn dismiss_listeners(spec: &dismiss::Spec) -> JsListeners {
+    JsListeners::install(DISMISS_JS).arg(spec)
 }
 
 /// Light-dismiss when a press or focus lands outside the element with the given `id`.
 /// `id` should be the id of the popover/dialog root that contains every "inside" element.
 ///
-/// A mouse press outside dismisses on `pointerdown`. A touch or pen press is a tap: `pointerdown`
-/// is recorded while the panel is open (a press that began before it opened has no record, so the
-/// long press that opens a context menu never closes it), `pointerup` within 10 px dismisses, and
-/// `pointercancel` (the browser took the gesture to scroll) drops it. A scroll that starts outside
-/// a panel on a phone therefore leaves it open. Focus moving outside the root dismisses too (e.g.
-/// tabbing away), except focus landing on an *ancestor* of the root: clicking the popover's own
-/// non-focusable background blurs the focused control and the browser moves focus to the nearest
-/// focusable ancestor, which is not a real focus-out.
+/// This is [`dismiss::Policy::OUTSIDE`] on the dismiss core: a mouse press dismisses on
+/// `pointerdown`, a touch or pen press is a tap (row 477), and focus moving outside dismisses too.
+/// Escape is not handled here; the menu hosts keep their own.
 fn use_outside_dismiss(
     id: impl Readable<Target = String> + Copy + 'static,
-    on_dismiss: impl FnMut() + Clone + 'static,
+    mut on_dismiss: impl FnMut() + Clone + 'static,
 ) {
-    use_js_listeners(move || {
-        let mut on_dismiss = on_dismiss.clone();
-        Some(
-            JsListeners::install(
-                "const id = await dioxus.recv();
-                const root = () => document.getElementById(id);
-                const outside = n => { const r = root(); return r && !r.contains(n); };
-                let press = null;
-                listen(document, 'pointerdown', e => {
-                    if (e.pointerType === 'mouse') { if (outside(e.target)) dioxus.send(true); }
-                    else press = { id: e.pointerId, x: e.clientX, y: e.clientY, target: e.target };
-                }, true);
-                listen(document, 'pointerup', e => {
-                    const p = press;
-                    press = null;
-                    if (p && p.id === e.pointerId && Math.hypot(e.clientX - p.x, e.clientY - p.y) < 10
-                        && outside(p.target)) dioxus.send(true);
-                }, true);
-                listen(document, 'pointercancel', e => { if (press && press.id === e.pointerId) press = null; }, true);
-                listen(document, 'focusin', e => {
-                    const r = root();
-                    if (r && !r.contains(e.target) && !e.target.contains(r)) dioxus.send(true);
-                }, true);",
-            )
-            .arg(id.cloned())
-            .on_message(move |_: bool| on_dismiss()),
-        )
-    });
+    dismiss::use_dismiss(
+        id,
+        dismiss::Scope::Element,
+        dismiss::Policy::OUTSIDE,
+        None,
+        move |_| on_dismiss(),
+    );
 }
 
 /// Returns the previous value of a reactive signal.
@@ -944,8 +920,8 @@ fn use_dialog_close_sync(
 /// On iOS Safari (touch), a default (modal, `is_modal` defaults to
 /// `true`) `Popover` would show only its `::backdrop`, the popover itself
 /// flashing and disappearing, if the opening tap also dismissed it.
-/// This hook is a modal `Popover`/`Dialog`'s only dismissal path -- the web
-/// arm calls neither `use_global_escape_listener` nor `use_outside_dismiss`
+/// This hook is a modal `Popover`/`Dialog`'s only press-dismissal path -- the web
+/// arm uses no closing layer of the dismiss core
 /// (the browser's own `showModal()` already supplies focus trap/restore and
 /// inertness; this hook is what supplies backdrop-click dismiss) -- so a
 /// dismiss firing on the *opening* tap itself is exactly the

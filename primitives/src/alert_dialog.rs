@@ -16,13 +16,12 @@
 //!   `dialog.rs` uses. Closing waits for the exit animation (the driver
 //!   defers `close()`; see `dialog.rs`), so the `<dialog>` carries its own
 //!   `data-state`. No backdrop-click dismiss: unlike `Dialog`,
-//!   `AlertDialogContent` does not call `use_outside_dismiss` (APG
+//!   `AlertDialogContent` has no outside-press arm (APG
 //!   discourages light-dismissing an alert dialog), and the web arm has no
 //!   equivalent either.
 
 use crate::state_attrs;
 #[cfg(not(feature = "web"))]
-use crate::use_global_escape_listener;
 use crate::{merge_attributes, use_animated_open, use_controlled, use_id_or, use_unique_id};
 #[cfg(not(feature = "web"))]
 use dioxus::document;
@@ -240,13 +239,19 @@ pub fn AlertDialogContent(props: AlertDialogContentProps) -> Element {
     let open = ctx.open;
     let set_open = ctx.set_open;
 
-    // Add a escape key listener to the document when the dialog is open. We can't
-    // just add this to the dialog itself because it might not be focused if the user
-    // is highlighting text or interacting with another element.
-    use_global_escape_listener(move || set_open.call(false));
-
     let gen_id = use_unique_id();
     let id = use_id_or(gen_id, props.id);
+
+    // Escape closes the dialog wherever focus is (the dismiss core): the dialog itself might not
+    // be focused if the user is highlighting text or interacting with another element. An alert
+    // dialog never light-dismisses, so there is no press or focus arm.
+    crate::dismiss::use_dismiss(
+        id,
+        crate::dismiss::Scope::Element,
+        crate::dismiss::Policy::ESCAPE,
+        None,
+        move |_| set_open.call(false),
+    );
 
     // An alert dialog is always modal, so lock page scroll for as long as
     // it's open. See dev-docs/plan.md Phase 3.2.
@@ -324,11 +329,20 @@ pub fn AlertDialogContent(props: AlertDialogContentProps) -> Element {
     // `crate::use_dialog_open_driver` (lib.rs), which keep a native close
     // from stranding the `open` signal at `true`
     // (dev-docs/reference/platform-rationale.md Caveat 1). Deliberately no
-    // `use_global_escape_listener` and no focus-trap eval: the browser's own
+    // closing layer and no focus-trap eval: the browser's own
     // `showModal()`/`cancel`/`close` events already cover Escape, focus
     // trap, and focus restore.
     crate::use_dialog_close_sync(id, set_open);
     crate::use_dialog_open_driver(id, open);
+    // Escape is the dialog's own `cancel`, routed through state by `use_dialog_close_sync`; the
+    // layer only keeps the dialog's place in the dismiss core's Escape order.
+    crate::dismiss::use_dismiss(
+        id,
+        crate::dismiss::Scope::Element,
+        crate::dismiss::Policy::NATIVE,
+        Some(open.into()),
+        |_| {},
+    );
 
     // Owned by this component -- see the native arm's identical
     // construction above (`dev-docs/backlog.md` row 93).

@@ -222,36 +222,6 @@ pub fn Navbar(props: NavbarProps) -> Element {
                 },
                 onkeydown: move |event: Event<KeyboardData>| {
                     match event.key() {
-                        Key::Escape => {
-                            // Escape refocuses the trigger (dev-docs/backlog.md
-                            // row 53): `Navbar` fully supports keyboard-driven
-                            // opening (`NavbarNav`'s ArrowDown/ArrowUp move
-                            // focus into the open content exactly the way
-                            // `MenubarMenu`'s do), so it needs the same
-                            // "return focus to the trigger the open menu
-                            // belongs to" contract `MenubarMenu`'s own
-                            // Escape arm already implements
-                            // (`menubar.rs`). Read the open index BEFORE
-                            // closing (`set_open_nav.call(None)` below
-                            // clears it), then re-focus that trigger via
-                            // the collection -- `ctx.focus` never actually
-                            // left that trigger's own index while keyboard
-                            // focus roamed *within* the open nav's own
-                            // content (`nav_ctx.focus`, a separate
-                            // collection, tracks that), so a plain
-                            // `set_focus` would be a same-value no-op that
-                            // never re-runs `control_mount_focus` -- clear
-                            // first to force a real transition, mirroring
-                            // `MenubarMenu`'s identical comment. A no-op
-                            // when nothing was open (Escape pressed with no
-                            // nav open).
-                            let open_index = *ctx.open_nav.peek();
-                            ctx.set_open_nav.call(None);
-                            if let Some(index) = open_index {
-                                ctx.focus.clear_focus();
-                                ctx.focus.set_focus(Some(index));
-                            }
-                        }
                         Key::ArrowLeft | Key::ArrowRight => {
                             match (ctx.direction)().resolve_horizontal(&event.key()) {
                                 Some(HorizontalNav::Prev) => ctx.focus.focus_prev(),
@@ -838,6 +808,39 @@ pub fn NavbarContent(props: NavbarContentProps) -> Element {
     }
 }
 
+/// Escape closes the open nav's content and, when focus was inside the content, hands it back to the
+/// trigger the open menu belongs to (dev-docs/backlog.md row 53: `Navbar` supports keyboard-driven
+/// opening the way `MenubarMenu` does, so it returns focus the way `MenubarMenu`'s Escape does). On the
+/// dismiss core ([`crate::dismiss::Policy::ESCAPE`]); a press outside is the content's native
+/// `popover="auto"` light dismiss (row 487 measured it equivalent), and the triggers' own `onblur`
+/// is the focus arm.
+fn use_navbar_dismiss(id: &str) {
+    let ctx: NavbarContext = use_context();
+    let nav_ctx: NavbarNavContext = use_context();
+    let index = nav_ctx.index;
+    let id = use_signal(|| id.to_string());
+    crate::dismiss::use_dismiss(
+        id,
+        crate::dismiss::Scope::Element,
+        crate::dismiss::Policy::ESCAPE,
+        Some(nav_ctx.is_open.into()),
+        move |cause| {
+            if (ctx.open_nav)() != Some(index.cloned()) {
+                return;
+            }
+            ctx.set_open_nav.call(None);
+            if cause.focus_was_within() {
+                // Clear first to force a real transition: `ctx.focus` never left this trigger's
+                // index while keyboard focus roamed within the open content (`nav_ctx.focus` tracks
+                // that), so a plain `set_focus` would be a same-value no-op that never re-runs
+                // `control_mount_focus` (`MenubarMenu`'s Escape does the same).
+                ctx.focus.clear_focus();
+                ctx.focus.set_focus(Some(index.cloned()));
+            }
+        },
+    );
+}
+
 /// Web arm: promote each nav's content to the top
 /// layer via `popover="auto"`, anchored to its own trigger -- the same
 /// mechanism `MenubarContentRendered`/`DropdownMenuContentRendered` use
@@ -881,6 +884,7 @@ fn NavbarContentRendered(
     let nav_ctx: NavbarNavContext = use_context();
     let open = nav_ctx.is_open;
     let index = nav_ctx.index;
+    use_navbar_dismiss(&id);
 
     // Drive `showPopover()` from `open`, and sync a native close back into
     // `ctx.open_nav` -- but *only* when this nav is still the one recorded
@@ -1018,6 +1022,7 @@ fn NavbarContentRendered(
     children: Element,
 ) -> Element {
     let nav_ctx: NavbarNavContext = use_context();
+    use_navbar_dismiss(&id);
 
     // See the web arm's identical construction above (dev-docs/backlog.md row
     // 41) for why this is conditional and routed through `merge_attributes`

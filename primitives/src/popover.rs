@@ -12,9 +12,9 @@
 //!   `showModal()`, driven by the exact same
 //!   `crate::use_dialog_open_driver`/`crate::use_dialog_close_sync`/
 //!   `crate::use_dialog_backdrop_dismiss` trio `dialog.rs`'s web modal arm
-//!   uses -- no focus-trap eval and no `use_global_escape_listener`/
-//!   `use_outside_dismiss` on this arm; the browser's own `showModal()`
-//!   supplies the focus trap, focus restore, background inertness, and top
+//!   uses -- no focus-trap eval and no dismissing layer on this arm (it joins the dismiss core's
+//!   Escape order as a native layer, `crate::dismiss::Policy::NATIVE`); the browser's own
+//!   `showModal()` supplies the focus trap, focus restore, background inertness, and top
 //!   layer.
 //!
 //! Unlike [`crate::dialog`]'s modal `Dialog`, a modal `Popover` stays
@@ -46,20 +46,15 @@ use crate::state_attrs;
 use dioxus::document;
 use dioxus::prelude::*;
 
-// `use_global_escape_listener`/`use_outside_dismiss` are only called from
-// native (Blitz) arms -- `PopoverModalContent`'s native arm (its own
-// dismissal wiring) and `PopoverNonModalContent`'s native arm
-// (Blitz has no Popover API, `dev-docs/reference/platform-rationale.md` Caveat
-// 2). Both web arms get dismissal from the browser instead (`showModal()`'s
-// `cancel`/`close` events for modal, `popover="auto"` light dismiss for
-// non-modal) -- gated the same way so the web build never carries an
-// unused import.
+// Only the native (Blitz) arms dismiss through the dismiss core (`crate::dismiss`, Escape and
+// outside press): `PopoverModalContent`'s and `PopoverNonModalContent`'s native arms (Blitz has no
+// Popover API, `dev-docs/reference/platform-rationale.md` Caveat 2). Both web arms get dismissal
+// from the browser (`showModal()`'s `cancel`/`close` events for modal, `popover="auto"` light
+// dismiss for non-modal) and are native layers of the core's Escape order.
 use crate::{
     merge_attributes, use_animated_open, use_controlled, use_id_or, use_unique_id, ContentAlign,
     ContentSide,
 };
-#[cfg(not(feature = "web"))]
-use crate::{use_global_escape_listener, use_outside_dismiss};
 use dioxus_attributes::attributes;
 
 #[derive(Clone, Copy)]
@@ -76,12 +71,12 @@ struct PopoverCtx {
     // Whether a modal popover keeps its page-dimming scrim. Only the modal arms read it.
     overlay: ReadSignal<bool>,
     labelledby: Signal<String>,
-    // Only read by `use_outside_dismiss` calls, which live solely in
+    // Only read by the dismiss core's call, which lives solely in
     // native (Blitz) arms (`PopoverModalContent`/`PopoverNonModalContent`'s
     // `#[cfg(not(feature = "web"))]` variants) -- both web arms get
     // dismissal from the browser instead. `#[allow]` so the web
     // build doesn't warn on a field genuinely unread there.
-    #[allow(unused, reason = "read only by the native arms' `use_outside_dismiss`")]
+    #[allow(unused, reason = "read only by the native arms' dismiss layer")]
     root_id: Memo<String>,
 
     // The current `PopoverContent`'s own element id, kept in sync by that
@@ -460,18 +455,12 @@ pub fn PopoverContentRendered(
     //    one child and mounts the other, each getting its own fresh hook
     //    scope, so there is no single instance whose hook count/order
     //    could vary.
-    // 2. Correctness, not just safety: `use_global_escape_listener`'s
-    //    underlying JS calls `event.preventDefault()` on *every* Escape
-    //    keypress while any instance is mounted, regardless of what its
-    //    Rust callback decides to do -- so merely having the non-modal web
-    //    arm call it (even with a callback that declines to act) would
-    //    suppress the browser's own `popover="auto"` Escape-dismissal
-    //    algorithm before it ever runs (keeping the hook called
-    //    unconditionally and gating only the Rust-side callback stops
-    //    Escape from closing the non-modal web popover at all). The non-modal web arm
-    //    below simply never calls `use_global_escape_listener`/
-    //    `use_outside_dismiss`, so it never installs that
-    //    `preventDefault()`.
+    // 2. Correctness, not just safety: a layer that takes the Escape key (`EscapeKey::Close`)
+    //    cancels the key's default action, which would suppress the browser's own
+    //    `popover="auto"` Escape dismissal and a modal `<dialog>`'s `cancel`. The web arms
+    //    therefore join the dismiss core's Escape order as native layers
+    //    (`crate::dismiss::Policy::NATIVE`), which keep their place in the order and leave the
+    //    key alone.
     if is_modal() {
         rsx! {
             PopoverModalContent { id, class, side, align, attributes, children, is_open }
@@ -517,8 +506,13 @@ fn PopoverModalContent(
     // Add a escape key listener to the document when the popover is open. We can't
     // just add this to the popover itself because it might not be focused if the user
     // is highlighting text or interacting with another element.
-    use_global_escape_listener(move || set_open.call(false));
-    use_outside_dismiss(ctx.root_id, move || set_open.call(false));
+    crate::dismiss::use_dismiss(
+        ctx.root_id,
+        crate::dismiss::Scope::Element,
+        crate::dismiss::Policy::ESCAPE_PRESS_AND_FOCUS,
+        None,
+        move |_| set_open.call(false),
+    );
 
     let id_for_trap = id.clone();
     use_effect(move || {
@@ -583,7 +577,7 @@ fn PopoverModalContent(
 /// keyed on `:modal` in `top_layer.rs`, would stop matching mid-fade.) The shared
 /// `close_sync` also routes Escape's `cancel` through state, so this arm needs no
 /// second, duplicate Escape handler. No
-/// `use_global_escape_listener`/`use_outside_dismiss` and no focus-trap eval on this
+/// closing layer and no focus-trap eval on this
 /// arm -- the browser's own `showModal()` supplies the focus trap, focus restore,
 /// background inertness, and top-layer rendering.
 ///
@@ -636,9 +630,18 @@ fn PopoverModalContent(
 
     crate::use_dialog_close_sync(id_signal, set_open);
     crate::use_dialog_open_driver(id_signal, open);
+    // Escape is the dialog's own `cancel`, routed through state by `use_dialog_close_sync`; the
+    // layer only keeps the dialog's place in the dismiss core's Escape order.
+    crate::dismiss::use_dismiss(
+        id_signal,
+        crate::dismiss::Scope::Element,
+        crate::dismiss::Policy::NATIVE,
+        Some(open.into()),
+        |_| {},
+    );
     // Native <dialog> has no built-in "click outside to dismiss" the way
     // `popover=` does -- see `crate::use_dialog_backdrop_dismiss`'s doc for
-    // why `use_outside_dismiss` itself can't be reused for a `showModal()`
+    // why the core's outside press can't be reused for a `showModal()`
     // dialog.
     crate::use_dialog_backdrop_dismiss(id_signal, move || set_open.call(false));
 
@@ -696,9 +699,9 @@ fn PopoverModalContent(
 /// an explicit `role="dialog"` because it is a plain `div`; here that would
 /// be redundant with the element's own implicit role, so it is dropped.
 ///
-/// Deliberately does *not* call `use_global_escape_listener`/
-/// `use_outside_dismiss` -- see `PopoverContentRendered`'s comment for why
-/// that is required for correctness, not just style, on this arm.
+/// Deliberately a native layer of the dismiss core (`Policy::NATIVE`), never a closing one -- see
+/// `PopoverContentRendered`'s comment for why that is required for correctness, not just style, on
+/// this arm.
 ///
 /// Uses `crate::top_layer::use_popover_shown_while_mounted`, not
 /// `use_popover_sync` (dev-docs/backlog.md row 19): this content is mounted by
@@ -745,6 +748,17 @@ fn PopoverNonModalContent(
     is_open: bool,
 ) -> Element {
     let ctx: PopoverCtx = use_context();
+    // Escape and the press outside are the `popover="auto"`'s own light dismiss, synced into state
+    // by `use_popover_shown_while_mounted`; the layer only keeps the popover's place in the dismiss
+    // core's Escape order.
+    let id_signal = use_signal(|| id.clone());
+    crate::dismiss::use_dismiss(
+        id_signal,
+        crate::dismiss::Scope::Element,
+        crate::dismiss::Policy::NATIVE,
+        Some(ctx.open.into()),
+        |_| {},
+    );
     crate::top_layer::use_popover_shown_while_mounted(id.clone(), ctx.open, ctx.set_open);
     crate::modality::use_close_focus(id.clone(), ctx.open);
     // JS-measured static positioning fallback for Firefox/WebKit (no CSS
@@ -819,8 +833,13 @@ fn PopoverNonModalContent(
 ) -> Element {
     let ctx: PopoverCtx = use_context();
     let set_open = ctx.set_open;
-    use_global_escape_listener(move || set_open.call(false));
-    use_outside_dismiss(ctx.root_id, move || set_open.call(false));
+    crate::dismiss::use_dismiss(
+        ctx.root_id,
+        crate::dismiss::Scope::Element,
+        crate::dismiss::Policy::ESCAPE_PRESS_AND_FOCUS,
+        None,
+        move |_| set_open.call(false),
+    );
 
     // Owned by this component -- see the web arm's identical construction
     // above (`dev-docs/backlog.md` row 93).
