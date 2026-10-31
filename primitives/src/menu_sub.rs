@@ -1,87 +1,56 @@
-//! Shared, type-independent plumbing for the APG "Menu and Menubar"
-//! pattern's nested-submenu contract (`DropdownMenu.Sub`/`ContextMenu.Sub`),
-//! used by both [`crate::dropdown_menu`] and [`crate::context_menu`].
+//! The nested-submenu half of the APG "Menu and Menubar" pattern
+//! (`DropdownMenu.Sub` / `ContextMenu.Sub`), written once for
+//! [`crate::dropdown_menu`] and [`crate::context_menu`].
 //!
-//! # Why this module exists, and what deliberately stays out of it
+//! # What is here
 //!
-//! `dropdown_menu.rs` and `context_menu.rs` each already have their own
-//! private root context struct (`DropdownMenuContext`, `ContextMenuCtx`)
-//! that a `*SubTrigger`/`*SubItem` needs to read to register itself in the
-//! *enclosing* menu's item collection (`ctx.focus`) -- that lookup is
-//! necessarily file-local (Rust's module privacy has no way to let this
-//! module see either private struct without making them `pub(crate)`, and
-//! doing that would widen those files' API surface for no reader benefit).
-//! Likewise, how the outermost content of each host is positioned differs:
-//! `DropdownMenuContent` anchors to its trigger; `ContextMenuContent`
-//! doesn't anchor at all (it's pinned to a raw click point, `position:
-//! fixed; left/top`, see that file's own doc). A `*Sub`'s own content,
-//! though, anchors to its trigger the same way *either* host's top-level
-//! content does -- so that positioning call is identical for both and does
-//! belong here in spirit, but the actual `use_anchor_position_fallback`
-//! call still has to live in each file's own `#[cfg(feature = "web")]`
-//! leaf render function, because the engine's shared stylesheet is scoped
-//! by the `data-dx-anchored` attribute that `top_layer::anchored_content_attributes`
-//! writes from a `top_layer::AnchorKind`, and both hosts' submenus pass
-//! `AnchorKind::DropdownMenu` rather than a kind of their own -- see each
-//! `*SubContentRendered`'s own doc for the full reasoning.
-//!
-//! What *is* identical for both hosts, and lives here:
-//! - [`SubMenuState`]: the open/close state, own roving-focus collection,
-//!   and trigger/content id pair every `Sub` needs -- mirrors
-//!   `DropdownMenuContext`'s own shape at one level of nesting (see that
-//!   struct's doc in `dropdown_menu.rs`), with the "which enclosing
-//!   collection do I register in" question left to each caller, since only
-//!   the caller knows which private root context type answers it.
-//! - The hover-intent timer every `*SubTrigger` needs to open on hover, and
-//!   every `*SubContent`/`*SubTrigger` needs to close on leaving without
-//!   entering the other. This crate's only prior art for a timed
-//!   pointer-driven open/close is `context_menu.rs`'s long-press timer
-//!   (`LONG_PRESS_DURATION`, `crate::sleep::sleep` + `spawn`/`Task`) --
-//!   [`DelayedAction`] is that same primitive, shared so
-//!   `DropdownMenuSubTrigger`/`ContextMenuSubTrigger` do not each
-//!   reinvent it.
-//! - The **`open_on_hover` switch** ([`SubMenuState::open_on_hover`]) and the
-//!   four pointer-hover entry points ([`SubMenuState::hover_enter_trigger`],
-//!   [`SubMenuState::hover_leave_trigger`], [`SubMenuState::hover_enter_content`],
-//!   [`SubMenuState::hover_leave_content`]) that honour it. This is the one
-//!   place a submenu's *pointer-hover* behaviour is decided: the two timers
-//!   are private to this module, so a host (`DropdownMenuSub`,
-//!   `ContextMenuSub`, or a future one) can only reach them through these
-//!   gated methods and cannot grow an ungated `onmouseenter` of its own.
-//!   See [`SubMenuState::open_on_hover`] for the semantics and the Base UI
-//!   reference.
+//! - The shared parts a host's `*Sub`, `*SubTrigger` and `*SubContent` components call: `render_sub` (the context
+//!   boundary), `render_sub_trigger` (a parent `menuitem` that opens the submenu) and `render_sub_content` (the
+//!   submenu panel, one component for the web and native renderers). They read the host's
+//!   [`crate::menu_root::MenuHost`] for what is host-specific: the collection the sub-trigger registers in, the
+//!   text direction, the disabled state and the count of open submenus. A submenu's *items* are the ordinary menu
+//!   items (`crate::menu_item`), which register in the submenu they are rendered in.
+//! - [`SubMenuState`]: the open/close state, own roving-focus collection, and trigger/content id pair every `Sub`
+//!   needs.
+//! - The hover-intent timer every sub-trigger needs to open on hover, and every sub-content/sub-trigger needs to
+//!   close on leaving without entering the other. [`DelayedAction`] is the one primitive for a timed pointer-driven
+//!   open/close (`crate::sleep::sleep` + `spawn`/`Task`), shared with `HoverCard`, the hover-intent helper and
+//!   `NavigationMenu`.
+//! - The **`open_on_hover` switch** ([`SubMenuState::open_on_hover`]) and the four pointer-hover entry points
+//!   ([`SubMenuState::hover_enter_trigger`], [`SubMenuState::hover_leave_trigger`],
+//!   [`SubMenuState::hover_enter_content`], [`SubMenuState::hover_leave_content`]) that honour it. This is the one
+//!   place a submenu's *pointer-hover* behaviour is decided: the two timers are private to this module, so a
+//!   caller can only reach them through these gated methods and cannot grow an ungated `onmouseenter` of its own.
 //!
 //! # Scope: one level of nesting
 //!
-//! A `Sub`'s own content may hold plain items (`DropdownMenuSubItem`/
-//! `ContextMenuSubItem`) but not a further nested `Sub` of its own.
-//! `DropdownMenuSubTrigger`/`ContextMenuSubTrigger` register in the
-//! *root* menu's collection by reading that host's root context type
-//! directly (`use_context::<DropdownMenuContext>()`, unconditionally the
-//! root, never a `SubMenuState`) -- correct only because there is never
-//! more than one level between a sub-trigger and the root. Supporting a
-//! `Sub` inside a `Sub` would need that lookup to walk however many
-//! `SubMenuState` levels enclose it before finding the true root, which
-//! this module's single `SubMenuState` type (identical at every depth,
-//! indistinguishable from its neighbours by type alone) cannot resolve on
-//! its own. `dev-docs/archive/rounds/component-backlog.md` row 68 budgets nested submenus as
-//! "L" effort against a `molikto` patch that is "shape only, not
-//! cherry-pickable" for exactly this one level -- recursive `Sub`-in-`Sub`
-//! is not part of that budget, and is left out here rather than half-built
-//! against a type that can't actually support it. See this crate's
-//! `menubar.rs` for the precedent: `MenubarMenu` also stops at one level
-//! (no nested `MenubarMenu` inside a `MenubarContent`) for the same
-//! practical reason.
+//! A `Sub`'s own content may hold items but not a further nested `Sub` of its own. The sub-trigger registers in the
+//! host's collection (`MenuHost::focus`), unconditionally the root, never a `SubMenuState` -- correct only because
+//! there is never more than one level between a sub-trigger and the root. Supporting a `Sub` inside a `Sub` would
+//! need that lookup to walk however many `SubMenuState` levels enclose it before finding the true root, which this
+//! module's single `SubMenuState` type (identical at every depth) cannot resolve on its own.
+//! `MenubarMenu` stops at one level for the same reason.
 
 use std::time::Duration;
 
 use crate::sleep::sleep;
 use dioxus::prelude::*;
+use dioxus_attributes::attributes;
 use dioxus_core::Task;
 
-use crate::collection::{use_collection_provider, CollectionPlacement, CollectionState};
+use crate::collection::{
+    collection_item, use_collection_provider, use_deferred_collection_focus, use_item,
+    use_item_index, CollectionPlacement, CollectionState,
+};
 use crate::direction::{Direction, HorizontalNav};
-use crate::use_unique_id;
+use crate::menu_item::{
+    self, MenuItemVariant, MenuSubContentProps, MenuSubProps, MenuSubTriggerProps,
+};
+use crate::menu_root::{self, MenuHost, PanelConfig, PanelKind, PanelPlacement, PanelPopover};
+use crate::{
+    merge_attributes, state_attrs, use_controlled, use_id_or, use_unique_id, ContentAlign,
+    ContentSide,
+};
 
 /// Hover-intent delay before a pointer hovering a sub-trigger opens its
 /// submenu.
@@ -438,4 +407,282 @@ pub(crate) fn use_sub_outside_dismiss(
             .on_message(move |_: bool| on_dismiss()),
         )
     });
+}
+
+/// The submenu boundary of any host: renders no element, only the context around its sub-trigger and sub-content.
+/// Called from a component body; it calls hooks.
+pub(crate) fn render_sub(props: MenuSubProps) -> Element {
+    let host: MenuHost = use_context();
+    let (open, set_open) = use_controlled(props.open, props.default_open, props.on_open_change);
+    let mut sub = use_sub_menu_state(open, set_open, props.roving_loop, props.open_on_hover);
+
+    // Closing (however triggered -- Escape/ArrowLeft, hover-leave, an outside interaction, or the enclosing menu
+    // closing entirely and unmounting this component) must not let a later reopen inherit stale focus state.
+    use_effect(move || {
+        if !(sub.open)() {
+            sub.focus.clear_focus();
+            sub.initial_focus.set(None);
+        }
+    });
+
+    // Keep the host's count of open submenus equal to "is *this* submenu currently open" at all times, so the
+    // host's "did focus really leave the whole menu" guards never misread this submenu's own item legitimately
+    // holding focus as an outside blur. `submenu_counted` (not `sub.open` alone) makes each transition
+    // exactly-once: mount always starts with `sub.open` false, so a naive "false branch decrements" would
+    // underflow the first time this effect runs, before this submenu was ever counted as open. The cleanup covers
+    // the one path the effect body cannot: an ancestor unmounting this component while `sub.open` is still `true`
+    // runs no further effects, only cleanups.
+    let mut open_count = host.submenu_open_count;
+    let mut submenu_counted = use_signal(|| false);
+    use_effect(move || {
+        let is_open = (sub.open)();
+        let was_counted = *submenu_counted.peek();
+        if is_open && !was_counted {
+            *open_count.write() += 1;
+            submenu_counted.set(true);
+        } else if !is_open && was_counted {
+            *open_count.write() -= 1;
+            submenu_counted.set(false);
+        }
+    });
+    crate::use_effect_cleanup(move || {
+        if *submenu_counted.peek() {
+            *open_count.write() -= 1;
+        }
+    });
+
+    use_context_provider(|| sub);
+    // The sub-trigger's element, for the submenu content's ArrowLeft/Escape hand-back.
+    let sub_trigger = crate::use_trigger_handle();
+    use_context_provider(|| crate::SubTriggerHandle(sub_trigger));
+
+    rsx! {
+        {props.children}
+    }
+}
+
+/// The parent `menuitem` of a submenu, for any host. It registers *itself* in the host's collection, the way a
+/// `MenubarTrigger` registers in the menubar's row rather than in its own menu's. Called from a component body; it
+/// calls hooks.
+pub(crate) fn render_sub_trigger(props: MenuSubTriggerProps) -> Element {
+    let host: MenuHost = use_context();
+    let mut sub: SubMenuState = use_context();
+
+    let disabled = move || (host.disabled)() || (props.disabled)();
+    let order = use_item_index(host.focus, props.index);
+    let index = order.index;
+    let item = use_item(
+        collection_item(host.focus, index)
+            .disabled(disabled)
+            .text_value(move || (props.text_value)()),
+    );
+    let focused = move || item.focused();
+    let mut register = item.onmounted();
+    let sub_trigger = use_context::<crate::SubTriggerHandle>().0;
+    let onmounted = move |event: MountedEvent| {
+        sub_trigger.set(event.data());
+        register(event);
+    };
+
+    let id = use_id_or(sub.trigger_id, props.id);
+
+    let base = attributes!(div {
+        id: id.cloned(),
+        role: crate::menu_semantics::MENU_ITEM_ROLE,
+        aria_haspopup: crate::menu_semantics::MENU_TRIGGER_HASPOPUP,
+        aria_expanded: sub.open,
+        aria_controls: sub.content_id.cloned(),
+        ..menu_item::item_state_attributes(disabled(), focused()),
+        ..state_attrs::trigger_open((sub.open)()),
+
+        onmounted,
+
+        // Hover opens without moving keyboard focus (and does nothing at all when `open_on_hover` is `false`).
+        onmouseenter: move |_| {
+            if disabled() {
+                return;
+            }
+            sub.hover_enter_trigger();
+        },
+        onmouseleave: move |_| {
+            sub.hover_leave_trigger();
+        },
+
+        onclick: move |event: Event<MouseData>| {
+            event.stop_propagation();
+            if disabled() {
+                return;
+            }
+            sub.cancel_hover();
+            // A pointer click (unlike a hover-intent open) does move focus: touch users have no hover state to
+            // rely on, so a tap here must be a complete "open and land in the submenu" action.
+            sub.open_with_focus(CollectionPlacement::First);
+        },
+
+        onkeydown: move |event: Event<KeyboardData>| {
+            if disabled() {
+                return;
+            }
+            let key = event.key();
+            // APG: ArrowRight/Enter/Space open the submenu and move focus to its first item; the arrow is
+            // direction-aware (`ArrowLeft` in RTL).
+            let opens = matches!(key, Key::Enter)
+                || matches!(&key, Key::Character(c) if c == " ")
+                || is_submenu_open_arrow_key(&key, (host.direction)());
+            if !opens {
+                return;
+            }
+            sub.open_with_focus(CollectionPlacement::First);
+            event.prevent_default();
+            event.stop_propagation();
+        },
+
+        // No `onblur`: whether focus really left the submenu is answered by the DOM, not by a signal, through the
+        // sub-content's `use_sub_outside_dismiss`.
+    });
+    let merged = merge_attributes(vec![
+        order.marker_attribute(),
+        base,
+        props.attributes,
+        menu_item::item_style_attributes(MenuItemVariant::Default, props.inset),
+    ]);
+    // Ties this trigger to the submenu content's `position-anchor`, folded with any caller-supplied `style`.
+    let merged = crate::top_layer::anchored_trigger_attributes(&sub.content_id.cloned(), merged);
+
+    rsx! {
+        div {
+            ..merged,
+            {props.children}
+        }
+    }
+}
+
+/// The submenu panel of any host, mounted only while the submenu is open (or animating closed). Called from a
+/// component body; it calls hooks.
+pub(crate) fn render_sub_content(props: MenuSubContentProps) -> Element {
+    let mut sub: SubMenuState = use_context();
+
+    let unique_id = use_unique_id();
+    let id = use_id_or(unique_id, props.id);
+
+    // Keep `sub.content_id` in sync with this content's actual id: the sub-trigger's `anchor-name` and
+    // `aria-controls` must both key off it.
+    use_effect(move || sub.content_id.set(id()));
+
+    let render = crate::use_animated_open(id, sub.open);
+    use_deferred_collection_focus(sub.focus, sub.initial_focus, render);
+
+    rsx! {
+        if render() {
+            MenuSubContentRendered {
+                id: id.cloned(),
+                attributes: props.attributes,
+                children: props.children,
+            }
+        }
+    }
+}
+
+/// The submenu panel. On the web it is a `popover="auto"` top-layer element anchored to its sub-trigger on the
+/// inline axis (`Right` in LTR, `Left` in RTL, flipped by the shared engine when it would overflow), with no gap:
+/// trigger and submenu sit in the same logical menu, and abutting shrinks the dead zone the close grace delay
+/// ([`SUBMENU_CLOSE_GRACE_DELAY`]) covers for a diagonal pointer move. `auto` lets an outside press or Escape
+/// light-dismiss just this submenu, and a click on a sibling of the enclosing menu is "outside" it. Without the
+/// popover API it is a plain in-flow element.
+///
+/// Escape and the close arrow close just this submenu and hand focus to its sub-trigger; the key never reaches the
+/// host's root handler, which would close the whole menu.
+#[component]
+fn MenuSubContentRendered(
+    /// The DOM id of the submenu's content element.
+    id: String,
+    /// Extra HTML attributes for the submenu's content element.
+    attributes: Vec<Attribute>,
+    /// The submenu items.
+    children: Element,
+) -> Element {
+    let host: MenuHost = use_context();
+    let mut sub: SubMenuState = use_context();
+    let open = sub.open;
+    let direction = host.direction;
+    // This submenu's own typeahead buffer, independent of the enclosing menu's.
+    let mut typeahead = crate::typeahead::use_typeahead_state();
+
+    let sub_side = if direction() == Direction::Rtl {
+        ContentSide::Left
+    } else {
+        ContentSide::Right
+    };
+    let on_native_toggle = use_callback(move |is_open: bool| {
+        if !is_open {
+            sub.focus.clear_focus();
+        }
+        sub.set_open.call(is_open);
+    });
+    let attributes = menu_root::use_menu_panel(
+        PanelConfig {
+            id: id.clone(),
+            open,
+            trigger_id: sub.trigger_id.cloned(),
+            on_native_toggle,
+            popover: PanelPopover::Auto,
+            placement: PanelPlacement::Anchored {
+                kind: PanelKind::Dropdown,
+                side: sub_side,
+                align: ContentAlign::Start,
+                offset: 0,
+            },
+            owned: attributes!(div {
+                dir: direction().as_str(),
+                "data-direction": direction().as_str(),
+            }),
+        },
+        attributes,
+    );
+    use_sub_outside_dismiss(sub.trigger_id, sub.content_id, move || {
+        sub.focus.clear_focus();
+        sub.set_open.call(false);
+    });
+
+    let sub_trigger = use_context::<crate::SubTriggerHandle>().0;
+    let onkeydown = move |event: Event<KeyboardData>| {
+        let key = event.key();
+        // The close key is direction-aware (`ArrowRight` in RTL); `Escape` is not.
+        let closes = matches!(key, Key::Escape) || is_submenu_close_arrow_key(&key, direction());
+        if closes {
+            sub.set_open.call(false);
+            sub.focus.clear_focus();
+            if let Some(trigger) = sub_trigger.element() {
+                spawn(async move {
+                    // focus-ok: ArrowLeft/Escape in a submenu (keyboard only) hands focus to its trigger
+                    _ = trigger.set_focus(true).await;
+                });
+            }
+        } else if !menu_root::nav_key(&event, sub.focus, &mut typeahead) {
+            return;
+        }
+        event.prevent_default();
+        event.stop_propagation();
+    };
+
+    rsx! {
+        div {
+            id,
+            // `.dx-context-menu-content` sets `pointer-events: none` on its base rule and relies on each renderer
+            // of that class to flip it back once open; a submenu carries the same class, so it sets the override
+            // too (an open submenu would otherwise let every hover and click through to the page behind it).
+            pointer_events: open().then_some("auto"),
+            onkeydown,
+            // Hovering this submenu's own content is as good as hovering its trigger for keeping it open.
+            onmouseenter: move |_| {
+                sub.hover_enter_content();
+            },
+            onmouseleave: move |_| {
+                sub.hover_leave_content();
+            },
+            onpointerdown: menu_root::keep_focus_on_pointerdown,
+            ..attributes,
+            {children}
+        }
+    }
 }

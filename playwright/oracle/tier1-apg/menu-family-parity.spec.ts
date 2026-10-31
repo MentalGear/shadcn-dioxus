@@ -36,8 +36,9 @@
  *     `pointerdown` (it closes and hands focus back to the trigger inside that same press, backlog row 140).
  *   - ContextMenu: no trigger button and no keyboard opening (the trigger is `tabindex="-1"`); the menu is placed at the
  *     pointer point (a long press opens it for touch and pen); its scroll lock is the only one of the three.
- *   - Menubar: the trigger row is a roving `menubar` of `menuitem` triggers; ArrowLeft/ArrowRight on an open menu move
- *     to the neighbouring menu and open it, hovering a trigger while one menu is open switches menus; no submenus.
+ *   - Menubar: the trigger row is a roving `menubar` of `menuitem` triggers; ArrowLeft/ArrowRight, Home and End on an
+ *     open menu move to the neighbouring, first or last menu and open it, hovering a trigger while one menu is open
+ *     switches menus; no submenus.
  *   - DropdownMenu: the trigger is a toggle button; ArrowDown/ArrowUp on the closed trigger open the menu on the
  *     first/last item.
  *
@@ -193,10 +194,13 @@ for (const host of HOSTS) {
       await expect(enabled.nth(0), "ArrowDown wraps to the first").toBeFocused();
       await page.keyboard.press("ArrowUp");
       await expect(enabled.nth(n - 1), "ArrowUp wraps to the last").toBeFocused();
-      await page.keyboard.press("Home");
-      await expect(enabled.nth(0)).toBeFocused();
-      await page.keyboard.press("End");
-      await expect(enabled.nth(n - 1)).toBeFocused();
+      if (host.route !== "menubar") {
+        // In a Menubar, Home and End move along the row of menus instead (see the Menubar differences block).
+        await page.keyboard.press("Home");
+        await expect(enabled.nth(0)).toBeFocused();
+        await page.keyboard.press("End");
+        await expect(enabled.nth(n - 1)).toBeFocused();
+      }
       await expect(rootMenu(page).locator(`${DISABLED}:focus`), "a disabled item never holds focus").toHaveCount(0);
     });
 
@@ -204,8 +208,7 @@ for (const host of HOSTS) {
       await open(host, page);
       const menu = rootMenu(page);
       const enabled = menu.locator(ENABLED);
-      await page.keyboard.press("End");
-      await expect(enabled.last()).toBeFocused();
+      await arrowTo(page, enabled.last());
 
       const first = enabled.first();
       const letter = (await label(first))[0].toLowerCase();
@@ -447,8 +450,7 @@ for (const host of HOSTS) {
       await open(host, page, "checkboxes");
       const menu = rootMenu(page);
       const enabled = menu.locator(ENABLED);
-      await page.keyboard.press("End");
-      await expect(enabled.last()).toBeFocused();
+      await arrowTo(page, enabled.last());
       const firstBox = menu.locator('[role="menuitemcheckbox"]:not([aria-disabled="true"])').first();
       await page.keyboard.press((await label(firstBox))[0].toLowerCase());
       await expect(firstBox).toBeFocused();
@@ -614,6 +616,17 @@ test.describe("menu family differences — Menubar", () => {
     await expect(next, "focus is on the next trigger").toBeFocused();
     await expect(anyMenu(page), "one menu is open, the neighbour's").toHaveCount(1);
     await expect(next.locator('xpath=following-sibling::*[@role="menu"]')).toHaveAttribute("data-state", "open");
+  });
+
+  test("Home and End on an open menu move to the first and last menu of the bar and open it", async ({ page }) => {
+    await open(host, page);
+    await page.keyboard.press("End");
+    const last = triggers(page).last();
+    await expect(last, "End moves to the last menu's trigger").toBeFocused();
+    await expect(last.locator('xpath=following-sibling::*[@role="menu"]')).toHaveAttribute("data-state", "open");
+    await page.keyboard.press("Home");
+    await expect(triggers(page).first(), "Home moves back to the first menu's trigger").toBeFocused();
+    await expect(anyMenu(page)).toHaveCount(1);
   });
 
   test("hovering another trigger while one menu is open switches menus; the first menu never opens from a hover", async ({ page }) => {

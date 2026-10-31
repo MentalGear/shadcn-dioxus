@@ -3,30 +3,30 @@
 //! Also defines [`ContextMenuSub`]/[`ContextMenuSubTrigger`]/
 //! [`ContextMenuSubContent`]/[`ContextMenuSubItem`], the nested-submenu
 //! half of the APG "Menu and Menubar" pattern (`dev-docs/archive/rounds/component-backlog.md`
-//! row 68). See [`ContextMenuSub`]'s own doc for the shared,
-//! host-independent state machine (`crate::menu_sub`) both this file and
-//! `dropdown_menu.rs`'s equivalent build on.
+//! row 68).
+//!
+//! This file is the ContextMenu *host* (backlog row 435): its trigger (a
+//! right-click or long-press target), its root (Escape and the focus/refocus
+//! plumbing) and its point-anchored panel. The items, the checkable items,
+//! the submenu and the panel wiring are the menu family every host shares
+//! (`crate::menu_item`, `crate::menu_sub`, `crate::menu_root`), reading the
+//! `MenuHost` this root provides; its items select on release
+//! (`SelectOn::PressRelease`), so the long press that opened the menu and
+//! lifts over an item selects nothing.
 
 use crate::sleep::sleep;
 use crate::state_attrs;
 use crate::{
-    collection::{
-        collection_item, use_collection_provider, use_deferred_collection_focus, use_item,
-        use_item_index, CollectionPlacement, CollectionState,
-    },
+    collection::{use_collection_provider, CollectionState},
     direction::{use_direction, use_direction_signal, Direction},
-    fold_style_attributes, has_own_accessible_name,
+    fold_style_attributes,
     menu_item::{
-        self, CheckableCommon, CheckableState, MenuCheckboxItemProps, MenuGroupProps,
-        MenuItemVariant, MenuRadioGroupProps, MenuRadioItemProps, MenuSeparatorProps,
-        MenuShortcutProps,
+        self, MenuCheckboxItemProps, MenuGroupProps, MenuItemProps, MenuRadioGroupProps,
+        MenuRadioItemProps, MenuSeparatorProps, MenuShortcutProps, MenuSubContentProps,
+        MenuSubProps, MenuSubTriggerProps, SelectOn,
     },
-    merge_attributes,
-    selectable::{
-        pointer_select_cancel, pointer_select_click, pointer_select_commit, pointer_select_start,
-        ItemPress,
-    },
-    use_animated_open, use_controlled, use_id_or, use_outside_dismiss, use_unique_id,
+    menu_root::{self, MenuHost, PanelConfig, PanelPlacement, PanelPopover},
+    menu_sub, merge_attributes, use_controlled, use_id_or, use_outside_dismiss, use_unique_id,
 };
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
@@ -93,20 +93,6 @@ struct ContextMenuCtx {
     // still-held finger — that would otherwise look like an instant tap on the
     // menu item the menu just rendered over.
     long_press_just_fired: Signal<bool>,
-
-    // Count of currently-open descendant `ContextMenuSub` submenus --
-    // mirrors `crate::dropdown_menu::DropdownMenuContext::submenu_open_
-    // count` exactly (same root cause, same construction; see that field's
-    // own doc for the full mechanism). Kept accurate by each
-    // `ContextMenuSub`'s own effect.
-    submenu_open_count: Signal<usize>,
-
-    // Text direction, read by `ContextMenuSubTrigger`/
-    // `ContextMenuSubContentRendered` to resolve the submenu open/close
-    // arrow key and which side a submenu opens on -- see
-    // `crate::menu_sub::is_submenu_open_arrow_key`/
-    // `is_submenu_close_arrow_key`'s doc.
-    direction: ReadSignal<Direction>,
 }
 
 /// The props for the [`ContextMenu`] component.
@@ -231,8 +217,28 @@ pub fn ContextMenu(props: ContextMenuProps) -> Element {
         trigger,
         interacted_outside,
         long_press_just_fired,
-        submenu_open_count,
+    });
+
+    // What the shared menu family (`menu_item`, `menu_sub`) reads from this host. A selection, or a root item
+    // that loses focus, clears the roving focus; a selection also closes.
+    let close = use_callback(move |()| {
+        let mut focus = focus;
+        focus.clear_focus();
+        set_open.call(false);
+    });
+    let blur = use_callback(move |()| {
+        let mut focus = focus;
+        focus.clear_focus();
+    });
+    use_context_provider(|| MenuHost {
+        open,
+        disabled: props.disabled,
+        focus,
         direction: direction_signal,
+        submenu_open_count,
+        select_on: SelectOn::PressRelease,
+        close,
+        blur,
     });
 
     // dev-docs/backlog.md row 53 (the "open-index container" band): this effect
@@ -621,39 +627,27 @@ pub fn ContextMenuContent(props: ContextMenuContentProps) -> Element {
     }
 }
 
-/// Web arm: promote the point-opened menu to the top layer via `popover="manual"`, so it escapes
-/// clipping and transformed ancestors the same way `DropdownMenuContentRendered` does
-/// (`dropdown_menu.rs`).
+/// The menu panel. On the web it is promoted to the top layer via `popover="manual"`, so it escapes clipping and
+/// transformed ancestors the same way `DropdownMenuContentRendered` does (`dropdown_menu.rs`); without the popover
+/// API it is a plain `position: fixed` div.
 ///
-/// The menu opens at a document point (`ContextMenuCtx::position`, the press's `pageX`/`pageY`),
-/// with no trigger element to anchor to (`anchor-name`/`position-anchor` are never wired up for
-/// it). `top_layer::use_point_anchor_placement` places it with the same script as every anchored
-/// overlay (rule P, backlog row 477): the point is a zero-size anchor, the menu is absolute in the
-/// top layer and moved by `transform`, so it stays at that point of the document when the page
-/// scrolls, opens upward or leftward when the room below or to the right is short, and is capped
-/// to the room left.
+/// The menu opens at a document point (`ContextMenuCtx::position`, the press's `pageX`/`pageY`), with no trigger
+/// element to anchor to (`anchor-name`/`position-anchor` are never wired up for it).
+/// `top_layer::use_point_anchor_placement` places it with the same script as every anchored overlay (rule P,
+/// backlog row 477): the point is a zero-size anchor, the menu is absolute in the top layer and moved by
+/// `transform`, so it stays at that point of the document when the page scrolls, opens upward or leftward when the
+/// room below or to the right is short, and is capped to the room left. Until the script takes the panel over it
+/// is `position: fixed` at the press's client point: a focus move into a panel that is not placed yet must not
+/// scroll the document to it.
 ///
-/// `manual` (not `auto`) is also the dismissal decision: `auto`'s native
-/// light dismiss (Escape,
-/// outside pointerdown) would race this component's own `use_outside_dismiss`
-/// and root-level Escape handling below, which already implement APG's
-/// exact close-and-refocus semantics (Radix's `onCloseAutoFocus`,
-/// `interacted_outside` distinguishing an outside dismiss from an internal
-/// one -- see `ContextMenuCtx::interacted_outside`'s doc). `auto` cannot
-/// replicate that distinction: a native light dismiss has no way to tell
-/// Rust *why* it closed, so reusing `DropdownMenuContentRendered`'s
-/// "native close also sets `interacted_outside`" callback shape here would
-/// wrongly mark every close -- including Escape and item-select -- as an
-/// outside interaction, silently breaking `use_refocus_on_close_unless`'s
-/// Escape/select refocus for this component (a real risk, not a
-/// hypothetical: see the file's own
-/// oracle-focus-restore "ContextMenu returns focus to its trigger on
-/// Escape" case). `manual` sidesteps
-/// the whole question: WHATWG HTML never light-dismisses a manual popover
-/// (Escape and outside pointerdown are no-ops to the platform for it), so
-/// `use_outside_dismiss`/the root `Escape` handler below stay the *only*
-/// dismissal path.
-#[cfg(feature = "web")]
+/// `manual` (not `auto`) is also the dismissal decision: `auto`'s native light dismiss (Escape, outside
+/// pointerdown) would race this component's own `use_outside_dismiss` and the root's Escape handling, which
+/// already implement APG's exact close-and-refocus semantics (Radix's `onCloseAutoFocus`, `interacted_outside`
+/// distinguishing an outside dismiss from an internal one -- see `ContextMenuCtx::interacted_outside`'s doc). A
+/// native light dismiss has no way to tell Rust *why* it closed, so marking every native close as an outside
+/// interaction would silently break `use_refocus_on_close_unless`'s Escape/select refocus. A `manual` popover is
+/// never closed by the platform on its own, so `use_outside_dismiss` and the root `Escape` handler stay the *only*
+/// dismissal path, and the `toggle` echo of `use_menu_panel` only ever repeats a close this crate already made.
 #[component]
 fn ContextMenuContentRendered(
     /// The DOM id of the menu's content element.
@@ -670,73 +664,17 @@ fn ContextMenuContentRendered(
     let (x, y) = (ctx.position)();
     let (cx, cy) = (ctx.client_position)();
 
-    // Drive `showPopover()`/`hidePopover()` from `open`. Unlike
-    // `DropdownMenuContentRendered`'s use of this same helper, the callback
-    // here does *not* touch `interacted_outside`/`focus` on a native close
-    // -- see this component's own doc for why: a `manual` popover is never
-    // closed by the platform on its own, so this round trip only ever
-    // echoes a close *this crate itself* already initiated (via
-    // `use_outside_dismiss` or the root `Escape` handler, both of which
-    // already set whatever state that specific close needs before this
-    // echo ever arrives) -- reapplying `ctx.set_open.call(is_open)` here is
-    // therefore always a same-value, idempotent no-op, kept only so this
-    // content's `:popover-open` state can never strand relative to `open`
-    // (the same defect class `use_popover_sync`'s own doc cites for
-    // `<dialog>`'s one-way binding), not because this callback needs to
-    // *decide* anything.
-    crate::top_layer::use_popover_sync(
-        id.clone(),
-        open,
-        Callback::new(move |is_open: bool| {
-            ctx.set_open.call(is_open);
-        }),
-    );
-
-    // dev-docs/backlog.md row 10, item 5.2: this content has no anchor element
-    // for `use_anchor_position_fallback` to key off of (see this
-    // component's own doc above) -- clamp the raw `(x, y)` click point into
-    // the viewport instead, the "virtual-anchor" construction that row
-    // calls for. Must run after `use_popover_sync`'s own effect just above
-    // (same ordering requirement `use_anchor_position_fallback` documents
-    // for itself at its own call sites), so the content is already promoted
-    // to the top layer and has a real rendered size to measure.
-    crate::top_layer::use_point_anchor_placement(id.clone(), x, y, open);
-
-    // dev-docs/backlog.md row 11 (typeahead): one buffer for this
-    // menu's own items -- see `DropdownMenu`'s identical call
-    // (`dropdown_menu.rs`) for the general rationale.
+    // One typeahead buffer for this menu's own items (`menu_root::nav_key`).
     let mut typeahead = crate::typeahead::use_typeahead_state();
 
     let onkeydown = move |event: Event<KeyboardData>| {
-        match event.key() {
-            Key::Escape => ctx.focus.clear_focus(),
-            Key::ArrowDown => {
-                ctx.focus.focus_next();
-            }
-            Key::ArrowUp => {
-                if open() {
-                    ctx.focus.focus_prev();
-                }
-            }
-            Key::Home => ctx.focus.focus_first(),
-            Key::End => ctx.focus.focus_last(),
-            // dev-docs/backlog.md row 11 (typeahead) -- see
-            // `DropdownMenu`'s identical arm (`dropdown_menu.rs`) for the
-            // full APG citation. Only while genuinely open, matching this
-            // handler's own `Key::ArrowUp` arm just above -- while closed
-            // (or mid close-animation), `ctx.focus` may still carry
-            // whatever it last held, so this avoids spuriously reacting to
-            // a keystroke on an unrelated, no-longer-visible menu.
-            Key::Character(_) => {
-                if !open() {
-                    return;
-                }
-                let entries = ctx.focus.text_entries();
-                if !typeahead.handle_key(ctx.focus, &entries, &event) {
-                    return;
-                }
-            }
-            _ => return,
+        if event.key() == Key::Escape {
+            // The root's Escape handler closes the menu; the roving focus is cleared first.
+            ctx.focus.clear_focus();
+        } else if !open() || !menu_root::nav_key(&event, ctx.focus, &mut typeahead) {
+            // While closed (or mid close-animation) `ctx.focus` may still carry whatever it last held, so a
+            // keystroke on an unrelated, no-longer-visible menu is ignored.
+            return;
         }
         event.prevent_default();
     };
@@ -757,6 +695,24 @@ fn ContextMenuContentRendered(
         }
     });
 
+    // The `toggle` echo only repeats a close this crate already made (see the doc above).
+    let on_native_toggle = use_callback(move |is_open: bool| ctx.set_open.call(is_open));
+    let attributes = menu_root::use_menu_panel(
+        PanelConfig {
+            id: id.clone(),
+            open,
+            trigger_id: ctx.trigger_id.cloned(),
+            on_native_toggle,
+            popover: PanelPopover::Manual,
+            placement: PanelPlacement::Point { x, y },
+            owned: attributes!(div {
+                aria_orientation: "vertical",
+                tabindex: if focused() { "0" } else { "-1" },
+            }),
+        },
+        attributes,
+    );
+
     use_outside_dismiss(ctx.root_id, move || {
         ctx.interacted_outside.set(true);
         ctx.focus.clear_focus();
@@ -775,49 +731,9 @@ fn ContextMenuContentRendered(
         )
     });
 
-    // dev-docs/backlog.md row 25: an APG menu requires an accessible name from
-    // either aria-labelledby or aria-label (menu-and-menubar-pattern.html,
-    // "WAI-ARIA Roles, States, and Properties") -- labelled by the trigger,
-    // mirroring `DropdownMenuContent`'s identical pattern
-    // (`dropdown_menu.rs`). The trigger's own accessible name comes from
-    // its children (arbitrary caller content -- see `ContextMenuTrigger`'s
-    // doc), the same source `DropdownMenuTrigger` uses. Only contributed
-    // when the caller hasn't already named this content some other way
-    // (`has_own_accessible_name`'s own doc), and as its own
-    // `merge_attributes` input -- present only when applicable -- rather
-    // than a bare `aria_labelledby: ...` literal alongside `..attributes`:
-    // a caller attribute list can carry a same-named `aria-labelledby`/
-    // `aria-label` with an empty/`AttributeValue::None` value, and two
-    // entries for one attribute name is exactly the duplicate-attribute
-    // hazard `merge_attributes` exists to prevent
-    // (`dev-docs/conformance-harness.md` hydration-parity Rule 4). dev-docs/backlog.md
-    // row 53 (the "trigger id-plumbing" band): this block is
-    // `menu_root::content_labelledby_attributes`, shared with
-    // `DropdownMenu`/`Menubar`'s identical construction.
-    let labelledby =
-        crate::menu_root::content_labelledby_attributes(&attributes, &ctx.trigger_id.cloned());
-    let attributes = merge_attributes(vec![
-        attributes,
-        labelledby,
-        // Owned by this component -- menu semantics, top-layer wiring and
-        // roving focus must win over a caller's own attributes
-        // (`dev-docs/backlog.md` row 93's duplicate-attribute hazard).
-        attributes!(div {
-            role: crate::menu_semantics::MENU_ROLE,
-            aria_orientation: "vertical",
-            popover: crate::top_layer::PopoverKind::Manual.as_str(),
-            tabindex: if focused() { "0" } else { "-1" },
-            ..state_attrs::open(open()),
-        }),
-    ]);
-
     rsx! {
         div {
-            id: id.clone(),
-            // Fixed at the press point until the placement script takes the panel over
-            // (`top_layer::use_point_anchor_placement`) and makes it absolute in document
-            // coordinates: a focus move into a panel that is not placed yet must not scroll the
-            // document to it.
+            id,
             position: "fixed",
             margin: "0",
             top: "{cy}px",
@@ -840,185 +756,10 @@ fn ContextMenuContentRendered(
     }
 }
 
-/// Native (Blitz) arm: Blitz has no popover-API support at all, so this is
-/// the functional floor, a plain `position: fixed` div with no `popover`
-/// attribute.
-#[cfg(not(feature = "web"))]
-#[component]
-fn ContextMenuContentRendered(
-    /// The DOM id of the menu's content element.
-    id: String,
-    /// Extra HTML attributes for the menu's content element.
-    attributes: Vec<Attribute>,
-    /// Whether page scrolling is locked while the menu is open. True only for an open modal menu.
-    scroll_lock_active: Memo<bool>,
-    /// The menu items.
-    children: Element,
-) -> Element {
-    let mut ctx: ContextMenuCtx = use_context();
-    let open = ctx.open;
-    let (x, y) = (ctx.client_position)();
-
-    // dev-docs/backlog.md row 11 (typeahead): see the web arm's
-    // identical call above for the general rationale.
-    let mut typeahead = crate::typeahead::use_typeahead_state();
-
-    let onkeydown = move |event: Event<KeyboardData>| {
-        match event.key() {
-            Key::Escape => ctx.focus.clear_focus(),
-            Key::ArrowDown => {
-                ctx.focus.focus_next();
-            }
-            Key::ArrowUp => {
-                if open() {
-                    ctx.focus.focus_prev();
-                }
-            }
-            Key::Home => ctx.focus.focus_first(),
-            Key::End => ctx.focus.focus_last(),
-            // dev-docs/backlog.md row 11 (typeahead) -- see
-            // `DropdownMenu`'s identical arm (`dropdown_menu.rs`) for the
-            // full APG citation. Only while genuinely open, matching this
-            // handler's own `Key::ArrowUp` arm just above -- while closed
-            // (or mid close-animation), `ctx.focus` may still carry
-            // whatever it last held, so this avoids spuriously reacting to
-            // a keystroke on an unrelated, no-longer-visible menu.
-            Key::Character(_) => {
-                if !open() {
-                    return;
-                }
-                let entries = ctx.focus.text_entries();
-                if !typeahead.handle_key(ctx.focus, &entries, &event) {
-                    return;
-                }
-            }
-            _ => return,
-        }
-        event.prevent_default();
-    };
-
-    let mut menu_ref: Signal<Option<std::rc::Rc<MountedData>>> = use_signal(|| None);
-    let focused = move || open() && !ctx.focus.any_focused();
-    // If the menu is open, but no item is focused, focus the div itself to capture events
-    use_effect(move || {
-        let Some(menu) = menu_ref() else {
-            return;
-        };
-        if focused() {
-            spawn(async move {
-                // Focus the menu itself to capture keyboard events
-                // focus-ok: the menu container takes focus for its keys (a container: no outline, no editable)
-                _ = menu.set_focus(true).await;
-            });
-        }
-    });
-
-    use_outside_dismiss(ctx.root_id, move || {
-        ctx.interacted_outside.set(true);
-        ctx.focus.clear_focus();
-        ctx.set_open.call(false);
-    });
-
-    // A `position: fixed` menu pinned to a click point drifts away from the
-    // click target as soon as the page scrolls. Native context menus block
-    // scroll while open; match that by suppressing wheel/touchmove outside
-    // the menu without mutating page-level overflow styles.
-    crate::js_listener::use_js_listeners(move || {
-        if !open() {
-            return None;
-        }
-        Some(
-            crate::js_listener::JsListeners::install(CONTEXT_MENU_SCROLL_BLOCK_JS)
-                .arg(ctx.root_id.cloned()),
-        )
-    });
-
-    // See the web arm's identical construction above (dev-docs/backlog.md row
-    // 25/53) for why this is conditional and routed through
-    // `menu_root::content_labelledby_attributes` rather than a bare literal
-    // alongside `..attributes`.
-    let labelledby =
-        crate::menu_root::content_labelledby_attributes(&attributes, &ctx.trigger_id.cloned());
-    let attributes = merge_attributes(vec![
-        attributes,
-        labelledby,
-        // Owned by this component -- see the web arm's identical
-        // construction above (`dev-docs/backlog.md` row 93).
-        attributes!(div {
-            role: crate::menu_semantics::MENU_ROLE,
-            aria_orientation: "vertical",
-            tabindex: if focused() { "0" } else { "-1" },
-            ..state_attrs::open(open()),
-        }),
-    ]);
-
-    rsx! {
-        div {
-            id: id.clone(),
-            position: "fixed",
-            left: "{x}px",
-            top: "{y}px",
-            pointer_events: open().then_some("auto"),
-            onkeydown,
-            onblur: move |_| {
-                if focused() {
-                    ctx.focus.clear_focus();
-                }
-            },
-            onmounted: move |evt| menu_ref.set(Some(evt.data())),
-            ..attributes,
-
-            crate::scroll_lock::ScrollLockGuard { active: scroll_lock_active }
-            {children}
-        }
-    }
-}
-
-/// The props for the [`ContextMenuItem`] component.
-#[derive(Props, Clone, PartialEq)]
-pub struct ContextMenuItemProps {
-    /// Whether the item is disabled
-    #[props(default = ReadSignal::new(Signal::new(false)))]
-    pub disabled: ReadSignal<bool>,
-
-    /// The value of the menu item
-    pub value: ReadSignal<String>,
-
-    /// The item's place in keyboard order. Leave it unset: items are ordered as they are
-    /// created, which is tree order. Set it on every item only when one is inserted between
-    /// items that are already mounted, or a keyed list reorders them.
-    #[props(default)]
-    pub index: ReadSignal<Option<usize>>,
-
-    /// Explicit label text used for typeahead search (`dev-docs/backlog.md`
-    /// row 11 -- APG's "Any key that corresponds to a printable character"
-    /// rule). When not set, falls back to [`Self::value`].
-    #[props(default)]
-    pub text_value: ReadSignal<Option<String>>,
-
-    /// Callback when the item is selected
-    #[props(default)]
-    pub on_select: Callback<String>,
-
-    /// Whether the item is drawn in the destructive ink -- shadcn's
-    /// `variant="destructive"`. The role stays `menuitem`; the item carries
-    /// `data-variant`. See [`crate::menu_item::MenuItemVariant`].
-    #[props(default)]
-    pub variant: MenuItemVariant,
-
-    /// Reserves the leading indicator slot without drawing anything -- shadcn's
-    /// `inset` -- so a menu that mixes plain and checkable items keeps its
-    /// labels on one edge. The item carries `data-inset="true"`.
-    #[props(default)]
-    pub inset: bool,
-
-    /// Additional attributes for the context menu item element
-    #[props(extends = GlobalAttributes)]
-    pub attributes: Vec<Attribute>,
-
-    /// The children of the context menu item
-    pub children: Element,
-}
+/// The props for the [`ContextMenuItem`] component. Shared by every
+/// menu-family host -- see [`crate::menu_item::MenuItemProps`] (a `String`
+/// value here).
+pub type ContextMenuItemProps = MenuItemProps<String>;
 
 /// # ContextMenuItem
 ///
@@ -1073,93 +814,7 @@ pub struct ContextMenuItemProps {
 /// - `data-highlighted`: Present (empty) while this item holds the roving focus, absent otherwise.
 #[component]
 pub fn ContextMenuItem(props: ContextMenuItemProps) -> Element {
-    let mut ctx: ContextMenuCtx = use_context();
-
-    let disabled = move || (props.disabled)() || (ctx.disabled)();
-    let order = use_item_index(ctx.focus, props.index);
-    let index = order.index;
-    let item = use_item(
-        collection_item(ctx.focus, index)
-            .disabled(disabled)
-            .text_value(move || Some((props.text_value)().unwrap_or_else(|| (props.value)()))),
-    );
-    let focused = move || item.focused();
-
-    let onmounted = item.onmounted();
-
-    let tab_index = use_memo(move || if focused() { "0" } else { "-1" });
-
-    // Touch sequences from the long-press that opened the menu shouldn't
-    // count as selecting an item. Recording on pointerdown and committing on
-    // pointerup means a pointerup without a matching pointerdown on this
-    // item is ignored — exactly the long-press-then-lift case.
-    let down_pos: Signal<Option<ItemPress>> = use_signal(|| None);
-    let value = props.value;
-    let mut select = move || {
-        if !disabled() {
-            props.on_select.call((value)());
-            ctx.focus.clear_focus();
-            ctx.set_open.call(false);
-        }
-    };
-
-    let handle_keydown = move |event: Event<KeyboardData>| {
-        if event.key() == Key::Enter || event.key() == Key::Character(" ".to_string()) {
-            select();
-            event.prevent_default();
-            event.stop_propagation();
-        }
-    };
-
-    // Owned by this component -- see `ContextMenuContentRendered`'s
-    // identical construction above (`dev-docs/backlog.md` row 93).
-    let attributes = merge_attributes(vec![
-        order.marker_attribute(),
-        props.attributes,
-        attributes!(div {
-            role: crate::menu_semantics::MENU_ITEM_ROLE,
-            tabindex: tab_index,
-            aria_disabled: disabled(),
-            ..state_attrs::disabled(disabled()),
-            ..state_attrs::presence(state_attrs::Flag::Highlighted, focused()),
-        }),
-        menu_item::item_style_attributes(props.variant, props.inset),
-    ]);
-
-    rsx! {
-        div {
-            onpointerdown: move |event| {
-                pointer_select_start(&event, disabled(), down_pos);
-            },
-            onpointerup: move |event| {
-                if pointer_select_commit(&event, disabled(), down_pos) {
-                    select();
-                    event.prevent_default();
-                    event.stop_propagation();
-                }
-            },
-            onclick: move |event| {
-                if pointer_select_click(disabled(), down_pos) {
-                    select();
-                    event.prevent_default();
-                    event.stop_propagation();
-                }
-            },
-            onpointercancel: move |_| {
-                pointer_select_cancel(down_pos);
-            },
-            onkeydown: handle_keydown,
-            onblur: move |_| {
-                if focused() {
-                    ctx.focus.clear_focus();
-                }
-            },
-            onmounted,
-            ..attributes,
-
-            {props.children}
-        }
-    }
+    menu_item::render_item(props, "ContextMenuItem")
 }
 
 /// The props for the [`ContextMenuCheckboxItem`] component. Shared by every
@@ -1232,7 +887,7 @@ pub fn ContextMenuCheckboxItem(props: ContextMenuCheckboxItemProps) -> Element {
         props.default_checked,
         props.on_checked_change,
     );
-    context_checkable_item(state, props.into())
+    menu_item::render_checkable(state, props.into())
 }
 
 /// # ContextMenuRadioGroup
@@ -1304,7 +959,7 @@ pub fn ContextMenuRadioGroup(props: ContextMenuRadioGroupProps) -> Element {
 #[component]
 pub fn ContextMenuRadioItem(props: ContextMenuRadioItemProps) -> Element {
     let state = menu_item::use_radio_state(props.value);
-    context_checkable_item(state, props.into())
+    menu_item::render_checkable(state, props.into())
 }
 
 /// The props for the [`ContextMenuSeparator`] component. Shared by every
@@ -1387,149 +1042,9 @@ pub fn ContextMenuShortcut(props: ContextMenuShortcutProps) -> Element {
     menu_item::render_shortcut(props)
 }
 
-/// The body shared by [`ContextMenuCheckboxItem`] and
-/// [`ContextMenuRadioItem`]: everything that is the same for both roles
-/// lives in `crate::menu_item`; this is the host-specific half -- which
-/// roving-focus collection the item registers in, how a pointer press/key
-/// commits (the same pointerdown-then-pointerup shape as
-/// [`ContextMenuItem`], so a long-press-then-lift that opened the menu never
-/// toggles the item under the finger), and what "close" means for a
-/// `ContextMenu`. Called from a component body; it calls hooks.
-fn context_checkable_item(state: CheckableState, common: CheckableCommon) -> Element {
-    let mut ctx: ContextMenuCtx = use_context();
-    // Inside a `ContextMenuSubContent` the item belongs to that submenu's
-    // own roving-focus collection, never the root's -- see
-    // `dropdown_checkable_item` for why `try_use_context` resolves it.
-    let sub: Option<crate::menu_sub::SubMenuState> = try_use_context();
-    let focus = sub.map_or(ctx.focus, |sub| sub.focus);
-
-    let CheckableCommon {
-        index,
-        disabled: item_disabled,
-        text_value,
-        close_on_select,
-        inset,
-        attributes,
-        children,
-    } = common;
-    let disabled = move || (ctx.disabled)() || item_disabled();
-    let order = use_item_index(focus, index);
-    let index = order.index;
-    let item = use_item(
-        collection_item(focus, index)
-            .disabled(disabled)
-            .text_value(move || state.text_value(text_value)),
-    );
-    let focused = move || item.focused();
-    let onmounted = item.onmounted();
-
-    let down_pos: Signal<Option<ItemPress>> = use_signal(|| None);
-    let mut select = move || {
-        if disabled() {
-            return;
-        }
-        state.activate();
-        if close_on_select() {
-            // Same belt-and-suspenders as `ContextMenuItem`/
-            // `ContextMenuSubItem`: clear every collection this item could
-            // be the focused member of before closing.
-            if let Some(mut sub) = sub {
-                sub.focus.clear_focus();
-            }
-            ctx.focus.clear_focus();
-            ctx.set_open.call(false);
-        }
-    };
-
-    let attributes = merge_attributes(vec![
-        order.marker_attribute(),
-        attributes,
-        state.owned_attributes(disabled(), inset, focused()),
-    ]);
-
-    rsx! {
-        div {
-            onpointerdown: move |event| {
-                pointer_select_start(&event, disabled(), down_pos);
-            },
-            onpointerup: move |event| {
-                if pointer_select_commit(&event, disabled(), down_pos) {
-                    select();
-                    event.prevent_default();
-                    event.stop_propagation();
-                }
-            },
-            onclick: move |event| {
-                if pointer_select_click(disabled(), down_pos) {
-                    select();
-                    event.prevent_default();
-                    event.stop_propagation();
-                }
-            },
-            onpointercancel: move |_| {
-                pointer_select_cancel(down_pos);
-            },
-            onkeydown: move |event: Event<KeyboardData>| {
-                if menu_item::is_activation_key(&event.key()) {
-                    select();
-                    event.prevent_default();
-                    event.stop_propagation();
-                }
-            },
-            onblur: move |_| {
-                if focused() {
-                    match sub {
-                        Some(mut sub) => sub.focus.clear_focus(),
-                        None => ctx.focus.clear_focus(),
-                    }
-                }
-            },
-            onmounted,
-            ..attributes,
-            {children}
-        }
-    }
-}
-
-/// The props for the [`ContextMenuSub`] component.
-#[derive(Props, Clone, PartialEq)]
-pub struct ContextMenuSubProps {
-    /// Whether the submenu is open. If not provided, the component is
-    /// uncontrolled and uses `default_open`.
-    pub open: ReadSignal<Option<bool>>,
-
-    /// Default open state if the component is not controlled.
-    #[props(default)]
-    pub default_open: bool,
-
-    /// Callback when the submenu's open state changes.
-    #[props(default)]
-    pub on_open_change: Callback<bool>,
-
-    /// Whether focus should loop when reaching the end of this submenu's
-    /// own items.
-    #[props(default = ReadSignal::new(Signal::new(true)))]
-    pub roving_loop: ReadSignal<bool>,
-
-    /// Whether hovering the [`ContextMenuSubTrigger`] opens this submenu
-    /// (after a short hover-intent delay), and leaving it closes it again.
-    /// Defaults to `true`. Set it to `false` for **click activation**: the
-    /// submenu then opens only on click, `Enter`, `Space` or the open arrow
-    /// key, and pointer movement never opens *or* closes it (it closes via
-    /// `Escape`/the close arrow, an outside click, or focus moving
-    /// elsewhere). Touch never hover-opens either way.
-    ///
-    /// Same name, and same default, as Base UI's `Menu.SubmenuTrigger`
-    /// `openOnHover` prop; see [`crate::dropdown_menu::DropdownMenuSubProps`]'s
-    /// identical field for why it sits on the `Sub` rather than the trigger.
-    /// Keyboard behaviour is identical in both modes.
-    #[props(default = ReadSignal::new(Signal::new(true)))]
-    pub open_on_hover: ReadSignal<bool>,
-
-    /// The children of the submenu, which should include a
-    /// [`ContextMenuSubTrigger`] and a [`ContextMenuSubContent`].
-    pub children: Element,
-}
+/// The props for the [`ContextMenuSub`] component. Shared by every
+/// menu-family host with submenus -- see [`crate::menu_item::MenuSubProps`].
+pub type ContextMenuSubProps = MenuSubProps;
 
 /// # ContextMenuSub
 ///
@@ -1602,88 +1117,12 @@ pub struct ContextMenuSubProps {
 /// ```
 #[component]
 pub fn ContextMenuSub(props: ContextMenuSubProps) -> Element {
-    let (open, set_open) = use_controlled(props.open, props.default_open, props.on_open_change);
-    let mut sub =
-        crate::menu_sub::use_sub_menu_state(open, set_open, props.roving_loop, props.open_on_hover);
-
-    // See `DropdownMenuSub`'s identical cleanup effect for why: a closed
-    // submenu must not let a later reopen inherit stale focus state.
-    use_effect(move || {
-        if !(sub.open)() {
-            sub.focus.clear_focus();
-            sub.initial_focus.set(None);
-        }
-    });
-
-    // See `DropdownMenuSub`'s identical effect (and `ContextMenuCtx::
-    // submenu_open_count`'s doc) for why and how this stays exactly "is
-    // *this* submenu currently open."
-    let mut ctx: ContextMenuCtx = use_context();
-    let mut submenu_counted = use_signal(|| false);
-    use_effect(move || {
-        let is_open = (sub.open)();
-        let was_counted = *submenu_counted.peek();
-        if is_open && !was_counted {
-            *ctx.submenu_open_count.write() += 1;
-            submenu_counted.set(true);
-        } else if !is_open && was_counted {
-            *ctx.submenu_open_count.write() -= 1;
-            submenu_counted.set(false);
-        }
-    });
-    crate::use_effect_cleanup(move || {
-        if *submenu_counted.peek() {
-            *ctx.submenu_open_count.write() -= 1;
-        }
-    });
-
-    use_context_provider(|| sub);
-    // The sub-trigger's element, for the submenu content's ArrowLeft/Escape hand-back.
-    let sub_trigger = crate::use_trigger_handle();
-    use_context_provider(|| crate::SubTriggerHandle(sub_trigger));
-
-    rsx! {
-        {props.children}
-    }
+    menu_sub::render_sub(props)
 }
 
-/// The props for the [`ContextMenuSubTrigger`] component.
-#[derive(Props, Clone, PartialEq)]
-pub struct ContextMenuSubTriggerProps {
-    /// The item's place in keyboard order. Leave it unset: items are ordered as they are
-    /// created, which is tree order. Set it on every item only when one is inserted between
-    /// items that are already mounted, or a keyed list reorders them.
-    #[props(default)]
-    pub index: ReadSignal<Option<usize>>,
-
-    /// The ID of the sub-trigger element. If not provided, an internally
-    /// generated ID is used.
-    pub id: ReadSignal<Option<String>>,
-
-    /// Whether the sub-trigger (and its submenu) is disabled.
-    #[props(default)]
-    pub disabled: ReadSignal<bool>,
-
-    /// Explicit label text used for root-menu typeahead search
-    /// (`dev-docs/backlog.md` row 11) -- see
-    /// [`crate::dropdown_menu::DropdownMenuSubTriggerProps::text_value`]'s
-    /// identical doc for why there is no fallback beyond this prop.
-    #[props(default)]
-    pub text_value: ReadSignal<Option<String>>,
-
-    /// Reserves the leading indicator slot without drawing anything -- shadcn's
-    /// `inset` -- so a menu that mixes plain and checkable items keeps its
-    /// labels on one edge. The item carries `data-inset="true"`.
-    #[props(default)]
-    pub inset: bool,
-
-    /// Additional attributes to apply to the sub-trigger element.
-    #[props(extends = GlobalAttributes)]
-    pub attributes: Vec<Attribute>,
-
-    /// The children of the sub-trigger, rendered as its visible label.
-    pub children: Element,
-}
+/// The props for the [`ContextMenuSubTrigger`] component. Shared by every
+/// menu-family host with submenus -- see [`crate::menu_item::MenuSubTriggerProps`].
+pub type ContextMenuSubTriggerProps = MenuSubTriggerProps;
 
 /// # ContextMenuSubTrigger
 ///
@@ -1710,132 +1149,12 @@ pub struct ContextMenuSubTriggerProps {
 ///   `true` or `false`.
 #[component]
 pub fn ContextMenuSubTrigger(props: ContextMenuSubTriggerProps) -> Element {
-    let ctx: ContextMenuCtx = use_context();
-    let mut sub: crate::menu_sub::SubMenuState = use_context();
-
-    let disabled = move || (ctx.disabled)() || (props.disabled)();
-    // The sub-trigger is the focusable element, so it registers *itself* in
-    // the enclosing (root) menu's collection -- see
-    // `DropdownMenuSubTrigger`'s identical choice.
-    let order = use_item_index(ctx.focus, props.index);
-    let index = order.index;
-    let item = use_item(
-        collection_item(ctx.focus, index)
-            .disabled(disabled)
-            .text_value(move || (props.text_value)()),
-    );
-    let focused = move || item.focused();
-    let mut register = item.onmounted();
-    let sub_trigger = use_context::<crate::SubTriggerHandle>().0;
-    let onmounted = move |event: MountedEvent| {
-        sub_trigger.set(event.data());
-        register(event);
-    };
-
-    // The hover-intent timers are shared with this submenu's own content
-    // (`ContextMenuSubContentRendered`) via `SubMenuState`, not private
-    // locals -- see `SubMenuState::hover_close`'s doc -- and are only
-    // reachable through its `hover_*` methods, which honour
-    // `ContextMenuSubProps::open_on_hover`.
-
-    let id = use_id_or(sub.trigger_id, props.id);
-
-    let base = attributes!(div {
-        id: id.cloned(),
-        role: crate::menu_semantics::MENU_ITEM_ROLE,
-        aria_haspopup: crate::menu_semantics::MENU_TRIGGER_HASPOPUP,
-        aria_expanded: sub.open,
-        aria_controls: sub.content_id.cloned(),
-        aria_disabled: disabled(),
-        ..state_attrs::disabled(disabled()),
-        ..state_attrs::presence(state_attrs::Flag::Highlighted, focused()),
-        ..state_attrs::trigger_open((sub.open)()),
-        tabindex: if focused() { "0" } else { "-1" },
-
-        onmounted,
-
-        onmouseenter: move |_| {
-            if disabled() {
-                return;
-            }
-            sub.hover_enter_trigger();
-        },
-        onmouseleave: move |_| {
-            sub.hover_leave_trigger();
-        },
-
-        onclick: move |event: Event<MouseData>| {
-            event.stop_propagation();
-            if disabled() {
-                return;
-            }
-            sub.cancel_hover();
-            sub.open_with_focus(CollectionPlacement::First);
-        },
-
-        onkeydown: move |event: Event<KeyboardData>| {
-            if disabled() {
-                return;
-            }
-            let key = event.key();
-            // See `DropdownMenuSubTrigger`'s identical construction
-            // (`dropdown_menu.rs`) for why the arrow half is
-            // direction-aware.
-            let opens = matches!(key, Key::Enter)
-                || matches!(&key, Key::Character(c) if c == " ")
-                || crate::menu_sub::is_submenu_open_arrow_key(&key, (ctx.direction)());
-            if !opens {
-                return;
-            }
-            sub.open_with_focus(CollectionPlacement::First);
-            event.prevent_default();
-            event.stop_propagation();
-        },
-
-        // No `onblur` here (`dev-docs/backlog.md` row 85): see
-        // `DropdownMenuSubTrigger`'s comment (`dropdown_menu.rs`) for the
-        // root cause -- closing the submenu whenever
-        // `focused() && !sub.focus.any_focused()` is a synchronous read of a
-        // Rust-tracked signal a raw external `.focus()` call never
-        // updates. `ContextMenuSubContentRendered`'s own
-        // `crate::menu_sub::use_sub_outside_dismiss` call gives this
-        // submenu the DOM-truth-based construction instead.
-    });
-    let merged = merge_attributes(vec![
-        order.marker_attribute(),
-        base,
-        props.attributes,
-        menu_item::item_style_attributes(MenuItemVariant::Default, props.inset),
-    ]);
-    // See `crate::top_layer::anchor_name_style`/`anchored_trigger_attributes`:
-    // ties this trigger to the submenu content's `position-anchor`, folded
-    // with any caller-supplied `style` rather than left to plain
-    // `merge_attributes` (which folds a plain `style` attribute but not
-    // shorthand style props -- `padding: ".."` etc., namespace
-    // `Some("style")` -- which would still render a second `style`).
-    let merged = crate::top_layer::anchored_trigger_attributes(&sub.content_id.cloned(), merged);
-
-    rsx! {
-        div {
-            ..merged,
-            {props.children}
-        }
-    }
+    menu_sub::render_sub_trigger(props)
 }
 
-/// The props for the [`ContextMenuSubContent`] component.
-#[derive(Props, Clone, PartialEq)]
-pub struct ContextMenuSubContentProps {
-    /// The ID of the submenu content element. If not provided, a unique ID
-    /// will be generated.
-    pub id: ReadSignal<Option<String>>,
-    /// Additional attributes to apply to the submenu content element.
-    #[props(extends = GlobalAttributes)]
-    pub attributes: Vec<Attribute>,
-    /// The children of the submenu content, which should include one or
-    /// more [`ContextMenuSubItem`] components.
-    pub children: Element,
-}
+/// The props for the [`ContextMenuSubContent`] component. Shared by every
+/// menu-family host with submenus -- see [`crate::menu_item::MenuSubContentProps`].
+pub type ContextMenuSubContentProps = MenuSubContentProps;
 
 /// # ContextMenuSubContent
 ///
@@ -1852,386 +1171,13 @@ pub struct ContextMenuSubContentProps {
 /// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
 #[component]
 pub fn ContextMenuSubContent(props: ContextMenuSubContentProps) -> Element {
-    let mut sub: crate::menu_sub::SubMenuState = use_context();
-
-    let unique_id = use_unique_id();
-    let id = use_id_or(unique_id, props.id);
-    use_effect(move || sub.content_id.set(id()));
-
-    let render = use_animated_open(id, sub.open);
-    use_deferred_collection_focus(sub.focus, sub.initial_focus, render);
-
-    rsx! {
-        if render() {
-            ContextMenuSubContentRendered {
-                id: id.cloned(),
-                attributes: props.attributes,
-                children: props.children,
-            }
-        }
-    }
+    menu_sub::render_sub_content(props)
 }
 
-/// Web arm: promote this submenu's content to the top layer via
-/// `popover="auto"` -- see
-/// [`crate::dropdown_menu::DropdownMenuSubContent`]'s identical web-arm
-/// render function for the full rationale (Phase 4.4 handles nested
-/// top-layer stacking; `auto`, not `manual`, so an outside click
-/// or Escape light-dismisses just this submenu). The one difference from
-/// that component: `manual`, not `auto`, is what the *enclosing*
-/// [`ContextMenuContent`] uses for itself (see that component's own doc
-/// for why -- it needs to own its exact close-and-refocus semantics rather
-/// than defer to native light dismiss); this submenu's own content is
-/// still `auto`; the two popover kinds coexist independently (WHATWG's
-/// light-dismiss algorithm evaluates each popover's own DOM-containment
-/// check on its own terms, not against its ancestor's `popover` value), so
-/// this submenu still gets the same free "outside click closes just this
-/// submenu" behavior `DropdownMenuSubContentRendered` does, un-raced by
-/// the root content's own `manual` dismissal handling.
-#[cfg(feature = "web")]
-#[component]
-fn ContextMenuSubContentRendered(
-    /// The DOM id of the submenu's content element.
-    id: String,
-    /// Extra HTML attributes for the submenu's content element.
-    attributes: Vec<Attribute>,
-    /// The submenu items.
-    children: Element,
-) -> Element {
-    let ctx: ContextMenuCtx = use_context();
-    let mut sub: crate::menu_sub::SubMenuState = use_context();
-    let open = sub.open;
-    // See `SubMenuState::hover_close`'s doc: this submenu's own content
-    // shares its trigger's hover timers (via `SubMenuState`'s
-    // `hover_enter_content`/`hover_leave_content`) so hovering *either* half
-    // keeps the submenu open, and only leaving both (without re-entering
-    // either) within the grace window actually closes it.
-    // dev-docs/backlog.md row 11 (typeahead): this submenu's own
-    // buffer, independent of the enclosing menu's root-level one -- see
-    // `DropdownMenu`'s identical call (`dropdown_menu.rs`) for the general
-    // rationale.
-    let mut typeahead = crate::typeahead::use_typeahead_state();
-
-    crate::top_layer::use_popover_sync(
-        id.clone(),
-        open,
-        Callback::new(move |is_open: bool| {
-            if !is_open {
-                sub.focus.clear_focus();
-            }
-            sub.set_open.call(is_open);
-        }),
-    );
-
-    // `dev-docs/backlog.md` row 85: see `crate::menu_sub::use_sub_outside_
-    // dismiss`'s own doc and `DropdownMenuSubContentRendered`'s identical
-    // call (`dropdown_menu.rs`) for the full construction.
-    crate::menu_sub::use_sub_outside_dismiss(sub.trigger_id, sub.content_id, move || {
-        sub.focus.clear_focus();
-        sub.set_open.call(false);
-    });
-
-    // See `DropdownMenuSubContentRendered`'s identical call for the full
-    // side/gap rationale: anchors to this submenu's own trigger on the
-    // inline axis, zero gap, flips via the shared engine stylesheet when it
-    // would overflow. Side is direction-aware -- `Left` in RTL -- matching
-    // Radix `menu.tsx` L1245.
-    let sub_side = if (ctx.direction)() == Direction::Rtl {
-        crate::ContentSide::Left
-    } else {
-        crate::ContentSide::Right
-    };
-    crate::top_layer::use_anchor_position_fallback(
-        id.clone(),
-        id.clone(),
-        open,
-        sub_side,
-        crate::ContentAlign::Start,
-        0,
-    );
-
-    // Passes `AnchorKind::DropdownMenu` -- see `DropdownMenuSubContentRendered`'s identical choice for
-    // why: this host's own root content is point-anchored and never anchored by the engine, and a
-    // submenu here is positioned by exactly the same `anchor()`/`position-try-fallbacks` rules as a
-    // `DropdownMenuContent`, so it reuses that kind.
-    let labelledby: Vec<Attribute> = if has_own_accessible_name(&attributes) {
-        Vec::new()
-    } else {
-        attributes!(div {
-            aria_labelledby: "{sub.trigger_id}"
-        })
-    };
-    let attributes = merge_attributes(vec![
-        attributes,
-        labelledby,
-        // Owned by this component -- menu semantics, top-layer wiring and
-        // direction state must win over a caller's own attributes
-        // (`dev-docs/backlog.md` row 93's duplicate-attribute hazard).
-        attributes!(div {
-            role: crate::menu_semantics::MENU_ROLE,
-            popover: crate::top_layer::PopoverKind::Auto.as_str(),
-            dir: (ctx.direction)().as_str(),
-            "data-direction": (ctx.direction)().as_str(),
-            ..state_attrs::open(open()),
-        }),
-    ]);
-    let attributes = crate::top_layer::anchored_content_attributes(
-        crate::top_layer::AnchorKind::DropdownMenu,
-        &id,
-        attributes,
-    );
-
-    let sub_trigger = use_context::<crate::SubTriggerHandle>().0;
-    // See `DropdownMenuSubContentRendered`'s identical `onkeydown` for the
-    // full APG citation (Escape/ArrowLeft close-and-refocus,
-    // ArrowDown/ArrowUp/Home/End scoped to `sub.focus`) -- `stop_propagation()`
-    // matters even more here: `ContextMenu`'s own root `onkeydown`
-    // (`ContextMenu`, above) unconditionally closes the *entire* context
-    // menu on Escape with no `cfg!(feature = "web")` carve-out at all
-    // (unlike `DropdownMenu`'s root handler), so an unconsumed Escape from
-    // inside this submenu would close everything, on every arm.
-    // See `DropdownMenuSubContentRendered`'s identical construction
-    // (`dropdown_menu.rs`) for why the close key is resolved via
-    // `is_submenu_close_arrow_key` rather than a plain `Key::ArrowLeft`
-    // literal, and why `Escape` stays a plain, direction-independent
-    // literal folded into the same arm.
-    let onkeydown = move |event: Event<KeyboardData>| {
-        let key = event.key();
-        let closes = matches!(key, Key::Escape)
-            || crate::menu_sub::is_submenu_close_arrow_key(&key, (ctx.direction)());
-        if closes {
-            sub.set_open.call(false);
-            sub.focus.clear_focus();
-            if let Some(trigger) = sub_trigger.element() {
-                spawn(async move {
-                    // focus-ok: ArrowLeft/Escape in a submenu (keyboard only) hands focus to its trigger
-                    _ = trigger.set_focus(true).await;
-                });
-            }
-        } else {
-            match key {
-                Key::ArrowDown => sub.focus.focus_next(),
-                Key::ArrowUp => sub.focus.focus_prev(),
-                Key::Home => sub.focus.focus_first(),
-                Key::End => sub.focus.focus_last(),
-                // dev-docs/backlog.md row 11 (typeahead) -- see
-                // `DropdownMenu`'s identical arm (`dropdown_menu.rs`) for
-                // the full APG citation. Scoped to `sub.focus`, this
-                // submenu's own items, never the enclosing menu's.
-                Key::Character(_) => {
-                    let entries = sub.focus.text_entries();
-                    if !typeahead.handle_key(sub.focus, &entries, &event) {
-                        return;
-                    }
-                }
-                _ => return,
-            }
-        }
-        event.prevent_default();
-        event.stop_propagation();
-    };
-
-    rsx! {
-        div {
-            id: id.clone(),
-            // Mirrors `ContextMenuContentRendered`'s identical inline
-            // override (this file, above): `.dx-context-menu-content`
-            // (`preview/src/components/context_menu/style.css`) sets
-            // `pointer-events: none` unconditionally on its BASE rule (not
-            // scoped to `[data-state="closed"]` the way
-            // `.dx-dropdown-menu-content`'s identical-looking reset is --
-            // see that file's own comment), relying on each renderer of
-            // that class to flip it back to `auto` once open, in Rust,
-            // rather than in CSS. `ContextMenuSubContentRendered`'s own
-            // rendered `div` carries this SAME class
-            // (`dx-context-menu-content dx-context-menu-sub-content`,
-            // `preview/src/components/context_menu/component.rs`), so it
-            // must set this override too: without it a genuinely open
-            // submenu is invisible to pointer hit-testing -- not just
-            // "closes on hover" (`SubMenuState::hover_close` above covers
-            // that half), but non-interactive outright, with every event
-            // (hover, click) passing straight through it to whatever page
-            // content sits behind, and `document.elementFromPoint()` over
-            // an open `:popover-open` submenu resolving to that content.
-            pointer_events: open().then_some("auto"),
-            onkeydown,
-            // See `SubMenuState::hover_close`'s doc: mirrors
-            // `ContextMenuSubTrigger`'s identical pair on the same shared
-            // timers, so hovering this submenu's own content is exactly as
-            // good as hovering its trigger for keeping it open.
-            onmouseenter: move |_| {
-                sub.hover_enter_content();
-            },
-            onmouseleave: move |_| {
-                sub.hover_leave_content();
-            },
-            // Keep focus where it is during the press (see `menu_root::keep_focus_on_pointerdown`).
-            onpointerdown: crate::menu_root::keep_focus_on_pointerdown,
-            ..attributes,
-            {children}
-        }
-    }
-}
-
-/// Native (Blitz) arm: Blitz has no popover-API support at all, so this
-/// stays the functional floor -- a plain, always-in-flow `div`. Mirrors
-/// `DropdownMenuSubContentRendered`'s identical native arm.
-#[cfg(not(feature = "web"))]
-#[component]
-fn ContextMenuSubContentRendered(
-    /// The DOM id of the submenu's content element.
-    id: String,
-    /// Extra HTML attributes for the submenu's content element.
-    attributes: Vec<Attribute>,
-    /// The submenu items.
-    children: Element,
-) -> Element {
-    let ctx: ContextMenuCtx = use_context();
-    let mut sub: crate::menu_sub::SubMenuState = use_context();
-    let open = sub.open;
-
-    // `dev-docs/backlog.md` row 85 -- see the web arm's identical call above
-    // for the full construction.
-    crate::menu_sub::use_sub_outside_dismiss(sub.trigger_id, sub.content_id, move || {
-        sub.focus.clear_focus();
-        sub.set_open.call(false);
-    });
-
-    let labelledby: Vec<Attribute> = if has_own_accessible_name(&attributes) {
-        Vec::new()
-    } else {
-        attributes!(div {
-            aria_labelledby: "{sub.trigger_id}"
-        })
-    };
-    let attributes = merge_attributes(vec![
-        attributes,
-        labelledby,
-        // Owned by this component -- see the web arm's identical
-        // construction above (`dev-docs/backlog.md` row 93).
-        attributes!(div {
-            role: crate::menu_semantics::MENU_ROLE,
-            dir: (ctx.direction)().as_str(),
-            ..state_attrs::open(open()),
-            "data-direction": (ctx.direction)().as_str(),
-        }),
-    ]);
-
-    // See `SubMenuState::hover_close`'s doc: this arm still gets the same
-    // shared-timer fix as the web arm, for parity even though Blitz mouse
-    // events are lower-priority here.
-    // dev-docs/backlog.md row 11 (typeahead): see the web arm's
-    // identical call above for the general rationale.
-    let mut typeahead = crate::typeahead::use_typeahead_state();
-
-    let sub_trigger = use_context::<crate::SubTriggerHandle>().0;
-    // See the web arm's identical construction (above) for why the close
-    // key is resolved via `is_submenu_close_arrow_key` rather than a plain
-    // `Key::ArrowLeft` literal.
-    let onkeydown = move |event: Event<KeyboardData>| {
-        let key = event.key();
-        let closes = matches!(key, Key::Escape)
-            || crate::menu_sub::is_submenu_close_arrow_key(&key, (ctx.direction)());
-        if closes {
-            sub.set_open.call(false);
-            sub.focus.clear_focus();
-            if let Some(trigger) = sub_trigger.element() {
-                spawn(async move {
-                    // focus-ok: ArrowLeft/Escape in a submenu (keyboard only) hands focus to its trigger
-                    _ = trigger.set_focus(true).await;
-                });
-            }
-        } else {
-            match key {
-                Key::ArrowDown => sub.focus.focus_next(),
-                Key::ArrowUp => sub.focus.focus_prev(),
-                Key::Home => sub.focus.focus_first(),
-                Key::End => sub.focus.focus_last(),
-                // dev-docs/backlog.md row 11 (typeahead) -- see
-                // `DropdownMenu`'s identical arm (`dropdown_menu.rs`) for
-                // the full APG citation. Scoped to `sub.focus`, this
-                // submenu's own items, never the enclosing menu's.
-                Key::Character(_) => {
-                    let entries = sub.focus.text_entries();
-                    if !typeahead.handle_key(sub.focus, &entries, &event) {
-                        return;
-                    }
-                }
-                _ => return,
-            }
-        }
-        event.prevent_default();
-        event.stop_propagation();
-    };
-
-    rsx! {
-        div {
-            id,
-            // See the web arm's identical `pointer_events` doc above -- this
-            // arm's CSS never loads (Blitz doesn't load `style.css`), but
-            // set for parity with `ContextMenuContentRendered`'s own native
-            // arm, which sets the same override.
-            pointer_events: open().then_some("auto"),
-            onkeydown,
-            onmouseenter: move |_| {
-                sub.hover_enter_content();
-            },
-            onmouseleave: move |_| {
-                sub.hover_leave_content();
-            },
-            // Keep focus where it is during the press (see `menu_root::keep_focus_on_pointerdown`).
-            onpointerdown: crate::menu_root::keep_focus_on_pointerdown,
-            ..attributes,
-            {children}
-        }
-    }
-}
-
-/// The props for the [`ContextMenuSubItem`] component.
-#[derive(Props, Clone, PartialEq)]
-pub struct ContextMenuSubItemProps {
-    /// Whether the item is disabled.
-    #[props(default = ReadSignal::new(Signal::new(false)))]
-    pub disabled: ReadSignal<bool>,
-
-    /// The value of the menu item.
-    pub value: ReadSignal<String>,
-
-    /// The item's place in keyboard order. Leave it unset: items are ordered as they are
-    /// created, which is tree order. Set it on every item only when one is inserted between
-    /// items that are already mounted, or a keyed list reorders them.
-    #[props(default)]
-    pub index: ReadSignal<Option<usize>>,
-
-    /// Explicit label text used for typeahead search within this submenu
-    /// -- see [`ContextMenuItemProps::text_value`]'s identical doc for the
-    /// fallback when this is not set.
-    #[props(default)]
-    pub text_value: ReadSignal<Option<String>>,
-
-    /// Callback when the item is selected.
-    #[props(default)]
-    pub on_select: Callback<String>,
-
-    /// Whether the item is drawn in the destructive ink -- shadcn's
-    /// `variant="destructive"`. The role stays `menuitem`; the item carries
-    /// `data-variant`. See [`crate::menu_item::MenuItemVariant`].
-    #[props(default)]
-    pub variant: MenuItemVariant,
-
-    /// Reserves the leading indicator slot without drawing anything -- shadcn's
-    /// `inset` -- so a menu that mixes plain and checkable items keeps its
-    /// labels on one edge. The item carries `data-inset="true"`.
-    #[props(default)]
-    pub inset: bool,
-
-    /// Additional attributes for the item element.
-    #[props(extends = GlobalAttributes)]
-    pub attributes: Vec<Attribute>,
-
-    /// The children of the item.
-    pub children: Element,
-}
+/// The props for the [`ContextMenuSubItem`] component. Shared by every
+/// menu-family host -- see [`crate::menu_item::MenuItemProps`] (a `String`
+/// value here).
+pub type ContextMenuSubItemProps = MenuItemProps<String>;
 
 /// # ContextMenuSubItem
 ///
@@ -2255,104 +1201,5 @@ pub struct ContextMenuSubItemProps {
 /// - `data-highlighted`: Present (empty) while this item holds the roving focus, absent otherwise.
 #[component]
 pub fn ContextMenuSubItem(props: ContextMenuSubItemProps) -> Element {
-    let mut ctx: ContextMenuCtx = use_context();
-    let mut sub: crate::menu_sub::SubMenuState = use_context();
-
-    let disabled = move || (props.disabled)() || (ctx.disabled)();
-    let order = use_item_index(sub.focus, props.index);
-    let index = order.index;
-    let item = use_item(
-        collection_item(sub.focus, index)
-            .disabled(disabled)
-            .text_value(move || Some((props.text_value)().unwrap_or_else(|| (props.value)()))),
-    );
-    let focused = move || item.focused();
-
-    let onmounted = item.onmounted();
-
-    let tab_index = use_memo(move || if focused() { "0" } else { "-1" });
-
-    // Same pointerdown/pointerup commit shape as `ContextMenuItem`, so a
-    // long-press-then-lift on the root menu that happens to land on a
-    // sub-item doesn't register as a selection -- see that component's
-    // identical fields for the full rationale.
-    let down_pos: Signal<Option<ItemPress>> = use_signal(|| None);
-    let value = props.value;
-    let mut select = move || {
-        if !disabled() {
-            props.on_select.call((value)());
-            // Same belt-and-suspenders shape as `ContextMenuItem`'s
-            // identical `select` closure -- clears both collections this
-            // item could be the registered/focused member of. Not
-            // strictly load-bearing (unmounting the whole tree, driven by
-            // `ctx.set_open.call(false)` below, already clears each via
-            // `collection.rs`'s own unregister-clears-if-focused path),
-            // but matching this file's convention.
-            sub.focus.clear_focus();
-            ctx.focus.clear_focus();
-            ctx.set_open.call(false);
-        }
-    };
-
-    let handle_keydown = move |event: Event<KeyboardData>| {
-        if event.key() == Key::Enter || event.key() == Key::Character(" ".to_string()) {
-            select();
-            event.prevent_default();
-            event.stop_propagation();
-        }
-    };
-
-    // Owned by this component -- see `ContextMenuItem`'s identical
-    // construction above (`dev-docs/backlog.md` row 93).
-    let attributes = merge_attributes(vec![
-        order.marker_attribute(),
-        props.attributes,
-        attributes!(div {
-            role: crate::menu_semantics::MENU_ITEM_ROLE,
-            tabindex: tab_index,
-            aria_disabled: disabled(),
-            ..state_attrs::disabled(disabled()),
-            ..state_attrs::presence(state_attrs::Flag::Highlighted, focused()),
-        }),
-        menu_item::item_style_attributes(props.variant, props.inset),
-    ]);
-
-    rsx! {
-        div {
-            onpointerdown: move |event| {
-                pointer_select_start(&event, disabled(), down_pos);
-            },
-            onpointerup: move |event| {
-                if pointer_select_commit(&event, disabled(), down_pos) {
-                    select();
-                    event.prevent_default();
-                    event.stop_propagation();
-                }
-            },
-            onclick: move |event| {
-                if pointer_select_click(disabled(), down_pos) {
-                    select();
-                    event.prevent_default();
-                    event.stop_propagation();
-                }
-            },
-            onpointercancel: move |_| {
-                pointer_select_cancel(down_pos);
-            },
-            onkeydown: handle_keydown,
-            onblur: move |_| {
-                if focused() {
-                    // Unlike `ContextMenuItem`'s identical-looking guard
-                    // (`ctx.focus`, the root collection), this clears only
-                    // `sub.focus` -- see `DropdownMenuSubItem`'s identical
-                    // guard for the full rationale.
-                    sub.focus.clear_focus();
-                }
-            },
-            onmounted,
-            ..attributes,
-
-            {props.children}
-        }
-    }
+    menu_item::render_item(props, "ContextMenuSubItem")
 }
