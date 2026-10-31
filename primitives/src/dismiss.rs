@@ -1,9 +1,8 @@
 //! The dismiss core (backlog row 487): one place that decides when an overlay closes.
 //!
-//! An overlay closes three ways: **Escape**, **a press outside**, and **focus leaving**. Each overlay
-//! used to do it by its own code, so a rule such as "a touch press outside is a tap, not a touch"
-//! (row 477) reached only the overlays that happened to call the one shared hook. An overlay now
-//! states a [`Policy`] and calls [`use_dismiss`]; the page half is one script
+//! An overlay closes three ways: **Escape**, **a press outside**, and **focus leaving**. An overlay
+//! states a [`Policy`] and calls [`use_dismiss`], so a rule such as "a touch press outside is a tap,
+//! not a touch" (row 477) lands once and reaches every overlay; the page half is one script
 //! (`DISMISS_JS` in `lib.rs`) that every layer shares, so
 //!
 //! - **Escape is layer-aware.** Layers that take part in Escape register on one page-side list ordered
@@ -221,13 +220,11 @@ pub(crate) fn use_dismiss(
         }
         let mut on_dismiss = on_dismiss.clone();
         let spec = Spec::new(root.cloned(), scope, policy);
-        Some(
-            dismiss_listeners(&spec).on_message(move |message: String| {
-                if let Some(cause) = Cause::from_message(&message) {
-                    on_dismiss(cause);
-                }
-            }),
-        )
+        Some(dismiss_listeners(&spec).on_message(move |message: String| {
+            if let Some(cause) = Cause::from_message(&message) {
+                on_dismiss(cause);
+            }
+        }))
     });
 }
 
@@ -239,7 +236,11 @@ mod tests {
 
     #[test]
     fn a_spec_serialises_the_policy_for_the_page() {
-        let spec = Spec::new("panel".into(), Scope::Closest("nav"), Policy::ESCAPE_AND_PRESS);
+        let spec = Spec::new(
+            "panel".into(),
+            Scope::Closest("nav"),
+            Policy::ESCAPE_AND_PRESS,
+        );
         let json = serde_json::to_value(&spec).expect("serialises");
         assert_eq!(json["id"], "panel");
         assert_eq!(json["closest"], "nav");

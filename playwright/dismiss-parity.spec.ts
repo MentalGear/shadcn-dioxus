@@ -18,6 +18,7 @@ import { test, expect } from "./fixtures";
 import type { Page } from "@playwright/test";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
+import { fixedViewportBox } from "./viewport-box";
 
 const NAV_TIMEOUT = 20 * 60 * 1000;
 const FIXTURE = `${BASE_URL}/component/top_layer/`;
@@ -186,11 +187,12 @@ async function prepare(page: Page, surface: Surface) {
 
 /** A point in the viewport that is not inside the surface, its trigger or any interactive element. */
 async function quietPoint(page: Page, surface: Surface): Promise<{ x: number; y: number }> {
+  const box = await fixedViewportBox(page);
   const point = await page.evaluate(
-    ({ content, trigger }) => {
+    ({ content, trigger, bottom }) => {
       const keep = [document.querySelector(content), document.querySelector(trigger)];
       for (const x of [6, 14, 24, 40, 60]) {
-        for (let y = 90; y < window.innerHeight - 20; y += 23) {
+        for (let y = 90; y < bottom - 20; y += 23) {
           const el = document.elementFromPoint(x, y);
           if (!el) continue;
           if (keep.some((k) => k && (k.contains(el) || el.contains(k)))) continue;
@@ -200,7 +202,7 @@ async function quietPoint(page: Page, surface: Surface): Promise<{ x: number; y:
       }
       return null;
     },
-    { content: surface.content, trigger: surface.trigger },
+    { content: surface.content, trigger: surface.trigger, bottom: box.y + box.height },
   );
   expect(point, "a quiet point outside the surface").not.toBeNull();
   return point as { x: number; y: number };

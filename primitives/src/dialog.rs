@@ -80,9 +80,7 @@ use dioxus::document;
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
 
-use crate::{
-    merge_attributes, use_animated_open, use_controlled, use_id_or, use_unique_id,
-};
+use crate::{merge_attributes, use_animated_open, use_controlled, use_id_or, use_unique_id};
 
 /// Context for the [`DialogRoot`] component
 #[derive(Clone, Copy)]
