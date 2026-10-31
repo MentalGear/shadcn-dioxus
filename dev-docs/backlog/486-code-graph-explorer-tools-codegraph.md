@@ -59,14 +59,18 @@ M
 to a case-by-case read of owners, cadence and downloads
 ([`dependency-evaluation.md`](../research/dependency-evaluation.md) section 1,
 [`dependency-scanners.md`](../research/dependency-scanners.md) recommendation G). Where the docs define a number, it is
-used as written; every other threshold is **proposed** and awaits the owner.
+used as written. Owner decision 2026-10-31: the rule is the general rule for every new dependency in the repo (crates,
+npm packages, vendored libraries, cargo-installed tools), not only this tool's. D2-D4 were proposed and are now
+**approved by the owner 2026-10-31**; D1 and D5 were already repo rules; D6 is the owner's. The rule lives in the
+supply-chain playbook, section [Choosing a new dependency](../supply-chain/README.md#choosing-a-new-dependency-owner-2026-10-31)
+(control C23), and this row applies it.
 
 | # | Rule | Source |
 |---|---|---|
 | D1 | A pinned release is at least 30 days old (`minimumReleaseAge: 43200`, pnpm enforces it at resolution) | defined: owner decision, row 359, `playwright/pnpm-workspace.yaml`, `preview/pnpm-workspace.yaml`, playbook C09/C19. Cargo-installed tools: 14 days, `dependency-scanners.md` G |
-| D2 | The project's first release is at least 12 months old | proposed |
-| D3 | Broad adoption: at least 1,000 GitHub stars; where stars cannot be read, at least 100,000 weekly npm downloads or 1,000,000 total crates.io downloads as the stand-in | proposed |
-| D4 | Active maintenance: a release in the last 24 months, not archived or deprecated | proposed |
+| D2 | The project's first release is at least 12 months old | approved by the owner 2026-10-31 |
+| D3 | Broad adoption: at least 1,000 GitHub stars; where stars cannot be read, at least 100,000 weekly npm downloads or 1,000,000 total crates.io downloads as the stand-in | approved by the owner 2026-10-31 |
+| D4 | Active maintenance: a release in the last 24 months, not archived or deprecated | approved by the owner 2026-10-31 |
 | D5 | Footprint: exact pin, no install script, few or no transitive dependencies, a permissive licence (the repo's licence set is MIT/Apache/ISC-class) | defined: playbook C09 (no install scripts), C03 (exact pins); `dependency-scanners.md` facts (licences) |
 | D6 | An exception is the owner's, written into this row with a reason and an end date, as `minimumReleaseAgeExclude` entries are | defined: the yaml header comment above |
 

@@ -29,6 +29,9 @@ drop (unused) > feature-gate (only that component's users pay) > pin exactly > r
 **Blast radius** = how many of the 83 `component.json` closures pull the crate in (from `component.json` `cargoDependencies`, and for
 `dioxus-primitives` internals, every component, since all 83 depend on it).
 
+These criteria apply to removing or lifting. The test for adding a new dependency is the playbook's
+[Choosing a new dependency](../supply-chain/README.md#choosing-a-new-dependency-owner-2026-10-31) section (C23).
+
 ## 2. Re-running the inventory
 
 ```

@@ -103,8 +103,28 @@ requires every `enforced`/`manual` path to exist and every `planned` script to s
 | C20 | Dependency register: one schema-checked TOML entry per direct dependency (outcome, reach class, version, evidence date, closure hash); a version bump re-opens the entry; transitive, `build.rs` and proc-macro counts are shrink-only ratchets; `lifted-from: crate@version` headers must have an entry | T4: closure growth and lifted code that no advisory scan can see | `scripts/check-supply-chain-register.sh` | `supply-chain/register.toml` | none yet | planned | Row 371; follow the repo's shrink-only baseline pattern |
 | C21 | Users' cooldown: the starter's `.cargo/config.toml` sets Cargo's minimum publish age once Rust 1.100 is stable (expected 2026-11-12); the only control that would have covered the 86-minute window of the August 2026 attack | T1 for users | none | `templates/starter/.cargo/config.toml` | none yet | planned | Unverified: that older cargo ignores the unknown key; row 371 |
 | C22 | This document stays true: the controls table is parsed, enforced and manual rows must name existing paths, planned scripts must not exist yet, and every script in the declared supply-chain set must appear in the table | drift of this playbook from the tree | `dev-docs/supply-chain/check-supply-chain-doc.sh`, `scripts/check-supply-chain-doc.sh` | `dev-docs/supply-chain/README.md`, `SECURITY.md` | run-gates | enforced | Copy the gate (it lives next to this file) with the table format; edit its CONFIG block (playbook path, `SECURITY.md`, gate-list file, `SUPPLY_CHAIN_SCRIPTS`). `scripts/check-supply-chain-doc.sh` is only this repo's three-line wrapper |
+| C23 | Every new dependency (crate, npm package, vendored library, cargo-installed tool) meets D1-D6 of the section [Choosing a new dependency](#choosing-a-new-dependency-owner-2026-10-31); an exception is the owner's and is recorded with a reason and an end date | T1 T4: a young, abandoned or thinly used package entering the build without a decision | none | `dev-docs/backlog/486-code-graph-explorer-tools-codegraph.md` (where exceptions are recorded) | manual | manual | Apply the thresholds to each addition by hand; no script checks them yet |
 
-Counts (checked by the gate, which prints them): 13 enforced, 3 manual, 6 planned.
+Counts (checked by the gate, which prints them): 13 enforced, 4 manual, 6 planned.
+
+## Choosing a new dependency (owner 2026-10-31)
+
+One rule for every new dependency in the repo: crates, npm packages, vendored libraries and cargo-installed tools. It is
+control C23; row 486 applies it to the code graph tool. D1 restates C19 (`minimumReleaseAge`) and the 14-day age for
+cargo-installed tools ([`research/dependency-scanners.md`](../research/dependency-scanners.md), recommendation G); D5 restates C03 and C09.
+
+- **D1 Release age.** The pinned release is at least 30 days old. Check the version's publish date in the npm `time` map
+  (`registry.npmjs.org/<pkg>`) or the crates.io `created_at` (`crates.io/api/v1/crates/<crate>/versions`).
+- **D2 First release.** The project's first release is at least 12 months old. Check the first publish date in the same metadata.
+- **D3 Adoption.** At least 1,000 GitHub stars (`stargazers_count`, `api.github.com/repos/<owner>/<repo>`). Where stars cannot be
+  read, at least 100,000 weekly npm downloads (`api.npmjs.org/downloads/point/last-week/<pkg>`) or 1,000,000 total crates.io
+  downloads (`downloads`). A downloads stand-in is recorded as unverified.
+- **D4 Maintenance.** A release in the last 24 months; the repository is not archived (`archived`) and the package is not
+  deprecated (npm `deprecated`).
+- **D5 Footprint.** Exact pin; no install script (C09); few or no transitive dependencies (`cargo tree`, the lock); a permissive
+  licence (MIT, Apache-2.0 or ISC class).
+- **D6 Exceptions.** Only the owner grants one. It is written into the row that needs it with a reason and an end date, as a
+  `minimumReleaseAgeExclude` entry is.
 
 ## Decisions recorded
 
