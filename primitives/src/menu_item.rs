@@ -839,7 +839,7 @@ pub(crate) fn render_menu_item(parts: ItemParts) -> Element {
             return;
         }
         activate.call(());
-        if close_on_select.is_none_or(|close| close()) {
+        if close_on_select.map_or(true, |close| close()) {
             // Every collection this item could be the focused member of is cleared before the tree closes.
             if let Some(mut sub) = sub {
                 sub.focus.clear_focus();

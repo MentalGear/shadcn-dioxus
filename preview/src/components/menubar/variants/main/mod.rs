@@ -2,7 +2,7 @@ use super::super::component::*;
 use dioxus::prelude::*;
 
 // The readout under the bar shows the last selected value, so a spec can observe a selection
-// (`playwright/menu-family-parity.spec.ts`).
+// (`playwright/oracle/tier1-apg/menu-family-parity.spec.ts`).
 #[component]
 pub fn Demo() -> Element {
     let mut selected = use_signal(|| None::<String>);

@@ -33,18 +33,6 @@ use dioxus_attributes::attributes;
 use dioxus_core::Task;
 use std::time::Duration;
 
-/// Cancels wheel/touchmove scrolling outside the open menu (see the comment at both call
-/// sites). Arg: the root id.
-const CONTEXT_MENU_SCROLL_BLOCK_JS: &str = "const id = await dioxus.recv();
-const f = (e) => {
-    const r = document.getElementById(id);
-    if (!r || !r.contains(e.target)) e.preventDefault();
-};
-// blocking-ok: cancelling the wheel outside the menu is the feature; installed only while a menu is open and removed with it
-listen(window, 'wheel', f, { capture: true, passive: false });
-// blocking-ok: same as the wheel listener above -- held only while a menu is open
-listen(window, 'touchmove', f, { capture: true, passive: false });";
-
 /// How long a touch must be held before the context menu opens.
 const LONG_PRESS_DURATION: Duration = Duration::from_millis(500);
 /// Pointer drift (in CSS pixels, squared) that cancels an in-flight long press.
@@ -717,18 +705,6 @@ fn ContextMenuContentRendered(
         ctx.interacted_outside.set(true);
         ctx.focus.clear_focus();
         ctx.set_open.call(false);
-    });
-
-    // Native context menus block scroll while open; match that by suppressing
-    // wheel/touchmove outside the menu without mutating page-level overflow styles.
-    crate::js_listener::use_js_listeners(move || {
-        if !open() {
-            return None;
-        }
-        Some(
-            crate::js_listener::JsListeners::install(CONTEXT_MENU_SCROLL_BLOCK_JS)
-                .arg(ctx.root_id.cloned()),
-        )
     });
 
     rsx! {
