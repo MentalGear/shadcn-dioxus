@@ -6,7 +6,7 @@ resolves here by id.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Done rows (384)
+## Done rows (385)
 
 | # | Item | Updated |
 |---|---|---|
@@ -357,6 +357,7 @@ resolves here by id.
 | [389](backlog/done/389-accent-active-selected-states.md) | Active and selected states take the picked accent (mark, ink, tint slots) | 2026-10-26 |
 | [391](backlog/done/391-wrappers-forward-primitive-props.md) | Themed wrappers forward every primitive prop, enforced by a props-diff gate | 2026-10-24 |
 | [393](backlog/done/393-docs-contradict-code.md) | Fix the docs statements the code contradicts | 2026-10-25 |
+| [394](backlog/done/394-coming-from-shadcn-radix-tanstack.md) | A 'Coming from shadcn / Radix / TanStack' table on every component page | 2026-10-24 |
 | [395](backlog/done/395-as-keeps-children.md) | `as` keeps the component's children and handlers (Radix asChild semantics) | 2026-10-24 |
 | [396](backlog/done/396-derive-item-index.md) | Derive item `index` from registration order | 2026-10-24 |
 | [397](backlog/done/397-docs-review-bugs.md) | Bugs the docs review found: ToggleGroup arrows, dead ScrollArea prop, DataTable sort, Sidebar Ctrl+B | 2026-10-24 |

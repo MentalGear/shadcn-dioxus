@@ -63,7 +63,6 @@ proposing one is closed as out of scope (row 337 is the first).
 | [387](backlog/387-docs-clarity-review.md) | Standing docs-clarity review: a technical-writer pass over every component's docs and props for implicit behaviour | STANDING. Run after every round that adds a component or changes a public prop, and before row… | M | docs |
 | [390](backlog/390-base-accent-preset-split.md) | Base and accent presets own disjoint variables; charts follow the accent | APPROVED 2026-10-26 by the owner ("Ok for the rest", backlog thread); for the next session (owner… | M | theme |
 | [392](backlog/392-docs-snippets-compile.md) | Compile-check the docs.md code samples; samples use the uncontrolled props | BACKLOG. Found by row 387's first docs-clarity review; the evidence (file:line per finding) is in… | M | docs |
-| [394](backlog/394-coming-from-shadcn-radix-tanstack.md) | A 'Coming from shadcn / Radix / TanStack' table on every component page | BACKLOG. Found by row 387's first docs-clarity review; the evidence (file:line per finding) is in… | M | docs |
 | [399](backlog/399-docs-review-demos.md) | Demo batch from the docs review | BACKLOG. Found by row 387's first docs-clarity review; the evidence (file:line per finding) is in… | S | docs |
 | [412](backlog/412-csp-meta-tag.md) | Docs site: a Content-Security-Policy `&lt;meta&gt;` tag | OPTIONAL: needs owner approval before it is adopted or scheduled (owner 2026-10-24). Not part of… | S | build |
 | [413](backlog/413-property-tests-and-miri.md) | Property tests and Miri on the pure logic | OPTIONAL: needs owner approval before it is adopted or scheduled (owner 2026-10-24). Not part of… | M | tests |
@@ -118,5 +117,6 @@ proposing one is closed as out of scope (row 337 is the first).
 | [483](backlog/483-playwright-anchored-panel-settle-fixture.md) | Playwright waits for a just-opened anchored panel to settle before acting inside it (fixture, not per spec) | IMPLEMENTED on lane/settle-fixture-483 (main-loop merge pending). The wait lives in the shared… | M | tests |
 | [484](backlog/484-convert-remaining-valued-boolean-state-attributes-to-presence.md) | Convert the remaining valued boolean state attributes to presence attributes (Base UI vocabulary) | BACKLOG, owner decision 2026-10-29. Row 485 (retire data-state) depends on this row: every state… | M | primitives |
 | [485](backlog/485-retire-data-state-css-moves-to-aria-and-presence.md) | Retire data-state: our CSS styles from ARIA and presence attributes | BACKLOG, owner decision 2026-10-29. Depends on row 484, which converts the valued booleans to… | M-L | styling |
+| [486](backlog/486-code-graph-explorer-tools-codegraph.md) | Code graph explorer: SCIP-derived graph with a granularity slider (tools/codegraph) | BACKLOG, not scheduled. Researched 2026-10-29 and 2026-10-31 at the owner's request; a prototype… | M | tooling |
 
 <!-- END GENERATED -->

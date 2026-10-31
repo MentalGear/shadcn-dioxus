@@ -1,0 +1,30 @@
+const {chromium}=require('playwright');
+const D='/tmp/claude-0/-home-user-shadcn-dioxus/e2d7f6f9-f2cf-5032-b74e-c30f3d18c6d3/scratchpad/codegraph2/';
+(async()=>{
+ const b=await chromium.launch();
+ const errs=[];
+ const run=async(name,opts,fn)=>{
+  const ctx=await b.newContext({viewport:opts.vp||{width:1280,height:900},colorScheme:opts.scheme||'light',ignoreHTTPSErrors:true});
+  const p=await ctx.newPage();
+  p.on('pageerror',e=>errs.push(name+': '+e.message));
+  p.on('console',m=>{if(m.type()==='error')errs.push(name+' console: '+m.text())});
+  await p.goto('file://'+D+'explorer.html',{waitUntil:'load'});
+  await p.waitForFunction(()=>window.__cy&&window.__cy.nodes().length>0,null,{timeout:30000});
+  if(fn)await fn(p);
+  const stat=await p.evaluate(()=>({msg:document.getElementById('msg').textContent,nodes:__cy.nodes().length,edges:__cy.edges().length,sw:document.documentElement.scrollWidth,cw:innerWidth}));
+  console.log(name,JSON.stringify(stat));
+  await p.screenshot({path:D+name+'.png'});
+  await ctx.close();
+ };
+ const lvl=async(p,v)=>{await p.evaluate(v=>{const e=document.getElementById('lvl');e.value=v;e.dispatchEvent(new Event('input'))},v);await p.waitForTimeout(400)};
+ await run('explorer',{},null);
+ await run('shot-crate',{},p=>lvl(p,0));
+ await run('shot-file',{},p=>lvl(p,2));
+ await run('shot-file-r2',{},async p=>{await lvl(p,2);await p.evaluate(()=>{const e=document.getElementById('rad');e.value=2;e.dispatchEvent(new Event('input'))});await p.waitForTimeout(400)});
+ await run('shot-dark',{scheme:'dark'},null);
+ await run('shot-mobile',{vp:{width:390,height:800},scheme:'dark'},null);
+ await run('shot-nohubs-off',{},async p=>{await p.uncheck('#hubs');await p.waitForTimeout(400)});
+ await run('shot-whole-comp',{},async p=>{await p.fill('#pick','');await p.dispatchEvent('#pick','change');await p.waitForTimeout(500)});
+ console.log('errors',errs);
+ await b.close();
+})();

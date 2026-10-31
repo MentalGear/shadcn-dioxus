@@ -1,7 +1,7 @@
 ---
 id: 394
 title: "A 'Coming from shadcn / Radix / TanStack' table on every component page"
-status: "BACKLOG. Found by row 387's first docs-clarity review; the evidence (file:line per finding) is in…"
+status: "NOT PLANNED 2026-10-31 (owner): no per-page \"Coming from\" table. The name and default differences…"
 size: "M"
 area: docs
 updated: 2026-10-24
@@ -15,7 +15,7 @@ Readers search by shadcn, Radix, TanStack and Sonner names and assume their defa
 
 ## Status / trigger
 
-BACKLOG. Found by row 387's first docs-clarity review; the evidence (file:line per finding) is in the project's shared files, `docs-clarity/2026-10-24-docs-clarity-review.md`.
+NOT PLANNED 2026-10-31 (owner): no per-page "Coming from" table. The name and default differences found by row 387's review stay in that review for the docs pass. BACKLOG. Found by row 387's first docs-clarity review; the evidence (file:line per finding) is in the project's shared files, `docs-clarity/2026-10-24-docs-clarity-review.md`.
 
 ## Size
 

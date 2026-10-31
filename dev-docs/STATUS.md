@@ -47,7 +47,7 @@ then the final review. Rows in one step are independent unless a row says otherw
    row 456, ports one engine instead of three), then **436** (code-quality review of the refactored code).
 3. **371** (dependency review; each outcome goes to the owner before it is applied), **440** (per-run gate log
    directory) and **266** part (c) (`cargo public-api` report with a diff gate).
-4. Docs on the settled API: **392**, **394**, **399**, **422**, then the standing review **387**.
+4. Docs on the settled API: **392**, **399**, **422**, then the standing review **387** (394 is not planned, owner 2026-10-31).
 5. Tests: the **152** suite prune (before the plan adds its specs).
 6. At any point: **153**, **268**, **170**, and the Radix-versus-Base-UI scan rows ([`research/radix-vs-base-ui-2026-10-28.md`](./research/radix-vs-base-ui-2026-10-28.md)): **478** (overlay defaults), **479**
    (scroll-lock method), **480** (keyboard inset re-diff), **481** (state attributes), **482** (control gaps), **484** (valued booleans to presence attributes, Base UI vocabulary) and **485** (retire `data-state`, after 484).
