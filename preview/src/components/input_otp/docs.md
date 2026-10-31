@@ -36,7 +36,7 @@ InputOtp { max_length: 6, pattern: OtpPattern::Alphanumeric, aria_label: "Code",
 InputOtp { max_length: 4, pattern: OtpPattern::Custom { class: "0-9a-f".into(), inputmode: dioxus_primitives::input_otp::OtpInputMode::Text }, /* slots */ }
 ```
 
-Rejected characters are removed as they arrive (a pasted `A1-B2` into an alphanumeric code becomes `A1B2`). The browser applies `maxlength` to a paste before the filter runs, so a pasted code with separators may be truncated first; paste the bare code. Raw `inputmode` or `pattern` attributes passed to `InputOtp` are overridden by the typed prop: it is the only way to set them. Letters keep their case.
+Rejected characters are removed as they arrive and the result is cut to `max_length` (a pasted `A1-B2` into an alphanumeric code becomes `A1B2`; a pasted `123-456` into a six-slot code becomes `123456`). The `<input>` carries no `maxlength`, because the browser would trim a paste to it before the filter runs. Raw `inputmode` or `pattern` attributes passed to `InputOtp` are overridden by the typed prop: it is the only way to set them. Letters keep their case.
 
 ## Motion
 

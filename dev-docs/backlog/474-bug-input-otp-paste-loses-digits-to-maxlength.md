@@ -4,7 +4,7 @@ title: "Bug: Input OTP paste loses digits because maxlength truncates before the
 status: "APPROVED 2026-10-26 by the owner (\"Ok for the rest\", backlog thread); for the next session (owner…"
 size: "S"
 area: inputs
-updated: 2026-10-26
+updated: 2026-10-31
 ---
 
 # Row 474: Bug: Input OTP paste loses digits because maxlength truncates before the filter runs
@@ -25,7 +25,7 @@ Related to [row 434](./434-javascript-in-typescript-modules-not-rust-strings.md)
 
 APPROVED 2026-10-26 by the owner ("Ok for the rest", backlog thread); for the next session (owner 2026-10-26: "We will do it all in a fresh session").
 
-BACKLOG. Found by board round 6; reproduce first. Independent of plan approval.
+FIXED on `lane/otp-paste-474` (2026-10-31), awaiting the merge batch. Reproduced on Chromium first (a build of the base): pasting `123-456` into the six-slot control gave `12345`, `123 456` gave `12345`, `12-34-56` gave `1234`, and `aB3-xY9` into the alphanumeric control gave `aB3xY`: the browser trims a paste to `maxlength` (`maxlength="6"` on the element) when it inserts it, before the `input` filter runs, so separators used up slots. Fix: the `<input>` carries no `maxlength`; the page-side filter in `InputOtp` applies the pattern and the length bound to the text of a `beforeinput` (cancel, insert the accepted part over the selection) and again to the DOM value on `input`, and the Rust `oninput` bounds the signal. A keystroke into a full value stays a no-op. The block stays at 23 JS lines (baseline unchanged). Specs: `playwright/input-otp-pattern.spec.ts` (5 of 12 red on the base build, 12 of 12 green after).
 
 ## Size
 
