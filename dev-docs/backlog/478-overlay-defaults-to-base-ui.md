@@ -1,10 +1,10 @@
 ---
 id: 478
 title: "Overlay and control defaults follow Base UI (menu check items, Combobox keys, Tooltip, NavigationMenu timing, Select, carousel RTL)"
-status: "PARTIAL. Owner decided 2026-10-28: Select defaults to item-aligned, as both shadcn variants do.…"
+status: "PARTIAL. Items 1, 2, 3, 5 and 6 are done and deployed (PR #156); item 4 (NavigationMenu and submenu…"
 size: "S each"
 area: overlays
-updated: 2026-10-28
+updated: 2026-10-31
 ---
 
 # Row 478: Overlay and control defaults follow Base UI
@@ -15,7 +15,7 @@ Where shadcn's `base-nova` style (Base UI) and this library differ in a default,
 
 ## Status / trigger
 
-PARTIAL. Owner decided 2026-10-28: Select defaults to item-aligned, as both shadcn variants do. From the scan of 2026-10-28. Each item below is independent and S; a lane may take any subset.
+PARTIAL. Items 1, 2, 3, 5 and 6 are done and deployed (PR #156); item 4 (NavigationMenu and submenu hover delays) is deferred until a safe triangle exists. Owner decided 2026-10-28: Select defaults to item-aligned, as both shadcn variants do. From the scan of 2026-10-28. Each item below is independent and S; a lane may take any subset.
 
 **Done on `lane/overlay-defaults-478a` (2026-10-28; item 4 deferred), one commit per item, each with a spec assertion:**
 - Item 1: `close_on_select` defaults to `false` for checkbox and radio items of all three hosts (`menu_item.rs`); the wrong "default of Base UI" sentence is fixed. The `checkboxes` and `radio_group` demos drop their explicit `false`; the demos that showed the closing default (the three `rtl` variants, context-menu `main`, the "Minimap" items) set `close_on_select: true`. The `close_on_select` doc comments in `context_menu.rs` still describe the Radix default (that file belonged to another lane); fix them with the next edit to it.

@@ -4,7 +4,7 @@
 the page as stale and check `git log` and the flag files named here.** What each batch contained is in `git log` and the
 backlog row files, not here: this page says only what is deployed, what runs, what is next and what waits for the owner.
 
-Last updated: **2026-10-29**. Several sessions work in parallel; who holds what is on the `claims` branch (`CLAIMS.md`).
+Last updated: **2026-10-31**. Several sessions work in parallel; who holds what is on the `claims` branch (`CLAIMS.md`).
 Preview site: https://mentalgear.github.io/shadcn-dioxus/ (deployed from main `7d50e068`, PR #156, deploy commit `3896d87c`).
 
 ## Where a fresh session picks up
@@ -40,11 +40,14 @@ then the final review. Rows in one step are independent unless a row says otherw
 
 1. Bugs and approved fixes (owner 2026-10-26), each reproduced first: **468** (form reset desync), **474** (Input OTP
    paste), **473** (date picker segments), **471** and **475** (desktop only; reasoned from code, since the sandbox has no
-   desktop build), **390** (theme preset split; the one item that changes CSS users write), **477** (anchored overlays placed in document coordinates;
-   measured on the owner's iPhone 2026-10-28, closes **296**, the iPhone Combobox drift, and comes before 452 and 456), **476** (iPhone checkbox and radio tap lag on the home page) and
-   **472** (chart tooltip fade). **469** only on the owner's word.
-2. Structure: **435** (one menu engine behind DropdownMenu, ContextMenu and Menubar; before the plan, so the overlay port,
-   row 456, ports one engine instead of three), then **436** (code-quality review of the refactored code).
+   desktop build), **390** (theme preset split; the one item that changes CSS users write), **476** (iPhone checkbox and radio tap lag on the home page) and
+   **472** (chart tooltip fade). **469** only on the owner's word. **477** (anchored overlays placed in document coordinates) and
+   **296** (the iPhone Combobox drift) have landed in PR #156 and are deployed; they close after the owner's iPhone check, so
+   nothing is left to build there.
+2. Structure: **435** (one menu family behind DropdownMenu, ContextMenu and Menubar) and **487** (one dismiss core: Escape,
+   outside dismiss and focus return for every overlay): finish the single overlay engine before the Rust ports (owner
+   2026-10-31), so the overlay port, row 456, ports one family and one core; then **436** (code-quality review of the
+   refactored code).
 3. **371** (dependency review; each outcome goes to the owner before it is applied), **440** (per-run gate log
    directory) and **266** part (c) (`cargo public-api` report with a diff gate).
 4. Docs on the settled API: **392**, **399**, **422**, then the standing review **387** (394 is not planned, owner 2026-10-31).
@@ -80,7 +83,7 @@ ports), its working form is [`js-interop.md`](./js-interop.md), and every item h
   (GitHub Actions pinned to SHAs).
 - For the measured ports (row 443): which devices the owner has (Mac, iPhone and iOS version, Windows or Android).
 - Row 469: start or drop (pre-hydration typing: autofill, back/forward form restoration, fast typing on a slow phone).
-- iPhone re-tests: rows 28, 30, 295 and 305 (307 is closed; 296 is fixed by 477, which is in Next).
+- iPhone re-tests: rows 28, 30, 295 and 305 (307 is closed; 296 is fixed by 477, landed and deployed, and closes with 477 after the owner's iPhone check).
 - Owner question from the Radix-versus-Base-UI scan (2026-10-28): (3) `as` (Radix `asChild` semantics, row 395) against
   base-nova's `render` prop for badge, item, sidebar, breadcrumb, attachment, bubble and marker; the main loop recommends
   keeping `as`.
