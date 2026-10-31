@@ -1,23 +1,20 @@
 /**
  * A tap on a checkbox, a radio or the label beside one does only the work of the control (backlog row 476).
  *
- * Owner report (an iPhone, the home page): checking a checkbox in the "Filter results" block, and the radios of the
- * Radio Group card, took about a second to show the new state, while the radios inside the same Filter block
- * answered at once. What the slow ones share is the `Label` beside the control (a tap on the text, the large
- * target); the fast ones are a `<button>` that contains its own text.
+ * On a phone the large tap target of a checkbox or radio is the text of its `Label`, and a block whose radios are
+ * a `<button>` that contains its own text (the "Filter results" status radios) answers a tap at once. What a tap on
+ * a label can add to the control's own click is two things a phone pays for and a desktop does not notice, and each
+ * has a test here (Chromium only: WebKit is not available, row 4):
  *
- * Chromium cannot show a second (WebKit is not available here, row 4), so this spec pins the two mechanisms a tap
- * on a label can add to the control's own click, each of which a phone pays for and a desktop does not notice:
- *
- *   - the label's `touch-action`: a `label` the page leaves at `auto` is read by Mobile Safari as the first tap of
- *     a possible double-tap zoom (the control's `manipulation` is the control's own, not its label's);
+ *   - the label's `touch-action`: a `label` left at `auto` is read by Mobile Safari as the first tap of a possible
+ *     double-tap zoom, and the control's `manipulation` is the control's own, not its label's;
  *   - work in the tap's hover phase: a touch synthesizes `mouseover`/`mouseenter`/`mousemove` before the click, and
- *     any signal write or script start there runs before the control's click. A touch on a label arms nothing, and
- *     a checkbox toggle runs no script (`new Function`, which is what `document::eval` costs) on the way.
+ *     any signal write or script start there runs ahead of the control's click. A touch on a label arms nothing,
+ *     and a checkbox toggle runs no script (`new Function`, which is what `document::eval` costs).
  *
  * Then the bound: tap to painted state under 4x CPU throttling (`Emulation.setCPUThrottlingRate`), the median of 10
- * taps per target, with a limit far below the reported second, so only a regression of that size is red. It
- * measures from `touchend` to the animation frame after the control's `aria-checked` changes.
+ * taps per target, against a limit of about a second, so only a regression of that size is red. It measures from
+ * `touchend` to the animation frame after the control's `aria-checked` changes.
  *
  *   PLAYWRIGHT_BASE_URL=http://127.0.0.1:8090 npx playwright test --config=ssg.local.config.ts tap-latency.spec.ts
  */
@@ -31,7 +28,7 @@ test.use({ ...devices["iPhone 13"], defaultBrowserType: "chromium" });
 const GOTO = { timeout: 20 * 60 * 1000 };
 const TAPS = 10;
 const THROTTLE = 4;
-/** Far below the reported second; a loaded 4-core box and a debug build both stay well under it. */
+/** About half a second: a loaded 4-core box and a debug build both stay well under it. */
 const BUDGET_MS = 600;
 
 /** The Filter results block's checkbox + label pair, and its status radios. */
