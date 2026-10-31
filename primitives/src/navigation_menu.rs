@@ -888,8 +888,6 @@ pub fn NavigationMenuContent(props: NavigationMenuContentProps) -> Element {
 
     use_context_provider(|| NavigationMenuContentContext);
 
-    let ctx: NavigationMenuContext = use_context();
-
     rsx! {
         if render() {
             NavigationMenuContentRendered {
@@ -917,7 +915,7 @@ pub fn NavigationMenuContent(props: NavigationMenuContentProps) -> Element {
 /// links' own `onblur` debounce, not the core's.
 #[component]
 fn NavigationMenuDismiss() -> Element {
-    let ctx: NavigationMenuContext = use_context();
+    let mut ctx: NavigationMenuContext = use_context();
     let item_ctx: NavigationMenuItemContext = use_context();
     let index = item_ctx.index;
 

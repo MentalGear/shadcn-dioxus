@@ -21,7 +21,6 @@
 //!   equivalent either.
 
 use crate::state_attrs;
-#[cfg(not(feature = "web"))]
 use crate::{merge_attributes, use_animated_open, use_controlled, use_id_or, use_unique_id};
 #[cfg(not(feature = "web"))]
 use dioxus::document;

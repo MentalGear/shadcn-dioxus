@@ -815,7 +815,7 @@ pub fn NavbarContent(props: NavbarContentProps) -> Element {
 /// `popover="auto"` light dismiss (row 487 measured it equivalent), and the triggers' own `onblur`
 /// is the focus arm.
 fn use_navbar_dismiss(id: &str) {
-    let ctx: NavbarContext = use_context();
+    let mut ctx: NavbarContext = use_context();
     let nav_ctx: NavbarNavContext = use_context();
     let index = nav_ctx.index;
     let id = use_signal(|| id.to_string());
