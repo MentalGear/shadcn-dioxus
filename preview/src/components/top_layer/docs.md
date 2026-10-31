@@ -16,6 +16,30 @@ opened by `showModal()` for the dialog engine — no Dioxus involved. If a
 rule fails on the native reference, the test is wrong, not the component —
 the same tier-2 discipline as the [`form`](../form) fixture.
 
+## Component Structure
+
+The fixture is one component, `TopLayerFixture`, that stacks its probe sections (the eight below, plus a scroll-lock handoff probe). Each section has the same shape:
+
+```rust
+div {
+    // One section per probe, in the order of "The eight sections" below.
+    section {
+        h2 { "Clipping escape" }
+        // A hint paragraph says what the oracle asserts here.
+        p { "..." }
+        // The probe stage: an ancestor that clips or stacks (`#clip-box`, `#stack-sibling`, ...) holding
+        // the surfaces under test (Tooltip, Popover, Dialog, ...) ...
+        div { id: "clip-box",
+            // ... next to their native reference: a plain `<div popover>` with a `<button popovertarget>`,
+            // or a plain `<dialog>`, which no Dioxus code drives.
+        }
+    }
+    // ... the other sections
+}
+```
+
+Each surface is composed from the primitive directly (`PopoverRoot` > `PopoverTrigger` + `PopoverContent`, `DialogRoot` > `DialogContent`, and so on), not from a themed wrapper, so the oracles measure the engine rather than a theme. The fixture is not installable; its sections are probes, not parts to assemble.
+
 ## What it covers
 
 | Surface | Engine | Sections |

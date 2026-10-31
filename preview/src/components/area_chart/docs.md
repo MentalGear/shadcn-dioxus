@@ -1,5 +1,34 @@
 Area charts show how one or more values change across categories, with the region under the line filled in. Use them for totals over time, or stack several series to show how a whole is made up. This page is a gallery of the shapes an area chart usually takes; every piece it uses (`ChartContainer`, `Chart`, `ChartTooltip`, `ChartLegend`) comes from the [Chart](/component/chart/) package, which is the one package you install.
 
+## Component Structure
+
+```rust
+// Card is the frame the demos use; a chart works without it.
+Card {
+    CardHeader {
+        CardTitle { "Visitors" }
+        CardDescription { "January - June 2024" }
+    }
+    CardContent {
+        // ChartContainer, Chart, ChartTooltip and ChartLegend come from the Chart package this page
+        // depends on; this page adds no piece of its own. Chart reads its kind from the container.
+        ChartContainer { config, data, kind: ChartKind::Area,
+            Chart {
+                aria_label: "Visitors by month",
+                // Area-specific settings (gradient, fill opacity, stack mode) live in `area: AreaOptions { .. }`.
+                curve: Curve::Natural,
+            }
+            ChartTooltip { indicator: TooltipIndicator::Line }
+            // ChartLegend lists one swatch and label per series; add it once there is more than one.
+            ChartLegend {}
+        }
+    }
+    CardFooter { "Showing total visitors for the last 6 months" }
+}
+```
+
+The demos on this page sit inside `AreaChartGallery`, a layout wrapper that only spaces them out; it is not part of an area chart. The pieces are siblings inside the container, as on the [Chart](/component/chart/) page.
+
 ## Quick start
 
 ```rust

@@ -1535,7 +1535,7 @@ html[data-nav-sort="category"] .dx-nav-sort .dx-nav-sort-option[data-nav-sort-op
   border-radius: 0.5rem;
 }
 
-/* The component page's docs accordion (`ComponentHighlight`): the library's `Accordion`, each item's `h2`
+/* The component page's docs accordions (`ComponentHighlight`, two groups): the library's `Accordion`, each item's `h3`
  * wrapping its trigger so the outline and the anchors stay. The heading is only a container here: the
  * trigger draws the row (its padding, chevron, hover underline and focus ring); the docs set the heading's
  * size. The page's own Collapsibles ("Manual installation files", a demo's "About this example") take the
@@ -1570,7 +1570,7 @@ html[data-nav-sort="category"] .dx-nav-sort .dx-nav-sort-option[data-nav-sort-op
   margin-top: 1.25rem;
 }
 
-.dx-docs-props h3 {
+.dx-docs-props h4 {
   display: flex;
   align-items: baseline;
   margin: 0 0 0.5rem;
@@ -1631,17 +1631,23 @@ html[data-nav-sort="category"] .dx-nav-sort .dx-nav-sort-option[data-nav-sort-op
   margin-bottom: 0;
 }
 
-.dx-component-description h2,
-.dx-component-description h3 {
+.dx-component-description h4,
+.dx-component-description h5 {
   color: var(--dx-foreground);
 }
 
-.dx-component-description h3 {
+/* A docs section's subheading: one level under the accordion item's `h3`. */
+.dx-component-description h4 {
   margin: 1.75rem 0 0.5rem;
   font-size: 1.15rem;
   font-weight: 600;
   letter-spacing: -0.005em;
   line-height: 1.3;
+}
+
+.dx-component-description h5 {
+  font-size: 1rem;
+  font-weight: 600;
 }
 
 .dx-component-description p code,
@@ -1675,7 +1681,7 @@ html[data-nav-sort="category"] .dx-nav-sort .dx-nav-sort-option[data-nav-sort-op
   text-underline-offset: 3px;
 }
 
-/* "Examples" follows the docs accordion: more room above it than between two sections, so it reads as
+/* "Examples" follows the docs groups: more room above it than between two sections, so it reads as
  * the start of a new part of the page. */
 .dx-component-section.dx-component-examples {
   padding-top: 4rem;

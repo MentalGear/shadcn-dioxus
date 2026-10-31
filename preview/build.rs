@@ -6,6 +6,9 @@ mod props_scan;
 // The slot-variable scanner shared with the `scripts/check-slot-docs.sh` gate (backlog row 433).
 #[path = "slot_scan.rs"]
 mod slot_scan;
+// How a component page groups and orders its docs sections, shared with `src/main.rs`'s tests (backlog row 422).
+#[path = "docs_groups.rs"]
+mod docs_groups;
 
 fn main() {
     let out_dir = std::env::var("OUT_DIR").unwrap();
@@ -62,6 +65,7 @@ fn main() {
     // every demo-adding change edited. Editing `mod.rs` (a CATALOG row is how a new component starts)
     // re-runs this script, so a new component directory is picked up without a manual `touch`.
     println!("cargo:rerun-if-changed=src/components/mod.rs");
+    println!("cargo:rerun-if-changed=docs_groups.rs");
     let components = discover_components(std::path::Path::new("src/components"));
     write_if_changed(&out_dir.join("examples.rs"), &render_examples(&components));
 }
@@ -226,6 +230,14 @@ fn walk_markdown_dir(dir: &std::path::Path, out_dir: &std::path::Path) -> std::i
                     sections.push(slots);
                 }
                 sections.push(render_props_section(&folder_name, &sections));
+                // The page order, decided once (`docs_groups`): Basic first, the page's own sections in
+                // authored order, then the recurring topics. The sort is stable.
+                sections.sort_by_key(|section| {
+                    docs_groups::page_position(
+                        &section.id,
+                        &docs_groups::plain_text(&section.title_html),
+                    )
+                });
                 write_if_changed(
                     &out_folder.join("docs_sections.rs"),
                     &render_docs_sections(&sections),
@@ -248,7 +260,7 @@ fn walk_markdown_dir(dir: &std::path::Path, out_dir: &std::path::Path) -> std::i
 
 /// The text of the props section's heading. The id is `docs-props-reference`, like every
 /// `split_docs_sections` row, and a `docs.md` that declares the same `##` fails the build.
-const PROPS_HEADING: &str = "Props reference";
+const PROPS_HEADING: &str = docs_groups::Basic::PropsReference.heading();
 
 /// The text of the slot-variable section's heading; its id is `docs-styling-slot-variables`. A `docs.md` that
 /// declares `## Slot variables` or this heading fails the build and `scripts/check-slot-docs.sh`.
@@ -258,7 +270,7 @@ const SLOTS_HEADING: &str = "Styling (slot variables)";
 /// generated "Props reference". `site/component_page.rs` renders each as one `AccordionItem` (its `DocsSection`
 /// mirrors this), so the page is built from the library's own Accordion, not a native disclosure.
 struct DocsSection {
-    /// The `h2` id, the anchor target (`docs-<slug>`).
+    /// The `h3` id, the anchor target (`docs-<slug>`).
     id: String,
     /// The heading's inline HTML (a `##` may hold `code`).
     title_html: String,
@@ -330,20 +342,20 @@ fn html_escape(text: &str) -> String {
 fn doc_html(doc: &str) -> String {
     let doc = doc.replace("[`", "`").replace("`]", "`");
     let mut out = String::new();
-    // A doc comment is content under the page's own `<h3>` (struct) or inside a table cell: its `# Example` /
+    // A doc comment is content under the page's own `<h4>` (struct) or inside a table cell: its `# Example` /
     // `## Styling` headings must never join the page outline (they would render an `<h1>` and `<h2>`s in the docs
-    // prose), so every heading level is demoted to `<h4>`.
+    // prose), so every heading level is demoted to `<h5>`.
     use pulldown_cmark::{Event, HeadingLevel, Tag, TagEnd};
     let events = pulldown_cmark::Parser::new(&doc).map(|event| match event {
         Event::Start(Tag::Heading {
             id, classes, attrs, ..
         }) => Event::Start(Tag::Heading {
-            level: HeadingLevel::H4,
+            level: HeadingLevel::H5,
             id,
             classes,
             attrs,
         }),
-        Event::End(TagEnd::Heading(_)) => Event::End(TagEnd::Heading(HeadingLevel::H4)),
+        Event::End(TagEnd::Heading(_)) => Event::End(TagEnd::Heading(HeadingLevel::H5)),
         other => other,
     });
     pulldown_cmark::html::push_html(&mut out, events);
@@ -450,7 +462,7 @@ fn render_props_section(name: &str, sections: &[DocsSection]) -> DocsSection {
                 })
                 .collect();
             body.push_str(&format!(
-                "<section class=\"dx-docs-props\">\n<h3 id=\"{id}-{kind}-{slug}\"><code>{n}</code> <span class=\"dx-docs-props-kind\">{label}</span></h3>\n",
+                "<section class=\"dx-docs-props\">\n<h4 id=\"{id}-{kind}-{slug}\"><code>{n}</code> <span class=\"dx-docs-props-kind\">{label}</span></h4>\n",
                 n = html_escape(&item.name),
                 kind = slugify(label),
                 slug = slugify(&item.name),
@@ -640,18 +652,20 @@ fn process_docs_md_to_sections(markdown_path: &std::path::Path) -> Vec<DocsSecti
     split_docs_sections(markdown_events(&markdown_input))
 }
 
-/// The docs.md -> sections pass (backlog row 233).
+/// The docs.md -> sections pass (backlog rows 233, 422).
 ///
-/// Every `##` section of a `docs.md` becomes one [`DocsSection`] (its `h2` id `docs-<slug>`, its heading
+/// Every `##` section of a `docs.md` becomes one [`DocsSection`] (its `h3` id `docs-<slug>`, its heading
 /// HTML and its body), and the text before the first `##` becomes a "Usage notes" section. `site/component_page.rs`
-/// renders them as closed items of the library's own `Accordion` (multi-open, `hidden_until_found`, the
-/// `h2` wrapping the trigger so the outline and the anchors stay), so no `docs.md` has to be edited: a new
-/// section is collapsed by construction. The site opens the item that holds the URL fragment (`site/component_page.rs`,
-/// `use_open_section_for_hash`).
+/// renders them as items of the library's own `Accordion`s (multi-open, `hidden_until_found`, the heading
+/// wrapping the trigger so the outline and the anchors stay), so no `docs.md` has to be edited: a new
+/// section is collapsed by construction. The group a section lands in and its place there come from
+/// `docs_groups` (`walk_markdown_dir` sorts). The site opens the item that holds the URL fragment
+/// (`site/component_page.rs`, `use_open_section_for_hash`).
 ///
-/// The heading text equals `PAGE_HEADING_USAGE` in `site/component_page.rs`, which `docs_md_has_no_template_h2`
-/// reserves so a `docs.md` cannot declare the same heading.
-const USAGE_NOTES_HEADING: &str = "Usage notes";
+/// The section a `docs.md` writes as "Component Structure" (any case) is retitled to the Basic group's
+/// "Component structure". Headings inside a section sit one level below the item heading: `###` renders
+/// as `h4`, `####` as `h5`.
+const USAGE_NOTES_HEADING: &str = docs_groups::Basic::UsageNotes.heading();
 
 fn split_docs_sections(events: Vec<pulldown_cmark::Event<'_>>) -> Vec<DocsSection> {
     use pulldown_cmark::{Event, HeadingLevel, Tag, TagEnd};
@@ -717,6 +731,39 @@ fn split_docs_sections(events: Vec<pulldown_cmark::Event<'_>>) -> Vec<DocsSectio
         }
         out
     }
+    /// A heading inside a section renders one level below where it is written, because the item heading
+    /// above it is an `h3`: page `h1` > group `h2` > item `h3` > `###` as `h4` > `####` as `h5`.
+    fn nest_headings(events: Vec<Event<'_>>) -> Vec<Event<'_>> {
+        fn below(level: HeadingLevel) -> HeadingLevel {
+            match level {
+                HeadingLevel::H1 | HeadingLevel::H2 | HeadingLevel::H3 => HeadingLevel::H4,
+                HeadingLevel::H4 => HeadingLevel::H5,
+                HeadingLevel::H5 | HeadingLevel::H6 => HeadingLevel::H6,
+            }
+        }
+        events
+            .into_iter()
+            .map(|event| match event {
+                Event::Start(Tag::Heading {
+                    level,
+                    id,
+                    classes,
+                    attrs,
+                }) => Event::Start(Tag::Heading {
+                    level: below(level),
+                    id,
+                    classes,
+                    attrs,
+                }),
+                Event::End(TagEnd::Heading(level)) => Event::End(TagEnd::Heading(below(level))),
+                other => other,
+            })
+            .collect()
+    }
+    /// A section body as HTML: subheadings anchored, then nested.
+    fn render_body(section_id: &str, events: Vec<Event<'_>>) -> String {
+        render(nest_headings(anchor_subheadings(section_id, events)))
+    }
 
     let mut slugs: Vec<String> = Vec::new();
     let mut unique_slug = |title: &str| {
@@ -742,7 +789,7 @@ fn split_docs_sections(events: Vec<pulldown_cmark::Event<'_>>) -> Vec<DocsSectio
     if !intro.is_empty() {
         let id = format!("docs-{}", unique_slug(USAGE_NOTES_HEADING));
         out.push(DocsSection {
-            html: render(anchor_subheadings(&id, intro)),
+            html: render_body(&id, intro),
             id,
             title_html: USAGE_NOTES_HEADING.to_string(),
         });
@@ -766,10 +813,16 @@ fn split_docs_sections(events: Vec<pulldown_cmark::Event<'_>>) -> Vec<DocsSectio
             body.push(event);
         }
         let id = format!("docs-{}", unique_slug(&title));
+        // The Basic group's section reads in the group's own casing, whatever the `docs.md` wrote.
+        let title_html = if id == docs_groups::Basic::ComponentStructure.id() {
+            docs_groups::Basic::ComponentStructure.heading().to_string()
+        } else {
+            render(title_events)
+        };
         out.push(DocsSection {
-            html: render(anchor_subheadings(&id, body)),
+            html: render_body(&id, body),
             id,
-            title_html: render(title_events),
+            title_html,
         });
     }
     out

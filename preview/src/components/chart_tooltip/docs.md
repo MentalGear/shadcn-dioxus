@@ -2,6 +2,25 @@
 
 Place `ChartTooltip {}` as a sibling of `Chart` inside the `ChartContainer`. It shows the label and one row per series for the active data point, which is the point under the pointer or the one the keyboard has stepped to. It is hidden from assistive technology (`aria-hidden`) because the chart's data table is the accessible source of the same numbers.
 
+## Component Structure
+
+```rust
+ChartContainer { config, data, kind: ChartKind::Bar,
+    Chart { aria_label: "Calories by day" }
+    // ChartTooltip is a sibling of Chart inside the container, after it, and reads the active data
+    // point from the container. Every option on this page is a prop of this one piece.
+    ChartTooltip {
+        indicator: TooltipIndicator::Line,
+        // `formatter` replaces the inside of each row; it is the only place a custom row nests.
+        formatter: |row: TooltipRow| rsx! { span { "{row.label}" } },
+    }
+    // ChartLegend is the other optional sibling; `hide_icon` and `vertical_align` are its options.
+    ChartLegend {}
+}
+```
+
+`ChartTooltip` has no child parts of its own: its rows are generated from the series in the `ChartConfig`, and a `ChartSeries` icon (`config.series[0].icon`) is shared by the tooltip and the legend. The demos on this page sit in `Card` inside a `Gallery` layout wrapper that only spaces them out.
+
 ## Indicator shape
 
 ```rust

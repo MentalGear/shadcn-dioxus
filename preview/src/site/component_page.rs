@@ -1,19 +1,22 @@
 use super::*;
+use crate::{docs_groups, DocsSection};
 
-/// The `h2` headings the component page renders itself (`ComponentHighlight`) or that `build.rs` adds
-/// around a component's `docs.md` ("Usage notes" wraps the text before its first `##`). A `docs.md` must not add an `h2` with one of these
-/// texts (the page would show it twice); `docs_md_has_no_template_h2` below
-/// enforces that, so the list is the single source for both.
-pub(crate) const PAGE_HEADING_INSTALLATION: &str = "Installation";
-#[cfg(test)]
-pub(crate) const PAGE_HEADING_USAGE: &str = "Usage notes";
+/// The `h2` headings the component page renders itself: the two docs groups (`docs_groups`), "Examples",
+/// and the section headings around a component's `docs.md` ("Usage notes" wraps the text before its first
+/// `##`). A `docs.md` must not add an `h2` with one of these texts (the page would show it twice);
+/// `docs_md_has_no_template_h2` in `main.rs` enforces that, so the list is the single source for both.
+/// "Component structure" is not reserved: a `docs.md` writes that section and `build.rs` moves it into the
+/// Basic group.
 pub(crate) const PAGE_HEADING_VARIANTS: &str = "Examples";
 /// "Usage" is reserved too: the text before a docs.md's first `##` is rendered under "Usage notes", so
 /// a docs h2 called "Usage" would read as a nested duplicate of it.
 #[cfg(test)]
-pub(crate) const TEMPLATE_H2_HEADINGS: [&str; 4] = [
-    PAGE_HEADING_INSTALLATION,
-    PAGE_HEADING_USAGE,
+pub(crate) const TEMPLATE_H2_HEADINGS: [&str; 7] = [
+    docs_groups::BASIC_HEADING,
+    docs_groups::SPECIFIC_HEADING,
+    docs_groups::Basic::Installation.heading(),
+    docs_groups::Basic::UsageNotes.heading(),
+    docs_groups::Basic::PropsReference.heading(),
     "Usage",
     PAGE_HEADING_VARIANTS,
 ];
@@ -61,7 +64,7 @@ pub(crate) fn prefix_root_absolute_hrefs(html: &str, prefix: &str) -> String {
 /// files", a demo's notes) that holds the URL fragment's target, on load and on every `hashchange`, then
 /// scrolls to the target.
 ///
-/// - A fragment naming a section's `h2` (`#installation`, `#docs-<slug>`: the h2 wraps the trigger, so it
+/// - A fragment naming a section's `h3` (`#installation`, `#docs-<slug>`: the h3 wraps the trigger, so it
 ///   is always visible) clicks that item's trigger: an ordinary, animated open.
 /// - A fragment naming something inside closed content: every closed panel around it is mounted as
 ///   `hidden="until-found"` (`hidden_until_found`), and the browser reveals it itself for a fresh load or
@@ -81,7 +84,7 @@ pub(crate) fn use_open_section_for_hash() {
                  try { id = decodeURIComponent(location.hash.slice(1)); } catch (_) {}
                  const target = id && document.getElementById(id);
                  if (!target) return;
-                 const trigger = target.matches('h2') && target.querySelector('button[aria-expanded=\"false\"]');
+                 const trigger = target.matches('h3') && target.querySelector('button[aria-expanded=\"false\"]');
                  if (trigger) trigger.click();
                  const closed = [];
                  for (let p = target.parentElement; p; p = p.parentElement) {
@@ -104,10 +107,6 @@ pub(crate) fn use_open_section_for_hash() {
 
 #[component]
 pub(crate) fn ComponentHighlight(demo: ComponentDemoData) -> Element {
-    use components::accordion::{
-        Accordion, AccordionChevron, AccordionContent, AccordionItem, AccordionTrigger,
-    };
-    use components::collapsible::{Collapsible, CollapsibleContent, CollapsibleTrigger};
     use_open_section_for_hash();
     let ComponentDemoData {
         name: raw_name,
@@ -166,78 +165,50 @@ pub(crate) fn ComponentHighlight(demo: ComponentDemoData) -> Element {
                         },
                     }
                 }
-                // Installation and the docs.md sections are ONE `Accordion` of the library's own (dev-docs/
+                // The docs are two groups, each a heading and an `Accordion` of the library's own (dev-docs/
                 // decisions.md: the docs are built from its components, so they look and move like them):
-                // several may be open, every item starts closed, and closed content stays in the server
-                // markup as `hidden="until-found"`, so find-in-page and `#fragment` links still reach it
-                // and hydration changes nothing the reader sees. Each `h2` wraps its trigger (shadcn's
-                // heading-around-trigger shape), so the outline and the anchors stay. The docs.md items
-                // are `build.rs` data (`render_docs_sections`), Installation is written here.
-                section { class: "dx-component-section dx-component-accordion dx-docs-prose",
-                    // The Table component's sheet, for the docs.md and props-reference tables
-                    // `build.rs` emits with its classes (they are HTML, not `Table` elements).
-                    document::Link { rel: "stylesheet", href: asset!("/src/components/table/style.css") }
-                    Accordion {
-                        class: "dx-docs-accordion",
-                        width: "100%",
-                        allow_multiple_open: true,
-                        collapsible: true,
-                        hidden_until_found: true,
-                        chevron: AccordionChevron::Start,
-                        AccordionItem {
-                            h2 { id: "installation", class: "dx-docs-accordion-heading",
-                                AccordionTrigger { class: "dx-docs-accordion-trigger",
-                                    "{PAGE_HEADING_INSTALLATION}"
+                // Basic (the sections every page has, in one order) and Component-Specific (this page's own
+                // sections). `docs_groups` decides the grouping and the order, once; a docs.md names no group. Several items may be open, every item but "Usage notes" starts closed, and closed
+                // content stays in the server markup as `hidden="until-found"`, so find-in-page and
+                // `#fragment` links still reach it and hydration changes nothing the reader sees. Each item
+                // heading (`h3`, under its group's `h2`) wraps its trigger (shadcn's heading-around-trigger
+                // shape), so the outline and the anchors stay. The docs.md items are `build.rs` data
+                // (`render_docs_sections`), Installation is written here.
+                // The Table component's sheet, for the docs.md and props-reference tables `build.rs` emits
+                // with its classes (they are HTML, not `Table` elements).
+                document::Link { rel: "stylesheet", href: asset!("/src/components/table/style.css") }
+                DocsGroup {
+                    id: "basic",
+                    heading: docs_groups::BASIC_HEADING,
+                    blurb: "The same sections, in the same order, on every component page.",
+                    for basic in docs_groups::BASIC_ORDER {
+                        match basic {
+                            docs_groups::Basic::Installation => rsx! {
+                                ComponentInstallation {
+                                    name: raw_name,
+                                    component: component.clone(),
+                                    style: style.clone(),
                                 }
-                            }
-                            AccordionContent {
-                                ComponentInstallCommand { name: raw_name }
-                                p { class: "dx-docs-muted",
-                                    "Also adds the components and crates this one needs. First time in this app? "
-                                    // link-ok: content link to the Docs page, never to a component page
-                                    Link { to: Route::docs(), "Set up the CLI and your app" }
-                                    " first."
-                                }
-                                Collapsible { class: "dx-component-manual-install", hidden_until_found: true,
-                                    // Same leading chevron as the accordion rows around it (row 299): the
-                                    // trigger wears the accordion's start-chevron recipe (`data-style` opts
-                                    // out of the Collapsible's own), and `as` puts the icon first instead of
-                                    // the Collapsible's trailing one.
-                                    CollapsibleTrigger {
-                                        class: "dx-docs-collapsible-trigger dx-accordion-trigger",
-                                        "data-style": "accordion",
-                                        "data-chevron": "start",
-                                        r#as: move |el: AsChild| rsx! {
-                                            button { ..el.attributes,
-                                                ChevronDown {
-                                                    class: "dx-accordion-expand-icon",
-                                                    size: "16px",
-                                                    stroke: "var(--dx-muted-foreground)",
-                                                }
-                                                "Manual installation files"
-                                            }
-                                        },
-                                    }
-                                    CollapsibleContent {
-                                        ManualComponentInstallation { component, style }
+                            },
+                            _ => rsx! {
+                                if let Some(section) = docs.iter().find(|section| section.id == basic.id()) {
+                                    DocsSectionItem {
+                                        key: "{section.id}",
+                                        section: *section,
+                                        default_open: basic.open_by_default(),
                                     }
                                 }
-                            }
+                            },
                         }
-                        for section in docs.iter() {
-                            AccordionItem { key: "{section.id}",
-                                h2 { id: section.id, class: "dx-docs-accordion-heading",
-                                    AccordionTrigger { class: "dx-docs-accordion-trigger",
-                                        span { dangerous_inner_html: section.title_html }
-                                    }
-                                }
-                                AccordionContent {
-                                    div {
-                                        class: "dx-component-description",
-                                        dangerous_inner_html: prefix_internal_hrefs(section.html),
-                                    }
-                                }
-                            }
+                    }
+                }
+                if docs.iter().any(|section| docs_groups::basic_of_id(section.id).is_none()) {
+                    DocsGroup {
+                        id: "component-specific",
+                        heading: docs_groups::SPECIFIC_HEADING,
+                        blurb: "What is particular to this component.",
+                        for section in docs.iter().filter(|section| docs_groups::basic_of_id(section.id).is_none()) {
+                            DocsSectionItem { key: "{section.id}", section: *section, default_open: false }
                         }
                     }
                 }
@@ -296,6 +267,114 @@ pub(crate) fn DirectionToggle() -> Element {
                 *PREVIEW_DIRECTION.write() = next;
             },
             "RTL"
+        }
+    }
+}
+
+/// One docs group: its `h2` and the library's `Accordion` that holds the group's items (the children are
+/// `AccordionItem`s). Both groups wear `.dx-docs-accordion`, so the page's disclosure styles and the specs
+/// address them alike.
+#[component]
+fn DocsGroup(
+    id: &'static str,
+    heading: &'static str,
+    blurb: &'static str,
+    children: Element,
+) -> Element {
+    use components::accordion::{Accordion, AccordionChevron};
+    rsx! {
+        section { class: "dx-component-section dx-component-accordion dx-docs-prose",
+            "data-docs-group": id,
+            div { class: "dx-component-section-heading",
+                h2 { id, "{heading}" }
+                p { "{blurb}" }
+            }
+            Accordion {
+                class: "dx-docs-accordion",
+                width: "100%",
+                allow_multiple_open: true,
+                collapsible: true,
+                hidden_until_found: true,
+                chevron: AccordionChevron::Start,
+                {children}
+            }
+        }
+    }
+}
+
+/// A `build.rs`-generated docs section as one accordion item: an `h3` (the item heading, under its group's
+/// `h2`) wrapping the trigger, and the section's HTML as the content.
+#[component]
+fn DocsSectionItem(section: DocsSection, default_open: bool) -> Element {
+    use components::accordion::{AccordionContent, AccordionItem, AccordionTrigger};
+    rsx! {
+        AccordionItem { default_open,
+            h3 { id: section.id, class: "dx-docs-accordion-heading",
+                AccordionTrigger { class: "dx-docs-accordion-trigger",
+                    span { dangerous_inner_html: section.title_html }
+                }
+            }
+            AccordionContent {
+                div {
+                    class: "dx-component-description",
+                    dangerous_inner_html: prefix_internal_hrefs(section.html),
+                }
+            }
+        }
+    }
+}
+
+/// The Installation item of the Basic group: the install command and the closed "Manual installation files".
+#[component]
+fn ComponentInstallation(
+    name: &'static str,
+    component: HighlightedCode,
+    style: CssHighlight,
+) -> Element {
+    use components::accordion::{AccordionContent, AccordionItem, AccordionTrigger};
+    use components::collapsible::{Collapsible, CollapsibleContent, CollapsibleTrigger};
+    rsx! {
+        AccordionItem {
+            h3 {
+                id: docs_groups::Basic::Installation.id(),
+                class: "dx-docs-accordion-heading",
+                AccordionTrigger { class: "dx-docs-accordion-trigger",
+                    "{docs_groups::Basic::Installation.heading()}"
+                }
+            }
+            AccordionContent {
+                ComponentInstallCommand { name }
+                p { class: "dx-docs-muted",
+                    "Also adds the components and crates this one needs. First time in this app? "
+                    // link-ok: content link to the Docs page, never to a component page
+                    Link { to: Route::docs(), "Set up the CLI and your app" }
+                    " first."
+                }
+                Collapsible { class: "dx-component-manual-install", hidden_until_found: true,
+                    // Same leading chevron as the accordion rows around it (row 299): the
+                    // trigger wears the accordion's start-chevron recipe (`data-style` opts
+                    // out of the Collapsible's own), and `as` puts the icon first instead of
+                    // the Collapsible's trailing one.
+                    CollapsibleTrigger {
+                        class: "dx-docs-collapsible-trigger dx-accordion-trigger",
+                        "data-style": "accordion",
+                        "data-chevron": "start",
+                        r#as: move |el: AsChild| rsx! {
+                            button { ..el.attributes,
+                                ChevronDown {
+                                    class: "dx-accordion-expand-icon",
+                                    size: "16px",
+                                    stroke: "var(--dx-muted-foreground)",
+                                }
+                                "Manual installation files"
+                            }
+                        },
+                    }
+                    CollapsibleContent {
+                        ManualComponentInstallation { component, style }
+                    }
+                }
+            }
         }
     }
 }

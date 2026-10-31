@@ -11,6 +11,8 @@ mod coarse_docs;
 mod components;
 mod contrast_docs;
 mod dashboard;
+#[path = "../docs_groups.rs"]
+mod docs_groups;
 mod docs_nav;
 // Client builds only: the server keeps `ServerDocument` for the SSR `<head>` (see the module's docs).
 #[cfg(not(feature = "server"))]
@@ -97,7 +99,8 @@ struct ComponentDemoData {
     r#type: ComponentType,
     description: &'static str,
     /// The page's docs sections (docs.md `##` sections, "Usage notes", "Props reference"), generated
-    /// by `build.rs` (`render_docs_sections`) and rendered by `ComponentHighlight` as Accordion items.
+    /// by `build.rs` (`render_docs_sections`) in page order (`docs_groups::page_position`) and rendered by
+    /// `ComponentHighlight` as Accordion items in two groups.
     docs: &'static [DocsSection],
     component: HighlightedCode,
     style: CssHighlight,
@@ -107,7 +110,7 @@ struct ComponentDemoData {
 /// One section of a component page's docs, as `build.rs` generates it (its `DocsSection`).
 #[derive(Clone, Copy, PartialEq)]
 struct DocsSection {
-    /// The `h2` id, the anchor target (`docs-<slug>`).
+    /// The `h3` id, the anchor target (`docs-<slug>`).
     id: &'static str,
     /// The heading's inline HTML.
     title_html: &'static str,
@@ -380,19 +383,105 @@ mod docs_tests {
         );
     }
 
-    /// `build.rs` cannot import `main.rs`, so the "Usage notes" it writes into every docs page is
-    /// pinned to this file's constant here.
+    /// Every component page's generated sections, checked against the one definition of the page order
+    /// (`docs_groups`, backlog row 422): the Basic sections are present once each and in `BASIC_ORDER`, the
+    /// page's own sections keep their authored order, and the recurring topics close the group in `TAIL`
+    /// order. The page renders the Basic group from `BASIC_ORDER` and the other group in this order, so this
+    /// pins both groups' order for every `DEMOS` entry.
     #[test]
-    fn build_rs_usage_notes_heading_matches_the_reserved_one() {
-        let build_rs = include_str!("../build.rs");
-        let declaration = format!(
-            "const USAGE_NOTES_HEADING: &str = \"{}\";",
-            crate::PAGE_HEADING_USAGE
-        );
-        assert!(
-            build_rs.contains(&declaration),
-            "build.rs lost `{declaration}`"
-        );
+    fn every_page_orders_its_docs_sections_by_group() {
+        use crate::docs_groups::{
+            basic_of_id, page_position, plain_text, tail_rank, Basic, BASIC_ORDER,
+        };
+        assert!(!crate::components::DEMOS.is_empty());
+        for demo in crate::components::DEMOS {
+            let name = demo.name;
+            let positions: Vec<(u8, usize)> = demo
+                .docs
+                .iter()
+                .map(|s| page_position(s.id, &plain_text(s.title_html)))
+                .collect();
+            assert!(
+                positions.is_sorted(),
+                "`{name}`: docs sections are not in page order: {:?}",
+                demo.docs.iter().map(|s| s.id).collect::<Vec<_>>()
+            );
+
+            let basic: Vec<Basic> = demo.docs.iter().filter_map(|s| basic_of_id(s.id)).collect();
+            let expected: Vec<Basic> = BASIC_ORDER
+                .into_iter()
+                .filter(|b| *b != Basic::Installation)
+                .collect();
+            assert_eq!(
+                basic, expected,
+                "`{name}`: the Basic group must hold Usage notes, Component structure and Props reference once each, in that order (Installation is the page's own)"
+            );
+            for section in demo
+                .docs
+                .iter()
+                .filter_map(|s| basic_of_id(s.id).map(|b| (s, b)))
+            {
+                assert_eq!(
+                    plain_text(section.0.title_html),
+                    section.1.heading(),
+                    "`{name}`: {} must carry the Basic group's heading",
+                    section.0.id
+                );
+            }
+
+            let specific: Vec<_> = demo
+                .docs
+                .iter()
+                .filter(|s| basic_of_id(s.id).is_none())
+                .collect();
+            let ranks: Vec<Option<usize>> = specific
+                .iter()
+                .map(|s| tail_rank(&plain_text(s.title_html)))
+                .collect();
+            let first_tail = ranks
+                .iter()
+                .position(Option::is_some)
+                .unwrap_or(ranks.len());
+            assert!(
+                ranks[first_tail..].iter().all(Option::is_some),
+                "`{name}`: a page-specific section follows a recurring topic"
+            );
+            let tail: Vec<usize> = ranks[first_tail..].iter().flatten().copied().collect();
+            assert!(
+                tail.is_sorted(),
+                "`{name}`: the recurring topics are out of order: {tail:?}"
+            );
+
+            // The page's own sections keep the order the `docs.md` wrote them in.
+            let key = |title: &str| {
+                title
+                    .chars()
+                    .filter(char::is_ascii_alphanumeric)
+                    .collect::<String>()
+                    .to_ascii_lowercase()
+            };
+            let own_generated: Vec<String> = specific
+                .iter()
+                .filter(|s| tail_rank(&plain_text(s.title_html)).is_none())
+                .map(|s| key(&plain_text(s.title_html)))
+                .collect();
+            let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("src/components")
+                .join(name)
+                .join("docs.md");
+            let own_authored: Vec<String> = h2_headings(&std::fs::read_to_string(&path).unwrap())
+                .iter()
+                .filter(|title| {
+                    tail_rank(title).is_none()
+                        && !BASIC_ORDER.iter().any(|b| key(b.heading()) == key(title))
+                })
+                .map(|title| key(title))
+                .collect();
+            assert_eq!(
+                own_generated, own_authored,
+                "`{name}`: the page-specific sections are not in the docs.md order"
+            );
+        }
     }
 
     #[test]

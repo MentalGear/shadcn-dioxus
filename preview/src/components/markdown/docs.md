@@ -1,4 +1,4 @@
-Markdown renders model output as prose. It parses the text with `pulldown-cmark`, folds the events into a small allowlisted tree, and renders that tree to Dioxus elements, so unsafe HTML and unsafe links cannot reach the page by construction. It is an optional component: `message`, `bubble` and `message_scroller` do not depend on it, and its parser crate is only added to your project if you run `dx components add markdown`.
+Markdown renders model output as prose. It parses the text with `pulldown-cmark`, folds the events into a small allowlisted tree, and renders that tree to Dioxus elements, so unsafe HTML and unsafe links cannot reach the page by construction. It is an optional component: `message`, `bubble` and `message_scroller` do not depend on it, and its parser crate is only added to your project if you run `shadcn-dioxus add markdown`.
 
 ## Component Structure
 
@@ -57,7 +57,7 @@ No highlighter ships with the component, so none of its dependencies reach your 
 
 ## Dependencies
 
-`dx components add markdown` runs `cargo add pulldown-cmark@=0.13.4 --no-default-features`: one extra crate in a typical Dioxus tree (`unicase`; `bitflags` and `memchr` are already there). The pin is exact because 0.13.4 carries a panic fix for the tight-paragraph case that a wasm app cannot recover from. Relax it in your `Cargo.toml` (`~0.13.4`) if another dependency needs a newer 0.13.x.
+`shadcn-dioxus add markdown` runs `cargo add pulldown-cmark@=0.13.4 --no-default-features`: one extra crate in a typical Dioxus tree (`unicase`; `bitflags` and `memchr` are already there). The pin is exact because 0.13.4 carries a panic fix for the tight-paragraph case that a wasm app cannot recover from. Relax it in your `Cargo.toml` (`~0.13.4`) if another dependency needs a newer 0.13.x.
 
 ## Accessibility
 
