@@ -337,7 +337,8 @@ fn use_effect_with_cleanup<F: FnMut() -> C + 'static, C: FnOnce() + 'static>(mut
 ///   layer reacts: a `close` layer cancels the key's default action (so an enclosing `<dialog>`
 ///   does not also take it as a `cancel`) and tells Rust; a `native` layer (a modal `<dialog>`, a
 ///   `popover="auto"`) leaves the key to the browser, and the layers under it ignore it.
-/// - **A press outside** (`press`): a mouse press dismisses on `pointerdown`. A touch or pen press is
+/// - **A press outside** (`press`): a mouse press (or an event with no pointer type, a script's
+///   synthetic one) dismisses on `pointerdown`. A touch or pen press is
 ///   a tap: `pointerdown` is recorded while the layer is open (a press that began before it opened
 ///   has no record, so the long press that opens a context menu never closes it), `pointerup`
 ///   within 10 px dismisses, and `pointercancel` (the browser took the gesture to scroll) drops it.
@@ -360,7 +361,7 @@ if (o.escape !== 'ignore') {
 }
 if (o.press) {
     listen(document, 'pointerdown', e => {
-        if (e.pointerType !== 'mouse') press = { id: e.pointerId, x: e.clientX, y: e.clientY, target: e.target };
+        if (/^(touch|pen)$/.test(e.pointerType)) press = { id: e.pointerId, x: e.clientX, y: e.clientY, target: e.target };
         else if (outside(e.target)) dioxus.send('outside');
     }, true);
     listen(document, 'pointerup', e => {
