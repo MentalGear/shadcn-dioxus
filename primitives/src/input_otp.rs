@@ -356,41 +356,52 @@ pub fn InputOtp(props: InputOtpProps) -> Element {
     let mut selection_start = use_signal(|| 0usize);
     let mut has_focus = use_signal(|| false);
     use_caret_sync(id, selection_start);
-    // Filters the DOM value synchronously, in the capture phase of the
-    // input's own `input` event, so rejected characters never reach the
-    // Rust handler, the slots or the next keystroke (no async write-back to
-    // race with fast typing). The caret keeps its place after the accepted
-    // characters that preceded it.
+    // The pattern and the length bound are applied by this one filter, to the
+    // text an edit would insert, before the browser applies it: the `<input>`
+    // carries no `maxlength`, because the browser trims a paste to `maxlength`
+    // before any filter sees it, which would drop accepted characters that
+    // follow a separator (row 474). A `beforeinput` that carries text is
+    // cancelled when the filtered, length-bounded text differs from it, and
+    // the accepted part is inserted over the selection instead; so a rejected
+    // character cannot replace a selected slot's character (click-to-slot), a
+    // keystroke into a full value is a no-op, and a paste keeps every accepted
+    // character that fits. The `input` listener is the same rule again for
+    // writes that carry no `beforeinput` text (autofill, undo): it filters the
+    // DOM value synchronously, in the capture phase, so rejected characters
+    // never reach the Rust handler, the slots or the next keystroke (no async
+    // write-back to race with fast typing), and keeps the caret after the
+    // accepted characters that preceded it.
     let reject = props.pattern.js_reject_source();
     crate::js_listener::use_js_listeners(move || {
         Some(
             crate::js_listener::JsListeners::install(
-                "const id = await dioxus.recv();
-                const source = await dioxus.recv();
+                "const [id, source, max] = [await dioxus.recv(), await dioxus.recv(), await dioxus.recv()];
                 const el = document.getElementById(id);
                 if (!el) return;
-                let re;
-                try { re = new RegExp(source, 'gv'); } catch (_) { re = new RegExp(source, 'gu'); }
-                // A typed character the pattern rejects is cancelled before it
-                // lands, so it cannot replace a selected slot's character
-                // (click-to-slot) and lose it.
+                let re; try { re = new RegExp(source, 'gv'); } catch (_) { re = new RegExp(source, 'gu'); }
+                const accept = (s, room) => Array.from(s.replace(re, '')).slice(0, Math.max(0, room)).join('');
                 listen(el, 'beforeinput', (e) => {
-                    if (typeof e.data === 'string' && e.data !== '' && e.data.replace(re, '') === '') {
-                        e.preventDefault();
-                    }
+                    if (typeof e.data !== 'string' || e.data === '') return;
+                    const [from, to] = [el.selectionStart, el.selectionEnd];
+                    const text = accept(e.data, max - (el.value.length - (to - from)));
+                    if (text === e.data) return;
+                    e.preventDefault();
+                    if (!text) return;
+                    el.setRangeText(text, from, to, 'end');
+                    el.dispatchEvent(new Event('input', { bubbles: true }));
                 }, true);
                 listen(el, 'input', () => {
                     const raw = el.value;
-                    const filtered = raw.replace(re, '');
+                    const filtered = accept(raw, max);
                     if (filtered === raw) return;
-                    const caret = el.selectionStart ?? raw.length;
-                    const kept = raw.slice(0, caret).replace(re, '').length;
+                    const kept = accept(raw.slice(0, el.selectionStart ?? raw.length), max).length;
                     el.value = filtered;
                     el.setSelectionRange(kept, kept);
                 }, true);",
             )
             .arg(id.cloned())
-            .arg(reject.clone()),
+            .arg(reject.clone())
+            .arg(max_length),
         )
     });
 
@@ -410,7 +421,7 @@ pub fn InputOtp(props: InputOtpProps) -> Element {
 
     // `spellcheck`/`autocapitalize` are overridable defaults; the rest
     // defines this control's own functional shape (numeric-only input,
-    // one-time-code autofill, the length bound matching the slot count).
+    // one-time-code autofill; the length bound is the filter's, not a `maxlength`).
     let defaults = attributes!(input {
         spellcheck: "false",
         autocapitalize: "off",
@@ -421,7 +432,6 @@ pub fn InputOtp(props: InputOtpProps) -> Element {
         inputmode: otp_pattern.inputmode().as_attr(),
         pattern: otp_pattern.html_pattern(),
         autocomplete: "one-time-code",
-        maxlength: "{max_length}",
     });
     let merged = merge_attributes(vec![defaults, props.attributes.clone(), owned]);
 
@@ -463,13 +473,16 @@ pub fn InputOtp(props: InputOtpProps) -> Element {
 
                 onfocus: move |_| has_focus.set(true),
                 onblur: move |_| has_focus.set(false),
-                // The DOM value is already filtered by the capture-phase
-                // listener below (synchronously, before this handler reads
-                // it); the Rust filter is the same rule again as the
-                // authority for the signal.
+                // The DOM value is already filtered and length-bounded by the
+                // page-side listeners above (synchronously, before this
+                // handler reads it); the Rust filter is the same rule again
+                // as the authority for the signal.
                 oninput: {
                     let otp_pattern = props.pattern.clone();
-                    move |e: FormEvent| set_value.call(otp_pattern.filter(&e.value()))
+                    move |e: FormEvent| {
+                        let filtered = otp_pattern.filter(&e.value());
+                        set_value.call(filtered.chars().take(max_length).collect())
+                    }
                 },
 
                 // Overrides the browser's own click-to-caret placement,
@@ -576,13 +589,13 @@ pub fn InputOtp(props: InputOtpProps) -> Element {
 /// (`clamped < value_len`), this selects that one character --
 /// `setSelectionRange(clamped, clamped + 1, ...)` -- instead of collapsing
 /// to `(clamped, clamped)`. A collapsed caret makes native typing *insert*
-/// at that position rather than overwrite, which has two symptoms: on a full value (already at `maxlength`), the browser silently
-/// refuses the keystroke outright (inserting would exceed `maxlength`), and
+/// at that position rather than overwrite, which has two symptoms: on a full value (already at `max_length`), the length bound
+/// refuses the keystroke outright (inserting would exceed `max_length`), and
 /// on a partial value, typing a digit shifts every character after the
 /// caret one slot right instead of correcting the clicked one. Typing over
 /// an actual selection *replaces* it -- the standard `<input>` semantics for
 /// "correct this character" -- and, because a replacement never grows the
-/// string, it also can't hit the `maxlength` insert-block. When `clamped ==
+/// string, it also can't hit the length bound. When `clamped ==
 /// value_len` (clicked past the last real character, nothing there to
 /// select), the collapsed-caret behavior stays: there is no character at
 /// that position for a range to cover.

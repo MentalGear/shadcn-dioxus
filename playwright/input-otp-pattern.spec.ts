@@ -54,6 +54,57 @@ test("paste is filtered", async ({ page }) => {
   await expect(digits).toHaveValue("1234");
 });
 
+// Row 474: the browser trims a paste to `maxlength` before the filter runs, so a code pasted with
+// separators lost its tail digits. The control reads the whole paste, filters it, then applies the length.
+for (const [pasted, expected] of [
+  ["123-456", "123456"],
+  ["123 456", "123456"],
+  ["12-34-56", "123456"],
+  ["1234567890", "123456"],
+] as const) {
+  test(`paste "${pasted}" fills six digit slots as "${expected}"`, async ({ page }) => {
+    await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
+    await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
+    const input = page.locator("#otp-main");
+    await input.click();
+    await page.evaluate((t) => navigator.clipboard.writeText(t), pasted);
+    await input.press("Control+V");
+    await expect(input).toHaveValue(expected);
+    await expect(page.locator("#input-otp-value")).toContainText(`Value: ${expected}`);
+    for (let i = 0; i < expected.length; i++) {
+      await expect(page.locator(`#otp-main + div [data-slot-index="${i}"]`)).toHaveText(expected[i]);
+    }
+  });
+}
+
+test("paste with separators into the alphanumeric control keeps every accepted character", async ({ page }) => {
+  await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
+  await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
+  const input = page.locator("#otp-alnum");
+  await input.click();
+  await page.evaluate((t) => navigator.clipboard.writeText(t), "aB3-xY9");
+  await input.press("Control+V");
+  await expect(input).toHaveValue("aB3xY9");
+});
+
+test("typing into a full control is still blocked, and a paste into a partly filled one is cut to the free slots", async ({
+  page,
+}) => {
+  await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
+  await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
+  const input = page.locator("#otp-main");
+  await input.click();
+  await page.keyboard.type("123456");
+  await page.keyboard.press("Home");
+  await page.keyboard.type("9");
+  await expect(input).toHaveValue("123456");
+  await input.fill("");
+  await page.keyboard.type("12");
+  await page.evaluate((t) => navigator.clipboard.writeText(t), "3-4-5-6-7-8");
+  await input.press("Control+V");
+  await expect(input).toHaveValue("123456");
+});
+
 test(":invalid follows the pattern", async ({ page }) => {
   await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
   const mismatch = (sel: string, v: string) =>
