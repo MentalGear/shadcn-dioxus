@@ -345,7 +345,13 @@ fn key_effects_backspace_pops_last_character() {
         0,
         31,
     );
-    assert_eq!(effects, vec![DateSegmentEffect::EmitValue(Some(1))]);
+    assert_eq!(
+        effects,
+        vec![
+            DateSegmentEffect::PreventDefault,
+            DateSegmentEffect::EmitValue(Some(1)),
+        ]
+    );
 }
 
 #[test]
@@ -366,6 +372,7 @@ fn key_effects_backspace_with_ctrl_or_meta_clears_all() {
     assert_eq!(
         effects,
         vec![
+            DateSegmentEffect::PreventDefault,
             DateSegmentEffect::EmitValue(None),
             DateSegmentEffect::FocusPrevious,
         ],
@@ -389,7 +396,140 @@ fn key_effects_delete_drops_first_character() {
         0,
         31,
     );
-    assert_eq!(effects, vec![DateSegmentEffect::EmitValue(Some(2))]);
+    assert_eq!(
+        effects,
+        vec![
+            DateSegmentEffect::PreventDefault,
+            DateSegmentEffect::EmitValue(Some(2)),
+        ]
+    );
+}
+
+#[test]
+fn key_effects_delete_on_an_untouched_segment_only_cancels_the_default() {
+    let (ctrl, meta, alt) = no_modifiers();
+    let effects = key_effects(&Key::Delete, ctrl, meta, alt, "", 2, false, None, 0, 0, 31);
+    assert_eq!(effects, vec![DateSegmentEffect::PreventDefault]);
+}
+
+#[test]
+fn key_effects_cancel_the_shortcuts_that_edit_the_text_and_pass_the_rest() {
+    for (character, ctrl, meta, alt, cancelled) in [
+        ("v", true, false, false, true),
+        ("V", false, true, false, true),
+        ("x", true, false, false, true),
+        ("z", true, false, false, true),
+        ("y", true, false, false, true),
+        ("b", true, false, false, true),
+        ("i", false, true, false, true),
+        ("u", true, false, false, true),
+        ("c", true, false, false, false),
+        ("a", true, false, false, false),
+        ("r", true, false, false, false),
+        ("v", false, false, true, false),
+        ("\u{f8}", false, false, true, true),
+    ] {
+        let effects = key_effects(
+            &Key::Character(character.to_string()),
+            ctrl,
+            meta,
+            alt,
+            "1",
+            2,
+            false,
+            Some(1),
+            0,
+            0,
+            31,
+        );
+        let expected = if cancelled {
+            vec![DateSegmentEffect::PreventDefault]
+        } else {
+            Vec::new()
+        };
+        assert_eq!(
+            effects, expected,
+            "{character:?} ctrl={ctrl} meta={meta} alt={alt}"
+        );
+    }
+}
+
+#[test]
+fn key_effects_cancel_the_keys_with_no_character_that_still_edit_text() {
+    let (ctrl, meta, alt) = no_modifiers();
+    for key in [
+        Key::Unidentified,
+        Key::Process,
+        Key::Dead,
+        Key::Insert,
+        Key::Cut,
+        Key::Paste,
+    ] {
+        let effects = key_effects(&key, ctrl, meta, alt, "1", 2, false, Some(1), 0, 0, 31);
+        assert_eq!(effects, vec![DateSegmentEffect::PreventDefault], "{key:?}");
+    }
+    for key in [Key::Tab, Key::Escape, Key::F5] {
+        let effects = key_effects(&key, ctrl, meta, alt, "1", 2, false, Some(1), 0, 0, 31);
+        assert_eq!(effects, Vec::new(), "{key:?} keeps its default action");
+    }
+}
+
+fn digit(c: &str) -> Key {
+    Key::Character(c.to_string())
+}
+
+#[test]
+fn dom_edit_keys_reads_an_insert_as_its_digits() {
+    assert_eq!(dom_edit_keys("YYYY", "7YYYY"), vec![digit("7")]);
+    assert_eq!(dom_edit_keys("YYYY", "YYYY7"), vec![digit("7")]);
+    assert_eq!(dom_edit_keys("YYYY", "YY7YY"), vec![digit("7")]);
+    assert_eq!(dom_edit_keys("1925", "19257"), vec![digit("7")]);
+    assert_eq!(
+        dom_edit_keys("1925", "7"),
+        vec![digit("7")],
+        "typed over a selection"
+    );
+    assert_eq!(dom_edit_keys("DD", "D19D"), vec![digit("1"), digit("9")]);
+}
+
+#[test]
+fn dom_edit_keys_reads_a_pure_deletion_as_one_backspace() {
+    assert_eq!(dom_edit_keys("1925", "192"), vec![Key::Backspace]);
+    assert_eq!(dom_edit_keys("1925", "125"), vec![Key::Backspace]);
+    assert_eq!(dom_edit_keys("1925", ""), vec![Key::Backspace]);
+}
+
+#[test]
+fn dom_edit_keys_ignores_what_is_not_a_digit_and_an_unchanged_text() {
+    assert!(dom_edit_keys("1925", "1925").is_empty());
+    assert!(dom_edit_keys("1925", "19x25").is_empty());
+    assert!(dom_edit_keys("1925", "19 25").is_empty());
+    assert!(dom_edit_keys("", "").is_empty());
+    assert!(dom_edit_keys("YYYY", "Y\u{f8}YYY").is_empty());
+    // A replacement that adds no digit deletes nothing the key effects can act on.
+    assert!(dom_edit_keys("1925", "1x5").is_empty());
+}
+
+#[test]
+fn text_state_after_follows_the_emitted_value_and_the_reset_flag() {
+    let effects = vec![
+        DateSegmentEffect::ConsumeReset,
+        DateSegmentEffect::EmitValue(Some(7)),
+    ];
+    assert_eq!(
+        text_state_after(&effects, "1925".to_string(), true),
+        ("7".to_string(), false)
+    );
+    let cleared = vec![DateSegmentEffect::<i32>::EmitValue(None)];
+    assert_eq!(
+        text_state_after(&cleared, "12".to_string(), false),
+        (String::new(), false)
+    );
+    let none: Vec<DateSegmentEffect<i32>> = Vec::new();
+    assert_eq!(
+        text_state_after(&none, "12".to_string(), true),
+        ("12".to_string(), true)
+    );
 }
 
 #[test]
