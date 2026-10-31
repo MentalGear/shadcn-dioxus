@@ -29,7 +29,8 @@
 //! | Select | close | yes | yes |
 //! | Combobox | close | no (a press elsewhere is allowed to leave the list open; the input's blur closes it) | no |
 //! | Popover, Dialog, AlertDialog (web) | native (`cancel`), in the order | native (`popover="auto"`, the backdrop) | no |
-//! | Popover, Dialog, AlertDialog (desktop) | close | yes (AlertDialog: no) | yes (Popover) |
+//! | Popover, Dialog (desktop, no browser dismissal) | close | yes | yes |
+//! | AlertDialog (desktop) | close | no (an alert dialog never light-dismisses) | no |
 //! | the menu hosts | their own (row 435) | yes, through [`Policy::OUTSIDE`] | yes |
 //!
 //! The page half is still a legacy script (`dev-docs/js-interop.md`); it is the one script row 456
