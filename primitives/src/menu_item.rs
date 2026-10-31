@@ -8,7 +8,7 @@
 //!
 //! Every item of every host -- a plain `*Item`, a `*SubItem`, a checkbox item,
 //! a radio item -- is `render_menu_item`, written against the
-//! [`crate::menu_root::MenuHost`] its host provides. What an item does is
+//! `crate::menu_root::MenuHost` its host provides. What an item does is
 //! therefore one definition:
 //!
 //! - **Registration** -- in the roving-focus collection of the submenu it is
@@ -19,7 +19,7 @@
 //!   `text_value`, else the item's `value` when it is a `String`/`&str`. A
 //!   radio item falls back to its `value`; a checkbox item has none.
 //! - **Selection** -- Enter or Space, and a pointer press committed the way the
-//!   host says ([`SelectOn`]). A selection runs the item's action, and when the
+//!   host says (`SelectOn`). A selection runs the item's action, and when the
 //!   item closes the menu (every plain item, a checkable item with
 //!   `close_on_select`) clears the roving focus of its submenu and calls the
 //!   host's `close`, which clears the root's roving focus and closes the tree.
@@ -799,8 +799,8 @@ pub(crate) struct ItemParts {
 }
 
 /// The one menu item: every plain item, submenu item, checkbox item and radio item of every host. It reads the
-/// [`MenuHost`] its host provides, registers in the roving-focus collection of the submenu it is rendered in (else
-/// the host's), and selects the way the host's [`SelectOn`] says. See the module doc, "One item, three hosts".
+/// `MenuHost` its host provides, registers in the roving-focus collection of the submenu it is rendered in (else
+/// the host's), and selects the way the host's `SelectOn` says. See the module doc, "One item, three hosts".
 ///
 /// Called from a component body; it calls hooks.
 pub(crate) fn render_menu_item(parts: ItemParts) -> Element {

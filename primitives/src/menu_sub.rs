@@ -7,7 +7,7 @@
 //! - The shared parts a host's `*Sub`, `*SubTrigger` and `*SubContent` components call: `render_sub` (the context
 //!   boundary), `render_sub_trigger` (a parent `menuitem` that opens the submenu) and `render_sub_content` (the
 //!   submenu panel, one component for the web and native renderers). They read the host's
-//!   [`crate::menu_root::MenuHost`] for what is host-specific: the collection the sub-trigger registers in, the
+//!   `crate::menu_root::MenuHost` for what is host-specific: the collection the sub-trigger registers in, the
 //!   text direction, the disabled state and the count of open submenus. A submenu's *items* are the ordinary menu
 //!   items (`crate::menu_item`), which register in the submenu they are rendered in.
 //! - [`SubMenuState`]: the open/close state, own roving-focus collection, and trigger/content id pair every `Sub`
@@ -78,7 +78,7 @@ pub(crate) const SUBMENU_OPEN_INTENT_DELAY: Duration = Duration::from_millis(200
 /// own submenu content) closes it.
 ///
 /// Without this, the physical gap between a trigger and its anchored
-/// content -- however small; see each `*SubContentRendered`'s zero-gap
+/// content -- however small; see `MenuSubContentRendered`'s zero-gap
 /// anchor choice, which exists specifically to shrink this window -- would
 /// make an ordinary diagonal mouse move from the trigger toward its own
 /// submenu register as "the pointer left," closing the submenu out from
@@ -105,7 +105,7 @@ pub(crate) fn is_submenu_open_arrow_key(key: &Key, direction: Direction) -> bool
 /// `ArrowRight` under RTL, which is exactly the arrow
 /// [`Direction::resolve_horizontal`] maps to [`HorizontalNav::Prev`].
 ///
-/// Unlike upstream, this crate's `*SubContentRendered` folds `Escape` into
+/// Unlike upstream, this crate's `MenuSubContentRendered` folds `Escape` into
 /// the *same* handler as this arrow key (a design choice of those
 /// components, not of this function) -- callers `matches!(key, Key::Escape) ||
 /// is_submenu_close_arrow_key(key, direction)`, rather than this function
@@ -174,7 +174,7 @@ pub(crate) struct SubMenuState {
     pub(crate) open: Memo<bool>,
     pub(crate) set_open: Callback<bool>,
     /// This submenu's own item collection -- registered into by
-    /// `*SubItem`, navigated by `*SubContentRendered`'s own
+    /// the items, navigated by `MenuSubContentRendered`'s own
     /// ArrowDown/ArrowUp/Home/End. Never the enclosing menu's collection.
     pub(crate) focus: CollectionState,
     /// Where focus should land once this submenu's content next mounts.
@@ -221,7 +221,7 @@ pub(crate) struct SubMenuState {
     /// scheduled on its way out would fire unconditionally ~200ms later and
     /// close the submenu out from under a pointer legitimately hovering
     /// it, making its items unselectable by mouse. Sharing this one
-    /// `DelayedAction` and having `*SubContentRendered` cancel it on its
+    /// `DelayedAction` and having `MenuSubContentRendered` cancel it on its
     /// own `onmouseenter` (and reschedule it on its own `onmouseleave`, the
     /// same contract the trigger has) closes that gap: the submenu
     /// only closes once the pointer has left *both* the trigger and its

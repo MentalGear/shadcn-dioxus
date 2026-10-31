@@ -10,7 +10,7 @@
 //!
 //! - [`MenuHost`] -- the small context a host provides and the shared parts read: whether the menu is open, whether
 //!   it is disabled, the collection its items register in, the text direction, how a selection commits
-//!   ([`crate::menu_item::SelectOn`]), what closes the whole tree, and what a blurred item does. The items
+//!   (`crate::menu_item::SelectOn`), what closes the whole tree, and what a blurred item does. The items
 //!   (`crate::menu_item`), the submenu (`crate::menu_sub`) and the panel below are written once against it.
 //! - [`use_menu_panel`] -- the content panel: role, state, accessible name, popover promotion and placement (the
 //!   last two web-only), as one attribute list a host spreads on its panel element.
