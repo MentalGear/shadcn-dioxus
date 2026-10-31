@@ -55,6 +55,10 @@ pub(crate) enum EscapeKey {
     /// The browser closes the layer (a modal `<dialog>`'s `cancel`, a `popover="auto"`'s close
     /// request). The layer stays in the order, so no layer under it takes the key, and the key is
     /// not touched.
+    #[allow(
+        dead_code,
+        reason = "constructed by the web arms, whose dismissal the browser owns"
+    )]
     Native,
 }
 
@@ -100,6 +104,10 @@ impl Policy {
     };
 
     /// The browser owns Escape and the outside press; the layer only keeps its place in the order.
+    #[allow(
+        dead_code,
+        reason = "used by the web arms, whose dismissal the browser owns"
+    )]
     pub(crate) const NATIVE: Policy = Policy {
         escape: EscapeKey::Native,
         press: false,
@@ -132,6 +140,10 @@ pub(crate) enum Cause {
 
 impl Cause {
     /// The user acted somewhere else: focus belongs where they put it, not back on the trigger.
+    #[allow(
+        dead_code,
+        reason = "read by the surfaces that hand focus back, whose web arm is the one that dismisses"
+    )]
     pub(crate) fn interacted_outside(self) -> bool {
         matches!(self, Cause::OutsidePress | Cause::FocusLeft)
     }
