@@ -117,6 +117,6 @@ proposing one is closed as out of scope (row 337 is the first).
 | [483](backlog/483-playwright-anchored-panel-settle-fixture.md) | Playwright waits for a just-opened anchored panel to settle before acting inside it (fixture, not per spec) | IMPLEMENTED on lane/settle-fixture-483 (main-loop merge pending). The wait lives in the shared… | M | tests |
 | [484](backlog/484-convert-remaining-valued-boolean-state-attributes-to-presence.md) | Convert the remaining valued boolean state attributes to presence attributes (Base UI vocabulary) | BACKLOG, owner decision 2026-10-29. Row 485 (retire data-state) depends on this row: every state… | M | primitives |
 | [485](backlog/485-retire-data-state-css-moves-to-aria-and-presence.md) | Retire data-state: our CSS styles from ARIA and presence attributes | BACKLOG, owner decision 2026-10-29. Depends on row 484, which converts the valued booleans to… | M-L | styling |
-| [486](backlog/486-code-graph-explorer-tools-codegraph.md) | Code graph explorer: SCIP-derived graph with a granularity slider (tools/codegraph) | BACKLOG, not scheduled. Researched 2026-10-29 and 2026-10-31 at the owner's request; a prototype… | M | tooling |
+| [486](backlog/486-code-graph-explorer-tools-codegraph.md) | Code graph explorer: SCIP-derived graph with a granularity slider (scripts/codegraph) | BACKLOG, not scheduled. Researched 2026-10-29 and 2026-10-31 at the owner's request; a prototype… | M | tooling |
 
 <!-- END GENERATED -->

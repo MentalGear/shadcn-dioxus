@@ -7,16 +7,24 @@ dependencies, and set the granularity with a slider (crate, component, file, ite
 
 ## Verdict
 
-1. **Data source: `rust-analyzer scip`.** It is the only candidate that resolves symbols through proc-macro and RSX
-   expansion (`rsx!`, `#[component]`) and across the workspace crates, and one index carries every level.
-2. **Cross-check: cargo-modules 0.27.** It gives a module-level DOT graph in seconds. It has no file level, no weights
-   and no call edges, and it analyses one crate per run. Version 0.28 needs rustc 1.98.
-3. **Item-level call edges, if wanted: crabmap** (Rust, MIT) or rust-analyzer's LSP call hierarchy (what Crabviz
-   uses).
-4. **TypeScript:** an import scan, which is enough for about 35 files, or dependency-cruiser when rules or cycle checks
-   are wanted. **CSS and assets:** scan `asset!()` / `include_str!()`.
-5. **UI: self-built on Cytoscape.js**, with compound nodes, the fcose layout and a hand-written roll-up per level. No
-   existing tool combines a granularity slider with Rust that sees through macros.
+Owner decisions 2026-10-31: one analysis source (rust-analyzer), and a dependency rule (no dependency with few stars or a
+very recent release; thresholds and per-dependency verdicts in [Dependency rule](#dependency-rule-applied) below and in
+row 486).
+
+1. **Data source: `rust-analyzer scip`, the only source.** It is the only candidate that resolves symbols through
+   proc-macro and RSX expansion (`rsx!`, `#[component]`) and across the workspace crates, and one index carries every
+   level. It ships with rustup.
+2. **Cross-check: cargo-modules 0.27, manual and one-off only.** It gives a module-level DOT graph in seconds. It has no
+   file level, no weights and no call edges, and it analyses one crate per run. Version 0.28 needs rustc 1.98. The tool
+   never installs or runs it.
+3. **Item-level edges, if wanted: from rust-analyzer itself.** The SCIP `enclosing_symbol` / `relationships` fields, or
+   rust-analyzer's own LSP call hierarchy driven by a Python stdlib script. crabmap and Crabviz are excluded by the
+   dependency rule, owner 2026-10-31 (Crabviz only used the same call hierarchy through an editor).
+4. **TypeScript:** the import scan (a regex over about 35 files). dependency-cruiser is excluded, owner 2026-10-31.
+   **CSS and assets:** scan `asset!()` / `include_str!()`.
+5. **UI: self-built on Cytoscape.js**, with compound nodes, the built-in `cose` layout and a hand-written roll-up per
+   level. The prototype used cytoscape-fcose; it fails the maintenance threshold and is dropped. No existing tool
+   combines a granularity slider with Rust that sees through macros.
 
 ## Measured on this repository
 
@@ -51,10 +59,10 @@ dependencies, and set the granularity with a slider (crate, component, file, ite
 
 | Tool | Granularity | Rust / our data | Verdict |
 |---|---|---|---|
-| rust-analyzer `scip` | files, symbols, references, enclosing symbol, impl relations | yes, macro-aware, workspace-wide (measured); SCIP protobuf (schema Apache-2.0); no incremental mode, about 8 min per refresh | **primary source** |
-| cargo-modules 0.27/0.28 (MPL-2.0) | crate, module, item; `owns`/`uses` | rust-analyzer based; DOT | cross-check |
-| crabmap 0.2.0 (MIT) | fn/type/module/file; `crabmap serve` web UI | syn + cargo metadata, optional rust-analyzer call hierarchy and MIR; JSON/DOT/Mermaid; no SCIP | item-level complement |
-| Crabviz (AGPL-3.0, VS Code) | file overview, per-function call hierarchy | any LSP server; editor-bound | ad hoc only |
+| rust-analyzer `scip` | files, symbols, references, enclosing symbol, impl relations | yes, macro-aware, workspace-wide (measured); SCIP protobuf (schema Apache-2.0); no incremental mode, about 8 min per refresh | **the only source** (owner 2026-10-31); item level from its SCIP fields or its LSP call hierarchy |
+| cargo-modules 0.27/0.28 (MPL-2.0) | crate, module, item; `owns`/`uses` | rust-analyzer based; DOT | manual one-off cross-check only; not a dependency of the tool |
+| crabmap 0.2.0 (MIT) | fn/type/module/file; `crabmap serve` web UI | syn + cargo metadata, optional rust-analyzer call hierarchy and MIR; JSON/DOT/Mermaid; no SCIP | **excluded by the dependency rule, owner 2026-10-31** (first published 2026-05-28, 124 total crates.io downloads on 2026-10-31) |
+| Crabviz (AGPL-3.0, VS Code) | file overview, per-function call hierarchy | any LSP server; editor-bound | **excluded by the dependency rule, owner 2026-10-31** |
 | rustdoc JSON | items, impls, re-exports | unstable format, nightly, no reference edges | no |
 | cargo tree / cargo-depgraph / cargo-deps | crates only | depgraph archived, deps unmaintained | no |
 | cargo-call-stack | whole-program fn calls | nightly, fat LTO, embedded focus | no |
@@ -67,15 +75,39 @@ dependencies, and set the granularity with a slider (crate, component, file, ite
 | Sourcegraph | precise navigation from SCIP | no graph view or graph API found | consumer only |
 | GitDiagram, Swark, CodeViz | one LLM-drawn diagram | not data-faithful | no |
 | Graph-RAG tools (code-review-graph, Code-Graph-RAG, treeloom, Codebase-Memory) | query graphs for agents, Neo4j/SQLite | tree-sitter based, Rust unconfirmed | export target later |
-| dependency-cruiser (MIT) | TS/JS modules, folder `collapse` | JSON/DOT/Mermaid | TS option |
+| dependency-cruiser (MIT) | TS/JS modules, folder `collapse` | JSON/DOT/Mermaid | **excluded by the dependency rule, owner 2026-10-31** (the regex scan covers about 35 files; 18 direct dependencies) |
 
 **UI libraries** (versions from the npm registry, 2026-10-31):
-- **Cytoscape.js 3.34.4** (the prototype pins 3.33.1): compound nodes, fcose 2.2.0, comfortable to a few thousand
-  elements.
-- **Sigma 4.0.4 with graphology 0.26.0:** WebGL, only needed to show all ~13,500 items at once.
-- **elkjs 0.12.1:** layered layout, as an optional second layout.
-- **React Flow (@xyflow/react 12.12):** needs React and manual layout.
-- **D3 edge bundling:** no ego or filter interaction.
+- **Cytoscape.js:** compound nodes, built-in `cose`, `concentric` and `breadthfirst` layouts, comfortable to a few
+  thousand elements. The latest, 3.34.4, was released 2026-10-15 (too young for the 30-day rule); 3.34.3 (2026-09-07) is
+  the newest eligible. The prototype pins 3.33.1.
+- **cytoscape-fcose 2.2.0** with cose-base 2.2.0 and layout-base 2.0.1: last releases 2023-01-17 and 2021-06-25; dropped
+  (maintenance threshold). The prototype uses it.
+- Not selected, and not evaluated against the rule: **Sigma 4.0.4 with graphology 0.26.0** (WebGL, only needed to show all
+  ~13,500 items at once), **elkjs 0.12.1** (layered layout), **React Flow (@xyflow/react 12.12)** (needs React and manual
+  layout), **D3 edge bundling** (no ego or filter interaction). Any of them would have to pass the rule first.
+
+## Dependency rule applied
+
+Owner 2026-10-31: no dependency that has few stars or is very recent. The thresholds are in
+[row 486](../backlog/486-code-graph-explorer-tools-codegraph.md) (D1 to D6). D1 (30 days) and the no-install-script,
+exact-pin footprint come from the supply-chain docs
+([`supply-chain/README.md`](../supply-chain/README.md), [`dependency-scanners.md`](./dependency-scanners.md)); the docs
+define no star, project-age or maintenance number, so D2 (first release 12 months old), D3 (1,000 stars, or 100,000
+weekly npm / 1,000,000 total crates.io downloads where stars cannot be read) and D4 (a release in 24 months) are
+**proposed**. GitHub stars could not be read from the session, so adoption is judged on downloads (**measured**, npm and
+crates.io APIs, 2026-10-31) and marked unverified.
+
+| Dependency | Measured | Verdict |
+|---|---|---|
+| rust-analyzer | rustup component, toolchain trusted as installed | keep |
+| Python stdlib (`build_graph.py`, `make_explorer.py`, `scipdump.py`) | imports: `sys`, `os`, `re`, `json`, `collections`, `itertools`; protobuf read by a hand-written varint reader | keep, stdlib only |
+| Cytoscape.js | since 2012-10-18; 24.3M weekly npm downloads; MIT; no dependencies; 3.34.4 is 16 days old, 3.34.3 is 54 | keep, pin 3.34.3 |
+| cytoscape-fcose, cose-base, layout-base | 22.4M, 44.9M and 45.0M weekly downloads; last releases 2023-01-17, 2023-01-17, 2021-06-25 | fail the maintenance threshold; use built-in `cose` |
+| dependency-cruiser | since 2016; 7.9M weekly; 18.7.0 released 2026-10-19; 18 direct dependencies | excluded; regex scan |
+| Playwright 1.60.0 | existing, locked dependency | keep |
+| crabmap | first published 2026-05-28; 124 total downloads | excluded |
+| cargo-modules | since 2016; 256,852 total downloads; MPL-2.0 | manual cross-check only |
 
 ## Data model
 
@@ -84,7 +116,7 @@ dependencies, and set the granularity with a slider (crate, component, file, ite
   - **L1 component:** each `primitives/src/<x>` and `preview/src/components/<x>`. Pair the two halves by name, or
     better by `component.json`.
   - **L2 file:** SCIP documents.
-  - **L3 item:** SCIP symbols with `enclosing_symbol`.
+  - **L3 item:** SCIP symbols with `enclosing_symbol`, or rust-analyzer's call hierarchy (no third-party tool).
 - **Edge kinds:** `ref` (use, call or type mention, weighted by occurrence count), `impl`/`type-def`, `ext` (external
   crate), `ts-import`, `asset` (CSS and other assets) and `test` (spec to component).
 - **Roll-up:** every edge becomes an edge between its endpoints' ancestors at the chosen level. Weights are summed and
@@ -111,12 +143,15 @@ dependencies, and set the granularity with a slider (crate, component, file, ite
   - a hub toggle, crate boxes and edge-kind switches
   - tap for the top neighbours, double-tap to re-centre
   - light and dark themes; usable at phone width
-- **Published privately for the owner on 2026-10-31.**
+- **Published privately for the owner on 2026-10-31.** The page loads Cytoscape, cytoscape-fcose, cose-base and layout-base
+  from jsDelivr, which a private preview allows; the repo version has no run-time load and bundles one pinned library
+  (row 486, S2 and S3). The three Python files import only the standard library.
 - **Limits:**
   - No item level yet (about 1 MB more data).
   - Radius 2 expands only from the strongest neighbours.
   - Components are paired by name, not `component.json`.
   - The index has to be rebuilt by hand.
+  - The repository path is hardcoded in `build_graph.py` and the scratch path in `smoke.js`.
 
 ## Sources
 
@@ -128,4 +163,4 @@ https://docs.scitools.com/graphs/Requires_and_Required_By.html ; https://github.
 https://github.com/rust-lang/rust/issues/76578 ; https://github.com/sverweij/dependency-cruiser ;
 https://github.com/AeneasVerif/charon ; https://github.com/tirth8205/code-review-graph ;
 https://github.com/vitali87/code-graph-rag ; https://github.com/treeloom/treeloom ;
-https://repowise.dev/blog/comparisons/best-codebase-visualization-tools ; https://registry.npmjs.org
+https://repowise.dev/blog/comparisons/best-codebase-visualization-tools ; https://registry.npmjs.org ; https://api.npmjs.org/downloads ; https://crates.io/api/v1/crates
