@@ -9,13 +9,12 @@
 //! principle change mid-mount (hook-order safety demands separate mounted
 //! instances, not an `if`/`else` inside one instance's body), and the modal
 //! web arm's dismissal semantics are not merely "the non-modal path with a
-//! different callback" -- `use_global_keydown_listener` (this crate's
-//! `lib.rs`) calls `event.preventDefault()` on *every* Escape keypress
-//! unconditionally while any instance using it is mounted, which would fight
-//! the native `<dialog>`'s own `cancel`/`close` handling if a gated-callback
-//! version of `use_global_escape_listener` were merely installed and told to
-//! do nothing (dev-docs/backlog.md row 3's warning; Popover follows the same
-//! rule).
+//! different callback" -- a closing layer of the dismiss core (`crate::dismiss`,
+//! `EscapeKey::Close`) cancels the key's default action, which would fight the
+//! native `<dialog>`'s own `cancel`/`close` handling if it were merely installed
+//! and told to do nothing (dev-docs/backlog.md row 3's warning; Popover follows
+//! the same rule). The web arm is a native layer of the core's Escape order
+//! instead (`Policy::NATIVE`).
 //!
 //! `DialogContentNonModal` (`is_modal: false`) is the plain non-native arm on
 //! both targets (dev-docs/plan.md Phase 4.2 scopes native `<dialog>` to the modal path).
@@ -33,12 +32,12 @@
 //!   `dev-docs/reference/platform-rationale.md` Caveat 1) plus
 //!   `crate::use_dialog_backdrop_dismiss` (shared with `popover.rs`'s
 //!   modal web arm) for the "click far outside the dialog" behaviour
-//!   `dialog.spec.ts` already covers -- `use_outside_dismiss`
-//!   itself is not reusable here, because a `showModal()` backdrop click's
+//!   `dialog.spec.ts` already covers -- the dismiss core's outside press
+//!   is not reusable here, because a `showModal()` backdrop click's
 //!   `event.target` *is* the `<dialog>` element (it contains itself), so
-//!   `use_outside_dismiss`'s `!root.contains(e.target)` check can never fire
+//!   its `!root.contains(e.target)` check can never fire
 //!   for it (`dev-docs/archive/research/phase4-spike-findings.md` experiment 6's
-//!   `elementFromPoint` finding). No `use_global_escape_listener` and no
+//!   `elementFromPoint` finding). No closing layer and no
 //!   focus-trap eval on this arm: the browser's own `showModal()` supplies
 //!   the focus trap, focus restore, inertness, and top layer, and its
 //!   `cancel`/`close` events (synced above) already handle Escape.
@@ -81,10 +80,7 @@ use dioxus::document;
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
 
-use crate::{
-    merge_attributes, use_animated_open, use_controlled, use_global_escape_listener, use_id_or,
-    use_outside_dismiss, use_unique_id,
-};
+use crate::{merge_attributes, use_animated_open, use_controlled, use_id_or, use_unique_id};
 
 /// Context for the [`DialogRoot`] component
 #[derive(Clone, Copy)]
@@ -442,12 +438,18 @@ fn DialogContentNonModal(
     // Add a escape key listener to the document when the dialog is open. We can't
     // just add this to the dialog itself because it might not be focused if the user
     // is highlighting text or interacting with another element.
-    use_global_escape_listener(move || set_open.call(false));
-    use_outside_dismiss(id, move || {
-        if !ctx.disable_pointer_dismissal.cloned() {
-            set_open.call(false);
-        }
-    });
+    crate::dismiss::use_dismiss(
+        id,
+        crate::dismiss::Scope::Element,
+        crate::dismiss::Policy::ESCAPE_PRESS_AND_FOCUS,
+        None,
+        move |cause| {
+            // Escape always closes; a press or focus outside only when pointer dismissal is on.
+            if cause.is_escape() || !ctx.disable_pointer_dismissal.cloned() {
+                set_open.call(false);
+            }
+        },
+    );
 
     // Owned by this component -- dialog role/aria wiring must win over a
     // caller's own attributes (`dev-docs/backlog.md` row 93's
@@ -499,12 +501,18 @@ fn DialogContentModal(
     // Add a escape key listener to the document when the dialog is open. We can't
     // just add this to the dialog itself because it might not be focused if the user
     // is highlighting text or interacting with another element.
-    use_global_escape_listener(move || set_open.call(false));
-    use_outside_dismiss(id, move || {
-        if !ctx.disable_pointer_dismissal.cloned() {
-            set_open.call(false);
-        }
-    });
+    crate::dismiss::use_dismiss(
+        id,
+        crate::dismiss::Scope::Element,
+        crate::dismiss::Policy::ESCAPE_PRESS_AND_FOCUS,
+        None,
+        move |cause| {
+            // Escape always closes; a press or focus outside only when pointer dismissal is on.
+            if cause.is_escape() || !ctx.disable_pointer_dismissal.cloned() {
+                set_open.call(false);
+            }
+        },
+    );
 
     use_effect(move || {
         let eval = document::eval(
@@ -579,10 +587,20 @@ fn DialogContentModal(
     // (guarded against `InvalidStateError`), both from `lib.rs`.
     crate::use_dialog_close_sync(id, set_open);
     crate::use_dialog_open_driver(id, open);
+    // Escape is the dialog's own `cancel`, routed through state by `use_dialog_close_sync`; the
+    // layer only keeps the dialog's place in the dismiss core's Escape order, so a layer opened
+    // inside it (a Select, a Popover) takes the first Escape and the dialog the second.
+    crate::dismiss::use_dismiss(
+        id,
+        crate::dismiss::Scope::Element,
+        crate::dismiss::Policy::NATIVE,
+        Some(open.into()),
+        |_| {},
+    );
     // Native <dialog> has no built-in "click outside to dismiss" the way
     // `popover=` does -- reproduces dialog.spec.ts's "clicking far outside
     // the dialog dismisses it" behaviour. See this module's doc comment for
-    // why `use_outside_dismiss` itself can't be reused here.
+    // why the core's outside press can't be reused here.
     crate::use_dialog_backdrop_dismiss(id, move || {
         if !ctx.disable_pointer_dismissal.cloned() {
             set_open.call(false);

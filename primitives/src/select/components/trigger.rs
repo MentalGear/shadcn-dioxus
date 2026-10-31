@@ -327,8 +327,10 @@ pub fn SelectTrigger(props: SelectTriggerProps) -> Element {
                         event.prevent_default();
                         event.stop_propagation();
                     }
-                    // The list is a `manual` popover: no browser Escape dismissal, so a trigger that
-                    // keeps focus (the Alt+ArrowDown open) closes it itself.
+                    // The web arm's Escape is the dismiss core's (`SelectListRendered`), also for a
+                    // trigger that keeps focus (the Alt+ArrowDown open); the arm without script keeps
+                    // this one.
+                    #[cfg(not(feature = "web"))]
                     Key::Escape if open() => {
                         ctx.set_open(false);
                         event.prevent_default();

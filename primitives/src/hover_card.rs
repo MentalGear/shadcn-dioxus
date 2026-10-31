@@ -386,17 +386,6 @@ pub fn HoverCardTrigger(props: HoverCardTriggerProps) -> Element {
     // Use use_id_or to handle the ID
     let id = use_id_or(trigger_id, props.id);
 
-    // Tooltip pattern: "Escape: Dismisses the Tooltip." HoverCard shares
-    // Tooltip's role and show-on-focus/hide-on-blur contract (see
-    // `tooltip.rs`'s identical `handle_keydown`), so it needs the same
-    // `onkeydown`.
-    let handle_keydown = move |event: Event<KeyboardData>| {
-        if event.key() == Key::Escape && (ctx.open)() {
-            event.prevent_default();
-            ctx.timers.dismiss();
-        }
-    };
-
     // Ties this trigger to the content's `position-anchor` so its
     // `[data-side]` CSS still resolves relative to this trigger once the
     // content is promoted to the top layer -- see
@@ -442,7 +431,6 @@ pub fn HoverCardTrigger(props: HoverCardTriggerProps) -> Element {
             // Focus events: keyboard, so immediate
             onfocus: move |_| ctx.timers.focus(),
             onblur: move |_| ctx.timers.blur(),
-            onkeydown: handle_keydown,
 
             ..attributes,
             {props.children}
@@ -585,6 +573,21 @@ pub fn HoverCardContent(props: HoverCardContentProps) -> Element {
 /// `hidePopover()` from the closing path; only `render()` dropping to
 /// `false` and the real DOM removal that follows takes this element out of
 /// the top layer.
+/// Escape closes an open card wherever focus is (the dismiss core, [`crate::dismiss::Policy::ESCAPE`];
+/// WAI-ARIA tooltip pattern: "Escape: dismisses the Tooltip", which a HoverCard shares). A
+/// force-mounted card that is closed is not a layer. A hover surface has no press or focus arm: the
+/// pointer leaving or the trigger blurring already closes it.
+fn use_hover_card_dismiss(id: &str, open: Memo<bool>, timers: HoverTimers) {
+    let id = use_signal(|| id.to_string());
+    crate::dismiss::use_dismiss(
+        id,
+        crate::dismiss::Scope::Element,
+        crate::dismiss::Policy::ESCAPE,
+        Some(open.into()),
+        move |_| timers.dismiss(),
+    );
+}
+
 #[cfg(feature = "web")]
 #[component]
 fn HoverCardContentRendered(
@@ -622,6 +625,7 @@ fn HoverCardContentRendered(
     let timers = use_context::<HoverCardCtx>().timers;
     let handle_mouse_enter = move |_: Event<MouseData>| timers.hold();
     let handle_mouse_leave = move |_: Event<MouseData>| timers.pointer_leave();
+    use_hover_card_dismiss(&id, open, timers);
 
     // `anchored_content_attributes` below writes `data-dx-anchored="hover-card"`, the attribute the
     // engine's anchor stylesheet selects on (see `tooltip.rs`'s `TooltipContentRendered` for why an
@@ -656,15 +660,6 @@ fn HoverCardContentRendered(
             id: id.clone(),
             onmouseenter: handle_mouse_enter,
             onmouseleave: handle_mouse_leave,
-            // Escape dismisses from inside the card too, in case it holds
-            // focusable content -- same Tooltip-pattern contract as the
-            // trigger's own `handle_keydown` (`HoverCardTrigger`, above).
-            onkeydown: move |event: Event<KeyboardData>| {
-                if event.key() == Key::Escape {
-                    event.prevent_default();
-                    timers.dismiss();
-                }
-            },
             ..attributes,
             {children}
         }
@@ -706,6 +701,7 @@ fn HoverCardContentRendered(
     let timers = use_context::<HoverCardCtx>().timers;
     let handle_mouse_enter = move |_: Event<MouseData>| timers.hold();
     let handle_mouse_leave = move |_: Event<MouseData>| timers.pointer_leave();
+    use_hover_card_dismiss(&id, open, timers);
 
     // Owned by this component -- see the web arm's identical construction
     // above (`dev-docs/backlog.md` row 93).
@@ -725,12 +721,6 @@ fn HoverCardContentRendered(
             id,
             onmouseenter: handle_mouse_enter,
             onmouseleave: handle_mouse_leave,
-            onkeydown: move |event: Event<KeyboardData>| {
-                if event.key() == Key::Escape {
-                    event.prevent_default();
-                    timers.dismiss();
-                }
-            },
             ..attributes,
             {children}
         }

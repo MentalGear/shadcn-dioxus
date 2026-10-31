@@ -186,11 +186,6 @@ impl HoverIntent {
         }
     }
 
-    /// Whether pointer hover is switched on at all (`open_on_hover`).
-    pub(crate) fn enabled(&self) -> bool {
-        (self.enabled)()
-    }
-
     /// The pointer left the region (trigger or panel) of item `index`. If `index` is the
     /// open item, it closes after [`HOVER_CLOSE_GRACE_DELAY`] unless the pointer re-enters.
     pub(crate) fn leave(&mut self, index: usize) {

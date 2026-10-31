@@ -66,12 +66,11 @@ primitives/src/input_otp.rs	1	59	0	2	0	0
 primitives/src/js_listener.rs	1	7	0	0	0	0
 primitives/src/keyboard_inset.rs	0	88	0	1	0	0
 primitives/src/label.rs	0	8	0	1	0	0
-primitives/src/lib.rs	5	211	0	5	0	0
+primitives/src/lib.rs	5	211	0	4	0	0
 primitives/src/menu_sub.rs	0	7	0	1	0	0
 primitives/src/message_scroller.js	0	0	805	0	0	0
 primitives/src/message_scroller.rs	2	0	0	1	0	0
 primitives/src/modality.rs	1	118	0	0	0	0
-primitives/src/navigation_menu.rs	0	6	0	1	0	0
 primitives/src/pointer.rs	0	5	0	1	0	0
 primitives/src/popover.rs	1	10	0	0	0	0
 primitives/src/questionnaire.rs	2	12	0	0	0	0
