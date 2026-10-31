@@ -25,7 +25,27 @@ Related to [row 434](./434-javascript-in-typescript-modules-not-rust-strings.md)
 
 APPROVED 2026-10-26 by the owner ("Ok for the rest", backlog thread); for the next session (owner 2026-10-26: "We will do it all in a fresh session").
 
-BACKLOG. Found by board round 6; reproduce first. Independent of plan approval.
+DONE on `lane/date-segments-473` (2026-10-31), awaiting merge. Reproduced first on a build of the base
+(`playwright/date-picker-segment-edit.spec.ts`, 10 of 11 red there, the 11th a control): select-all + Backspace left the
+segment's text empty while `aria-valuenow` moved on (the browser removed the text node the vdom keeps writing to);
+Delete on an untouched segment deleted characters of the placeholder (`YYYY` became `YY`; `String::remove(0)` on the
+empty buffer also panicked in `date_segment_key_effects`); `insertText` (an IME or virtual-keyboard commit, no keydown)
+produced `21925`, `x1925`; Ctrl+V showed the clipboard text, Ctrl+B wrapped the text in `<b>`.
+
+Root cause: the segment is `contenteditable` with a vdom-owned text child, and nothing cancelled or reconciled the
+browser's editing default actions (`segment.rs`, the `onkeydown` handler returned no `PreventDefault` for Backspace,
+Delete, Unidentified/Process/Dead, paste/cut/undo/format shortcuts; no `paste`/`cut`/`drop`/`input` handler existed).
+
+Fix, by construction (Rust only, no bridge, no JS): (1) every cancelable editing default is cancelled in
+`date_segment_key_effects` and by `onpaste`/`oncut`/`ondrop`; (2) the edits that cannot be cancelled in time (an IME or
+virtual keyboard whose keydown carries no usable key) reach `oninput` with the DOM already edited: `dom_edit_keys`
+reads the edit back as the keys it stands for (digits typed, a pure deletion is Backspace), which replay through the
+same `date_segment_key_effects`, and `SegmentText` re-creates the text node (a one-item keyed list, the only place the
+vdom compares keys) so the DOM shows the rendered value whether or not it changed. Subsumes the Backspace/Delete,
+paste, cut, drop, undo, format-shortcut and IME-commit instances. Not covered: a `beforeinput` cancel (the plan's
+`otpFilter`-like behaviour is not built), so an uncancelable edit flickers once before the reconcile and a stray element
+a browser inserts next to the text node is not removed; Android was not run (Chromium `Input.insertText` and
+`imeSetComposition` stand in for it).
 
 ## Size
 

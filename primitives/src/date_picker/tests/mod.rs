@@ -1,6 +1,7 @@
 use super::*;
 use time::macros::date;
 mod key_effects;
+mod segment_text;
 mod state;
 
 #[component]
