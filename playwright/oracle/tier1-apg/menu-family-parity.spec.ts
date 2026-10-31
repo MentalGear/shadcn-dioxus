@@ -58,7 +58,6 @@ import { awaitAnimationsSettled, measureAtRest } from "../../animations";
 const ITEM = ':is([role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"])';
 const ENABLED = `${ITEM}:not([aria-disabled="true"])`;
 const DISABLED = `${ITEM}[aria-disabled="true"]`;
-const UNCHECKED_RADIO = '[role="menuitemradio"]:not([aria-disabled="true"])[aria-checked="false"]';
 
 /** How a host commits a pointer press on a plain item: `click`, on release, or on the press itself. */
 type Commit = "click" | "release" | "press";
@@ -465,22 +464,32 @@ for (const host of HOSTS) {
       const checkedCount = () => group.locator('[role="menuitemradio"][aria-checked="true"]').count();
       expect(await checkedCount(), "exactly one radio is checked").toBe(1);
 
-      const unchecked = group.locator(UNCHECKED_RADIO).first();
-      await unchecked.click();
-      await expect(unchecked).toHaveAttribute("aria-checked", "true");
+      // The first enabled radio that is not checked, by position, so the locator keeps naming it once it is.
+      const firstUnchecked = async () => {
+        const states = await radios.evaluateAll((els) =>
+          els.map((el) => ({ checked: el.getAttribute("aria-checked") === "true", disabled: el.getAttribute("aria-disabled") === "true" })),
+        );
+        const at = states.findIndex((s) => !s.checked && !s.disabled);
+        expect(at, "an enabled unchecked radio exists").toBeGreaterThanOrEqual(0);
+        return radios.nth(at);
+      };
+
+      const clicked = await firstUnchecked();
+      await clicked.click();
+      await expect(clicked).toHaveAttribute("aria-checked", "true");
       expect(await checkedCount(), "still exactly one checked").toBe(1);
       await expect(menu, "choosing keeps the menu open").toHaveAttribute("data-state", "open");
 
       // Keyboard: Space / Enter on another radio moves the check to it.
-      const next = group.locator(UNCHECKED_RADIO).first();
-      await arrowTo(page, next);
+      const byKey = await firstUnchecked();
+      await arrowTo(page, byKey);
       await page.keyboard.press("Space");
-      await expect(next).toHaveAttribute("aria-checked", "true");
+      await expect(byKey).toHaveAttribute("aria-checked", "true");
       expect(await checkedCount()).toBe(1);
-      const again = group.locator(UNCHECKED_RADIO).first();
-      await arrowTo(page, again);
+      const byEnter = await firstUnchecked();
+      await arrowTo(page, byEnter);
       await page.keyboard.press("Enter");
-      await expect(again).toHaveAttribute("aria-checked", "true");
+      await expect(byEnter).toHaveAttribute("aria-checked", "true");
       expect(await checkedCount()).toBe(1);
       expect(await radios.count()).toBeGreaterThanOrEqual(2);
     });
@@ -579,8 +588,9 @@ test.describe("menu family differences — ContextMenu", () => {
     await expect(t).toHaveAttribute("tabindex", "-1");
     await t.evaluate((el) => {
       (el as HTMLElement).style.position = "fixed";
-      (el as HTMLElement).style.top = "120px";
-      (el as HTMLElement).style.left = "160px";
+      // Clear of the docs site's left sidebar, which would intercept the pointer.
+      (el as HTMLElement).style.top = "200px";
+      (el as HTMLElement).style.left = "640px";
     });
     await t.click();
     await page.waitForTimeout(300);

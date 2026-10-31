@@ -868,7 +868,14 @@ pub(crate) fn render_menu_item(parts: ItemParts) -> Element {
         div {
             onpointerdown: move |event: Event<PointerData>| match host.select_on {
                 SelectOn::Click => {}
-                SelectOn::PressRelease => pointer_select_start(&event, disabled(), press),
+                SelectOn::PressRelease => {
+                    // A press on a disabled item moves no focus either: left to the browser it would focus
+                    // the disabled item and blur the focused one, which reads as "focus left the menu".
+                    if disabled() {
+                        event.prevent_default();
+                    }
+                    pointer_select_start(&event, disabled(), press);
+                }
                 SelectOn::PressStart => select(),
             },
             onpointerup: move |event: Event<PointerData>| {
