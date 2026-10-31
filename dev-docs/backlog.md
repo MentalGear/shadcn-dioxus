@@ -40,7 +40,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (75)
+## Open rows (76)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -119,5 +119,6 @@ proposing one is closed as out of scope (row 337 is the first).
 | [485](backlog/485-retire-data-state-css-moves-to-aria-and-presence.md) | Retire data-state: our CSS styles from ARIA and presence attributes | BACKLOG, owner decision 2026-10-29. Depends on row 484, which converts the valued booleans to… | M-L | styling |
 | [486](backlog/486-code-graph-explorer-tools-codegraph.md) | Code graph explorer: SCIP-derived graph with a granularity slider (scripts/codegraph) | BACKLOG, not scheduled. Researched 2026-10-29 and 2026-10-31 at the owner's request; a prototype… | M | tooling |
 | [487](backlog/487-one-dismiss-core-escape-outside-dismiss-and-focus-return.md) | One dismiss core: Escape, outside dismiss and focus return for every overlay | BACKLOG, prioritised with row 435 (owner 2026-10-31): the single overlay engine is finished before… | M-L | overlays |
+| [488](backlog/488-bug-combobox-in-rtl-does-not-show-its-list.md) | Bug: Combobox in RTL does not show its list | BACKLOG, low priority: for much later (owner report 2026-10-31). Reproduce first. | S | overlays |
 
 <!-- END GENERATED -->
