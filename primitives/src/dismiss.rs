@@ -262,8 +262,9 @@ mod tests {
 
     #[test]
     fn the_menu_policy_ignores_escape_and_dismisses_on_press_and_focus() {
-        assert_eq!(Policy::OUTSIDE.escape, EscapeKey::Ignore);
-        assert!(Policy::OUTSIDE.press && Policy::OUTSIDE.focus);
+        let policy = Policy::OUTSIDE;
+        assert_eq!(policy.escape, EscapeKey::Ignore);
+        assert!(policy.press && policy.focus);
     }
 
     #[test]
