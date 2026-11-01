@@ -40,7 +40,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (77)
+## Open rows (78)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -121,5 +121,6 @@ proposing one is closed as out of scope (row 337 is the first).
 | [487](backlog/487-one-dismiss-core-escape-outside-dismiss-and-focus-return.md) | One dismiss core: Escape, outside dismiss and focus return for every overlay | PHASE 1 on lane/dismiss-core-487 (2026-10-31), not yet merged; phase 2 (the menu family) waits for… | M-L | overlays |
 | [488](backlog/488-bug-combobox-in-rtl-does-not-show-its-list.md) | Bug: Combobox in RTL does not show its list | BACKLOG, low priority: for much later (owner report 2026-10-31). Reproduce first. | S | overlays |
 | [489](backlog/489-menubar-items-select-on-pointerdown-touch-scroll.md) | Menubar items select on pointerdown, so a touch scroll that starts on an item selects it | BACKLOG. Found by row 435 (2026-10-31): Menubar keeps its PressStart selection model; on touch this… | S | overlays |
+| [490](backlog/490-first-key-press-restyles-the-page-focus-modality-tokens-on-root.md) | The first key press restyles the whole page: focus-modality tokens are redefined on :root | BACKLOG. Found 2026-11-01 while root-causing a release-suite timing red (main-thread.spec combobox… | S-M | theme / performance |
 
 <!-- END GENERATED -->
