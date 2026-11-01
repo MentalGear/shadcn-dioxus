@@ -11,6 +11,12 @@
 #   alone (then it serves that dir itself); the server must answer unknown URLs as the site does (tools/site-server.sh).
 #
 # Prints one line per chunk: tests passed/failed, wall seconds INSIDE the lock (queue time excluded), and the sum.
+#
+# The chunks run every test except the `@timing` cases (playwright/timing.ts). Those run last, in ONE more pass
+# (tools/timing-pass.sh): one worker, started only when tools/wait-quiet.sh sees the machine idle, under the same lock,
+# written to OUT/chunk-timing.json. A timing case measures time, and three workers plus the lane builds of a shared box
+# move the measurement more than any code change does. `--only-chunk timing` runs just that pass; `--only-chunk N` runs
+# chunk N alone. A pass that never gets a quiet machine writes no report, and the deploy's verdict counts that as red.
 set -uo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 out="" chunks=8 workers=2 config=suite.local.config.ts table="" lock=${LANE_TGT:-/home/user/tgt}/pw.lock only=""
@@ -47,9 +53,16 @@ for i in $(seq 1 "$chunks"); do
   start=$(date +%s)
   flock "$lock" bash -c '
     s=$(date +%s)
-    PW_SPECS_FILE="$1" PLAYWRIGHT_JSON_OUTPUT_FILE="$2" pnpm exec playwright test --config="$3" --workers="$4" --reporter=json,line >"$5" 2>&1
+    PW_SPECS_FILE="$1" PLAYWRIGHT_JSON_OUTPUT_FILE="$2" pnpm exec playwright test --config="$3" --workers="$4" --grep-invert @timing --pass-with-no-tests --reporter=json,line >"$5" 2>&1
     echo $(( $(date +%s) - s )) > "$6"' _ "$out/specs-$i.txt" "$out/chunk-$i.json" "$config" "$workers" "$out/chunk-$i.log" "$out/chunk-$i.wall"
   w=$(cat "$out/chunk-$i.wall" 2>/dev/null || echo 0); total=$((total + w))
   echo "chunk $i/$chunks: $(wc -l < "$out/specs-$i.txt") files, wall_in_lock=${w}s (queued+run $(( $(date +%s) - start ))s), running total ${total}s"
 done
+if [ -z "$only" ] || [ "$only" = timing ]; then
+  cat "$out"/specs-*.txt > "$out/timing-specs.txt"
+  PW_SPECS_FILE="$out/timing-specs.txt" tools/timing-pass.sh --config "$config" --out "$out/chunk-timing" --lock "$lock"
+  trc=$?
+  w=$(cat "$out/chunk-timing.wall" 2>/dev/null || echo 0); total=$((total + w))
+  echo "timing pass: exit $trc, wall_in_lock=${w}s (one worker, after the quiet-machine wait), running total ${total}s"
+fi
 echo "run-suite: total wall inside the lock ${total}s"

@@ -3,6 +3,7 @@ import type { Locator, Page } from "@playwright/test";
 import { BASE_URL, buildProfile } from "./base-url";
 import { gotoHydrated } from "./hydration";
 import { calibrationMs, frameCostMeter } from "./frame-cost";
+import { TIMING_TAG } from "./timing";
 
 // Helper to run scrollHeight stability test with configurable tolerance
 async function testScrollHeightStability(
@@ -456,7 +457,7 @@ test.describe("content-visibility mode", () => {
 });
 
 test.describe("content-visibility mode: per-frame cost (release only)", () => {
-  test("a scroll costs the main thread less chunked than with one skippable element per row", async ({ page, browserName }) => {
+  test("a scroll costs the main thread less chunked than with one skippable element per row", { tag: TIMING_TAG }, async ({ page, browserName }) => {
     // Wall time is not what is measured (main-thread task time per frame is), but a loaded box stretches the
     // interleaved rounds past the default timeout.
     test.setTimeout(5 * 60_000);

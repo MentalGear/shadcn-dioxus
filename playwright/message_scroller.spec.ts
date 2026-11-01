@@ -26,6 +26,7 @@ import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { BASE_URL, buildProfile } from "./base-url";
 import { gotoHydrated } from "./hydration";
 import { calibrationMs, frameCostMeter } from "./frame-cost";
+import { TIMING_TAG } from "./timing";
 
 const GOTO_OPTS = { timeout: 20 * 60 * 1000 };
 // The demos' `MessageScrollerContent` start padding (`--dx-space-4`).
@@ -439,7 +440,7 @@ test.describe("virtualization: content-visibility", () => {
     ).toHaveAttribute("data-keep-rendered", "");
   });
 
-  test("scrolling a 2,000-row transcript costs the main thread less chunked than per row (release only)", async ({ page }) => {
+  test("scrolling a 2,000-row transcript costs the main thread less chunked than per row (release only)", { tag: TIMING_TAG }, async ({ page }) => {
     // Wall time is not what is measured (main-thread task time per frame is), but a loaded box stretches the
     // interleaved rounds past the default timeout.
     test.setTimeout(5 * 60_000);

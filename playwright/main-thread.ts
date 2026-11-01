@@ -229,6 +229,23 @@ export async function withGesture(page: Page, gesture: () => Promise<void>): Pro
   return { longTasks, interactions, maxTaskMs, maxInteractionMs };
 }
 
+/**
+ * Waits until the page is at rest: every finite animation and transition has finished and two frames have passed
+ * without a new one starting. A gesture that follows another (a close after an open) is measured from here, so the
+ * previous gesture's animation frames are not counted as the gesture's own long tasks. Gives up after 20 rounds
+ * (an animation that keeps restarting is the page's, and the measurement then reports it).
+ */
+export async function settleAnimations(page: Page): Promise<void> {
+  await page.evaluate(async () => {
+    const live = () => document.getAnimations().filter((a) => a.effect && a.effect.getComputedTiming().iterations !== Infinity);
+    for (let round = 0; round < 20; round++) {
+      await Promise.allSettled(live().map((a) => a.finished));
+      await new Promise<void>((done) => requestAnimationFrame(() => requestAnimationFrame(() => done())));
+      if (live().length === 0) return;
+    }
+  });
+}
+
 function worstOf(report: GestureReport): number {
   return Math.max(report.maxTaskMs, report.maxInteractionMs);
 }
