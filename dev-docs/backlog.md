@@ -40,7 +40,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (76)
+## Open rows (77)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -70,7 +70,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [415](backlog/415-pin-actions-to-shas.md) | Pin GitHub Actions to commit SHAs | OPTIONAL: needs owner approval before it is adopted or scheduled (owner 2026-10-24). Not part of… | XS | build |
 | [422](backlog/422-docs-page-shared-section-group.md) | Component pages: group the sections every page shares under one header, component-specific sections under another | BUILT on lane/docs-groups-422 (2026-10-31), awaiting the merge batch. The owner approved the… | M | docs |
 | [434](backlog/434-javascript-in-typescript-modules-not-rust-strings.md) | Cut JavaScript to what Rust cannot do: audit every eval block, move the rest into Rust, TypeScript only for the remainder | BACKLOG. Umbrella for rows 444-467 (the step 3 plan; the paper review is closed after seven rounds… | L | primitives |
-| [435](backlog/435-one-menu-family-behind-three-hosts.md) | One menu-family implementation behind three hosts (DropdownMenu, ContextMenu, Menubar) | LANDED on lane/menu-family-435 (steps 1-4 of the Detail below; merge pending), after owner approval… | L | primitives |
+| [435](backlog/435-one-menu-family-behind-three-hosts.md) | One menu-family implementation behind three hosts (DropdownMenu, ContextMenu, Menubar) | LANDED on the session branch (2026-10-31, merged from lane/menu-family-435; steps 1-4 of the Detail… | L | primitives |
 | [436](backlog/436-code-quality-skill-review.md) | Code-quality skill review: code-review and simplify skills over the whole codebase, after the row 426-435 refactors | BACKLOG. It was in the plan next to row 365 but never had a row, so 365 ran without it. The owner… | M for the review. Each accepted finding… | process |
 | [438](backlog/438-blitz-native-renderer.md) | dioxus-native (Blitz) as a supported renderer: parked, research-gated, after row 434 | PARKED. Start when all of these hold: 1. Dioxus 0.8 is stable and the primitives build on it. 2.… | Estimates from the research: tier 0 M… | primitives |
 | [440](backlog/440-run-gates-per-run-log-dir.md) | run-gates.sh writes logs to a shared directory: two concurrent runs on one target overwrite each other's logs | BACKLOG. Found by the row 433 lane (2026-10-26). | S | tooling |
@@ -110,7 +110,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [476](backlog/476-ios-checkbox-and-radio-taps-lag-on-the-home-page.md) | iOS: checkbox and radio taps lag about a second on the home page (Filter results demo, Radio Group card) | IN PROGRESS (lane tap-lag-476, 2026-10-31). The lag does not reproduce in Chromium, so the fix… | M | components |
 | [477](backlog/477-anchored-overlays-placed-in-document-coordinates.md) | Anchored overlays are placed in document coordinates (absolute top-layer panels, transform-only), CSS anchoring kept where supported | LANDED in PR #156 (main 7d50e068), deployed; open: the owner's iPhone run (keyboard up, scrolling… | L | overlays |
 | [478](backlog/478-overlay-defaults-to-base-ui.md) | Overlay and control defaults follow Base UI (menu check items, Combobox keys, Tooltip, NavigationMenu timing, Select, carousel RTL) | PARTIAL. Items 1, 2, 3, 5 and 6 are done and deployed (PR #156); item 4 (NavigationMenu and submenu… | S each | overlays |
-| [479](backlog/479-scroll-lock-method-and-the-touch-carve-out.md) | Scroll-lock method: Base UI's overflow:hidden with scrollbar-gutter, and no lock for touch-opened anchored popups | PARTIAL. Method, DropdownMenu and Select done (landed in PR #156, deployed). Remaining: remove… | M | overlays |
+| [479](backlog/479-scroll-lock-method-and-the-touch-carve-out.md) | Scroll-lock method: Base UI's overflow:hidden with scrollbar-gutter, and no lock for touch-opened anchored popups | PARTIAL. Method, DropdownMenu and Select done (landed in PR #156, deployed).… | M | overlays |
 | [480](backlog/480-re-diff-keyboard-inset-against-base-ui-1-9-0.md) | Re-diff primitives/src/keyboard_inset.rs against Base UI 1.9.0 | PARTLY LANDED 2026-10-28 (lane keyboard-inset-480; device check pending). Two 1.6.0 -&gt; 1.9.0… | M | overlays |
 | [481](backlog/481-state-attributes-one-helper-emits-data-state-and-presence.md) | State attributes: one helper emits data-state and Base UI presence attributes | IN PROGRESS (2026-10-29), lane state-attributes-481. Landed: primitives/src/state_attrs.rs (the… | M | primitives |
 | [482](backlog/482-control-gaps-slider-form-participation-read-only-and-small-attributes.md) | Control gaps: Slider form participation, read_only, Toggle data-pressed, Tabs activate_on_focus | IMPLEMENTED on lane/control-gaps-482, awaiting the merge batch (2026-10-28). Items 1 to 4 are… | S-M | components |
@@ -120,5 +120,6 @@ proposing one is closed as out of scope (row 337 is the first).
 | [486](backlog/486-code-graph-explorer-tools-codegraph.md) | Code graph explorer: SCIP-derived graph with a granularity slider (scripts/codegraph) | BACKLOG, not scheduled. Researched 2026-10-29 and 2026-10-31 at the owner's request; a prototype… | M | tooling |
 | [487](backlog/487-one-dismiss-core-escape-outside-dismiss-and-focus-return.md) | One dismiss core: Escape, outside dismiss and focus return for every overlay | BACKLOG, prioritised with row 435 (owner 2026-10-31): the single overlay engine is finished before… | M-L | overlays |
 | [488](backlog/488-bug-combobox-in-rtl-does-not-show-its-list.md) | Bug: Combobox in RTL does not show its list | BACKLOG, low priority: for much later (owner report 2026-10-31). Reproduce first. | S | overlays |
+| [489](backlog/489-menubar-items-select-on-pointerdown-touch-scroll.md) | Menubar items select on pointerdown, so a touch scroll that starts on an item selects it | BACKLOG. Found by row 435 (2026-10-31): Menubar keeps its PressStart selection model; on touch this… | S | overlays |
 
 <!-- END GENERATED -->
