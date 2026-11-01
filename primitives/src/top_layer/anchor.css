@@ -1,11 +1,11 @@
 /* A popover panel the browser has taken out of the top layer is not rendered (backlog row 492). The UA hides a
-   closed popover with `[popover]:not(:popover-open) { display: none }`, and a `display` that a component sheet
-   sets on its panel class (`flex`, `block`) beats that rule. Escape, a light dismiss and a press on the trigger
+   closed popover with [popover]:not(:popover-open) { display: none }, and a display that a component sheet
+   sets on its panel class (flex, block) beats that rule. Escape, a light dismiss and a press on the trigger
    hide the popover natively, before the exit animation can play, so without this rule the panel keeps painting
    for the length of the animation as an ordinary positioned box: outside the top layer, placed against another
    containing block, and clipped or covered by its ancestors. A panel that closes through its exit animation
-   stays `:popover-open` until it unmounts (`use_popover_shown_while_mounted`), so this hides only a panel that
-   has already left the top layer. `!important` because it restates the UA's rule for every component sheet at
+   stays :popover-open until it unmounts (use_popover_shown_while_mounted), so this hides only a panel that
+   has already left the top layer. !important because it restates the UA's rule for every component sheet at
    once: no selector a sheet writes can outrank it. */
 [data-dx-anchored][popover]:not(:popover-open) {
   display: none !important;

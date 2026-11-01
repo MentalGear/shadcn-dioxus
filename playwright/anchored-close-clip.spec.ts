@@ -2,12 +2,12 @@
  * An anchored panel is never painted outside the top layer, and keeps its open height through its whole close
  * (backlog row 492).
  *
- * A popover the browser closes natively (Escape, a light dismiss, a press on the trigger) leaves the top layer at once;
- * a component sheet's `display` used to keep it painting for the whole exit animation as an ordinary positioned box,
- * placed against another containing block and clipped by its ancestors. `primitives/src/top_layer/anchor.css` hides
- * such a panel for every component sheet.
+ * A popover the browser closes natively (Escape, a light dismiss, a press on the trigger) leaves the top layer at once.
+ * A component sheet's `display` would keep such a panel painting through the exit animation as an ordinary positioned
+ * box, placed against another containing block and clipped by its ancestors, so
+ * `primitives/src/top_layer/anchor.css` hides it for every component sheet.
  *
- *   - ColorPicker: the close is recorded on every animation frame from the close request until the panel is gone,
+ *   - ColorPicker: the close is recorded on every animation frame from the close request for 500 ms,
  *     above and below its trigger, at a desktop and a phone viewport, for each way of closing. Every frame is either
  *     not rendered or the open panel: in the top layer, its height within 1 px of the open height.
  *   - Every other anchored overlay that closes natively: no frame after Escape or an outside press paints a panel
