@@ -28,8 +28,10 @@ pub struct LabelProps {
 /// count (`event.detail`) is above 1, unless it landed on a button, input, select or textarea
 /// inside the label or a handler of yours already called `prevent_default`. Dioxus's mouse events
 /// do not carry the click count, so this is a small scoped script that is installed the first time
-/// the pointer reaches the label (the click that starts a double click is always preceded by it)
-/// and removed when the label unmounts. Nothing runs on the server or before a pointer arrives.
+/// a mouse or pen reaches the label (the click that starts a double click is always preceded by it)
+/// and removed when the label unmounts. Nothing runs on the server or before such a pointer
+/// arrives, and a touch never installs it: a tap on a label (the usual way to reach its control on a
+/// phone) writes no signal and starts no script, so the control's own click is the only work of the tap.
 ///
 /// ```rust
 /// use dioxus::prelude::*;
@@ -82,8 +84,8 @@ pub fn Label(props: LabelProps) -> Element {
 
     rsx! {
         label {
-            onmouseenter: move |_| arm(armed),
-            onmousedown: move |_| arm(armed),
+            onpointerenter: move |event| arm(armed, &event),
+            onpointerdown: move |event| arm(armed, &event),
             ..merged,
 
             {props.children}
@@ -91,9 +93,27 @@ pub fn Label(props: LabelProps) -> Element {
     }
 }
 
-/// Turns the double-click guard on; a no-op once it is, so a hover does not notify the effect again.
-fn arm(mut armed: Signal<bool>) {
-    if !*armed.peek() {
+/// Turns the double-click guard on for a mouse or pen pointer; a no-op once it is, so a hover does not
+/// notify the effect again, and for a touch, which has no double click to guard against.
+fn arm(mut armed: Signal<bool>, event: &PointerEvent) {
+    if guards_double_click(&event.pointer_type()) && !*armed.peek() {
         armed.set(true);
+    }
+}
+
+/// Whether a pointer of this `PointerEvent.pointerType` can double click: a touch cannot.
+fn guards_double_click(pointer_type: &str) -> bool {
+    pointer_type != "touch"
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn only_a_touch_leaves_the_guard_off() {
+        assert!(guards_double_click("mouse"));
+        assert!(guards_double_click("pen"));
+        assert!(!guards_double_click("touch"));
     }
 }

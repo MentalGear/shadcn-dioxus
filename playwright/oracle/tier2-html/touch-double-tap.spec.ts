@@ -51,7 +51,7 @@
  *
  * SELECTOR mirrors `main.css`'s app-layer rule exactly, one list shared by
  * both the construction and this oracle: `button`, `[role="button"]`,
- * `a[href]`, `input`, `select`, `textarea`, `summary`,
+ * `a[href]`, `input`, `select`, `textarea`, `label`, `summary`,
  * `[tabindex]:not([tabindex="-1"])`, `[role="menuitem"]`, `[role="option"]`,
  * `[role="tab"]`, `[role="switch"]`, `[role="checkbox"]`, `[role="radio"]`,
  * `[role="slider"]`. This already reaches "anything with a click handler"
@@ -104,7 +104,7 @@ const BASE = BASE_URL;
 // Mirrors preview/assets/main.css's app-layer selector list exactly -- see
 // that rule's own comment for why each entry is there.
 const SELECTOR =
-  'button, [role="button"], a[href], input, select, textarea, summary, [tabindex]:not([tabindex="-1"]), [role="menuitem"], [role="option"], [role="tab"], [role="switch"], [role="checkbox"], [role="radio"], [role="slider"]';
+  'button, [role="button"], a[href], input, select, textarea, label, summary, [tabindex]:not([tabindex="-1"]), [role="menuitem"], [role="option"], [role="tab"], [role="switch"], [role="checkbox"], [role="radio"], [role="slider"]';
 
 type Row = {
   tag: string;

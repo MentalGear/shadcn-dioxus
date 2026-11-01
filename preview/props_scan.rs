@@ -148,6 +148,32 @@ pub fn scan_props(source: &str) -> Vec<PropsStruct> {
     out
 }
 
+/// Every column-0 `pub type Alias<..> = Target<..>;` in `source`, as `(alias, target)`. A component's host file
+/// names a shared props struct through such an alias (`pub type ContextMenuItemProps = MenuItemProps<String>;`),
+/// so the docs page labels the struct with the names a reader writes.
+pub fn scan_aliases(source: &str) -> Vec<(String, String)> {
+    let ident = |text: &str| -> String {
+        text.chars()
+            .take_while(|c| c.is_alphanumeric() || *c == '_')
+            .collect()
+    };
+    let mut out = Vec::new();
+    for line in source.lines() {
+        let Some(rest) = line.strip_prefix("pub type ") else {
+            continue;
+        };
+        let alias = ident(rest);
+        let Some(at) = rest.find(" = ") else {
+            continue;
+        };
+        let target = ident(&rest[at + 3..]);
+        if !alias.is_empty() && !target.is_empty() {
+            out.push((alias, target));
+        }
+    }
+    out
+}
+
 /// `#[component] pub fn Name(a: A, #[props(default)] b: B, ..)`: the arguments are the props, with the same
 /// attribute and doc-comment shapes as a struct field. `fn Name(props: NameProps)` is the derive form
 /// (covered by its struct) and yields nothing. Returns the item and the line to resume at.

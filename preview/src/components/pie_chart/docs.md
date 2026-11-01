@@ -1,5 +1,34 @@
 Pie charts show how a whole divides into parts, and donut charts do the same with a hole in the middle that can hold a total. They are the arc-based members of the [Chart](/component/chart/) family: the same `ChartContainer`, `Chart`, `ChartTooltip` and `ChartLegend`, with `kind: ChartKind::Pie` and a `PieOptions` value that shapes the slices. Installing `chart` is everything a pie or donut needs; this page is a gallery of that mode.
 
+## Component Structure
+
+```rust
+// Card is the frame the demos use; a chart works without it.
+Card {
+    CardHeader {
+        CardTitle { "Visitors" }
+        CardDescription { "January - June 2024" }
+    }
+    CardContent {
+        // ChartContainer, Chart, ChartTooltip and ChartLegend come from the Chart package this page
+        // depends on; this page adds no piece of its own. Chart reads its kind from the container.
+        ChartContainer { config, data, kind: ChartKind::Pie,
+            Chart {
+                aria_label: "Visitors by browser",
+                // Slices, donut hole, angles and center text are `pie: PieOptions { .. }`.
+                pie: PieOptions { inner_radius: Radius::Px(60.0), ..Default::default() },
+            }
+            ChartTooltip { hide_label: true }
+            // ChartLegend lists one swatch and label per series; add it once there is more than one.
+            ChartLegend {}
+        }
+    }
+    CardFooter { "Showing total visitors for the last 6 months" }
+}
+```
+
+Each `ChartDatum` is one slice, so the legend lists slices rather than series. The pieces are siblings inside the container, as on the [Chart](/component/chart/) page.
+
 ## Quick start
 
 ```rust

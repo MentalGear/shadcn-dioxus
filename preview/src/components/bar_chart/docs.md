@@ -1,5 +1,34 @@
 Bar charts compare values across categories. This page is a gallery of bar configurations built from the [Chart](/component/chart/) package (`ChartContainer`, `Chart`, `ChartTooltip`, `ChartLegend`) and `Card` for the surrounding frame. Installing this component adds `chart` and `card` for you.
 
+## Component Structure
+
+```rust
+// Card is the frame the demos use; a chart works without it.
+Card {
+    CardHeader {
+        CardTitle { "Visitors" }
+        CardDescription { "January - June 2024" }
+    }
+    CardContent {
+        // ChartContainer, Chart, ChartTooltip and ChartLegend come from the Chart package this page
+        // depends on; this page adds no piece of its own. Chart reads its kind from the container.
+        ChartContainer { config, data, kind: ChartKind::Bar,
+            Chart {
+                aria_label: "Visitors by month",
+                // Bar-specific settings (horizontal, radius, labels, gaps) live in `bar: BarOptions { .. }`.
+                stacked: false,
+            }
+            ChartTooltip { hide_label: true }
+            // ChartLegend lists one swatch and label per series; add it once there is more than one.
+            ChartLegend {}
+        }
+    }
+    CardFooter { "Showing total visitors for the last 6 months" }
+}
+```
+
+`BarChartTrendFooter` is the shared "Trending up" footer the demos reuse inside `Card`; it is demo chrome, not part of a bar chart. The pieces are siblings inside the container, as on the [Chart](/component/chart/) page.
+
 ## Quick start
 
 ```rust

@@ -2,6 +2,25 @@ Chart draws themed, accessible SVG charts from plain data. It covers area, bar, 
 
 The other chart pages are galleries built on this same package: [Area chart](/component/area_chart/), [Bar chart](/component/bar_chart/), [Line chart](/component/line_chart/), [Pie chart](/component/pie_chart/), [Radar chart](/component/radar_chart/), [Radial chart](/component/radial_chart/), and [Chart tooltip](/component/chart_tooltip/). Install the `chart` package once and use any of them.
 
+## Component Structure
+
+```rust
+// ChartContainer owns the series config and the data, and is always the outermost chart piece. It sets
+// each series' `--color-<key>` variable on its own element; the pieces inside read the config, the data
+// and the kind from it, so they must sit inside it.
+ChartContainer { config, data, kind: ChartKind::Bar,
+    // Chart draws the grid, the axes, one mark per series and the hidden data table. It is the one piece
+    // every chart needs, and its `aria_label` is its accessible name.
+    Chart { aria_label: "Visitors by month" }
+    // ChartTooltip is the hover and keyboard readout. Place it after Chart.
+    ChartTooltip {}
+    // ChartLegend lists one swatch and label per series. Leave it out for a single series.
+    ChartLegend {}
+}
+```
+
+The three pieces are siblings, not nested in each other. Wrap the container in `Card` (`CardHeader`, `CardContent`, `CardFooter`) for the framed look every gallery page uses; a chart does not need it.
+
 ## Quick start
 
 ```rust

@@ -39,7 +39,7 @@ test("a docs accordion item animates open", async ({ page }) => {
         requestAnimationFrame(tick);
       }),
   );
-  await item.locator("> h2 > button").click();
+  await item.locator("> h3 > button").click();
   const heights = await sampling;
   const final = heights[heights.length - 1];
   expect(final, "the opened item has content").toBeGreaterThan(40);
@@ -58,9 +58,9 @@ test("every docs accordion chevron stays inside its section's border box", async
       const item = items(page).nth(i);
       const fit = await readAtRest(item, (el) => {
         const box = el.getBoundingClientRect();
-        const icon = el.querySelector(":scope > h2 .dx-accordion-expand-icon")!.getBoundingClientRect();
+        const icon = el.querySelector(":scope > h3 .dx-accordion-expand-icon")!.getBoundingClientRect();
         return {
-          id: el.querySelector(":scope > h2")!.id,
+          id: el.querySelector(":scope > h3")!.id,
           inside:
             icon.left >= box.left - 0.5 &&
             icon.right <= box.right + 0.5 &&

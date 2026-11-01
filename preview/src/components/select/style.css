@@ -126,7 +126,9 @@
   top: 100%;
 
   /* A long list scrolls inside the popup (the scroll buttons below show while it can); the
-     recipe's `overflow: visible` loses to this, the same as the combobox list. */
+     recipe's `overflow: visible` loses to this, the same as the combobox list. The item-aligned
+     list carries no `data-dx-anchored` (`top_layer::AnchorKind::SelectItemAligned`), so the shared
+     anchor sheet's `overscroll-behavior: contain` does not reach it: it contains its own overscroll here. */
   overflow: hidden auto;
 
   /*
@@ -150,6 +152,7 @@
   margin-top: var(--dx-space-1);
   inset-inline-start: 0;
   opacity: 0;
+  overscroll-behavior: contain;
   pointer-events: none;
   transform-origin: top;
   will-change: transform, opacity;

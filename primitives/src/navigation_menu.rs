@@ -778,16 +778,6 @@ pub fn NavigationMenuTrigger(props: NavigationMenuTriggerProps) -> Element {
             onkeydown: move |event: Event<KeyboardData>| {
                 // RTL mirrors the horizontal pair (`Direction::ltr_equivalent`).
                 match direction.ltr_equivalent(&event.key()) {
-                    // "If a dropdown is open ... pressing Esc will close the
-                    // dropdown" -- disclosure-navigation.html's own
-                    // accessibility-features note. Closes whatever is open
-                    // (mirroring the reference JS's own
-                    // `toggleExpand(this.openIndex, false)`), not only when
-                    // it is this trigger's own panel, matching
-                    // `onButtonKeyDown` exactly.
-                    Key::Escape if (ctx.open)().is_some() => {
-                        ctx.set_open.call(None);
-                    }
                     Key::ArrowLeft => ctx.focus.focus_prev(),
                     Key::ArrowRight => ctx.focus.focus_next(),
                     // disclosure-navigation-hybrid.html's own keyboard
@@ -898,8 +888,6 @@ pub fn NavigationMenuContent(props: NavigationMenuContentProps) -> Element {
 
     use_context_provider(|| NavigationMenuContentContext);
 
-    let ctx: NavigationMenuContext = use_context();
-
     rsx! {
         if render() {
             NavigationMenuContentRendered {
@@ -907,59 +895,53 @@ pub fn NavigationMenuContent(props: NavigationMenuContentProps) -> Element {
                 attributes: props.attributes,
                 children: props.children,
             }
-            // Click activation only: with no pointer-leave close, a press
-            // outside the nav is what dismisses a click-opened panel on
-            // engines that don't focus a button on click (Safari, macOS
-            // Firefox), where the trigger's own blur never fires.
-            if !ctx.hover.enabled() {
-                NavigationMenuOutsidePressDismiss {}
-            }
+            NavigationMenuDismiss {}
         }
     }
 }
 
-/// Click-activation mode's "press outside the navigation menu closes the
-/// open panel" -- mounted by [`NavigationMenuContent`] only while its panel
-/// is rendered *and* [`NavigationMenuProps::open_on_hover`] is `false`, so
-/// the default (hover) mode and every closed panel pay nothing for it.
+/// The open panel's dismissal, on the dismiss core ([`crate::dismiss`]): Escape closes the panel and,
+/// when focus was inside the navigation menu, hands focus back to the trigger ("closes it and sets
+/// focus on the button that controls that dropdown", disclosure-navigation-hybrid.html's keyboard
+/// table, Escape row); a press outside the `nav` closes it, a touch press as a tap, so a scroll that
+/// starts outside leaves it open.
 ///
-/// Why a document-level listener at all: a hover-opened panel is closed by
-/// the pointer leaving it (the hover-close grace timer), and a keyboard- or
-/// Chromium-click-opened one by the trigger's `onblur`. A click-opened panel
-/// with hover switched off has only the latter, and Safari/macOS Firefox do
-/// not give a `<button>` focus on click -- so no blur ever arrives and the
-/// panel would stay open under a click on the page background. The check is
-/// "the target is outside the `nav` that holds this item's trigger" (found
-/// via the trigger's own id, `closest('nav')`), so a press on a sibling
-/// trigger or on this panel's own links is never a dismiss (the sibling
-/// trigger's own click switches panels). The focus half is already covered
-/// by the trigger/link `onblur` debounce, so this listens to `pointerdown`
-/// only.
+/// Mounted by [`NavigationMenuContent`] while its panel is rendered, in both activation modes: a
+/// hover-opened panel closes when the pointer leaves it, but a tap on a touch screen never leaves,
+/// and a click-opened one has no pointer-leave close at all (Safari and macOS Firefox do not focus a
+/// `<button>` on click, so the trigger's blur never arrives either). The root is the `nav` that holds
+/// this item's trigger, so a press on a sibling trigger or on this panel's own links is never a
+/// dismiss (the sibling trigger's own click switches panels). Focus leaving is the triggers' and
+/// links' own `onblur` debounce, not the core's.
 #[component]
-fn NavigationMenuOutsidePressDismiss() -> Element {
-    let ctx: NavigationMenuContext = use_context();
+fn NavigationMenuDismiss() -> Element {
+    let mut ctx: NavigationMenuContext = use_context();
     let item_ctx: NavigationMenuItemContext = use_context();
-    let trigger_id = item_ctx.trigger_id;
     let index = item_ctx.index;
 
-    crate::js_listener::use_js_listeners(move || {
-        Some(
-            crate::js_listener::JsListeners::install(
-                "const triggerId = await dioxus.recv();
-                listen(document, 'pointerdown', (e) => {
-                    const trigger = document.getElementById(triggerId);
-                    const nav = trigger && trigger.closest('nav');
-                    if (nav && !nav.contains(e.target)) dioxus.send(true);
-                }, true);",
-            )
-            .arg(trigger_id.cloned())
-            .on_message(move |_: bool| {
-                if (ctx.open)() == Some(index.cloned()) {
-                    ctx.set_open.call(None);
-                }
-            }),
-        )
-    });
+    crate::dismiss::use_dismiss(
+        item_ctx.trigger_id,
+        crate::dismiss::Scope::Closest("nav"),
+        crate::dismiss::Policy::ESCAPE_AND_PRESS,
+        Some(item_ctx.is_open.into()),
+        move |cause| {
+            if (ctx.open)() != Some(index.cloned()) {
+                return;
+            }
+            ctx.set_open.call(None);
+            if cause.focus_was_within() {
+                // `clear_focus()` immediately before `set_focus`, not `set_focus` alone:
+                // `ctx.focus`'s `focused` field can already equal this trigger's index from before
+                // focus left it for `content_focus` (a link inside the panel never touches
+                // `ctx.focus`, see this module's doc, "Tab order"), and `CollectionState::set_focus`
+                // only drives DOM focus when the value changes. Setting the same value is a silent
+                // no-op that leaves focus on the link, which falls to `<body>` once the closing
+                // panel is removed. Clearing first forces a real `None -> Some` transition.
+                ctx.focus.clear_focus();
+                ctx.focus.set_focus(Some(index.cloned()));
+            }
+        },
+    );
 
     rsx! {}
 }
@@ -1073,40 +1055,6 @@ fn NavigationMenuContentRendered(
             onmouseleave: move |_| {
                 ctx.hover.leave(index.cloned());
             },
-            onkeydown: move |event: Event<KeyboardData>| {
-                // "closes it and sets focus on the button that controls
-                // that dropdown" -- disclosure-navigation-hybrid.html's
-                // keyboard table, Escape row. Mirrors the reference JS's
-                // `onMenuKeyDown`: focus the trigger via the top-level
-                // collection (registered by `NavigationMenuTrigger`).
-                if event.key() == Key::Escape {
-                    ctx.set_open.call(None);
-                    // `clear_focus()` immediately before `set_focus` --
-                    // not merely `set_focus(Some(index.cloned()))` alone --
-                    // because `ctx.focus`'s own `focused` field can already
-                    // equal this trigger's index from *before* focus ever
-                    // left it for `content_focus` (a link inside the panel
-                    // never touches `ctx.focus` at all, per this module's
-                    // two-collection design -- see this module's own doc,
-                    // "Tab order"), and `CollectionState::set_focus` only
-                    // notifies/re-drives DOM focus when the value actually
-                    // *changes* (its own doc: "A redundant clear ... must
-                    // not wake effects"). Setting the same already-current
-                    // value is therefore a silent no-op that leaves real
-                    // DOM focus exactly where it was: with real DOM focus on a link inside the
-                    // panel, `ctx.focus.set_focus(Some(trigger_index))`
-                    // alone would never re-focus the trigger (focus would fall
-                    // through to `<body>` once the closing content was
-                    // actually removed from the DOM, several hundred ms
-                    // later, past this animated exit's own hold). Clearing
-                    // first forces a real `None -> Some` transition, so the
-                    // very next line's `set_focus` is never a no-op.
-                    ctx.focus.clear_focus();
-                    ctx.focus.set_focus(Some(index.cloned()));
-                    event.prevent_default();
-                }
-            },
-
             ..attributes,
             {children}
         }
@@ -1157,19 +1105,6 @@ fn NavigationMenuContentRendered(
             onmouseleave: move |_| {
                 ctx.hover.leave(index.cloned());
             },
-            onkeydown: move |event: Event<KeyboardData>| {
-                if event.key() == Key::Escape {
-                    ctx.set_open.call(None);
-                    // `clear_focus()` before `set_focus` -- see the web
-                    // arm's identical Escape handler, just above in this
-                    // file, for the full account of why `set_focus` alone
-                    // can silently no-op here.
-                    ctx.focus.clear_focus();
-                    ctx.focus.set_focus(Some(index.cloned()));
-                    event.prevent_default();
-                }
-            },
-
             ..attributes,
             {children}
         }

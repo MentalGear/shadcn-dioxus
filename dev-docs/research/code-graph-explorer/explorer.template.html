@@ -1,0 +1,237 @@
+<title>Code Graph Explorer</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+:root{
+  --bg:#f7f7f5;--panel:#ffffff;--ink:#1c1d1f;--muted:#5d6168;--line:#d9dad6;--accent:#2563eb;--edge:#8e939b;--hl:#111111;
+  --c-preview:#2563eb;--c-primitives:#c2620a;--c-dioxus-attributes:#7c3aed;--c-cli:#047857;--c-test-harness:#be185d;
+  --c-playwright:#0e7490;--c-external:#6b7280;--c-other:#8a6d3b;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#141517;--panel:#1d1f22;--ink:#ececea;--muted:#a3a7ae;--line:#33363b;--accent:#6ea0ff;--edge:#6d727a;--hl:#ffffff;
+  --c-preview:#6ea0ff;--c-primitives:#f0a050;--c-dioxus-attributes:#b79cff;--c-cli:#4fd1a5;--c-test-harness:#f472b6;
+  --c-playwright:#4fc3d9;--c-external:#9aa0a8;--c-other:#d1b36b;}}
+:root[data-theme="dark"]{
+  --bg:#141517;--panel:#1d1f22;--ink:#ececea;--muted:#a3a7ae;--line:#33363b;--accent:#6ea0ff;--edge:#6d727a;--hl:#ffffff;
+  --c-preview:#6ea0ff;--c-primitives:#f0a050;--c-dioxus-attributes:#b79cff;--c-cli:#4fd1a5;--c-test-harness:#f472b6;
+  --c-playwright:#4fc3d9;--c-external:#9aa0a8;--c-other:#d1b36b;}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif}
+#app{display:flex;flex-direction:column;min-height:100vh;padding:12px 16px;gap:10px;max-width:1400px;margin:0 auto}
+h1{font-size:18px;margin:0}
+.sub{color:var(--muted);font-size:12px;margin:2px 0 0}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px 16px;align-items:end}
+.controls label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)}
+.controls output{color:var(--ink);font-weight:600}
+select,input[type=text],input[list]{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 8px;min-height:36px;width:100%}
+input[type=range]{width:100%;accent-color:var(--accent);min-height:28px}
+.ticks{display:flex;justify-content:space-between;font-size:11px;color:var(--muted)}
+.checks{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px;font-size:13px}
+.checks label{flex-direction:row;align-items:center;gap:5px;color:var(--ink)}
+.checks input{min-height:0;width:auto}
+details>summary{cursor:pointer;font-size:12px;color:var(--muted);padding:2px 0}
+#stage{position:relative;flex:1;min-height:58vh;padding:0;overflow:hidden}
+#cy{position:absolute;inset:0}
+#msg{position:absolute;left:12px;top:10px;font-size:12px;color:var(--muted);background:var(--panel);padding:3px 8px;border-radius:6px;border:1px solid var(--line);z-index:2;max-width:calc(100% - 24px)}
+.legend{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:-1px}
+#info{font-size:12px;color:var(--muted);min-height:2.6em}
+#info b{color:var(--ink)}
+#info button{font:inherit;font-size:12px;color:var(--accent);background:none;border:1px solid var(--line);border-radius:6px;padding:3px 8px;cursor:pointer;margin-left:6px}
+@media (max-width:600px){#app{padding:8px 16px}#stage{min-height:62vh}}
+</style>
+<div id="app">
+  <div><h1>Code Graph Explorer</h1>
+  <p class="sub">shadcn-dioxus: rust-analyzer SCIP references (Rust), import scan (TS), asset!/include_str! (CSS, assets), spec-name match (tests). Roll-up by level; tap a node for details, double-tap to re-centre.</p></div>
+  <details class="panel" open><summary>Controls</summary>
+    <div class="controls">
+      <label>Component <input list="comps" id="pick" placeholder="type a component, e.g. select" autocomplete="off"><datalist id="comps"></datalist></label>
+      <label>Granularity: <output id="lvlOut">component</output>
+        <input type="range" id="lvl" min="0" max="2" step="1" value="1">
+        <span class="ticks"><span>crate</span><span>component</span><span>file</span></span></label>
+      <label>Ego radius: <output id="radOut">1</output><input type="range" id="rad" min="1" max="2" step="1" value="1"></label>
+      <label>Min edge weight: <output id="thrOut">2</output><input type="range" id="thr" min="1" max="30" step="1" value="2"></label>
+      <label>Direction <select id="dir"><option value="both">both (uses + used by)</option><option value="out">uses (dependencies)</option><option value="in">used by (dependents)</option></select></label>
+    </div>
+    <div class="checks">
+      <label><input type="checkbox" id="hubs" checked> hide hubs</label>
+      <label><input type="checkbox" id="group" checked> group in boxes</label>
+      <label><input type="checkbox" id="k_rs" checked> Rust refs</label>
+      <label><input type="checkbox" id="k_ext" checked> external crates</label>
+      <label><input type="checkbox" id="k_ts" checked> TS imports</label>
+      <label><input type="checkbox" id="k_asset" checked> CSS / assets</label>
+      <label><input type="checkbox" id="k_test" checked> tests</label>
+    </div>
+  </details>
+  <div class="panel legend" id="legend"></div>
+  <div class="panel" id="stage"><div id="msg"></div><div id="cy"></div></div>
+  <div class="panel" id="info">Nothing selected.</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/layout-base@2.0.1/layout-base.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/cose-base@2.2.0/cose-base.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/cytoscape@3.33.1/dist/cytoscape.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/cytoscape-fcose@2.2.0/cytoscape-fcose.js"></script>
+<script type="application/json" id="graph">__GRAPH__</script>
+<script>
+(function(){
+const G=JSON.parse(document.getElementById('graph').textContent);
+const N=G.nodes,E=G.edges;
+const comps={};G.comps.forEach(c=>comps[c.id]=c);
+const fileComp=N.map(n=>n.comp);
+const crateOf=i=>{const c=comps[fileComp[i]].crate;return c==='external'?'external':c};
+const KNOWN=['preview','primitives','dioxus-attributes','cli','test-harness','playwright','external'];
+const LV=['crate','component','file'];
+const st={lvl:1,rad:1,thr:2,dir:'both',hubs:true,group:true,kinds:{rs:1,ext:1,ts:1,asset:1,test:1},seedFiles:new Set(),pickName:''};
+const $=id=>document.getElementById(id);
+
+// hubs: components with >=100 distinct neighbours (all edge kinds), plus any lib.rs
+const nb={};
+E.forEach(([a,b])=>{const x=fileComp[a],y=fileComp[b];if(x===y)return;(nb[x]=nb[x]||new Set()).add(y);(nb[y]=nb[y]||new Set()).add(x)});
+const hubComp=new Set(Object.keys(nb).filter(k=>nb[k].size>=100));
+const isHubFile=i=>hubComp.has(fileComp[i])||/(^|\/)lib\.rs$/.test(N[i].id);
+
+// picker: component names present in preview or primitives
+const names=[...new Set(G.comps.filter(c=>c.crate==='preview'||c.crate==='primitives').map(c=>c.name).filter(n=>!n.startsWith('·')&&!n.includes('/')))].sort();
+$('comps').innerHTML=names.map(n=>'<option value="'+n+'">').join('');
+$('legend').innerHTML=KNOWN.map(k=>'<span><i style="background:var(--c-'+k+')"></i>'+k+(k==='preview'?' (pv)':k==='primitives'?' (pr)':'')+'</span>').join('')+
+  '<span>arrow = uses; ring = centre; thick = heavier</span>';
+
+function seedFromName(n){
+  const s=new Set();
+  if(!n)return s;
+  G.comps.forEach(c=>{if(c.name===n&&(c.crate==='preview'||c.crate==='primitives'))N.forEach((f,i)=>{if(f.comp===c.id)s.add(i)})});
+  return s;
+}
+const keyOf=i=>st.lvl===0?crateOf(i):st.lvl===1?fileComp[i]:N[i].id;
+function label(key){
+  if(st.lvl===0)return key;
+  if(st.lvl===1){const c=comps[key];const suf=c.crate==='preview'?' pv':c.crate==='primitives'?' pr':'';return (c.crate==='external'?c.name:c.name)+suf}
+  const p=key.split('/');return p.slice(-2).join('/');
+}
+function crateOfKey(key){
+  if(st.lvl===0)return key;
+  if(st.lvl===1)return comps[key].crate;
+  return crateOf(fileIdx[key]);
+}
+const fileIdx={};N.forEach((n,i)=>fileIdx[n.id]=i);
+
+let cy=null;
+function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim()}
+function crateColor(c){return css('--c-'+(KNOWN.includes(c)?c:'other'))}
+
+function compute(){
+  const seedFiles=st.seedFiles;
+  const seedKeys=new Set([...seedFiles].map(keyOf));
+  const W=new Map(),items=new Map();
+  N.forEach((n,i)=>{const k=keyOf(i);items.set(k,(items.get(k)||0)+n.items)});
+  for(const [a,b,w,k] of E){
+    if(!st.kinds[k])continue;
+    if(st.hubs&&st.lvl>0){
+      if(isHubFile(a)&&!seedFiles.has(a))continue;
+      if(isHubFile(b)&&!seedFiles.has(b))continue;
+    }
+    const x=keyOf(a),y=keyOf(b);if(x===y)continue;
+    const kk=x+'\u0001'+y;W.set(kk,(W.get(kk)||0)+w);
+  }
+  let edges=[...W].map(([k,w])=>{const [x,y]=k.split('\u0001');return {x,y,w}}).filter(e=>e.w>=st.thr);
+  let keep;
+  if(seedKeys.size){
+    const adj={};
+    edges.forEach(e=>{
+      if(st.dir!=='in')(adj[e.x]=adj[e.x]||[]).push([e.y,e.w]);
+      if(st.dir!=='out')(adj[e.y]=adj[e.y]||[]).push([e.x,e.w]);
+    });
+    keep=new Set(seedKeys);let frontier=[...seedKeys];
+    for(let r=0;r<st.rad;r++){
+      const cand=new Map();
+      frontier.forEach(u=>(adj[u]||[]).forEach(([v,w])=>{if(!keep.has(v))cand.set(v,(cand.get(v)||0)+w)}));
+      let list=[...cand].sort((p,q)=>q[1]-p[1]);
+      if(r>0||list.length>80)list=list.slice(0,r>0?30:80);
+      frontier=list.map(p=>p[0]);frontier.forEach(v=>keep.add(v));
+    }
+    edges=edges.filter(e=>keep.has(e.x)&&keep.has(e.y));
+  }else{
+    keep=new Set();edges.forEach(e=>{keep.add(e.x);keep.add(e.y)});
+  }
+  return {edges,keep,seedKeys,items,W};
+}
+
+function render(){
+  const msg=$('msg');
+  if(st.lvl===2&&!st.seedFiles.size){msg.textContent='File level needs a component: pick one above.';if(cy)cy.elements().remove();return}
+  const R=compute();window.__last=R;
+  const els=[];const parents=new Set();
+  const useG=st.group&&st.lvl>0;
+  R.keep.forEach(k=>{
+    const cr=crateOfKey(k);
+    const d={id:k,label:label(k),cr,sz:14+Math.min(26,4*Math.sqrt(R.items.get(k)||1)),seed:R.seedKeys.has(k)?1:0};
+    if(useG){const p=st.lvl===1?'crate:'+cr:'comp:'+fileComp[fileIdx[k]];d.parent=p;parents.add(p+'\u0001'+cr+'\u0001'+(st.lvl===1?cr:comps[fileComp[fileIdx[k]]].name))}
+    els.push({data:d});
+  });
+  parents.forEach(s=>{const [id,cr,lab]=s.split('\u0001');els.push({data:{id,label:lab,cr,grp:1},classes:'grp'})});
+  const maxw=Math.max(1,...R.edges.map(e=>e.w));
+  R.edges.forEach((e,i)=>els.push({data:{id:'e'+i,source:e.x,target:e.y,w:e.w,lw:0.8+3.2*Math.log(1+e.w)/Math.log(1+maxw)}}));
+  msg.textContent=LV[st.lvl]+' level: '+R.keep.size+' nodes, '+R.edges.length+' edges'+(st.seedFiles.size?' (ego, radius '+st.rad+', '+st.dir+')':' (whole graph)')+(R.edges.length>1500?' - raise min weight for clarity':'');
+  if(!cy){
+    cy=cytoscape({container:$('cy'),elements:[],wheelSensitivity:0.3,minZoom:0.05,maxZoom:4});
+    window.__cy=cy;
+    cy.on('tap','node',ev=>{const n=ev.target;if(!n.data('grp'))showInfo(n.id())});
+    cy.on('dbltap','node',ev=>{const n=ev.target;if(n.data('grp'))return;recenter(n.id())});
+  }
+  cy.batch(()=>{cy.elements().remove();cy.add(els)});
+  applyStyle();
+  const big=R.keep.size>400;
+  cy.layout({name:'fcose',quality:big?'draft':'default',randomize:true,animate:false,nodeDimensionsIncludeLabels:true,
+    idealEdgeLength:e=>70+Math.max(0,40-8*Math.log(1+e.data('w'))),nodeRepulsion:()=>9000,packComponents:true,tile:true}).run();
+  cy.fit(undefined,30);
+}
+function applyStyle(){
+  const ink=css('--ink'),edge=css('--edge'),line=css('--line'),panel=css('--panel'),hl=css('--hl');
+  cy.style([
+    {selector:'node',style:{'background-color':e=>crateColor(e.data('cr')),width:'data(sz)',height:'data(sz)',label:'data(label)','font-size':10,color:ink,
+      'text-valign':'bottom','text-margin-y':3,'text-wrap':'none','text-background-color':panel,'text-background-opacity':.75,'text-background-padding':1}},
+    {selector:'node[seed = 1]',style:{'border-width':3,'border-color':hl}},
+    {selector:'.grp',style:{shape:'round-rectangle','background-opacity':.07,'background-color':e=>crateColor(e.data('cr')),'border-width':1,'border-color':e=>crateColor(e.data('cr')),
+      'text-valign':'top','text-halign':'center','font-size':11,'font-weight':600,'text-margin-y':-2,'text-background-opacity':0,padding:10,width:'label',height:'label'}},
+    {selector:'edge',style:{'curve-style':'bezier','line-color':edge,'target-arrow-color':edge,'target-arrow-shape':'triangle','arrow-scale':.8,width:'data(lw)',opacity:.55}},
+    {selector:'.dim',style:{opacity:.12}},
+    {selector:'edge.hi',style:{opacity:.95,'line-color':hl,'target-arrow-color':hl}},
+    {selector:'node:selected',style:{'border-width':3,'border-color':hl}}
+  ]);
+}
+function showInfo(k){
+  const R=window.__last;if(!R)return;
+  cy.elements().removeClass('dim hi');
+  const n=cy.getElementById(k);const nh=n.closedNeighborhood();
+  cy.elements().not(nh).addClass('dim');n.connectedEdges().addClass('hi');
+  const out=[],inn=[];
+  R.edges.forEach(e=>{if(e.x===k)out.push([e.y,e.w]);if(e.y===k)inn.push([e.x,e.w])});
+  const top=l=>l.sort((a,b)=>b[1]-a[1]).slice(0,6).map(([x,w])=>label(x)+' <b>'+w+'</b>').join(', ')||'-';
+  let files='';
+  if(st.lvl<2){let c=0;N.forEach((f,i)=>{if(keyOf(i)===k)c++});files=c+' files, '}
+  $('info').innerHTML='<b>'+k.replace(/\u0001/g,' ')+'</b> ('+crateOfKey(k)+'): '+files+(R.items.get(k)||0)+' items. Uses: '+top(out)+'. Used by: '+top(inn)+'. <button id="rc">re-centre here</button>';
+  $('rc').onclick=()=>recenter(k);
+}
+function recenter(k){
+  const s=new Set();N.forEach((f,i)=>{if(keyOf(i)===k)s.add(i)});
+  st.seedFiles=s;st.pickName='';$('pick').value=st.lvl===1&&comps[k]?comps[k].name:'';
+  render();
+}
+function setPick(n){
+  st.pickName=n;st.seedFiles=seedFromName(n);render();
+}
+// wiring
+$('pick').addEventListener('change',e=>{const v=e.target.value.trim();if(!v){st.seedFiles=new Set();render();return}if(names.includes(v))setPick(v)});
+$('lvl').addEventListener('input',e=>{st.lvl=+e.target.value;$('lvlOut').textContent=LV[st.lvl];render()});
+$('rad').addEventListener('input',e=>{st.rad=+e.target.value;$('radOut').textContent=st.rad;render()});
+$('thr').addEventListener('input',e=>{st.thr=+e.target.value;$('thrOut').textContent=st.thr;render()});
+$('dir').addEventListener('change',e=>{st.dir=e.target.value;render()});
+$('hubs').addEventListener('change',e=>{st.hubs=e.target.checked;render()});
+$('group').addEventListener('change',e=>{st.group=e.target.checked;render()});
+['rs','ext','ts','asset','test'].forEach(k=>$('k_'+k).addEventListener('change',e=>{st.kinds[k]=e.target.checked?1:0;render()}));
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{if(cy)applyStyle()});
+window.__setState=(o)=>{Object.assign(st,o);if(o.seedName!==undefined){$('pick').value=o.seedName;setPick(o.seedName);return}render()};
+if(innerWidth<700){const d=document.querySelector('details.panel');if(d)d.open=false}
+$('pick').value='select';setPick('select');
+})();
+</script>

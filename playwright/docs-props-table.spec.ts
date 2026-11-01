@@ -30,8 +30,8 @@ test("every component page carries the Props reference section", async ({ reques
 test("a known prop shows its display type, default and doc comment", async ({ page }) => {
   await gotoHydrated(page, `${BASE_URL}/component/switch/`, NAV);
   const section = page.locator(".dx-docs-accordion > .dx-accordion-item", { has: page.locator("#docs-props-reference") });
-  await expect(section.locator("> h2")).toHaveText("Props reference");
-  await section.locator("> h2 > button").click();
+  await expect(section.locator("> h3")).toHaveText("Props reference");
+  await section.locator("> h3 > button").click();
   await expect(section).toHaveAttribute("data-open", "true");
 
   // The styled wrapper's table, then the primitive's: both list the same prop.
@@ -58,7 +58,7 @@ test("the opened Props reference passes axe on a derive-struct and fn-argument c
   for (const name of ["select", "badge", "button"]) {
     await gotoHydrated(page, `${BASE_URL}/component/${name}/`, NAV);
     const section = page.locator(".dx-docs-accordion > .dx-accordion-item", { has: page.locator("#docs-props-reference") });
-    await section.locator("> h2 > button").click();
+    await section.locator("> h3 > button").click();
     await expect(section.locator("table").first()).toBeVisible();
     await expectNoAxeViolations(page, `${name}: props reference open`, {
       include: ".dx-docs-accordion > .dx-accordion-item:has(#docs-props-reference)",

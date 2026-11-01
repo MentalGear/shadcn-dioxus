@@ -26,7 +26,7 @@ test('an accordion header does not underline on hover, collapsed or open', async
 
 test('the docs page accordion and manual-install collapsible lead with a chevron that rotates open', async ({ page }) => {
   await gotoHydrated(page, `${BASE_URL}/component/button/`, GOTO_OPTS);
-  const trigger = page.locator('h2#installation > button.dx-accordion-trigger');
+  const trigger = page.locator('h3#installation > button.dx-accordion-trigger');
   await expect(trigger).toHaveAttribute('data-chevron', 'start');
   const icon = trigger.locator('> .dx-accordion-expand-icon');
   const side = async (t: typeof trigger) =>

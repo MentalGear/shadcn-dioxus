@@ -70,6 +70,8 @@ pub fn TopLayerFixture() -> Element {
     // Scroll-lock handoff (backlog row 375): two SIBLING dialogs, one click closes A and opens B.
     let mut handoff_a_open = use_signal(|| false);
     let mut handoff_b_open = use_signal(|| false);
+    // Nested dismiss layers (row 487): a Dialog that holds a Select, a non-modal Popover and a Tooltip.
+    let mut nested_open = use_signal(|| false);
 
     rsx! {
         div { class: Styles::dx_top_layer_fixture,
@@ -329,6 +331,56 @@ pub fn TopLayerFixture() -> Element {
                     // An element well away from both triggers, for the
                     // light-dismiss ("click outside") assertions.
                     button { id: "outside-click-target", class: Styles::dx_top_layer_outside, "Click outside target" }
+                }
+            }
+
+            section { class: Styles::dx_top_layer_section,
+                h2 { "Nested dismiss layers" }
+                p { class: Styles::dx_top_layer_hint,
+                    "A modal "
+                    code { "Dialog" }
+                    " holding a "
+                    code { "Select" }
+                    ", a non-modal "
+                    code { "Popover" }
+                    " and a "
+                    code { "Tooltip" }
+                    ". Escape closes only the topmost layer: the nested one first, the dialog on the "
+                    "next press (the dismiss parity spec, backlog row 487)."
+                }
+                button {
+                    id: "nested-dialog-trigger",
+                    onclick: move |_| nested_open.set(true),
+                    "Open nested layers"
+                }
+                DialogRoot {
+                    id: "nested-dialog-root",
+                    open: nested_open(),
+                    on_open_change: move |v| nested_open.set(v),
+                    DialogContent {
+                        id: "nested-dialog-content",
+                        style: "min-height: 220px; min-width: 260px; border: 1px solid; padding: 1rem; background: Canvas; color: CanvasText;",
+                        DialogTitle { "Nested layers" }
+                        Select::<String> { id: "nested-select-root", item_to_label: |value: String| value,
+                            SelectTrigger { id: "nested-select-trigger", SelectValue { placeholder: "Nested select" } }
+                            SelectList { id: "nested-select-content",
+                                SelectOption::<String> { value: "one", "Option one" }
+                                SelectOption::<String> { value: "two", "Option two" }
+                            }
+                        }
+                        PopoverRoot { id: "nested-popover-root", is_modal: false,
+                            PopoverTrigger { id: "nested-popover-trigger", "Nested popover" }
+                            PopoverContent {
+                                id: "nested-popover-content",
+                                "data-dx-surface": "floating",
+                                "Nested popover content"
+                            }
+                        }
+                        Tooltip {
+                            TooltipTrigger { id: "nested-tooltip-trigger", "Nested tooltip" }
+                            TooltipContent { id: "nested-tooltip-content", "Nested tooltip content" }
+                        }
+                    }
                 }
             }
 

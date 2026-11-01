@@ -2,6 +2,35 @@ A slideshow of slides that the user pages through with Previous/Next buttons, th
 
 Slides snap into place with CSS scroll snapping, so touch and trackpad scrolling are native. Everything below is opt-in; a carousel with only `CarouselPrevious`, `CarouselNext` and `CarouselContent` needs no configuration.
 
+## Component Structure
+
+```rust
+// Carousel is the root: the selection, the loop and the keyboard handling. Name it with `aria_label`.
+Carousel { aria_label: "Featured photos",
+    // Optional auto-rotation. Put the rotation control first, so it is the first focusable element
+    // (the WAI-ARIA auto-rotating pattern); CarouselAutoplay renders nothing and owns the timer.
+    CarouselRotationControl { Play {} }
+    CarouselAutoplay { delay_ms: 4000u64 }
+    // Optional dot pickers, a tablist of one CarouselIndicator per slide.
+    CarouselIndicators {
+        CarouselIndicator { index: 0usize }
+        CarouselIndicator { index: 1usize }
+    }
+    // The buttons come before the track in the markup, so they come first in the Tab order.
+    CarouselPrevious { ChevronLeft {} }
+    CarouselNext { ChevronRight {} }
+    // CarouselContent is the scrolling track; each CarouselItem is one slide, `index` counting from 0.
+    CarouselContent {
+        CarouselItem { index: 0usize, "Slide 1" }
+        CarouselItem { index: 1usize, "Slide 2" }
+    }
+    // For a long list, CarouselVirtualContent::<T> takes the place of CarouselContent and its items and
+    // renders only a window of the slides.
+}
+```
+
+Only `Carousel` and `CarouselContent` with its items are required. `use_carousel()` reads the nearest `Carousel` from any component rendered inside it, for a custom counter or picker.
+
 ## Quick start
 
 ```rust

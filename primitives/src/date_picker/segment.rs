@@ -157,6 +157,76 @@ pub(super) fn push_commit_text_effects<T: SegmentInt + Copy + FromStr>(
     effects.push(DateSegmentEffect::EmitValue(value));
 }
 
+/// Whether a modified character key edits the segment's text node by default, so the segment
+/// cancels it: paste, cut, undo, redo and the bold, italic and underline shortcuts
+/// (`ctrl_or_meta`), and a non-ASCII glyph composed with a modifier (macOS Option+key). Every other
+/// shortcut (copy, select all, reload, the browser's tab keys) passes through.
+pub(super) fn is_text_editing_shortcut(character: &str, ctrl_or_meta: bool) -> bool {
+    if !character.is_ascii() {
+        return true;
+    }
+    ctrl_or_meta
+        && matches!(
+            character.to_ascii_lowercase().as_str(),
+            "v" | "x" | "z" | "y" | "b" | "i" | "u"
+        )
+}
+
+/// The keys that stand for an edit the browser already applied to the segment's text: `before` is
+/// the text the vdom rendered, `after` the text the DOM holds when `input` fires. The part of
+/// `after` between the unchanged prefix and suffix is what was inserted; its digits are the typed
+/// digits, and a pure deletion is one Backspace. Anything else (a letter, a whitespace) edits
+/// nothing. The caller replays them through [`date_segment_key_effects`], the same function a
+/// keydown goes through, so a virtual keyboard or an IME (whose keydown carries no usable key)
+/// types into the segment like a physical key.
+pub(super) fn dom_edit_keys(before: &str, after: &str) -> Vec<Key> {
+    let before: Vec<char> = before.chars().collect();
+    let after: Vec<char> = after.chars().collect();
+    let shortest = before.len().min(after.len());
+    let prefix = before
+        .iter()
+        .zip(&after)
+        .take_while(|(a, b)| a == b)
+        .count();
+    let suffix = before
+        .iter()
+        .rev()
+        .zip(after.iter().rev())
+        .take_while(|(a, b)| a == b)
+        .count()
+        .min(shortest - prefix);
+    let inserted = &after[prefix..after.len() - suffix];
+    let removed = before.len() - prefix - suffix;
+    let digits: Vec<Key> = inserted
+        .iter()
+        .filter(|c| c.is_ascii_digit())
+        .map(|c| Key::Character(c.to_string()))
+        .collect();
+    if digits.is_empty() && inserted.is_empty() && removed > 0 {
+        vec![Key::Backspace]
+    } else {
+        digits
+    }
+}
+
+/// The text buffer and reset flag after `effects` were applied, for replaying several keys in one
+/// event without waiting for the render that updates the segment's `text_value`.
+pub(super) fn text_state_after<T: Display>(
+    effects: &[DateSegmentEffect<T>],
+    mut buffer: String,
+    mut reset: bool,
+) -> (String, bool) {
+    for effect in effects {
+        match effect {
+            DateSegmentEffect::EmitValue(Some(value)) => buffer = value.to_string(),
+            DateSegmentEffect::EmitValue(None) => buffer.clear(),
+            DateSegmentEffect::ConsumeReset => reset = false,
+            _ => (),
+        }
+    }
+    (buffer, reset)
+}
+
 /// Whether a key edits the segment's value (a digit or other character, Backspace, Delete, the Up
 /// and Down steps, Home and End), as opposed to moving focus between segments.
 pub(super) fn is_edit_key(key: &Key) -> bool {
@@ -267,8 +337,13 @@ pub(super) fn date_segment_key_effects<T: SegmentInt + Copy + FromStr>(
     let mut effects = Vec::new();
     match key {
         Key::Character(actual_char) => {
-            // Don't block keyboard shortcuts
+            // A shortcut passes through to the browser, except the ones that edit the text node
+            // the vdom owns (paste, cut, undo, redo, bold, italic, underline) and a glyph that a
+            // modifier composed (macOS Option+key).
             if ctrl || meta || alt {
+                if is_text_editing_shortcut(actual_char, ctrl || meta) {
+                    effects.push(DateSegmentEffect::PreventDefault);
+                }
                 return effects;
             }
             if actual_char.parse::<T>().is_ok() {
@@ -284,7 +359,10 @@ pub(super) fn date_segment_key_effects<T: SegmentInt + Copy + FromStr>(
             effects.push(DateSegmentEffect::PreventDefault);
             effects.push(DateSegmentEffect::StopPropagation);
         }
+        // Backspace and Delete edit the value through the effects below; the browser's own
+        // deletion would edit the text node the vdom writes.
         Key::Backspace => {
+            effects.push(DateSegmentEffect::PreventDefault);
             let mut text = current_text.to_string();
             if ctrl || meta {
                 text.clear();
@@ -294,9 +372,13 @@ pub(super) fn date_segment_key_effects<T: SegmentInt + Copy + FromStr>(
             push_commit_text_effects(&mut effects, &text, min, max);
         }
         Key::Delete => {
-            let mut text = current_text.to_string();
-            text.remove(0);
-            push_commit_text_effects(&mut effects, &text, min, max);
+            effects.push(DateSegmentEffect::PreventDefault);
+            // An untouched segment has no text to drop a character from.
+            if !current_text.is_empty() {
+                let mut text = current_text.to_string();
+                text.remove(0);
+                push_commit_text_effects(&mut effects, &text, min, max);
+            }
         }
         Key::ArrowLeft => {
             effects.push(DateSegmentEffect::FocusPrevious);
@@ -356,9 +438,27 @@ pub(super) fn date_segment_key_effects<T: SegmentInt + Copy + FromStr>(
         Key::End => {
             effects.push(DateSegmentEffect::EmitValue(Some(max)));
         }
+        // Keys whose default action inserts or rewrites text without a character to match: an IME
+        // or dead-key stage, the Insert-key paste and cut keys.
+        Key::Unidentified | Key::Process | Key::Dead | Key::Insert | Key::Cut | Key::Paste => {
+            effects.push(DateSegmentEffect::PreventDefault);
+        }
         _ => (),
     }
     effects
+}
+
+/// The text of a segment: one text node the vdom writes. A new `generation` makes the vdom create
+/// a fresh node and remove the old one, whatever the browser did to it, so the DOM shows `text`
+/// again even when `text` did not change (a keyed list is the only place the vdom compares keys,
+/// hence the one-item loop).
+#[component]
+pub(super) fn SegmentText(generation: u32, text: String) -> Element {
+    rsx! {
+        for generation in [generation] {
+            Fragment { key: "{generation}", "{text}" }
+        }
+    }
 }
 
 #[component]
@@ -424,6 +524,47 @@ pub(super) fn DateSegment<T: Clone + Copy + SegmentInt + FromStr + Display + 'st
     });
 
     let direction = use_direction(None);
+
+    // The effects of one key, and the state they leave behind: the one function a keydown and a
+    // replayed input edit both go through. The buffer and the reset flag are arguments so a replay
+    // of several keys sees each key's result before the render that updates the signals.
+    let key_effects =
+        move |key: &Key, modifiers: SegmentKeyModifiers, buffer: &str, reset: bool| {
+            // A read-only segment keeps focus and its focus keys but turns every edit key into
+            // nothing (`read_only_key_effects`), before any value is computed.
+            if ctx.is_read_only() && is_edit_key(key) {
+                read_only_key_effects(key, modifiers)
+            } else {
+                date_segment_key_effects(
+                    key,
+                    modifiers,
+                    SegmentTextState {
+                        current_text: buffer,
+                        max_length: props.max_length,
+                        reset,
+                    },
+                    SegmentValueBounds {
+                        current_value: (props.value)(),
+                        default: props.default,
+                        min: props.min.cloned(),
+                        max: props.max.cloned(),
+                        wrap: props.wrap,
+                    },
+                )
+            }
+        };
+    let mut apply_effects = move |effects: &[DateSegmentEffect<T>]| {
+        for effect in effects {
+            match effect {
+                DateSegmentEffect::EmitValue(value) => props.on_value_change.call(*value),
+                DateSegmentEffect::FocusPrevious => ctx.focus.focus_prev(),
+                DateSegmentEffect::FocusNext => ctx.focus.focus_next(),
+                DateSegmentEffect::ConsumeReset => reset_value.set(false),
+                DateSegmentEffect::PreventDefault | DateSegmentEffect::StopPropagation => (),
+            }
+        }
+    };
+
     let handle_keydown = move |event: Event<KeyboardData>| {
         // RTL mirrors the horizontal pair (`Direction::ltr_equivalent`): the
         // segments sit in a row that mirrors with `dir`.
@@ -434,39 +575,37 @@ pub(super) fn DateSegment<T: Clone + Copy + SegmentInt + FromStr + Display + 'st
             meta: modifiers.meta(),
             alt: modifiers.alt(),
         };
-        // A read-only segment keeps focus and its focus keys but turns every edit key into
-        // nothing (`read_only_key_effects`), before any value is computed.
-        let effects = if ctx.is_read_only() && is_edit_key(&key) {
-            read_only_key_effects(&key, modifiers)
-        } else {
-            date_segment_key_effects(
-                &key,
-                modifiers,
-                SegmentTextState {
-                    current_text: &text_value(),
-                    max_length: props.max_length,
-                    reset: reset_value(),
-                },
-                SegmentValueBounds {
-                    current_value: (props.value)(),
-                    default: props.default,
-                    min: props.min.cloned(),
-                    max: props.max.cloned(),
-                    wrap: props.wrap,
-                },
-            )
-        };
-
-        for effect in effects {
+        let effects = key_effects(&key, modifiers, &text_value(), reset_value());
+        apply_effects(&effects);
+        for effect in &effects {
             match effect {
-                DateSegmentEffect::EmitValue(value) => props.on_value_change.call(value),
-                DateSegmentEffect::FocusPrevious => ctx.focus.focus_prev(),
-                DateSegmentEffect::FocusNext => ctx.focus.focus_next(),
-                DateSegmentEffect::ConsumeReset => reset_value.set(false),
                 DateSegmentEffect::PreventDefault => event.prevent_default(),
                 DateSegmentEffect::StopPropagation => event.stop_propagation(),
+                _ => (),
             }
         }
+    };
+
+    // The vdom is the only writer of the segment's text node. Every editing default action the
+    // events can cancel is cancelled (keys above, `paste`, `cut` and `drop` below); one that cannot
+    // be cancelled in time, because the keydown of an IME or a virtual keyboard carries no usable
+    // key, reaches `input` with the DOM already edited. That edit is read back as the keys it stands
+    // for, replayed through the key effects, and `resync` re-creates the text node so the DOM
+    // shows the rendered value whether or not the value changed.
+    let mut resync = use_signal(|| 0_u32);
+    let handle_input = move |event: Event<FormData>| {
+        let keys = if ctx.is_read_only() {
+            Vec::new()
+        } else {
+            dom_edit_keys(&display_value(), &event.value())
+        };
+        let (mut buffer, mut reset) = (text_value(), reset_value());
+        for key in keys {
+            let effects = key_effects(&key, SegmentKeyModifiers::default(), &buffer, reset);
+            apply_effects(&effects);
+            (buffer, reset) = text_state_after(&effects, buffer, reset);
+        }
+        resync += 1;
     };
 
     let disabled = move || (ctx.disabled)();
@@ -534,6 +673,10 @@ pub(super) fn DateSegment<T: Clone + Copy + SegmentInt + FromStr + Display + 'st
     rsx! {
         span {
             onkeydown: handle_keydown,
+            oninput: handle_input,
+            onpaste: |event: Event<ClipboardData>| event.prevent_default(),
+            oncut: |event: Event<ClipboardData>| event.prevent_default(),
+            ondrop: |event: Event<DragData>| event.prevent_default(),
             onmounted,
             onfocus: move |_| {
                 reset_value.set(true);
@@ -543,7 +686,7 @@ pub(super) fn DateSegment<T: Clone + Copy + SegmentInt + FromStr + Display + 'st
                 }
             },
             ..merged,
-            {display_value}
+            SegmentText { generation: resync(), text: display_value() }
         }
     }
 }

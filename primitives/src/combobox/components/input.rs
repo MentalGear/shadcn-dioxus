@@ -97,21 +97,10 @@ pub fn ComboboxInput(props: ComboboxInputProps) -> Element {
             ctx.handles.focus_chip(None, true, chips);
             event.prevent_default();
         }
+        // The web arm's open list closes on Escape through the dismiss core (`ComboboxListRendered`,
+        // wherever focus is); the arm without script closes it here.
+        #[cfg(not(feature = "web"))]
         Key::Escape if open() => {
-            // No wasm carve-out here, unlike `Select`/`DropdownMenu`:
-            // `ComboboxListRendered`'s web arm renders `popover="manual"`
-            // (`list.rs`), not `auto` -- see that component's doc for why
-            // (`auto`'s light dismiss closes this
-            // popup on *any* external click, including ones this
-            // component's own demos/tests rely on leaving it open across,
-            // e.g. `combobox.spec.ts`'s "dynamic option removal" case).
-            // WHATWG HTML's popover light-dismiss algorithm -- the thing a
-            // `prevent_default()` here would otherwise race -- only ever
-            // applies to `auto`/`hint` popovers, so a `manual` popover has
-            // no Escape-triggered close of its own to suppress here on any
-            // target; this stays the sole, unconditional dismissal path,
-            // matching `ContextMenuContentRendered`'s identical `manual`
-            // reasoning (`context_menu.rs`).
             ctx.set_open(false);
             event.prevent_default();
             event.stop_propagation();
@@ -119,7 +108,7 @@ pub fn ComboboxInput(props: ComboboxInputProps) -> Element {
         // Escape on a closed list clears the selection (every chip of a multi-select); the closed
         // input then shows no label. A surrounding dialog keeps its Escape for the press that has
         // nothing left to clear (Base UI `ComboboxInput`, row 478).
-        Key::Escape if !ctx.selectable.values.peek().is_empty() => {
+        Key::Escape if !open() && !ctx.selectable.values.peek().is_empty() => {
             ctx.clear();
             event.prevent_default();
             event.stop_propagation();

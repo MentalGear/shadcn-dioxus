@@ -1,7 +1,7 @@
 ---
 id: 422
 title: "Component pages: group the sections every page shares under one header, component-specific sections under another"
-status: "BACKLOG, outline approved by the owner 2026-10-25 (backlog thread): build it as below. Docs stage…"
+status: "BUILT on lane/docs-groups-422 (2026-10-31), awaiting the merge batch. The owner approved the…"
 size: "M"
 area: docs
 updated: 2026-10-25
@@ -17,8 +17,8 @@ Put the component-specific accordion sections under another header.
 
 ## Status / trigger
 
-BACKLOG, outline approved by the owner 2026-10-25 (backlog thread): build it as below. Docs stage of the adopted order: after row 394 (the "Coming from shadcn / Radix / TanStack" table
-also adds a shared section on every page, so both decide the same layout once).
+BUILT on `lane/docs-groups-422` (2026-10-31), awaiting the merge batch. The owner approved the outline 2026-10-25;
+row 394 (the "Coming from shadcn / Radix / TanStack" table) is NOT PLANNED, so the Basic group carries no table from it.
 
 ## Size
 
@@ -41,3 +41,19 @@ once in the generator, not per `docs.md`.
 
 Decide the grouping once in `preview/build.rs` / `site/component_page.rs`; a `docs.md` names no group. A gate or test
 should pin that every page renders the Basic group in that order and that the recurring-topic tail keeps its order.
+
+## Built (2026-10-31)
+
+- `preview/docs_groups.rs` (included by `build.rs` and `src/main.rs`) is the one definition: `BASIC_ORDER`, `TAIL`
+  (matched by whole-word, case-insensitive heading prefix, `tail_rank`) and `page_position`, the sort key `build.rs` orders
+  `docs_sections.rs` by. `site/component_page.rs` renders Basic from `BASIC_ORDER` (Installation is written there) and
+  Component-Specific in the generated order; an empty Component-Specific group is omitted.
+- Outline: page `h1`, group `h2` ("Basic", "Component-Specific", "Examples"), item `h3`, a `###` of a docs.md as `h4`, a
+  props struct as `h4`, a doc-comment heading as `h5`. The hash handler matches the item `h3`.
+- A docs.md writes "Component Structure" in any case; `build.rs` retitles it "Component structure". Ten pages had none
+  (area_chart, bar_chart, carousel, chart, chart_tooltip, line_chart, pie_chart, radar_chart, radial_chart, top_layer)
+  and gained a real section; `tag_group` wrote it as "Structure" and was renamed.
+- Pins: `cargo test -p preview` `every_page_orders_its_docs_sections_by_group` (every `DEMOS` entry: Basic present once each
+  and in order, own sections in docs.md order, tail last and in order) plus `docs_groups` unit tests;
+  `playwright/docs-structure.spec.ts` tests 2 and 3 on the rendered pages.
+- Every page has Usage notes text, so the "no Usage notes" case does not occur; the page skips the item if it ever does.

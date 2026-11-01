@@ -88,7 +88,7 @@
  * `page.getByRole("menu", { name: "More tools" })`, not
  * `page.getByRole("menu").filter({ has: page.getByRole("menuitem", { name:
  * "Rename" }) })`. A nested submenu's `role="menu"` popup is, by design (see
- * `crate::menu_sub`'s module doc and each `*SubContentRendered`'s own doc,
+ * `crate::menu_sub`'s module doc and each `MenuSubContentRendered`'s own doc,
  * `primitives/src/{dropdown_menu,context_menu}.rs`), a genuine DOM
  * descendant of the *root* menu's own `role="menu"` content -- the same
  * "nested `popover=auto` stacking" shape Radix and native OS menus use, and
@@ -375,7 +375,7 @@ test.describe("APG Menu and Menubar pattern — DropdownMenu.Sub", () => {
   // trigger again, so a timer that only the trigger can cancel would fire
   // ~200ms later and close the submenu out from under the pointer, while it
   // still hovers the content. The hover timers therefore live on the shared
-  // `SubMenuState` (`primitives/src/menu_sub.rs`) so `*SubContentRendered`
+  // `SubMenuState` (`primitives/src/menu_sub.rs`) so `MenuSubContentRendered`
   // can cancel/reschedule the same timer from its own `onmouseenter`/
   // `onmouseleave`. This test drives real intermediate `mousemove` events
   // (via `page.mouse.move(..., { steps })`) from the trigger, across the

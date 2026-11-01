@@ -27,14 +27,6 @@ impl CheckboxState {
             CheckboxState::Unchecked => "false",
         }
     }
-
-    fn to_data_state(self) -> &'static str {
-        match self {
-            CheckboxState::Checked => "checked",
-            CheckboxState::Indeterminate => "indeterminate",
-            CheckboxState::Unchecked => "unchecked",
-        }
-    }
 }
 
 impl From<CheckboxState> for bool {
@@ -313,34 +305,28 @@ fn BubbleInput(
         move || default_checked != CheckboxState::Unchecked,
     );
 
-    // Update the actual input state to match our virtual state.
+    // The live `checked` property follows the `checked` attribute below (Dioxus writes it as a
+    // property whenever the value changes), so a tap on a checked or unchecked box runs no script.
+    // `indeterminate` has no attribute: only a box that is, or has just stopped being,
+    // indeterminate sets that one property from script.
+    let was_indeterminate = use_hook(|| std::cell::Cell::new(false));
     use_effect(move || {
-        let checked = checked();
+        let indeterminate = checked() == CheckboxState::Indeterminate;
+        if !indeterminate && !was_indeterminate.get() {
+            return;
+        }
+        was_indeterminate.set(indeterminate);
         let js = eval(
             r#"
             let id = await dioxus.recv();
-            let action = await dioxus.recv();
+            let indeterminate = await dioxus.recv();
             let input = document.getElementById(id);
-
-            switch(action) {
-                case "checked":
-                    input.checked = true;
-                    input.indeterminate = false;
-                    break;
-                case "indeterminate":
-                    input.indeterminate = true;
-                    input.checked = true;
-                    break;
-                case "unchecked":
-                    input.checked = false;
-                    input.indeterminate = false;
-                    break;
-            }
+            if (input) input.indeterminate = indeterminate;
             "#,
         );
 
         let _ = js.send(id());
-        let _ = js.send(checked.to_data_state());
+        let _ = js.send(indeterminate);
     });
 
     // All owned: `id` is looked up by the `use_effect` eval above and by
@@ -354,9 +340,9 @@ fn BubbleInput(
         tabindex: "-1",
         // The `checked` content attribute: the server HTML carries it (so a no-script form post
         // and the parser's `.defaultChecked` are right before hydration) and a client-created
-        // input gets the live state from it. The default for `<form reset>` is
-        // `use_default_checked` above; the live property is also kept in sync by the
-        // `use_effect` above. Never `initial_checked` (row 253, `default_checked.rs`).
+        // input gets the live state from it, and every later change is written as the live property.
+        // The default for `<form reset>` is `use_default_checked` above. Never `initial_checked`
+        // (row 253, `default_checked.rs`).
         checked: checked() != CheckboxState::Unchecked,
     });
     let merged = merge_attributes(vec![attributes, owned]);

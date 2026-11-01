@@ -58,7 +58,7 @@ test.describe("style tab", () => {
     // reader opens Installation, then the manual files.
     const manual = page.locator(".dx-component-manual-install");
     await expect(manual).toHaveAttribute("data-open", "false");
-    await page.locator("h2#installation > button").click();
+    await page.locator("h3#installation > button").click();
     await expect(manual).toHaveAttribute("data-open", "false");
     await manual.locator("> .dx-collapsible-trigger").click();
     await expect(manual).toHaveAttribute("data-open", "true");
