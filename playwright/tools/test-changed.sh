@@ -40,7 +40,12 @@ echo "test-changed: ${#specs[@]} spec file(s) cover the diff: ${specs[*]}" >&2
 [ -n "$narrowed" ] && echo "test-changed: tests kept of the page-scoped matrix specs (CSS reaches only some pages): $narrowed" >&2
 # hydration-parity.spec.ts only RUNS attr-synth; building it is this pre-step, through the build lock (row 338).
 if grep -q 'hydration-parity\.spec\.ts$' <<<"$(printf '%s\n' "${specs[@]}")"; then tools/ensure-attr-synth.sh; fi
-extra=()
-[ -n "$grep_invert" ] && extra+=(--grep-invert "$grep_invert")
+# The `@timing` cases (playwright/timing.ts) never run beside other tests: this pass skips them, and tools/timing-pass.sh
+# runs the selected ones afterwards, alone, once the machine is quiet (dev-docs/dev-loop.md, "Running tests").
+inv="@timing"
+[ -n "$grep_invert" ] && inv="(?:$grep_invert)|@timing"
 # Not `exec`: a server site_server_ready started is stopped by this shell's EXIT trap.
-pnpm exec playwright test -c ssg.local.config.ts "${specs[@]}" ${extra[@]+"${extra[@]}"} "$@"
+rc=0
+pnpm exec playwright test -c ssg.local.config.ts "${specs[@]}" --grep-invert "$inv" --pass-with-no-tests "$@" || rc=$?
+tools/timing-pass.sh --config ssg.local.config.ts -- "${specs[@]}" || { trc=$?; [ "$rc" -ne 0 ] || rc=$trc; }
+exit "$rc"

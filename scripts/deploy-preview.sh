@@ -18,6 +18,8 @@
 # emergency fix only, and the reason is printed.
 #   DEPLOY_SUITE_WORKERS (default 3: the main loop's full-run setting), DEPLOY_SUITE_CHUNKS (default 6),
 #   DEPLOY_SUITE_PORT (default 4830).
+# The `@timing` cases (playwright/timing.ts) are not in the six chunks: a seventh pass runs them alone, one worker,
+# once the machine is quiet (playwright/tools/timing-pass.sh), and a pass that never ran counts as red.
 # The deploy suite is the one place the narrowed browser sweeps run in full (row 329: the cargo `ssr_parity` test
 # covers SSR-vs-first-render per batch): `FIRST_PAINT_ROUTES=all` (first-paint text and styles, every route) and
 # `LS_STEP=32` (layout-stability, every width on every route).
@@ -50,7 +52,10 @@ const walk = (suite, file) => {
     if (t.status === "flaky") flakyTitles.push(title);
   }
 };
-for (let i = 1; i <= Number(chunks); i++) {
+// The chunks, then the timing pass (playwright/tools/timing-pass.sh): a pass that never got a quiet machine wrote no
+// report and counts as missing, like a chunk that did not finish.
+const names = [...Array.from({ length: Number(chunks) }, (_, k) => String(k + 1)), "timing"];
+for (const i of names) {
   const f = `${dir}/chunk-${i}.json`;
   if (!fs.existsSync(f)) { missing.push(i); continue; }
   let j;

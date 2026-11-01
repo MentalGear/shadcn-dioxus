@@ -40,7 +40,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (77)
+## Open rows (78)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -121,5 +121,6 @@ proposing one is closed as out of scope (row 337 is the first).
 | [487](backlog/487-one-dismiss-core-escape-outside-dismiss-and-focus-return.md) | One dismiss core: Escape, outside dismiss and focus return for every overlay | PHASE 1 on lane/dismiss-core-487 (2026-10-31), not yet merged; phase 2 (the menu family) waits for… | M-L | overlays |
 | [488](backlog/488-bug-combobox-in-rtl-does-not-show-its-list.md) | Bug: Combobox in RTL does not show its list | BACKLOG, low priority: for much later (owner report 2026-10-31). Reproduce first. | S | overlays |
 | [489](backlog/489-menubar-items-select-on-pointerdown-touch-scroll.md) | Menubar items select on pointerdown, so a touch scroll that starts on an item selects it | BACKLOG. Found by row 435 (2026-10-31): Menubar keeps its PressStart selection model; on touch this… | S | overlays |
+| [493](backlog/493-timing-cases-run-alone-on-a-quiet-machine.md) | Timing cases run alone, on a quiet machine: the @timing tag and the timing pass | MERGE-READY on lane/main-thread-timing. Owner decision 2026-11-01 (the general rule); the evidence… | M | playwright |
 
 <!-- END GENERATED -->

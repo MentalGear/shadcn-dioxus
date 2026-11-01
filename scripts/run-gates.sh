@@ -161,6 +161,7 @@ gates=(
   "check-spec-at-rest|scripts/check-spec-at-rest.sh"
   "check-spec-font-state|scripts/check-spec-font-state.sh"
   "check-timing-relative|scripts/check-timing-relative.sh"
+  "check-timing-tags|scripts/check-timing-tags.sh"
   "check-spec-goto-hydrated|scripts/check-spec-goto-hydrated.sh"
   "check-demo-text-locators|scripts/check-demo-text-locators.sh"
   "check-slow-spec-budget|scripts/check-slow-spec-budget.sh"

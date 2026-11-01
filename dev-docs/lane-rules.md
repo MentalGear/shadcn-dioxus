@@ -234,6 +234,9 @@ Facts, all from one debug SSG build of one tree on this 4-core / 15 GB box share
   suite 1.4x faster (7,264 s -> ~5,060 s inside the lock, with the balanced chunks and the 404 fix below) but added two
   load flakes (`layout-stability` dark and `first-paint-styles` `/component/empty/`, both green alone at 2 and 3 workers).
   So: 3 workers for the main loop's full run when no build is queued; lanes stay at 2.
+- **Timing cases are not in the chunks.** `@timing` cases (`playwright/timing.ts`) run after the last chunk in one
+  pass with one worker, once the machine is quiet (`playwright/tools/timing-pass.sh`; the rule is in
+  [`dev-loop.md`](./dev-loop.md), "Running tests"). `test:changed` does the same for the timing cases it selects.
 - **Chunks, not one run**: one run holds `pw.lock` for 1.5-2 h and every other lane's specs wait behind it (they did).
   `playwright/tools/run-suite.sh --out DIR --chunks N --workers W` cuts the specs with `shard.mjs` (longest-first onto
   the lightest shard, weights from `durations.json`: the 6 chunks came out at 728-968 s each, the 8 count-balanced

@@ -70,38 +70,25 @@
  * `getByRole("list")` or `getByRole('link', ...)` against a route that also renders the sidebar
  * should be scoped the same way.
  *
- * Robustness under load (design requirement -- this
- * sandbox runs several builds/servers concurrently, so a single
- * scheduling hiccup landing inside a gesture's measurement window is a
- * real, expected occurrence, not a hypothetical): every gesture goes
- * through `assertResponsive` (`../../main-thread.ts`), which runs it up
- * to 3 times and accepts the first attempt that clears both thresholds --
- * a genuine main-thread block (row 73's shape: an infinite synchronous
- * re-trigger loop) reproduces on every single attempt, deterministically,
- * because it is a property of the code, not of scheduling; a scheduling
- * hiccup (another build's `rustc`/`dx` competing for the same 4 cores for
- * one unlucky frame) does not reproduce on a clean retry. This makes the
- * retry a strictly *more* trustworthy signal than a single run, not a
- * weaker one -- and the thresholds themselves (`LONG_TASK_THRESHOLD_MS`,
- * `INTERACTION_THRESHOLD_MS` in main-thread.ts) are never lowered to
- * compensate; only the number of chances a real pass gets to show up
- * changes. They are absolute on purpose (the Long Tasks definition is a
- * platform number, not a cost relative to some other path), and every
- * annotation carries the box's calibration time so a near-miss is read
- * against its load (backlog row 402; the per-frame cost specs compare
- * same-run measurements instead, `frame-cost.ts`). Every test records its measured maxima via
- * `test.info().annotations` regardless of outcome, so a green run's exact
- * numbers stay visible in the HTML report rather than disappearing into
- * "passed". This file also recommends running it with `PW_WORKERS=1` --
- * two Chromium tabs each opening DevTools-protocol connections and firing
- * gestures at the same 4 cores this sandbox's builds are also contending
- * for is exactly the kind of shared-resource noise the retry policy
- * exists to absorb, not a reason to add a second, self-inflicted source
- * of it. Deliberately not `test.describe.configure({ mode: "serial" })`
- * for this -- see the comment just above `test.beforeEach` further down
- * this file for why that mode's other effect
- * (stop-the-file-on-first-failure) is the wrong choice for an inventory
- * file where every subject's result is independently meaningful.
+ * Robustness (design requirement): every test here is a `@timing` case (`TIMING_TAG`, `../../timing.ts`), so the
+ * suite runner and `test:changed` never run it beside other tests: `tools/timing-pass.sh` runs it alone, one worker,
+ * once `tools/wait-quiet.sh` sees the machine idle (dev-docs/dev-loop.md, "Running tests"). Two Chromium tabs
+ * dispatching real input at the same cores, or a build on them, would move the measurement more than the code does.
+ * Within that pass a single scheduling hiccup inside a gesture's window is still possible, so every gesture goes
+ * through `assertResponsive` (`../../main-thread.ts`), which runs it up to 3 times and accepts the first attempt that
+ * clears both thresholds -- a genuine main-thread block (row 73's shape: an infinite synchronous re-trigger loop)
+ * reproduces on every attempt, deterministically, because it is a property of the code, not of scheduling; a hiccup
+ * does not reproduce on a clean retry. The thresholds themselves (`LONG_TASK_THRESHOLD_MS`,
+ * `INTERACTION_THRESHOLD_MS` in main-thread.ts) are never lowered to compensate; only the number of chances a real
+ * pass gets to show up changes. They are absolute on purpose (the Long Tasks definition is a platform number, not a
+ * cost relative to some other path), and every annotation carries the box's calibration time so a near-miss is read
+ * against its load (backlog row 402; the per-frame cost specs compare same-run measurements instead,
+ * `frame-cost.ts`). A close gesture is measured from a page at rest (`settleAnimations`): the open's own animation
+ * frames are the open's, not the close's. Every test records its measured maxima via `test.info().annotations`
+ * regardless of outcome, so a green run's exact numbers stay visible in the HTML report. Deliberately not
+ * `test.describe.configure({ mode: "serial" })`: that mode's other effect (stop the file on the first failure) is the
+ * wrong choice for an inventory where every subject's result is independently meaningful; the isolation comes from
+ * the pass, not from the file.
  *
  * Sensitivity: a handler that spins past a threshold turns the matching tests red -- a `pointerdown`
  * listener spinning 120ms (over the 50ms long-task threshold) the drawer-drag and slider-drag tests on
@@ -124,8 +111,10 @@ import { type Page } from "@playwright/test";
 import {
   installMainThreadObserver,
   assertResponsive,
+  settleAnimations,
   type GestureReport,
 } from "../../main-thread";
+import { TIMING_TAG } from "../../timing";
 import { gotoHydrated } from "../../hydration";
 import { demoFrame, demoRole, demoRoles } from "../../demo-frame";
 import { BASE_URL } from "../../base-url";
@@ -142,23 +131,8 @@ async function goto(page: Page, name: string, extra = ""): Promise<void> {
   await gotoHydrated(page, url(name, extra), { timeout: NAV_TIMEOUT });
 }
 
-// One worker, one gesture at a time is STRONGLY recommended for this file:
-// `PW_WORKERS=1` (session.local.config.ts's own env hook). Two Chromium
-// tabs each dispatching real pointer/keyboard input and running their own
-// PerformanceObserver callbacks would compete for the same handful of
-// cores this sandbox's concurrent `dx`/`rustc` builds are already
-// contending for -- exactly the kind of noise `assertResponsive`'s retry
-// exists to absorb, not a second, self-inflicted source of it.
-//
-// Deliberately NOT `test.describe.configure({ mode: "serial" })`: that
-// mode's other effect is stopping the whole file on the
-// first failure and skipping every remaining test (one red on subject 21
-// of 58 would silently skip the other 37), which is exactly the wrong
-// behaviour for a broad regression-guard inventory where every subject's
-// own pass/fail is independently meaningful. Every subject here is
-// fully independent (its own `goto`), so the only property wanted is "not
-// concurrent with each other", which `PW_WORKERS=1` already gives without
-// that side effect.
+// One gesture at a time, on a quiet machine: the file's cases are `@timing` and run in `tools/timing-pass.sh`
+// (one worker), not in the parallel pass. Every subject is fully independent (its own `goto`).
 
 test.beforeEach(async ({ browserName }) => {
   test.skip(
@@ -470,7 +444,7 @@ const OVERLAY_SUBJECTS: OverlaySubject[] = [
 ];
 
 for (const subject of OVERLAY_SUBJECTS) {
-  test(`${subject.name}: open is responsive`, async ({ page }) => {
+  test(`${subject.name}: open is responsive`, { tag: TIMING_TAG }, async ({ page }) => {
     await installMainThreadObserver(page);
     await subject.goto(page);
     const report = await assertResponsive(page, `${subject.name} open`, () => subject.open(page), {
@@ -479,11 +453,13 @@ for (const subject of OVERLAY_SUBJECTS) {
     recordReport(subject.name, "open", report);
   });
 
-  test(`${subject.name}: close is responsive`, async ({ page }) => {
+  test(`${subject.name}: close is responsive`, { tag: TIMING_TAG }, async ({ page }) => {
     await installMainThreadObserver(page);
     const toOpenState = async () => {
       await subject.goto(page);
       await subject.open(page);
+      // The open's own animation frames are not the close's: measure the close from a page at rest.
+      await settleAnimations(page);
     };
     await toOpenState();
     const report = await assertResponsive(page, `${subject.name} close`, () => subject.close(page), {
@@ -817,7 +793,7 @@ const FORM_CONTROL_SUBJECTS: FormControlSubject[] = [
 ];
 
 for (const subject of FORM_CONTROL_SUBJECTS) {
-  test(`${subject.name}: primary interaction is responsive`, async ({ page }) => {
+  test(`${subject.name}: primary interaction is responsive`, { tag: TIMING_TAG }, async ({ page }) => {
     await installMainThreadObserver(page);
     await subject.goto(page);
     const report = await assertResponsive(page, `${subject.name} interaction`, () => subject.interact(page), {

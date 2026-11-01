@@ -14,12 +14,13 @@ import { test, expect } from "./fixtures";
 import { BASE_URL, buildProfile } from "./base-url";
 import { gotoHydrated } from "./hydration";
 import { calibrationMs, frameCostMeter } from "./frame-cost";
+import { TIMING_TAG } from "./timing";
 
 /** Chunked append must cost at most this fraction of the per-row append (measured ~0.55-0.65; no chunking is ~1.0). */
 const MAX_CHUNKED_TO_PER_ROW_RATIO = 0.85;
 const ROUNDS = 3;
 
-test("appending 1,000 rows to a 2,000-row transcript while following costs less chunked than per row (release only)", async ({
+test("appending 1,000 rows to a 2,000-row transcript while following costs less chunked than per row (release only)", { tag: TIMING_TAG }, async ({
   page,
 }) => {
   // Wall time is not what is measured (main-thread task time per frame is), but a loaded box stretches the
