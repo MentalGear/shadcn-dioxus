@@ -1,6 +1,11 @@
 :where([data-dx-anchored]:is([popover], :modal)) {
   margin: 0;
   inset: auto;
+
+  /* A scrollable list in an anchored overlay contains its own overscroll: a wheel or touch past its end does
+     not chain to the page, which stays scrollable from outside the panel (backlog row 477). Zero specificity,
+     so a component sheet can still choose otherwise. */
+  overscroll-behavior: contain;
 }
 
 @supports (anchor-name: --a) {

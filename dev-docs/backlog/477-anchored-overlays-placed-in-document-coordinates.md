@@ -56,3 +56,5 @@ L
 
 - **Proof:** a device run on the owner's iPhone (keyboard up, scrolling with each overlay open, the numbers above as the baseline); Playwright specs on the top-layer, popover, select, combobox and context-menu surfaces at a phone viewport with the keyboard emulated through a `visualViewport` offset (panel gap to the anchor stays within 0.5 px while the page scrolls); release-build run for the timing specs.
 - **Does not subsume:** the scroll-lock method (row 479), the Base UI defaults of row 478, the keyboard inset of the Drawer (row 480).
+
+- Scrollable panels contain overscroll (owner 2026-10-31): `overscroll-behavior: contain` on every anchored panel (`primitives/src/top_layer/anchor.css`) and on the Select item-aligned list (`preview/src/components/select/style.css`, no `data-dx-anchored`), so a wheel past a list's end does not scroll the page; the page stays scrollable from outside the panel. Proof: `playwright/overscroll-contain.spec.ts`.
