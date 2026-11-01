@@ -293,12 +293,20 @@ fn render_docs_sections(sections: &[DocsSection]) -> String {
     out
 }
 
+/// The three menu hosts (row 435). Their item, submenu and root props are declared in the shared menu modules
+/// below, and each host names them through a `pub type` alias, so the host's own file holds no struct for them.
+const MENU_FAMILY_HOSTS: [&str; 3] = ["dropdown_menu", "context_menu", "menubar"];
+/// The shared menu modules a menu host's props table also reads (`primitives/src/<module>.rs`).
+const MENU_FAMILY_SHARED: [&str; 3] = ["menu_item", "menu_sub", "menu_root"];
+
 /// Where a component's props structs live: its primitive (`primitives/src/<name>.rs` and/or the
-/// `primitives/src/<name>/` module directory) and its styled wrapper (`src/components/<name>/component.rs`).
-/// Each file is registered with `cargo:rerun-if-changed`, so editing a prop or its doc comment re-runs this
-/// script (row 92's stale-`OUT_DIR` class); a brand-new primitive file is picked up by the next run, like a
-/// new `.md`.
-fn props_sources(name: &str) -> Vec<(&'static str, std::path::PathBuf)> {
+/// `primitives/src/<name>/` module directory), its styled wrapper (`src/components/<name>/component.rs`) and,
+/// for a menu host, the shared menu modules (`MENU_FAMILY_SHARED`). Each source is `(label, path, exported_only)`:
+/// `exported_only` is set for a shared module, whose structs the host shows only when the host exports them under a
+/// `pub type` alias (Menubar has no submenu, so it shows no `MenuSub*` table). Each file is registered with
+/// `cargo:rerun-if-changed`, so editing a prop or its doc comment re-runs this script (row 92's stale-`OUT_DIR`
+/// class); a brand-new primitive file is picked up by the next run, like a new `.md`.
+fn props_sources(name: &str) -> Vec<(&'static str, std::path::PathBuf, bool)> {
     fn rs_files(dir: &std::path::Path, out: &mut Vec<std::path::PathBuf>) {
         let Ok(entries) = std::fs::read_dir(dir) else {
             return;
@@ -315,7 +323,7 @@ fn props_sources(name: &str) -> Vec<(&'static str, std::path::PathBuf)> {
     let mut sources = Vec::new();
     let wrapper = std::path::PathBuf::from(format!("src/components/{name}/component.rs"));
     if wrapper.is_file() {
-        sources.push(("Styled component", wrapper));
+        sources.push(("Styled component", wrapper, false));
     }
     let mut primitive = Vec::new();
     let file = std::path::PathBuf::from(format!("../primitives/src/{name}.rs"));
@@ -327,7 +335,15 @@ fn props_sources(name: &str) -> Vec<(&'static str, std::path::PathBuf)> {
         &mut primitive,
     );
     primitive.sort();
-    sources.extend(primitive.into_iter().map(|path| ("Primitive", path)));
+    sources.extend(primitive.into_iter().map(|path| ("Primitive", path, false)));
+    if MENU_FAMILY_HOSTS.contains(&name) {
+        for module in MENU_FAMILY_SHARED {
+            let path = std::path::PathBuf::from(format!("../primitives/src/{module}.rs"));
+            if path.is_file() {
+                sources.push(("Primitive", path, true));
+            }
+        }
+    }
     sources
 }
 
@@ -435,10 +451,19 @@ fn render_props_section(name: &str, sections: &[DocsSection]) -> DocsSection {
     let mut body = String::new();
     // A `#[cfg(web)]`/`#[cfg(not(web))]` pair declares the same component twice: the first one is the page's.
     let mut seen = std::collections::HashSet::new();
-    for (label, path) in props_sources(name) {
+    // The host's own `pub type` aliases (already a rerun input: the host file is in `props_sources`), so a struct
+    // shared through an alias is labelled with the names a reader writes.
+    let aliases = std::fs::read_to_string(format!("../primitives/src/{name}.rs"))
+        .map(|source| props_scan::scan_aliases(&source))
+        .unwrap_or_default();
+    for (label, path, exported_only) in props_sources(name) {
         println!("cargo:rerun-if-changed={}", path.display());
         let source = std::fs::read_to_string(&path).unwrap();
         for item in props_scan::scan_props(&source) {
+            let exported = aliases.iter().any(|(_, target)| *target == item.name);
+            if exported_only && !exported {
+                continue;
+            }
             if !seen.insert((label, item.name.clone())) {
                 continue;
             }
@@ -471,6 +496,17 @@ fn render_props_section(name: &str, sections: &[DocsSection]) -> DocsSection {
                 body.push_str(&format!(
                     "<div class=\"dx-docs-props-intro\">{}</div>\n",
                     doc_html(&item.doc)
+                ));
+            }
+            if exported {
+                let names: Vec<String> = aliases
+                    .iter()
+                    .filter(|(_, target)| *target == item.name)
+                    .map(|(alias, _)| format!("<code>{}</code>", html_escape(alias)))
+                    .collect();
+                body.push_str(&format!(
+                    "<p class=\"dx-docs-muted\">Also exported as {}.</p>\n",
+                    names.join(", ")
                 ));
             }
             let plus = if spreads.is_empty() {
