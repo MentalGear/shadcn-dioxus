@@ -71,6 +71,8 @@ ports), its working form is [`js-interop.md`](./js-interop.md), and every item h
 9. The measured group, one port at a time with the old version switchable, the owner measuring on real devices after
    each: **442** (desktop proof harness) and **443** (measurement kit), **463** (freeze), **464** (carousel), **465**
    (message scroller), **466** (wheel band), then **467** (remove the old scripts per the owner's verdict).
+   Trigger on the plan's last step: **494** re-measures the `@timing` cases (deactivated since 2026-11-02, row 493) on a
+   release build and re-enables the timing pass.
 
 **Last**
 
