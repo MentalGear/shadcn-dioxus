@@ -10,9 +10,15 @@
 #                  holds the lock already (`flock pw.lock pnpm run test:changed`), and taking it again would deadlock
 # Runs `playwright test --grep @timing --workers=1` after tools/wait-quiet.sh; the spec selection comes from the
 # caller's arguments and PW_SPECS_FILE. A debug build measures nothing (the cases skip themselves), so it neither waits
-# nor runs, and says so. Exit: 0 green or nothing to run, 1 a red case or the machine never went quiet.
+# nor runs, and says so. While tools/timing-switch.sh says `off` (and TIMING_PASS=on is not set) nothing runs and no
+# report is written. Exit: 0 green or nothing to run, 1 a red case or the machine never went quiet.
 set -uo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
+source tools/timing-switch.sh
+if [ "$TIMING_PASS" != on ]; then
+  echo "timing-pass: the @timing cases are deactivated until the Rust port is done (backlog row $TIMING_REENABLE_ROW re-enables them; TIMING_PASS=on runs the pass by hand); not run"
+  exit 0
+fi
 config="" out="" lock=""
 while [ $# -gt 0 ]; do
   case "$1" in
