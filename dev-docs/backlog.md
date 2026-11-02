@@ -40,7 +40,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (81)
+## Open rows (82)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -124,6 +124,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [490](backlog/490-first-key-press-restyles-the-page-focus-modality-tokens-on-root.md) | The first key press restyles the whole page: focus-modality tokens are redefined on :root | BACKLOG. Found 2026-11-01 while root-causing a release-suite timing red (main-thread.spec combobox… | S-M | theme / performance |
 | [491](backlog/491-drawer-shadcn-scrollable-content-demo.md) | Drawer: add shadcn's scrollable content demo | BACKLOG (owner 2026-11-01). | S | components |
 | [492](backlog/492-bug-colorpicker-panel-clips-to-half-height-on-close.md) | Bug: ColorPicker's panel clips to about half its height when it closes | BACKLOG, bug (owner report 2026-11-01). Reproduce first. | S | overlays |
-| [493](backlog/493-timing-cases-run-alone-on-a-quiet-machine.md) | Timing cases run alone, on a quiet machine: the @timing tag and the timing pass | MERGE-READY on lane/main-thread-timing. Owner decision 2026-11-01 (the general rule); the evidence… | M | playwright |
+| [493](backlog/493-timing-cases-run-alone-on-a-quiet-machine.md) | Timing cases run alone, on a quiet machine: the @timing tag and the timing pass | The construction landed (the tag, the pass, the gate). Deactivated by owner decision 2026-11-02… | M | playwright |
+| [494](backlog/494-re-enable-the-timing-cases-after-the-rust-port.md) | Re-enable the @timing cases after the Rust port | BACKLOG, triggered: when the JavaScript plan's port rows are done (row 434 with rows 444-466, final… | S-M | playwright |
 
 <!-- END GENERATED -->

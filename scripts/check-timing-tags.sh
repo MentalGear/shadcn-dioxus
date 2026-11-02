@@ -18,6 +18,11 @@
 # asserts a bound is the business of `check-timing-relative` (a constant bound on a duration needs its reason) and is
 # tagged by hand; a `test.describe` body is not read as a case.
 #
+# It also checks the deactivation switch (playwright/tools/timing-switch.sh, row 494): while the default is
+# `off`, the row it names (`TIMING_REENABLE_ROW`) must be an open backlog row (a file in dev-docs/backlog/, not done/),
+# and timing-pass.sh, run-suite.sh and deploy-preview.sh must read the switch, so the deactivation cannot be forgotten
+# silently or bypassed by one script.
+#
 # Usage: scripts/check-timing-tags.sh [--self-test] [FILE ...]   (default: every spec under playwright/, after the
 # self-test that must turn red on the forbidden shapes)
 # Exit status: 0 when clean.
@@ -56,7 +61,23 @@ test("a", { tag: TIMING_TAG }, async () => { await f(page); });'
   exit 0
 fi
 
-if [[ $# -eq 0 ]]; then "${BASH_SOURCE[0]}" --self-test; fi
+if [[ $# -eq 0 ]]; then
+  "${BASH_SOURCE[0]}" --self-test
+  switch=playwright/tools/timing-switch.sh
+  [[ -f "$switch" ]] || { echo "check-timing-tags: $switch (the timing pass switch) is missing" >&2; exit 1; }
+  for user in playwright/tools/timing-pass.sh playwright/tools/run-suite.sh scripts/deploy-preview.sh; do
+    grep -q 'timing-switch\.sh' "$user" || { echo "check-timing-tags: $user does not read $switch" >&2; exit 1; }
+  done
+  default="$(sed -n 's/^TIMING_PASS_DEFAULT=//p' "$switch")"
+  row="$(sed -n 's/^TIMING_REENABLE_ROW=//p' "$switch")"
+  if [[ "$default" == off ]]; then
+    compgen -G "dev-docs/backlog/${row}-*.md" >/dev/null \
+      || { echo "check-timing-tags: the timing pass is off but backlog row '${row}' (TIMING_REENABLE_ROW in $switch) is not an open row in dev-docs/backlog/; re-enable the pass (TIMING_PASS_DEFAULT=on) or name the open row" >&2; exit 1; }
+    echo "check-timing-tags: timing pass deactivated, re-enabled by open row $row"
+  elif [[ "$default" != on ]]; then
+    echo "check-timing-tags: TIMING_PASS_DEFAULT in $switch must be on or off (got '$default')" >&2; exit 1
+  fi
+fi
 
 python3 -I - "$@" <<'PYEOF'
 import os

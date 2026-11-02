@@ -1,10 +1,10 @@
 ---
 id: 493
 title: "Timing cases run alone, on a quiet machine: the @timing tag and the timing pass"
-status: "MERGE-READY on lane/main-thread-timing. Owner decision 2026-11-01 (the general rule); the evidence…"
+status: "The construction landed (the tag, the pass, the gate). Deactivated by owner decision 2026-11-02…"
 size: "M"
 area: playwright
-updated: 2026-11-01
+updated: 2026-11-02
 ---
 
 # Row 493: Timing cases run alone, on a quiet machine
@@ -15,7 +15,7 @@ A test that asserts how long the main thread took (a long task, an interaction, 
 
 ## Status / trigger
 
-MERGE-READY on `lane/main-thread-timing`. Owner decision 2026-11-01 (the general rule); the evidence below is from the two reds.
+The construction landed (the tag, the pass, the gate). Deactivated by owner decision 2026-11-02 until the Rust port is done: `playwright/tools/timing-switch.sh` is off and [row 494](./494-re-enable-the-timing-cases-after-the-rust-port.md) re-enables it. Owner decision 2026-11-01 (the general rule); the evidence below is from the two reds.
 
 ## Size
 

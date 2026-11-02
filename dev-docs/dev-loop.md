@@ -64,6 +64,9 @@ changes"). Every gate before every commit is `scripts/run-gates.sh`.
   timing cases measure nothing and skips the wait. By hand: `pnpm exec playwright test --grep @timing --workers=1`, with
   nothing else running (`scripts/lane-lock.sh --status`). A close or other second gesture is measured from a page at rest
   (`settleAnimations`, `playwright/main-thread.ts`), so the first gesture's animation frames are not charged to it.
+  **Currently deactivated** (owner 2026-11-02, until the Rust port is done): `playwright/tools/timing-switch.sh` is off, the
+  timing pass prints that and does not run, and the deploy does not count its missing report; `TIMING_PASS=on` runs it by
+  hand. Row 494 re-enables it.
 - **One spec by hand.** Playwright's positional file arguments are substring matches against every spec path:
   `pnpm exec playwright test select.spec.ts` also runs `native_select.spec.ts`. Anchor it (`./select.spec.ts`, or a path
   with a `/`) or filter by title with `--grep`/`-g <regex>`; `--repeat-each <N>`, `--reporter=line` and `--grep-invert`
