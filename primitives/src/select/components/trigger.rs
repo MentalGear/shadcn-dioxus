@@ -113,6 +113,8 @@ pub fn SelectTrigger(props: SelectTriggerProps) -> Element {
     // `use_id_or(ctx.dialog_labelledby, props.id)` (`dialog.rs`).
     let id = use_id_or(ctx.selectable.trigger_id, props.id);
     let mut press = use_signal(|| TriggerPress::None);
+    // The task that opens the list one task after a mouse press; an Escape in that gap cancels it.
+    let mut pending_open = use_signal(|| None::<dioxus::core::Task>);
     // A mouse press whose `click` never reached the trigger (the button was released over the list)
     // must not swallow the next click once the list is closed.
     use_effect(move || {
@@ -284,10 +286,12 @@ pub fn SelectTrigger(props: SelectTriggerProps) -> Element {
                         // trigger: the list takes focus from the trigger then, and nothing hands
                         // it back. The press has also marked the page as pointer-driven by then,
                         // so the option the list focuses paints no keyboard ring.
-                        spawn(async move {
+                        let task = spawn(async move {
                             crate::sleep::sleep(std::time::Duration::ZERO).await;
+                            pending_open.set(None);
                             ctx.open_for_pointer(false);
                         });
+                        pending_open.set(Some(task));
                     }
                 } else {
                     press.set(TriggerPress::Other);
@@ -327,11 +331,13 @@ pub fn SelectTrigger(props: SelectTriggerProps) -> Element {
                         event.prevent_default();
                         event.stop_propagation();
                     }
-                    // The web arm's Escape is the dismiss core's (`SelectListRendered`), also for a
-                    // trigger that keeps focus (the Alt+ArrowDown open); the arm without script keeps
-                    // this one.
-                    #[cfg(not(feature = "web"))]
-                    Key::Escape if open() => {
+                    // Escape is the trigger's own, on every arm: the list's dismiss layer registers on
+                    // the page only after the list has rendered, and a key that arrives in that gap
+                    // (or before the open task of a press has run) is closed or cancelled here.
+                    Key::Escape if open() || pending_open.peek().is_some() => {
+                        if let Some(task) = pending_open.write().take() {
+                            task.cancel();
+                        }
                         ctx.set_open(false);
                         event.prevent_default();
                         event.stop_propagation();

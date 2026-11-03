@@ -279,8 +279,9 @@ fn select_list_onkeydown(mut ctx: SelectContext) -> impl FnMut(KeyboardEvent) {
 ///
 /// - **Escape**, **an outside press** and **focus leaving**: the dismiss core
 ///   ([`crate::dismiss::Policy::ESCAPE_PRESS_AND_FOCUS`]) on the list. Escape closes the list
-///   wherever focus is (on the list or an option, or on the trigger after an Alt+ArrowDown open)
-///   and cancels the key, so an enclosing dialog stays open; a mouse press outside dismisses at
+///   while focus is on the list or an option and cancels the key, so an enclosing dialog stays
+///   open (on the trigger, `SelectTrigger`'s own Escape arm takes the key, also before this layer
+///   has registered on the page); a mouse press outside dismisses at
 ///   once, a touch or pen press as a tap, so a page scroll that starts outside leaves the list
 ///   open. This listbox's own `onblur` and an individual option's (`option.rs`) also close it when
 ///   focus leaves the whole widget. An outside press or focus leaving lands on
