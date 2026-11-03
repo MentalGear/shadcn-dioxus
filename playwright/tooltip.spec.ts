@@ -133,6 +133,7 @@ test.describe("delay / close_delay (backlog row 166)", () => {
     await button(page, "Default (0)").hover();
     await expect(surface(page)).toBeVisible();
     // Less than the default's 600 ms; no tighter bound, which would be a debug-build timing claim.
+    // timing-bound-ok: the page's own event stamps against the 600 ms delay that would otherwise delay it, a relation to the configured delay, not a budget for the machine
     expect(elapsed(await readProbe(page), "pointerover", "surface:open")!).toBeLessThan(600);
   });
 
@@ -141,6 +142,7 @@ test.describe("delay / close_delay (backlog row 166)", () => {
     await startProbe(page);
     await button(page, "Rests (600)").focus();
     await expect(surface(page)).toBeVisible();
+    // timing-bound-ok: the page's own event stamps against the 600 ms delay that would otherwise delay it, a relation to the configured delay, not a budget for the machine
     expect(elapsed(await readProbe(page), "focusin", "surface:open")!).toBeLessThan(600);
   });
 
@@ -152,6 +154,7 @@ test.describe("delay / close_delay (backlog row 166)", () => {
     await clearProbe(page);
     await page.evaluate(() => (document.activeElement as HTMLElement).blur());
     await expect(openSurface(page)).toHaveCount(0);
+    // timing-bound-ok: the page's own event stamps against the 600 ms delay that would otherwise delay it, a relation to the configured delay, not a budget for the machine
     expect(elapsed(await readProbe(page), "focusout", "surface:closed")!).toBeLessThan(600);
   });
 
