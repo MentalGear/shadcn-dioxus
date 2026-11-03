@@ -41,7 +41,8 @@ echo "test-changed: ${#specs[@]} spec file(s) cover the diff: ${specs[*]}" >&2
 # hydration-parity.spec.ts only RUNS attr-synth; building it is this pre-step, through the build lock (row 338).
 if grep -q 'hydration-parity\.spec\.ts$' <<<"$(printf '%s\n' "${specs[@]}")"; then tools/ensure-attr-synth.sh; fi
 # The `@timing` cases (playwright/timing.ts) never run beside other tests: this pass skips them, and tools/timing-pass.sh
-# runs the selected ones afterwards, alone, once the machine is quiet (dev-docs/dev-loop.md, "Running tests").
+# runs the selected ones afterwards, alone, once the machine is quiet (dev-docs/dev-loop.md, "Running tests"). While
+# tools/timing-switch.sh says `off` that pass prints it is deactivated and runs nothing.
 inv="@timing"
 [ -n "$grep_invert" ] && inv="(?:$grep_invert)|@timing"
 # Not `exec`: a server site_server_ready started is stopped by this shell's EXIT trap.

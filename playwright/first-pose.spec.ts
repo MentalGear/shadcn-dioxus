@@ -1,6 +1,7 @@
 import { test, expect } from "./fixtures";
 import type { Page } from "@playwright/test";
 import { gotoHydrated } from "./hydration";
+import { installFrameRecorder, readFrames } from "./frame-recorder";
 import { BASE_URL } from "./base-url";
 
 /**
@@ -117,21 +118,13 @@ test("carousel: Next is enabled at opacity 1 in the server HTML and on every fra
   expect(nextTag![0]).not.toMatch(/\bdisabled\b/);
 
   // Sample the first frames of a hydrating document.
-  await page.addInitScript(() => {
-    const samples: { opacity: number; disabled: boolean }[] = [];
-    (window as unknown as { __nextSamples: typeof samples }).__nextSamples = samples;
-    const tick = () => {
-      const el = document.querySelector('[aria-label="Next slide"]') as HTMLButtonElement | null;
-      if (el) samples.push({ opacity: Number(getComputedStyle(el).opacity), disabled: el.disabled });
-      requestAnimationFrame(tick);
-    };
-    requestAnimationFrame(tick);
+  await installFrameRecorder(page, "__nextSamples", ({ parsed }) => {
+    const el = document.querySelector('[aria-label="Next slide"]') as HTMLButtonElement | null;
+    return el && parsed(el) ? { opacity: Number(getComputedStyle(el).opacity), disabled: el.disabled } : null;
   });
   await gotoHydrated(page, url, NAV);
   await page.waitForTimeout(1500);
-  const samples = await page.evaluate(
-    () => (window as unknown as { __nextSamples: { opacity: number; disabled: boolean }[] }).__nextSamples,
-  );
+  const samples = await readFrames<{ opacity: number; disabled: boolean }>(page, "__nextSamples");
   expect(samples.length).toBeGreaterThan(5);
   const bad = samples.filter((s) => s.opacity !== 1 || s.disabled);
   expect(bad.length, `frames where the first carousel's Next was dimmed or disabled: ${JSON.stringify(bad.slice(0, 3))}`).toBe(0);

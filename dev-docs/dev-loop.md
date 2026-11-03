@@ -55,7 +55,11 @@ changes"). Every gate before every commit is `scripts/run-gates.sh`.
   `PW_FORCE_TIMING_SPECS=1` overrides), so a green run on debug says nothing about timing.
 - **Timing cases run alone, on a quiet machine (owner 2026-11-01).** A case that asserts how long the main thread took
   (a long task, an interaction, a per-frame cost) is declared `test(title, { tag: TIMING_TAG }, ...)`
-  (`playwright/timing.ts`, the one marker; `scripts/check-timing-tags.sh` fails a case that measures time without it).
+  (`playwright/timing.ts`, the one marker; `scripts/check-timing-tags.sh` fails a case that measures time without it). A case
+  whose verdict reads the pacing of the machine without being a timing measurement is made deterministic instead:
+  a fling or flick goes through `dragOnTimeline` (`playwright/pointer-timeline.ts`, the events carry the test's
+  timestamps) and a first-frames sampler through `installFrameRecorder` (`playwright/frame-recorder.ts`, no state is
+  judged while the parser is inside the subject); the gate matches the raw forms.
   `playwright/tools/run-suite.sh` (the deploy's suite) and `test:changed` run everything else first with their workers
   (`--grep-invert @timing`), then the tagged cases in `playwright/tools/timing-pass.sh`: one worker, started only after
   `playwright/tools/wait-quiet.sh` sees no build slot held or queued and the CPUs at most 15 % busy for three 5 s windows
@@ -64,6 +68,9 @@ changes"). Every gate before every commit is `scripts/run-gates.sh`.
   timing cases measure nothing and skips the wait. By hand: `pnpm exec playwright test --grep @timing --workers=1`, with
   nothing else running (`scripts/lane-lock.sh --status`). A close or other second gesture is measured from a page at rest
   (`settleAnimations`, `playwright/main-thread.ts`), so the first gesture's animation frames are not charged to it.
+  **Currently deactivated** (owner 2026-11-02, until the Rust port is done): `playwright/tools/timing-switch.sh` is off, the
+  timing pass prints that and does not run, and the deploy does not count its missing report; `TIMING_PASS=on` runs it by
+  hand. Row 494 re-enables it.
 - **One spec by hand.** Playwright's positional file arguments are substring matches against every spec path:
   `pnpm exec playwright test select.spec.ts` also runs `native_select.spec.ts`. Anchor it (`./select.spec.ts`, or a path
   with a `/`) or filter by title with `--grep`/`-g <regex>`; `--repeat-each <N>`, `--reporter=line` and `--grep-invert`

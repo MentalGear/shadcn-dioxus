@@ -524,7 +524,7 @@ test.describe('top drawer: the closing edge is UP', () => {
   });
 });
 
-test('a real-mouse flick closes a bottom drawer; a drag-close carries on from the release point instead of easing back first', async ({ page }) => {
+test('a real-mouse drag past the close distance closes a bottom drawer; a drag-close carries on from the release point instead of easing back first', async ({ page }) => {
   await openBottom(page);
   const content = page.locator(CONTENT);
   const box = (await measureAtRest(content));

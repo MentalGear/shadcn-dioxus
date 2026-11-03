@@ -4,6 +4,7 @@ import { BASE_URL } from "./base-url";
 import { measureAtRest } from "./animations";
 import { fixedViewportBox } from "./viewport-box";
 import { gotoHydrated } from "./hydration";
+import { dragOnTimeline } from "./pointer-timeline";
 
 /** Each toast demo owns one provider whose region carries a distinct name (axe landmark-unique). */
 const region = (page: Page, name: string) => page.getByRole("region", { name });
@@ -56,7 +57,12 @@ test.describe("toast: swipe to dismiss (row 138 step 4)", () => {
 
   test("a short fast flick (velocity) dismisses", async ({ page }) => {
     const t = await show(page);
-    await drag(page, t, 25, 1, 0);
+    const b = await measureAtRest(t);
+    const x = b.x + b.width / 2;
+    const y = b.y + b.height / 2;
+    // 25 px in 10 ms, on the browser's clock rather than the round trips' (pointer-timeline.ts): 2.5 px/ms against the
+    // 0.11 px/ms the swipe needs beyond its 10 px minimum.
+    await dragOnTimeline(page, { x, y }, [{ x: x + 25, y, atMs: 10 }]);
     await expect(t).toHaveCount(0);
   });
 

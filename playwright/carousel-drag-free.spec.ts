@@ -8,6 +8,7 @@ import { test, expect } from "./fixtures";
 import { type Page } from "@playwright/test";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
+import { dragOnTimeline } from "./pointer-timeline";
 
 const GOTO_OPTS = { timeout: 20 * 60 * 1000 };
 
@@ -53,20 +54,43 @@ async function settled(page: Page, variant: Variant) {
     .toBeGreaterThanOrEqual(5);
 }
 
-/** A quick fling: `px` along the axis with no pauses (the release velocity is capped, so the coast length is bounded), released while still moving. `sign` is the physical direction. */
-async function fling(page: Page, variant: Variant, px: number, sign: 1 | -1) {
+/**
+ * Records the track's scroll position at the release (capture phase, before the carousel's own handler starts the
+ * coast), so "it coasted" is judged against where the pointer let go, not against when a later read happened to run.
+ */
+async function recordRelease(page: Page, variant: Variant) {
+  await page.evaluate((v) => {
+    const track = document.querySelector(`#component-preview-frame-${v} .dx-carousel-content`) as HTMLElement;
+    const w = window as unknown as { __atRelease: number | null };
+    w.__atRelease = null;
+    window.addEventListener("pointerup", () => (w.__atRelease = Math.abs(track.scrollLeft)), { capture: true, once: true });
+  }, variant);
+}
+const scrollAtRelease = (page: Page) =>
+  page.evaluate(() => (window as unknown as { __atRelease: number | null }).__atRelease);
+
+/** The pointer is at the middle of the track; the gesture is `[{ x, y, atMs }]` after the press (pointer-timeline.ts). */
+async function trackCentre(page: Page, variant: Variant) {
   const track = frameOf(page, variant).locator(".dx-carousel-content");
   await track.scrollIntoViewIfNeeded();
   const box = (await track.boundingBox())!;
-  const x0 = box.x + box.width / 2;
-  const y = box.y + box.height / 2;
-  await page.mouse.move(x0, y);
-  await page.mouse.down();
+  return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+}
+
+/**
+ * A quick fling: `px` along the axis in eight moves 12 ms apart, released while still moving. The browser stamps the
+ * events with those times (not with when each call arrived), so on every machine the release velocity is
+ * `px / 96` px/ms: 1.46 px/ms for the 140 px used here, a coast of about 470 px, well past a slide boundary and well
+ * short of the end of the track. `sign` is the physical direction.
+ */
+async function fling(page: Page, variant: Variant, px: number, sign: 1 | -1) {
+  const { x, y } = await trackCentre(page, variant);
   const steps = 8;
-  for (let i = 1; i <= steps; i++) {
-    await page.mouse.move(x0 + (sign * px * i) / steps, y);
-  }
-  await page.mouse.up();
+  await dragOnTimeline(
+    page,
+    { x, y },
+    Array.from({ length: steps }, (_, k) => ({ x: x + (sign * px * (k + 1)) / steps, y, atMs: 12 * (k + 1) })),
+  );
 }
 
 const minEdgeDistance = (offs: number[]) => Math.min(...offs.map((o) => Math.abs(o)));
@@ -88,28 +112,30 @@ for (const variant of ["drag_free", "drag_free_rtl"] as const) {
     test("a fling coasts past a slide boundary and rests off every slide edge", async ({ page }) => {
       await goto(page, variant);
       const px = 140;
+      await recordRelease(page, variant);
       await fling(page, variant, px, toward as 1 | -1);
-      // Coasting keeps moving after the pointer is up.
-      const justAfter = (await slideOffsets(page, variant)).scroll;
       await settled(page, variant);
       const end = await slideOffsets(page, variant);
+      // Coasting keeps moving after the pointer is up.
       expect(end.scroll).toBeGreaterThan(px + 80);
-      expect(end.scroll).toBeGreaterThan(justAfter + 40);
+      expect(end.scroll).toBeGreaterThan((await scrollAtRelease(page))! + 40);
     });
 
     test("a slow drag rests where it was let go, off every slide edge", async ({ page }) => {
       await goto(page, variant);
-      const track = frameOf(page, variant).locator(".dx-carousel-content");
-      await track.scrollIntoViewIfNeeded();
-      const box = (await track.boundingBox())!;
-      const x0 = box.x + box.width / 2;
-      const y = box.y + box.height / 2;
-      await page.mouse.move(x0, y);
-      await page.mouse.down();
-      await page.mouse.move(x0 + toward * 30, y, { steps: 3 });
-      await page.mouse.move(x0 + toward * 55, y, { steps: 3 });
-      await page.waitForTimeout(250); // held still: no release velocity
-      await page.mouse.up();
+      const { x, y } = await trackCentre(page, variant);
+      // Held still for 250 ms before the release: no release velocity.
+      await dragOnTimeline(
+        page,
+        { x, y },
+        [
+          { x: x + toward * 10, y, atMs: 30 },
+          { x: x + toward * 20, y, atMs: 60 },
+          { x: x + toward * 30, y, atMs: 90 },
+          { x: x + toward * 55, y, atMs: 120 },
+        ],
+        250,
+      );
       await settled(page, variant);
       const end = await slideOffsets(page, variant);
       expect(end.scroll).toBeGreaterThan(20);
@@ -154,11 +180,11 @@ for (const variant of ["drag_free", "drag_free_rtl"] as const) {
     test("reduced motion: the released drag does not coast", async ({ page }) => {
       await page.emulateMedia({ reducedMotion: "reduce" });
       await goto(page, variant);
+      await recordRelease(page, variant);
       await fling(page, variant, 140, toward as 1 | -1);
-      const justAfter = (await slideOffsets(page, variant)).scroll;
       await page.waitForTimeout(600);
       const end = (await slideOffsets(page, variant)).scroll;
-      expect(Math.abs(end - justAfter)).toBeLessThan(2);
+      expect(Math.abs(end - (await scrollAtRelease(page))!)).toBeLessThan(2);
     });
   });
 }

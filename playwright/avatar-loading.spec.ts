@@ -1,7 +1,8 @@
 import { test, expect } from "./fixtures";
 import type { Page } from "@playwright/test";
 import { BASE_URL } from "./base-url";
-import { gotoPrerendered } from "./page-kinds";
+import { gotoPrerendered, gotoReference } from "./page-kinds";
+import { installFrameRecorder, readFrames } from "./frame-recorder";
 
 // Avatar loading semantics (backlog row 235), Base UI's: the fallback stands in for the picture in every state
 // but `loaded` -- while it loads, after an error, with no picture -- and only a loaded picture removes it, so
@@ -30,42 +31,38 @@ async function open(page: Page) {
   await page.waitForSelector('html[data-hydrated="true"]', { state: "attached", timeout: 5 * 60 * 1000 });
 }
 
+/** What one avatar shows right now: its fallback, a decoded picture, both or neither (null: the parser is still inside it). */
+interface Showing {
+  fallback: boolean;
+  loaded: boolean;
+}
+interface Sample {
+  t: number;
+  main: Showing | null;
+  delayed: Showing | null;
+}
+
 /**
- * From the first frame on, sample every animation frame: is the avatar showing anything (its fallback, or a
- * decoded picture)? Also log when the delayed fallback appears and when the page hydrated.
+ * From the first frame of the navigation on, judge what each avatar shows after every DOM-changing task and on every
+ * animation frame (`frame-recorder.ts`, `perTask`): a state is judged only once the HTML parser is past the avatar, so a document
+ * streamed in two chunks never reads as an avatar without its fallback.
  */
 async function startSampling(page: Page) {
-  await page.addInitScript(
-    ({ withFallback, delayed }) => {
-      const w = window as unknown as Record<string, unknown>;
-      w.__blank = 0;
-      w.__frames = 0;
-      w.__delayedShownAt = null as number | null;
-      w.__hydratedAt = null as number | null;
-      const showing = (label: string) => {
-        const root = document.querySelector(`[aria-label="${label}"]`);
-        if (!root) return null;
-        const img = root.querySelector("img");
-        const loaded = !!img && img.complete && img.naturalWidth > 0;
-        return { fallback: !!root.querySelector(".dx-avatar-fallback"), loaded };
-      };
-      const tick = () => {
-        const now = performance.now();
-        if (w.__hydratedAt === null && document.documentElement.dataset.hydrated === "true") w.__hydratedAt = now;
-        const a = showing(withFallback);
-        if (a) {
-          w.__frames = (w.__frames as number) + 1;
-          if (!a.fallback && !a.loaded) w.__blank = (w.__blank as number) + 1;
-        }
-        const d = showing(delayed);
-        if (d && d.fallback && w.__delayedShownAt === null) w.__delayedShownAt = now;
-        requestAnimationFrame(tick);
-      };
-      requestAnimationFrame(tick);
-    },
-    { withFallback: WITH_FALLBACK, delayed: DELAYED_FALLBACK },
-  );
+  await installFrameRecorder(page, "__avatarStates", ({ parsed }) => {
+    const showing = (label: string) => {
+      const root = document.querySelector(`[aria-label="${label}"]`);
+      if (!root || !parsed(root)) return null;
+      const img = root.querySelector("img");
+      return { fallback: !!root.querySelector(".dx-avatar-fallback"), loaded: !!img && img.complete && img.naturalWidth > 0 };
+    };
+    const main = showing("Loading avatar with fallback");
+    const delayed = showing("Loading avatar with delayed fallback");
+    return main || delayed ? { t: performance.now(), main, delayed } : null;
+  }, { perTask: true });
 }
+
+const sampled = (page: Page) => readFrames<Sample>(page, "__avatarStates");
+const isBlank = (s: Showing | null) => s !== null && !s.fallback && !s.loaded;
 
 test("while the picture loads the fallback stays, the picture then replaces it, and no frame is blank", async ({ page }) => {
   await startSampling(page);
@@ -87,12 +84,40 @@ test("while the picture loads the fallback stays, the picture then replaces it, 
   await expect(avatar.locator("img")).toBeVisible();
   expect(await avatar.locator("img").evaluate((el: HTMLImageElement) => el.naturalWidth)).toBeGreaterThan(0);
 
-  const sampled = await page.evaluate(() => {
-    const w = window as unknown as { __blank: number; __frames: number };
-    return { blank: w.__blank, frames: w.__frames };
+  const states = (await sampled(page)).map((s) => s.main).filter((m): m is Showing => m !== null);
+  expect(states.some((m) => m.fallback && !m.loaded), "the recorder saw the fallback standing in").toBe(true);
+  expect(states.some((m) => !m.fallback && m.loaded), "the recorder saw the picture replace it").toBe(true);
+  expect(states.filter(isBlank), "states with neither the fallback nor a decoded picture").toEqual([]);
+});
+
+test("the recorder flags a blank avatar: a fallback removed by hand while the picture loads", async ({ page }) => {
+  await startSampling(page);
+  await answerSlowImageAfter(page, 60_000);
+  await open(page);
+  const avatar = page.getByLabel(WITH_FALLBACK);
+  await expect(avatar).toHaveAttribute("data-state", "loading");
+  await avatar.evaluate((el) => el.querySelector(".dx-avatar-fallback")!.remove());
+  await expect.poll(async () => (await sampled(page)).filter((s) => isBlank(s.main)).length).toBeGreaterThan(0);
+});
+
+test("the recorder does not judge a subtree the parser has not finished", async ({ page }) => {
+  await installFrameRecorder(page, "__half", ({ parsed }) => {
+    const root = document.querySelector("#root");
+    return root && parsed(root) ? { children: root.children.length } : null;
   });
-  expect(sampled.frames).toBeGreaterThan(30);
-  expect(sampled.blank).toBe(0);
+  await gotoReference(page, "about:blank");
+  // A document that is still being parsed: <div id=root> holds one child and its end tag has not arrived.
+  await page.evaluate(() => {
+    document.open();
+    document.write('<div id="root"><i></i>');
+  });
+  await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  expect(await readFrames(page, "__half"), "no state is judged while the parser is inside the subject").toEqual([]);
+  await page.evaluate(() => {
+    document.write("<b></b></div><p>after</p>");
+    document.close();
+  });
+  await expect.poll(async () => (await readFrames<{ children: number }>(page, "__half")).at(-1)?.children).toBe(2);
 });
 
 test("the picture-less avatar keeps its pulsing placeholder while it loads", async ({ page }) => {
@@ -121,7 +146,7 @@ test("delay: the fallback is held back that long, and a picture that loads withi
   await avatar.scrollIntoViewIfNeeded();
   // Still loading at hydration: no fallback yet (the root's placeholder stands in) ...
   await expect(avatar).toHaveAttribute("data-state", "loading");
-  const shownAt = async () => page.evaluate(() => (window as unknown as { __delayedShownAt: number | null }).__delayedShownAt);
+  const shownAt = async () => (await sampled(page)).find((s) => s.delayed?.fallback)?.t ?? null;
   // ... and it appears once the 600 ms are up (not instantly, not never).
   await expect(avatar.locator(".dx-avatar-fallback")).toHaveText("DF", { timeout: 10_000 });
   // The delay runs from the component's client mount, which is not observable from the DOM and happens during
@@ -135,9 +160,9 @@ test("delay: the fallback is held back that long, and a picture that loads withi
   });
   expect(wasmEnd, "the wasm module's resource timing entry").not.toBeNull();
   const waited = (await shownAt())! - wasmEnd!;
-  // 600 ms delay; 5 ms for timer coarsening (a timer may fire a tick early against performance.now()).
+  // 600 ms delay; 5 ms for timer coarsening (a timer may fire a tick early against performance.now()). A lower bound
+  // only: that the fallback does appear is the 10 s wait above, and an upper bound would measure the machine.
   expect(waited).toBeGreaterThanOrEqual(595);
-  expect(waited).toBeLessThan(4_000);
 });
 
 test("delay: a picture that loads within the delay never shows the fallback", async ({ page }) => {
@@ -149,7 +174,7 @@ test("delay: a picture that loads within the delay never shows the fallback", as
   // Outlast the 600 ms timer: a late fallback would show up now.
   await page.waitForTimeout(1_200);
   await expect(avatar.locator(".dx-avatar-fallback")).toHaveCount(0);
-  expect(await page.evaluate(() => (window as unknown as { __delayedShownAt: number | null }).__delayedShownAt)).toBeNull();
+  expect((await sampled(page)).filter((s) => s.delayed?.fallback), "states in which the delayed avatar showed its fallback").toEqual([]);
 });
 
 test("the prerendered HTML holds the fallback (no hydration mismatch), and none when a delay holds it back", async ({ request }) => {

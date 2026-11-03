@@ -17,8 +17,11 @@
 # written to OUT/chunk-timing.json. A timing case measures time, and three workers plus the lane builds of a shared box
 # move the measurement more than any code change does. `--only-chunk timing` runs just that pass; `--only-chunk N` runs
 # chunk N alone. A pass that never gets a quiet machine writes no report, and the deploy's verdict counts that as red.
+# While tools/timing-switch.sh says `off` the pass prints that it is deactivated and writes no report (`TIMING_PASS=on`
+# runs it by hand).
 set -uo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
+source tools/timing-switch.sh
 out="" chunks=8 workers=2 config=suite.local.config.ts table="" lock=${LANE_TGT:-/home/user/tgt}/pw.lock only=""
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -29,6 +32,8 @@ while [ $# -gt 0 ]; do
 done
 [ -n "$out" ] || { echo "run-suite: --out DIR is required" >&2; exit 2; }
 mkdir -p "$out"
+# Only the timing pass was asked for and it is deactivated: say so before building or serving anything.
+if [ "$only" = timing ] && [ "$TIMING_PASS" != on ]; then tools/timing-pass.sh --config "$config"; exit $?; fi
 # hydration-parity.spec.ts only runs the attr-synth binary; build it here, through the build lock, before any
 # `--list` or chunk loads the spec (row 338).
 tools/ensure-attr-synth.sh || exit 2
@@ -62,7 +67,9 @@ if [ -z "$only" ] || [ "$only" = timing ]; then
   cat "$out"/specs-*.txt > "$out/timing-specs.txt"
   PW_SPECS_FILE="$out/timing-specs.txt" tools/timing-pass.sh --config "$config" --out "$out/chunk-timing" --lock "$lock"
   trc=$?
-  w=$(cat "$out/chunk-timing.wall" 2>/dev/null || echo 0); total=$((total + w))
-  echo "timing pass: exit $trc, wall_in_lock=${w}s (one worker, after the quiet-machine wait), running total ${total}s"
+  if [ "$TIMING_PASS" = on ]; then
+    w=$(cat "$out/chunk-timing.wall" 2>/dev/null || echo 0); total=$((total + w))
+    echo "timing pass: exit $trc, wall_in_lock=${w}s (one worker, after the quiet-machine wait), running total ${total}s"
+  fi
 fi
 echo "run-suite: total wall inside the lock ${total}s"
