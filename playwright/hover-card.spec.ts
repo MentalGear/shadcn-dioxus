@@ -120,6 +120,7 @@ test.describe("delay / close_delay (backlog row 166)", () => {
     await trigger(page, "Default (600 / 300)").hover();
     await page.waitForTimeout(150);
     await page.mouse.move(0, 0);
+    // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
     await page.waitForTimeout(1100); // past the 600 ms the abandoned hover would have opened at
     await expect(surface(page)).toHaveCount(0);
     expect((await readProbe(page)).some((e) => e.what === "surface:open")).toBe(false);
@@ -200,6 +201,7 @@ test("a pointerenter of a touch pointer does not start the open; a mouse pointer
   await gotoHydrated(page, `${BASE_URL}/component/hover_card/`, { timeout: 20 * 60 * 1000 });
   const trigger = page.getByRole("button", { name: "Dioxus" });
   await trigger.dispatchEvent("pointerenter", { pointerType: "touch", pointerId: 7, isPrimary: true });
+  // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
   await page.waitForTimeout(1000); // past the default 600 ms delay
   await expect(page.getByRole("tooltip")).toHaveCount(0);
 

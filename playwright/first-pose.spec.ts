@@ -76,12 +76,14 @@ for (const kind of KINDS) {
     const from = kind === "bar" ? "area" : "bar";
     await gotoHydrated(page, `${BASE_URL}/charts/${from}/`, NAV);
     // Let the source tab's own entrance finish so the recorder only sees the new tab's charts.
+    // timing-bound-ok: a settle window for real-time layout, animation or hydration after load, not the wait for an app timer; a slow machine only lengthens it
     await page.waitForTimeout(1500);
     await startChartRecorder(page);
     // Ids of charts alive before the click are excluded by recording their count first.
     const before = await page.evaluate(() => document.querySelectorAll('[data-slot="chart-svg"]').length);
     await page.locator(`a.dx-charts-tab[href*="/charts/${kind}/"]`).first().click();
     await expect(page).toHaveURL(new RegExp(`/charts/${kind}/`));
+    // timing-bound-ok: a settle window for real-time layout, animation or hydration after load, not the wait for an app timer; a slow machine only lengthens it
     await page.waitForTimeout(2500);
     const rec = await page.evaluate(() => {
       window.__poseStop();
@@ -123,6 +125,7 @@ test("carousel: Next is enabled at opacity 1 in the server HTML and on every fra
     return el && parsed(el) ? { opacity: Number(getComputedStyle(el).opacity), disabled: el.disabled } : null;
   });
   await gotoHydrated(page, url, NAV);
+  // timing-bound-ok: a settle window for real-time layout, animation or hydration after load, not the wait for an app timer; a slow machine only lengthens it
   await page.waitForTimeout(1500);
   const samples = await readFrames<{ opacity: number; disabled: boolean }>(page, "__nextSamples");
   expect(samples.length).toBeGreaterThan(5);

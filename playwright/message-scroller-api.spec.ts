@@ -99,12 +99,14 @@ test.describe("message_scroller: per-call margin and instant jumps", () => {
 
     await root.getByRole("button", { name: "Jump to turn 3", exact: true }).click();
     await expect.poll(async () => (await offsetOf(vp, "visibility-q3")) > 0).toBe(true);
+    // timing-bound-ok: a settle window for real-time layout, animation or hydration after load, not the wait for an app timer; a slow machine only lengthens it
     await page.waitForTimeout(1200); // past the settling window
     const plain = await offsetOf(vp, "visibility-q3");
 
     await setScrollTop(vp, "top");
     await root.getByRole("button", { name: "Jump with margin" }).click();
     await expect.poll(async () => (await offsetOf(vp, "visibility-q3")) - plain, { timeout: 10_000 }).toBe(24);
+    // timing-bound-ok: a settle window for real-time layout, animation or hydration after load, not the wait for an app timer; a slow machine only lengthens it
     await page.waitForTimeout(1200);
     expect((await offsetOf(vp, "visibility-q3")) - plain).toBe(24);
 
@@ -126,6 +128,7 @@ test.describe("message_scroller: per-call margin and instant jumps", () => {
     });
     await root.getByRole("button", { name: "Jump to turn 3", exact: true }).click();
     await expect.poll(async () => (await offsetOf(vp, "visibility-q3")) > 0).toBe(true);
+    // timing-bound-ok: a settle window for real-time layout, animation or hydration after load, not the wait for an app timer; a slow machine only lengthens it
     await page.waitForTimeout(1200);
     const tops = await vp.evaluate((el) => (el as unknown as { __tops: number[] }).__tops);
     // One jump to the target (a re-aim of a settling jump may add a value or two); never an animation.

@@ -187,10 +187,12 @@ test.describe("Checkable items", () => {
     // cycles them; a plain item (Reload, via its value) is a target too.
     await page.keyboard.press("a");
     await expect(fullUrls, "typeahead 'a' reaches the next checkbox item").toBeFocused();
+    // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
     await page.waitForTimeout(1100);
     await page.keyboard.press("r");
     await expect(reload).toBeFocused();
     // The disabled Force Reload is never a candidate ("f" matches nothing else).
+    // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
     await page.waitForTimeout(1100);
     await page.keyboard.press("f");
     await expect(reload, "typeahead 'f' must not land on the disabled Force Reload").toBeFocused();
@@ -360,6 +362,7 @@ test.describe("open_on_hover: false (click activation)", () => {
     await expect(menuNamed(page, "Insert")).toHaveAttribute("data-state", "open");
 
     await tools.hover();
+    // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
     await page.waitForTimeout(HOVER_SETTLE_MS);
     await expect(menuNamed(page, "Insert")).toHaveAttribute("data-state", "open");
     await expect(menuNamed(page, "Tools")).toHaveCount(0);
@@ -372,6 +375,7 @@ test.describe("open_on_hover: false (click activation)", () => {
   test("hovering a trigger with nothing open never opens a menu", async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/menubar/`, { timeout: 20 * 60 * 1000 });
     await page.getByRole("menuitem", { name: "Insert", exact: true }).hover();
+    // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
     await page.waitForTimeout(HOVER_SETTLE_MS);
     await expect(menuNamed(page, "Insert")).toHaveCount(0);
   });

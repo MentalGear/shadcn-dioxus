@@ -59,7 +59,10 @@ changes"). Every gate before every commit is `scripts/run-gates.sh`.
   whose verdict reads the pacing of the machine without being a timing measurement is made deterministic instead:
   a fling or flick goes through `dragOnTimeline` (`playwright/pointer-timeline.ts`, the events carry the test's
   timestamps) and a first-frames sampler through `installFrameRecorder` (`playwright/frame-recorder.ts`, no state is
-  judged while the parser is inside the subject); the gate matches the raw forms.
+  judged while the parser is inside the subject), and a wait on an app timer (a toast's countdown, a delay) through
+  `pauseAppClock` + `page.clock.runFor` (`playwright/app-clock.ts`; the app's timers are `setTimeout`s, so the test decides
+  when they fire); a real-time `waitForTimeout(>= 1 s or a constant)` needs the clock or `timing-bound-ok: <reason>`;
+  the gate matches the raw forms.
   `playwright/tools/run-suite.sh` (the deploy's suite) and `test:changed` run everything else first with their workers
   (`--grep-invert @timing`), then the tagged cases in `playwright/tools/timing-pass.sh`: one worker, started only after
   `playwright/tools/wait-quiet.sh` sees no build slot held or queued and the CPUs at most 15 % busy for three 5 s windows

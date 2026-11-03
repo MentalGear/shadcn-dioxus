@@ -666,6 +666,7 @@ test.describe("Rule 8 — the opening-gesture false positive: a modal Popover's 
       // "for at least 1s" -- long enough that any same-gesture false
       // dismiss (this sandbox's Chromium included, were it to regress) has
       // long since had its chance to fire.
+      // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
       await page.waitForTimeout(1000);
       await expect(content, "the popover must still be open 1s after the opening tap").toBeVisible();
 

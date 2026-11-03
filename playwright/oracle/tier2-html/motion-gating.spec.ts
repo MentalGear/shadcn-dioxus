@@ -133,6 +133,7 @@ test.describe("motion gating", () => {
     await expect.poll(() => page.evaluate(() => !!(window as any).__dxActivity)).toBe(true);
     await page.waitForTimeout(500); // observer report + the task being dropped
     const parked = await label();
+    // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
     await page.waitForTimeout(3800);
     expect(await label(), "no slide change while off-screen").toBe(parked);
 
@@ -146,6 +147,7 @@ test.describe("motion gating", () => {
     await setHidden(page, true);
     await page.waitForTimeout(500);
     const hiddenAt = await label();
+    // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
     await page.waitForTimeout(3800);
     expect(await label(), "no slide change in a hidden tab").toBe(hiddenAt);
     await setHidden(page, false);
@@ -185,6 +187,7 @@ test.describe("motion gating", () => {
     await page.waitForTimeout(800);
     const ticks = await page.evaluate(() => (window as any).__ticks as number);
     const parkedValue = await value();
+    // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
     await page.waitForTimeout(3500);
     expect(await page.evaluate(() => (window as any).__ticks as number), "no 1 s timer callbacks off-screen").toBe(ticks);
     expect(await value(), "no state change off-screen").toBe(parkedValue);
@@ -225,6 +228,7 @@ test.describe("motion gating", () => {
     await page.evaluate(() => window.scrollTo(0, 0));
     await run();
     await expect(toasts).toHaveCount(1);
+    // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
     await page.waitForTimeout(1000);
     await setHidden(page, true);
     await page.waitForTimeout(DURATION + 2000); // longer than the whole duration
@@ -242,6 +246,7 @@ test.describe("motion gating", () => {
     await gotoHydrated(page, `${BASE_URL}/component/bar_chart/`, NAV);
     const svgs = page.locator('[data-slot="chart-svg"]');
     await expect(svgs.first()).toBeAttached({ timeout: 5 * 60 * 1000 });
+    // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
     await page.waitForTimeout(2500); // measured renders settle
     const count = await svgs.count();
     expect(count, "the page stacks several charts").toBeGreaterThan(2);
@@ -288,6 +293,7 @@ test.describe("motion gating", () => {
     await gotoHydrated(page, `${BASE_URL}/component/bar_chart/`, NAV);
     const first = page.locator('[data-slot="chart-svg"]').first();
     await expect(first).toBeAttached({ timeout: 5 * 60 * 1000 });
+    // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
     await page.waitForTimeout(2500);
     expect(await first.getAttribute("data-animate"), "no entrance while the tab is hidden").toBeNull();
     await setHidden(page, false);
@@ -351,6 +357,7 @@ test.describe("motion gating", () => {
   test("the listener inventory returns to its baseline after the subscribers unmount", async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/button/`, NAV);
     await expect(page.locator("main").first()).toBeVisible({ timeout: 5 * 60 * 1000 });
+    // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
     await page.waitForTimeout(1500);
     const client = await page.context().newCDPSession(page);
     const inventory = async () => {

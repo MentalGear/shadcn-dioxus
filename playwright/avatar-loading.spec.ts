@@ -172,6 +172,7 @@ test("delay: a picture that loads within the delay never shows the fallback", as
   const avatar = page.getByLabel(DELAYED_FALLBACK);
   await expect(avatar).toHaveAttribute("data-state", "loaded", { timeout: 30_000 });
   // Outlast the 600 ms timer: a late fallback would show up now.
+  // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
   await page.waitForTimeout(1_200);
   await expect(avatar.locator(".dx-avatar-fallback")).toHaveCount(0);
   expect((await sampled(page)).filter((s) => s.delayed?.fallback), "states in which the delayed avatar showed its fallback").toEqual([]);

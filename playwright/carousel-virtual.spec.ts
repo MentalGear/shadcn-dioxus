@@ -423,6 +423,7 @@ test.describe("CarouselVirtualContent: the re-centre never paints a visible jump
     await next.dispatchEvent("click");
     // Comfortably past the paging animation, the settle, and the instant
     // re-centre correction that follows it.
+    // timing-bound-ok: a settle window for real-time layout, animation or hydration after load, not the wait for an app timer; a slow machine only lengthens it
     await page.waitForTimeout(1200);
 
     const samples: number[] = await content.evaluate(() => {

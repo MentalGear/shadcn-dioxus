@@ -77,6 +77,7 @@ const fixtureSurface = (
     else await trigger.click();
     const content = page.locator(`#${contentId}`);
     await expect(content).toBeVisible();
+    // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
     await page.waitForTimeout(PAST_QUIET);
     return content;
   },
@@ -93,6 +94,7 @@ const demoSurface = (name: string, url: string, trigger: (page: Page) => Locator
     await t.click();
     const c = content(page);
     await expect(c).toBeVisible();
+    // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
     await page.waitForTimeout(PAST_QUIET);
     return c;
   },
@@ -154,6 +156,7 @@ test.describe("policy: any scroll closes", () => {
       });
       await page.waitForTimeout(150);
       await expect(content).toBeVisible();
+      // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
       await page.waitForTimeout(PAST_QUIET);
       await page.evaluate(() => document.dispatchEvent(new Event("scroll")));
       await expect(content).toHaveCount(0);
@@ -180,9 +183,11 @@ test.describe("policy: scrolling never closes it", () => {
     test(`${s.name}: a small scroll that keeps the anchor in view leaves it open`, async ({ page }) => {
       const content = await s.open(page);
       await scrollBy(page, 30);
+      // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
       await page.waitForTimeout(PAST_QUIET);
       await expect(content).toBeVisible();
       await scrollBy(page, -60);
+      // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
       await page.waitForTimeout(PAST_QUIET);
       await expect(content).toBeVisible();
     });
@@ -190,6 +195,7 @@ test.describe("policy: scrolling never closes it", () => {
     test(`${s.name}: scrolling the anchor out of view leaves it open`, async ({ page }) => {
       const content = await s.open(page);
       await scrollAnchorOut(page, s.anchor(page));
+      // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
       await page.waitForTimeout(PAST_QUIET);
       await expect(content).toBeVisible();
     });
@@ -202,6 +208,7 @@ test.describe("policy: scrolling never closes it", () => {
       await page.setViewportSize({ width, height: Math.round(height * 0.55) });
       // what the browser does next: bring the focused field back into the remaining space
       await centre(s.anchor(page));
+      // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
       await page.waitForTimeout(PAST_QUIET);
       await expect(content).toBeVisible();
     });
@@ -213,6 +220,7 @@ test.describe("policy: scrolling never closes it", () => {
     await page.setViewportSize({ width, height: Math.round(height * 0.5) });
     await centre(page.locator("#clip-combobox-trigger"));
     await page.keyboard.type("a");
+    // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
     await page.waitForTimeout(PAST_QUIET);
     await expect(content).toBeVisible();
     await expect(page.locator("#clip-combobox-trigger")).toHaveValue("a");

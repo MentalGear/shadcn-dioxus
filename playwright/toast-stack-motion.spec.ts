@@ -3,6 +3,7 @@ import { type Page } from "@playwright/test";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 import { measureAtRest } from "./animations";
+import { pauseAppClock } from "./app-clock";
 
 /**
  * A toast that is dismissed leaves the layout at once (Sonner's model): the toasts still present
@@ -32,6 +33,8 @@ async function startSampler(page: Page, name: string, keepCollapsed = false) {
     const w = window as unknown as { __dxF: Frame[]; __dxStop: boolean };
     w.__dxF = [];
     w.__dxStop = false;
+    // The real frames, even when a spec has paused the page clock (playwright/app-clock.ts).
+    const raf = (window as unknown as { __nativeRaf?: typeof requestAnimationFrame }).__nativeRaf ?? requestAnimationFrame.bind(window);
     const tick = () => {
       const active = document.activeElement as HTMLElement | null;
       if (blur && active && reg.contains(active)) active.blur();
@@ -43,7 +46,7 @@ async function startSampler(page: Page, name: string, keepCollapsed = false) {
         items[el.id] = { y: r.top + r.height / 2, o: parseFloat(cs.opacity), ty, removed: el.dataset.removed === "true" };
       });
       w.__dxF.push({ t: performance.now(), items });
-      if (!w.__dxStop && w.__dxF.length < 900) requestAnimationFrame(tick);
+      if (!w.__dxStop && w.__dxF.length < 900) raf(tick);
     };
     tick();
   }, keepCollapsed);
@@ -166,17 +169,21 @@ test.describe("toast: a dismissal does not make the stack jump", () => {
   test("collapsed, dismissed by its timeout: the toast that stays does not move", async ({ page }) => {
     await open(page);
     await page.mouse.move(2, 2);
-    // Three timed toasts, 400ms apart: they expire oldest first (3s each), the newest stays longest.
+    // Three timed toasts, 1 s apart on the page clock: they expire oldest first (3 s each), the newest stays longest.
+    // The test, not the machine, decides when the first one runs out.
+    await pauseAppClock(page);
     const b = page.getByRole("button", { name: "Show timed toast" });
     for (let i = 0; i < 3; i++) {
       await b.click();
-      await page.waitForTimeout(400);
+      await page.clock.runFor(1_000);
     }
     const t = toasts(page, PAUSE);
     await expect(t).toHaveCount(3);
     const leaving = await t.last().evaluate((el) => el.id); // the oldest expires first
     await startSampler(page, PAUSE);
-    await expect(t).toHaveCount(2, { timeout: 8000 });
+    await page.clock.runFor(1_100); // 3.1 s after the first click: its countdown has ended
+    await page.clock.resume(); // the exit transition and the unmount run in real time; the next expiry is ~0.9 s away
+    await expect(t).toHaveCount(2);
     await page.waitForTimeout(150);
     const { motions } = analyse(await stopSampler(page), leaving);
     expect(motions.length, "a newer toast was watched throughout").toBeGreaterThan(0);

@@ -81,6 +81,7 @@ test("prefers-reduced-motion keeps the snap: no height is ever pinned or in betw
   await sampleHeights(page, 900);
   await next(page);
   await expect(form.locator("fieldset[data-active]")).toHaveCount(1);
+  // timing-bound-ok: a settle window for real-time layout, animation or hydration after load, not the wait for an app timer; a slow machine only lengthens it
   await page.waitForTimeout(1000);
   const { heights, pinned } = await sampled(page);
   const after = await form.evaluate((f) => f.getBoundingClientRect().height);
