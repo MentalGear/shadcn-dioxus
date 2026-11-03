@@ -33,6 +33,18 @@
 //! | AlertDialog (desktop) | close | no (an alert dialog never light-dismisses) | no |
 //! | the menu hosts | their own (row 435) | yes, through [`Policy::OUTSIDE`] | yes |
 //!
+//! ## The gap before a layer is on the page
+//!
+//! A layer registers on the page only after its panel has mounted (an effect on a later frame), and
+//! a pointer open runs one task after the press. An Escape that arrives between "open requested" and
+//! that registration reaches no layer, so the overlay would open and stay open. The gap is closed on
+//! the Rust side by the element that has focus while it lasts, the trigger: it reports the request
+//! ([`OpenGap`] for an open that waits a task, a timer's pending state for a hover delay) and takes
+//! Escape through [`escape_in_gap`] while the overlay is open or its open is pending, closing or
+//! cancelling it and consuming the key exactly as a registered `close` layer does. A hover surface
+//! (Tooltip, HoverCard) also keeps its layer registered from the moment its open is pending, so an
+//! Escape with focus elsewhere cancels a hover delay.
+//!
 //! The page half is still a legacy script (`dev-docs/js-interop.md`); it is the one script row 456
 //! ports.
 
@@ -207,6 +219,75 @@ impl Spec {
             press: policy.press,
             focus: policy.focus,
         }
+    }
+}
+
+/// The trigger's Escape arm for the gap before the layer is on the page (see the module doc).
+///
+/// `requested` is "the overlay is open, or its open is pending". When the key is Escape and
+/// `requested` holds, `close` runs and the key is consumed (default action cancelled, propagation
+/// stopped), as a registered `close` layer would, so an enclosing `<dialog>` keeps its own Escape.
+/// Returns whether it took the key.
+pub(crate) fn escape_in_gap(event: &KeyboardEvent, requested: bool, close: impl FnOnce()) -> bool {
+    if requested && event.key() == Key::Escape {
+        close();
+        event.prevent_default();
+        event.stop_propagation();
+        true
+    } else {
+        false
+    }
+}
+
+/// An open that runs one task after the gesture that requested it, and the state of that wait.
+///
+/// A mouse press on a trigger opens one task later, after the press's `mousedown` has moved focus
+/// onto it. Until that task has run, the overlay is neither open nor a layer, yet the user has asked
+/// for it: [`OpenGap::escape`] cancels the wait.
+#[derive(Clone, Copy)]
+pub(crate) struct OpenGap {
+    task: Signal<Option<dioxus::core::Task>>,
+}
+
+/// Create an [`OpenGap`]. A hook: call it unconditionally, once per render.
+pub(crate) fn use_open_gap() -> OpenGap {
+    OpenGap {
+        task: use_signal(|| None),
+    }
+}
+
+impl OpenGap {
+    /// Run `open` one task from now, replacing a wait already pending.
+    pub(crate) fn defer(mut self, open: impl FnOnce() + 'static) {
+        self.cancel();
+        let mut slot = self.task;
+        let task = spawn(async move {
+            crate::sleep::sleep(std::time::Duration::ZERO).await;
+            slot.set(None);
+            open();
+        });
+        self.task.set(Some(task));
+    }
+
+    /// Whether an open is waiting for its task.
+    pub(crate) fn pending(self) -> bool {
+        self.task.peek().is_some()
+    }
+
+    /// Drop the wait, if any.
+    pub(crate) fn cancel(mut self) {
+        if let Some(task) = self.task.write().take() {
+            task.cancel();
+        }
+    }
+
+    /// The trigger's Escape arm: [`escape_in_gap`] for an overlay that is `open` or waiting on this
+    /// handle. The wait is cancelled before `close` runs.
+    pub(crate) fn escape(self, event: &KeyboardEvent, open: bool, close: impl FnOnce()) -> bool {
+        escape_in_gap(event, open || self.pending(), || {
+            self.cancel();
+            close();
+        })
     }
 }
 

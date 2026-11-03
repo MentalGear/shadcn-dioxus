@@ -49,6 +49,9 @@ pub(crate) struct HoverTimers {
     close_delay: ReadSignal<u64>,
     open_timer: DelayedAction,
     close_timer: DelayedAction,
+    /// What this handle last asked for. The `open` memo catches up with a write only after the
+    /// event that made it, so a key in the same task would read the old state from the memo.
+    asked: Signal<bool>,
 }
 
 /// Create the [`HoverTimers`] of one root. A hook: call it unconditionally,
@@ -60,6 +63,10 @@ pub(crate) fn use_hover_timers(
     delay: ReadSignal<u64>,
     close_delay: ReadSignal<u64>,
 ) -> HoverTimers {
+    // Follows `open` once it has caught up, so a close that did not come through this handle (a
+    // scroll, the content's own) is not remembered as a request.
+    let mut asked = use_signal(|| false);
+    use_effect(move || asked.set(open()));
     HoverTimers {
         open,
         set_open,
@@ -68,6 +75,7 @@ pub(crate) fn use_hover_timers(
         close_delay,
         open_timer: use_delayed_action(),
         close_timer: use_delayed_action(),
+        asked,
     }
 }
 
@@ -87,12 +95,12 @@ impl HoverTimers {
         let delay = *self.delay.peek();
         if delay == 0 {
             open_timer.cancel();
-            self.set_open.call(true);
+            self.write(true);
         } else {
-            let (disabled, set_open) = (self.disabled, self.set_open);
+            let (disabled, timers) = (self.disabled, self);
             open_timer.schedule(Duration::from_millis(delay), move || {
                 if !disabled() {
-                    set_open.call(true);
+                    timers.write(true);
                 }
             });
         }
@@ -109,12 +117,12 @@ impl HoverTimers {
         let close_delay = *self.close_delay.peek();
         if close_delay == 0 {
             close_timer.cancel();
-            self.set_open.call(false);
+            self.write(false);
         } else if *self.open.peek() {
-            let (disabled, set_open) = (self.disabled, self.set_open);
+            let (disabled, timers) = (self.disabled, self);
             close_timer.schedule(Duration::from_millis(close_delay), move || {
                 if !disabled() {
-                    set_open.call(false);
+                    timers.write(false);
                 }
             });
         } else {
@@ -134,7 +142,7 @@ impl HoverTimers {
     pub(crate) fn focus(self) {
         self.cancel_pending();
         if !(self.disabled)() {
-            self.set_open.call(true);
+            self.write(true);
         }
     }
 
@@ -142,14 +150,35 @@ impl HoverTimers {
     pub(crate) fn blur(self) {
         self.cancel_pending();
         if !(self.disabled)() {
-            self.set_open.call(false);
+            self.write(false);
         }
+    }
+
+    /// Whether the pointer's open delay is running: the surface is not open yet but has been
+    /// asked to open. Reading it subscribes the caller.
+    pub(crate) fn pending(self) -> bool {
+        self.open_timer.is_pending()
+    }
+
+    /// Ask for the surface to open or close, and remember it.
+    fn write(self, open: bool) {
+        let mut asked = self.asked;
+        asked.set(open);
+        self.set_open.call(open);
+    }
+
+    /// The trigger's Escape arm: close an open surface, or cancel an open that is still waiting
+    /// (the focus open of a surface whose content has not mounted yet, a running hover delay), and
+    /// take the key (`dismiss::escape_in_gap`).
+    pub(crate) fn escape(self, event: &KeyboardEvent) -> bool {
+        let requested = *self.open.peek() || *self.asked.peek() || self.open_timer.is_pending();
+        crate::dismiss::escape_in_gap(event, requested, || self.dismiss())
     }
 
     /// Escape: close now, whatever `disabled` says.
     pub(crate) fn dismiss(self) {
         self.cancel_pending();
-        self.set_open.call(false);
+        self.write(false);
     }
 
     fn cancel_pending(self) {
@@ -298,6 +327,7 @@ pub fn HoverCard(props: HoverCardProps) -> Element {
         props.close_delay,
     );
 
+    use_hover_dismiss(content_id, timers);
     use_context_provider(|| HoverCardCtx {
         open,
         set_open,
@@ -431,6 +461,9 @@ pub fn HoverCardTrigger(props: HoverCardTriggerProps) -> Element {
             // Focus events: keyboard, so immediate
             onfocus: move |_| ctx.timers.focus(),
             onblur: move |_| ctx.timers.blur(),
+            onkeydown: move |event: KeyboardEvent| {
+                ctx.timers.escape(&event);
+            },
 
             ..attributes,
             {props.children}
@@ -573,17 +606,19 @@ pub fn HoverCardContent(props: HoverCardContentProps) -> Element {
 /// `hidePopover()` from the closing path; only `render()` dropping to
 /// `false` and the real DOM removal that follows takes this element out of
 /// the top layer.
-/// Escape closes an open card wherever focus is (the dismiss core, [`crate::dismiss::Policy::ESCAPE`];
+/// Escape closes an open card wherever focus is (the dismiss core, [`crate::dismiss::Policy::ESCAPE`], a layer of the root;
 /// WAI-ARIA tooltip pattern: "Escape: dismisses the Tooltip", which a HoverCard shares). A
 /// force-mounted card that is closed is not a layer. A hover surface has no press or focus arm: the
 /// pointer leaving or the trigger blurring already closes it.
-fn use_hover_card_dismiss(id: &str, open: Memo<bool>, timers: HoverTimers) {
-    let id = use_signal(|| id.to_string());
+pub(crate) fn use_hover_dismiss(id: Signal<String>, timers: HoverTimers) {
+    // Registered from the moment the surface is asked to open, not from the moment its content has
+    // mounted, so an Escape during the pointer's open delay cancels the open.
+    let requested = use_memo(move || (timers.open)() || timers.pending());
     crate::dismiss::use_dismiss(
         id,
         crate::dismiss::Scope::Element,
         crate::dismiss::Policy::ESCAPE,
-        Some(open.into()),
+        Some(requested.into()),
         move |_| timers.dismiss(),
     );
 }
@@ -625,7 +660,6 @@ fn HoverCardContentRendered(
     let timers = use_context::<HoverCardCtx>().timers;
     let handle_mouse_enter = move |_: Event<MouseData>| timers.hold();
     let handle_mouse_leave = move |_: Event<MouseData>| timers.pointer_leave();
-    use_hover_card_dismiss(&id, open, timers);
 
     // `anchored_content_attributes` below writes `data-dx-anchored="hover-card"`, the attribute the
     // engine's anchor stylesheet selects on (see `tooltip.rs`'s `TooltipContentRendered` for why an
@@ -701,7 +735,6 @@ fn HoverCardContentRendered(
     let timers = use_context::<HoverCardCtx>().timers;
     let handle_mouse_enter = move |_: Event<MouseData>| timers.hold();
     let handle_mouse_leave = move |_: Event<MouseData>| timers.pointer_leave();
-    use_hover_card_dismiss(&id, open, timers);
 
     // Owned by this component -- see the web arm's identical construction
     // above (`dev-docs/backlog.md` row 93).
