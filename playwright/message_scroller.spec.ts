@@ -27,6 +27,7 @@ import { BASE_URL, buildProfile } from "./base-url";
 import { gotoHydrated } from "./hydration";
 import { calibrationMs, frameCostMeter } from "./frame-cost";
 import { TIMING_TAG } from "./timing";
+import { installFrameRecorder, readFrames } from "./frame-recorder";
 
 const GOTO_OPTS = { timeout: 20 * 60 * 1000 };
 // The demos' `MessageScrollerContent` start padding (`--dx-space-4`).
@@ -115,28 +116,18 @@ test.describe("opening position", () => {
     // Sample every frame from the first one: the viewport must never be visible
     // AND scrollable AND still at the top. (Before its stylesheet applies it is
     // not a scroll container, so that state cannot occur there either.)
-    await page.addInitScript(() => {
-      const w = window as unknown as { __msFlash: { samples: number; flashes: number } };
-      w.__msFlash = { samples: 0, flashes: 0 };
-      const tick = () => {
-        const vp = document.querySelector("[data-message-scroller-viewport]") as HTMLElement | null;
-        if (vp) {
-          w.__msFlash.samples++;
-          const scrollable = vp.scrollHeight > vp.clientHeight + 1;
-          const visible = getComputedStyle(vp).visibility !== "hidden";
-          if (visible && scrollable && vp.scrollTop < 1) w.__msFlash.flashes++;
-        }
-        requestAnimationFrame(tick);
-      };
-      requestAnimationFrame(tick);
+    await installFrameRecorder(page, "__msFlash", ({ parsed }) => {
+      const vp = document.querySelector("[data-message-scroller-viewport]") as HTMLElement | null;
+      if (!vp || !parsed(vp)) return null;
+      const scrollable = vp.scrollHeight > vp.clientHeight + 1;
+      const visible = getComputedStyle(vp).visibility !== "hidden";
+      return { flash: visible && scrollable && vp.scrollTop < 1 };
     });
     const vp = await open(page);
     await expect.poll(() => dist(vp)).toBeLessThanOrEqual(1);
-    const flash = await page.evaluate(
-      () => (window as unknown as { __msFlash: { samples: number; flashes: number } }).__msFlash,
-    );
-    expect(flash.samples).toBeGreaterThan(0);
-    expect(flash.flashes).toBe(0);
+    const states = await readFrames<{ flash: boolean }>(page, "__msFlash");
+    expect(states.length).toBeGreaterThan(0);
+    expect(states.filter((f) => f.flash).length).toBe(0);
     // The guard attribute is gone from both the root and the viewport.
     await expect(frameOf(page, "main").locator("[data-pending-scroll]")).toHaveCount(0);
   });

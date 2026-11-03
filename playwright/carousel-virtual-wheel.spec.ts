@@ -46,6 +46,7 @@ import type { Locator, Page } from "@playwright/test";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 import { gotoReference } from "./page-kinds";
+import { TIMING_TAG } from "./timing";
 import { replayWheel, recordingsOfKind, TRANSLATE_X_EXPR } from "./wheel-replay";
 
 type Variant = "virtual_loop" | "virtual_loop_rtl" | "virtual_many" | "main" | "rewind" | "rtl" | "vertical";
@@ -1160,7 +1161,7 @@ async function replayRecordedFlick(page: Page, content: Locator, events: [number
 
 test.describe("Carousel: long real flicks never stall at a rendered slice end", () => {
   for (const mark of ["mark3", "mark4", "mark6"] as const) {
-    test(`virtual_many, recorded flick ${mark}: travels well past a 2-slide radius and never sits pinned at a false end for more than ~200ms`, async ({
+    test(`virtual_many, recorded flick ${mark}: travels well past a 2-slide radius and never sits pinned at a false end for more than ~200ms`, { tag: TIMING_TAG }, async ({
       page,
     }) => {
       test.setTimeout(180_000);
@@ -1173,7 +1174,7 @@ test.describe("Carousel: long real flicks never stall at a rendered slice end", 
     });
   }
 
-  test("virtual_loop (seamless, effective radius 5 of 12): the recorded flick mark4 never stalls at a slice end either", async ({ page }) => {
+  test("virtual_loop (seamless, effective radius 5 of 12): the recorded flick mark4 never stalls at a slice end either", { tag: TIMING_TAG }, async ({ page }) => {
     test.setTimeout(180_000);
     const { frame, content } = await open(page, "virtual_loop");
     await pageTo(page, frame, "6 of 12");

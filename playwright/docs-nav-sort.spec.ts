@@ -1,6 +1,7 @@
 import { test, expect } from "./fixtures";
 import type { Page } from "@playwright/test";
 import { gotoHydrated } from "./hydration";
+import { installFrameRecorder, readFrames } from "./frame-recorder";
 import { BASE_URL } from "./base-url";
 
 // The docs sidebar lists the components A-Z by default and by category on request (backlog
@@ -107,33 +108,24 @@ test("the choice survives a reload, and the FIRST PAINT already shows it (no fla
 
   // Before any page script runs, start recording what each frame would paint: the computed display of both
   // lists and the background of the selected option, from the first frame in which the sidebar exists.
-  await page.addInitScript(() => {
-    const frames: Array<{ az: string; cat: string; pressedBg: string; azBg: string }> = [];
-    (window as unknown as { __navFrames: typeof frames }).__navFrames = frames;
-    const tick = () => {
-      const a = document.querySelector(".dx-nav-az");
-      const c = document.querySelector(".dx-nav-category");
-      const oc = document.querySelector('.dx-nav-sort-option[data-nav-sort-option="category"]');
-      const oa = document.querySelector('.dx-nav-sort-option[data-nav-sort-option="az"]');
-      if (a && c && oc && oa) {
-        frames.push({
-          az: getComputedStyle(a).display,
-          cat: getComputedStyle(c).display,
-          pressedBg: getComputedStyle(oc).backgroundColor,
-          azBg: getComputedStyle(oa).backgroundColor,
-        });
-      }
-      requestAnimationFrame(tick);
+  await installFrameRecorder(page, "__navFrames", ({ parsed }) => {
+    const a = document.querySelector(".dx-nav-az");
+    const c = document.querySelector(".dx-nav-category");
+    const oc = document.querySelector('.dx-nav-sort-option[data-nav-sort-option="category"]');
+    const oa = document.querySelector('.dx-nav-sort-option[data-nav-sort-option="az"]');
+    if (!a || !c || !oc || !oa || !parsed(a) || !parsed(c) || !parsed(oc) || !parsed(oa)) return null;
+    return {
+      az: getComputedStyle(a).display,
+      cat: getComputedStyle(c).display,
+      pressedBg: getComputedStyle(oc).backgroundColor,
+      azBg: getComputedStyle(oa).backgroundColor,
     };
-    requestAnimationFrame(tick);
   });
   await gotoHydrated(page, PAGE);
 
   await expect(az(page)).toBeHidden();
   await expect(option(page, "category")).toHaveAttribute("aria-pressed", "true");
-  const frames = await page.evaluate(
-    () => (window as unknown as { __navFrames: Array<{ az: string; cat: string; pressedBg: string; azBg: string }> }).__navFrames,
-  );
+  const frames = await readFrames<{ az: string; cat: string; pressedBg: string; azBg: string }>(page, "__navFrames");
   expect(frames.length, "the recorder saw frames with the sidebar present").toBeGreaterThan(0);
   const wrong = frames.filter(
     (f) => f.az !== "none" || f.cat === "none" || f.pressedBg === "rgba(0, 0, 0, 0)" || f.azBg !== "rgba(0, 0, 0, 0)",
