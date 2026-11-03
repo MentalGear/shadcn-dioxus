@@ -67,10 +67,7 @@ details>summary{cursor:pointer;font-size:12px;color:var(--muted);padding:2px 0}
   <div class="panel" id="stage"><div id="msg"></div><div id="cy"></div></div>
   <div class="panel" id="info">Nothing selected.</div>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/layout-base@2.0.1/layout-base.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/cose-base@2.2.0/cose-base.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/cytoscape@3.33.1/dist/cytoscape.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/cytoscape-fcose@2.2.0/cytoscape-fcose.js"></script>
+<script>__CYTOSCAPE__</script>
 <script type="application/json" id="graph">__GRAPH__</script>
 <script>
 (function(){
@@ -145,9 +142,7 @@ function compute(){
     for(let r=0;r<st.rad;r++){
       const cand=new Map();
       frontier.forEach(u=>(adj[u]||[]).forEach(([v,w])=>{if(!keep.has(v))cand.set(v,(cand.get(v)||0)+w)}));
-      let list=[...cand].sort((p,q)=>q[1]-p[1]);
-      if(r>0||list.length>80)list=list.slice(0,r>0?30:80);
-      frontier=list.map(p=>p[0]);frontier.forEach(v=>keep.add(v));
+      frontier=[...cand.keys()];frontier.forEach(v=>keep.add(v));
     }
     edges=edges.filter(e=>keep.has(e.x)&&keep.has(e.y));
   }else{
@@ -161,7 +156,8 @@ function render(){
   if(st.lvl===2&&!st.seedFiles.size){msg.textContent='File level needs a component: pick one above.';if(cy)cy.elements().remove();return}
   const R=compute();window.__last=R;
   const els=[];const parents=new Set();
-  const useG=st.group&&st.lvl>0;
+  const big=R.keep.size>250;
+  const useG=st.group&&st.lvl>0&&!big;
   R.keep.forEach(k=>{
     const cr=crateOfKey(k);
     const d={id:k,label:label(k),cr,sz:14+Math.min(26,4*Math.sqrt(R.items.get(k)||1)),seed:R.seedKeys.has(k)?1:0};
@@ -180,9 +176,12 @@ function render(){
   }
   cy.batch(()=>{cy.elements().remove();cy.add(els)});
   applyStyle();
-  const big=R.keep.size>400;
-  cy.layout({name:'fcose',quality:big?'draft':'default',randomize:true,animate:false,nodeDimensionsIncludeLabels:true,
-    idealEdgeLength:e=>70+Math.max(0,40-8*Math.log(1+e.data('w'))),nodeRepulsion:()=>9000,packComponents:true,tile:true}).run();
+  // cose lays out compound graphs up to a few hundred nodes; beyond that it only yields a hairball, so a big
+  // ego view is ringed by hop distance instead (centre in the middle, boxes off).
+  cy.layout(big?{name:'concentric',animate:false,minNodeSpacing:6,avoidOverlap:true,startAngle:0,
+      concentric:n=>n.data('seed')?10000:n.degree(),levelWidth:()=>Math.max(2,Math.ceil(R.keep.size/40))}
+    :{name:'cose',animate:false,randomize:true,nodeDimensionsIncludeLabels:true,numIter:1000,
+      idealEdgeLength:e=>70+Math.max(0,40-8*Math.log(1+e.data('w'))),nodeRepulsion:()=>9000,componentSpacing:60,gravity:0.4}).run();
   cy.fit(undefined,30);
 }
 function applyStyle(){

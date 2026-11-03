@@ -125,7 +125,7 @@ crates.io APIs, 2026-10-31) and marked unverified.
 
 ## Prototype
 
-- **Sources:** [`code-graph-explorer/`](./code-graph-explorer/).
+- **Sources:** [`scripts/codegraph/`](../../scripts/codegraph/).
   - `build_graph.py`: SCIP plus the scans, written to `graph.json`.
   - `make_explorer.py`: inlines the graph into the template.
   - `explorer.template.html`: the page.
