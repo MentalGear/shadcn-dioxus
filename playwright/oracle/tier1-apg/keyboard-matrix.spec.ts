@@ -272,6 +272,7 @@ test.describe("APG Menu (opened from a menu button) pattern — DropdownMenu con
     await page.keyboard.press("ArrowDown"); // Edit
     await page.keyboard.press(await labelChar(popupItem(page, "menu", "menuitem", 2), 0)); // "d"
     await expect(popupItem(page, "menu", "menuitem", 2)).toBeFocused();
+    // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
     await page.waitForTimeout(1100);
     await page.keyboard.press(await labelChar(popupItem(page, "menu", "menuitem", 0), 0)); // "e": Edit
     // If the buffer had NOT reset, "d" then "e" would search on "de" and
@@ -445,6 +446,7 @@ test.describe("APG Menu and Menubar pattern — Menubar", () => {
     await page.keyboard.press("ArrowDown"); // opens, focuses Cut
     await page.keyboard.press(await labelChar(menubarItem(page, 0), 0)); // "c"
     await expect(menubarItem(page, 1)).toBeFocused();
+    // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
     await page.waitForTimeout(1100);
     await page.keyboard.press(await labelChar(menubarItem(page, 0), 1)); // "u"
     // If the buffer had NOT reset, "c" then "u" would search on "cu" and
@@ -1271,6 +1273,7 @@ test.describe("APG Menu pattern (context-menu invocation) — ContextMenu", () =
     await page.keyboard.press("ArrowDown"); // Edit
     await page.keyboard.press(await labelChar(popupItem(page, "menu", "menuitem", 2), 0)); // "d"
     await expect(popupItem(page, "menu", "menuitem", 2)).toBeFocused();
+    // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
     await page.waitForTimeout(1100);
     await page.keyboard.press(await labelChar(popupItem(page, "menu", "menuitem", 0), 0)); // "e"
     // If the buffer had NOT reset, "d" then "e" would search on "de" and

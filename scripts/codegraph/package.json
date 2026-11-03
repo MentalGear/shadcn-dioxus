@@ -1,0 +1,8 @@
+{
+  "name": "codegraph",
+  "private": true,
+  "packageManager": "pnpm@10.28.0",
+  "dependencies": {
+    "cytoscape": "3.34.3"
+  }
+}

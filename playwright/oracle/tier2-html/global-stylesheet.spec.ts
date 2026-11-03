@@ -32,6 +32,7 @@ const ROUTES = [
 for (const url of ROUTES) {
   test(`global stylesheet (main.css) is applied on ${new URL(url).pathname}${new URL(url).search}`, async ({ page }) => {
     await gotoPrerendered(page, url, { waitUntil: "domcontentloaded", timeout: 60_000 });
+    // timing-bound-ok: a settle window for real-time layout, animation or hydration after load, not the wait for an app timer; a slow machine only lengthens it
     await page.waitForTimeout(3000);
     const state = await page.evaluate(() => {
       const link = document.querySelector('link[rel="stylesheet"][href*="main-"]') as HTMLLinkElement | null;

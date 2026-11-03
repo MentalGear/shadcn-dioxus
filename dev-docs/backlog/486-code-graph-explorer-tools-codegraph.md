@@ -1,10 +1,10 @@
 ---
 id: 486
 title: "Code graph explorer: SCIP-derived graph with a granularity slider (scripts/codegraph)"
-status: "BACKLOG, not scheduled. Dev tool only (owner 2026-11-02); minimal scope defined. Researched…"
+status: "BUILT, minimal scope (2026-11-03): scripts/codegraph/ (run.sh, build_graph.py, make_explorer.py…"
 size: "S-M for the minimal scope; the rest is…"
 area: tooling
-updated: 2026-11-02
+updated: 2026-11-03
 ---
 
 # Row 486: Code graph explorer
@@ -22,11 +22,18 @@ optional (Detail, Scope, Optional).
 
 ## Status / trigger
 
-BACKLOG, not scheduled. Dev tool only (owner 2026-11-02); minimal scope defined.
+BUILT, minimal scope (2026-11-03): `scripts/codegraph/` (`run.sh`, `build_graph.py`, `make_explorer.py`,
+`explorer.template.html`, `smoke.js`, a pnpm folder with Cytoscape.js 3.34.3, `README.md`). Delivery route: the preferred
+pnpm folder (S3), because it conflicts with no rule: `scripts/codegraph/` has its own `package.json`,
+`pnpm-workspace.yaml` and lock like `playwright/` and `preview/`. The staleness key, the C09/C19 config columns and the
+session-setup frozen install are in. Recommended: full radius 2 done; pairing through `component.json` not done
+(`component.json` names no primitive, so the name match stays). Optional items open. The page switches to a concentric
+layout above 250 nodes because `cose` gives a hairball there (`cose` is kept up to that size, with boxes). Proof numbers
+are in the README. Dev tool only (owner 2026-11-02).
 
 Researched 2026-10-29 and 2026-10-31 at the owner's request; a prototype exists. The research, the tool comparison and the
 measured numbers are in [`research/code-graph-explorer-2026-10-31.md`](../research/code-graph-explorer-2026-10-31.md), and
-the prototype sources are in [`research/code-graph-explorer/`](../research/code-graph-explorer/).
+the tool is in [`scripts/codegraph/`](../../scripts/codegraph/) (the prototype sources moved there).
 
 Owner decisions 2026-10-31:
 1. rust-analyzer is the one analysis source. crabmap, Crabviz and every other young or little-used tool are out of the

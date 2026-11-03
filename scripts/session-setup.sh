@@ -15,7 +15,7 @@
 #      dx's reqwest client rejects the agent proxy's CA (`UnknownIssuer`):
 #      esbuild, binaryen/wasm-opt, wasm-bindgen -> ~/.local/share/.dx/tools/
 #      (fetched with curl, which does trust the CA; TLS is never disabled)
-#   4. `pnpm install --frozen-lockfile` in playwright/ and preview/ (never a
+#   4. `pnpm install --frozen-lockfile` in playwright/, preview/ and scripts/codegraph/ (never a
 #      plain `pnpm add`/`install` that rewrites the lock -- backlog rows 72, 359; Playwright browsers are preinstalled at
 #      /opt/pw-browsers, so `playwright install` is deliberately NOT run)
 #   5. `cargo fetch --locked` for every committed Cargo.lock: the root workspace
@@ -141,6 +141,7 @@ pnpm_install_if_stale() {
 }
 pnpm_install_if_stale "$repo_root/playwright"
 pnpm_install_if_stale "$repo_root/preview"
+pnpm_install_if_stale "$repo_root/scripts/codegraph"
 
 # --- 5. crates ----------------------------------------------------------------
 # One `cargo fetch --locked` per committed Cargo.lock, the same list

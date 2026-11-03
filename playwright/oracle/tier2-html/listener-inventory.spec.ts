@@ -250,6 +250,7 @@ test.describe("listener inventory: every overlay returns window/document to its 
         await scenario.open(page);
         await page.waitForTimeout(500);
         await scenario.close(page);
+        // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
         await page.waitForTimeout(SETTLE_MS);
       }
 

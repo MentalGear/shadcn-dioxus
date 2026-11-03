@@ -122,6 +122,7 @@ test.describe("delay / close_delay (backlog row 166)", () => {
     await page.waitForTimeout(150);
     await page.mouse.move(0, 0);
     // Well past the 600 ms the abandoned hover would have opened at.
+    // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
     await page.waitForTimeout(1100);
     await expect(surface(page)).toHaveCount(0);
     expect((await readProbe(page)).some((e) => e.what === "surface:open")).toBe(false);
@@ -179,6 +180,7 @@ test.describe("delay / close_delay (backlog row 166)", () => {
     await expect(surface(page)).toBeVisible();
     const box = (await measureAtRest(surface(page)));
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
     await page.waitForTimeout(1000); // > close_delay
     await expect(openSurface(page)).toHaveCount(1);
 

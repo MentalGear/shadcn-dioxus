@@ -137,6 +137,7 @@ test.describe("Chart entry animation: a chart in the first paint never restarts"
   for (const { name, url } of PAGES) {
     test(`${name}: every frame from first paint shows the final drawing`, async ({ page }) => {
       await gotoHydrated(page, url, NAV);
+      // timing-bound-ok: a settle window for real-time layout, animation or hydration after load, not the wait for an app timer; a slow machine only lengthens it
       await page.waitForTimeout(1500); // the measured render and any (wrong) entrance would have started by now
       const visible = await onScreenIndexes(page);
       expect(visible.length, "a chart is on the first screen").toBeGreaterThan(0);
@@ -169,6 +170,7 @@ test.describe("Chart entry animation: a chart below the fold animates once, when
   for (const kind of KINDS) {
     test(`${kind}_chart: one entrance on first view, none on the way back`, async ({ page }) => {
       await gotoHydrated(page, `${BASE_URL}/component/${kind}_chart/`, NAV);
+      // timing-bound-ok: a settle window for real-time layout, animation or hydration after load, not the wait for an app timer; a slow machine only lengthens it
       await page.waitForTimeout(1500);
       const count = await page.locator('[data-slot="chart-svg"]').count();
       expect(count, "the page stacks several charts").toBeGreaterThan(2);
@@ -182,6 +184,7 @@ test.describe("Chart entry animation: a chart below the fold animates once, when
       await expect
         .poll(async () => (await rec(page)).animateAttr[last], { timeout: 10_000, message: "entrance starts" })
         .toBe("true");
+      // timing-bound-ok: a settle window for real-time layout, animation or hydration after load, not the wait for an app timer; a slow machine only lengthens it
       await page.waitForTimeout(2500); // longest entrance is 1.5 s (+ the arc labels' fade)
       const played = await rec(page);
       const n = played.anims[last] ?? 0;
@@ -192,6 +195,7 @@ test.describe("Chart entry animation: a chart below the fold animates once, when
         await page.evaluate(() => window.scrollTo(0, 0));
         await page.waitForTimeout(400);
         await scrollLastChartIn(page);
+        // timing-bound-ok: a settle window for real-time layout, animation or hydration after load, not the wait for an app timer; a slow machine only lengthens it
         await page.waitForTimeout(1200);
       }
       const after = await rec(page);
@@ -211,6 +215,7 @@ test.describe("Chart entry animation: a chart the client creates has nothing pai
     page,
   }) => {
     await gotoHydrated(page, `${BASE_URL}/component/?name=bar_chart&`, NAV); // legacy-route-ok: this test IS the legacy redirect
+    // timing-bound-ok: a settle window for real-time layout, animation or hydration after load, not the wait for an app timer; a slow machine only lengthens it
     await page.waitForTimeout(2000);
     const visible = await onScreenIndexes(page);
     expect(visible.length, "a chart is on the first screen").toBeGreaterThan(0);
@@ -227,8 +232,10 @@ test.describe("Chart entry animation: reduced motion", () => {
     test(`${kind}_chart: no animation in the first paint or on entering the view`, async ({ page }) => {
       await page.emulateMedia({ reducedMotion: "reduce" });
       await gotoHydrated(page, `${BASE_URL}/component/${kind}_chart/`, NAV);
+      // timing-bound-ok: a settle window for real-time layout, animation or hydration after load, not the wait for an app timer; a slow machine only lengthens it
       await page.waitForTimeout(1000);
       const last = await scrollLastChartIn(page);
+      // timing-bound-ok: a settle window for real-time layout, animation or hydration after load, not the wait for an app timer; a slow machine only lengthens it
       await page.waitForTimeout(2500);
       const r = await rec(page);
       expect(r.frames).toBeGreaterThan(30);

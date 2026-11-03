@@ -215,6 +215,7 @@ for (const host of HOSTS) {
       await expect(first, `typing "${letter}" moves to the first item (wrapping)`).toBeFocused();
 
       // The typeahead buffer clears after TYPEAHEAD_RESET_MS (1 s); the disabled item's first letter then matches nothing.
+      // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
       await page.waitForTimeout(1200);
       const disabledLetter = (await label(menu.locator(DISABLED).first()))[0].toLowerCase();
       await page.keyboard.press(disabledLetter);

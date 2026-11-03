@@ -115,6 +115,7 @@ test.describe("windowed find-in-page placeholders (row 153 prototype)", () => {
     });
     await gotoHydrated(page, `${URL}#:~:text=Row%207777%20of%2010000`, { waitUntil: "networkidle" });
     await page.waitForSelector('html[data-hydrated="true"]', { state: "attached" });
+    // timing-bound-ok: a settle window for real-time layout, animation or hydration after load, not the wait for an app timer; a slow machine only lengthens it
     await page.waitForTimeout(1500);
     const inView = await rowInView(page, 7776);
     console.log(`text fragment after hydration: beforematch fired for ${JSON.stringify(fired)}, row 7777 in view: ${inView}`);

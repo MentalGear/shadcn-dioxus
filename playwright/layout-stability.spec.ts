@@ -215,6 +215,7 @@ for (const { route, scheme, widths, pool = POOL } of GROUPS) {
       await gotoPrerendered(page, `${front.url}${route}`, { waitUntil: "commit" });
       await page.waitForSelector('html[data-hydrated="true"]', { state: "attached", timeout: 120_000 });
       await page.evaluate(() => document.fonts.ready.then(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))));
+      // timing-bound-ok: a settle window for real-time layout, animation or hydration after load, not the wait for an app timer; a slow machine only lengthens it
       await page.waitForTimeout(1500); // no input: whatever still moves by itself shows up in this window
       const { events, paint } = await page.evaluate(() => ({
         events: (window as any).__layoutRec.events as BoxEvent[],
@@ -377,6 +378,7 @@ test.describe("progressive paint (home widget masonry)", () => {
       await cdp.send("Emulation.setCPUThrottlingRate", { rate: Number(process.env.LS_PP_CPU ?? 4) });
       await gotoPrerendered(page, `${front.url}/`, { waitUntil: "commit" });
       await page.waitForLoadState("load", { timeout: 4 * 60 * 1000 });
+      // timing-bound-ok: a settle window for real-time layout, animation or hydration after load, not the wait for an app timer; a slow machine only lengthens it
       await page.waitForTimeout(1000);
       const { frames, fcp } = await page.evaluate(() => ({
         frames: (window as any).__cardRec.frames as { t: number; boxes: number[][] }[],

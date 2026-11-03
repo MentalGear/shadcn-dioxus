@@ -474,6 +474,7 @@ test.describe('open_on_hover: false (click activation)', () => {
     await expect(guides).toHaveAttribute('aria-expanded', 'false');
 
     await guides.hover();
+    // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
     await page.waitForTimeout(HOVER_SETTLE_MS);
     await expect(guides).toHaveAttribute('aria-expanded', 'false');
     await expect(clickNav(page).getByRole('link', { name: 'Installation' })).toHaveCount(0);
@@ -496,6 +497,7 @@ test.describe('open_on_hover: false (click activation)', () => {
     // Away from both the trigger and the panel -- with hover on this would
     // close after HOVER_CLOSE_GRACE_DELAY (300ms); wait well past it.
     await page.getByRole('heading', { level: 1 }).hover();
+    // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
     await page.waitForTimeout(HOVER_SETTLE_MS);
     await expect(guides).toHaveAttribute('aria-expanded', 'true');
     await expect(clickNav(page).getByRole('link', { name: 'Installation' })).toBeVisible();
@@ -509,6 +511,7 @@ test.describe('open_on_hover: false (click activation)', () => {
     await expect(guides).toHaveAttribute('aria-expanded', 'true');
 
     await reference.hover();
+    // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
     await page.waitForTimeout(HOVER_SETTLE_MS);
     await expect(guides).toHaveAttribute('aria-expanded', 'true');
     await expect(reference).toHaveAttribute('aria-expanded', 'false');

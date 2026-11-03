@@ -250,6 +250,7 @@ test.describe("Carousel: autoplay + rotation control", () => {
     const before = await selectedAt();
     // Wait past two full ticks -- focus is still inside the content
     // element, so this must never advance regardless of elapsed time.
+    // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
     await page.waitForTimeout(2600);
     expect(await selectedAt()).toBe(before);
 
@@ -257,6 +258,7 @@ test.describe("Carousel: autoplay + rotation control", () => {
     // control does) -- move focus elsewhere on the page.
     await page.keyboard.press("Tab");
     await expect(content).toHaveAttribute("aria-live", "polite");
+    // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
     await page.waitForTimeout(1600);
     expect(await selectedAt()).toBe(before);
   });
@@ -282,6 +284,7 @@ test.describe("Carousel: autoplay + rotation control", () => {
     const selectedAt = async () =>
       frame.locator('[role="group"][data-selected="true"]').getAttribute("aria-label");
     const before = await selectedAt();
+    // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
     await page.waitForTimeout(1600);
     expect(await selectedAt()).toBe(before);
 
@@ -320,6 +323,7 @@ test.describe("Carousel: autoplay + rotation control", () => {
     const selectedAt = async () =>
       frame.locator('[role="group"][data-selected="true"]').getAttribute("aria-label");
     const before = await selectedAt();
+    // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
     await page.waitForTimeout(1600);
     expect(await selectedAt()).toBe(before);
   });
@@ -508,6 +512,7 @@ test.describe("Carousel: autoplay stops on a press on the track (row 470)", () =
   const expectStaysPut = async (page: import("@playwright/test").Page, selected: () => Promise<string | null>) => {
     await page.waitForTimeout(700);
     const settled = await selected();
+    // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
     await page.waitForTimeout(PAST_ONE_DELAY_MS);
     expect(await selected()).toBe(settled);
   };

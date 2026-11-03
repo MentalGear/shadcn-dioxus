@@ -1,6 +1,9 @@
-# SCIP index + static scans -> graph.json (file-level edges; client rolls up to component/crate)
+# SCIP index + static scans -> graph.json (file-level edges; the page rolls up to component/crate).
+# usage: python3 -I build_graph.py <index.scip> <graph.json>   (stdlib only; the repo root is two levels above this file)
+# Model: every node is a file {id, comp, items}; `items` is the per-node metrics slot (add fields beside it, the
+# page reads n.items only). Edges are [src, dst, weight, kind] over node indexes.
 import sys, os, re, json, collections
-REPO='/home/user/shadcn-dioxus'
+REPO=os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 scip, out = sys.argv[1], sys.argv[2]
 def varint(b,i):
     r=s=0

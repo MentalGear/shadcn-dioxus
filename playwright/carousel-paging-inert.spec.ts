@@ -105,6 +105,7 @@ test.describe("Carousel: paging never scrolls the page", () => {
 
     // The `autoplay` variant's own `delay_ms: 1200` (this file's own
     // header note) -- comfortably past two full ticks.
+    // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
     await page.waitForTimeout(1200 * 2 + 600);
 
     // The carousel did actually advance on its own -- otherwise a
@@ -514,6 +515,7 @@ test.describe("Carousel: only visible slides are reachable (inert)", () => {
       frame.locator('[data-selected="true"]').getAttribute("aria-label");
     const before = await selectedAt();
     expect(before).toBe("1 of 5");
+    // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
     await page.waitForTimeout(2600); // past two full 1200ms ticks
     expect(await selectedAt()).toBe(before);
   });
