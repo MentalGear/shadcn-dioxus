@@ -56,64 +56,63 @@ pub fn ComboboxInput(props: ComboboxInputProps) -> Element {
     // the browser keeps placing the caret where the user clicked.
     let display_value = use_memo(move || ctx.input_text());
 
-    let onkeydown = move |event: KeyboardEvent| match event.key() {
-        Key::ArrowDown => {
-            if !open() {
-                ctx.open_at_selected_or_first();
-            } else {
-                ctx.focus_next_visible();
+    let onkeydown = move |event: KeyboardEvent| {
+        // An open list closes on Escape from the input at once: the list's dismiss layer is on the
+        // page only after the list has rendered (`dismiss::escape_in_gap`).
+        if crate::dismiss::escape_in_gap(&event, open(), || ctx.set_open(false)) {
+            return;
+        }
+        match event.key() {
+            Key::ArrowDown => {
+                if !open() {
+                    ctx.open_at_selected_or_first();
+                } else {
+                    ctx.focus_next_visible();
+                }
+                event.prevent_default();
+                event.stop_propagation();
             }
-            event.prevent_default();
-            event.stop_propagation();
-        }
-        Key::ArrowUp => {
-            if !open() {
-                ctx.open_at_selected_or_last();
-            } else {
-                ctx.focus_prev_visible();
+            Key::ArrowUp => {
+                if !open() {
+                    ctx.open_at_selected_or_last();
+                } else {
+                    ctx.focus_prev_visible();
+                }
+                event.prevent_default();
+                event.stop_propagation();
             }
-            event.prevent_default();
-            event.stop_propagation();
+            // Home and End are not handled: they move the caret in the text field, open or closed,
+            // and never the list highlight (Base UI `ComboboxInput`, row 478).
+            Key::Enter if open() => {
+                ctx.select_focused();
+                event.prevent_default();
+                event.stop_propagation();
+            }
+            // Multi-select: Backspace in an empty input removes the last chip, and
+            // the "previous" arrow (direction-aware) steps back onto the chips.
+            Key::Backspace if ctx.is_multi() && ctx.query.peek().is_empty() => {
+                ctx.remove_last();
+                event.prevent_default();
+            }
+            ref key
+                if ctx.is_multi()
+                    && ctx.query.peek().is_empty()
+                    && direction.resolve_horizontal(key) == Some(HorizontalNav::Prev) =>
+            {
+                let chips = ctx.selectable.values.peek().len();
+                ctx.handles.focus_chip(None, true, chips);
+                event.prevent_default();
+            }
+            // Escape on a closed list clears the selection (every chip of a multi-select); the closed
+            // input then shows no label. A surrounding dialog keeps its Escape for the press that has
+            // nothing left to clear (Base UI `ComboboxInput`, row 478).
+            Key::Escape if !open() && !ctx.selectable.values.peek().is_empty() => {
+                ctx.clear();
+                event.prevent_default();
+                event.stop_propagation();
+            }
+            _ => {}
         }
-        // Home and End are not handled: they move the caret in the text field, open or closed,
-        // and never the list highlight (Base UI `ComboboxInput`, row 478).
-        Key::Enter if open() => {
-            ctx.select_focused();
-            event.prevent_default();
-            event.stop_propagation();
-        }
-        // Multi-select: Backspace in an empty input removes the last chip, and
-        // the "previous" arrow (direction-aware) steps back onto the chips.
-        Key::Backspace if ctx.is_multi() && ctx.query.peek().is_empty() => {
-            ctx.remove_last();
-            event.prevent_default();
-        }
-        ref key
-            if ctx.is_multi()
-                && ctx.query.peek().is_empty()
-                && direction.resolve_horizontal(key) == Some(HorizontalNav::Prev) =>
-        {
-            let chips = ctx.selectable.values.peek().len();
-            ctx.handles.focus_chip(None, true, chips);
-            event.prevent_default();
-        }
-        // The web arm's open list closes on Escape through the dismiss core (`ComboboxListRendered`,
-        // wherever focus is); the arm without script closes it here.
-        #[cfg(not(feature = "web"))]
-        Key::Escape if open() => {
-            ctx.set_open(false);
-            event.prevent_default();
-            event.stop_propagation();
-        }
-        // Escape on a closed list clears the selection (every chip of a multi-select); the closed
-        // input then shows no label. A surrounding dialog keeps its Escape for the press that has
-        // nothing left to clear (Base UI `ComboboxInput`, row 478).
-        Key::Escape if !open() && !ctx.selectable.values.peek().is_empty() => {
-            ctx.clear();
-            event.prevent_default();
-            event.stop_propagation();
-        }
-        _ => {}
     };
 
     // `spellcheck` is an overridable default; the rest is this input's own

@@ -144,6 +144,11 @@ impl DelayedAction {
         }
     }
 
+    /// Whether an action is scheduled and has not yet run. Reading it subscribes the caller.
+    pub(crate) fn is_pending(&self) -> bool {
+        self.task.read().is_some()
+    }
+
     /// Schedule `action` to run after `delay`, replacing (cancelling)
     /// whatever this handle was already waiting on.
     pub(crate) fn schedule(&mut self, delay: Duration, action: impl FnOnce() + 'static) {

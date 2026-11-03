@@ -315,28 +315,16 @@ pub fn DropdownMenu(props: DropdownMenuProps) -> Element {
                     ctx.open_with_focus(CollectionPlacement::First);
                 }
             }
+            // Escape closes an open menu from the root on every arm. The web arm's `popover="auto"`
+            // closes it natively too, but only once the popover is shown: a key that arrives
+            // between the open request and that (Enter, then Escape in one task) would otherwise
+            // be dropped and the menu would open and stay open (`dismiss::escape_in_gap`). The
+            // native close and this one agree: the signal goes false, and the focus return of
+            // `use_refocus_on_close_unless` runs for either.
             Key::Escape => {
-                // Web arm: `DropdownMenuContentRendered`'s `popover="auto"`
-                // owns Escape dismissal natively (WHATWG HTML's light-dismiss
-                // algorithm) -- returning here before `event.prevent_default()`
-                // below leaves the key's default action alone so the browser's
-                // own dismissal still runs. Calling both `set_open` *and*
-                // `prevent_default` unconditionally here would race that native algorithm, and the
-                // `prevent_default` specifically would suppress the
-                // browser's default action for the key outright -- the same
-                // "unconditional keydown-suppressor must never run on the
-                // web arm" lesson `PopoverContentRendered`'s doc documents
-                // for `use_global_escape_listener` (dev-docs/plan.md Phase
-                // 4.4/4.2). This is a plain `cfg!()` compile-time branch on
-                // ordinary code, not a conditionally-called hook, so it
-                // carries none of that lesson's hook-order hazard -- no
-                // component-boundary split needed for this one arm. Native
-                // (Blitz) arm: closes here directly (Blitz
-                // has no popover-API light dismiss to defer to).
-                if cfg!(feature = "web") {
-                    return;
-                }
-                ctx.set_open.call(false);
+                crate::dismiss::escape_in_gap(&event, open(), || ctx.set_open.call(false));
+                // A closed menu leaves the key alone, for an enclosing dialog's own Escape.
+                return;
             }
             Key::ArrowDown => {
                 // APG (Optional): "Down Arrow: opens the menu and moves
