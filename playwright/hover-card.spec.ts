@@ -130,6 +130,7 @@ test.describe("delay / close_delay (backlog row 166)", () => {
     await startProbe(page);
     await trigger(page, "Quick (10 / 100)").hover();
     await expect(surface(page)).toBeVisible();
+    // timing-bound-ok: the page's own event stamps against the 600 ms open delay that would otherwise open it, a relation to the configured delay, not a budget for the machine
     expect(elapsed(await readProbe(page), "mouseover", "surface:open")!).toBeLessThan(600);
   });
 
@@ -140,11 +141,13 @@ test.describe("delay / close_delay (backlog row 166)", () => {
     await startProbe(page);
     await trigger(page, "Default (600 / 300)").focus();
     await expect(surface(page)).toBeVisible();
+    // timing-bound-ok: the page's own event stamps against the 600 ms open delay that would otherwise open it, a relation to the configured delay, not a budget for the machine
     expect(elapsed(await readProbe(page), "focusin", "surface:open")!).toBeLessThan(600);
 
     await clearProbe(page);
     await page.evaluate(() => (document.activeElement as HTMLElement).blur()); // off the trigger: blur
     await expect(openSurface(page)).toHaveCount(0);
+    // timing-bound-ok: the page's own event stamps against the 300 ms close delay that would otherwise hold it open, a relation to the configured delay, not a budget for the machine
     expect(elapsed(await readProbe(page), "focusout", "surface:closed")!).toBeLessThan(300);
   });
 

@@ -1,10 +1,10 @@
 ---
 id: 486
 title: "Code graph explorer: SCIP-derived graph with a granularity slider (scripts/codegraph)"
-status: "BACKLOG, not scheduled. Researched 2026-10-29 and 2026-10-31 at the owner's request; a prototype…"
-size: "M"
+status: "BACKLOG, not scheduled. Dev tool only (owner 2026-11-02); minimal scope defined. Researched…"
+size: "S-M for the minimal scope; the rest is…"
 area: tooling
-updated: 2026-10-31
+updated: 2026-11-02
 ---
 
 # Row 486: Code graph explorer
@@ -15,12 +15,18 @@ An explorer that shows the codebase as a graph: pick a component, see its shared
 dependents, and set the granularity with a slider (crate, component, file, item). It is a repo tool, so every dependency
 it uses passes the dependency rule below and every security requirement below holds before it lands.
 
+**Dev tool only (owner decision 2026-11-02).** The explorer is a developer tool that lives in the repo under
+`scripts/codegraph/`, like `scripts/run-gates.sh`. It is never shipped: not part of the CLI, not in the component registry
+or any `component.json`, not installable by users, and not in `run-gates.sh`. The item granularity of the slider is
+optional (Detail, Scope, Optional).
+
 ## Status / trigger
 
-BACKLOG, not scheduled. Researched 2026-10-29 and 2026-10-31 at the owner's request; a prototype exists. The research,
-the tool comparison and the measured numbers are in
-[`research/code-graph-explorer-2026-10-31.md`](../research/code-graph-explorer-2026-10-31.md), and the prototype sources
-are in [`research/code-graph-explorer/`](../research/code-graph-explorer/).
+BACKLOG, not scheduled. Dev tool only (owner 2026-11-02); minimal scope defined.
+
+Researched 2026-10-29 and 2026-10-31 at the owner's request; a prototype exists. The research, the tool comparison and the
+measured numbers are in [`research/code-graph-explorer-2026-10-31.md`](../research/code-graph-explorer-2026-10-31.md), and
+the prototype sources are in [`research/code-graph-explorer/`](../research/code-graph-explorer/).
 
 Owner decisions 2026-10-31:
 1. rust-analyzer is the one analysis source. crabmap, Crabviz and every other young or little-used tool are out of the
@@ -32,9 +38,17 @@ Owner decisions 2026-10-31:
    page. Written below as requirements S1-S10.
 4. The published prototype stays as it is (it loads its libraries from a CDN, for a private preview only).
 
+Owner decisions 2026-11-02:
+1. **Dev tool only.** See Item. Not shipped, not in the CLI, the registry or any `component.json`, and not in
+   `run-gates.sh`.
+2. **Scope split.** The row's scope is the minimal set in Detail, Scope (a) to (c), size S-M. The recommended items and
+   the optional items are defined there too and are not part of the minimal scope.
+3. The dependency verdicts and security requirements S1-S10 stand unchanged in substance; sentences that assumed the
+   tool would be a gate or a shipped surface were adjusted to match decision 1.
+
 ## Size
 
-M
+S-M for the minimal scope; the rest is unsized.
 
 ## Detail
 
@@ -43,15 +57,16 @@ M
 - **Data:** `rust-analyzer scip` is the only source that resolves through `rsx!` / `#[component]` and across crates
   (8 min cold, 26 MB). On top of it come a TS import scan (a regex over about 35 files), `asset!()` / `include_str!()`
   for CSS, and spec-name links. Nothing else analyses Rust.
-- **Item level:** comes from rust-analyzer itself, in one of two ways, both written in Python stdlib: (a) the SCIP
-  `enclosing_symbol` and `relationships` fields (about 1 MB more data; lossy for macro-generated items, 10,905
+- **Item level (optional):** comes from rust-analyzer itself, in one of two ways, both written in Python stdlib: (a) the
+  SCIP `enclosing_symbol` and `relationships` fields (about 1 MB more data; lossy for macro-generated items, 10,905
   unresolved references measured), or (b) a script that drives rust-analyzer's own LSP call hierarchy over stdio
   (`callHierarchy/incomingCalls`), lazily per component. Which fields rust-analyzer 1.97 emits is unverified; the first
   step of the item-level work is a spike that lists them.
 - **UI:** a self-built static page on Cytoscape.js with its built-in `cose` layout (compound nodes). It rolls edges up
   per level and has an ego radius, a minimum edge weight, a direction filter and a hub toggle. `concentric` and
   `breadthfirst` are built in too and are candidates for the ego views. Layout quality at the file level (about 1,400
-  nodes) is measured in the smoke step; the prototype used cytoscape-fcose, which this row drops (below).
+  nodes) is checked by hand during the minimal scope's proof; the prototype used cytoscape-fcose, which this row drops
+  (below).
 
 ### The dependency rule (owner 2026-10-31)
 
@@ -86,7 +101,7 @@ where it rests on them.
 | cytoscape-fcose 2.2.0 | first published 2019-04-12; 22.4M weekly downloads; MIT; last release 2023-01-17, about 45 months ago (fails D4); depends on cose-base | **fails D4**: drop; the page uses Cytoscape's built-in `cose`. Back only by a D6 exception if `cose` is measured unusable at the file level |
 | cose-base 2.2.0, layout-base 2.0.1 | fcose's dependencies; last releases 2023-01-17 and 2021-06-25 (fail D4); 44.9M and 45.0M weekly downloads | **drop** with fcose |
 | dependency-cruiser 18.7.0 | first published 2016; 7.9M weekly downloads; the latest release (2026-10-19) is 12 days old; 18 direct dependencies | **excluded**: the regex scan covers the TS part; not added |
-| Playwright 1.60.0 | already in `playwright/package.json`, exact pin, locked, 30-day age, no install scripts | **keep** (existing dependency) |
+| Playwright 1.60.0 | already in `playwright/package.json`, exact pin, locked, 30-day age, no install scripts | **keep** (existing dependency; used only by the optional smoke test) |
 | crabmap | first published 2026-05-28 (0.3.1 is current), 124 total downloads on crates.io | **excluded** (fails D2 and D3), owner 2026-10-31 |
 | Crabviz | AGPL-3.0, VS Code extension, editor-bound; stars unverified | **excluded**, owner 2026-10-31 |
 | cargo-modules | first published 2016; 256,852 total downloads; MPL-2.0 (the repo dropped its last MPL crate in row 217) | **not a dependency**; a manual one-off cross-check only, no script of the tool installs or runs it |
@@ -99,10 +114,10 @@ Playbook: [`supply-chain/README.md`](../supply-chain/README.md). Control ids are
   tool uses. A new one needs its row of evidence in the tool's README before it is used, and the ladder first (drop, then
   replace with std or a browser API, then keep; `dependency-evaluation.md` section 1).
 - **S2. The page needs no network (T9).** `explorer.html` is one self-contained file: no `<script src>`, `<link>`,
-  `@import`, font or image from an `http(s)` URL, and no CDN at run time. The smoke test aborts every request that is
-  not `file:` and fails on any attempt. C13 (`check-demo-remote-assets.sh`) covers the docs site and does not flag
-  scripts, and `check-js-volume.sh` flags an external `<script src>` only inside its universe, which excludes
-  `scripts/`; so S9 adds the tool's own check.
+  `@import`, font or image from an `http(s)` URL, and no CDN at run time. The optional smoke test aborts every request that
+  is not `file:` and fails on any attempt. C13 (`check-demo-remote-assets.sh`) covers the docs site and does not flag
+  scripts, and `check-js-volume.sh` flags an external `<script src>` only inside its universe, which excludes `scripts/`;
+  so S9 adds the tool's own check. Until the optional gate exists, the page is checked by hand (Scope, Proof).
 - **S3. Library files come from a lockfile, with the version and checksum recorded.** Preferred: a pnpm folder
   `scripts/codegraph/` with a `package.json` that pins `cytoscape` exactly (no `^` or `~`), its own
   `pnpm-workspace.yaml` carrying `minimumReleaseAge: 43200` and `onlyBuiltDependencies: []`, and a committed
@@ -123,7 +138,7 @@ Playbook: [`supply-chain/README.md`](../supply-chain/README.md). Control ids are
   to age.
 - **S6. No install scripts (T2, C09).** `onlyBuiltDependencies: []`. The lock holds one package (Cytoscape, no transitive
   dependencies per the registry).
-- **S7. The SCIP run (CLAUDE.md "Build environment", `lane-rules.md`).** `scripts/codegraph.sh` requires an absolute,
+- **S7. The SCIP run (CLAUDE.md "Build environment", `lane-rules.md`).** `scripts/codegraph/run.sh` requires an absolute,
   isolated `CARGO_TARGET_DIR` (never the repo-root `target/`; it refuses a relative or shared one as `build-ssg.sh` does),
   runs with `CARGO_INCREMENTAL=0`, analyses only this repository's tree, and executes only the build scripts and
   proc-macros the workspace already builds (rust-analyzer loads them as `cargo check` does; the workspace lock has 73
@@ -131,39 +146,73 @@ Playbook: [`supply-chain/README.md`](../supply-chain/README.md). Control ids are
   (proposed; unverified that `rust-analyzer scip` honours it, so the first spike checks) and fails if `Cargo.lock` differs
   afterwards. The tool adds no Cargo dependency, so C01, C02 and C16 to C18 see no change.
 - **S8. Generated artefacts are not committed.** `index.scip`, `graph.json` and `explorer.html` are written to
-  `target-codegraph/` (already ignored by `target-*/`); the build refuses an output path inside tracked files.
-- **S9. One gate keeps S2, S3 and the stdlib claim true.** `scripts/check-codegraph-deps.sh`, offline and deterministic
-  like the other supply-chain gates: every `import` in `scripts/codegraph/*.py` is in `sys.stdlib_module_names`; the page
-  template and the built-page recipe contain no `http(s)://` URL outside a reasoned allowlist; `package.json`
-  dependencies are exact and are the one named package; `git ls-files` holds no `*.scip`, `graph.json` or
-  `explorer.html`. It gets its header, a `run-gates.sh` entry, `scripts/gates-doc.py --write`, and a row in the playbook's
-  Controls table plus the drift gate's `SUPPLY_CHAIN_SCRIPTS` list. The new `pnpm-workspace.yaml` is added to the C09
-  and C19 config columns and the frozen install to `scripts/session-setup.sh` (C10).
+  `target-codegraph/` (already ignored by `target-*/`), with the staleness key beside `index.scip` (Scope (b)); the build
+  refuses an output path inside tracked files.
+- **S9. The checks behind S2, S3 and the stdlib claim.** Owner decision 2026-11-02: the tool is not in `run-gates.sh`, so
+  these checks are not a gate by default. They are: every `import` in `scripts/codegraph/*.py` is in
+  `sys.stdlib_module_names`; the page template and the built-page recipe contain no `http(s)://` URL outside a reasoned
+  allowlist; `package.json` dependencies are exact and are the one named package; `git ls-files` holds no `*.scip`,
+  `graph.json` or `explorer.html`. Until the owner adopts the optional gate (Scope, Optional), they are checked by hand at
+  review. If adopted, the gate takes a header, the usual `scripts/gates-doc.py --write` and a row in the playbook's
+  Controls table plus the drift gate's `SUPPLY_CHAIN_SCRIPTS` list; its `run-gates.sh` registration is a separate owner
+  decision, because decision 1 keeps the tool out of `run-gates.sh`. The new `pnpm-workspace.yaml` is added to the C09 and
+  C19 config columns and the frozen install to `scripts/session-setup.sh` (C10), as part of Scope (c).
 - **S10. Scanners.** Today the repo has no advisory scanner (C16 to C18 are planned), so the new files are covered by: C09
   and C10 for the pnpm folder, the planned C19 once it lists the third `pnpm-workspace.yaml`, an optional manual
-  OSV-Scanner run over `pnpm-lock.yaml`, and S9 for the rest. cargo-deny and cargo-vet, once adopted, need no change
-  because `Cargo.lock` does not change. The smoke test uses the Playwright already pinned in `playwright/`.
+  OSV-Scanner run over `pnpm-lock.yaml`, and S9 for the rest (by hand until the optional gate exists). cargo-deny and
+  cargo-vet, once adopted, need no change because `Cargo.lock` does not change. The optional smoke test would use the
+  Playwright already pinned in `playwright/`.
 
-### Steps to make it a repo tool
+### Scope
 
-  1. Move the prototype to `scripts/codegraph/` and derive the repository path from the script's location (the prototype
-     hardcodes it).
-  2. Add `scripts/codegraph.sh`: the S7 SCIP run with a staleness check against HEAD, then the build (S8).
-  3. Swap the CDN `<script>` tags for the inlined Cytoscape (S3) and the fcose layout for `cose` (dependency rule);
-     measure each level and keep or replace per layout.
-  4. Pair components through `component.json` instead of by name.
-  5. Make radius 2 a full breadth-first search.
-  6. Add the item level (rust-analyzer's SCIP fields or its call hierarchy, as above), lazy per component.
-  7. Add the Playwright smoke test (`smoke.js`, resolving `playwright` from `playwright/node_modules`, scratch path
-     replaced by the build output), outside `run-gates.sh`, with the S2 request check.
-  8. Add the S9 gate and the S3 to S6 files.
-  9. Optional: a GraphML or Cypher export, written with the stdlib.
-- **Keep in mind (JS volume):** the explorer page is JavaScript in tracked HTML. `check-js-volume.sh` excludes `scripts/`
-  (like `playwright/` and `dev-docs/`), so the tool lives under `scripts/codegraph/` and the page is dev tooling that
-  ships nowhere and touches nothing in `primitives/` or `preview/`, which is what the bridge rule in
-  [`js-interop.md`](../js-interop.md) governs. A top-level `tools/` would be inside the gate's universe and needs a
-  visible `--update-baseline --allow-raise "row 486 ..."`; the volume rule says it can only shrink, so the excluded path is
-  the choice.
-- **Proof:** the explorer builds from a fresh index on the current HEAD, the smoke test renders every level with no
-  console errors and no network attempt, `scripts/check-codegraph-deps.sh` is green, `scripts/run-gates.sh` is
-  `ALL GREEN`, and `git status` shows no generated artefact.
+**Minimal (the row's scope), size S-M:**
+
+- **(a) Run and build.** `scripts/codegraph/run.sh` runs `rust-analyzer scip` with an isolated absolute
+  `CARGO_TARGET_DIR` (S7); the stdlib-only Python extractor, run as `python3 -I`, writes `graph.json`; `make_explorer.py`
+  builds `explorer.html` into the git-ignored `target-codegraph/` folder (S8), which the developer opens locally. The
+  prototype moves from `research/code-graph-explorer/` to `scripts/codegraph/`, and the repository path comes from the
+  script's location instead of being hardcoded.
+- **(b) Staleness check (owner: keep it).** The ~8 min SCIP run is skipped when the indexed tree has not changed since the
+  last index. The cached `index.scip` is keyed on the Rust sources as they are in the working tree: the content hashes
+  (`git hash-object`) of the `*.rs` and `Cargo.toml` files that `git ls-files -co --exclude-standard` lists, so an
+  uncommitted edit counts; plus `Cargo.lock` and the rust-analyzer version. The key is stored beside the index. When only
+  the extractor or the page template changed, only `graph.json` and `explorer.html` are rebuilt. `--force` re-indexes.
+- **(c) Libraries.** Cytoscape.js is pinned through the repo's package setup per C23 and S1-S10 (S3 to S6), inlined into
+  the page, and loaded from no CDN. The new `pnpm-workspace.yaml` goes in the C09 and C19 config columns and the frozen
+  install in `scripts/session-setup.sh` (C10). fcose is replaced by Cytoscape's built-in `cose` (dependency rule);
+  each level is measured by hand at file level and the layout is kept or replaced per level.
+
+**Recommended (not in the minimal scope):**
+
+- **Pair through `component.json`.** Pair a themed component with its primitive through `component.json` instead of by
+  name; the name match misses files such as `preview/src/components/select/mod.rs`.
+- **Full radius 2.** Radius 2 is a complete breadth-first search; the prototype only follows the strongest 80/30
+  neighbours.
+
+**Optional (not in the minimal scope, not sized):**
+
+- **Item level** from rust-analyzer itself, lazily per component, in one of the two ways under What the tool is. The
+  first step is a spike that lists the fields rust-analyzer 1.97 emits.
+- **Playwright smoke test** outside `run-gates.sh`: `smoke.js`, resolving `playwright` from `playwright/node_modules`, with
+  the scratch path replaced by the build output; it renders every level and runs the S2 request check (every non-`file:`
+  request aborted and reported).
+- **GraphML or Cypher export**, written with the stdlib.
+- **`check-codegraph-deps` gate (S9)**, a proposal only; the owner decides whether it exists.
+
+**Keep in mind (JS volume):** the explorer page is JavaScript in tracked HTML. `check-js-volume.sh` excludes `scripts/`
+(like `playwright/` and `dev-docs/`), so the tool lives under `scripts/codegraph/` and the page is dev tooling that
+ships nowhere and touches nothing in `primitives/` or `preview/`, which is what the bridge rule in
+[`js-interop.md`](../js-interop.md) governs. A top-level `tools/` would be inside the gate's universe and needs a
+visible `--update-baseline --allow-raise "row 486 ..."`; the volume rule says it can only shrink, so the excluded path is
+the choice.
+
+**Proof (minimal scope):**
+
+- `scripts/codegraph/run.sh` on the current HEAD builds `index.scip`, `graph.json` and `explorer.html` in
+  `target-codegraph/` from a fresh index.
+- A second run with no source change reports the cached index and skips rust-analyzer; a `.rs` edit, committed or not,
+  re-indexes; an extractor or page-only change rebuilds graph and page without SCIP; `--force` re-indexes.
+- `Cargo.lock` is unchanged after the run; `git status` shows no generated artefact; the page has no `http(s)` URL
+  outside the allowlist; opened from `file:` it renders every level with no console errors and no network request,
+  checked by hand in a browser.
+- The commit that lands the tool passes `scripts/run-gates.sh` as `ALL GREEN` (repo rule). The tool itself is not a gate.

@@ -30,6 +30,7 @@ S-M
 2. Measure: `TIMING_PASS=on playwright/tools/run-suite.sh --only-chunk timing ...` (or `pnpm exec playwright test --grep @timing --workers=1`) on a release build, nothing else running, at least five passes.
 3. For each case that is still red: fix the code, or re-budget the threshold with the owner (a threshold is not changed without the owner).
 4. Set `TIMING_PASS_DEFAULT=on` in `playwright/tools/timing-switch.sh`, refresh `playwright/durations.json` (`durations.mjs chunk-*.json --write`, the `chunk-timing.json` is part of the glob), and get one full deploy suite green (`scripts/deploy-preview.sh --suite-only`).
-5. Move this row to done in the same commit: `scripts/check-timing-tags.sh` fails while the switch is off and this row is not open.
+5. The four `carousel-virtual-wheel.spec.ts` cases that bound a frame-sampled stall at 200 ms ("long real flicks never stall at a rendered slice end") carry the tag and are dormant with the pass; their first run in the pass is the re-enable's measurement of them (row 493).
+6. Move this row to done in the same commit: `scripts/check-timing-tags.sh` fails while the switch is off and this row is not open.
 
 Related: [row 493](./493-timing-cases-run-alone-on-a-quiet-machine.md) (the tag, the pass, the evidence), [row 490](./490-first-key-press-restyles-the-page-focus-modality-tokens-on-root.md), [row 434](./434-javascript-in-typescript-modules-not-rust-strings.md).
