@@ -219,6 +219,7 @@ test.describe("overlay-gated elements (coarse pointer, desktop-width viewport)",
 
   test("demos page: BlockColorPalette's hex field is >= 16px once its popover opens", async ({ page }) => {
     await gotoHydrated(page, `${BASE}/demos?`, { timeout: 60000 });
+    // timing-bound-ok: a settle window for real-time layout, animation or hydration after load, not the wait for an app timer; a slow machine only lengthens it
     await page.waitForTimeout(3000);
     const trigger = page.getByRole("button", { name: /Color picker/i }).first();
     test.skip((await trigger.count()) === 0, "no BlockColorPalette trigger rendered on /demos in this build");
@@ -231,6 +232,7 @@ test.describe("overlay-gated elements (coarse pointer, desktop-width viewport)",
 
   test("dashboard email client: search input and compose form are >= 16px", async ({ page }) => {
     await gotoHydrated(page, `${BASE}/dashboard/email-client?`, { timeout: 60000 });
+    // timing-bound-ok: a settle window for real-time layout, animation or hydration after load, not the wait for an app timer; a slow machine only lengthens it
     await page.waitForTimeout(3000);
     assertAllAtLeast16(await scan(page), "/dashboard/email-client");
 
@@ -291,6 +293,7 @@ test.describe("overlay-gated elements (coarse pointer, desktop-width viewport)",
   test('overlay: combobox listbox open ("Switch workspace" input stays >= 16px)', async ({ page }) => {
     const route = `${BASE}/component/combobox/`;
     await gotoHydrated(page, route, { timeout: 60000 });
+    // timing-bound-ok: a settle window for real-time layout, animation or hydration after load, not the wait for an app timer; a slow machine only lengthens it
     await page.waitForTimeout(3000);
     // Open from the keyboard, as combobox.spec.ts's keyboard test does.
     // By accessible name: the navbar's language <select> also has the

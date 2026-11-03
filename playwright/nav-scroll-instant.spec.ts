@@ -116,6 +116,7 @@ for (const [label, use] of [
       await startTrace(page);
       await link.click();
       await page.waitForFunction(() => location.pathname.startsWith("/component/"));
+      // timing-bound-ok: a settle window for real-time layout, animation or hydration after load, not the wait for an app timer; a slow machine only lengthens it
       await page.waitForTimeout(2500); // long enough for any glide (~0.7-1.5 s on a debug build)
       const frames = await stopTrace(page);
 
@@ -138,6 +139,7 @@ for (const [label, use] of [
       await startTrace(page);
       await page.goBack();
       await page.waitForFunction(() => location.pathname === "/");
+      // timing-bound-ok: a settle window for real-time layout, animation or hydration after load, not the wait for an app timer; a slow machine only lengthens it
       await page.waitForTimeout(2500);
       const frames = await stopTrace(page);
 
@@ -182,6 +184,7 @@ test.describe("same-page anchors scroll smoothly (1280x800)", () => {
     await page.locator(`a[href="${href}"]`).first().click();
     await page.waitForTimeout(100);
     // While the jump is in flight (or just settled) the opt-in is what makes it smooth.
+    // timing-bound-ok: a settle window for real-time layout, animation or hydration after load, not the wait for an app timer; a slow machine only lengthens it
     await page.waitForTimeout(1500);
     const frames = await stopTrace(page);
 

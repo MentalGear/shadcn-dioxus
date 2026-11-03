@@ -25,6 +25,13 @@
 #     identifier (a computed style, `parseFloat(...)` or a `...Transition...` read, is not a measurement), unless that line or the line above carries
 #     `timing-bound-ok: <reason>` (a non-empty reason: the bound is a relation to something the page configures, such
 #     as a 600 ms open delay, not a budget for the machine).
+#   - (a different remedy, no tag) a wait on an app timer in real time: `waitForTimeout(<N>)` with N a literal of 1000 ms or more, or
+#     an UPPER_CASE constant (a delay or settle window the page configures). The app's timers are `setTimeout`s, so the
+#     verdict of "after the toast's 3 s it is gone" or "the 600 ms open delay has passed" belongs on `page.clock`
+#     (playwright/app-clock.ts: `pauseAppClock`, then `page.clock.runFor`), where the test decides when the timer fires. The
+#     wait passes when its file uses `page.clock` or `pauseAppClock`, when its case is tagged, or when its line or one of the
+#     two above carries `timing-bound-ok: <reason>` (a window in which nothing may happen, so a loaded machine only
+#     lengthens it, or a wait for a real-time transition or network the clock does not control).
 # A deterministic test does not need the tag: it drives the clock itself, and the gate then has nothing to match.
 #
 # Limits, stated: it reads those names and shapes, so a spec that measures time with its own `performance.now()` pair
@@ -105,6 +112,20 @@ test("dismisses", async ({ page }) => { await flick(page); });'
   expect green boundlower 'test("a", async () => { expect(waited).toBeGreaterThanOrEqual(595); });'
   expect green boundstyle 'test("a", async () => { expect(parseFloat(await style(probe, "transition-duration"))).toBeLessThan(0.001); });'
   expect green boundcount 'test("a", async () => { expect(rows).toBeLessThan(40); });'
+  expect red appwait 'test("a", async ({ page }) => { await page.waitForTimeout(3500); });'
+  expect red appwaitconst 'test("a", async ({ page }) => { await page.waitForTimeout(HOVER_SETTLE_MS); });'
+  expect red appwaitunderscore 'test("a", async ({ page }) => { await page.waitForTimeout(1_200 * 2); });'
+  expect green appwaitshort 'test("a", async ({ page }) => { await page.waitForTimeout(350); });'
+  expect green appwaitclock 'test("a", async ({ page }) => { await pauseAppClock(page); await page.clock.runFor(3500); });'
+  expect green appwaitclockfile 'test("a", async ({ page }) => { await page.clock.install(); await page.waitForTimeout(3500); });'
+  expect green appwaitmarked 'test("a", async ({ page }) => {
+  // timing-bound-ok: nothing may happen in this window, a slow machine only lengthens it
+  await page.waitForTimeout(3500);
+});'
+  expect red appwaitemptyreason 'test("a", async ({ page }) => {
+  await page.waitForTimeout(3500); // timing-bound-ok:
+});'
+  expect green appwaittagged 'test("a", { tag: TIMING_TAG }, async ({ page }) => { await page.waitForTimeout(3500); });'
   echo "check-timing-tags --self-test: OK ($cases cases)"
   exit 0
 fi
@@ -263,6 +284,36 @@ def paced_flings(code, spans, helpers):
             hits.append((a + f.start(), f"drives a `{f.group(0)}` with page.mouse and no clock of its own (use dragOnTimeline)"))
     return hits
 
+WAIT = re.compile(r"\bwaitForTimeout\s*\(")
+WAIT_LONG = re.compile(r"\s*(?:[A-Z][A-Z0-9_]*[A-Z0-9]\b|\d[\d_]*(?:\s*[-+*]\s*[\d_]+)*)")
+CLOCK = re.compile(r"\bpage\s*\.\s*clock\b|\bpauseAppClock\b")
+
+def long_waits(code, raw_lines, spans):
+    """(offset, text) of every real-time `waitForTimeout` on an app-sized duration with no clock, tag or marker."""
+    out = []
+    if CLOCK.search(code):
+        return out
+    for m in WAIT.finditer(code):
+        end = call_end(code, m.end())
+        arg = code[m.end():end - 1].strip()
+        if not WAIT_LONG.fullmatch(arg):
+            continue
+        if not re.search(r"[A-Z]{2}", arg) and eval_ms(arg) < 1000:
+            continue
+        line = code.count("\n", 0, m.start())
+        if any(BOUND_OK.search(l) for l in raw_lines[max(0, line - 2):line + 1]):
+            continue
+        if any(a <= m.start() < b and TAGGED.search(code[a:b].split("async", 1)[0]) for a, b in spans):
+            continue
+        out.append((m.start(), arg))
+    return out
+
+def eval_ms(arg):
+    try:
+        return eval(arg.replace("_", ""), {"__builtins__": {}})
+    except Exception:
+        return 0
+
 errors = []
 considered = 0
 for path in files:
@@ -270,6 +321,8 @@ for path in files:
         raw = fh.read()
     code = IMPORT.sub(blank, COMMENT_LINE.sub(blank, COMMENT_BLOCK.sub(blank, raw)))
     spans = [(m.start(), call_end(code, m.end())) for m in TEST_CALL.finditer(code)]
+    for off, arg in long_waits(code, raw.split("\n"), spans):
+        errors.append(f"{path}:{code.count(chr(10), 0, off) + 1}: waitForTimeout({arg}) waits on an app timer in real time (drive it with page.clock, playwright/app-clock.ts, or say `timing-bound-ok: <reason>`)")
     hits = measure_hits(code, raw.split("\n")) + paced_flings(code, spans, helper_bodies(code))
     if not hits:
         continue
@@ -288,10 +341,11 @@ for path in files:
         errors.append(f"{path}:{line_of(outside[0][0])}: {outside[0][1]} outside any test(...) and the file has no `@timing` case")
 
 if errors:
-    for e in errors:
+    for e in sorted(errors):
         print(e, file=sys.stderr)
-    print(f"\ncheck-timing-tags: {len(errors)} problem(s). Declare the case `test(title, {{ tag: TIMING_TAG }}, ...)` "
-          f"(import it from playwright/timing.ts) so it runs in the quiet timing pass.", file=sys.stderr)
+    print(f"\ncheck-timing-tags: {len(errors)} problem(s). A case that measures time is declared `test(title, {{ tag: TIMING_TAG }}, ...)` "
+          f"(import it from playwright/timing.ts) so it runs in the quiet timing pass; a wait on an app timer uses page.clock "
+          f"(playwright/app-clock.ts) or says `timing-bound-ok: <reason>`.", file=sys.stderr)
     sys.exit(1)
 print(f"check-timing-tags: OK ({considered} spec file(s) measure time, every such case is tagged)")
 PYEOF

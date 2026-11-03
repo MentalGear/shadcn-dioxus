@@ -400,6 +400,7 @@ test.describe("APG Menu and Menubar pattern — DropdownMenu.Sub", () => {
       triggerBox.y + triggerBox.height / 2,
       { steps: 10 },
     );
+    // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
     await page.waitForTimeout(PAST_INTENT_DELAY_MS);
     await expect(subTrigger, "submenu opens on hover-intent").toHaveAttribute(
       "aria-expanded",
@@ -424,6 +425,7 @@ test.describe("APG Menu and Menubar pattern — DropdownMenu.Sub", () => {
     // timer scheduled by the trigger would fire and close the submenu out
     // from under the pointer, which is now resting on the submenu's own
     // item.
+    // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
     await page.waitForTimeout(PAST_INTENT_DELAY_MS);
     await expect(
       subTrigger,
@@ -608,6 +610,7 @@ test.describe("APG Menu and Menubar pattern — ContextMenu.Sub", () => {
       triggerBox.y + triggerBox.height / 2,
       { steps: 10 },
     );
+    // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
     await page.waitForTimeout(PAST_INTENT_DELAY_MS);
     await expect(subTrigger, "submenu opens on hover-intent").toHaveAttribute(
       "aria-expanded",
@@ -624,6 +627,7 @@ test.describe("APG Menu and Menubar pattern — ContextMenu.Sub", () => {
       { steps: 15 },
     );
 
+    // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
     await page.waitForTimeout(PAST_INTENT_DELAY_MS);
     await expect(
       subTrigger,

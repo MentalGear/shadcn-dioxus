@@ -143,10 +143,13 @@ const seconds = (label: string) => {
 test.describe("scroll smoothness of / (counts)", () => {
   test("1. page timers do not grow with the page's age", async ({ page }) => {
     await openHome(page);
+    // timing-bound-ok: a measurement window of the page's real main-thread work, not the wait for an app timer; a slow machine only lengthens it
     await page.waitForTimeout(3000); // settle: first renders, entrance animations
     const a = await probe(page);
+    // timing-bound-ok: a measurement window of the page's real main-thread work, not the wait for an app timer; a slow machine only lengthens it
     await page.waitForTimeout(6000);
     const b = await probe(page);
+    // timing-bound-ok: a measurement window of the page's real main-thread work, not the wait for an app timer; a slow machine only lengthens it
     await page.waitForTimeout(6000);
     const c = await probe(page);
 
@@ -175,6 +178,7 @@ test.describe("scroll smoothness of / (counts)", () => {
     const card = page.locator(".dx-widget-card").filter({ has: page.getByRole("button", { name: "Play or pause" }) }).first();
     await card.getByRole("button", { name: "Play or pause" }).click();
     const paused = seconds(await playerLabel(page));
+    // timing-bound-ok: a measurement window of the page's real main-thread work, not the wait for an app timer; a slow machine only lengthens it
     await page.waitForTimeout(3500);
     expect(seconds(await playerLabel(page)), "paused: the readout holds still").toBeLessThanOrEqual(paused + 1);
     await card.getByRole("button", { name: "Play or pause" }).click();
@@ -183,6 +187,7 @@ test.describe("scroll smoothness of / (counts)", () => {
 
   test("3. #main has no non-passive wheel / touch listener", async ({ page }) => {
     await openHome(page);
+    // timing-bound-ok: a measurement window of the page's real main-thread work, not the wait for an app timer; a slow machine only lengthens it
     await page.waitForTimeout(1500);
     const cdp = await page.context().newCDPSession(page);
     const { result } = await cdp.send("Runtime.evaluate", { expression: "document.querySelector('#main')" });
@@ -216,6 +221,7 @@ test.describe("scroll smoothness of / (counts)", () => {
     // At the top of the page, only the first viewport's cards take part in rendering; everything else is
     // skipped (no style/layout/paint, their animations stop costing frames).
     await page.evaluate(() => window.scrollTo(0, 0));
+    // timing-bound-ok: a measurement window of the page's real main-thread work, not the wait for an app timer; a slow machine only lengthens it
     await page.waitForTimeout(1500);
     const skippedAtTop = await page.evaluate(
       () => [...document.querySelectorAll(".dx-component-card-preview")].filter((e) => !(e as HTMLElement).checkVisibility({ contentVisibilityAuto: true })).length,
@@ -226,6 +232,7 @@ test.describe("scroll smoothness of / (counts)", () => {
     // Idle at the top: a ticking demo or a pulse in an off-screen card must not keep re-laying-out the page.
     // Leaked 100 ms intervals or un-skipped cards each add tens of layouts per second.
     const m0 = await metrics(cdp);
+    // timing-bound-ok: a measurement window of the page's real main-thread work, not the wait for an app timer; a slow machine only lengthens it
     await page.waitForTimeout(4000);
     const m1 = await metrics(cdp);
     const idleLayouts = m1.layouts - m0.layouts;
@@ -267,6 +274,7 @@ test.describe("scroll smoothness of / (counts)", () => {
     // DO keep the skip (tests 1-5).
     await gotoHydrated(page, `${BASE_URL}/component/area_chart/?`, { timeout: 20 * 60 * 1000 });
     await page.waitForFunction(() => document.querySelectorAll(".dx-component-variant").length >= 5, undefined, { timeout: 5 * 60 * 1000 });
+    // timing-bound-ok: a measurement window of the page's real main-thread work, not the wait for an app timer; a slow machine only lengthens it
     await page.waitForTimeout(1500);
     const r = await page.evaluate(() => {
       const v = [...document.querySelectorAll(".dx-component-variant")] as HTMLElement[];

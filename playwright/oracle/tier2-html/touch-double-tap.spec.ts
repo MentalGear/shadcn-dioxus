@@ -202,6 +202,7 @@ test("demos page: every interactive element suppresses double-tap zoom", async (
 
 test("dashboard email client: every interactive element suppresses double-tap zoom", async ({ page }) => {
   await gotoHydrated(page, `${BASE}/dashboard/email-client?`, { timeout: 60000 });
+  // timing-bound-ok: a settle window for real-time layout, animation or hydration after load, not the wait for an app timer; a slow machine only lengthens it
   await page.waitForTimeout(3000);
   assertAllManipulation(await scan(page), "/dashboard/email-client");
 });
@@ -214,6 +215,7 @@ test.describe("overlay-gated elements", () => {
   test('overlay: combobox listbox open ("Switch workspace" options suppress double-tap zoom)', async ({ page }) => {
     const route = `${BASE}/component/combobox/`;
     await gotoHydrated(page, route, { timeout: 60000 });
+    // timing-bound-ok: a settle window for real-time layout, animation or hydration after load, not the wait for an app timer; a slow machine only lengthens it
     await page.waitForTimeout(3000);
     const trigger = demoRole(page, "combobox");
     await trigger.focus();

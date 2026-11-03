@@ -653,6 +653,7 @@ test.describe("hydration parity — SSG server markup vs. wasm client", () => {
     await gotoHydrated(page, `${BASE}/`, { timeout: NAV_TIMEOUT, waitUntil: "networkidle" });
     // Settle window: hydration mismatch recovery/errors can surface a tick
     // or two after the initial load event, not necessarily synchronously.
+    // timing-bound-ok: a settle window for real-time layout, animation or hydration after load, not the wait for an app timer; a slow machine only lengthens it
     await page.waitForTimeout(2000);
 
     const hydrationMessages = consoleMessages.filter((m) => /hydrat/i.test(m));

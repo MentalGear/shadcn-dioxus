@@ -221,6 +221,7 @@ test.describe('open_on_hover: false (click activation)', () => {
     await expect(layout).toHaveAttribute('data-state', 'closed');
 
     await page.getByRole('menuitem', { name: 'Layout', exact: true }).hover();
+    // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
     await page.waitForTimeout(HOVER_SETTLE_MS);
     await expect(layout).toHaveAttribute('data-state', 'closed');
 
@@ -236,6 +237,7 @@ test.describe('open_on_hover: false (click activation)', () => {
     await expect(layout).toHaveAttribute('data-state', 'open');
 
     await page.getByRole('heading', { level: 1 }).hover();
+    // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
     await page.waitForTimeout(HOVER_SETTLE_MS);
     await expect(layout).toHaveAttribute('data-state', 'open');
   });
@@ -248,6 +250,7 @@ test.describe('open_on_hover: false (click activation)', () => {
     await expect(layout).toHaveAttribute('data-state', 'open');
 
     await page.getByRole('menuitem', { name: 'Overlays', exact: true }).hover();
+    // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
     await page.waitForTimeout(HOVER_SETTLE_MS);
     await expect(layout).toHaveAttribute('data-state', 'open');
     await expect(overlays).toHaveAttribute('data-state', 'closed');

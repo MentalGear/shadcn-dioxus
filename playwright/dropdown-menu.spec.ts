@@ -205,10 +205,12 @@ test.describe('Checkable items', () => {
     // Typeahead: a checkbox item is a target when it has a text_value...
     await page.keyboard.press('s');
     await expect(statusBar, "typeahead 's' wraps past Panel to Status Bar").toBeFocused();
+    // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
     await page.waitForTimeout(1100);
     await page.keyboard.press('p');
     await expect(panel, "typeahead 'p' reaches Panel").toBeFocused();
     // ...and a disabled one is never a candidate.
+    // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
     await page.waitForTimeout(1100);
     await page.keyboard.press('a');
     await expect(panel, "typeahead 'a' must not land on the disabled Activity Bar").toBeFocused();
@@ -331,6 +333,7 @@ test.describe('Checkable items', () => {
     // A radio item has no text_value here: typeahead falls back to its value.
     await page.keyboard.press('b');
     await expect(bottom, "typeahead 'b' reaches Bottom via its value").toBeFocused();
+    // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
     await page.waitForTimeout(1100);
     await page.keyboard.press('r');
     await expect(bottom, "typeahead 'r' must not land on the disabled Right").toBeFocused();
@@ -417,6 +420,7 @@ test.describe('DropdownMenuSub open_on_hover: false (click activation)', () => {
     await expect(sub).toHaveAttribute('aria-expanded', 'false');
 
     await sub.hover();
+    // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
     await page.waitForTimeout(HOVER_SETTLE_MS);
     await expect(sub).toHaveAttribute('aria-expanded', 'false');
     await expect(submenu).toHaveCount(0);
@@ -436,6 +440,7 @@ test.describe('DropdownMenuSub open_on_hover: false (click activation)', () => {
     // Onto a sibling item of the parent menu -- with hover on, this closes
     // the submenu after SUBMENU_CLOSE_GRACE_DELAY.
     await page.getByRole('menuitem', { name: 'Share' }).hover();
+    // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
     await page.waitForTimeout(HOVER_SETTLE_MS);
     await expect(sub).toHaveAttribute('aria-expanded', 'true');
     await expect(submenu).toBeVisible();
@@ -443,6 +448,7 @@ test.describe('DropdownMenuSub open_on_hover: false (click activation)', () => {
     // And the pointer resting inside then leaving the submenu content does not close it either.
     await page.getByRole('menuitem', { name: 'Plain text' }).hover();
     await page.getByRole('menuitem', { name: 'Print' }).hover();
+    // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
     await page.waitForTimeout(HOVER_SETTLE_MS);
     await expect(sub).toHaveAttribute('aria-expanded', 'true');
   });

@@ -116,8 +116,10 @@ for (const kase of CASES) {
         type: "touchStart",
         touchPoints: [{ x, y }],
       });
+      // timing-bound-ok: the gesture's hold and settle are real touch time the clock does not control
       await page.waitForTimeout(HOLD_MS);
       await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+      // timing-bound-ok: the gesture's hold and settle are real touch time the clock does not control
       await page.waitForTimeout(SETTLE_MS);
 
       const toggles = await page.evaluate(

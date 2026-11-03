@@ -139,6 +139,7 @@ for (const { route, scheme, widths } of GROUPS) {
       await gotoPrerendered(page, `${BASE_URL}${route}`, { waitUntil: "commit" });
       await page.waitForSelector('html[data-hydrated="true"]', { state: "attached", timeout: 120_000 });
       await page.evaluate(() => document.fonts.ready.then(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))));
+      // timing-bound-ok: a settle window for real-time layout, animation or hydration after load, not the wait for an app timer; a slow machine only lengthens it
       await page.waitForTimeout(1500); // no input: whatever still moves by itself shows up in this window
       const { events, paint, parsedAt, charts, measured } = await page.evaluate(() => ({
         events: (window as any).__chartsRec.events as BoxEvent[],

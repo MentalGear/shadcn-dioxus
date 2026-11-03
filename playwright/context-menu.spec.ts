@@ -736,6 +736,7 @@ test.describe('ContextMenuSub open_on_hover: false (click activation)', () => {
     await expect(sub).toHaveAttribute('aria-expanded', 'false');
 
     await sub.hover();
+    // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
     await page.waitForTimeout(HOVER_SETTLE_MS);
     await expect(sub).toHaveAttribute('aria-expanded', 'false');
     await expect(submenu).toHaveCount(0);
@@ -752,12 +753,14 @@ test.describe('ContextMenuSub open_on_hover: false (click activation)', () => {
     await expect(submenu).toBeVisible();
 
     await page.getByRole('menuitem', { name: 'Share' }).hover();
+    // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
     await page.waitForTimeout(HOVER_SETTLE_MS);
     await expect(sub).toHaveAttribute('aria-expanded', 'true');
     await expect(submenu).toBeVisible();
 
     await page.getByRole('menuitem', { name: 'Plain text' }).hover();
     await page.getByRole('menuitem', { name: 'Print' }).hover();
+    // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
     await page.waitForTimeout(HOVER_SETTLE_MS);
     await expect(sub).toHaveAttribute('aria-expanded', 'true');
   });
