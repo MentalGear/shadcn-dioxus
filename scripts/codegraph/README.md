@@ -52,3 +52,14 @@ The extractor model is files as nodes (`{id, comp, items}`; `items` is the per-n
 - Generated files (`index.scip`, `graph.json`, `explorer.html`) stay under the git-ignored output dir; `run.sh` refuses
   an output dir that is not ignored or holds tracked files.
 - The page template, the scripts and the recipe contain no `http(s)://` URL; the only ones in `explorer.html` are licence-comment text inside the unmodified Cytoscape bundle (never fetched). Check by hand: `grep -n 'https\?://' scripts/codegraph/*.py scripts/codegraph/run.sh scripts/codegraph/explorer.template.html`; `smoke.js` aborts and fails on any non-`file:` request.
+
+## Measured (rust-analyzer 1.97.0, 2026-11-03, 4 cores)
+
+- Cold run: SCIP 684 s (26.3 MB, 900 documents), extractor and page 2 s. 1,383 files, 254 components, 10,792 edges.
+- Warm run, nothing changed: 1 s, all three products reused. Template-only change: 0 s, page rebuilt. Extractor-only
+  change: 2 s, graph and page rebuilt, no SCIP. A new untracked `.rs` file changes the index key and starts the SCIP run.
+- Page, opened from `file:` at 1280 px (`node scripts/codegraph/smoke.js`, playwright from `playwright/node_modules`):
+  no console error, no non-`file:` request (all aborted and reported), picker, crate, component and file levels render;
+  file level radius 1 for `button` is 154 nodes and radius 2 is 465 nodes. `cose` (with boxes) is the layout up to 250
+  nodes; above that the ego view is a concentric ring layout by hop distance without boxes, because `cose` gives a hairball
+  there. Raise the minimum edge weight to thin a big view.
