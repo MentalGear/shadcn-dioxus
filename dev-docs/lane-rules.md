@@ -12,7 +12,11 @@ Session tooling (paths below default to `LANE_TGT=/home/user/tgt`):
   source touch, `CARGO_BUILD_JOBS=2`, `CARGO_INCREMENTAL=0`.
 - `scripts/lane-ssg.sh <worktree> <lane> [port]` -- debug SSG of a worktree inside the queue, from a fresh
   copy of the warm template, served on `port` (the server starts outside the lock).
-- `scripts/gate-at.sh <commit> <log>` -- `scripts/run-gates.sh` on a pinned commit in its own worktree (class `gate`).
+- `scripts/gate-at.sh <commit> <log>` -- `scripts/run-gates.sh` on a pinned commit in its own worktree (class `gate`). Each
+  `run-gates.sh` run writes its per-gate logs to its own `$CARGO_TARGET_DIR/run-gates/<UTC time>-<pid>/` (the summary's
+  `logs:` line; `run-gates/latest` points at the newest finished run; the newest 20 are kept, `RUN_GATES_KEEP`), so
+  concurrent runs on one target never share a log (row 440). A reused gate's summary line names the log of the run
+  that really ran it.
 - `scripts/lane-target.sh create <name> --release [--base-path P]` / `warm-release [--base-path P]` -- the two warm
   RELEASE trees (row 324): `$LANE_TGT/release-template` (no base path, validation) and `$LANE_TGT/release` (base path,
   the deploy's), chosen by base path. A validation release build is `eval "$(scripts/lane-target.sh create v --release)"`
