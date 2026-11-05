@@ -1,7 +1,7 @@
 ---
 id: 492
 title: "Bug: ColorPicker's panel clips to about half its height when it closes"
-status: "FIXED on lane/colorpicker-close-492, not merged (2026-11-01). Root cause: a component sheet's…"
+status: "FIXED and MERGED in PR #161 (6e85dea6), DEPLOYED in 1ea333fa. Root cause: a component sheet's…"
 size: "S"
 area: overlays
 updated: 2026-11-01
@@ -16,7 +16,7 @@ animation. The owner's word for it is "glitch": the panel shrinks and clips its 
 
 ## Status / trigger
 
-FIXED on `lane/colorpicker-close-492`, not merged (2026-11-01). Root cause: a component sheet's `display` beat the UA's
+FIXED and MERGED in PR #161 (`6e85dea6`), DEPLOYED in `1ea333fa`. Root cause: a component sheet's `display` beat the UA's
 `[popover]:not(:popover-open) { display: none }`, so a natively closed popover kept painting outside the top layer for
 the whole exit animation. Not suspects 1-3. One shared rule, `primitives/src/top_layer/anchor.css`
 (`[data-dx-anchored][popover]:not(:popover-open) { display: none !important }`), closes the class for ColorPicker,

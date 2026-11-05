@@ -1,7 +1,7 @@
 ---
 id: 435
 title: "One menu-family implementation behind three hosts (DropdownMenu, ContextMenu, Menubar)"
-status: "LANDED on the session branch (2026-10-31, merged from lane/menu-family-435; steps 1-4 of the Detail…"
+status: "MERGED in PR #159 (c16027cc), DEPLOYED in 1ea333fa. Steps 1-4 of the Detail below are built, after…"
 size: "L"
 area: primitives
 updated: 2026-10-31
@@ -15,7 +15,7 @@ DropdownMenu, ContextMenu and Menubar should behave the same wherever APG says t
 
 ## Status / trigger
 
-LANDED on the session branch (2026-10-31, merged from `lane/menu-family-435`; steps 1-4 of the Detail below), after owner approval 2026-10-25 and the 2026-10-31 call to finish the single overlay engine (this row and [row 487](./487-one-dismiss-core-escape-outside-dismiss-and-focus-return.md)) before the Rust ports, so the overlay port ([row 456](./456-port-3-ov-overlay-core-escape-dismiss-open-focus.md)) ports one menu family and one dismiss core instead of three and twelve. Measured on the session branch: the hosts and the shared modules together went from 7,826 to 6,038 lines (dropdown 2,371 -> 1,275, context 2,358 -> 1,181, menubar 1,569 -> 1,235; `menu_root.rs`, `menu_item.rs` and `menu_sub.rs` now 313, 1,346 and 688). The ContextMenu scroll-block blocker (row 479's piece) went with commit `3a0dd429`. The Props reference tables of the three docs pages list the shared structs again (lane `menu-props-fix`, 2026-10-31). Built: `playwright/oracle/tier1-apg/menu-family-parity.spec.ts` (the three-host parity spec, written first), `menu_root::MenuHost` / `use_menu_panel` / `nav_key`, `menu_item::SelectOn` / `render_menu_item` / `MenuItemProps<T>`, and `menu_sub::render_sub` / `render_sub_trigger` / `render_sub_content`. Proof below.
+MERGED in PR #159 (`c16027cc`), DEPLOYED in `1ea333fa`. Steps 1-4 of the Detail below are built, after owner approval 2026-10-25 and the 2026-10-31 call to finish the single overlay engine (this row and [row 487](./487-one-dismiss-core-escape-outside-dismiss-and-focus-return.md)) before the Rust ports, so the overlay port ([row 456](./456-port-3-ov-overlay-core-escape-dismiss-open-focus.md)) ports one menu family and one dismiss core instead of three and twelve. Measured on the session branch: the hosts and the shared modules together went from 7,826 to 6,038 lines (dropdown 2,371 -> 1,275, context 2,358 -> 1,181, menubar 1,569 -> 1,235; `menu_root.rs`, `menu_item.rs` and `menu_sub.rs` now 313, 1,346 and 688). The ContextMenu scroll-block blocker (row 479's piece) went with commit `3a0dd429`. The Props reference tables of the three docs pages list the shared structs again (lane `menu-props-fix`, 2026-10-31). Built: `playwright/oracle/tier1-apg/menu-family-parity.spec.ts` (the three-host parity spec, written first), `menu_root::MenuHost` / `use_menu_panel` / `nav_key`, `menu_item::SelectOn` / `render_menu_item` / `MenuItemProps<T>`, and `menu_sub::render_sub` / `render_sub_trigger` / `render_sub_content`. Proof below.
 
 ## Size
 
