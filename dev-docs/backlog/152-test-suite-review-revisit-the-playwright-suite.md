@@ -19,6 +19,8 @@ Test-suite review: revisit the Playwright suite (~1,786 tests, ~21 min on a rele
 
 **NARROWED 2026-10-19: speed half 152a DONE (lane suite-speed badc56d7): measured (3,752 tests, 183 files, 14,168 s test time on debug; all-routes 16%, first-paint 7.7%; fixed sleeps < 2%, no external waits), duration-balanced shards + 3 workers about 1.4x faster on the same build, release about 1.47x faster than debug and runs the timing specs, changed-files spec selector playwright/tools/select.mjs, slow-spec budget gate check-slow-spec-budget on playwright/durations.json, serve-spa.py serves 404.html like Pages (four not-found specs no longer hang). Remaining: per-file page reuse via a shared-page fixture (all-routes loads each route three times), then 152b (prune, merge, re-tier specs)** -- owner note 2026-10-05; nothing was run for this row, the evidence below is read from the round-2 full-suite report
 
+**Next target (owner 2026-11-05: item 4 of the build and test-suite review).** `all-routes.spec.ts` is the longest file, at 859 s of 13,255 s (`playwright/durations.json`, debug build, 2 workers); `first-paint-styles` (512 s) follows. Start the remaining 152b work there, after the 2026-11-05 lane batch has merged, since that batch edits `dismiss-parity` and `menu-family-parity`.
+
 ## Size
 
 M

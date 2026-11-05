@@ -40,7 +40,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (82)
+## Open rows (84)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -126,5 +126,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [492](backlog/492-bug-colorpicker-panel-clips-to-half-height-on-close.md) | Bug: ColorPicker's panel clips to about half its height when it closes | FIXED on lane/colorpicker-close-492, not merged (2026-11-01). Root cause: a component sheet's… | S | overlays |
 | [493](backlog/493-timing-cases-run-alone-on-a-quiet-machine.md) | Timing cases run alone, on a quiet machine: the @timing tag and the timing pass | The construction landed (the tag, the pass, the gate). Deactivated by owner decision 2026-11-02… | M | playwright |
 | [494](backlog/494-re-enable-the-timing-cases-after-the-rust-port.md) | Re-enable the @timing cases after the Rust port | BACKLOG, triggered: when the JavaScript plan's port rows are done (row 434 with rows 444-466, final… | S-M | playwright |
+| [495](backlog/495-slow-observation-window-specs.md) | The two ~32 s-per-test specs wait on signals, not on fixed observation windows | APPROVED (owner 2026-11-05: item 1 of the build and test-suite review). Lane slow-specs-495. | S-M | playwright |
+| [496](backlog/496-incremental-gate-target.md) | Measure incremental compilation for the main loop's gate target | APPROVED (owner 2026-11-05: item 2 of the build and test-suite review), measure first. Runs when no… | S | tooling |
 
 <!-- END GENERATED -->
