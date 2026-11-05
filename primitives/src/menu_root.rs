@@ -121,8 +121,8 @@ pub(crate) fn content_labelledby_attributes(
 /// Every menu panel wires this as its `onpointerdown`. Two reasons, one construction:
 /// - the menu must stay open across a click's pointerdown-to-pointerup gap (an item focus change would otherwise
 ///   blur the trigger and trip the blur-driven close before `onclick`/`on_select` fire);
-/// - a menu whose items **commit on `pointerdown`** (`SelectOn::PressStart`, the Menubar) closes and refocuses
-///   the trigger *inside* that same pointerdown. The mousedown that follows it would then focus the pressed item,
+/// - a menu whose items **commit a mouse press on `pointerdown`** (`SelectOn::PressStart`, the Menubar) closes and
+///   refocuses the trigger *inside* that same pointerdown. The mousedown that follows it would then focus the pressed item,
 ///   which is already being unmounted, and focus would end on `<body>` instead of the trigger (backlog row 140).
 ///   With the default cancelled, the refocus the commit made is the last focus change.
 pub(crate) fn keep_focus_on_pointerdown(event: Event<PointerData>) {

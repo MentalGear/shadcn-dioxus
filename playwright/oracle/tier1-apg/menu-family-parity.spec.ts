@@ -33,7 +33,9 @@
  *   - Selection commit (`SelectOn`, primitives/src/menu_item.rs): DropdownMenu commits on `click` (a press that ends off
  *     the item selects nothing), ContextMenu on release (`pointerup` for a mouse, the `click` after the release for
  *     touch and pen: the long press that opened the menu and lifts over an item must not select it), Menubar on
- *     `pointerdown` (it closes and hands focus back to the trigger inside that same press, backlog row 140).
+ *     `pointerdown` for a mouse (it closes and hands focus back to the trigger inside that same press, backlog row
+ *     140) and on the release for touch and pen, like ContextMenu (a touch that turns into a scroll never selects,
+ *     backlog row 489; `menubar.spec.ts` "An item press" asserts the scroll, the tap and the mouse press).
  *   - ContextMenu: no trigger button and no keyboard opening (the trigger is `tabindex="-1"`); the menu is placed at the
  *     pointer point (a long press opens it for touch and pen); its scroll lock is the only one of the three.
  *   - Menubar: the trigger row is a roving `menubar` of `menuitem` triggers; ArrowLeft/ArrowRight, Home and End on an
@@ -59,7 +61,7 @@ const ITEM = ':is([role="menuitem"], [role="menuitemcheckbox"], [role="menuitemr
 const ENABLED = `${ITEM}:not([aria-disabled="true"])`;
 const DISABLED = `${ITEM}[aria-disabled="true"]`;
 
-/** How a host commits a pointer press on a plain item: `click`, on release, or on the press itself. */
+/** How a host commits a mouse press on a plain item: `click`, on release, or on the press itself (touch and pen: on the tap, in all three). */
 type Commit = "click" | "release" | "press";
 
 interface Host {
@@ -505,7 +507,7 @@ for (const host of HOSTS) {
   });
 }
 
-// ---- touch: a tap on an item selects it (all three hosts) ----
+// ---- touch: a tap on an item selects it, in all three hosts (a Menubar item no longer commits on the touch's pointerdown) ----
 
 test.describe("menu family parity — touch", () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, colorScheme: "light" });
@@ -545,6 +547,42 @@ test.describe("menu family parity — touch", () => {
       await item.tap();
       await expect(anyMenu(page)).toHaveCount(0);
       await expect(demoFrame(page)).toContainText(new RegExp(`Selected: ${text}`, "i"));
+    });
+  }
+});
+
+// ---- touch: the press alone selects nothing (all three hosts) ----
+
+test.describe("menu family parity — touch press", () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, colorScheme: "light" });
+
+  for (const host of HOSTS) {
+    test(`${host.name}: a touch pointerdown on an item, with no release, selects nothing`, async ({ page }) => {
+      await goto(page, host);
+      // Opened by mouse (a context menu by a right click): this case is about the item press, not the opening gesture.
+      await open(host, page);
+      const menu = rootMenu(page);
+      await page.waitForTimeout(900);
+      const item = menu.locator(ENABLED).nth(1);
+      await item.evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        el.dispatchEvent(
+          new PointerEvent("pointerdown", {
+            pointerId: 7778,
+            pointerType: "touch",
+            isPrimary: true,
+            clientX: r.x + r.width / 2,
+            clientY: r.y + r.height / 2,
+            button: 0,
+            buttons: 1,
+            bubbles: true,
+            cancelable: true,
+          }),
+        );
+      });
+      await page.waitForTimeout(300);
+      await expect(menu, "a touch press without a release leaves the menu open").toHaveAttribute("data-state", "open");
+      await expect(demoFrame(page)).not.toContainText("Selected:");
     });
   }
 });

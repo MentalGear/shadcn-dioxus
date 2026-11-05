@@ -3,8 +3,9 @@
 //! This file is the Menubar *host* (backlog row 435): the `menubar` row of roving triggers, each
 //! [`MenubarMenu`]'s trigger and anchored panel, and the keys that move between menus. The items, the checkable
 //! items and the panel wiring are the menu family every host shares (`crate::menu_item`, `crate::menu_root`),
-//! reading the `MenuHost` each `MenubarMenu` provides; its items select on `pointerdown` (`SelectOn::PressStart`),
-//! because the commit closes the menu and hands focus back to the trigger inside that one press.
+//! reading the `MenuHost` each `MenubarMenu` provides; its items select a mouse press on `pointerdown`
+//! (`SelectOn::PressStart`), because the commit closes the menu and hands focus back to the trigger inside that one
+//! press, and a touch or pen press on the release, so a touch that turns into a scroll selects nothing.
 
 use crate::state_attrs;
 use dioxus::prelude::*;

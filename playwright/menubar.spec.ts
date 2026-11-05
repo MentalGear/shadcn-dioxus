@@ -4,6 +4,7 @@ import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 import { expectFadeKeepsTransform } from "./assert-anchor-transform";
+import { measureAtRest } from "./animations";
 
 test("pointer navigation", async ({ page }) => {
   await gotoHydrated(page, `${BASE_URL}/component/menubar/`, { timeout: 20 * 60 * 1000 }); // Increase timeout to 20 minutes
@@ -304,6 +305,85 @@ test.describe("Checkable items", () => {
     await modify.click();
     await expect(descending).toHaveAttribute("aria-checked", "true");
     await expect(page.getByRole("menuitemradio", { name: "Ascending" })).toHaveAttribute("aria-checked", "false");
+  });
+});
+
+// A touch or pen press on an item is a tap, not a press (backlog row 477's rule, row 489): the item records the press
+// on `pointerdown` and commits on the release, a scroll that takes the pointer drops it, and a mouse press still
+// commits on `pointerdown`. The `rtl` variant's "Pinned" item has `close_on_select: true`, so a commit is visible as the
+// menu closing, the (controlled) check flipping and focus going back to the trigger.
+test.describe("An item press: touch commits on the tap, mouse on pointerdown (row 489)", () => {
+  const openOptions = async (page: Page, how: "tap" | "click") => {
+    await gotoHydrated(page, block("rtl"), { timeout: 20 * 60 * 1000 });
+    // A tall page, so a touch drag that starts on an item really scrolls it.
+    await page.evaluate(() => {
+      document.body.style.paddingTop = "1200px";
+      document.body.style.paddingBottom = "3000px";
+    });
+    const options = page.getByRole("menuitem", { name: "Options" });
+    await options.evaluate((el) => el.scrollIntoView({ block: "center", inline: "center" }));
+    if (how === "tap") await options.tap();
+    else await options.click();
+    const pinned = page.getByRole("menuitemcheckbox", { name: "Pinned" });
+    const menu = popupHaving(page, pinned);
+    await expect(menu).toHaveAttribute("data-state", "open");
+    await expect(pinned).toHaveAttribute("aria-checked", "true");
+    await awaitSettled(page);
+    return { options, pinned, menu };
+  };
+
+  const awaitSettled = (page: Page) =>
+    page.evaluate(() => new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(r, 120)))));
+
+  test.describe("touch", () => {
+    test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
+
+    test("a touch scroll that starts on an item selects nothing: the menu stays open, no action, focus does not move", async ({ page }) => {
+      const { pinned, menu } = await openOptions(page, "tap");
+      const box = await measureAtRest(pinned);
+      const x = box.x + box.width / 2;
+      const y = box.y + box.height / 2;
+      const cdp = await page.context().newCDPSession(page);
+      const touch = (type: string, ty?: number) =>
+        cdp.send("Input.dispatchTouchEvent", { type, touchPoints: ty === undefined ? [] : [{ x, y: ty }] });
+      const scrolledBefore = await page.evaluate(() => window.scrollY);
+      const focusBefore = await page.evaluate(() => document.activeElement?.id ?? "");
+      // a finger that lands on the item and drags: the browser takes the gesture to scroll and cancels the pointer
+      await touch("touchStart", y);
+      for (let i = 1; i <= 8; i++) {
+        await touch("touchMove", y - i * 20);
+        await page.waitForTimeout(16);
+      }
+      await touch("touchEnd");
+      await awaitSettled(page);
+      expect(await page.evaluate(() => window.scrollY), "the drag scrolled the page").not.toBe(scrolledBefore);
+      await expect(menu, "a scroll that starts on an item leaves the menu open").toHaveAttribute("data-state", "open");
+      await expect(pinned, "the item's action did not run").toHaveAttribute("aria-checked", "true");
+      // A tap that opened the menu left focus on the trigger; a commit would have handed it back there from an item,
+      // so the case is "focus is exactly where it was".
+      expect(await page.evaluate(() => document.activeElement?.id ?? ""), "focus did not move").toBe(focusBefore);
+    });
+
+    test("a tap on an item selects it once: the action runs, the menu closes, focus returns to the trigger", async ({ page }) => {
+      const { options, pinned, menu } = await openOptions(page, "tap");
+      await pinned.tap();
+      await expect(menu, "the tap closes the menu").toHaveCount(0);
+      await expect(options, "a tap hands focus back to the trigger").toBeFocused();
+      await options.tap();
+      await expect(pinned, "the action ran exactly once").toHaveAttribute("aria-checked", "false");
+    });
+  });
+
+  test("a mouse press on an item selects on pointerdown", async ({ page }) => {
+    const { options, pinned, menu } = await openOptions(page, "click");
+    // Only the press: the commit has happened before the release.
+    const box = await measureAtRest(pinned);
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    await expect(menu, "the press alone closes the menu").toHaveCount(0);
+    await expect(options).toBeFocused();
+    await page.mouse.up();
+    await expect(options, "the release moves nothing").toBeFocused();
   });
 });
 
