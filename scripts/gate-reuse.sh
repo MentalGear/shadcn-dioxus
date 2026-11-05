@@ -13,12 +13,13 @@
 #
 #   gate_reuse_store                      -> the store directory
 #   gate_reuse_key REPO_ROOT CMDLINES...  -> the key (stdout)
-#   gate_reuse_lookup KEY GATE            -> stdout "<tree>\t<iso date>\t<secs>", rc 0 on a stored PASS, else rc 1
-#   gate_reuse_record KEY GATE TREE SECS  -> store a PASS
+#   gate_reuse_lookup KEY GATE            -> stdout "<tree>\t<iso date>\t<secs>[\t<log>]", rc 0 on a stored PASS, else rc 1
+#                                            (<log> is the log file of the run that really ran the gate, row 440)
+#   gate_reuse_record KEY GATE TREE SECS [LOG] -> store a PASS
 #   gate_reuse_forget KEY GATE            -> delete a stored result
 #   gate_reuse_prune                      -> drop keys not written for 21 days
 
-GATE_REUSE_FORMAT=1
+GATE_REUSE_FORMAT=2
 
 gate_reuse_store() {
   printf '%s\n' "${GATE_REUSE_DIR:-${LANE_TGT:-/home/user/tgt}/gate-reuse}"
@@ -40,18 +41,18 @@ gate_reuse_key() { # $1 = repo root, rest = the reusable gates' command lines
 
 _gate_reuse_file() { printf '%s/%s/%s\n' "$(gate_reuse_store)" "$1" "$2"; }
 
-gate_reuse_lookup() { # prints "<tree>\t<date>\t<secs>"
+gate_reuse_lookup() { # prints "<tree>\t<date>\t<secs>[\t<log>]"
   local f; f="$(_gate_reuse_file "$1" "$2")"
   [ -f "$f" ] || return 1
-  awk -F'\t' 'NR == 1 && $1 == "PASS" && NF >= 5 { print $2 "\t" $3 "\t" $4; ok = 1 } END { exit !ok }' "$f"
+  awk -F'\t' 'NR == 1 && $1 == "PASS" && NF >= 5 { print $2 "\t" $3 "\t" $4 ($6 != "" ? "\t" $6 : ""); ok = 1 } END { exit !ok }' "$f"
 }
 
-gate_reuse_record() { # KEY GATE TREE SECS
-  local key="$1" gate="$2" tree="$3" secs="$4" dir tmp
+gate_reuse_record() { # KEY GATE TREE SECS [LOG]
+  local key="$1" gate="$2" tree="$3" secs="$4" log="${5:-}" dir tmp
   dir="$(gate_reuse_store)/$key"
   mkdir -p "$dir" 2>/dev/null || return 1
   tmp="$(mktemp "$dir/.tmp.XXXXXX")" || return 1
-  printf 'PASS\t%s\t%s\t%s\tformat%s\n' "$tree" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$secs" "$GATE_REUSE_FORMAT" > "$tmp"
+  printf 'PASS\t%s\t%s\t%s\tformat%s\t%s\n' "$tree" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$secs" "$GATE_REUSE_FORMAT" "$log" > "$tmp"
   mv -f "$tmp" "$dir/$gate"
 }
 

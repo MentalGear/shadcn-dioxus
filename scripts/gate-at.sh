@@ -2,6 +2,8 @@
 # Run scripts/run-gates.sh on a PINNED commit in its own worktree, so merges in the main checkout
 # can never change the tree under a running gate (a merge during a run would leave conflict
 # markers in the checked tree; backlog row 221). Usage: scripts/gate-at.sh <commit> <logfile>
+# <logfile> holds run-gates' stdout; the per-gate logs are in the run's own directory, named by its `logs:` line
+# (printed here too; row 440).
 # LANE_TGT (default /home/user/tgt) holds the lock queue, the gates target and the worktree root.
 set -uo pipefail
 export T="${LANE_TGT:-/home/user/tgt}" LANE_TGT="${LANE_TGT:-/home/user/tgt}"; repo="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -33,4 +35,4 @@ rc=$?
 got="$(head -1 "$log")"
 if [ "$got" != "${c:0:${#got}}" ] || [ -z "$got" ]; then echo "gate-at: ran on '$got', not $c -- NOT a pass for $c" >> "$log"; rc=9; fi
 echo "EXIT $rc" >> "$log"
-grep -E "FAIL|ALL GREEN|gates run|EXIT" "$log"
+grep -E "FAIL|ALL GREEN|gates run|^logs: |EXIT" "$log"
