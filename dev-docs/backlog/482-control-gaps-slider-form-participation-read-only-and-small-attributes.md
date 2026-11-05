@@ -1,7 +1,7 @@
 ---
 id: 482
 title: "Control gaps: Slider form participation, read_only, Toggle data-pressed, Tabs activate_on_focus"
-status: "IMPLEMENTED on lane/control-gaps-482, awaiting the merge batch (2026-10-28). Items 1 to 4 are…"
+status: "MERGED in PR #156 (7d50e068), DEPLOYED in 1ea333fa. Items 1 to 4 are built: Slider and RangeSlider…"
 size: "S-M"
 area: components
 updated: 2026-10-28
@@ -15,7 +15,7 @@ Four behaviours that Radix and Base UI both have (or that Base UI has and base-n
 
 ## Status / trigger
 
-IMPLEMENTED on `lane/control-gaps-482`, awaiting the merge batch (2026-10-28). Items 1 to 4 are built: Slider and RangeSlider `name`/`form`, one hidden `type=hidden` input per thumb (the first carries the id the shared form-reset listener uses, so a reset restores `default_value`), `on_value_commit` (pointer release after a press that changed a value, each keyboard step that changes one; not a reset) and `RangeSlider::min_steps_between_thumbs` (one `bounds_for` serves clamping and `aria-valuemin/max`); `read_only` on Checkbox, Switch and RadioGroup (`aria-readonly` plus a `data-readonly` presence attribute; the group carries `aria-readonly`, its items only `data-readonly`, because `aria-readonly` is not allowed on `role=radio`; a radio group's arrow keys still move focus); Toggle `data-pressed` (ToggleGroup items inherit it); Tabs `activate_on_focus`. Not done, as the row marks them optional: Tabs `data-active`/`data-hidden`, the Slider push collision, `edge` alignment and Control part. The row 481 helper does not exist yet, so the presence attributes are written with `then_some("")` at each site; row 481 folds them into its helper.
+MERGED in PR #156 (`7d50e068`), DEPLOYED in `1ea333fa`. Items 1 to 4 are built: Slider and RangeSlider `name`/`form`, one hidden `type=hidden` input per thumb (the first carries the id the shared form-reset listener uses, so a reset restores `default_value`), `on_value_commit` (pointer release after a press that changed a value, each keyboard step that changes one; not a reset) and `RangeSlider::min_steps_between_thumbs` (one `bounds_for` serves clamping and `aria-valuemin/max`); `read_only` on Checkbox, Switch and RadioGroup (`aria-readonly` plus a `data-readonly` presence attribute; the group carries `aria-readonly`, its items only `data-readonly`, because `aria-readonly` is not allowed on `role=radio`; a radio group's arrow keys still move focus); Toggle `data-pressed` (ToggleGroup items inherit it); Tabs `activate_on_focus`. Not done, as the row marks them optional: Tabs `data-active`/`data-hidden`, the Slider push collision, `edge` alignment and Control part. Row 481's helper (`state_attrs.rs`) has landed since (PR #156), and the `read_only` sites use its `readonly` function.
 
 ## Size
 

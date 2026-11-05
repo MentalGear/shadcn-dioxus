@@ -1,7 +1,7 @@
 ---
 id: 422
 title: "Component pages: group the sections every page shares under one header, component-specific sections under another"
-status: "BUILT on lane/docs-groups-422 (2026-10-31), awaiting the merge batch. The owner approved the…"
+status: "MERGED in PR #159 (c16027cc), DEPLOYED in 1ea333fa. Nothing open. The owner approved the outline…"
 size: "M"
 area: docs
 updated: 2026-10-25
@@ -17,7 +17,7 @@ Put the component-specific accordion sections under another header.
 
 ## Status / trigger
 
-BUILT on `lane/docs-groups-422` (2026-10-31), awaiting the merge batch. The owner approved the outline 2026-10-25;
+MERGED in PR #159 (`c16027cc`), DEPLOYED in `1ea333fa`. Nothing open. The owner approved the outline 2026-10-25;
 row 394 (the "Coming from shadcn / Radix / TanStack" table) is NOT PLANNED, so the Basic group carries no table from it.
 
 ## Size

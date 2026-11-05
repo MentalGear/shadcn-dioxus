@@ -6,7 +6,7 @@ resolves here by id.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Done rows (385)
+## Done rows (389)
 
 | # | Item | Updated |
 |---|---|---|
@@ -380,6 +380,7 @@ resolves here by id.
 | [419](backlog/done/419-toast-close-target.md) | Toast close button: a bigger hit target and a hover style | 2026-10-25 |
 | [420](backlog/done/420-coarse-sizing-every-control.md) | Touch sizing covers every control: a coarse-aware control scale and one hit size | 2026-10-25 |
 | [421](backlog/done/421-toast-insert-no-glide.md) | Toast: a new toast's first measurement never plays as a glide (collapsed pile jumps on insert, Firefox) | 2026-10-25 |
+| [422](backlog/done/422-docs-page-shared-section-group.md) | Component pages: group the sections every page shares under one header, component-specific sections under another | 2026-10-25 |
 | [423](backlog/done/423-accordion-header-hover-underline.md) | An open Accordion header still underlines on hover; the header should never underline | 2026-10-25 |
 | [424](backlog/done/424-date-picker-read-only-still-edits.md) | DatePicker `read_only` still lets keys change the value and the popover pick a date | 2026-10-25 |
 | [425](backlog/done/425-hover-card-force-mount-no-effect.md) | HoverCard `force_mount` has no effect: the card is still rendered only while open | 2026-10-25 |
@@ -395,5 +396,8 @@ resolves here by id.
 | [439](backlog/done/439-chart-prehydration-geometry-flake.md) | chart-prehydration geometry flake: the two loads race font-display: optional | 2026-10-25 |
 | [441](backlog/done/441-reduced-motion-scrim.md) | The modal scrim fade ignores prefers-reduced-motion: the per-sheet rule never won on specificity | 2026-10-26 |
 | [470](backlog/done/470-bug-carousel-autoplay-tick-fights-a-user-swipe.md) | Bug: the carousel autoplay tick fights a user swipe (the scroller is pulled forward and bounces back) | 2026-10-26 |
+| [474](backlog/done/474-bug-input-otp-paste-loses-digits-to-maxlength.md) | Bug: Input OTP paste loses digits because maxlength truncates before the filter runs | 2026-10-31 |
+| [483](backlog/done/483-playwright-anchored-panel-settle-fixture.md) | Playwright waits for a just-opened anchored panel to settle before acting inside it (fixture, not per spec) | 2026-10-29 |
+| [492](backlog/done/492-bug-colorpicker-panel-clips-to-half-height-on-close.md) | Bug: ColorPicker's panel clips to about half its height when it closes | 2026-11-01 |
 
 <!-- END GENERATED -->
