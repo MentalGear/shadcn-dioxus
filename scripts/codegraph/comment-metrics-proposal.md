@@ -1,5 +1,10 @@
 # Proposal: comment metrics in the code graph explorer (row 486)
 
+Status: M1 to M6 are built (`comment_metrics.py`, `build_graph.py`, `explorer.template.html`; how to read them is in
+`README.md`). The `_walk_rust` and `_embedded_comments` names below are now `walk_rust` and `embedded_comments` in
+`scripts/comment-scan.py`. N1 to N6 are not built. Where the build differs from this text (sparse fence on a log scale,
+`pub mod x;` skipped by M3) `README.md` says so.
+
 Scope: dev tool only, `scripts/codegraph/`, stdlib Python run as `python3 -I`, no dependency beyond the pinned Cytoscape
 (C23 untouched), no cargo build. The tool **shows** what the gates enforce; it never enforces (no gate, not in
 `run-gates.sh`). Sample numbers: measured 2026-11-03 at HEAD e71db4db, `primitives/src/` (201 `.rs` files),

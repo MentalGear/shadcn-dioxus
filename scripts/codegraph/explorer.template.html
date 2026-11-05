@@ -5,15 +5,18 @@
   --bg:#f7f7f5;--panel:#ffffff;--ink:#1c1d1f;--muted:#5d6168;--line:#d9dad6;--accent:#2563eb;--edge:#8e939b;--hl:#111111;
   --c-preview:#2563eb;--c-primitives:#c2620a;--c-dioxus-attributes:#7c3aed;--c-cli:#047857;--c-test-harness:#be185d;
   --c-playwright:#0e7490;--c-external:#6b7280;--c-other:#8a6d3b;
+  --heat-lo:#dfe9f7;--heat-hi:#b4410f;--zero:#e6e7e3;--bar:#5f7fb8;--bar-bg:#e8e9e5;--warn:#9a5b00;--ring-d:#b4410f;--ring-s:#2563eb;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#141517;--panel:#1d1f22;--ink:#ececea;--muted:#a3a7ae;--line:#33363b;--accent:#6ea0ff;--edge:#6d727a;--hl:#ffffff;
   --c-preview:#6ea0ff;--c-primitives:#f0a050;--c-dioxus-attributes:#b79cff;--c-cli:#4fd1a5;--c-test-harness:#f472b6;
-  --c-playwright:#4fc3d9;--c-external:#9aa0a8;--c-other:#d1b36b;}}
+  --c-playwright:#4fc3d9;--c-external:#9aa0a8;--c-other:#d1b36b;
+  --heat-lo:#26344d;--heat-hi:#f0894f;--zero:#2a2c30;--bar:#7a9be0;--bar-bg:#2a2c30;--warn:#e8b04a;--ring-d:#f0894f;--ring-s:#6ea0ff;}}
 :root[data-theme="dark"]{
   --bg:#141517;--panel:#1d1f22;--ink:#ececea;--muted:#a3a7ae;--line:#33363b;--accent:#6ea0ff;--edge:#6d727a;--hl:#ffffff;
   --c-preview:#6ea0ff;--c-primitives:#f0a050;--c-dioxus-attributes:#b79cff;--c-cli:#4fd1a5;--c-test-harness:#f472b6;
-  --c-playwright:#4fc3d9;--c-external:#9aa0a8;--c-other:#d1b36b;}
+  --c-playwright:#4fc3d9;--c-external:#9aa0a8;--c-other:#d1b36b;
+  --heat-lo:#26344d;--heat-hi:#f0894f;--zero:#2a2c30;--bar:#7a9be0;--bar-bg:#2a2c30;--warn:#e8b04a;--ring-d:#f0894f;--ring-s:#6ea0ff;}
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif}
 #app{display:flex;flex-direction:column;min-height:100vh;padding:12px 16px;gap:10px;max-width:1400px;margin:0 auto}
@@ -38,11 +41,48 @@ details>summary{cursor:pointer;font-size:12px;color:var(--muted);padding:2px 0}
 #info{font-size:12px;color:var(--muted);min-height:2.6em}
 #info b{color:var(--ink)}
 #info button{font:inherit;font-size:12px;color:var(--accent);background:none;border:1px solid var(--line);border-radius:6px;padding:3px 8px;cursor:pointer;margin-left:6px}
+.status{display:flex;flex-wrap:wrap;gap:4px 8px;margin-top:6px}
+.chip{border:1px solid var(--line);border-radius:999px;padding:1px 8px;font-size:12px;color:var(--muted);background:var(--panel)}
+.chip.bad{border-color:var(--warn);color:var(--warn)}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line)}
+.tabs button{font:inherit;background:none;color:var(--muted);border:0;border-bottom:2px solid transparent;padding:8px 12px;cursor:pointer;min-height:40px}
+.tabs button[aria-selected=true]{color:var(--ink);border-bottom-color:var(--accent);font-weight:600}
+.grad{display:inline-block;width:140px;height:10px;border-radius:5px;border:1px solid var(--line);background:linear-gradient(90deg,var(--heat-lo),var(--heat-hi));vertical-align:-1px}
+.sw{display:inline-block;width:12px;height:12px;border-radius:50%;background:var(--zero);border:1px solid var(--line);vertical-align:-2px;margin-right:4px}
+.ringd,.rings{display:inline-block;width:12px;height:12px;border-radius:50%;border:3px solid;vertical-align:-3px;margin-right:4px}
+.ringd{border-color:var(--ring-d)}.rings{border-color:var(--ring-s)}
+.banner{font-size:12px;color:var(--warn)}
+table{border-collapse:collapse;width:100%;font-size:12px}
+th,td{text-align:left;padding:4px 6px;border-bottom:1px solid var(--line);vertical-align:middle}
+th{color:var(--muted);font-weight:500}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+.bar{position:relative;height:8px;background:var(--bar-bg);border-radius:4px;min-width:60px}
+.bar i{position:absolute;left:0;top:0;bottom:0;background:var(--bar);border-radius:4px}
+.bar b{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--ink);opacity:.55}
+.tag{font-size:11px;color:var(--muted)}
+.scroll{overflow-x:auto}
+.cfilters{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px 14px;margin-bottom:10px;align-items:end}
+.cfilters label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)}
+.cfilters .checks{margin-top:0;flex-direction:column;gap:2px}
+.cfilters .checks label{flex-direction:row;align-items:center;gap:6px;color:var(--ink)}
+.cfilters input[type=checkbox]{min-height:0;width:auto}
+input[type=number],input[type=search]{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 8px;min-height:36px;width:100%}
+td.p{overflow-wrap:anywhere;font-family:ui-monospace,Menlo,Consolas,monospace}
+td.p button{font:inherit;color:var(--accent);background:none;border:0;padding:0;cursor:pointer;text-align:left;overflow-wrap:anywhere}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace}
+#info h3{font-size:13px;margin:10px 0 4px;color:var(--ink)}
+#info ul{margin:2px 0 0;padding-left:18px}
+[hidden]{display:none!important}
 @media (max-width:600px){#app{padding:8px 16px}#stage{min-height:62vh}}
 </style>
 <div id="app">
   <div><h1>Code Graph Explorer</h1>
-  <p class="sub">shadcn-dioxus: rust-analyzer SCIP references (Rust), import scan (TS), asset!/include_str! (CSS, assets), spec-name match (tests). Roll-up by level; tap a node for details, double-tap to re-centre.</p></div>
+  <p class="sub">shadcn-dioxus: rust-analyzer SCIP references (Rust), import scan (TS), asset!/include_str! (CSS, assets), spec-name match (tests). Roll-up by level; tap a node for details, double-tap to re-centre. Comment metrics come from <span class="mono">scripts/comment-scan.py</span> over the working tree.</p>
+  <div class="status" id="status" role="status"></div></div>
+  <div class="tabs" role="tablist" aria-label="Views">
+    <button role="tab" id="t-graph" aria-selected="true" aria-controls="v-graph">Graph</button>
+    <button role="tab" id="t-comm" aria-selected="false" aria-controls="v-comm" tabindex="-1">Comments</button>
+  </div>
   <details class="panel" open><summary>Controls</summary>
     <div class="controls">
       <label>Component <input list="comps" id="pick" placeholder="type a component, e.g. select" autocomplete="off"><datalist id="comps"></datalist></label>
@@ -51,6 +91,13 @@ details>summary{cursor:pointer;font-size:12px;color:var(--muted);padding:2px 0}
         <span class="ticks"><span>crate</span><span>component</span><span>file</span></span></label>
       <label>Ego radius: <output id="radOut">1</output><input type="range" id="rad" min="1" max="2" step="1" value="1"></label>
       <label>Min edge weight: <output id="thrOut">2</output><input type="range" id="thr" min="1" max="30" step="1" value="2"></label>
+      <label>Metric lens <select id="lens">
+        <option value="deps" selected>dependencies (colour by crate)</option>
+        <option value="ratio">comment ratio</option>
+        <option value="cov">doc coverage (low = hot)</option>
+        <option value="todo">TODOs</option>
+        <option value="hist">history-rule hits</option></select></label>
+      <label>Node size <select id="size"><option value="items" selected>items defined</option><option value="code">code lines</option><option value="flat">uniform</option></select></label>
       <label>Direction <select id="dir"><option value="both">both (uses + used by)</option><option value="out">uses (dependencies)</option><option value="in">used by (dependents)</option></select></label>
     </div>
     <div class="checks">
@@ -63,9 +110,30 @@ details>summary{cursor:pointer;font-size:12px;color:var(--muted);padding:2px 0}
       <label><input type="checkbox" id="k_test" checked> tests</label>
     </div>
   </details>
+  <div id="v-graph" role="tabpanel" aria-labelledby="t-graph" style="display:flex;flex-direction:column;gap:10px;flex:1">
   <div class="panel legend" id="legend"></div>
+  <div class="panel banner" id="banner" hidden></div>
   <div class="panel" id="stage"><div id="msg"></div><div id="cy"></div></div>
   <div class="panel" id="info">Nothing selected.</div>
+  </div>
+  <section class="panel" id="v-comm" role="tabpanel" aria-labelledby="t-comm" hidden>
+    <h2 style="font-size:14px;margin:0 0 2px">Comments: worst first</h2>
+    <p class="tag" style="margin:0 0 8px">Same numbers as the lenses, as a list. A row opens its file or component in the graph. Outlier = comment ratio beyond 1.5 IQR of the repo's entities with at least 100 code lines (dense: above Q3 + 1.5 IQR; sparse: below Q1 - 1.5 IQR on a log scale; a sparse test-only entity is not flagged).</p>
+    <div class="cfilters">
+      <label>Rows <select id="c-lvl"><option value="2" selected>files</option><option value="1">components</option><option value="0">crates</option></select></label>
+      <label>Rank by <select id="c-rank"><option value="sparse" selected>sparsest (lowest ratio)</option><option value="dense">densest (highest ratio)</option><option value="undoc">undocumented pub items</option><option value="todo">TODOs</option><option value="hist">history-rule hits</option></select></label>
+      <label>Min code lines <input type="number" id="c-min" value="100" min="0" step="20"></label>
+      <label>Crate <select id="c-crate"><option value="">all</option></select></label>
+      <label>Tests <select id="c-tests"><option value="no" selected>exclude</option><option value="yes">include</option><option value="only">only tests</option></select></label>
+      <label>Path or name contains <input type="search" id="c-q" placeholder="e.g. select/"></label>
+      <label>Rows shown <input type="number" id="c-n" value="25" min="5" step="5"></label>
+      <div class="checks"><label><input type="checkbox" id="c-und"> only with undocumented pub</label><label><input type="checkbox" id="c-out"> only outliers</label></div>
+    </div>
+    <p class="tag" id="c-scope" hidden></p>
+    <div class="scroll"><table><thead><tr><th>Name</th><th class="n">Code</th><th class="n">Comment</th><th class="n">Ratio</th><th>Ratio vs median</th><th class="n">Doc share</th><th class="n">Pub doc</th><th class="n">Undoc pub</th><th class="n">TODO</th><th class="n">Hist</th><th>Outlier</th></tr></thead>
+      <tbody id="c-body"></tbody></table></div>
+    <p class="tag" id="c-count" style="margin-top:8px"></p>
+  </section>
 </div>
 <script>__CYTOSCAPE__</script>
 <script type="application/json" id="graph">__GRAPH__</script>
@@ -78,8 +146,59 @@ const fileComp=N.map(n=>n.comp);
 const crateOf=i=>{const c=comps[fileComp[i]].crate;return c==='external'?'external':c};
 const KNOWN=['preview','primitives','dioxus-attributes','cli','test-harness','playwright','external'];
 const LV=['crate','component','file'];
-const st={lvl:1,rad:1,thr:2,dir:'both',hubs:true,group:true,kinds:{rs:1,ext:1,ts:1,asset:1,test:1},seedFiles:new Set(),pickName:''};
+const st={lvl:1,rad:1,thr:2,dir:'both',hubs:true,group:true,kinds:{rs:1,ext:1,ts:1,asset:1,test:1},seedFiles:new Set(),pickName:'',lens:'deps',size:'items',scope:null};
 const $=id=>document.getElementById(id);
+const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+// ---- comment metrics M1-M6: per-file raw counts (n.cm, order G.meta.cm_fields) summed per level, ratios from the sums
+const CF=G.meta.cm_fields,NF=CF.length,FI={};CF.forEach((f,i)=>FI[f]=i);
+const IT=NF,NFILES=NF+1,NTEST=NF+2; // extra slots of an aggregate: items defined, files, test files
+const keyAt=(l,i)=>l===0?crateOf(i):l===1?fileComp[i]:N[i].id;
+const keyOf=i=>keyAt(st.lvl,i);
+const aggCache={};
+function aggAt(l){
+  if(aggCache[l])return aggCache[l];
+  const m=new Map();
+  N.forEach((n,i)=>{const k=keyAt(l,i);let a=m.get(k);if(!a){a=new Array(NF+3).fill(0);m.set(k,a)}
+    const c=n.cm;if(c)for(let j=0;j<NF;j++)a[j]+=c[j];a[IT]+=n.items;a[NFILES]++;if(n.t)a[NTEST]++});
+  return aggCache[l]=m;
+}
+const M={
+  ratio:a=>a[FI.code]?a[FI.com]/a[FI.code]:null,
+  share:a=>a[FI.com]?a[FI.doc]/a[FI.com]:null,
+  cov:a=>{const n=a[FI.pubs]+a[FI.fields];return n?(a[FI.doced]+a[FI.fdoced])/n:null},
+  und:a=>a[FI.pubs]+a[FI.fields]-a[FI.doced]-a[FI.fdoced],
+  todo:a=>a[FI.todo],hist:a=>a[FI.hist]
+};
+const TOT=new Array(NF+3).fill(0);N.forEach(n=>{if(n.cm)n.cm.forEach((v,j)=>TOT[j]+=v)});
+const REPO={ratio:M.ratio(TOT),share:M.share(TOT),cov:M.cov(TOT)};
+const pc=x=>x==null?'n/a':(x*100).toFixed(1)+' %';
+const r2=x=>x==null?'n/a':x.toFixed(2);
+const fmt=n=>n.toLocaleString('en-US');
+// M6: dense = M1 above Q3 + 1.5 IQR of M1, over the repo's entities of one level that have >= 100 code lines.
+// Sparse = M1 below Q1 - 1.5 IQR computed on ln(M1 + 0.02): M1 is skewed and bounded at 0, so the plain fence is
+// negative and flags nothing; on the log scale it flags the bare large entities. A sparse entity made only of test
+// files is not flagged (a test file is allowed to be bare).
+const MINCODE=100;
+const LNE=0.02,ln=x=>Math.log(x+LNE);
+const quant=(a,p)=>{const x=(a.length-1)*p,lo=Math.floor(x),hi=Math.ceil(x);return a[lo]+(a[hi]-a[lo])*(x-lo)};
+const outCache={};
+function outliers(l){
+  if(outCache[l])return outCache[l];
+  const rows=[...aggAt(l)].filter(([,a])=>a[FI.code]>=MINCODE).map(([k,a])=>[k,M.ratio(a),a]);
+  const rs=rows.map(r=>r[1]).sort((x,y)=>x-y);
+  const o={flag:new Map(),q1:null,q3:null,lo:null,hi:null,median:null,dense:[],sparse:[]};
+  if(rs.length>=4){
+    o.q1=quant(rs,.25);o.q3=quant(rs,.75);o.median=quant(rs,.5);
+    const iqr=o.q3-o.q1;o.hi=o.q3+1.5*iqr;
+    const ls=rs.map(ln),lq1=quant(ls,.25),lq3=quant(ls,.75);o.lo=Math.max(0,Math.exp(lq1-1.5*(lq3-lq1))-LNE);
+    rows.forEach(([k,r,a])=>{
+      if(r>o.hi){o.flag.set(k,'d');o.dense.push([k,r])}
+      else if(r<o.lo&&a[NTEST]<a[NFILES]){o.flag.set(k,'s');o.sparse.push([k,r])}});
+    o.dense.sort((x,y)=>y[1]-x[1]);o.sparse.sort((x,y)=>x[1]-y[1]);
+  }
+  return outCache[l]=o;
+}
 
 // hubs: components with >=100 distinct neighbours (all edge kinds), plus any lib.rs
 const nb={};
@@ -90,8 +209,17 @@ const isHubFile=i=>hubComp.has(fileComp[i])||/(^|\/)lib\.rs$/.test(N[i].id);
 // picker: component names present in preview or primitives
 const names=[...new Set(G.comps.filter(c=>c.crate==='preview'||c.crate==='primitives').map(c=>c.name).filter(n=>!n.startsWith('·')&&!n.includes('/')))].sort();
 $('comps').innerHTML=names.map(n=>'<option value="'+n+'">').join('');
-$('legend').innerHTML=KNOWN.map(k=>'<span><i style="background:var(--c-'+k+')"></i>'+k+(k==='preview'?' (pv)':k==='primitives'?' (pr)':'')+'</span>').join('')+
-  '<span>arrow = uses; ring = centre; thick = heavier</span>';
+$('c-crate').innerHTML+=KNOWN.map(k=>'<option value="'+k+'">'+k+'</option>').join('');
+
+// status line: the gates' own numbers, shown before the gate run
+(function(){
+  const h=TOT[FI.hist],t=TOT[FI.todo];
+  $('status').innerHTML='<span class="chip'+(h?' bad':'')+'" id="chip-hist">history-rule hits '+h+'</span>'+
+    '<span class="chip" id="chip-todo">TODO/FIXME/HACK/XXX '+t+'</span>'+
+    '<span class="chip">comment ratio '+r2(REPO.ratio)+' (repo)</span>'+
+    '<span class="chip">pub doc coverage '+pc(REPO.cov)+'</span>'+
+    '<span class="chip">doc share '+pc(REPO.share)+'</span>';
+})();
 
 function seedFromName(n){
   const s=new Set();
@@ -99,7 +227,6 @@ function seedFromName(n){
   G.comps.forEach(c=>{if(c.name===n&&(c.crate==='preview'||c.crate==='primitives'))N.forEach((f,i)=>{if(f.comp===c.id)s.add(i)})});
   return s;
 }
-const keyOf=i=>st.lvl===0?crateOf(i):st.lvl===1?fileComp[i]:N[i].id;
 function label(key){
   if(st.lvl===0)return key;
   if(st.lvl===1){const c=comps[key];const suf=c.crate==='preview'?' pv':c.crate==='primitives'?' pr':'';return (c.crate==='external'?c.name:c.name)+suf}
@@ -116,11 +243,66 @@ let cy=null;
 function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim()}
 function crateColor(c){return css('--c-'+(KNOWN.includes(c)?c:'other'))}
 
+// ---- lenses: one scalar per node, mapped onto the --heat-lo .. --heat-hi ramp
+const LENS={
+  ratio:{val:a=>M.ratio(a),heat:v=>Math.min(1,v/0.8),lo:'0.0',hi:'0.8+ comment lines per code line',fmt:r2,title:'comment ratio'},
+  cov:{val:a=>M.cov(a),heat:v=>Math.min(1,(1-v)/0.35),lo:'100 % documented',hi:'65 % or less',fmt:pc,title:'pub doc coverage'},
+  todo:{val:a=>a[FI.todo],heat:v=>v?1:0,lo:'0',hi:'1+',fmt:String,title:'TODO/FIXME/HACK/XXX',zero:true},
+  hist:{val:a=>a[FI.hist],heat:v=>v?1:0,lo:'0',hi:'1+',fmt:String,title:'history-rule hits',zero:true}
+};
+const hex=c=>{c=c.replace('#','');if(c.length===3)c=c.replace(/./g,'$&$&');return [0,2,4].map(i=>parseInt(c.slice(i,i+2),16))};
+function ramp(t){
+  const a=hex(css('--heat-lo')),b=hex(css('--heat-hi'));
+  return 'rgb('+a.map((x,i)=>Math.round(x+(b[i]-x)*t)).join(',')+')';
+}
+function fillOf(k,cr){
+  if(st.lens==='deps')return crateColor(cr);
+  const R=window.__last,a=R&&R.agg.get(k),L=LENS[st.lens];
+  const v=a?L.val(a):null;
+  if(v==null||(L.zero&&!v))return css('--zero');
+  return ramp(L.heat(v));
+}
+function sizeOf(k,a){
+  if(st.size==='flat')return 22;
+  if(st.size==='code')return 8+6*Math.log10(1+(a?a[FI.code]:0));
+  return 14+Math.min(26,4*Math.sqrt((a?a[IT]:0)||1));
+}
+function recolor(){
+  const R=window.__last;if(!cy||!R)return;
+  const o=outliers(st.lvl);
+  cy.batch(()=>cy.nodes().forEach(n=>{
+    if(n.data('grp'))return;
+    const k=n.id(),a=R.agg.get(k);
+    n.data('fill',fillOf(k,n.data('cr')));
+    n.data('sz',sizeOf(k,a));
+    n.data('ring',st.lens==='deps'?'':(o.flag.get(k)||''));
+  }));
+  legend();
+}
+function legend(){
+  const el=$('legend'),ban=$('banner');
+  if(st.lens==='deps'){
+    el.innerHTML=KNOWN.map(k=>'<span><i style="background:var(--c-'+k+')"></i>'+k+(k==='preview'?' (pv)':k==='primitives'?' (pr)':'')+'</span>').join('')+
+      '<span>arrow = uses; ring = centre; thick = heavier</span>';
+    ban.hidden=true;return;
+  }
+  const L=LENS[st.lens],R=window.__last;
+  let vmin=Infinity,vmax=-Infinity,none=0;
+  if(R)R.keep.forEach(k=>{const a=R.agg.get(k),v=a?L.val(a):null;if(v==null){none++;return}vmin=Math.min(vmin,v);vmax=Math.max(vmax,v)});
+  const range=vmin<=vmax?'in view: '+L.fmt(vmin)+' to '+L.fmt(vmax):'in view: no value';
+  el.innerHTML='<span>'+L.lo+'</span><span class="grad"></span><span>'+L.hi+'</span>'+
+    '<span><span class="sw"></span>'+(L.zero?'none':'no data')+'</span>'+
+    '<span><span class="ringd"></span>dense outlier</span><span><span class="rings"></span>sparse outlier</span>'+
+    '<span class="tag">'+esc(L.title)+', '+range+'; outliers are for the '+LV[st.lvl]+' level</span>';
+  if(L.zero&&R&&vmax<=0){ban.hidden=false;ban.textContent=(st.lens==='todo'?'0 TODO/FIXME/HACK/XXX in every node of this view. The repo tracks work in backlog rows, so an empty map is the expected result.':'0 history-rule hits in every node of this view. check-history-comments.sh enforces this; the lens shows a dirty tree before the gate run.')}
+  else ban.hidden=true;
+}
+
 function compute(){
   const seedFiles=st.seedFiles;
   const seedKeys=new Set([...seedFiles].map(keyOf));
-  const W=new Map(),items=new Map();
-  N.forEach((n,i)=>{const k=keyOf(i);items.set(k,(items.get(k)||0)+n.items)});
+  const W=new Map();
+  const agg=aggAt(st.lvl);
   for(const [a,b,w,k] of E){
     if(!st.kinds[k])continue;
     if(st.hubs&&st.lvl>0){
@@ -148,7 +330,7 @@ function compute(){
   }else{
     keep=new Set();edges.forEach(e=>{keep.add(e.x);keep.add(e.y)});
   }
-  return {edges,keep,seedKeys,items,W};
+  return {edges,keep,seedKeys,agg,W};
 }
 
 function render(){
@@ -158,9 +340,11 @@ function render(){
   const els=[];const parents=new Set();
   const big=R.keep.size>250;
   const useG=st.group&&st.lvl>0&&!big;
+  const o=outliers(st.lvl);
   R.keep.forEach(k=>{
     const cr=crateOfKey(k);
-    const d={id:k,label:label(k),cr,sz:14+Math.min(26,4*Math.sqrt(R.items.get(k)||1)),seed:R.seedKeys.has(k)?1:0};
+    const a=R.agg.get(k);
+    const d={id:k,label:label(k),cr,sz:sizeOf(k,a),fill:fillOf(k,cr),ring:st.lens==='deps'?'':(o.flag.get(k)||''),seed:R.seedKeys.has(k)?1:0};
     if(useG){const p=st.lvl===1?'crate:'+cr:'comp:'+fileComp[fileIdx[k]];d.parent=p;parents.add(p+'\u0001'+cr+'\u0001'+(st.lvl===1?cr:comps[fileComp[fileIdx[k]]].name))}
     els.push({data:d});
   });
@@ -175,7 +359,7 @@ function render(){
     cy.on('dbltap','node',ev=>{const n=ev.target;if(n.data('grp'))return;recenter(n.id())});
   }
   cy.batch(()=>{cy.elements().remove();cy.add(els)});
-  applyStyle();
+  applyStyle();legend();
   // cose lays out compound graphs up to a few hundred nodes; beyond that it only yields a hairball, so a big
   // ego view is ringed by hop distance instead (centre in the middle, boxes off).
   cy.layout(big?{name:'concentric',animate:false,minNodeSpacing:6,avoidOverlap:true,startAngle:0,
@@ -187,9 +371,11 @@ function render(){
 function applyStyle(){
   const ink=css('--ink'),edge=css('--edge'),line=css('--line'),panel=css('--panel'),hl=css('--hl');
   cy.style([
-    {selector:'node',style:{'background-color':e=>crateColor(e.data('cr')),width:'data(sz)',height:'data(sz)',label:'data(label)','font-size':10,color:ink,
+    {selector:'node',style:{'background-color':'data(fill)',width:'data(sz)',height:'data(sz)',label:'data(label)','font-size':10,color:ink,
       'text-valign':'bottom','text-margin-y':3,'text-wrap':'none','text-background-color':panel,'text-background-opacity':.75,'text-background-padding':1}},
     {selector:'node[seed = 1]',style:{'border-width':3,'border-color':hl}},
+    {selector:'node[ring = "d"]',style:{'outline-width':3,'outline-offset':2,'outline-color':css('--ring-d'),'outline-opacity':1}},
+    {selector:'node[ring = "s"]',style:{'outline-width':3,'outline-offset':2,'outline-color':css('--ring-s'),'outline-opacity':1}},
     {selector:'.grp',style:{shape:'round-rectangle','background-opacity':.07,'background-color':e=>crateColor(e.data('cr')),'border-width':1,'border-color':e=>crateColor(e.data('cr')),
       'text-valign':'top','text-halign':'center','font-size':11,'font-weight':600,'text-margin-y':-2,'text-background-opacity':0,padding:10,width:'label',height:'label'}},
     {selector:'edge',style:{'curve-style':'bezier','line-color':edge,'target-arrow-color':edge,'target-arrow-shape':'triangle','arrow-scale':.8,width:'data(lw)',opacity:.55}},
@@ -198,18 +384,57 @@ function applyStyle(){
     {selector:'node:selected',style:{'border-width':3,'border-color':hl}}
   ]);
 }
+
+// ---- details panel: dependencies, then the Comments table for the selected node
+function barHtml(v,max,med){
+  const w=v==null?0:Math.min(100,v/max*100);
+  return '<div class="bar" aria-hidden="true"><i style="width:'+w+'%"></i>'+(med!=null?'<b style="left:'+Math.min(100,med/max*100)+'%"></b>':'')+'</div>';
+}
+function metricRows(a){
+  const o=outliers(st.lvl),flag=o.flag.get(window.__sel);
+  const rs=[
+    ['Comment ratio (lines)',r2(M.ratio(a)),barHtml(M.ratio(a),1,REPO.ratio),'repo '+r2(REPO.ratio)+(flag?' - '+(flag==='d'?'dense':'sparse')+' outlier':'')],
+    ['Doc share of comments',pc(M.share(a)),barHtml(M.share(a),1,REPO.share),'repo '+pc(REPO.share)],
+    ['Pub items + fields documented',pc(M.cov(a)),barHtml(M.cov(a),1,REPO.cov),'repo '+pc(REPO.cov)+'; undocumented '+M.und(a)],
+    ['TODO / FIXME / HACK / XXX',String(a[FI.todo]),'',''],
+    ['History-rule hits',String(a[FI.hist]),'','check-history-comments.sh'],
+    ['Comment lines in Rust strings',String(a[FI.js]),'','JS/CSS held in strings, not in the ratio']
+  ];
+  return rs.map(r=>'<tr><td>'+r[0]+(r[3]?'<div class="tag">'+esc(r[3])+'</div>':'')+'</td><td class="n">'+r[1]+'</td><td>'+r[2]+'</td></tr>').join('');
+}
+function detailLists(k,a){
+  let h='';
+  if(st.lvl===2){
+    const d=N[fileIdx[k]].d||{};
+    if(d.und&&d.und.length)h+='<h3>Undocumented pub items ('+d.und.length+')</h3><ul>'+d.und.slice(0,12).map(u=>'<li><span class="mono">'+esc(u[1])+'</span> line '+u[0]+'</li>').join('')+(d.und.length>12?'<li>and '+(d.und.length-12)+' more</li>':'')+'</ul>';
+    if(d.todo)h+='<h3>TODO markers</h3><ul>'+d.todo.map(u=>'<li>'+esc(u[1])+' line '+u[0]+'</li>').join('')+'</ul>';
+    if(d.hist)h+='<h3>History-rule hits</h3><ul>'+d.hist.map(u=>'<li>'+esc(u[1])+' line '+u[0]+'</li>').join('')+'</ul>';
+  }else{
+    const fs=[];N.forEach((n,i)=>{if(keyOf(i)===k&&n.cm)fs.push(n)});
+    const top=(f,t)=>{const l=fs.filter(n=>f(n)>0).sort((x,y)=>f(y)-f(x)).slice(0,5);return l.length?'<h3>'+t+'</h3><ul>'+l.map(n=>'<li><span class="mono">'+esc(n.id)+'</span> '+f(n)+'</li>').join('')+'</ul>':''};
+    h+=top(n=>n.cm[FI.pubs]+n.cm[FI.fields]-n.cm[FI.doced]-n.cm[FI.fdoced],'Most undocumented pub items');
+    h+=top(n=>n.cm[FI.todo],'Files with TODO markers');
+    h+=top(n=>n.cm[FI.hist],'Files with history-rule hits');
+  }
+  return h;
+}
 function showInfo(k){
   const R=window.__last;if(!R)return;
+  window.__sel=k;
   cy.elements().removeClass('dim hi');
   const n=cy.getElementById(k);const nh=n.closedNeighborhood();
   cy.elements().not(nh).addClass('dim');n.connectedEdges().addClass('hi');
   const out=[],inn=[];
   R.edges.forEach(e=>{if(e.x===k)out.push([e.y,e.w]);if(e.y===k)inn.push([e.x,e.w])});
-  const top=l=>l.sort((a,b)=>b[1]-a[1]).slice(0,6).map(([x,w])=>label(x)+' <b>'+w+'</b>').join(', ')||'-';
-  let files='';
-  if(st.lvl<2){let c=0;N.forEach((f,i)=>{if(keyOf(i)===k)c++});files=c+' files, '}
-  $('info').innerHTML='<b>'+k.replace(/\u0001/g,' ')+'</b> ('+crateOfKey(k)+'): '+files+(R.items.get(k)||0)+' items. Uses: '+top(out)+'. Used by: '+top(inn)+'. <button id="rc">re-centre here</button>';
+  const top=l=>l.sort((a,b)=>b[1]-a[1]).slice(0,6).map(([x,w])=>esc(label(x))+' <b>'+w+'</b>').join(', ')||'-';
+  const a=R.agg.get(k)||new Array(NF+3).fill(0);
+  const files=st.lvl<2?a[NFILES]+' files, ':'';
+  $('info').innerHTML='<b>'+esc(k.replace(/\u0001/g,' '))+'</b> ('+crateOfKey(k)+'): '+files+a[IT]+' items. Uses: '+top(out)+'. Used by: '+top(inn)+'. <button id="rc">re-centre here</button>'+
+    '<h3>Comments</h3><div class="scroll"><table id="cm-table"><thead><tr><th>Metric</th><th class="n">Value</th><th>vs repo</th></tr></thead><tbody>'+metricRows(a)+'</tbody></table></div>'+
+    '<p class="tag">'+fmt(a[FI.code])+' code lines, '+fmt(a[FI.com])+' comment lines. Counts are summed over the '+a[NFILES]+' file'+(a[NFILES]===1?'':'s')+'; the ratio is the ratio of the sums. The bar tick is the repo value.</p>'+
+    '<button id="seecm">see these files in Comments</button>'+detailLists(k,a);
   $('rc').onclick=()=>recenter(k);
+  $('seecm').onclick=()=>openComments({lvl:st.lvl,key:k});
 }
 function recenter(k){
   const s=new Set();N.forEach((f,i)=>{if(keyOf(i)===k)s.add(i)});
@@ -219,17 +444,93 @@ function recenter(k){
 function setPick(n){
   st.pickName=n;st.seedFiles=seedFromName(n);render();
 }
+
+// ---- Comments view: worst entities by metric, with filters
+const cstate=()=>({lvl:+$('c-lvl').value,rank:$('c-rank').value,min:+$('c-min').value||0,crate:$('c-crate').value,tests:$('c-tests').value,
+  q:$('c-q').value.trim().toLowerCase(),n:Math.max(1,+$('c-n').value||25),und:$('c-und').checked,out:$('c-out').checked});
+function commentRows(){
+  const c=cstate(),agg=aggAt(c.lvl),o=outliers(c.lvl);
+  let rows=[...agg].map(([k,a])=>({k,a,r:M.ratio(a),und:M.und(a),flag:o.flag.get(k)||''}));
+  rows=rows.filter(({k,a,und,flag})=>{
+    const cr=c.lvl===0?k:c.lvl===1?comps[k].crate:crateOf(fileIdx[k]);
+    if(a[FI.code]<c.min||(!a[FI.code]&&(c.rank==='sparse'||c.rank==='dense')))return false;
+    if(c.crate&&cr!==c.crate)return false;
+    const allTest=a[NTEST]===a[NFILES],anyTest=a[NTEST]>0;
+    if(c.tests==='no'&&allTest&&a[NFILES]>0)return false;
+    if(c.tests==='only'&&!anyTest)return false;
+    if(c.q&&!k.toLowerCase().includes(c.q))return false;
+    if(c.und&&!und)return false;
+    if(c.out&&!flag)return false;
+    if(c.rank==='todo'&&!a[FI.todo])return false;
+    if(c.rank==='hist'&&!a[FI.hist])return false;
+    if(c.rank==='undoc'&&!und)return false;
+    if(st.scope&&st.scope.lvl===c.lvl&&k!==st.scope.key)return false;
+    return true;
+  });
+  if(st.scope&&st.scope.lvl!==c.lvl){ // a scope set at another level: keep the entities whose files fall inside it
+    const keep=new Set();N.forEach((n,i)=>{if(keyAt(st.scope.lvl,i)===st.scope.key)keep.add(keyAt(c.lvl,i))});
+    rows=rows.filter(r=>keep.has(r.k));
+  }
+  const cmp={sparse:(x,y)=>x.r-y.r,dense:(x,y)=>y.r-x.r,undoc:(x,y)=>y.und-x.und||y.a[FI.code]-x.a[FI.code],
+    todo:(x,y)=>y.a[FI.todo]-x.a[FI.todo],hist:(x,y)=>y.a[FI.hist]-x.a[FI.hist]}[c.rank];
+  rows.sort(cmp);
+  return {rows,c,o};
+}
+function renderComments(){
+  const {rows,c,o}=commentRows();
+  const med=o.median;
+  const sc=$('c-scope');
+  if(st.scope){sc.hidden=false;sc.innerHTML='Scope: '+LV[st.scope.lvl]+' <b>'+esc(st.scope.key)+'</b> <button id="c-clear">clear</button>';$('c-clear').onclick=()=>{st.scope=null;renderComments()}}
+  else sc.hidden=true;
+  $('c-body').innerHTML=rows.slice(0,c.n).map(({k,a,r,und,flag})=>{
+    const nm=c.lvl===1?comps[k].name+' ('+comps[k].crate+')':k;
+    return '<tr><td class="p"><button data-k="'+esc(k)+'">'+esc(nm)+'</button></td><td class="n">'+fmt(a[FI.code])+'</td><td class="n">'+fmt(a[FI.com])+'</td>'+
+      '<td class="n">'+r2(r)+'</td><td style="min-width:90px">'+barHtml(r,1.2,med)+'</td><td class="n">'+pc(M.share(a))+'</td><td class="n">'+pc(M.cov(a))+'</td>'+
+      '<td class="n">'+und+'</td><td class="n">'+a[FI.todo]+'</td><td class="n">'+a[FI.hist]+'</td><td>'+(flag==='d'?'dense':flag==='s'?'sparse':'')+'</td></tr>'}).join('')||
+    '<tr><td colspan="11" class="tag">no entity matches</td></tr>';
+  $('c-count').textContent=Math.min(c.n,rows.length)+' of '+rows.length+' '+LV[c.lvl]+'s shown. Median ratio '+r2(med)+' over '+LV[c.lvl]+'s with '+MINCODE+'+ code lines (tick); outlier fences: sparse below '+
+    (o.lo==null?'n/a':r2(o.lo))+', dense above '+(o.hi==null?'n/a':r2(o.hi))+'. Doc coverage is lexical here; the missing_docs lint and the props/slot gates are the authority.';
+  document.querySelectorAll('#c-body [data-k]').forEach(b=>b.addEventListener('click',()=>openInGraph(c.lvl,b.dataset.k)));
+}
+function openInGraph(lvl,k){
+  let seed;
+  if(lvl===2){seed=new Set([fileIdx[k]])}
+  else{seed=new Set();N.forEach((n,i)=>{if(keyAt(lvl,i)===k)seed.add(i)})}
+  st.lvl=lvl;$('lvl').value=lvl;$('lvlOut').textContent=LV[lvl];
+  st.seedFiles=lvl===2?new Set([...N.keys()].filter(i=>fileComp[i]===fileComp[fileIdx[k]])):seed;
+  $('pick').value=lvl===1&&comps[k]?comps[k].name:'';
+  showTab('graph');
+  if(lvl===2&&cy.getElementById(k).length)showInfo(k);
+  else if(lvl===1&&cy.getElementById(k).length)showInfo(k);
+}
+function openComments(scope){st.scope=scope;$('c-lvl').value=2;showTab('comm')}
+function showTab(t){
+  const g=t==='graph';
+  $('v-graph').hidden=!g;$('v-comm').hidden=g;document.querySelector('details.panel').hidden=!g;
+  $('t-graph').setAttribute('aria-selected',g);$('t-comm').setAttribute('aria-selected',!g);
+  $('t-graph').tabIndex=g?0:-1;$('t-comm').tabIndex=g?-1:0;
+  if(g){render();if(cy){cy.resize();cy.fit(undefined,30)}}else renderComments();
+}
+
 // wiring
 $('pick').addEventListener('change',e=>{const v=e.target.value.trim();if(!v){st.seedFiles=new Set();render();return}if(names.includes(v))setPick(v)});
 $('lvl').addEventListener('input',e=>{st.lvl=+e.target.value;$('lvlOut').textContent=LV[st.lvl];render()});
 $('rad').addEventListener('input',e=>{st.rad=+e.target.value;$('radOut').textContent=st.rad;render()});
 $('thr').addEventListener('input',e=>{st.thr=+e.target.value;$('thrOut').textContent=st.thr;render()});
 $('dir').addEventListener('change',e=>{st.dir=e.target.value;render()});
+$('lens').addEventListener('change',e=>{st.lens=e.target.value;recolor()});
+$('size').addEventListener('change',e=>{st.size=e.target.value;recolor()});
 $('hubs').addEventListener('change',e=>{st.hubs=e.target.checked;render()});
 $('group').addEventListener('change',e=>{st.group=e.target.checked;render()});
 ['rs','ext','ts','asset','test'].forEach(k=>$('k_'+k).addEventListener('change',e=>{st.kinds[k]=e.target.checked?1:0;render()}));
-matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{if(cy)applyStyle()});
+['c-lvl','c-rank','c-min','c-crate','c-tests','c-q','c-n','c-und','c-out'].forEach(id=>$(id).addEventListener('input',renderComments));
+$('t-graph').addEventListener('click',()=>showTab('graph'));$('t-comm').addEventListener('click',()=>showTab('comm'));
+document.querySelectorAll('.tabs button').forEach(b=>b.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key==='ArrowLeft'){const t=b.id==='t-graph'?'comm':'graph';showTab(t);$('t-'+t).focus()}}));
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{if(cy){applyStyle();recolor()}});
 window.__setState=(o)=>{Object.assign(st,o);if(o.seedName!==undefined){$('pick').value=o.seedName;setPick(o.seedName);return}render()};
+// test hooks: the numbers behind the page (read by smoke.js)
+window.__cm={fields:CF,agg:(l,k)=>{const a=aggAt(l).get(k);return a?a.slice():null},total:()=>TOT.slice(),outliers:l=>{const o=outliers(l);return {q1:o.q1,q3:o.q3,lo:o.lo,hi:o.hi,median:o.median,dense:o.dense,sparse:o.sparse}},
+  setLens:v=>{$('lens').value=v;st.lens=v;recolor()},show:showTab,info:showInfo,comments:()=>commentRows().rows.length};
 if(innerWidth<700){const d=document.querySelector('details.panel');if(d)d.open=false}
 $('pick').value='select';setPick('select');
 })();

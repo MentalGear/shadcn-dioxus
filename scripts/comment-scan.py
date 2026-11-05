@@ -13,7 +13,7 @@ inline `<script>` and `<style>`: `preview/index.html`), Python (`#` tokens and d
 (`python3 - <<'PY'`, `node <<`, `bash <<`), in which case it is read as that language. A comment marker inside a
 string literal is not a comment, except in Rust: a string literal that reads as code (JS with a statement shape and a
 JS word, CSS with a `{ prop: value }` rule and a `/* */`) is scanned for the `//` and `/* */` comments inside it
-(`extract_rust`, `_embedded_comments`), reported at their Rust source line; the string text around them is data.
+(`extract_rust`, `embedded_comments`), reported at their Rust source line; the string text around them is data.
 
 Scanned: `git ls-files` with the extensions above, minus SKIP_PREFIXES (dev-docs/archive/ is where history belongs, the
 prose under dev-docs/ is not code so no extension picks it up, but its code files are scanned;
@@ -144,7 +144,7 @@ def _embedded_kind(content):
     return None
 
 
-def _embedded_comments(content, char_lines):
+def embedded_comments(content, char_lines):
     kind = _embedded_kind(content)
     if not kind:
         return
@@ -157,7 +157,7 @@ def _embedded_comments(content, char_lines):
             yield char_lines[min(starts[min(rel, len(starts)) - 1], len(char_lines) - 1)], body
 
 
-def _walk_rust(text):
+def walk_rust(text):
     """The one Rust tokenizer: yields `("comment", start, end, [(line, body), ...])` for every comment and
     `("lit", start, end, (line, body_start, body_end, content, char_lines))` for every string literal (normal, raw
     and byte), in source order. `start`/`end` are offsets of the whole token in `text`, `body_start`/`body_end` of
@@ -225,11 +225,11 @@ def _walk_rust(text):
 
 
 def extract_rust(text):
-    for kind, _, _, p in _walk_rust(text):
+    for kind, _, _, p in walk_rust(text):
         if kind == "comment":
             yield from p
         elif len(p[3]) > 8:
-            yield from _embedded_comments(p[3], p[4])
+            yield from embedded_comments(p[3], p[4])
 
 
 class Literal:
@@ -243,7 +243,7 @@ class Literal:
 
 def literals_of(text):
     """Every string literal of a Rust source, in order (the JS-volume gate's reader of strings)."""
-    return [Literal(i, j, p) for kind, i, j, p in _walk_rust(text) if kind == "lit"]
+    return [Literal(i, j, p) for kind, i, j, p in walk_rust(text) if kind == "lit"]
 
 
 def code_of(text, keep_strings=False):
@@ -251,7 +251,7 @@ def code_of(text, keep_strings=False):
     contents blanked to the same number of spaces (quotes kept). Newlines survive, so line numbers and columns of the
     result are those of the source, and a token search cannot hit a comment or a string."""
     out = list(text)
-    for kind, i, j, p in _walk_rust(text):
+    for kind, i, j, p in walk_rust(text):
         a, b = (i, j) if kind == "comment" else (p[1], p[2])
         if kind == "lit" and keep_strings:
             continue
