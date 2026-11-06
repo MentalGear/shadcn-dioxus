@@ -1,9 +1,8 @@
 use super::super::component::*;
 use dioxus::prelude::*;
 
-/// The two ends of a page range: on the first page Previous is unavailable, on the last page Next is. The
-/// pagination has no `disabled` prop, so an unavailable link has no `href` (it is not focusable) and carries
-/// `aria-disabled`, with the dimmed look of a disabled button.
+/// The two ends of a page range: on the first page Previous is unavailable, on the last page Next is. An
+/// unavailable link takes the `disabled` prop.
 #[component]
 pub fn Demo() -> Element {
     rsx! {
@@ -14,10 +13,7 @@ pub fn Demo() -> Element {
                     "aria-label": "First page pagination",
                     PaginationContent {
                         PaginationItem {
-                            PaginationPrevious {
-                                "aria-disabled": "true",
-                                style: "opacity: var(--dx-opacity-disabled); pointer-events: none;",
-                            }
+                            PaginationPrevious { disabled: true }
                         }
                         PaginationItem {
                             PaginationLink { href: "#", is_active: true, "1" }
@@ -46,10 +42,7 @@ pub fn Demo() -> Element {
                             PaginationLink { href: "#", is_active: true, "10" }
                         }
                         PaginationItem {
-                            PaginationNext {
-                                "aria-disabled": "true",
-                                style: "opacity: var(--dx-opacity-disabled); pointer-events: none;",
-                            }
+                            PaginationNext { disabled: true }
                         }
                     }
                 }

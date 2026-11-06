@@ -103,6 +103,10 @@ pub struct PaginationLinkProps {
     /// Marks a previous or next link so the theme can style it (`data-kind`).
     #[props(default)]
     pub data_kind: Option<PaginationLinkKind>,
+    /// Makes the link unavailable (the first page's Previous, the last page's Next): `aria-disabled="true"`, no
+    /// `href` (so it is not focusable and cannot navigate), no event handlers, and `data-disabled` for the theme.
+    #[props(default)]
+    pub disabled: bool,
     /// Called on `click`.
     onclick: Option<EventHandler<MouseEvent>>,
     /// Called on `mousedown`.
@@ -127,26 +131,37 @@ pub fn PaginationLink(props: PaginationLinkProps) -> Element {
     // attributes.
     let owned = attributes!(a {
         ..state_attrs::valued(state_attrs::Flag::Active, props.is_active),
+        ..state_attrs::presence(state_attrs::Flag::Disabled, props.disabled),
         "data-size": props.size.class(),
         "data-kind": data_kind,
         aria_current: aria_current,
     });
-    let merged = merge_attributes(vec![base, props.attributes.clone(), owned]);
+    // An unavailable link is an `<a>` without `href` (not focusable, cannot navigate) that still reads as a
+    // link, disabled: the caller's `href` is dropped, `role="link"` and `aria-disabled` are asserted.
+    let mut caller = props.attributes.clone();
+    let disabled_owned = if props.disabled {
+        caller.retain(|attribute| attribute.name != "href");
+        attributes!(a { role: "link", aria_disabled: "true" })
+    } else {
+        Vec::new()
+    };
+    let merged = merge_attributes(vec![base, caller, owned, disabled_owned]);
+    let disabled = props.disabled;
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/pagination/style.css") }
         a {
             onclick: move |event| {
-                if let Some(f) = &props.onclick {
+                if let (false, Some(f)) = (disabled, &props.onclick) {
                     f.call(event);
                 }
             },
             onmousedown: move |event| {
-                if let Some(f) = &props.onmousedown {
+                if let (false, Some(f)) = (disabled, &props.onmousedown) {
                     f.call(event);
                 }
             },
             onmouseup: move |event| {
-                if let Some(f) = &props.onmouseup {
+                if let (false, Some(f)) = (disabled, &props.onmouseup) {
                     f.call(event);
                 }
             },
@@ -164,6 +179,9 @@ pub fn PaginationPrevious(
     onmousedown: Option<EventHandler<MouseEvent>>,
     /// Called on `mouseup`.
     onmouseup: Option<EventHandler<MouseEvent>>,
+    /// Makes the link unavailable; see `PaginationLink`'s `disabled`.
+    #[props(default)]
+    disabled: bool,
     #[props(extends = GlobalAttributes)]
     #[props(extends = a)]
     attributes: Vec<Attribute>,
@@ -183,6 +201,7 @@ pub fn PaginationPrevious(
             onclick,
             onmousedown,
             onmouseup,
+            disabled,
             attributes: merged,
             ChevronLeft { size: "1rem" }
             span { class: "dx-pagination-label", "Previous" }
@@ -198,6 +217,9 @@ pub fn PaginationNext(
     onmousedown: Option<EventHandler<MouseEvent>>,
     /// Called on `mouseup`.
     onmouseup: Option<EventHandler<MouseEvent>>,
+    /// Makes the link unavailable; see `PaginationLink`'s `disabled`.
+    #[props(default)]
+    disabled: bool,
     #[props(extends = GlobalAttributes)]
     #[props(extends = a)]
     attributes: Vec<Attribute>,
@@ -213,6 +235,7 @@ pub fn PaginationNext(
             onclick,
             onmousedown,
             onmouseup,
+            disabled,
             attributes: merged,
             span { class: "dx-pagination-label", "Next" }
             ChevronRight { size: "1rem" }
