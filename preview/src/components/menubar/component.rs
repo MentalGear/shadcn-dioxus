@@ -1,5 +1,5 @@
 use dioxus::prelude::*;
-use dioxus_icons::lucide::Check;
+use crate::components::icons::Check;
 use dioxus_primitives::dioxus_attributes::attributes;
 use dioxus_primitives::menubar::{
     self, MenubarCheckboxItemProps, MenubarContentProps, MenubarGroupProps, MenubarSeparatorProps, MenubarShortcutProps, MenubarItemProps, MenubarMenuProps,

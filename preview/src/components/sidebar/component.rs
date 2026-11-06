@@ -7,7 +7,7 @@ use crate::components::skeleton::Skeleton;
 use crate::components::tooltip::{Tooltip, TooltipContent, TooltipTrigger};
 use dioxus::prelude::*;
 use dioxus_primitives::AsChild;
-use dioxus_icons::lucide::PanelLeft;
+use crate::components::icons::PanelLeft;
 use dioxus_primitives::dioxus_attributes::attributes;
 use dioxus_primitives::state_attrs;
 use dioxus_primitives::js_listener::{use_js_listeners, JsListeners};

@@ -1,5 +1,5 @@
 use dioxus::prelude::*;
-use dioxus_icons::lucide::{Check, ChevronDown, ChevronUp};
+use crate::components::icons::{Check, ChevronDown, ChevronUp};
 use dioxus_primitives::select::{self, SelectGroupLabelProps, SelectOptionProps};
 use dioxus_primitives::{dioxus_attributes::attributes, merge_attributes};
 use std::time::Duration;

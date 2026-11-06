@@ -48,7 +48,7 @@ ALWAYS = "dioxus-primitives"
 # dir -> why it has a component.json but is not an installable registry member (mirrors check-installed-paths.sh).
 NOT_INSTALLABLE = {"top_layer"}
 # crate -> written `=x.y.z` in component.json (mirrors check-cargo-dep-versions.sh EXACT_ONLY).
-EXACT_ONLY = {"dioxus-icons", "pulldown-cmark"}
+EXACT_ONLY = {"pulldown-cmark"}
 HAND = ("name", "description", "authors")
 KEY_ORDER = ("name", "description", "authors", "exclude", "cargoDependencies", "componentDependencies", "globalAssets")
 NOT_EXTERNAL = {"crate", "self", "super", "std", "core", "alloc", "dioxus", "r", "b", "br"}

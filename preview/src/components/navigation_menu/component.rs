@@ -1,5 +1,5 @@
 use dioxus::prelude::*;
-use dioxus_icons::lucide::ChevronDown;
+use crate::components::icons::ChevronDown;
 use dioxus_primitives::dioxus_attributes::attributes;
 use dioxus_primitives::merge_attributes;
 use dioxus_primitives::navigation_menu::{

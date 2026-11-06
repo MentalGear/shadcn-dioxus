@@ -1,5 +1,5 @@
 use dioxus::prelude::*;
-use dioxus_icons::lucide::{ChevronDown, ChevronLeft, ChevronRight};
+use crate::components::icons::{ChevronDown, ChevronLeft, ChevronRight};
 use dioxus_primitives::calendar::{
     self, CalendarDayProps, CalendarGridBodyProps, CalendarGridCellProps,
     CalendarGridDayHeaderProps, CalendarGridHeadProps, CalendarGridHeaderRowProps,

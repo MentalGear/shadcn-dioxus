@@ -57,7 +57,7 @@ mutate "undeclared sibling component" "printf 'use crate::components::card::Card
 mutate "undeclared relative sibling component" "printf 'use super::super::card::Card;\n' >> $c/button/component.rs"
 mutate "undeclared effects class" "printf 'const _C: &str = \"dx-shimmer\";\n' >> $c/button/component.rs"
 mutate "undeclared primitives feature" "printf 'use dioxus_primitives::calendar::DateRange;\n' >> $c/button/component.rs"
-mutate "wrong crate version" "sed -i 's|=0.1.0|=0.0.9|' $c/accordion/component.json"
+mutate "wrong crate version" "sed -i 's|0.3.47|0.3.46|' $c/calendar/component.json"
 mutate "dropped root member" "sed -i '0,/preview\\/src\\/components\\/tabs/{/preview\\/src\\/components\\/tabs/d}' component.json"
 [ "$fail" -eq 0 ] || exit 1
 echo "check-component-manifests: OK -- the generator's --check is green and 12 mutations each turn it red."

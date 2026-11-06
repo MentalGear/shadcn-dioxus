@@ -1,6 +1,6 @@
 use crate::components::button::{Button, ButtonSize, ButtonVariant};
 use dioxus::prelude::*;
-use dioxus_icons::lucide::{Check, Copy};
+use crate::components::icons::{Check, Copy};
 use dioxus_primitives::dioxus_attributes::attributes;
 use dioxus_primitives::merge_attributes;
 

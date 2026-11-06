@@ -1,5 +1,5 @@
 use dioxus::prelude::*;
-use dioxus_icons::lucide::ChevronRight;
+use crate::components::icons::ChevronRight;
 use dioxus_primitives::activity::use_motion_when;
 use dioxus_primitives::collapsible::{
     self, CollapsibleContentProps, CollapsibleProps, CollapsibleTriggerProps,

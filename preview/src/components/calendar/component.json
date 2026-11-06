@@ -10,13 +10,12 @@
       "features": ["calendar"]
     },
     {
-      "name": "dioxus-icons",
-      "version": "=0.1.0"
-    },
-    {
       "name": "time",
       "version": "0.3.47"
     }
+  ],
+  "componentDependencies": [
+    { "name": "icons", "git": "https://github.com/MentalGear/shadcn-dioxus" }
   ],
   "globalAssets": ["../../../assets/dx-components-theme.css"]
 }

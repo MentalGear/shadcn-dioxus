@@ -1,5 +1,5 @@
 use dioxus::prelude::*;
-use dioxus_icons::lucide::{Check, ChevronRight};
+use crate::components::icons::{Check, ChevronRight};
 use dioxus_primitives::context_menu::{
     self, ContextMenuCheckboxItemProps, ContextMenuContentProps, ContextMenuGroupProps, ContextMenuSeparatorProps, ContextMenuShortcutProps, ContextMenuItemProps,
     ContextMenuProps, ContextMenuRadioGroupProps, ContextMenuRadioItemProps,

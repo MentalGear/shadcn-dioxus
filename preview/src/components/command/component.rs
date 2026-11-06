@@ -1,5 +1,5 @@
 use dioxus::prelude::*;
-use dioxus_icons::lucide::Search;
+use crate::components::icons::Search;
 use dioxus_primitives::combobox::default_combobox_filter;
 use dioxus_primitives::command::{self, CommandEmptyProps, CommandGroupLabelProps, CommandItemProps};
 use dioxus_primitives::{dioxus_attributes::attributes, merge_attributes};

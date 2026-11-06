@@ -39,6 +39,7 @@
     "preview/src/components/field",
     "preview/src/components/form",
     "preview/src/components/hover_card",
+    "preview/src/components/icons",
     "preview/src/components/input",
     "preview/src/components/input_group",
     "preview/src/components/input_otp",

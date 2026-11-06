@@ -20,7 +20,7 @@ use super::columns::DataTableState;
 use crate::components::button::{Button, ButtonSize, ButtonVariant};
 use crate::components::table::TableRow;
 use dioxus::prelude::*;
-use dioxus_icons::lucide::GripVertical;
+use crate::components::icons::GripVertical;
 use dioxus_primitives::data_view::{KeyOrder, RowAnchor};
 use dioxus_primitives::dioxus_attributes::attributes;
 use dioxus_primitives::direction::Direction;

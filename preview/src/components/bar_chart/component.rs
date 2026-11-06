@@ -19,7 +19,7 @@
 //! convenience for this repo's own gallery code.
 
 use dioxus::prelude::*;
-use dioxus_icons::lucide::TrendingUp;
+use crate::components::icons::TrendingUp;
 
 pub use crate::components::card::{
     Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle,
