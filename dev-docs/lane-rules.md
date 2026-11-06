@@ -147,7 +147,7 @@ Use the cheapest tool that answers the question, in this order:
    quote their summary line (owner decision 2026-10-18, see "Gate procedure" below):
    `CARGO_TARGET_DIR=$LANE_TGT/check scripts/run-gates.sh --fast` -- every listed gate PASS, exit 3 (partial by design).
    `--fast` skips the cargo gates (`CARGO_GATES` in `run-gates.sh`: the three clippy arms, `test`, `test-server`,
-   `check-rustdoc`, `check-primitives-features`, `check-attr-spread-collision`), so that is every static `check-*.sh`, fmt and
+   `check-rustdoc`, `check-primitives-features`, `check-attr-spread-collision`, `check-public-api`), so that is every static `check-*.sh`, fmt and
    stylelint, in seconds. Do NOT run the full `run-gates.sh`: the main loop runs it once on the merged tree. If you
    changed Rust, also lint the crate you touched through the lock (`scripts/lane-cargo.sh -- cargo clippy -p <crate>
    --all-targets --features web -- -D warnings`).
