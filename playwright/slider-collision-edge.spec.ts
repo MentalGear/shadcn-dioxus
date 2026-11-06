@@ -15,23 +15,28 @@ test.describe("ThumbCollision::Push", () => {
   test("a thumb that reaches the other one pushes it along, keeping min_steps_between_thumbs", async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/slider/`, GOTO);
     const [start, end] = [thumbs(page, "Pushing Range").nth(0), thumbs(page, "Pushing Range").nth(1)];
-    await expect(start).toHaveAttribute("aria-valuenow", "30");
-    await expect(end).toHaveAttribute("aria-valuenow", "40");
+    await expect(start).toHaveAttribute("aria-valuenow", "20");
+    await expect(end).toHaveAttribute("aria-valuenow", "60");
 
     await start.focus();
     // Within the gap's reach nothing is pushed.
     await page.keyboard.press("ArrowRight");
-    expect(await values(page, "Pushing Range")).toEqual([31, 40]);
-    // Shift+Arrow is ten steps: 41 would leave 1 step to the end thumb, so the end thumb moves to 46.
+    expect(await values(page, "Pushing Range")).toEqual([21, 60]);
     await page.keyboard.press("Shift+ArrowRight");
-    expect(await values(page, "Pushing Range")).toEqual([41, 46]);
+    await page.keyboard.press("Shift+ArrowRight");
+    expect(await values(page, "Pushing Range")).toEqual([41, 60]);
+    // 51 would leave 9 steps to the end thumb, so the end thumb moves to 61 and then 71.
+    await page.keyboard.press("Shift+ArrowRight");
+    expect(await values(page, "Pushing Range")).toEqual([51, 61]);
+    await page.keyboard.press("Shift+ArrowRight");
+    expect(await values(page, "Pushing Range")).toEqual([61, 71]);
     // End: the start thumb reaches the room the end thumb needs (max - gap), the end thumb is at max.
     await page.keyboard.press("End");
-    expect(await values(page, "Pushing Range")).toEqual([95, 100]);
+    expect(await values(page, "Pushing Range")).toEqual([90, 100]);
 
     await end.focus();
     await page.keyboard.press("Home");
-    expect(await values(page, "Pushing Range")).toEqual([0, 5]);
+    expect(await values(page, "Pushing Range")).toEqual([0, 10]);
   });
 
   test("dragging a thumb past the other pushes it, and the displayed range follows", async ({ page }) => {
@@ -47,7 +52,7 @@ test.describe("ThumbCollision::Push", () => {
     await page.mouse.up();
     const [a, b] = await values(page, "Pushing Range");
     expect(a).toBeGreaterThan(60);
-    expect(b - a).toBe(5);
+    expect(b - a).toBe(10);
   });
 });
 
