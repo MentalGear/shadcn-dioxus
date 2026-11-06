@@ -101,11 +101,12 @@ const SURFACES: Surface[] = [
       await page.locator("#clip-combobox-trigger").click();
       await page.keyboard.press("ArrowDown");
     },
-    // The input's blur closes it. A page control may act on the options while the list stays open (the
-    // `dynamic` demo of `combobox.spec.ts`), so a press is not a dismissal of its own, and a touch tap on
-    // plain page does not blur the input: it leaves the list open.
+    // A mouse press on plain page blurs the input, and the blur closes it; the press is not a dismissal of its own
+    // (a page control may act on the options while the list stays open, the `dynamic` demo of `combobox.spec.ts`).
+    // A touch tap on plain page does not blur the input, so the policy closes the list on a touch or pen tap
+    // outside the input and the list (owner decision, row 487 item 6).
     pressOutside: true,
-    touch: false,
+    touch: true,
     focusOutside: true,
     focusReturn: true,
   },
@@ -333,6 +334,56 @@ test.describe("touch: a scroll that starts outside is not a dismissal, a tap is"
       await expect(content, "a tap outside closes it").toBeHidden();
     });
   }
+});
+
+test.describe("touch: the backdrop of a modal is a tap target, a drag from it is not", () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
+
+  const dialog = SURFACES.find((s) => s.name === "Dialog") as Surface;
+
+  const gesture = async (page: Page, steps: { dx: number; dy: number }[]) => {
+    const box = await fixedViewportBox(page);
+    const start = { x: box.x + 5, y: box.y + 5 };
+    const cdp = await page.context().newCDPSession(page);
+    const send = (type: string, dx = 0, dy = 0) =>
+      cdp.send("Input.dispatchTouchEvent", {
+        type,
+        touchPoints: type === "touchEnd" ? [] : [{ x: start.x + dx, y: start.y + dy }],
+      });
+    await send("touchStart");
+    for (const step of steps) {
+      await send("touchMove", step.dx, step.dy);
+      await page.waitForTimeout(16);
+    }
+    await send("touchEnd");
+    await settle(page);
+  };
+
+  test("Dialog: a touch drag that starts on the backdrop leaves it open", async ({ page }) => {
+    await prepare(page, dialog);
+    await gesture(page, Array.from({ length: 8 }, (_, i) => ({ dx: 0, dy: (i + 1) * 10 })));
+    await expect(dialog.content(page).first(), "a drag from the backdrop must not close it").toBeVisible();
+  });
+
+  test("Dialog: a touch that moves past the tap distance and lifts on the backdrop leaves it open", async ({ page }) => {
+    await prepare(page, dialog);
+    // 12 px is inside the browser's own click slop, so a `click` would still follow; the tap rule is 10 px
+    await gesture(page, [{ dx: 0, dy: 4 }, { dx: 0, dy: 8 }, { dx: 0, dy: 12 }]);
+    await expect(dialog.content(page).first(), "a press that moved 12 px is not a tap").toBeVisible();
+  });
+
+  test("Dialog: a tap on the backdrop closes it", async ({ page }) => {
+    await prepare(page, dialog);
+    await gesture(page, []);
+    await expect(dialog.content(page).first()).toBeHidden();
+  });
+
+  test("Dialog: a tap inside its own box leaves it open", async ({ page }) => {
+    await prepare(page, dialog);
+    await dialog.content(page).first().tap({ position: { x: 20, y: 20 } });
+    await settle(page);
+    await expect(dialog.content(page).first()).toBeVisible();
+  });
 });
 
 test.describe("nested layers: only the topmost closes", () => {
