@@ -10,9 +10,7 @@ dioxus-code = { version = "0.1.0", default-features = false, features = ["macro"
 dioxus-icons = "0.1.0"
 # The two optional primitives features gate `palette` / `time` for every other consumer; the docs site demos both.
 dioxus-primitives = { workspace = true, features = ["calendar", "color-picker"] }
-dioxus-i18n = "0.6.0"
 palette = "0.7.6"
-unic-langid = { version = "0.9", features = ["macros"] }
 tracing = { workspace = true }
 time = { version = "0.3.44", features = ["std", "macros"] }
 # The `markdown` component's parser. Exact pin, no default features and no `html`: the component renders

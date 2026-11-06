@@ -130,7 +130,7 @@ pub fn DatePickerMonthSegment(props: DatePickerMonthSegmentProps) -> Element {
     // calendar grid's `CalendarMonthTitle`/`CalendarSelectMonthValue` (and
     // `DatePickerCalendarProps::on_format_month`) already use, defaulting to
     // `Month::to_string()` (see `DateElementProps::on_format_month`) but
-    // overridable with e.g. `dioxus_i18n`'s `tid!` for a translated name.
+    // overridable with a translation lookup for a translated name.
     // `None` while the segment has no value yet (`ctx.month_value()` is
     // `None`), matching `aria-valuenow`'s own untouched-is-absent rule
     // (finding 3) so the two stay in lockstep -- see `DateSegment`'s
