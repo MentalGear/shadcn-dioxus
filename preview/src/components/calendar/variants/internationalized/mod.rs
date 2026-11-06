@@ -1,7 +1,6 @@
 use super::super::component::*;
-use crate::i18n::{use_locale_root, LocaleDemo};
+use crate::i18n::{tid, use_locale_root, LocaleDemo};
 use dioxus::prelude::*;
-use dioxus_i18n::tid;
 
 use time::{macros::date, Date, Month, Weekday};
 
@@ -23,9 +22,9 @@ pub fn Demo() -> Element {
                     tracing::info!("View changed to: {}-{}", new_view.year(), new_view.month());
                     view_date.set(new_view);
                 },
-                on_format_weekday: |weekday: Weekday| tid!(& weekday.to_string()),
-                on_format_month: |month: Month| tid!(& month.to_string()),
-                on_format_month_short: |month: Month| tid!(& format!("{month}_Short")),
+                on_format_weekday: |weekday: Weekday| tid(&weekday.to_string()),
+                on_format_month: |month: Month| tid(&month.to_string()),
+                on_format_month_short: |month: Month| tid(&format!("{month}_Short")),
                 caption_layout: CaptionLayout::Dropdown,
                 min_date: date!(1995 - 07 - 21),
                 max_date: date!(2035 - 09 - 11),

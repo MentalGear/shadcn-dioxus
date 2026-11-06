@@ -132,7 +132,7 @@ pub(super) struct DateElementProps {
     /// Locale-aware month name for the month segment's `aria-valuetext`
     /// (backlog row 84 finding 2). Defaults to `Month::to_string()` (plain
     /// English), matching `DatePickerCalendarProps::on_format_month`'s own
-    /// default for the calendar grid -- pass e.g. `dioxus_i18n`'s `tid!` for
+    /// default for the calendar grid -- pass e.g. a translation lookup such as an i18n crate's `tid!` for
     /// a translated name, the same way the calendar side already can.
     #[props(default = Callback::new(|month: Month| month.to_string()))]
     pub on_format_month: Callback<Month, String>,
