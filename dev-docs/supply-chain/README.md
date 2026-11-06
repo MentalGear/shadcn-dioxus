@@ -148,6 +148,11 @@ package has no `main` and no compiler API (`createProgram`), which `scripts/ts-s
   tool; vet adds exact-version trust that deny's name-level allowlist cannot. `cargo-audit` is a strict subset of deny's
   advisories check, so not both. OSV-Scanner, cargo-geiger, cargo-crev, Socket, Dependabot and Renovate are not in the gate
   list, with reasons per tool in [`research/dependency-scanners.md`](../research/dependency-scanners.md).
+- **Lifted code is recorded here, one bullet per lift (row 371).** `preview/stylelint-idiomatic-order.yaml` is the
+  property-order list of `stylelint-config-idiomatic-order@10.0.0` (MIT, 2026-11-06, owner's decision on the C23 failure:
+  last release 2023-12-09). It carries `lifted-from: stylelint-config-idiomatic-order@10.0.0` and the MIT notice at its top,
+  and is YAML, not JavaScript, so it adds nothing to the hand-written JS count of `check-js-volume.sh`. `stylelint-order`
+  stays a dev dependency. Proof: the resolved stylelint config and the output over the repo's CSS are identical before and after.
 - **Gates are offline and deterministic.** Facts that change with the calendar (new advisories, yanks, publisher changes)
   live in a separate networked refresh step that writes a committed snapshot; the gate reads the snapshot (C18).
 - **Ratchets, not budgets.** A budget with headroom creeps; a baseline that may only shrink, with reasoned allowlists and

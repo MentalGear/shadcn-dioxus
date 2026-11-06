@@ -29,15 +29,14 @@
 //!   B of the spike findings above), driven by
 //!   `crate::use_dialog_open_driver`/`crate::use_dialog_close_sync` (which
 //!   prevents the stranded-signal defect,
-//!   `dev-docs/reference/platform-rationale.md` Caveat 1) plus
-//!   `crate::use_dialog_backdrop_dismiss` (shared with `popover.rs`'s
-//!   modal web arm) for the "click far outside the dialog" behaviour
-//!   `dialog.spec.ts` already covers -- the dismiss core's outside press
-//!   is not reusable here, because a `showModal()` backdrop click's
-//!   `event.target` *is* the `<dialog>` element (it contains itself), so
-//!   its `!root.contains(e.target)` check can never fire
-//!   for it (`dev-docs/archive/research/phase4-spike-findings.md` experiment 6's
-//!   `elementFromPoint` finding). No closing layer and no
+//!   `dev-docs/reference/platform-rationale.md` Caveat 1) plus the dismiss
+//!   core's backdrop press (`crate::dismiss::Policy::NATIVE_BACKDROP`, shared with
+//!   `popover.rs`'s modal web arm) for the "click far outside the dialog" behaviour
+//!   `dialog.spec.ts` covers -- a `showModal()` backdrop press's `event.target` *is*
+//!   the `<dialog>` element (`dev-docs/archive/research/phase4-spike-findings.md`
+//!   experiment 6's `elementFromPoint` finding), so the core's `Backdrop` press mode
+//!   tests the pointer against the dialog's rect instead of `!root.contains(target)`.
+//!   No closing Escape layer and no
 //!   focus-trap eval on this arm: the browser's own `showModal()` supplies
 //!   the focus trap, focus restore, inertness, and top layer, and its
 //!   `cancel`/`close` events (synced above) already handle Escape.
@@ -590,22 +589,22 @@ fn DialogContentModal(
     // Escape is the dialog's own `cancel`, routed through state by `use_dialog_close_sync`; the
     // layer only keeps the dialog's place in the dismiss core's Escape order, so a layer opened
     // inside it (a Select, a Popover) takes the first Escape and the dialog the second.
+    // Native <dialog> has no built-in "click outside to dismiss" the way `popover=` does: the
+    // layer's backdrop press (the tap rule for touch and pen) is dialog.spec.ts's "clicking far
+    // outside the dialog dismisses it".
     crate::dismiss::use_dismiss(
         id,
         crate::dismiss::Scope::Element,
-        crate::dismiss::Policy::NATIVE,
+        crate::dismiss::Policy::NATIVE_BACKDROP,
         Some(open.into()),
-        |_| {},
+        move |cause| {
+            if cause == crate::dismiss::Cause::OutsidePress
+                && !ctx.disable_pointer_dismissal.cloned()
+            {
+                set_open.call(false);
+            }
+        },
     );
-    // Native <dialog> has no built-in "click outside to dismiss" the way
-    // `popover=` does -- reproduces dialog.spec.ts's "clicking far outside
-    // the dialog dismisses it" behaviour. See this module's doc comment for
-    // why the core's outside press can't be reused here.
-    crate::use_dialog_backdrop_dismiss(id, move || {
-        if !ctx.disable_pointer_dismissal.cloned() {
-            set_open.call(false);
-        }
-    });
 
     // Owned by this component -- see `DialogContentNonModal`'s identical
     // construction above (`dev-docs/backlog.md` row 93).

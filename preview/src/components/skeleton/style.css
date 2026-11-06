@@ -16,6 +16,15 @@
   background-color: var(--dx-muted);
 }
 
+/* Reduced motion: the theme's shared layer shortens transition durations on buttons and scrims but has no rule
+ * for an animation on a plain element, so the pulse would run on. It stops rather than shortening to
+ * `--dx-motion-duration-reduced`, which would flicker. The rest state is `opacity: 1`, so the box stays solid. */
+@media (prefers-reduced-motion: reduce) {
+  .dx-skeleton {
+    animation: none;
+  }
+}
+
 /* The box is the caller's (an inline `style`, or a composing component's slot variables); zero specificity,
  * so a class that sizes the skeleton still wins. */
 :where(.dx-skeleton) {

@@ -298,7 +298,18 @@ def all_composed():
                     with open(os.path.join(root, fname), encoding="utf-8") as f:
                         for c, y in composed_classes(f.read(), x).items():
                             composed.setdefault(c, y)
-    return composed
+    # A component with no stylesheet rules (`icons`: inline SVG that styles itself through attributes) has no
+    # property for the composing sheet to contest, so a class on its root is not a composition.
+    return {c: y for c, y in composed.items() if has_rules(y)}
+
+
+def has_rules(y):
+    """Whether component `y`'s `style.css` declares anything (a comment-only sheet does not)."""
+    path = f"{COMPONENTS}/{y}/style.css"
+    if not os.path.isfile(path):
+        return False
+    with open(path, encoding="utf-8") as f:
+        return any(decls for _prelude, decls, _line, _ctx in parse_rules(f.read()))
 
 
 def scan():

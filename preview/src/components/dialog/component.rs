@@ -1,7 +1,7 @@
 use crate::components::button::{Button, ButtonSize, ButtonVariant};
 use dioxus::prelude::*;
 use dioxus_primitives::AsChild;
-use dioxus_icons::lucide::X;
+use crate::components::icons::X;
 use dioxus_primitives::dialog::{self, DialogCtx, DialogDescriptionProps, DialogTitleProps};
 use dioxus_primitives::keyboard_inset::{use_keyboard_panel, KeyboardInset};
 use dioxus_primitives::{dioxus_attributes::attributes, merge_attributes};

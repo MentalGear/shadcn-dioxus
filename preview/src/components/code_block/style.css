@@ -41,6 +41,11 @@
   box-shadow: var(--dx-ring-focus);
 }
 
+/* Zeroed with the focused content's ring (theme "Focus modality"). */
+.dx-code-block:has(> .dx-code-block-content[data-dx-pointer-focus]) {
+  --dx-ring-focus: 0 0 #0000;
+}
+
 .dx-code-block-header,
 .dx-code-block-footer {
   display: flex;

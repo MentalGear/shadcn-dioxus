@@ -2458,11 +2458,18 @@ html:not([data-dx-press-feedback="off"]) [role="radio"][class*=" dx-"]:not([disa
  *    panel when that focus counts as keyboard-ish, which no sheet reset. Flat lists and zero specificity on
  *    purpose: a control's own rule still wins, and no selector list sits inside `:not()` (see the
  *    `touch-action` rule in `main.css`).
- * 2. Under a mouse, touch or pen the non-field ring tokens resolve to nothing, so a trigger that was
- *    focused by script after a tap (Safari does not focus a tapped button; a menu, a roving menubar and a
- *    popover's first control all move focus) cannot draw a ring. `--dx-ring-field` is deliberately NOT
- *    touched: a text field the user tapped is still focused and still rings, as in shadcn. Keyboard modality
- *    (or no attribute at all, no script) keeps every ring. Forced colors (below) is unaffected. */
+ * 2. Under a mouse, touch or pen the non-field ring tokens resolve to nothing on the FOCUSED element, so a
+ *    trigger that was focused by script after a tap (Safari does not focus a tapped button; a menu, a roving
+ *    menubar and a popover's first control all move focus) cannot draw a ring. `--dx-ring-field` is
+ *    deliberately NOT touched: a text field the user tapped is still focused and still rings, as in shadcn.
+ *    Keyboard modality (or no script at all) keeps every ring. Forced colors (below) is unaffected.
+ *
+ *    The gate is `data-dx-pointer-focus`, which the modality script puts on the focused element while the
+ *    modality is not `keyboard` (and takes off when focus leaves or the modality becomes `keyboard`). It sits
+ *    on that one element, never on `:root`: a custom property redefined on `:root`, or any rule keyed off an
+ *    attribute of `<html>` whose subject is `:focus-visible`, makes the engine restyle every element on the
+ *    page for the first key press. A ring drawn on a CONTAINER from a focused descendant
+ *    (`.x:has(:focus-visible)`) repeats this reset on the container with `.x:has([data-dx-pointer-focus])`. */
 :where(dialog):focus,
 :where([popover]):focus,
 :where([role="listbox"]):focus,
@@ -2472,7 +2479,7 @@ html:not([data-dx-press-feedback="off"]) [role="radio"][class*=" dx-"]:not([disa
   outline: none;
 }
 
-:root[data-dx-modality]:not([data-dx-modality="keyboard"]) {
+[data-dx-pointer-focus] {
   --dx-ring: 0 0 #0000;
   --dx-ring-focus: 0 0 #0000;
   --dx-ring-focus-inset: 0 0 #0000;

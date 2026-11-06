@@ -37,7 +37,7 @@
 #  5. stylelint runs with `pnpm exec`, which never downloads: a worktree without node_modules fails loudly
 #     (`cd preview && pnpm install --frozen-lockfile`, or symlink the main checkout's node_modules --
 #     backlog rows 72, 359) instead of fetching an unvetted version.
-#  6. Reuse (backlog row 320). The cargo gates (CARGO_GATES: check-primitives-features, check-attr-spread-collision,
+#  6. Reuse (backlog row 320). The cargo gates (CARGO_GATES: check-primitives-features, check-attr-spread-collision, check-public-api,
 #     the three clippy arms, `cargo test`, `cargo test` on the server arm, check-rustdoc) are ~90 % of a full run, and a
 #     CSS-, spec- or docs-only batch cannot change their result. So a PASS is stored per (cargo-input hash,
 #     toolchain, command line) -- the key of scripts/gate-reuse.sh, whose inputs are scripts/cargo-inputs-hash.sh's
@@ -54,7 +54,7 @@
 set -uo pipefail
 
 # The cargo gates: the slow ones, whose PASS is reused for an identical cargo-input key (guard 6) and which --fast leaves out.
-CARGO_GATES='^(clippy-|test(-server)?$|check-rustdoc$|check-primitives-features$|check-attr-spread-collision$)'
+CARGO_GATES='^(clippy-|test(-server)?$|check-rustdoc$|check-primitives-features$|check-attr-spread-collision$|check-public-api$)'
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
@@ -94,6 +94,7 @@ gates=(
   "check-component-call|scripts/check-component-call.sh"
   "check-test-harness-controlled|scripts/check-test-harness-controlled.sh"
   "check-attr-spread-collision|scripts/check-attr-spread-collision.sh"
+  "check-public-api|scripts/check-public-api.sh"
   "check-direction-keys|scripts/check-direction-keys.sh"
   "check-state-attributes|scripts/check-state-attributes.sh"
   "check-render-keys|scripts/check-render-keys.sh"

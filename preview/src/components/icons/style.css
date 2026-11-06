@@ -1,0 +1,3 @@
+/* Icons are inline SVG that take their colour from `currentColor` and their size from the `size`
+ * prop, so there is nothing to style. The stylesheet exists so the component installs like every
+ * other. */

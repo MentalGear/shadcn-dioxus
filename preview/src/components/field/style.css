@@ -141,6 +141,12 @@
   box-shadow: var(--dx-ring-focus);
 }
 
+/* The ring tokens are zeroed on the focused element (theme "Focus modality"), so a container drawing the ring for it
+ * zeroes them on itself too. */
+.dx-field-label:has([data-dx-pointer-focus]) > .dx-field {
+  --dx-ring-focus: 0 0 #0000;
+}
+
 .dx-field[data-invalid="true"] .dx-field-label {
   --dx-label-color: var(--dx-destructive-text);
 }

@@ -4,7 +4,8 @@
 #
 # What a user's `dx components add` puts in their Cargo.toml comes only from `component.json`, so over every
 # `cargoDependencies` entry: the version is `x.y.z`, `^`, `~` or `=` with a floor equal to the `Cargo.lock` version,
-# the crate is a `preview` dependency, `dioxus-icons` and `pulldown-cmark` are pinned `=x.y.z`, only an allowlisted
+# the crate is a `preview` dependency, `pulldown-cmark` is pinned `=x.y.z`, no component lists `dioxus-icons` (its glyphs
+# are the `icons` component; the crate is a dependency of the site only), only an allowlisted
 # component (`markdown`) may list a markdown, HTML or syntax parser, the `dioxus-primitives` `rev`s are all unstamped
 # or all one 40-hex value (`scripts/stamp-release-rev.sh <sha>` writes it at release time), and every primitives
 # module behind a cargo feature that a component's installed Rust files name has that feature in its closure's
@@ -61,7 +62,6 @@ import glob, json, os, re, sys, tomllib
 
 # crate -> reason; written `=x.y.z` in component.json.
 EXACT_ONLY = {
-    "dioxus-icons": "leaf crate used by 27 components, pre-1.0 and one maintainer: an exact pin keeps every install on the version we render with",
     "pulldown-cmark": "markdown parser (owner decision E2: exact pin, because model output reaches this parser and 0.13.4 carries a panic fix)",
 }
 # Markdown / HTML / syntax parser crates: a component may list one only if PARSER_ALLOW[crate] names it.
@@ -74,6 +74,10 @@ PARSERS = set(PARSER_ALLOW) | {
     "dioxus-mdx", "syntect", "tree-sitter", "arborium", "dioxus-code", "html5ever", "scraper", "ammonia",
 }
 REGISTRY_CRATES = {"dioxus-primitives", "dioxus-attributes"}
+# crate -> why no component's cargoDependencies may name it (the glyphs a component draws come from the `icons` component).
+NOT_INSTALLED = {
+    "dioxus-icons": "the glyphs are the `icons` component (preview/src/components/icons); the crate is the site's own dependency",
+}
 
 errors = []
 def err(msg): errors.append(msg)
@@ -124,6 +128,9 @@ for name, (d, m) in comps.items():
             for ft in c.get("features") or []:
                 if crate == "dioxus-primitives" and ft not in prim_features:
                     err(f"{where} lists feature {ft!r}, which primitives/Cargo.toml does not define ({sorted(prim_features)})")
+            continue
+        if crate in NOT_INSTALLED:
+            err(f"{where}: {NOT_INSTALLED[crate]}")
             continue
         if crate in PARSERS and name not in PARSER_ALLOW.get(crate, []):
             err(f"{where}: parser crate; only {PARSER_ALLOW.get(crate) or 'no component'} may list it (PARSER_ALLOW in scripts/check-cargo-dep-versions.sh)")

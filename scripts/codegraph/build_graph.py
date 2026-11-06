@@ -1,13 +1,10 @@
 # SCIP index + static scans -> graph.json (file-level edges; the page rolls up to component/crate).
 # usage: python3 -I build_graph.py <index.scip> <graph.json>   (stdlib only; the repo root is two levels above this file)
-# Model: every node is a file {id, comp, items}; `items` is the per-node metrics slot (add fields beside it, the
-# page reads n.items only). Edges are [src, dst, weight, kind] over node indexes.
-import sys, os, re, json, collections, importlib.util
-HERE=os.path.dirname(os.path.abspath(__file__))
-REPO=os.path.dirname(os.path.dirname(HERE))
-# comment metrics M1-M5 (comment_metrics.py): a script run as `python3 -I` has no sibling imports, so it is loaded by path
-_cm_spec=importlib.util.spec_from_file_location('comment_metrics',os.path.join(HERE,'comment_metrics.py'))
-cmm=importlib.util.module_from_spec(_cm_spec);_cm_spec.loader.exec_module(cmm)
+# Model: every node is a file {id, comp, items}; `items` is its definitions count. Edges are [src, dst, weight, kind] over
+# node indexes. The comment metrics are not here: they depend on file text only and live in comments.json
+# (build_comments.py), which the page joins to the nodes by file id.
+import sys, os, re, json, collections
+REPO=os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 scip, out = sys.argv[1], sys.argv[2]
 def varint(b,i):
     r=s=0
@@ -133,17 +130,11 @@ for f in list(allf):
                 t='preview/src/components/%s/%s'%(k,leaf)
                 if t in fidx:fe[(f,t,'test')]+=1;break
 nodes=[]
-cm=cmm.measure(REPO,[f for f in allf if not f.startswith('ext:')])
 for f in allf:
     cid,cr,name=comp(f)
-    n={'id':f,'comp':cid,'items':items.get(f,0)}
-    if f in cm:
-        n['cm'],detail=list(cm[f][0]),cm[f][1]
-        if detail:n['d']=detail
-        if cmm.is_test_path(f):n['t']=1
-    nodes.append(n)
+    nodes.append({'id':f,'comp':cid,'items':items.get(f,0)})
 edges=[[fidx[a],fidx[b],c,k] for (a,b,k),c in fe.items() if a in fidx and b in fidx]
-g={'meta':{'cm_fields':list(cmm.CM_FIELDS),'scip_documents':len(docs),'items_defined':len(defs),'unresolved_workspace_refs':unres,'std_refs':stdn,'item_level_edges':len(itemedges)},
+g={'meta':{'scip_documents':len(docs),'items_defined':len(defs),'unresolved_workspace_refs':unres,'std_refs':stdn,'item_level_edges':len(itemedges)},
    'comps':list(comps.values()),'nodes':nodes,'edges':edges}
 json.dump(g,open(out,'w'),separators=(',',':'))
 kinds=collections.Counter(e[3] for e in edges)

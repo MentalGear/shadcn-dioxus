@@ -1,5 +1,5 @@
 use dioxus::prelude::*;
-use dioxus_icons::lucide::ChevronDown;
+use crate::components::icons::ChevronDown;
 pub use dioxus_primitives::accordion::AccordionChevron;
 use dioxus_primitives::accordion::{
     self, AccordionContentProps, AccordionItemProps, AccordionProps, AccordionTriggerProps,

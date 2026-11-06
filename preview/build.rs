@@ -9,6 +9,10 @@ mod slot_scan;
 // How a component page groups and orders its docs sections, shared with `src/main.rs`'s tests (backlog row 422).
 #[path = "docs_groups.rs"]
 mod docs_groups;
+// What a controlled pair is and the "Controlled state" block built from it, shared with `src/main.rs`'s tests
+// (backlog rows 392 and 387).
+#[path = "controlled_scan.rs"]
+mod controlled_scan;
 
 fn main() {
     let out_dir = std::env::var("OUT_DIR").unwrap();
@@ -230,6 +234,9 @@ fn walk_markdown_dir(dir: &std::path::Path, out_dir: &std::path::Path) -> std::i
                     sections.push(slots);
                 }
                 sections.push(render_props_section(&folder_name, &sections));
+                if let Some(controlled) = render_controlled_section(&folder_name, &sections) {
+                    sections.push(controlled);
+                }
                 // The page order, decided once (`docs_groups`): Basic first, the page's own sections in
                 // authored order, then the recurring topics. The sort is stable.
                 sections.sort_by_key(|section| {
@@ -557,6 +564,57 @@ fn render_props_section(name: &str, sections: &[DocsSection]) -> DocsSection {
         title_html: PROPS_HEADING.to_string(),
         html: body,
     }
+}
+
+/// The generated "Controlled state" section of a page whose props hold a controlled pair (`controlled_scan`),
+/// `None` for a page with none. It reads the same structs as the props reference, so it lists exactly the pairs
+/// the props table shows. A half-present pair fails the build (every one is reported at once) rather than
+/// being left out of the page.
+fn render_controlled_section(name: &str, sections: &[DocsSection]) -> Option<DocsSection> {
+    assert!(
+        !sections.iter().any(|s| s.id == controlled_scan::SECTION_ID),
+        "src/components/{name}/docs.md declares `## {}`, which build.rs adds itself",
+        controlled_scan::SECTION_HEADING
+    );
+    let aliases = std::fs::read_to_string(format!("../primitives/src/{name}.rs"))
+        .map(|source| props_scan::scan_aliases(&source))
+        .unwrap_or_default();
+    let mut seen = std::collections::HashSet::new();
+    let mut items = Vec::new();
+    for (label, path, exported_only) in props_sources(name) {
+        let source = std::fs::read_to_string(&path).unwrap();
+        for item in props_scan::scan_props(&source) {
+            let exported = aliases.iter().any(|(_, target)| *target == item.name);
+            if (exported_only && !exported) || !seen.insert((label, item.name.clone())) {
+                continue;
+            }
+            items.push(controlled_scan::Item {
+                name: item.name,
+                fields: item
+                    .fields
+                    .iter()
+                    .filter(|f| f.extends.is_none())
+                    .map(|f| f.name.clone())
+                    .collect(),
+            });
+        }
+    }
+    let (pairs, mut problems) = controlled_scan::pairs(&items);
+    problems.sort();
+    problems.dedup();
+    assert!(
+        problems.is_empty(),
+        "src/components/{name}: controlled props are inconsistent (see preview/controlled_scan.rs):\n  {}",
+        problems.join("\n  ")
+    );
+    if pairs.is_empty() {
+        return None;
+    }
+    Some(DocsSection {
+        id: controlled_scan::SECTION_ID.to_string(),
+        title_html: controlled_scan::SECTION_HEADING.to_string(),
+        html: controlled_scan::render(&pairs),
+    })
 }
 
 /// The Table component's part classes (`src/components/table/component.rs`, `style.css`): every table

@@ -475,6 +475,12 @@ td:has(.dx-calendar-grid-cell[data-selection-end="true"]) {
     box-shadow: var(--dx-ring-focus);
 }
 
+/* Zeroed with the focused select's ring (theme "Focus modality"). */
+.dx-calendar-month-select-container:has([data-dx-pointer-focus]),
+.dx-calendar-year-select-container:has([data-dx-pointer-focus]) {
+    --dx-ring-focus: 0 0 #0000;
+}
+
 .dx-calendar-month-select,
 .dx-calendar-year-select {
     position: absolute;

@@ -19,6 +19,7 @@ pub(crate) const DOCS_SECTIONS: &[&str] = &[
     "Add a component",
     "Recommended workflow",
     "Motion",
+    "Controlled",
     "Utilities",
     "Touch sizing",
     "Contrast mode",
@@ -274,14 +275,18 @@ pub(crate) fn Docs(dark_mode: Option<bool>) -> Element {
                 }
                 section { class: "dx-docs-section",
                     h2 { id: "{docs_section_slug(DOCS_SECTIONS[5])}", "{DOCS_SECTIONS[5]}" }
-                    crate::utilities_docs::UtilitiesDocs {}
+                    crate::controlled_docs::ControlledDocs {}
                 }
                 section { class: "dx-docs-section",
                     h2 { id: "{docs_section_slug(DOCS_SECTIONS[6])}", "{DOCS_SECTIONS[6]}" }
-                    crate::coarse_docs::CoarseDocs {}
+                    crate::utilities_docs::UtilitiesDocs {}
                 }
                 section { class: "dx-docs-section",
                     h2 { id: "{docs_section_slug(DOCS_SECTIONS[7])}", "{DOCS_SECTIONS[7]}" }
+                    crate::coarse_docs::CoarseDocs {}
+                }
+                section { class: "dx-docs-section",
+                    h2 { id: "{docs_section_slug(DOCS_SECTIONS[8])}", "{DOCS_SECTIONS[8]}" }
                     crate::contrast_docs::ContrastDocs {}
                 }
             }

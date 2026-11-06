@@ -1,6 +1,6 @@
 use dioxus::prelude::*;
 use dioxus_primitives::AsChild;
-use dioxus_icons::lucide::X;
+use crate::components::icons::X;
 use dioxus_primitives::dialog::{
     self, DialogCtx, DialogDescriptionProps, DialogTitleProps,
 };

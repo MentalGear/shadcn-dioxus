@@ -49,7 +49,7 @@
 //!   belongs here.
 //!
 //! A drag that began inside the drawer and ended over its `::backdrop` is not a
-//! backdrop click: `crate::use_dialog_backdrop_dismiss` requires the PRESS to have
+//! backdrop click: the dismiss core's `Backdrop` press requires the PRESS to have
 //! started on the backdrop too, so that rule is dialog-wide, not drawer-specific.
 //!
 //! Gating *where* a drag may start still needs the real DOM target (Dioxus's

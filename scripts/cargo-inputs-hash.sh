@@ -50,7 +50,8 @@ export LC_ALL=C
 CARGO_ROOTS=(primitives cli preview test-harness dioxus-attributes scripts/attr-spread-collision-checker templates)
 WORKSPACE_FILES=(Cargo.toml Cargo.lock rust-toolchain rust-toolchain.toml rustfmt.toml .rustfmt.toml clippy.toml
   .clippy.toml component.json scripts/check-primitives-features.sh scripts/check-rustdoc.sh scripts/check-attr-spread-collision.sh
-  scripts/check-attr-spread-collision.baseline.tsv scripts/check-attr-spread-collision.component-forward.baseline.tsv)
+  scripts/check-attr-spread-collision.baseline.tsv scripts/check-attr-spread-collision.component-forward.baseline.tsv
+  scripts/check-public-api.sh primitives/public-api.txt)
 ASSET_EXT='css|svg|png|jpg|jpeg|gif|webp|ico|woff|woff2'
 
 # The working tree's files: tracked and untracked-not-ignored (NUL separated, then one per line).

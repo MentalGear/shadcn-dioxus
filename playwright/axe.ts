@@ -160,6 +160,19 @@ export interface AxeScanOptions {
   exclude?: AxeExclusion[];
   /** Region exclusions, each requiring a written `reason` (see `AxeRegionExclusion`). */
   excludeRegions?: AxeRegionExclusion[];
+  /**
+   * Run exactly these axe rule ids instead of the whole tag set. For a repeat scan of a page whose structure is
+   * already proven unchanged (`all-routes.spec.ts` runs only the colour rules in the second colour scheme).
+   */
+  onlyRules?: string[];
+}
+
+/** The axe rule ids of the colour category (`cat.color`) that `TAGS` selects: the rules whose verdict depends on the colour scheme. */
+export function colorRuleIds(): string[] {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const axeCore = require(require.resolve("axe-core", { paths: [require.resolve("@axe-core/playwright")] }));
+  const inSet = new Set<string>(axeCore.getRules(TAGS).map((r: { ruleId: string }) => r.ruleId));
+  return axeCore.getRules(["cat.color"]).map((r: { ruleId: string }) => r.ruleId).filter((id: string) => inSet.has(id));
 }
 
 function formatViolations(
@@ -254,7 +267,8 @@ export async function expectNoAxeViolations(
   // the selector, source and check data of the passing and incomplete nodes this function never reads (14,700 nodes on the
   // home page). On a debug build (8 routes) that is -20 % scan time with identical violations on the real pages and on a page
   // with five injected defects.
-  let builder = new AxeBuilder({ page }).withTags(TAGS).options({ resultTypes: ["violations"] });
+  let builder = new AxeBuilder({ page });
+  builder = (opts.onlyRules ? builder.withRules(opts.onlyRules) : builder.withTags(TAGS)).options({ resultTypes: ["violations"] });
 
   if (opts.include) {
     builder = builder.include(opts.include);

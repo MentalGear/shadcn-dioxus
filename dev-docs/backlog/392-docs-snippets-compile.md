@@ -40,9 +40,18 @@ components and each as a `#[component]`, then `cargo check -p preview --features
 samples yet. Left as they are: `breadcrumb`'s `Route::Components {}` (the app's own router) and `alert_dialog`'s icon
 placeholder, both app-specific fragments.
 
-Still open: the shared "Controlled vs uncontrolled" paragraph that every page links to (it lives in a shared page
-this lane does not own), and the gate that compiles every docs `rust` block (the "By construction" step; a marker
-opts a block out with a reason). Both need an owner decision on where the paragraph lives and on the gate's shape.
+**Controlled paragraph LANDED (lane controlled-docs-392), by construction.** The explanation is written once, in the
+`/docs#controlled` section (`preview/src/controlled_docs.rs`, next to Motion). Each component page gets a generated
+"Controlled state" section: `preview/build.rs` (`render_controlled_section`) reads the same props structs as the props
+table and `preview/controlled_scan.rs` finds the pairs (`X` + `on_X_change`, with `default_X` when present; the state
+prop is also `selected_X`, plus one alias, `DatePickerProps` `value` -> `selected_date`). A half-present pair fails the
+build: `default_X` + `on_X_change` with no `X`, or `X` + `default_X` with no `on_X_change`, unless listed with a reason
+(`OBSERVERS`: DataTable sort; `UNREPORTED`: the checkbox's `BubbleInput`). `docs_tests::controlled_block_is_on_every_page_with_a_pair`
+re-reads the pairs from each page's rendered props table and requires the section exactly when a pair exists, plus the
+eleven named pages. Not covered by name: Input (a native element: `value`/`oninput`, no props struct) and Navbar (its
+`value` belongs to one item, nothing is controlled), so neither has a pair to list. Spec: `playwright/controlled-docs.spec.ts`
+(written, run by the batch verifier). Still open: the gate that compiles every docs `rust` block (the "By construction"
+step; a marker opts a block out with a reason), which needs an owner decision on its shape.
 
 ## Size
 

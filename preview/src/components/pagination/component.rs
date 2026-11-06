@@ -1,5 +1,5 @@
 use dioxus::prelude::*;
-use dioxus_icons::lucide::{ChevronLeft, ChevronRight, Ellipsis};
+use crate::components::icons::{ChevronLeft, ChevronRight, Ellipsis};
 use dioxus_primitives::dioxus_attributes::attributes;
 use dioxus_primitives::merge_attributes;
 use dioxus_primitives::state_attrs;

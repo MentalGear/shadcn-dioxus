@@ -341,11 +341,16 @@ fn use_effect_with_cleanup<F: FnMut() -> C + 'static, C: FnOnce() + 'static>(mut
 ///   layer reacts: a `close` layer cancels the key's default action (so an enclosing `<dialog>`
 ///   does not also take it as a `cancel`) and tells Rust; a `native` layer (a modal `<dialog>`, a
 ///   `popover="auto"`) leaves the key to the browser, and the layers under it ignore it.
-/// - **A press outside** (`press`): a mouse press (or an event with no pointer type, a script's
-///   synthetic one) dismisses on `pointerdown`. A touch or pen press is
+/// - **A press outside** (`press`: `ignore`, `outside`, `tap` or `backdrop`): with `outside` a mouse
+///   press (or an event with no pointer type, a script's
+///   synthetic one) dismisses on `pointerdown`; with `tap` a mouse press does nothing. A touch or pen press is
 ///   a tap: `pointerdown` is recorded while the layer is open (a press that began before it opened
 ///   has no record, so the long press that opens a context menu never closes it), `pointerup`
 ///   within 10 px dismisses, and `pointercancel` (the browser took the gesture to scroll) drops it.
+///   `backdrop` is for a modal `<dialog>` root: the press target is the dialog itself, so a press counts only
+///   when it lands on the dialog element outside the dialog's rect, and the release must land there too
+///   (a drag that began inside the dialog never closes it); a mouse press dismisses on release, a touch or pen
+///   press under the tap rule.
 /// - **Focus leaving** (`focus`): `focusin` on something outside the root, except an *ancestor* of
 ///   it: clicking the root's own non-focusable background blurs the focused control and the browser
 ///   moves focus to the nearest focusable ancestor, which is not a real focus-out.
@@ -355,21 +360,27 @@ fn use_effect_with_cleanup<F: FnMut() -> C + 'static, C: FnOnce() + 'static>(mut
 /// `outside`, `focus`, `escape` or `escape-within` (focus was inside the root when Escape came).
 const DISMISS_JS: &str = "const o = await dioxus.recv();
 const layers = (window.__dxDismissLayers = window.__dxDismissLayers || []);
+const backdrop = o.press === 'backdrop';
 const roots = () => [o.id, o.also].filter(Boolean).map(id => { const el = document.getElementById(id); return el && o.closest ? el.closest(o.closest) : el; }).filter(Boolean);
-const within = n => roots().some(r => r.contains(n)); const outside = n => roots().length > 0 && !within(n); let press = null;
+const within = n => roots().some(r => r.contains(n));
+const onBackdrop = e => { const d = roots()[0], r = d && d.getBoundingClientRect(); return !!d && e.target === d && !(e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom); };
+const outside = n => roots().length > 0 && !within(n); let press = null;
 layers.push(o), layers.sort((a, b) => a.seq - b.seq), cleanup(() => layers.splice(layers.indexOf(o), 1));
 listen(document, 'keydown', e => {
     if (e.key !== 'Escape' || layers[layers.length - 1] !== o || o.escape === 'native') return;
     e.preventDefault(), dioxus.send(within(document.activeElement) ? 'escape-within' : 'escape');
 });
-if (o.press) {
+if (o.press !== 'ignore') {
     listen(document, 'pointerdown', e => {
-        if (/^(touch|pen)$/.test(e.pointerType)) press = { id: e.pointerId, x: e.clientX, y: e.clientY, target: e.target };
-        else if (outside(e.target)) dioxus.send('outside');
+        const tap = /^(touch|pen)$/.test(e.pointerType); press = null;
+        if (backdrop) { if (onBackdrop(e)) press = { id: e.pointerId, x: e.clientX, y: e.clientY, tap, target: e.target }; }
+        else if (tap) press = { id: e.pointerId, x: e.clientX, y: e.clientY, tap, target: e.target };
+        else if (o.press === 'outside' && outside(e.target)) dioxus.send('outside');
     }, true);
     listen(document, 'pointerup', e => {
         const p = press; press = null;
-        if (p && p.id === e.pointerId && Math.hypot(e.clientX - p.x, e.clientY - p.y) < 10 && outside(p.target)) dioxus.send('outside');
+        if (!p || p.id !== e.pointerId || (p.tap && Math.hypot(e.clientX - p.x, e.clientY - p.y) >= 10)) return;
+        if (backdrop ? onBackdrop(e) : outside(p.target)) dioxus.send('outside');
     }, true);
     listen(document, 'pointercancel', e => { if (press && press.id === e.pointerId) press = null; }, true);
 }
@@ -770,8 +781,8 @@ function dxDialogForwardKeys(dialog) {
 const DIALOG_EXIT_TIMEOUT_MS: u32 = 1500;
 
 /// Sync the `<dialog>` element's native `close` event -- fired on Escape's
-/// default `cancel` action, a `::backdrop`/outside-click `close()` call we
-/// drive ourselves (see `dialog.rs`'s `use_dialog_backdrop_dismiss`), a
+/// default `cancel` action, a `::backdrop` press the dismiss core turns into a
+/// `close()` (`dismiss::Press::Backdrop`), a
 /// `method="dialog"` form submission, or any other close, browser- or
 /// script-driven alike -- back into `set_open`, so the Rust signal can never
 /// strand.
@@ -831,183 +842,6 @@ fn use_dialog_close_sync(
                     modal_closed.notify();
                 }
             }),
-        )
-    });
-}
-
-/// Backdrop-click dismiss for a web modal arm's `<dialog>` (`showModal()`).
-///
-/// `showModal()`'s `::backdrop` covers the entire viewport and owns
-/// hit-testing everywhere while the dialog is open
-/// (`dev-docs/archive/research/phase4-spike-findings.md` experiment 6: `elementFromPoint`
-/// resolves to the `<dialog>` element at every coordinate) -- and every
-/// pointer event over a `::backdrop` (or any other pseudo-element) is
-/// dispatched with its `target` set to the host element, i.e. the `<dialog>`
-/// itself. So the discriminator for "did this click land on the backdrop
-/// (dismiss) or on the dialog's own visible box (don't dismiss)" can't be
-/// `event.target` -- it's already the dialog element either way, including
-/// for clicks that land in the dialog's own padding/gap areas where no
-/// child happens to be. A bounding-rect check against the dialog's own
-/// rendered box (the same technique MDN's `<dialog>` guide recommends for
-/// this exact "click outside to close" pattern) tells the two apart
-/// correctly regardless of `event.target`.
-///
-/// Shared by `popover.rs`'s modal web arm, `alert_dialog.rs` and `dialog.rs`
-/// (Phase 4.2, dev-docs/plan.md) rather than reimplemented in each --
-/// the same trio as [`use_dialog_open_driver`]/[`use_dialog_close_sync`].
-/// `dismiss::use_dismiss` itself is not reusable here, because a
-/// `showModal()` backdrop click's `event.target` *is* the `<dialog>` element
-/// (it contains itself), so the core's
-/// `!root.contains(e.target)` check can never fire for it.
-///
-/// ## The nested-dialog false positive
-///
-/// The rect test alone is not a sufficient discriminator, because the
-/// listener is bound directly on the `<dialog>` element and a native `click`
-/// bubbles: a click on *any* descendant control -- not just the backdrop --
-/// reaches this same handler. Two independent guards are required before the
-/// rect test is even consulted, both checked in the shared predicate below:
-///
-/// - **`event.detail === 0`**: per UI Events, a `click` is dispatched "when
-///   a pointing device button is pressed and released on an element" *or*
-///   "when an element is activated" -- e.g. Enter/Space on a focused button
-///   (`<https://www.w3.org/TR/uievents/#event-type-click>`). For the latter,
-///   non-pointer case, `detail` is 0: no pointing-device button was
-///   involved. In Chromium such a synthesized click also carries
-///   `clientX`/`clientY` of `0, 0`, which the rect test misreads as "outside"
-///   for any dialog not pinned at the viewport's top-left corner. Rejecting
-///   `detail === 0` up front means a keyboard-activated control's bubbled
-///   click is never even rect-tested.
-/// - **`event.target === dialog`**: a `showModal()` backdrop click's target
-///   is always the `<dialog>` element itself (see this function's doc
-///   above), so a *real* backdrop click and a real click on the dialog's own
-///   padding both have `event.target === dialog` -- the rect test alone
-///   already tells those two apart correctly. But a click that bubbled up
-///   from a descendant control carries that control as its target, never the
-///   dialog -- so requiring `event.target === dialog` rejects every bubbled
-///   click outright, independent of `detail`, without narrowing what counts
-///   as a real backdrop click.
-///
-/// Without both guards, activating a control nested inside the dialog's own
-/// content -- e.g. this crate's nested-`Dialog` demo's "Open Nested Dialog"
-/// button -- bubbles a `detail === 0` click up to the *outer* dialog's own
-/// listener, which (mis)reads it as an outside click and closes the outer
-/// dialog. Because the nested `<dialog>` is a DOM descendant of the outer
-/// one, the outer dialog's own close (`display: none` via its UA default
-/// styling) then forces the still-open nested dialog out of the top layer,
-/// which fires its own `close` event a moment later too -- the nested dialog
-/// visibly opens and then immediately closes, with focus never durably
-/// landing on anything inside it. See `dev-docs/plan.md`/this crate's
-/// `native-dialog.spec.ts` Rule 7 for the oracle rules this satisfies.
-///
-/// ## The opening-gesture false positive
-///
-/// On iOS Safari (touch), a default (modal, `is_modal` defaults to
-/// `true`) `Popover` would show only its `::backdrop`, the popover itself
-/// flashing and disappearing, if the opening tap also dismissed it.
-/// This hook is a modal `Popover`/`Dialog`'s only press-dismissal path -- the web
-/// arm uses no closing layer of the dismiss core
-/// (the browser's own `showModal()` already supplies focus trap/restore and
-/// inertness; this hook is what supplies backdrop-click dismiss) -- so a
-/// dismiss firing on the *opening* tap itself is exactly the
-/// flash-and-disappear symptom described above.
-///
-/// Touch-emulated (`hasTouch`, `locator.tap()`) opens of this exact
-/// popover in the sandbox's Chromium keep it open, with no self-dismiss.
-/// That is expected, not a sign there is nothing to guard: this listener is bound
-/// directly on the `<dialog>` element, and the button that opens it is a
-/// *sibling* of that dialog, not an ancestor -- the one native `click`
-/// event dispatched for the opening tap has `event.target` fixed to the
-/// button for its entire dispatch (per DOM event dispatch, a event's
-/// `target` is set once and does not change mid-dispatch even if the
-/// listener that runs partway through synchronously shows the dialog), and
-/// it never reaches this handler at all, on any engine that dispatches
-/// exactly one `click` per tap. iOS Safari's touch-to-click synthesis is
-/// the documented exception: WebKit computes a synthesized click's hit-test
-/// target lazily, and a DOM mutation between `touchend` and that synthesis
-/// (exactly `showModal()`, moving this same coordinate under the freshly
-/// shown `::backdrop`) can retarget the synthesized click at whatever now
-/// sits there -- the dialog itself, i.e. `event.target === dialog`, passing
-/// this hook's own discriminator and landing at the *trigger's* screen
-/// position, which sits outside a trigger-anchored (not viewport-centered;
-/// see `popover.rs`'s module doc) modal `Popover`'s own rendered box. This
-/// is engine behavior this sandbox cannot exercise (no such click-retarget
-/// quirk exists in this Chromium build to reproduce against), so the
-/// iOS case is device-only; no reproduction is claimed here.
-///
-/// Guarded by construction regardless: `dialog.addEventListener('click', ...)`
-/// is deferred by one `requestAnimationFrame`, so the very click that opened
-/// this dialog -- and any same-gesture follow-up event an engine might
-/// synthesize immediately after it -- can never reach this listener at all,
-/// on any engine, by construction rather than by guessing at Safari's exact
-/// timing. A *separate*, later dismiss click still works:
-/// one frame (~16ms) is far shorter than the time a real second tap, or a
-/// Playwright `.click()`'s own actionability/round-trip overhead, ever
-/// takes to reach the browser. `cancelAnimationFrame` on cleanup covers the
-/// case where the dialog closes (unmounts) before the deferred frame ever
-/// fires, so the listener is
-/// never attached to an element already gone from the DOM.
-///
-/// ## The drag false positive (dragging UP on a bottom Drawer's handle must not close it)
-///
-/// A `click` is dispatched on the nearest common ancestor of where the press and
-/// the release landed. A press on the Drawer handle (or on text, or in an input)
-/// and a release over the `::backdrop` above the panel have the dialog itself as
-/// that ancestor, so the release produces a `click` with `target === dialog` and
-/// coordinates outside the dialog's box -- indistinguishable, by the checks above,
-/// from a real backdrop click. Every drag that begins inside a dialog and ends
-/// outside it (a text selection, a slider, a Drawer pulled the wrong way) would
-/// close it. A dismissal is a *click on the backdrop*, so the press must have started
-/// there too: a `pointerdown` whose target is the dialog and which landed outside
-/// its box arms the next `click`, and any other press disarms it. Not tied to the
-/// Drawer: this is the shared hook for Dialog, Sheet, Drawer, CommandDialog and
-/// the modal Popover, so the whole class is handled here.
-#[cfg(feature = "web")]
-fn use_dialog_backdrop_dismiss(
-    id: impl Readable<Target = String> + Copy + 'static,
-    on_dismiss: impl FnMut() + Clone + 'static,
-) {
-    use_js_listeners(move || {
-        let mut on_dismiss = on_dismiss.clone();
-        Some(
-            JsListeners::install(
-                "const id = await dioxus.recv();
-                const dialog = document.getElementById(id);
-                const outside = (x, y) => {
-                    const rect = dialog.getBoundingClientRect();
-                    return !(x >= rect.left && x <= rect.right
-                        && y >= rect.top && y <= rect.bottom);
-                };
-                // Whether the press that this click completes began on the backdrop --
-                // see this hook's doc, 'The drag false positive'.
-                let pressedOnBackdrop = false;
-                const onDown = (e) => {
-                    pressedOnBackdrop = e.target === dialog && outside(e.clientX, e.clientY);
-                };
-                const onClick = (e) => {
-                    const startedOnBackdrop = pressedOnBackdrop;
-                    pressedOnBackdrop = false;
-                    // Ignore a click that isn't pointer-originated (a keyboard
-                    // Enter/Space activation) and any click that bubbled up from
-                    // a descendant control rather than landing on the dialog
-                    // element itself -- see this hook's doc comment.
-                    if (e.detail === 0 || e.target !== dialog) return;
-                    if (startedOnBackdrop && outside(e.clientX, e.clientY)) dioxus.send(true);
-                };
-                // Deferred by one frame -- see this hook's doc, 'The
-                // opening-gesture false positive' -- so the tap that opened
-                // this dialog (still finishing its own dispatch, or a
-                // same-gesture synthetic follow-up some engines emit) can never
-                // reach this listener. `cleanup` cancels a frame that has not
-                // fired yet; `listen` itself ignores one that fires late.
-                const raf = requestAnimationFrame(() => {
-                    listen(dialog, 'pointerdown', onDown);
-                    listen(dialog, 'click', onClick);
-                });
-                cleanup(() => cancelAnimationFrame(raf));",
-            )
-            .arg(id.cloned())
-            .on_message(move |_: bool| on_dismiss()),
         )
     });
 }
