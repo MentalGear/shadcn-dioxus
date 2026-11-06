@@ -1,0 +1,3 @@
+# path<TAB>reason<TAB>row. The callers table of scripts/check-bridge-behaviours.sh: a file outside primitives/src/bridge/ that names `legacy::` (the one place a caller-composed script body reaches the transport). Shrink only: a new row is the
+# owner's decision, and a row whose file no longer names `legacy::` is stale and fails.
+primitives/src/js_listener.rs	js_listener runs its bespoke script bodies through legacy::open until the last one is ported to a named behaviour, a bridge stream or CSS; the legacy removal lane after 3.WB deletes legacy.rs with this row	434

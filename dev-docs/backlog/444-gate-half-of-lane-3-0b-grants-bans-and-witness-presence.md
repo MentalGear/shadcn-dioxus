@@ -23,6 +23,8 @@ APPROVED 2026-10-26 (owner: "okay for the plan"; scope 2, the recommended defaul
 
 Clippy sink-ban probe done 2026-11-06: `disallowed-methods` fires on `document::eval` and the `DataTransfer` setters at every site kind, a per-site `#[expect]` works on statements, closures and rsx attribute values, 69 eval sites and 14 setter calls today; see [`clippy-sink-ban-probe-2026-11-06.md`](../research/clippy-sink-ban-probe-2026-11-06.md).
 
+`check-bridge-behaviours` core done 2026-11-06 (lane B2): budgets are a `Ratchet` over `scripts/check-bridge-behaviours.budgets.tsv` (bytes; the dict is gone); `Program::Frozen{module}` over an empty `FrozenModule` with the three fixed `document::eval` argument shapes checked and the callers table `check-bridge-behaviours.callers.tsv` (one row, `js_listener.rs`); `FORBIDDEN_VERBS` (every `Method` variant, named by no Rust file outside `bridge/`, `METHODS` private to `bridge.ts`); a frozen, non-configurable `window.__dxBridge` (source and bundle) and a `KINDS` check in `lib/register.ts` (the bridge's own `register` stays until item 0.3); the Rust half of the lease rule; the `WitnessViolation` constructor ban outside `playwright/witness/probes/`; the `adds:` rule against the merge base (`scripts/lib/rows.py`); the platform-rule reader wired in; a missing TypeScript compiler is red under `RATCHET_REQUIRE_BASE=1`. The `tsc`-API scans stay in `check-ts-scan`. The three `document::eval` sites of `transport.rs` carry `#[expect(clippy::disallowed_methods)]`, which is unfulfilled (a warning, red under `-D warnings`) until lane D's `clippy.toml` ban is merged with it.
+
 ## Size
 
 L
