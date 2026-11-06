@@ -99,8 +99,11 @@ pub(crate) enum Press {
     /// the press began there too (a drag that starts inside and ends over the backdrop is not a
     /// backdrop press). The dismissal comes on release, a touch or pen press under the tap rule.
     #[cfg_attr(
-        not(feature = "web"),
-        expect(dead_code, reason = "only the web arm renders a native modal <dialog>")
+        all(not(feature = "web"), not(test)),
+        expect(
+            dead_code,
+            reason = "only the web arm renders a native modal <dialog>; the unit tests use it"
+        )
     )]
     Backdrop,
 }
@@ -164,8 +167,11 @@ impl Policy {
     /// A modal `<dialog>` (Dialog, Popover): the browser owns Escape, and a press on the backdrop
     /// dismisses ([`Press::Backdrop`]).
     #[cfg_attr(
-        not(feature = "web"),
-        expect(dead_code, reason = "only the web arm renders a native modal <dialog>")
+        all(not(feature = "web"), not(test)),
+        expect(
+            dead_code,
+            reason = "only the web arm renders a native modal <dialog>; the unit tests use it"
+        )
     )]
     pub(crate) const NATIVE_BACKDROP: Policy = Policy {
         escape: EscapeKey::Native,
