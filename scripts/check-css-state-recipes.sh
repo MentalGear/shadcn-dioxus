@@ -35,7 +35,7 @@
 #                      class: Input, Textarea, Input Group, Input OTP, Combobox/Command input, Date Picker
 #                      segment, ...) declares a `box-shadow` that reads `--dx-ring-focus` or
 #                      `--dx-ring-focus-inset`. Those two are zeroed outside keyboard modality
-#                      (`:root[data-dx-modality]:not([data-dx-modality="keyboard"])` in the theme), but a text
+#                      (`[data-dx-pointer-focus]` in the theme), but a text
 #                      field the user clicked or tapped is still focused and must still ring, as in shadcn:
 #                      a field takes `--dx-ring-field` (inset edge + halo) or, when its edge is a real
 #                      border (Textarea outline), `--dx-ring-focus-halo` beside `border-color`. Without it the
