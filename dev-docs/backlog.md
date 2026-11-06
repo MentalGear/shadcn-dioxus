@@ -40,7 +40,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (79)
+## Open rows (80)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -123,5 +123,6 @@ proposing one is closed as out of scope (row 337 is the first).
 | [495](backlog/495-slow-observation-window-specs.md) | The two ~32 s-per-test specs wait on signals, not on fixed observation windows | Lane slow-specs-495: done, awaiting merge. Both specs wait on signals through… | S-M | playwright |
 | [496](backlog/496-incremental-gate-target.md) | Measure incremental compilation for the main loop's gate target | APPROVED (owner 2026-11-05: item 2 of the build and test-suite review), measure first. Runs when no… | S | tooling |
 | [497](backlog/497-scroll-area-scroll-type-hidden-shows-the-bar.md) | ScrollArea ScrollType::Hidden shows the scrollbar | BACKLOG. Found by row 399's first-half lane (2026-11-06); measured on a debug SSG build in Chromium. | S | components |
+| [499](backlog/499-safe-triangle-for-hover-menus.md) | A safe triangle for the hover menus, so they can take Base UI's short close delays | BACKLOG. Split out of row 478 item 4, whose open delays now follow Base UI. Land before row 456… | M | overlays |
 
 <!-- END GENERATED -->

@@ -1,5 +1,5 @@
 ---
-id: 497
+id: 499
 title: "A safe triangle for the hover menus, so they can take Base UI's short close delays"
 status: "BACKLOG. Split out of row 478 item 4, whose open delays now follow Base UI. Land before row 456…"
 size: "M"
@@ -7,7 +7,7 @@ area: overlays
 updated: 2026-11-06
 ---
 
-# Row 497: A safe triangle for the hover menus
+# Row 499: A safe triangle for the hover menus
 
 ## Item
 
