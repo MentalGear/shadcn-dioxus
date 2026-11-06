@@ -1,7 +1,7 @@
 use super::super::component::*;
 use dioxus::prelude::*;
 
-/// No `value`: the bar has no amount to show, so it sweeps (`data-state="indeterminate"`) and the readout is empty.
+/// No `value`: the bar has no amount to show, so it sweeps (`data-indeterminate`) and the readout is empty.
 #[component]
 pub fn Demo() -> Element {
     rsx! {
