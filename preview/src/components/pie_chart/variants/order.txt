@@ -9,3 +9,5 @@ donut_active
 donut_text
 stacked
 interactive
+half
+padding

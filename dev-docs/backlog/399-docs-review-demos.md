@@ -17,6 +17,18 @@ Supported modes with no demo: ScrollArea Both (the default) and `scroll_type`; P
 
 BACKLOG. Found by row 387's first docs-clarity review; the evidence (file:line per finding) is in the project's shared files, `docs-clarity/2026-10-24-docs-clarity-review.md`.
 
+**Second half (lane demos-399b):** demos added for DataTable reorder with a sortable column (`data_table` `sort_reorder`),
+Pie half-pie and padding (`pie_chart` `half`, `padding`), Line gaps (`line_chart` `gaps`), Input OTP letters with
+`on_complete` (`input_otp` `complete`: `OtpPattern::Letters`; an alphanumeric demo already existed), Resizable controlled
+sizes (`resizable` `controlled`) and ContextMenu `modal: false` (`context_menu` `non_modal`). `DropdownMenu` and `Menubar`
+have no `modal` prop, so only the ContextMenu has a non-modal mode to show. Each is exercised once in
+`playwright/demo-modes.spec.ts`.
+Proof: `demo-modes.spec.ts` 7/7 on a debug SSG build (chromium); `test:changed` over `d040554a...HEAD` 478 passed (27
+spec files, including all-routes axe and the chart, resizable, context-menu and data-table specs). The pie padding is
+in the drawn path, not in `data-start-angle`/`data-end-angle`, so the spec measures the 4 degree gap between one arc's
+end point and the next one's start point; the line gap renders as two `chart-line` paths with five dots; the
+non-modal context menu leaves `window.__dxScrollLocked` unset. No mode turned out broken (no `fixme`).
+
 ## Size
 
 S
