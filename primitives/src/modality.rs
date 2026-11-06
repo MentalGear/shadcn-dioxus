@@ -41,8 +41,10 @@
 //!   pen with mouse), and the Drawer follows the same rule as every other modal (Base UI's
 //!   DrawerPopup always focuses the popup; our touch rule and `preventScroll` already cover its
 //!   mobile-keyboard and swipe-gesture reasons).
-//! * The theme (`dx-components-theme.css`, "Focus modality") reads the same attribute: the
-//!   non-field ring tokens are transparent unless the modality is `keyboard`, and a programmatic
+//! * The theme (`dx-components-theme.css`, "Focus modality") reads `data-dx-pointer-focus`, which
+//!   the same writer keeps on the FOCUSED element while the modality is not `keyboard`: the
+//!   non-field ring tokens are transparent on that element, never on `:root` (a token redefined on
+//!   `<html>` restyles every element on the page for the first key press, row 490). A programmatic
 //!   focus container (`dialog`, `[popover]`, listbox/menu, `tabindex="-1"`) never draws the UA
 //!   outline. `--dx-ring-field` is untouched: a focused text field still rings after a mouse open
 //!   (shadcn does the same); buttons and containers show no ring after a pointer open.
@@ -67,7 +69,7 @@ use dioxus::prelude::*;
 /// `<html>` to `keyboard`, `mouse`, `touch` or `pen`. Kept on ONE line with no double quotes so the
 /// pre-paint script can embed the identical text; `preview/src/theme.rs` has a test that it does,
 /// and `scripts/check-open-focus.sh` compares all three copies.
-pub const MODALITY_JS: &str = "(function(){var W=window,R=document.documentElement;if(W.__dxModality)return;W.__dxModality=1;function S(m){if(R.getAttribute('data-dx-modality')!==m)R.setAttribute('data-dx-modality',m)}var Q=W.matchMedia&&W.matchMedia('(any-pointer: coarse) and (hover: none)');if(!R.hasAttribute('data-dx-modality'))S(Q&&Q.matches?'touch':'mouse');var K={Shift:1,Control:1,Alt:1,Meta:1,AltGraph:1,CapsLock:1,Fn:1,FnLock:1,Hyper:1,Super:1,OS:1};function P(t){return t==='touch'||t==='pen'?t:'mouse'}try{/*listener-ok: the modality writer lives as long as the page*/W.addEventListener('pointerdown',function(e){S(P(e.pointerType))},true);/*listener-ok: the modality writer lives as long as the page*/W.addEventListener('keydown',function(e){if(!K[e.key])S('keyboard')},true);/*listener-ok: the modality writer lives as long as the page*/W.addEventListener('click',function(e){if(e.detail===0){S('keyboard')}else if(R.getAttribute('data-dx-modality')==='keyboard')S(P(e.pointerType||(Q&&Q.matches?'touch':'mouse')))},true)}catch(x){}})()";
+pub const MODALITY_JS: &str = "(function(){var W=window,D=document,R=D.documentElement,N='data-dx-modality',A='data-dx-pointer-focus';if(W.__dxModality)return;W.__dxModality=1;function G(){return R.getAttribute(N)}function M(e){if(e&&e!==R&&e!==D.body)e.toggleAttribute(A,G()!=='keyboard')}function S(m){if(G()!==m){R.setAttribute(N,m);M(D.activeElement)}}var Q=W.matchMedia&&W.matchMedia('(any-pointer: coarse) and (hover: none)');if(!G())S(Q&&Q.matches?'touch':'mouse');var K=/^(Shift|Control|Alt|AltGraph|Meta|CapsLock|Fn(Lock)?|Hyper|Super|OS)$/;function P(t){return t==='touch'||t==='pen'?t:'mouse'}function L(t,f){/*listener-ok: page-lifetime writer*/W.addEventListener(t,f,true)}try{L('pointerdown',function(e){S(P(e.pointerType))});L('keydown',function(e){if(!K.test(e.key))S('keyboard')});L('click',function(e){if(e.detail===0){S('keyboard')}else if(G()==='keyboard')S(P(e.pointerType||(Q&&Q.matches?'touch':'mouse')))});L('focusin',function(e){M(e.target)});L('focusout',function(e){e.target.removeAttribute(A)})}catch(x){}})()";
 
 /// The open-focus policy as JS function declarations (`dxModality`, `dxEditable`, `dxFocusSpec`,
 /// `dxOpenFocus`, `dxCloseFocus`), prefixed to the overlay scripts that open or close a panel.
@@ -419,9 +421,10 @@ mod tests {
     #[test]
     fn writer_is_idempotent_and_reads_no_focus_state() {
         assert!(MODALITY_JS.contains("__dxModality"));
-        // The decision is never taken from :focus-visible or activeElement.
+        // The decision is never taken from :focus-visible; `activeElement` is only where the
+        // pointer-focus marker is moved when the modality changes.
         assert!(!MODALITY_JS.contains("focus-visible"));
-        assert!(!MODALITY_JS.contains("activeElement"));
+        assert_eq!(MODALITY_JS.matches("activeElement").count(), 1);
         assert!(!OPEN_FOCUS_JS.contains("focus-visible"));
         // Row 240: the open policy reads `activeElement` exactly twice, never to decide the
         // modality -- once to remember the opener (`dxOpenFocus`) and once to see where focus is

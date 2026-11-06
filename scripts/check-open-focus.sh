@@ -193,10 +193,26 @@ if not explicit:
 
     css = read("preview/assets/dx-components-theme.css")
     if not re.search(
-        r':root\[data-dx-modality\]:not\(\[data-dx-modality="keyboard"\]\)\s*\{[^{}]*--dx-ring:\s*0 0 #0000;[^{}]*'
+        r'(?m)^\[data-dx-pointer-focus\]\s*\{[^{}]*--dx-ring:\s*0 0 #0000;[^{}]*'
         r'--dx-ring-focus:\s*0 0 #0000;[^{}]*--dx-ring-focus-inset:\s*0 0 #0000;', css):
-        errors.append("preview/assets/dx-components-theme.css: the modality ring rule is gone (--dx-ring, "
-                      "--dx-ring-focus and --dx-ring-focus-inset must be `0 0 #0000` outside the keyboard modality)")
+        errors.append("preview/assets/dx-components-theme.css: the modality ring rule is gone (`[data-dx-pointer-focus]` "
+                      "must set --dx-ring, --dx-ring-focus and --dx-ring-focus-inset to `0 0 #0000`)")
+    # The gate sits on the focused element, never on `<html>`: a ring token redefined on `:root`, or a rule whose
+    # ancestor is an attribute of `<html>` and whose subject is `:focus-visible`, restyles the whole page on the
+    # first key press (row 490).
+    if re.search(r':root\[data-dx-modality\][^{}]*\{[^{}]*--dx-ring(-focus|-focus-inset)?:', css) \
+            or re.search(r'\[data-dx-modality[^\]]*\][^{},]*:focus-visible\s*[{,]', css):
+        errors.append("preview/assets/dx-components-theme.css: ring tokens are gated by `[data-dx-pointer-focus]` on the "
+                      "focused element; a `:root[data-dx-modality]` ring rule restyles the whole page on the first key press")
+    # A container that draws a ring for a focused descendant (`:has(:focus-visible)` reading a modality-zeroed token)
+    # resets that token on itself for a pointer-focused descendant, in the same sheet.
+    for p in sorted(glob.glob("preview/src/components/*/style.css")):
+        sheet = read(p)
+        has_reset = ":has(" in sheet and "[data-dx-pointer-focus]" in sheet
+        for sel, body in re.findall(r'([^{}]+)\{([^{}]*)\}', sheet):
+            if ":has(" in sel and ":focus-visible" in sel and re.search(r'var\(--dx-ring-focus(-inset)?\)', body) and not has_reset:
+                errors.append(f"{p}: `{sel.strip()}` draws a modality-zeroed ring for a focused descendant but the sheet "
+                              f"has no `:has([data-dx-pointer-focus])` rule resetting the token (theme \"Focus modality\")")
     if re.search(r':root\[data-dx-modality\][^{}]*\{[^{}]*--dx-ring-field', css):
         errors.append("preview/assets/dx-components-theme.css: --dx-ring-field must not be modality-gated (a tapped "
                       "text field still rings)")

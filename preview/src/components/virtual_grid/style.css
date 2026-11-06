@@ -105,6 +105,11 @@
   box-shadow: var(--dx-ring-focus-inset);
 }
 
+/* Zeroed with the focused control's ring (theme "Focus modality"). */
+.dx-virtual-grid [data-grid-has-control]:has([data-dx-pointer-focus]):not(:where([popover], dialog) *) {
+  --dx-ring-focus-inset: 0 0 #0000;
+}
+
 /* The gallery: rows are CSS grids of equal tracks; the gap is part of the measured row. */
 .dx-virtual-grid-wrap {
   overflow: hidden auto;

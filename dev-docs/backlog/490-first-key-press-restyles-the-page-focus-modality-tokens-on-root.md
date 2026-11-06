@@ -1,10 +1,10 @@
 ---
 id: 490
 title: "The first key press restyles the whole page: focus-modality tokens are redefined on :root"
-status: "BACKLOG. Found 2026-11-01 while root-causing a release-suite timing red (main-thread.spec combobox…"
+status: "Found 2026-11-01 while root-causing a release-suite timing red (main-thread.spec combobox open, 52…"
 size: "S-M"
 area: "theme / performance"
-updated: 2026-11-01
+updated: 2026-11-06
 ---
 
 # Row 490: The first key press restyles the whole page: focus-modality tokens are redefined on :root
@@ -20,7 +20,8 @@ hit on the first keyboard input of any page, and it is about half of the Combobo
 
 ## Status / trigger
 
-BACKLOG. Found 2026-11-01 while root-causing a release-suite timing red (main-thread.spec combobox open, 52 ms vs 50 ms).
+Found 2026-11-01 while root-causing a release-suite timing red (main-thread.spec combobox open, 52 ms vs 50 ms).
+Fixed 2026-11-06 on `lane/modality-490` (see "Fix" below); awaiting merge.
 
 ## Size
 
@@ -58,3 +59,40 @@ Neither is chosen here. Whichever is chosen, the proof is the same.
 
 **Evidence.** The probe specs and traces are container-local, in `/home/user/tgt/cbx-probes/` (`zz-cbx-*.spec.ts`).
 The numbers above are the record.
+
+## Fix (2026-11-06)
+
+**Root cause, measured with counts.** Chromium `UpdateLayoutTree` trace events report the elements each style
+recalculation touched (`playwright/modality-restyle.spec.ts`, Combobox page of about 5,170 elements, mouse click in the
+input, then one key press, same build for both numbers):
+
+| scenario | before | after |
+| --- | --- | --- |
+| first `a` typed in the Combobox input | 961 elements (one recalc of 942) | 26 |
+| first ArrowDown from mouse modality | 944 elements (one recalc of 942) | 10 |
+
+The earlier option "scope the tokens to `:root[...] :focus-visible`" does not help: measured 987 and 970 elements. A rule
+whose ancestor is an attribute of `<html>` and whose subject is only `:focus-visible` has nothing the engine can index
+the subject by, so the attribute flip invalidates the whole subtree. The cost is any rule or token keyed off an
+attribute of `<html>` that every ring reads, not the particular token.
+
+**Construction.** `MODALITY_JS` (still the one writer, three identical copies) keeps `data-dx-pointer-focus` on the
+FOCUSED element while the modality is not `keyboard`: set on `focusin`, removed on `focusout`, moved to or taken off
+`document.activeElement` when the modality changes. The theme sets `--dx-ring`, `--dx-ring-focus` and
+`--dx-ring-focus-inset` to `0 0 #0000` on `[data-dx-pointer-focus]`; nothing is redefined on `:root`, so a modality flip
+restyles one element. The writer was compacted (one `L()` listener helper with the single `listener-ok` marker, a regex
+for the modifier keys), so the JS volume went down (inline script 7467 to 7453 bytes, js_lit unchanged) and the baseline
+was lowered.
+
+**Open question answered.** Of the owner's two options (scope to the focused element, or set per component) the first is
+the base and the second is needed only where a container draws a ring for a focused descendant
+(`:has(:focus-visible)`): Field, Attachment, Code Block, Virtual Grid has-control cells and the Calendar month/year
+selects each reset the token on the container with `:has([data-dx-pointer-focus])`. `check-open-focus.sh` fails a
+sheet that draws such a ring without that reset, and a `:root[data-dx-modality]` ring rule.
+
+**Behaviour change to know about.** The Slider thumb reads `--dx-ring-focus` in `:hover` and `:active` rules too
+(shadcn `hover:ring-3 active:ring-3`). Under mouse modality a hovered, unfocused thumb used to get the zeroed token (no
+halo); it now shows the halo, as in shadcn. A pressed thumb is focused by the press, so it stays zeroed as before.
+
+**Not done.** The "do not flip on typing in an editable control" half of the earlier proposal is subsumed: with the flip
+costing one element, skipping it saves nothing, and a Tab out of a field must still flip.
