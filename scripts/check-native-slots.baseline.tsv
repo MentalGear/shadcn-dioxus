@@ -1,0 +1,25 @@
+# check-native-slots baseline (scripts/lib/ratchet.py): shrink-only per-file counts, regenerate with --update-baseline.
+# path	value	checked	selected	open	hidden
+preview/src/components/button_group/variants/select/mod.rs	0	0	1	0	0
+preview/src/components/date_picker/variants/natural_language/mod.rs	1	0	0	0	0
+preview/src/components/form/component.rs	12	3	3	0	0
+preview/src/components/markdown/component.rs	0	1	0	0	0
+preview/src/components/markdown/variants/images/mod.rs	0	1	0	0	0
+preview/src/components/native_select/variants/disabled/mod.rs	0	0	1	0	0
+preview/src/components/virtual_grid/variants/gallery/mod.rs	0	1	0	0	0
+primitives/src/calendar/select.rs	2	0	2	0	0
+primitives/src/checkbox.rs	0	1	0	0	0
+primitives/src/collapsible.rs	0	0	0	0	1
+primitives/src/color_picker.rs	2	0	0	0	0
+primitives/src/combobox/components/combobox.rs	1	0	0	0	0
+primitives/src/combobox/components/group.rs	0	0	0	0	1
+primitives/src/combobox/components/input.rs	1	0	0	0	0
+primitives/src/combobox/multi.rs	1	0	0	0	0
+primitives/src/command.rs	1	0	0	0	0
+primitives/src/hover_card.rs	0	0	0	0	2
+primitives/src/input_otp.rs	1	0	0	0	0
+primitives/src/questionnaire.rs	2	1	0	0	4
+primitives/src/radio_group.rs	1	1	0	0	0
+primitives/src/select/components/select.rs	0	0	3	0	0
+primitives/src/slider.rs	1	0	0	0	0
+primitives/src/switch.rs	1	1	0	0	0
