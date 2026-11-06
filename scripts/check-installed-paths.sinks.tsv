@@ -1,0 +1,5 @@
+# Installed-component JavaScript sinks, read by scripts/check-installed-paths.sh (third half).
+# Columns: path, kind, count, reason (tab-separated). The count must equal the tree exactly: it only shrinks,
+# as each site is ported to the bridge (dev-docs/js-interop.md, row 434 step 3); a row is deleted at zero.
+preview/src/components/form/component.rs	eval	3	the three form demos read their fields through document::eval(read_form_data_js(..))
+preview/src/components/code_block/component.rs	eval	1	the copy button writes the clipboard through document::eval
