@@ -81,3 +81,18 @@ files (the old run took 11 m 30 s wall, the new 9 m 0 s; the machine was not equ
 untouched, went 54.2 s -> 49.3 s in the same pair, so about 9 % of the gain is load). `playwright/durations.json` carries the
 changed files' entries scaled by their measured before/after ratio (its seconds come from another, differently loaded run).
 
+## 152b slice 3: the second colour scheme runs only the colour rules (2026-11-06)
+
+The structure rules of axe (landmarks, names, roles, ARIA, headings, lists) read the DOM, and the colour scheme changes only
+`data-theme` and CSS variables, so a second full scan in dark re-proves nothing. `all-routes.spec.ts` now runs every rule in
+light and, in dark, only the rules of axe's `cat.color` category that the repo's tag set selects (`colorRuleIds()` in
+`playwright/axe.ts`, read from axe-core's own metadata: `color-contrast` and `link-in-text-block`; `color-contrast-enhanced` is
+outside the tag set). The premise is checked per route instead of assumed: `structureSignature` hashes, for every element of
+every frame, tag, role, `aria-*` and name-bearing attributes, `hidden`/`inert`/`tabindex`, own text and the computed `display` and
+`visibility`, once before the dark scan and once before the light scan; when the two differ the route runs every rule in dark too
+and the test records an annotation saying so. A failing dark colour scan is reported under the same step as before.
+
+Not measured in this lane: the build slot was withdrawn (disk), so the spec is syntax-checked (`playwright test --list`, 93 tests)
+and the batch verifier's before/after of `all-routes` gives the seconds and `durations.json` entry. Expected from the slice 2
+profile: the dark scan is about half the axe step (about 250 of 500 s), and the colour rules are roughly 10-15 % of a scan.
+
