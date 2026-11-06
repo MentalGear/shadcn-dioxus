@@ -327,6 +327,11 @@ pub fn ComboboxChips(props: ComboboxChipsProps) -> Element {
     }
 }
 
+/// The DOM id of the clear button for the input with id `input_id`; the list's dismiss layer counts it as inside.
+pub(super) fn clear_id(input_id: &str) -> String {
+    format!("{input_id}-clear")
+}
+
 /// Props for [`ComboboxClear`].
 #[derive(Props, Clone, PartialEq)]
 pub struct ComboboxClearProps {
@@ -355,6 +360,7 @@ pub fn ComboboxClear(props: ComboboxClearProps) -> Element {
         r#type: "button",
         disabled: (ctx.selectable.disabled)(),
         "data-dx-combobox-clear": "true",
+        id: clear_id(&ctx.input_id.read()),
     });
     let merged = merge_attributes(vec![defaults, props.attributes.clone(), owned]);
 

@@ -275,11 +275,14 @@ test("dynamic option removal updates filtering and keyboard selection", async ({
         "true",
     );
 
+    // A press on a page control outside the combobox closes the list (Base UI's Combobox does the same); the
+    // control still acts on the options, and reopening shows them updated.
     await page.getByRole("button", { name: "Toggle SvelteKit" }).click();
-    await expect(list(page).getByRole("option", { name: "SvelteKit" })).toHaveCount(0);
-    await expect(list(page).getByRole("option", { name: "SolidStart" })).toBeVisible();
+    await expect(content(page)).toHaveCount(0);
 
     await trigger.click();
+    await expect(list(page).getByRole("option", { name: "SvelteKit" })).toHaveCount(0);
+    await expect(list(page).getByRole("option", { name: "SolidStart" })).toBeVisible();
     await expect(trigger).toBeFocused();
     await page.keyboard.press("ArrowDown");
     const next = list(page).getByRole("option", { name: "Next.js" });
