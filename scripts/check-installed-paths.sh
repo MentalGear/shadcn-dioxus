@@ -46,10 +46,21 @@
 #     app that was not made from `templates/starter` has no `dioxus-primitives`, and a component with no
 #     `cargoDependencies` fails there
 #     with E0433 while the starter template, the preview and the smoke script all pre-declare it.
+# Third part (installed components contain no JavaScript sink). The files a user installs are the files of each
+# member directory that survive its `exclude` list (`variants/` and `docs.md` never install; `globalAssets` are CSS and
+# are not read). Every `.rs` one is read through scripts/comment-scan.py `code_of`, so comments and string text are
+# blank, and every sink named by check-js-volume.sh is counted: `eval` (`document::eval`, `eval(`, a `use ... eval`),
+# `document::*`, `document::Script` and the script constructors, `dangerous_inner_html` (and `set_inner_html`), and the
+# FFI names (`web_sys`, `js_sys`, `wasm_bindgen`, `gloo_utils`, `evaluate_script`, `inline_js`, `srcdoc`, `extern "`).
+# A Rust string that holds a `Function(` constructor counts as `eval`. An installed `.js`, `.ts` or `.html` file counts as
+# `script-file`. Each (file, kind) count must equal its row in scripts/check-installed-paths.sinks.tsv: a site with no
+# row is red, a row above the tree is red (stale), a row for a site that is gone is red. There is no raise path, so the
+# list only shrinks as the sites are ported to the bridge (dev-docs/js-interop.md). The self-test plants one sink per
+# case in a three-component copy of the tree and expects it to turn the gate red, and a variant or a comment to stay green.
 # `scripts/registry-install-smoke.sh` is the definitive (slow, pre-merge) check that this approximates.
 #
 # Usage: scripts/check-installed-paths.sh
-# Exit status: 0 when clean.
+# Exit status: 0 when clean; 1 a sink or a stale row; 2 the self-test broke.
 
 set -uo pipefail
 cd "$(dirname "$0")/.."
@@ -237,3 +248,195 @@ if problems:
     sys.exit(1)
 print(f"check-installed-paths: OK -- {len(members)} components each carry mod.rs + component.rs + style.css, with exclude/assets/dependencies (component and cargo) consistent.")
 PY
+
+# Third half: the sinks in the installed files (see the header). The script is a function so the real tree and the
+# self-test's copies run the same text.
+sinks_py() {
+cat <<'SINKPY'
+import importlib.util
+import json
+import os
+import re
+import sys
+
+ROOT, SCRIPTS = sys.argv[1], sys.argv[2]
+_spec = importlib.util.spec_from_file_location("comment_scan", os.path.join(SCRIPTS, "comment-scan.py"))
+cs = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(cs)
+
+TSV = os.path.join(ROOT, "scripts", "check-installed-paths.sinks.tsv")
+# The kind names are check-js-volume.sh's SINK_RX names; set_inner_html is the same HTML-injection sink.
+RUST_SINKS = [
+    ("eval", re.compile(r"\bdocument\s*::\s*eval\b|\buse\b[^;]*?\beval\b|\beval\s*\(")),
+    ("document-glob", re.compile(r"\bdocument\s*::\s*\*")),
+    ("script", re.compile(r"\bdocument\s*::\s*Script\b|\bScript\s*\{|\bscript\s*\{|\bcreate_script\b|\bcreate_head_element\b|\bcreate_link\b")),
+    ("dangerous_inner_html", re.compile(r"\bdangerous_inner_html\b|\bset_inner_html\b")),
+    ("ffi", re.compile(r"\b(?:web_sys|js_sys|wasm_bindgen|gloo_utils|evaluate_script|inline_js|srcdoc)\b|\bextern\s+\"")),
+]
+STRING_SINK = re.compile(r"\bFunction\s*\(")
+JS_FILES = (".js", ".mjs", ".cjs", ".ts", ".tsx", ".jsx", ".html", ".htm")
+KINDS = {k for k, _ in RUST_SINKS} | {"script-file"}
+
+
+def installed(member_dir, excluded):
+    for dp, _, fns in os.walk(member_dir):
+        for fn in sorted(fns):
+            full = os.path.join(dp, fn)
+            rel = os.path.normpath(os.path.relpath(full, member_dir))
+            if any(rel == e or rel.startswith(e + os.sep) for e in excluded):
+                continue
+            yield full, fn
+
+
+def scan():
+    sites = {}
+
+    def add(path, kind, line, what):
+        sites.setdefault((path, kind), []).append((line, what))
+
+    with open(os.path.join(ROOT, "component.json")) as fh:
+        members = json.load(fh).get("members") or []
+    for member in members:
+        d = os.path.join(ROOT, member)
+        manifest = os.path.join(d, "component.json")
+        if not os.path.isfile(manifest):
+            continue  # the first half of this gate reports a member without its manifest
+        with open(manifest) as fh:
+            excluded = [os.path.normpath(e) for e in (json.load(fh).get("exclude") or [])]
+        for full, fn in installed(d, excluded):
+            path = os.path.relpath(full, ROOT)
+            ext = os.path.splitext(fn)[1]
+            if ext == ".rs":
+                with open(full, encoding="utf-8") as fh:
+                    text = fh.read()
+                lines = text.splitlines()
+                code = cs.code_of(text)
+                for kind, rx in RUST_SINKS:
+                    for m in rx.finditer(code):
+                        line = text.count("\n", 0, m.start()) + 1
+                        add(path, kind, line, lines[line - 1].strip())
+                for lit in cs.literals_of(text):
+                    if STRING_SINK.search(lit.content):
+                        add(path, "eval", lit.line, lines[lit.line - 1].strip())
+            elif ext in JS_FILES:
+                add(path, "script-file", 1, fn)
+    return sites
+
+
+def read_tsv():
+    rows, problems = {}, []
+    where_tsv = os.path.relpath(TSV, ROOT)
+    if not os.path.isfile(TSV):
+        return rows, [f"{where_tsv} is missing"]
+    with open(TSV, encoding="utf-8") as fh:
+        for n, line in enumerate(fh, 1):
+            if not line.strip() or line.startswith("#"):
+                continue
+            where = f"{where_tsv}:{n}"
+            cols = line.rstrip("\n").split("\t")
+            if len(cols) != 4 or not all(c.strip() for c in cols):
+                problems.append(f"{where}: want path, kind, count and reason, tab-separated and all filled")
+                continue
+            path, kind, count, _ = cols
+            if kind not in KINDS:
+                problems.append(f"{where}: kind '{kind}' is not one of {sorted(KINDS)}")
+            elif not count.isdigit():
+                problems.append(f"{where}: count '{count}' is not a whole number")
+            elif (path, kind) in rows:
+                problems.append(f"{where}: {path} {kind} is listed twice")
+            else:
+                rows[(path, kind)] = int(count)
+    return rows, problems
+
+
+sites = scan()
+rows, problems = read_tsv()
+for key in sorted(set(sites) | set(rows)):
+    path, kind = key
+    have = len(sites.get(key, []))
+    want = rows.get(key)
+    if want == have:
+        continue
+    listed = "".join(f"\n      {path}:{ln}  {what}" for ln, what in sorted(sites.get(key, [])))
+    if want is None:
+        problems.append(f"{path}: {have} {kind} site(s) not in the TSV, so the install would ship them:{listed}")
+    elif have == 0:
+        problems.append(f"{path}: the TSV lists {want} {kind} site(s) but the tree has none (stale row; delete it)")
+    elif have > want:
+        problems.append(f"{path}: the TSV lists {want} {kind} site(s) but the tree has {have}:{listed}")
+    else:
+        problems.append(f"{path}: the TSV lists {want} {kind} site(s) but the tree has {have} (stale row; set the count to {have})")
+
+if problems:
+    print("check-installed-paths: installed component files contain a JavaScript sink (dx components add would ship it):", file=sys.stderr)
+    for p in problems:
+        print("  " + p, file=sys.stderr)
+    print("The sites are listed in scripts/check-installed-paths.sinks.tsv. It only shrinks: port a site to the bridge, then lower or delete its row.", file=sys.stderr)
+    sys.exit(1)
+n = sum(len(v) for v in sites.values())
+print(f"check-installed-paths: sinks OK -- {n} recorded installed site(s) in {len({p for p, _ in sites})} file(s), each listed in the TSV.")
+SINKPY
+}
+
+# Plants one sink per case in a copy of three components (the rest of the tree is not read) and checks the exit status.
+sinks_self_test() {
+    local t comp=preview/src/components fails=0 rc
+    t=$(mktemp -d) || return 2
+    trap 'rm -rf "$t"' RETURN
+    mkdir -p "$t/scripts"
+    cp component.json "$t/"
+    fresh() {
+        rm -rf "$t/$comp"
+        mkdir -p "$t/$comp"
+        cp -r "$comp/button" "$comp/form" "$comp/code_block" "$t/$comp/"
+        cp scripts/check-installed-paths.sinks.tsv "$t/scripts/"
+    }
+    expect() { # name, want exit status; the case's mutation has been applied
+        local out
+        out=$(sinks_py | python3 -I - "$t" "$PWD/scripts" 2>&1)
+        rc=$?
+        if [ "$rc" -ne "$2" ]; then
+            fails=$((fails + 1))
+            echo "check-installed-paths: self-test FAILED: $1 (exit $rc, want $2)" >&2
+            echo "$out" >&2
+        fi
+    }
+
+    fresh; expect "the copied tree matches the TSV" 0
+    fresh; printf '\nfn planted_eval() { let _ = document::eval("1"); }\n' >> "$t/$comp/button/component.rs"
+    expect "document::eval in an installed file" 1
+    fresh; printf '\nfn planted_eval() { let _ = js_sys::eval("1"); }\n' >> "$t/$comp/button/component.rs"
+    expect "js_sys::eval in an installed file" 1
+    fresh; printf '\nfn planted_html(el: &str) { let _ = el.set_inner_html("x"); }\n' >> "$t/$comp/button/component.rs"
+    expect "set_inner_html in an installed file" 1
+    fresh; cat >> "$t/$comp/button/component.rs" <<'EOF'
+
+const PLANTED: &str = "new Function('a', 'return a')";
+EOF
+    expect "a Function constructor in a Rust string" 1
+    fresh; cat >> "$t/$comp/button/component.rs" <<'EOF'
+
+// document::eval("1") in a comment is not a sink.
+const QUOTED: &str = "document::eval(\"1\") in a string is not a sink";
+EOF
+    expect "a sink name in a comment or a string" 0
+    fresh; printf '\nfn planted_eval() { let _ = document::eval("1"); }\n' >> "$t/$comp/button/variants/main/mod.rs"
+    expect "a sink in a variant (not installed)" 0
+    fresh; sed -i '/document::eval(&read_form_data_js("outside-form"/d' "$t/$comp/form/component.rs"
+    expect "a row above the tree (one form site removed, TSV not lowered)" 1
+    fresh; sed -i 's/^\(preview\/src\/components\/code_block\/component.rs\teval\t\)1\t/\12\t/' "$t/scripts/check-installed-paths.sinks.tsv"
+    expect "a row whose count is above the tree" 1
+    fresh; printf 'preview/src/components/nope/component.rs\teval\t1\tthe component is gone\n' >> "$t/scripts/check-installed-paths.sinks.tsv"
+    expect "a row for a file that is gone" 1
+    fresh; printf 'export {};\n' > "$t/$comp/button/helper.ts"
+    expect "a hand-written .ts in an installed component" 1
+
+    if [ "$fails" -ne 0 ]; then
+        echo "check-installed-paths: self-test broke ($fails case(s))" >&2
+        return 1
+    fi
+    echo "check-installed-paths: sinks self-test OK -- 10/10 cases as expected."
+}
+
+sinks_py | python3 -I - "$PWD" "$PWD/scripts" || exit 1
+sinks_self_test || exit 2
