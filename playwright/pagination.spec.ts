@@ -81,3 +81,36 @@ for (const dark of [false, true]) {
     expect(otherHoveredBorder, "a non-active link must not gain a visible border on hover").toBe("rgba(0, 0, 0, 0)");
   });
 }
+
+// An unavailable end link (`disabled`) is an anchor without `href`: `aria-disabled`, out of the tab order, and a
+// click cannot navigate. The enabled links around it keep their `href`.
+test("disabled Previous/Next: aria-disabled, no href, not focusable, click does not navigate", async ({ page }) => {
+  await gotoHydrated(page, `${BASE_URL}/component/pagination/`);
+  const preview = page.locator("#component-preview-frame-disabled_ends").first();
+  const first = preview.locator('nav[aria-label="First page pagination"]');
+  const last = preview.locator('nav[aria-label="Last page pagination"]');
+
+  const previous = first.locator('[data-slot="pagination-link"][data-kind="previous"]');
+  await expect(previous).toHaveAttribute("aria-disabled", "true");
+  await expect(previous).toHaveAttribute("data-disabled", "");
+  expect(await previous.getAttribute("href")).toBeNull();
+  expect(await previous.evaluate((el) => (el as HTMLElement).tabIndex), "an anchor without href is not tabbable").toBe(-1);
+  expect(await previous.evaluate((el) => getComputedStyle(el).pointerEvents)).toBe("none");
+  expect(Number(await previous.evaluate((el) => getComputedStyle(el).opacity))).toBeLessThan(1);
+
+  const next = last.locator('[data-slot="pagination-link"][data-kind="next"]');
+  await expect(next).toHaveAttribute("aria-disabled", "true");
+  expect(await next.getAttribute("href")).toBeNull();
+
+  // The enabled ends and the page links are unchanged.
+  for (const enabled of [first.locator('[data-kind="next"]'), last.locator('[data-kind="previous"]'), first.locator('a[aria-current="page"]')]) {
+    await expect(enabled).toHaveAttribute("href", "#");
+    await expect(enabled).not.toHaveAttribute("aria-disabled", /.*/);
+    await expect(enabled).not.toHaveAttribute("data-disabled", /.*/);
+    expect(await enabled.evaluate((el) => (el as HTMLElement).tabIndex)).toBe(0);
+  }
+
+  const url = page.url();
+  await previous.click({ force: true });
+  expect(page.url(), "a disabled link must not navigate").toBe(url);
+});

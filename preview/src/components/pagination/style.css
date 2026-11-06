@@ -142,3 +142,10 @@
   }
 }
 
+
+/* An unavailable link (`disabled`): the disabled opacity, and no pointer events. It has no `href`, so it is not
+ * focusable or navigable; the pointer rule keeps the hover and active styles off it. */
+.dx-pagination-link[data-disabled] {
+  opacity: var(--dx-opacity-disabled);
+  pointer-events: none;
+}

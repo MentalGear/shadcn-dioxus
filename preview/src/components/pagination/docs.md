@@ -33,4 +33,5 @@ Pagination {
 ## Notes
 
 - `PaginationLink` uses `is_active` to indicate the current page.
+- `disabled` on `PaginationLink`, `PaginationPrevious` and `PaginationNext` marks an unavailable link (the first page's Previous, the last page's Next): `aria-disabled="true"`, no `href` (not focusable, cannot navigate), event handlers suppressed, and `data-disabled` for styling.
 - `PaginationPrevious` and `PaginationNext` show labels on larger (non-mobile) screens; labels are hidden on smaller screens to keep the control compact.
