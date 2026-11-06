@@ -4,7 +4,7 @@ title: "Phase 0.1: the gate half of lane 3.0 (grant rows, sink and setter bans, 
 status: "APPROVED 2026-10-26 (owner: \"okay for the plan\"; scope 2, the recommended default, since no scope…"
 size: "L"
 area: tooling
-js-grant: none
+js-grant: js_file=10 (owner 2026-11-06: lane B2 closes the bridge global and registration; measured +10 lines: register.ts +1, ts-test/bridge.test.ts +9)
 adds: []
 updated: 2026-10-26
 ---
