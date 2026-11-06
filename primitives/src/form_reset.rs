@@ -2,11 +2,11 @@
 //!
 //! `<form>` reset restores a control's own DOM state (a text field's `value` goes back to its
 //! `value` content attribute, a checkbox's `checked` to `defaultChecked`) and tells no Rust state
-//! about it. A controlled text `Input` or `Textarea` therefore showed the default while its owner's
-//! signal kept the old text, and the next render of the owner wrote the old text back.
+//! about it. Without a reset path, a controlled text `Input` or `Textarea` shows the default while its
+//! owner's signal keeps the old text, and the next render of the owner writes the old text back.
 //!
 //! [`use_form_reset_value`] closes that. It listens for the owning form's `reset` through
-//! [`use_form_reset_listener`](crate::use_form_reset_listener), the listener every other
+//! [`use_form_reset_listener`], the listener every other
 //! form-associated primitive already uses (`Checkbox`, `Switch`, `RadioGroup`, `Select`, `Slider`,
 //! `InputOtp`, `Combobox`), then reads the control's value after the browser restored it and hands
 //! it to `on_reset`.
