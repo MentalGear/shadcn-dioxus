@@ -2,6 +2,7 @@
 orientation
 nested
 separator
+text
 split
 with_input
 dropdown

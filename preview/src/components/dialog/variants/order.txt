@@ -2,6 +2,7 @@
 edit_profile
 share
 overlay
+non_modal
 no_close
 scrollable
 sticky_footer
