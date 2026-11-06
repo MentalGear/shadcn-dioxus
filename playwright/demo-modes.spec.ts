@@ -58,19 +58,29 @@ test("pie_chart half: the slices span 180 degrees, not 360", async ({ page }) =>
 
 test("pie_chart padding: adjacent slices are 4 degrees apart", async ({ page }) => {
   await goto(page, "pie_chart", "padding");
-  const arcs = await arcAngles(page);
-  expect(arcs.length).toBe(5);
-  for (let i = 1; i < arcs.length; i++) {
-    expect(Math.abs(arcs[i].start - arcs[i - 1].end)).toBeGreaterThan(3);
+  // The slices keep their nominal angles; the padding is in the drawn path, so the gap is measured between
+  // one arc's end point and the next arc's start point, seen from the centre (the pie's origin).
+  const ds = await page.locator('[data-slot="chart-arc"]').evaluateAll((els) => els.map((e) => e.getAttribute("d") ?? ""));
+  expect(ds.length).toBe(5);
+  const nums = (d: string) => (d.match(/-?\d+(\.\d+)?/g) ?? []).map(Number);
+  const angle = (x: number, y: number) => (Math.atan2(y, x) * 180) / Math.PI;
+  const start = (d: string) => angle(nums(d)[0], nums(d)[1]);
+  const end = (d: string) => {
+    const n = nums(d); // M x y A rx ry rot large sweep x y L 0 0 Z
+    return angle(n[7], n[8]);
+  };
+  for (let i = 0; i < ds.length; i++) {
+    const gap = Math.abs(start(ds[(i + 1) % ds.length]) - end(ds[i]));
+    expect(Math.min(gap, 360 - gap)).toBeCloseTo(4, 0);
   }
 });
 
 test("line_chart gaps: a missing month breaks the line into two runs", async ({ page }) => {
   await goto(page, "line_chart", "gaps");
-  const line = page.locator('[data-slot="chart-line"]').first();
-  await expect(line).toBeAttached();
-  const d = (await line.getAttribute("d")) ?? (await line.locator("path").first().getAttribute("d")) ?? "";
-  expect((d.match(/M/g) ?? []).length).toBe(2);
+  const runs = page.locator('[data-slot="chart-line"]');
+  await expect(runs).toHaveCount(2);
+  const ds = await runs.evaluateAll((els) => els.map((e) => e.getAttribute("d") ?? ""));
+  ds.forEach((d) => expect((d.match(/M/g) ?? []).length).toBe(1));
   await expect(page.locator('[data-slot="chart-dot"]')).toHaveCount(5);
 });
 
