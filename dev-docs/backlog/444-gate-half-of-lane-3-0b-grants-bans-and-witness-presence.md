@@ -21,6 +21,8 @@ Part of the [row 434](./434-javascript-in-typescript-modules-not-rust-strings.md
 
 APPROVED 2026-10-26 (owner: "okay for the plan"; scope 2, the recommended default, since no scope was named). Phase 0 of the row 434 step 3 plan; it starts once the rows ordered before the plan have landed (STATUS.md, "Next", owner 2026-10-26).
 
+Clippy sink-ban probe done 2026-11-06: `disallowed-methods` fires on `document::eval` and the `DataTransfer` setters at every site kind, a per-site `#[expect]` works on statements, closures and rsx attribute values, 69 eval sites and 14 setter calls today; see [`clippy-sink-ban-probe-2026-11-06.md`](../research/clippy-sink-ban-probe-2026-11-06.md).
+
 ## Size
 
 L
