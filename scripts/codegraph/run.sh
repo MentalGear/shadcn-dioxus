@@ -9,7 +9,9 @@
 #   index.key  sha256 of the working-tree content hash of every *.rs and Cargo.toml that
 #              `git ls-files -co --exclude-standard` lists (so an uncommitted edit counts), Cargo.lock,
 #              and the rust-analyzer version
-#   graph.key  index.key + build_graph.py + every tracked/untracked *.ts and *.css (the extractor's static scans)
+#   graph.key  index.key + build_graph.py + comment_metrics.py + scripts/comment-scan.py + every tracked/untracked *.ts,
+#              *.css, *.html, *.js and *.txt (the static scans and the comment metrics M1-M5, which read every node's
+#              file text; the *.rs files are in index.key)
 #   page.key   graph.key + explorer.template.html + make_explorer.py + the cytoscape bundle
 # --force re-indexes (and so rebuilds the rest). The SCIP run holds the build lock (scripts/lane-lock.sh).
 set -euo pipefail
@@ -59,7 +61,7 @@ hashes() {
   rm -f "$list"
 }
 index_key="$( { hashes '*.rs' ':(glob)**/Cargo.toml'; git hash-object Cargo.lock; echo "$ra_version"; } | sha)"
-graph_key="$( { echo "$index_key"; git hash-object "$here/build_graph.py"; hashes '*.ts' '*.css'; } | sha)"
+graph_key="$( { echo "$index_key"; git hash-object "$here/build_graph.py" "$here/comment_metrics.py" "$repo/scripts/comment-scan.py"; hashes '*.ts' '*.css' '*.html' '*.js' '*.txt'; } | sha)"
 page_key="$( { echo "$graph_key"; git hash-object "$here/explorer.template.html" "$here/make_explorer.py" "$cyto"; } | sha)"
 
 stored() { cat "$out/$1.key" 2>/dev/null || true; }
