@@ -1,31 +1,45 @@
-//! The one reset path for a text control whose value the owner's Rust signal holds.
+//! The one path by which a DOM-side value change reaches the owner of a form control.
 //!
-//! `<form>` reset restores a control's own DOM state (a text field's `value` goes back to its
-//! `value` content attribute, a checkbox's `checked` to `defaultChecked`) and tells no Rust state
-//! about it. Without a reset path, a controlled text `Input` or `Textarea` shows the default while its
-//! owner's signal keeps the old text, and the next render of the owner writes the old text back.
+//! A form control's value has two writers: the browser (the DOM) and the owner's Rust signal.
+//! Whenever the browser changes the value and the owner is not told, the two disagree and the next
+//! render writes the owner's stale value back over the DOM. The browser changes a value without an
+//! `input` event in two cases:
 //!
-//! [`use_form_reset_value`] closes that. It listens for the owning form's `reset` through
-//! [`use_form_reset_listener`], the listener every other
-//! form-associated primitive already uses (`Checkbox`, `Switch`, `RadioGroup`, `Select`, `Slider`,
-//! `InputOtp`, `Combobox`), then reads the control's value after the browser restored it and hands
-//! it to `on_reset`.
+//! - **a `<form>` reset** (`form.reset()`, a `<button type=reset>`): a text field's `value` goes
+//!   back to its `value` content attribute, a checkbox's `checked` to `defaultChecked`;
+//! - **form-state restore**: history navigation (and a reload in some engines) puts the previous
+//!   page's field values back into the server-rendered controls before the wasm hydrates, so the
+//!   restored text is in the DOM while the owner's signal holds the default. (A back/forward-cache
+//!   restore keeps the whole page alive, DOM and signals alike, so it cannot disagree.)
 //!
-//! **The rule.** A reset is a value change to the control's default, so the text control reports it
-//! the way an edit is reported: the wrapper calls its `oninput` and then its `onchange` with the
-//! restored value, and an owner that mirrors the field into a signal follows without knowing about
-//! forms. An uncontrolled field already holds its default in the DOM; its handlers see the same
-//! event and ignore it. Reading the DOM after the reset (not predicting the default) means a
-//! `reset` the page cancelled with `preventDefault` reports the unchanged value, which is a no-op
-//! for the owner.
+//! **The rule.** Every DOM-side value change reaches the owner through the control's ONE change
+//! callback, for controlled and uncontrolled alike: a text control reports it the way an edit is
+//! reported (`oninput`, then `onchange`, with the new value); a checkbox, switch, radio group,
+//! select, slider, OTP field and combobox call their value-change callback with the default. An
+//! owner that mirrors the control into a signal follows without knowing about forms, and there is
+//! no separate `onreset` an owner could forget to wire. React differs: it reports no reset to a
+//! controlled input (a long-standing React issue), so the state keeps the old value and React
+//! rewrites the DOM from it.
 //!
-//! **One read for the whole form.** A reset restores every field at once, and a controlled field
-//! whose owner re-renders writes the owner's text back into the DOM. If each field read its own
-//! value in its own task, the first field's report would re-render the owner and put the old text
-//! back into the fields not read yet. The fields that heard the reset therefore queue
-//! themselves, one task (a task after the browser restored the values) reads all of them in one
-//! bridge transaction, and the handlers then run back to back, so the owner sees every restored
-//! value before it renders once.
+//! Two kinds of control are covered here:
+//!
+//! - a **text-like control the owner holds** (`Input`, `Textarea`, `NativeSelect`, and the OTP
+//!   field) reports through [`use_form_value_report`] (attributes) or [`use_dom_value_report`]
+//!   (an id): the DOM value after a reset, and the DOM value at mount when it differs from the one
+//!   the owner rendered (a restored field). Both read the DOM, so a `reset` the page cancelled with
+//!   `preventDefault` reports the unchanged value, a no-op for the owner.
+//! - a **mirror input** a primitive renders only so a form submits the primitive's state (the
+//!   checkbox, switch, radio and select mirrors) is derived output: Rust is its only writer. It
+//!   carries `autocomplete="off"` ([`MIRROR_AUTOCOMPLETE`]) so the browser never restores a value
+//!   into it, and a reset reaches the primitive through its own value-change callback.
+//!
+//! **One read for the whole form.** A reset or a restore changes many fields at once, and a
+//! controlled field whose owner re-renders writes the owner's text back into the DOM. If each field
+//! read its own value in its own task, the first field's report would re-render the owner and put
+//! the old text back into the fields not read yet. The fields that heard the event therefore queue
+//! themselves, one task (after the browser restored the values) reads all of them in one bridge
+//! transaction, and the handlers then run back to back, so the owner sees every value before it
+//! renders once.
 
 use std::cell::RefCell;
 
@@ -35,11 +49,11 @@ use dioxus::prelude::*;
 use crate::bridge::{self, Prop, Target};
 use crate::{use_form_reset_listener, use_unique_id};
 
-/// The `id` the control carries: the caller's own, else the one this hook generated.
-fn caller_id(attributes: &[Attribute]) -> Option<String> {
+/// The text of the attribute `name` the caller passed, if it passed one as text.
+fn text_attribute(attributes: &[Attribute], name: &str) -> Option<String> {
     attributes
         .iter()
-        .find(|attribute| attribute.name == "id")
+        .find(|attribute| attribute.name == name)
         .and_then(|attribute| match &attribute.value {
             dioxus_core::AttributeValue::Text(text) => Some(text.to_string()),
             _ => None,
@@ -47,15 +61,15 @@ fn caller_id(attributes: &[Attribute]) -> Option<String> {
 }
 
 /// The data of a synthetic form event: the control's value, no files, no other fields.
-struct ResetFormData(String);
+struct ReportFormData(String);
 
-impl HasFileData for ResetFormData {
+impl HasFileData for ReportFormData {
     fn files(&self) -> Vec<FileData> {
         Vec::new()
     }
 }
 
-impl HasFormData for ResetFormData {
+impl HasFormData for ReportFormData {
     fn value(&self) -> String {
         self.0.clone()
     }
@@ -73,36 +87,40 @@ impl HasFormData for ResetFormData {
     }
 }
 
-/// A synthetic `input`/`change` event carrying `value`, for the handlers of a reset field.
-pub fn reset_form_event(value: String) -> FormEvent {
-    Event::new(std::rc::Rc::new(FormData::new(ResetFormData(value))), false)
+/// A synthetic `input`/`change` event carrying `value`, for the handlers of a control whose value
+/// the browser changed.
+fn value_report_event(value: String) -> FormEvent {
+    Event::new(
+        std::rc::Rc::new(FormData::new(ReportFormData(value))),
+        false,
+    )
 }
 
-/// A control that heard a reset: its id and what to do with its restored value.
+/// A control that heard a reset or mounted: its id and what to do with its value once read.
 type Waiting = (String, Box<dyn FnMut(String)>);
 
 thread_local! {
-    /// The controls that heard a reset and wait for the one read; `None` while no read is scheduled.
+    /// The controls waiting for the one read; `None` while no read is scheduled.
     static QUEUE: RefCell<Option<Vec<Waiting>>> = const { RefCell::new(None) };
 }
 
 /// Adds a control to the next read, scheduling it when it is the first.
-fn queue_read(id: String, on_reset: Box<dyn FnMut(String)>) {
+fn queue_read(id: String, on_value: Box<dyn FnMut(String)>) {
     let first = QUEUE.with(|queue| {
         let mut queue = queue.borrow_mut();
         match queue.as_mut() {
             Some(waiting) => {
-                waiting.push((id, on_reset));
+                waiting.push((id, on_value));
                 false
             }
             None => {
-                *queue = Some(vec![(id, on_reset)]);
+                *queue = Some(vec![(id, on_value)]);
                 true
             }
         }
     });
     if first {
-        // interval-ok: one task per reset, ends after it has reported; it must outlive the first field's component
+        // interval-ok: one task per read batch, ends after it has reported; it must outlive the first field's component
         crate::dioxus_core::spawn_forever(async {
             // The `reset` event is dispatched before the browser restores the values, and the
             // microtasks that carried every field's message run in between: the next task is after
@@ -128,37 +146,99 @@ fn queue_read(id: String, on_reset: Box<dyn FnMut(String)>) {
                     _ => None,
                 })
                 .collect();
-            for ((_, mut on_reset), value) in waiting.into_iter().zip(values) {
+            for ((_, mut on_value), value) in waiting.into_iter().zip(values) {
                 if let Some(value) = value {
-                    on_reset(value);
+                    on_value(value);
                 }
             }
         });
     }
 }
 
-/// Reports a form reset of the text control `attributes` belongs to: after the browser restored the
-/// control's value, `on_reset` runs with it. Returns the attributes to add to the control: an `id`
-/// when the caller passed none (the listener finds the control and its form by id).
+/// The `autocomplete` value of a mirror input: the browser never restores a form-state value into
+/// it, because the primitive that renders it is its only writer.
+pub const MIRROR_AUTOCOMPLETE: &str = "off";
+
+/// Reports the value of the control with `id` once after mount when it differs from `owner_value`: a
+/// form-state restore put text into the server-rendered control before the wasm hydrated, or the
+/// user typed before it did.
 ///
-/// Call it in the wrapper component that renders the `<input>` or `<textarea>`, pass `attributes`
-/// as the caller supplied them and merge the returned ones in.
-pub fn use_form_reset_value(
+/// `owner_value` is the value the owner's Rust state holds, `None` when the owner holds none the
+/// control could be compared with (then nothing is reported); it is read once, at mount. `report`
+/// runs with the DOM's value. A control that resets itself through its own value-change callback
+/// (`Slider`, `InputOtp`) uses this and not [`use_dom_value_report`].
+pub fn use_dom_value_restore(
+    id: impl Readable<Target = String> + Copy + 'static,
+    owner_value: impl Fn() -> Option<String> + Clone + 'static,
+    report: impl FnMut(String) + Clone + 'static,
+) {
+    use_effect(move || {
+        let owner_value = owner_value.clone();
+        let mut report = report.clone();
+        queue_read(
+            id.peek().clone(),
+            Box::new(move |dom: String| {
+                if owner_value().is_some_and(|owner| owner != dom) {
+                    report(dom);
+                }
+            }),
+        );
+    });
+}
+
+/// Reports every DOM-side value change of the control with `id` to `report`: the value after a form
+/// reset, and what [`use_dom_value_restore`] reports at mount. `report` runs after the browser
+/// restored the DOM, with the DOM's value.
+pub fn use_dom_value_report(
+    id: impl Readable<Target = String> + Copy + 'static,
+    owner_value: impl Fn() -> Option<String> + Clone + 'static,
+    report: impl FnMut(String) + Clone + 'static,
+) {
+    let on_reset = report.clone();
+    use_form_reset_listener(id, move || {
+        queue_read(id.peek().clone(), Box::new(on_reset.clone()));
+    });
+    use_dom_value_restore(id, owner_value, report);
+}
+
+/// [`use_dom_value_report`] for a text control the wrapper renders from `attributes` (an `<input>`,
+/// a `<textarea>` or a `<select>`): the report is the control's `oninput` and then its `onchange`,
+/// each with a [`FormEvent`] carrying the DOM value, and the owner's value is the `value`
+/// attribute (`owner_default` when it passed none: `Some("")` for an `<input>` or `<textarea>`,
+/// `None` for a `<select>`, whose DOM value is its first option's and so says nothing). Returns the attributes to add to the control: an `id` when the caller passed none
+/// (the listener and the read find the control by id).
+///
+/// Call it in the wrapper component that renders the control, pass `attributes` as the caller
+/// supplied them and merge the returned ones in.
+pub fn use_form_value_report(
     attributes: &[Attribute],
-    on_reset: impl FnMut(String) + Clone + 'static,
+    oninput: Option<EventHandler<FormEvent>>,
+    onchange: Option<EventHandler<FormEvent>>,
+    owner_default: Option<&'static str>,
 ) -> Vec<Attribute> {
     let mut id = use_unique_id();
-    let user_id = caller_id(attributes);
+    let user_id = text_attribute(attributes, "id");
     use_effect(use_reactive!(|user_id| {
         if let Some(user_id) = user_id {
             id.set(user_id);
         }
     }));
-    use_form_reset_listener(id, move || {
-        let on_reset = on_reset.clone();
-        queue_read(id.peek().clone(), Box::new(on_reset));
-    });
-    if caller_id(attributes).is_some() {
+    let mut owner_value = use_hook(|| CopyValue::new(None::<String>));
+    owner_value
+        .set(text_attribute(attributes, "value").or_else(|| owner_default.map(str::to_owned)));
+    use_dom_value_report(
+        id,
+        move || owner_value.cloned(),
+        move |value: String| {
+            if let Some(handler) = oninput {
+                handler.call(value_report_event(value.clone()));
+            }
+            if let Some(handler) = onchange {
+                handler.call(value_report_event(value));
+            }
+        },
+    );
+    if text_attribute(attributes, "id").is_some() {
         Vec::new()
     } else {
         vec![Attribute::new("id", id(), None, false)]

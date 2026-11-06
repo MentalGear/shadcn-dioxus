@@ -417,6 +417,8 @@ pub fn Select<T: Clone + PartialEq + 'static>(props: SelectProps<T>) -> Element 
             disabled: (props.disabled)(),
             aria_hidden: "true",
             tabindex: "-1",
+            // Rust is the only writer of this mirror: the browser must not restore a form-state value into it.
+            autocomplete: crate::MIRROR_AUTOCOMPLETE,
             position: "absolute",
             pointer_events: "none",
             opacity: "0",
@@ -605,6 +607,8 @@ pub fn SelectMulti<T: Clone + PartialEq + 'static>(props: SelectMultiProps<T>) -
             disabled: (props.disabled)(),
             aria_hidden: "true",
             tabindex: "-1",
+            // Rust is the only writer of this mirror: the browser must not restore a form-state value into it.
+            autocomplete: crate::MIRROR_AUTOCOMPLETE,
             position: "absolute",
             pointer_events: "none",
             opacity: "0",

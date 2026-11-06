@@ -47,7 +47,9 @@ pub mod drag_and_drop_list;
 pub mod drawer;
 pub mod dropdown_menu;
 mod form_reset;
-pub use form_reset::{reset_form_event, use_form_reset_value};
+pub use form_reset::{
+    use_dom_value_report, use_dom_value_restore, use_form_value_report, MIRROR_AUTOCOMPLETE,
+};
 pub mod hover_card;
 mod hover_intent;
 pub mod input_otp;
