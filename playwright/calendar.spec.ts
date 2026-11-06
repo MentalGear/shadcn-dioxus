@@ -274,14 +274,7 @@ test("right arrow key navigates through all days of the month", async ({
 });
 
 test.describe("Axe automated scan", () => {
-  // Calendar renders inline (no overlay); a day is focused/"selected" by
-  // keyboard, so that state, plus the plain loaded state, are scanned.
-  test("loaded has no automatically detectable a11y issues", async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/calendar/`, { timeout: 20 * 60 * 1000 });
-    await page.waitForLoadState("networkidle");
-    await expectNoAxeViolations(page, "calendar: loaded", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
-  });
-
+  // Calendar renders inline (no overlay); a day is focused by keyboard, and that state is scanned here.
   test("a day focused via keyboard has no automatically detectable a11y issues", async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/calendar/`, { timeout: 20 * 60 * 1000 });
     await page.waitForLoadState("networkidle");

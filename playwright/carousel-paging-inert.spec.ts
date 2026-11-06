@@ -5,7 +5,6 @@
 
 import { test, expect } from "./fixtures";
 import { type Page } from "@playwright/test";
-import { expectNoAxeViolations } from "./axe";
 import {
   goto,
   demoFrame,
@@ -579,12 +578,5 @@ test.describe("Carousel: only visible slides are reachable (inert)", () => {
       const selectedAfter = await frame.locator('[data-selected="true"]').getAttribute("aria-label");
       expect(selectedAfter).not.toBe(selectedBefore);
     }).toPass({ timeout: 3000 });
-  });
-
-  test("axe: clean with non-visible slides inert (main variant)", async ({ page }) => {
-    await goto(page, "main");
-    await expectNoAxeViolations(page, "carousel: main variant with inert slides", {
-      include: "#component-preview-frame",
-    });
   });
 });

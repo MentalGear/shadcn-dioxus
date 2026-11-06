@@ -3,9 +3,9 @@
   "build": "debug",
   "workers": "2",
   "date": "2026-10-21",
-  "tests": 4200,
+  "tests": 4188,
   "files": 276,
-  "total_seconds": 13257,
+  "total_seconds": 12932,
   "budget_seconds": 17000,
   "max_file_seconds": 3000,
   "note": "seconds = sum of test durations (worker time) on the DEBUG SSG build, 2 workers, 4-core box shared with other lanes; main-thread.spec.ts and scroll-main-thread.spec.ts are release-only (skipped on debug) and carry their RELEASE seconds. release_total_seconds = the same run on a release build. Refresh: playwright/tools/run-suite.sh, then durations.mjs chunk-*.json --write",
@@ -78,7 +78,7 @@
   },
   "all-routes.spec.ts": {
    "tests": 93,
-   "seconds": 859.2,
+   "seconds": 748.4,
    "passed": 93,
    "failed": 0,
    "skipped": 0,
@@ -205,9 +205,9 @@
    "retried": 0
   },
   "button_group.spec.ts": {
-   "tests": 2,
-   "seconds": 4,
-   "passed": 2,
+   "tests": 1,
+   "seconds": 3.3,
+   "passed": 1,
    "failed": 0,
    "skipped": 0,
    "retried": 0
@@ -221,9 +221,9 @@
    "retried": 0
   },
   "calendar.spec.ts": {
-   "tests": 21,
-   "seconds": 74,
-   "passed": 21,
+   "tests": 20,
+   "seconds": 59.7,
+   "passed": 20,
    "failed": 0,
    "skipped": 0,
    "retried": 0
@@ -278,24 +278,24 @@
   },
   "carousel-nav-opacity.spec.ts": {
    "tests": 18,
-   "seconds": 74.5,
+   "seconds": 59.5,
    "passed": 17,
    "failed": 1,
    "skipped": 0,
    "retried": 0
   },
   "carousel-paging-inert.spec.ts": {
-   "tests": 17,
-   "seconds": 81.5,
-   "passed": 17,
+   "tests": 16,
+   "seconds": 58.7,
+   "passed": 16,
    "failed": 0,
    "skipped": 0,
    "retried": 0
   },
   "carousel-rewind-autoplay.spec.ts": {
-   "tests": 22,
-   "seconds": 100,
-   "passed": 22,
+   "tests": 19,
+   "seconds": 67.5,
+   "passed": 19,
    "failed": 0,
    "skipped": 0,
    "retried": 0
@@ -317,9 +317,9 @@
    "retried": 0
   },
   "carousel-virtual.spec.ts": {
-   "tests": 16,
-   "seconds": 102.3,
-   "passed": 16,
+   "tests": 15,
+   "seconds": 79.6,
+   "passed": 15,
    "failed": 0,
    "skipped": 0,
    "retried": 0
@@ -333,9 +333,9 @@
    "retried": 0
   },
   "carousel.spec.ts": {
-   "tests": 59,
-   "seconds": 240.9,
-   "passed": 59,
+   "tests": 58,
+   "seconds": 176.0,
+   "passed": 58,
    "failed": 0,
    "skipped": 0,
    "retried": 0
@@ -669,9 +669,9 @@
    "retried": 0
   },
   "date-picker.spec.ts": {
-   "tests": 80,
-   "seconds": 192.8,
-   "passed": 79,
+   "tests": 79,
+   "seconds": 165.1,
+   "passed": 78,
    "failed": 1,
    "skipped": 0,
    "retried": 0
@@ -1613,9 +1613,9 @@
    "retried": 0
   },
   "popover.spec.ts": {
-   "tests": 22,
-   "seconds": 39,
-   "passed": 22,
+   "tests": 21,
+   "seconds": 31.0,
+   "passed": 21,
    "failed": 0,
    "skipped": 0,
    "retried": 0
@@ -1829,9 +1829,9 @@
    "retried": 0
   },
   "spinner.spec.ts": {
-   "tests": 2,
-   "seconds": 4.3,
-   "passed": 2,
+   "tests": 1,
+   "seconds": 2.1,
+   "passed": 1,
    "failed": 0,
    "skipped": 0,
    "retried": 0
@@ -2045,9 +2045,9 @@
    "retried": 0
   },
   "toast.spec.ts": {
-   "tests": 6,
-   "seconds": 13.3,
-   "passed": 6,
+   "tests": 5,
+   "seconds": 9.5,
+   "passed": 5,
    "failed": 0,
    "skipped": 0,
    "retried": 0

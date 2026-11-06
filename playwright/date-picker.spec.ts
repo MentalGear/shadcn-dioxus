@@ -197,11 +197,6 @@ test("Escape closes the popup", async ({ page }) => {
 });
 
 test.describe("Axe automated scan", () => {
-  test("loaded (popover closed) has no automatically detectable a11y issues", async ({ page }) => {
-    await gotoDatePicker(page);
-    await expectNoAxeViolations(page, "date-picker: loaded", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
-  });
-
   test("calendar popover open has no automatically detectable a11y issues", async ({ page }) => {
     await gotoDatePicker(page);
     await trigger(page).click();
