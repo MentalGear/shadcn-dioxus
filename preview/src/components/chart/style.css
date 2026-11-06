@@ -418,7 +418,8 @@
  * guarantee that (Recharts/shadcn slide in from the top-left corner there;
  * that quirk is deliberately not copied):
  *  1. A closed tooltip is `display: none`, and an element that was not
- *     rendered before a style change never transitions into it.
+ *     rendered before a style change never transitions into it. The fade
+ *     (below) only ever moves `opacity` and `display`, never `transform`.
  *  2. An open tooltip is laid out but `visibility: hidden` until it has
  *     measured its own size (`data-placed="false"`), so its flip/clamp is
  *     final on the first visible frame, and `data-motion` stays `false` for
@@ -464,24 +465,54 @@
    * from the chart box's top-left (the drawing itself is never mirrored
    * under `dir="rtl"`, so neither is the tooltip's coordinate frame). */
   transform: translate(0, 0);
+
+  /* The fade, on the floating-surface tokens (`--dx-floating-duration` and the enter curve; the
+   * exit curve is set on the closed state below). `display` is a discrete transition
+   * (`allow-discrete`): a closing tooltip stays rendered for the whole fade and only then becomes
+   * `display: none`, so its box collapses to 0x0 exactly when it is gone, which is the signal the
+   * primitive's `onresize` uses to un-place it. An engine without `allow-discrete` hides at
+   * once. The opening fade starts from `@starting-style` below. */
+  transition: opacity var(--dx-floating-duration) var(--dx-floating-ease-enter),
+    display var(--dx-floating-duration) var(--dx-floating-ease-enter) allow-discrete;
   white-space: nowrap;
 }
 
+/* An open tooltip whose `transform` is animating (`data-motion`) also transitions the position, on
+ * the slow token. Its list repeats the fade so that a position move never drops the fade. */
 .dx-chart-tooltip[data-motion="true"] {
-  transition: transform var(--dx-motion-duration-slow) var(--dx-motion-ease-out);
+  transition: transform var(--dx-motion-duration-slow) var(--dx-motion-ease-out),
+    opacity var(--dx-floating-duration) var(--dx-floating-ease-enter),
+    display var(--dx-floating-duration) var(--dx-floating-ease-enter) allow-discrete;
 }
 
-.dx-chart-tooltip[data-placed="false"] {
+/* Hidden only while it is open and unmeasured. A closed tooltip keeps its visibility through its
+ * fade-out; `[data-placed="false"]` on a closed one would cut the fade off at its first frame. */
+.dx-chart-tooltip[data-state="open"][data-placed="false"] {
   visibility: hidden;
 }
 
 .dx-chart-tooltip[data-state="closed"] {
   display: none;
+  opacity: 0;
+  transition-timing-function: var(--dx-floating-ease-exit);
 }
 
+/* The opening fade: the element's first rendered style is transparent, and it transitions to
+ * `opacity: 1` (the base rule). */
+@starting-style {
+  .dx-chart-tooltip[data-state="open"] {
+    opacity: 0;
+  }
+}
+
+/* Reduced motion: the same one-token override the theme gives its floating surfaces. The chart
+ * tooltip is not an interactive root, so the theme's shared layer does not reach it; this block is
+ * the sheet's own answer. Both lists are named, because the `data-motion` shorthand above would
+ * otherwise win over the base duration. */
 @media (prefers-reduced-motion: reduce) {
+  .dx-chart-tooltip,
   .dx-chart-tooltip[data-motion="true"] {
-    transition: none;
+    transition-duration: var(--dx-motion-duration-reduced);
   }
 }
 

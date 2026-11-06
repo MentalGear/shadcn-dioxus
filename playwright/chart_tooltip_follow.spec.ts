@@ -335,8 +335,18 @@ test.describe("Tooltip motion", () => {
     await page.mouse.move(m.chart.x + m.pointX(1), m.chart.y + m.plot.top + 40);
     await page.mouse.move(m.chart.x + m.pointX(2), m.chart.y + m.plot.top + 70);
     await expect(tooltip).toHaveAttribute("data-motion", "true");
-    const duration = await tooltip.evaluate((el) => getComputedStyle(el).transitionDuration);
-    expect(duration).toMatch(/^0(\.0*1?)?m?s$/);
+    // The theme's reduced-motion token is the single source of truth for "off": the transition
+    // runs for exactly that duration (a near-zero one, not the literal 0s), read from the page.
+    const { duration, token } = await tooltip.evaluate((el) => {
+      const probe = document.createElement("div");
+      probe.style.transitionDuration = "var(--dx-motion-duration-reduced)";
+      document.body.appendChild(probe);
+      const token = getComputedStyle(probe).transitionDuration;
+      probe.remove();
+      return { duration: getComputedStyle(el).transitionDuration, token };
+    });
+    expect(token).not.toBe("");
+    expect(duration.split(",").every((d) => d.trim() === token)).toBe(true);
   });
 });
 
