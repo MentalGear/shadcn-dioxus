@@ -11,9 +11,9 @@
 //! - `#[cfg(feature = "web")]`: a real `<dialog>` opened with
 //!   `showModal()`, driven by the exact same
 //!   `crate::use_dialog_open_driver`/`crate::use_dialog_close_sync`/
-//!   `crate::use_dialog_backdrop_dismiss` trio `dialog.rs`'s web modal arm
-//!   uses -- no focus-trap eval and no dismissing layer on this arm (it joins the dismiss core's
-//!   Escape order as a native layer, `crate::dismiss::Policy::NATIVE`); the browser's own
+//!   `crate::dismiss::Policy::NATIVE_BACKDROP` layer `dialog.rs`'s web modal arm
+//!   uses -- no focus-trap eval and no closing Escape layer on this arm (it joins the dismiss core's
+//!   Escape order as a native layer, with a backdrop press); the browser's own
 //!   `showModal()` supplies the focus trap, focus restore, background inertness, and top
 //!   layer.
 //!
@@ -567,8 +567,8 @@ fn PopoverModalContent(
 
 /// Web arm (native-dialog engine, two-engine overlay architecture):
 /// a real `<dialog>` opened with `showModal()`, driven exactly like
-/// `dialog.rs`'s web modal arm by the shared trio [`crate::use_dialog_open_driver`],
-/// [`crate::use_dialog_close_sync`] and [`crate::use_dialog_backdrop_dismiss`]. There is
+/// `dialog.rs`'s web modal arm by the shared [`crate::use_dialog_open_driver`],
+/// [`crate::use_dialog_close_sync`] and the dismiss core's backdrop press. There is
 /// one implementation of the deferred close: the dialog stays modal -- in the top
 /// layer, with its `::backdrop` and its anchored position -- until the content fade
 /// and the scrim fade have both finished, and only then is `close()` called. (A
@@ -615,8 +615,7 @@ fn PopoverModalContent(
     let scroll_lock_active = use_memo(move || is_modal() && open());
     crate::scroll_lock::use_scroll_lock(scroll_lock_active);
 
-    // `use_dialog_open_driver`/`use_dialog_close_sync`/
-    // `use_dialog_backdrop_dismiss` all want a `Readable<Target = String>`
+    // `use_dialog_open_driver`/`use_dialog_close_sync`/`use_dismiss` all want a `Readable<Target = String>`
     // to track this content's own element id, the same shape
     // `dialog.rs`'s `Memo<String>` gives them -- but this component's whole
     // call chain (`PopoverContent` -> `PopoverContentRendered` -> here)
@@ -631,19 +630,19 @@ fn PopoverModalContent(
     crate::use_dialog_close_sync(id_signal, set_open);
     crate::use_dialog_open_driver(id_signal, open);
     // Escape is the dialog's own `cancel`, routed through state by `use_dialog_close_sync`; the
-    // layer only keeps the dialog's place in the dismiss core's Escape order.
+    // layer keeps the dialog's place in the dismiss core's Escape order, and its backdrop press
+    // (the tap rule for touch and pen) is the light dismiss a `showModal()` dialog lacks.
     crate::dismiss::use_dismiss(
         id_signal,
         crate::dismiss::Scope::Element,
-        crate::dismiss::Policy::NATIVE,
+        crate::dismiss::Policy::NATIVE_BACKDROP,
         Some(open.into()),
-        |_| {},
+        move |cause| {
+            if cause == crate::dismiss::Cause::OutsidePress {
+                set_open.call(false);
+            }
+        },
     );
-    // Native <dialog> has no built-in "click outside to dismiss" the way
-    // `popover=` does -- see `crate::use_dialog_backdrop_dismiss`'s doc for
-    // why the core's outside press can't be reused for a `showModal()`
-    // dialog.
-    crate::use_dialog_backdrop_dismiss(id_signal, move || set_open.call(false));
 
     let class = class.unwrap_or_else(|| "dx-popover-content".to_string());
     // Folds the caller's own `style` together with the anchor binding into

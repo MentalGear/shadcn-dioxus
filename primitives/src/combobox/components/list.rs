@@ -126,15 +126,17 @@ fn ComboboxListRendered(
     let mut selectable = ctx.selectable;
     let open = selectable.open;
 
-    // Escape closes the open list wherever focus is (the dismiss core). A press elsewhere is
-    // deliberately not a dismissal here (a page control may act on the options while the list
-    // stays open, `combobox.spec.ts` "dynamic option removal"), and the input's `onblur` is the
-    // focus arm.
+    // Escape closes the open list wherever focus is (the dismiss core), and so does a touch or pen
+    // tap outside the input and the list (the input does not blur on a touch tap). A mouse press
+    // elsewhere is deliberately not a dismissal here (a page control may act on the options while
+    // the list stays open, `combobox.spec.ts` "dynamic option removal"), and the input's `onblur`
+    // is the focus arm.
     let list_id = use_signal(|| id.clone());
-    crate::dismiss::use_dismiss(
+    crate::dismiss::use_dismiss_within(
         list_id,
+        Some(ctx.input_id),
         crate::dismiss::Scope::Element,
-        crate::dismiss::Policy::ESCAPE,
+        crate::dismiss::Policy::ESCAPE_AND_TAP,
         Some(open.into()),
         move |_| selectable.set_open(false),
     );

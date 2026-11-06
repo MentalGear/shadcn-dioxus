@@ -23,7 +23,7 @@
  *     (no pointing-device button was pressed):
  *     https://www.w3.org/TR/uievents/#event-type-click
  *
- * Rule 7's hazard: `use_dialog_backdrop_dismiss` (primitives/src/lib.rs)
+ * Rule 7's hazard: the dismiss core's backdrop press (primitives/src/dismiss.rs, `Press::Backdrop`)
  * distinguishes a backdrop click from a content click with a bounding-rect
  * test against `event.clientX`/`clientY`. A keyboard activation (Enter or
  * Space) of a button dispatches a `click` with `detail === 0` and, in
@@ -357,7 +357,7 @@ test.describe("Rule 6 — modal Popover", () => {
     // open -- unlike Rule 2's `AlertDialog`-based fixture (chosen there
     // specifically because `Dialog`'s own backdrop-click dismiss would
     // otherwise confound the probe), every modal `Popover` *does* carry
-    // `use_dialog_backdrop_dismiss` (it wires the same trio
+    // the dismiss core's backdrop press (it wires the same trio
     // `Dialog`'s web modal arm uses), so a real click at these background
     // coordinates is a legitimate "outside" click to the `<dialog>`'s own
     // full-viewport `::backdrop` and correctly dismisses the Popover as a
@@ -591,10 +591,10 @@ test.describe("Rule 7d — a keyboard activation of a control inside the dialog 
  * `Popover` shows only its `::backdrop`; the popover itself flashes
  * and disappears. The default `Popover` is non-modal (dev-docs/backlog.md
  * row 169), so these tests drive the explicit `modal` demo, "Open modal
- * popover". See `use_dialog_backdrop_dismiss`'s doc
+ * popover". See the dismiss core's backdrop press doc
  * (primitives/src/lib.rs) for the full mechanism this rule guards.
  *
- * Root cause: `use_dialog_backdrop_dismiss`'s discriminator for "is this a
+ * Root cause: the dismiss core's backdrop discriminator for "is this a
  * real backdrop click" is `event.target === dialog` plus a bounding-rect
  * test (Rule 7's own territory above) -- it says nothing about *when* the
  * click happened relative to the dialog opening. `event.target` for the
@@ -682,72 +682,38 @@ test.describe("Rule 8 — the opening-gesture false positive: a modal Popover's 
     }
   });
 
-  test("construction-level: the backdrop-dismiss click listener is attached from inside a requestAnimationFrame callback, not synchronously at open", async ({
+  test("construction-level: a release on the backdrop with no press recorded after the open is not a dismissal", async ({
     page,
   }) => {
-    // Instruments `EventTarget.prototype.addEventListener`/
-    // `window.requestAnimationFrame` before any app code runs, so the
-    // check is unaffected by exactly when Dioxus happens to flush its
-    // effects -- this observes the *construction*
-    // (`use_dialog_backdrop_dismiss`'s own deferral, primitives/src/lib.rs)
-    // directly, sidestepping the timing-race problem the black-box test
-    // above cannot fully close in a sandbox with no engine that actually
-    // exhibits the click-retarget quirk.
-    await page.addInitScript(() => {
-      const w = window as unknown as {
-        __dxBackdropListenerAttachedInsideRaf?: boolean;
-      };
-      let insideRaf = false;
-      const originalRaf = window.requestAnimationFrame.bind(window);
-      window.requestAnimationFrame = (cb: FrameRequestCallback) =>
-        originalRaf((t) => {
-          insideRaf = true;
-          try {
-            cb(t);
-          } finally {
-            insideRaf = false;
-          }
-        });
-      const originalAddEventListener = EventTarget.prototype.addEventListener;
-      EventTarget.prototype.addEventListener = function (
-        this: EventTarget,
-        type: string,
-        listener: EventListenerOrEventListenerObject | null,
-        options?: boolean | AddEventListenerOptions,
-      ) {
-        const el = this as unknown as HTMLElement;
-        if (
-          type === "click" &&
-          el &&
-          el.tagName === "DIALOG" &&
-          w.__dxBackdropListenerAttachedInsideRaf === undefined
-        ) {
-          w.__dxBackdropListenerAttachedInsideRaf = insideRaf;
-        }
-        return originalAddEventListener.call(this, type, listener, options);
-      };
-    });
-
-    // dev-docs/backlog.md row 109: this test clicks the trigger right after
-    // navigating, on the SSG lane -- `gotoHydrated` so that click can't
-    // land before hydration attaches listeners. The `addInitScript` above
-    // instruments this same navigation: `gotoHydrated` is just
-    // `page.goto` plus a wait, so init-script ordering holds.
+    // The dismiss core records a press only from a `pointerdown` that arrives while the layer is open, and only on
+    // that press's `pointerup` does a backdrop press dismiss. So the opening gesture's own release (its press began
+    // before the layer existed) has no record and cannot dismiss, whatever the engine does with the click that
+    // follows. Checked directly: a bare `pointerup` on the dialog outside its box leaves it open, and a full
+    // `pointerdown` + `pointerup` pair at the same spot closes it.
+    // dev-docs/backlog.md row 109: `gotoHydrated` so the click on the trigger can't land before hydration.
     await gotoHydrated(page, `${BASE_URL}/component/popover/`, { timeout: NAV_TIMEOUT });
     const trigger = demoRole(page, "button", 0, "modal");
     await trigger.scrollIntoViewIfNeeded();
     await trigger.click();
-    await expect(page.getByRole("dialog")).toBeVisible();
-    // One frame is enough for the deferred attachment to have happened;
-    // give it a couple to be safe against a slow CI frame.
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
     await page.waitForTimeout(100);
 
-    const attachedInsideRaf = await page.evaluate(
-      () => (window as unknown as { __dxBackdropListenerAttachedInsideRaf?: boolean }).__dxBackdropListenerAttachedInsideRaf,
-    );
-    expect(
-      attachedInsideRaf,
-      "the dialog's own backdrop-dismiss click listener must be attached from inside a requestAnimationFrame callback, not synchronously at open -- otherwise the opening gesture's own click (or an engine's same-gesture retargeted follow-up) can reach it",
-    ).toBe(true);
+    const fire = (types: string[]) =>
+      page.evaluate((types) => {
+        const el = document.querySelector("dialog[open]") as HTMLElement;
+        for (const type of types) {
+          el.dispatchEvent(
+            new PointerEvent(type, { bubbles: true, pointerId: 7, pointerType: "mouse", clientX: 1, clientY: 1 }),
+          );
+        }
+      }, types);
+
+    await fire(["pointerup"]);
+    await page.waitForTimeout(150);
+    await expect(dialog, "a release with no recorded press must not dismiss").toBeVisible();
+
+    await fire(["pointerdown", "pointerup"]);
+    await expect(dialog, "a recorded press and release on the backdrop dismisses").toBeHidden();
   });
 });
