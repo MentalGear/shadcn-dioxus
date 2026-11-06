@@ -137,10 +137,16 @@ td.p button{font:inherit;color:var(--accent);background:none;border:0;padding:0;
 </div>
 <script>__CYTOSCAPE__</script>
 <script type="application/json" id="graph">__GRAPH__</script>
+<script type="application/json" id="comments">__COMMENTS__</script>
+<script type="application/json" id="builddata">__STATUS__</script>
 <script>
 (function(){
 const G=JSON.parse(document.getElementById('graph').textContent);
+const C=JSON.parse(document.getElementById('comments').textContent);
+const S=JSON.parse(document.getElementById("builddata").textContent);
 const N=G.nodes,E=G.edges;
+// the comment metrics come from file text (comments.json), the graph from the SCIP index: joined by file id
+N.forEach(n=>{const e=C.files[n.id];if(e){n.cm=e.cm;if(e.d)n.d=e.d;if(e.t)n.t=1}});
 const comps={};G.comps.forEach(c=>comps[c.id]=c);
 const fileComp=N.map(n=>n.comp);
 const crateOf=i=>{const c=comps[fileComp[i]].crate;return c==='external'?'external':c};
@@ -150,8 +156,8 @@ const st={lvl:1,rad:1,thr:2,dir:'both',hubs:true,group:true,kinds:{rs:1,ext:1,ts
 const $=id=>document.getElementById(id);
 const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
-// ---- comment metrics M1-M6: per-file raw counts (n.cm, order G.meta.cm_fields) summed per level, ratios from the sums
-const CF=G.meta.cm_fields,NF=CF.length,FI={};CF.forEach((f,i)=>FI[f]=i);
+// ---- comment metrics M1-M6: per-file raw counts (n.cm, order C.fields) summed per level, ratios from the sums
+const CF=C.fields,NF=CF.length,FI={};CF.forEach((f,i)=>FI[f]=i);
 const IT=NF,NFILES=NF+1,NTEST=NF+2; // extra slots of an aggregate: items defined, files, test files
 const keyAt=(l,i)=>l===0?crateOf(i):l===1?fileComp[i]:N[i].id;
 const keyOf=i=>keyAt(st.lvl,i);
@@ -219,6 +225,14 @@ $('c-crate').innerHTML+=KNOWN.map(k=>'<option value="'+k+'">'+k+'</option>').joi
     '<span class="chip">comment ratio '+r2(REPO.ratio)+' (repo)</span>'+
     '<span class="chip">pub doc coverage '+pc(REPO.cov)+'</span>'+
     '<span class="chip">doc share '+pc(REPO.share)+'</span>';
+  const when=t=>t?new Date(t*1000).toISOString().slice(0,16).replace('T',' ')+' UTC':'?';
+  const tree=S.tree.head+(S.tree.dirty?' + uncommitted':'');
+  const ix=S.index,cmx=S.comments;
+  const stale=ix.stale?'<span class="chip bad" id="chip-stale" title="'+esc(ix.changed.join('\n'))+'">index STALE: '+ix.nchanged+' Rust/Cargo file'+(ix.nchanged===1?'':'s')+' changed since it was built (graph edges and item counts are from the older tree; re-run run.sh --force)</span>'
+    :'<span class="chip" id="chip-stale">index up to date</span>';
+  $('status').innerHTML+=
+    '<span class="chip" id="chip-index">graph: SCIP index of '+esc(ix.head)+(ix.dirty?' + uncommitted':'')+', key '+esc(ix.key)+', '+ix.secs+' s cold, built '+when(ix.at)+'</span>'+stale+
+    '<span class="chip" id="chip-comments">comment metrics: working tree '+esc(tree)+', key '+esc(cmx.key)+', built '+when(cmx.at)+' (independent of the index)</span>';
 })();
 
 function seedFromName(n){

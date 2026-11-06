@@ -46,6 +46,13 @@ const page_path = path.resolve(process.argv[2] || path.resolve(__dirname, '../..
   const docLines = libText.split('\n').filter(l => /^\s*\/\/[\/!]/.test(l)).length;
   check('lib.rs doc lines equal an independent line count', cm.file && cm.file.doc === docLines, { page: cm.file && cm.file.doc, plain: docLines });
   check('lib.rs: pub items counted, `pub mod x;` lines skipped', cm.file && cm.file.pubs >= 0 && cm.file.pubs <= (libText.match(/^\s*pub\s+(?:fn|struct|enum|trait|const|static|type|mod)\s/gm) || []).length, cm.file && { pubs: cm.file.pubs, doced: cm.file.doced });
+  // status line: what the graph (index) and the comment metrics were each built from
+  const chips = await p.evaluate(() => ['chip-index', 'chip-stale', 'chip-comments'].map(id => { const e = document.getElementById(id); return e ? e.textContent : null; }));
+  check('status line names the index, its staleness and the metrics inputs', chips[0] && /SCIP index of [0-9a-f]{8}/.test(chips[0]) && chips[1] && chips[2] && /working tree [0-9a-f]{8}/.test(chips[2]), chips);
+  if (process.env.CODEGRAPH_EXPECT_STALE) {
+    const want = process.env.CODEGRAPH_EXPECT_STALE === '1';
+    check('index staleness is shown as expected (CODEGRAPH_EXPECT_STALE=' + (want ? 1 : 0) + ')', /STALE/.test(chips[1]) === want, chips[1]);
+  }
   // details panel
   await p.evaluate(() => { __cm.show('graph'); const e = document.getElementById('lvl'); e.value = 1; e.dispatchEvent(new Event('input')); });
   await p.waitForTimeout(500);
