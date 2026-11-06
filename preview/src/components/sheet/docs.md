@@ -48,9 +48,11 @@ SheetClose {
 ## Alignment with shadcn/ui v4
 
 This component's `style.css` follows shadcn/ui v4's
-`Sheet` (`SheetOverlay`/`SheetContent`/`SheetHeader`/`SheetFooter`/
-`SheetTitle`/`SheetDescription`/`SheetPrimitive.Close`), translated onto this
-repo's own design tokens rather than copying Tailwind classes verbatim:
+`Sheet` (`SheetHeader`/`SheetFooter`/`SheetTitle`/`SheetDescription`/
+`SheetPrimitive.Close`), translated onto this repo's own design tokens rather
+than copying Tailwind classes verbatim. There is no `SheetOverlay` or
+`SheetContent` element here: `Sheet` draws the scrim and the panel itself, and
+its children are the panel's content.
 
 - **Overlay**: `fixed inset-0 bg-black/50` in shadcn; here the shared overlay
   scrim every modal uses. On the web build, `.dx-sheet` is a real `<dialog>`
