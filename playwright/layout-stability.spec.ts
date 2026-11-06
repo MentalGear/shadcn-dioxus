@@ -18,12 +18,12 @@
  *
  * The construction: a spec that records the boxes of the top group on EVERY animation frame from the first one
  * (an init script, so the SSR frame is included) and fails when any box changes after the first paint, until
- * hydration has finished and 1.5 s more have passed with no input. A second change of the same box in that
+ * hydration has finished and the page is quiet (no box event, mutation, running animation or unloaded font or image for 30 frames; 1.5 s at most) with no input. A second change of the same box in that
  * window is an oscillation and is reported as such. It does not know which rule did it, so a new member of
  * the class fails here at the width where it shows, whatever its cause.
  *
  * Hydration is held back until the prerendered page has been painted (the wasm request waits for the first paint
- * plus 200 ms), so the prerendered-vs-hydrated differences are on screen at every width, not only on a slow one.
+ * plus three frames), so the prerendered-vs-hydrated differences are on screen at every width, not only on a slow one.
  *
  * "After the first paint": a frame whose rAF callback runs after `first-contentful-paint` (+ 20 ms of grace). Frames
  * before the first paint are never shown, so what the page settles into before the user sees it is free; every frame
@@ -74,6 +74,7 @@ import { BASE_URL } from "./base-url";
 import http from "node:http";
 import type { BrowserContext, Page } from "@playwright/test";
 import { gotoPrerendered } from "./page-kinds";
+import { holdWasmUntilPainted, settleUntilQuiet, trackPendingTimers } from "./stability-window";
 
 type Box = { x: number; y: number; w: number; h: number };
 type BoxEvent = { t: number; f: number; id: number; cls: string; txt: string; from: Box; to: Box };
@@ -209,14 +210,13 @@ for (const { route, scheme, widths, pool = POOL } of GROUPS) {
       slowEnd: (body, bodyStart) => Math.min(body.length, bodyStart + SWEEP_BYTES),
     });
 
-    /** One width: load, hydrate, record 1.5 s of box movement, and describe what moved after the first paint ("" = nothing). */
+    /** One width: load, hydrate, record box movement until the page is quiet, and describe what moved after the first paint ("" = nothing). */
     async function measure(page: Page, width: number): Promise<string> {
       await page.setViewportSize({ width, height: HEIGHT });
       await gotoPrerendered(page, `${front.url}${route}`, { waitUntil: "commit" });
       await page.waitForSelector('html[data-hydrated="true"]', { state: "attached", timeout: 120_000 });
-      await page.evaluate(() => document.fonts.ready.then(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))));
-      // timing-bound-ok: a settle window for real-time layout, animation or hydration after load, not the wait for an app timer; a slow machine only lengthens it
-      await page.waitForTimeout(1500); // no input: whatever still moves by itself shows up in this window
+      // No input: whatever still moves by itself shows up before the page is quiet (fonts, images, animations, 30 frames without a box event or a mutation; at most 1.5 s).
+      await settleUntilQuiet(page, "window.__layoutRec.events.length");
       const { events, paint } = await page.evaluate(() => ({
         events: (window as any).__layoutRec.events as BoxEvent[],
         paint: performance.getEntriesByType("paint").map((p) => ({ name: p.name, t: Math.round(p.startTime) })),
@@ -240,7 +240,7 @@ for (const { route, scheme, widths, pool = POOL } of GROUPS) {
     }
 
     // POOL pages of the one context take the widths from a shared queue. The cost of a width is mostly waiting (the
-    // wasm download, hydration, the 1.5 s no-input window), so two pages at once finish in about half the time; each
+    // wasm download, hydration, the quiet window), so two pages at once finish in about half the time; each
     // width is still its own fresh navigation on its own page, measured by the same recorder and judged by the same
     // rule. A page's paint clock is its own, and the held-until-painted wasm below is per page.
     const todo = [...(ONLY.length ? ONLY : widths)];
@@ -253,14 +253,11 @@ for (const { route, scheme, widths, pool = POOL } of GROUPS) {
       const page = await context.newPage();
       if (CPU > 1) await (await context.newCDPSession(page)).send("Emulation.setCPUThrottlingRate", { rate: CPU });
       await page.addInitScript(RECORDER);
-      // Hydration waits until the prerendered page has been painted (+200 ms): the slow-wasm case, the worst one for
+      await trackPendingTimers(page);
+      // Hydration waits until the prerendered page has been painted (+3 frames): the slow-wasm case, the worst one for
       // a prerendered page, and the only one in which every prerendered-vs-hydrated difference is on screen. Without
       // it a fast or a loaded machine hydrates before its first paint and the same defect passes at that width.
-      await page.route("**/*.wasm", async (route) => {
-        for (let i = 0; i < 400 && !(await page.evaluate(() => performance.getEntriesByType("paint").length).catch(() => 0)); i++) await page.waitForTimeout(50);
-        await page.waitForTimeout(200);
-        await route.continue().catch(() => {});
-      });
+      await holdWasmUntilPainted(page);
       for (let width = todo.shift(); width !== undefined; width = todo.shift()) {
         const failure = await measure(page, width);
         if (failure) failureAt.set(width, failure);
@@ -373,13 +370,13 @@ test.describe("progressive paint (home widget masonry)", () => {
       await context.addCookies([{ name: "dx_theme", value: "light", url: front.url }]);
       const page = await context.newPage();
       await page.addInitScript(CARD_RECORDER);
+      await trackPendingTimers(page);
       await page.route("**/*.wasm", (route) => route.abort());
       const cdp = await context.newCDPSession(page);
       await cdp.send("Emulation.setCPUThrottlingRate", { rate: Number(process.env.LS_PP_CPU ?? 4) });
       await gotoPrerendered(page, `${front.url}/`, { waitUntil: "commit" });
       await page.waitForLoadState("load", { timeout: 4 * 60 * 1000 });
-      // timing-bound-ok: a settle window for real-time layout, animation or hydration after load, not the wait for an app timer; a slow machine only lengthens it
-      await page.waitForTimeout(1000);
+      await settleUntilQuiet(page, "(() => { const f = window.__cardRec.frames; return JSON.stringify(f[f.length - 1]?.boxes); })()");
       const { frames, fcp } = await page.evaluate(() => ({
         frames: (window as any).__cardRec.frames as { t: number; boxes: number[][] }[],
         fcp: performance.getEntriesByType("paint").find((p) => p.name === "first-contentful-paint")?.startTime ?? -1,

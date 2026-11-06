@@ -122,7 +122,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [491](backlog/491-drawer-shadcn-scrollable-content-demo.md) | Drawer: add shadcn's scrollable content demo | BACKLOG (owner 2026-11-01). | S | components |
 | [493](backlog/493-timing-cases-run-alone-on-a-quiet-machine.md) | Timing cases run alone, on a quiet machine: the @timing tag and the timing pass | The construction is MERGED in PR #160 (8edeb5f1) and DEPLOYED in 1ea333fa: the tag, the pass, the… | M | playwright |
 | [494](backlog/494-re-enable-the-timing-cases-after-the-rust-port.md) | Re-enable the @timing cases after the Rust port | BACKLOG, triggered: when the JavaScript plan's port rows are done (row 434 with rows 444-466, final… | S-M | playwright |
-| [495](backlog/495-slow-observation-window-specs.md) | The two ~32 s-per-test specs wait on signals, not on fixed observation windows | APPROVED (owner 2026-11-05: item 1 of the build and test-suite review). Lane slow-specs-495. | S-M | playwright |
+| [495](backlog/495-slow-observation-window-specs.md) | The two ~32 s-per-test specs wait on signals, not on fixed observation windows | Lane slow-specs-495: done, awaiting merge. Both specs wait on signals through… | S-M | playwright |
 | [496](backlog/496-incremental-gate-target.md) | Measure incremental compilation for the main loop's gate target | APPROVED (owner 2026-11-05: item 2 of the build and test-suite review), measure first. Runs when no… | S | tooling |
 
 <!-- END GENERATED -->
