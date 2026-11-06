@@ -23,7 +23,7 @@ accordion::AccordionChevron  enum AccordionChevron  #[derive(Debug, Clone, Copy,
 accordion::AccordionChevron::End  variant End
 accordion::AccordionChevron::Start  variant Start
 accordion::AccordionChevron::as_str  fn as_str(self) -> &'static str
-accordion::AccordionContent  fn AccordionContent(props: AccordionContentProps) -> Element  #[doc = " With [`AccordionProps::hidden_until_found`] they stay mounted while closed, as `hidden=\"until-found\"`."]  #[doc = "   the content has not been removed (or re-hidden) yet. Style the close animation on this, not on"]  #[doc = "   `data-open=\"false\"`, which is also what a closed `hidden=\"until-found\"` panel looks like."]  #[component]
+accordion::AccordionContent  fn AccordionContent(props: AccordionContentProps) -> Element  #[doc = " With [`AccordionProps::hidden_until_found`] they stay mounted while closed, as `hidden=\"until-found\"`."]  #[doc = "   the content has not been removed (or re-hidden) yet. Style the close animation on this, not on"]  #[doc = "   `data-closed`, which is also what a closed `hidden=\"until-found\"` panel looks like."]  #[component]
 accordion::AccordionContentProps  struct AccordionContentProps  #[derive(Props, Clone, PartialEq)]
 accordion::AccordionContentProps.attributes  field Vec<Attribute>  #[props(extends = GlobalAttributes)]
 accordion::AccordionContentProps.children  field Element
@@ -2367,7 +2367,7 @@ hover_card::HoverCardContentProps  struct HoverCardContentProps  #[derive(Props,
 hover_card::HoverCardContentProps.align  field ContentAlign  #[props(default = ContentAlign::Center)]
 hover_card::HoverCardContentProps.attributes  field Vec<Attribute>  #[props(extends = GlobalAttributes)]
 hover_card::HoverCardContentProps.children  field Element
-hover_card::HoverCardContentProps.force_mount  field bool  #[doc = " Keeps the card in the DOM while it is closed, hidden (`hidden`, `data-state=\"closed\"`), like"]  #[props(default = false)]
+hover_card::HoverCardContentProps.force_mount  field bool  #[doc = " Keeps the card in the DOM while it is closed, hidden (`hidden`, `data-closed`), like"]  #[props(default = false)]
 hover_card::HoverCardContentProps.id  field ReadSignal<Option<String>>  #[props(default)]
 hover_card::HoverCardContentProps.side  field ContentSide  #[props(default = ContentSide::Top)]
 hover_card::HoverCardProps  struct HoverCardProps  #[derive(Props, Clone, PartialEq)]
@@ -2662,7 +2662,7 @@ modality::FocusTarget::Panel  variant Panel
 modality::FocusTarget::Selector  variant Selector(String)
 modality::FocusTarget::selector  fn selector(css: impl Into<String>) -> Self
 modality::FocusTargetFn  type FocusTargetFn = Callback<OpenModality, FocusTarget>
-modality::MODALITY_JS  const MODALITY_JS: &str = "(function(){var W=window,R=document.documentElement;if(W.__dxModality)return;W.__dxModality=1;function S(m){if(R.getAttribute('data-dx-modality')!==m)R.setAttribute('data-dx-modality',m)}var Q=W.matchMedia&&W.matchMedia('(any-pointer: coarse) and (hover: none)');if(!R.hasAttribute('data-dx-modality'))S(Q&&Q.matches?'touch':'mouse');var K={Shift:1,Control:1,Alt:1,Meta:1,AltGraph:1,CapsLock:1,Fn:1,FnLock:1,Hyper:1,Super:1,OS:1};function P(t){return t==='touch'||t==='pen'?t:'mouse'}try{/*listener-ok: the modality writer lives as long as the page*/W.addEventListener('pointerdown',function(e){S(P(e.pointerType))},true);/*listener-ok: the modality writer lives as long as the page*/W.addEventListener('keydown',function(e){if(!K[e.key])S('keyboard')},true);/*listener-ok: the modality writer lives as long as the page*/W.addEventListener('click',function(e){if(e.detail===0){S('keyboard')}else if(R.getAttribute('data-dx-modality')==='keyboard')S(P(e.pointerType||(Q&&Q.matches?'touch':'mouse')))},true)}catch(x){}})()"
+modality::MODALITY_JS  const MODALITY_JS: &str = "(function(){var W=window,D=document,R=D.documentElement,N='data-dx-modality',A='data-dx-pointer-focus';if(W.__dxModality)return;W.__dxModality=1;function G(){return R.getAttribute(N)}function M(e){if(e&&e!==R&&e!==D.body)e.toggleAttribute(A,G()!=='keyboard')}function S(m){if(G()!==m){R.setAttribute(N,m);M(D.activeElement)}}var Q=W.matchMedia&&W.matchMedia('(any-pointer: coarse) and (hover: none)');if(!G())S(Q&&Q.matches?'touch':'mouse');var K=/^(Shift|Control|Alt|AltGraph|Meta|CapsLock|Fn(Lock)?|Hyper|Super|OS)$/;function P(t){return t==='touch'||t==='pen'?t:'mouse'}function L(t,f){/*listener-ok: page-lifetime writer*/W.addEventListener(t,f,true)}try{L('pointerdown',function(e){S(P(e.pointerType))});L('keydown',function(e){if(!K.test(e.key))S('keyboard')});L('click',function(e){if(e.detail===0){S('keyboard')}else if(G()==='keyboard')S(P(e.pointerType||(Q&&Q.matches?'touch':'mouse')))});L('focusin',function(e){M(e.target)});L('focusout',function(e){e.target.removeAttribute(A)})}catch(x){}})()"
 modality::OPEN_FOCUS_JS  const OPEN_FOCUS_JS: &str = r#"
 function dxModality() {
     const m = document.documentElement.getAttribute('data-dx-modality');
@@ -2841,7 +2841,7 @@ navigation_menu::NavigationMenuContentProps  struct NavigationMenuContentProps  
 navigation_menu::NavigationMenuContentProps.attributes  field Vec<Attribute>  #[props(extends = GlobalAttributes)]
 navigation_menu::NavigationMenuContentProps.children  field Element
 navigation_menu::NavigationMenuContentProps.id  field ReadSignal<Option<String>>
-navigation_menu::NavigationMenuIndicator  fn NavigationMenuIndicator(props: NavigationMenuIndicatorProps) -> Element  #[doc = " [`NavigationMenuList`], after the items. It is purely visual (`aria-hidden`, presentational)."]  #[doc = " - `data-state`: `visible` while an item is open, `hidden` otherwise."]  #[component]
+navigation_menu::NavigationMenuIndicator  fn NavigationMenuIndicator(props: NavigationMenuIndicatorProps) -> Element  #[doc = " [`NavigationMenuList`], after the items. It is purely visual (`aria-hidden`, presentational)."]  #[component]
 navigation_menu::NavigationMenuIndicatorProps  struct NavigationMenuIndicatorProps  #[derive(Props, Clone, PartialEq)]
 navigation_menu::NavigationMenuIndicatorProps.attributes  field Vec<Attribute>  #[props(extends = GlobalAttributes)]
 navigation_menu::NavigationMenuIndicatorProps.children  field Element
@@ -3554,33 +3554,40 @@ state_attrs::Flag  enum Flag  #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 state_attrs::Flag::Active  variant Active
 state_attrs::Flag::Checked  variant Checked
 state_attrs::Flag::Disabled  variant Disabled
+state_attrs::Flag::Done  variant Done
 state_attrs::Flag::Dragging  variant Dragging
+state_attrs::Flag::Empty  variant Empty
+state_attrs::Flag::Error  variant Error
+state_attrs::Flag::Hidden  variant Hidden
 state_attrs::Flag::Highlighted  variant Highlighted
+state_attrs::Flag::Idle  variant Idle
 state_attrs::Flag::Invalid  variant Invalid
+state_attrs::Flag::Loaded  variant Loaded
+state_attrs::Flag::Loading  variant Loading
 state_attrs::Flag::Open  variant Open
+state_attrs::Flag::PanelOpen  variant PanelOpen
+state_attrs::Flag::PopupOpen  variant PopupOpen
+state_attrs::Flag::Pressed  variant Pressed
+state_attrs::Flag::Processing  variant Processing
 state_attrs::Flag::Readonly  variant Readonly
 state_attrs::Flag::Selected  variant Selected
 state_attrs::Flag::Unchecked  variant Unchecked
+state_attrs::Flag::Uploading  variant Uploading
 state_attrs::Flag::name  const fn name(self) -> &'static str
 state_attrs::IntoFlag  trait IntoFlag
 state_attrs::IntoFlag::flag  fn flag(&self) -> bool
 state_attrs::active  fn active(is_active: impl IntoFlag) -> Vec<Attribute>
 state_attrs::checked  fn checked(state: impl Into<Checked>) -> Vec<Attribute>
-state_attrs::disabled  fn disabled(on: impl IntoFlag) -> Vec<Attribute>
 state_attrs::open  fn open(is_open: impl IntoFlag) -> Vec<Attribute>
-state_attrs::open_valued  fn open_valued(is_open: impl IntoFlag) -> Vec<Attribute>
-state_attrs::panel_hidden  fn panel_hidden(is_active: impl IntoFlag) -> Vec<Attribute>  #[doc = " A tab panel: `data-state=\"active|inactive\"`, and `data-hidden` while it is not the active one."]
+state_attrs::panel_hidden  fn panel_hidden(is_active: impl IntoFlag) -> Vec<Attribute>  #[doc = " A tab panel: `data-hidden` while it is not the active one."]
 state_attrs::panel_open  fn panel_open(is_open: impl IntoFlag) -> Vec<Attribute>
 state_attrs::popup_open  fn popup_open(is_open: impl IntoFlag) -> Vec<Attribute>
 state_attrs::presence  fn presence(flag: Flag, on: impl IntoFlag) -> Vec<Attribute>
-state_attrs::presence_true  fn presence_true(flag: Flag, on: impl IntoFlag) -> Vec<Attribute>
 state_attrs::pressed  fn pressed(is_pressed: impl IntoFlag) -> Vec<Attribute>
 state_attrs::progress  fn progress(value: Option<f64>, max: f64) -> Vec<Attribute>
 state_attrs::readonly  fn readonly(on: impl IntoFlag) -> Vec<Attribute>
 state_attrs::selected  fn selected(is_selected: impl IntoFlag) -> Vec<Attribute>
-state_attrs::state  fn state(value: &'static str) -> Vec<Attribute>
 state_attrs::trigger_open  fn trigger_open(is_open: impl IntoFlag) -> Vec<Attribute>
-state_attrs::valued  fn valued(flag: Flag, on: impl IntoFlag) -> Vec<Attribute>
 switch  mod
 switch::Switch  fn Switch(props: SwitchProps) -> Element  #[component]
 switch::SwitchProps  struct SwitchProps  #[derive(Props, Clone, PartialEq)]

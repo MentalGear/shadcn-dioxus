@@ -507,7 +507,6 @@ pub struct TabContentProps {
 /// ## Styling
 ///
 /// The [`TabContent`] component defines the following data attributes you can use to control styling:
-/// - `data-hidden`: Present while this panel is not the active one.
 /// - `data-hidden`: Present (empty) while this panel is not the active one, absent otherwise.
 ///
 /// An inactive panel carries the `hidden` attribute (`hidden="until-found"` with
