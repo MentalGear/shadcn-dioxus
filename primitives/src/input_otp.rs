@@ -56,8 +56,8 @@
 
 use crate::state_attrs;
 use crate::{
-    merge_attributes, use_controlled, use_form_reset_listener, use_id_or, use_previous,
-    use_unique_id,
+    merge_attributes, use_controlled, use_dom_value_restore, use_form_reset_listener, use_id_or,
+    use_previous, use_unique_id,
 };
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
@@ -341,6 +341,13 @@ pub fn InputOtp(props: InputOtpProps) -> Element {
     // directly to the real input here (see this module's doc for why no
     // second hidden input is needed to get there).
     use_form_reset_listener(id, move || set_value.call(default_value.clone()));
+    // A form-state restore puts the previous page's text into the server-rendered input before
+    // the wasm hydrates; the owner hears it through the same change callback (`form_reset.rs`).
+    use_dom_value_restore(
+        id,
+        move || Some(value.peek().clone()),
+        move |dom: String| set_value.call(dom),
+    );
 
     // Fire `on_complete` exactly on the transition into "full" (value's
     // length reaches `max_length`), not on every keystroke made while

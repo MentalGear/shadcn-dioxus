@@ -444,6 +444,8 @@ pub fn RadioItem(props: RadioItemProps) -> Element {
             type: "radio",
             aria_hidden: "true",
             tabindex: "-1",
+            // Rust is the only writer of this mirror: the browser must not restore a form-state value into it.
+            autocomplete: crate::MIRROR_AUTOCOMPLETE,
             position: "absolute",
             pointer_events: "none",
             opacity: "0",

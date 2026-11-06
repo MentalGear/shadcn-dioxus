@@ -168,6 +168,8 @@ pub fn Switch(props: SwitchProps) -> Element {
             type: "checkbox",
             aria_hidden: true,
             tabindex: -1,
+            // Rust is the only writer of this mirror: the browser must not restore a form-state value into it.
+            autocomplete: crate::MIRROR_AUTOCOMPLETE,
             name: props.name,
             form: props.form,
             value: props.value,

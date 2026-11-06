@@ -1,7 +1,7 @@
 use dioxus::prelude::*;
 use dioxus_icons::lucide::ChevronDown;
 use dioxus_primitives::dioxus_attributes::attributes;
-use dioxus_primitives::merge_attributes;
+use dioxus_primitives::{merge_attributes, use_form_value_report};
 
 /// The size of a [`NativeSelect`]: shadcn's `size="sm" | "default"` (`h-7` / `h-8`, the theme's
 /// control-height ladder). It shadows the `<select size>` row-count attribute, as shadcn's does.
@@ -48,7 +48,10 @@ pub fn NativeSelect(
     children: Element,
 ) -> Element {
     let base = attributes!(select { class: "dx-native-select", "data-dx-root": "", "data-size": size.class() });
-    let merged = merge_attributes(vec![base, attributes]);
+    // A form reset or a restored selection changes the DOM value without an `input` event; the handlers hear it
+    // as an edit, so an owner that mirrors the select into a signal follows (`primitives/src/form_reset.rs`).
+    let owned = use_form_value_report(&attributes, oninput, onchange, None);
+    let merged = merge_attributes(vec![base, attributes, owned]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/native_select/style.css") }
         div { class: "dx-native-select-wrapper", "data-size": size.class(),

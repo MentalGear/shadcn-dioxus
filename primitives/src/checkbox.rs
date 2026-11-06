@@ -338,6 +338,8 @@ fn BubbleInput(
         r#type: "checkbox",
         aria_hidden: "true",
         tabindex: "-1",
+        // Rust is the only writer of this mirror: the browser must not restore a form-state value into it.
+        autocomplete: crate::MIRROR_AUTOCOMPLETE,
         // The `checked` content attribute: the server HTML carries it (so a no-script form post
         // and the parser's `.defaultChecked` are right before hydration) and a client-created
         // input gets the live state from it, and every later change is written as the live property.
