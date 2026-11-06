@@ -3511,6 +3511,8 @@ slider::RangeSliderProps.name  field ReadSignal<String>  #[doc = " The name subm
 slider::RangeSliderProps.on_value_change  field Callback<Range<f64>>  #[props(default)]
 slider::RangeSliderProps.on_value_commit  field Callback<Range<f64>>  #[props(default)]
 slider::RangeSliderProps.step  field ReadSignal<f64>  #[props(default = 1.0)]
+slider::RangeSliderProps.thumb_alignment  field ThumbAlignment  #[props(default)]
+slider::RangeSliderProps.thumb_collision  field ThumbCollision  #[props(default)]
 slider::RangeSliderProps.value  field ReadSignal<Option<Range<f64>>>
 slider::Slider  fn Slider(props: SliderProps) -> Element  #[doc = " `form`) through a hidden `<input>`; a [`RangeSlider`] submits one per thumb under the same"]  #[component]
 slider::SliderProps  struct SliderProps  #[derive(Props, Clone, PartialEq)]
@@ -3529,6 +3531,7 @@ slider::SliderProps.name  field ReadSignal<String>  #[doc = " The name submitted
 slider::SliderProps.on_value_change  field Callback<f64>  #[props(default)]
 slider::SliderProps.on_value_commit  field Callback<f64>  #[props(default)]
 slider::SliderProps.step  field ReadSignal<f64>  #[props(default = 1.0)]
+slider::SliderProps.thumb_alignment  field ThumbAlignment  #[props(default)]
 slider::SliderProps.value  field ReadSignal<Option<f64>>
 slider::SliderRange  fn SliderRange(props: SliderRangeProps) -> Element  #[component]
 slider::SliderRangeProps  struct SliderRangeProps  #[derive(Props, Clone, PartialEq)]
@@ -3543,6 +3546,12 @@ slider::SliderTrack  fn SliderTrack(props: SliderTrackProps) -> Element  #[compo
 slider::SliderTrackProps  struct SliderTrackProps  #[derive(Props, Clone, PartialEq)]
 slider::SliderTrackProps.attributes  field Vec<Attribute>  #[props(extends = GlobalAttributes)]
 slider::SliderTrackProps.children  field Element
+slider::ThumbAlignment  enum ThumbAlignment  #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+slider::ThumbAlignment::Center  variant Center
+slider::ThumbAlignment::Edge  variant Edge
+slider::ThumbCollision  enum ThumbCollision  #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+slider::ThumbCollision::Clamp  variant Clamp
+slider::ThumbCollision::Push  variant Push
 state_attrs  mod
 state_attrs::Checked  enum Checked  #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 state_attrs::Checked  impl From<CheckboxState> for Checked
