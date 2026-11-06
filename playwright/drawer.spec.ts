@@ -182,7 +182,7 @@ test('a drag away from the dismiss direction never exposes the viewport edge', a
   }
   // Read while the pointer is still down, so a `getComputedStyle` cannot land on a
   // closed/unmounted panel (backlog row 115). This gesture ends 160px above the handle,
-  // over the dialog's `::backdrop`; `use_dialog_backdrop_dismiss` must not read that as a
+  // over the dialog's `::backdrop`; the backdrop press must not read that as a
   // backdrop click that closes the drawer (dragging UP must not close it) -- the
   // dedicated tests below pin that.
   const filterValue = await content.evaluate((el) => getComputedStyle(el).filter);
