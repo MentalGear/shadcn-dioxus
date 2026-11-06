@@ -130,7 +130,7 @@ const goto = (page: Page, name: string) =>
   gotoHydrated(page, `${BASE}${name}/`, { timeout: 20 * 60 * 1000 });
 
 // `crate::menu_sub::SUBMENU_OPEN_INTENT_DELAY`/`SUBMENU_CLOSE_GRACE_DELAY`
-// are both 200ms (`primitives/src/menu_sub.rs`) -- generous margins below
+// are 100ms and 200ms (`primitives/src/menu_sub.rs`) -- generous margins below
 // so this file's own timing never races the implementation's.
 const PAST_INTENT_DELAY_MS = 500;
 
@@ -174,8 +174,12 @@ async function hoverAndTimeOpen(subTrigger: Locator): Promise<{ elapsedMs: numbe
   expect(r.open, "the page saw aria-expanded flip to true").not.toBeNull();
   return { elapsedMs: (r.open as number) - (r.over as number) };
 }
-// A little under crate::menu_sub::SUBMENU_OPEN_INTENT_DELAY (200 ms) for timer granularity.
-const MIN_INTENT_DELAY_MS = 180;
+// A little under crate::menu_sub::SUBMENU_OPEN_INTENT_DELAY (100 ms, Base UI's `SubmenuTrigger` `delay`) for timer
+// granularity.
+const MIN_INTENT_DELAY_MS = 90;
+// Well above it and below twice the delay: the best of a few hovers (a loaded debug build can delay
+// one) opens inside this bound.
+const MAX_BEST_INTENT_DELAY_MS = 170;
 
 test.describe("APG Menu and Menubar pattern — DropdownMenu.Sub", () => {
   test.beforeEach(async ({ page }) => {
@@ -341,6 +345,17 @@ test.describe("APG Menu and Menubar pattern — DropdownMenu.Sub", () => {
       trigger,
       "only the submenu closed -- the root menu that contains it is untouched",
     ).toHaveAttribute("data-state", "open");
+  });
+
+  test("hover: the intent delay is Base UI's 100 ms (the best of three hovers opens inside 170 ms)", async ({ page }) => {
+    const subTrigger = rootItem(page, 3);
+    const times: number[] = [];
+    for (let i = 0; i < 3; i++) {
+      times.push((await hoverAndTimeOpen(subTrigger)).elapsedMs);
+      await rootItem(page, 0).hover();
+      await expect(subTrigger).toHaveAttribute("aria-expanded", "false");
+    }
+    expect(Math.min(...times), `open delays ${times.join(", ")} ms`).toBeLessThan(MAX_BEST_INTENT_DELAY_MS);
   });
 
   test("hover: opens after a short intent delay, not instantly; leaving to a sibling item closes it", async ({

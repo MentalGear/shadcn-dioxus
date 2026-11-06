@@ -61,7 +61,7 @@ DropdownMenuContent {
 ### Open on hover, or click only
 
 By default hovering a `DropdownMenuSubTrigger` opens its submenu after a short
-delay (200 ms) and leaving it closes the submenu again after a short grace
+delay (100 ms) and leaving it closes the submenu again after a short grace
 delay, so a diagonal move toward the submenu is not misread as leaving. Pass
 `open_on_hover: false` to the `DropdownMenuSub` for **click activation**:
 
