@@ -142,3 +142,56 @@ release); D5 (build.rs / proc-macro / `unsafe` lines / direct deps / licence); o
   (`check-primitives-features.sh`, SSG) is the proof to run before applying.
 - RustSec advisories and `cargo geiger`: still not available (no `cargo-audit`, `cargo-deny`); the `unsafe` counts are upper bounds.
 - Transitive crates were not rated against D1-D4 (the rule covers new dependencies; the closure gate is C16/C17, planned).
+
+## Applied 2026-11-06 (owner: dissolve by construction what C23 already decides)
+
+P1, P5, P6 and P7 follow from C23 D5 (few dependencies, exact pins) and are applied in this branch; P2, P3, P4, P8, P9 and P10 stay with the owner.
+
+| # | Change | Measured |
+|---|---|---|
+| P1 | `[workspace.dependencies] dioxus` has `default-features = false`; `primitives` names `lib` and `launch` (it uses `client!`, `server_only!`, `fullstack!`, which `launch` provides, so the earlier proposal of `lib` alone did not build); `preview` names `lib`, `launch`, `devtools`, `logger`, `router`; its build-dependency names `lib` and `devtools` (see below) | `cargo tree -p dioxus-primitives --target wasm32-unknown-unknown --no-default-features --features web -e normal,build --prefix none \| sort -u \| wc -l`: 146 -> 131; native, default features: 202 -> 175 |
+| P5 | `preview` build-dependency `pulldown-cmark = "=0.13.4"` | lock unchanged |
+| P6 | `syn` without `extra-traits` in `dioxus-attributes` and `attr-spread-collision-checker` | lock unchanged, both build |
+| P7 | `clap` with `default-features = false, features = ["derive", "std", "help", "usage", "error-context"]` | `cargo tree -p shadcn-dioxus -e normal,build`: 37 -> 30 unique lines; cargo removed 76 lock lines (`anstream`, `anstyle-parse`, `anstyle-query`, ...); the CLI loses coloured help and "did you mean" |
+
+P1 also shrank the detached `playwright/oracle/attr-synth/Cargo.lock` by 100 lines (`dioxus-devtools`, `dioxus-logger` and their closure no longer
+resolve there), written by `cargo metadata`. Proof run in this branch: `cargo check --workspace --all-targets` and the `clippy-web` arm's `cargo check`
+(green after the build-dependency fix below), `scripts/run-gates.sh --fast` 99 gates, red 0. The full clippy arms, `test` and `test-server` are left to the
+main loop's full run (an earlier run in this lane was cut short by a container restart; only `clippy-default` finished, green).
+
+Two findings from building P1:
+
+- `dioxus-web` 0.7.9 does not compile with `document` and without `devtools` (its `document` code calls `Window::location`, whose
+  `web-sys/Location` is enabled only by `devtools`). `dioxus-code`'s `runtime` feature switches `dioxus/web` on in `preview`'s build-dependency
+  graph, so that graph needs `devtools` (a comment in `preview/Cargo.toml` says so). `clippy-web` caught it.
+- The starter (`templates/starter/Cargo.toml.liquid`) is not trimmed: it calls `dioxus::launch`, and `dx serve` hot reload needs `devtools`
+  and the default logger, so its `dioxus` keeps the default features. Users who trim their own `dioxus` now get the smaller closure from
+  `dioxus-primitives` as well; the starter's own count does not change.
+
+## P3: a replacement for `dioxus-code`?
+
+Question: is there a highlighter that passes D1-D5 and replaces `dioxus-code` with a small diff? Numbers from crates.io, 2026-11-06 (stars unreadable).
+
+| Candidate | First release | Latest stable | Total downloads | Required deps | C23 |
+|---|---|---|---|---|---|
+| `dioxus-code` 0.1.2 (today) | 2026-05-05 | 0.1.2, 2026-05-11 | 14,949 | arborium, arborium-theme, dioxus (+ tree-sitter, `build.rs`) | D2, D3 fail |
+| `arborium` 2.18.2 (its engine) | 2025-12-04 | 2026-08-28 | 267,010 | many grammar crates | D2 (11 months), D3 fail |
+| `syntect` 5.3.0 | 2016-06-20 | 2025-09-27 | 38.7 M | 5 (`once_cell`, `serde`, `serde_derive`, `thiserror`, `walkdir`) plus a regex backend (`onig` C build or `fancy-regex`) | D1-D4 pass, D5 licence MIT; regex backend adds `build.rs` or a pure-Rust engine |
+| `synoptic` 2.2.9 | 2021-01-04 | 2024-11-30 (23 months) | 2.47 M | 5 | passes D1-D4 narrowly (D4 lapses 2026-11-30); regex heuristics, no Rust grammar quality |
+| `tree-sitter-highlight` 0.27.1 | 2019-02-20 | 2026-10-08 (29 days: D1 fails for the newest, 0.27.0 or earlier would pass) | 4.64 M | 4, plus one grammar crate per language (`tree-sitter-rust`, `tree-sitter-css`), each its own C23 check and a C `build.rs` | needs per-grammar review |
+| `inkjet` 0.11.1 | 2023-08-06 | 2024-09-15 (26 months) | 184,245 | many grammars | D3, D4 fail |
+| `two-face` 0.5.1 | 2023-07-04 | 2025-12-25 | 15.4 M | syntect extras (syntax sets) | passes; companion of `syntect` |
+
+Why none is a small diff. `dioxus-code` is not a call in one place: `dioxus_code::code!(path)` (a proc-macro that embeds and highlights a file at
+compile time) is used in the component-page macros of `preview/src/components/mod.rs` (about 6 sites per component kind) and in `site/gallery.rs`; `Code`,
+`CodeTheme`, `Theme::GITHUB_LIGHT/DARK` and `HighlightedSource::from_static_parts` in `site/mod.rs` and `site/code.rs`; `HighlightSpan` in
+`installed_source.rs` (the installed-source view builds spans itself); `Language::from_slug` in `build.rs`; the generated theme CSS in
+`assets/main.css` and `playwright/axe.ts` (colour contrast of the theme); and `src/wasm_libc_shim.rs` exists only because tree-sitter needs libc symbols on wasm.
+A `syntect` replacement means a new `code!`-equivalent proc-macro or `build.rs` step (syntect cannot run in wasm without its regex backend), a new
+`Code` component, a new theme CSS pass with a re-checked contrast (axe), and reworked span plumbing: estimated 400-600 lines and a visual re-baseline,
+not a small diff. The existing markdown pipeline (`pulldown-cmark` in `build.rs`) renders fences with no highlighting at all, so reusing it
+means dropping highlighting, which is a visible regression the owner would have to choose.
+
+Result: **not implemented.** `syntect` (with `two-face`) is the only candidate that passes D1-D5 without caveats, and it is a rewrite of the
+code-view layer. The choice for the owner: a D6 exception for `dioxus-code` (docs site only, never in a user's build), or the `syntect` rewrite
+(estimated 400-600 lines, one lane), or no highlighting.
