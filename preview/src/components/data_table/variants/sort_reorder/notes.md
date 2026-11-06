@@ -1,0 +1,1 @@
+A `reorderable` table with a sortable Header column. Sorting the column wins over the manual order: the drag handles show "Clear the sort to reorder rows" and do nothing. Click the sort button until the sort is cleared, then reorder the rows again.
