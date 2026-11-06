@@ -8,22 +8,27 @@ Navbar {
     // The NavbarNav contains the individual menus that can be opened.
     NavbarNav {
         // The index of the menu: its place in the keyboard (arrow-key) order. It does not move the menu on screen.
-        index: 0,
-        // The menubar trigger is the element that will display the menu when activated.
+        index: 0usize,
+        // The navbar trigger is the element that will display the menu when activated.
         NavbarTrigger {
             // The content of the trigger button
-            {children}
+            "Layout"
         }
-        // The menubar content contains all the items that will be displayed in the menu when it is opened.
+        // The navbar content contains all the items that will be displayed in the menu when it is opened.
         NavbarContent {
-            // Each menubar item represents an individual items in the menu.
+            // Each navbar item represents an individual item in the menu.
             NavbarItem {
+                // Its place in the keyboard (arrow-key) order within the menu.
+                index: 0usize,
                 // The value of the item which will be passed to the on_select callback when the item is selected.
-                value: "",
+                value: "card".to_string(),
+                // Where the item links to: a route, or a string path.
+                to: "/component/card/",
                 on_select: |value: String| {
                     // This callback is triggered when the item is selected.
                     // The value parameter contains the value of the selected item.
                 },
+                "Card"
             }
         }
     }
@@ -45,7 +50,7 @@ Navbar {
     aria_label: "Main",
     // Default is `true`.
     open_on_hover: false,
-    NavbarNav { /* ... */ }
+    NavbarNav { index: 0usize, /* ... */ }
 }
 ```
 

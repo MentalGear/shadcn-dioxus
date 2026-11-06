@@ -3,10 +3,14 @@ The dialog component can be used to display additional information or actions re
 ## Component Structure
 
 ```rust
+let mut open = use_signal(|| false);
+
 // The dialog component must wrap all dialog elements.
 Dialog {
-    // The open prop determines if the dialog is currently open or closed.
+    // The open prop determines if the dialog is currently open or closed. Pair it with `on_open_change`,
+    // which the dialog calls when the user closes it (Escape, the close button, DialogClose); without it the dialog cannot close.
     open: open(),
+    on_open_change: move |v| open.set(v),
     // Header: the title and description in a column (shadcn's DialogHeader).
     DialogHeader {
         DialogTitle { "Item information" }

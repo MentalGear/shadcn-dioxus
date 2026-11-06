@@ -12,7 +12,7 @@ Tabs {
             // The value of the tab trigger, which must be unique and is used to identify the active tab.
             value: "tab1",
             // The contents of the tab trigger button
-            {children}
+            "Account"
         }
     }
     // The TabContent component contains the content that is displayed when the corresponding tab is active.
@@ -20,7 +20,7 @@ Tabs {
         // The value of the tab content, which must match the value of the corresponding TabTrigger to be displayed.
         value: "tab1",
         // The content of the tab, which is displayed when the tab is active.
-        {children}
+        "Account settings go here."
     }
 }
 ```

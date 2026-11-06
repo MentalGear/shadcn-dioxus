@@ -3,6 +3,8 @@ The Native Select component is a styled native `<select>`, for the common case w
 ## Component Structure
 
 ```rust
+let mut fruit = use_signal(|| "apple".to_string());
+
 NativeSelect {
     value: "{fruit}",
     onchange: move |e: FormEvent| fruit.set(e.value()),

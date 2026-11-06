@@ -5,9 +5,11 @@ A Tag Group is a focusable group of tags (labels, categories, filters and simila
 Single selection with [`TagGroup`](component.rs):
 
 ```rust
+let mut value = use_signal(|| None::<String>);
+
 TagGroup {
     value: Some(value.into()),
-    on_value_change: move |value| { /* ... */ },
+    on_value_change: move |next| value.set(next),
     on_remove: move |removed: Vec<String>| { /* drop them from your list */ },
     TagGroupLabel { "Labels" }
     TagList {
