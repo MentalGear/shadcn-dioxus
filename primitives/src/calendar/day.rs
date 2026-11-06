@@ -267,11 +267,15 @@ pub fn calendar_day_attributes(state: &CalendarDayState) -> Vec<Attribute> {
     if state.today {
         attrs.push(attr("data-today", Bool(true)));
     }
-    attrs.push(attr("data-selected", Bool(state.selected)));
+    if state.selected {
+        attrs.push(attr("data-selected", Text(String::new())));
+    }
     if state.unavailable {
         attrs.push(attr("data-unavailable", Bool(true)));
     }
-    attrs.push(attr("data-disabled", Bool(state.disabled)));
+    if state.disabled {
+        attrs.push(attr("data-disabled", Text(String::new())));
+    }
     // backlog row 84: an unavailable day (or a day inside a
     // disabled calendar -- `state.disabled` is already `(calendar disabled)
     // || unavailable`, see `day_state`) must tell assistive tech it cannot
@@ -286,8 +290,8 @@ pub fn calendar_day_attributes(state: &CalendarDayState) -> Vec<Attribute> {
     // established convention for exactly that shape of control (e.g.
     // `combobox`/`select`/`command`'s own options: `aria_disabled:
     // (option.disabled)()` alongside a still-focusable role). Mirrors
-    // `data-disabled` immediately above: same source value, same
-    // unconditional presence (a `data-disabled=false` day contributes
+    // `data-disabled` immediately above: same source value, but always
+    // written (a day that is not disabled contributes
     // `aria-disabled=false`, which is the correct, explicit "not disabled"
     // ARIA state for a role that has no native disabled semantics of its
     // own, not merely "no opinion").

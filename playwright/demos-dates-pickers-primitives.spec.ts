@@ -50,10 +50,18 @@ for (const d of DEMOS) {
       if ((await control.count()) > 0) {
         await expect(control).toBeVisible();
         if (d.click && mode === "light") {
-          const before = await control.getAttribute("data-state");
+          // The state attributes the control carries (`data-open` / `data-closed`, `data-checked` / `data-unchecked`, ...).
+          const stateOf = () =>
+            control.evaluate((el) =>
+              el
+                .getAttributeNames()
+                .filter((n) => /^data-(open|closed|checked|unchecked|indeterminate|pressed|active|selected)$/.test(n))
+                .join(" "),
+            );
+          const before = await stateOf();
           await control.click();
-          const after = await control.getAttribute("data-state");
-          if (before !== null) expect(after).not.toBe(before);
+          const after = await stateOf();
+          if (before !== "") expect(after).not.toBe(before);
         }
       }
       await setMode(page, mode);

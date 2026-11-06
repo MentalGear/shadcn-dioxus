@@ -304,7 +304,7 @@ pub struct HoverCardProps {
 /// ## Styling
 ///
 /// The [`HoverCard`] component defines the following data attributes you can use to control styling:
-/// - `data-state`: Indicates the current state of the hover card. Values are `open` or `closed`.
+/// - `data-open` / `data-closed`: Exactly one is present: whether this part is open.
 /// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
 /// - `data-disabled`: Indicates whether the item is disabled. Values are `true` or `false`.
 #[component]
@@ -342,7 +342,7 @@ pub fn HoverCard(props: HoverCardProps) -> Element {
         props.attributes,
         attributes!(div {
             ..state_attrs::open(open()),
-            ..state_attrs::disabled((props.disabled)()),
+            ..state_attrs::presence(state_attrs::Flag::Disabled, (props.disabled)()),
         }),
     ]);
 
@@ -486,7 +486,7 @@ pub struct HoverCardContentProps {
     #[props(default = ContentAlign::Center)]
     pub align: ContentAlign,
 
-    /// Keeps the card in the DOM while it is closed, hidden (`hidden`, `data-state="closed"`), like
+    /// Keeps the card in the DOM while it is closed, hidden (`hidden`, `data-closed`), like
     /// Radix's `forceMount`: for an animation library that drives the card itself, or content that
     /// should exist in the markup. By default (`false`) a closed card is not rendered at all; it is
     /// mounted when it opens and removed after its exit animation.
@@ -542,7 +542,7 @@ pub struct HoverCardContentProps {
 /// ## Styling
 ///
 /// The [`HoverCardContent`] component defines the following data attributes you can use to control styling:
-/// - `data-state`: Indicates the current state of the hover card. Values are `open` or `closed`.
+/// - `data-open` / `data-closed`: Exactly one is present: whether this part is open.
 /// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
 /// - `data-side`: Indicates the side of the trigger where the hover card is placed. Values are `top`, `right`, `bottom`, or `left`.
 /// - `data-align`: Indicates the alignment of the hover card relative to the trigger. Values are `start`, `center`, or `end`.
@@ -634,7 +634,7 @@ fn HoverCardContentRendered(
     open: Memo<bool>,
     /// Sets the open state. On the web, it is called when the browser closes the card.
     set_open: Callback<bool>,
-    /// Whether the card is open. Sets its `data-state`.
+    /// Whether the card is open. Sets its `data-open` / `data-closed`.
     is_open: bool,
     /// The side of the trigger the card is placed on.
     side: ContentSide,
@@ -716,7 +716,7 @@ fn HoverCardContentRendered(
     open: Memo<bool>,
     /// Sets the open state. On the web, it is called when the browser closes the card.
     set_open: Callback<bool>,
-    /// Whether the card is open. Sets its `data-state`.
+    /// Whether the card is open. Sets its `data-open` / `data-closed`.
     is_open: bool,
     /// The side of the trigger the card is placed on.
     side: ContentSide,
@@ -789,7 +789,7 @@ mod tests {
 
         let html = render(true);
         assert!(html.contains("card body"), "{html}");
-        assert!(html.contains("data-state=\"closed\""), "{html}");
+        assert!(html.contains("data-closed"), "{html}");
         assert!(html.contains("hidden=true"), "{html}");
     }
 }

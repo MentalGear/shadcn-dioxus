@@ -219,7 +219,7 @@ fn SlideCounter() -> Element {
         for i in 0..api.count {
             button {
                 "aria-label": "Go to slide {i + 1}",
-                "data-active": i == api.selected,
+                "data-active": (i == api.selected).then_some(""),
                 onclick: move |_| api.scroll_to(i),
             }
         }

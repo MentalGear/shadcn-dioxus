@@ -29,7 +29,7 @@ test("test", async ({ page }) => {
     await selectTrigger.click();
     // Assert the select menu is open
     const selectMenu = page.getByRole("listbox");
-    await expect(selectMenu).toHaveAttribute("data-state", "open");
+    await expect(selectMenu).toHaveAttribute("data-open", "");
 
     // Assert the menu is focused
     await expect(selectMenu).toBeFocused();
@@ -72,7 +72,7 @@ test("test", async ({ page }) => {
     // Reopen the select menu
     await selectTrigger.click();
     // Assert the select menu is open again
-    await expect(selectMenu).toHaveAttribute("data-state", "open");
+    await expect(selectMenu).toHaveAttribute("data-open", "");
 
     // Click the second option to select it
     let bananaOption = selectMenu.getByRole("option", { name: "banana" });
@@ -90,7 +90,7 @@ test("tabbing out of menu closes the select menu", async ({ page }) => {
     await selectTrigger.click();
     // Assert the select menu is open
     const selectMenu = page.getByRole("listbox");
-    await expect(selectMenu).toHaveAttribute("data-state", "open");
+    await expect(selectMenu).toHaveAttribute("data-open", "");
 
     // Assert the menu is focused
     await expect(selectMenu).toBeFocused();
@@ -110,7 +110,7 @@ test("multi-select toggles options and stays open", async ({ page }) => {
 
     await selectTrigger.click();
     const selectMenu = page.getByRole("listbox");
-    await expect(selectMenu).toHaveAttribute("data-state", "open");
+    await expect(selectMenu).toHaveAttribute("data-open", "");
 
     const pepperoni = selectMenu.getByRole("option", { name: "Pepperoni" });
     const onion = selectMenu.getByRole("option", { name: "Onion" });
@@ -120,12 +120,12 @@ test("multi-select toggles options and stays open", async ({ page }) => {
 
     // Click an unselected option — it should toggle on without closing
     await onion.click();
-    await expect(selectMenu).toHaveAttribute("data-state", "open");
+    await expect(selectMenu).toHaveAttribute("data-open", "");
     await expect(onion).toHaveAttribute("aria-selected", "true");
 
     // Click an already-selected option — it should toggle off without closing
     await pepperoni.click();
-    await expect(selectMenu).toHaveAttribute("data-state", "open");
+    await expect(selectMenu).toHaveAttribute("data-open", "");
     await expect(pepperoni).toHaveAttribute("aria-selected", "false");
 
     // Escape closes the menu without selecting
@@ -145,20 +145,20 @@ test("mobile: multi-select tapping options keeps the dropdown open", async ({ pa
     await selectTrigger.tap();
 
     const selectMenu = page.getByRole("listbox");
-    await expect(selectMenu).toHaveAttribute("data-state", "open");
+    await expect(selectMenu).toHaveAttribute("data-open", "");
 
     const onion = selectMenu.getByRole("option", { name: "Onion" });
     await expect(onion).toHaveAttribute("aria-selected", "false");
 
     // Tapping the first option on mobile should toggle it without closing the menu
     await onion.tap();
-    await expect(selectMenu).toHaveAttribute("data-state", "open");
+    await expect(selectMenu).toHaveAttribute("data-open", "");
     await expect(onion).toHaveAttribute("aria-selected", "true");
 
     // Tapping a second option should also leave the dropdown open
     const pepperoni = selectMenu.getByRole("option", { name: "Pepperoni" });
     await pepperoni.tap();
-    await expect(selectMenu).toHaveAttribute("data-state", "open");
+    await expect(selectMenu).toHaveAttribute("data-open", "");
     await expect(pepperoni).toHaveAttribute("aria-selected", "false");
 });
 
@@ -170,7 +170,7 @@ test("multi-select keyboard toggles and exposes aria-multiselectable", async ({ 
     await selectTrigger.click();
 
     const selectMenu = page.getByRole("listbox");
-    await expect(selectMenu).toHaveAttribute("data-state", "open");
+    await expect(selectMenu).toHaveAttribute("data-open", "");
     // Listbox advertises multi-select mode for assistive tech
     await expect(selectMenu).toHaveAttribute("aria-multiselectable", "true");
 
@@ -181,7 +181,7 @@ test("multi-select keyboard toggles and exposes aria-multiselectable", async ({ 
 
     // Space toggles the focused option off without closing
     await page.keyboard.press(" ");
-    await expect(selectMenu).toHaveAttribute("data-state", "open");
+    await expect(selectMenu).toHaveAttribute("data-open", "");
     await expect(pepperoni).toHaveAttribute("aria-selected", "false");
 
     // Arrow down to Onion and toggle on with Enter — menu still open in multi-mode
@@ -190,7 +190,7 @@ test("multi-select keyboard toggles and exposes aria-multiselectable", async ({ 
     const onion = selectMenu.getByRole("option", { name: "Onion" });
     await expect(onion).toBeFocused();
     await page.keyboard.press("Enter");
-    await expect(selectMenu).toHaveAttribute("data-state", "open");
+    await expect(selectMenu).toHaveAttribute("data-open", "");
     await expect(onion).toHaveAttribute("aria-selected", "true");
 
     await page.keyboard.press("Escape");
@@ -207,7 +207,7 @@ test("tabbing out of item closes the select menu", async ({ page }) => {
     await selectTrigger.click();
     // Assert the select menu is open
     const selectMenu = page.getByRole("listbox");
-    await expect(selectMenu).toHaveAttribute("data-state", "open");
+    await expect(selectMenu).toHaveAttribute("data-open", "");
 
     // Assert the menu is focused
     await expect(selectMenu).toBeFocused();
@@ -228,7 +228,7 @@ test("options selected", async ({ page }) => {
     await selectTrigger.click();
     // Assert the select menu is open
     const selectMenu = page.getByRole("listbox");
-    await expect(selectMenu).toHaveAttribute("data-state", "open");
+    await expect(selectMenu).toHaveAttribute("data-open", "");
 
     // Assert no items have aria-selected
     const options = selectMenu.getByRole("option");
@@ -370,7 +370,7 @@ test.describe("Listbox width tracks the trigger width (dev-docs/backlog.md row 4
         const trigger = singleSelectTrigger(page);
         await trigger.click();
         const listbox = page.getByRole("listbox");
-        await expect(listbox).toHaveAttribute("data-state", "open");
+        await expect(listbox).toHaveAttribute("data-open", "");
         await assertListboxTracksTriggerWidth(page, trigger, listbox);
     });
 
@@ -384,7 +384,7 @@ test.describe("Listbox width tracks the trigger width (dev-docs/backlog.md row 4
         // An explicit role only: the gallery's form card also renders a native
         // <select multiple>, whose implicit role is listbox too.
         const listbox = page.locator('[role="listbox"]');
-        await expect(listbox).toHaveAttribute("data-state", "open");
+        await expect(listbox).toHaveAttribute("data-open", "");
         await assertListboxTracksTriggerWidth(page, trigger, listbox);
     });
 });
@@ -416,7 +416,7 @@ test.describe("Trigger minimum width (dev-docs/backlog.md row 10)", () => {
         const trigger = page.getByRole("combobox", { name: "Fruit, required (library)" });
         await trigger.click();
         const listbox = page.getByRole("listbox", { name: "Fruit options, required (library)" });
-        await expect(listbox).toHaveAttribute("data-state", "open");
+        await expect(listbox).toHaveAttribute("data-open", "");
         await listbox.getByRole("option", { name: "Apple" }).click();
 
         // The trigger itself must have real width (a missing min-width
@@ -426,7 +426,7 @@ test.describe("Trigger minimum width (dev-docs/backlog.md row 10)", () => {
         expect(triggerBox.width, `trigger width ${triggerBox.width}px`).toBeGreaterThanOrEqual(100);
 
         await trigger.click();
-        await expect(listbox).toHaveAttribute("data-state", "open");
+        await expect(listbox).toHaveAttribute("data-open", "");
         const option = listbox.getByRole("option", { name: "Apple" });
         const check = option.locator("svg");
 
@@ -463,7 +463,7 @@ test.describe("Axe automated scan", () => {
     test("listbox open has no automatically detectable a11y issues", async ({ page }) => {
         await gotoHydrated(page, `${BASE_URL}/component/select/`);
         await singleSelectTrigger(page).click();
-        await expect(page.getByRole("listbox")).toHaveAttribute("data-state", "open");
+        await expect(page.getByRole("listbox")).toHaveAttribute("data-open", "");
         await expectNoAxeViolations(page, "select: listbox open", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
     });
 });
@@ -520,7 +520,7 @@ test("touch: a single-select tap is consumed by the option, never the page under
         const selectTrigger = singleSelectTrigger(page).first();
         await selectTrigger.tap();
         const selectMenu = page.getByRole("listbox");
-        await expect(selectMenu).toHaveAttribute("data-state", "open");
+        await expect(selectMenu).toHaveAttribute("data-open", "");
 
         await page.evaluate(() => {
             const w = window as unknown as { __tapClicks: string[] };
@@ -569,7 +569,7 @@ test.describe("defaults (row 478)", () => {
         await select(page, trigger, "banana");
         await trigger.click();
         const list = listbox(page);
-        await expect(list).toHaveAttribute("data-state", "open");
+        await expect(list).toHaveAttribute("data-open", "");
         await expect(list).toHaveAttribute("data-position", "item-aligned");
         await expect(list).toHaveAttribute("data-placed", "true");
         await awaitAnimationsSettled(list);
@@ -592,7 +592,7 @@ test.describe("defaults (row 478)", () => {
             await expect(listbox(page)).toHaveCount(0);
             await trigger.tap();
             const list = listbox(page);
-            await expect(list).toHaveAttribute("data-state", "open");
+            await expect(list).toHaveAttribute("data-open", "");
             await expect(list).toHaveAttribute("data-position", "popper");
             await expect(list).not.toHaveAttribute("data-placed", "true");
             await awaitAnimationsSettled(list);
@@ -636,7 +636,7 @@ test.describe("defaults (row 478)", () => {
             await expect(listbox(page)).toHaveCount(0);
             await centreTrigger(trigger);
             await trigger.tap();
-            await expect(listbox(page)).toHaveAttribute("data-state", "open");
+            await expect(listbox(page)).toHaveAttribute("data-open", "");
         } finally {
             await context.close();
         }
@@ -673,20 +673,20 @@ test.describe("defaults (row 478)", () => {
         };
         // Nothing selected: the list opens below the trigger, so the release lands outside it.
         await press();
-        await expect(listbox(page)).toHaveAttribute("data-state", "open");
+        await expect(listbox(page)).toHaveAttribute("data-open", "");
         await page.mouse.up();
         await page.waitForTimeout(400);
-        await expect(listbox(page)).toHaveAttribute("data-state", "open");
+        await expect(listbox(page)).toHaveAttribute("data-open", "");
         await page.keyboard.press("ArrowDown");
         await page.keyboard.press("Enter");
         await expect(trigger).toHaveText("Apple");
 
         // A selection: the list opens with that option under the pointer. Releasing there picks nothing.
         await press();
-        await expect(listbox(page)).toHaveAttribute("data-state", "open");
+        await expect(listbox(page)).toHaveAttribute("data-open", "");
         await page.mouse.up();
         await page.waitForTimeout(400);
-        await expect(listbox(page)).toHaveAttribute("data-state", "open");
+        await expect(listbox(page)).toHaveAttribute("data-open", "");
         await expect(trigger).toHaveText("Apple");
         await expect(listbox(page).getByRole("option", { name: "apple" })).toHaveAttribute("aria-selected", "true");
     });
@@ -695,13 +695,13 @@ test.describe("defaults (row 478)", () => {
         await gotoHydrated(page, `${BASE_URL}/component/select/`, { timeout: 20 * 60 * 1000 });
         const trigger = singleSelectTrigger(page);
         await trigger.click();
-        await expect(listbox(page)).toHaveAttribute("data-state", "open");
+        await expect(listbox(page)).toHaveAttribute("data-open", "");
         await page.mouse.click(2, 2);
         await expect(listbox(page)).toHaveCount(0);
 
         await trigger.focus();
         await page.keyboard.press("Alt+ArrowDown");
-        await expect(listbox(page)).toHaveAttribute("data-state", "open");
+        await expect(listbox(page)).toHaveAttribute("data-open", "");
         await expect(trigger).toBeFocused();
         await page.keyboard.press("Escape");
         await expect(listbox(page)).toHaveCount(0);
@@ -719,7 +719,7 @@ test.describe("defaults (row 478)", () => {
             await page.evaluate(() => (document.body.style.paddingBottom = "3000px"));
             await trigger.evaluate((el) => el.scrollIntoView({ block: "center" }));
             await trigger.click();
-            await expect(list).toHaveAttribute("data-state", "open");
+            await expect(list).toHaveAttribute("data-open", "");
             await awaitAnimationsSettled(list);
             const offset = async () => {
                 const t = await measureAtRest(trigger);
@@ -733,7 +733,7 @@ test.describe("defaults (row 478)", () => {
             await page.mouse.wheel(0, 120);
             await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(scrollBefore + 50);
             await page.waitForTimeout(300);
-            await expect(list).toHaveAttribute("data-state", "open");
+            await expect(list).toHaveAttribute("data-open", "");
             const after = await offset();
             expect(after.ty, "the page moved the trigger").toBeLessThan(before.ty - 50);
             expect(Math.abs(after.dy - before.dy), "list stays at the same offset from the trigger").toBeLessThanOrEqual(1);

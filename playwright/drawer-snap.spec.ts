@@ -37,7 +37,7 @@ const MID = 355;
 async function open(page: Page) {
   await gotoHydrated(page, URL, GOTO_OPTS);
   await demoRole(page, "button", 0, VARIANT).click();
-  await expect(page.locator(ROOT)).toHaveAttribute("data-state", "open");
+  await expect(page.locator(ROOT)).toHaveAttribute("data-open", "");
   await awaitAnimationsSettled(page.locator(CONTENT));
 }
 
@@ -135,7 +135,7 @@ test("a short slow drag snaps back to the same point", async ({ page }) => {
   await slow(page, -40);
   await expectVisible(page, LOW);
   await expect(page.locator(ACTIVE)).toHaveText("148px");
-  await expect(page.locator(ROOT)).toHaveAttribute("data-state", "open");
+  await expect(page.locator(ROOT)).toHaveAttribute("data-open", "");
 });
 
 test("a fast flick settles by velocity: the same distance that stays when slow skips to another point", async ({ page }) => {
@@ -154,7 +154,7 @@ test("a fast flick settles by velocity: the same distance that stays when slow s
   await expectVisible(page, MID);
   await flick(page, 30);
   await expectVisible(page, LOW);
-  await expect(page.locator(ROOT)).toHaveAttribute("data-state", "open");
+  await expect(page.locator(ROOT)).toHaveAttribute("data-open", "");
 });
 
 test("dragging below the lowest snap point closes the drawer; a short pull does not", async ({ page }) => {
@@ -162,7 +162,7 @@ test("dragging below the lowest snap point closes the drawer; a short pull does 
   // 20px of 148 visible is 14%: stays.
   await slow(page, 20);
   await expectVisible(page, LOW);
-  await expect(page.locator(ROOT)).toHaveAttribute("data-state", "open");
+  await expect(page.locator(ROOT)).toHaveAttribute("data-open", "");
   // 100px is 68%: closes.
   await slow(page, 100);
   await expect(page.locator(ROOT)).toHaveCount(0);
@@ -182,7 +182,7 @@ test("a long drag from the top point that stays above the lowest never closes", 
   await expectVisible(page, viewport.height);
   await slow(page, viewport.height - LOW - 200);
   await expectVisible(page, MID);
-  await expect(page.locator(ROOT)).toHaveAttribute("data-state", "open");
+  await expect(page.locator(ROOT)).toHaveAttribute("data-open", "");
 });
 
 test("the active snap point is controlled: a footer button moves the panel and the demo reports it", async ({ page }) => {
@@ -218,7 +218,7 @@ test("content scrolls only at the largest point, and a scrolled panel does not s
   await drag(page, '[data-slot="drawer-header"]', { dy: 300, steps: 6, stepMs: 40, pauseMs: 100 });
   await page.waitForTimeout(500);
   await expectVisible(page, viewport.height);
-  await expect(page.locator(ROOT)).toHaveAttribute("data-state", "open");
+  await expect(page.locator(ROOT)).toHaveAttribute("data-open", "");
 });
 
 test("Escape closes a snap drawer opened at a partial point", async ({ page }) => {

@@ -12,7 +12,6 @@ fn ToggleToolbarButton(
         ToolbarButton {
             index,
             on_click,
-            "data-state": if is_on { "on" } else { "off" },
             "aria-pressed": if is_on { "true" } else { "false" },
             {children}
         }

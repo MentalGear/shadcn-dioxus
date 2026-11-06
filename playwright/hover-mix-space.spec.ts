@@ -50,7 +50,7 @@ for (const scheme of ["light", "dark"] as const) {
     await open(page, "toggle", scheme);
     const t = page.locator("#component-preview-frame").getByRole("button", { name: "Toggle bookmark", exact: true });
     await t.click();
-    await expect(t).toHaveAttribute("data-state", "on");
+    await expect(t).toHaveAttribute("aria-pressed", "true");
     await page.mouse.move(0, 0);
     await expectFill(page, t, bg(t), step("var(--dx-accent)", 15), "toggle on");
   });
@@ -59,7 +59,7 @@ for (const scheme of ["light", "dark"] as const) {
     await open(page, "toggle_group", scheme);
     const item = page.locator("#component-preview-frame .dx-toggle-group-item").first();
     await item.click();
-    await expect(item).toHaveAttribute("data-state", "on");
+    await expect(item).toHaveAttribute("aria-pressed", "true");
     await page.mouse.move(0, 0);
     await expectFill(page, item, bg(item), step("var(--dx-accent)", 15), "toggle_group on");
   });
@@ -80,7 +80,7 @@ for (const scheme of ["light", "dark"] as const) {
     await gotoHydrated(page, `${BASE_URL}/component/block/?name=calendar&variant=range&${scheme === "dark" ? "dark_mode=true" : ""}`, GOTO);
     await page.waitForLoadState("networkidle");
     const cell = page
-      .locator('.dx-calendar-grid-cell[data-month="current"][data-today="true"]:not([data-selected="true"],[data-disabled="true"])')
+      .locator('.dx-calendar-grid-cell[data-month="current"][data-today="true"]:not([data-selected],[data-disabled])')
       .first();
     await cell.scrollIntoViewIfNeeded();
     await expect(cell).toBeVisible();

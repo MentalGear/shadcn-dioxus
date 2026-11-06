@@ -30,7 +30,7 @@ pub fn Checkbox(props: CheckboxProps) -> Element {
             ..props,
             checkbox::CheckboxIndicator { class: "dx-checkbox-indicator",
                 // The primitive mounts these for checked AND indeterminate; CSS shows the
-                // glyph that matches the indicator's `data-state` (never both).
+                // glyph that matches the indicator's `data-checked` / `data-indeterminate` (never both).
                 Check { class: "dx-checkbox-glyph-check", size: "1rem" }
                 Minus { class: "dx-checkbox-glyph-minus", size: "1rem" }
             }

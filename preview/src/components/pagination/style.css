@@ -95,7 +95,7 @@
 
 /* The current page: the outline Button, its label the picked accent's ink and its border the accent's mark under
  * an accent (row 389); `--dx-foreground` and the outline border with none. */
-.dx-pagination-link[data-active="true"] {
+.dx-pagination-link[data-active] {
   border-color: var(--dx-accent-mark, var(--light, var(--dx-border)) var(--dark, var(--dx-input)));
   background-color: var(--light, var(--dx-background))
     var(--dark, color-mix(in oklab, var(--dx-input-fill) 30%, transparent));
@@ -103,7 +103,7 @@
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .dx-pagination-link[data-active="true"]:hover {
+  .dx-pagination-link[data-active]:hover {
     background-color: var(--light, var(--dx-muted))
       var(--dark, color-mix(in oklab, var(--dx-input-fill) 50%, transparent));
     color: var(--dx-active-ink);
@@ -111,12 +111,12 @@
 }
 
 /* Every other page: the ghost Button. */
-.dx-pagination-link[data-active="false"] {
+.dx-pagination-link:not([data-active]) {
   background-color: transparent;
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .dx-pagination-link[data-active="false"]:hover {
+  .dx-pagination-link:not([data-active]):hover {
     background-color: var(--light, var(--dx-muted))
       var(--dark, color-mix(in oklab, var(--dx-muted) 50%, transparent));
     color: var(--dx-foreground);

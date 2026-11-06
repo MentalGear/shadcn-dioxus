@@ -57,11 +57,11 @@ test.describe("style tab", () => {
     // Installation and "Manual installation files" are both closed by default (rows 233, 236): the
     // reader opens Installation, then the manual files.
     const manual = page.locator(".dx-component-manual-install");
-    await expect(manual).toHaveAttribute("data-open", "false");
+    await expect(manual).not.toHaveAttribute("data-open");
     await page.locator("h3#installation > button").click();
-    await expect(manual).toHaveAttribute("data-open", "false");
+    await expect(manual).not.toHaveAttribute("data-open");
     await manual.locator("> .dx-collapsible-trigger").click();
-    await expect(manual).toHaveAttribute("data-open", "true");
+    await expect(manual).toHaveAttribute("data-open", "");
     await page.getByRole("tab", { name: "style.css" }).click();
 
     const styleCode = page.locator("pre code", { hasText: ".dx-kbd" });

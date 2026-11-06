@@ -102,7 +102,7 @@ test.describe("delay / close_delay (backlog row 166)", () => {
   const SLOP = 40; // timer clamping / clock granularity between two performance.now() stamps
   const trigger = (page: Page, name: string) => page.getByRole("button", { name, exact: true });
   const surface = (page: Page) => page.getByRole("tooltip");
-  const openSurface = (page: Page) => page.locator('[role="tooltip"][data-state="open"]');
+  const openSurface = (page: Page) => page.locator('[role="tooltip"][data-open]');
 
   test("nothing opens before `delay`: the default card waits 600 ms of pointer rest", async ({ page }) => {
     await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });

@@ -65,9 +65,9 @@
 //! `crate::use_dialog_open_driver` waits for the animations and transitions
 //! running on the dialog and its `::backdrop` to settle first, and Escape
 //! (`cancel`) is routed through state rather than closing natively. The
-//! `<dialog>` therefore carries its own `data-state` (`"open"`/`"closed"`) --
+//! `<dialog>` therefore carries its own `data-open` / `data-closed` --
 //! `[open]` stays set for the whole exit, so a stylesheet keys the exit on
-//! `[data-state="closed"]` -- and stays a real modal in the top layer, with the
+//! `[data-closed]` -- and stays a real modal in the top layer, with the
 //! viewport as its containing block, until the end. See that hook's doc for what
 //! this prevents (a closing Sheet/Drawer/Dialog changing size and
 //! position, clipped to a `content-visibility` ancestor, the moment it left the
@@ -219,7 +219,7 @@ pub struct DialogRootProps {
 /// ## Styling
 ///
 /// The [`DialogRoot`] component defines the following data attributes you can use to control styling:
-/// - `data-state`: Indicates if the dialog is open or closed. It can be either "open" or "closed".
+/// - `data-open` / `data-closed`: Exactly one is present: whether this part is open.
 /// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
 #[component]
 pub fn DialogRoot(props: DialogRootProps) -> Element {
@@ -357,7 +357,7 @@ pub struct DialogContentProps {
 /// ## Styling
 ///
 /// The [`DialogRoot`] component defines the following data attributes you can use to control styling:
-/// - `data-state`: Indicates if the dialog is open or closed. It can be either "open" or "closed".
+/// - `data-open` / `data-closed`: Exactly one is present: whether this part is open.
 /// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
 #[component]
 pub fn DialogContent(props: DialogContentProps) -> Element {
@@ -618,7 +618,7 @@ fn DialogContentModal(
             // The dialog's own state, not just the root wrapper's: closing keeps the
             // `<dialog>` open (and modal) while it animates out
             // (`crate::use_dialog_open_driver`), so `[open]` does not say "closing" and a
-            // stylesheet keys the exit on `[data-state="closed"]` instead.
+            // stylesheet keys the exit on `[data-closed]` instead.
             ..state_attrs::open(open()),
             "data-dx-overlay": overlay_off(ctx.overlay),
         }),

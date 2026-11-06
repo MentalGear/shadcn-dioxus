@@ -63,12 +63,12 @@ test("every component page has one closed Installation section with one CLI comm
       );
       return {
         h2Installation: installation.length,
-        installationOpen: item ? item.dataset.open : null,
+        installationOpen: item ? item.hasAttribute("data-open") : null,
         commands: item?.querySelectorAll(".dx-component-install-commands code").length ?? 0,
         commandText: item?.querySelector(".dx-component-install-commands code")?.textContent ?? "",
         manualCount: manual.length,
         manualInsideInstallation: manual.every((m) => item?.contains(m)),
-        manualOpen: manual.some((m) => m.dataset.open === "true"),
+        manualOpen: manual.some((m) => m.hasAttribute("data-open")),
         headerHasCommand: !!article.querySelector("header .dx-component-inline-command"),
         anyCommandOutsideInstallation: [...article.querySelectorAll(".dx-component-inline-command")].some(
           (c) => !item?.contains(c),
@@ -79,7 +79,7 @@ test("every component page has one closed Installation section with one CLI comm
     });
     const expected = `shadcn-dioxus add ${name}`;
     if (facts.h2Installation !== 1) problems.push(`${name}: ${facts.h2Installation} Installation headings`);
-    if (facts.installationOpen !== "false") problems.push(`${name}: Installation is not closed (${facts.installationOpen})`);
+    if (facts.installationOpen !== false) problems.push(`${name}: Installation is not closed (${facts.installationOpen})`);
     if (facts.commands !== 1) problems.push(`${name}: ${facts.commands} install commands in Installation`);
     if (facts.commandText !== expected) problems.push(`${name}: command is "${facts.commandText}", wanted "${expected}"`);
     if (facts.anyCommandOutsideInstallation || facts.headerHasCommand)
@@ -104,7 +104,7 @@ test("every docs section is an accordion item, closed except Usage notes, with i
       const items = accordions.flatMap((a) => [...a.querySelectorAll<HTMLElement>(":scope > .dx-accordion-item")]);
       const docsItems = items.filter((i) => i.querySelector(":scope > h3")?.id !== "installation");
       const openIds = items
-        .filter((i) => i.dataset.open !== "false")
+        .filter((i) => i.hasAttribute("data-open"))
         .map((i) => i.querySelector(":scope > h3")?.id ?? "?");
       return {
         sections: docsItems.length,
@@ -112,7 +112,7 @@ test("every docs section is an accordion item, closed except Usage notes, with i
         // Closed content is in the markup (`hidden="until-found"`), never unmounted or shown.
         notUntilFound: items.filter(
           (i) =>
-            i.dataset.open === "false" &&
+            !i.hasAttribute("data-open") &&
             i.querySelector(":scope > .dx-accordion-content")?.getAttribute("hidden") !== "until-found",
         ).length,
         // A docs heading that is not an item heading would be an uncollapsed section.
@@ -209,30 +209,30 @@ test("a demo's prose is a closed 'About this example' Collapsible under the demo
   // One per attachment variant that has a notes.md (nine), each closed, each right after its own demo.
   await expect(notes).toHaveCount(9);
   for (const note of await notes.all()) {
-    await expect(note).toHaveAttribute("data-open", "false");
+    await expect(note).not.toHaveAttribute("data-open");
     await expect(note.locator("> .dx-collapsible-trigger")).toHaveText("About this example");
   }
   const dialog = page.locator("h3", { hasText: /^dialog$/i });
   const dialogNote = dialog.locator("xpath=following-sibling::div[contains(@class,'dx-variant-notes')][1]");
   await expect(dialogNote).toContainText("AttachmentTrigger");
   await dialogNote.locator("> .dx-collapsible-trigger").click();
-  await expect(dialogNote).toHaveAttribute("data-open", "true");
+  await expect(dialogNote).toHaveAttribute("data-open", "");
   await expect(dialogNote.locator("code").first()).toBeVisible();
 });
 
 test("a fragment into a closed item opens it, on load and on hashchange", async ({ page }) => {
   await gotoHydrated(page, `${page_url("button")}#docs-component-structure`);
   const structure = itemOf(page, "docs-component-structure");
-  await expect(structure).toHaveAttribute("data-open", "true");
+  await expect(structure).toHaveAttribute("data-open", "");
   // Usage notes is the one item open without a fragment.
-  await expect(itemOf(page, "docs-usage-notes")).toHaveAttribute("data-open", "true");
+  await expect(itemOf(page, "docs-usage-notes")).toHaveAttribute("data-open", "");
   const installation = itemOf(page, "installation");
-  await expect(installation).toHaveAttribute("data-open", "false");
+  await expect(installation).not.toHaveAttribute("data-open");
 
   // The header link opens Installation and scrolls to it.
   await page.locator("header a.dx-component-install-link").click();
-  await expect(installation).toHaveAttribute("data-open", "true");
+  await expect(installation).toHaveAttribute("data-open", "");
   await expect(page.locator("#installation")).toBeInViewport();
   // Opening Installation does not open "Manual installation files" (row 236).
-  await expect(installation.locator(".dx-component-manual-install")).toHaveAttribute("data-open", "false");
+  await expect(installation.locator(".dx-component-manual-install")).not.toHaveAttribute("data-open");
 });

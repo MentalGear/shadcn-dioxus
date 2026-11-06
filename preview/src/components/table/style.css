@@ -41,7 +41,7 @@
   }
 }
 
-.dx-table-row[data-state="selected"] {
+.dx-table-row[data-selected] {
   background-color: var(--dx-table-selected-background);
 }
 

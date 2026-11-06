@@ -92,7 +92,7 @@ pub fn MenubarItem(props: MenubarItemProps) -> Element {
 /// reserves `padding-inline-start`; the three
 /// `--dx-menu-item-indicator-*` tokens and the construction are the same.
 /// The icon carries `dx-menubar-item-indicator`; it is drawn only while the
-/// primitive reports `data-state="checked"`.
+/// primitive reports `data-checked`.
 #[component]
 pub fn MenubarCheckboxItem(props: MenubarCheckboxItemProps) -> Element {
     let base = attributes!(div {

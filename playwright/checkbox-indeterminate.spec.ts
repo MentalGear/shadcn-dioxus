@@ -1,7 +1,7 @@
 /**
  * `CheckboxState::Indeterminate` must not render the Check tick in an UNFILLED box (an indicator that draws
- * its icon for any non-unchecked state, with a sheet that only styles `data-state="checked"`, does). By
- * construction the indicator holds both glyphs and CSS shows the one matching `data-state`, and the filled
+ * its icon for any non-unchecked state, with a sheet that only styles `data-checked`, does). By
+ * construction the indicator holds both glyphs and CSS shows the one matching the state attribute, and the filled
  * surface covers checked and indeterminate alike.
  */
 import { test, expect } from "./fixtures";
@@ -30,7 +30,7 @@ test("indeterminate shows a minus in a filled box, checked a tick, unchecked nei
   await gotoHydrated(page, URL_, GOTO);
   const box = demoRole(page, "checkbox", 0, "indeterminate");
   await box.scrollIntoViewIfNeeded();
-  await expect(box).toHaveAttribute("data-state", "indeterminate");
+  await expect(box).toHaveAttribute("data-indeterminate", "");
   await expect(box).toHaveAttribute("aria-checked", "mixed");
   const mixed = await glyphs(box);
   expect(mixed.minus).toBe(true);
@@ -39,12 +39,12 @@ test("indeterminate shows a minus in a filled box, checked a tick, unchecked nei
 
   // Clicking an indeterminate box unchecks it (primitive contract); the next click checks it.
   await box.click();
-  await expect(box).toHaveAttribute("data-state", "unchecked");
+  await expect(box).toHaveAttribute("data-unchecked", "");
   const off = await glyphs(box);
   expect(off.check).toBe(false);
   expect(off.minus).toBe(false);
   await box.click();
-  await expect(box).toHaveAttribute("data-state", "checked");
+  await expect(box).toHaveAttribute("data-checked", "");
   const on = await glyphs(box);
   expect(on.check).toBe(true);
   expect(on.minus).toBe(false);
@@ -55,12 +55,12 @@ test("table header goes indeterminate when some rows are selected, and a click s
   await gotoHydrated(page, URL_, GOTO);
   const header = demoRole(page, "checkbox", 0, "table");
   await header.scrollIntoViewIfNeeded();
-  await expect(header).toHaveAttribute("data-state", "indeterminate"); // demo starts with one row selected
+  await expect(header).toHaveAttribute("data-indeterminate", ""); // demo starts with one row selected
   expect((await glyphs(header)).minus).toBe(true);
   await header.click();
-  await expect(header).toHaveAttribute("data-state", "checked");
+  await expect(header).toHaveAttribute("data-checked", "");
   await header.click();
-  await expect(header).toHaveAttribute("data-state", "unchecked");
+  await expect(header).toHaveAttribute("data-unchecked", "");
 });
 
 for (const mode of ["light", "dark"] as const) {

@@ -47,15 +47,6 @@ pub enum SidebarState {
     Collapsed,
 }
 
-impl SidebarState {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            SidebarState::Expanded => "expanded",
-            SidebarState::Collapsed => "collapsed",
-        }
-    }
-}
-
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
 pub enum SidebarSide {
     #[default]
@@ -355,7 +346,7 @@ pub fn Sidebar(
         "data-slot": "sidebar",
         role: "complementary",
         aria_label: "Sidebar",
-        ..state_attrs::state(state().as_str()),
+        ..state_attrs::open(state() == SidebarState::Expanded),
     });
 
     rsx! {
@@ -741,7 +732,7 @@ pub fn SidebarMenuButton(
         "data-sidebar": "menu-button",
         "data-size": size.as_str(),
         "data-variant": variant.as_str(),
-        ..state_attrs::valued(state_attrs::Flag::Active, is_active),
+        ..state_attrs::presence(state_attrs::Flag::Active, is_active),
         // The ONE opt-out from another component's default trigger recipe (`:not([data-style])` in
         // dropdown_menu/ and collapsible/ style.css, the signal drawer/ and button/ use too): a sidebar
         // button is composed as `DropdownMenuTrigger as` / `CollapsibleTrigger as`, which render it
@@ -808,7 +799,7 @@ pub fn SidebarMenuAction(
         class: "dx-sidebar-menu-action",
         "data-slot": "sidebar-menu-action",
         "data-sidebar": "menu-action",
-        "data-show-on-hover": if show_on_hover { "true" } else { "false" },
+        "data-show-on-hover": show_on_hover.then_some(""),
         // Same opt-out as `SidebarMenuButton` (see there).
         "data-style": "sidebar",
     });
@@ -941,7 +932,7 @@ pub fn SidebarMenuSubButton(
         "data-slot": "sidebar-menu-sub-button",
         "data-sidebar": "menu-sub-button",
         "data-size": size.as_str(),
-        ..state_attrs::valued(state_attrs::Flag::Active, is_active),
+        ..state_attrs::presence(state_attrs::Flag::Active, is_active),
     });
     let merged = merge_attributes(vec![base, attributes]);
 

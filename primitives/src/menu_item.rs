@@ -59,7 +59,7 @@
 //!
 //! - **Roles and ARIA** -- `CheckableState::owned_attributes`: `role`
 //!   (`menuitemcheckbox`/`menuitemradio`, from `crate::menu_semantics`),
-//!   `aria-checked` (always present, `"true"` or `"false"`), `data-state`
+//!   `aria-checked` (always present, `"true"` or `"false"`), `data-checked` / `data-unchecked`
 //!   (`checked`/`unchecked`), `aria-disabled`, `data-disabled`, `tabindex`.
 //!   Owned by the primitive, so they win over a caller's own attributes.
 //! - **State** -- `use_checkbox_state` (controlled or uncontrolled
@@ -214,7 +214,7 @@ pub(crate) fn item_style_attributes(variant: MenuItemVariant, inset: bool) -> Ve
 pub(crate) fn item_state_attributes(disabled: bool, focused: bool) -> Vec<Attribute> {
     attributes!(div {
         aria_disabled: disabled,
-        ..state_attrs::disabled(disabled),
+        ..state_attrs::presence(state_attrs::Flag::Disabled, disabled),
         ..state_attrs::presence(state_attrs::Flag::Highlighted, focused),
         tabindex: if focused { "0" } else { "-1" },
     })
@@ -1130,12 +1130,12 @@ mod tests {
         assert_eq!(count(r#"aria-checked="true""#), 2, "{host}: {html}");
         assert_eq!(count(r#"aria-checked="false""#), 2, "{host}: {html}");
         assert_eq!(count("aria-checked="), 4, "{host}: {html}");
-        assert_eq!(count(r#"data-state="checked""#), 2, "{host}: {html}");
-        assert_eq!(count(r#"data-state="unchecked""#), 2, "{host}: {html}");
+        assert_eq!(count("data-checked"), 2, "{host}: {html}");
+        assert_eq!(count("data-unchecked"), 2, "{host}: {html}");
     }
 
     /// A checkable item holding the roving focus is `data-highlighted` (a presence attribute, absent
-    /// otherwise) and `data-checked` / `data-unchecked` beside `data-state`.
+    /// otherwise) and `data-checked` / `data-unchecked`.
     #[test]
     fn a_checkable_item_renders_highlighted_and_checked_as_presence() {
         let names = |focused: bool, checked: bool| {

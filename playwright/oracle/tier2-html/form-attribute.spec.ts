@@ -44,7 +44,7 @@ test.describe("Rule 8 -- the `form` attribute associates a control outside its <
   test("Checkbox, Switch and RadioGroup contribute through form=", async ({ page }) => {
     await gotoForm(page);
     await page.locator("#plan-outside-pro").click();
-    await expect(page.locator("#plan-outside-pro")).toHaveAttribute("data-state", "checked");
+    await expect(page.locator("#plan-outside-pro")).toHaveAttribute("data-checked", "");
     const entries = await submitAndRead(page);
     expect(entries).toContainEqual("terms-outside-lib=accepted");
     expect(entries).toContainEqual("notify-outside-lib=subscribed");
@@ -66,9 +66,9 @@ test.describe("Rule 8 -- the `form` attribute associates a control outside its <
     await page.locator("#switch-outside").click();
     await page.locator("#plan-outside-pro").click();
     await page.locator("#outside-reset").click();
-    await expect(page.locator("#chk-outside")).toHaveAttribute("data-state", "checked");
-    await expect(page.locator("#switch-outside")).toHaveAttribute("data-state", "checked");
-    await expect(page.locator("#plan-outside-starter")).toHaveAttribute("data-state", "checked");
+    await expect(page.locator("#chk-outside")).toHaveAttribute("data-checked", "");
+    await expect(page.locator("#switch-outside")).toHaveAttribute("data-checked", "");
+    await expect(page.locator("#plan-outside-starter")).toHaveAttribute("data-checked", "");
     const entries = await submitAndRead(page);
     expect(entries).toContainEqual("terms-outside-lib=accepted");
     expect(entries).toContainEqual("notify-outside-lib=subscribed");

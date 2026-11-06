@@ -170,7 +170,7 @@ pub fn DatePicker(props: DatePickerProps) -> Element {
     let defaults = attributes!(div { aria_label: "Date" });
     let owned = attributes!(div {
         role: "group",
-        ..state_attrs::disabled((props.disabled)()),
+        ..state_attrs::presence(state_attrs::Flag::Disabled, (props.disabled)()),
         "data-read-only": (props.read_only)().then_some("true"),
         ..state_attrs::readonly(props.read_only),
     });
@@ -379,7 +379,7 @@ pub fn DateRangePicker(props: DateRangePickerProps) -> Element {
     });
     let owned = attributes!(div {
         role: "group",
-        ..state_attrs::disabled((props.disabled)()),
+        ..state_attrs::presence(state_attrs::Flag::Disabled, (props.disabled)()),
         "data-read-only": (props.read_only)().then_some("true"),
         ..state_attrs::readonly(props.read_only),
     });

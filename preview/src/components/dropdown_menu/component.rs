@@ -185,7 +185,7 @@ pub fn DropdownMenuSubItem<T: Clone + PartialEq + 'static>(
 /// The icon carries `dx-dropdown-menu-item-indicator`, so it sits in the
 /// slot the item reserved at the inline end -- the same construction as the
 /// sub-trigger's chevron -- and a long label can never meet it. It is drawn
-/// only while the primitive reports `data-state="checked"`; an unchecked
+/// only while the primitive reports `data-checked`; an unchecked
 /// item keeps the slot, so labels never shift when an item is toggled.
 #[component]
 pub fn DropdownMenuCheckboxItem(props: DropdownMenuCheckboxItemProps) -> Element {

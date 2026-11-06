@@ -26,7 +26,7 @@
 
 /* The wrapper `div` `Drawer` renders around the `<dialog>` carries `data-dx-scrim` (`component.rs`): the
  * theme's one "The modal scrim without a top layer" rule paints it where there is no top layer (non-web
- * arm, `is_modal: false`), fades it with `data-state`, and drops it for `overlay: false`. Nothing to write here. */
+ * arm, `is_modal: false`), fades it with `data-open` / `data-closed`, and drops it for `overlay: false`. Nothing to write here. */
 
 /* The scrim (this dialog's top-layer `::backdrop`) is the ONE shared rule in
  * `dx-components-theme.css` ("The modal scrim, once"): keyed on any `<dialog>` with a `dx-`
@@ -38,7 +38,7 @@
  * Two independent motion systems share this element on purpose --
  * `primitives/src/drawer.rs`'s module doc has the full reasoning:
  *
- * - `translate`, via the recipe's `dx-edge-in-*`/`dx-edge-out-*` keyframes selected by `data-state`,
+ * - `translate`, via the recipe's `dx-edge-in-*`/`dx-edge-out-*` keyframes selected by `data-open` / `data-closed`,
  *   plays the programmatic (button/Escape/backdrop) slide-in/out.
  * - `transform`, set inline by the primitive only while a drag has moved the panel (and held while a
  *   drag-triggered close plays out), tracks the live pointer offset. A CSS `animation`'s value for a
@@ -86,7 +86,7 @@
   }
 }
 
-.dx-drawer[data-dragging="true"] {
+.dx-drawer[data-dragging] {
   transition: none;
 
   /* A drag gesture starts from a `pointerdown` anywhere on the content not
@@ -163,23 +163,23 @@
  * behind the child. Closing the child (the moment it STARTS to close) restores it. `scale` and `transform`
  * are the two properties the slide (`translate`) does not hold; the inline drag `transform` only exists
  * while this panel itself is dragged, which a modal child above it rules out. */
-.dx-drawer[data-nested-open="true"] {
+.dx-drawer[data-nested-open] {
   scale: var(--dx-drawer-nest-scale, 0.96);
 }
 
-.dx-drawer[data-nested-open="true"][data-side="bottom"] {
+.dx-drawer[data-nested-open][data-side="bottom"] {
   transform: translateY(calc(-1 * var(--dx-drawer-nest-shift, var(--dx-space-4))));
 }
 
-.dx-drawer[data-nested-open="true"][data-side="top"] {
+.dx-drawer[data-nested-open][data-side="top"] {
   transform: translateY(var(--dx-drawer-nest-shift, var(--dx-space-4)));
 }
 
-.dx-drawer[data-nested-open="true"][data-side="right"] {
+.dx-drawer[data-nested-open][data-side="right"] {
   transform: translateX(calc(-1 * var(--dx-drawer-nest-shift, var(--dx-space-4))));
 }
 
-.dx-drawer[data-nested-open="true"][data-side="left"] {
+.dx-drawer[data-nested-open][data-side="left"] {
   transform: translateX(var(--dx-drawer-nest-shift, var(--dx-space-4)));
 }
 
@@ -232,19 +232,19 @@
 }
 
 /* The nested stack on top of the snap rest. */
-.dx-drawer[data-snap][data-nested-open="true"][data-side="bottom"] {
+.dx-drawer[data-snap][data-nested-open][data-side="bottom"] {
   transform: translateY(calc(var(--dx-drawer-rest) - var(--dx-drawer-nest-shift, var(--dx-space-4)) + var(--dx-drawer-drag, 0px)));
 }
 
-.dx-drawer[data-snap][data-nested-open="true"][data-side="top"] {
+.dx-drawer[data-snap][data-nested-open][data-side="top"] {
   transform: translateY(calc(-1 * var(--dx-drawer-rest) + var(--dx-drawer-nest-shift, var(--dx-space-4)) + var(--dx-drawer-drag, 0px)));
 }
 
-.dx-drawer[data-snap][data-nested-open="true"][data-side="right"] {
+.dx-drawer[data-snap][data-nested-open][data-side="right"] {
   transform: translateX(calc(var(--dx-drawer-rest) - var(--dx-drawer-nest-shift, var(--dx-space-4)) + var(--dx-drawer-drag, 0px)));
 }
 
-.dx-drawer[data-snap][data-nested-open="true"][data-side="left"] {
+.dx-drawer[data-snap][data-nested-open][data-side="left"] {
   transform: translateX(calc(-1 * var(--dx-drawer-rest) + var(--dx-drawer-nest-shift, var(--dx-space-4)) + var(--dx-drawer-drag, 0px)));
 }
 
@@ -255,7 +255,7 @@
   pointer-events: none;
 }
 
-.dx-drawer-root[data-dx-modal="false"] .dx-drawer:not([data-state="closed"]) {
+.dx-drawer-root[data-dx-modal="false"] .dx-drawer:not([data-closed]) {
   pointer-events: auto;
 }
 
@@ -275,8 +275,8 @@
    * engines (and a user's drag routinely overshoots onto neighboring
    * text) -- always off, not just while `[data-dragging]` (below), since
    * a drag can only ever START from a `pointerdown`, before `dragging`
-   * flips true. No `-webkit-user-select` -- see `.dx-drawer[data-dragging=
-   * "true"]`'s identical note above. */
+   * flips true. No `-webkit-user-select` -- see the identical note on `.dx-drawer[data-dragging]`
+   * above. */
   user-select: none;
 }
 

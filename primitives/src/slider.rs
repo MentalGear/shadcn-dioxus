@@ -561,7 +561,7 @@ fn SliderImpl(props: SliderImplProps) -> Element {
     // with these literals on the same element (backlog row 93).
     let owned = attributes!(div {
         role: "group",
-        ..state_attrs::disabled(props.disabled),
+        ..state_attrs::presence(state_attrs::Flag::Disabled, props.disabled),
         "data-orientation": orientation,
         "data-direction": direction.as_str(),
     });
@@ -715,7 +715,7 @@ pub fn SliderTrack(props: SliderTrackProps) -> Element {
     };
 
     let owned = attributes!(div {
-        ..state_attrs::disabled(ctx.disabled),
+        ..state_attrs::presence(state_attrs::Flag::Disabled, ctx.disabled),
         "data-orientation": orientation,
     });
     let merged = merge_attributes(vec![props.attributes.clone(), owned]);
@@ -811,7 +811,7 @@ pub fn SliderRange(props: SliderRangeProps) -> Element {
     });
 
     let owned = attributes!(div {
-        ..state_attrs::disabled(ctx.disabled),
+        ..state_attrs::presence(state_attrs::Flag::Disabled, ctx.disabled),
         "data-orientation": orientation,
         style,
     });
@@ -946,9 +946,9 @@ pub fn SliderThumb(props: SliderThumbProps) -> Element {
         aria_valuemax: vmax,
         aria_valuenow: value,
         aria_orientation: orientation,
-        ..state_attrs::disabled(ctx.disabled),
+        ..state_attrs::presence(state_attrs::Flag::Disabled, ctx.disabled),
         "data-orientation": orientation,
-        ..state_attrs::valued(state_attrs::Flag::Dragging, ctx.dragging),
+        ..state_attrs::presence(state_attrs::Flag::Dragging, ctx.dragging),
         "data-index": index as i64,
         "data-direction": (ctx.direction)().as_str(),
         style,

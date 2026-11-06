@@ -317,17 +317,12 @@ fn calendar_day_attributes_always_includes_aria_label_selected_and_disabled() {
         find_attr(&attrs, "aria-label").unwrap().value,
         Text(aria_label(&state.date))
     );
-    assert_eq!(
-        find_attr(&attrs, "data-selected").unwrap().value,
-        Bool(false)
-    );
-    assert_eq!(
-        find_attr(&attrs, "data-disabled").unwrap().value,
-        Bool(false)
-    );
-    // backlog row 84: `aria-disabled` mirrors `data-disabled`
-    // exactly (same source value, same unconditional presence) -- see
-    // the comment in `calendar_day_attributes`.
+    // `data-selected` and `data-disabled` are presence attributes: absent here.
+    assert!(find_attr(&attrs, "data-selected").is_none());
+    assert!(find_attr(&attrs, "data-disabled").is_none());
+    // backlog row 84: `aria-disabled` has the same source value as
+    // `data-disabled` but is always written -- see the comment in
+    // `calendar_day_attributes`.
     assert_eq!(
         find_attr(&attrs, "aria-disabled").unwrap().value,
         Bool(false)
@@ -362,11 +357,18 @@ fn calendar_day_attributes_renders_true_valued_booleans_unquoted() {
     });
     let attrs = calendar_day_attributes(&state);
 
+    for name in ["data-selected", "data-disabled"] {
+        assert_eq!(
+            find_attr(&attrs, name)
+                .unwrap_or_else(|| panic!("missing {name}"))
+                .value,
+            Text(String::new()),
+            "{name} must be present and empty"
+        );
+    }
     for name in [
         "data-today",
-        "data-selected",
         "data-unavailable",
-        "data-disabled",
         "aria-disabled",
         "data-selection-start",
         "data-selection-between",
@@ -583,8 +585,8 @@ fn single_calendar_day_renders_today_selected_and_month_attributes() {
         aria_label(&date!(2024 - 06 - 15))
     )));
     assert!(html.contains("data-today=true"));
-    assert!(html.contains("data-selected=true"));
-    assert!(html.contains("data-disabled=false"));
+    assert!(html.contains(r#"data-selected="""#));
+    assert!(!html.contains("data-disabled"));
     assert!(html.contains("aria-disabled=false"));
     assert!(html.contains(r#"data-month="current""#));
     assert!(!html.contains("data-unavailable"));
@@ -683,7 +685,7 @@ fn range_calendar_day_renders_selection_start_between_and_end_attributes() {
     assert!(html.contains("data-selection-between=true"));
     assert!(html.contains("data-selection-end=true"));
     assert_eq!(
-        html.matches("data-selected=true").count(),
+        html.matches(r#"data-selected="""#).count(),
         3,
         "all three dates are within the inclusive selected range"
     );

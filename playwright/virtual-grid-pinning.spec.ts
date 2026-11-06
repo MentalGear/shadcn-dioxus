@@ -293,7 +293,7 @@ test.describe("row fill on pinned cells", () => {
     const checkbox = cell(g, 2, END_COLUMN).getByRole("checkbox");
     await checkbox.click();
     const row = g.locator('[role="row"][aria-rowindex="4"]');
-    await expect(row).toHaveAttribute("data-state", "selected");
+    await expect(row).toHaveAttribute("data-selected", "");
     await page.mouse.move(0, 0);
     const selected = await row.evaluate((el) => getComputedStyle(el).backgroundColor);
     expect(alphaOf(selected)).toBe(1);

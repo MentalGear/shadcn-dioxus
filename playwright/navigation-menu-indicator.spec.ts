@@ -12,7 +12,7 @@ test("the indicator tracks the open trigger at rest", async ({ page }) => {
   await gotoHydrated(page, URL, GOTO);
   const nav = page.getByRole("navigation", { name: "Indicator navigation menu" });
   const indicator = nav.locator(".dx-navigation-menu-indicator");
-  await expect(indicator).toHaveAttribute("data-state", "hidden");
+  await expect(indicator).toHaveAttribute("data-closed", "");
   await expect(indicator).toHaveCSS("opacity", "0");
 
   const centreOf = async (name: string) => {
@@ -30,7 +30,7 @@ test("the indicator tracks the open trigger at rest", async ({ page }) => {
   };
 
   await nav.getByRole("button", { name: "Learn" }).click();
-  await expect(indicator).toHaveAttribute("data-state", "visible");
+  await expect(indicator).toHaveAttribute("data-open", "");
   await expect(indicator).toHaveCSS("opacity", "1");
   let m = await centreOf("Learn");
   expect(Math.abs(m.a.x - m.t)).toBeLessThan(1.5);
@@ -38,11 +38,11 @@ test("the indicator tracks the open trigger at rest", async ({ page }) => {
   const firstX = m.a.x;
 
   await nav.getByRole("button", { name: "Build with the library" }).click();
-  await expect(indicator).toHaveAttribute("data-state", "visible");
+  await expect(indicator).toHaveAttribute("data-open", "");
   m = await centreOf("Build with the library");
   expect(Math.abs(m.a.x - m.t)).toBeLessThan(1.5);
   expect(m.a.x).toBeGreaterThan(firstX + 20);
 
   await page.keyboard.press("Escape");
-  await expect(indicator).toHaveAttribute("data-state", "hidden");
+  await expect(indicator).toHaveAttribute("data-closed", "");
 });

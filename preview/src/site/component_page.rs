@@ -89,7 +89,7 @@ pub(crate) fn use_open_section_for_hash() {
                  if (trigger) trigger.click();
                  const closed = [];
                  for (let p = target.parentElement; p; p = p.parentElement) {
-                     if (p.id && (p.getAttribute('hidden') === 'until-found' || p.getAttribute('data-open') === 'false')) closed.push(p);
+                     if (p.id && (p.getAttribute('hidden') === 'until-found' || p.hasAttribute('data-closed'))) closed.push(p);
                  }
                  closed.forEach((p) => p.dispatchEvent(new Event('beforematch')));
                  let frames = 0;

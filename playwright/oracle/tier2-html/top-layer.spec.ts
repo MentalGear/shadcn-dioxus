@@ -118,7 +118,7 @@
  *      `overflow: hidden` + `transform` + a height shorter than the
  *      content renders fully visible outside the clip.
  *   2. Light dismiss for `popover="auto"` — click outside closes it AND
- *      Rust state (`data-state` on the `PopoverRoot`) syncs.
+ *      Rust state (`data-open` on the `PopoverRoot`) syncs.
  *   3. Escape closes `popover="auto"` AND Rust state syncs.
  *   4. Top-layer stacking — a popover opened after a high-z-index sibling
  *      renders above it.
@@ -598,11 +598,11 @@ test.describe("Rule 2 — light dismiss for popover=auto (click outside closes i
     await expect(page.locator("#stack-native-content")).toBeHidden();
   });
 
-  test("Popover (non-modal): click outside closes it and syncs data-state", async ({ page }) => {
+  test("Popover (non-modal): click outside closes it and syncs data-open", async ({ page }) => {
     await gotoFixture(page);
     await page.locator("#stack-popover-trigger").evaluate((el) => (el as HTMLElement).click());
     await expect(page.locator("#stack-popover-content")).toBeVisible();
-    await expect(page.locator("#stack-popover-root")).toHaveAttribute("data-state", "open");
+    await expect(page.locator("#stack-popover-root")).toHaveAttribute("data-open", "");
 
     await page.locator("#outside-click-target").click();
 
@@ -610,10 +610,10 @@ test.describe("Rule 2 — light dismiss for popover=auto (click outside closes i
     // must independently learn about it (primitives/src/top_layer/popover_sync.rs
     // `use_popover_sync`'s `toggle` listener) -- assert both, since a
     // stranded signal (the exact defect class dev-docs/reference/platform-rationale.md
-    // Caveat 1 documents for <dialog>) would leave data-state="open" even
+    // Caveat 1 documents for <dialog>) would leave data-open even
     // though the content is gone.
     await expect(page.locator("#stack-popover-content")).toBeHidden();
-    await expect(page.locator("#stack-popover-root")).toHaveAttribute("data-state", "closed");
+    await expect(page.locator("#stack-popover-root")).toHaveAttribute("data-closed", "");
   });
 });
 
@@ -626,16 +626,16 @@ test.describe("Rule 3 — Escape closes popover=auto, and Rust state syncs", () 
     await expect(page.locator("#stack-native-content")).toBeHidden();
   });
 
-  test("Popover (non-modal): Escape closes it and syncs data-state", async ({ page }) => {
+  test("Popover (non-modal): Escape closes it and syncs data-open", async ({ page }) => {
     await gotoFixture(page);
     await page.locator("#stack-popover-trigger").evaluate((el) => (el as HTMLElement).click());
     await expect(page.locator("#stack-popover-content")).toBeVisible();
-    await expect(page.locator("#stack-popover-root")).toHaveAttribute("data-state", "open");
+    await expect(page.locator("#stack-popover-root")).toHaveAttribute("data-open", "");
 
     await page.keyboard.press("Escape");
 
     await expect(page.locator("#stack-popover-content")).toBeHidden();
-    await expect(page.locator("#stack-popover-root")).toHaveAttribute("data-state", "closed");
+    await expect(page.locator("#stack-popover-root")).toHaveAttribute("data-closed", "");
   });
 });
 
@@ -1444,7 +1444,7 @@ async function sampleOpenPlacement(page: Page, overlay: AnchoredOverlay) {
       const content = await readAtRest(contentLoc, (el) => {
         const r = (el as HTMLElement).getBoundingClientRect();
         return {
-          open: el.getAttribute("data-state") === "open",
+          open: el.hasAttribute("data-open"),
           top: r.top, left: r.left, right: r.right, bottom: r.bottom, width: r.width, height: r.height,
         };
       });

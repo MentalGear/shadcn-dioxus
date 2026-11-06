@@ -67,7 +67,7 @@ GATE = re.compile(r"use_motion\w*|use_entered_view_when|use_document_visible")
 # (stylesheet path, reason). The reason says WHY this loop is not paused by the gate.
 ALLOW = [
     ("preview/src/components/input_otp/style.css",
-     "the caret blink exists only on the ONE focused slot (`[data-active=\"true\"]::after`), i.e. while the "
+     "the caret blink exists only on the ONE focused slot (`[data-active]::after`), i.e. while the "
      "user is typing into that field: it is visible by definition, and a hidden tab renders no frames"),
 ]
 

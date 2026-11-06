@@ -51,15 +51,15 @@ test.describe("Tag group", () => {
       const core = tag(page, "core");
       const desktop = tag(page, "desktop");
 
-      await expect(bug).toHaveAttribute("data-selected", "true");
-      await expect(core).toHaveAttribute("data-selected", "false");
+      await expect(bug).toHaveAttribute("data-selected", "");
+      await expect(core).not.toHaveAttribute("data-selected");
 
       await core.click();
-      await expect(bug).toHaveAttribute("data-selected", "true");
-      await expect(core).toHaveAttribute("data-selected", "true");
+      await expect(bug).toHaveAttribute("data-selected", "");
+      await expect(core).toHaveAttribute("data-selected", "");
 
       await desktop.click();
-      await expect(desktop).toHaveAttribute("data-selected", "true");
+      await expect(desktop).toHaveAttribute("data-selected", "");
     });
 
     test("does not clear the last selected tag when empty selection is disallowed", async ({
@@ -67,29 +67,29 @@ test.describe("Tag group", () => {
     }) => {
       const bug = tag(page, "bug");
 
-      await expect(bug).toHaveAttribute("data-selected", "true");
+      await expect(bug).toHaveAttribute("data-selected", "");
       await bug.click();
-      await expect(bug).toHaveAttribute("data-selected", "true");
+      await expect(bug).toHaveAttribute("data-selected", "");
 
       await tag(page, "core").click();
       await bug.click();
-      await expect(bug).toHaveAttribute("data-selected", "false");
-      await expect(tag(page, "core")).toHaveAttribute("data-selected", "true");
+      await expect(bug).not.toHaveAttribute("data-selected");
+      await expect(tag(page, "core")).toHaveAttribute("data-selected", "");
     });
 
     test("marks disabled tags as non-interactive", async ({ page }) => {
       const feature = tag(page, "feature");
       const example = tag(page, "example");
 
-      await expect(feature).toHaveAttribute("data-disabled", "true");
+      await expect(feature).toHaveAttribute("data-disabled", "");
       await expect(feature).toHaveAttribute("aria-disabled", "true");
       await expect(feature).toHaveAttribute("tabindex", "-1");
-      await expect(feature).toHaveAttribute("data-selected", "false");
+      await expect(feature).not.toHaveAttribute("data-selected");
 
-      await expect(example).toHaveAttribute("data-disabled", "true");
+      await expect(example).toHaveAttribute("data-disabled", "");
       await expect(example).toHaveAttribute("aria-disabled", "true");
       await expect(example).toHaveAttribute("tabindex", "-1");
-      await expect(example).toHaveAttribute("data-selected", "false");
+      await expect(example).not.toHaveAttribute("data-selected");
     });
 
     test("clears selection on Escape", async ({ page }) => {
@@ -98,8 +98,8 @@ test.describe("Tag group", () => {
       await expect(bug).toBeFocused();
 
       await page.keyboard.press("Escape");
-      await expect(bug).toHaveAttribute("data-selected", "false");
-      await expect(tag(page, "core")).toHaveAttribute("data-selected", "false");
+      await expect(bug).not.toHaveAttribute("data-selected");
+      await expect(tag(page, "core")).not.toHaveAttribute("data-selected");
     });
   });
 
@@ -123,13 +123,13 @@ test.describe("Tag group", () => {
 
       await core.click();
       await expect(core).toBeFocused();
-      await expect(core).toHaveAttribute("data-selected", "true");
+      await expect(core).toHaveAttribute("data-selected", "");
 
       await page.keyboard.press("Space");
-      await expect(core).toHaveAttribute("data-selected", "false");
+      await expect(core).not.toHaveAttribute("data-selected");
 
       await page.keyboard.press("Space");
-      await expect(core).toHaveAttribute("data-selected", "true");
+      await expect(core).toHaveAttribute("data-selected", "");
     });
 
     test("Delete removes all selected tags", async ({ page }) => {
@@ -138,8 +138,8 @@ test.describe("Tag group", () => {
       const desktop = tag(page, "desktop");
 
       await core.click();
-      await expect(bug).toHaveAttribute("data-selected", "true");
-      await expect(core).toHaveAttribute("data-selected", "true");
+      await expect(bug).toHaveAttribute("data-selected", "");
+      await expect(core).toHaveAttribute("data-selected", "");
       await expect(core).toBeFocused();
 
       await page.keyboard.press("Delete");
@@ -177,19 +177,19 @@ test.describe("Tag group", () => {
       const core = group.getByRole("row", { name: "core" });
       const desktop = group.getByRole("row", { name: "desktop" });
 
-      await expect(bug).toHaveAttribute("data-selected", "true");
-      await expect(desktop).toHaveAttribute("data-selected", "true");
+      await expect(bug).toHaveAttribute("data-selected", "");
+      await expect(desktop).toHaveAttribute("data-selected", "");
 
       await core.click();
       await expect(core).toBeFocused();
-      await expect(core).toHaveAttribute("data-selected", "true");
+      await expect(core).toHaveAttribute("data-selected", "");
 
       await page.keyboard.press("Delete");
 
       await expect(bug).toHaveCount(0);
       await expect(core).toHaveCount(0);
       await expect(desktop).toBeVisible();
-      await expect(desktop).toHaveAttribute("data-selected", "true");
+      await expect(desktop).toHaveAttribute("data-selected", "");
       await expect(desktop).toBeFocused();
     });
   });

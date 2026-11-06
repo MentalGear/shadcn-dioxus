@@ -212,7 +212,7 @@ pub fn Combobox<T: Clone + PartialEq + 'static>(props: ComboboxProps<T>) -> Elem
 
     let owned = attributes!(div {
         ..state_attrs::open(open()),
-        ..state_attrs::disabled((props.disabled)()),
+        ..state_attrs::presence(state_attrs::Flag::Disabled, (props.disabled)()),
     });
     let merged = merge_attributes(vec![props.attributes.clone(), owned]);
 

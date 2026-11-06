@@ -44,9 +44,9 @@ test('dragging the Sidebar handle resizes both adjacent panels while the group\'
   if (!beforeLeft || !beforeRight) throw new Error('panel has no bounding box');
   const totalBefore = beforeLeft.width + beforeRight.width;
 
-  await expect(handle).toHaveAttribute('data-state', 'idle');
+  await expect(handle).not.toHaveAttribute('data-dragging');
   await dragHandleBy(page, handle, 80, 0);
-  await expect(handle).toHaveAttribute('data-state', 'idle');
+  await expect(handle).not.toHaveAttribute('data-dragging');
 
   const afterLeft = await left.boundingBox();
   const afterRight = await right.boundingBox();

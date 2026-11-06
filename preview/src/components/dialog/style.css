@@ -7,7 +7,7 @@
 
 /* The wrapper `div` `DialogRoot` renders around the `<dialog>` carries `data-dx-scrim` (`component.rs`): the
  * theme's one "The modal scrim without a top layer" rule paints it where there is no top layer (non-web
- * arm, `is_modal: false`), fades it with `data-state`, and drops it for `overlay: false`. Nothing to write here. */
+ * arm, `is_modal: false`), fades it with `data-open` / `data-closed`, and drops it for `overlay: false`. Nothing to write here. */
 
 /* The scrim (this dialog's top-layer `::backdrop`) is the ONE shared rule in
  * `dx-components-theme.css` ("The modal scrim, once"): keyed on any `<dialog>` with a `dx-`
@@ -15,7 +15,7 @@
  * panel. There is no `::backdrop` rule here to drift. */
 
 /* The panel fades and zooms with the same tokens (Nova's `fade-in-0 zoom-in-95`
- * / `fade-out-0 zoom-out-95`) and is visible only while `[open][data-state="open"]`;
+ * / `fade-out-0 zoom-out-95`) and is visible only while `[open][data-open]`;
  * the exit is the move back to the base rule, played while the dialog is still a
  * modal in the top layer. Until `showModal()` runs (a mounted dialog's first frames)
  * and after the final `close()`, `display: none` -- the UA rule this stylesheet's own
@@ -37,14 +37,14 @@ dialog.dx-dialog:not([open]) {
   display: none;
 }
 
-dialog.dx-dialog[open][data-state="open"] {
+dialog.dx-dialog[open][data-open] {
   opacity: 1;
   pointer-events: auto;
   transform: translate(-50%, -50%) scale(1); /* rtl-physical: the viewport-centering below */
 }
 
 @starting-style {
-  dialog.dx-dialog[open][data-state="open"] {
+  dialog.dx-dialog[open][data-open] {
     opacity: 0;
     transform: translate(-50%, -50%) scale(0.95); /* rtl-physical: the viewport-centering below */
   }

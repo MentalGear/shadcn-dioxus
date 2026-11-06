@@ -20,7 +20,7 @@ const ROOT = '[data-slot="drawer-root"]';
 async function openNonModal(page: Page, index: number) {
   await gotoHydrated(page, `${BASE_URL}/component/drawer/`, GOTO_OPTS);
   await demoRole(page, "button", index, "non_modal").click();
-  await expect(page.locator(ROOT)).toHaveAttribute("data-state", "open");
+  await expect(page.locator(ROOT)).toHaveAttribute("data-open", "");
   await awaitAnimationsSettled(page.locator(CONTENT));
 }
 
@@ -44,7 +44,7 @@ test("disable_pointer_dismissal: an outside press acts on the page and the drawe
   await expect(pageButton).toContainText("Page button: 0");
   await pageButton.click();
   await expect(pageButton).toContainText("Page button: 1");
-  await expect(page.locator(ROOT)).toHaveAttribute("data-state", "open");
+  await expect(page.locator(ROOT)).toHaveAttribute("data-open", "");
 });
 
 test("disable_pointer_dismissal: Escape and Close close it", async ({ page }) => {
@@ -52,7 +52,7 @@ test("disable_pointer_dismissal: Escape and Close close it", async ({ page }) =>
   await page.keyboard.press("Escape");
   await expect(page.locator(ROOT)).toHaveCount(0);
   await demoRole(page, "button", 2, "non_modal").click();
-  await expect(page.locator(ROOT)).toHaveAttribute("data-state", "open");
+  await expect(page.locator(ROOT)).toHaveAttribute("data-open", "");
   await page.locator(CONTENT).getByRole("button", { name: "Close" }).click();
   await expect(page.locator(ROOT)).toHaveCount(0);
 });

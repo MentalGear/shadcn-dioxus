@@ -50,7 +50,7 @@ pub fn DrawerContent(props: DrawerContentProps) -> Element {
         "dx-drawer".to_string()
     };
     // An edge panel of the theme's recipe (`dx-components-theme.css`, "Edge panel"), floating when it
-    // is a left or right one; the resolved `data-side` and `data-state` come from the primitive.
+    // is a left or right one; the resolved `data-side` and `data-open` / `data-closed` come from the primitive.
     let content_base = attributes!(div {
         "data-slot": "drawer-content",
         "data-dx-surface": "edge",

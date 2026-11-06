@@ -176,7 +176,7 @@ pub fn Calendar(props: CalendarProps) -> Element {
     });
     let owned = attributes!(div {
         role: "application",
-        ..state_attrs::disabled((props.disabled)()),
+        ..state_attrs::presence(state_attrs::Flag::Disabled, (props.disabled)()),
         "data-direction": direction.as_str(),
     });
     let merged = merge_attributes(vec![defaults, props.attributes.clone(), owned]);

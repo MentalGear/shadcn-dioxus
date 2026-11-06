@@ -6,7 +6,7 @@ import { gotoHydrated } from "./hydration";
 
 test("test", async ({ page }) => {
   await gotoHydrated(page, `${BASE_URL}/component/tabs/`);
-  let activeTab = page.locator('[role="tabpanel"][data-state="active"]:not(#component-preview-frame)')
+  let activeTab = page.locator('[role="tabpanel"][data-active]:not(#component-preview-frame)')
     .filter({ hasText: /^Tab \d Content$/ });
   let tab1Button = page.getByRole("tab", { name: "Tab 1" });
   let tab2Button = page.getByRole("tab", { name: "Tab 2" });
@@ -38,7 +38,7 @@ test("test", async ({ page }) => {
 test.describe("active tab keeps its color under the pointer", () => {
   // Same bug class as calendar/style.css's day hover (see calendar.spec.ts):
   // `.dx-tabs-trigger:hover` must not out-rank
-  // `.dx-tabs-trigger[data-state="active"]`, or clicking a tab -- which
+  // `.dx-tabs-trigger[data-active]`, or clicking a tab -- which
   // leaves the pointer resting on it -- would silently dim its text to the
   // plain hover tint instead of the active color. Runs in both themes: this
   // one (unlike calendar's) shows in light mode too, since
@@ -60,7 +60,7 @@ test.describe("active tab keeps its color under the pointer", () => {
 
       // Click Tab 2 -- Playwright's .click() leaves the pointer on it.
       await tab2Button.click();
-      await expect(tab2Button).toHaveAttribute("data-state", "active");
+      await expect(tab2Button).toHaveAttribute("data-active", "");
       expect(await tab2Button.evaluate((el) => el.matches(":hover"))).toBe(true);
       const activeAndHoveredColor = await settledColor(tab2Button);
 
@@ -89,7 +89,7 @@ test.describe("Axe automated scan", () => {
     // resolves to two elements (a Playwright strict-mode violation).
     await expect(
       page
-        .locator('[role="tabpanel"][data-state="active"]:not(#component-preview-frame)')
+        .locator('[role="tabpanel"][data-active]:not(#component-preview-frame)')
         .filter({ hasText: /^Tab \d Content$/ }),
     ).toContainText("Tab 2 Content");
     await expectNoAxeViolations(page, "tabs: tab 2 selected", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
@@ -136,8 +136,10 @@ test.describe("hidden_until_found", () => {
     for (const name of Object.keys(PANEL_TEXT)) {
       const isActive = name === active;
       await expect(tab(name)).toHaveAttribute("aria-selected", String(isActive));
-      await expect(tab(name)).toHaveAttribute("data-state", isActive ? "active" : "inactive");
-      await expect(panelOf(name)).toHaveAttribute("data-state", isActive ? "active" : "inactive");
+      if (isActive) await expect(tab(name)).toHaveAttribute("data-active", "");
+      else await expect(tab(name)).not.toHaveAttribute("data-active");
+      if (isActive) await expect(panelOf(name)).not.toHaveAttribute("data-hidden");
+      else await expect(panelOf(name)).toHaveAttribute("data-hidden", "");
       if (isActive) await expect(panelOf(name)).not.toHaveAttribute("hidden", /.*/);
       else await expect(panelOf(name)).toHaveAttribute("hidden", "until-found");
     }
@@ -154,7 +156,7 @@ test.describe("hidden_until_found", () => {
     // The default demo unmounts inactive panels: an empty, plain `hidden` element, no content.
     await expect(page.locator('[role="tabpanel"]', { hasText: "Tab 2 Content" })).toHaveCount(0);
     await expect(
-      page.locator('[role="tabpanel"][data-state="inactive"][hidden=""]').filter({ hasNotText: /\S/ }).first(),
+      page.locator('[role="tabpanel"][data-hidden][hidden=""]').filter({ hasNotText: /\S/ }).first(),
     ).toBeAttached();
     // And find-in-page reaches the opted-in text but not the unmounted text.
     expect(await page.evaluate(() => window.find("axolotl"))).toBe(true);
@@ -423,7 +425,7 @@ test.describe("the docs demo frame keeps its own chrome", () => {
 
   test("a default Tabs panel is framed by the zero-specificity default", async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/tabs/`);
-    const panel = page.locator('.dx-tabs[data-variant="default"] .dx-tabs-content-themed[data-state="active"]').first();
+    const panel = page.locator('.dx-tabs[data-variant="default"] .dx-tabs-content-themed[data-active]').first();
     await expect(panel).toBeVisible();
     await expect(panel).toHaveCSS("border-top-width", "1px");
     expect(await panel.evaluate((el) => getComputedStyle(el).backgroundColor)).not.toBe("rgba(0, 0, 0, 0)");

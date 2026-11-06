@@ -29,7 +29,7 @@
  * already owns.
  *
  * Design ("keyboard matrix oracle"): assert behaviour (open
- * state via data-state/aria-expanded/visibility, focus via
+ * state via data-open/aria-expanded/visibility, focus via
  * document.activeElement comparisons, aria-activedescendant), not
  * implementation details. Every test is titled
  * "<Component> — <Key>: <APG expectation>". A row the demo pages cannot
@@ -98,7 +98,7 @@ test.describe("APG Menu Button pattern — DropdownMenu trigger", () => {
 
     // Two assertions, one per half of the APG requirement: the menu opens (this one),
     // and focus moves to the first item (the second).
-    await expect(trigger, "Enter must open the menu").toHaveAttribute("data-state", "open");
+    await expect(trigger, "Enter must open the menu").toHaveAttribute("data-open", "");
     // Asserting the APG requirement directly, so a regression shows up as a red.
     // Source: primitives/src/dropdown_menu.rs DropdownMenu::handle_keydown's
     // Key::Enter arm calls `ctx.open_with_focus(CollectionPlacement::First)`, the
@@ -123,7 +123,7 @@ test.describe("APG Menu Button pattern — DropdownMenu trigger", () => {
       trigger,
       "Space opens the menu: the root keydown handler routes it through " +
         "`open_with_focus`, the same path as Enter.",
-    ).toHaveAttribute("data-state", "open");
+    ).toHaveAttribute("data-open", "");
     const active = await activeElement(page);
     expect(
       active.role,
@@ -145,10 +145,10 @@ test.describe("APG Menu Button pattern — DropdownMenu trigger", () => {
     // `ctx.open_with_focus(CollectionPlacement::First)` from a closed trigger and
     // `focus_next()` once open.
     expect(
-      await trigger.getAttribute("data-state"),
+      await trigger.getAttribute("data-open"),
       "APG (Optional): Down Arrow should open the menu, as a cold " +
         "Enter/Space press does (see those rows above).",
-    ).toBe("open");
+    ).not.toBeNull();
   });
 
   test("DropdownMenu trigger — Up Arrow (Optional): \"opens the menu and moves focus to the last menu item\"", async ({ page }) => {
@@ -163,10 +163,10 @@ test.describe("APG Menu Button pattern — DropdownMenu trigger", () => {
     // last item. Source: DropdownMenu::handle_keydown's Key::ArrowUp arm calls
     // `ctx.open_with_focus(CollectionPlacement::Last)` from a closed trigger.
     expect(
-      await trigger.getAttribute("data-state"),
+      await trigger.getAttribute("data-open"),
       "APG (Optional): Up Arrow should open the menu (the Key::ArrowUp arm " +
         "of dropdown_menu.rs does, focusing the last item).",
-    ).toBe("open");
+    ).not.toBeNull();
   });
 });
 
@@ -183,7 +183,7 @@ test.describe("APG Menu (opened from a menu button) pattern — DropdownMenu con
 
     await page.keyboard.press("Escape");
 
-    await expect(trigger).toHaveAttribute("data-state", "closed");
+    await expect(trigger).toHaveAttribute("data-closed", "");
     await expect(trigger, "Escape must return focus to the trigger").toBeFocused();
   });
 
@@ -220,8 +220,8 @@ test.describe("APG Menu (opened from a menu button) pattern — DropdownMenu con
     const chosen = (await popupItem(page, "menu", "menuitem", 2).innerText()).trim();
     await page.keyboard.press("Enter");
     await expect(demoRole(page, "button")).toHaveAttribute(
-      "data-state",
-      "closed",
+      "data-closed",
+      "",
     );
     await expect(demoFrame(page), "the demo reports the chosen item").toContainText(chosen);
   });
@@ -232,8 +232,8 @@ test.describe("APG Menu (opened from a menu button) pattern — DropdownMenu con
     const chosen = (await popupItem(page, "menu", "menuitem", 2).innerText()).trim();
     await page.keyboard.press("Space");
     await expect(demoRole(page, "button")).toHaveAttribute(
-      "data-state",
-      "closed",
+      "data-closed",
+      "",
     );
     await expect(demoFrame(page), "the demo reports the chosen item").toContainText(chosen);
   });
@@ -304,8 +304,8 @@ test.describe("APG Menu and Menubar pattern — Menubar", () => {
 
     const fileMenu = page.locator(".dx-menubar-content");
     await expect(fileMenu, "Enter must open the File submenu").toHaveAttribute(
-      "data-state",
-      "open",
+      "data-open",
+      "",
     );
     // APG requires focus to land on the submenu's first item. Asserting that
     // requirement directly. Source: menubar.rs MenubarMenu's onkeydown
@@ -346,7 +346,7 @@ test.describe("APG Menu and Menubar pattern — Menubar", () => {
     await page.keyboard.press("ArrowDown");
 
     const fileMenu = page.locator(".dx-menubar-content");
-    await expect(fileMenu).toHaveAttribute("data-state", "open");
+    await expect(fileMenu).toHaveAttribute("data-open", "");
     await expect(
       fileMenu.getByRole("menuitem").first(),
       "ArrowDown opens AND focuses the first item, the same as Enter and " +
@@ -382,7 +382,7 @@ test.describe("APG Menu and Menubar pattern — Menubar", () => {
     await fileTrigger.focus();
     await page.keyboard.press("ArrowDown");
     const fileMenu = page.locator(".dx-menubar-content");
-    await expect(fileMenu).toHaveAttribute("data-state", "open");
+    await expect(fileMenu).toHaveAttribute("data-open", "");
 
     await page.keyboard.press("Escape");
 
@@ -485,7 +485,7 @@ test.describe("APG Menu and Menubar pattern — Navbar nav dropdowns", () => {
     await page.keyboard.press("ArrowDown");
 
     const inputsMenu = page.locator(".dx-navbar-content");
-    await expect(inputsMenu).toHaveAttribute("data-state", "open");
+    await expect(inputsMenu).toHaveAttribute("data-open", "");
     await expect(inputsMenu.getByRole("menuitem").first()).toBeFocused();
 
     await page.keyboard.press("Escape");
@@ -536,7 +536,7 @@ test.describe("APG Combobox pattern (select-only) — Select trigger", () => {
     await page.keyboard.press("Enter");
 
     const listbox = page.getByRole("listbox");
-    await expect(listbox).toHaveAttribute("data-state", "open");
+    await expect(listbox).toHaveAttribute("data-open", "");
   });
 
   test("Select trigger — Enter: focus lands on an option, not the listbox container (roving DOM focus, not APG's own aria-activedescendant technique)", async ({ page }) => {
@@ -569,7 +569,7 @@ test.describe("APG Combobox pattern (select-only) — Select trigger", () => {
     const t = trigger(page);
     await t.focus();
     await page.keyboard.press("Space");
-    await expect(page.getByRole("listbox")).toHaveAttribute("data-state", "open");
+    await expect(page.getByRole("listbox")).toHaveAttribute("data-open", "");
   });
 
   test("Select trigger — Down Arrow: \"moves focus into the popup ... places focus on the first focusable element\"", async ({ page }) => {
@@ -609,7 +609,7 @@ test.describe("APG Combobox pattern (select-only) — Select trigger", () => {
     // Source: SelectTrigger's onkeydown checks `event.modifiers().alt()` on
     // ArrowDown and opens with `keep_trigger_focus` set (see
     // `SelectContext::keep_trigger_focus`), so focus stays on the trigger.
-    await expect(page.getByRole("listbox")).toHaveAttribute("data-state", "open");
+    await expect(page.getByRole("listbox")).toHaveAttribute("data-open", "");
     await expect(
       t,
       "APG (Optional): Alt+ArrowDown should open the popup WITHOUT moving " +
@@ -668,7 +668,7 @@ test.describe("APG Combobox pattern (select-only) — Select trigger", () => {
 // ============================================================================
 test.describe("APG Combobox pattern (editable) — Combobox", () => {
   const input = (page: Page) => demoRole(page, "combobox");
-  const listbox = (page: Page) => page.locator("[role='listbox'][data-state='open']");
+  const listbox = (page: Page) => page.locator("[role='listbox'][data-open]");
 
   test("Combobox input — Down Arrow: \"moves focus into the popup\" via aria-activedescendant (DOM focus stays on the combobox)", async ({ page }) => {
     await goto(page, "combobox");
@@ -756,7 +756,7 @@ test.describe("APG Accordion pattern — Accordion", () => {
   // file's "do not rely on memory" rule, only the pinned commit's own text
   // counts.)
   const items = (page: Page) =>
-    page.locator("[data-open]").filter({ has: page.getByRole("button") });
+    page.locator("[data-open], [data-closed]").filter({ has: page.getByRole("button") });
 
   test("AccordionTrigger — Enter: \"expands the associated panel\" / collapses an expanded one", async ({ page }) => {
     await goto(page, "accordion");
@@ -764,9 +764,9 @@ test.describe("APG Accordion pattern — Accordion", () => {
     const first = items(page).first();
     await buttons.first().focus();
     await page.keyboard.press("Enter");
-    await expect(first).toHaveAttribute("data-open", "true");
+    await expect(first).toHaveAttribute("data-open", "");
     await page.keyboard.press("Enter");
-    await expect(first).toHaveAttribute("data-open", "false");
+    await expect(first).not.toHaveAttribute("data-open");
   });
 
   test("AccordionTrigger — Space: \"expands the associated panel\" / collapses an expanded one", async ({ page }) => {
@@ -775,9 +775,9 @@ test.describe("APG Accordion pattern — Accordion", () => {
     const first = items(page).first();
     await buttons.first().focus();
     await page.keyboard.press("Space");
-    await expect(first).toHaveAttribute("data-open", "true");
+    await expect(first).toHaveAttribute("data-open", "");
     await page.keyboard.press("Space");
-    await expect(first).toHaveAttribute("data-open", "false");
+    await expect(first).not.toHaveAttribute("data-open");
   });
 
   test.skip(
@@ -865,7 +865,7 @@ test.describe("APG Alert Dialog pattern — AlertDialog", () => {
 // ============================================================================
 test.describe("APG Tabs pattern — Tabs", () => {
   const activeTabPanel = (page: Page) =>
-    demoFrame(page).locator('[role="tabpanel"][data-state="active"]');
+    demoFrame(page).locator('[role="tabpanel"][data-active]');
 
   test("TabTrigger — Right Arrow: \"Moves focus to the next tab\" WITHOUT activating it (this component implements manual activation)", async ({ page }) => {
     await goto(page, "tabs");
@@ -968,9 +968,9 @@ test.describe("APG Switch pattern — Switch", () => {
   test("Switch — Space: changes the state", async ({ page }) => {
     await goto(page, "switch");
     const el = demoRole(page, "switch");
-    await expect(el).toHaveAttribute("data-state", "unchecked");
+    await expect(el).toHaveAttribute("data-unchecked", "");
     await el.press("Space");
-    await expect(el).toHaveAttribute("data-state", "checked");
+    await expect(el).toHaveAttribute("data-checked", "");
   });
 
   test("Switch — Enter (Optional): changes the state", async ({ page }) => {
@@ -989,7 +989,7 @@ test.describe("APG Switch pattern — Switch", () => {
       "This component deliberately suppresses Enter (switch.rs " +
         "onkeydown calls prevent_default() on Key::Enter) -- a same-class " +
         "control (Toggle) responds to Enter for the identical action.",
-    ).toHaveAttribute("data-state", "unchecked");
+    ).toHaveAttribute("data-unchecked", "");
   });
 });
 
@@ -997,10 +997,10 @@ test.describe("APG Checkbox pattern — Checkbox", () => {
   test("Checkbox — Space: \"changes the state of the checkbox\"", async ({ page }) => {
     await goto(page, "checkbox");
     const el = demoRole(page, "checkbox");
-    await expect(el).toHaveAttribute("data-state", "unchecked");
+    await expect(el).toHaveAttribute("data-unchecked", "");
     await el.focus();
     await page.keyboard.press("Space");
-    await expect(el).toHaveAttribute("data-state", "checked");
+    await expect(el).toHaveAttribute("data-checked", "");
   });
 
   test("Checkbox — Enter: not specified by APG at all for checkbox (contrast with Switch's optional allowance)", async ({ page }) => {
@@ -1011,7 +1011,7 @@ test.describe("APG Checkbox pattern — Checkbox", () => {
     // checkbox.rs suppresses Enter the same way switch.rs does -- correctly
     // conservative here, since checkbox-pattern.html never even lists Enter
     // as optional the way switch-pattern.html does.
-    await expect(el).toHaveAttribute("data-state", "unchecked");
+    await expect(el).toHaveAttribute("data-unchecked", "");
   });
 });
 
@@ -1019,10 +1019,10 @@ test.describe("Button pattern (toggle button) — Toggle", () => {
   test("Toggle — Space: activates the button, flipping aria-pressed", async ({ page }) => {
     await goto(page, "toggle");
     const el = page.locator("#component-preview-frame").locator("button[aria-pressed]").first();
-    await expect(el).toHaveAttribute("data-state", "off");
+    await expect(el).toHaveAttribute("aria-pressed", "false");
     await el.focus();
     await page.keyboard.press("Space");
-    await expect(el).toHaveAttribute("data-state", "on");
+    await expect(el).toHaveAttribute("aria-pressed", "true");
   });
 
   test("Toggle — Enter: activates the button, flipping aria-pressed (unlike Switch/Checkbox, this component does NOT suppress Enter)", async ({ page }) => {
@@ -1036,7 +1036,7 @@ test.describe("Button pattern (toggle button) — Toggle", () => {
         "props.onkeydown, unset in this demo) -- native <button> Enter " +
         "activation runs unmodified, unlike Switch and Checkbox which both " +
         "explicitly prevent_default() on Key::Enter.",
-    ).toHaveAttribute("data-state", "on");
+    ).toHaveAttribute("aria-pressed", "true");
   });
 });
 
@@ -1053,7 +1053,7 @@ test.describe("APG Tabs-adjacent roving widget — ToggleGroup", () => {
     await b.click();
     await page.keyboard.press("ArrowRight");
     await expect(i).toBeFocused();
-    await expect(i).toHaveAttribute("data-state", "off");
+    await expect(i).toHaveAttribute("aria-pressed", "false");
   });
 
   test("ToggleGroupItem — Enter: activates (toggles on) the focused item", async ({ page }) => {
@@ -1064,7 +1064,7 @@ test.describe("APG Tabs-adjacent roving widget — ToggleGroup", () => {
     await b.click();
     await page.keyboard.press("ArrowRight");
     await page.keyboard.press("Enter");
-    await expect(i).toHaveAttribute("data-state", "on");
+    await expect(i).toHaveAttribute("aria-pressed", "true");
   });
 });
 

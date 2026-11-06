@@ -40,7 +40,7 @@ for (const mode of ["light", "dark"] as const) {
 
     test(`field/disabled: a disabled field dims its labels, not its description`, async ({ page }) => {
       const root = await open(page, "field", "disabled", mode);
-      const fields = root.locator(".dx-field[data-disabled='true']");
+      const fields = root.locator(".dx-field[data-disabled]");
       expect(await fields.count()).toBeGreaterThanOrEqual(2);
       const labels = fields.locator(".dx-field-label");
       expect(await labels.count()).toBeGreaterThanOrEqual(2);
@@ -51,7 +51,7 @@ for (const mode of ["light", "dark"] as const) {
       await expect(root.getByRole("textbox").first()).toBeDisabled();
       await expect(root.getByRole("switch").first()).toBeDisabled();
       // An enabled field next to them is not dimmed.
-      const enabled = root.locator(".dx-field:not([data-disabled='true']) > .dx-field-label");
+      const enabled = root.locator(".dx-field:not([data-disabled]) > .dx-field-label");
       expect(await css(enabled.first(), "opacity")).toBe("1");
       await expectNoAxeViolations(page, `field/disabled ${mode}`);
     });

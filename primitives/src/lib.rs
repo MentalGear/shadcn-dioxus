@@ -622,7 +622,7 @@ pub(crate) fn use_form_reset_listener(
 /// and its `::backdrop`'s) has settled, bounded by `DIALOG_EXIT_TIMEOUT_MS`, and only then
 /// calls `close()`: the same construction [`crate::popover`]'s modal arm uses, on
 /// every engine and for every dialog-engine modal. A stylesheet therefore keys
-/// its exit on the dialog's `data-state="closed"` (set by every caller of this
+/// its exit on the dialog's `data-closed` (set by every caller of this
 /// hook) and never needs an engine-specific keep-alive. With no animation at all
 /// (no stylesheet, reduced motion to `0s`) the wait is empty and it closes at once.
 ///
@@ -697,7 +697,7 @@ fn use_dialog_open_driver(
                 // The exit: whatever is animating or transitioning on the dialog itself or
                 // its ::backdrop (a pseudo-element animation reports the originating
                 // element as its target). `getAnimations()` flushes style first, so the
-                // transitions this very `data-state` flip started are already in the list.
+                // transitions this very `data-open` / `data-closed` flip started are already in the list.
                 // An infinite animation is never an exit, and a finished one is done.
                 const exiting = () => document.getAnimations().filter((a) =>
                     a.effect && a.effect.target === dialog && a.playState !== 'finished'
@@ -900,7 +900,7 @@ fn use_animated_open(
                         // Hold the element in the DOM for an extra ~250ms after
                         // the close animation finishes so external observers
                         // (e.g. Playwright polling) reliably see the
-                        // data-state="closed" element before it unmounts. The
+                        // data-closed element before it unmounts. The
                         // element is opacity:0 / pointer-events:none here, so
                         // the user sees nothing.
                         const hold = () => new Promise(r => setTimeout(r, 250));

@@ -147,9 +147,9 @@ pub fn TableFooter(
 #[derive(Props, Clone, PartialEq)]
 pub struct TableRowProps {
     /// Whether this row is selected (e.g. by a leading checkbox column in
-    /// the Data Table composition pattern). Renders `data-state="selected"`
+    /// the Data Table composition pattern). Renders `data-selected`
     /// when `true`, matching shadcn/ui's own `table.tsx`
-    /// (`data-state={row.getIsSelected() && "selected"}`); the attribute is
+    /// (`data-state={row.getIsSelected() && "selected"}` in shadcn); the attribute is
     /// omitted entirely rather than set to some "unselected" value when
     /// `false`, mirroring that same `&&` short-circuit.
     #[props(default)]
@@ -166,7 +166,7 @@ pub struct TableRowProps {
 #[component]
 pub fn TableRow(props: TableRowProps) -> Element {
     let base = attributes!(tr { class: "dx-table-row", "data-slot": "table-row" });
-    // `data-state` is state the wrapper computes from `props.selected`, not a
+    // `data-selected` is state the wrapper computes from `props.selected`, not a
     // caller-overridable default, so it is merged in LAST (owned wins) rather
     // than folded into `base` -- see the merge-precedence policy in
     // dev-docs/issues/duplicate-attribute-findings.md.
@@ -250,7 +250,7 @@ pub struct TableRowsProps {
     /// by its item, so focus and state inside a row move with it and the measured row heights
     /// follow the item.
     pub item_key: Option<Callback<usize, String>>,
-    /// Whether row `idx` is selected: sets `data-state="selected"` like [`TableRow`]'s
+    /// Whether row `idx` is selected: sets `data-selected` like [`TableRow`]'s
     /// `selected`. Read while rendering, so a selection a row reads re-renders the body.
     pub row_selected: Option<Callback<usize, bool>>,
     /// Extra attributes for the `<tr>` of row `idx`.

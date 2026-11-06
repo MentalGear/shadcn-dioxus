@@ -179,7 +179,7 @@ const SCENES: Record<string, Scene> = {
     open: async (page) => {
       await gotoComponent(page, "select");
       await page.getByRole("combobox").filter({ hasText: /Select an option|Apple|Banana/ }).click();
-      await expect(page.getByRole("listbox")).toHaveAttribute("data-state", "open");
+      await expect(page.getByRole("listbox")).toHaveAttribute("data-open", "");
     },
     probes: [
       {
@@ -197,13 +197,13 @@ const SCENES: Record<string, Scene> = {
       const input = page.getByRole("combobox", { name: "Select framework" });
       await input.focus();
       await page.keyboard.press("ArrowDown");
-      await expect(page.locator("[role='listbox'][data-state='open']")).toBeVisible();
+      await expect(page.locator("[role='listbox'][data-open]")).toBeVisible();
     },
     probes: [
       {
         name: "combobox option hovered",
-        target: (page) => page.locator("[role='listbox'][data-state='open']").getByRole("option", { name: "SvelteKit" }),
-        surface: (page) => page.locator("[role='listbox'][data-state='open']"),
+        target: (page) => page.locator("[role='listbox'][data-open]").getByRole("option", { name: "SvelteKit" }),
+        surface: (page) => page.locator("[role='listbox'][data-open]"),
         enter: hover,
         rest: async (page) => away(page),
       },
@@ -271,7 +271,7 @@ const SCENES: Record<string, Scene> = {
       {
         name: "calendar plain day hovered",
         target: (page) =>
-          preview(page).locator('.dx-calendar-grid-cell[data-month="current"]:not([data-today="true"]):not([data-selected="true"]):not([data-disabled="true"])').nth(3),
+          preview(page).locator('.dx-calendar-grid-cell[data-month="current"]:not([data-today="true"]):not([data-selected]):not([data-disabled])').nth(3),
         surface: (page) => preview(page).locator(".dx-calendar").first(),
         enter: hover,
         rest: async (page) => away(page),

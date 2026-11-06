@@ -345,8 +345,8 @@ async function waitSettled(locator: Locator) {
 /**
  * Records, in the BROWSER's clock (so Playwright round trips -- which a busy machine stretches to
  * seconds -- cannot blur a 300 ms dwell): when the LAST click lands, when a day first reads
- * `data-selected="true"` (and what state the popover was in right then), and when `dialog` flips to
- * `data-state="closed"`.
+ * `data-selected` (and what state the popover was in right then), and when `dialog` gains
+ * `data-closed`.
  */
 async function armDwellProbe(dialog: Locator) {
   await dialog.evaluate((d) => {
@@ -356,15 +356,15 @@ async function armDwellProbe(dialog: Locator) {
     new MutationObserver((records) => {
       for (const r of records) {
         const el = r.target as Element;
-        if (r.attributeName === "data-selected" && el.getAttribute("data-selected") === "true" && !w.__dwell.selected) {
+        if (r.attributeName === "data-selected" && el.getAttribute("data-selected") !== null && !w.__dwell.selected) {
           w.__dwell.selected = performance.now();
-          w.__dwell.stateAtSelected = d.getAttribute("data-state") ?? "";
+          w.__dwell.stateAtSelected = d.hasAttribute("data-open") ? "open" : d.hasAttribute("data-closed") ? "closed" : "";
         }
-        if (r.attributeName === "data-state" && el === d && d.getAttribute("data-state") === "closed" && !w.__dwell.closed) {
+        if (r.attributeName === "data-closed" && el === d && d.hasAttribute("data-closed") && !w.__dwell.closed) {
           w.__dwell.closed = performance.now();
         }
       }
-    }).observe(d, { attributes: true, attributeFilter: ["data-state", "data-selected"], subtree: true });
+    }).observe(d, { attributes: true, attributeFilter: ["data-open", "data-closed", "data-selected"], subtree: true });
   });
 }
 async function readDwell(page: Page) {
@@ -1452,7 +1452,7 @@ test.describe("Closing after a selection: dwell, then close", () => {
     await dayCell(dialog, a).click();
     // Well past the dwell: an incomplete range must not close the picker.
     await page.waitForTimeout(DWELL_MIN_MS * 3);
-    await expect(dialog).toHaveAttribute("data-state", "open");
+    await expect(dialog).toHaveAttribute("data-open", "");
 
     await dayCell(dialog, b).click();
     await expect(dialog).toBeHidden({ timeout: 15000 });
@@ -1474,8 +1474,8 @@ test.describe("Closing after a selection: dwell, then close", () => {
     // Select, then the user takes over 20 ms later (one page.evaluate: the gap is exactly that).
     await runSteps(dialog, [{ click: 12 }, { wait: 20 }, { key: "ArrowRight", on: 12 }]);
     await page.waitForTimeout(DWELL_MIN_MS * 3);
-    await expect(dialog).toHaveAttribute("data-state", "open");
-    await expect(dayCell(dialog, 12)).toHaveAttribute("data-selected", "true");
+    await expect(dialog).toHaveAttribute("data-open", "");
+    await expect(dayCell(dialog, 12)).toHaveAttribute("data-selected", "");
 
     // Escape closes it.
     await page.keyboard.press("Escape");
@@ -1489,7 +1489,7 @@ test.describe("Closing after a selection: dwell, then close", () => {
     await expect(dialog).toBeVisible();
 
     await runSteps(dialog, [{ click: 17 }, { wait: 80 }, { click: 17 }]); // inside the dwell
-    await expect(dayCell(dialog, 17)).toHaveAttribute("data-selected", "true");
+    await expect(dayCell(dialog, 17)).toHaveAttribute("data-selected", "");
     await expect(segment(page, "day", CLOSING)).toHaveText("17");
     await expect(dialog).toBeHidden({ timeout: 15000 });
     await expect(segment(page, "day", CLOSING)).toHaveText("17"); // and set once it has closed
@@ -1505,8 +1505,8 @@ test.describe("Closing after a selection: dwell, then close", () => {
     const { a, b, c } = await closingRangeDays(dialog);
     await runSteps(dialog, [{ click: a }, { wait: 20 }, { click: b }, { wait: 40 }, { pointerdown: c }, { click: c }]);
     await page.waitForTimeout(DWELL_MIN_MS * 3);
-    await expect(dialog).toHaveAttribute("data-state", "open"); // not closed under a half-picked range
-    await expect(dayCell(dialog, c)).toHaveAttribute("data-selected", "true");
+    await expect(dialog).toHaveAttribute("data-open", ""); // not closed under a half-picked range
+    await expect(dayCell(dialog, c)).toHaveAttribute("data-selected", "");
 
     // Escape abandons the half-picked range (RangeCalendar), and a second Escape closes the popover.
     await page.keyboard.press("Escape");
@@ -1526,7 +1526,7 @@ test.describe("Closing after a selection: dwell, then close", () => {
     await pickerTrigger(page, CLOSING).click(); // reopen: the original deadline is still to come, or has just passed
     await expect(dialog).toBeVisible();
     await page.waitForTimeout(DWELL_MIN_MS * 3);
-    await expect(dialog).toHaveAttribute("data-state", "open");
+    await expect(dialog).toHaveAttribute("data-open", "");
   });
 
   test("selecting another day during the dwell restarts it, and the popover closes once, measured from the last click", async ({ page }) => {
@@ -1553,15 +1553,15 @@ test.describe("close_on_select: false (variant=keep_open)", () => {
     await expect(dialog).toBeVisible();
 
     await dayCell(dialog, 14).click();
-    await expect(dayCell(dialog, 14)).toHaveAttribute("data-selected", "true");
+    await expect(dayCell(dialog, 14)).toHaveAttribute("data-selected", "");
     await page.waitForTimeout(DWELL_MIN_MS * 3);
-    await expect(dialog).toHaveAttribute("data-state", "open"); // well past the default dwell
+    await expect(dialog).toHaveAttribute("data-open", ""); // well past the default dwell
 
     // Another date can be tried without reopening.
     await dayCell(dialog, 16).click();
-    await expect(dayCell(dialog, 16)).toHaveAttribute("data-selected", "true");
+    await expect(dayCell(dialog, 16)).toHaveAttribute("data-selected", "");
     await page.waitForTimeout(DWELL_MIN_MS * 2);
-    await expect(dialog).toHaveAttribute("data-state", "open");
+    await expect(dialog).toHaveAttribute("data-open", "");
 
     await page.keyboard.press("Escape");
     await expect(dialog).toBeHidden({ timeout: 15000 });
@@ -1674,10 +1674,10 @@ test.describe("Apply / Cancel footer (confirm, the default) -- single picker (va
     await expect(dialog).toBeVisible();
 
     await dayCell(dialog, 15).click();
-    await expect(dayCell(dialog, 15)).toHaveAttribute("data-selected", "true");
+    await expect(dayCell(dialog, 15)).toHaveAttribute("data-selected", "");
     await expect(footerButton(dialog, "Apply")).toBeEnabled();
     await page.waitForTimeout(DWELL_MIN_MS * 3);
-    await expect(dialog).toHaveAttribute("data-state", "open");
+    await expect(dialog).toHaveAttribute("data-open", "");
     expect(await committedDay(page), "the input must keep the committed value while a selection is only staged").toBe(before);
     await expect(segment(page, "day")).not.toHaveText("15");
   });
@@ -1712,7 +1712,7 @@ test.describe("Apply / Cancel footer (confirm, the default) -- single picker (va
 
     await dayCell(dialog, 18).focus();
     await page.keyboard.press("Enter");
-    await expect(dayCell(dialog, 18)).toHaveAttribute("data-selected", "true");
+    await expect(dayCell(dialog, 18)).toHaveAttribute("data-selected", "");
     await expect(footerButton(dialog, "Apply")).toBeEnabled();
     await footerButton(dialog, "Apply").focus();
     await page.keyboard.press("Enter");
@@ -1731,9 +1731,9 @@ test.describe("Apply / Cancel footer (confirm, the default) -- single picker (va
 
     await pickerTrigger(page).click();
     await expect(dialog).toBeVisible();
-    await expect(dayCell(dialog, 15)).toHaveAttribute("data-selected", "true");
+    await expect(dayCell(dialog, 15)).toHaveAttribute("data-selected", "");
     await dayCell(dialog, 20).click();
-    await expect(dayCell(dialog, 20)).toHaveAttribute("data-selected", "true");
+    await expect(dayCell(dialog, 20)).toHaveAttribute("data-selected", "");
     await expect(footerButton(dialog, "Apply")).toBeEnabled();
     return dialog;
   }
@@ -1744,8 +1744,8 @@ test.describe("Apply / Cancel footer (confirm, the default) -- single picker (va
     // ...and the discarded 20 does not resurface on the next open.
     await pickerTrigger(page).click();
     await expect(dialog).toBeVisible();
-    await expect(dayCell(dialog, 15)).toHaveAttribute("data-selected", "true");
-    await expect(dayCell(dialog, 20)).not.toHaveAttribute("data-selected", "true");
+    await expect(dayCell(dialog, 15)).toHaveAttribute("data-selected", "");
+    await expect(dayCell(dialog, 20)).not.toHaveAttribute("data-selected", "");
     await expect(footerButton(dialog, "Apply")).toBeDisabled();
   }
 
@@ -1782,7 +1782,7 @@ test.describe("Apply / Cancel footer (confirm, the default) -- single picker (va
     const dialog = await commitFifteenThenStageTwenty(page);
     // 20 -> back to 15: the calendar reads it as a fresh selection, equal to the committed value.
     await dayCell(dialog, 15).click();
-    await expect(dayCell(dialog, 15)).toHaveAttribute("data-selected", "true");
+    await expect(dayCell(dialog, 15)).toHaveAttribute("data-selected", "");
     await expect(footerButton(dialog, "Apply")).toBeDisabled();
   });
 });
@@ -1798,12 +1798,12 @@ test.describe("Apply / Cancel footer (confirm, the default) -- range picker (var
     await dayCell(dialog, 6).click();
     await expect(footerButton(dialog, "Apply")).toBeDisabled(); // only the start: incomplete
     await page.waitForTimeout(DWELL_MIN_MS * 3);
-    await expect(dialog).toHaveAttribute("data-state", "open");
+    await expect(dialog).toHaveAttribute("data-open", "");
 
     await dayCell(dialog, 12).click();
     await expect(footerButton(dialog, "Apply")).toBeEnabled();
     await page.waitForTimeout(DWELL_MIN_MS * 3);
-    await expect(dialog).toHaveAttribute("data-state", "open"); // complete, but staged
+    await expect(dialog).toHaveAttribute("data-open", ""); // complete, but staged
     // The input keeps the committed (empty) range.
     await expect(rangeSegment(page, "start", "day", "range")).not.toHaveText("06");
 
@@ -1873,7 +1873,7 @@ test.describe("confirm: false demos follow their shadcn twin", () => {
     await dayCell(dialog, 6).first().click();
     await dayCell(dialog, 12).first().click();
     await page.waitForTimeout(DWELL_MIN_MS * 3);
-    await expect(dialog).toHaveAttribute("data-state", "open");
+    await expect(dialog).toHaveAttribute("data-open", "");
     await expect(rangeSegment(page, "start", "day", "multi_month")).toHaveText("06");
     await expect(rangeSegment(page, "end", "day", "multi_month")).toHaveText("12");
     await page.keyboard.press("Escape");
@@ -1887,7 +1887,7 @@ test.describe("confirm: false demos follow their shadcn twin", () => {
     await expect(dialog).toBeVisible();
     await dayCell(dialog, 14).click();
     await page.waitForTimeout(DWELL_MIN_MS * 3);
-    await expect(dialog).toHaveAttribute("data-state", "open");
+    await expect(dialog).toHaveAttribute("data-open", "");
     await expect(segment(page, "day", "internationalized")).toHaveText("14");
   });
 
@@ -2005,7 +2005,7 @@ test.describe("Natural language picker (variant=natural_language)", () => {
     await field(page).press("ArrowDown");
     const dialog = pickerContent(page, VARIANT);
     await expect(dialog).toBeVisible();
-    await expect(dayCell(dialog, 4)).toHaveAttribute("data-selected", "true");
+    await expect(dayCell(dialog, 4)).toHaveAttribute("data-selected", "");
   });
 
   test("the popover is end-aligned to the calendar button", async ({ page }) => {
@@ -2054,7 +2054,7 @@ test.describe("Natural language picker (variant=natural_language)", () => {
     await expect(dialog).toBeVisible();
     // The demo opens on a relative date ("In 2 days"), so which day is already selected depends on the run date:
     // clicking the selected day deselects it (field ""). Pick a day that is not selected.
-    const target = (await dayCell(dialog, 20).getAttribute("data-selected")) === "true" ? 21 : 20;
+    const target = (await dayCell(dialog, 20).getAttribute("data-selected")) !== null ? 21 : 20;
     await dayCell(dialog, target).click();
     await expect(dialog).toBeHidden({ timeout: 15000 });
     const value = await field(page).inputValue();

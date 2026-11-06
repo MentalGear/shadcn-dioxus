@@ -168,7 +168,7 @@ test.describe("Behavioural: variant-specific rendering", () => {
     // demo's own frame.
     await frame.getByRole("combobox").click();
     const listbox = page.getByRole("listbox");
-    await expect(listbox).toHaveAttribute("data-state", "open");
+    await expect(listbox).toHaveAttribute("data-open", "");
     await listbox.getByRole("option", { name: "Last 7 days" }).click();
     await expect(frame.locator('[data-slot="chart-hit-band"]')).toHaveCount(8);
   });

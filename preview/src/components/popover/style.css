@@ -73,7 +73,7 @@
 
 /* Modal-overlay scrim: the modal arm's `::backdrop` is the shared rule in
  * `dx-components-theme.css` ("The modal scrim, once"), the same one Dialog, AlertDialog, Sheet,
- * Drawer and CommandDialog use. Its visible state is keyed on `[open][data-state="open"]`; the
+ * Drawer and CommandDialog use. Its visible state is keyed on `[open][data-open]`; the
  * modal popover keeps its dialog open (and modal) until its exit animations settle
  * (`use_popover_modal_driver`), so `[open]` is set exactly while a scrim exists and the scrim fades
  * out with the panel. Only the modal arm has one: the non-modal arm (`<dialog popover="auto">`) is

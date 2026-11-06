@@ -246,22 +246,22 @@ for (const vp of VIEWPORTS) {
                 w: r.width,
                 h: r.height,
                 radius: cs.borderTopLeftRadius,
-                active: b.getAttribute("data-active"),
+                active: b.hasAttribute("data-active"),
                 bg: cs.backgroundColor,
               };
             }),
           );
         const assertUniform = (rows: Awaited<ReturnType<typeof read>>, label: string) => {
-          expect(rows.filter((r) => r.active === "true"), `${label}: exactly one active dot`).toHaveLength(1);
+          expect(rows.filter((r) => r.active), `${label}: exactly one active dot`).toHaveLength(1);
           for (const r of rows) {
             expect(r.w, `${label}: width == height`).toBeCloseTo(r.h, 1);
             expect(r.radius, `${label}: same radius on every dot`).toBe(rows[0].radius);
             expect(parseFloat(r.radius), `${label}: rounded, not 0`).toBeGreaterThan(0);
             expect(r.bg, `${label}: has a painted background`).not.toBe("rgba(0, 0, 0, 0)");
           }
-          const inactive = rows.filter((r) => r.active !== "true");
+          const inactive = rows.filter((r) => !r.active);
           expect(new Set(inactive.map((r) => r.bg)).size, `${label}: inactive dots share one colour`).toBe(1);
-          expect(rows.find((r) => r.active === "true")!.bg, `${label}: active differs from inactive`).not.toBe(
+          expect(rows.find((r) => r.active)!.bg, `${label}: active differs from inactive`).not.toBe(
             inactive[0].bg,
           );
         };
@@ -270,10 +270,10 @@ for (const vp of VIEWPORTS) {
         await frame.locator(".dx-carousel-next").click();
         await frame.locator(".dx-carousel-next").click();
         await expect(frame.getByText("Slide 3 of 5")).toBeVisible();
-        await expect(dots.nth(2)).toHaveAttribute("data-active", "true");
+        await expect(dots.nth(2)).toHaveAttribute("data-active", "");
         assertUniform(await read(), "after two Next clicks");
         await dots.nth(0).click();
-        await expect(dots.nth(0)).toHaveAttribute("data-active", "true");
+        await expect(dots.nth(0)).toHaveAttribute("data-active", "");
         assertUniform(await read(), "after picking dot 1");
       });
 

@@ -20,7 +20,7 @@
  * THE CONSTRUCTION these assertions pin down: `use_dialog_open_driver`
  * (`primitives/src/lib.rs`) defers `close()` until every animation on the dialog (and
  * its `::backdrop`) has settled, and the stylesheets key the exit on
- * `data-state="closed"` and hide the dialog with `display: none` while it is not
+ * `data-closed` and hide the dialog with `display: none` while it is not
  * `[open]`. So, on every engine and with no `overlay` transition:
  *   1. a dialog is never RENDERED outside the top layer -- not in the frames between
  *      mount and `showModal()`, not after `close()` begins its exit (`display !== none`
@@ -28,7 +28,7 @@
  *   2. its layout box (width, height, left, top) is constant for every rendered frame:
  *      the exit is motion by `transform`/`opacity`/`translate` only;
  *   3. `close()` really waited for the exit: the `close` event arrives at least as long
- *      after `data-state` flipped to "closed" as the longest animation that was running.
+ *      after `data-closed` appeared as the longest animation that was running.
  * 2 and 3 are measured in the browser's own events (a `MutationObserver` and the `close`
  * event, both timestamped on arrival), not by counting frames, which depend on how
  * starved the page's main thread is (dev-docs/backlog.md row 115); 1 and 2 are per-frame
@@ -52,7 +52,7 @@ export interface ExitFrame {
   open: boolean;
   /** `dialog.matches(":modal")`: in the top layer as a modal. */
   modal: boolean;
-  /** The dialog's own `data-state`. */
+  /** The dialog's own `data-open` / `data-closed` state. */
   state: string | null;
   /** Layout box, independent of transforms. */
   layout: { w: number; h: number; left: number; top: number };
@@ -68,7 +68,7 @@ export interface ExitCapture {
   closeEventAt: number | null;
   /** First sampled frame at which the dialog element was no longer in the DOM. */
   unmountedAt: number | null;
-  /** The longest `endTime` (ms) among the animations running on the dialog one frame after `data-state` flipped. */
+  /** The longest `endTime` (ms) among the animations running on the dialog one frame after `data-closed` appeared. */
   expectedExitMs: number;
   /** Whether the dialog element was gone from the DOM at the end. */
   unmounted: boolean;
@@ -103,7 +103,7 @@ export async function captureModalExit(
     const attach = (d: HTMLDialogElement) => {
       st.dlg = d;
       new MutationObserver(() => {
-        if (d.dataset.state === "closed" && st.closedAt === null) {
+        if (d.hasAttribute("data-closed") && st.closedAt === null) {
           st.closedAt = performance.now() - st.t0;
           // One frame later every transition/animation this flip started exists; the
           // longest of them is how long a correct driver has to keep the dialog open.
@@ -118,7 +118,7 @@ export async function captureModalExit(
             );
           });
         }
-      }).observe(d, { attributes: true, attributeFilter: ["data-state"] });
+      }).observe(d, { attributes: true, attributeFilter: ["data-open", "data-closed"] });
       d.addEventListener("close", () => {
         st.closeEventAt = performance.now() - st.t0;
       });
@@ -136,7 +136,7 @@ export async function captureModalExit(
             display: cs.display,
             open: el.hasAttribute("open"),
             modal: el.matches(":modal"),
-            state: el.getAttribute("data-state"),
+            state: el.hasAttribute("data-closed") ? "closed" : el.hasAttribute("data-open") ? "open" : null,
             layout: {
               w: el.offsetWidth,
               h: el.offsetHeight,
@@ -183,7 +183,7 @@ export async function captureModalExit(
         connected: d?.isConnected,
         modal: d?.matches(":modal"),
         open: d?.hasAttribute("open"),
-        state: d?.getAttribute("data-state"),
+        state: d ? (d.hasAttribute("data-closed") ? "closed" : d.hasAttribute("data-open") ? "open" : null) : undefined,
         animations: document
           .getAnimations()
           .filter((a) => (a.effect as KeyframeEffect | null)?.target === d)
@@ -258,7 +258,7 @@ export function assertModalExit(capture: ExitCapture, label: string): void {
   if (loose.length > 0) {
     fail(
       `the dialog was rendered ${loose.length} time(s) outside the top layer (display ${loose[0].display}, not :modal, ` +
-        `data-state ${loose[0].state}) -- out of it a fixed panel is sized and clipped by a layout-contained ancestor`,
+        `${loose[0].state}) -- out of it a fixed panel is sized and clipped by a layout-contained ancestor`,
     );
   }
 
@@ -269,7 +269,7 @@ export function assertModalExit(capture: ExitCapture, label: string): void {
     if (bad) {
       fail(
         `the layout ${key} changed from ${ref.layout[key]} to ${bad.layout[key]} at ${Math.round(bad.t)}ms ` +
-          `(data-state ${bad.state}, ${bad.modal ? "modal" : "NOT modal"}) -- a closing panel must move by transform only`,
+          `(${bad.state}, ${bad.modal ? "modal" : "NOT modal"}) -- a closing panel must move by transform only`,
       );
     }
   }
@@ -278,12 +278,12 @@ export function assertModalExit(capture: ExitCapture, label: string): void {
   //    hold) before its exit had played. Normally `close()` comes first and the wrapper unmounts
   //    the element a little later; on a starved main thread the wrapper's unmount can win the race,
   //    which is harmless -- either way the exit had to run to its end first.
-  if (capture.closedAt === null) fail("data-state never flipped to closed");
+  if (capture.closedAt === null) fail("data-closed never appeared");
   const endedAt = capture.closeEventAt ?? capture.unmountedAt;
   if (endedAt === null) fail("the dialog was neither close()d nor unmounted");
   const waited = (endedAt as number) - (capture.closedAt as number);
   if (waited < capture.expectedExitMs - EXIT_WAIT_SLACK_MS) {
-    fail(`the dialog left the top layer ${Math.round(waited)}ms after data-state=closed, but the exit runs ${Math.round(capture.expectedExitMs)}ms -- it cut the exit short`);
+    fail(`the dialog left the top layer ${Math.round(waited)}ms after data-closed appeared, but the exit runs ${Math.round(capture.expectedExitMs)}ms -- it cut the exit short`);
   }
   if (!capture.unmounted) fail("the dialog was never unmounted");
 }

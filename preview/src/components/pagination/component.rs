@@ -130,7 +130,7 @@ pub fn PaginationLink(props: PaginationLinkProps) -> Element {
     // caller default -- owned-wins, merged after the caller's own
     // attributes.
     let owned = attributes!(a {
-        ..state_attrs::valued(state_attrs::Flag::Active, props.is_active),
+        ..state_attrs::presence(state_attrs::Flag::Active, props.is_active),
         ..state_attrs::presence(state_attrs::Flag::Disabled, props.disabled),
         "data-size": props.size.class(),
         "data-kind": data_kind,

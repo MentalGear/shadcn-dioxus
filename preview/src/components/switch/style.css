@@ -73,7 +73,7 @@
   transition: background-color var(--dx-motion-duration-base), box-shadow var(--dx-motion-duration-base);
 }
 
-.dx-switch[data-state="checked"]::before {
+.dx-switch[data-checked]::before {
   background-color: var(--dx-primary);
 }
 
@@ -93,7 +93,7 @@
 /* Nova: `aria-invalid:border-destructive ring-3 ring-destructive/20 dark:ring-destructive/40`. After the
  * focus rule so a focused invalid switch stays red. */
 .dx-switch[aria-invalid="true"]::before,
-.dx-switch[data-invalid="true"]::before {
+.dx-switch[data-invalid]::before {
   box-shadow: var(--dx-ring-invalid-field);
 }
 
@@ -117,7 +117,7 @@
   will-change: transform;
 }
 
-.dx-switch[data-state="checked"] .dx-switch-thumb {
+.dx-switch[data-checked] .dx-switch-thumb {
   background-color: var(--light, var(--dx-background)) var(--dark, var(--dx-primary-foreground));
   transform: translateX(calc(var(--dx-switch-width) - 1px - var(--dx-switch-thumb-size))); /* rtl-physical: see .dx-switch-thumb's comment above */
 }
@@ -129,12 +129,12 @@
   transform: translateX(-1px); /* rtl-physical */
 }
 
-[dir="rtl"] .dx-switch[data-state="checked"] .dx-switch-thumb {
+[dir="rtl"] .dx-switch[data-checked] .dx-switch-thumb {
   transform: translateX(calc(-1 * (var(--dx-switch-width) - 1px - var(--dx-switch-thumb-size)))); /* rtl-physical */
 }
 
 /* Only apply disabled styles when data-disabled is "true" */
-.dx-switch[data-disabled="true"] {
+.dx-switch[data-disabled] {
   cursor: not-allowed;
   opacity: var(--dx-opacity-disabled);
 }

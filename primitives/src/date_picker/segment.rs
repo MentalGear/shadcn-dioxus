@@ -666,7 +666,7 @@ pub(super) fn DateSegment<T: Clone + Copy + SegmentInt + FromStr + Display + 'st
         aria_readonly: ctx.is_read_only().then_some("true"),
         tabindex: "0",
         "no-date": (props.value)().is_none(),
-        ..state_attrs::disabled((ctx.disabled)()),
+        ..state_attrs::presence(state_attrs::Flag::Disabled, (ctx.disabled)()),
     });
     let merged = merge_attributes(vec![defaults, props.attributes.clone(), owned]);
 

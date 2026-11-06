@@ -45,27 +45,27 @@ test.describe("sidebar: block route", () => {
     await gotoSidebarBlock(page);
 
     const sidebar = page.locator('[data-slot="sidebar"]:not([data-mobile="true"])');
-    await expect(sidebar).toHaveAttribute("data-state", "expanded");
+    await expect(sidebar).toHaveAttribute("data-open", "");
     const trigger = page.locator('[data-slot="sidebar-trigger"]');
     await expect(trigger).toHaveAccessibleName("Toggle Sidebar");
 
     // Toggle via button.
     await trigger.click();
-    await expect(sidebar).toHaveAttribute("data-state", "collapsed");
+    await expect(sidebar).toHaveAttribute("data-closed", "");
     await trigger.click();
-    await expect(sidebar).toHaveAttribute("data-state", "expanded");
+    await expect(sidebar).toHaveAttribute("data-open", "");
 
     // Toggle via keyboard shortcut (⌘/Ctrl+B).
     await page.keyboard.press("Control+b");
-    await expect(sidebar).toHaveAttribute("data-state", "collapsed");
+    await expect(sidebar).toHaveAttribute("data-closed", "");
     await page.keyboard.press("Control+b");
-    await expect(sidebar).toHaveAttribute("data-state", "expanded");
+    await expect(sidebar).toHaveAttribute("data-open", "");
   });
 
   test("desktop: Ctrl+B is left to a text field, a contenteditable and a handler that prevented it (row 397)", async ({ page }) => {
     await gotoSidebarBlock(page);
     const sidebar = page.locator('[data-slot="sidebar"]:not([data-mobile="true"])');
-    await expect(sidebar).toHaveAttribute("data-state", "expanded");
+    await expect(sidebar).toHaveAttribute("data-open", "");
     await page.evaluate(() => {
       const input = Object.assign(document.createElement("input"), { id: "probe-input", ariaLabel: "probe" });
       const editor = Object.assign(document.createElement("div"), { id: "probe-editor", contentEditable: "true" });
@@ -85,13 +85,13 @@ test.describe("sidebar: block route", () => {
       });
       if (id !== "probe-bold") expect(prevented, `${id}: the key is not swallowed`).toBe(false);
       await page.keyboard.press("Control+b");
-      await expect(sidebar, `${id}: Ctrl+B does not toggle the sidebar`).toHaveAttribute("data-state", "expanded");
+      await expect(sidebar, `${id}: Ctrl+B does not toggle the sidebar`).toHaveAttribute("data-open", "");
     }
 
     // Outside an editable target the shortcut still toggles.
     await page.evaluate(() => (document.activeElement as HTMLElement).blur());
     await page.keyboard.press("Control+b");
-    await expect(sidebar).toHaveAttribute("data-state", "collapsed");
+    await expect(sidebar).toHaveAttribute("data-closed", "");
   });
 
   test("desktop: side switch updates data-side", async ({ page }) => {
@@ -161,7 +161,7 @@ test.describe("sidebar: block route", () => {
     await page.getByRole("button", { name: "Icon" }).click();
     await trigger.click();
 
-    await expect(sidebar).toHaveAttribute("data-state", "collapsed");
+    await expect(sidebar).toHaveAttribute("data-closed", "");
     await expect(sidebar).toHaveAttribute("data-collapsible", "icon");
 
     // In icon-collapsed mode, tooltips should appear on keyboard focus.
@@ -189,7 +189,7 @@ test.describe("sidebar: block route", () => {
     await trigger.tap();
 
     const sheet = page.locator('[data-slot="sheet-root"]');
-    await expect(sheet).toHaveAttribute("data-state", "open");
+    await expect(sheet).toHaveAttribute("data-open", "");
     await page.keyboard.press("Escape");
     await expect(sheet).toHaveCount(0);
     await expect(trigger).toBeFocused();
@@ -215,7 +215,7 @@ test.describe("Axe automated scan", () => {
     const sidebar = page.locator('[data-slot="sidebar"]:not([data-mobile="true"])');
     const trigger = page.locator('[data-slot="sidebar-trigger"]');
     await trigger.click();
-    await expect(sidebar).toHaveAttribute("data-state", "collapsed");
+    await expect(sidebar).toHaveAttribute("data-closed", "");
     await expectNoAxeViolations(page, "sidebar: collapsed", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });
 });

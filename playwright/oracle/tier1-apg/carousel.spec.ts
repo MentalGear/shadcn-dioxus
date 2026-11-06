@@ -304,11 +304,11 @@ test.describe("Library: our own carousel primitive (main variant)", () => {
 
     await next.focus();
     await page.keyboard.press("Enter");
-    await expect(slide(frame, 2)).toHaveAttribute("data-selected", "true");
+    await expect(slide(frame, 2)).toHaveAttribute("data-selected", "");
     await expect(next).toBeFocused();
 
     await page.keyboard.press("Space");
-    await expect(slide(frame, 3)).toHaveAttribute("data-selected", "true");
+    await expect(slide(frame, 3)).toHaveAttribute("data-selected", "");
     await expect(next).toBeFocused();
   });
 
@@ -526,11 +526,11 @@ test.describe("Library: our own carousel primitive (indicators variant)", () => 
     await page.keyboard.press("ArrowRight");
     await expect(tabs.nth(1)).toBeFocused();
     await expect(tabs.nth(1)).toHaveAttribute("aria-selected", "true");
-    await expect(panel(2)).toHaveAttribute("data-selected", "true");
+    await expect(panel(2)).toHaveAttribute("data-selected", "");
 
     await page.keyboard.press("ArrowLeft");
     await expect(tabs.nth(0)).toBeFocused();
-    await expect(panel(1)).toHaveAttribute("data-selected", "true");
+    await expect(panel(1)).toHaveAttribute("data-selected", "");
 
     // Wrap at the start.
     await page.keyboard.press("ArrowLeft");
@@ -543,11 +543,11 @@ test.describe("Library: our own carousel primitive (indicators variant)", () => 
 
     await page.keyboard.press("End");
     await expect(tabs.nth(4)).toBeFocused();
-    await expect(panel(5)).toHaveAttribute("data-selected", "true");
+    await expect(panel(5)).toHaveAttribute("data-selected", "");
 
     await page.keyboard.press("Home");
     await expect(tabs.nth(0)).toBeFocused();
-    await expect(panel(1)).toHaveAttribute("data-selected", "true");
+    await expect(panel(1)).toHaveAttribute("data-selected", "");
   });
 
   test("R9: the tablist precedes the slide content in document order", async ({ page }) => {

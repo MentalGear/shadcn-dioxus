@@ -23,7 +23,7 @@ async function open(page: Page, variant: string, mode: "light" | "dark" = "light
 const field = (root: Locator) => root.locator("[data-dx-combobox-chips]");
 const chips = (root: Locator) => root.locator("[data-dx-combobox-chip]");
 const chipLabels = (root: Locator) => chips(root).locator("> span");
-const listbox = (page: Page) => page.locator("[role='listbox'][data-state='open']");
+const listbox = (page: Page) => page.locator("[role='listbox'][data-open]");
 
 test("chips render the selection; options toggle and the list stays open", async ({ page }) => {
     const root = await open(page, "multiple");

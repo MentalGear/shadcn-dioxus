@@ -733,12 +733,12 @@ pub fn QuestionnaireItem(props: QuestionnaireItemProps) -> Element {
         aria_describedby: (!described.is_empty()).then(|| described.join(" ")),
         aria_invalid: invalid.then_some("true"),
         aria_keyshortcuts: key_shortcuts,
-        ..state_attrs::presence_true(state_attrs::Flag::Active, active),
+        ..state_attrs::presence(state_attrs::Flag::Active, active),
         "data-status": status.as_str(),
-        ..state_attrs::presence_true(state_attrs::Flag::Invalid, invalid),
+        ..state_attrs::presence(state_attrs::Flag::Invalid, invalid),
         "data-required": required.then_some("true"),
         "data-multiple": multiple.then_some("true"),
-        ..state_attrs::presence_true(state_attrs::Flag::Disabled, disabled),
+        ..state_attrs::presence(state_attrs::Flag::Disabled, disabled),
         onfocus: move |_| ctx.claim_focus(KeyTarget::Item(focus_name.clone())),
     });
     let merged = merge_attributes(vec![base, props.attributes]);
@@ -879,8 +879,8 @@ pub fn QuestionnaireChoice(props: QuestionnaireChoiceProps) -> Element {
     let base = attributes!(label {
         ..state_attrs::presence(state_attrs::Flag::Checked, state.checked),
         ..state_attrs::presence(state_attrs::Flag::Unchecked, !state.checked),
-        ..state_attrs::presence_true(state_attrs::Flag::Disabled, state.disabled),
-        ..state_attrs::presence_true(state_attrs::Flag::Invalid, state.invalid),
+        ..state_attrs::presence(state_attrs::Flag::Disabled, state.disabled),
+        ..state_attrs::presence(state_attrs::Flag::Invalid, state.invalid),
         "data-type": if state.multiple { "checkbox" } else { "radio" },
         "data-shortcut": state.shortcut.clone(),
     });
@@ -1031,8 +1031,8 @@ pub fn QuestionnaireInput(props: QuestionnaireInputProps) -> Element {
         disabled: disabled,
         aria_invalid: invalid.then_some("true"),
         aria_keyshortcuts: key_shortcuts,
-        "data-filled": filled.then_some("true"),
-        "data-empty": (!filled).then_some("true"),
+        "data-filled": filled.then_some(""),
+        ..state_attrs::presence(state_attrs::Flag::Empty, !filled),
         onfocus: move |_| {
             ctx.claim_focus(KeyTarget::Answer {
                 item: focus_item.clone(),
@@ -1090,7 +1090,7 @@ pub fn QuestionnaireError(props: QuestionnaireErrorProps) -> Element {
         id: id,
         hidden: !invalid,
         role: invalid.then_some("alert"),
-        ..state_attrs::presence_true(state_attrs::Flag::Invalid, invalid),
+        ..state_attrs::presence(state_attrs::Flag::Invalid, invalid),
     });
     let merged = merge_attributes(vec![base, props.attributes]);
     let message = if required {
@@ -1187,8 +1187,8 @@ pub fn use_questionnaire_action(
         aria_hidden: (!visible).then_some("true"),
         tabindex: (!visible).then_some(-1),
         aria_keyshortcuts: shortcut.then_some("Enter"),
-        "data-visible": visible.then_some("true"),
-        "data-hidden": (!visible).then_some("true"),
+        "data-visible": visible.then_some(""),
+        ..state_attrs::presence(state_attrs::Flag::Hidden, !visible),
         "data-status": status.map(ItemStatus::as_str),
         onclick: move |_| {
             if let Some(command) = command.clone() {

@@ -24,7 +24,7 @@ const ROOT = '[data-slot="drawer-root"]';
 async function open(page: Page) {
   await gotoHydrated(page, URL, GOTO_OPTS);
   await demoRole(page, "button", 0, VARIANT).click();
-  await expect(page.locator(ROOT)).toHaveAttribute("data-state", "open");
+  await expect(page.locator(ROOT)).toHaveAttribute("data-open", "");
   await awaitAnimationsSettled(page.locator(CONTENT));
 }
 
@@ -73,7 +73,7 @@ test("the page scrolls while a non-modal drawer is open, and the drawer stays", 
   await page.mouse.move(195, 200);
   await page.mouse.wheel(0, 300);
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(before);
-  await expect(page.locator(ROOT)).toHaveAttribute("data-state", "open");
+  await expect(page.locator(ROOT)).toHaveAttribute("data-open", "");
 });
 
 test("no focus trap: Tab leaves the panel", async ({ page }) => {

@@ -118,7 +118,7 @@ pub fn ComboboxInput(props: ComboboxInputProps) -> Element {
     // `spellcheck` is an overridable default; the rest is this input's own
     // functional state: `style` ties it to the anchor-positioned listbox,
     // `type`/`value`/`autocomplete` define and drive the controlled text
-    // input, and role/aria-*/`data-state`/`disabled` mirror the combobox
+    // input, and role/aria-*/`data-open`/`disabled` mirror the combobox
     // widget's real state.
     let defaults = attributes!(input {
         spellcheck: "false",

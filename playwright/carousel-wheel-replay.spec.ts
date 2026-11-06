@@ -258,7 +258,7 @@ async function openComponent(page: Page): Promise<{ content: Locator }> {
   // The same element carousel-helpers.ts's `readContentTransform` reads: it is
   // the scroll-snap track AND the element the band's transform is written to.
   const content = frame.locator(".dx-carousel-content");
-  await expect(frame.getByRole("group", { name: "1 of 5" })).toHaveAttribute("data-selected", "true");
+  await expect(frame.getByRole("group", { name: "1 of 5" })).toHaveAttribute("data-selected", "");
   // Scrolling the demo into view is left to the browser's own instant scroll
   // (the root `scroll-behavior` is `auto` unless an anchor jump opts in).
   await content.scrollIntoViewIfNeeded();

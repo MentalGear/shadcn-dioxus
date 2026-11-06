@@ -76,7 +76,7 @@
   font-size: var(--dx-text-sm);
 }
 
-.dx-accordion-content[data-open="true"] {
+.dx-accordion-content[data-open] {
   animation: dx-accordion-open var(--dx-motion-duration-slower) var(--dx-motion-ease);
   grid-template-rows: 1fr;
 }
@@ -89,17 +89,17 @@
  * (`default_open`) is marked the same way: it is in the server HTML at full
  * size, and animating it open from 0fr on load would move the page below it.
  */
-.dx-accordion-content[data-open="true"][data-revealed] {
+.dx-accordion-content[data-open][data-revealed] {
   animation: none;
 }
 
 /*
- * `data-closing` (not `data-open="false"`) selects the exit animation: with
- * `hidden_until_found` a closed panel stays mounted, so `data-open="false"` is
+ * `data-closing` (not `data-closed`) selects the exit animation: with
+ * `hidden_until_found` a closed panel stays mounted, so `data-closed` is
  * also what it looks like at rest, and keying the animation on it would play a
  * close animation on every page load.
  */
-.dx-accordion-content[data-open="false"][data-closing] {
+.dx-accordion-content:not([data-open])[data-closing] {
   animation: dx-accordion-close var(--dx-motion-duration-slower) var(--dx-motion-ease);
 }
 
@@ -109,7 +109,7 @@
  * caught up yet (it follows the `beforematch` event a moment later). Show it at
  * full size meanwhile so the browser scrolls to the match's real position.
  */
-.dx-accordion-content[data-open="false"]:not([hidden], [data-closing]) {
+.dx-accordion-content:not([data-open], [hidden], [data-closing]) {
   grid-template-rows: 1fr;
 }
 
@@ -117,7 +117,7 @@
  * A `transition` on `grid-template-rows` only plays when the property
  * changes on an element already present in the render tree. `AccordionContent`
  * is only mounted once it starts opening (see `use_animated_open`), so the
- * very first paint of a newly-opened item already has `data-open="true"` --
+ * very first paint of a newly-opened item already has `data-open` --
  * there is no earlier frame for a transition to interpolate from, and the
  * panel snaps open instantly. A `@keyframes` animation does not have this
  * problem: it always plays its `from` keyframe on the frame it is applied,
@@ -208,7 +208,7 @@
   transition: rotate var(--dx-motion-duration-slower) var(--dx-motion-ease-standard);
 }
 
-.dx-accordion-item[data-open="true"] .dx-accordion-expand-icon {
+.dx-accordion-item[data-open] .dx-accordion-expand-icon {
   rotate: 180deg;
 }
 

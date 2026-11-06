@@ -79,19 +79,19 @@
     height: 0.875rem;
 }
 
-.dx-checkbox-indicator[data-state="checked"] > .dx-checkbox-glyph-minus,
-.dx-checkbox-indicator[data-state="indeterminate"] > .dx-checkbox-glyph-check {
+.dx-checkbox-indicator[data-checked] > .dx-checkbox-glyph-minus,
+.dx-checkbox-indicator[data-indeterminate] > .dx-checkbox-glyph-check {
     display: none;
 }
 
 /* Indeterminate is filled like checked (shadcn: `data-[state=indeterminate]`), with the minus glyph. */
-.dx-checkbox[data-state="checked"],
-.dx-checkbox[data-state="indeterminate"] {
+.dx-checkbox[data-checked],
+.dx-checkbox[data-indeterminate] {
     color: var(--dx-primary-foreground);
 }
 
-.dx-checkbox[data-state="checked"] > .dx-checkbox-indicator,
-.dx-checkbox[data-state="indeterminate"] > .dx-checkbox-indicator {
+.dx-checkbox[data-checked] > .dx-checkbox-indicator,
+.dx-checkbox[data-indeterminate] > .dx-checkbox-indicator {
     background-color: var(--dx-primary);
     box-shadow: none;
 }
@@ -105,13 +105,13 @@
 /* `aria-invalid:border-destructive ring-3 ring-destructive/20 dark:ring-destructive/40`. After the
    focus rule so a focused invalid checkbox stays red; `[data-invalid]` is Form's blocked-submit marker. */
 .dx-checkbox[aria-invalid="true"] > .dx-checkbox-indicator,
-.dx-checkbox[data-invalid="true"] > .dx-checkbox-indicator {
+.dx-checkbox[data-invalid] > .dx-checkbox-indicator {
     box-shadow: var(--dx-ring-invalid-field);
 }
 
 /* `disabled:cursor-not-allowed disabled:opacity-50`. */
 .dx-checkbox:disabled,
-.dx-checkbox[data-disabled="true"] {
+.dx-checkbox[data-disabled] {
     cursor: not-allowed;
     opacity: var(--dx-opacity-disabled);
 }

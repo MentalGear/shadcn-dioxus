@@ -333,7 +333,7 @@ pub fn NavigationMenu(props: NavigationMenuProps) -> Element {
     let attributes = merge_attributes(vec![
         props.attributes,
         attributes!(nav {
-            ..state_attrs::disabled((props.disabled)()),
+            ..state_attrs::presence(state_attrs::Flag::Disabled, (props.disabled)()),
         }),
     ]);
 
@@ -403,7 +403,7 @@ pub struct NavigationMenuIndicatorProps {
 /// This must be used inside a [`NavigationMenu`] component.
 ///
 /// ## Data attributes
-/// - `data-state`: `visible` while an item is open, `hidden` otherwise.
+/// - `data-open` / `data-closed`: `data-open` while an item is open, `data-closed` otherwise.
 #[component]
 pub fn NavigationMenuIndicator(props: NavigationMenuIndicatorProps) -> Element {
     let ctx: NavigationMenuContext = use_context();
@@ -458,7 +458,7 @@ pub fn NavigationMenuIndicator(props: NavigationMenuIndicatorProps) -> Element {
         attributes!(li {
             role: "presentation",
             aria_hidden: "true",
-            ..state_attrs::state(if open().is_some() { "visible" } else { "hidden" }),
+            ..state_attrs::open(open().is_some()),
         }),
     ]);
 
@@ -545,8 +545,7 @@ pub struct NavigationMenuItemProps {
 ///
 /// The [`NavigationMenuItem`] component defines the following data
 /// attributes you can use to control styling:
-/// - `data-state`: Indicates if this item's panel is open or closed.
-///   Values are `open` or `closed`.
+/// - `data-open` / `data-closed`: Exactly one is present: whether this part is open.
 /// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
 /// - `data-disabled`: Indicates if the item is disabled. Values are `true`
 ///   or `false`.
@@ -610,7 +609,7 @@ pub fn NavigationMenuItem(props: NavigationMenuItemProps) -> Element {
         props.attributes,
         attributes!(li {
             ..state_attrs::open(is_open()),
-            ..state_attrs::disabled((ctx.disabled)() || (props.disabled)()),
+            ..state_attrs::presence(state_attrs::Flag::Disabled, (ctx.disabled)() || (props.disabled)()),
         }),
     ]);
 
@@ -711,7 +710,7 @@ pub fn NavigationMenuTrigger(props: NavigationMenuTriggerProps) -> Element {
             aria_expanded: is_open(),
             aria_controls: item_ctx.content_id.cloned(),
             ..state_attrs::trigger_open(is_open()),
-            ..state_attrs::disabled(disabled()),
+            ..state_attrs::presence(state_attrs::Flag::Disabled, disabled()),
         }),
     ]);
 
@@ -852,8 +851,7 @@ pub struct NavigationMenuContentProps {
 ///
 /// The [`NavigationMenuContent`] component defines the following data
 /// attributes you can use to control styling:
-/// - `data-state`: Indicates if this panel is open or closed. Values are
-///   `open` or `closed`.
+/// - `data-open` / `data-closed`: Exactly one is present: whether this part is open.
 /// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
 #[component]
 pub fn NavigationMenuContent(props: NavigationMenuContentProps) -> Element {
@@ -954,7 +952,7 @@ fn NavigationMenuDismiss() -> Element {
 ///
 /// This content renders through [`use_animated_open`] (in
 /// [`NavigationMenuContent`] above), which deliberately keeps the element
-/// mounted with `data-state="closed"` for its whole exit transition (plus a
+/// mounted with `data-closed` for its whole exit transition (plus a
 /// settle hold) before actually unmounting it -- exactly the shape
 /// `crate::top_layer::use_popover_shown_while_mounted`'s own doc describes
 /// for `SelectList`/`ComboboxList`/`Toast`/`Popover`/`HoverCard`/`Tooltip`.
@@ -966,7 +964,7 @@ fn NavigationMenuDismiss() -> Element {
 /// `getAnimations()` check ever runs, so that check observes zero
 /// running animations and finishes the close cycle immediately -- the exit
 /// fade/scale would be skipped outright: the panel would vanish within one
-/// 40ms sample of its `data-state` flipping to `"closed"`, instead of
+/// 40ms sample of its `data-closed` appearing, instead of
 /// playing the ~150ms fade-and-scale-down this file's stylesheet declares,
 /// plus its ~250ms settle hold. This is `top_layer.rs`'s own documented
 /// "Bug 1 (animation race)" on `use_popover_shown_while_mounted`'s doc --
@@ -1209,8 +1207,8 @@ pub fn NavigationMenuLink(props: NavigationMenuLinkProps) -> Element {
             // same fix as `NavbarItem`/`DropdownMenuItem` (dev-docs/backlog.md
             // row 39).
             aria_disabled: disabled(),
-            ..state_attrs::valued(state_attrs::Flag::Active, props.active),
-            ..state_attrs::disabled(disabled()),
+            ..state_attrs::presence(state_attrs::Flag::Active, props.active),
+            ..state_attrs::presence(state_attrs::Flag::Disabled, disabled()),
         }),
     ]);
 

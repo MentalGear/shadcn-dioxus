@@ -753,8 +753,8 @@ pub fn InputOtpSlot(props: InputOtpSlotProps) -> Element {
     let disabled = ctx.disabled;
 
     let owned = attributes!(div {
-        ..state_attrs::valued(state_attrs::Flag::Active, active()),
-        ..state_attrs::disabled(disabled()),
+        ..state_attrs::presence(state_attrs::Flag::Active, active()),
+        ..state_attrs::presence(state_attrs::Flag::Disabled, disabled()),
         "data-slot-index": "{index}",
     });
     let merged = merge_attributes(vec![props.attributes.clone(), owned]);

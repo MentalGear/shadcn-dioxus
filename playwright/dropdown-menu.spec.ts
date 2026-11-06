@@ -10,49 +10,49 @@ test('test', async ({ page }) => {
   await gotoHydrated(page, `${BASE_URL}/component/dropdown_menu/`);
   let menuElement = page.getByRole('button', { name: 'Open Menu' });
   // The menu should not be open initially
-  await expect(menuElement).toHaveAttribute('data-state', 'closed');
+  await expect(menuElement).toHaveAttribute('data-closed', '');
   // Clicking the menu should open it
   await menuElement.click();
-  await expect(menuElement).toHaveAttribute('data-state', 'open');
+  await expect(menuElement).toHaveAttribute('data-open', '');
   // Pressing down should focus the first item
   await page.keyboard.press('ArrowDown');
   await expect(page.getByRole('menuitem', { name: 'Edit' })).toBeFocused();
-  await expect(page.getByRole('menuitem', { name: 'Undo' })).toHaveAttribute('data-disabled', 'true');
+  await expect(page.getByRole('menuitem', { name: 'Undo' })).toHaveAttribute('data-disabled', "");
   await page.keyboard.press('ArrowDown');
   await expect(page.getByRole('menuitem', { name: 'Duplicate' })).toBeFocused();
   // The menu should close after selecting an item
   await page.keyboard.press('Enter');
-  await expect(menuElement).toHaveAttribute('data-state', 'closed');
+  await expect(menuElement).toHaveAttribute('data-closed', '');
   // The selected item should be displayed
   await expect(page.getByText('Selected: Duplicate')).toBeVisible();
 
   // Reopen the menu
   await menuElement.click();
-  await expect(menuElement).toHaveAttribute('data-state', 'open');
+  await expect(menuElement).toHaveAttribute('data-open', '');
   // Pressing Escape should close the menu
   await page.keyboard.press('Escape');
-  await expect(menuElement).toHaveAttribute('data-state', 'closed');
+  await expect(menuElement).toHaveAttribute('data-closed', '');
 
   // Reopen the menu
   await menuElement.click();
-  await expect(menuElement).toHaveAttribute('data-state', 'open');
+  await expect(menuElement).toHaveAttribute('data-open', '');
   // Pressing Tab should close the menu
   await page.keyboard.press('Tab');
-  await expect(menuElement).toHaveAttribute('data-state', 'closed');
+  await expect(menuElement).toHaveAttribute('data-closed', '');
 
   // Reopen the menu
   await menuElement.click();
-  await expect(menuElement).toHaveAttribute('data-state', 'open');
+  await expect(menuElement).toHaveAttribute('data-open', '');
   // Clicking outside the menu should close it
   await page.locator('body').click({ position: { x: 0, y: 0 } });
-  await expect(menuElement).toHaveAttribute('data-state', 'closed');
+  await expect(menuElement).toHaveAttribute('data-closed', '');
 
   // Reopen the menu
   await menuElement.click();
-  await expect(menuElement).toHaveAttribute('data-state', 'open');
+  await expect(menuElement).toHaveAttribute('data-open', '');
   // Clicking an item should close the menu.
   await page.getByRole('menuitem', { name: 'Edit' }).click();
-  await expect(menuElement).toHaveAttribute('data-state', 'closed');
+  await expect(menuElement).toHaveAttribute('data-closed', '');
 });
 
 // Regression guard: a dropdown menu is not full page width (backlog row 47).
@@ -98,7 +98,7 @@ test('open content is fit-content width, not full page width, and sits near its 
 // "nothing focused" state, because that Rust-tracked roving-focus signal is
 // updated by this crate's own click/keyboard code *before* moving DOM focus,
 // and a raw external `.focus()` call updates nothing; `trigger` would end up
-// `data-state="closed"` after this exact sequence. See `DropdownMenuSubTrigger`'s
+// `data-closed` after this exact sequence. See `DropdownMenuSubTrigger`'s
 // identical construction (`oracle/tier1-apg/menu-submenu.spec.ts`) for the
 // sub-trigger instance of the same class.
 test('a raw .focus() call on a plain item does not close the menu (row 85)', async ({ page }) => {
@@ -108,7 +108,7 @@ test('a raw .focus() call on a plain item does not close the menu (row 85)', asy
   // afterward -- this leaves `ctx.focus` (the root's own roving-focus
   // collection) never populated, exactly the precondition the bug needs.
   await trigger.click();
-  await expect(trigger).toHaveAttribute('data-state', 'open');
+  await expect(trigger).toHaveAttribute('data-open', '');
   const editItem = page.getByRole('menuitem', { name: 'Edit' });
   await expect(editItem).toBeVisible();
 
@@ -118,7 +118,7 @@ test('a raw .focus() call on a plain item does not close the menu (row 85)', asy
   // before a real regression's own close would have completed.
   await page.waitForTimeout(150);
 
-  await expect(trigger, 'the whole menu must not close').toHaveAttribute('data-state', 'open');
+  await expect(trigger, 'the whole menu must not close').toHaveAttribute('data-open', '');
   await expect(editItem, 'the item must simply be focused in place').toBeFocused();
 });
 
@@ -145,7 +145,7 @@ test.describe('Checkable items', () => {
     await gotoHydrated(page, block('checkboxes'));
     const trigger = page.getByRole('button', { name: 'Checkboxes' });
     await trigger.click();
-    await expect(trigger).toHaveAttribute('data-state', 'open');
+    await expect(trigger).toHaveAttribute('data-open', '');
 
     const items = page.getByRole('menuitemcheckbox');
     await expect(items, 'three checkbox items, none of them a plain menuitem').toHaveCount(3);
@@ -156,9 +156,9 @@ test.describe('Checkable items', () => {
 
     // aria-checked is present on every item, "true"/"false", never absent.
     await expect(statusBar).toHaveAttribute('aria-checked', 'true');
-    await expect(statusBar).toHaveAttribute('data-state', 'checked');
+    await expect(statusBar).toHaveAttribute('data-checked', '');
     await expect(activityBar).toHaveAttribute('aria-checked', 'false');
-    await expect(activityBar).toHaveAttribute('data-state', 'unchecked');
+    await expect(activityBar).toHaveAttribute('data-unchecked', '');
     await expect(panel).toHaveAttribute('aria-checked', 'false');
     await expect(activityBar).toHaveAttribute('aria-disabled', 'true');
     await expect(statusBar).toHaveAttribute('aria-disabled', 'false');
@@ -166,7 +166,7 @@ test.describe('Checkable items', () => {
     await panel.click();
     await expect(panel).toHaveAttribute('aria-checked', 'true');
     await expect(page.getByText('Status bar true, panel true')).toBeVisible();
-    await expect(trigger, 'the default keeps the menu open').toHaveAttribute('data-state', 'open');
+    await expect(trigger, 'the default keeps the menu open').toHaveAttribute('data-open', '');
 
     await statusBar.click();
     await expect(statusBar).toHaveAttribute('aria-checked', 'false');
@@ -176,7 +176,7 @@ test.describe('Checkable items', () => {
     // forever for an `aria-disabled` element to become actionable).
     await activityBar.click({ force: true });
     await expect(activityBar).toHaveAttribute('aria-checked', 'false');
-    await expect(trigger).toHaveAttribute('data-state', 'open');
+    await expect(trigger).toHaveAttribute('data-open', '');
   });
 
   test('checkbox items: arrow keys skip the disabled item, Space and Enter toggle in place, typeahead reaches them', async ({ page }) => {
@@ -196,11 +196,11 @@ test.describe('Checkable items', () => {
     // closing the menu" -- what the default gives.
     await page.keyboard.press('Space');
     await expect(panel).toHaveAttribute('aria-checked', 'true');
-    await expect(trigger).toHaveAttribute('data-state', 'open');
+    await expect(trigger).toHaveAttribute('data-open', '');
     await expect(panel, 'focus stays on the toggled item').toBeFocused();
     await page.keyboard.press('Enter');
     await expect(panel).toHaveAttribute('aria-checked', 'false');
-    await expect(trigger).toHaveAttribute('data-state', 'open');
+    await expect(trigger).toHaveAttribute('data-open', '');
 
     // Typeahead: a checkbox item is a target when it has a text_value...
     await page.keyboard.press('s');
@@ -239,7 +239,7 @@ test.describe('Checkable items', () => {
     await page.keyboard.press('Space');
     await expect(wordWrap).toHaveAttribute('aria-checked', 'true');
     await expect(page.getByText('word wrap true')).toBeVisible();
-    await expect(trigger, 'the default keeps the whole menu open').toHaveAttribute('data-state', 'open');
+    await expect(trigger, 'the default keeps the whole menu open').toHaveAttribute('data-open', '');
     await expect(wordWrap, 'focus stays on the toggled item').toBeFocused();
 
     // Escape/ArrowLeft hands focus back to the sub-trigger; the root's own
@@ -263,12 +263,12 @@ test.describe('Checkable items', () => {
 
     await wordWrap.click();
     await expect(wordWrap).toHaveAttribute('aria-checked', 'true');
-    await expect(trigger).toHaveAttribute('data-state', 'open');
+    await expect(trigger).toHaveAttribute('data-open', '');
 
     // `Minimap` sets `close_on_select: true`: choosing it closes the menu --
     // the entire tree, submenu included, like `DropdownMenuSubItem`.
     await minimap.click();
-    await expect(trigger, 'close_on_select: true takes the whole tree with it').toHaveAttribute('data-state', 'closed');
+    await expect(trigger, 'close_on_select: true takes the whole tree with it').toHaveAttribute('data-closed', '');
     await expect(page.getByRole('menu')).toHaveCount(0);
     await expect(page.getByText('minimap true')).toBeVisible();
   });
@@ -277,7 +277,7 @@ test.describe('Checkable items', () => {
     await gotoHydrated(page, block('radio_group'));
     const trigger = page.getByRole('button', { name: 'Radio Group' });
     await trigger.click();
-    await expect(trigger).toHaveAttribute('data-state', 'open');
+    await expect(trigger).toHaveAttribute('data-open', '');
 
     const group = page.getByRole('group', { name: 'Panel Position' });
     await expect(group, 'the group is named by its heading via aria-labelledby').toBeVisible();
@@ -299,7 +299,7 @@ test.describe('Checkable items', () => {
     await expect(bottom).toHaveAttribute('aria-checked', 'false');
     await expect(page.getByText('Panel position top')).toBeVisible();
     expect(await checkedCount(), 'still exactly one radio checked after a choice').toBe(1);
-    await expect(trigger, 'the default keeps the menu open').toHaveAttribute('data-state', 'open');
+    await expect(trigger, 'the default keeps the menu open').toHaveAttribute('data-open', '');
 
     await right.click({ force: true });
     await expect(right, 'a disabled radio cannot be chosen').toHaveAttribute('aria-checked', 'false');
@@ -318,7 +318,7 @@ test.describe('Checkable items', () => {
     await page.keyboard.press('Space');
     await expect(top).toHaveAttribute('aria-checked', 'true');
     await expect(bottom).toHaveAttribute('aria-checked', 'false');
-    await expect(trigger).toHaveAttribute('data-state', 'open');
+    await expect(trigger).toHaveAttribute('data-open', '');
 
     await page.keyboard.press('ArrowDown');
     await expect(bottom).toBeFocused();
@@ -343,12 +343,12 @@ test.describe('Checkable items', () => {
     await gotoHydrated(page, block('rtl'));
     const trigger = page.getByRole('button', { name: 'Launch Menu' });
     await trigger.click();
-    await expect(trigger).toHaveAttribute('data-state', 'open');
+    await expect(trigger).toHaveAttribute('data-open', '');
 
     const pinned = page.getByRole('menuitemcheckbox', { name: 'Pinned' });
     await expect(pinned).toHaveAttribute('aria-checked', 'true');
     await pinned.click();
-    await expect(trigger, 'a checkbox item with close_on_select: true closes the menu').toHaveAttribute('data-state', 'closed');
+    await expect(trigger, 'a checkbox item with close_on_select: true closes the menu').toHaveAttribute('data-closed', '');
     await expect(trigger, 'focus returns to the trigger like any other close').toBeFocused();
 
     await trigger.click();
@@ -360,7 +360,7 @@ test.describe('Checkable items', () => {
     const descending = page.getByRole('menuitemradio', { name: 'Descending' });
     await expect(descending).toBeFocused();
     await page.keyboard.press('Enter');
-    await expect(trigger).toHaveAttribute('data-state', 'closed');
+    await expect(trigger).toHaveAttribute('data-closed', '');
 
     await trigger.click();
     await expect(descending).toHaveAttribute('aria-checked', 'true');
@@ -407,7 +407,7 @@ test.describe('DropdownMenuSub open_on_hover: false (click activation)', () => {
     await gotoHydrated(page, `${BASE_URL}/component/dropdown_menu/`, { timeout: 20 * 60 * 1000 });
     const trigger = page.getByRole('button', { name: 'Actions', exact: true });
     await trigger.click();
-    await expect(trigger).toHaveAttribute('data-state', 'open');
+    await expect(trigger).toHaveAttribute('data-open', '');
     return {
       trigger,
       sub: page.getByRole('menuitem', { name: 'Export as' }),
@@ -466,7 +466,7 @@ test.describe('DropdownMenuSub open_on_hover: false (click activation)', () => {
     await page.keyboard.press('ArrowLeft');
     await expect(sub).toHaveAttribute('aria-expanded', 'false');
     await expect(sub).toBeFocused();
-    await expect(trigger).toHaveAttribute('data-state', 'open');
+    await expect(trigger).toHaveAttribute('data-open', '');
 
     await page.keyboard.press('Enter');
     await expect(page.getByRole('menuitem', { name: 'PDF document' })).toBeFocused();
@@ -482,7 +482,7 @@ test.describe('DropdownMenuSub open_on_hover: false (click activation)', () => {
     const { trigger, sub } = await openMenu(page);
     await sub.click();
     await page.getByRole('menuitem', { name: 'Plain text' }).click();
-    await expect(trigger).toHaveAttribute('data-state', 'closed');
+    await expect(trigger).toHaveAttribute('data-closed', '');
     await expect(page.getByText('Chosen: text')).toBeVisible();
   });
 
@@ -508,18 +508,18 @@ test.describe('Open/close animation', () => {
   test('the fade animates translate/scale and leaves transform alone (root content and submenu, open and close)', async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/dropdown_menu/`, { timeout: 20 * 60 * 1000 });
     await page.getByRole('button', { name: 'Open Menu' }).click();
-    const content = page.locator('.dx-dropdown-menu-content[data-state="open"]:not(.dx-dropdown-menu-sub-content)').first();
+    const content = page.locator('.dx-dropdown-menu-content[data-open]:not(.dx-dropdown-menu-sub-content)').first();
     await expect(content).toBeVisible();
     await expectFadeKeepsTransform(content, 'dropdown menu content, open');
-    await expectFadeKeepsTransform(content, 'dropdown menu content, close', { 'data-state': 'closed' });
+    await expectFadeKeepsTransform(content, 'dropdown menu content, close', { 'data-open': null, 'data-closed': '' });
 
     // The submenu shares the keyframes but is its own element.
     const sub = page.getByRole('menuitem', { name: 'More tools' });
     await sub.hover();
     await expect(sub).toHaveAttribute('aria-expanded', 'true');
-    const subContent = page.locator('.dx-dropdown-menu-sub-content[data-state="open"]').first();
+    const subContent = page.locator('.dx-dropdown-menu-sub-content[data-open]').first();
     await expect(subContent).toBeVisible();
     await expectFadeKeepsTransform(subContent, 'dropdown submenu content, open');
-    await expectFadeKeepsTransform(subContent, 'dropdown submenu content, close', { 'data-state': 'closed' });
+    await expectFadeKeepsTransform(subContent, 'dropdown submenu content, close', { 'data-open': null, 'data-closed': '' });
   });
 });

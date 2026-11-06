@@ -23,7 +23,7 @@ test("a docs accordion item animates open", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await gotoHydrated(page, URL);
   const item = itemOf(page, "docs-props-reference");
-  await expect(item).toHaveAttribute("data-open", "false");
+  await expect(item).not.toHaveAttribute("data-open");
   const content = item.locator("> .dx-accordion-content");
   // Sample the content's height every frame from the click until it has been stable for a while.
   const sampling = content.evaluate(
@@ -45,7 +45,7 @@ test("a docs accordion item animates open", async ({ page }) => {
   expect(final, "the opened item has content").toBeGreaterThan(40);
   const intermediate = new Set(heights.filter((h) => h > 1 && h < final - 1).map((h) => Math.round(h)));
   expect(intermediate.size, `heights: ${heights.map((h) => Math.round(h)).join(",")}`).toBeGreaterThanOrEqual(3);
-  await expect(item).toHaveAttribute("data-open", "true");
+  await expect(item).toHaveAttribute("data-open", "");
 });
 
 test("every docs accordion chevron stays inside its section's border box", async ({ page }) => {
@@ -85,14 +85,14 @@ test("a fragment to a heading inside a closed item opens it, on load and on hash
 
   await gotoHydrated(page, `${URL}#${sub}`);
   const subItem = itemOf(page, sub);
-  await expect(subItem).toHaveAttribute("data-open", "true");
+  await expect(subItem).toHaveAttribute("data-open", "");
   await expect(page.locator(`[id="${sub}"]`)).toBeVisible();
   await expect(page.locator(`[id="${sub}"]`)).toBeInViewport();
 
   const propsItem = itemOf(page, props!);
-  await expect(propsItem).toHaveAttribute("data-open", "false");
+  await expect(propsItem).not.toHaveAttribute("data-open");
   await page.evaluate((id) => (location.hash = id), props!);
-  await expect(propsItem).toHaveAttribute("data-open", "true");
+  await expect(propsItem).toHaveAttribute("data-open", "");
   await expect(page.locator(`[id="${props}"]`)).toBeVisible();
   await expect(page.locator(`[id="${props}"]`)).toBeInViewport();
 });

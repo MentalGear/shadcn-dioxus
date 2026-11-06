@@ -39,7 +39,7 @@ test.describe("Carousel: loop_mode Rewind (explicit opt-in wraparound)", () => {
     for (let i = 0; i < 4; i++) {
       await next.click();
     }
-    await expect(region.getByRole("group", { name: "5 of 5" })).toHaveAttribute("data-selected", "true");
+    await expect(region.getByRole("group", { name: "5 of 5" })).toHaveAttribute("data-selected", "");
     // A non-loop (or non-opted-in) carousel would have `next` disabled
     // here -- `LoopMode::Rewind` never does.
     await expect(next).toBeEnabled();
@@ -57,7 +57,7 @@ test.describe("Carousel: loop_mode Rewind (explicit opt-in wraparound)", () => {
 
     // Previous from slide 1 wraps to slide 5.
     await previous.click();
-    await expect(slide(5)).toHaveAttribute("data-selected", "true");
+    await expect(slide(5)).toHaveAttribute("data-selected", "");
     await expectSnappedToBoundary(content, slide(5));
 
     // Next from slide 5 wraps back to slide 1 -- and, unlike every other
@@ -67,7 +67,7 @@ test.describe("Carousel: loop_mode Rewind (explicit opt-in wraparound)", () => {
     // intermediate value, only the start and end positions.
     const contentId = (await content.getAttribute("id"))!;
     const samples = await sampleScrollDuring(page, contentId, "scrollLeft", () => next.click());
-    await expect(slide(1)).toHaveAttribute("data-selected", "true");
+    await expect(slide(1)).toHaveAttribute("data-selected", "");
     await expectSnappedToBoundary(content, slide(1));
     expect(
       passesThroughAnIntermediateValue(samples),
@@ -78,10 +78,10 @@ test.describe("Carousel: loop_mode Rewind (explicit opt-in wraparound)", () => {
     for (let i = 0; i < 4; i++) {
       await next.click();
     }
-    await expect(slide(5)).toHaveAttribute("data-selected", "true");
+    await expect(slide(5)).toHaveAttribute("data-selected", "");
     await next.focus();
     await page.keyboard.press("ArrowRight");
-    await expect(slide(1)).toHaveAttribute("data-selected", "true");
+    await expect(slide(1)).toHaveAttribute("data-selected", "");
   });
 
   test("under RTL, loop_mode Rewind wraps both directions, and the arrow keys are not swapped", async ({ page }) => {
@@ -97,22 +97,22 @@ test.describe("Carousel: loop_mode Rewind (explicit opt-in wraparound)", () => {
 
     // Previous from slide 1 wraps to slide 4.
     await previous.click();
-    await expect(slide(4)).toHaveAttribute("data-selected", "true");
+    await expect(slide(4)).toHaveAttribute("data-selected", "");
     await expect(previous).toBeEnabled();
 
     // Next from slide 4 wraps back to slide 1.
     await next.click();
-    await expect(slide(1)).toHaveAttribute("data-selected", "true");
+    await expect(slide(1)).toHaveAttribute("data-selected", "");
 
     // RTL root keyboard: ArrowRight means next (the keys do not swap), so it
     // should wrap from the last slide back to the first too.
     for (let i = 0; i < 3; i++) {
       await next.click();
     }
-    await expect(slide(4)).toHaveAttribute("data-selected", "true");
+    await expect(slide(4)).toHaveAttribute("data-selected", "");
     await next.focus();
     await page.keyboard.press("ArrowRight");
-    await expect(slide(1)).toHaveAttribute("data-selected", "true");
+    await expect(slide(1)).toHaveAttribute("data-selected", "");
   });
 
   /**
@@ -127,7 +127,7 @@ test.describe("Carousel: loop_mode Rewind (explicit opt-in wraparound)", () => {
     const content = region.locator(".dx-carousel-content");
     const slide = (n: number) => region.getByRole("group", { name: `${n} of 5` });
 
-    await expect(slide(1)).toHaveAttribute("data-selected", "true");
+    await expect(slide(1)).toHaveAttribute("data-selected", "");
     // A large rightward drag from slide 1 (nothing before it): no band, no
     // wrap to slide 5 -- `loop`/`loop_mode` only govern Previous/Next/the
     // root keyboard (this crate's own module doc). Sampled in-page every
@@ -137,7 +137,7 @@ test.describe("Carousel: loop_mode Rewind (explicit opt-in wraparound)", () => {
     }, 300);
     expect(Math.max(0, ...samples.map(Math.abs)), "no band at a looping carousel's edge").toBe(0);
     expect(await readContentTransform(content)).toBe("");
-    await expect(slide(1)).toHaveAttribute("data-selected", "true");
+    await expect(slide(1)).toHaveAttribute("data-selected", "");
   });
 });
 
@@ -211,7 +211,7 @@ test.describe("Carousel: autoplay + rotation control", () => {
     // slide 1 by the time the page is ready. Whatever slide is
     //     // selected now, a different one must become selected on its own.
     const selectedLabel = () =>
-      frame.locator('[role="group"][aria-roledescription="slide"][data-selected="true"]').first().getAttribute("aria-label");
+      frame.locator('[role="group"][aria-roledescription="slide"][data-selected]').first().getAttribute("aria-label");
     await expect.poll(selectedLabel).not.toBeNull();
     const before = await selectedLabel();
     await expect.poll(selectedLabel, { timeout: 3000 }).not.toBe(before);
@@ -238,7 +238,7 @@ test.describe("Carousel: autoplay + rotation control", () => {
     await expect(content).toHaveAttribute("aria-live", "polite");
 
     const selectedAt = async () =>
-      frame.locator('[role="group"][data-selected="true"]').getAttribute("aria-label");
+      frame.locator('[role="group"][data-selected]').getAttribute("aria-label");
     const before = await selectedAt();
     // Wait past two full ticks -- focus is still inside the content
     // element, so this must never advance regardless of elapsed time.
@@ -274,7 +274,7 @@ test.describe("Carousel: autoplay + rotation control", () => {
     await expect(content).toHaveAttribute("aria-live", "polite");
 
     const selectedAt = async () =>
-      frame.locator('[role="group"][data-selected="true"]').getAttribute("aria-label");
+      frame.locator('[role="group"][data-selected]').getAttribute("aria-label");
     const before = await selectedAt();
     // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
     await page.waitForTimeout(1600);
@@ -313,7 +313,7 @@ test.describe("Carousel: autoplay + rotation control", () => {
     await expect(content).toHaveAttribute("aria-live", "polite");
 
     const selectedAt = async () =>
-      frame.locator('[role="group"][data-selected="true"]').getAttribute("aria-label");
+      frame.locator('[role="group"][data-selected]').getAttribute("aria-label");
     const before = await selectedAt();
     // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
     await page.waitForTimeout(1600);
@@ -359,7 +359,7 @@ test.describe("Carousel: indicators (tablist/dot-picker) variant", () => {
     await expect(tabs.nth(2)).toHaveAttribute("tabindex", "0");
     await expect(tabs.nth(0)).toHaveAttribute("aria-selected", "false");
     await expect(tabs.nth(0)).toHaveAttribute("tabindex", "-1");
-    await expect(slide(3)).toHaveAttribute("data-selected", "true");
+    await expect(slide(3)).toHaveAttribute("data-selected", "");
     await expectSnappedToBoundary(content, slide(3));
   });
 
@@ -373,11 +373,11 @@ test.describe("Carousel: indicators (tablist/dot-picker) variant", () => {
     await page.keyboard.press("ArrowRight");
     await expect(tabs.nth(1)).toBeFocused();
     await expect(tabs.nth(1)).toHaveAttribute("aria-selected", "true");
-    await expect(slide(2)).toHaveAttribute("data-selected", "true");
+    await expect(slide(2)).toHaveAttribute("data-selected", "");
 
     await page.keyboard.press("ArrowLeft");
     await expect(tabs.nth(0)).toBeFocused();
-    await expect(slide(1)).toHaveAttribute("data-selected", "true");
+    await expect(slide(1)).toHaveAttribute("data-selected", "");
   });
 
   test("ArrowLeft/ArrowRight wrap at both ends of the tablist", async ({ page }) => {
@@ -403,11 +403,11 @@ test.describe("Carousel: indicators (tablist/dot-picker) variant", () => {
     await tabs.nth(0).focus();
     await page.keyboard.press("End");
     await expect(tabs.nth(4)).toBeFocused();
-    await expect(slide(5)).toHaveAttribute("data-selected", "true");
+    await expect(slide(5)).toHaveAttribute("data-selected", "");
 
     await page.keyboard.press("Home");
     await expect(tabs.nth(0)).toBeFocused();
-    await expect(slide(1)).toHaveAttribute("data-selected", "true");
+    await expect(slide(1)).toHaveAttribute("data-selected", "");
   });
 
   test("each tab's aria-controls points at its matching tabpanel's id", async ({ page }) => {
@@ -481,7 +481,7 @@ test.describe("Carousel: autoplay stops on a press on the track (row 470)", () =
     const viewport = frame.locator('[data-slot="carousel-viewport"]');
     const rotation = frame.getByRole("button", { name: /automatic slide show/i });
     const selected = () =>
-      frame.locator('[role="group"][aria-roledescription="slide"][data-selected="true"]').first().getAttribute("aria-label");
+      frame.locator('[role="group"][aria-roledescription="slide"][data-selected]').first().getAttribute("aria-label");
     await expect(rotation).toHaveAttribute("aria-label", RUNNING);
     return { frame, viewport, rotation, selected };
   };

@@ -7,7 +7,7 @@
  * any input. Two members show up when recording every rAF frame from the first one (sweep 320..1440, both
  * colour schemes, touch emulation on and off):
  *
- *   1. SSR != hydrated. `Avatar` is prerendered with `data-state="empty"`, i.e. the image AND the fallback
+ *   1. SSR != hydrated. `Avatar` is prerendered with `data-empty`, i.e. the image AND the fallback
  *      initials side by side in a centred flex row, so the picture sits ~8px left of the circle's centre with
  *      the initials peeking in on the right; when the wasm hydrates, the fallback is removed and the image
  *      jumps back to the centre. Twelve avatars in the home page's widget masonry, at every width.

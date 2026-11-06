@@ -112,7 +112,7 @@ test("context_menu non_modal: an open menu does not lock page scrolling", async 
   await goto(page, "context_menu", "non_modal");
   const locked = () => page.evaluate(() => (window as unknown as { __dxScrollLocked?: boolean }).__dxScrollLocked === true);
   await page.getByRole("button", { name: "Right click (non-modal)" }).click({ button: "right" });
-  await expect(page.getByRole("menu")).toHaveAttribute("data-state", "open");
+  await expect(page.getByRole("menu")).toHaveAttribute("data-open", "");
   expect(await locked()).toBe(false);
   await page.getByRole("menuitem", { name: "Paste" }).click();
   await expect(page.locator("#context-menu-non-modal-chosen")).toHaveText("Selected: Paste");

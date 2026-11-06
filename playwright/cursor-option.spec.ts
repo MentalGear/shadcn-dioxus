@@ -47,7 +47,7 @@ test.describe("default: shadcn v4's arrow on every interactive element", () => {
     expect(await cursorOf(demoFrame(page).locator(".dx-select-trigger").first())).toBe("default");
 
     await open(page, "/component/calendar/");
-    const day = demoFrame(page).locator('.dx-calendar-grid-cell[data-month="current"]:not([data-disabled="true"])').first();
+    const day = demoFrame(page).locator('.dx-calendar-grid-cell[data-month="current"]:not([data-disabled])').first();
     expect(await cursorOf(day)).toBe("default");
 
     await open(page, "/component/combobox/");
@@ -71,7 +71,7 @@ test.describe('data-dx-interactive-element-cursor="pointer": the hand on every o
 
     await open(page, "/component/calendar/");
     await setOption(page, "pointer");
-    const day = demoFrame(page).locator('.dx-calendar-grid-cell[data-month="current"]:not([data-disabled="true"])').first();
+    const day = demoFrame(page).locator('.dx-calendar-grid-cell[data-month="current"]:not([data-disabled])').first();
     expect(await cursorOf(day)).toBe("pointer");
 
     await open(page, "/component/combobox/");
@@ -89,7 +89,7 @@ test.describe('data-dx-interactive-element-cursor="pointer": the hand on every o
     ["switch", ".dx-switch"],
     ["checkbox", ".dx-checkbox"],
     ["radio_group", ".dx-radio-group-item"],
-    ["tabs", '.dx-tabs-trigger:not([data-disabled="true"])'],
+    ["tabs", '.dx-tabs-trigger:not([data-disabled])'],
     ["toggle", ".dx-toggle"],
     ["toggle_group", ".dx-toggle-group-item"],
     ["slider", ".dx-slider-thumb"],
@@ -159,7 +159,7 @@ test.describe("what the option never changes", () => {
     test(`${mode}: a disabled tab keeps its not-allowed cursor`, async ({ page }) => {
       await open(page, "/component/tabs/");
       if (mode === "pointer") await setOption(page, "pointer");
-      const tab = demoFrame(page, "disabled").locator('.dx-tabs-trigger[data-disabled="true"]').first();
+      const tab = demoFrame(page, "disabled").locator('.dx-tabs-trigger[data-disabled]').first();
       await expect(tab).toBeAttached();
       expect(await cursorOf(tab)).toBe("not-allowed");
     });

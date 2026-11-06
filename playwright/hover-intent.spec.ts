@@ -60,13 +60,13 @@ const MENUS: Menu[] = [
   },
 ];
 
-/** Whether the menu reads as open: `data-state` on a nav wrapper, `aria-expanded` on a trigger. */
+/** Whether the menu reads as open: `data-open` / `data-closed` on a nav wrapper, `aria-expanded` on a trigger. */
 async function expectOpen(menu: Locator, open: boolean, timeout?: number) {
   const isButton = (await menu.evaluate((el) => el.tagName)) === 'BUTTON';
   if (isButton) {
     await expect(menu).toHaveAttribute('aria-expanded', open ? 'true' : 'false', { timeout });
   } else {
-    await expect(menu).toHaveAttribute('data-state', open ? 'open' : 'closed', { timeout });
+    await expect(menu).toHaveAttribute(open ? 'data-open' : 'data-closed', '', { timeout });
   }
 }
 

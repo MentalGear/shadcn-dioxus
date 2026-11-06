@@ -139,7 +139,7 @@ test.describe("opening position", () => {
     await expect.poll(() => offsetOf(vp, "m6")).toBeGreaterThanOrEqual(50);
     expect(await offsetOf(vp, "m6")).toBeLessThanOrEqual(110);
     expect(await dist(vp)).toBeGreaterThan(20);
-    await expect(jumpButton(page, "last_anchor")).toHaveAttribute("data-active", "true");
+    await expect(jumpButton(page, "last_anchor")).toHaveAttribute("data-active", "");
   });
 });
 
@@ -157,7 +157,7 @@ test.describe("follow the stream", () => {
     expect(Math.max(...samples)).toBeLessThanOrEqual(100);
     await expect.poll(() => dist(vp)).toBeLessThanOrEqual(1);
     // Following publishes `end: false`, so the jump button stays out of the way.
-    await expect(jumpButton(page)).toHaveAttribute("data-active", "false");
+    await expect(jumpButton(page)).not.toHaveAttribute("data-active");
     await expect(jumpButton(page)).toHaveJSProperty("inert", true);
   });
 
@@ -171,7 +171,7 @@ test.describe("follow the stream", () => {
     // The reply keeps growing below the reader without moving them.
     expect(Math.abs((await scrollTop(vp)) - releasedAt)).toBeLessThanOrEqual(1);
     expect(await dist(vp)).toBeGreaterThan(100);
-    await expect(jumpButton(page)).toHaveAttribute("data-active", "true");
+    await expect(jumpButton(page)).toHaveAttribute("data-active", "");
     await expect(jumpButton(page)).toHaveJSProperty("inert", false);
   });
 
@@ -220,7 +220,7 @@ test.describe("jump to latest", () => {
   test("is inert at rest and not reachable by Tab", async ({ page }) => {
     const vp = await open(page);
     const button = jumpButton(page);
-    await expect(button).toHaveAttribute("data-active", "false");
+    await expect(button).not.toHaveAttribute("data-active");
     await expect(button).toHaveJSProperty("inert", true);
     await expect(button).toHaveAttribute("tabindex", "-1");
     await vp.focus();
@@ -232,10 +232,10 @@ test.describe("jump to latest", () => {
     const vp = await open(page);
     await wheel(page, vp, -600);
     const button = jumpButton(page);
-    await expect(button).toHaveAttribute("data-active", "true");
+    await expect(button).toHaveAttribute("data-active", "");
     await button.click();
     await expect.poll(() => dist(vp), { timeout: 10_000 }).toBeLessThanOrEqual(1);
-    await expect(button).toHaveAttribute("data-active", "false");
+    await expect(button).not.toHaveAttribute("data-active");
     // Following is re-engaged: an appended row stays in view.
     await frameOf(page, "main").getByRole("button", { name: "Add message" }).click();
     await expect.poll(() => dist(vp)).toBeLessThanOrEqual(1);
@@ -247,7 +247,7 @@ test.describe("jump to latest", () => {
     await vp.focus();
     await page.keyboard.press("PageUp");
     await expect.poll(() => dist(vp)).toBeGreaterThan(30);
-    await expect(button).toHaveAttribute("data-active", "true");
+    await expect(button).toHaveAttribute("data-active", "");
     await page.keyboard.press("Tab");
     await expect(button).toBeFocused();
     await page.keyboard.press("Enter");
@@ -323,10 +323,10 @@ test.describe("loading earlier messages", () => {
   test("the start button jumps to the oldest message", async ({ page }) => {
     const vp = await open(page, "load_history");
     const start = jumpButton(page, "load_history", "start");
-    await expect(start).toHaveAttribute("data-active", "true");
+    await expect(start).toHaveAttribute("data-active", "");
     await start.click();
     await expect.poll(() => scrollTop(vp), { timeout: 10_000 }).toBeLessThanOrEqual(1);
-    await expect(start).toHaveAttribute("data-active", "false");
+    await expect(start).not.toHaveAttribute("data-active");
   });
 });
 
@@ -399,7 +399,7 @@ test.describe("virtualization: content-visibility", () => {
     await frameOf(page, "long").getByRole("button", { name: "Add message" }).click();
     await expect(frameOf(page, "long").getByText(/messages in the DOM/)).toContainText(String(ROWS + 1));
     expect(Math.abs((await stable(vp)) - at)).toBeLessThanOrEqual(1);
-    await expect(jumpButton(page, "long")).toHaveAttribute("data-active", "true");
+    await expect(jumpButton(page, "long")).toHaveAttribute("data-active", "");
     await jumpButton(page, "long").click();
     await expect.poll(() => dist(vp), { timeout: 10_000 }).toBeLessThanOrEqual(1);
   });
@@ -525,7 +525,7 @@ test.describe("accessibility", () => {
   test("with the jump button visible has no automatically detectable a11y issues", async ({ page }) => {
     const vp = await open(page);
     await wheel(page, vp, -600);
-    await expect(jumpButton(page)).toHaveAttribute("data-active", "true");
+    await expect(jumpButton(page)).toHaveAttribute("data-active", "");
     await expectNoAxeViolations(page, "message_scroller: jump button visible", {
       excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT],
     });

@@ -59,7 +59,7 @@ Drawer { open: open(), on_open_change: move |v| open.set(v),
 }
 ```
 
-While the nested drawer is open the parent steps back (`data-nested-open="true"`: a 4% shrink toward its docked edge and a 16px push away from it, `--dx-drawer-nest-scale` and `--dx-drawer-nest-shift`); it is restored the moment the nested one starts closing. Only the top-most drawer reacts to Escape, a tap on the scrim and a drag, and the page's scroll lock stays one lock until the last drawer closes.
+While the nested drawer is open the parent steps back (`data-nested-open`: a 4% shrink toward its docked edge and a 16px push away from it, `--dx-drawer-nest-scale` and `--dx-drawer-nest-shift`); it is restored the moment the nested one starts closing. Only the top-most drawer reacts to Escape, a tap on the scrim and a drag, and the page's scroll lock stays one lock until the last drawer closes.
 
 ## Drag to dismiss
 

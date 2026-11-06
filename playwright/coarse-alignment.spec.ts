@@ -84,8 +84,8 @@ const PROBES = `
   <button type="button" class="dx-toggle" data-probe="toggle-default" data-clip data-size="default" aria-label="t"></button>
   <div class="dx-tabs" data-size="default" data-variant="default" data-orientation="horizontal"><div class="dx-tabs-list" data-probe="tabs-list-default" role="tablist"><button type="button" class="dx-tabs-trigger" data-probe="tabs-trigger-default" role="tab">Agjy</button><button type="button" class="dx-tabs-trigger" role="tab">Two</button></div></div>
   <button type="button" class="dx-toolbar-button" data-probe="toolbar-button" data-clip aria-label="b"></button>
-  <a href="#" class="dx-pagination-link" data-probe="pagination-link" data-clip data-size="default" data-active="false">Agjy</a>
-  <a href="#" class="dx-pagination-link" data-probe="pagination-icon" data-clip data-size="icon" data-active="false">1</a>
+  <a href="#" class="dx-pagination-link" data-probe="pagination-link" data-clip data-size="default">Agjy</a>
+  <a href="#" class="dx-pagination-link" data-probe="pagination-icon" data-clip data-size="icon">1</a>
   <span class="dx-pagination-ellipsis" data-probe="pagination-ellipsis">${ICON}</span>
   <div class="dx-input-otp-group" data-probe="otp-group"><div class="dx-input-otp-slot" data-probe="otp-slot" data-clip>1</div><div class="dx-input-otp-slot">2</div></div>
   <div class="dx-date-picker-group" data-probe="date-picker-group" data-clip><span class="dx-date-picker-segment" data-probe="date-picker-segment" data-text-entry>10</span><span>/</span><span class="dx-date-picker-segment">25</span></div>

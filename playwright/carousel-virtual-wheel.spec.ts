@@ -174,7 +174,7 @@ async function startRecording(content: Locator): Promise<void> {
       rec.frames.push({
         t: performance.now(),
         pos: el.scrollLeft,
-        sel: el.querySelector('[data-selected="true"]')?.getAttribute("aria-label") ?? null,
+        sel: el.querySelector('[data-selected]')?.getAttribute("aria-label") ?? null,
         aligned: aligned?.getAttribute("aria-label") ?? null,
         off,
         win: Array.from(el.children)
@@ -491,7 +491,7 @@ async function pageTo(page: Page, frame: Locator, label: string): Promise<void> 
     const num = (l: string | null | undefined) => Number((l ?? "").split(" of ")[0]);
     // Slides are role=group, or role=tabpanel when the demo has indicators.
     const selected = () =>
-      root.querySelector(':is([role="group"], [role="tabpanel"])[data-selected="true"]')?.getAttribute("aria-label");
+      root.querySelector(':is([role="group"], [role="tabpanel"])[data-selected]')?.getAttribute("aria-label");
     for (let i = 0; i < 400 && selected() !== label; i++) {
       const before = selected();
       // Step toward the target: Previous when it is behind (a non-looping
@@ -502,7 +502,7 @@ async function pageTo(page: Page, frame: Locator, label: string): Promise<void> 
       while (selected() === before && performance.now() - t0 < 2000) await new Promise((r) => requestAnimationFrame(r));
     }
   }, label);
-  await expect(frame.locator(':is([role="group"], [role="tabpanel"])[data-selected="true"]').first()).toHaveAttribute(
+  await expect(frame.locator(':is([role="group"], [role="tabpanel"])[data-selected]').first()).toHaveAttribute(
     "aria-label",
     label,
   );
@@ -765,7 +765,7 @@ async function expectCleanRest(content: Locator): Promise<void> {
               aligned = child;
             }
           }
-          const sel = el.querySelector('[data-selected="true"]')?.getAttribute("aria-label");
+          const sel = el.querySelector('[data-selected]')?.getAttribute("aria-label");
           return off < 1 && sel === aligned?.getAttribute("aria-label") ? "ok" : `off=${off} sel=${sel} aligned=${aligned?.getAttribute("aria-label")}`;
         }),
       { timeout: 3000 },
@@ -831,7 +831,7 @@ test.describe("Carousel drag band: only at a true end of the data", () => {
       expect(Math.abs(r.gapAtHold), `${label}: clamped at the ${side} edge while held`).toBeLessThan(1);
       expect(r.band, `${label}: no band`).toBe(0);
       await expectCleanRest(content);
-      await expect(frame.locator('[role="group"][data-selected="true"]').first()).toHaveAttribute("aria-label", label);
+      await expect(frame.locator('[role="group"][data-selected]').first()).toHaveAttribute("aria-label", label);
     }
   });
 
@@ -1191,7 +1191,7 @@ test.describe("Carousel: long real flicks never stall at a rendered slice end", 
     const { frame, content } = await open(page, "virtual_many");
     await pageTo(page, frame, "4 of 200");
     await replayRecordedFlick(page, content, RECORDED_TRACKPAD_FLICKS.mark4);
-    await expect(frame.locator('[data-selected="true"]').first()).toHaveAttribute("aria-label", "1 of 200");
+    await expect(frame.locator('[data-selected]').first()).toHaveAttribute("aria-label", "1 of 200");
     const recentres = await content.evaluate((el) =>
       ((window as unknown as { __dxCarouselTrace?: { id: string; kind: string; edgeIndex?: string }[] }).__dxCarouselTrace ?? []).filter(
         (r) => r.id === el.id && r.kind === "pinned-recentre",

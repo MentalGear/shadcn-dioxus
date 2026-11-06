@@ -67,7 +67,7 @@
 /* Invalid: the wrapper draws the field chrome, so it draws the invalid recipe (the control is bare).
  * After the focus rule so a focused invalid group stays red. */
 .dx-input-group:has(.dx-input-group-control[aria-invalid="true"]),
-.dx-input-group:has(.dx-input-group-control[data-invalid="true"]) {
+.dx-input-group:has(.dx-input-group-control[data-invalid]) {
   box-shadow: var(--dx-ring-invalid-field);
 }
 

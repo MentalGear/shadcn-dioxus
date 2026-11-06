@@ -129,7 +129,7 @@
 }
 
 /* `ring-ring/50 hover:ring-3 focus-visible:ring-3 active:ring-3`: the shared 3px focus halo. */
-.dx-slider-thumb:focus-visible[data-dragging="true"],
+.dx-slider-thumb:focus-visible[data-dragging],
 .dx-slider-thumb:focus-visible,
 .dx-slider-thumb:active {
     box-shadow: var(--dx-ring-focus);
@@ -143,11 +143,11 @@
     }
 }
 
-.dx-slider[data-disabled="true"] {
+.dx-slider[data-disabled] {
     cursor: not-allowed;
     opacity: var(--dx-opacity-disabled);
 }
 
-.dx-slider[data-disabled="true"] .dx-slider-thumb {
+.dx-slider[data-disabled] .dx-slider-thumb {
     cursor: not-allowed;
 }

@@ -4,7 +4,7 @@
  *
  * A delay is a lower bound the product promises ("nothing opens before `delay`"), so it is measured
  * where it happens: the page stamps `performance.now()` on the pointer/focus event that starts a
- * delay and on the moment the `role="tooltip"` surface mounts or flips its `data-state`, and the
+ * delay and on the moment the `role="tooltip"` surface mounts or flips its `data-open` / `data-closed`, and the
  * spec compares the two stamps. Measuring from the spec process instead (Date.now() around a
  * `hover()` call) adds the protocol round trip to every number and, on a slow debug build, can
  * only make an early open look late -- never the reverse -- so only the lower bound is asserted;
@@ -24,7 +24,10 @@ export async function startProbe(page: Page): Promise<void> {
     }
     const log: ProbeEntry[] = [];
     w.__hoverProbe = { log };
-    const state = () => document.querySelector('[role="tooltip"]')?.getAttribute("data-state") ?? "none";
+    const state = () => {
+      const t = document.querySelector('[role="tooltip"]');
+      return t ? (t.hasAttribute("data-open") ? "open" : "closed") : "none";
+    };
     let last = state();
     new MutationObserver(() => {
       const s = state();
@@ -36,7 +39,7 @@ export async function startProbe(page: Page): Promise<void> {
       subtree: true,
       childList: true,
       attributes: true,
-      attributeFilter: ["data-state"],
+      attributeFilter: ["data-open", "data-closed"],
     });
     // `pointerover` precedes `mouseover` for the same hover: a delay-0 surface can open between the two.
     for (const type of ["pointerover", "mouseover", "mouseout", "focusin", "focusout"]) {

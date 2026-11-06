@@ -17,7 +17,7 @@ async function open(page: Page) {
   await gotoHydrated(page, `${BASE_URL}/component/select/`);
   await trigger(page).scrollIntoViewIfNeeded();
   await trigger(page).click();
-  await expect(list(page)).toHaveAttribute("data-state", "open");
+  await expect(list(page)).toHaveAttribute("data-open", "");
   await awaitAnimationsSettled(list(page));
 }
 
@@ -95,7 +95,7 @@ test("a list that fits shows no scroll button, and a closed select renders none"
   await sizes.scrollIntoViewIfNeeded();
   await sizes.click();
   const l = page.getByRole("listbox", { name: "Small size options" });
-  await expect(l).toHaveAttribute("data-state", "open");
+  await expect(l).toHaveAttribute("data-open", "");
   await expect(l.locator('[data-slot="select-scroll-button"][data-visible="true"]')).toHaveCount(0);
 });
 
@@ -147,7 +147,7 @@ test.describe("position=item-aligned", () => {
     await gotoHydrated(page, `${BASE_URL}/component/select/`);
     await aligned(page).scrollIntoViewIfNeeded();
     await aligned(page).click();
-    await expect(alignedList(page)).toHaveAttribute("data-state", "open");
+    await expect(alignedList(page)).toHaveAttribute("data-open", "");
     await expect(alignedList(page)).toHaveAttribute("data-position", "item-aligned");
     await awaitAnimationsSettled(alignedList(page));
     await expect(alignedList(page)).toHaveAttribute("data-placed", "true");

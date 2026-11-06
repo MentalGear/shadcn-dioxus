@@ -106,7 +106,7 @@
  * its one `Field` child just grows to fill it; the label is only the *condition*
  * (`:has(...)`), never the subject.
  *
- * Checked is read off any descendant carrying `data-state="checked"` (Radio
+ * Checked is read off any descendant carrying `data-checked` (Radio
  * item, Switch and Checkbox all emit it), so no control's class is named here.
  * Dark mode is the theme's `--light`/`--dark` space toggle
  * (dx-components-theme.css): one of the two values is the empty
@@ -122,12 +122,12 @@
 
 /* Zero-specificity condition, so the checked fill below still wins on a hovered checked card. */
 @media (hover: hover) and (pointer: fine) {
-  .dx-field-label:where(:hover:not(:has(:disabled, [data-disabled="true"]))) > .dx-field {
+  .dx-field-label:where(:hover:not(:has(:disabled, [data-disabled]))) > .dx-field {
     background-color: color-mix(in oklab, var(--dx-muted) 50%, transparent);
   }
 }
 
-.dx-field-label:has([data-state="checked"]) > .dx-field {
+.dx-field-label:has([data-checked]) > .dx-field {
   border-color:
     var(--light, color-mix(in oklab, var(--dx-primary) 30%, transparent))
     var(--dark, color-mix(in oklab, var(--dx-primary) 20%, transparent));
@@ -147,14 +147,14 @@
   --dx-ring-focus: 0 0 #0000;
 }
 
-.dx-field[data-invalid="true"] .dx-field-label {
+.dx-field[data-invalid] .dx-field-label {
   --dx-label-color: var(--dx-destructive-text);
 }
 
 /* `Field { disabled }`: Nova's `group-data-[disabled=true]/field:opacity-50` on `FieldLabel` (the
  * description keeps its ink). Through Label's opacity slot, set on the label's own element, for the same
  * reason as the line height above. The control is disabled by its own `disabled`; this only dims the row. */
-.dx-field[data-disabled="true"] .dx-field-label {
+.dx-field[data-disabled] .dx-field-label {
   --dx-label-opacity: var(--dx-opacity-disabled);
 }
 

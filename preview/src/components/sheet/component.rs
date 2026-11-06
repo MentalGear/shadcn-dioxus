@@ -107,7 +107,7 @@ pub fn Sheet(props: SheetProps) -> Element {
 
 /// The panel: an edge panel of the theme's recipe (`data-dx-surface="edge"` plus the resolved
 /// `data-side`). It is its own component to read the dialog's open state: the panel carries its
-/// own `data-state`, because the recipe's slide is keyed on it and the non-web/non-modal arms
+/// own `data-open` / `data-closed`, because the recipe's slide is keyed on it and the non-web/non-modal arms
 /// of the dialog primitive put none on their content element.
 #[component]
 fn SheetPanel(

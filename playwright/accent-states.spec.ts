@@ -462,7 +462,7 @@ test.describe("accent on active and selected states (row 389)", () => {
     await gotoHydrated(page, `${BASE_URL}/component/tabs/`);
     await expect(demoRoles(page, "tab").first()).toBeVisible();
     const trig = (cond: string) =>
-      `[...document.querySelectorAll('.dx-tabs-trigger[data-state="active"]')].find((e) => { const t = e.closest('.dx-tabs'); return ${cond}; })`;
+      `[...document.querySelectorAll('.dx-tabs-trigger[data-active]')].find((e) => { const t = e.closest('.dx-tabs'); return ${cond}; })`;
     await checkStates(page, [
       {
         label: "line bar (docs DEMO/CODE tabs)",
@@ -508,13 +508,13 @@ test.describe("accent on active and selected states (row 389)", () => {
     await page.mouse.move(0, 0);
     await page.evaluate(() => {
       document.querySelectorAll(".dx-navigation-menu-link").forEach((a, i) => {
-        if (i === 1) a.setAttribute("data-active", "true");
+        if (i === 1) a.setAttribute("data-active", "");
       });
     });
     await checkStates(page, [
       {
         label: "panel link data-active",
-        find: `document.querySelector('.dx-navigation-menu-content .dx-navigation-menu-link[data-active="true"]')`,
+        find: `document.querySelector('.dx-navigation-menu-content .dx-navigation-menu-link[data-active]')`,
         prop: "background-color",
         // A state with no rule of its own: with no accent it is the neutral selected fill (`--dx-accent-selected`).
         plain: "var(--dx-accent-selected)",
@@ -525,11 +525,11 @@ test.describe("accent on active and selected states (row 389)", () => {
 
   test("Sidebar: the active row and the active sub-row paint the sidebar tint (the docs nav is the library's Sidebar)", async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/button/`);
-    await expect(page.locator('.dx-sidebar-menu-button[data-active="true"]').first()).toBeVisible();
+    await expect(page.locator('.dx-sidebar-menu-button[data-active]').first()).toBeVisible();
     await checkStates(page, [
       {
         label: "docs nav active row",
-        find: `document.querySelector('.dx-sidebar-menu-button[data-active="true"]')`,
+        find: `document.querySelector('.dx-sidebar-menu-button[data-active]')`,
         prop: "background-color",
         plain: "var(--dx-sidebar-accent)",
         next: "var(--dx-sidebar-accent-tint)",
@@ -539,11 +539,11 @@ test.describe("accent on active and selected states (row 389)", () => {
     await gotoHydrated(page, `${BASE_URL}/component/block/sidebar/main/`);
     const sub = page.locator(".dx-sidebar-menu-sub-button").first();
     await expect(sub).toBeAttached();
-    await sub.evaluate((el) => el.setAttribute("data-active", "true"));
+    await sub.evaluate((el) => el.setAttribute("data-active", ""));
     await checkStates(page, [
       {
         label: "active sub-row",
-        find: `document.querySelector('.dx-sidebar-menu-sub-button[data-active="true"]')`,
+        find: `document.querySelector('.dx-sidebar-menu-sub-button[data-active]')`,
         prop: "background-color",
         plain: "var(--dx-sidebar-accent)",
         next: "var(--dx-sidebar-accent-tint)",
@@ -555,28 +555,28 @@ test.describe("accent on active and selected states (row 389)", () => {
     const pressed = "color-mix(in var(--dx-hover-mix-space), var(--dx-accent-tint), var(--dx-tint-step-ink) 15%)";
     const pressedPlain = "color-mix(in var(--dx-hover-mix-space), var(--dx-accent), var(--dx-foreground) 15%)";
     await gotoHydrated(page, `${BASE_URL}/component/toggle/`);
-    await demoFrame(page).locator('.dx-toggle[data-state="off"]').first().click();
+    await demoFrame(page).locator('.dx-toggle[aria-pressed=false]').first().click();
     await page.mouse.move(0, 0);
-    await expect(demoFrame(page).locator('.dx-toggle[data-state="on"]').first()).toBeVisible();
-    await checkStates(page, [{ label: "toggle on", find: `document.querySelector('#component-preview-frame .dx-toggle[data-state="on"]')`, prop: "background-color", plain: pressedPlain, next: pressed }]);
+    await expect(demoFrame(page).locator('.dx-toggle[aria-pressed=true]').first()).toBeVisible();
+    await checkStates(page, [{ label: "toggle on", find: `document.querySelector('#component-preview-frame .dx-toggle[aria-pressed=true]')`, prop: "background-color", plain: pressedPlain, next: pressed }]);
 
     await gotoHydrated(page, `${BASE_URL}/component/toggle_group/`);
-    await demoFrame(page).locator('.dx-toggle-group-item[data-state="off"]').first().click();
+    await demoFrame(page).locator('.dx-toggle-group-item[aria-pressed=false]').first().click();
     await page.mouse.move(0, 0);
-    await expect(demoFrame(page).locator('.dx-toggle-group-item[data-state="on"]').first()).toBeVisible();
+    await expect(demoFrame(page).locator('.dx-toggle-group-item[aria-pressed=true]').first()).toBeVisible();
     await checkStates(page, [
-      { label: "toggle group item on", find: `document.querySelector('#component-preview-frame .dx-toggle-group-item[data-state="on"]')`, prop: "background-color", plain: pressedPlain, next: pressed },
+      { label: "toggle group item on", find: `document.querySelector('#component-preview-frame .dx-toggle-group-item[aria-pressed=true]')`, prop: "background-color", plain: pressedPlain, next: pressed },
     ]);
 
     await gotoHydrated(page, `${BASE_URL}/component/toolbar/`);
-    const pressedButton = demoFrame(page).locator('.dx-toolbar-button[data-state="on"], .dx-toolbar-button[aria-pressed="true"]');
-    if ((await pressedButton.count()) === 0) await demoFrame(page).locator(".dx-toolbar-button[aria-pressed], .dx-toolbar-button[data-state]").first().click();
+    const pressedButton = demoFrame(page).locator('.dx-toolbar-button[aria-pressed=true], .dx-toolbar-button[aria-pressed="true"]');
+    if ((await pressedButton.count()) === 0) await demoFrame(page).locator(".dx-toolbar-button[aria-pressed]").first().click();
     await page.mouse.move(0, 0);
     await expect(pressedButton.first()).toBeVisible();
     await checkStates(page, [
       {
         label: "toolbar pressed",
-        find: `document.querySelector('#component-preview-frame .dx-toolbar-button[data-state="on"], #component-preview-frame .dx-toolbar-button[aria-pressed="true"]')`,
+        find: `document.querySelector('#component-preview-frame .dx-toolbar-button[aria-pressed=true], #component-preview-frame .dx-toolbar-button[aria-pressed="true"]')`,
         prop: "background-color",
         plain: "var(--dx-accent-selected)",
         next: "var(--dx-accent-tint-selected)",
@@ -589,8 +589,8 @@ test.describe("accent on active and selected states (row 389)", () => {
     const tag = demoFrame(page).locator(".dx-tag-group-tag").first();
     await tag.click();
     await page.mouse.move(0, 0);
-    await expect(demoFrame(page).locator('.dx-tag-group-tag[data-selected="true"]').first()).toBeVisible();
-    const sel = `document.querySelector('.dx-tag-group-tag[data-selected="true"]')`;
+    await expect(demoFrame(page).locator('.dx-tag-group-tag[data-selected]').first()).toBeVisible();
+    const sel = `document.querySelector('.dx-tag-group-tag[data-selected]')`;
     await checkStates(page, [
       { label: "selected tag fill", find: sel, prop: "background-color", plain: "var(--dx-ring-color)", next: "var(--dx-ring-color)", unchanged: true },
       {
@@ -606,11 +606,11 @@ test.describe("accent on active and selected states (row 389)", () => {
 
   test("Carousel, Slider, Progress: the active dot, the range and the fill paint the mark", async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/carousel/`);
-    await expect(page.locator(".dx-carousel-indicator[aria-selected='true'], .dx-carousel-picker-dot[data-active='true']").first()).toBeAttached();
+    await expect(page.locator(".dx-carousel-indicator[aria-selected='true'], .dx-carousel-picker-dot[data-active]").first()).toBeAttached();
     await checkStates(page, [
       {
         label: "carousel active dot",
-        find: `document.querySelector('.dx-carousel-indicator[aria-selected="true"], .dx-carousel-picker-dot[data-active="true"]')`,
+        find: `document.querySelector('.dx-carousel-indicator[aria-selected="true"], .dx-carousel-picker-dot[data-active]')`,
         prop: "background-color",
         plain: "var(--dx-primary)",
         next: "var(--dx-primary-mark)",
@@ -673,11 +673,11 @@ test.describe("accent on active and selected states (row 389)", () => {
 
     await gotoHydrated(page, `${BASE_URL}/component/command/`);
     await demoFrame(page, "inline").locator(".dx-command-item").nth(1).hover();
-    await expect(demoFrame(page, "inline").locator('.dx-command-item[data-highlighted="true"]').first()).toBeVisible();
+    await expect(demoFrame(page, "inline").locator('.dx-command-item[data-highlighted]').first()).toBeVisible();
     await checkStates(page, [
       {
         label: "command highlighted item",
-        find: `document.querySelector('#component-preview-frame-inline .dx-command-item[data-highlighted="true"]')`,
+        find: `document.querySelector('#component-preview-frame-inline .dx-command-item[data-highlighted]')`,
         prop: "background-color",
         plain: "var(--dx-accent)",
         next: "var(--dx-accent-tint)",
@@ -695,7 +695,7 @@ test.describe("accent on active and selected states (row 389)", () => {
     await checkStates(page, [
       {
         label: "combobox highlighted option",
-        find: `document.querySelector('.dx-combobox-option[data-highlighted="true"]')`,
+        find: `document.querySelector('.dx-combobox-option[data-highlighted]')`,
         prop: "background-color",
         plain: "var(--dx-accent)",
         next: "var(--dx-accent-tint)",
@@ -714,11 +714,11 @@ test.describe("accent on active and selected states (row 389)", () => {
     await gotoHydrated(page, `${BASE_URL}/component/menubar/`);
     await demoFrame(page).locator(".dx-menubar-trigger").first().click();
     await page.mouse.move(0, 0);
-    await expect(page.locator('.dx-menubar-menu[data-state="open"] .dx-menubar-trigger').first()).toBeVisible();
+    await expect(page.locator('.dx-menubar-menu[data-open] .dx-menubar-trigger').first()).toBeVisible();
     await checkStates(page, [
       {
         label: "menubar open trigger",
-        find: `document.querySelector('.dx-menubar-menu[data-state="open"] .dx-menubar-trigger')`,
+        find: `document.querySelector('.dx-menubar-menu[data-open] .dx-menubar-trigger')`,
         prop: "background-color",
         plain: "var(--dx-muted)",
         next: "var(--dx-accent-tint)",
@@ -763,15 +763,15 @@ test.describe("accent on active and selected states (row 389)", () => {
 
   test("Table: the selected row takes the theme slot", async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/table/`);
-    // The demo has no selection: mark a body row selected (the sheet's rule is `[data-state="selected"]`).
+    // The demo has no selection: mark a body row selected (the sheet's rule is `[data-selected]`).
     const row = demoFrame(page).locator("tbody tr.dx-table-row").first();
     await expect(row).toBeVisible();
-    await row.evaluate((el) => el.setAttribute("data-state", "selected"));
+    await row.evaluate((el) => el.setAttribute("data-selected", ""));
     await page.mouse.move(0, 0);
     await checkStates(page, [
       {
         label: "selected table row",
-        find: `document.querySelector('#component-preview-frame tr[data-state="selected"]')`,
+        find: `document.querySelector('#component-preview-frame tr[data-selected]')`,
         prop: "background-color",
         plain: "var(--dx-muted)",
         next: "var(--dx-accent-tint)",
@@ -781,9 +781,9 @@ test.describe("accent on active and selected states (row 389)", () => {
 
   test("Pagination: the current page takes the ink and the mark border", async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/pagination/`);
-    await expect(demoFrame(page).locator('.dx-pagination-link[data-active="true"]').first()).toBeVisible();
+    await expect(demoFrame(page).locator('.dx-pagination-link[data-active]').first()).toBeVisible();
     await page.mouse.move(0, 0);
-    const find = `document.querySelector('.dx-pagination-link[data-active="true"]')`;
+    const find = `document.querySelector('.dx-pagination-link[data-active]')`;
     await checkStates(page, [
       { label: "pagination current label", find, prop: "color", plain: "var(--dx-foreground)", next: "var(--dx-active-ink)" },
       {

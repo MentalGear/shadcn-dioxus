@@ -235,7 +235,7 @@ pub fn RadioGroup(props: RadioGroupProps) -> Element {
     let owned = attributes!(div {
         role: "radiogroup",
         "data-orientation": if (props.horizontal)() { "horizontal" } else { "vertical" },
-        ..state_attrs::disabled((props.disabled)()),
+        ..state_attrs::presence(state_attrs::Flag::Disabled, (props.disabled)()),
         "data-direction": direction.as_str(),
         aria_required: props.required,
         aria_readonly: (props.read_only)().then_some("true"),
@@ -320,7 +320,7 @@ pub struct RadioItemProps {
 /// ## Styling
 ///
 /// The [`RadioItem`] component defines the following data attributes you can use to control styling:
-/// - `data-state`: Indicates the state of the radio item. Values are `checked` or `unchecked`.
+/// - `data-checked` / `data-unchecked`: Exactly one is present: whether the item is checked.
 /// - `data-checked` / `data-unchecked`: Present (empty) while checked / unchecked, absent otherwise.
 /// - `data-disabled`: Indicates if the radio item is disabled. Values are `true` or `false`.
 /// - `data-readonly`: Present (empty) while the group is read-only, absent otherwise.
@@ -377,7 +377,7 @@ pub fn RadioItem(props: RadioItemProps) -> Element {
 
     // `type` is an overridable default; the rest is this item's own
     // functional state (role/tabindex define the widget and its
-    // roving-focus wiring, aria-checked/data-state/data-disabled mirror
+    // roving-focus wiring, aria-checked/data-checked/data-disabled mirror
     // its real state).
     let defaults = attributes!(button { r#type: "button" });
     let owned = attributes!(button {
@@ -385,7 +385,7 @@ pub fn RadioItem(props: RadioItemProps) -> Element {
         tabindex: tab_index,
         aria_checked: checked,
         ..state_attrs::checked(checked()),
-        ..state_attrs::disabled(disabled()),
+        ..state_attrs::presence(state_attrs::Flag::Disabled, disabled()),
         ..state_attrs::readonly(ctx.read_only),
     });
     let merged = merge_attributes(vec![

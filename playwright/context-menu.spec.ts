@@ -14,7 +14,7 @@ test('pointer navigation', async ({ page }) => {
 
   // Assert the context menu is visible
   const contextMenu = page.getByRole('menu');
-  await expect(contextMenu).toHaveAttribute('data-state', 'open');
+  await expect(contextMenu).toHaveAttribute('data-open', '');
   // Click on the "Edit" menu item
   await page.getByRole('menuitem', { name: 'Edit' }).click();
   // Assert the context menu is closed after clicking
@@ -66,7 +66,7 @@ test('menu lands at the tap coordinates on touch long-press', async ({ page }) =
     }));
   }, { x: tapX, y: tapY, pointerId });
 
-  await expect(contextMenu).toHaveAttribute('data-state', 'open');
+  await expect(contextMenu).toHaveAttribute('data-open', '');
   // Measure the SETTLED box: the open fade scales the panel (0.95 -> 1 about its centre), so a box read
   // mid-fade sits up to ~5.5px right of the tap point on a 220px menu -- that fails on every load-starved
   // run (dev-docs/backlog.md row 115).
@@ -118,7 +118,7 @@ test('clamps the menu into the viewport for a mouse right-click near a corner', 
     }));
   }, { x, y });
 
-  await expect(contextMenu).toHaveAttribute('data-state', 'open');
+  await expect(contextMenu).toHaveAttribute('data-open', '');
   // The SETTLED box: the open fade scales the panel about its centre (0.95 -> 1), so a mid-fade read sits
   // up to ~3px inside its final edges and can hide a margin that is really smaller than EDGE_MARGIN.
   await awaitAnimationsSettled(contextMenu);
@@ -161,7 +161,7 @@ test('clamps the menu into the viewport for a touch long-press near a corner', a
     }));
   }, { x, y, pointerId });
 
-  await expect(contextMenu).toHaveAttribute('data-state', 'open');
+  await expect(contextMenu).toHaveAttribute('data-open', '');
   // The SETTLED box: the open fade scales the panel about its centre (0.95 -> 1), so a mid-fade read sits
   // up to ~3px inside its final edges and can hide a margin that is really smaller than EDGE_MARGIN.
   await awaitAnimationsSettled(contextMenu);
@@ -203,7 +203,7 @@ test('touch long-press opens the context menu', async ({ page }) => {
     }));
   }, { x, y, pointerId });
 
-  await expect(contextMenu).toHaveAttribute('data-state', 'open');
+  await expect(contextMenu).toHaveAttribute('data-open', '');
 
   // Release the touch after the menu has opened; it should stay open.
   await trigger.evaluate((el, { x, y, pointerId }) => {
@@ -217,7 +217,7 @@ test('touch long-press opens the context menu', async ({ page }) => {
     }));
   }, { x, y, pointerId });
 
-  await expect(contextMenu).toHaveAttribute('data-state', 'open');
+  await expect(contextMenu).toHaveAttribute('data-open', '');
 });
 
 test('pen long-press opens the context menu', async ({ page }) => {
@@ -245,7 +245,7 @@ test('pen long-press opens the context menu', async ({ page }) => {
     }));
   }, { x, y, pointerId });
 
-  await expect(contextMenu).toHaveAttribute('data-state', 'open');
+  await expect(contextMenu).toHaveAttribute('data-open', '');
 });
 
 test('mouse pointerdown does not arm the long-press timer', async ({ page }) => {
@@ -284,7 +284,7 @@ test('touch tap outside closes the open menu', async ({ page }) => {
   const contextMenu = page.getByRole('menu');
 
   await trigger.click({ button: 'right' });
-  await expect(contextMenu).toHaveAttribute('data-state', 'open');
+  await expect(contextMenu).toHaveAttribute('data-open', '');
 
   // Tap near the bottom-right of the viewport, well outside the menu.
   // Inset 30px from each edge rather than flush against it (`width - 10`):
@@ -336,7 +336,7 @@ test('pointerdown at the trigger location does not dismiss an open menu', async 
   const contextMenu = page.getByRole('menu');
 
   await trigger.click({ button: 'right' });
-  await expect(contextMenu).toHaveAttribute('data-state', 'open');
+  await expect(contextMenu).toHaveAttribute('data-open', '');
 
   await readStatic(trigger, (el) => {
     const triggerRect = el.getBoundingClientRect();
@@ -376,7 +376,7 @@ test('pointerdown at the trigger location does not dismiss an open menu', async 
     }));
   });
 
-  await expect(contextMenu).toHaveAttribute('data-state', 'open');
+  await expect(contextMenu).toHaveAttribute('data-open', '');
 });
 
 test('touch released before long-press threshold does not open the menu', async ({ page }) => {
@@ -429,7 +429,7 @@ test('keyboard navigation', async ({ page }) => {
 
   // Assert the context menu is visible
   const contextMenu = page.getByRole('menu');
-  await expect(contextMenu).toHaveAttribute('data-state', 'open');
+  await expect(contextMenu).toHaveAttribute('data-open', '');
   // Hit escape to close the context menu
   await page.keyboard.press('Escape');
   // Assert the context menu is closed after pressing escape
@@ -442,7 +442,7 @@ test('keyboard navigation', async ({ page }) => {
   await page.keyboard.press('ArrowDown');
   // Assert the "Edit" menu item is focused
   await expect(page.getByRole('menuitem', { name: 'Edit' })).toBeFocused();
-  await expect(page.getByRole('menuitem', { name: 'Undo' })).toHaveAttribute('data-disabled', 'true');
+  await expect(page.getByRole('menuitem', { name: 'Undo' })).toHaveAttribute('data-disabled', "");
   // Move down to the "Duplicate" menu item
   await page.keyboard.press('ArrowDown');
   // Assert the "Duplicate" menu item is focused
@@ -479,7 +479,7 @@ test.describe('Checkable items', () => {
     await gotoHydrated(page, block('checkboxes'));
     await page.getByRole('button', { name: 'Right click for checkboxes' }).click({ button: 'right' });
     const menu = page.getByRole('menu');
-    await expect(menu).toHaveAttribute('data-state', 'open');
+    await expect(menu).toHaveAttribute('data-open', '');
 
     await expect(page.getByRole('menuitemcheckbox'), 'three checkbox items').toHaveCount(3);
     await expect(page.getByRole('menuitem'), 'only the "More options" sub-trigger is a plain menuitem').toHaveCount(1);
@@ -488,16 +488,16 @@ test.describe('Checkable items', () => {
     const devTools = page.getByRole('menuitemcheckbox', { name: 'Show Developer Tools' });
 
     await expect(bookmarks).toHaveAttribute('aria-checked', 'true');
-    await expect(bookmarks).toHaveAttribute('data-state', 'checked');
+    await expect(bookmarks).toHaveAttribute('data-checked', '');
     await expect(fullUrls).toHaveAttribute('aria-checked', 'false');
-    await expect(fullUrls).toHaveAttribute('data-state', 'unchecked');
+    await expect(fullUrls).toHaveAttribute('data-unchecked', '');
     await expect(devTools).toHaveAttribute('aria-checked', 'true');
     await expect(devTools).toHaveAttribute('aria-disabled', 'true');
 
     await fullUrls.click();
     await expect(fullUrls).toHaveAttribute('aria-checked', 'true');
     await expect(page.getByText('Bookmarks true, full URLs true')).toBeVisible();
-    await expect(menu, 'the default keeps the menu open').toHaveAttribute('data-state', 'open');
+    await expect(menu, 'the default keeps the menu open').toHaveAttribute('data-open', '');
 
     await bookmarks.click();
     await expect(bookmarks).toHaveAttribute('aria-checked', 'false');
@@ -506,7 +506,7 @@ test.describe('Checkable items', () => {
     // element to become actionable.
     await devTools.click({ force: true });
     await expect(devTools, 'a disabled item cannot be toggled').toHaveAttribute('aria-checked', 'true');
-    await expect(menu).toHaveAttribute('data-state', 'open');
+    await expect(menu).toHaveAttribute('data-open', '');
   });
 
   test('checkbox items: arrow keys skip the disabled item, Space and Enter toggle in place, typeahead cycles the enabled ones', async ({ page }) => {
@@ -533,11 +533,11 @@ test.describe('Checkable items', () => {
     // closing the menu" -- what the default gives.
     await page.keyboard.press('Space');
     await expect(fullUrls).toHaveAttribute('aria-checked', 'true');
-    await expect(menu).toHaveAttribute('data-state', 'open');
+    await expect(menu).toHaveAttribute('data-open', '');
     await expect(fullUrls, 'focus stays on the toggled item').toBeFocused();
     await page.keyboard.press('Enter');
     await expect(fullUrls).toHaveAttribute('aria-checked', 'false');
-    await expect(menu).toHaveAttribute('data-state', 'open');
+    await expect(menu).toHaveAttribute('data-open', '');
 
     // Typeahead: every label starts with "S", so repeating "s" cycles the
     // checkbox items -- skipping the disabled one.
@@ -568,7 +568,7 @@ test.describe('Checkable items', () => {
     await page.keyboard.press('Space');
     await expect(wordWrap).toHaveAttribute('aria-checked', 'true');
     await expect(page.getByText('word wrap true')).toBeVisible();
-    await expect(menu.first(), 'the default keeps the whole menu open').toHaveAttribute('data-state', 'open');
+    await expect(menu.first(), 'the default keeps the whole menu open').toHaveAttribute('data-open', '');
     await expect(wordWrap, 'focus stays on the toggled item').toBeFocused();
 
     // ArrowLeft hands focus back to the sub-trigger; the root's own roving
@@ -601,7 +601,7 @@ test.describe('Checkable items', () => {
   test('radio groups: role=group named by its label, one checked item per group, a choice moves only its own group\'s check', async ({ page }) => {
     await gotoHydrated(page, block('radio_group'));
     await page.getByRole('button', { name: 'Right click for radio group' }).click({ button: 'right' });
-    await expect(page.getByRole('menu')).toHaveAttribute('data-state', 'open');
+    await expect(page.getByRole('menu')).toHaveAttribute('data-open', '');
 
     const people = page.getByRole('group', { name: 'People' });
     const theme = page.getByRole('group', { name: 'Theme' });
@@ -620,7 +620,7 @@ test.describe('Checkable items', () => {
     await expect(people.getByRole('menuitemradio', { name: 'Pedro Duarte' })).toHaveAttribute('aria-checked', 'false');
     await expect(checked(people)).toHaveCount(1);
     await expect(theme.getByRole('menuitemradio', { name: 'Light' }), "the other group is untouched").toHaveAttribute('aria-checked', 'true');
-    await expect(page.getByRole('menu'), 'the default keeps the menu open').toHaveAttribute('data-state', 'open');
+    await expect(page.getByRole('menu'), 'the default keeps the menu open').toHaveAttribute('data-open', '');
   });
 
   test('radio groups: Space and Enter choose in place across both groups, typeahead falls back to the value', async ({ page }) => {
@@ -638,14 +638,14 @@ test.describe('Checkable items', () => {
     await page.keyboard.press('Space');
     await expect(dark).toHaveAttribute('aria-checked', 'true');
     await expect(theme.getByRole('menuitemradio', { name: 'Light' })).toHaveAttribute('aria-checked', 'false');
-    await expect(menu).toHaveAttribute('data-state', 'open');
+    await expect(menu).toHaveAttribute('data-open', '');
 
     await page.keyboard.press('ArrowDown');
     await expect(system).toBeFocused();
     await page.keyboard.press('Enter');
     await expect(system).toHaveAttribute('aria-checked', 'true');
     await expect(dark).toHaveAttribute('aria-checked', 'false');
-    await expect(menu).toHaveAttribute('data-state', 'open');
+    await expect(menu).toHaveAttribute('data-open', '');
 
     // A radio item has no text_value here: typeahead falls back to its value.
     await page.keyboard.press('d');
@@ -657,7 +657,7 @@ test.describe('Checkable items', () => {
     const trigger = page.getByRole('button', { name: 'right click here' });
     await trigger.click({ button: 'right' });
     const menu = page.getByRole('menu');
-    await expect(menu).toHaveAttribute('data-state', 'open');
+    await expect(menu).toHaveAttribute('data-open', '');
 
     const bookmarks = page.getByRole('menuitemcheckbox', { name: 'Show Bookmarks' });
     await expect(bookmarks).toHaveAttribute('aria-checked', 'true');
@@ -819,9 +819,9 @@ test.describe('Open/close animation', () => {
   test('the fade animates translate/scale and leaves transform alone (open and close)', async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/context_menu/`, { timeout: 20 * 60 * 1000 });
     await page.getByRole('button', { name: 'right click here' }).click({ button: 'right' });
-    const content = page.locator('.dx-context-menu-content[data-state="open"]').first();
+    const content = page.locator('.dx-context-menu-content[data-open]').first();
     await expect(content).toBeVisible();
     await expectFadeKeepsTransform(content, 'context menu content, open');
-    await expectFadeKeepsTransform(content, 'context menu content, close', { 'data-state': 'closed' });
+    await expectFadeKeepsTransform(content, 'context menu content, close', { 'data-open': null, 'data-closed': '' });
   });
 });

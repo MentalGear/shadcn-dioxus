@@ -191,7 +191,7 @@ test.describe("R3 -- axe: role=combobox trigger stays a11y-clean closed and open
   test("open: no automatically detectable a11y issues", async ({ page }) => {
     await goto(page, "select");
     await librarySelectTrigger(page).click();
-    await expect(page.getByRole("listbox")).toHaveAttribute("data-state", "open");
+    await expect(page.getByRole("listbox")).toHaveAttribute("data-open", "");
     await expectNoAxeViolations(page, "select-only-combobox: open", {
       excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT],
     });

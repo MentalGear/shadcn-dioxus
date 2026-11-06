@@ -6,9 +6,8 @@
 # `primitives/src/state_attrs.rs`, which writes Radix's `data-state` and Base UI's presence attributes (empty while the state holds,
 # absent otherwise) from one call. A non-test, non-comment line under `primitives/src` (except `chart/`) or in a preview
 # `components/*/component.rs` that writes one of the vocabulary names as a literal attribute key fails, and so does any other `data-*`
-# attribute given the constant `false` or `"false"`. Valued booleans that stylesheets and specs still select as `="true"` go
-# through `state_attrs::valued`, `disabled`, `open_valued` and `presence_true`, whose calls are counted per file against a
-# shrink-only baseline. Backlog row 481.
+# attribute given the constant `false` or `"false"`. A boolean state is a presence attribute (`state_attrs::presence`); the valued
+# helpers (`valued`, `disabled`, `open_valued`, `presence_true`) are gone and any call to one fails. Backlog rows 481 and 484.
 #
 # THE CLASS: a boolean written as `"data-x": flag` renders `data-x=false` in the false case (dioxus-ssr writes a `Bool` as
 # `name=value`), so a presence selector (`[data-x]`, Tailwind's `data-open:`, every base-nova class string) matches the false case,
@@ -17,8 +16,7 @@
 #
 # THE CONSTRUCTION: one module owns the vocabulary. `state_attrs::open|trigger_open|checked|pressed|active|panel_hidden|selected|
 # progress|state` return `data-state` and the matching presence attribute together, `presence`/`readonly`/`popup_open`/`panel_open`
-# return a presence attribute (present and empty, or absent), and the valued forms live in the same file, so moving a flag to
-# presence is one edit there plus its CSS and specs. This gate keeps every other file from writing the names.
+# return a presence attribute (present and empty, or absent). This gate keeps every other file from writing the names.
 #
 # Vocabulary: state, checked, unchecked, indeterminate, open, closed, popup-open, panel-open, pressed, disabled, readonly,
 # highlighted, selected, invalid, active, dragging, complete, progressing. `dev-docs/state-attributes.md` lists each one (the gate
@@ -46,24 +44,22 @@ sys.path.insert(0, "scripts/lib")
 from allow import Allowlist  # noqa: E402
 
 VOCAB = [
-    "state", "checked", "unchecked", "indeterminate", "open", "closed", "popup-open", "panel-open",
+    "checked", "unchecked", "indeterminate", "open", "closed", "popup-open", "panel-open",
     "pressed", "disabled", "readonly", "highlighted", "selected", "invalid", "active", "dragging",
-    "complete", "progressing",
+    "complete", "progressing", "hidden", "loading", "loaded", "empty", "idle", "uploading", "processing",
+    "done",
 ]
+# `data-state` is retired (row 485): no emission anywhere in scope, the helper included.
+RETIRED = "data-state"
 HELPER = "primitives/src/state_attrs.rs"
 BASELINE = "scripts/check-state-attributes.baseline.tsv"
 DOC = "dev-docs/state-attributes.md"
 
 # (path, attribute, reason): a literal that must stay outside the helper.
-ALLOW = Allowlist("check-state-attributes", [
-    ("primitives/src/message_scroller.rs", "data-active",
-     "The scroll-to-end button's `data-active` is written by the page script (`message_scroller.js`); the Rust render only seeds its first value."),
-], fields=("path", "name"))
+ALLOW = Allowlist("check-state-attributes", [], fields=("path", "name"))
 
-# Calls (and constant-false sites) whose count per file is the legacy-valued debt.
-CALL_RE = re.compile(
-    r"state_attrs::(valued|presence_true)\(\s*(?:state_attrs::)?Flag::(\w+)"
-    r"|state_attrs::(disabled|open_valued)\(")
+# Calls of the deleted valued forms; any use is a violation, and the baseline (constant-false sites) is empty.
+CALL_RE = re.compile(r"state_attrs::(valued|presence_true|disabled|open_valued)\(")
 
 
 def rust_code_only(src):
@@ -132,6 +128,8 @@ def scan(path, src):
     """Findings for one file: [(kind, line, name, detail)]; kind is 'literal' or 'false'."""
     text = live(src)
     found = []
+    for m in re.finditer(r'"data-state"', text):
+        found.append(("retired", text.count("\n", 0, m.start()) + 1, RETIRED, ""))
     for m in list(KEY_RE.finditer(text)) + list(NEW_RE.finditer(text)):
         name = "data-" + m.group(1)
         line = text.count("\n", 0, m.start()) + 1
@@ -141,10 +139,7 @@ def scan(path, src):
             found.append(("false", line, name, m.group(2).strip()))
     calls = collections.Counter()
     for m in CALL_RE.finditer(text):
-        if m.group(1):
-            calls[f"{m.group(1)}:{m.group(2)}"] += 1
-        else:
-            calls[{"disabled": "valued:Disabled", "open_valued": "valued:Open"}[m.group(3)]] += 1
+        found.append(("valued", text.count("\n", 0, m.start()) + 1, m.group(1), ""))
     return found, calls
 
 
@@ -162,7 +157,7 @@ def files():
 
 def run_self_test():
     fixtures = [
-        ('rsx! { div { "data-state": if open { "open" } else { "closed" } } }', ["literal"]),
+        ('rsx! { div { "data-state": if open { "open" } else { "closed" } } }', ["retired"]),
         ('attributes!(div { "data-open": open })', ["literal"]),
         ('attributes!(div { "data-checked": c.then_some("") })', ["literal"]),
         ('attributes!(div { ..state_attrs::open(open()) })', []),
@@ -176,6 +171,8 @@ def run_self_test():
         ('let s = "// \\"data-open\\": x"; /* "data-active": y */', []),
         ('fn f() {}\n#[cfg(test)]\nmod t { fn g() { let _ = r#"data-state"#; "data-state": "x" } }', []),
         ('attributes!(div { "data-thing": other_false })', []),
+        ('Attribute::new("data-state", v, None, false)', ["retired"]),
+        ('fn f() -> Attribute { text("data-state", "open") }', ["retired"]),
     ]
     bad = 0
     for src, want in fixtures:
@@ -183,11 +180,11 @@ def run_self_test():
         if got != want:
             print(f"self-test FAILED for {src!r}: want {want}, got {got}")
             bad += 1
-    calls = scan("x.rs", "..state_attrs::valued(state_attrs::Flag::Dragging, d), ..state_attrs::disabled(x), "
-                 "..state_attrs::presence_true(Flag::Active, a), ..state_attrs::open_valued(o), ..state_attrs::presence(Flag::Selected, s)")[1]
-    want_calls = {"valued:Dragging": 1, "valued:Disabled": 1, "presence_true:Active": 1, "valued:Open": 1}
-    if dict(calls) != want_calls:
-        print(f"self-test FAILED for call counting: want {want_calls}, got {dict(calls)}")
+    kinds = [k for k, *_ in scan("x.rs", "..state_attrs::valued(state_attrs::Flag::Dragging, d), ..state_attrs::disabled(x), "
+                                 "..state_attrs::presence_true(Flag::Active, a), ..state_attrs::open_valued(o), "
+                                 "..state_attrs::presence(Flag::Selected, s)")[0]]
+    if kinds != ["valued"] * 4:
+        print(f"self-test FAILED for the deleted valued forms: want 4 `valued` findings, got {kinds}")
         bad += 1
     return bad
 
@@ -205,8 +202,7 @@ def read_baseline():
 
 def write_baseline(counts):
     with open(BASELINE, "w") as f:
-        f.write("# check-state-attributes baseline: calls of the legacy valued forms (valued, disabled, open_valued,\n"
-                "# presence_true) per file, shrink-only. Regenerate with scripts/check-state-attributes.sh --update-baseline;\n"
+        f.write("# check-state-attributes baseline: constant-false `data-*` writes per file, shrink-only. Regenerate with scripts/check-state-attributes.sh --update-baseline;\n"
                 "# see dev-docs/state-attributes.md.\n")
         for (path, call), n in sorted(counts.items()):
             f.write(f"{path}\t{call}\t{n}\n")
@@ -233,7 +229,13 @@ def main(argv):
         for kind, line, name, detail in found:
             if ALLOW.find(lambda e, p=path, n=name: e.path == p and e.name == n):
                 continue
-            if kind == "literal":
+            if kind == "retired":
+                errors.append(f"{path}:{line}: `data-state` is retired; state is a presence attribute or ARIA "
+                              f"(primitives/src/state_attrs.rs, dev-docs/state-attributes.md)")
+            elif kind == "valued":
+                errors.append(f"{path}:{line}: `state_attrs::{name}` is gone; a boolean state is a presence attribute: "
+                              f"`state_attrs::presence(Flag::X, on)` (present while it holds, absent otherwise)")
+            elif kind == "literal":
                 errors.append(f"{path}:{line}: `\"{name}\"` is written here; a component gets state attributes only from `state_attrs::*` "
                               f"(primitives/src/state_attrs.rs)")
             else:
@@ -241,6 +243,10 @@ def main(argv):
         for call, n in calls.items():
             counts[(path, call)] = n
     errors += ALLOW.problems()
+    if os.path.exists(HELPER):
+        for kind, line, name, detail in scan(HELPER, open(HELPER).read())[0]:
+            if kind == "retired":
+                errors.append(f"{HELPER}:{line}: `data-state` is retired and must not be emitted here either")
 
     # The vocabulary is documented once, and every name is in it.
     if not os.path.exists(DOC):
@@ -263,17 +269,17 @@ def main(argv):
                 print(f"refusing to raise {path} {call}: {old} -> {new} (new code uses state_attrs::presence; --allow-grow with a reason)")
             return 1
         write_baseline(counts)
-        print(f"check-state-attributes: baseline written ({sum(counts.values())} legacy valued calls in {len({p for p, _ in counts})} files)")
+        print(f"check-state-attributes: baseline written ({sum(counts.values())} constant-false writes in {len({p for p, _ in counts})} files)")
         return 0
     if "--list" in argv:
         print(ALLOW.listing())
-        print(f"legacy valued calls: {sum(counts.values())} in {len({p for p, _ in counts})} files")
+        print(f"constant-false writes: {sum(counts.values())} in {len({p for p, _ in counts})} files")
         return 0
 
     for (path, call), n in sorted(counts.items()):
         if n > base.get((path, call), 0):
             what = ("a `data-*` attribute given the constant `false`/`\"false\"` (a boolean attribute is present or absent, never `false`)"
-                    if call.startswith("false:") else "a legacy valued boolean")
+                    if call.startswith("false:") else "a constant-false boolean")
             errors.append(f"{path}: {n} `{call}` site(s), baseline {base.get((path, call), 0)}: {what} is selected as "
                           f"`=\"true\"`/`=\"false\"` by existing CSS, JS or specs, so a new one is not added; use `state_attrs::presence`")
     for (path, call), n in sorted(base.items()):
@@ -283,7 +289,7 @@ def main(argv):
     for e in errors:
         print("FAIL: " + e)
     if not errors:
-        print(f"check-state-attributes: OK ({len(files())} files, {sum(counts.values())} legacy valued calls on the baseline)")
+        print(f"check-state-attributes: OK ({len(files())} files, {sum(counts.values())} constant-false writes on the baseline)")
     return 1 if errors else 0
 
 

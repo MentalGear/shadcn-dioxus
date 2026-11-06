@@ -1020,8 +1020,8 @@ pub fn TagOption<T: Clone + PartialEq + 'static>(props: TagOptionProps<T>) -> El
         aria_rowindex: (index.cloned() as i32) + 1,
         aria_selected: (state.selectable)().then_some(selected()),
         aria_disabled: disabled(),
-        ..state_attrs::valued(state_attrs::Flag::Selected, selected()),
-        ..state_attrs::disabled(disabled()),
+        ..state_attrs::presence(state_attrs::Flag::Selected, selected()),
+        ..state_attrs::presence(state_attrs::Flag::Disabled, disabled()),
     });
     let merged = merge_attributes(vec![props.attributes.clone(), owned]);
 
