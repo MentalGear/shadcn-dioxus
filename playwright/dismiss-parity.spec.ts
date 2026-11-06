@@ -101,10 +101,9 @@ const SURFACES: Surface[] = [
       await page.locator("#clip-combobox-trigger").click();
       await page.keyboard.press("ArrowDown");
     },
-    // A mouse press on plain page blurs the input, and the blur closes it; the press is not a dismissal of its own
-    // (a page control may act on the options while the list stays open, the `dynamic` demo of `combobox.spec.ts`).
-    // A touch tap on plain page does not blur the input, so the policy closes the list on a touch or pen tap
-    // outside the input and the list (owner decision, row 487 item 6).
+    // A press outside the input, the list and the clear button closes the list (Base UI's Combobox): a mouse
+    // press at once, a touch or pen press as a tap. The next describe blocks cover a mouse press that cannot blur
+    // the input and the clear button.
     pressOutside: true,
     touch: true,
     focusOutside: true,
@@ -435,5 +434,55 @@ test.describe("nested layers: only the topmost closes", () => {
     await page.locator("#nested-dialog-content h2, #nested-dialog-content [role=heading]").first().click();
     await expect(page.locator("#nested-select-content")).toBeHidden();
     await expect(page.locator("#nested-dialog-content")).toBeVisible();
+  });
+});
+
+// Base UI's Combobox closes on a mouse press outside (`outsidePressEvent: { mouse: 'sloppy', touch: 'intentional' }`)
+// and counts the clear button as inside. Red on the build before the Combobox took `Policy::ESCAPE_AND_PRESS`:
+// "a mouse press on a control that keeps the input focused closes the list" and "touch: a tap on the clear button
+// keeps the list open"; the mouse clear case is parity.
+test.describe("Combobox: a press outside closes the list, the clear button is inside", () => {
+  const combobox = SURFACES.find((s) => s.name === "Combobox")!;
+
+  test("a mouse press on a control that keeps the input focused closes the list", async ({ page }) => {
+    await prepare(page, combobox);
+    await addOutsideButton(page, await quietPoint(page, combobox));
+    // the press cannot blur the input, so the list closing is the press policy and not the focus arm
+    await page.evaluate(() =>
+      document.getElementById("dismiss-spec-outside")!.addEventListener("mousedown", (e) => e.preventDefault()),
+    );
+    await page.locator("#dismiss-spec-outside").click();
+    await expect(combobox.content(page).first()).toBeHidden();
+  });
+
+  const openWithClear = async (page: Page) => {
+    await gotoHydrated(page, `${BASE_URL}/component/combobox/`, { timeout: NAV_TIMEOUT });
+    const root = page.locator("#component-preview-frame-multiple_clear").first();
+    await root.scrollIntoViewIfNeeded();
+    const input = root.getByRole("combobox", { name: "Frameworks with clear" });
+    await input.click();
+    const list = page.locator("[role='listbox'][data-state='open']");
+    await expect(list).toBeVisible();
+    return { root, list, clear: root.getByRole("button", { name: "Clear" }) };
+  };
+
+  test("a mouse press on the clear button keeps the list open", async ({ page }) => {
+    const { root, list, clear } = await openWithClear(page);
+    await clear.click();
+    await expect(root.locator("[data-dx-combobox-chip]")).toHaveCount(0);
+    await settle(page);
+    await expect(list).toBeVisible();
+  });
+
+  test.describe("touch", () => {
+    test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
+
+    test("a tap on the clear button keeps the list open", async ({ page }) => {
+      const { root, list, clear } = await openWithClear(page);
+      await clear.tap();
+      await expect(root.locator("[data-dx-combobox-chip]")).toHaveCount(0);
+      await settle(page);
+      await expect(list, "the clear button is inside the combobox").toBeVisible();
+    });
   });
 });

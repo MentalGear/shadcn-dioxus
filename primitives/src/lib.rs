@@ -355,13 +355,13 @@ fn use_effect_with_cleanup<F: FnMut() -> C + 'static, C: FnOnce() + 'static>(mut
 ///   it: clicking the root's own non-focusable background blurs the focused control and the browser
 ///   moves focus to the nearest focusable ancestor, which is not a real focus-out.
 ///
-/// The root is the element with `id` (plus the element with `also`, when a layer's inside is two elements that no
+/// The root is the element with `id` (plus the elements with `also`, when a layer's inside is several elements that no
 /// common ancestor holds alone: a submenu's trigger and its content), or its nearest ancestor matching `closest`. A message is
 /// `outside`, `focus`, `escape` or `escape-within` (focus was inside the root when Escape came).
 const DISMISS_JS: &str = "const o = await dioxus.recv();
 const layers = (window.__dxDismissLayers = window.__dxDismissLayers || []);
 const backdrop = o.press === 'backdrop';
-const roots = () => [o.id, o.also].filter(Boolean).map(id => { const el = document.getElementById(id); return el && o.closest ? el.closest(o.closest) : el; }).filter(Boolean);
+const roots = () => [o.id, ...o.also].filter(Boolean).map(id => { const el = document.getElementById(id); return el && o.closest ? el.closest(o.closest) : el; }).filter(Boolean);
 const within = n => roots().some(r => r.contains(n));
 const onBackdrop = e => { const d = roots()[0], r = d && d.getBoundingClientRect(); return !!d && e.target === d && !(e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom); };
 const outside = n => roots().length > 0 && !within(n); let press = null;

@@ -613,7 +613,7 @@ fn MenuSubContentRendered(
     // the enclosing menu's layer.
     crate::dismiss::use_dismiss_within(
         sub.content_id,
-        Some(sub.trigger_id),
+        move || vec![sub.trigger_id.cloned()],
         crate::dismiss::Scope::Element,
         crate::dismiss::Policy::MENU_SUB,
         None,

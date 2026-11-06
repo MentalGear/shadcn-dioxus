@@ -16,8 +16,7 @@
 //!   (`pointercancel`) dismisses nothing. A press that began before the layer opened never closes
 //!   it. [`Press::Backdrop`] is the same rule for a modal `<dialog>`'s backdrop, where the target is
 //!   the dialog itself and a rect test stands in for "outside"; it dismisses on release for the
-//!   mouse too, and only when the press began on the backdrop. [`Press::Tap`] applies the rule to
-//!   touch and pen only.
+//!   mouse too, and only when the press began on the backdrop.
 //! - **Focus leaving** dismisses where the surface wants it ([`Policy::focus`]).
 //! - **What closed it** is the [`Cause`] handed to `on_dismiss`, so a surface returns focus to its
 //!   trigger after Escape and leaves it where the user put it after an outside press
@@ -31,7 +30,7 @@
 //! | NavigationMenu | close, focus back to the trigger | yes, both activation modes | no (its own blur debounce) |
 //! | Navbar | close, focus back to the trigger | native `popover="auto"` light dismiss | no |
 //! | Select | close | yes | yes |
-//! | Combobox ([`Policy::ESCAPE_AND_TAP`]) | close | a touch or pen tap outside the input and the list closes it (owner decision); a mouse press does not: a page control may act on the options while the list stays open, and the input's blur closes it. Base UI's Combobox (`@base-ui/react` 1.9.0, `combobox/root/AriaCombobox.mjs`) uses `outsidePressEvent: { mouse: 'sloppy', touch: 'intentional' }`, so its mouse press closes too; ours deliberately does not | no |
+//! | Combobox ([`Policy::ESCAPE_AND_PRESS`]) | close | a press outside the input, the list and the clear button closes it, as Base UI's Combobox does (`@base-ui/react` 1.9.0, `combobox/root/AriaCombobox.mjs`, `outsidePressEvent: { mouse: 'sloppy', touch: 'intentional' }`): a mouse press at once, a touch or pen press as a tap | no |
 //! | Popover (modal), Dialog (web, [`Policy::NATIVE_BACKDROP`]) | native (`cancel`), in the order | the backdrop press ([`Press::Backdrop`], the tap rule for touch and pen) | no |
 //! | Popover (non-modal), AlertDialog (web) | native (`cancel`), in the order | native (`popover="auto"`; AlertDialog: none) | no |
 //! | Popover, Dialog (desktop, no browser dismissal) | close | yes | yes |
@@ -95,9 +94,6 @@ pub(crate) enum Press {
     Ignore,
     /// A press outside the root dismisses: a mouse press at once, a touch or pen press as a tap.
     Outside,
-    /// Only a touch or pen tap outside the root dismisses; a mouse press leaves the layer open
-    /// (Combobox: a page control may act on the options while the list stays open).
-    Tap,
     /// A press on the backdrop of a modal `<dialog>` dismisses. The press's target is the dialog
     /// itself (the root), so "outside" is a rect test: the pointer is outside the dialog's box and
     /// the press began there too (a drag that starts inside and ends over the backdrop is not a
@@ -117,13 +113,6 @@ pub(crate) struct Policy {
 }
 
 impl Policy {
-    /// Escape and a touch or pen tap outside; a mouse press leaves the layer open (Combobox).
-    pub(crate) const ESCAPE_AND_TAP: Policy = Policy {
-        escape: EscapeKey::Close,
-        press: Press::Tap,
-        focus: false,
-    };
-
     /// Escape only (the hover surfaces).
     pub(crate) const ESCAPE: Policy = Policy {
         escape: EscapeKey::Close,
@@ -232,8 +221,8 @@ impl Cause {
 #[derive(Serialize)]
 pub(crate) struct Spec {
     id: String,
-    /// A second element that is inside too (a submenu's trigger beside its content).
-    also: Option<String>,
+    /// Further elements that are inside too (a submenu's trigger beside its content, a Combobox's input and clear button).
+    also: Vec<String>,
     closest: Option<&'static str>,
     seq: u64,
     escape: EscapeKey,
@@ -255,7 +244,7 @@ fn next_seq() -> u64 {
 }
 
 impl Spec {
-    fn new(id: String, also: Option<String>, scope: Scope, policy: Policy) -> Self {
+    fn new(id: String, also: Vec<String>, scope: Scope, policy: Policy) -> Self {
         Spec {
             id,
             also,
@@ -355,22 +344,17 @@ pub(crate) fn use_dismiss(
     active: Option<ReadSignal<bool>>,
     on_dismiss: impl FnMut(Cause) + Clone + 'static,
 ) {
-    use_dismiss_within(
-        root,
-        None::<Signal<String>>,
-        scope,
-        policy,
-        active,
-        on_dismiss,
-    );
+    use_dismiss_within(root, Vec::new, scope, policy, active, on_dismiss);
 }
 
-/// [`use_dismiss`] for a layer whose inside is two elements: `root` and `also`. A submenu is its
-/// content and its sub-trigger, which no common ancestor holds without holding the enclosing menu's
-/// other items too. `also` may be absent (a trigger that has not rendered yet).
+/// [`use_dismiss`] for a layer whose inside is several elements: `root` and the ids `also` returns. A
+/// submenu is its content and its sub-trigger, which no common ancestor holds without holding the
+/// enclosing menu's other items too; a Combobox list is the list, the input and the clear button. An id
+/// whose element has not rendered yet is skipped. `also` is read where the listeners are installed, so a
+/// signal it reads re-installs them.
 pub(crate) fn use_dismiss_within(
     root: impl Readable<Target = String> + Copy + 'static,
-    also: Option<impl Readable<Target = String> + Copy + 'static>,
+    also: impl Fn() -> Vec<String> + Clone + 'static,
     scope: Scope,
     policy: Policy,
     active: Option<ReadSignal<bool>>,
@@ -383,7 +367,7 @@ pub(crate) fn use_dismiss_within(
             }
         }
         let mut on_dismiss = on_dismiss.clone();
-        let spec = Spec::new(root.cloned(), also.map(|also| also.cloned()), scope, policy);
+        let spec = Spec::new(root.cloned(), also(), scope, policy);
         Some(dismiss_listeners(&spec).on_message(move |message: String| {
             if let Some(cause) = Cause::from_message(&message) {
                 on_dismiss(cause);
@@ -402,28 +386,28 @@ mod tests {
     fn a_spec_serialises_the_policy_for_the_page() {
         let spec = Spec::new(
             "panel".into(),
-            Some("trigger".into()),
+            vec!["trigger".into()],
             Scope::Closest("nav"),
             Policy::ESCAPE_AND_PRESS,
         );
         let json = serde_json::to_value(&spec).expect("serialises");
         assert_eq!(json["id"], "panel");
-        assert_eq!(json["also"], "trigger");
+        assert_eq!(json["also"][0], "trigger");
         assert_eq!(json["closest"], "nav");
         assert_eq!(json["escape"], "close");
         assert_eq!(json["press"], "outside");
         assert_eq!(json["focus"], false);
-        let native = Spec::new("d".into(), None, Scope::Element, Policy::NATIVE);
+        let native = Spec::new("d".into(), vec![], Scope::Element, Policy::NATIVE);
         let json = serde_json::to_value(&native).expect("serialises");
         assert_eq!(json["escape"], "native");
         assert!(json["closest"].is_null());
-        assert!(json["also"].is_null());
+        assert_eq!(json["also"].as_array().map(Vec::len), Some(0));
     }
 
     #[test]
     fn a_layer_that_opens_later_is_above_one_that_opened_earlier() {
-        let first = Spec::new("a".into(), None, Scope::Element, Policy::ESCAPE);
-        let second = Spec::new("b".into(), None, Scope::Element, Policy::ESCAPE);
+        let first = Spec::new("a".into(), vec![], Scope::Element, Policy::ESCAPE);
+        let second = Spec::new("b".into(), vec![], Scope::Element, Policy::ESCAPE);
         assert!(second.seq > first.seq);
     }
 
@@ -440,11 +424,11 @@ mod tests {
     #[test]
     fn the_press_modes_serialise_for_the_page() {
         for (policy, mode) in [
-            (Policy::ESCAPE_AND_TAP, "tap"),
+            (Policy::ESCAPE_AND_PRESS, "outside"),
             (Policy::NATIVE_BACKDROP, "backdrop"),
             (Policy::ESCAPE, "ignore"),
         ] {
-            let spec = Spec::new("d".into(), None, Scope::Element, policy);
+            let spec = Spec::new("d".into(), vec![], Scope::Element, policy);
             let json = serde_json::to_value(&spec).expect("serialises");
             assert_eq!(json["press"], mode);
         }
