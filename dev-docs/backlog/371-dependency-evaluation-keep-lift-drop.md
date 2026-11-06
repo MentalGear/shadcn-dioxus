@@ -4,7 +4,7 @@ title: "Dependency evaluation: keep, feature-gate, replace, lift or drop (rule o
 status: "BACKLOG: unparked by the owner 2026-10-24, stage 4 of the adopted order (after the structure rows…"
 size: "S each outcome"
 area: build
-updated: 2026-10-25
+updated: 2026-11-06
 ---
 
 # Row 371: Dependency evaluation: keep, feature-gate, replace, lift or drop
@@ -18,6 +18,8 @@ Apply the owner's dependency rule (2026-10-23) to every dependency a user's `dx 
 **BACKLOG: unparked by the owner 2026-10-24, stage 4 of the adopted order (after the structure rows, before the review pass and row 365).** Inventory done; each outcome goes to the owner before it is applied.
 
 **Applied 2026-10-25 (owner-approved, branch `lane/row-371-dep-trims`):** (1) `palette` with `default-features = false, features = ["std"]`; (2) `time` without `macros` (the 10 library `date!` defaults are `const` dates in `primitives/src/calendar/mod.rs`; `macros` moved to primitives' `[dev-dependencies]`; `preview` keeps its own `macros`); (3) `cargo install ... --locked` in every copy of the install line (README, `cli/README.md`, `templates/starter/README.md`, `cli/Cargo.toml`, `preview/src/main.rs` which renders the docs pages; `scripts/check-registry-url.sh` requires it in `cli/README.md`); (4) version floors equal to the lock in `primitives/Cargo.toml` (`tokio` 1.52.3 both entries, `serde` 1.0.228, `gloo-timers` 0.3.0) and rule 7 of `scripts/check-cargo-dep-versions.sh`, which fails when a registry-sourced `[dependencies]` or `[target.*.dependencies]` entry of primitives has a floor other than the lock version. **Deferred by the owner 2026-10-25:** the `dioxus-icons` lift (outcome 3). Open: outcome 4 (`gloo-timers` replace) and the construction half.
+
+**Re-review against C23, 2026-11-06 (awaiting the owner):** every direct dependency (25 Rust names, 9 npm packages, `dx`; 35 entries) checked against D1-D6 in [`dev-docs/research/dependency-review-2026-11-06.md`](../research/dependency-review-2026-11-06.md). Proposed outcomes: 25 keep unchanged, 5 keep with a small change (`dioxus` default-feature trim, 146 -> 130 wasm tree lines; `pulldown-cmark` build-dependency exact pin; `syn` `extra-traits`; `clap` features; `gloo-timers` keep or replace), 2 keep under a D6 exception (`dioxus-code`, `@axe-core/playwright` MPL-2.0), 2 lift (`dioxus-icons` 12 glyphs, `stylelint-config-idiomatic-order` 96 lines), 1 replace (`dioxus-i18n`, D1 until 2026-11-11 and D3). Nothing applied. GitHub was unreachable, so stars and `archived` are unverified and D3 used the downloads stand-in.
 
 **Measured 2026-10-25** (`cargo tree -p dioxus-primitives --target wasm32-unknown-unknown --no-default-features --features "web[ calendar| color-picker]" -e normal,build --prefix none --locked | sort -u | wc -l`; unique lines, so a crate in two versions counts twice): `web` 146 -> 146, `web calendar` 152 -> 151 (`time-macros` gone), `web color-picker` 160 -> 150 (phf, phf_generator, phf_macros, phf_shared, rand, rand_core, siphasher and three more). Proof the trims build: `scripts/check-primitives-features.sh` OK (no features, each feature alone, `web`, all), `cargo check` of the calendar and color-picker features for wasm32 and native, and the primitives `--lib` tests (1068 passed).
 
