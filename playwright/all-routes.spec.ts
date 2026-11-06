@@ -230,7 +230,10 @@ async function ensureScheme(page: Page, scheme: Scheme) {
     await frame.evaluate((m) => (window as unknown as { __dxApplyMode?: (m: string) => void }).__dxApplyMode?.(m), scheme);
   }
   await expect(page.locator("html")).toHaveAttribute("data-theme", scheme);
-  await settle(page);
+  // A scheme switch only rewrites attributes and CSS variables: no component renders, so no `document::Link` can arrive
+  // (unlike a viewport change, which is re-settled with the sheet watch). The wait for loaded sheets, hydrated frames and
+  // flushed layout stays; the 400 ms quiet window for late sheets does not.
+  await settle(page, { watchNewSheets: false });
 }
 
 /** Does `selector` still violate any rule? (For the "known finding is still real" assertion.) */

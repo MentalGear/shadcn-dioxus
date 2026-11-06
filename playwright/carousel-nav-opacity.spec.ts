@@ -557,12 +557,9 @@ test.describe("Carousel: focus when the focused arrow becomes disabled", () => {
 });
 
 test.describe("Carousel: axe on the hidden-arrow demo", () => {
-  test("no automatically detectable a11y issues at the first slide and at the last", async ({ page }) => {
+  test("no automatically detectable a11y issues at the last slide", async ({ page }) => {
     await goto(page, "hidden_arrows");
     const root = hiddenArrows(page);
-    await expectNoAxeViolations(page, "carousel: hidden_arrows, first slide", {
-      include: "#component-preview-frame-hidden_arrows",
-    });
     await clickToEnd(root, 4);
     await expect(nextOf(root)).toBeHidden();
     await expectNoAxeViolations(page, "carousel: hidden_arrows, last slide", {

@@ -22,7 +22,6 @@
 
 import { test, expect } from "./fixtures";
 import { type Page } from "@playwright/test";
-import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 import {
@@ -410,15 +409,6 @@ test.describe("Carousel: light and dark mode render without error", () => {
       await expect(frame.getByRole("region")).toBeVisible();
     });
   }
-});
-
-test.describe("Axe automated scan", () => {
-  test("carousel component page (every variant mounted) has no automatically detectable a11y issues", async ({ page }) => {
-    await goto(page, "main");
-    await expectNoAxeViolations(page, "carousel: all variants", {
-      excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT],
-    });
-  });
 });
 
 /**

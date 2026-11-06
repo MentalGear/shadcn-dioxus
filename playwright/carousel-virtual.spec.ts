@@ -348,23 +348,6 @@ test.describe("CarouselVirtualContent: a11y", () => {
     await expect.poll(label).toBe("200 of 200");
   });
 
-  test("axe: virtual_loop and virtual_many have no automatically detectable a11y issues", async ({ page }) => {
-    // Every variant of a "Normal"-kind component (including these two)
-    // renders on the same page at once -- see this file's own header
-    // ("SCOPING") -- so the existing "carousel component page (every
-    // variant mounted)" scan in the "Axe automated scan" describe block
-    // above already covers both; this test targets them individually so a
-    // regression names the right variant rather than "carousel: all
-    // variants" generically.
-    await goto(page, "virtual_loop");
-    await expectNoAxeViolations(page, "carousel: virtual_loop variant", {
-      include: "#component-preview-frame-virtual_loop",
-    });
-    await expectNoAxeViolations(page, "carousel: virtual_many variant", {
-      include: "#component-preview-frame-virtual_many",
-    });
-  });
-
   test("virtual_loop_rtl: seamless loop pages under RTL, and the arrow keys are not swapped", async ({ page }) => {
     // Cheap RTL coverage of the identical seamless-loop path -- not a full duplicate
     // of every `virtual_loop` test above, just the one thing RTL could

@@ -5,7 +5,6 @@
 
 import { test, expect } from "./fixtures";
 import { type Locator } from "@playwright/test";
-import { expectNoAxeViolations } from "./axe";
 import {
   goto,
   demoFrame,
@@ -139,13 +138,6 @@ test.describe("Carousel: loop_mode Rewind (explicit opt-in wraparound)", () => {
     expect(Math.max(0, ...samples.map(Math.abs)), "no band at a looping carousel's edge").toBe(0);
     expect(await readContentTransform(content)).toBe("");
     await expect(slide(1)).toHaveAttribute("data-selected", "true");
-  });
-
-  test("axe: the rewind variant has no automatically detectable a11y issues", async ({ page }) => {
-    await goto(page, "rewind");
-    await expectNoAxeViolations(page, "carousel: rewind variant", {
-      include: "#component-preview-frame-rewind",
-    });
   });
 });
 
@@ -327,13 +319,6 @@ test.describe("Carousel: autoplay + rotation control", () => {
     await page.waitForTimeout(1600);
     expect(await selectedAt()).toBe(before);
   });
-
-  test("axe: the autoplay variant has no automatically detectable a11y issues", async ({ page }) => {
-    await goto(page, "autoplay");
-    await expectNoAxeViolations(page, "carousel: autoplay variant", {
-      include: "#component-preview-frame-autoplay",
-    });
-  });
 });
 
 /**
@@ -432,13 +417,6 @@ test.describe("Carousel: indicators (tablist/dot-picker) variant", () => {
     const firstPanelId = await frame.locator('[role="tabpanel"]').nth(0).getAttribute("id");
     expect(firstPanelId).toBeTruthy();
     await expect(firstTab).toHaveAttribute("aria-controls", firstPanelId!);
-  });
-
-  test("axe: the indicators variant has no automatically detectable a11y issues", async ({ page }) => {
-    await goto(page, "indicators");
-    await expectNoAxeViolations(page, "carousel: indicators variant", {
-      include: "#component-preview-frame-indicators",
-    });
   });
 
   test("the active dot's opacity/width transition is present normally, and near-instant under prefers-reduced-motion", async ({

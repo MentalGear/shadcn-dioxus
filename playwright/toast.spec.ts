@@ -131,11 +131,6 @@ test.describe('Toast bounding box (dev-docs/backlog.md row 44)', () => {
 });
 
 test.describe('Axe automated scan', () => {
-  test('loaded (no toast) has no automatically detectable a11y issues', async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/toast/`);
-    await expectNoAxeViolations(page, 'toast: loaded', { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
-  });
-
   test('a toast shown has no automatically detectable a11y issues', async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/toast/`);
     await page.getByRole('button', { name: 'Info (60s)' }).click();

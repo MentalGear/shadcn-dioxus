@@ -249,14 +249,6 @@ test("modal: an animation cancelled with no successor cycle unmounts", async ({ 
 });
 
 test.describe("Axe automated scan", () => {
-  test("loaded (popover closed) has no automatically detectable a11y issues", async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/popover/`);
-    // Wait for render before scanning -- see input.spec.ts's identical
-    // comment for why (avoids a false pre-hydration "no main"/"no h1").
-    await expect(page.getByRole("button", { name: "Show Popover" })).toBeVisible();
-    await expectNoAxeViolations(page, "popover: loaded", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
-  });
-
   test("open has no automatically detectable a11y issues", async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/popover/`);
     await page.getByRole("button", { name: "Show Popover" }).click();
