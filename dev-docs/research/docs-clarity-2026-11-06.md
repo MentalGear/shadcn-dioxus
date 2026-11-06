@@ -22,7 +22,7 @@ preview/src/components/*/variants/`, plus the 392 sweep). Read-only except the o
    uncontrolled" paragraph would close this on every page; it still needs an owner decision on where it lives.
    Size M (one shared paragraph plus one link per page).
 
-2. **Medium. Sheet names components that do not exist.** `sheet/docs.md:51-52` says the Sheet follows shadcn's
+2. **Medium. Sheet names components that do not exist.** **Fixed** (sheet/docs.md, one sentence). `sheet/docs.md:51-52` says the Sheet follows shadcn's
    `SheetOverlay`/`SheetContent`, and the repo has neither. A reader who searches for `SheetContent` finds nothing.
    Fix: one sentence, "There is no SheetContent or SheetOverlay here: `Sheet` draws the scrim and the panel, and its
    children are the content." Size S.
@@ -30,11 +30,14 @@ preview/src/components/*/variants/`, plus the 392 sweep). Read-only except the o
 3. **Medium. Skeleton has no reduced-motion rule (disclosed, not fixed).** `skeleton/docs.md:16` says so. Verified:
    `preview/src/components/skeleton/style.css` has no `prefers-reduced-motion` block, while progress has one
    (`progress/style.css:80`). Fix: add the block to the shipped stylesheet, so copies do not each need it. A code
-   change, so proposed, not made here. Size S.
+   change. **Fixed** (skeleton/style.css gates the pulse with `animation: none` under reduced motion; the docs sentence
+   now describes it). Checked in a headless browser on a minimal page with the base and the new stylesheet: the base
+   runs the pulse under `reduced`, the new one stops it (`animation: none`, opacity 1). The component-page Playwright
+   check was not run: the debug SSG build was refused for disk space (2.4-5.4 GB free, 5.9 GB needed).
 
 4. **Low. Tabs' shadcn names have no mapping to the repo's names.** `tabs/docs.md:32` maps `TabsList` for `variant`, and
    line 64 names shadcn's `TabsContent`, but nowhere is `TabsList` -> `TabList`, `TabsContent` -> `TabContent`,
-   `TabsTrigger` -> `TabTrigger` stated in one place. Fix: one mapping sentence at the top of the page. Size S.
+   `TabsTrigger` -> `TabTrigger` stated in one place. **Fixed** (one sentence under the tabs page's intro).
 
 5. **Low. Toast key casing.** `toast/docs.md:1` wrote `f6`; the key is F6 everywhere else on the page. **Fixed** (the
    only docs edit this round; prose, not a sample, so no compile check was needed).
