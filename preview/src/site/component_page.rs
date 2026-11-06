@@ -1,5 +1,5 @@
 use super::*;
-use crate::{docs_groups, DocsSection};
+use crate::{controlled_scan, docs_groups, DocsSection};
 
 /// The `h2` headings the component page renders itself: the two docs groups (`docs_groups`), "Examples",
 /// and the section headings around a component's `docs.md` ("Usage notes" wraps the text before its first
@@ -11,7 +11,7 @@ pub(crate) const PAGE_HEADING_VARIANTS: &str = "Examples";
 /// "Usage" is reserved too: the text before a docs.md's first `##` is rendered under "Usage notes", so
 /// a docs h2 called "Usage" would read as a nested duplicate of it.
 #[cfg(test)]
-pub(crate) const TEMPLATE_H2_HEADINGS: [&str; 7] = [
+pub(crate) const TEMPLATE_H2_HEADINGS: [&str; 8] = [
     docs_groups::BASIC_HEADING,
     docs_groups::SPECIFIC_HEADING,
     docs_groups::Basic::Installation.heading(),
@@ -19,6 +19,7 @@ pub(crate) const TEMPLATE_H2_HEADINGS: [&str; 7] = [
     docs_groups::Basic::PropsReference.heading(),
     "Usage",
     PAGE_HEADING_VARIANTS,
+    controlled_scan::SECTION_HEADING,
 ];
 
 /// Prefixes the app base path (`dx --base-path`, e.g. `/shadcn-dioxus`)
