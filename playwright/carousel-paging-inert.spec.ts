@@ -84,7 +84,7 @@ test.describe("Carousel: paging never scrolls the page", () => {
     const frame = demoFrame(page, "autoplay");
     const slide = (n: number) => frame.getByRole("group", { name: `${n} of 5` });
     const selectedLabel = async () =>
-      frame.locator('[role="group"][data-selected="true"]').getAttribute("aria-label");
+      frame.locator('[role="group"][data-selected]').getAttribute("aria-label");
 
     await waitForScrollStable(page);
     // Instant, never the page's own default `smooth` behavior (see this
@@ -137,13 +137,13 @@ test.describe("Carousel: paging never scrolls the page", () => {
     // `dispatchEvent`, not `.click()` -- see this describe block's own
     // "Methodology notes" for why.
     await next.dispatchEvent("click");
-    await expect(slide(2)).toHaveAttribute("data-selected", "true");
+    await expect(slide(2)).toHaveAttribute("data-selected", "");
     expect(await page.evaluate(() => window.scrollY)).toBe(scrollYBefore);
     expect(await page.evaluate(() => window.scrollX)).toBe(scrollXBefore);
     await expectSnappedToBoundary(content, slide(2));
 
     await previous.dispatchEvent("click");
-    await expect(slide(1)).toHaveAttribute("data-selected", "true");
+    await expect(slide(1)).toHaveAttribute("data-selected", "");
     expect(await page.evaluate(() => window.scrollY)).toBe(scrollYBefore);
     expect(await page.evaluate(() => window.scrollX)).toBe(scrollXBefore);
     await expectSnappedToBoundary(content, slide(1));
@@ -168,7 +168,7 @@ test.describe("Carousel: paging never scrolls the page", () => {
     // `.focus()`, is the correct isolation of the thing under test.
     await tab.evaluate((el) => (el as HTMLElement).focus({ preventScroll: true }));
     await expect(tab).toHaveAttribute("aria-selected", "true");
-    await expect(slide(3)).toHaveAttribute("data-selected", "true");
+    await expect(slide(3)).toHaveAttribute("data-selected", "");
     expect(await page.evaluate(() => window.scrollY)).toBe(scrollYBefore);
     expect(await page.evaluate(() => window.scrollX)).toBe(scrollXBefore);
     await expectSnappedToBoundary(content, slide(3));
@@ -179,7 +179,7 @@ test.describe("Carousel: paging never scrolls the page", () => {
     const frame = demoFrame(page, "main");
     const content = frame.locator(".dx-carousel-content");
     const slide = (n: number) => frame.getByRole("group", { name: `${n} of 5` });
-    await expect(slide(1)).toHaveAttribute("data-selected", "true");
+    await expect(slide(1)).toHaveAttribute("data-selected", "");
 
     await waitForScrollStable(page);
     // Bring the carousel fully into view ourselves first, instantly --
@@ -200,7 +200,7 @@ test.describe("Carousel: paging never scrolls the page", () => {
     await dragBy(page, content, -pitch * 0.7, 0);
 
     await expectSnappedToBoundary(content, slide(2));
-    await expect(slide(2)).toHaveAttribute("data-selected", "true");
+    await expect(slide(2)).toHaveAttribute("data-selected", "");
     expect(await page.evaluate(() => window.scrollY)).toBe(scrollYBefore);
     expect(await page.evaluate(() => window.scrollX)).toBe(scrollXBefore);
   });
@@ -408,7 +408,7 @@ test.describe("Carousel: only visible slides are reachable (inert)", () => {
     await expect(slideButton).toBeFocused();
 
     await page.keyboard.press("ArrowRight");
-    await expect(frame.getByRole("group", { name: "2 of 5" })).toHaveAttribute("data-selected", "true");
+    await expect(frame.getByRole("group", { name: "2 of 5" })).toHaveAttribute("data-selected", "");
 
     const contentId = await content.getAttribute("id");
     await expect
@@ -429,7 +429,7 @@ test.describe("Carousel: only visible slides are reachable (inert)", () => {
 
     await slideButton.focus();
     await frame.getByRole("button", { name: "Next slide" }).click();
-    await expect(frame.getByRole("group", { name: "2 of 5" })).toHaveAttribute("data-selected", "true");
+    await expect(frame.getByRole("group", { name: "2 of 5" })).toHaveAttribute("data-selected", "");
 
     const isBody = await page.evaluate(() => document.activeElement === document.body);
     expect(isBody).toBe(false);
@@ -460,7 +460,7 @@ test.describe("Carousel: only visible slides are reachable (inert)", () => {
     const scrollYBefore = await page.evaluate(() => window.scrollY);
 
     await page.keyboard.press("ArrowRight");
-    await expect(frame.getByRole("group", { name: "2 of 5" })).toHaveAttribute("data-selected", "true");
+    await expect(frame.getByRole("group", { name: "2 of 5" })).toHaveAttribute("data-selected", "");
     await expect.poll(() => page.evaluate(() => document.activeElement?.id ?? null)).toBe(contentId);
     expect(await page.evaluate(() => window.scrollY)).toBe(scrollYBefore);
   });
@@ -511,7 +511,7 @@ test.describe("Carousel: only visible slides are reachable (inert)", () => {
     }).toPass({ timeout: 1000 });
 
     const selectedAt = async () =>
-      frame.locator('[data-selected="true"]').getAttribute("aria-label");
+      frame.locator('[data-selected]').getAttribute("aria-label");
     const before = await selectedAt();
     expect(before).toBe("1 of 5");
     // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
@@ -563,7 +563,7 @@ test.describe("Carousel: only visible slides are reachable (inert)", () => {
     const y = neighbourBox!.y + neighbourBox!.height / 2;
     expect(x).toBeLessThan(viewportBox!.x + viewportBox!.width);
 
-    const selectedBefore = await frame.locator('[data-selected="true"]').getAttribute("aria-label");
+    const selectedBefore = await frame.locator('[data-selected]').getAttribute("aria-label");
     const pitch = await slidePitch(items.first());
 
     await page.mouse.move(x, y);
@@ -575,7 +575,7 @@ test.describe("Carousel: only visible slides are reachable (inert)", () => {
     await page.mouse.up();
 
     await expect(async () => {
-      const selectedAfter = await frame.locator('[data-selected="true"]').getAttribute("aria-label");
+      const selectedAfter = await frame.locator('[data-selected]').getAttribute("aria-label");
       expect(selectedAfter).not.toBe(selectedBefore);
     }).toPass({ timeout: 3000 });
   });

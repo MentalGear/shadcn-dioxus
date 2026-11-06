@@ -99,7 +99,7 @@
   box-shadow: var(--dx-ring-focus);
 }
 
-.dx-resizable-handle[data-disabled="true"] {
+.dx-resizable-handle[data-disabled] {
   opacity: var(--dx-opacity-disabled);
   pointer-events: none;
 }

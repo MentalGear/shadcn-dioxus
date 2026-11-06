@@ -117,7 +117,7 @@ test.describe("motion gating", () => {
     const root = "#component-preview-frame-autoplay";
     const label = () =>
       page
-        .locator(`${root} [role="group"][aria-roledescription="slide"][data-selected="true"]`)
+        .locator(`${root} [role="group"][aria-roledescription="slide"][data-selected]`)
         .first()
         .getAttribute("aria-label");
     await expect.poll(label, { timeout: 5 * 60 * 1000 }).not.toBeNull();

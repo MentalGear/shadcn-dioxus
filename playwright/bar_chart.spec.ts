@@ -127,8 +127,8 @@ test.describe("interactive variant (shadcn chart-bar-interactive.tsx)", () => {
     await expect(toggles).toHaveCount(2);
 
     // Desktop is active by default.
-    await expect(toggles.nth(0)).toHaveAttribute("data-active", "true");
-    await expect(toggles.nth(1)).toHaveAttribute("data-active", "false");
+    await expect(toggles.nth(0)).toHaveAttribute("data-active", "");
+    await expect(toggles.nth(1)).not.toHaveAttribute("data-active");
     // Both totals are real, non-empty numbers regardless of which is active.
     const totals = f.locator(".dx-chart-interactive-toggle-total");
     await expect(totals.nth(0)).toHaveText(/\d/);
@@ -139,8 +139,8 @@ test.describe("interactive variant (shadcn chart-bar-interactive.tsx)", () => {
     expect(barsBefore).toBeGreaterThan(0);
 
     await toggles.nth(1).click();
-    await expect(toggles.nth(1)).toHaveAttribute("data-active", "true");
-    await expect(toggles.nth(0)).toHaveAttribute("data-active", "false");
+    await expect(toggles.nth(1)).toHaveAttribute("data-active", "");
+    await expect(toggles.nth(0)).not.toHaveAttribute("data-active");
     // One bar per category either way (a single-series
     // config), so the count is the same although the drawn
     // values are the other series'.

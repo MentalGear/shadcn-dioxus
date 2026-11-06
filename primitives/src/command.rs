@@ -333,7 +333,7 @@ pub fn Command<T: Clone + PartialEq + 'static>(props: CommandProps<T>) -> Elemen
     let attributes = merge_attributes(vec![
         props.attributes,
         attributes!(div {
-            ..state_attrs::disabled((props.disabled)()),
+            ..state_attrs::presence(state_attrs::Flag::Disabled, (props.disabled)()),
         }),
     ]);
 
@@ -774,9 +774,9 @@ pub fn CommandItem<T: PartialEq + Clone + 'static>(props: CommandItemProps<T>) -
             role: "option",
             aria_selected: (option.selected)(),
             aria_disabled: (option.disabled)(),
-            ..state_attrs::valued(state_attrs::Flag::Highlighted, (option.focused)()),
-            ..state_attrs::disabled((option.disabled)()),
-            ..state_attrs::valued(state_attrs::Flag::Selected, (option.selected)()),
+            ..state_attrs::presence(state_attrs::Flag::Highlighted, (option.focused)()),
+            ..state_attrs::presence(state_attrs::Flag::Disabled, (option.disabled)()),
+            ..state_attrs::presence(state_attrs::Flag::Selected, (option.selected)()),
         }),
     ]);
 

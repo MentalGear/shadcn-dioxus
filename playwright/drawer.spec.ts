@@ -759,9 +759,9 @@ test.describe('Nested drawers', () => {
     page.evaluate(() => [...document.querySelectorAll('dialog')].filter((d) => d.open && d.matches(':modal')).length);
   const parentState = (page: import('@playwright/test').Page) =>
     page.evaluate(() => {
-      const el = document.querySelector('dialog[data-slot="drawer-content"][data-nested-open]') as HTMLElement;
+      const el = document.querySelector('dialog[data-slot="drawer-content"]') as HTMLElement;
       const cs = getComputedStyle(el);
-      return { nested: el.getAttribute('data-nested-open'), scale: cs.scale, transform: cs.transform, open: el.getAttribute('data-state') };
+      return { nested: el.hasAttribute('data-nested-open'), scale: cs.scale, transform: cs.transform, open: el.getAttribute('data-state') };
     });
 
   async function openParent(page: import('@playwright/test').Page) {
@@ -778,11 +778,11 @@ test.describe('Nested drawers', () => {
 
   test('opening the child scales and offsets the parent; closing it restores the parent', async ({ page }) => {
     await openParent(page);
-    expect(await parentState(page)).toMatchObject({ nested: 'false', scale: 'none' });
+    expect(await parentState(page)).toMatchObject({ nested: false, scale: 'none' });
 
     await openChild(page);
     // The parent steps back: `scale` 0.96 and a vertical offset, once its transition has played.
-    await expect.poll(async () => (await parentState(page)).nested).toBe('true');
+    await expect.poll(async () => (await parentState(page)).nested).toBe(true);
     await expect.poll(async () => parseFloat((await parentState(page)).scale)).toBeCloseTo(0.96, 2);
     await expect.poll(async () => (await parentState(page)).transform).not.toBe('none');
     expect(await openModals(page)).toBe(2);
@@ -791,7 +791,7 @@ test.describe('Nested drawers', () => {
     await page.keyboard.press('Escape');
     await expect(page.locator(CHILD_TITLE)).toHaveCount(0);
     expect(await openModals(page)).toBe(1);
-    await expect.poll(async () => parentState(page)).toMatchObject({ nested: 'false', scale: 'none', transform: 'none', open: 'open' });
+    await expect.poll(async () => parentState(page)).toMatchObject({ nested: false, scale: 'none', transform: 'none', open: 'open' });
     // Focus is back on the button that opened the child, inside the still-open parent.
     await expect(page.getByRole('button', { name: 'Open nested drawer', exact: true })).toBeFocused();
   });
@@ -825,7 +825,7 @@ test.describe('Nested drawers', () => {
     await expect(page.getByText('Parent drawer', { exact: true })).toBeVisible();
     expect(await openModals(page)).toBe(1);
     expect(await scrollLocked(page)).toBe(true);
-    await expect.poll(async () => parentState(page)).toMatchObject({ nested: 'false', scale: 'none', open: 'open' });
+    await expect.poll(async () => parentState(page)).toMatchObject({ nested: false, scale: 'none', open: 'open' });
     // And now the parent, alone on top, drags normally.
     const ph = (await measureAtRest(page.locator(CONTENT))).height;
     await pointerDrag(page, '[data-slot="drawer-content"] > [data-slot="drawer-handle"]', { kind: 'mouse', dx: 0, dy: ph * 0.5, steps: 8, stepMs: 60, pauseBeforeUpMs: 200 });

@@ -301,7 +301,7 @@ pub fn ContextMenu(props: ContextMenuProps) -> Element {
             tabindex: 0,
             dir: direction.as_str(),
             ..state_attrs::open(open()),
-            ..state_attrs::disabled((props.disabled)()),
+            ..state_attrs::presence(state_attrs::Flag::Disabled, (props.disabled)()),
             "data-direction": direction.as_str(),
         }),
         props.attributes,

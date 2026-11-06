@@ -333,7 +333,7 @@ pub fn NavigationMenu(props: NavigationMenuProps) -> Element {
     let attributes = merge_attributes(vec![
         props.attributes,
         attributes!(nav {
-            ..state_attrs::disabled((props.disabled)()),
+            ..state_attrs::presence(state_attrs::Flag::Disabled, (props.disabled)()),
         }),
     ]);
 
@@ -610,7 +610,7 @@ pub fn NavigationMenuItem(props: NavigationMenuItemProps) -> Element {
         props.attributes,
         attributes!(li {
             ..state_attrs::open(is_open()),
-            ..state_attrs::disabled((ctx.disabled)() || (props.disabled)()),
+            ..state_attrs::presence(state_attrs::Flag::Disabled, (ctx.disabled)() || (props.disabled)()),
         }),
     ]);
 
@@ -711,7 +711,7 @@ pub fn NavigationMenuTrigger(props: NavigationMenuTriggerProps) -> Element {
             aria_expanded: is_open(),
             aria_controls: item_ctx.content_id.cloned(),
             ..state_attrs::trigger_open(is_open()),
-            ..state_attrs::disabled(disabled()),
+            ..state_attrs::presence(state_attrs::Flag::Disabled, disabled()),
         }),
     ]);
 
@@ -1209,8 +1209,8 @@ pub fn NavigationMenuLink(props: NavigationMenuLinkProps) -> Element {
             // same fix as `NavbarItem`/`DropdownMenuItem` (dev-docs/backlog.md
             // row 39).
             aria_disabled: disabled(),
-            ..state_attrs::valued(state_attrs::Flag::Active, props.active),
-            ..state_attrs::disabled(disabled()),
+            ..state_attrs::presence(state_attrs::Flag::Active, props.active),
+            ..state_attrs::presence(state_attrs::Flag::Disabled, disabled()),
         }),
     ]);
 

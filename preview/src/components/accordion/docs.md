@@ -89,7 +89,7 @@ Accordion {
 }
 ```
 
-Opening and closing by trigger animate the height as usual, and the content is re-hidden once the close animation finishes. Opening because of a match is not animated, because the browser has already scrolled to the match at full size. `AccordionContent` exposes `data-closing` (only while the close animation runs) and `data-revealed` (open because of a match) for styling this; key a close animation on `data-closing`, not on `data-open="false"`, which is also how a closed panel looks at rest.
+Opening and closing by trigger animate the height as usual, and the content is re-hidden once the close animation finishes. Opening because of a match is not animated, because the browser has already scrolled to the match at full size. `AccordionContent` exposes `data-closing` (only while the close animation runs) and `data-revealed` (open because of a match) for styling this; key a close animation on `data-closing`, not on `data-closed`, which is also how a closed panel looks at rest.
 
 Cost: every item's content is mounted (and, on a server-rendered page, hydrated) while closed, and it is in the server-rendered HTML. That is why it is opt-in.
 

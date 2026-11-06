@@ -182,7 +182,7 @@ pub fn Menubar(props: MenubarProps) -> Element {
         attributes!(div {
             role: "menubar",
             dir: direction.as_str(),
-            ..state_attrs::disabled((props.disabled)()),
+            ..state_attrs::presence(state_attrs::Flag::Disabled, (props.disabled)()),
             "data-direction": direction.as_str(),
             tabindex: (!ctx.focus.any_focused()).then_some("0"),
         }),
@@ -440,7 +440,7 @@ pub fn MenubarMenu(props: MenubarMenuProps) -> Element {
             id: root_id.cloned(),
             role: crate::menu_semantics::MENU_ROLE,
             ..state_attrs::open(is_open()),
-            ..state_attrs::disabled((ctx.disabled)() || (props.disabled)()),
+            ..state_attrs::presence(state_attrs::Flag::Disabled, (ctx.disabled)() || (props.disabled)()),
         }),
         props.attributes,
     ]);

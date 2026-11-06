@@ -206,10 +206,10 @@
 
 /* Disabled: Nova's `disabled:pointer-events-none disabled:opacity-50`, per
  * item (a group-level `disabled` reaches every item as its own `disabled`
- * attribute and `data-disabled="true"`). Items are `.dx-toggle-group-item`, not
+ * attribute and `data-disabled`). Items are `.dx-toggle-group-item`, not
  * `.dx-toggle`, so `toggle/style.css`'s rule does not cover them. */
 .dx-toggle-group-item:disabled,
-.dx-toggle-group-item[data-disabled="true"] {
+.dx-toggle-group-item[data-disabled] {
   opacity: var(--dx-opacity-disabled);
   pointer-events: none;
 }

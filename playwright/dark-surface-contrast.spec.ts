@@ -271,7 +271,7 @@ const SCENES: Record<string, Scene> = {
       {
         name: "calendar plain day hovered",
         target: (page) =>
-          preview(page).locator('.dx-calendar-grid-cell[data-month="current"]:not([data-today="true"]):not([data-selected="true"]):not([data-disabled="true"])').nth(3),
+          preview(page).locator('.dx-calendar-grid-cell[data-month="current"]:not([data-today="true"]):not([data-selected]):not([data-disabled])').nth(3),
         surface: (page) => preview(page).locator(".dx-calendar").first(),
         enter: hover,
         rest: async (page) => away(page),

@@ -42,7 +42,7 @@ async function sampleCloseInApp(page: Page): Promise<Sample[]> {
 
   await button.click();
   await page.waitForFunction(
-    (el) => el?.getAttribute("data-open") === "true",
+    (el) => el?.hasAttribute("data-open") === true,
     await firstItem.elementHandle()
   );
   await page.waitForTimeout(500); // let the open animation fully settle

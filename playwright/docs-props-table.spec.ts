@@ -32,7 +32,7 @@ test("a known prop shows its display type, default and doc comment", async ({ pa
   const section = page.locator(".dx-docs-accordion > .dx-accordion-item", { has: page.locator("#docs-props-reference") });
   await expect(section.locator("> h3")).toHaveText("Props reference");
   await section.locator("> h3 > button").click();
-  await expect(section).toHaveAttribute("data-open", "true");
+  await expect(section).toHaveAttribute("data-open", "");
 
   // The styled wrapper's table, then the primitive's: both list the same prop.
   // The library's Table classes, so the docs table looks like the Table component.

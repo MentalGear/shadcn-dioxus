@@ -59,7 +59,7 @@ h6.dx-markdown-heading {
   margin-block-start: var(--dx-space-1);
 }
 
-.dx-markdown-item[data-task="true"] {
+.dx-markdown-item[data-task] {
   list-style: none;
   margin-inline-start: calc(var(--dx-space-6) * -1);
 }

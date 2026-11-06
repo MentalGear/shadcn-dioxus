@@ -49,7 +49,7 @@ test("filters and selects with the keyboard", async ({ page }) => {
     await expect(svelte).toBeVisible();
 
     await page.keyboard.press("ArrowDown");
-    await expect(svelte).toHaveAttribute("data-highlighted", "true");
+    await expect(svelte).toHaveAttribute("data-highlighted", "");
 
     await page.keyboard.press("Enter");
     await expect(content(page)).toHaveCount(0);
@@ -90,15 +90,15 @@ test("arrow keys stay on visible filtered options", async ({ page }) => {
     await expect(list(page)).not.toHaveAttribute("tabindex", /.+/);
 
     await page.keyboard.press("ArrowDown");
-    await expect(svelte).toHaveAttribute("data-highlighted", "true");
+    await expect(svelte).toHaveAttribute("data-highlighted", "");
     await expect(trigger).toBeFocused();
     await expect(trigger).toHaveAttribute("aria-activedescendant", await svelte.getAttribute("id"));
 
     await page.keyboard.press("ArrowDown");
-    await expect(svelte).toHaveAttribute("data-highlighted", "true");
+    await expect(svelte).toHaveAttribute("data-highlighted", "");
 
     await page.keyboard.press("ArrowUp");
-    await expect(svelte).toHaveAttribute("data-highlighted", "true");
+    await expect(svelte).toHaveAttribute("data-highlighted", "");
 });
 
 test("keeps filtered options in source order", async ({ page }) => {
@@ -124,13 +124,13 @@ test("keeps filtered options in source order", async ({ page }) => {
     expect(nextBox!.y).toBeLessThan(svelteBox!.y);
 
     await page.keyboard.press("ArrowDown");
-    await expect(next).toHaveAttribute("data-highlighted", "true");
+    await expect(next).toHaveAttribute("data-highlighted", "");
 
     await page.keyboard.press("ArrowDown");
-    await expect(svelte).toHaveAttribute("data-highlighted", "true");
+    await expect(svelte).toHaveAttribute("data-highlighted", "");
 
     await page.keyboard.press("ArrowUp");
-    await expect(next).toHaveAttribute("data-highlighted", "true");
+    await expect(next).toHaveAttribute("data-highlighted", "");
 });
 
 test("keeps filtered options during keyboard close animation", async ({ page }) => {
@@ -143,7 +143,7 @@ test("keeps filtered options during keyboard close animation", async ({ page }) 
 
     const svelte = list(page).getByRole("option", { name: "SvelteKit" });
     await page.keyboard.press("ArrowDown");
-    await expect(svelte).toHaveAttribute("data-highlighted", "true");
+    await expect(svelte).toHaveAttribute("data-highlighted", "");
 
     // The close animation is short and a poll can miss it entirely, so record it in the page: an observer notes
     // (state, option names) of the listbox on every DOM change from the moment Enter is pressed.
@@ -216,14 +216,14 @@ test("disabled options are exposed but skipped by keyboard selection", async ({ 
     await expect(svelte).toHaveAttribute("aria-disabled", "true");
 
     await page.keyboard.press("ArrowDown");
-    await expect(next).toHaveAttribute("data-highlighted", "true");
+    await expect(next).toHaveAttribute("data-highlighted", "");
 
     await page.keyboard.press("ArrowDown");
-    await expect(svelte).toHaveAttribute("data-highlighted", "false");
-    await expect(nuxt).toHaveAttribute("data-highlighted", "true");
+    await expect(svelte).not.toHaveAttribute("data-highlighted");
+    await expect(nuxt).toHaveAttribute("data-highlighted", "");
 
     await page.keyboard.press("ArrowUp");
-    await expect(next).toHaveAttribute("data-highlighted", "true");
+    await expect(next).toHaveAttribute("data-highlighted", "");
 });
 
 test("controlled value and controlled open stay in sync", async ({ page }) => {
@@ -283,7 +283,7 @@ test("dynamic option removal updates filtering and keyboard selection", async ({
     await expect(trigger).toBeFocused();
     await page.keyboard.press("ArrowDown");
     const next = list(page).getByRole("option", { name: "Next.js" });
-    await expect(next).toHaveAttribute("data-highlighted", "true");
+    await expect(next).toHaveAttribute("data-highlighted", "");
 
     await page.keyboard.press("Enter");
     await expect(content(page)).toHaveCount(0);
@@ -392,7 +392,7 @@ test("clicking an input that holds a selection keeps its text and puts the caret
     // ...and the selected one is marked (semantics and the check indicator).
     const svelte = list(page).getByRole("option", { name: "SvelteKit" });
     await expect(svelte).toHaveAttribute("aria-selected", "true");
-    await expect(svelte).toHaveAttribute("data-selected", "true");
+    await expect(svelte).toHaveAttribute("data-selected", "");
     await expect(svelte.locator(".dx-combobox-option-indicator")).toBeVisible();
     await expect(list(page).locator("[aria-selected='true']")).toHaveCount(1);
 
@@ -477,7 +477,7 @@ test("Home and End move the caret in the input, never the list highlight, while 
     await trigger.click();
     await expect(content(page)).toBeVisible();
     await page.keyboard.press("ArrowDown");
-    const highlighted = list(page).locator("[role='option'][data-highlighted='true']");
+    const highlighted = list(page).locator("[role='option'][data-highlighted]");
     await expect(highlighted).toHaveCount(1);
     const before = await highlighted.textContent();
 
@@ -556,7 +556,7 @@ test("reopening scrolls the selected option into view", async ({ page }) => {
 
     // Keyboard navigation keeps the active option in view as well.
     await page.keyboard.press("ArrowDown"); // wraps from the last option to the first
-    await expect(list(page).getByRole("option", { name: "Next.js" })).toHaveAttribute("data-highlighted", "true");
+    await expect(list(page).getByRole("option", { name: "Next.js" })).toHaveAttribute("data-highlighted", "");
     await expect.poll(async () => {
         const [l, o] = [await measureAtRest(list(page)), await measureAtRest(list(page).getByRole("option", { name: "Next.js" }))];
         return !!l && !!o && o.y >= l.y - 1 && o.y + o.height <= l.y + l.height + 1;

@@ -176,7 +176,7 @@ pub fn ColorPicker(props: ColorPickerProps) -> Element {
     });
     let owned = attributes!(div {
         role: "group",
-        ..state_attrs::disabled((props.disabled)()),
+        ..state_attrs::presence(state_attrs::Flag::Disabled, (props.disabled)()),
     });
     let merged = merge_attributes(vec![defaults, props.attributes.clone(), owned]);
 
@@ -434,7 +434,7 @@ pub fn AreaThumb(props: AreaThumbProps) -> Element {
         aria_label: "Color area"
     });
     let owned = attributes!(div {
-        ..state_attrs::valued(state_attrs::Flag::Dragging, area_ctx.dragging),
+        ..state_attrs::presence(state_attrs::Flag::Dragging, area_ctx.dragging),
         style,
         tabindex: 0,
     });

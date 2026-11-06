@@ -80,12 +80,12 @@
 /* The ring is drawn on the circle, not on the row (see above). After the focus rules so a focused
  * invalid radio stays red. */
 .dx-radio-group-item[aria-invalid="true"]::before,
-.dx-radio-group-item[data-invalid="true"]::before {
+.dx-radio-group-item[data-invalid]::before {
   box-shadow: var(--dx-ring-invalid-field);
 }
 
 .dx-radio-group-item[aria-invalid="true"][data-state="checked"]::before,
-.dx-radio-group-item[data-invalid="true"][data-state="checked"]::before {
+.dx-radio-group-item[data-invalid][data-state="checked"]::before {
   box-shadow: var(--dx-ring-invalid);
 }
 

@@ -80,7 +80,7 @@ for (const scheme of ["light", "dark"] as const) {
     await gotoHydrated(page, `${BASE_URL}/component/block/?name=calendar&variant=range&${scheme === "dark" ? "dark_mode=true" : ""}`, GOTO);
     await page.waitForLoadState("networkidle");
     const cell = page
-      .locator('.dx-calendar-grid-cell[data-month="current"][data-today="true"]:not([data-selected="true"],[data-disabled="true"])')
+      .locator('.dx-calendar-grid-cell[data-month="current"][data-today="true"]:not([data-selected],[data-disabled])')
       .first();
     await cell.scrollIntoViewIfNeeded();
     await expect(cell).toBeVisible();

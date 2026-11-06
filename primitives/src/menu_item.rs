@@ -214,7 +214,7 @@ pub(crate) fn item_style_attributes(variant: MenuItemVariant, inset: bool) -> Ve
 pub(crate) fn item_state_attributes(disabled: bool, focused: bool) -> Vec<Attribute> {
     attributes!(div {
         aria_disabled: disabled,
-        ..state_attrs::disabled(disabled),
+        ..state_attrs::presence(state_attrs::Flag::Disabled, disabled),
         ..state_attrs::presence(state_attrs::Flag::Highlighted, focused),
         tabindex: if focused { "0" } else { "-1" },
     })

@@ -41,7 +41,7 @@ test.describe("Carousel: edge rubber-band, pointer (mode B3)", () => {
     const frame = demoFrame(page, "main");
     const content = frame.locator(".dx-carousel-content");
     const slide = (n: number) => frame.getByRole("group", { name: `${n} of 5` });
-    await expect(slide(1)).toHaveAttribute("data-selected", "true");
+    await expect(slide(1)).toHaveAttribute("data-selected", "");
     expect(await readContentTransform(content)).toBe("");
 
     const pitch = await slidePitch(slide(1));
@@ -67,7 +67,7 @@ test.describe("Carousel: edge rubber-band, pointer (mode B3)", () => {
 
     // Never a second source of truth for the index (research doc's own
     // framing): the bounce never moved `selected`.
-    await expect(slide(1)).toHaveAttribute("data-selected", "true");
+    await expect(slide(1)).toHaveAttribute("data-selected", "");
     await expect(frame.getByRole("button", { name: "Previous slide" })).toBeDisabled();
   });
 
@@ -84,7 +84,7 @@ test.describe("Carousel: edge rubber-band, pointer (mode B3)", () => {
       await next.click();
       await expectSnappedToBoundary(content, slide(i + 2));
     }
-    await expect(slide(5)).toHaveAttribute("data-selected", "true");
+    await expect(slide(5)).toHaveAttribute("data-selected", "");
     await expect(next).toBeDisabled();
 
     const pitch = await slidePitch(slide(5));
@@ -104,7 +104,7 @@ test.describe("Carousel: edge rubber-band, pointer (mode B3)", () => {
       expect(await readContentTransform(content)).toBe("");
     }).toPass({ timeout: 2000 });
 
-    await expect(slide(5)).toHaveAttribute("data-selected", "true");
+    await expect(slide(5)).toHaveAttribute("data-selected", "");
     await expect(next).toBeDisabled();
   });
 
@@ -113,7 +113,7 @@ test.describe("Carousel: edge rubber-band, pointer (mode B3)", () => {
     const frame = demoFrame(page, "rtl");
     const content = frame.locator(".dx-carousel-content");
     const slide = (n: number) => frame.getByRole("group", { name: `${n} of 4` });
-    await expect(slide(1)).toHaveAttribute("data-selected", "true");
+    await expect(slide(1)).toHaveAttribute("data-selected", "");
 
     const pitch = await slidePitch(slide(1));
     const rawTravel = pitch * 1.5;
@@ -133,7 +133,7 @@ test.describe("Carousel: edge rubber-band, pointer (mode B3)", () => {
       expect(await readContentTransform(content)).toBe("");
     }).toPass({ timeout: 2000 });
 
-    await expect(slide(1)).toHaveAttribute("data-selected", "true");
+    await expect(slide(1)).toHaveAttribute("data-selected", "");
   });
 
   test("pointer overdrag at the start boundary works in the vertical variant", async ({ page }) => {
@@ -141,7 +141,7 @@ test.describe("Carousel: edge rubber-band, pointer (mode B3)", () => {
     const frame = demoFrame(page, "vertical");
     const content = frame.locator(".dx-carousel-content");
     const slide = (n: number) => frame.getByRole("group", { name: `${n} of 4` });
-    await expect(slide(1)).toHaveAttribute("data-selected", "true");
+    await expect(slide(1)).toHaveAttribute("data-selected", "");
 
     const pitch = await slidePitch(slide(1), "vertical");
     const rawTravel = pitch * 1.5;
@@ -161,7 +161,7 @@ test.describe("Carousel: edge rubber-band, pointer (mode B3)", () => {
       expect(await readContentTransform(content)).toBe("");
     }).toPass({ timeout: 2000 });
 
-    await expect(slide(1)).toHaveAttribute("data-selected", "true");
+    await expect(slide(1)).toHaveAttribute("data-selected", "");
   });
 
   test("a mid-range pointer drag produces no transform and pages correctly", async ({
@@ -176,7 +176,7 @@ test.describe("Carousel: edge rubber-band, pointer (mode B3)", () => {
     await dragBy(page, content, -pitch * 0.7, 0);
 
     await expectSnappedToBoundary(content, slide(2));
-    await expect(slide(2)).toHaveAttribute("data-selected", "true");
+    await expect(slide(2)).toHaveAttribute("data-selected", "");
     expect(await readContentTransform(content)).toBe("");
   });
 });
@@ -360,7 +360,7 @@ test.describe("Carousel: clipping viewport (edge overdrag never paints outside t
     const viewport = viewportLocator(frame);
     const content = frame.locator(".dx-carousel-content");
     const slide = (n: number) => frame.getByRole("group", { name: `${n} of 5` });
-    await expect(slide(1)).toHaveAttribute("data-selected", "true");
+    await expect(slide(1)).toHaveAttribute("data-selected", "");
 
     const run = await playWheel(content, { deltas: neg(WHEEL.hold) });
     const depth = parseTranslatePx(run.finalTransform);
@@ -390,7 +390,7 @@ test.describe("Carousel: clipping viewport (edge overdrag never paints outside t
       await next.click();
       await expectSnappedToBoundary(content, slide(i + 2));
     }
-    await expect(slide(5)).toHaveAttribute("data-selected", "true");
+    await expect(slide(5)).toHaveAttribute("data-selected", "");
 
     const run = await playWheel(content, { deltas: WHEEL.hold });
     const depth = parseTranslatePx(run.finalTransform);

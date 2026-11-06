@@ -184,7 +184,7 @@
     color: var(--dx-tabs-active-color);
 }
 
-.dx-tabs-trigger[data-disabled="true"] {
+.dx-tabs-trigger[data-disabled] {
     cursor: not-allowed;
     opacity: var(--dx-opacity-disabled);
 }
@@ -196,7 +196,7 @@
    would repaint the active tab). Hover and active resolve to the same
    `foreground` with no accent picked; the guard keeps a retuned active colour from regressing. */
 @media (hover: hover) and (pointer: fine) {
-    :where(.dx-tabs-trigger:hover:not([data-disabled="true"])) {
+    :where(.dx-tabs-trigger:hover:not([data-disabled])) {
         color: var(--dx-foreground);
     }
 }

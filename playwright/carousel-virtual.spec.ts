@@ -59,7 +59,7 @@ test.describe("CarouselVirtualContent: the DOM never holds more than 2*radius+1 
     const next = frame.getByRole("button", { name: "Next slide" });
     for (let i = 2; i <= 11; i++) {
       await next.dispatchEvent("click");
-      await expect.poll(() => frame.locator('[data-selected="true"]').getAttribute("aria-label")).toBe(
+      await expect.poll(() => frame.locator('[data-selected]').getAttribute("aria-label")).toBe(
         `${i} of 200`,
       );
     }
@@ -69,7 +69,7 @@ test.describe("CarouselVirtualContent: the DOM never holds more than 2*radius+1 
 
 test.describe("CarouselVirtualContent: seamless loop (virtual_loop)", () => {
   function selectedLabel(frame: Locator) {
-    return () => frame.locator('[data-selected="true"]').getAttribute("aria-label");
+    return () => frame.locator('[data-selected]').getAttribute("aria-label");
   }
 
   test("Next through all 12 slides wraps 12 -> 1, one slide per click, DOM count never grows", async ({ page }) => {
@@ -219,10 +219,10 @@ test.describe("CarouselVirtualContent: trackpad-style wheel scrolling wraps seam
     await goto(page, "virtual_loop");
     const frame = demoFrame(page, "virtual_loop");
     const content = frame.locator("[data-orientation]").first();
-    const label = () => frame.locator('[data-selected="true"]').getAttribute("aria-label");
+    const label = () => frame.locator('[data-selected]').getAttribute("aria-label");
 
     await expect.poll(label).toBe("1 of 12");
-    const pitch = await slidePitch(frame.locator('[data-selected="true"]'));
+    const pitch = await slidePitch(frame.locator('[data-selected]'));
     await content.hover();
 
     const seen: string[] = ["1 of 12"];
@@ -319,7 +319,7 @@ test.describe("CarouselVirtualContent: a11y", () => {
     const frame = demoFrame(page, "virtual_many");
     const next = frame.getByRole("button", { name: "Next slide" });
     const previous = frame.getByRole("button", { name: "Previous slide" });
-    const label = () => frame.locator('[data-selected="true"]').getAttribute("aria-label");
+    const label = () => frame.locator('[data-selected]').getAttribute("aria-label");
 
     await expect.poll(label).toBe("1 of 200");
     await expect(previous).toBeDisabled();
@@ -355,7 +355,7 @@ test.describe("CarouselVirtualContent: a11y", () => {
     await goto(page, "virtual_loop_rtl");
     const frame = demoFrame(page, "virtual_loop_rtl");
     const next = frame.getByRole("button", { name: "Next slide" });
-    const label = () => frame.locator('[data-selected="true"]').getAttribute("aria-label");
+    const label = () => frame.locator('[data-selected]').getAttribute("aria-label");
 
     await expect.poll(label).toBe("1 of 12");
     // RTL: ArrowRight is still the "next" key (`carousel_key_intent` never reads the direction).
@@ -393,7 +393,7 @@ test.describe("CarouselVirtualContent: the re-centre never paints a visible jump
       w.__samples = [];
       let raf: number;
       const sample = () => {
-        const sel = el.querySelector('[data-selected="true"]');
+        const sel = el.querySelector('[data-selected]');
         if (sel) {
           w.__samples.push(sel.getBoundingClientRect().left);
         }
@@ -445,7 +445,7 @@ test.describe("CarouselVirtualContent: paging never scrolls the page", () => {
     await goto(page, "virtual_loop");
     const frame = demoFrame(page, "virtual_loop");
     const next = frame.getByRole("button", { name: "Next slide" });
-    const label = () => frame.locator('[data-selected="true"]').getAttribute("aria-label");
+    const label = () => frame.locator('[data-selected]').getAttribute("aria-label");
 
     await waitForScrollStable(page);
     await page.evaluate(() => window.scrollTo({ top: 0, left: 0, behavior: "instant" }));

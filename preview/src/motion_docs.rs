@@ -270,7 +270,7 @@ pub(crate) const MOTION_TABLE: &[[&str; 4]] = &[
         r#"Input OTP"#,
         r#"the caret blinks, `opacity`, 1 s step, forever, on the one focused slot only"#,
         r#"exempt (visible by definition; in `check-motion-gating.sh`'s `ALLOW`)"#,
-        r#"`animation` on `.dx-input-otp-slot[data-active="true"]::after`; under reduced motion the caret is steady (`animation: none`)"#,
+        r#"`animation` on `.dx-input-otp-slot[data-active]::after`; under reduced motion the caret is steady (`animation: none`)"#,
     ],
     [
         r#"Shimmer effect"#,

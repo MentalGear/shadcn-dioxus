@@ -342,7 +342,7 @@ pub fn HoverCard(props: HoverCardProps) -> Element {
         props.attributes,
         attributes!(div {
             ..state_attrs::open(open()),
-            ..state_attrs::disabled((props.disabled)()),
+            ..state_attrs::presence(state_attrs::Flag::Disabled, (props.disabled)()),
         }),
     ]);
 

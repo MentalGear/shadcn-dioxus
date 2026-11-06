@@ -119,7 +119,7 @@
 }
 
 /* State styles */
-.dx-hover-card[data-disabled="true"] .dx-hover-card-trigger {
+.dx-hover-card[data-disabled] .dx-hover-card-trigger {
   color: var(--dx-muted-foreground);
 }
 

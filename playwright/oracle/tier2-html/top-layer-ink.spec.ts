@@ -345,7 +345,7 @@ const SURFACES: Surface[] = [
     // The first option is highlighted on open and so carries `--dx-accent-foreground`
     // (its own, deliberate colour, row 111); the first un-highlighted one inherits the list's.
     text: (page) =>
-      page.locator('.dx-combobox-list[data-state="open"] .dx-combobox-option:not([data-highlighted="true"])').first(),
+      page.locator('.dx-combobox-list[data-state="open"] .dx-combobox-option:not([data-highlighted])').first(),
     expectedVar: "--dx-popover-foreground",
   },
   {

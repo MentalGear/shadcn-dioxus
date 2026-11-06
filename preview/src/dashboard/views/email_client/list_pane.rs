@@ -210,7 +210,7 @@ fn MessageRow(
             onclick: move |_| {
                 state.select_message(uid_for_click.clone());
             },
-            "data-selected": is_selected,
+            "data-selected": is_selected.then_some(""),
 
             ItemMedia { variant: ItemMediaVariant::Icon,
                 ImageAvatar {
@@ -277,7 +277,7 @@ fn MessageRow(
                         variant: ButtonVariant::Ghost,
                         r#type: "button",
                         class: "ec-row-action ec-row-action-star",
-                        "data-active": starred,
+                        "data-active": starred.then_some(""),
                         aria_label: if starred { "Unstar message" } else { "Star message" },
                         onkeydown: move |e: KeyboardEvent| e.stop_propagation(),
                         onclick: move |e: Event<MouseData>| {

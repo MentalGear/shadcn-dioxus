@@ -468,7 +468,7 @@ pub fn ResizablePanelGroup(props: ResizablePanelGroupProps) -> Element {
     // back in with nothing left to collide with.
     let owned = attributes!(div {
         "data-orientation": orientation,
-        ..state_attrs::disabled(ctx.disabled),
+        ..state_attrs::presence(state_attrs::Flag::Disabled, ctx.disabled),
         "data-direction": text_direction.as_str(),
         style,
     });
@@ -742,7 +742,7 @@ pub fn ResizableHandle(props: ResizableHandleProps) -> Element {
         tabindex,
         aria_orientation,
         "data-orientation": data_orientation,
-        ..state_attrs::disabled(handle_disabled),
+        ..state_attrs::presence(state_attrs::Flag::Disabled, handle_disabled),
         ..state_attrs::state(data_state()),
         aria_valuenow: size_now,
         aria_valuemin: value_min,

@@ -93,7 +93,7 @@
 /* Nova: `aria-invalid:border-destructive ring-3 ring-destructive/20 dark:ring-destructive/40`. After the
  * focus rule so a focused invalid switch stays red. */
 .dx-switch[aria-invalid="true"]::before,
-.dx-switch[data-invalid="true"]::before {
+.dx-switch[data-invalid]::before {
   box-shadow: var(--dx-ring-invalid-field);
 }
 
@@ -134,7 +134,7 @@
 }
 
 /* Only apply disabled styles when data-disabled is "true" */
-.dx-switch[data-disabled="true"] {
+.dx-switch[data-disabled] {
   cursor: not-allowed;
   opacity: var(--dx-opacity-disabled);
 }

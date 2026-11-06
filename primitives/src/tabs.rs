@@ -184,7 +184,7 @@ pub fn Tabs(props: TabsProps) -> Element {
 
     let owned = attributes!(div {
         "data-orientation": if (props.horizontal)() { "horizontal" } else { "vertical" },
-        ..state_attrs::disabled((props.disabled)()),
+        ..state_attrs::presence(state_attrs::Flag::Disabled, (props.disabled)()),
         "data-direction": direction.as_str(),
     });
     let merged = merge_attributes(vec![props.attributes.clone(), owned]);
@@ -378,7 +378,7 @@ pub fn TabTrigger(props: TabTriggerProps) -> Element {
         aria_selected: selected,
         aria_controls: (ctx.tab_content_ids)().get(&props.value).cloned(),
         ..state_attrs::active(selected()),
-        ..state_attrs::disabled(disabled()),
+        ..state_attrs::presence(state_attrs::Flag::Disabled, disabled()),
     });
     let merged = merge_attributes(vec![
         order.marker_attribute(),

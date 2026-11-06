@@ -70,7 +70,7 @@
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .dx-select-trigger:hover:not([data-disabled="true"]) {
+  .dx-select-trigger:hover:not([data-disabled]) {
     background: var(--dx-muted);
   }
 }
@@ -84,8 +84,8 @@
    own `aria-invalid`/`data-invalid`, or the Form's marker on the `.dx-select` root the themed `Select`
    puts a caller's attributes on. */
 .dx-select-trigger[aria-invalid="true"],
-.dx-select-trigger[data-invalid="true"],
-.dx-select[data-invalid="true"] .dx-select-trigger {
+.dx-select-trigger[data-invalid],
+.dx-select[data-invalid] .dx-select-trigger {
   box-shadow: var(--dx-ring-invalid-field);
 }
 
@@ -115,7 +115,7 @@
   pointer-events: none;
 }
 
-.dx-select[data-disabled="true"] .dx-select-trigger {
+.dx-select[data-disabled] .dx-select-trigger {
   color: var(--dx-muted-foreground);
   cursor: not-allowed;
   opacity: var(--dx-opacity-disabled);
@@ -299,13 +299,13 @@
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .dx-select-option:hover:not([data-disabled="true"]) {
+  .dx-select-option:hover:not([data-disabled]) {
     background: var(--dx-accent-tint);
     color: var(--dx-accent-foreground);
   }
 }
 
-.dx-select-option[data-disabled="true"] {
+.dx-select-option[data-disabled] {
   color: var(--dx-muted-foreground);
   opacity: var(--dx-opacity-disabled);
   pointer-events: none;

@@ -88,7 +88,7 @@ test('drag survives pointercancel (iPad system gesture)', async ({ page }) => {
   // Start a drag so the slider records an active pointer.
   const firstPointerId = 99;
   const firstDrag = await dispatchPointerDown(0.5, firstPointerId);
-  await expect(thumb).toHaveAttribute('data-dragging', 'true');
+  await expect(thumb).toHaveAttribute('data-dragging', "");
 
   // OS gesture: pointercancel fires without a matching pointerup. Dispatch it
   // through window so the shared pointer tracker observes the cancellation.
@@ -103,12 +103,12 @@ test('drag survives pointercancel (iPad system gesture)', async ({ page }) => {
       cancelable: true,
     }));
   }, { ...firstDrag, pointerId: firstPointerId });
-  await expect(thumb).toHaveAttribute('data-dragging', 'false');
+  await expect(thumb).not.toHaveAttribute('data-dragging');
 
   // New tap at 70% with a fresh pointer should still update the slider.
   await clickSliderTrack(page, sliderTrack(slider), 0.7);
   await expect(thumb).toHaveAttribute('aria-valuenow', '70');
-  await expect(thumb).toHaveAttribute('data-dragging', 'false');
+  await expect(thumb).not.toHaveAttribute('data-dragging');
   await expect(thumb).toHaveAttribute('aria-valuenow', '70');
 });
 
@@ -148,7 +148,7 @@ test('drag ignores pageX/clientX mismatch (iPad pinch-zoom analog)', async ({ pa
       cancelable: true,
     }));
   }, { x, y, pointerId });
-  await expect(thumb).toHaveAttribute('data-dragging', 'true');
+  await expect(thumb).toHaveAttribute('data-dragging', "");
   const before = await thumb.getAttribute('aria-valuenow');
   expect(parseInt(before!, 10)).toBeLessThan(50);
 
@@ -439,7 +439,7 @@ test.describe('slider in a form', () => {
     await page.mouse.move(start.x, start.y);
     await page.mouse.down();
     // The drag begins once the press has resolved the track rect; moves sent before that are not a drag.
-    await expect(thumb).toHaveAttribute('data-dragging', 'true');
+    await expect(thumb).toHaveAttribute('data-dragging', "");
     await page.mouse.move(track.x + track.width * 0.6, start.y, { steps: 10 });
     await expect.poll(async () => Number(await thumb.getAttribute('aria-valuenow'))).toBeGreaterThan(50);
     // Mid-drag the value has moved, and nothing is committed yet.

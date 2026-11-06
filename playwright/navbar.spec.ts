@@ -49,7 +49,7 @@ test('keyboard navigation', async ({ page }) => {
   await page.keyboard.press('ArrowDown');
   // Assert the focus is on the calendar menu item
   await expect(page.getByRole('menuitem', { name: 'Calendar' })).toBeFocused();
-  await expect(page.getByRole('menuitem', { name: 'Slider' })).toHaveAttribute('data-disabled', 'true');
+  await expect(page.getByRole('menuitem', { name: 'Slider' })).toHaveAttribute('data-disabled', "");
   await page.keyboard.press('ArrowDown');
   // Assert the disabled slider item is skipped
   await expect(page.getByRole('menuitem', { name: 'Checkbox' })).toBeFocused();

@@ -49,7 +49,7 @@ test('a trigger click reports the new list and the written-back value drives the
   await expect(status).toHaveText('Open: pricing. Callback calls: 1.');
 
   // The item's own open flag is the controlled state too.
-  await expect(demoFrame(page, 'controlled').locator('.dx-accordion-item').nth(1)).toHaveAttribute('data-open', 'true');
+  await expect(demoFrame(page, 'controlled').locator('.dx-accordion-item').nth(1)).toHaveAttribute('data-open', "");
 
   // The open item closes: the callback reports an empty list.
   await trigger('Pricing').click();

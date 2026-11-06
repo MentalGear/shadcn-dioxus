@@ -164,7 +164,7 @@ pub fn Checkbox(props: CheckboxProps) -> Element {
         aria_checked: checked().to_aria_checked(),
         aria_required: props.required,
         ..state_attrs::checked(checked()),
-        ..state_attrs::disabled(props.disabled),
+        ..state_attrs::presence(state_attrs::Flag::Disabled, props.disabled),
         aria_readonly: (props.read_only)().then_some("true"),
         ..state_attrs::readonly(props.read_only),
     });
@@ -263,7 +263,7 @@ pub fn CheckboxIndicator(
 
     let owned = attributes!(span {
         ..state_attrs::checked(checked),
-        ..state_attrs::disabled(ctx.disabled),
+        ..state_attrs::presence(state_attrs::Flag::Disabled, ctx.disabled),
         ..state_attrs::readonly(ctx.read_only),
     });
     let merged = merge_attributes(vec![attributes, owned]);

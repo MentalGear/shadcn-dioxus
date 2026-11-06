@@ -764,9 +764,9 @@ test.describe("APG Accordion pattern — Accordion", () => {
     const first = items(page).first();
     await buttons.first().focus();
     await page.keyboard.press("Enter");
-    await expect(first).toHaveAttribute("data-open", "true");
+    await expect(first).toHaveAttribute("data-open", "");
     await page.keyboard.press("Enter");
-    await expect(first).toHaveAttribute("data-open", "false");
+    await expect(first).not.toHaveAttribute("data-open");
   });
 
   test("AccordionTrigger — Space: \"expands the associated panel\" / collapses an expanded one", async ({ page }) => {
@@ -775,9 +775,9 @@ test.describe("APG Accordion pattern — Accordion", () => {
     const first = items(page).first();
     await buttons.first().focus();
     await page.keyboard.press("Space");
-    await expect(first).toHaveAttribute("data-open", "true");
+    await expect(first).toHaveAttribute("data-open", "");
     await page.keyboard.press("Space");
-    await expect(first).toHaveAttribute("data-open", "false");
+    await expect(first).not.toHaveAttribute("data-open");
   });
 
   test.skip(

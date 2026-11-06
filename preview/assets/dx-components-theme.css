@@ -1266,7 +1266,7 @@ html[data-theme="light"] [class~="dxc-system"] {
  * settings) and the `[tabindex]` catch-all (prose and scrollers). Same zero specificity and `dx-` scoping as
  * the baselines above, so a component keeps what is genuinely its own: `grab`/`grabbing` on a drag handle,
  * `col-resize` on a resizer, `text` on a field. A disabled control (`:disabled`, `aria-disabled="true"`,
- * `data-disabled="true"`) is left out of the list altogether, so it keeps its own disabled cursor
+ * `data-disabled`) is left out of the list altogether, so it keeps its own disabled cursor
  * (`not-allowed`, or the UA's arrow where its recipe is `pointer-events: none`) in both settings.
  *
  * What a component sheet may NOT do is declare `cursor: pointer` or `cursor: default` on a control: at
@@ -1312,7 +1312,7 @@ html[data-theme="light"] [class~="dxc-system"] {
     [role="slider"][class^="dx-"],
     [role="slider"][class*=" dx-"],
     [data-dx-menu-item]
-  ):not(:disabled, [aria-disabled="true"], [data-disabled="true"])
+  ):not(:disabled, [aria-disabled="true"], [data-disabled])
 ) {
   cursor: var(--dx-interactive-element-cursor, default);
 }
@@ -1895,7 +1895,7 @@ html:not([data-dx-press-feedback="off"]) [role="radio"][class*=" dx-"]:not([disa
   overflow-wrap: anywhere;
 }
 
-:where([data-dx-menu-item][data-disabled="true"]) {
+:where([data-dx-menu-item][data-disabled]) {
   cursor: not-allowed;
   opacity: var(--dx-opacity-disabled);
 }
@@ -1907,7 +1907,7 @@ html:not([data-dx-press-feedback="off"]) [role="radio"][class*=" dx-"]:not([disa
 }
 
 @media (hover: hover) and (pointer: fine) {
-  :where([data-dx-menu-item]:hover:not([data-disabled="true"])) {
+  :where([data-dx-menu-item]:hover:not([data-disabled])) {
     background: var(--dx-accent-tint);
     color: var(--dx-accent-foreground);
   }
@@ -1978,7 +1978,7 @@ html:not([data-dx-press-feedback="off"]) [role="radio"][class*=" dx-"]:not([disa
 }
 
 @media (hover: hover) and (pointer: fine) {
-  [data-dx-menu-item]:hover:not([data-disabled="true"]) [data-dx-menu-shortcut] {
+  [data-dx-menu-item]:hover:not([data-disabled]) [data-dx-menu-shortcut] {
     color: inherit;
   }
 }
@@ -2002,7 +2002,7 @@ html:not([data-dx-press-feedback="off"]) [role="radio"][class*=" dx-"]:not([disa
 }
 
 @media (hover: hover) and (pointer: fine) {
-  [data-dx-menu-item][data-variant="destructive"]:hover:not([data-disabled="true"]) {
+  [data-dx-menu-item][data-variant="destructive"]:hover:not([data-disabled]) {
     background-color: var(--light, color-mix(in oklab, var(--dx-destructive) 10%, transparent))
       var(--dark, color-mix(in oklab, var(--dx-destructive) 20%, transparent));
   }
@@ -2366,7 +2366,7 @@ html:not([data-dx-press-feedback="off"]) [role="radio"][class*=" dx-"]:not([disa
 :where([data-dx-interactive]):disabled,
 :where([data-dx-interactive])[disabled],
 :where([data-dx-interactive])[aria-disabled="true"],
-:where([data-dx-interactive])[data-disabled="true"] {
+:where([data-dx-interactive])[data-disabled] {
   opacity: var(--dx-opacity-disabled);
   pointer-events: none;
 }
@@ -2493,8 +2493,8 @@ html:not([data-dx-press-feedback="off"]) [role="radio"][class*=" dx-"]:not([disa
  * `playwright/all-routes.spec.ts` (forced-colors keyboard-focus check). */
 @media (forced-colors: active) {
   :focus-visible:not(main),
-  [class*="dx-"][data-highlighted="true"],
-  .dx-input-otp-slot[data-active="true"] {
+  [class*="dx-"][data-highlighted],
+  .dx-input-otp-slot[data-active] {
     outline: 2px solid Highlight !important;
     outline-offset: -2px !important;
   }
@@ -2535,7 +2535,7 @@ html:not([data-dx-press-feedback="off"]) [role="radio"][class*=" dx-"]:not([disa
  *   --dx-ring-invalid        the 3px halo: destructive/20 in light, /40 in dark  (pairs with --dx-ring-focus)
  *   --dx-ring-invalid-field  edge + halo as one inset-edge box-shadow            (pairs with --dx-ring-field)
  *
- * A control selects `[aria-invalid="true"]` (and, for the Form submit marker, `[data-invalid="true"]`)
+ * A control selects `[aria-invalid="true"]` (and, for the Form submit marker, `[data-invalid]`)
  * AFTER its `:focus-visible` rule, so a focused invalid control stays red, as in shadcn. `Field`'s
  * `invalid` prop styles the label, description and error text; the control carries its own
  * `aria-invalid` (the attribute assistive technology reads), exactly as in shadcn.

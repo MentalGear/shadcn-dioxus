@@ -120,7 +120,7 @@ pub fn Switch(props: SwitchProps) -> Element {
         aria_required: props.required,
         ..state_attrs::checked(checked()),
         // Only add data-disabled when actually disabled
-        ..state_attrs::disabled(props.disabled),
+        ..state_attrs::presence(state_attrs::Flag::Disabled, props.disabled),
         aria_readonly: (props.read_only)().then_some("true"),
         ..state_attrs::readonly(props.read_only),
     });

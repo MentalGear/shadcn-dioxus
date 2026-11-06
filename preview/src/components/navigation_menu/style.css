@@ -50,16 +50,16 @@
   background-color: color-mix(in oklab, var(--dx-muted) 50%, transparent);
 }
 
-.dx-navigation-menu-trigger[data-disabled="true"],
-.dx-navigation-menu-link[data-disabled="true"] {
+.dx-navigation-menu-trigger[data-disabled],
+.dx-navigation-menu-link[data-disabled] {
   color: var(--dx-muted-foreground);
   cursor: not-allowed;
   opacity: var(--dx-opacity-disabled);
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .dx-navigation-menu-trigger:hover:not([data-disabled="true"]),
-  .dx-navigation-menu-item > .dx-navigation-menu-link:hover:not([data-disabled="true"]) {
+  .dx-navigation-menu-trigger:hover:not([data-disabled]),
+  .dx-navigation-menu-item > .dx-navigation-menu-link:hover:not([data-disabled]) {
     background: var(--dx-muted);
     outline: none;
   }
@@ -69,7 +69,7 @@
  * `data-[active=true]:bg-muted/50`): the theme's selected tint, hued by a picked accent (row 389). Hover and
  * focus below paint over it, as they do over any link. `background-color`, not the shorthand: the featured
  * card keeps its gradient. */
-.dx-navigation-menu-link[data-active="true"] {
+.dx-navigation-menu-link[data-active] {
   background-color: var(--dx-accent-tint-selected);
 }
 
@@ -337,7 +337,7 @@
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .dx-navigation-menu-content .dx-navigation-menu-link:hover:not([data-disabled="true"]) {
+  .dx-navigation-menu-content .dx-navigation-menu-link:hover:not([data-disabled]) {
     background-color: var(--dx-muted);
     outline: none;
   }
@@ -403,7 +403,7 @@
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .dx-navigation-menu-content .dx-navigation-menu-featured:hover:not([data-disabled="true"]) {
+  .dx-navigation-menu-content .dx-navigation-menu-featured:hover:not([data-disabled]) {
     --dx-navigation-menu-featured-surface: color-mix(in var(--dx-hover-mix-space), var(--dx-muted), var(--dx-foreground) 8%);
   }
 }

@@ -85,7 +85,7 @@
 
 /* Invalid (the state recipe, after the focus rule so a focused invalid input stays red). */
 .dx-combobox-input[aria-invalid="true"],
-.dx-combobox-input[data-invalid="true"] {
+.dx-combobox-input[data-invalid] {
   box-shadow: var(--dx-ring-invalid-field);
 }
 
@@ -218,12 +218,12 @@
     calc(var(--dx-menu-item-indicator-inset) + var(--dx-menu-item-indicator-size) + var(--dx-menu-item-indicator-gap));
 }
 
-.dx-combobox-option[data-highlighted="true"] {
+.dx-combobox-option[data-highlighted] {
   background: var(--dx-accent-tint);
   color: var(--dx-accent-foreground);
 }
 
-.dx-combobox-option[data-disabled="true"] {
+.dx-combobox-option[data-disabled] {
   opacity: var(--dx-opacity-disabled);
   pointer-events: none;
 }
@@ -265,7 +265,7 @@
   box-shadow: var(--dx-ring-field);
 }
 
-.dx-combobox-chips[data-disabled="true"] {
+.dx-combobox-chips[data-disabled] {
   background: var(--light, color-mix(in oklab, var(--dx-input-fill) 50%, transparent))
     var(--dark, color-mix(in oklab, var(--dx-input-fill) 80%, transparent));
   cursor: not-allowed;

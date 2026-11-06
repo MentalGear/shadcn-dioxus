@@ -174,7 +174,7 @@ for (const host of HOSTS) {
       expect(await menu.locator(ITEM).count(), "the menu has items").toBeGreaterThanOrEqual(3);
       const disabled = menu.locator(DISABLED);
       expect(await disabled.count(), "the demo has a disabled item").toBeGreaterThanOrEqual(1);
-      await expect(disabled.first()).toHaveAttribute("data-disabled", "true");
+      await expect(disabled.first()).toHaveAttribute("data-disabled", "");
     });
 
     // ---- keyboard ----

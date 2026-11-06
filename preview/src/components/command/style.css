@@ -224,17 +224,17 @@ dialog.dx-command-dialog[open][data-state="open"] {
  * keeps the keyboard-highlight role the other menus use (`--dx-accent`, which differs from the
  * popover by the same step shadcn ships), and its trailing shortcut (`text-muted-foreground
  * group-data-selected/command-item:text-foreground`) and icons take the foreground. */
-.dx-command-item[data-highlighted="true"] {
+.dx-command-item[data-highlighted] {
   background: var(--dx-accent-tint);
   color: var(--dx-accent-foreground);
 }
 
-.dx-command-item[data-highlighted="true"] > svg,
-.dx-command-item[data-highlighted="true"] [data-command-item-shortcut] {
+.dx-command-item[data-highlighted] > svg,
+.dx-command-item[data-highlighted] [data-command-item-shortcut] {
   color: var(--dx-accent-foreground);
 }
 
-.dx-command-item[data-disabled="true"] {
+.dx-command-item[data-disabled] {
   opacity: var(--dx-opacity-disabled);
   pointer-events: none;
 }
@@ -261,6 +261,6 @@ dialog.dx-command-dialog[open][data-state="open"] {
   margin-inline-start: auto;
 }
 
-.dx-command-item[data-highlighted="true"] .dx-command-shortcut {
+.dx-command-item[data-highlighted] .dx-command-shortcut {
   color: var(--dx-accent-foreground);
 }

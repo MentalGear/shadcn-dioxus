@@ -380,7 +380,7 @@ pub fn Select<T: Clone + PartialEq + 'static>(props: SelectProps<T>) -> Element 
 
     let owned = attributes!(div {
         ..state_attrs::open(open()),
-        ..state_attrs::disabled((props.disabled)()),
+        ..state_attrs::presence(state_attrs::Flag::Disabled, (props.disabled)()),
         "data-direction": (ctx.direction)().as_str(),
     });
     let merged = merge_attributes(vec![props.attributes.clone(), owned]);
@@ -581,7 +581,7 @@ pub fn SelectMulti<T: Clone + PartialEq + 'static>(props: SelectMultiProps<T>) -
 
     let owned = attributes!(div {
         ..state_attrs::open(open()),
-        ..state_attrs::disabled((props.disabled)()),
+        ..state_attrs::presence(state_attrs::Flag::Disabled, (props.disabled)()),
         "data-direction": (ctx.direction)().as_str(),
     });
     let merged = merge_attributes(vec![props.attributes.clone(), owned]);

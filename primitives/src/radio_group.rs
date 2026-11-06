@@ -235,7 +235,7 @@ pub fn RadioGroup(props: RadioGroupProps) -> Element {
     let owned = attributes!(div {
         role: "radiogroup",
         "data-orientation": if (props.horizontal)() { "horizontal" } else { "vertical" },
-        ..state_attrs::disabled((props.disabled)()),
+        ..state_attrs::presence(state_attrs::Flag::Disabled, (props.disabled)()),
         "data-direction": direction.as_str(),
         aria_required: props.required,
         aria_readonly: (props.read_only)().then_some("true"),
@@ -385,7 +385,7 @@ pub fn RadioItem(props: RadioItemProps) -> Element {
         tabindex: tab_index,
         aria_checked: checked,
         ..state_attrs::checked(checked()),
-        ..state_attrs::disabled(disabled()),
+        ..state_attrs::presence(state_attrs::Flag::Disabled, disabled()),
         ..state_attrs::readonly(ctx.read_only),
     });
     let merged = merge_attributes(vec![

@@ -135,7 +135,7 @@
 //!
 //! A [`Drawer`] rendered inside another [`DrawerContent`] is nested (Vaul's
 //! `NestedRoot`, without a separate component: the context decides). While the child
-//! is open the parent carries `data-nested-open="true"`, which the theme turns into a
+//! is open the parent carries `data-nested-open`, which the theme turns into a
 //! small scale and offset, and closing the child (the moment its close STARTS)
 //! restores it. Escape closes only the top-most because the browser's `cancel` goes
 //! to the top-most modal `<dialog>` only; a drag closes only the top-most because
@@ -1176,8 +1176,8 @@ pub fn DrawerContent(props: DrawerContentProps) -> Element {
         "data-dx-drawer": "content",
         "data-side": side.cloned().as_str(),
         ..state_attrs::open(is_open),
-        ..state_attrs::valued(state_attrs::Flag::Dragging, dragging()),
-        "data-nested-open": if open_children() > 0 { "true" } else { "false" },
+        ..state_attrs::presence(state_attrs::Flag::Dragging, dragging()),
+        "data-nested-open": (open_children() > 0).then_some(""),
         "data-snap": snap_state,
         style: style,
     });

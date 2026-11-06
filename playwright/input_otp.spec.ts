@@ -55,33 +55,33 @@ test("Backspace/Delete/ArrowLeft/ArrowRight move the active slot", async ({ page
   await page.keyboard.type("123456");
   // Typing advances the active slot -- after a full 6-digit value the caret
   // has nowhere left to go, so the last slot stays active.
-  await expect(slot(5)).toHaveAttribute("data-active", "true");
+  await expect(slot(5)).toHaveAttribute("data-active", "");
 
   await page.keyboard.press("Home");
-  await expect(slot(0)).toHaveAttribute("data-active", "true");
+  await expect(slot(0)).toHaveAttribute("data-active", "");
 
   await page.keyboard.press("ArrowRight");
-  await expect(slot(1)).toHaveAttribute("data-active", "true");
-  await expect(slot(0)).toHaveAttribute("data-active", "false");
+  await expect(slot(1)).toHaveAttribute("data-active", "");
+  await expect(slot(0)).not.toHaveAttribute("data-active");
 
   // Backspace deletes the character before the caret (index 0, "1") and
   // moves the caret back with it.
   await page.keyboard.press("Backspace");
   await expect(input).toHaveValue("23456");
-  await expect(slot(0)).toHaveAttribute("data-active", "true");
+  await expect(slot(0)).toHaveAttribute("data-active", "");
 
   // Delete removes the character at the caret ("2") without moving it.
   await page.keyboard.press("Delete");
   await expect(input).toHaveValue("3456");
-  await expect(slot(0)).toHaveAttribute("data-active", "true");
+  await expect(slot(0)).toHaveAttribute("data-active", "");
   await expect(slot(0)).toHaveText("3");
 
   await page.keyboard.press("End");
-  await expect(slot(4)).toHaveAttribute("data-active", "true");
+  await expect(slot(4)).toHaveAttribute("data-active", "");
 
   await page.keyboard.press("ArrowLeft");
-  await expect(slot(3)).toHaveAttribute("data-active", "true");
-  await expect(slot(4)).toHaveAttribute("data-active", "false");
+  await expect(slot(3)).toHaveAttribute("data-active", "");
+  await expect(slot(4)).not.toHaveAttribute("data-active");
 });
 
 test("disabled state blocks input", async ({ page }) => {
@@ -239,7 +239,7 @@ test.describe("Click-to-caret positioning: a click on a slot places the caret at
       const p = await slotCenter(page, "#otp-main", idx);
       await page.mouse.click(p.x, p.y);
       await expect(input, `clicking empty slot ${idx}`).toHaveJSProperty("selectionStart", 0);
-      await expect(page.locator(`#otp-main + div [data-slot-index="0"]`)).toHaveAttribute("data-active", "true");
+      await expect(page.locator(`#otp-main + div [data-slot-index="0"]`)).toHaveAttribute("data-active", "");
       if (idx !== 0) {
         await expect(page.locator(`#otp-main + div [data-slot-index="${idx}"]`)).toHaveAttribute(
           "data-active",
@@ -290,7 +290,7 @@ test.describe("Click-to-caret positioning: a click on a slot places the caret at
       const p = await slotCenter(page, "#otp-main", idx);
       await page.mouse.click(p.x, p.y);
       await expect(input, `clicking slot ${idx} on a full value`).toHaveJSProperty("selectionStart", idx);
-      await expect(page.locator(`#otp-main + div [data-slot-index="${idx}"]`)).toHaveAttribute("data-active", "true");
+      await expect(page.locator(`#otp-main + div [data-slot-index="${idx}"]`)).toHaveAttribute("data-active", "");
     }
   });
 

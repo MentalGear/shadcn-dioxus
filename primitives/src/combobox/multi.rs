@@ -171,7 +171,7 @@ pub fn ComboboxMulti<T: Clone + PartialEq + ToString + 'static>(
 
     let owned = attributes!(div {
         ..state_attrs::open(open()),
-        ..state_attrs::disabled((props.disabled)()),
+        ..state_attrs::presence(state_attrs::Flag::Disabled, (props.disabled)()),
         "data-multiple": "true",
     });
     let merged = merge_attributes(vec![props.attributes.clone(), owned]);
@@ -250,7 +250,7 @@ pub fn ComboboxChips(props: ComboboxChipsProps) -> Element {
         // The popup anchors to this field, not to the input inside it (the input drops its own anchor in a multi-select).
         style: crate::top_layer::anchor_name_style(&ctx.input_id.cloned()),
         "data-dx-combobox-chips": "true",
-        ..state_attrs::disabled(disabled),
+        ..state_attrs::presence(state_attrs::Flag::Disabled, disabled),
     });
     let merged = merge_attributes(vec![props.attributes.clone(), owned]);
 

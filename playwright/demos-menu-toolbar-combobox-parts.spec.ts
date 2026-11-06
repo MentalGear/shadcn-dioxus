@@ -138,7 +138,7 @@ for (const mode of ["light", "dark"] as const) {
 
       // ArrowDown from the last fruit lands on the first vegetable: the groups share one order.
       for (let i = 0; i < 5; i++) await input.press("ArrowDown");
-      await expect(list.getByRole("option", { name: "Broccoli" })).toHaveAttribute("data-highlighted", "true");
+      await expect(list.getByRole("option", { name: "Broccoli" })).toHaveAttribute("data-highlighted", "");
 
       await input.fill("car");
       await expect(list.getByRole("group")).toHaveCount(1);
@@ -152,10 +152,10 @@ for (const mode of ["light", "dark"] as const) {
       await input.click();
       await input.pressSequentially("ru");
       const rust = openList(page).getByRole("option", { name: "Rust" });
-      await expect(rust).toHaveAttribute("data-highlighted", "true");
+      await expect(rust).toHaveAttribute("data-highlighted", "");
       await expect(input).toHaveAttribute("aria-activedescendant", (await rust.getAttribute("id"))!);
       await input.pressSequentially("b");
-      await expect(openList(page).getByRole("option", { name: "Ruby" })).toHaveAttribute("data-highlighted", "true");
+      await expect(openList(page).getByRole("option", { name: "Ruby" })).toHaveAttribute("data-highlighted", "");
       await input.press("Enter");
       await expect(input).toHaveValue("Ruby");
       await expectNoAxeViolations(page, `combobox/auto_highlight ${mode}`);

@@ -105,13 +105,13 @@
 /* `aria-invalid:border-destructive ring-3 ring-destructive/20 dark:ring-destructive/40`. After the
    focus rule so a focused invalid checkbox stays red; `[data-invalid]` is Form's blocked-submit marker. */
 .dx-checkbox[aria-invalid="true"] > .dx-checkbox-indicator,
-.dx-checkbox[data-invalid="true"] > .dx-checkbox-indicator {
+.dx-checkbox[data-invalid] > .dx-checkbox-indicator {
     box-shadow: var(--dx-ring-invalid-field);
 }
 
 /* `disabled:cursor-not-allowed disabled:opacity-50`. */
 .dx-checkbox:disabled,
-.dx-checkbox[data-disabled="true"] {
+.dx-checkbox[data-disabled] {
     cursor: not-allowed;
     opacity: var(--dx-opacity-disabled);
 }

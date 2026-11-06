@@ -344,7 +344,7 @@
 /* `aria-invalid:ring-3 aria-invalid:border-destructive`: the invalid ring
  * shows at rest, not only on focus. */
 .dx-button[aria-invalid="true"],
-.dx-button[data-invalid="true"] {
+.dx-button[data-invalid] {
   border-color: var(--dx-ring-invalid-color);
   box-shadow: var(--dx-ring-invalid);
 }

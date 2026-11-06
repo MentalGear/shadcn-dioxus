@@ -450,7 +450,7 @@ async function probeForcedColors(page: Page, schemes: Scheme[]) {
         let ok = visibleOutline(e);
         if (!ok && getComputedStyle(e).opacity === "0") {
           // An invisible overlay input (InputOtp): focus shows on the active proxy inside its group.
-          const proxy = e.parentElement?.querySelector('[data-active="true"]');
+          const proxy = e.parentElement?.querySelector('[data-active]');
           ok = !!proxy && visibleOutline(proxy);
         }
         if (ok) return "";
@@ -498,7 +498,7 @@ async function installFlipScheme(page: Page) {
 // --- 3b. the active option of a listbox that never takes focus ------------------------------
 // Combobox and Command keep focus in their input and mark the active option with `data-highlighted`
 // (`aria-activedescendant`). Its highlight is a background change, which forced colors flattens, so the
-// theme's forced-colors rule also outlines `[data-highlighted="true"]`. (Menus, Select and Menubar move real
+// theme's forced-colors rule also outlines `[data-highlighted]`. (Menus, Select and Menubar move real
 // focus onto their items, which the focus sweep above already covers.)
 /** How to put each list's input in focus (Command is a dialog opened from a button; its palette is outside `<main>`). */
 const ACTIVEDESCENDANT_LISTS: Record<string, (page: Page) => Promise<void>> = {
@@ -521,7 +521,7 @@ async function probeActiveDescendant(page: Page, focusInput: (page: Page) => Pro
   await page.keyboard.press("Tab"); // keyboard modality
   await focusInput(page);
   await page.keyboard.press("ArrowDown");
-  const option = page.locator('[role="option"][data-highlighted="true"]').first();
+  const option = page.locator('[role="option"][data-highlighted]').first();
   await expect(option).toBeVisible();
   const outlines: Partial<Record<Scheme, string>> = {};
   for (const scheme of schemes) {

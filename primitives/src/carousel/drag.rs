@@ -364,7 +364,7 @@ pub(super) const CAROUSEL_DRAG_JS: &str = concat!(carousel_true_end_js!(), carou
                 return;
             }
             dragging = true;
-            el.setAttribute('data-dragging', 'true');
+            el.setAttribute('data-dragging', '');
             dxTrace(el, 'drag-start', { pointerType: e.pointerType });
             try { el.setPointerCapture(pointerId); } catch (err) {}
             // `scroll-snap-type: ... mandatory` (set inline by this same

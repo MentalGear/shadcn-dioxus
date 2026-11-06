@@ -55,10 +55,10 @@
 }
 
 /* `.cn-label`'s `peer-disabled:opacity-50` and `peer-disabled:cursor-not-allowed`: a label that
- * follows a disabled control (its `peer`) dims with it. `[data-disabled="true"]` is the marker
+ * follows a disabled control (its `peer`) dims with it. `[data-disabled]` is the marker
  * Checkbox, Switch and Toggle emit next to the `disabled` attribute. The `group-data-[disabled=true]`
  * half (an ancestor marks the whole row) belongs to Field, which owns that ancestor. */
-:is(:disabled, [data-disabled="true"]) ~ .dx-label {
+:is(:disabled, [data-disabled]) ~ .dx-label {
   cursor: not-allowed;
   opacity: var(--dx-opacity-disabled);
 }

@@ -675,7 +675,7 @@ mod tests {
         // `"data-active": <bool>` already use elsewhere in this crate), not
         // a quoted string: `data-active=true`/`data-active=false` in the
         // raw SSR text. This is still a fully valid unquoted HTML
-        // attribute token, and CSS's own `[data-active="true"]` matches it
+        // attribute token, and CSS's own `[data-active]` matches it
         // in the real DOM regardless of the source's quoting (a browser's
         // HTML parser and `dioxus-web`'s own CSR `set_attribute` both
         // resolve it to the identical attribute VALUE string) -- this

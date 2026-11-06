@@ -40,4 +40,4 @@ Rejected characters are removed as they arrive and the result is cut to `max_len
 
 ## Motion
 
-The caret blinks (`opacity`, 1 s, forever) on the one focused slot only, i.e. while the user is typing into the field; it is visible by definition, so it is not gated (it is on `check-motion-gating.sh`'s allowlist). Override `animation` on `.dx-input-otp-slot[data-active="true"]::after` to change or remove it; reduced motion swaps in `--dx-motion-duration-reduced`. See [Motion](/docs#motion) for the tokens, reduced motion and the per-component table.
+The caret blinks (`opacity`, 1 s, forever) on the one focused slot only, i.e. while the user is typing into the field; it is visible by definition, so it is not gated (it is on `check-motion-gating.sh`'s allowlist). Override `animation` on `.dx-input-otp-slot[data-active]::after` to change or remove it; reduced motion swaps in `--dx-motion-duration-reduced`. See [Motion](/docs#motion) for the tokens, reduced motion and the per-component table.

@@ -34,7 +34,7 @@ async function slideOffsets(page: Page, variant: Variant): Promise<{ offs: numbe
     });
     return {
       offs,
-      selected: slides.findIndex((s) => s.getAttribute("data-selected") === "true"),
+      selected: slides.findIndex((s) => s.getAttribute("data-selected") !== null),
       scroll: Math.abs(track.scrollLeft),
     };
   }, variant);

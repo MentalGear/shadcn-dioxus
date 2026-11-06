@@ -240,7 +240,7 @@ test.describe("message_scroller: RTL", () => {
     const button = root.locator('[data-message-scroller-button][data-direction="end"]');
     const centred = async () => {
       await vp.evaluate((el) => (el.scrollTop = 0));
-      await expect(button).toHaveAttribute("data-active", "true");
+      await expect(button).toHaveAttribute("data-active", "");
       await expect(button).toHaveCSS("opacity", "1");
       const frameBox = (await root.locator("[data-message-scroller-root]").boundingBox())!;
       const buttonBox = (await button.boundingBox())!;
@@ -263,7 +263,7 @@ test.describe("message_scroller: follow mode and the autoscroll window", () => {
     const button = root.locator('[data-message-scroller-button][data-direction="end"]');
     // Leave the pinned end by hand, then press the jump button: it re-arms follow and opens the 180 ms window.
     await vp.evaluate((el) => (el.scrollTop = 0));
-    await expect(button).toHaveAttribute("data-active", "true");
+    await expect(button).toHaveAttribute("data-active", "");
     // Once the pin has really moved the viewport down (first scroll event of its smooth scroll, while the 180 ms
     // window is open), scroll back to the top in that same event: an upward move that lands inside the window,
     // with no timing assumption. The move must follow a downward one, or there is nothing to release.
@@ -280,6 +280,6 @@ test.describe("message_scroller: follow mode and the autoscroll window", () => {
     await expect(vp).not.toHaveAttribute("data-autoscrolling");
     expect(await vp.evaluate((el) => Math.round(el.scrollTop))).toBe(0);
     // Follow was released: the viewport sits at the top and the jump button is offered again.
-    await expect(button).toHaveAttribute("data-active", "true");
+    await expect(button).toHaveAttribute("data-active", "");
   });
 });

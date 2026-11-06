@@ -97,7 +97,7 @@ pub fn Toggle(props: ToggleProps) -> Element {
     let owned = attributes!(button {
         aria_pressed: pressed,
         ..state_attrs::pressed(pressed()),
-        ..state_attrs::disabled(props.disabled),
+        ..state_attrs::presence(state_attrs::Flag::Disabled, props.disabled),
     });
     let merged = merge_attributes(vec![defaults, props.attributes.clone(), owned]);
 

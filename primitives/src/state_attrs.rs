@@ -6,7 +6,7 @@
 //! ```rust,ignore
 //! let owned = attributes!(button {
 //!     ..state_attrs::checked(checked()),
-//!     ..state_attrs::disabled(props.disabled),
+//!     ..state_attrs::presence(state_attrs::Flag::Disabled, props.disabled),
 //!     ..state_attrs::readonly(props.read_only),
 //! });
 //! ```
@@ -40,14 +40,12 @@
 //! | [`presence`] | none | one [`Flag`], present-as-empty or absent | `data-readonly`, `data-highlighted`, `data-invalid`, `data-selected`, ... |
 //! | [`state`] | the given value | none | a `data-state` with no Base UI counterpart (Avatar, Progress status, ...) |
 //!
-//! # Valued booleans are legacy
+//! # No valued booleans
 //!
-//! Many stylesheets and specs select a boolean as `[data-disabled="true"]` / `[data-open="false"]`, so
-//! those attributes are still emitted as `data-x=true|false` through [`valued`] (and [`disabled`], which is
-//! `valued(Flag::Disabled, ..)`). A valued boolean matches a presence selector in its false case, so it is
-//! a convention that cannot be pasted from upstream Tailwind classes: each call is counted per file by
-//! `scripts/check-state-attributes.sh` against a shrink-only baseline, and moving a flag to presence is a
-//! one-line change here plus its CSS and specs. A new component uses [`presence`].
+//! A boolean state is a presence attribute: present (and empty) while it holds, absent otherwise, never
+//! `data-x=true|false`. A presence selector (`[data-disabled]`, Tailwind's `data-disabled:`) therefore matches exactly
+//! when the state holds, and a stylesheet or spec asks for the false case with `:not([data-disabled])` or
+//! `not.toHaveAttribute`. [`presence`] writes one; there is no valued form.
 //!
 //! # The gate
 //!
@@ -218,15 +216,14 @@ pub fn panel_open(is_open: impl IntoFlag) -> Vec<Attribute> {
     }
 }
 
-/// A part that has no `data-state` and is open or closed (Accordion item and panel, Collapsible):
-/// the legacy valued `data-open=true|false` (see [`valued`]) and the presence attribute `data-closed`.
-pub fn open_valued(is_open: impl IntoFlag) -> Vec<Attribute> {
-    let is_open = is_open.flag();
-    let mut attrs = valued(Flag::Open, is_open);
-    if !is_open {
-        attrs.push(present("data-closed"));
+/// A part that has no `data-state` and is open or closed (Accordion item and panel, Collapsible): the
+/// presence attribute `data-open` while open, `data-closed` while closed.
+pub fn open_presence(is_open: impl IntoFlag) -> Vec<Attribute> {
+    if is_open.flag() {
+        presence(Flag::Open, true)
+    } else {
+        vec![present("data-closed")]
     }
-    attrs
 }
 
 /// A checkbox-like control: `data-state="checked|unchecked|indeterminate"` and the matching
@@ -301,37 +298,9 @@ pub fn presence(flag: Flag, on: impl IntoFlag) -> Vec<Attribute> {
     }
 }
 
-/// A boolean state as a presence attribute whose value is `true`: `data-x="true"` while it holds, absent
-/// otherwise, so the presence selector (`[data-x]`) and the legacy `[data-x="true"]` selector both match
-/// exactly the true case.
-pub fn presence_true(flag: Flag, on: impl IntoFlag) -> Vec<Attribute> {
-    if on.flag() {
-        vec![text(flag.name(), "true")]
-    } else {
-        Vec::new()
-    }
-}
-
 /// `data-readonly` as a presence attribute.
 pub fn readonly(on: impl IntoFlag) -> Vec<Attribute> {
     presence(Flag::Readonly, on)
-}
-
-/// A boolean state as the legacy valued attribute `data-x=true|false`, which is present in both cases.
-/// It exists for the attributes whose stylesheets and specs select `="true"` / `="false"`; the gate
-/// counts each call per file against a shrink-only baseline.
-pub fn valued(flag: Flag, on: impl IntoFlag) -> Vec<Attribute> {
-    vec![Attribute::new(
-        flag.name(),
-        AttributeValue::Bool(on.flag()),
-        None,
-        false,
-    )]
-}
-
-/// `data-disabled=true|false`, the valued form every stylesheet selects (`[data-disabled="true"]`).
-pub fn disabled(on: impl IntoFlag) -> Vec<Attribute> {
-    valued(Flag::Disabled, on)
 }
 
 #[cfg(test)]
@@ -460,22 +429,19 @@ mod tests {
     }
 
     #[test]
-    fn valued_booleans_stay_valued_until_their_css_moves() {
+    fn a_boolean_is_present_while_it_holds_and_absent_otherwise() {
         assert_eq!(
-            names(&render(|| disabled(true))),
-            vec![pair_of("data-disabled", "true")]
+            names(&render(|| presence(Flag::Disabled, true))),
+            vec![pair_of("data-disabled", "")]
+        );
+        assert!(names(&render(|| presence(Flag::Disabled, false))).is_empty());
+        assert_eq!(
+            names(&render(|| open_presence(false))),
+            vec![pair_of("data-closed", "")]
         );
         assert_eq!(
-            names(&render(|| disabled(false))),
-            vec![pair_of("data-disabled", "false")]
-        );
-        assert_eq!(
-            names(&render(|| open_valued(false))),
-            vec![pair_of("data-closed", ""), pair_of("data-open", "false")]
-        );
-        assert_eq!(
-            names(&render(|| open_valued(true))),
-            vec![pair_of("data-open", "true")]
+            names(&render(|| open_presence(true))),
+            vec![pair_of("data-open", "")]
         );
     }
 
@@ -566,8 +532,8 @@ mod ssr_tests {
         assert_eq!(value(&boxes[2], "data-state"), Some("unchecked"));
         assert_eq!(value(&boxes[2], "data-unchecked"), Some(""));
         assert!(!has(&boxes[2], "data-checked") && !has(&boxes[2], "data-indeterminate"));
-        // The valued boolean stays valued; read-only is a presence attribute and absent here.
-        assert_eq!(value(&boxes[2], "data-disabled"), Some("false"));
+        // Disabled and read-only are presence attributes, absent here.
+        assert!(!has(&boxes[2], "data-disabled"));
         assert!(!has(&boxes[2], "data-readonly"));
     }
 
@@ -588,14 +554,13 @@ mod ssr_tests {
             data(&switches[0]),
             vec![
                 ("data-checked".into(), String::new()),
-                ("data-disabled".into(), "false".into()),
                 ("data-state".into(), "checked".into()),
             ]
         );
         assert_eq!(
             data(&switches[1]),
             vec![
-                ("data-disabled".into(), "true".into()),
+                ("data-disabled".into(), String::new()),
                 ("data-state".into(), "unchecked".into()),
                 ("data-unchecked".into(), String::new()),
             ]
@@ -692,17 +657,17 @@ mod ssr_tests {
     }
 
     #[test]
-    fn accordion_items_render_open_valued_closed_present_and_panel_open_on_the_trigger() {
+    fn accordion_items_render_open_or_closed_as_presence_and_panel_open_on_the_trigger() {
         let html = render(Accordions);
-        let items: Vec<Tag> = by_attr(&html, "data-open")
-            .into_iter()
-            .filter(|t| t.attrs.contains_key("data-disabled"))
-            .collect();
+        let items = find_elements(&html, |a| {
+            (a.contains_key("data-open") || a.contains_key("data-closed"))
+                && !a.contains_key("id")
+                && !a.contains_key("aria-expanded")
+        });
         assert_eq!(items.len(), 2, "{html}");
-        // `data-open` stays `true|false` (stylesheets select `="true"`); `data-closed` is presence.
-        assert_eq!(value(&items[0], "data-open"), Some("true"));
+        assert_eq!(value(&items[0], "data-open"), Some(""));
         assert!(!has(&items[0], "data-closed"));
-        assert_eq!(value(&items[1], "data-open"), Some("false"));
+        assert!(!has(&items[1], "data-open"));
         assert_eq!(value(&items[1], "data-closed"), Some(""));
         let triggers = by_attr(&html, "aria-expanded");
         assert_eq!(triggers.len(), 2, "{html}");
@@ -729,10 +694,10 @@ mod ssr_tests {
         let html = render(Collapsibles);
         let triggers = by_attr(&html, "aria-expanded");
         assert_eq!(triggers.len(), 2, "{html}");
-        assert_eq!(value(&triggers[0], "data-open"), Some("true"));
+        assert_eq!(value(&triggers[0], "data-open"), Some(""));
         assert_eq!(value(&triggers[0], "data-panel-open"), Some(""));
         assert!(!has(&triggers[0], "data-closed"));
-        assert_eq!(value(&triggers[1], "data-open"), Some("false"));
+        assert!(!has(&triggers[1], "data-open"));
         assert_eq!(value(&triggers[1], "data-closed"), Some(""));
         assert!(!has(&triggers[1], "data-panel-open"));
     }

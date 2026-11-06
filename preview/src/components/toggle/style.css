@@ -102,7 +102,7 @@
 
 /* Nova: `aria-invalid:border-destructive ring-3 ring-destructive/20 dark:ring-destructive/40`. */
 .dx-toggle[aria-invalid="true"],
-.dx-toggle[data-invalid="true"] {
+.dx-toggle[data-invalid] {
   box-shadow: var(--dx-ring-invalid-field);
 }
 
@@ -124,9 +124,9 @@
 }
 
 /* Disabled: Nova's `disabled:pointer-events-none disabled:opacity-50`. The
- * primitive emits both the `disabled` attribute and `data-disabled="true"`. */
+ * primitive emits both the `disabled` attribute and `data-disabled`. */
 .dx-toggle:disabled,
-.dx-toggle[data-disabled="true"] {
+.dx-toggle[data-disabled] {
   opacity: var(--dx-opacity-disabled);
   pointer-events: none;
 }

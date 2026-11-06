@@ -131,7 +131,7 @@ def check(sheets, theme, main, theme_rs, index_html):
             if "[data-dx-menu-item]" not in entries:
                 violations.append(f"{THEME}:{line}: the baseline rule lost `[data-dx-menu-item]`")
             disabled = selector_list(shape.group(2))
-            for spelling in (":disabled", '[aria-disabled="true"]', '[data-disabled="true"]'):
+            for spelling in (":disabled", '[aria-disabled="true"]', '[data-disabled]'):
                 if spelling not in disabled:
                     violations.append(f"{THEME}:{line}: the baseline rule no longer leaves `{spelling}` out "
                                       "(a disabled control keeps its own cursor)")
@@ -218,7 +218,7 @@ def self_test():
     expect_red("the rule loses :where() (non-zero specificity)",
                theme=baseline_block(lambda b: b.replace(":where(\n  :is(", ":is(\n  :is(", 1)))
     expect_red("a disabled control no longer left out",
-               theme=baseline_block(lambda b: b.replace(', [data-disabled="true"])', ")", 1)))
+               theme=baseline_block(lambda b: b.replace(', [data-disabled])', ")", 1)))
     expect_red("the :disabled exclusion deleted",
                theme=baseline_block(lambda b: b.replace(":disabled, ", "", 1)))
     expect_red("the pointer attribute rule deleted", theme=theme.replace(f"  {VAR}: pointer;", "  color: inherit;"))

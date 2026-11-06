@@ -163,12 +163,12 @@ test("types to filter, arrow-navigates, and selects with the keyboard", async ({
 
     await page.keyboard.press("ArrowDown");
     const newFile = list(page).getByRole("option", { name: "New File" });
-    await expect(newFile).toHaveAttribute("data-highlighted", "true");
+    await expect(newFile).toHaveAttribute("data-highlighted", "");
     await expect(input(page)).toHaveAttribute("aria-activedescendant", await newFile.getAttribute("id"));
 
     await page.keyboard.press("ArrowDown");
     const newWindow = list(page).getByRole("option", { name: "New Window" });
-    await expect(newWindow).toHaveAttribute("data-highlighted", "true");
+    await expect(newWindow).toHaveAttribute("data-highlighted", "");
 
     await page.keyboard.press("Enter");
     // Selecting closes the dialog (the demo's `on_value_change` sets

@@ -204,7 +204,7 @@ pub fn Navbar(props: NavbarProps) -> Element {
             // explicitly disclaims.
             role: "menubar",
             dir: direction.as_str(),
-            ..state_attrs::disabled((props.disabled)()),
+            ..state_attrs::presence(state_attrs::Flag::Disabled, (props.disabled)()),
             "data-direction": direction.as_str(),
             tabindex: (!ctx.focus.any_focused()).then_some("0"),
         }),
@@ -418,7 +418,7 @@ pub fn NavbarNav(props: NavbarNavProps) -> Element {
             // literal.
             role: crate::menu_semantics::MENU_ROLE,
             ..state_attrs::open(is_open()),
-            ..state_attrs::disabled((ctx.disabled)() || (props.disabled)()),
+            ..state_attrs::presence(state_attrs::Flag::Disabled, (ctx.disabled)() || (props.disabled)()),
         }),
     ]);
 
@@ -1278,7 +1278,7 @@ pub fn NavbarItem(mut props: NavbarItemProps) -> Element {
             // semantics at all, so `data-disabled` alone would leave this
             // item looking, to assistive tech, like a normal active link.
             aria_disabled: is_disabled,
-            ..state_attrs::disabled(is_disabled),
+            ..state_attrs::presence(state_attrs::Flag::Disabled, is_disabled),
             tabindex: tabindex,
         }),
     ]);

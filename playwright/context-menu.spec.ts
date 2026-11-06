@@ -442,7 +442,7 @@ test('keyboard navigation', async ({ page }) => {
   await page.keyboard.press('ArrowDown');
   // Assert the "Edit" menu item is focused
   await expect(page.getByRole('menuitem', { name: 'Edit' })).toBeFocused();
-  await expect(page.getByRole('menuitem', { name: 'Undo' })).toHaveAttribute('data-disabled', 'true');
+  await expect(page.getByRole('menuitem', { name: 'Undo' })).toHaveAttribute('data-disabled', "");
   // Move down to the "Duplicate" menu item
   await page.keyboard.press('ArrowDown');
   // Assert the "Duplicate" menu item is focused

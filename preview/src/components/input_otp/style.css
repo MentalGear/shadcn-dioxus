@@ -73,8 +73,8 @@
 /* The focused slot: the keyboard focus ring, the shared `--dx-ring-field`
  * token `Input` draws (`../input/style.css`'s `.dx-input:focus-visible`). (The
  * real input is invisible, so the active slot is where focus shows.) */
-.dx-input-otp-slot[data-active="true"],
-.dx-input-otp-slot[data-active="true"]:first-child {
+.dx-input-otp-slot[data-active],
+.dx-input-otp-slot[data-active]:first-child {
   z-index: var(--dx-z-raise);
   box-shadow: var(--dx-ring-field);
 }
@@ -82,7 +82,7 @@
 /* The fake caret -- a blinking bar drawn on the active slot only, since the
    real input driving it is invisible (opacity: 0) by design (see
    primitives/src/input_otp.rs's module doc). */
-.dx-input-otp-slot[data-active="true"]::after {
+.dx-input-otp-slot[data-active]::after {
   position: absolute;
   width: 1px;
   height: 1rem;
@@ -107,7 +107,7 @@
 
 /* Reduced motion: a steady caret (an infinite 0.01 ms loop would flicker, not stop). */
 @media (prefers-reduced-motion: reduce) {
-  .dx-input-otp-slot[data-active="true"]::after {
+  .dx-input-otp-slot[data-active]::after {
     animation: none;
   }
 }
@@ -117,23 +117,23 @@
  * and the group the 3px halo, as Nova's `has-aria-invalid:ring-3 ring-destructive/20`. After the
  * active rule so the caret slot stays red. */
 .dx-input-otp-input[aria-invalid="true"] + div .dx-input-otp-group,
-.dx-input-otp-input[data-invalid="true"] + div .dx-input-otp-group {
+.dx-input-otp-input[data-invalid] + div .dx-input-otp-group {
   box-shadow: var(--dx-ring-invalid);
 }
 
 .dx-input-otp-input[aria-invalid="true"] + div .dx-input-otp-slot,
-.dx-input-otp-input[data-invalid="true"] + div .dx-input-otp-slot {
+.dx-input-otp-input[data-invalid] + div .dx-input-otp-slot {
   --dx-input-otp-edge: var(--dx-ring-invalid-color);
 }
 
-.dx-input-otp-input[aria-invalid="true"] + div .dx-input-otp-slot[data-active="true"],
-.dx-input-otp-input[data-invalid="true"] + div .dx-input-otp-slot[data-active="true"],
-.dx-input-otp-input[aria-invalid="true"] + div .dx-input-otp-slot[data-active="true"]:first-child,
-.dx-input-otp-input[data-invalid="true"] + div .dx-input-otp-slot[data-active="true"]:first-child {
+.dx-input-otp-input[aria-invalid="true"] + div .dx-input-otp-slot[data-active],
+.dx-input-otp-input[data-invalid] + div .dx-input-otp-slot[data-active],
+.dx-input-otp-input[aria-invalid="true"] + div .dx-input-otp-slot[data-active]:first-child,
+.dx-input-otp-input[data-invalid] + div .dx-input-otp-slot[data-active]:first-child {
   box-shadow: var(--dx-ring-invalid-field);
 }
 
-.dx-input-otp-slot[data-disabled="true"] {
+.dx-input-otp-slot[data-disabled] {
   opacity: var(--dx-opacity-disabled);
 }
 

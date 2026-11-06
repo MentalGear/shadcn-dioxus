@@ -33,14 +33,14 @@
   background-color: var(--dx-accent-tint);
 }
 
-.dx-menubar-trigger[data-disabled="true"] {
+.dx-menubar-trigger[data-disabled] {
   color: var(--dx-muted-foreground);
   cursor: not-allowed;
   opacity: var(--dx-opacity-disabled);
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .dx-menubar-trigger:hover:not([data-disabled="true"]) {
+  .dx-menubar-trigger:hover:not([data-disabled]) {
     background: var(--dx-muted);
     outline: none;
   }

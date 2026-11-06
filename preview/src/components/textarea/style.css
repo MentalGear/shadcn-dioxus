@@ -96,7 +96,7 @@
       :disabled,
       :focus,
       [aria-invalid="true"],
-      [data-invalid="true"]
+      [data-invalid]
     ) {
     border-color: var(--dx-border-strong);
   }
@@ -117,12 +117,12 @@
  * recipe; the outline variant draws a real border, so it takes the Button construction (destructive
  * border, halo around it). `[data-invalid]` is Form's blocked-submit marker. */
 .dx-textarea[data-style][aria-invalid="true"],
-.dx-textarea[data-style][data-invalid="true"] {
+.dx-textarea[data-style][data-invalid] {
   box-shadow: var(--dx-ring-invalid-field);
 }
 
 .dx-textarea[data-style="outline"][aria-invalid="true"],
-.dx-textarea[data-style="outline"][data-invalid="true"] {
+.dx-textarea[data-style="outline"][data-invalid] {
   border-color: var(--dx-ring-invalid-color);
   box-shadow: var(--dx-ring-invalid);
 }
@@ -148,7 +148,7 @@
 .dx-textarea[data-bare][data-style]:focus,
 .dx-textarea[data-bare][data-style]:focus-visible,
 .dx-textarea[data-bare][data-style][aria-invalid="true"],
-.dx-textarea[data-bare][data-style][data-invalid="true"],
+.dx-textarea[data-bare][data-style][data-invalid],
 .dx-textarea[data-bare][data-style]:disabled:not([data-style="ghost"]) {
   border-radius: 0;
   background: none;

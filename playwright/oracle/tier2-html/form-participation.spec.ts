@@ -462,7 +462,7 @@ test.describe("Rule 4 — required with no value blocks submission and sets vali
  * hidden control or show its native validation bubble on one (the console
  * says "An invalid form control ... is not focusable."). `component.rs`'s `watch_invalid_js` bridges this onto the
  * VISIBLE control (fixture-only fix, not a primitives change -- see that
- * function's doc for why): `data-invalid="true"` on every blocked control's
+ * function's doc for why): `data-invalid` on every blocked control's
  * visible counterpart, and focus on the first one, matching a real
  * browser's own reportValidity() behavior of focusing/bubble-anchoring
  * only the first invalid control.
@@ -480,36 +480,36 @@ test.describe("Rule 4 extension — a blocked submit gives visible feedback on t
     await gotoForm(page);
     await submitRequiredAndRead(page);
 
-    await expect(page.locator("#chk-required-lib")).toHaveAttribute("data-invalid", "true");
-    await expect(page.locator("#switch-required-lib")).toHaveAttribute("data-invalid", "true");
+    await expect(page.locator("#chk-required-lib")).toHaveAttribute("data-invalid", "");
+    await expect(page.locator("#switch-required-lib")).toHaveAttribute("data-invalid", "");
     // The first radio in the group -- native reportValidity() itself
     // focuses/anchors on the first radio of an unsatisfied required group,
     // so this fixture's bridge follows the same convention.
-    await expect(page.locator("#tier-lib-small")).toHaveAttribute("data-invalid", "true");
+    await expect(page.locator("#tier-lib-small")).toHaveAttribute("data-invalid", "");
     // dev-docs/backlog.md row 8: SelectTrigger's role is "combobox".
     await expect(
       page.getByRole("combobox", { name: "Fruit, required (library)" }),
-    ).toHaveAttribute("data-invalid", "true");
+    ).toHaveAttribute("data-invalid", "");
   });
 
   test("clears data-invalid once the control is fixed", async ({ page }) => {
     await gotoForm(page);
     await submitRequiredAndRead(page);
-    await expect(page.locator("#chk-required-lib")).toHaveAttribute("data-invalid", "true");
+    await expect(page.locator("#chk-required-lib")).toHaveAttribute("data-invalid", "");
 
     await page.locator("#chk-required-lib").click();
 
-    await expect(page.locator("#chk-required-lib")).not.toHaveAttribute("data-invalid", "true");
+    await expect(page.locator("#chk-required-lib")).not.toHaveAttribute("data-invalid", "");
   });
 
   test("clears every data-invalid marker on form reset", async ({ page }) => {
     await gotoForm(page);
     await submitRequiredAndRead(page);
-    await expect(page.locator('[data-invalid="true"]').first()).toBeVisible();
+    await expect(page.locator('[data-invalid]').first()).toBeVisible();
 
     await page.locator("#required-reset").click();
 
-    await expect(page.locator('[data-invalid="true"]')).toHaveCount(0);
+    await expect(page.locator('[data-invalid]')).toHaveCount(0);
   });
 });
 
@@ -527,7 +527,7 @@ test.describe("axe: invalid state after a blocked submit", () => {
   test("blocked required-fields submit has no automatically detectable a11y issues", async ({ page }) => {
     await gotoForm(page);
     await submitRequiredAndRead(page);
-    await expect(page.locator('[data-invalid="true"]').first()).toBeVisible();
+    await expect(page.locator('[data-invalid]').first()).toBeVisible();
     await expectNoAxeViolations(page, "form: invalid state after blocked submit", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });
 });

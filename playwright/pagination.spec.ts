@@ -25,12 +25,12 @@ test("current page is marked aria-current=\"page\"; Previous/Next have accessibl
   await expect(preview.getByRole("link", { name: "3", exact: true })).toBeVisible();
 });
 
-// dev-docs/backlog.md row 89: `[data-active="true"]`'s own background
+// dev-docs/backlog.md row 89: `[data-active]`'s own background
 // (`var(--light, var(--primary-color)) var(--dark, var(--primary-color-3))`)
-// and `[data-active="true"]:hover`'s (`var(--primary-color-4)`) are
+// and `[data-active]:hover`'s (`var(--primary-color-4)`) are
 // different token-family members, not a deliberate one-step-lighter pairing
 // -- but it does NOT let a user lose the current-page indication on hover:
-// `[data-active="true"]`'s own `border` (`var(--primary-color-6)`) is set by
+// `[data-active]`'s own `border` (`var(--primary-color-6)`) is set by
 // a rule `:hover` never touches at all, so it persists unconditionally, and
 // no non-active link has a border in any state. The exact
 // computed values below (both themes) pin it: the
