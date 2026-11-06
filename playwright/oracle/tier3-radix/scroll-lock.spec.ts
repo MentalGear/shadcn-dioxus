@@ -217,7 +217,7 @@ test.describe("Dialog locks and releases page scroll", () => {
     // own Close button rather than Escape: this test's subject is the
     // scroll-lock refcount, not the (separately covered, and here
     // momentarily still settling right after the inner dialog's unmount)
-    // Escape-priority stack in `use_global_escape_listener` (lib.rs).
+    // Escape order of the dismiss core's layers (`dismiss.rs`).
     await page.getByRole("dialog").locator('[data-slot="dialog-close"]').click();
     await expect(page.getByRole("dialog")).toHaveCount(0);
     await assertScrollIsUnlocked(page);

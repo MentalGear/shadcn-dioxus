@@ -42,7 +42,7 @@
  *
  * If the Navbar case is RED, `NavbarTrigger` opens its `auto` popover from
  * `pointerdown`: it must open on `click` (or `NavbarContent` must be `manual` +
- * `use_outside_dismiss`); see dev-docs/backlog.md row 40. The DropdownMenu case
+ * `dismiss::use_dismiss`); see dev-docs/backlog.md row 40. The DropdownMenu case
  * is a green control for the click-open family.
  */
 import { test, expect } from "../../fixtures";

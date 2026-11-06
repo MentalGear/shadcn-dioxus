@@ -40,7 +40,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (80)
+## Open rows (78)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -61,7 +61,6 @@ proposing one is closed as out of scope (row 337 is the first).
 | [372](backlog/372-scroll-fade-overlay-scrollbar-hybrid.md) | Scroll fade: transition the edge depths (landed) and paint the fade as gradients where the scrollbar is an overlay (deferred) | WAITING ON OWNER: part 1, the overlay-scrollbar hybrid, is deferred ("leave mask for now"); reopen… | M | primitives |
 | [383](backlog/383-adversarial-review-board.md) | Adversarial review board: independent expert reviewers attack the finished library, last item of the backlog | BACKLOG. Runs last: after row 365's proposals are answered and every other engineering row has… | M | process |
 | [387](backlog/387-docs-clarity-review.md) | Standing docs-clarity review: a technical-writer pass over every component's docs and props for implicit behaviour | STANDING. Run after every round that adds a component or changes a public prop, and before row… | M | docs |
-| [390](backlog/390-base-accent-preset-split.md) | Base and accent presets own disjoint variables; charts follow the accent | APPROVED 2026-10-26 by the owner ("Ok for the rest", backlog thread); for the next session (owner… | M | theme |
 | [392](backlog/392-docs-snippets-compile.md) | Compile-check the docs.md code samples; samples use the uncontrolled props | BACKLOG. Found by row 387's first docs-clarity review; the evidence (file:line per finding) is in… | M | docs |
 | [399](backlog/399-docs-review-demos.md) | Demo batch from the docs review | BACKLOG. Found by row 387's first docs-clarity review; the evidence (file:line per finding) is in… | S | docs |
 | [412](backlog/412-csp-meta-tag.md) | Docs site: a Content-Security-Policy `&lt;meta&gt;` tag | OPTIONAL: needs owner approval before it is adopted or scheduled (owner 2026-10-24). Not part of… | S | build |
@@ -69,7 +68,6 @@ proposing one is closed as out of scope (row 337 is the first).
 | [414](backlog/414-formal-proof-spike.md) | Spike: formal proofs of one headless model (Kani, optionally Aeneas to Lean) | OPTIONAL: needs owner approval before it is adopted or scheduled (owner 2026-10-24). Not part of… | M | research |
 | [415](backlog/415-pin-actions-to-shas.md) | Pin GitHub Actions to commit SHAs | OPTIONAL: needs owner approval before it is adopted or scheduled (owner 2026-10-24). Not part of… | XS | build |
 | [434](backlog/434-javascript-in-typescript-modules-not-rust-strings.md) | Cut JavaScript to what Rust cannot do: audit every eval block, move the rest into Rust, TypeScript only for the remainder | BACKLOG. Umbrella for rows 444-467 (the step 3 plan; the paper review is closed after seven rounds… | L | primitives |
-| [435](backlog/435-one-menu-family-behind-three-hosts.md) | One menu-family implementation behind three hosts (DropdownMenu, ContextMenu, Menubar) | MERGED in PR #159 (c16027cc), DEPLOYED in 1ea333fa. Steps 1-4 of the Detail below are built, after… | L | primitives |
 | [436](backlog/436-code-quality-skill-review.md) | Code-quality skill review: code-review and simplify skills over the whole codebase, after the row 426-435 refactors | BACKLOG. It was in the plan next to row 365 but never had a row, so 365 ran without it. The owner… | M for the review. Each accepted finding… | process |
 | [438](backlog/438-blitz-native-renderer.md) | dioxus-native (Blitz) as a supported renderer: parked, research-gated, after row 434 | PARKED. Start when all of these hold: 1. Dioxus 0.8 is stable and the primitives build on it. 2.… | Estimates from the research: tier 0 M… | primitives |
 | [440](backlog/440-run-gates-per-run-log-dir.md) | run-gates.sh writes logs to a shared directory: two concurrent runs on one target overwrite each other's logs | DONE 2026-11-05 (lane gate-logs-440), awaiting merge. Found by the row 433 lane (2026-10-26).… | S | tooling |
@@ -115,7 +113,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [484](backlog/484-convert-remaining-valued-boolean-state-attributes-to-presence.md) | Convert the remaining valued boolean state attributes to presence attributes (Base UI vocabulary) | BACKLOG, owner decision 2026-10-29. Row 485 (retire data-state) depends on this row: every state… | M | primitives |
 | [485](backlog/485-retire-data-state-css-moves-to-aria-and-presence.md) | Retire data-state: our CSS styles from ARIA and presence attributes | BACKLOG, owner decision 2026-10-29. Depends on row 484, which converts the valued booleans to… | M-L | styling |
 | [486](backlog/486-code-graph-explorer-tools-codegraph.md) | Code graph explorer: SCIP-derived graph with a granularity slider (scripts/codegraph) | BUILT, minimal scope (2026-11-03): scripts/codegraph/ (run.sh, build_graph.py, make_explorer.py… | S-M for the minimal scope; the rest is… | tooling |
-| [487](backlog/487-one-dismiss-core-escape-outside-dismiss-and-focus-return.md) | One dismiss core: Escape, outside dismiss and focus return for every overlay | PHASE 1 on lane/dismiss-core-487 (2026-10-31), not yet merged; phase 2 (the menu family) waits for… | M-L | overlays |
+| [487](backlog/487-one-dismiss-core-escape-outside-dismiss-and-focus-return.md) | One dismiss core: Escape, outside dismiss and focus return for every overlay | Phase 1 merged in PR #159 and deployed in 1ea333fa; the Escape-gap rule merged in PR #164; phase 2… | M-L | overlays |
 | [488](backlog/488-bug-combobox-in-rtl-does-not-show-its-list.md) | Bug: Combobox in RTL does not show its list | BACKLOG, low priority: for much later (owner report 2026-10-31). Reproduce first. | S | overlays |
 | [489](backlog/489-menubar-items-select-on-pointerdown-touch-scroll.md) | Menubar items select on pointerdown, so a touch scroll that starts on an item selects it | DONE on lane/menu-dismiss-489 (2026-11-06), not yet merged. Found by row 435 (2026-10-31): Menubar… | S | overlays |
 | [490](backlog/490-first-key-press-restyles-the-page-focus-modality-tokens-on-root.md) | The first key press restyles the whole page: focus-modality tokens are redefined on :root | BACKLOG. Found 2026-11-01 while root-causing a release-suite timing red (main-thread.spec combobox… | S-M | theme / performance |

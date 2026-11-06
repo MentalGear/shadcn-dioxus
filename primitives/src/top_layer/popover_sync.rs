@@ -20,8 +20,9 @@ pub(crate) enum PopoverKind {
     /// `popover="auto"` — light-dismisses on Escape and on a pointerdown
     /// outside the popover (and any popovers it is nested in); showing one
     /// auto popover also closes unrelated open ones. Used by the non-modal
-    /// [`crate::popover`] arm, which needs no `use_outside_dismiss`/
-    /// `use_global_escape_listener` wiring on the web arm;
+    /// [`crate::popover`] arm, which needs no dismiss-core layer that closes it on the web arm
+    /// (`use_dismiss`, `dismiss.rs`): the browser's light dismiss does that, and the arm's `NATIVE`
+    /// layer only keeps its place in the Escape order;
     /// also `dropdown_menu.rs`, `menubar.rs`, and `select/components/
     /// list.rs`'s `SelectListRendered`, each of
     /// which layers light dismiss on top of -- not instead of -- their own

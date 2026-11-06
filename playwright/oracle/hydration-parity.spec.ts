@@ -195,7 +195,7 @@
  * the caller's id win there), not protected against override the way
  * `toast.rs`'s own `id` is (see that function's doc): nothing else here
  * does a fixed-expectation `document.getElementById` lookup against its
- * *own* id winning -- `use_outside_dismiss`/`use_refocus_on_close_unless`'s
+ * *own* id winning -- `use_dismiss`/`use_refocus_on_close_unless`'s
  * lookups silently no-op whenever a caller's override id makes them miss,
  * on both paths (a separate behavior gap once a caller overrides one of
  * these ids -- out of scope here, which is only about the served markup

@@ -58,8 +58,8 @@
  *     reason distinct from Tooltip/HoverCard's: it opens at a raw click
  *     point with no persistent trigger to key an outside-vs-internal
  *     dismissal distinction off of the way `auto`'s native light dismiss
- *     would need, so it keeps its own `use_outside_dismiss` +
- *     root `Escape` handler (see
+ *     would need, so it keeps its own dismiss layer on its root
+ *     (`use_dismiss`, `Policy::MENU`) (see
  *     `primitives/src/context_menu.rs`'s `ContextMenuContentRendered` doc
  *     for the full reasoning and the focus-restore risk this avoids).
  *     `Menubar` menus render `popover="auto"`, anchored to their own

@@ -153,7 +153,7 @@ for (const [arm, url, label] of ARMS) {
 
 for (const [arm, url, label] of ARMS) {
 test(`${arm}: popover stays open when clicking non-focusable content inside it`, async ({ page }) => {
-  // `use_outside_dismiss` tells pointerdown from focusin. Clicking a non-focusable region inside the popover (e.g.
+  // The dismiss core (`use_dismiss`, `dismiss.rs`) tells pointerdown from focusin. Clicking a non-focusable region inside the popover (e.g.
   // this demo's "Dimensions" heading) blurs the currently-focused control,
   // and the browser moves focus to the nearest focusable *ancestor* -- which
   // is outside the popover's root while still containing it. That is not

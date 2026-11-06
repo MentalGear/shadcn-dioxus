@@ -1,7 +1,7 @@
 ---
 id: 487
 title: "One dismiss core: Escape, outside dismiss and focus return for every overlay"
-status: "PHASE 1 on lane/dismiss-core-487 (2026-10-31), not yet merged; phase 2 (the menu family) waits for…"
+status: "Phase 1 merged in PR #159 and deployed in 1ea333fa; the Escape-gap rule merged in PR #164; phase 2…"
 size: "M-L"
 area: overlays
 updated: 2026-11-06
@@ -15,7 +15,7 @@ Every overlay closes the same three ways (Escape, a press outside, focus handed 
 
 ## Status / trigger
 
-PHASE 1 on `lane/dismiss-core-487` (2026-10-31), not yet merged; phase 2 (the menu family) waits for [row 435](./435-one-menu-family-behind-three-hosts.md) to merge. Prioritised with row 435 (owner 2026-10-31): the single overlay engine is finished before the Rust ports. [Row 456](./456-port-3-ov-overlay-core-escape-dismiss-open-focus.md) then ports one core instead of the scattered handlers.
+Phase 1 merged in PR #159 and deployed in `1ea333fa`; the Escape-gap rule merged in PR #164; phase 2 (the menu family on the core, row [435](./done/435-one-menu-family-behind-three-hosts.md)'s hosts) is on the session branch, merged 2026-11-06. Open: phase 2 item 5 (dialog backdrop press) and item 6 (Combobox touch outside tap, an owner decision). Prioritised with row 435 (owner 2026-10-31): the single overlay engine is finished before the Rust ports. [Row 456](./456-port-3-ov-overlay-core-escape-dismiss-open-focus.md) then ports one core instead of the scattered handlers.
 
 **Phase 1, what exists.** `primitives/src/dismiss.rs` is the core: an overlay passes a `Policy` (`escape`: `Ignore` / `Close` / `Native`; `press`; `focus`) and a root (an element id, or the nearest `closest` ancestor of it) to `use_dismiss`, and gets an `on_dismiss(Cause)` call (`EscapeWithin`, `Escape`, `OutsidePress`, `FocusLeft`). The page half is one legacy script (`DISMISS_JS`, `lib.rs`) that replaces three: the global Escape listener, the outside-press listener and NavigationMenu's own. Layers register on one page-side list (`window.__dxDismissLayers`) ordered by when they opened, so the topmost layer takes Escape and the decision is made inside the key's dispatch; a `Close` layer cancels the key's default action, a `Native` layer (a modal `<dialog>`, a `popover="auto"`) stays in the order and leaves the key to the browser. A mouse press dismisses on `pointerdown`; a touch or pen press is a tap (row 477's rule), for every surface that has a press arm. `use_outside_dismiss` keeps its signature (it is `Policy::OUTSIDE` on the core), and `RefocusTrigger` / `use_refocus_on_close_unless` are unchanged for the menu hosts.
 

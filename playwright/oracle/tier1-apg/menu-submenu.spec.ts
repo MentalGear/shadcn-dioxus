@@ -462,10 +462,11 @@ test.describe("APG Menu and Menubar pattern — DropdownMenu.Sub", () => {
   // `trigger` ends up `data-state="closed"` and the "More tools" sub-trigger
   // is gone from the DOM entirely (the whole menu unmounted), with focus
   // reverted to `trigger` itself. Instead
-  // `DropdownMenuContentRendered` calls `use_outside_dismiss` (the same
-  // DOM-truth-based "did focus/a click land outside the whole widget"
-  // check `ContextMenu`'s own root uses, which asks
-  // `element.contains(event.target)` rather than trusting a signal), and
+  // `DropdownMenuContentRendered` puts the menu's dismiss layer on the root
+  // (`use_dismiss`, `Policy::MENU`): the same DOM-truth-based "did focus or a
+  // click land outside the whole widget" check that `ContextMenu`'s root
+  // uses, which asks `element.contains(event.target)` rather than trusting a
+  // signal, and
   // `DropdownMenuTrigger` has no `onblur` branch.
   test("a raw .focus() call on the sub-trigger does not close the whole menu (row 85)", async ({
     page,
@@ -652,12 +653,12 @@ test.describe("APG Menu and Menubar pattern — ContextMenu.Sub", () => {
   // (`playwright/menubar.spec.ts`) have the root-level failure mode; this
   // exact "mouse-opened root, then raw `.focus()` directly on
   // `ContextMenuSubTrigger`" sequence does not for `ContextMenu`, whose root
-  // dismissal goes through `use_outside_dismiss` (`context_menu.rs`) rather
+  // dismissal goes through `use_dismiss` (`context_menu.rs`) rather
   // than a signal-based `onblur` guard. `ContextMenuSubTrigger`'s own
   // `onblur` (the submenu-*level* instance) has the same shape
   // (`focused() && !sub.focus.any_focused()`, `context_menu.rs`) as
   // `DropdownMenuSubTrigger`'s, so both use the same construction
-  // (`crate::menu_sub::use_sub_outside_dismiss`) for uniformity and
+  // (`crate::menu_sub`'s `use_dismiss_within` layer, `Policy::MENU_SUB`) for uniformity and
   // defense-in-depth. This test guards the construction that
   // both hosts share.
   test("a raw .focus() call on the sub-trigger does not close the whole menu (row 85, construction parity)", async ({
