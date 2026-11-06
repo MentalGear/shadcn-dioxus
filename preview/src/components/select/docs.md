@@ -4,15 +4,17 @@ The Select component is used to create a dropdown menu that allows users to sele
 
 ```rust
 Select::<String> {
-    value: "option1",
+    // The option selected when the select mounts. The select tracks the user's choice after that;
+    // to control it, pass `value` (a signal) and set it in `on_value_change`.
+    default_value: "option1".to_string(),
     item_to_label: |value: String| label_of(&value), // required: the trigger's text, read at render time
-    on_value_change: |value: String| {
+    on_value_change: |value: Option<String>| {
         // Handle the change in selected value.
     },
     SelectGroup {
         SelectGroupLabel { "Group A" }
         SelectOption::<String> {
-            value: "option1",
+            value: "option1".to_string(),
             "Option 1"
         }
     }

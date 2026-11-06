@@ -3,17 +3,20 @@ The Calendar component is used to display a calendar interface, allowing users t
 ## Component Structure
 
 ```rust
+// Dates are the `time` crate's `time::Date`.
+let mut selected_date = use_signal(|| None::<Date>);
+
 Calendar {
-    // The currently selected date in the calendar (if any).
-    selected_date,
-    on_date_change: |date: Option<CalendarDate>| {
+    // The currently selected date in the calendar (if any). Pair it with `on_date_change`, which sets it.
+    selected_date: selected_date(),
+    on_date_change: move |date: Option<Date>| {
         // This callback is triggered when a date is selected in the calendar.
         // The date parameter contains the selected date.
+        selected_date.set(date);
     },
     // The current view date of the calendar, which determines the month and year displayed.
-    // Leave it out to show the month of today.
-    view_date,
-    on_view_change: |date: CalendarDate| {
+    // Pass `view_date` (a signal, like `selected_date`) to control it; leave it out to show the month of today.
+    on_view_change: |date: Date| {
         // This callback is triggered when the view date changes.
         // The date parameter contains the new view date.
     },

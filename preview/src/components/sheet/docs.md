@@ -3,8 +3,12 @@ The sheet component is a panel that slides in from the edge of the screen. It ca
 ## Component Structure
 
 ```rust
+let mut open = use_signal(|| false);
+
 Sheet {
+    // Pair `open` with `on_open_change`: the sheet calls it when the user closes it, so it can close.
     open: open(),
+    on_open_change: move |v| open.set(v),
     // Which edge to slide in from. Available sides: Top, Right (default), Bottom, Left.
     side: SheetSide::Right,
     SheetContentClose {}

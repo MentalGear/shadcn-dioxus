@@ -8,18 +8,19 @@ ContextMenu {
     // The context menu trigger is the element that will display the context menu when right-clicked.
     ContextMenuTrigger {
         // The content of the trigger
-        {children}
+        "Right-click here"
     }
     // The context menu content contains all the items that will be displayed in the context menu.
     ContextMenuContent {
         // Each context menu item represents an individual action in the context menu. Arrow keys move through the items in document order.
         ContextMenuItem {
             // The value of the item which will be passed to the on_select callback when the item is selected.
-            value: "",
+            value: "open".to_string(),
             on_select: |value: String| {
                 // This callback is triggered when the item is selected.
                 // The value parameter contains the value of the selected item.
             },
+            "Open"
         }
     }
 }
@@ -88,6 +89,9 @@ the `click_only_submenu` variant.
 `aria-label` or `aria-labelledby`). They work in a `ContextMenuContent` and in a `ContextMenuSubContent`.
 
 ```rust
+let mut show_status_bar = use_signal(|| false);
+let mut position = use_signal(|| "top".to_string());
+
 ContextMenuContent {
     ContextMenuCheckboxItem {
         // Controlled: `checked` + `on_checked_change`. Uncontrolled:

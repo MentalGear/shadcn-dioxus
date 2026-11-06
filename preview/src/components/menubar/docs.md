@@ -10,18 +10,19 @@ Menubar {
         // The menubar trigger is the element that will display the menu when activated.
         MenubarTrigger {
             // The content of the trigger button
-            {children}
+            "File"
         }
         // The menubar content contains all the items that will be displayed in the menu when it is opened.
         MenubarContent {
             // Each menubar item represents an individual items in the menu.
             MenubarItem {
                 // The value of the item which will be passed to the on_select callback when the item is selected.
-                value: "",
+                value: "open".to_string(),
                 on_select: |value: String| {
                     // This callback is triggered when the item is selected.
                     // The value parameter contains the value of the selected item.
                 },
+                "Open"
             }
         }
     }
@@ -37,6 +38,9 @@ Menubar {
 `aria-label` or `aria-labelledby`). They work in a `MenubarContent`.
 
 ```rust
+let mut show_status_bar = use_signal(|| false);
+let mut position = use_signal(|| "top".to_string());
+
 MenubarContent {
     MenubarCheckboxItem {
         // Controlled: `checked` + `on_checked_change`. Uncontrolled:

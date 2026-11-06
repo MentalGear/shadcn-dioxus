@@ -5,8 +5,9 @@ The RadioGroup component is used to create a group of radio buttons that allows 
 ```rust
 // The RadioGroup component wraps all radio items in the group.
 RadioGroup {
-    // The value property represents the currently selected radio button in the group.
-    value: "option1",
+    // The option selected when the group mounts. The group tracks the user's choice after that.
+    // To control the selection yourself, pass `value` (a signal) and update it in `on_value_change`.
+    default_value: "option1".to_string(),
     on_value_change: |value: String| {
         // This callback is triggered when the selected radio button changes.
         // The value parameter contains the value of the newly selected radio button.
@@ -14,9 +15,9 @@ RadioGroup {
     // The RadioItem component represents each individual radio button in the group.
     RadioItem {
         // The value of the radio button, which is used to identify the selected option and will be passed to the on_value_change callback when selected.
-        value: "option1",
+        value: "option1".to_string(),
         // The contents of the radio item button
-        {children}
+        "Option 1"
     }
 }
 ```
