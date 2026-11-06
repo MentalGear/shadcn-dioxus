@@ -6,6 +6,7 @@ import { gotoHydrated } from './hydration';
 import { fixedViewportBox } from './viewport-box';
 import { expectFadeKeepsTransform } from './assert-anchor-transform';
 import { measureAtRest, readAtRest } from "./animations";
+import { pauseAppClock } from "./app-clock";
 
 const URL = `${BASE_URL}/component/navigation_menu/`;
 const GOTO = { timeout: 20 * 60 * 1000 }; // Increase timeout to 20 minutes
@@ -31,7 +32,7 @@ test('hover opens the panel', async ({ page }) => {
   const trigger = nav(page).getByRole('button', { name: 'Getting started' });
   await expect(trigger).toHaveAttribute('aria-expanded', 'false');
   await trigger.hover();
-  // primitives/src/navigation_menu.rs's HOVER_OPEN_INTENT_DELAY (150ms) --
+  // primitives/src/navigation_menu.rs's HOVER_OPEN_INTENT_DELAY (50ms) --
   // expect()'s own auto-retry tolerates the delay without this test
   // asserting its exact length (a tight "still closed immediately after
   // hover" window would be flaky under load, not a real methodology
@@ -40,7 +41,22 @@ test('hover opens the panel', async ({ page }) => {
   await expect(trigger).toHaveAttribute('aria-expanded', 'true');
 });
 
-// dev-docs/backlog.md row 189. Hover opens the panel after the 150ms intent delay; the click a user
+// Row 478 item 4: the open delay is Base UI's `NavigationMenu.Root` `delay` default, 50 ms. The hover-intent timer is a
+// `setTimeout`, so the page clock (`app-clock.ts`) fixes the moment it fires: closed 49 ms after the pointer entered,
+// open by 109 ms (renders run on fake frames, hence the margin after the timer).
+test('hover opens the panel after the 50 ms intent delay', async ({ page }) => {
+  await gotoHydrated(page, URL, GOTO);
+  const trigger = nav(page).getByRole('button', { name: 'Getting started' });
+  await pauseAppClock(page);
+  await trigger.hover();
+  await page.clock.runFor(49);
+  await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+  await page.clock.runFor(60);
+  await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+  await page.clock.resume();
+});
+
+// dev-docs/backlog.md row 189. Hover opens the panel after the 50ms intent delay; the click a user
 // then makes on the same trigger must not TOGGLE it shut (the panel would flash open then closed).
 // A click on a panel the pointer opened confirms it (it stays open); the click after that is an
 // ordinary toggle. (Radix itself closes here and only blocks hover re-opening; Base UI's
@@ -188,7 +204,7 @@ test.describe('Open animation never reflows the content', () => {
     await expect(trigger).toHaveAttribute('aria-expanded', 'false');
 
     await trigger.hover();
-    // Spans HOVER_OPEN_INTENT_DELAY (150ms) plus the open transition's own
+    // Spans HOVER_OPEN_INTENT_DELAY (50ms) plus the open transition's own
     // --dx-motion-duration-slow (200ms), with margin --
     // primitives/src/navigation_menu.rs and this component's style.css.
     const widths = await sampleWidthEveryFrame(page, 500);
@@ -462,7 +478,7 @@ test.describe('Axe automated scan', () => {
 // test above.
 // ---------------------------------------------------------------------------
 test.describe('open_on_hover: false (click activation)', () => {
-  const HOVER_SETTLE_MS = 1000; // >> HOVER_OPEN_INTENT_DELAY (150ms) + HOVER_CLOSE_GRACE_DELAY (300ms)
+  const HOVER_SETTLE_MS = 1000; // >> HOVER_OPEN_INTENT_DELAY (50ms) + HOVER_CLOSE_GRACE_DELAY (300ms)
 
   function clickNav(page: Page) {
     return page.getByRole('navigation', { name: 'Click-only navigation menu' });

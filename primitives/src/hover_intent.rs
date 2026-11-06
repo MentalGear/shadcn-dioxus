@@ -46,8 +46,9 @@
 //! `packages/react/navigation-menu/src/navigation-menu.tsx`): the trigger's and the
 //! content's `onPointerLeave` both call `startCloseTimer` (150 ms), and `onPointerEnter` of
 //! either clears it; `onTriggerEnter` opens after `delayDuration` (200 ms) only while
-//! nothing is open. This crate keeps its own, slightly longer close grace (300 ms) -- the
-//! panel is separated from its trigger by a gap, and a slow diagonal is more forgiving.
+//! nothing is open. This crate's open delay is Base UI's NavigationMenu (50 ms). It keeps its
+//! own, longer close grace (300 ms) until it has a safe triangle -- the panel is separated from its
+//! trigger by a gap, and a slow diagonal is more forgiving.
 
 use std::time::Duration;
 
@@ -57,14 +58,16 @@ use crate::js_listener::{use_js_listeners, JsListeners};
 use crate::menu_sub::{use_delayed_action, DelayedAction};
 
 /// Hover-intent delay before a pointer resting on a trigger opens its panel (nothing
-/// open yet). Numerically the same as this theme's `--dx-motion-duration-base` token
-/// (`preview/assets/dx-components-theme.css`) -- not read from it (this is a plain Rust
-/// constant, not CSS), but deliberately kept in step with it.
-pub(crate) const HOVER_OPEN_INTENT_DELAY: Duration = Duration::from_millis(150);
+/// open yet): Base UI's `NavigationMenu.Root` `delay` default of 50 ms
+/// (`@base-ui/react` 1.9.0, `navigation-menu/root/NavigationMenuRoot.mjs:49`, used as the
+/// trigger's `restMs`, `navigation-menu/trigger/NavigationMenuTrigger.mjs:409`).
+pub(crate) const HOVER_OPEN_INTENT_DELAY: Duration = Duration::from_millis(50);
 
 /// Grace delay before a pointer leaving a trigger or its panel (without entering the
-/// other) closes the panel. Numerically the same as this theme's
-/// `--dx-motion-duration-slower` token, for the same reason as [`HOVER_OPEN_INTENT_DELAY`].
+/// other) closes the panel. Longer than Base UI's 50 ms `closeDelay`
+/// (`NavigationMenuRoot.mjs:50`): Base UI keeps the panel open while the pointer crosses the gap
+/// inside a `safePolygon` (`NavigationMenuTrigger.mjs:405`), which this crate does not have, so the
+/// grace period stands in for it.
 pub(crate) const HOVER_CLOSE_GRACE_DELAY: Duration = Duration::from_millis(300);
 
 /// The hover-intent state of one hover-opened, one-at-a-time menu. `Copy`, so it travels

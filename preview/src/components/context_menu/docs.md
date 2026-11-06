@@ -62,7 +62,7 @@ ContextMenuContent {
 ### Open on hover, or click only
 
 By default hovering a `ContextMenuSubTrigger` opens its submenu after a short
-delay (200 ms) and leaving it closes the submenu again after a short grace
+delay (100 ms) and leaving it closes the submenu again after a short grace
 delay. Pass `open_on_hover: false` to the `ContextMenuSub` for **click
 activation**:
 

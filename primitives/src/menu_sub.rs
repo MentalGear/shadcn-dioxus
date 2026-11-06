@@ -66,14 +66,15 @@ use crate::{
 /// convention (Radix, native OS menus), not an APG normative requirement,
 /// so this delay is this crate's own choice, not a citation (see
 /// `dev-docs/archive/rounds/component-backlog.md` row 68's "budget as fresh design work
-/// against Radix `Sub`/`Portal` semantics"). A short delay, not an instant
+/// against Radix `Sub`/`Portal` semantics"). The value is Base UI's
+/// `SubmenuTrigger` `delay` default of 100 ms (`@base-ui/react` 1.9.0,
+/// `menu/submenu-trigger/MenuSubmenuTrigger.mjs:40`). A short delay, not an instant
 /// open, keeps a pointer merely passing over the trigger on its way
 /// elsewhere from flashing open every submenu it crosses -- the exact
 /// defect an instant hover-open produces. Only applies while
 /// [`SubMenuState::open_on_hover`] is `true` (the default); Base UI's
-/// equivalent knob is `SubmenuTrigger`'s `delay` prop (default 100 ms) --
-/// not exposed here, this constant stays the one value.
-pub(crate) const SUBMENU_OPEN_INTENT_DELAY: Duration = Duration::from_millis(200);
+/// `SubmenuTrigger` `delay` prop is not exposed here, this constant stays the one value.
+pub(crate) const SUBMENU_OPEN_INTENT_DELAY: Duration = Duration::from_millis(100);
 
 /// Grace delay before a pointer leaving a sub-trigger (without entering its
 /// own submenu content) closes it.
@@ -84,7 +85,10 @@ pub(crate) const SUBMENU_OPEN_INTENT_DELAY: Duration = Duration::from_millis(200
 /// make an ordinary diagonal mouse move from the trigger toward its own
 /// submenu register as "the pointer left," closing the submenu out from
 /// under the pointer before it ever arrives. Same non-normative status as
-/// [`SUBMENU_OPEN_INTENT_DELAY`] above.
+/// [`SUBMENU_OPEN_INTENT_DELAY`] above. Base UI's `closeDelay` is 0
+/// (`MenuSubmenuTrigger.mjs:41`) because a `safePolygon` with `blockPointerEvents`
+/// (`MenuSubmenuTrigger.mjs:154`) holds the submenu open on the way to it; this crate has no safe
+/// triangle, so the grace delay stays at 200 ms.
 pub(crate) const SUBMENU_CLOSE_GRACE_DELAY: Duration = Duration::from_millis(200);
 
 /// Whether `key` is this pattern's direction-aware submenu **open** arrow
