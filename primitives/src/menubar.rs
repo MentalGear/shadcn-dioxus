@@ -3,8 +3,9 @@
 //! This file is the Menubar *host* (backlog row 435): the `menubar` row of roving triggers, each
 //! [`MenubarMenu`]'s trigger and anchored panel, and the keys that move between menus. The items, the checkable
 //! items and the panel wiring are the menu family every host shares (`crate::menu_item`, `crate::menu_root`),
-//! reading the `MenuHost` each `MenubarMenu` provides; its items select on `pointerdown` (`SelectOn::PressStart`),
-//! because the commit closes the menu and hands focus back to the trigger inside that one press.
+//! reading the `MenuHost` each `MenubarMenu` provides; its items select a mouse press on `pointerdown`
+//! (`SelectOn::PressStart`), because the commit closes the menu and hands focus back to the trigger inside that one
+//! press, and a touch or pen press on the release, so a touch that turns into a scroll selects nothing.
 
 use crate::state_attrs;
 use dioxus::prelude::*;
@@ -22,7 +23,8 @@ use crate::{
         use_item_index, CollectionPlacement, CollectionState, ItemIndex,
     },
     direction::{use_direction, use_direction_signal, Direction, HorizontalNav},
-    use_id_or, use_outside_dismiss, use_unique_id, ContentAlign, ContentSide,
+    dismiss::{self, Cause, Policy, Scope},
+    use_id_or, use_unique_id, ContentAlign, ContentSide,
 };
 
 #[derive(Clone, Copy)]
@@ -210,18 +212,6 @@ struct MenubarMenuContext {
     disabled: ReadSignal<bool>,
     initial_focus: Signal<Option<CollectionPlacement>>,
 
-    // This menu's own outer wrapping element id (set on the `div`
-    // `MenubarMenu` itself renders, the one enclosing both its
-    // `MenubarTrigger` and `MenubarContent`) -- mirrors
-    // `ContextMenuCtx::root_id`/`DropdownMenuContext::root_id`
-    // (`context_menu.rs`/`dropdown_menu.rs`) exactly, for
-    // `dev-docs/backlog.md` row 85: `MenubarContentRendered`'s own
-    // `use_outside_dismiss(menu_ctx.root_id, ...)` call answers "did focus
-    // leave this menu" by asking the DOM directly, instead of the
-    // signal-based checks an `onblur` handler on `MenubarTrigger` or
-    // `MenubarItem` would make (neither has one -- see each one's own note).
-    root_id: Signal<String>,
-
     // The current `MenubarContent`'s own element id for *this* menu, kept
     // in sync by that component -- mirrors `DropdownMenuContext::content_id`
     // (`dropdown_menu.rs`). `MenubarTrigger`'s `anchor-name` must key off
@@ -238,6 +228,10 @@ struct MenubarMenuContext {
     // same, keyed off their own `trigger_id`). Set once by `MenubarTrigger`
     // via `use_unique_id`, read by `MenubarContentRendered`.
     trigger_id: Signal<String>,
+
+    // Closes this menu for a `Cause` (Escape, a press outside, focus leaving): the one body the dismiss layer and
+    // the trigger's Escape arm for the gap before the layer is on the page both call.
+    dismiss: Callback<Cause>,
 }
 
 /// The props for the [`MenubarMenu`] component.
@@ -342,9 +336,29 @@ pub fn MenubarMenu(props: MenubarMenuProps) -> Element {
     let content_id = use_unique_id();
     // This menu's own trigger id -- see `MenubarMenuContext::trigger_id`'s doc.
     let trigger_id = use_unique_id();
-    // This menu's own outer wrapping element id -- see
-    // `MenubarMenuContext::root_id`'s doc.
-    let root_id = use_unique_id();
+    // This menu's own outer wrapping element id (the `div` `MenubarMenu` renders, enclosing both its
+    // `MenubarTrigger` and `MenubarContent`): the root of the dismiss layer below, which answers "did focus leave
+    // this menu" by asking the DOM directly (`dev-docs/backlog.md` row 85), instead of the signal-based checks an
+    // `onblur` handler on `MenubarTrigger` or `MenubarItem` would make (neither has one).
+    let root_id = menu_root::use_root_id(&props.attributes);
+
+    // Escape closes the menu and, APG menubar: "Escape: ... sets focus to the menubar", moves focus to this menu's
+    // own trigger. `ctx.focus` never stopped being this trigger's own index while keyboard focus roamed *within*
+    // the open menu (`menu_ctx.focus` tracks that separately), so `set_focus` alone would be a same-value no-op that
+    // never re-runs `control_mount_focus`: the roving focus is cleared first to force a real transition. A close
+    // caused by acting somewhere else leaves focus where the user put it. A menu that is no longer the recorded
+    // one (arrow-key navigation moved straight to a sibling) is left alone.
+    let dismiss = use_callback(move |cause: Cause| {
+        let mut ctx = ctx;
+        if (ctx.open_menu)() != Some(index.cloned()) {
+            return;
+        }
+        ctx.focus.clear_focus();
+        ctx.set_open_menu.call(None);
+        if !cause.interacted_outside() {
+            ctx.focus.set_focus(Some(index.cloned()));
+        }
+    });
 
     let mut menu_ctx = use_context_provider(|| MenubarMenuContext {
         index,
@@ -355,8 +369,18 @@ pub fn MenubarMenu(props: MenubarMenuProps) -> Element {
         initial_focus,
         content_id,
         trigger_id,
-        root_id,
+        dismiss,
     });
+
+    // One layer for the open menu, on the menu's wrapper (its trigger and its content): the policy every menu host
+    // shares (`Policy::MENU`).
+    dismiss::use_dismiss(
+        root_id,
+        Scope::Element,
+        Policy::MENU,
+        Some(is_open.into()),
+        move |cause| dismiss.call(cause),
+    );
 
     use_effect(move || {
         if !is_open() {
@@ -453,22 +477,8 @@ pub fn MenubarMenu(props: MenubarMenuProps) -> Element {
                             ctx.set_open_menu.call(Some(index.cloned()));
                         }
                     }
-                    Key::Escape => {
-                        ctx.set_open_menu.call(None);
-                        // APG menubar: "Escape: ... sets focus to the
-                        // menubar." Use the existing collection-focus
-                        // mechanism (not the shared refocus-on-close hook --
-                        // see dev-docs/plan.md Phase 3.1) to move focus back to
-                        // this menu's own trigger item. `ctx.focus` never
-                        // stopped being this trigger's own index while
-                        // keyboard focus roamed *within* the open submenu
-                        // (`menu_ctx.focus` tracks that separately), so
-                        // `set_focus` alone would be a same-value no-op that
-                        // never re-runs `control_mount_focus` -- clear first
-                        // to force a real transition.
-                        ctx.focus.clear_focus();
-                        ctx.focus.set_focus(Some(index.cloned()));
-                    }
+                    // Escape is the dismiss layer's (`Policy::MENU`); the trigger takes it for the gap before the
+                    // layer is on the page (`MenubarTrigger`).
                     Key::ArrowLeft | Key::ArrowRight => {
                         match (ctx.direction)().resolve_horizontal(&event.key()) {
                             Some(HorizontalNav::Prev) => ctx.focus.focus_prev(),
@@ -666,6 +676,13 @@ pub fn MenubarTrigger(props: MenubarTriggerProps) -> Element {
     rsx! {
         button {
             onmounted,
+            // The layer registers a moment after the menu opens; an Escape in that gap is the trigger's, which still
+            // holds focus (`dismiss::escape_in_gap`).
+            onkeydown: move |event: Event<KeyboardData>| {
+                dismiss::escape_in_gap(&event, is_open(), || {
+                    menu_ctx.dismiss.call(Cause::EscapeWithin)
+                });
+            },
             onpointerup: move |_| {
                 if !disabled() {
                     let new_open = if is_open() { None } else { Some(index.cloned()) };
@@ -690,11 +707,10 @@ pub fn MenubarTrigger(props: MenubarTriggerProps) -> Element {
             // a `MenubarItem` inside this menu's open content (so it
             // genuinely holds DOM focus), then a raw `.focus()` call
             // directly on this trigger, would close the content immediately.
-            // `MenubarContentRendered`'s own `use_outside_dismiss(menu_ctx.
-            // root_id, ...)` call gives this menu the DOM-truth-based
-            // construction `DropdownMenu`/`ContextMenu` use (see
-            // `DropdownMenuTrigger`'s comment in `dropdown_menu.rs` for the
-            // root cause).
+            // `MenubarMenu`'s dismiss layer on `root_id` gives this
+            // menu the DOM-truth-based construction `DropdownMenu`/
+            // `ContextMenu` use (see `DropdownMenuTrigger`'s comment in
+            // `dropdown_menu.rs` for the root cause).
             ..attributes,
             {props.children}
         }
@@ -815,8 +831,8 @@ pub fn MenubarContent(props: MenubarContentProps) -> Element {
 /// to it -- and `auto`'s native light dismiss (Escape, outside pointerdown) is free, spec-correct insurance beside
 /// this crate's own DOM-truth dismissal, not a competing mechanism.
 ///
-/// Escape is handled entirely by `MenubarMenu`'s own `onkeydown` (which calls `prevent_default()`
-/// unconditionally): APG requires Escape to move focus to *this specific menu's own trigger*
+/// Escape is the dismiss layer's `MenubarMenu` registers (`Policy::MENU`, which cancels the key so the popover's own
+/// close does not also run): APG requires Escape to move focus to *this specific menu's own trigger*
 /// (`ctx.focus.set_focus(Some(index))`), which native light dismiss has no way to know how to do. There is exactly
 /// one trigger for a `DropdownMenu`, so "return focus to the trigger" can be deferred there; here it cannot.
 ///
@@ -838,7 +854,7 @@ fn MenubarContentRendered(
     /// The menu items.
     children: Element,
 ) -> Element {
-    let mut ctx: MenubarContext = use_context();
+    let ctx: MenubarContext = use_context();
     let menu_ctx: MenubarMenuContext = use_context();
     let index = menu_ctx.index;
 
@@ -864,20 +880,10 @@ fn MenubarContentRendered(
         },
         attributes,
     );
-    // "Did focus leave this menu" is asked of the DOM, scoped to the `MenubarMenu` wrapper (`menu_ctx.root_id`),
-    // which covers this menu's own trigger *and* this content -- never of an `onblur` that reads a Rust-tracked
-    // roving-focus signal a raw external `.focus()` call would leave stale.
-    use_outside_dismiss(menu_ctx.root_id, move || {
-        if (ctx.open_menu)() == Some(index.cloned()) {
-            ctx.focus.clear_focus();
-            ctx.set_open_menu.call(None);
-        }
-    });
-
     rsx! {
         div {
             id,
-            // Items commit on `pointerdown` and close the menu right there; the mousedown that follows must not
+            // A mouse press on an item commits on `pointerdown` and closes the menu right there; the mousedown that follows must not
             // focus the pressed (about to unmount) item, or focus ends on `<body>` instead of the trigger the
             // commit just refocused (dev-docs/backlog.md row 140) -- see `menu_root::keep_focus_on_pointerdown`.
             onpointerdown: menu_root::keep_focus_on_pointerdown,

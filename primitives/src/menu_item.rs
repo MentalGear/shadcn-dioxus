@@ -131,9 +131,32 @@ pub(crate) enum SelectOn {
     /// opened the menu lifting over an item -- selects nothing, and a touch that turns into a scroll never
     /// selects.
     PressRelease,
-    /// On the `pointerdown` itself (`Menubar`): the commit closes the menu and hands focus back to the trigger
-    /// inside that one press (`crate::menu_root::keep_focus_on_pointerdown`).
+    /// On the `pointerdown` itself for a mouse (`Menubar`): the commit closes the menu and hands focus back to the
+    /// trigger inside that one press (`crate::menu_root::keep_focus_on_pointerdown`). A touch or pen press is a
+    /// tap, not a press (row 477's rule): the item takes the [`SelectOn::PressRelease`] path for it, so a touch
+    /// that turns into a scroll never selects. The choice is per pointer type inside the one item
+    /// ([`SelectOn::commits_on_press`]), not a fourth model.
     PressStart,
+}
+
+impl SelectOn {
+    /// Whether a press of `pointer_type` (`"mouse"`, `"touch"`, `"pen"`) selects on its `pointerdown`. Only a mouse
+    /// press does, and only where the host says [`SelectOn::PressStart`]; a touch or pen press waits for its
+    /// release (pen follows touch: a pen on a touch screen scrolls the page the same way, and row 477 treats the
+    /// two alike for every tap).
+    fn commits_on_press(self, pointer_type: &str) -> bool {
+        self == SelectOn::PressStart && pointer_type == "mouse"
+    }
+
+    /// Whether the press/release/cancel handlers of [`SelectOn::PressRelease`] apply to a press of
+    /// `pointer_type`: the host's own model, or a [`SelectOn::PressStart`] host's touch and pen presses.
+    fn records_press(self, pointer_type: &str) -> bool {
+        match self {
+            SelectOn::Click => false,
+            SelectOn::PressRelease => true,
+            SelectOn::PressStart => !self.commits_on_press(pointer_type),
+        }
+    }
 }
 
 /// Which look a menu item has: shadcn's `variant="default" | "destructive"`
@@ -866,9 +889,11 @@ pub(crate) fn render_menu_item(parts: ItemParts) -> Element {
 
     rsx! {
         div {
-            onpointerdown: move |event: Event<PointerData>| match host.select_on {
-                SelectOn::Click => {}
-                SelectOn::PressRelease => {
+            onpointerdown: move |event: Event<PointerData>| {
+                let pointer_type = event.pointer_type();
+                if host.select_on.commits_on_press(&pointer_type) {
+                    select();
+                } else if host.select_on.records_press(&pointer_type) {
                     // A press on a disabled item moves no focus either: left to the browser it would focus
                     // the disabled item and blur the focused one, which reads as "focus left the menu".
                     if disabled() {
@@ -876,10 +901,9 @@ pub(crate) fn render_menu_item(parts: ItemParts) -> Element {
                     }
                     pointer_select_start(&event, disabled(), press);
                 }
-                SelectOn::PressStart => select(),
             },
             onpointerup: move |event: Event<PointerData>| {
-                if host.select_on == SelectOn::PressRelease
+                if host.select_on.records_press(&event.pointer_type())
                     && pointer_select_commit(&event, disabled(), press)
                 {
                     select();
@@ -887,25 +911,19 @@ pub(crate) fn render_menu_item(parts: ItemParts) -> Element {
                     event.stop_propagation();
                 }
             },
-            onclick: move |event: Event<MouseData>| match host.select_on {
-                SelectOn::Click => {
+            onclick: move |event: Event<MouseData>| {
+                if host.select_on == SelectOn::Click {
                     event.stop_propagation();
                     select();
-                }
-                SelectOn::PressRelease => {
-                    if pointer_select_click(disabled(), press) {
-                        select();
-                        event.prevent_default();
-                        event.stop_propagation();
-                    }
-                }
-                SelectOn::PressStart => {}
-            },
-            onpointercancel: move |_| {
-                if host.select_on == SelectOn::PressRelease {
-                    pointer_select_cancel(press);
+                } else if pointer_select_click(disabled(), press) {
+                    // Only a touch or pen press is still recorded when its `click` arrives (a mouse press
+                    // committed on `pointerdown` or `pointerup`).
+                    select();
+                    event.prevent_default();
+                    event.stop_propagation();
                 }
             },
+            onpointercancel: move |_| pointer_select_cancel(press),
             onkeydown: move |event: Event<KeyboardData>| {
                 if is_activation_key(&event.key()) {
                     select();
@@ -998,6 +1016,21 @@ pub(crate) fn is_activation_key(key: &Key) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn only_a_mouse_press_on_a_press_start_host_commits_on_pointerdown() {
+        assert!(SelectOn::PressStart.commits_on_press("mouse"));
+        for tap in ["touch", "pen"] {
+            assert!(!SelectOn::PressStart.commits_on_press(tap));
+            assert!(SelectOn::PressStart.records_press(tap));
+        }
+        assert!(!SelectOn::PressStart.records_press("mouse"));
+        for host in [SelectOn::Click, SelectOn::PressRelease] {
+            assert!(!host.commits_on_press("mouse"));
+        }
+        assert!(SelectOn::PressRelease.records_press("mouse"));
+        assert!(!SelectOn::Click.records_press("touch"));
+    }
     use crate::context_menu::{
         ContextMenu, ContextMenuCheckboxItem, ContextMenuGroup, ContextMenuItem,
         ContextMenuRadioGroup, ContextMenuRadioItem, ContextMenuSeparator, ContextMenuShortcut,

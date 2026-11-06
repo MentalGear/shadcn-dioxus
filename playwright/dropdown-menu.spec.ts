@@ -90,7 +90,7 @@ test('open content is fit-content width, not full page width, and sits near its 
 // focus programmatically does, and an assistive-technology focus-
 // restoration path plausibly could -- must not close the whole menu and
 // revert focus to the trigger; it simply focuses the item in place. By
-// construction `DropdownMenuContentRendered` calls `use_outside_dismiss` (the
+// construction `DropdownMenu` calls `dismiss::use_dismiss` (the
 // same DOM-truth-based "did focus/a click land outside" check `ContextMenu`'s
 // own root uses, which asks `element.contains(event.target)` rather than
 // trusting a signal). An `onblur` on `DropdownMenuTrigger` that decides "did

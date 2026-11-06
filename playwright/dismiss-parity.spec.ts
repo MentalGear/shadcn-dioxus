@@ -179,8 +179,9 @@ const SURFACES: Surface[] = [
     open: clickId("clip-dropdown-menu-trigger"),
     pressOutside: true,
     touch: true,
-    // Menubar closes on a focus that moves outside, DropdownMenu does not: the menu hosts' parity is row 435's.
-    focusOutside: false,
+    // The menu hosts share one focus-out policy (`Policy::MENU`): the fixture gives the root its own `id`, which the
+    // dismiss layer must still find.
+    focusOutside: true,
     focusReturn: true,
   },
   {

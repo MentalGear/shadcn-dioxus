@@ -31,7 +31,17 @@
 //! | Popover, Dialog, AlertDialog (web) | native (`cancel`), in the order | native (`popover="auto"`, the backdrop) | no |
 //! | Popover, Dialog (desktop, no browser dismissal) | close | yes | yes |
 //! | AlertDialog (desktop) | close | no (an alert dialog never light-dismisses) | no |
-//! | the menu hosts | their own (row 435) | yes, through [`Policy::OUTSIDE`] | yes |
+//! | DropdownMenu, ContextMenu, Menubar ([`Policy::MENU`]) | close, focus back to the trigger (the Menubar: to the menu's own trigger) | yes | yes |
+//! | a submenu ([`Policy::MENU_SUB`]) | close only the submenu, focus back to its sub-trigger | no (a press outside closes the whole menu, and so the submenu with it) | yes |
+//!
+//! The menu hosts share one focus-out policy: focus moving to another element closes the menu and
+//! focus stays where the user put it. It is Base UI's, which shadcn's `base-nova` menus wrap:
+//! `Menu.Popup` renders a `FloatingFocusManager` (`@base-ui/react` 1.9.0, `menu/popup/MenuPopup.mjs`)
+//! and leaves `closeOnFocusOut` at its default `true`
+//! (`floating-ui-react/components/FloatingFocusManager.mjs`), for the menubar's menus as for a
+//! dropdown. Escape is a `close` layer for every menu panel, a `popover="auto"` one included: the
+//! browser's own close echo cannot say that Escape caused it, and the [`Cause`] is what decides
+//! whether focus goes back to the trigger.
 //!
 //! ## The gap before a layer is on the page
 //!
@@ -59,8 +69,6 @@ use crate::{dismiss_listeners, js_listener::use_js_listeners};
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub(crate) enum EscapeKey {
-    /// The layer does not take part in Escape (the menu hosts, which have their own).
-    Ignore,
     /// Escape closes the layer while it is the topmost layer taking part, and the key's default
     /// action is cancelled.
     Close,
@@ -86,14 +94,6 @@ pub(crate) struct Policy {
 }
 
 impl Policy {
-    /// A press or focus outside, and nothing for Escape: the menu hosts and
-    /// [`crate::use_outside_dismiss`].
-    pub(crate) const OUTSIDE: Policy = Policy {
-        escape: EscapeKey::Ignore,
-        press: true,
-        focus: true,
-    };
-
     /// Escape only (the hover surfaces).
     pub(crate) const ESCAPE: Policy = Policy {
         escape: EscapeKey::Close,
@@ -112,6 +112,18 @@ impl Policy {
     pub(crate) const ESCAPE_PRESS_AND_FOCUS: Policy = Policy {
         escape: EscapeKey::Close,
         press: true,
+        focus: true,
+    };
+
+    /// A menu host (DropdownMenu, ContextMenu, Menubar): Escape, a press outside and focus leaving all
+    /// close it (see the module doc's table).
+    pub(crate) const MENU: Policy = Policy::ESCAPE_PRESS_AND_FOCUS;
+
+    /// A submenu: Escape closes just the submenu and focus leaving it closes it. A press outside is the
+    /// enclosing menu's, which closes the whole tree.
+    pub(crate) const MENU_SUB: Policy = Policy {
+        escape: EscapeKey::Close,
+        press: false,
         focus: true,
     };
 
@@ -152,10 +164,6 @@ pub(crate) enum Cause {
 
 impl Cause {
     /// The user acted somewhere else: focus belongs where they put it, not back on the trigger.
-    #[allow(
-        dead_code,
-        reason = "read by the surfaces that hand focus back, whose web arm is the one that dismisses"
-    )]
     pub(crate) fn interacted_outside(self) -> bool {
         matches!(self, Cause::OutsidePress | Cause::FocusLeft)
     }
@@ -186,6 +194,8 @@ impl Cause {
 #[derive(Serialize)]
 pub(crate) struct Spec {
     id: String,
+    /// A second element that is inside too (a submenu's trigger beside its content).
+    also: Option<String>,
     closest: Option<&'static str>,
     seq: u64,
     escape: EscapeKey,
@@ -207,9 +217,10 @@ fn next_seq() -> u64 {
 }
 
 impl Spec {
-    fn new(id: String, scope: Scope, policy: Policy) -> Self {
+    fn new(id: String, also: Option<String>, scope: Scope, policy: Policy) -> Self {
         Spec {
             id,
+            also,
             closest: match scope {
                 Scope::Element => None,
                 Scope::Closest(selector) => Some(selector),
@@ -306,6 +317,27 @@ pub(crate) fn use_dismiss(
     active: Option<ReadSignal<bool>>,
     on_dismiss: impl FnMut(Cause) + Clone + 'static,
 ) {
+    use_dismiss_within(
+        root,
+        None::<Signal<String>>,
+        scope,
+        policy,
+        active,
+        on_dismiss,
+    );
+}
+
+/// [`use_dismiss`] for a layer whose inside is two elements: `root` and `also`. A submenu is its
+/// content and its sub-trigger, which no common ancestor holds without holding the enclosing menu's
+/// other items too. `also` may be absent (a trigger that has not rendered yet).
+pub(crate) fn use_dismiss_within(
+    root: impl Readable<Target = String> + Copy + 'static,
+    also: Option<impl Readable<Target = String> + Copy + 'static>,
+    scope: Scope,
+    policy: Policy,
+    active: Option<ReadSignal<bool>>,
+    on_dismiss: impl FnMut(Cause) + Clone + 'static,
+) {
     use_js_listeners(move || {
         if let Some(active) = active {
             if !active() {
@@ -313,7 +345,7 @@ pub(crate) fn use_dismiss(
             }
         }
         let mut on_dismiss = on_dismiss.clone();
-        let spec = Spec::new(root.cloned(), scope, policy);
+        let spec = Spec::new(root.cloned(), also.map(|also| also.cloned()), scope, policy);
         Some(dismiss_listeners(&spec).on_message(move |message: String| {
             if let Some(cause) = Cause::from_message(&message) {
                 on_dismiss(cause);
@@ -332,33 +364,39 @@ mod tests {
     fn a_spec_serialises_the_policy_for_the_page() {
         let spec = Spec::new(
             "panel".into(),
+            Some("trigger".into()),
             Scope::Closest("nav"),
             Policy::ESCAPE_AND_PRESS,
         );
         let json = serde_json::to_value(&spec).expect("serialises");
         assert_eq!(json["id"], "panel");
+        assert_eq!(json["also"], "trigger");
         assert_eq!(json["closest"], "nav");
         assert_eq!(json["escape"], "close");
         assert_eq!(json["press"], true);
         assert_eq!(json["focus"], false);
-        let native = Spec::new("d".into(), Scope::Element, Policy::NATIVE);
+        let native = Spec::new("d".into(), None, Scope::Element, Policy::NATIVE);
         let json = serde_json::to_value(&native).expect("serialises");
         assert_eq!(json["escape"], "native");
         assert!(json["closest"].is_null());
+        assert!(json["also"].is_null());
     }
 
     #[test]
     fn a_layer_that_opens_later_is_above_one_that_opened_earlier() {
-        let first = Spec::new("a".into(), Scope::Element, Policy::ESCAPE);
-        let second = Spec::new("b".into(), Scope::Element, Policy::ESCAPE);
+        let first = Spec::new("a".into(), None, Scope::Element, Policy::ESCAPE);
+        let second = Spec::new("b".into(), None, Scope::Element, Policy::ESCAPE);
         assert!(second.seq > first.seq);
     }
 
     #[test]
-    fn the_menu_policy_ignores_escape_and_dismisses_on_press_and_focus() {
-        let policy = Policy::OUTSIDE;
-        assert_eq!(policy.escape, EscapeKey::Ignore);
-        assert!(policy.press && policy.focus);
+    fn the_menu_hosts_share_one_policy_and_a_submenu_leaves_the_press_to_its_menu() {
+        let menu = Policy::MENU;
+        assert_eq!(menu.escape, EscapeKey::Close);
+        assert!(menu.press && menu.focus);
+        let sub = Policy::MENU_SUB;
+        assert_eq!(sub.escape, EscapeKey::Close);
+        assert!(!sub.press && sub.focus);
     }
 
     #[test]
@@ -388,6 +426,6 @@ mod tests {
         }
         assert!(script.contains("o.escape === 'native'"));
         assert!(script.contains("e.preventDefault()"));
-        assert!(script.contains("o.escape !== 'ignore'"));
+        assert!(script.contains("o.also"));
     }
 }

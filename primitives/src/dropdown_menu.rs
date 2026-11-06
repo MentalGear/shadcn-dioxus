@@ -21,14 +21,15 @@ use crate::{
         CollectionState,
     },
     direction::{use_direction, use_direction_signal, Direction},
+    dismiss::{self, Cause, Policy, Scope},
     menu_item::{
         self, MenuCheckboxItemProps, MenuGroupProps, MenuItemProps, MenuRadioGroupProps,
         MenuRadioItemProps, MenuSeparatorProps, MenuShortcutProps, MenuSubContentProps,
         MenuSubProps, MenuSubTriggerProps, SelectOn,
     },
     menu_root::{self, MenuHost, PanelConfig, PanelKind, PanelPlacement, PanelPopover},
-    menu_sub, merge_attributes, use_controlled, use_id_or, use_outside_dismiss, use_unique_id,
-    ContentAlign, ContentSide,
+    menu_sub, merge_attributes, use_controlled, use_id_or, use_unique_id, ContentAlign,
+    ContentSide,
 };
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
@@ -39,19 +40,6 @@ struct DropdownMenuContext {
     open: Memo<bool>,
     set_open: Callback<bool>,
     disabled: ReadSignal<bool>,
-
-    // This menu's own outer wrapping element id (set on the root `div`
-    // `DropdownMenu` itself renders, the one enclosing both
-    // `DropdownMenuTrigger` and `DropdownMenuContent`) -- mirrors
-    // `ContextMenuCtx::root_id` (`context_menu.rs`) exactly, for the
-    // same reason (`dev-docs/backlog.md` row 85). See
-    // `DropdownMenuContentRendered`'s own `use_outside_dismiss` call for
-    // why this id, not `trigger_id`/`content_id` individually, is what a
-    // real "did focus/a click leave the whole widget" check needs to key
-    // off (a `DropdownMenuTrigger` `onblur` would answer that question from
-    // `focus.any_focused()`, a Rust-tracked signal a raw external
-    // `.focus()` call never updates, instead of asking the DOM directly).
-    root_id: Signal<String>,
 
     // Focus state
     focus: CollectionState,
@@ -103,6 +91,14 @@ impl DropdownMenuContext {
     fn open_with_focus(&mut self, target: CollectionPlacement) {
         self.initial_focus.set(Some(target));
         self.set_open.call(true);
+    }
+
+    /// Close the menu for `cause`: the roving focus is cleared, and `interacted_outside` says whether focus goes
+    /// back to the trigger (it does not when the user acted somewhere else).
+    fn dismiss(&mut self, cause: Cause) {
+        self.interacted_outside.set(cause.interacted_outside());
+        self.focus.clear_focus();
+        self.set_open.call(false);
     }
 }
 
@@ -206,7 +202,12 @@ pub fn DropdownMenu(props: DropdownMenuProps) -> Element {
     let direction_signal = use_direction_signal(direction);
 
     let disabled = props.disabled;
-    let root_id = use_unique_id();
+    // This menu's own outer wrapping element id (the root `div` encloses both `DropdownMenuTrigger` and
+    // `DropdownMenuContent`): the root of the dismiss layer below, which is why this id, not `trigger_id` or
+    // `content_id` alone, is what a real "did focus or a click leave the whole widget" check keys off
+    // (`dev-docs/backlog.md` row 85; a `DropdownMenuTrigger` `onblur` would answer from `focus.any_focused()`, a
+    // Rust-tracked signal a raw external `.focus()` call never updates, instead of asking the DOM directly).
+    let root_id = menu_root::use_root_id(&props.attributes);
     let trigger_id = use_unique_id();
     let trigger = crate::use_trigger_handle();
     // Placeholder value until `DropdownMenuContent` mounts and syncs its
@@ -220,7 +221,6 @@ pub fn DropdownMenu(props: DropdownMenuProps) -> Element {
         open,
         set_open,
         disabled,
-        root_id,
         focus,
         initial_focus,
         trigger_id,
@@ -291,7 +291,23 @@ pub fn DropdownMenu(props: DropdownMenuProps) -> Element {
         ReadSignal::new(ctx.interacted_outside),
     );
 
-    // Handle escape key to close the menu
+    // One layer for the open menu, on the root (the trigger, the content and every submenu's content, a DOM
+    // descendant of it): Escape, a press outside and focus leaving all close it, and what caused the close
+    // decides whether focus goes back to the trigger (`use_refocus_on_close_unless` reads `interacted_outside`).
+    // `popover="auto"` closes natively on Escape too, but the layer cancels the key first, and the native close
+    // could not say that Escape caused it.
+    dismiss::use_dismiss(
+        root_id,
+        Scope::Element,
+        Policy::MENU,
+        Some(open.into()),
+        move |cause| {
+            let mut ctx = ctx;
+            ctx.dismiss(cause);
+        },
+    );
+
+    // Handle the open keys and the keys of an open menu
     let handle_keydown = move |event: Event<KeyboardData>| {
         ctx.trigger.press().key_pressed(&event);
         if disabled() {
@@ -315,17 +331,10 @@ pub fn DropdownMenu(props: DropdownMenuProps) -> Element {
                     ctx.open_with_focus(CollectionPlacement::First);
                 }
             }
-            // Escape closes an open menu from the root on every arm. The web arm's `popover="auto"`
-            // closes it natively too, but only once the popover is shown: a key that arrives
-            // between the open request and that (Enter, then Escape in one task) would otherwise
-            // be dropped and the menu would open and stay open (`dismiss::escape_in_gap`). The
-            // native close and this one agree: the signal goes false, and the focus return of
-            // `use_refocus_on_close_unless` runs for either.
-            Key::Escape => {
-                crate::dismiss::escape_in_gap(&event, open(), || ctx.set_open.call(false));
-                // A closed menu leaves the key alone, for an enclosing dialog's own Escape.
-                return;
-            }
+            // Escape is the dismiss layer's (`Policy::MENU`, above), so a submenu's layer, registered later,
+            // takes the key before this menu's. The trigger takes it for the gap before the layer is on the
+            // page (`DropdownMenuTrigger`); a closed menu leaves the key alone, for an enclosing dialog's own.
+            Key::Escape => return,
             Key::ArrowDown => {
                 // APG (Optional): "Down Arrow: opens the menu and moves
                 // focus to the first menu item" from a closed trigger; once
@@ -366,8 +375,8 @@ pub fn DropdownMenu(props: DropdownMenuProps) -> Element {
     // Merged (caller-wins, deduped), not set-then-spread-over: `dev-docs/
     // backlog.md` row 85 needs a stable `id` on *this* element (the one
     // wrapping both `DropdownMenuTrigger` and `DropdownMenuContent`) so
-    // `DropdownMenuContentRendered`'s `use_outside_dismiss(ctx.root_id,
-    // ...)` can ask the DOM "is the thing that just received focus/a click
+    // `DropdownMenu`'s dismiss layer (on `root_id`)
+    // can ask the DOM "is the thing that just received focus/a click
     // actually inside the whole widget". A caller-supplied `id` in a
     // trailing `..props.attributes` spread does NOT "win by spread order":
     // an explicit `id:` literal followed by `..props.attributes` on the
@@ -379,7 +388,7 @@ pub fn DropdownMenu(props: DropdownMenuProps) -> Element {
     // caller's override. `ContextMenu`'s identical root `div`
     // (`context_menu.rs`) merges this same shape via `merge_attributes`;
     // `id` is caller-wins like everything else here, and
-    // `use_outside_dismiss`'s own `getElementById` lookup silently
+    // the dismiss layer's `getElementById` lookup silently
     // no-ops if a caller's override id makes it miss.
     let attributes = merge_attributes(vec![
         attributes!(div {
@@ -500,6 +509,12 @@ pub fn DropdownMenuTrigger(props: DropdownMenuTriggerProps) -> Element {
         aria_expanded: open,
         aria_haspopup: crate::menu_semantics::MENU_TRIGGER_HASPOPUP,
         onmounted: ctx.trigger.onmounted(),
+        // The layer registers a moment after the menu opens; an Escape in that gap (Enter, then Escape in one
+        // task) is the trigger's, which still holds focus (`dismiss::escape_in_gap`).
+        onkeydown: move |event: Event<KeyboardData>| {
+            let mut ctx = ctx;
+            dismiss::escape_in_gap(&event, open(), || ctx.dismiss(Cause::EscapeWithin));
+        },
         onclick: move |_| {
             if disabled() {
                 return;
@@ -536,13 +551,12 @@ pub fn DropdownMenuTrigger(props: DropdownMenuTriggerProps) -> Element {
         // *before* anything updated `ctx.focus`, and the stale "nothing
         // focused" state would close the whole menu and (since it never
         // sets `interacted_outside`) `use_refocus_on_close_unless` would
-        // refocus this same button. `ContextMenu` goes through
-        // `use_outside_dismiss` (`primitives/src/lib.rs`), which asks the DOM
-        // directly (a native `focusin` listener plus
+        // refocus this same button. The dismiss core (`crate::dismiss`)
+        // asks the DOM directly (a native `focusin` listener plus
         // `root.contains(event.target)`), so it is immune to the same-tick
         // blur-before-focus ordering hazard by construction.
-        // `DropdownMenuContentRendered`'s own `use_outside_dismiss(ctx.root_id,
-        // ...)` call below gives `DropdownMenu` that same construction.
+        // `DropdownMenu`'s own `dismiss::use_dismiss` layer on `root_id`
+        // gives the menu that construction.
     });
     let merged = merge_attributes(vec![base, props.attributes]);
     // Ties this trigger to the web-arm content's `position-anchor`
@@ -675,8 +689,8 @@ pub fn DropdownMenuContent(props: DropdownMenuContentProps) -> Element {
 
 /// The menu panel. On the web it is promoted to the top layer via `popover="auto"` so it escapes clipping and
 /// transformed ancestors, the same construction `Tooltip`/`HoverCard`/non-modal `Popover` use
-/// (dev-docs/plan.md Phase 4.4), and gets the platform's light dismiss (Escape and an outside pointerdown) beside
-/// this crate's own DOM-truth dismissal. Without the popover API it is a plain, always-in-flow `div`, visible
+/// (dev-docs/plan.md Phase 4.4), and gets the platform's light dismiss (an outside pointerdown; Escape is the
+/// dismiss layer's) beside this crate's own DOM-truth dismissal. Without the popover API it is a plain, always-in-flow `div`, visible
 /// exactly when `render()` (`DropdownMenuContent`) mounts it.
 ///
 /// `menu_root::use_menu_panel` drives `showPopover()`/`hidePopover()` from `open` and mirrors the browser's own
@@ -691,7 +705,7 @@ pub fn DropdownMenuContent(props: DropdownMenuContentProps) -> Element {
 /// `[data-side]` anchor rules use an 8px gap, so this measured placement is the one authority, and it publishes
 /// the resolved `data-placed-side`.
 ///
-/// "Did focus or a press leave the whole widget" is asked of the DOM (`use_outside_dismiss` on the root's id,
+/// "Did focus or a press leave the whole widget" is asked of the DOM (`DropdownMenu`'s dismiss layer on the root's id,
 /// which covers the trigger *and* this content, submenus included, since a `DropdownMenuSub`'s content is a DOM
 /// descendant of this one): a trigger `onblur` would answer it from `ctx.focus.any_focused()`, a Rust-tracked
 /// signal a raw external `.focus()` call never updates.
@@ -739,12 +753,6 @@ fn DropdownMenuContentRendered(
         },
         attributes,
     );
-    use_outside_dismiss(ctx.root_id, move || {
-        ctx.interacted_outside.set(true);
-        ctx.focus.clear_focus();
-        ctx.set_open.call(false);
-    });
-
     rsx! {
         div {
             id,
