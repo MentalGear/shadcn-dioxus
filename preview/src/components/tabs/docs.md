@@ -1,5 +1,7 @@
 The Tabs component is used to create a tabbed interface, allowing users to switch between different views or sections of content.
 
+shadcn names the parts `TabsList`, `TabsTrigger` and `TabsContent`; here they are `TabList`, `TabTrigger` and `TabContent`.
+
 ## Component Structure
 
 ```rust

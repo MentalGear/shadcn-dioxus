@@ -13,4 +13,4 @@ Skeleton {
 
 The pulse is an `opacity` animation that loops forever (2 s). It is paused whenever the skeleton is outside the viewport (plus a 200px pre-roll), inside a skipped `content-visibility` subtree or in a hidden tab, and it resumes where it stopped. `Skeleton` calls `dioxus_primitives::activity::use_motion()` and spreads `motion.attributes()` on its root; the theme's single `[data-dx-motion="paused"]` rule does the pausing.
 
-To change or remove the pulse, override `animation` on `.dx-skeleton`. There is no reduced-motion rule for it yet, so add `@media (prefers-reduced-motion: reduce) { .dx-skeleton { animation: none; } }` to your copy if your audience needs it. See [Motion](/docs#motion) for the tokens, reduced motion and the per-component table.
+To change or remove the pulse, override `animation` on `.dx-skeleton`. Under `prefers-reduced-motion: reduce` the pulse stops (`animation: none`, the box stays at full opacity), as in the shipped stylesheet; a copy that wants the pulse under reduced motion overrides that rule. See [Motion](/docs#motion) for the tokens, reduced motion and the per-component table.
