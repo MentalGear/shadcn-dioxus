@@ -11,8 +11,8 @@
  * finite CSS animation or transition is running, and `QUIET_FRAMES`
  * consecutive animation frames have passed in which neither the recorder saw a box event nor the DOM mutated. Any box
  * event or mutation restarts the count, so a page that keeps changing is observed for as long as it changes. The
- * ceiling `CEILING_MS` is the observation window the specs used to wait in full: a page that never goes quiet (a live
- * region that mutates every frame) is judged on that window, so the check never watches less than before.
+ * ceiling `CEILING_MS` (1.5 s) is the longest window a check observes: a page that never goes quiet (a live region that
+ * mutates every frame) is judged on the full window.
  */
 import type { Page } from "@playwright/test";
 
