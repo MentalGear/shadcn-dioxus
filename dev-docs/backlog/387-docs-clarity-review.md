@@ -24,6 +24,8 @@ A recurring review, run by subagents with a world-class technical-writer persona
 
 STANDING. Run after every round that adds a component or changes a public prop, and before row 383's review board. Each run writes a ranked findings report and proposes which findings become backlog rows; the owner picks.
 
+**Round 2, 2026-11-06 (lane docs-review-387)**, report `dev-docs/research/docs-clarity-2026-11-06.md`. Scope: 60 pages changed since the first round (2026-10-24) plus row 392's sweep. Sampled, not the full four-subagent pass (the lane had no subagent tool). Five findings: one high (no controlled vs uncontrolled guidance on 13 pages with controlled-capable props, the row 392 paragraph, owner decision on its place), two medium (Sheet's shadcn names `SheetContent`/`SheetOverlay` that do not exist here; skeleton ships no reduced-motion rule), two low (Tabs' shadcn-to-repo name mapping; F6 casing). Fixed in this round: the F6 casing (`toast/docs.md`). Proposed: the other four, sized S or M in the report. Clean: no dead component or anchor links, every variant named in prose exists, no frozen controlled literal left in these pages' samples.
+
 ## Size
 
 M
