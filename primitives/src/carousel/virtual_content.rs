@@ -418,6 +418,10 @@ pub fn CarouselVirtualContent<T: Clone + PartialEq + 'static>(
             intended.set(target_position);
             let target_id = format!("{scroller_id}-p{target_position}");
             let align_str = align().as_str().to_string();
+            #[expect(
+                clippy::disallowed_methods,
+                reason = "row 457: this page script is ported by row 457"
+            )]
             let eval = document::eval(CAROUSEL_SCROLL_TO_JS);
             let _ = eval.send((
                 scroller_id,
@@ -470,6 +474,10 @@ pub fn CarouselVirtualContent<T: Clone + PartialEq + 'static>(
         let target_id = format!("{scroller_id}-p{a}");
         let orientation_str = orientation().as_str().to_string();
         let align_str = align().as_str().to_string();
+        #[expect(
+            clippy::disallowed_methods,
+            reason = "row 457: this page script is ported by row 457"
+        )]
         let eval = document::eval(CAROUSEL_SCROLL_TO_JS);
         let _ = eval.send((
             scroller_id,

@@ -408,6 +408,7 @@ pub fn FormFixture() -> Element {
                     "data-dx-root": "",
                     show_status: false,
                     onsubmit: move |_: FormEvent| {
+                        #[expect(clippy::disallowed_methods, reason = "row 458: this page script is ported by row 458")]
                         let _ = document::eval(&read_form_data_js("entries-form", "form-result"));
                     },
 
@@ -641,6 +642,7 @@ pub fn FormFixture() -> Element {
                     "data-dx-root": "",
                     show_status: false,
                     onsubmit: move |_: FormEvent| {
+                        #[expect(clippy::disallowed_methods, reason = "row 458: this page script is ported by row 458")]
                         let _ = document::eval(&read_form_data_js("outside-form", "outside-result"));
                     },
                     div { class: "dx-form-actions",
@@ -675,6 +677,7 @@ pub fn FormFixture() -> Element {
                     "data-dx-root": "",
                     show_status: false,
                     onsubmit: move |_: FormEvent| {
+                        #[expect(clippy::disallowed_methods, reason = "row 458: this page script is ported by row 458")]
                         let _ = document::eval(&read_form_data_js("form-required", "required-result"));
                     },
 

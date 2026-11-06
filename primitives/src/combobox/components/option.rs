@@ -150,6 +150,10 @@ pub fn ComboboxOption<T: PartialEq + Clone + 'static>(props: ComboboxOptionProps
     // highlighted) and as arrow keys move the highlight.
     use_effect(move || {
         if render() && (option.focused)() {
+            #[expect(
+                clippy::disallowed_methods,
+                reason = "row 434: the bridge ports this page script"
+            )]
             let eval = document::eval(SCROLL_OPTION_INTO_VIEW_JS);
             let _ = eval.send(option.id.cloned());
         }

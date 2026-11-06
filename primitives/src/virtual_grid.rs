@@ -1952,6 +1952,10 @@ fn selected_state(
 /// move, a re-render or a caller's own `tabindex` cannot leave a second stop behind.
 fn use_cell_controls(container_id: Signal<String>) {
     use_effect(move || {
+        #[expect(
+            clippy::disallowed_methods,
+            reason = "row 457: this page script is ported by row 457"
+        )]
         let eval = document::eval(CELL_CONTROLS_JS);
         let _ = eval.send((container_id.peek().clone(), CONTROL_SELECTOR));
     });
@@ -2081,6 +2085,10 @@ fn use_focus_active_tile(
 /// With a non-empty `control_selector` (the data grid's [`CONTROL_SELECTOR`]) focus goes to the
 /// cell's control when it holds one, else to the cell.
 fn focus_and_reveal(container_id: String, selector: String, control_selector: &str, cover: Cover) {
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "row 457: this page script is ported by row 457"
+    )]
     let eval = document::eval(FOCUS_CELL_JS);
     let _ = eval.send((
         container_id,
@@ -2096,6 +2104,10 @@ fn focus_and_reveal(container_id: String, selector: String, control_selector: &s
 /// where a find-in-page match landed (the find bar keeps focus). `at` is the cell's place on the
 /// canvas (its row's top, its column's start), for a cell the window does not hold yet.
 fn reveal_cell(container_id: String, selector: String, cover: Cover, at: (u32, u32)) {
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "row 457: this page script is ported by row 457"
+    )]
     let eval = document::eval(FOCUS_CELL_JS);
     let _ = eval.send((container_id, selector, "", cover, false, at));
 }

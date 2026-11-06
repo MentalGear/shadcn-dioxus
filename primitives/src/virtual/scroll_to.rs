@@ -179,6 +179,10 @@ pub(crate) fn scroll_dom_to(
     cover: (u32, u32, u32),
     inline: bool,
 ) {
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "row 457: this page script is ported by row 457"
+    )]
     let eval = document::eval(SCROLL_DOM_JS);
     let _ = eval.send((container_id, selector, align, cover, inline));
 }

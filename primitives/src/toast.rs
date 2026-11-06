@@ -420,6 +420,10 @@ pub fn ToastProvider(props: ToastProviderProps) -> Element {
     use_effect(move || {
         let newest = toast_list.read().last().map_or(0, |t| t.id.0);
         let length = toast_list.read().len();
+        #[expect(
+            clippy::disallowed_methods,
+            reason = "row 455: this page script is ported by row 455"
+        )]
         let _ = document::eval(&format!(
             "window.__dxToastF6&&window.__dxToastF6.set({:?},{length},{newest})",
             region_id.cloned()

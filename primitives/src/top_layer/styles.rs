@@ -127,6 +127,10 @@ pub(crate) fn ensure_anchor_positioning_styles() {
     if ANCHOR_POSITIONING_STYLES_INSTALLED.with(|installed| installed.replace(true)) {
         return;
     }
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "row 452: this page script is ported by row 452"
+    )]
     let eval = document::eval(&anchor_positioning_inject_js());
     let _ = eval;
 }
@@ -311,6 +315,10 @@ pub(crate) fn ensure_top_layer_ink_styles() {
     // The modality writer (`modality.rs`) rides along: this runs when the first overlay MOUNTS, long
     // before any user opens one, so an app without the pre-paint script still has
     // `data-dx-modality` in place by the first interaction. Idempotent.
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "row 452: this page script is ported by row 452"
+    )]
     let eval = document::eval(&format!(
         "{};{}",
         crate::modality::MODALITY_JS,

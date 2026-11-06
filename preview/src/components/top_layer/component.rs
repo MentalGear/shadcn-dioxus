@@ -742,6 +742,7 @@ pub fn TopLayerFixture() -> Element {
                     button {
                         id: "dialog-clip-native-trigger",
                         onclick: move |_| {
+                            #[expect(clippy::disallowed_methods, reason = "row 452: this page script is ported by row 452")]
                             document::eval(
                                 "document.getElementById('dialog-clip-native-content').showModal();",
                             );

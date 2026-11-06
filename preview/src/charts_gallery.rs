@@ -347,6 +347,10 @@ fn ChartsPage(kind: ChartKind) -> Element {
     // pending switch and does nothing.
     use_effect(use_reactive!(|kind| {
         let _ = kind;
+        #[expect(
+            clippy::disallowed_methods,
+            reason = "row 434: the bridge ports this page script"
+        )]
         document::eval(RESTORE_TAB_ROW);
     }));
 
@@ -462,6 +466,10 @@ fn ChartsCard(
                 // The surface is picked at click time (a modal can only be
                 // one of the two), against the same 768px line the grid and
                 // the sidebar use.
+                #[expect(
+                    clippy::disallowed_methods,
+                    reason = "row 434: the bridge ports this page script"
+                )]
                 let mut probe = document::eval(
                     "dioxus.send(window.matchMedia('(max-width: 767.98px)').matches)",
                 );
@@ -532,6 +540,7 @@ fn CopyCodeButton(
                 onclick: move |_| {
                     let source = source.clone();
                     spawn(async move {
+                        #[expect(clippy::disallowed_methods, reason = "row 434: the bridge ports this page script")]
                         let mut clip = document::eval(
                             r#"
                             const text = await dioxus.recv();

@@ -50,6 +50,7 @@ fn Readout(total: usize) -> Element {
     let mut bridge = use_signal(|| None::<Eval>);
 
     use_effect(move || {
+        #[expect(clippy::disallowed_methods, reason = "row 457: this page script is ported by row 457")]
         let mut eval = document::eval(READOUT_JS);
         let _ = eval.send("[data-vl-rows-in=\"content-visibility\"]");
         spawn(async move {

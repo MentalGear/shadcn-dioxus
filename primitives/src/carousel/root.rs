@@ -378,6 +378,10 @@ pub fn Carousel(props: CarouselProps) -> Element {
         let wraps_now = loop_enabled() && loop_mode() == LoopMode::Rewind;
         let is_wrap = wraps_now && is_rewind_wrap(prev_selected_for_scroll(), index, count());
         let instant = first || is_wrap;
+        #[expect(
+            clippy::disallowed_methods,
+            reason = "row 464: this page script is ported by row 464"
+        )]
         let eval = document::eval(CAROUSEL_SCROLL_TO_JS);
         let _ = eval.send((
             scroller_id,
@@ -467,6 +471,10 @@ pub fn Carousel(props: CarouselProps) -> Element {
         // transition is not the new current one, so a redirect is due
         // regardless of whether the browser has already carried out its
         // own fallback-to-`body` by the time this runs.
+        #[expect(
+            clippy::disallowed_methods,
+            reason = "row 464: this page script is ported by row 464"
+        )]
         document::eval(&format!(
             "var root = document.getElementById('{target}'); \
              if (root) {{ root.focus({{ preventScroll: true }}); }}"

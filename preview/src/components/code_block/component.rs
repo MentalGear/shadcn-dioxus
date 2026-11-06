@@ -195,6 +195,7 @@ pub fn CodeBlockCopyButton(
             onclick: move |_| {
                 let text = value.clone();
                 spawn(async move {
+                    #[expect(clippy::disallowed_methods, reason = "row 434: the bridge ports this page script")]
                     let mut clip = document::eval(
                         r#"
                         const text = await dioxus.recv();

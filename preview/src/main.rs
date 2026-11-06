@@ -262,6 +262,10 @@ pub fn App() -> Element {
     // This effect reads no signal, so it runs exactly once, right after
     // that first commit, and never again.
     use_effect(|| {
+        #[expect(
+            clippy::disallowed_methods,
+            reason = "row 434: the bridge ports this page script"
+        )]
         document::eval("document.documentElement.dataset.hydrated = 'true'");
     });
 

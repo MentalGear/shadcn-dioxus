@@ -316,6 +316,10 @@ fn BubbleInput(
             return;
         }
         was_indeterminate.set(indeterminate);
+        #[expect(
+            clippy::disallowed_methods,
+            reason = "row 458: this page script is ported by row 458"
+        )]
         let js = eval(
             r#"
             let id = await dioxus.recv();

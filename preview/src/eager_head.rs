@@ -84,6 +84,10 @@ impl EagerHeadDocument {
 
 impl Document for EagerHeadDocument {
     fn eval(&self, js: String) -> Eval {
+        #[expect(
+            clippy::disallowed_methods,
+            reason = "row 434: named exception, the eager head document forwards scripts"
+        )]
         self.inner.eval(js)
     }
 
@@ -100,6 +104,10 @@ impl Document for EagerHeadDocument {
     // addition: a stylesheet the page's CSS bundle already carries is not inserted a second time. See the
     // module docs ("Inserting early is not the same as applying early"). Still synchronous, still `eval`.
     fn create_link(&self, props: LinkProps) {
+        #[expect(
+            clippy::disallowed_methods,
+            reason = "row 434: named exception, the eager head document forwards scripts"
+        )]
         self.eval(link_js(&props));
     }
 
@@ -167,6 +175,10 @@ mod tests {
     impl Document for Platform {
         fn eval(&self, js: String) -> Eval {
             self.evals.borrow_mut().push(js);
+            #[expect(
+                clippy::disallowed_methods,
+                reason = "row 434: named exception, the eager head document forwards scripts"
+            )]
             NoOpDocument.eval(String::new())
         }
 

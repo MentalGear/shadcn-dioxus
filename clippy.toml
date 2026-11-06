@@ -1,2 +1,13 @@
 # Clippy configuration (row 355). `unwrap_used` is denied in primitives and cli; a test may unwrap.
 allow-unwrap-in-tests = true
+
+# Row 444: the page-script sink ban. Every remaining site carries a per-site
+# `#[expect(clippy::disallowed_methods, reason = "row N: ...")]` until the bridge ports it.
+disallowed-methods = [
+  { path = "dioxus::document::eval", reason = "row 434: page scripts go through the bridge (primitives/src/bridge/), not document::eval" },
+  { path = "dioxus_document::Document::eval", reason = "row 434: page scripts go through the bridge (primitives/src/bridge/), not Document::eval" },
+  { path = "dioxus_html::DataTransfer::set_data", reason = "row 434: drag data writes belong to the bridge" },
+  { path = "dioxus_html::DataTransfer::set_drop_effect", reason = "row 434: drag effect writes belong to the bridge" },
+  { path = "dioxus_html::DataTransfer::set_effect_allowed", reason = "row 434: drag effect writes belong to the bridge" },
+  { path = "dioxus_html::DataTransfer::clear_data", reason = "row 434: drag data writes belong to the bridge" },
+]

@@ -336,6 +336,10 @@ pub(crate) fn use_early_scroll_capture(open: Memo<bool>) {
         }
         let state = state.clone();
         spawn(async move {
+            #[expect(
+                clippy::disallowed_methods,
+                reason = "row 459: this page script is ported by row 459"
+            )]
             let mut eval = document::eval("dioxus.send([window.scrollX, window.scrollY]);");
             if let Ok(position) = eval.recv::<(f64, f64)>().await {
                 let mut inner = state.0.borrow_mut();
@@ -550,6 +554,10 @@ async fn finish_release(state: &ScrollLockState, epoch: u64) {
         // from where the user left it -- e.g. its sticky top nav rendering off-screen.
         // This is a mitigation for that symptom, not a fix for whatever causes the
         // scroll to move in the first place while locked.
+        #[expect(
+            clippy::disallowed_methods,
+            reason = "row 459: this page script is ported by row 459"
+        )]
         let _ = document::eval(&format!("window.scrollTo({x}, {y});"));
     }
 }
