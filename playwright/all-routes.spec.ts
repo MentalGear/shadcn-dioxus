@@ -21,7 +21,9 @@
  * not hide the others: every probe runs, and the test's error carries each failing probe's own message under its name.
  *
  * For every route, in `light` and in `dark`:
- *  1. AXE. `expectNoAxeViolations` with the repo's tag set, closed state. Known, tracked findings are
+ *  1. AXE. `expectNoAxeViolations` with the repo's tag set, closed state: every rule in light, the colour-category rules
+ *     only in dark, once the page's structure is shown identical in both (`structureSignature`; a route where it differs runs
+ *     every rule in dark too). Known, tracked findings are
  *     listed in `KNOWN_AXE` below, one entry per route and theme, each scoped to the exact selector that
  *     is still wrong and naming its backlog row -- never a blanket rule or route disable. An entry also
  *     asserts that its finding still reproduces, so fixing the defect fails the sweep until the entry is
@@ -58,7 +60,7 @@
 import { test, expect } from "./fixtures";
 import type { Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import { expectNoAxeViolations, type AxeRegionExclusion } from "./axe";
+import { colorRuleIds, expectNoAxeViolations, type AxeRegionExclusion } from "./axe";
 import { readBlockDemos, readCatalog } from "./catalog";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
@@ -250,19 +252,75 @@ async function stillViolates(page: Page, selector: string): Promise<boolean> {
 // Each probe asserts what a stand-alone test for it would assert, with the same messages. A (route, scheme) pair
 // is navigated ONCE and the probes run on that load, in the order of `PROBE ORDER` below.
 
-/** 1. axe, closed state, at the default viewport, with the page as it was loaded. */
-async function probeAxe(page: Page, route: Route, scheme: Scheme) {
+/**
+ * What the structure rules of axe (landmarks, names, roles, ARIA, headings, lists, tab order) can see, as one string:
+ * for every element of every frame its tag, role, `aria-*`, name-bearing attributes, `hidden`/`inert`/`tabindex`, own
+ * text, and the computed `display`/`visibility` (what decides whether axe tests it). The colour scheme changes only
+ * `data-theme` and CSS variables, so this string is the same in light and dark; `probeAxe` checks that per route before
+ * it lets the second scheme run the colour rules only. The theme attribute on `<html>` is left out.
+ */
+async function structureSignature(page: Page): Promise<string> {
+  const parts: string[] = [];
+  for (const frame of page.frames()) {
+    parts.push(
+      await frame.evaluate(() => {
+        const out: string[] = [];
+        for (const e of document.querySelectorAll("*")) {
+          const cs = getComputedStyle(e);
+          const attrs = [...e.attributes]
+            .filter((a) => /^(aria-|role$|alt$|title$|for$|name$|type$|hidden$|inert$|tabindex$|lang$|href$|id$)/.test(a.name))
+            .map((a) => `${a.name}=${a.value}`)
+            .join(",");
+          const own = [...e.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent!.trim()).join("");
+          out.push(`${e.tagName}|${attrs}|${cs.display}|${cs.visibility}|${own}`);
+        }
+        return out.join("\n");
+      }),
+    );
+  }
+  return parts.join("\n=====\n");
+}
+
+let COLOR_RULES: string[] | undefined;
+
+/**
+ * 1. axe, closed state, at the default viewport, with the page as it was loaded. The full rule set runs in `full` mode;
+ * in `colors` mode only the colour-category rules run (`colorRuleIds`: `color-contrast`, `link-in-text-block`), which
+ * are the rules whose verdict depends on the scheme. Returns the structure signature taken just before the scan.
+ */
+async function probeAxe(page: Page, route: Route, scheme: Scheme, mode: "full" | "colors") {
   await ensureScheme(page, scheme);
+  const signature = await structureSignature(page);
   const known = KNOWN_AXE[route.id]?.[scheme] ?? [];
-  await expectNoAxeViolations(page, `all-routes: ${route.id} (${scheme})`, {
+  COLOR_RULES ??= colorRuleIds();
+  expect(COLOR_RULES, "axe's colour rules (cat.color) are found").toContain("color-contrast");
+  await expectNoAxeViolations(page, `all-routes: ${route.id} (${scheme}, ${mode === "full" ? "all rules" : "colour rules"})`, {
     excludeRegions: [EXCLUDE_BLOCK_DEMO_FRAMES, ...known.map((k) => ({ selector: k.selector, reason: `${k.row}: ${k.why}` }))],
+    ...(mode === "colors" ? { onlyRules: COLOR_RULES } : {}),
   });
-  expect(await everyFrameHasATitle(page), "every <iframe> has a title (axe frame-title)").toEqual([]);
+  if (mode === "full") {
+    expect(await everyFrameHasATitle(page), "every <iframe> has a title (axe frame-title)").toEqual([]);
+  }
   for (const k of known) {
     expect(
       await stillViolates(page, k.selector),
       `${route.id} (${scheme}): known finding \`${k.selector}\` (${k.row}) no longer reproduces -- delete its KNOWN_AXE entry`,
     ).toBe(true);
+  }
+  return signature;
+}
+
+/**
+ * The axe step of a route: dark runs the colour rules only, light runs every rule, and the two structure signatures must
+ * be equal -- that equality is what makes "the structure rules judged the same page in dark" true. A route whose
+ * signature differs between the schemes (a DOM that depends on the scheme) gets the full dark scan as well.
+ */
+async function probeAxeBothSchemes(page: Page, route: Route) {
+  const dark = await probeAxe(page, route, "dark", "colors");
+  const light = await probeAxe(page, route, "light", "full");
+  if (dark !== light) {
+    test.info().annotations.push({ type: "axe", description: `${route.id}: structure differs between light and dark, so dark ran every rule` });
+    await probeAxe(page, route, "dark", "full");
   }
 }
 
@@ -568,7 +626,7 @@ async function runProbes(probes: Array<[title: string, run: () => Promise<void>]
 //   1. overflow   resizes to 390px once, re-settles, reads light, switches, reads dark, restores the viewport. First,
 //                 because axe and the sweep both change what a later geometry read sees (axe: closed accordions lay
 //                 out their content, `content-visibility` sections render; the sweep: focus, scroll, URL hash).
-//   2. axe        dark (the page is in dark after 1), then light: the page at the default viewport with nothing
+//   2. axe        dark (the page is in dark after 1; colour rules only), then light (every rule): the page at the default viewport with nothing
 //                 focused and no forced colors. A viewport round trip and a scheme switch do not change its result.
 //   3. forced colors  emulates forced colors, presses Tab/Enter ONCE, reads the skip link and sweeps the controls in
 //                 light and in dark (see `probeForcedColors` for why one walk). After axe, which judges normal rendering.
@@ -587,7 +645,7 @@ for (const route of ROUTES) {
     const schemesLabel = SCHEMES.join(", ");
     await runProbes([
       [`no horizontal overflow at 390px (${schemesLabel})`, () => probeOverflow(page, route, SCHEMES)],
-      ...[...SCHEMES].reverse().map((scheme) => [`axe (${scheme})`, () => probeAxe(page, route, scheme)] as [string, () => Promise<void>]),
+      [`axe (dark: colour rules, light: all rules)`, () => probeAxeBothSchemes(page, route)],
       ...(route.kind === "page"
         ? [[`skip link and visible focus in forced colors (${schemesLabel})`, () => probeForcedColors(page, SCHEMES)] as [string, () => Promise<void>]]
         : []),
