@@ -1,10 +1,10 @@
 ---
 id: 491
 title: "Drawer: add shadcn's scrollable content demo"
-status: "BACKLOG (owner 2026-11-01)."
+status: "DONE (2026-11-06). scrollable_content now ends its body in a \"Feedback\" Input, and…"
 size: "S"
 area: components
-updated: 2026-11-01
+updated: 2026-11-06
 ---
 
 # Row 491: Drawer: add shadcn's scrollable content demo
@@ -17,7 +17,16 @@ keyboard up, is brought into the visible band.
 
 ## Status / trigger
 
-BACKLOG (owner 2026-11-01).
+DONE (2026-11-06). `scrollable_content` now ends its body in a "Feedback" `Input`, and
+`playwright/drawer-scrollable-content.spec.ts` (phone width, light and dark, axe) asserts: the body is the scroll
+container (`overflow-y: auto`, panel not scrolling), header and footer keep their position while the body scrolls,
+`window.scrollY` stays put (gap 1); and with a stubbed `visualViewport` keyboard of 336px (`data-dx-keyboard`,
+`--dx-keyboard-inset`) the focused field, reached with `preventScroll`, lies inside the visible band and the body, the body
+scrolled and the footer ends above the keyboard (gap 2). It passed on the first run: `keyboard_inset.rs` already handles the
+field, so the spec stays as a regression guard; no primitive change. `notes.md` is rendered as the demo's description like
+the other variants' (gap 3). The upstream name stays unconfirmed (see Detail). Row 480's device check stays the final proof.
+Green on chromium only: the box's pinned Playwright 1.60 wants chromium 1223 while 1243 is installed, so the lane ran with a
+`PLAYWRIGHT_BROWSERS_PATH` of symlinks.
 
 ## Size
 

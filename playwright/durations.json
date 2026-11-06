@@ -3,9 +3,9 @@
   "build": "debug",
   "workers": "2",
   "date": "2026-10-21",
-  "tests": 4188,
-  "files": 272,
-  "total_seconds": 13208,
+  "tests": 4192,
+  "files": 273,
+  "total_seconds": 13227,
   "budget_seconds": 17000,
   "max_file_seconds": 3000,
   "note": "seconds = sum of test durations (worker time) on the DEBUG SSG build, 2 workers, 4-core box shared with other lanes; main-thread.spec.ts and scroll-main-thread.spec.ts are release-only (skipped on debug) and carry their RELEASE seconds. release_total_seconds = the same run on a release build. Refresh: playwright/tools/run-suite.sh, then durations.mjs chunk-*.json --write",
@@ -390,7 +390,7 @@
   },
   "charts-hydration-stability.spec.ts": {
    "tests": 8,
-   "seconds": 191.0,
+   "seconds": 191,
    "passed": 8,
    "failed": 0,
    "skipped": 0,
@@ -836,6 +836,14 @@
    "skipped": 0,
    "retried": 0
   },
+  "drawer-scrollable-content.spec.ts": {
+   "tests": 4,
+   "seconds": 19.8,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "retried": 0
+  },
   "drawer-snap.spec.ts": {
    "tests": 13,
    "seconds": 38.5,
@@ -1054,7 +1062,7 @@
   },
   "layout-stability.spec.ts": {
    "tests": 19,
-   "seconds": 627.0,
+   "seconds": 627,
    "passed": 19,
    "failed": 0,
    "skipped": 0,
