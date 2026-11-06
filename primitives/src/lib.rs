@@ -46,6 +46,8 @@ mod dismiss;
 pub mod drag_and_drop_list;
 pub mod drawer;
 pub mod dropdown_menu;
+mod form_reset;
+pub use form_reset::{reset_form_event, use_form_reset_value};
 pub mod hover_card;
 mod hover_intent;
 pub mod input_otp;
@@ -556,7 +558,7 @@ pub(crate) fn use_refocus_on_close_unless(
 /// Looks up the owning form via `element.form` (present on `input`/`select`)
 /// falling back to `element.closest('form')` for elements -- like a
 /// `RadioGroup`'s container `<div>` -- that are not themselves form-associated.
-fn use_form_reset_listener(
+pub(crate) fn use_form_reset_listener(
     id: impl Readable<Target = String> + Copy + 'static,
     on_reset: impl FnMut() + Clone + 'static,
 ) {

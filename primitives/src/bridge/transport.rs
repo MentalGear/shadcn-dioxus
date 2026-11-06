@@ -270,9 +270,13 @@ fn hub() -> Hub {
 }
 
 /// Queues `f` to run after the next render, owned by the root scope: an effect queued from a component
-/// is dropped with that component, which would strand the outbox.
+/// is dropped with that component, which would strand the outbox. `f` runs with the root scope on the
+/// stack: a queued effect runs with none, and an ask made from a task (no render of its own) would
+/// otherwise reach `document::eval` and the context lookups with an empty scope stack and panic.
 fn after_render(f: impl FnOnce() + 'static) {
-    Runtime::current().in_scope(ScopeId::ROOT, || queue_effect(f));
+    Runtime::current().in_scope(ScopeId::ROOT, || {
+        queue_effect(move || Runtime::current().in_scope(ScopeId::ROOT, f))
+    });
 }
 
 fn enqueue(ops: Vec<Value>, asks: bool) -> Option<Pending> {
