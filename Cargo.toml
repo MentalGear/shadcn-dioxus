@@ -32,7 +32,10 @@ allow_attributes_without_reason = "warn"
 dioxus-primitives = { path = "primitives" }
 tracing = { version = "0.1", features = ["std"] }
 
-dioxus = "0.7.8"
+# No default features: a library crate must not force `devtools` and `logger` on its dependents. Each crate names
+# what it needs: `primitives` the `lib` set plus `launch` (its `client!`, `server_only!` and `fullstack!` macros), the
+# binaries `preview` and `test-harness` also `devtools` and `logger`.
+dioxus = { version = "0.7.8", default-features = false }
 dioxus-rsx = "0.7.8"
 
 [profile.release]

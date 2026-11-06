@@ -5,7 +5,7 @@ edition = "2021"
 rust-version = "1.88.0"
 
 [dependencies]
-dioxus = { workspace = true, features = ["router"] }
+dioxus = { workspace = true, features = ["lib", "launch", "devtools", "logger", "router"] }
 dioxus-code = { version = "0.1.0", default-features = false, features = ["macro", "lang-css"] }
 dioxus-icons = "0.1.0"
 # The two optional primitives features gate `palette` / `time` for every other consumer; the docs site demos both.
@@ -21,11 +21,13 @@ pulldown-cmark = { version = "=0.13.4", default-features = false }
 
 
 [build-dependencies]
-dioxus = { workspace = true }
+# `devtools` because `dioxus-code`'s `runtime` switches `dioxus/web` on in this build graph, and dioxus-web 0.7.9's `document`
+# code only compiles with the `web-sys/Location` that its `devtools` feature enables.
+dioxus = { workspace = true, features = ["lib", "devtools"] }
 dioxus-code = { version = "0.1.0", default-features = false, features = ["runtime", "lang-css"] }
 dioxus-ssr = "0.7.0"
 # docs.md -> HTML in build.rs only (no CLI `getopts`); >= 0.13.4 carries the tight-paragraph panic fix.
-pulldown-cmark = { version = "0.13.4", default-features = false, features = ["html"] }
+pulldown-cmark = { version = "=0.13.4", default-features = false, features = ["html"] }
 serde_json = "1"
 
 [dev-dependencies]

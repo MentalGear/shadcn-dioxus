@@ -12,7 +12,7 @@ homepage = "https://dioxuslabs.com"
 repository = "https://github.com/DioxusLabs/components"
 
 [dependencies]
-dioxus.workspace = true
+dioxus = { workspace = true, features = ["lib", "launch"] }
 dioxus-attributes = { path = "../dioxus-attributes" }
 # Optional, switched on by the `calendar` feature (Calendar, DatePicker): see `[features]`.
 time = { version = "0.3.47", optional = true, features = ["std", "local-offset"] }
