@@ -78,6 +78,9 @@ while [ $# -gt 0 ]; do
     *) die "unknown option: $1 (try --help)" ;;
   esac
 done
+# A full run (no --fast, --only or --skip) is the one a merge batch quotes, so an unavailable merge base is red there
+# (scripts/lib/ratchet.py: RATCHET_REQUIRE_BASE); a partial run keeps the lenient default.
+if [ "$fast" = 0 ] && [ -z "$only" ] && [ -z "$skip" ]; then export RATCHET_REQUIRE_BASE=1; fi
 [ "$fast" = 0 ] || skip="${skip:+($skip)|}$CARGO_GATES"
 
 # --- the gate list, by group. name | command (run with bash -c from the repo root) -------
@@ -106,7 +109,10 @@ gates=(
   "check-blocking-scroll-listeners|scripts/check-blocking-scroll-listeners.sh"
   "check-js-listeners|scripts/check-js-listeners.sh"
   "check-bridge-behaviours|scripts/check-bridge-behaviours.sh"
+  "check-ts-scan|scripts/check-ts-scan.sh"
   "check-js-volume|scripts/check-js-volume.sh"
+  "check-ratchet-grant|scripts/check-ratchet-grant.sh"
+  "check-native-slots|scripts/check-native-slots.sh"
   "check-motion-gating|scripts/check-motion-gating.sh"
   "check-infinite-animations|scripts/check-infinite-animations.sh"
   "check-open-focus|scripts/check-open-focus.sh"
@@ -371,7 +377,7 @@ for f in "$log_dir"/*.log; do
   [ -e "$f" ] || continue
   if grep -q '^RATCHET RAISES' "$f"; then
     echo "RATCHET RAISES (a deliberate raise is the owner's decision; quote it in the report):"
-    awk '/^RATCHET RAISES/ { p = 1; next } /^  / { if (p) print "  " $0; next } { p = 0 }' "$f"
+    awk '/^RATCHET RAISES/ { p = 1; print "  " $0; next } /^  / { if (p) print "  " $0; next } { p = 0 }' "$f"
   fi
 done
 if [ "${#red[@]}" -gt 0 ]; then

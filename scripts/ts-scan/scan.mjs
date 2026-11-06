@@ -25,7 +25,7 @@
 // SHRINK-ONLY BASELINE `scripts/ts-scan/bridge.baseline.tsv`: the sites that predate the rules, one row per
 // `file, rule, context, hash` with a count. `context` is the enclosing function path and `hash` is a hash of the
 // whitespace-normalised expression text, so a line move changes nothing, an edit of a baselined site or a new site is
-// red, and a baseline row the tree no longer needs is red too ("stale": remove it). `--update-baseline` only ever
+// red, and a baseline row the tree does not need is red too ("stale": remove it). `--update-baseline` only ever
 // removes or lowers rows, never adds; a first baseline is written with `--init-baseline` when the file is absent.
 //
 // TypeScript is not pinned in the repo: `TS_MODULE` below is the ONE place the compiler is resolved (the sandbox

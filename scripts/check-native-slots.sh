@@ -178,7 +178,7 @@ def measure_rust(text, path=""):
         skip = child_blocks(code, m.end(), end)
         for off, attr in attr_sites(code, keep, m.end(), end, skip):
             found.append((off, "attributes!", attr))
-    # drop the same offset found twice, and anything in a test module
+    # drop the same offset reached twice, and anything in a test module
     seen, sites = set(), []
     for off, el, attr in sorted(found):
         if (off, attr) in seen or any(a <= off <= b for a, b in tests):
