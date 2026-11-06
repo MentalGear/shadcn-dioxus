@@ -412,9 +412,6 @@ mod why {
     pub const CLOCK: &str = "the date comes from the clock, which is read after hydration (an effect), never while rendering: a render-time \
         date would be baked into the page as the build day and hydration keeps the server's text (row 377); the date's span \
         reserves the widest date text in a hidden `::before` sharing its grid cell, so the empty -> filled text moves no box";
-    pub const ANCHOR_ID: &str = "a caller-supplied `id` on a popup's content reaches the trigger's `anchor-name` only after the content's \
-        effect syncs it into the root context (`PopoverCtx::content_id` and its Tooltip/HoverCard twins); the server writes the generated \
-        id. `anchor-name` is a custom ident that names an anchor and paints nothing, and the client's name is the one `position-anchor` resolves";
 }
 use why::*;
 
@@ -474,15 +471,10 @@ const ROUTE_BASELINE: &[(&str, &str)] = &[
 
 /// Pages that differ only when primitives' `web` arm is compiled (preview's `web`, `desktop` and `server`
 /// features turn it on; a bare `cargo test --workspace` does not). The `web` arm is the one that ships:
-/// the popup roots there are real `<dialog>`s whose content effect syncs its id into the trigger's
-/// `anchor-name` (`primitives/src/popover.rs:242,385`), and the dropdown menu page's account-switcher
-/// avatar (`dropdown_menu/account_switcher`) reaches its load effect only in the web arm's markup. The plain
-/// arm does neither, so these pages match there.
+/// the dropdown menu page's account-switcher avatar (`dropdown_menu/account_switcher`) reaches its load
+/// effect only in the web arm's markup. The plain arm does not, so the page matches there.
 /// The outcome is a function of the compiled feature set, never of timing: 10 runs per arm agree.
-const ROUTE_BASELINE_WEB: &[(&str, &str)] = &[
-    ("/component/dropdown_menu/", AVATAR),
-    ("/component/top_layer/", ANCHOR_ID),
-];
+const ROUTE_BASELINE_WEB: &[(&str, &str)] = &[("/component/dropdown_menu/", AVATAR)];
 
 /// The pages [`ROUTE_BASELINE`] and, when the `web` arm is compiled, [`ROUTE_BASELINE_WEB`] list.
 fn route_baseline() -> Vec<(&'static str, &'static str)> {

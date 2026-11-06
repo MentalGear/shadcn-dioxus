@@ -84,7 +84,7 @@ test('a press inside the dialog released over its backdrop does not dismiss it (
 });
 
 test('dialog stays open when clicking non-focusable content inside it', async ({ page }) => {
-  // `use_outside_dismiss` (shared with Popover) tells pointerdown from focusin. Clicking a non-focusable region inside the
+  // The dismiss core (`use_dismiss`, `dismiss.rs`, shared with Popover) tells pointerdown from focusin. Clicking a non-focusable region inside the
   // dialog (e.g. this demo's "Item information" title) blurs the currently
   // focused control, and the browser moves focus to the nearest focusable
   // *ancestor* -- outside the dialog's root while still containing it. That is not

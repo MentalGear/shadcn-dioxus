@@ -33,6 +33,7 @@
 
 use std::time::Duration;
 
+use crate::dismiss::Cause;
 use crate::sleep::sleep;
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
@@ -105,12 +106,8 @@ pub(crate) fn is_submenu_open_arrow_key(key: &Key, direction: Direction) -> bool
 /// `ArrowRight` under RTL, which is exactly the arrow
 /// [`Direction::resolve_horizontal`] maps to [`HorizontalNav::Prev`].
 ///
-/// Unlike upstream, this crate's `MenuSubContentRendered` folds `Escape` into
-/// the *same* handler as this arrow key (a design choice of those
-/// components, not of this function) -- callers `matches!(key, Key::Escape) ||
-/// is_submenu_close_arrow_key(key, direction)`, rather than this function
-/// covering `Escape` itself, so it stays a precise, direction-only
-/// predicate a caller can also use standalone.
+/// `Escape` is not covered here: it is the submenu's dismiss layer's (`crate::dismiss::Policy::MENU_SUB`), so this
+/// stays a precise, direction-only predicate a caller can also use standalone.
 pub(crate) fn is_submenu_close_arrow_key(key: &Key, direction: Direction) -> bool {
     direction.resolve_horizontal(key) == Some(HorizontalNav::Prev)
 }
@@ -258,7 +255,7 @@ pub(crate) struct SubMenuState {
     ///   "the menu that was opened on hover"). It closes the way every
     ///   keyboard-opened submenu already does -- Escape / the close arrow, an
     ///   outside click, or focus moving elsewhere
-    ///   ([`use_sub_outside_dismiss`]).
+    ///   (the submenu's dismiss layer, `crate::dismiss::Policy::MENU_SUB`).
     ///
     /// Keyboard behaviour is untouched either way (APG's ArrowRight/Enter/
     /// Space open, ArrowLeft/Escape close).
@@ -362,56 +359,6 @@ pub(crate) fn use_sub_menu_state(
         hover_close: use_delayed_action(),
         open_on_hover,
     }
-}
-
-/// `dev-docs/backlog.md` row 85's construction, generalized to a `Sub`'s own
-/// shape. `crate::use_outside_dismiss` (`lib.rs`) already answers "did
-/// focus/a click leave the tracked subtree" by asking the DOM directly --
-/// a native `focusin` listener plus `element.contains(event.target)` --
-/// rather than trusting a Rust-tracked roving-focus signal a raw external
-/// `.focus()` call (a Playwright test driving focus programmatically, or
-/// an assistive-technology focus-restoration path) never updates; see
-/// `DropdownMenuContentRendered`'s own call in `dropdown_menu.rs` for the
-/// full root-cause writeup this reuses. It cannot be called as-is for a
-/// `Sub`, though: it takes exactly *one* container id, and a `Sub`'s own
-/// trigger and content are never wrapped by a common element the way a
-/// top-level host's trigger+content pair are (`DropdownMenuSub`/
-/// `ContextMenuSub` render no wrapper of their own -- see this module's
-/// own doc, "Why this module exists"). This is the same construction with
-/// two ids instead of one: "inside" means a descendant of *either*.
-///
-/// Deliberately narrower than `use_outside_dismiss` in one respect: no
-/// `pointerdown` handling. A click anywhere outside a `Sub`'s own
-/// trigger+content already closes the *whole* enclosing menu (every
-/// item's `onclick` calls the host's own `set_open.call(false)`, and a
-/// `Sub` renders nothing once its enclosing `*Content` unmounts -- see
-/// `DropdownMenuSub`'s own cleanup effect), so a second, submenu-scoped
-/// pointerdown check would be redundant. Only the focus-based check is
-/// this module's own gap: closing *just* this submenu (not the whole
-/// menu) when focus moves elsewhere within the still-open enclosing menu
-/// is a case a `*SubTrigger` `onblur` cannot handle, because of the signal-
-/// staleness hazard (backlog row 85) a trigger `onblur` has.
-pub(crate) fn use_sub_outside_dismiss(
-    trigger_id: impl Readable<Target = String> + Copy + 'static,
-    content_id: impl Readable<Target = String> + Copy + 'static,
-    on_dismiss: impl FnMut() + Clone + 'static,
-) {
-    crate::js_listener::use_js_listeners(move || {
-        let mut on_dismiss = on_dismiss.clone();
-        Some(
-            crate::js_listener::JsListeners::install(
-                "const [triggerId, contentId] = await dioxus.recv();
-                const inside = (target) => {
-                    const t = document.getElementById(triggerId);
-                    const c = document.getElementById(contentId);
-                    return (t != null && t.contains(target)) || (c != null && c.contains(target));
-                };
-                listen(document, 'focusin', (e) => { if (!inside(e.target)) dioxus.send(true); }, true);",
-            )
-            .arg((trigger_id.cloned(), content_id.cloned()))
-            .on_message(move |_: bool| on_dismiss()),
-        )
-    });
 }
 
 /// The submenu boundary of any host: renders no element, only the context around its sub-trigger and sub-content.
@@ -543,7 +490,7 @@ pub(crate) fn render_sub_trigger(props: MenuSubTriggerProps) -> Element {
         },
 
         // No `onblur`: whether focus really left the submenu is answered by the DOM, not by a signal, through the
-        // sub-content's `use_sub_outside_dismiss`.
+        // sub-content's dismiss layer.
     });
     let merged = merge_attributes(vec![
         order.marker_attribute(),
@@ -591,12 +538,12 @@ pub(crate) fn render_sub_content(props: MenuSubContentProps) -> Element {
 /// The submenu panel. On the web it is a `popover="auto"` top-layer element anchored to its sub-trigger on the
 /// inline axis (`Right` in LTR, `Left` in RTL, flipped by the shared engine when it would overflow), with no gap:
 /// trigger and submenu sit in the same logical menu, and abutting shrinks the dead zone the close grace delay
-/// ([`SUBMENU_CLOSE_GRACE_DELAY`]) covers for a diagonal pointer move. `auto` lets an outside press or Escape
-/// light-dismiss just this submenu, and a click on a sibling of the enclosing menu is "outside" it. Without the
+/// ([`SUBMENU_CLOSE_GRACE_DELAY`]) covers for a diagonal pointer move. `auto` lets an outside press
+/// light-dismiss just this submenu (Escape is the dismiss layer's), and a click on a sibling of the enclosing menu is "outside" it. Without the
 /// popover API it is a plain in-flow element.
 ///
-/// Escape and the close arrow close just this submenu and hand focus to its sub-trigger; the key never reaches the
-/// host's root handler, which would close the whole menu.
+/// Escape and the close arrow close just this submenu and hand focus to its sub-trigger; Escape never reaches the
+/// enclosing menu's layer, which would close the whole menu.
 #[component]
 fn MenuSubContentRendered(
     /// The DOM id of the submenu's content element.
@@ -644,25 +591,40 @@ fn MenuSubContentRendered(
         },
         attributes,
     );
-    use_sub_outside_dismiss(sub.trigger_id, sub.content_id, move || {
+    let sub_trigger = use_context::<crate::SubTriggerHandle>().0;
+    // Closes just this submenu. A close caused by the keyboard (the close arrow, Escape) hands focus to the
+    // sub-trigger; one caused by focus moving elsewhere leaves it where the user put it.
+    let close = move |cause: Option<Cause>| {
+        let mut sub = sub;
         sub.focus.clear_focus();
         sub.set_open.call(false);
-    });
-
-    let sub_trigger = use_context::<crate::SubTriggerHandle>().0;
-    let onkeydown = move |event: Event<KeyboardData>| {
-        let key = event.key();
-        // The close key is direction-aware (`ArrowRight` in RTL); `Escape` is not.
-        let closes = matches!(key, Key::Escape) || is_submenu_close_arrow_key(&key, direction());
-        if closes {
-            sub.set_open.call(false);
-            sub.focus.clear_focus();
+        if !cause.is_some_and(Cause::interacted_outside) {
             if let Some(trigger) = sub_trigger.element() {
                 spawn(async move {
                     // focus-ok: ArrowLeft/Escape in a submenu (keyboard only) hands focus to its trigger
                     _ = trigger.set_focus(true).await;
                 });
             }
+        }
+    };
+    // One layer for the open submenu, over its content and its sub-trigger (neither holds the other, and the
+    // enclosing menu's other items are not inside it): `Policy::MENU_SUB`. It registers after the enclosing menu's
+    // layer, so it is the topmost and takes the first Escape: only the submenu closes, and the key never reaches
+    // the enclosing menu's layer.
+    crate::dismiss::use_dismiss_within(
+        sub.content_id,
+        Some(sub.trigger_id),
+        crate::dismiss::Scope::Element,
+        crate::dismiss::Policy::MENU_SUB,
+        None,
+        move |cause| close(Some(cause)),
+    );
+
+    let onkeydown = move |event: Event<KeyboardData>| {
+        let key = event.key();
+        // The close key is direction-aware (`ArrowRight` in RTL).
+        if is_submenu_close_arrow_key(&key, direction()) {
+            close(None);
         } else if !menu_root::nav_key(&event, sub.focus, &mut typeahead) {
             return;
         }

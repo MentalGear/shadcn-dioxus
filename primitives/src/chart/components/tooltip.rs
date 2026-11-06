@@ -242,11 +242,48 @@ pub fn ChartTooltip(props: ChartTooltipProps) -> Element {
     // first (the jump from "hidden at an estimate" to "visible at the
     // target") must not animate; only a later one -- a pointer or key move
     // -- may. See the stylesheet's `data-motion` rule.
+    let mut mounted = use_signal(|| None::<std::rc::Rc<MountedData>>);
     let mut placed_renders = use_hook(|| CopyValue::new(0u32));
+    // The last open render's datum index and placement. A closing tooltip
+    // stays displayed for its fade-out (the stylesheet), so while closed it
+    // keeps rendering that datum at that placement: emptying it would shrink
+    // its box (its own `onresize` would then record a stale, smaller size
+    // that a reopen inside the fade places by) and re-anchoring it would
+    // move it mid-fade.
+    let mut last_open = use_hook(|| CopyValue::new(None::<(usize, TooltipPlacement)>));
 
     // An active index is all it takes -- on the server that is never the
     // case, so the SSR tooltip is always closed.
     let open = active.is_some();
+    // Every closed -> open transition measures the tooltip afresh before it
+    // may show: a tooltip reopened inside its fade-out is still displayed, so
+    // its own `onresize` (which reports a changed size only) would not
+    // un-place it, yet the new datum's label can change its width and with it
+    // the flip/clamp, which would then slide in view. `placed` is cleared
+    // here and set again by this measurement (or by `onresize`, whichever
+    // reports first), so the first visible frame is at its target.
+    let is_open = use_memo(move || (ctx.active_index)().is_some());
+    use_effect(move || {
+        if !is_open() {
+            return;
+        }
+        placed.set(false);
+        let Some(element) = mounted.peek().clone() else {
+            return;
+        };
+        spawn(async move {
+            let Ok(rect) = element.get_client_rect().await else {
+                return;
+            };
+            let next = (rect.width().ceil(), rect.height().ceil());
+            if next.0 > 0.0 && next.1 > 0.0 {
+                if tip_size.peek().as_ref() != Some(&next) {
+                    tip_size.set(Some(next));
+                }
+                placed.set(true);
+            }
+        });
+    });
     // Placed needs both measurements: its own size (`placed`) AND the chart
     // box (`box_size`, from the chart's `onresize`). With only the first, a
     // tooltip that is open from the start (`default_index`) could show for a
@@ -269,7 +306,8 @@ pub fn ChartTooltip(props: ChartTooltipProps) -> Element {
     // hides it), so an arbitrary fallback is fine whenever either half of
     // this is still unset (no layout yet, or this family hasn't populated
     // an anchor for the active index).
-    let anchor_pct = active
+    let shown = active.or_else(|| (*last_open.peek()).map(|(i, _)| i));
+    let anchor_pct = shown
         .and_then(|i| layout.as_ref().and_then(|l| l.anchor_percent.get(i)))
         .copied()
         .unwrap_or((50.0, 50.0));
@@ -292,10 +330,16 @@ pub fn ChartTooltip(props: ChartTooltipProps) -> Element {
             )
         },
     );
+    let placement = if open {
+        *last_open.write() = shown.map(|i| (i, placement));
+        placement
+    } else {
+        (*last_open.peek()).map_or(placement, |(_, held)| held)
+    };
     let side_x = if placement.flipped_x { "left" } else { "right" };
     let side_y = if placement.flipped_y { "top" } else { "bottom" };
 
-    let active_datum = active.and_then(|i| data.get(i));
+    let active_datum = shown.and_then(|i| data.get(i));
 
     // `data-slot`/`data-state`/`data-indicator`/`aria-hidden` are
     // structural/aria wiring this component owns (`data-slot` is the
@@ -342,15 +386,15 @@ pub fn ChartTooltip(props: ChartTooltipProps) -> Element {
     // The cross-series total at the active datum (`None` treated as `0.0`)
     // -- only meaningful to a caller-supplied `formatter`
     // ([`TooltipRow::total`]'s own doc), but cheap regardless: `config`'s
-    // series list is small, and this whole block is skipped entirely when
-    // the tooltip is closed (`active_datum` is `None`).
+    // series list is small, and this whole block is skipped entirely until
+    // the tooltip has been open once (`active_datum` is `None`).
     let total: f64 = active_datum
         .map(|d| d.values.iter().filter_map(|v| *v).sum())
         .unwrap_or(0.0);
     let rows = tooltip_rows(
         &config.series,
         slice_rows,
-        active,
+        shown,
         active_datum,
         props.name_key.as_deref(),
     );
@@ -358,6 +402,7 @@ pub fn ChartTooltip(props: ChartTooltipProps) -> Element {
 
     rsx! {
         div {
+            onmounted: move |evt: MountedEvent| mounted.set(Some(evt.data())),
             // Its own border-box size, for the flip/clamp decision above. A
             // closed (`display: none`) tooltip reports 0x0: un-placed again.
             onresize: move |evt: ResizeEvent| {

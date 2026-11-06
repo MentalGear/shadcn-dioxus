@@ -1,5 +1,7 @@
 use dioxus::prelude::*;
-use dioxus_primitives::{dioxus_attributes::attributes, merge_attributes};
+use dioxus_primitives::{
+    dioxus_attributes::attributes, merge_attributes, reset_form_event, use_form_reset_value,
+};
 
 /// Wraps a plain `<input>` in this crate's themed styling.
 ///
@@ -77,7 +79,19 @@ pub fn Input(
     let wheel: Vec<Attribute> = onwheel
         .map(|handler| vec![dioxus::html::events::onwheel(handler)])
         .unwrap_or_default();
-    let merged = merge_attributes(vec![base, attributes, wheel]);
+    // A `<form>` reset restores the DOM value only; the handlers hear it as an edit to the default, so an
+    // owner that mirrors the field into a signal follows (`primitives/src/form_reset.rs`).
+    let reset_oninput = oninput;
+    let reset_onchange = onchange;
+    let owned = use_form_reset_value(&attributes, move |value: String| {
+        if let Some(handler) = reset_oninput {
+            handler.call(reset_form_event(value.clone()));
+        }
+        if let Some(handler) = reset_onchange {
+            handler.call(reset_form_event(value));
+        }
+    });
+    let merged = merge_attributes(vec![base, attributes, wheel, owned]);
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/input/style.css") }

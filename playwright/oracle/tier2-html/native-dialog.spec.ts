@@ -270,8 +270,8 @@ test.describe("Rule 5 — nested dialogs: close order and focus return", () => {
     await openNested.click();
     await expect(page.getByRole("dialog")).toHaveCount(2);
 
-    // Close the inner dialog via Escape -- per `use_global_escape_listener`'s
-    // stack (lib.rs), only the top-most (inner) listener fires.
+    // Close the inner dialog via Escape -- the dismiss core's layer order
+    // (`dismiss.rs`) lets only the top-most (inner) layer react.
     await page.keyboard.press("Escape");
     await expect(page.getByRole("dialog")).toHaveCount(1);
     await expect(outer, "the outer dialog must still be open").toBeVisible();

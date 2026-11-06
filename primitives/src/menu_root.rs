@@ -21,8 +21,9 @@
 //! - [`use_menu_content_lifecycle`] -- id resolution plus `use_animated_open`'s close-animation hold.
 //! - [`content_labelledby_attributes`] -- the panel's accessible name from its trigger.
 //!
-//! Escape, outside dismissal and focus return stay with the host's call sites of `use_outside_dismiss` and
-//! `use_refocus_on_close_unless` (`lib.rs`).
+//! Escape, a press outside and focus leaving are one `crate::dismiss::use_dismiss` layer per open host root
+//! ([`crate::dismiss::Policy::MENU`]) and per open submenu ([`crate::dismiss::Policy::MENU_SUB`]); the
+//! [`crate::dismiss::Cause`] it reports decides whether focus goes back to the trigger.
 //!
 //! `Navbar` and `NavigationMenu` are not menus in this sense (their items are links) and use none of this.
 
@@ -61,6 +62,35 @@ pub(crate) struct MenuHost {
     pub(crate) close: Callback<()>,
     /// A root-level item that held the roving focus lost DOM focus.
     pub(crate) blur: Callback<()>,
+}
+
+/// The id of a host's root element **as the DOM carries it**, for the dismiss layer that looks the root up by id.
+///
+/// A host renders `id: <generated>` first and the caller's attributes after, and a caller's `id` wins
+/// (`merge_attributes`), so a menu root given its own `id` carries that one and the generated id names nothing: the
+/// layer would find no root and never dismiss on a press or focus outside. The caller's id is written into the signal
+/// the way `use_id_or` does for a trigger. A hook: call it before any hook that reads the returned signal.
+pub(crate) fn use_root_id(attributes: &[Attribute]) -> Signal<String> {
+    let mut root_id = crate::use_unique_id();
+    let caller = caller_id(attributes);
+    use_effect(move || {
+        if let Some(id) = caller.clone() {
+            root_id.set(id);
+        }
+    });
+    root_id
+}
+
+/// The text of a caller-supplied `id` attribute, if there is a non-empty one.
+fn caller_id(attributes: &[Attribute]) -> Option<String> {
+    attributes.iter().find_map(|a| match (&a.value, a.name) {
+        (dioxus_core::AttributeValue::Text(id), "id")
+            if a.namespace.is_none() && !id.is_empty() =>
+        {
+            Some(id.clone())
+        }
+        _ => None,
+    })
 }
 
 /// Keeps `open` in sync with whether `focus`'s roving-focus collection currently holds DOM focus, skipped while
@@ -121,8 +151,8 @@ pub(crate) fn content_labelledby_attributes(
 /// Every menu panel wires this as its `onpointerdown`. Two reasons, one construction:
 /// - the menu must stay open across a click's pointerdown-to-pointerup gap (an item focus change would otherwise
 ///   blur the trigger and trip the blur-driven close before `onclick`/`on_select` fire);
-/// - a menu whose items **commit on `pointerdown`** (`SelectOn::PressStart`, the Menubar) closes and refocuses
-///   the trigger *inside* that same pointerdown. The mousedown that follows it would then focus the pressed item,
+/// - a menu whose items **commit a mouse press on `pointerdown`** (`SelectOn::PressStart`, the Menubar) closes and
+///   refocuses the trigger *inside* that same pointerdown. The mousedown that follows it would then focus the pressed item,
 ///   which is already being unmounted, and focus would end on `<body>` instead of the trigger (backlog row 140).
 ///   With the default cancelled, the refocus the commit made is the last focus change.
 pub(crate) fn keep_focus_on_pointerdown(event: Event<PointerData>) {

@@ -1,10 +1,10 @@
 ---
 id: 475
 title: "Bug: Resizable and Slider on desktop: a previous drag's queued per-move frames can land in the next drag"
-status: "APPROVED 2026-10-26 by the owner (\"Ok for the rest\", backlog thread); for the next session (owner…"
+status: "FIXED 2026-11-06 on lane branch lane/pointer-epoch-475 (bridge epoch in pointer.rs); web-verified…"
 size: "S"
 area: components
-updated: 2026-10-26
+updated: 2026-11-06
 ---
 
 # Row 475: Bug: Resizable and Slider on desktop: a previous drag's queued per-move frames can land in the next drag
@@ -19,9 +19,13 @@ Related to [row 434](./434-javascript-in-typescript-modules-not-rust-strings.md)
 
 ## Status / trigger
 
-APPROVED 2026-10-26 by the owner ("Ok for the rest", backlog thread); for the next session (owner 2026-10-26: "We will do it all in a fresh session").
+FIXED 2026-11-06 on lane branch `lane/pointer-epoch-475` (bridge epoch in pointer.rs); web-verified, desktop inferred from the code (no desktop build in the lane container). Approved 2026-10-26 by the owner ("Ok for the rest", backlog thread).
 
-BACKLOG. Found by board round 7; reproduce first. Independent of plan approval.
+- **Reproduced:** `playwright/move-interaction-regrab.spec.ts` sets `__dxBridgeDelayFrames = 8` (at 2 frames a debug build finishes drag 1 before drag 2 starts, so the stale frames never overlap) and does a quick double drag. On the base build the Slider ends at 85 (expected 36 to 44); after the fix it passes (3 of 3). Only the Slider is asserted: a Resizable case was tried and dropped, because under the 8-frame delay a drag that moves sooner than the window listeners' install message (also delayed) sees none of its own frames, which made its end position timing-dependent, so Resizable and ColorPicker are covered by the same code path (`use_move_interaction` into `pointer.rs`), not by their own spec.
+- **Root cause (sharper than the row's text):** `JsListeners::drop` only sends a teardown over the same delayed channel, and the old bridge's receive task keeps delivering its queued `move` and `up` frames to `update_pointer`/`remove_pointer` by `pointerId`. On a quick re-grab `start_pointer` takes its stale branch and a new bridge is installed, so the old bridge's frames land on the new drag's entry (same mouse id). Resizable and Slider both go through this.
+- **Fix, by construction, in Rust only (`primitives/src/pointer.rs`):** a bridge epoch. Each `ensure_bridge` takes a new epoch, its handler carries it and drops any message whose epoch is no longer current, and every bridge removal retires the epoch. `release_pointer` (a new gesture on a still-tracked id) also restarts the bridge when other pointers keep it up. No JS changed, so no legacy-freeze or JS-volume question arises. Subsumes every `use_move_interaction` user: Slider, Resizable (handle and group) and ColorPicker. The drawer does not use `use_move_interaction` (its drag is its own `JsListeners` in `drawer.rs`), so it is not covered by this fix and not changed.
+- **Behaviour note:** the undelivered tail of a gesture that is superseded by a new press before its frames arrive is dropped (the handle stops where the last delivered frame left it, and the new gesture starts from its own press), not applied.
+- **Not done:** the plan's full gesture epoch on the rsx `pointerdown` carried by each frame (rows 447, 455); this local epoch is per bridge install, which is per gesture because the bridge idles between drags.
 
 ## Size
 

@@ -12,7 +12,11 @@ Session tooling (paths below default to `LANE_TGT=/home/user/tgt`):
   source touch, `CARGO_BUILD_JOBS=2`, `CARGO_INCREMENTAL=0`.
 - `scripts/lane-ssg.sh <worktree> <lane> [port]` -- debug SSG of a worktree inside the queue, from a fresh
   copy of the warm template, served on `port` (the server starts outside the lock).
-- `scripts/gate-at.sh <commit> <log>` -- `scripts/run-gates.sh` on a pinned commit in its own worktree (class `gate`).
+- `scripts/gate-at.sh <commit> <log>` -- `scripts/run-gates.sh` on a pinned commit in its own worktree (class `gate`). Each
+  `run-gates.sh` run writes its per-gate logs to its own `$CARGO_TARGET_DIR/run-gates/<UTC time>-<pid>/` (the summary's
+  `logs:` line; `run-gates/latest` points at the newest finished run; the newest 20 are kept, `RUN_GATES_KEEP`), so
+  concurrent runs on one target never share a log (row 440). A reused gate's summary line names the log of the run
+  that really ran it.
 - `scripts/lane-target.sh create <name> --release [--base-path P]` / `warm-release [--base-path P]` -- the two warm
   RELEASE trees (row 324): `$LANE_TGT/release-template` (no base path, validation) and `$LANE_TGT/release` (base path,
   the deploy's), chosen by base path. A validation release build is `eval "$(scripts/lane-target.sh create v --release)"`
@@ -126,6 +130,10 @@ Use the cheapest tool that answers the question, in this order:
    pnpm run test:changed -- --workers=2` (details in "Before handback" step 3; `node tools/select.mjs --explain`
    says which specs and why; `CHANGED_RANGE=A..B` for a range other than your branch). Specs run on SSG output,
    not on `dx serve`, because the first paint and hydration are what they test.
+   A build slot costs about 9 minutes and the queue is often several lanes deep, so compile-check first (a
+   `cargo check` of the touched crates through `scripts/lane-cargo.sh`) and queue a build only on code that compiles.
+   Wait for a queued build in the foreground (the Bash timeout at its maximum, then a foreground `until` loop);
+   a queued build is not a blocker, so a lane does not hand back while one of its builds waits.
 3. **The full suite is the deploy's**, once per deploy on a release build (`scripts/deploy-preview.sh`, row 322;
    "Running the suite" for the chunking). A lane never runs it.
 

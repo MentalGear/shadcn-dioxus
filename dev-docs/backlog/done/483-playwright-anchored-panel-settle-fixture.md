@@ -1,7 +1,7 @@
 ---
 id: 483
 title: "Playwright waits for a just-opened anchored panel to settle before acting inside it (fixture, not per spec)"
-status: "IMPLEMENTED on lane/settle-fixture-483 (main-loop merge pending). The wait lives in the shared…"
+status: "MERGED in PR #158 (06747d1c), DEPLOYED in 1ea333fa. The wait lives in the shared fixture; the six…"
 size: "M"
 area: tests
 updated: 2026-10-29
@@ -15,7 +15,7 @@ Playwright's actionability check waits for a just-opened anchored panel to finis
 
 ## Status / trigger
 
-IMPLEMENTED on lane/settle-fixture-483 (main-loop merge pending). The wait lives in the shared fixture; the six specs call `click()`/`hover()` plainly. Proof on a debug lane-ssg build: the six specs pass 3x each (432 tests), and the full suite (`playwright/tools/run-suite.sh`, 8 chunks) ran 3,703 passed, 23 skipped, 1 failed. The one red, `oracle/tier1-apg/keyboard-matrix.spec.ts` "Select listbox — Escape" (a trigger click outside any panel, then Escape), passed 10/10 alone and 60/60 at 4 workers on both the new and the base fixture: a load flake, not the fixture.
+MERGED in PR #158 (`06747d1c`), DEPLOYED in `1ea333fa`. The wait lives in the shared fixture; the six specs call `click()`/`hover()` plainly. Proof on a debug lane-ssg build: the six specs pass 3x each (432 tests), and the full suite (`playwright/tools/run-suite.sh`, 8 chunks) ran 3,703 passed, 23 skipped, 1 failed. The one red, `oracle/tier1-apg/keyboard-matrix.spec.ts` "Select listbox — Escape" (a trigger click outside any panel, then Escape), passed 10/10 alone and 60/60 at 4 workers on both the new and the base fixture: a load flake, not the fixture.
 
 ## Size
 

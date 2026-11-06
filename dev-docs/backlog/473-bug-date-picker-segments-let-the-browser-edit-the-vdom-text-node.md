@@ -1,7 +1,7 @@
 ---
 id: 473
 title: "Bug: date picker segments let the browser edit the text node the vdom also writes"
-status: "APPROVED 2026-10-26 by the owner (\"Ok for the rest\", backlog thread); for the next session (owner…"
+status: "MERGED in PR #159 (c16027cc), DEPLOYED in 1ea333fa. Open: an Android run (not done) and the…"
 size: "M"
 area: components
 updated: 2026-10-26
@@ -23,9 +23,9 @@ Related to [row 434](./434-javascript-in-typescript-modules-not-rust-strings.md)
 
 ## Status / trigger
 
-APPROVED 2026-10-26 by the owner ("Ok for the rest", backlog thread); for the next session (owner 2026-10-26: "We will do it all in a fresh session").
+MERGED in PR #159 (`c16027cc`), DEPLOYED in `1ea333fa`. Open: an Android run (not done) and the `beforeinput` case below. Approved by the owner 2026-10-26.
 
-DONE on `lane/date-segments-473` (2026-10-31), awaiting merge. Reproduced first on a build of the base
+Done on `lane/date-segments-473` (2026-10-31). Reproduced first on a build of the base
 (`playwright/date-picker-segment-edit.spec.ts`, 10 of 11 red there, the 11th a control): select-all + Backspace left the
 segment's text empty while `aria-valuenow` moved on (the browser removed the text node the vdom keeps writing to);
 Delete on an untouched segment deleted characters of the placeholder (`YYYY` became `YY`; `String::remove(0)` on the

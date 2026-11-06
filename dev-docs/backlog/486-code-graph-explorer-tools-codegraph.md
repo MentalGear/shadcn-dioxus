@@ -4,7 +4,7 @@ title: "Code graph explorer: SCIP-derived graph with a granularity slider (scrip
 status: "BUILT, minimal scope (2026-11-03): scripts/codegraph/ (run.sh, build_graph.py, make_explorer.py…"
 size: "S-M for the minimal scope; the rest is…"
 area: tooling
-updated: 2026-11-03
+updated: 2026-11-05
 ---
 
 # Row 486: Code graph explorer
@@ -30,6 +30,16 @@ session-setup frozen install are in. Recommended: full radius 2 done; pairing th
 (`component.json` names no primitive, so the name match stays). Optional items open. The page switches to a concentric
 layout above 250 nodes because `cose` gives a hairball there (`cose` is kept up to that size, with boxes). Proof numbers
 are in the README. Dev tool only (owner 2026-11-02).
+
+Comment metrics M1 to M6 BUILT (2026-11-05, owner-approved proposal `scripts/codegraph/comment-metrics-proposal.md`): comment
+ratio, doc share, pub doc coverage, history-rule hits, TODO/FIXME/HACK/XXX counts and density outliers, from one pass of
+`scripts/comment-scan.py` (its `walk_rust` and `embedded_comments` are now public names, a rename only; both gates
+unchanged) in `scripts/codegraph/comment_metrics.py`, summed per component and crate, stored in `graph.json`, shown as
+lenses, a details-panel table, outlier rings and a Comments worst-files tab. Still a dev tool: no gate, no dependency.
+Measured: primitives crate M1 0.48, M2 80.5 %, M3 97.7 %; M4 total 0 (equals `check-history-comments.sh`, 0; a planted
+history comment read 1 on both); M5 total 2 (two `TODO` words in `preview/src/site`); M6 dense outliers 22 files, sparse 4
+(the sparse fence is on a log scale because the plain one is negative). Rebuilding the graph with the metrics takes about 14
+s. Nice-to-have N1 to N6 are not built. Numbers and how to read them: `scripts/codegraph/README.md`.
 
 Researched 2026-10-29 and 2026-10-31 at the owner's request; a prototype exists. The research, the tool comparison and the
 measured numbers are in [`research/code-graph-explorer-2026-10-31.md`](../research/code-graph-explorer-2026-10-31.md), and

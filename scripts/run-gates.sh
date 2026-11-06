@@ -9,7 +9,7 @@
 #   --skip REGEX      skip gates whose name matches REGEX
 #   --fast            skip the cargo gates (what a lane runs: every static check, fmt and stylelint, in seconds)
 #   --stop-on-fail    stop at the first red gate (default: run everything, report all reds)
-#   --log-dir DIR     per-gate logs + summary.tsv (default: $CARGO_TARGET_DIR/run-gates)
+#   --log-dir DIR     per-gate logs + summary.tsv (default: a fresh $CARGO_TARGET_DIR/run-gates/<UTC time>-<pid>/)
 #   --list            print the gate names and exit
 #   --no-reuse        run every cargo gate even when its result is stored for an identical cargo-input hash
 #                     (also GATE_REUSE=0); see guard 6
@@ -45,7 +45,12 @@
 #     summary lists every reused gate with the tree it really ran on and the final line says how many. Only a
 #     PASS is stored, a FAIL deletes the stored PASS, a changed byte in any input is a different key, and
 #     --no-reuse (or GATE_REUSE=0) forces the real run. fmt is never reused (it is under a second). The store is
-#     $GATE_REUSE_DIR, default ${LANE_TGT:-/home/user/tgt}/gate-reuse.
+#     $GATE_REUSE_DIR, default ${LANE_TGT:-/home/user/tgt}/gate-reuse. A stored PASS also names the log file of the
+#     run that really ran the gate, and a reuse line in the summary prints that path.
+#  7. One log directory per run (backlog row 440). Every run writes to its own $CARGO_TARGET_DIR/run-gates/<UTC time>-<pid>/
+#     and prints it, so two runs on one target never overwrite each other's logs and a log a reader opens belongs to the
+#     summary that named it. `run-gates/latest` is a symlink to the newest FINISHED run, switched by a rename at the end.
+#     The newest $RUN_GATES_KEEP (default 20) run directories are kept; older ones are deleted at the start of a run.
 set -uo pipefail
 
 # The cargo gates: the slow ones, whose PASS is reused for an identical cargo-input key (guard 6) and which --fast leaves out.
@@ -216,8 +221,19 @@ export CARGO_TARGET_DIR
 # 11-13 GB in about an hour of shared gate runs and fills the session's disk (backlog row 168).
 # Default it off; a caller can still opt back in with CARGO_INCREMENTAL=1.
 export CARGO_INCREMENTAL="${CARGO_INCREMENTAL:-0}"
-log_dir="${log_dir:-$CARGO_TARGET_DIR/run-gates}"
-mkdir -p "$log_dir" || die "cannot create log dir $log_dir"
+runs_root="$CARGO_TARGET_DIR/run-gates"
+if [ -n "$log_dir" ]; then
+  mkdir -p "$log_dir" || die "cannot create log dir $log_dir"
+  log_dir="$(cd "$log_dir" && pwd)"; own_run_dir=0
+else
+  log_dir="$runs_root/$(date -u +%Y%m%dT%H%M%SZ)-$$"; own_run_dir=1
+  mkdir -p "$runs_root" && mkdir "$log_dir" || die "cannot create log dir $log_dir"
+  # Guard 7 retention: keep the newest RUN_GATES_KEEP run directories (names sort by time), never this run's.
+  keep="${RUN_GATES_KEEP:-20}"
+  case "$keep" in ''|*[!0-9]*) keep=20 ;; esac
+  find "$runs_root" -mindepth 1 -maxdepth 1 -type d -regex '.*/[0-9]\{8\}T[0-9]\{6\}Z-[0-9]+' | sort -r \
+    | tail -n +$((keep + 1)) | while IFS= read -r old; do [ "$old" = "$log_dir" ] || rm -rf "$old"; done
+fi
 summary_tsv="$log_dir/summary.tsv"
 : > "$summary_tsv"
 
@@ -281,9 +297,11 @@ for g in "${gates[@]}"; do
   if [[ "$name" =~ $CARGO_GATES ]]; then
     reuse_init
     if [ "$reuse_state" = on ] && hit="$(gate_reuse_lookup "$reuse_key" "$name")"; then
-      IFS=$'\t' read -r from_tree from_date from_secs <<<"$hit"
-      printf '>> %-34s PASS  reused from tree %s (ran %s, took %ss)\n' "$name" "$from_tree" "$from_date" "$from_secs"
-      printf '%s\tPASS\t0\t0.0\treused from tree %s (%s, %ss)\n' "$name" "$from_tree" "$from_date" "$from_secs" >> "$summary_tsv"
+      IFS=$'\t' read -r from_tree from_date from_secs from_log <<<"$hit"
+      from_log_note="log ${from_log:-unknown}"
+      [ -z "$from_log" ] || [ -e "$from_log" ] || from_log_note="log $from_log (pruned)"
+      printf '>> %-34s PASS  reused from tree %s (ran %s, took %ss, %s)\n' "$name" "$from_tree" "$from_date" "$from_secs" "$from_log_note"
+      printf '%s\tPASS\t0\t0.0\treused from tree %s (%s, %ss, %s)\n' "$name" "$from_tree" "$from_date" "$from_secs" "$from_log_note" >> "$summary_tsv"
       reused+=("$name")
       case ", $reused_from, " in *", $from_tree, "*) ;; *) reused_from="${reused_from:+$reused_from, }$from_tree" ;; esac
       ran=$((ran + 1)); continue
@@ -324,15 +342,22 @@ done
 # was taken on (a tree edited under a running gate must not vouch for the new bytes).
 if [ "${#reuse_pending[@]}" -gt 0 ]; then
   if [ "$(gate_reuse_key "$repo_root" "${cargo_cmds[@]}" 2>/dev/null)" = "$reuse_key" ]; then
-    for p in "${reuse_pending[@]}"; do gate_reuse_record "$reuse_key" "${p%%:*}" "$tree_label" "${p#*:}"; done
+    for p in "${reuse_pending[@]}"; do gate_reuse_record "$reuse_key" "${p%%:*}" "$tree_label" "${p#*:}" "$log_dir/${p%%:*}.log"; done
     echo "run-gates: stored ${#reuse_pending[@]} cargo-gate PASS result(s) under key $reuse_key"
   else
     echo "run-gates: the cargo inputs changed while the gates ran -- nothing stored for reuse"
   fi
 fi
 
+# Guard 7: publish this run as `latest` by renaming a fresh symlink over the old one (atomic), only for a default run dir.
+if [ "$own_run_dir" = 1 ]; then
+  ln -sfn "$log_dir" "$runs_root/.latest.$$" && mv -T "$runs_root/.latest.$$" "$runs_root/latest" 2>/dev/null \
+    || rm -f "$runs_root/.latest.$$"
+fi
+
 echo
 echo "================ run-gates summary (tree $head_sha, diff-hash $diff_hash) ================"
+echo "logs: $log_dir"
 awk -F'\t' '{ printf "%-34s %-5s rc=%-3s %8ss  %s\n", $1, $2, $3, $4, $5 }' "$summary_tsv"
 total="$(awk -F'\t' '{ s += $4 } END { printf "%.1f", s }' "$summary_tsv")"
 echo "gates run: $ran   red: ${#red[@]}   total: ${total}s"

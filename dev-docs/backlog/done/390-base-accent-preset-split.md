@@ -1,10 +1,10 @@
 ---
 id: 390
 title: "Base and accent presets own disjoint variables; charts follow the accent"
-status: "APPROVED 2026-10-26 by the owner (\"Ok for the rest\", backlog thread); for the next session (owner…"
+status: "MERGED in PR #143 (merge f1991ecb; the lane merge 743621bf carries the commit 4a08542d), DEPLOYED…"
 size: "M"
 area: theme
-updated: 2026-10-26
+updated: 2026-11-06
 ---
 
 # Row 390: base and accent presets own disjoint variables
@@ -15,7 +15,7 @@ Owner report 2026-10-24: "check if there is clear, encoded distinction between a
 
 ## Status / trigger
 
-APPROVED 2026-10-26 by the owner ("Ok for the rest", backlog thread); for the next session (owner 2026-10-26: "We will do it all in a fresh session").
+MERGED in PR #143 (merge `f1991ecb`; the lane merge `743621bf` carries the commit `4a08542d`), DEPLOYED in `1ea333fa` (the deploy of main `7145b2a0`, PRs #159-#163). Approved by the owner 2026-10-26 ("Ok for the rest", backlog thread) and built in the next session (owner 2026-10-26: "We will do it all in a fresh session").
 
 DECIDED 2026-10-24 (owner): (1) each axis owns its own variables, disjoint and enforced; (2) charts with no accent picked are the library palette under every base, an accent swaps in its hue ramp. BUILT on `lane/preset-split`.
 

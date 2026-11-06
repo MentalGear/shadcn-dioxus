@@ -46,6 +46,8 @@ mod dismiss;
 pub mod drag_and_drop_list;
 pub mod drawer;
 pub mod dropdown_menu;
+mod form_reset;
+pub use form_reset::{reset_form_event, use_form_reset_value};
 pub mod hover_card;
 mod hover_intent;
 pub mod input_otp;
@@ -331,7 +333,7 @@ fn use_effect_with_cleanup<F: FnMut() -> C + 'static, C: FnOnce() + 'static>(mut
 /// The page half of the dismiss core ([`dismiss`]): one listener script per layer, parameterised by
 /// the layer's [`dismiss::Policy`].
 ///
-/// - **Escape** (`escape` is `close` or `native`): every layer that takes part registers on
+/// - **Escape**: every layer registers on
 ///   `window.__dxDismissLayers`, ordered by the `seq` it was given when it opened, so the order is
 ///   one list on the page and the decision is made inside the key's dispatch. Only the topmost
 ///   layer reacts: a `close` layer cancels the key's default action (so an enclosing `<dialog>`
@@ -346,19 +348,18 @@ fn use_effect_with_cleanup<F: FnMut() -> C + 'static, C: FnOnce() + 'static>(mut
 ///   it: clicking the root's own non-focusable background blurs the focused control and the browser
 ///   moves focus to the nearest focusable ancestor, which is not a real focus-out.
 ///
-/// The root is the element with `id`, or its nearest ancestor matching `closest`. A message is
+/// The root is the element with `id` (plus the element with `also`, when a layer's inside is two elements that no
+/// common ancestor holds alone: a submenu's trigger and its content), or its nearest ancestor matching `closest`. A message is
 /// `outside`, `focus`, `escape` or `escape-within` (focus was inside the root when Escape came).
 const DISMISS_JS: &str = "const o = await dioxus.recv();
 const layers = (window.__dxDismissLayers = window.__dxDismissLayers || []);
-const root = () => { const el = document.getElementById(o.id); return el && o.closest ? el.closest(o.closest) : el; };
-const outside = n => { const r = root(); return r && !r.contains(n); }; let press = null;
-if (o.escape !== 'ignore') {
-    layers.push(o), layers.sort((a, b) => a.seq - b.seq), cleanup(() => layers.splice(layers.indexOf(o), 1));
-    listen(document, 'keydown', e => {
-        if (e.key !== 'Escape' || layers[layers.length - 1] !== o || o.escape === 'native') return;
-        e.preventDefault(), dioxus.send(root() && root().contains(document.activeElement) ? 'escape-within' : 'escape');
-    });
-}
+const roots = () => [o.id, o.also].filter(Boolean).map(id => { const el = document.getElementById(id); return el && o.closest ? el.closest(o.closest) : el; }).filter(Boolean);
+const within = n => roots().some(r => r.contains(n)); const outside = n => roots().length > 0 && !within(n); let press = null;
+layers.push(o), layers.sort((a, b) => a.seq - b.seq), cleanup(() => layers.splice(layers.indexOf(o), 1));
+listen(document, 'keydown', e => {
+    if (e.key !== 'Escape' || layers[layers.length - 1] !== o || o.escape === 'native') return;
+    e.preventDefault(), dioxus.send(within(document.activeElement) ? 'escape-within' : 'escape');
+});
 if (o.press) {
     listen(document, 'pointerdown', e => {
         if (/^(touch|pen)$/.test(e.pointerType)) press = { id: e.pointerId, x: e.clientX, y: e.clientY, target: e.target };
@@ -371,32 +372,13 @@ if (o.press) {
     listen(document, 'pointercancel', e => { if (press && press.id === e.pointerId) press = null; }, true);
 }
 if (o.focus) listen(document, 'focusin', e => {
-    const r = root(); if (r && !r.contains(e.target) && !e.target.contains(r)) dioxus.send('focus');
+    if (outside(e.target) && !roots().some(r => e.target.contains(r))) dioxus.send('focus');
 }, true);";
 
 /// Install [`DISMISS_JS`] for one layer; the returned value removes its listeners and its place in
 /// the Escape order when dropped.
 fn dismiss_listeners(spec: &dismiss::Spec) -> JsListeners {
     JsListeners::install(DISMISS_JS).arg(spec)
-}
-
-/// Light-dismiss when a press or focus lands outside the element with the given `id`.
-/// `id` should be the id of the popover/dialog root that contains every "inside" element.
-///
-/// This is [`dismiss::Policy::OUTSIDE`] on the dismiss core: a mouse press dismisses on
-/// `pointerdown`, a touch or pen press is a tap (row 477), and focus moving outside dismisses too.
-/// Escape is not handled here; the menu hosts keep their own.
-fn use_outside_dismiss(
-    id: impl Readable<Target = String> + Copy + 'static,
-    mut on_dismiss: impl FnMut() + Clone + 'static,
-) {
-    dismiss::use_dismiss(
-        id,
-        dismiss::Scope::Element,
-        dismiss::Policy::OUTSIDE,
-        None,
-        move |_| on_dismiss(),
-    );
 }
 
 /// Returns the previous value of a reactive signal.
@@ -556,7 +538,7 @@ pub(crate) fn use_refocus_on_close_unless(
 /// Looks up the owning form via `element.form` (present on `input`/`select`)
 /// falling back to `element.closest('form')` for elements -- like a
 /// `RadioGroup`'s container `<div>` -- that are not themselves form-associated.
-fn use_form_reset_listener(
+pub(crate) fn use_form_reset_listener(
     id: impl Readable<Target = String> + Copy + 'static,
     on_reset: impl FnMut() + Clone + 'static,
 ) {
@@ -871,9 +853,9 @@ fn use_dialog_close_sync(
 /// Shared by `popover.rs`'s modal web arm, `alert_dialog.rs` and `dialog.rs`
 /// (Phase 4.2, dev-docs/plan.md) rather than reimplemented in each --
 /// the same trio as [`use_dialog_open_driver`]/[`use_dialog_close_sync`].
-/// `use_outside_dismiss` itself is not reusable here, because a
+/// `dismiss::use_dismiss` itself is not reusable here, because a
 /// `showModal()` backdrop click's `event.target` *is* the `<dialog>` element
-/// (it contains itself), so `use_outside_dismiss`'s
+/// (it contains itself), so the core's
 /// `!root.contains(e.target)` check can never fire for it.
 ///
 /// ## The nested-dialog false positive
