@@ -130,6 +130,10 @@ Use the cheapest tool that answers the question, in this order:
    pnpm run test:changed -- --workers=2` (details in "Before handback" step 3; `node tools/select.mjs --explain`
    says which specs and why; `CHANGED_RANGE=A..B` for a range other than your branch). Specs run on SSG output,
    not on `dx serve`, because the first paint and hydration are what they test.
+   A build slot costs about 9 minutes and the queue is often several lanes deep, so compile-check first (a
+   `cargo check` of the touched crates through `scripts/lane-cargo.sh`) and queue a build only on code that compiles.
+   Wait for a queued build in the foreground (the Bash timeout at its maximum, then a foreground `until` loop);
+   a queued build is not a blocker, so a lane does not hand back while one of its builds waits.
 3. **The full suite is the deploy's**, once per deploy on a release build (`scripts/deploy-preview.sh`, row 322;
    "Running the suite" for the chunking). A lane never runs it.
 
