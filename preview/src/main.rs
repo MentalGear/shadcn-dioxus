@@ -10,6 +10,9 @@ mod charts_gallery;
 mod coarse_docs;
 mod components;
 mod contrast_docs;
+mod controlled_docs;
+#[path = "../controlled_scan.rs"]
+mod controlled_scan;
 mod dashboard;
 #[path = "../docs_groups.rs"]
 mod docs_groups;
@@ -463,6 +466,7 @@ mod docs_tests {
             let own_generated: Vec<String> = specific
                 .iter()
                 .filter(|s| tail_rank(&plain_text(s.title_html)).is_none())
+                .filter(|s| s.id != crate::controlled_scan::SECTION_ID)
                 .map(|s| key(&plain_text(s.title_html)))
                 .collect();
             let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -480,6 +484,73 @@ mod docs_tests {
             assert_eq!(
                 own_generated, own_authored,
                 "`{name}`: the page-specific sections are not in the docs.md order"
+            );
+        }
+    }
+
+    /// The "Controlled state" block is generated from each page's own props table, so it appears on exactly the
+    /// pages whose props hold a controlled pair (`controlled_scan`): the pairs are read back out of the rendered
+    /// props reference (`data-prop` rows, one `dx-docs-props` section per struct) and every page that has one
+    /// must carry the section, with the link to `/docs#controlled`, and no other page may.
+    #[test]
+    fn controlled_block_is_on_every_page_with_a_pair() {
+        use crate::controlled_scan::{pairs, render, Item, EXPLANATION_HREF, SECTION_ID};
+        let mut with_block = Vec::new();
+        for demo in crate::components::DEMOS {
+            let items: Vec<Item> = demo
+                .docs
+                .iter()
+                .filter(|s| s.id == "docs-props-reference")
+                .flat_map(|s| s.html.split("<section class=\"dx-docs-props\">").skip(1))
+                .map(|part| Item {
+                    name: part
+                        .split("<code>")
+                        .nth(1)
+                        .and_then(|rest| rest.split("</code>").next())
+                        .unwrap_or_default()
+                        .to_string(),
+                    fields: part
+                        .split("data-prop=\"")
+                        .skip(1)
+                        .filter_map(|rest| rest.split('"').next())
+                        .map(str::to_string)
+                        .collect(),
+                })
+                .collect();
+            let (found, problems) = pairs(&items);
+            assert!(problems.is_empty(), "`{}`: {problems:?}", demo.name);
+            let section = demo.docs.iter().find(|s| s.id == SECTION_ID);
+            assert_eq!(
+                section.is_some(),
+                !found.is_empty(),
+                "`{}`: the Controlled state section must be present exactly when the props hold a controlled pair ({} found)",
+                demo.name,
+                found.len()
+            );
+            if let Some(section) = section {
+                assert!(section.html.contains(EXPLANATION_HREF), "`{}`", demo.name);
+                assert_eq!(section.html, render(&found), "`{}`", demo.name);
+                with_block.push(demo.name);
+            }
+        }
+        // The pages the docs review (row 387) named, minus the two with no controlled pair by name:
+        // Input is a native element (`value`/`oninput`) and Navbar's `value` belongs to one item.
+        for name in [
+            "alert_dialog",
+            "date_picker",
+            "dialog",
+            "sheet",
+            "popover",
+            "hover_card",
+            "tooltip",
+            "color_picker",
+            "input_otp",
+            "tag_group",
+            "toggle",
+        ] {
+            assert!(
+                with_block.contains(&name),
+                "`{name}` has no Controlled state block"
             );
         }
     }
