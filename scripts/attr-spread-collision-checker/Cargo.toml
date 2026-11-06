@@ -3,7 +3,7 @@ name = "attr-spread-collision-checker"
 version = "0.1.0"
 edition = "2021"
 publish = false
-description = "syn/dioxus-rsx-based analyzer behind scripts/check-attr-spread-collision.sh -- see that script's header for what it detects."
+description = "syn-based analyzers: the attr-spread-collision-checker behind scripts/check-attr-spread-collision.sh and the public-api-snapshot behind scripts/check-public-api.sh -- see those scripts' headers."
 
 [[bin]]
 name = "attr-spread-collision-checker"
@@ -15,6 +15,7 @@ path = "src/main.rs"
 # this repo's own `rsx! { .. }` invocations are written against.
 dioxus-rsx = { workspace = true }
 proc-macro2 = { version = "1.0", features = ["span-locations"] }
+quote = "1.0"
 syn = { version = "2.0", features = ["full", "extra-traits", "visit"] }
 
 [lints]
