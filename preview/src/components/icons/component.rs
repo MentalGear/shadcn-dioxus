@@ -99,7 +99,7 @@ macro_rules! glyph {
     ($(#[$doc:meta])* $name:ident { $($shape:tt)* }) => {
         $(#[$doc])*
         #[component]
-        #[allow(non_snake_case)]
+        #[allow(non_snake_case, reason = "a glyph component is named like the icon (PascalCase), as Dioxus components are")]
         pub fn $name(props: IconProps) -> Element {
             rsx! {
                 Svg { size: props.size, attributes: props.attributes, $($shape)* }

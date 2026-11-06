@@ -55,7 +55,7 @@ pub fn use_locale_root() {
 /// The message `key` in the active locale. Reading it subscribes the calling render to a locale switch.
 pub fn tid(key: &str) -> String {
     let tag = consume_context::<Signal<&'static str>>();
-    lookup(&tag(), key)
+    lookup(tag(), key)
 }
 
 /// A locale picker above `children`, which must sit under a [`use_locale_root`] caller.
