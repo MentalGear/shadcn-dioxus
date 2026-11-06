@@ -113,6 +113,7 @@ gates=(
   "check-js-volume|scripts/check-js-volume.sh"
   "check-ratchet-grant|scripts/check-ratchet-grant.sh"
   "check-native-slots|scripts/check-native-slots.sh"
+  "check-hot-events|scripts/check-hot-events.sh"
   "check-motion-gating|scripts/check-motion-gating.sh"
   "check-infinite-animations|scripts/check-infinite-animations.sh"
   "check-open-focus|scripts/check-open-focus.sh"
