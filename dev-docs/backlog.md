@@ -40,7 +40,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (78)
+## Open rows (79)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -62,7 +62,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [383](backlog/383-adversarial-review-board.md) | Adversarial review board: independent expert reviewers attack the finished library, last item of the backlog | BACKLOG. Runs last: after row 365's proposals are answered and every other engineering row has… | M | process |
 | [387](backlog/387-docs-clarity-review.md) | Standing docs-clarity review: a technical-writer pass over every component's docs and props for implicit behaviour | STANDING. Run after every round that adds a component or changes a public prop, and before row… | M | docs |
 | [392](backlog/392-docs-snippets-compile.md) | Compile-check the docs.md code samples; samples use the uncontrolled props | PARTLY LANDED 2026-11-06 (lane docs-samples-392). Every sample the row names is fixed and compiles… | M | docs |
-| [399](backlog/399-docs-review-demos.md) | Demo batch from the docs review | IN REVIEW, first half (lane demos-399a, branch lane/demos-399a). Seven demos added, one variant… | S | docs |
+| [399](backlog/399-docs-review-demos.md) | Demo batch from the docs review | Both halves merged on the session branch (2026-11-06); not yet on main. Found while building them… | S | docs |
 | [412](backlog/412-csp-meta-tag.md) | Docs site: a Content-Security-Policy `&lt;meta&gt;` tag | OPTIONAL: needs owner approval before it is adopted or scheduled (owner 2026-10-24). Not part of… | S | build |
 | [413](backlog/413-property-tests-and-miri.md) | Property tests and Miri on the pure logic | OPTIONAL: needs owner approval before it is adopted or scheduled (owner 2026-10-24). Not part of… | M | tests |
 | [414](backlog/414-formal-proof-spike.md) | Spike: formal proofs of one headless model (Kani, optionally Aeneas to Lean) | OPTIONAL: needs owner approval before it is adopted or scheduled (owner 2026-10-24). Not part of… | M | research |
@@ -122,5 +122,6 @@ proposing one is closed as out of scope (row 337 is the first).
 | [494](backlog/494-re-enable-the-timing-cases-after-the-rust-port.md) | Re-enable the @timing cases after the Rust port | BACKLOG, triggered: when the JavaScript plan's port rows are done (row 434 with rows 444-466, final… | S-M | playwright |
 | [495](backlog/495-slow-observation-window-specs.md) | The two ~32 s-per-test specs wait on signals, not on fixed observation windows | Lane slow-specs-495: done, awaiting merge. Both specs wait on signals through… | S-M | playwright |
 | [496](backlog/496-incremental-gate-target.md) | Measure incremental compilation for the main loop's gate target | APPROVED (owner 2026-11-05: item 2 of the build and test-suite review), measure first. Runs when no… | S | tooling |
+| [497](backlog/497-scroll-area-scroll-type-hidden-shows-the-bar.md) | ScrollArea ScrollType::Hidden shows the scrollbar | BACKLOG. Found by row 399's first-half lane (2026-11-06); measured on a debug SSG build in Chromium. | S | components |
 
 <!-- END GENERATED -->
