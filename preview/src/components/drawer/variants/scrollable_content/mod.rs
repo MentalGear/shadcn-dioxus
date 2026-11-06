@@ -4,11 +4,14 @@ use crate::components::{
         Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader,
         DrawerSide, DrawerTitle,
     },
+    input::Input,
+    label::Label,
 };
 use dioxus::prelude::*;
 
 /// shadcn's "Scrollable Content" drawer: a side drawer whose body is longer than the screen and
-/// scrolls inside the panel while the header and footer stay put.
+/// scrolls inside the panel while the header and footer stay put. The body ends in a feedback field,
+/// so the on-screen keyboard has a field to reveal inside the scrolling body.
 #[component]
 pub fn Demo() -> Element {
     let mut open = use_signal(|| false);
@@ -37,6 +40,14 @@ pub fn Demo() -> Element {
                     for i in 1..=30 {
                         p { style: "margin: 0; font-size: var(--dx-text-sm);",
                             "Release 1.{i}: fixes, polish and small improvements."
+                        }
+                    }
+                    div { style: "display: grid; gap: 0.5rem; padding-bottom: 0.5rem;",
+                        Label { html_for: "release-feedback", "Feedback" }
+                        Input {
+                            id: "release-feedback",
+                            name: "feedback",
+                            placeholder: "What should the next release fix?",
                         }
                     }
                 }
