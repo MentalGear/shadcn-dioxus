@@ -267,6 +267,18 @@ Facts, all from one debug SSG build of one tree on this 4-core / 15 GB box share
   matrices (`touch-*`, `main-thread`, `dx-class-migration`) each re-navigate every route; a worker-scoped page or one
   visit-each-route fixture (`fixtures.ts`) would cut two of the three hydrations per route in `all-routes` (a navigation-plus-hydrate is ~1.8 s on debug).
 
+## One verifier per batch (2026-11-06)
+
+The shared costs are one build slot (about 9 minutes and 6 GB of disk per SSG build), one Playwright lock and four
+cores, so a batch's verification runs once for the batch, not once per lane:
+
+- **Edit lanes** (demos, docs, CSS, gates, mechanical sweeps) end with a compile check and the `--fast` gates, and hand
+  back without an SSG build.
+- **Debugging lanes** (a bug row that must be red on the base build, a primitive whose behaviour is the change) keep
+  their own build loop, because their iteration needs it.
+- **The verifier** (one agent per batch) builds the shared base once, merges the batch's edit lanes, builds once, runs
+  `test:changed` over the union, and bisects any red to its lane, which gets it back to fix.
+
 ## Merge queue (row 321, owner decision 2026-10-21)
 Why: on 2026-10-20 four sessions each merged main into their own batch and re-gated whenever main moved (three extra
 full gates for batch A), and two deploys collided. So there is ONE merge owner (the backlog thread,
