@@ -106,7 +106,7 @@ test.describe("DataTable Grid layout", () => {
     await expect(cell(g, 0, 1)).toHaveText(orderId(ROWS - 1));
     await scrollTo(g, "end");
     await expect(rowCheckbox(g, "ORD-00001")).toHaveAttribute("aria-checked", "true");
-    await expect(g.locator('[role="row"][data-state="selected"]')).toHaveCount(1);
+    await expect(g.locator('[role="row"][data-selected]')).toHaveCount(1);
   });
 
   test("the header checkbox selects every row that passes the filter", async ({ page }) => {
@@ -139,7 +139,7 @@ test.describe("Table and Grid layouts share one table look", () => {
     const g = grid(page);
     await expect(cell(g, 0, 1)).toHaveText("ORD-00001");
     await rowCheckbox(g, "ORD-00001").click();
-    await expect(g.locator('[role="row"][data-state="selected"]')).toHaveCount(1);
+    await expect(g.locator('[role="row"][data-selected]')).toHaveCount(1);
     await page.mouse.move(0, 0); // off the rows: a hovered row paints the hover fill, not the selected one
     await page.waitForTimeout(400); // the Table row's background transition
     const style = (el: Element, props: string[]) => {
@@ -164,7 +164,7 @@ test.describe("Table and Grid layouts share one table look", () => {
     }, style.toString());
     const gridLook = await g.evaluate((root, fn) => {
       const f = new Function("el", "props", `return (${fn})(el, props)`) as (el: Element, p: string[]) => Record<string, string>;
-      const selected = root.querySelector('[role="row"][data-state="selected"]')!;
+      const selected = root.querySelector('[role="row"][data-selected]')!;
       const body = root.querySelector('[data-grid-cell="0:1"]')!;
       const head = root.querySelector('[data-grid-cell="header:1"]')!;
       const plainRow = root.querySelector('[role="row"][aria-rowindex="3"]')!;

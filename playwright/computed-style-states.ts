@@ -288,9 +288,9 @@ export function installStateLib(a: StateArgs) {
     const known: Set<Element> | undefined = S.known;
     let marks = "";
     let k = 0;
-    document.querySelectorAll('[aria-expanded], [data-state], [open], [aria-hidden]').forEach((e) => {
+    document.querySelectorAll('[aria-expanded], [data-open], [data-closed], [open], [aria-hidden]').forEach((e) => {
       if (known && !known.has(e)) return;
-      marks += `${k++}:${e.getAttribute("aria-expanded") ?? ""}${e.getAttribute("data-state") ?? ""}${e.hasAttribute("open") ? "o" : ""}${e.getAttribute("aria-hidden") ?? ""},`;
+      marks += `${k++}:${e.getAttribute("aria-expanded") ?? ""}${e.hasAttribute("data-open") ? "O" : e.hasAttribute("data-closed") ? "C" : ""}${e.hasAttribute("open") ? "o" : ""}${e.getAttribute("aria-hidden") ?? ""},`;
     });
     let h = 5381;
     for (let i = 0; i < marks.length; i++) h = ((h << 5) + h + marks.charCodeAt(i)) | 0;
@@ -325,7 +325,7 @@ export function installStateLib(a: StateArgs) {
         return -1;
       }
     };
-    return [qa('[data-state="open"]'), qa('[aria-expanded="true"]'), qa("dialog[open]"), qa(":popover-open"), roles].join("|");
+    return [qa('[data-open]'), qa('[aria-expanded="true"]'), qa("dialog[open]"), qa(":popover-open"), roles].join("|");
   };
 
   /** Toggles whose aria-expanded differs from the baseline (a single-open accordion that swapped its open item). */
@@ -341,7 +341,7 @@ export function installStateLib(a: StateArgs) {
   /** Visible dismiss-looking buttons inside whatever is open (a dialog that ignores Escape). */
   S.closerList = () => {
     const out: Element[] = [];
-    document.querySelectorAll('[role="dialog"] button, [role="alertdialog"] button, dialog[open] button, [data-state="open"] button').forEach((e) => {
+    document.querySelectorAll('[role="dialog"] button, [role="alertdialog"] button, dialog[open] button, [data-open] button').forEach((e) => {
       const t = ((e.getAttribute("aria-label") || "") + " " + (e.textContent || "")).toLowerCase();
       if (/\b(close|cancel|dismiss|done|ok|got it|no thanks)\b/.test(t) && S.visible(e)) out.push(e);
     });
@@ -395,7 +395,7 @@ export function installStateLib(a: StateArgs) {
   };
 
   /** Rendered elements that were NOT rendered at the last `take("base")` and are on their way out: inside a
-   *  `data-state="closed"` node, a `[popover]` that is not `:popover-open`, or a `<dialog>` that is not `[open]`.
+   *  `data-closed` node, a `[popover]` that is not `:popover-open`, or a `<dialog>` that is not `[open]`.
    *  A non-modal popover stays mounted (display and box intact) for its exit animation / unmount hold, ~300-600 ms,
    *  which no mutation and no probe change marks the end of except the unmount itself. */
   S.closingList = (): Element[] => {
@@ -406,7 +406,7 @@ export function installStateLib(a: StateArgs) {
       let closing = false;
       try {
         const po = el.closest("[popover]");
-        closing = !!el.closest('[data-state="closed"]') || (!!po && !po.matches(":popover-open")) || !!el.closest("dialog:not([open])");
+        closing = !!el.closest('[data-closed]') || (!!po && !po.matches(":popover-open")) || !!el.closest("dialog:not([open])");
       } catch (_) {
         /* selector unsupported */
       }
@@ -442,7 +442,7 @@ export function installStateLib(a: StateArgs) {
   S.openMark = () => {
     const open = new Set<Element>();
     try {
-      document.querySelectorAll('[aria-expanded="true"], [data-state="open"], [open], :popover-open, dialog:modal').forEach((e) => open.add(e));
+      document.querySelectorAll('[aria-expanded="true"], [data-open], [open], :popover-open, dialog:modal').forEach((e) => open.add(e));
     } catch (_) {
       /* selector unsupported */
     }
@@ -618,14 +618,14 @@ export function installStateLib(a: StateArgs) {
         if (e.matches(FOCUSABLE) || e.getAttribute("role") === "button") add(e);
       });
       // 4. a closed overlay root that is itself not focusable: its first focusable descendant is the trigger
-      r.querySelectorAll('[data-state="closed"]').forEach((e) => {
+      r.querySelectorAll('[data-closed]').forEach((e) => {
         if (e.matches(FOCUSABLE)) return add(e);
         add(e.querySelector(FOCUSABLE));
       });
       // 5. pages whose triggers are plain buttons
       if (plain) r.querySelectorAll('button, [role="button"]').forEach((e) => add(e));
     }
-    // a wrapper that contains a more specific trigger is not itself the trigger (`[data-state=closed]` roots)
+    // a wrapper that contains a more specific trigger is not itself the trigger (`[data-closed]` roots)
     const all = Array.from(set);
     return all.filter((e) => !all.some((o) => o !== e && e.contains(o))).sort(byDoc);
   };

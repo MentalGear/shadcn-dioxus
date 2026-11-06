@@ -58,7 +58,7 @@
 
 /* Checked: `bg-primary border-primary` with the `size-2` `primary-foreground` dot. The ring below
  * is drawn outside the circle only (the edge is already `primary`). */
-.dx-radio-group-item[data-state="checked"]::before {
+.dx-radio-group-item[data-checked]::before {
   border: 0.25rem solid var(--dx-primary);
   background: var(--dx-primary-foreground);
   box-shadow: none;
@@ -73,7 +73,7 @@
   box-shadow: var(--dx-ring-field);
 }
 
-.dx-radio-group-item[data-state="checked"]:focus-visible::before {
+.dx-radio-group-item[data-checked]:focus-visible::before {
   box-shadow: var(--dx-ring-focus);
 }
 
@@ -84,8 +84,8 @@
   box-shadow: var(--dx-ring-invalid-field);
 }
 
-.dx-radio-group-item[aria-invalid="true"][data-state="checked"]::before,
-.dx-radio-group-item[data-invalid][data-state="checked"]::before {
+.dx-radio-group-item[aria-invalid="true"][data-checked]::before,
+.dx-radio-group-item[data-invalid][data-checked]::before {
   box-shadow: var(--dx-ring-invalid);
 }
 

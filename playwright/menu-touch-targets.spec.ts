@@ -29,7 +29,7 @@ const HOSTS: Row[] = [
     open: async (page) => {
       await gotoHydrated(page, block("dropdown_menu", "shortcuts"));
       await page.getByRole("button", { name: "Shortcuts menu" }).click();
-      await expect(page.getByRole("menu")).toHaveAttribute("data-state", "open");
+      await expect(page.getByRole("menu")).toHaveAttribute("data-open", "");
     },
     rows: (page) => page.getByRole("menu").getByRole("menuitem"),
   },
@@ -38,7 +38,7 @@ const HOSTS: Row[] = [
     open: async (page) => {
       await gotoHydrated(page, block("context_menu", "groups"));
       await page.getByRole("button", { name: "Right click for groups" }).click({ button: "right" });
-      await expect(page.getByRole("menu")).toHaveAttribute("data-state", "open");
+      await expect(page.getByRole("menu")).toHaveAttribute("data-open", "");
     },
     rows: (page) => page.getByRole("menu").getByRole("menuitem"),
   },
@@ -47,7 +47,7 @@ const HOSTS: Row[] = [
     open: async (page) => {
       await gotoHydrated(page, block("menubar", "shortcuts"));
       await page.getByRole("menuitem", { name: "Document" }).click();
-      await expect(page.locator(".dx-menubar-content")).toHaveAttribute("data-state", "open");
+      await expect(page.locator(".dx-menubar-content")).toHaveAttribute("data-open", "");
     },
     rows: (page) => page.locator(".dx-menubar-content").getByRole("menuitem"),
   },
@@ -72,7 +72,7 @@ const HOSTS: Row[] = [
     open: async (page) => {
       await gotoHydrated(page, block("select", "main"));
       await page.getByRole("combobox").first().click();
-      await expect(page.getByRole("listbox")).toHaveAttribute("data-state", "open");
+      await expect(page.getByRole("listbox")).toHaveAttribute("data-open", "");
     },
     rows: (page) => page.getByRole("listbox").getByRole("option"),
   },
@@ -81,9 +81,9 @@ const HOSTS: Row[] = [
     open: async (page) => {
       await gotoHydrated(page, block("combobox", "main"));
       await page.getByRole("combobox", { name: "Select framework" }).click();
-      await expect(page.locator("[role='listbox'][data-state='open']")).toBeVisible();
+      await expect(page.locator("[role='listbox'][data-open]")).toBeVisible();
     },
-    rows: (page) => page.locator("[role='listbox'][data-state='open']").getByRole("option"),
+    rows: (page) => page.locator("[role='listbox'][data-open]").getByRole("option"),
   },
   {
     label: "NavigationMenu triggers",

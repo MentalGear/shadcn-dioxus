@@ -29,7 +29,7 @@
   transition: background-color var(--dx-motion-duration-fast) var(--dx-motion-ease-out);
 }
 
-.dx-menubar-menu[data-state="open"] .dx-menubar-trigger {
+.dx-menubar-menu[data-open] .dx-menubar-trigger {
   background-color: var(--dx-accent-tint);
 }
 
@@ -100,7 +100,7 @@
  * `translate`, never `transform`: an animated `transform` REPLACES an anchor's own centring transform
  * for as long as the animation runs -- scripts/check-anchored-keyframes.sh). The `opacity: 0` above is
  * the hidden REST state; the recipe's `forwards` open animation lifts it. */
-.dx-menubar-content[data-state="open"] {
+.dx-menubar-content[data-open] {
   pointer-events: auto;
 }
 

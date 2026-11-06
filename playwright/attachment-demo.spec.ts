@@ -34,16 +34,16 @@ test("the main demo starts with an image: an image group, an uploading file and 
     await expect.poll(() => images.nth(i).evaluate((el: HTMLImageElement) => el.naturalWidth)).toBeGreaterThan(0);
   }
   const firstTop = (await cards.first().boundingBox())!.y;
-  const uploadTop = (await demo.locator('[data-state="uploading"]').boundingBox())!.y;
+  const uploadTop = (await demo.locator('[data-uploading]').boundingBox())!.y;
   expect(firstTop).toBeLessThan(uploadTop);
 
-  const uploading = demo.locator('[data-slot="attachment"][data-state="uploading"]');
+  const uploading = demo.locator('[data-slot="attachment"][data-uploading]');
   await expect(uploading).toHaveCount(1);
   await expect(uploading).toContainText("Uploading · 64%");
   await expect(uploading.getByRole("status")).toBeVisible(); // the Spinner as the media
 
   const code = demo.locator('[data-slot="attachment"]', { hasText: "message-renderer.rs" });
-  await expect(code).toHaveAttribute("data-state", "done");
+  await expect(code).toHaveAttribute("data-done", "");
 
   await demo.getByRole("button", { name: "Cancel upload" }).click();
   await expect(uploading).toHaveCount(0);

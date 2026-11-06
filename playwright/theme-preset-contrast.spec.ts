@@ -293,12 +293,12 @@ for (const mode of ["light", "dark"] as const) {
       const away = () => page.mouse.move(0, 0);
 
       await away();
-      await expect(toggle).toHaveAttribute("data-state", "off");
+      await expect(toggle).toHaveAttribute("aria-pressed", "false");
       const off = await sweep(page, [{ ...probe[0], name: "toggle off" }], mode);
       await toggle.hover();
       const hover = await sweep(page, [{ ...probe[0], name: "toggle hover" }], mode);
       await toggle.click();
-      await expect(toggle).toHaveAttribute("data-state", "on");
+      await expect(toggle).toHaveAttribute("aria-pressed", "true");
       await away();
       const on = await sweep(page, [{ ...probe[0], name: "toggle on" }], mode);
       await toggle.hover();
@@ -322,7 +322,7 @@ for (const mode of ["light", "dark"] as const) {
       const probe = (name: string, nth: number): Probe => ({ name, selector: ".dx-component-preview-frame .dx-toggle-group-item", nth });
 
       await item(0).click();
-      await expect(item(0)).toHaveAttribute("data-state", "on");
+      await expect(item(0)).toHaveAttribute("aria-pressed", "true");
       await item(1).hover();
       expect(await item(1).evaluate((el) => el.matches(":hover"))).toBe(true);
       // Item 0 is pressed, 1 is hovered, 2 is neither: all three states in one frame, so one sweep.

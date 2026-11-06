@@ -745,7 +745,7 @@ button.dx-theme-phone-trigger {
   box-shadow: var(--dx-ring);
 }
 
-.dx-theme-swatches .dx-toggle-group-item.dx-theme-swatch[data-state="on"] {
+.dx-theme-swatches .dx-toggle-group-item.dx-theme-swatch[aria-pressed="true"] {
   border-color: var(--dx-foreground);
   background: var(--dx-popover);
   box-shadow: 0 0 0 1px var(--dx-foreground);
@@ -923,9 +923,9 @@ html:not([data-nav-sort="category"]) .dx-nav-category {
 }
 
 /* The pressed look comes from `<html data-nav-sort>` (set before first paint), never from the item's
- * `data-state`, which is Rust state and still the SSG default (A-Z) on the first frame. Specificity: the
- * component's `[data-state="on"]` and `:focus-visible` rules are (0,2,0); these are above them. */
-.dx-nav-sort .dx-nav-sort-option[data-state] {
+ * `aria-pressed`, which is Rust state and still the SSG default (A-Z) on the first frame. Specificity: the
+ * component's `[aria-pressed="true"]` and `:focus-visible` rules are (0,2,0); these are above them. */
+.dx-nav-sort .dx-nav-sort-option[aria-pressed] {
   background-color: transparent;
   color: var(--dx-muted-foreground);
 }
@@ -937,7 +937,7 @@ html[data-nav-sort="category"] .dx-nav-sort .dx-nav-sort-option[data-nav-sort-op
   color: var(--dx-active-ink);
 }
 
-.dx-nav-sort .dx-nav-sort-option[data-state]:focus-visible {
+.dx-nav-sort .dx-nav-sort-option[aria-pressed]:focus-visible {
   background-color: var(--dx-accent);
   color: var(--dx-foreground);
 }
@@ -948,7 +948,7 @@ html[data-nav-sort="category"] .dx-nav-sort .dx-nav-sort-option[data-nav-sort-op
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .dx-nav-sort .dx-nav-sort-option[data-state]:hover {
+  .dx-nav-sort .dx-nav-sort-option[aria-pressed]:hover {
     background-color: var(--dx-accent);
     color: var(--dx-foreground);
   }

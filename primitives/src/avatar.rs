@@ -119,7 +119,7 @@ pub struct AvatarProps {
 /// ## Styling
 ///
 /// The [`Avatar`] component defines the following data attributes you can use to control styling:
-/// - `data-state`: Indicates the current state of the avatar. Possible values are `loading`, `loaded`, `error`, or `empty`.
+/// - `data-loading` / `data-loaded` / `data-error` / `data-empty`: Exactly one is present: the avatar image's status.
 #[component]
 pub fn Avatar(props: AvatarProps) -> Element {
     // Internal state tracking
@@ -138,18 +138,21 @@ pub fn Avatar(props: AvatarProps) -> Element {
     });
 
     // The built-in "??" stand-in (used only when no `AvatarFallback` was given) is for a picture that
-    // failed or was never given; while loading, the root's `data-state="loading"` placeholder shows.
+    // failed or was never given; while loading, the root's `data-loading` placeholder shows.
     let show_fallback =
         use_memo(move || matches!(state(), AvatarState::Error | AvatarState::Empty));
 
     let owned = attributes!(span {
         role: "img",
-        ..state_attrs::state(match state() {
-            AvatarState::Loading => "loading",
-            AvatarState::Loaded => "loaded",
-            AvatarState::Error => "error",
-            AvatarState::Empty => "empty",
-        }),
+        ..state_attrs::presence(
+            match state() {
+                AvatarState::Loading => state_attrs::Flag::Loading,
+                AvatarState::Loaded => state_attrs::Flag::Loaded,
+                AvatarState::Error => state_attrs::Flag::Error,
+                AvatarState::Empty => state_attrs::Flag::Empty,
+            },
+            true,
+        ),
     });
     // The loading placeholder pulses: paused while off-screen or in a hidden tab
     // (`crate::activity`); an avatar that is not loading subscribes to nothing.

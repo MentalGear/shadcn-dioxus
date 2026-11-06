@@ -181,7 +181,7 @@ settle, record a signature of every in-scope element, put the page in a state wi
 `[popover]`, content mounted into the page and a class flip all land in the same delta.
 
 - **`open`**: triggers are derived (`aria-haspopup`, collapsed `aria-expanded`, `popovertarget`, `summary`, tooltip
-  `aria-describedby`, `*-trigger` classes, the first focusable inside a `data-state=closed` root; on the plain-button
+  `aria-describedby`, `*-trigger` classes, the first focusable inside a `data-closed` root; on the plain-button
   pages every button); each is tried with click, right-click, hover and focus until the page changes, each distinct item
   inside (at most 8) is hovered, then the overlay is closed and VERIFIED closed. **`hover`**: every distinct interactive
   control of the demo frames (at most 60 per page) and every chart plot. **`focusK`**: the focus pass repeated with

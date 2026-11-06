@@ -102,7 +102,7 @@
  * the exact submenu element by its own name instead (`aria-labelledby`
  * resolving to the sub-trigger's own id and text, per this file's
  * general-menu rule) -- unambiguous, since only the one submenu is named
- * "More tools", and every `data-state`/`aria-labelledby`/item-count/
+ * "More tools", and every `data-open`/`aria-labelledby`/item-count/
  * visibility check downstream is graded against that one element.
  */
 
@@ -224,8 +224,8 @@ test.describe("APG Menu and Menubar pattern — DropdownMenu.Sub", () => {
 
     const submenu = submenuOf(page);
     await expect(submenu, "the opened submenu is role=\"menu\"").toHaveAttribute(
-      "data-state",
-      "open",
+      "data-open",
+      "",
     );
     expect(await submenu.getAttribute("id"), "aria-controls resolves to the submenu's id").toBe(
       controlsId,
@@ -312,7 +312,7 @@ test.describe("APG Menu and Menubar pattern — DropdownMenu.Sub", () => {
     await expect(
       trigger,
       "the parent (root) menu stays open when a submenu closes",
-    ).toHaveAttribute("data-state", "open");
+    ).toHaveAttribute("data-open", "");
   });
 
   test('Escape: "closes the menu that contains focus and returns focus to ... the parent menuitem ... from which the menu was opened" — the parent menu stays open', async ({
@@ -340,7 +340,7 @@ test.describe("APG Menu and Menubar pattern — DropdownMenu.Sub", () => {
     await expect(
       trigger,
       "only the submenu closed -- the root menu that contains it is untouched",
-    ).toHaveAttribute("data-state", "open");
+    ).toHaveAttribute("data-open", "");
   });
 
   test("hover: opens after a short intent delay, not instantly; leaving to a sibling item closes it", async ({
@@ -459,7 +459,7 @@ test.describe("APG Menu and Menubar pattern — DropdownMenu.Sub", () => {
   // focus move this crate's own click/keyboard code drives (all of which
   // update that signal *before* moving DOM focus), but it is never told
   // about a focus move arriving any other way. A violation looks like this:
-  // `trigger` ends up `data-state="closed"` and the "More tools" sub-trigger
+  // `trigger` ends up `data-closed` and the "More tools" sub-trigger
   // is gone from the DOM entirely (the whole menu unmounted), with focus
   // reverted to `trigger` itself. Instead
   // `DropdownMenuContentRendered` puts the menu's dismiss layer on the root
@@ -485,7 +485,7 @@ test.describe("APG Menu and Menubar pattern — DropdownMenu.Sub", () => {
     // completed.
     await page.waitForTimeout(150);
 
-    await expect(trigger, "the whole menu must not close").toHaveAttribute("data-state", "open");
+    await expect(trigger, "the whole menu must not close").toHaveAttribute("data-open", "");
     await expect(
       subTrigger,
       "the sub-trigger must simply be focused in place, not torn out of the DOM by the whole menu unmounting",
@@ -521,7 +521,7 @@ test.describe("APG Menu and Menubar pattern — ContextMenu.Sub", () => {
     await subTrigger.click();
 
     const submenu = submenuOf(page);
-    await expect(submenu).toHaveAttribute("data-state", "open");
+    await expect(submenu).toHaveAttribute("data-open", "");
     expect(
       await submenu.getAttribute("aria-labelledby"),
       "dev-docs/backlog.md row 25's rule, applied to this new component -- " +
@@ -558,8 +558,8 @@ test.describe("APG Menu and Menubar pattern — ContextMenu.Sub", () => {
     await expect(subTrigger, "closes the submenu").toHaveAttribute("aria-expanded", "false");
     await expect(subTrigger, "returns focus to the parent menuitem").toBeFocused();
     await expect(rootMenu, "the root context menu stays open").toHaveAttribute(
-      "data-state",
-      "open",
+      "data-open",
+      "",
     );
 
     // Re-open and close with Enter/Escape this time, same contract.
@@ -569,8 +569,8 @@ test.describe("APG Menu and Menubar pattern — ContextMenu.Sub", () => {
     await expect(subTrigger).toHaveAttribute("aria-expanded", "false");
     await expect(subTrigger).toBeFocused();
     await expect(rootMenu, "still open after the submenu's own Escape").toHaveAttribute(
-      "data-state",
-      "open",
+      "data-open",
+      "",
     );
   });
 
@@ -671,7 +671,7 @@ test.describe("APG Menu and Menubar pattern — ContextMenu.Sub", () => {
     await subTrigger.focus();
     await page.waitForTimeout(150);
 
-    await expect(rootMenu, "the whole menu must not close").toHaveAttribute("data-state", "open");
+    await expect(rootMenu, "the whole menu must not close").toHaveAttribute("data-open", "");
     await expect(subTrigger, "the sub-trigger must simply be focused in place").toBeFocused();
   });
 });

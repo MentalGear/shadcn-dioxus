@@ -72,14 +72,14 @@ test("while the picture loads the fallback stays, the picture then replaces it, 
   const avatar = page.getByLabel(WITH_FALLBACK);
   await avatar.scrollIntoViewIfNeeded();
   // Hydrated and still loading: the fallback is there (a removed fallback would leave a blank pulsing disc).
-  await expect(avatar).toHaveAttribute("data-state", "loading");
+  await expect(avatar).toHaveAttribute("data-loading", "");
   await expect(avatar.locator(".dx-avatar-fallback")).toHaveText("LF");
   await expect(avatar.locator(".dx-avatar-fallback")).toBeVisible();
   // With the fallback standing in, nothing pulses.
   expect(await avatar.evaluate((el) => getComputedStyle(el).animationName)).toBe("none");
 
   // The picture arrives: it replaces the fallback.
-  await expect(avatar).toHaveAttribute("data-state", "loaded", { timeout: 30_000 });
+  await expect(avatar).toHaveAttribute("data-loaded", "", { timeout: 30_000 });
   await expect(avatar.locator(".dx-avatar-fallback")).toHaveCount(0);
   await expect(avatar.locator("img")).toBeVisible();
   expect(await avatar.locator("img").evaluate((el: HTMLImageElement) => el.naturalWidth)).toBeGreaterThan(0);
@@ -95,7 +95,7 @@ test("the recorder flags a blank avatar: a fallback removed by hand while the pi
   await answerSlowImageAfter(page, 60_000);
   await open(page);
   const avatar = page.getByLabel(WITH_FALLBACK);
-  await expect(avatar).toHaveAttribute("data-state", "loading");
+  await expect(avatar).toHaveAttribute("data-loading", "");
   await avatar.evaluate((el) => el.querySelector(".dx-avatar-fallback")!.remove());
   await expect.poll(async () => (await sampled(page)).filter((s) => isBlank(s.main)).length).toBeGreaterThan(0);
 });
@@ -125,7 +125,7 @@ test("the picture-less avatar keeps its pulsing placeholder while it loads", asy
   await open(page);
   const placeholder = page.getByLabel("Loading avatar", { exact: true });
   await placeholder.scrollIntoViewIfNeeded();
-  await expect(placeholder).toHaveAttribute("data-state", "loading");
+  await expect(placeholder).toHaveAttribute("data-loading", "");
   expect(await placeholder.evaluate((el) => getComputedStyle(el).animationName)).toBe("dx-pulse");
 });
 
@@ -133,7 +133,7 @@ test("a broken picture falls back at once and the img is gone", async ({ page })
   await answerSlowImageAfter(page, 60_000);
   await open(page);
   const broken = page.getByLabel("Error avatar", { exact: true });
-  await expect(broken).toHaveAttribute("data-state", "error", { timeout: 60_000 });
+  await expect(broken).toHaveAttribute("data-error", "", { timeout: 60_000 });
   await expect(broken.getByText("JR")).toBeVisible();
   await expect(broken.locator("img")).toHaveCount(0);
 });
@@ -145,7 +145,7 @@ test("delay: the fallback is held back that long, and a picture that loads withi
   const avatar = page.getByLabel(DELAYED_FALLBACK);
   await avatar.scrollIntoViewIfNeeded();
   // Still loading at hydration: no fallback yet (the root's placeholder stands in) ...
-  await expect(avatar).toHaveAttribute("data-state", "loading");
+  await expect(avatar).toHaveAttribute("data-loading", "");
   const shownAt = async () => (await sampled(page)).find((s) => s.delayed?.fallback)?.t ?? null;
   // ... and it appears once the 600 ms are up (not instantly, not never).
   await expect(avatar.locator(".dx-avatar-fallback")).toHaveText("DF", { timeout: 10_000 });
@@ -170,7 +170,7 @@ test("delay: a picture that loads within the delay never shows the fallback", as
   await answerSlowImageAfter(page, 50);
   await open(page);
   const avatar = page.getByLabel(DELAYED_FALLBACK);
-  await expect(avatar).toHaveAttribute("data-state", "loaded", { timeout: 30_000 });
+  await expect(avatar).toHaveAttribute("data-loaded", "", { timeout: 30_000 });
   // Outlast the 600 ms timer: a late fallback would show up now.
   // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
   await page.waitForTimeout(1_200);

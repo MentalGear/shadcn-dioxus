@@ -320,7 +320,7 @@ pub struct RadioItemProps {
 /// ## Styling
 ///
 /// The [`RadioItem`] component defines the following data attributes you can use to control styling:
-/// - `data-state`: Indicates the state of the radio item. Values are `checked` or `unchecked`.
+/// - `data-checked` / `data-unchecked`: Exactly one is present: whether the item is checked.
 /// - `data-checked` / `data-unchecked`: Present (empty) while checked / unchecked, absent otherwise.
 /// - `data-disabled`: Indicates if the radio item is disabled. Values are `true` or `false`.
 /// - `data-readonly`: Present (empty) while the group is read-only, absent otherwise.
@@ -377,7 +377,7 @@ pub fn RadioItem(props: RadioItemProps) -> Element {
 
     // `type` is an overridable default; the rest is this item's own
     // functional state (role/tabindex define the widget and its
-    // roving-focus wiring, aria-checked/data-state/data-disabled mirror
+    // roving-focus wiring, aria-checked/data-checked/data-disabled mirror
     // its real state).
     let defaults = attributes!(button { r#type: "button" });
     let owned = attributes!(button {

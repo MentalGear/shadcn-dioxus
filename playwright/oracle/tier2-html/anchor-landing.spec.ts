@@ -83,7 +83,7 @@ async function scrollBehavior(page: Page, behavior: "smooth" | "auto") {
 }
 
 async function clickSectionLink(page: Page, id: string) {
-  const collapsed = await page.evaluate(() => document.querySelector('[data-slot="sidebar"]')?.getAttribute("data-state") === "collapsed");
+  const collapsed = await page.evaluate(() => document.querySelector('[data-slot="sidebar"]')?.hasAttribute("data-closed") === true);
   if (collapsed) {
     await page.locator('[data-slot="sidebar-trigger"]').first().click();
     await page.waitForTimeout(500);

@@ -6,7 +6,7 @@ import { gotoHydrated } from "./hydration";
 
 // VirtualGrid hooks (backlog row 341), on the `selectable` demo: 10,000 orders in a sticky-header grid with a
 // checkbox column (0), then Order, Status and Total columns whose headers are sort buttons. The three hooks:
-// `column_sort` (aria-sort on the columnheader), `row_selected` (aria-selected + data-state on rows, keyed by
+// `column_sort` (aria-sort on the columnheader), `row_selected` (aria-selected + data-selected on rows, keyed by
 // the row's identity) and a control inside a cell (the control is the one tab stop, the arrows still move
 // between cells, Space acts on it). Controls are located by role and position inside the demo frame (row 220).
 
@@ -56,19 +56,18 @@ test.describe("VirtualGrid header sort state (column_sort)", () => {
 });
 
 test.describe("VirtualGrid row selection (row_selected)", () => {
-  test("every row says whether it is selected; a selected one is data-state=selected and painted", async ({ page }) => {
+  test("every row says whether it is selected; a selected one is data-selected and painted", async ({ page }) => {
     await gotoHydrated(page, PAGE_URL);
     const g = grid(page);
     await expect(checkboxIn(g, 0)).toBeVisible();
     // The first data row is aria-rowindex 2 (the header is 1).
     await expect(rowAt(g, 2)).toHaveAttribute("aria-selected", "false");
-    await expect(rowAt(g, 2)).not.toHaveAttribute("data-state");
-    await expect(g.locator('[role="row"][data-state="selected"]')).toHaveCount(0);
+        await expect(g.locator('[role="row"][data-selected]')).toHaveCount(0);
     const plain = await rowAt(g, 2).evaluate((el) => getComputedStyle(el).backgroundColor);
 
     await checkboxIn(g, 0).click();
     await expect(rowAt(g, 2)).toHaveAttribute("aria-selected", "true");
-    await expect(rowAt(g, 2)).toHaveAttribute("data-state", "selected");
+    await expect(rowAt(g, 2)).toHaveAttribute("data-selected", "");
     await expect(rowAt(g, 3)).toHaveAttribute("aria-selected", "false");
     const painted = await rowAt(g, 2).evaluate((el) => getComputedStyle(el).backgroundColor);
     expect(painted).not.toBe(plain);
@@ -78,7 +77,7 @@ test.describe("VirtualGrid row selection (row_selected)", () => {
     await gotoHydrated(page, PAGE_URL);
     const g = grid(page);
     await checkboxIn(g, 0).click();
-    await expect(rowAt(g, 2)).toHaveAttribute("data-state", "selected");
+    await expect(rowAt(g, 2)).toHaveAttribute("data-selected", "");
 
     // The active cell's row stays mounted (pinned) wherever the window goes, so make another row active
     // (ArrowDown, no selection) and track row 0, which the window can really unmount.
@@ -88,9 +87,9 @@ test.describe("VirtualGrid row selection (row_selected)", () => {
     await g.evaluate((el) => (el.scrollTop = 5000 * 36));
     await expect(cell(g, 5000, 1)).toBeVisible();
     await expect(rowAt(g, 2)).toHaveCount(0);
-    await expect(g.locator('[role="row"][data-state="selected"]')).toHaveCount(0);
+    await expect(g.locator('[role="row"][data-selected]')).toHaveCount(0);
     await g.evaluate((el) => (el.scrollTop = 0));
-    await expect(rowAt(g, 2)).toHaveAttribute("data-state", "selected");
+    await expect(rowAt(g, 2)).toHaveAttribute("data-selected", "");
     await expect(checkboxIn(g, 0)).toBeChecked();
 
     // Sort the Order column descending: item 0 has the lowest order number, so it moves to the last slot.
@@ -101,8 +100,8 @@ test.describe("VirtualGrid row selection (row_selected)", () => {
     await expect(rowAt(g, 2)).toHaveAttribute("aria-selected", "false");
     await g.evaluate((el) => (el.scrollTop = 1e9));
     await expect(rowAt(g, 10001)).toHaveAttribute("aria-selected", "true");
-    await expect(rowAt(g, 10001)).toHaveAttribute("data-state", "selected");
-    await expect(g.locator('[role="row"][data-state="selected"]')).toHaveCount(1);
+    await expect(rowAt(g, 10001)).toHaveAttribute("data-selected", "");
+    await expect(g.locator('[role="row"][data-selected]')).toHaveCount(1);
   });
 });
 
@@ -132,7 +131,7 @@ test.describe("VirtualGrid controls inside cells", () => {
     await expect.poll(() => bodyTabStops(g)).toEqual(["1:0"]);
     await page.keyboard.press("Space");
     await expect(checkboxIn(g, 1)).toBeChecked();
-    await expect(rowAt(g, 3)).toHaveAttribute("data-state", "selected");
+    await expect(rowAt(g, 3)).toHaveAttribute("data-selected", "");
 
     // ArrowRight leaves the control for the next cell, which has none: the cell itself is the stop.
     await page.keyboard.press("ArrowRight");

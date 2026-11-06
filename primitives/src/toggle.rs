@@ -73,7 +73,7 @@ pub struct ToggleProps {
 /// ## Styling
 ///
 /// The [`Toggle`] component defines the following data attributes you can use to control styling:
-/// - `data-state`: Indicates the state of the toggle. Values are `on` or `off`.
+/// - `data-pressed`: Present while the toggle is pressed.
 /// - `data-pressed`: Present (empty) while the toggle is pressed, absent otherwise.
 /// - `data-disabled`: Indicates if the toggle is disabled. Values are `true` or `false`.
 #[component]
@@ -164,15 +164,7 @@ mod tests {
         let toggles = crate::test_support::find_elements(&html, |a| a.contains_key("aria-pressed"));
         assert_eq!(toggles.len(), 2, "{html}");
         assert!(toggles[0].attrs.contains_key("data-pressed"), "{html}");
-        assert_eq!(
-            toggles[0].attrs.get("data-state").map(String::as_str),
-            Some("on")
-        );
         assert!(!toggles[1].attrs.contains_key("data-pressed"), "{html}");
-        assert_eq!(
-            toggles[1].attrs.get("data-state").map(String::as_str),
-            Some("off")
-        );
     }
 
     #[test]

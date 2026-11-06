@@ -107,7 +107,7 @@ pub fn ComboboxList(props: ComboboxListProps) -> Element {
 /// [`crate::use_animated_open`] (`ComboboxList`, above). It matters here
 /// specifically: `combobox.spec.ts`'s "keeps
 /// filtered options during keyboard close animation" test (an Enter-key,
-/// script-driven close) requires the `data-state="closed"` element to stay
+/// script-driven close) requires the `data-closed` element to stay
 /// visible through its exit animation, which binding
 /// `showPopover()`/`hidePopover()` to the raw `open` signal breaks (see the
 /// linked doc for the exact mechanism) -- this reasoning is orthogonal to

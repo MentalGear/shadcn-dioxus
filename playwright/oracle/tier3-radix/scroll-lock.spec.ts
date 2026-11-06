@@ -327,15 +327,15 @@ test.describe("DropdownMenu leaves the page scrollable", () => {
 
     const trigger = demoRole(page, "button");
     await trigger.click();
-    await expect(trigger).toHaveAttribute("data-state", "open");
+    await expect(trigger).toHaveAttribute("data-open", "");
     await assertNoHorizontalShift(page, rightBefore, "while the dropdown menu is open");
 
     await assertScrollIsUnlocked(page);
-    await expect(trigger, "scrolling the page leaves an anchored menu open").toHaveAttribute("data-state", "open");
+    await expect(trigger, "scrolling the page leaves an anchored menu open").toHaveAttribute("data-open", "");
     expect(await lockMarker(page), "a dropdown menu must not take the scroll lock").toBe(false);
 
     await page.keyboard.press("Escape");
-    await expect(trigger).toHaveAttribute("data-state", "closed");
+    await expect(trigger).toHaveAttribute("data-closed", "");
     await assertNoHorizontalShift(page, rightBefore, "after the dropdown menu closes");
   });
 
@@ -348,13 +348,13 @@ test.describe("DropdownMenu leaves the page scrollable", () => {
 
       const trigger = demoRole(page, "button");
       await trigger.tap();
-      await expect(trigger).toHaveAttribute("data-state", "open");
+      await expect(trigger).toHaveAttribute("data-open", "");
 
       await page.evaluate(() => window.scrollTo(0, 0));
       // Pan from a point of the main column that is not under the menu (the sidebar scrolls by itself).
       await touchScrollPage(page, 1000, 650, 300);
       expect(await page.evaluate(() => window.scrollY), "the touch pan moved the page").toBeGreaterThan(0);
-      await expect(trigger, "scrolling the page leaves an anchored menu open").toHaveAttribute("data-state", "open");
+      await expect(trigger, "scrolling the page leaves an anchored menu open").toHaveAttribute("data-open", "");
       expect(await lockMarker(page), "a dropdown menu must not take the scroll lock").toBe(false);
     });
   });
@@ -369,7 +369,7 @@ test.describe("ContextMenu locks and releases page scroll", () => {
     const rightBefore = await rightEdgeMarkerRight(page);
 
     await demoRole(page, "button").click({ button: "right" });
-    await expect(page.getByRole("menu")).toHaveAttribute("data-state", "open");
+    await expect(page.getByRole("menu")).toHaveAttribute("data-open", "");
     await assertNoHorizontalShift(page, rightBefore, "while the context menu is open");
 
     await assertScrollIsLocked(page);
@@ -393,7 +393,7 @@ test.describe("ContextMenu locks and releases page scroll", () => {
     await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(scrolled);
     const box = await staticBox(trigger);
     await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2, { button: "right" });
-    await expect(page.getByRole("menu")).toHaveAttribute("data-state", "open");
+    await expect(page.getByRole("menu")).toHaveAttribute("data-open", "");
     await assertScrollIsLocked(page);
 
     await page.keyboard.press("Escape");
@@ -411,7 +411,7 @@ test.describe("ContextMenu locks and releases page scroll", () => {
       await page.evaluate(() => window.scrollTo(0, 0));
 
       await demoRole(page, "button").click({ button: "right" });
-      await expect(page.getByRole("menu")).toHaveAttribute("data-state", "open");
+      await expect(page.getByRole("menu")).toHaveAttribute("data-open", "");
       await touchScrollPage(page, 1000, 650, 300);
       expect(await page.evaluate(() => window.scrollY), "the touch pan must not move the locked page").toBe(0);
 

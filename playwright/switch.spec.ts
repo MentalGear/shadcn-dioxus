@@ -9,15 +9,15 @@ test('test', async ({ page }) => {
   let switchElement = page.locator('#component-preview-frame').getByRole('switch', { name: 'Airplane Mode', exact: true });
   await expect(switchElement).toBeVisible();
   // The switch should not be checked initially
-  await expect(switchElement).toHaveAttribute('data-state', 'unchecked');
+  await expect(switchElement).toHaveAttribute('data-unchecked', '');
   // Clicking the switch should check it
   await switchElement.click();
-  await expect(switchElement).toHaveAttribute('data-state', 'checked');
+  await expect(switchElement).toHaveAttribute('data-checked', '');
   // Pressing space should also toggle the switch.
   // Use locator.press so the element is focused before the keystroke —
   // webkit does not always retain focus on a button after a synthetic click.
   await switchElement.press('Space');
-  await expect(switchElement).toHaveAttribute('data-state', 'unchecked');
+  await expect(switchElement).toHaveAttribute('data-unchecked', '');
 });
 
 test.describe('Axe automated scan', () => {
@@ -60,7 +60,7 @@ test.describe("size (row 155 group 7)", () => {
     for (const id of ["switch-size-sm", "switch-size-default"]) {
       const sw = page.locator("#component-preview-frame-sizes").locator(`#${id}`);
       await sw.click();
-      await expect(sw).toHaveAttribute("data-state", "checked");
+      await expect(sw).toHaveAttribute("data-checked", "");
       await expect
         .poll(async () =>
           sw.evaluate((el) => {
@@ -78,16 +78,16 @@ test.describe("size (row 155 group 7)", () => {
 test('a read-only switch keeps its state, stays focusable and is announced', async ({ page }) => {
   await gotoHydrated(page, `${BASE_URL}/component/switch/`, { timeout: 20 * 60 * 1000, waitUntil: 'networkidle' });
   const sw = page.locator('#component-preview-frame-read_only #switch-read-only');
-  await expect(sw).toHaveAttribute('data-state', 'checked');
+  await expect(sw).toHaveAttribute('data-checked', '');
   await expect(sw).toHaveAttribute('aria-readonly', 'true');
   await expect(sw).toHaveAttribute('data-readonly', '');
   await expect(sw).toBeEnabled();
 
   await sw.click();
   await expect(sw).toBeFocused();
-  await expect(sw).toHaveAttribute('data-state', 'checked');
+  await expect(sw).toHaveAttribute('data-checked', '');
   await page.keyboard.press('Space');
-  await expect(sw).toHaveAttribute('data-state', 'checked');
+  await expect(sw).toHaveAttribute('data-checked', '');
   // A writable switch carries neither attribute.
   const writable = page.locator('#component-preview-frame').getByRole('switch', { name: 'Airplane Mode', exact: true });
   await expect(writable).not.toHaveAttribute('aria-readonly');

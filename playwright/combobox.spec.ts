@@ -13,10 +13,10 @@ const input = (page: Page) =>
     page.getByRole("combobox", { name: "Select framework" });
 
 const content = (page: Page) =>
-    page.locator("[role='listbox'][data-state='open']");
+    page.locator("[role='listbox'][data-open]");
 
 const list = (page: Page) =>
-    page.locator("[role='listbox'][data-state='open']");
+    page.locator("[role='listbox'][data-open]");
 
 test("opens from the focused input with the keyboard", async ({ page }) => {
     await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
@@ -152,7 +152,7 @@ test("keeps filtered options during keyboard close animation", async ({ page }) 
       (window as unknown as { __closeSeen: typeof seen }).__closeSeen = seen;
       const snap = () => {
         const lb = document.querySelector("[role='listbox']");
-        const state = lb ? (lb.getAttribute("data-state") ?? "none") : "gone";
+        const state = lb ? (lb.hasAttribute("data-open") ? "open" : lb.hasAttribute("data-closed") ? "closed" : "none") : "gone";
         const options = lb ? [...lb.querySelectorAll("[role='option']")].map((o) => (o.textContent ?? "").trim()) : [];
         const last = seen[seen.length - 1];
         if (!last || last.state !== state || last.options.join("|") !== options.join("|")) seen.push({ state, options });

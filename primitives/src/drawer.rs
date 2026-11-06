@@ -71,7 +71,7 @@
 //! sets `transform` replaces whatever `transform` the element already has for as long
 //! as it runs (`scripts/check-anchored-keyframes.sh`). It has to be a keyframe, not a
 //! `transition`, because a plain CSS `transition` never runs on an element's first
-//! style computation and this panel's `data-state` is already `"open"` at the moment
+//! style computation and this panel's `data-open` is already present at the moment
 //! it is first inserted (`use_animated_open` only mounts it once `open` is true).
 //!
 //! Per the CSS Animations cascade, a *running or forwards-held* animation's value for
@@ -872,7 +872,7 @@ pub struct DrawerRootProps {
 ///
 /// [`DrawerContent`] defines the following data attributes you can use to
 /// control styling:
-/// - `data-state`: `"open"` or `"closed"`.
+/// - `data-open` / `data-closed`: Exactly one is present: whether this part is open.
 /// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
 /// - `data-side`: `"top"`, `"right"`, `"bottom"`, or `"left"` -- the RESOLVED side
 ///   (never `"auto"`; see [`EdgeSide::Auto`]).
@@ -980,7 +980,7 @@ pub struct DrawerContentProps {
 /// The content of the drawer -- must be used inside a [`Drawer`]. Renders
 /// [`crate::dialog::DialogContent`] (so it inherits that primitive's focus
 /// trap/restore, inertness, top layer and Escape handling) with
-/// `data-side`/`data-state`/`data-dragging` data attributes and, while a
+/// `data-side`/`data-open`/`data-dragging` data attributes and, while a
 /// drag has moved the panel, an inline `transform` (see this module's doc
 /// for why `transform` and not `translate`) tracking the pointer.
 ///

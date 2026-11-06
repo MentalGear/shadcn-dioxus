@@ -135,7 +135,7 @@ pub struct TooltipProps {
 /// ## Styling
 ///
 /// The [`Tooltip`] component defines the following data attributes you can use to control styling:
-/// - `data-state`: Indicates the current state of the tooltip. Values are `open` or `closed`.
+/// - `data-open` / `data-closed`: Exactly one is present: whether this part is open.
 /// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
 /// - `data-disabled`: Indicates if the tooltip is disabled. Values are `true` or `false`.
 #[component]
@@ -390,7 +390,7 @@ pub struct TooltipContentProps {
 /// ## Styling
 ///
 /// The [`TooltipContent`] component defines the following data attributes you can use to control styling:
-/// - `data-state`: Indicates the current state of the tooltip. Values are `open` or `closed`.
+/// - `data-open` / `data-closed`: Exactly one is present: whether this part is open.
 /// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
 /// - `data-side`: Indicates which side of the trigger the tooltip is positioned. Values are `top`, `right`, `bottom`, or `left`.
 /// - `data-align`: Indicates the alignment of the tooltip. Values are `start`, `center`, or `end`.
@@ -451,7 +451,7 @@ pub fn TooltipContent(props: TooltipContentProps) -> Element {
 /// Uses `crate::top_layer::use_popover_shown_while_mounted`, not
 /// `use_popover_sync` (dev-docs/backlog.md row 19). This component is mounted
 /// by `render()` in `TooltipContent` above -- `use_animated_open` -- which
-/// keeps it in the DOM with `data-state="closed"` for its whole CSS close
+/// keeps it in the DOM with `data-closed` for its whole CSS close
 /// animation (plus a settle hold) before actually unmounting it.
 /// `use_popover_sync` calls `hidePopover()` the instant `open` (the real,
 /// non-animated signal) goes `false`, and the UA's
@@ -474,7 +474,7 @@ pub fn TooltipContent(props: TooltipContentProps) -> Element {
 fn TooltipContentRendered(
     /// The DOM id of the tooltip content element.
     id: String,
-    /// Whether the tooltip is open. Sets the content's `data-state`, and on the web keeps its popover shown.
+    /// Whether the tooltip is open. Sets the content's `data-open` / `data-closed`, and on the web keeps its popover shown.
     open: Memo<bool>,
     /// Sets the open state. On the web, it is called when the browser closes the tooltip's popover.
     set_open: Callback<bool>,
@@ -561,7 +561,7 @@ fn TooltipContentRendered(
 fn TooltipContentRendered(
     /// The DOM id of the tooltip content element.
     id: String,
-    /// Whether the tooltip is open. Sets the content's `data-state`, and on the web keeps its popover shown.
+    /// Whether the tooltip is open. Sets the content's `data-open` / `data-closed`, and on the web keeps its popover shown.
     open: Memo<bool>,
     // Unused on this arm -- kept as a same-named field so the shared,
     // cfg-independent call site in `TooltipContent` compiles on

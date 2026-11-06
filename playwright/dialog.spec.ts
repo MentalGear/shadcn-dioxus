@@ -76,7 +76,7 @@ test('a press inside the dialog released over its backdrop does not dismiss it (
   await page.mouse.up();
   await page.waitForTimeout(700);
   await expect(dialog).toBeVisible();
-  await expect(dialog).toHaveAttribute('data-state', 'open');
+  await expect(dialog).toHaveAttribute('data-open', '');
 
   // Press AND release on the backdrop: dismissed.
   await page.mouse.click(2, 2);

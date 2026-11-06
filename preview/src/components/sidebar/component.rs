@@ -47,15 +47,6 @@ pub enum SidebarState {
     Collapsed,
 }
 
-impl SidebarState {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            SidebarState::Expanded => "expanded",
-            SidebarState::Collapsed => "collapsed",
-        }
-    }
-}
-
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
 pub enum SidebarSide {
     #[default]
@@ -355,7 +346,7 @@ pub fn Sidebar(
         "data-slot": "sidebar",
         role: "complementary",
         aria_label: "Sidebar",
-        ..state_attrs::state(state().as_str()),
+        ..state_attrs::open(state() == SidebarState::Expanded),
     });
 
     rsx! {

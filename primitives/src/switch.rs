@@ -82,7 +82,7 @@ pub struct SwitchProps {
 /// ## Styling
 ///
 /// The [`Switch`] component defines the following data attributes you can use to control styling:
-/// - `data-state`: Indicates the state of the switch. Values are `checked` or `unchecked`.
+/// - `data-checked` / `data-unchecked`: Exactly one is present: whether the item is checked.
 /// - `data-checked` / `data-unchecked`: Present (empty) while checked / unchecked, absent otherwise.
 /// - `data-disabled`: Indicates if the switch is disabled. Values are `true` or `false`.
 /// - `data-readonly`: Present (empty) while the switch is read-only, absent otherwise. The

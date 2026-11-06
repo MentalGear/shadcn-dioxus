@@ -111,7 +111,7 @@
   white-space: nowrap;
 }
 
-.dx-select[data-state="open"] .dx-select-trigger {
+.dx-select[data-open] .dx-select-trigger {
   pointer-events: none;
 }
 
@@ -184,7 +184,7 @@
  * anchor's own centring transform for as long as the animation runs) is the theme's floating-surface
  * recipe: `dx-pop-in` over 150 ms ease-out, `dx-pop-out` over 150 ms ease-in, with `forwards`, which
  * also lifts the base `opacity: 0` above. Only the listbox's pointer-events are its own. */
-.dx-select-list[data-state="open"] {
+.dx-select-list[data-open] {
   pointer-events: auto;
 }
 

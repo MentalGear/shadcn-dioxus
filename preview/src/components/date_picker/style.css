@@ -29,7 +29,7 @@
     --dx-popover-trigger-icon-size: 1.25rem;
 }
 
-.dx-date-picker [data-state="open"] .dx-date-picker-trigger {
+.dx-date-picker [data-open] .dx-date-picker-trigger {
     rotate: 180deg;
 }
 

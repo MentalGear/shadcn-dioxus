@@ -250,12 +250,12 @@ test.describe("Menu-item indicator slot: label never meets the indicator", () =>
         const trigger = page.getByRole("combobox").first();
         await trigger.click();
         const listbox = page.getByRole("listbox");
-        await expect(listbox).toHaveAttribute("data-state", "open");
+        await expect(listbox).toHaveAttribute("data-open", "");
         // The longest option, selected.
         await listbox.getByRole("option", { name: "Watermelon" }).click();
         await expect(listbox).toHaveCount(0);
         await trigger.click();
-        await expect(listbox).toHaveAttribute("data-state", "open");
+        await expect(listbox).toHaveAttribute("data-open", "");
 
         const option = listbox.getByRole("option", { name: "Watermelon" });
         await expectGapHolds(page, option, "svg", "select option check");
@@ -300,7 +300,7 @@ test.describe("Menu-item indicator slot: label never meets the indicator", () =>
         const trigger = page.getByRole("combobox").first();
         await trigger.click();
         const listbox = page.getByRole("listbox");
-        await expect(listbox).toHaveAttribute("data-state", "open");
+        await expect(listbox).toHaveAttribute("data-open", "");
         const option = listbox.getByRole("option", { name: "First" });
         const measure = await labelIndicatorGap(option, "svg");
         // In RTL the inline end is the LEFT edge: the check precedes the label
@@ -313,7 +313,7 @@ test.describe("Menu-item indicator slot: label never meets the indicator", () =>
         await gotoHydrated(page, block("combobox"));
         const input = page.getByRole("combobox", { name: "Select framework" });
         await input.click();
-        const listbox = page.locator("[role='listbox'][data-state='open']");
+        const listbox = page.locator("[role='listbox'][data-open]");
         await listbox.getByRole("option", { name: "SolidStart" }).click();
         await input.click();
         await expect(listbox).toBeVisible();
@@ -574,7 +574,7 @@ test.describe("Menu-item indicator slot: one set of tokens", () => {
 
         await gotoHydrated(page, block("combobox"));
         await page.getByRole("combobox", { name: "Select framework" }).click();
-        seen.combobox = await page.locator("[role='listbox'][data-state='open'] [role='option']").first().evaluate(readTokens);
+        seen.combobox = await page.locator("[role='listbox'][data-open] [role='option']").first().evaluate(readTokens);
 
         await gotoHydrated(page, block("native_select"));
         seen.native_select = await page.locator(".dx-native-select-wrapper").first().evaluate(readTokens);

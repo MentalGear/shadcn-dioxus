@@ -36,7 +36,7 @@ const rect = (el: Locator) =>
     const r = e.getBoundingClientRect();
     return { top: r.top, right: r.right, bottom: r.bottom, left: r.left, width: r.width, height: r.height };
   });
-const openList = (page: Page) => page.locator("[role='listbox'][data-state='open']");
+const openList = (page: Page) => page.locator("[role='listbox'][data-open]");
 const formEntries = (root: Locator, name: string) =>
   root.locator("form").evaluate((form, n) => new FormData(form as HTMLFormElement).getAll(n), name);
 
@@ -55,7 +55,7 @@ for (const mode of ["light", "dark"] as const) {
       for (const { name, side } of cases) {
         const trigger = root.getByRole("button", { name });
         await trigger.click();
-        const menu = page.locator("[role='menu'][data-state='open']");
+        const menu = page.locator("[role='menu'][data-open]");
         await expect(menu).toBeVisible();
         await expect(menu).toHaveAttribute("data-placed-side", side);
         // The pop-in scales the panel: measure once it has settled.

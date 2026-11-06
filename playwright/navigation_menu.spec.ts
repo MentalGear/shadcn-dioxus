@@ -56,7 +56,7 @@ test('a click on a trigger whose panel hover just opened keeps it open; the next
   // 150ms intent timer, time to land before asserting.
   await page.waitForTimeout(400);
   await expect(trigger).toHaveAttribute('aria-expanded', 'true');
-  await expect(trigger).toHaveAttribute('data-state', 'open');
+  await expect(trigger).toHaveAttribute('data-open', '');
 
   // The click claimed the panel: a second click is an ordinary toggle and closes it, and the
   // pointer still resting on the trigger does not re-open it.
@@ -207,7 +207,7 @@ test.describe('Open animation never reflows the content', () => {
   test('the open/close motion actually animates transform, not just opacity', async ({ page }) => {
     // Guards the entrance motion behind the reflow invariant (not a literal `width`
     // transition): `preview/src/components/navigation_menu/style.css`'s
-    // `[data-state]` motion rules must not tie in CSS specificity with the shared,
+    // `[data-open]` / `[data-closed]` motion rules must not tie in CSS specificity with the shared,
     // engine-injected anchor-positioning stylesheet's own `transform: none` reset
     // (primitives/src/top_layer/styles.rs), which -- injected later in the cascade -- would
     // win and silently kill the scale/slide entrance motion (opacity would be the
@@ -245,13 +245,14 @@ test.describe('Open animation never reflows the content', () => {
     // still winning, this would also read as identity instead.
     expect(settledTransform).toMatch(PLACEMENT_ONLY);
 
-    // Flip `data-state` directly on the real, mounted element (bypassing
+    // Flip `data-open` / `data-closed` directly on the real, mounted element (bypassing
     // this primitive's own hover/focus lifecycle entirely) to isolate
     // exactly what the CSS cascade computes for "closed", independent of
     // timing -- the technique that isolates this cascade case.
     await page.evaluate(() => {
       const el = document.querySelector('.dx-navigation-menu-content');
-      el?.setAttribute('data-state', 'closed');
+      el?.removeAttribute('data-open');
+      el?.setAttribute('data-closed', '');
     });
     // Read past this file's own --dx-motion-duration-base (150ms)
     // transition so this is the *settled* value, not a mid-transition one.
@@ -286,7 +287,7 @@ test.describe('Panel layout matches shadcn: panel width, featured card and list 
   // shadcn-ui/ui@295a1f1 apps/v4/registry/new-york-v4/examples/
   // navigation-menu-demo.tsx (grid `md:w-[400px] lg:w-[500px]
   // lg:grid-cols-[.75fr_1fr]`, featured `from-muted/50 to-muted`, `ListItem`).
-  const OPEN_PANEL = '.dx-navigation-menu-content[data-state="open"]';
+  const OPEN_PANEL = '.dx-navigation-menu-content[data-open]';
 
   async function openPanel(page: Page, name: string) {
     const trigger = nav(page).getByRole('button', { name });
@@ -603,9 +604,9 @@ test.describe('Open/close animation', () => {
     const trigger = nav(page).getByRole('button', { name: 'Getting started' });
     await trigger.hover();
     await expect(trigger).toHaveAttribute('aria-expanded', 'true');
-    const content = page.locator('.dx-navigation-menu-content[data-state="open"]').first();
+    const content = page.locator('.dx-navigation-menu-content[data-open]').first();
     await expect(content).toBeVisible();
     await expectFadeKeepsTransform(content, 'navigation menu content, open');
-    await expectFadeKeepsTransform(content, 'navigation menu content, close', { 'data-state': 'closed' });
+    await expectFadeKeepsTransform(content, 'navigation menu content, close', { 'data-open': null, 'data-closed': '' });
   });
 });

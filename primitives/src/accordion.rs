@@ -454,7 +454,7 @@ pub fn AccordionItem(props: AccordionItemProps) -> Element {
     });
 
     let owned = attributes!(div {
-        ..state_attrs::open_presence(ctx.is_open(&item.key())),
+        ..state_attrs::open(ctx.is_open(&item.key())),
         ..state_attrs::presence(state_attrs::Flag::Disabled, ctx.is_disabled() || item.is_disabled()),
     });
     let merged = merge_attributes(vec![props.attributes.clone(), owned]);
@@ -569,7 +569,7 @@ pub fn AccordionContent(props: AccordionContentProps) -> Element {
     });
 
     let mut owned = attributes!(div {
-        ..state_attrs::open_presence(open()),
+        ..state_attrs::open(open()),
         "data-closing": closing.then_some("true"),
         "data-revealed": (open() && revealed()).then_some("true"),
     });

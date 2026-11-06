@@ -9,7 +9,7 @@ test("test", async ({ page }) => {
   // hot-linked photos: the src is the hashed local asset and it must actually load.
   const image = page.locator('img[alt="Avery Lin"]').first();
   await expect(image).toHaveAttribute("src", /\/avery-lin[^/]*\.svg$/);
-  await expect(page.getByLabel("Basic avatar")).toHaveAttribute("data-state", "loaded");
+  await expect(page.getByLabel("Basic avatar")).toHaveAttribute("data-loaded", "");
 
   // The main demo is shadcn's avatar-demo: a grayscale avatar, one with a green badge, a grayscale group ending in "+3".
   const demo = page.locator("#component-preview-frame").first();

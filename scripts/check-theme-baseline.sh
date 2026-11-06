@@ -56,7 +56,7 @@
 #  6. The no-top-layer scrim and the visually-hidden recipe (row 426). The scrim of a modal that has no top layer
 #     (non-web arm, `is_modal: false`) is the wrapper `div` Dialog, AlertDialog, Sheet, Drawer and CommandDialog render
 #     around the panel: each carries `data-dx-scrim` and the theme's five zero-specificity `:where([data-dx-scrim])`
-#     rules paint it, fade it with `data-state` and drop it for `overlay: false`. A component sheet may not read
+#     rules paint it, fade it with `data-open` / `data-closed` and drop it for `overlay: false`. A component sheet may not read
 #     `--dx-overlay-scrim` (that is the scrim being painted by hand again), and each of the five sources must still
 #     emit the attribute. "Text for assistive technology that is not drawn" is the theme's one
 #     `:where([data-dx-visually-hidden])` rule; a rule in a component sheet or in `main.css` that has the recipe's
@@ -281,9 +281,9 @@ if not explicit:
             errors.append(f"{THEME}: the shared touch-action rule has a bare (non-`dx-`) selector; it must stay "
                           f"scoped to the `dx-` class namespace like the box-model rule")
     scrim = re.search(r"dialog\[class\^=\"dx-\"\][^{}]*::backdrop[^{}]*\{[^{}]*backdrop-filter\s*:\s*none", theme)
-    scrim_open = re.search(r"\[open\]\[data-state=\"open\"\][^{}]*::backdrop[^{}]*\{[^{}]*--dx-overlay-scrim", theme)
+    scrim_open = re.search(r"\[open\]\[data-open\][^{}]*::backdrop[^{}]*\{[^{}]*--dx-overlay-scrim", theme)
     if not scrim or not scrim_open:
-        errors.append(f"{THEME}: the shared modal-scrim `::backdrop` rules (resting + `[open][data-state=\"open\"]`) are gone")
+        errors.append(f"{THEME}: the shared modal-scrim `::backdrop` rules (resting + `[open][data-open]`) are gone")
     # Arm 3b: the dialog box's UA padding (`1em`, font-size dependent) is reset once, at zero specificity.
     pad_ok = all(
         re.search(r":where\(\s*dialog\[class" + op + r"=\"" + lead + r"dx-\"\]\s*\)[^{}]*\{[^{}]*(?<![\w-])padding\s*:\s*0\s*;", theme)
@@ -300,8 +300,8 @@ if not explicit:
                                     "background: var(--dx-overlay-scrim)", "inset: 0", "opacity: 0"],
         ":where([data-dx-scrim]:has(> dialog))": ["backdrop-filter: none", "background: transparent"],
         ':where([data-dx-scrim][data-dx-overlay="off"])': ["backdrop-filter: none", "background: transparent"],
-        ':where([data-dx-scrim][data-state="closed"])': ["animation: dx-fade-out var(--dx-overlay-duration)", "pointer-events: none"],
-        ':where([data-dx-scrim][data-state="open"])': ["animation: dx-fade-in var(--dx-overlay-duration)"],
+        ':where([data-dx-scrim][data-closed])': ["animation: dx-fade-out var(--dx-overlay-duration)", "pointer-events: none"],
+        ':where([data-dx-scrim][data-open])': ["animation: dx-fade-in var(--dx-overlay-duration)"],
         ":where([data-dx-visually-hidden])": ["position: absolute", "overflow: hidden", "width: 1px", "height: 1px", "padding: 0",
                                               "border: 0", "margin: -1px", "clip-path: inset(50%)", "white-space: nowrap"],
     }

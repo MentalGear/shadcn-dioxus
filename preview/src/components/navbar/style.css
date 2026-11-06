@@ -31,7 +31,7 @@
   transition: background-color var(--dx-motion-duration-fast) var(--dx-motion-ease-out);
 }
 
-.dx-navbar-nav[data-state="open"] .dx-navbar-trigger {
+.dx-navbar-nav[data-open] .dx-navbar-trigger {
   background-color: var(--dx-muted);
 }
 
@@ -130,7 +130,7 @@
  * inline styles included -- which is why `animation`+`@keyframes` closes
  * cause (1) outright. It also sidesteps a second, navbar-specific gap a
  * plain higher-specificity `transition` rule could not: this content mounts
- * with `data-state="open"` already set on its very first painted frame (no
+ * with `data-open` already set on its very first painted frame (no
  * separate "closed" frame precedes it), so a `transition` -- which requires
  * an actual prior computed-style value to interpolate *from* -- has
  * nothing to animate on open either; an `@keyframes` animation always plays
@@ -143,7 +143,7 @@
  * closing on its own, and closing because a sibling to its start/end opened
  * instead) plus their `[dir="rtl"]` physical-sign counterparts, as explicit
  * keyframe endpoints instead of an implicit before/after computed-style diff. */
-.dx-navbar-content[data-state="closed"][data-open-menu-direction="start"] {
+.dx-navbar-content[data-closed][data-open-menu-direction="start"] {
   animation: dx-navbar-content-animate-out-start var(--dx-floating-duration) var(--dx-floating-ease-exit) forwards;
 }
 
@@ -167,7 +167,7 @@
   }
 }
 
-.dx-navbar-content[data-state="closed"][data-open-menu-direction="end"] {
+.dx-navbar-content[data-closed][data-open-menu-direction="end"] {
   animation: dx-navbar-content-animate-out-end var(--dx-floating-duration) var(--dx-floating-ease-exit) forwards;
 }
 
@@ -185,7 +185,7 @@
   }
 }
 
-.dx-navbar-content[data-state="closed"][data-open-menu-direction="closed"] {
+.dx-navbar-content[data-closed][data-open-menu-direction="closed"] {
   animation: dx-navbar-content-animate-out-closed var(--dx-floating-duration) var(--dx-floating-ease-exit) forwards;
 }
 
@@ -207,15 +207,15 @@
    reasoning as any `[dir="rtl"]` physical-sign override. Negating the sign IS the
    other direction's keyframes (`out-start` is `-100%`, `out-end` is `100%`), so each RTL rule names
    its sibling instead of carrying a byte-identical copy (scripts/check-duplicate-keyframes.sh). */
-[dir="rtl"] .dx-navbar-content[data-state="closed"][data-open-menu-direction="start"] {
+[dir="rtl"] .dx-navbar-content[data-closed][data-open-menu-direction="start"] {
   animation-name: dx-navbar-content-animate-out-end;
 }
 
-[dir="rtl"] .dx-navbar-content[data-state="closed"][data-open-menu-direction="end"] {
+[dir="rtl"] .dx-navbar-content[data-closed][data-open-menu-direction="end"] {
   animation-name: dx-navbar-content-animate-out-start;
 }
 
-.dx-navbar-content[data-state="open"] {
+.dx-navbar-content[data-open] {
   animation: dx-navbar-content-animate-in var(--dx-motion-duration-slow) var(--dx-motion-ease-emphasized) forwards;
   pointer-events: auto;
 }
@@ -290,6 +290,6 @@
   transition: rotate var(--dx-motion-duration-base) var(--dx-motion-ease-standard);
 }
 
-.dx-navbar-nav[data-state="open"] .dx-navbar-expand-icon {
+.dx-navbar-nav[data-open] .dx-navbar-expand-icon {
   rotate: 180deg;
 }

@@ -192,7 +192,7 @@ test.describe("Rule 1 — a named control contributes name=value to FormData on 
   test("RadioGroup: once an item is checked, contributes name=value", async ({ page }) => {
     await gotoForm(page);
     await page.locator("#plan-lib-pro").click();
-    await expect(page.locator("#plan-lib-pro")).toHaveAttribute("data-state", "checked");
+    await expect(page.locator("#plan-lib-pro")).toHaveAttribute("data-checked", "");
     const entries = await submitAndRead(page, "#entries-submit", formResult(page));
     expect(
       hasEntry(entries, "plan-lib", "pro"),
@@ -555,14 +555,14 @@ test.describe("Rule 6 — form reset restores the initial value", () => {
     const hidden = page.locator('input[name="terms-lib"]');
     await page.locator("#chk-lib").click(); // uncheck it
     await expect(hidden).not.toBeChecked();
-    await expect(page.locator("#chk-lib")).toHaveAttribute("data-state", "unchecked");
+    await expect(page.locator("#chk-lib")).toHaveAttribute("data-unchecked", "");
     await page.locator("#entries-reset").click();
     await expect(hidden).toBeChecked();
     await expect(
       page.locator("#chk-lib"),
       "the visible Checkbox button's own (Dioxus) state must resync too, not " +
         "just the hidden mirror input's DOM state",
-    ).toHaveAttribute("data-state", "checked");
+    ).toHaveAttribute("data-checked", "");
     const entries = await submitAndRead(page, "#entries-submit", formResult(page));
     expect(hasEntry(entries, "terms-lib", "accepted")).toBe(true);
   });
@@ -585,17 +585,17 @@ test.describe("Rule 6 — form reset restores the initial value", () => {
     // content attribute already means "unchecked", and this fixture's
     // Switch default happens to be unchecked (a `default_checked: true`
     // Switch would fail for the reason Checkbox would; see its rule 6
-    // test). The `data-state` assertion below is the part that cannot pass
+    // test). The `data-open` assertion below is the part that cannot pass
     // by coincidence: nothing but a working reset listener flips the
     // *visible* button back after it was toggled on.
     await gotoForm(page);
     const hidden = page.locator('input[name="notify-lib"]');
     await page.locator("#switch-lib").click(); // check it
     await expect(hidden).toBeChecked();
-    await expect(page.locator("#switch-lib")).toHaveAttribute("data-state", "checked");
+    await expect(page.locator("#switch-lib")).toHaveAttribute("data-checked", "");
     await page.locator("#entries-reset").click();
     expect(await hidden.isChecked()).toBe(false);
-    await expect(page.locator("#switch-lib")).toHaveAttribute("data-state", "unchecked");
+    await expect(page.locator("#switch-lib")).toHaveAttribute("data-unchecked", "");
     const entries = await submitAndRead(page, "#entries-submit", formResult(page));
     expect(hasKey(entries, "notify-lib")).toBe(false);
   });
@@ -618,9 +618,9 @@ test.describe("Rule 6 — form reset restores the initial value", () => {
     // default (dev-docs/plan.md Phase 1.2).
     await gotoForm(page);
     await page.locator("#plan-lib-pro").click();
-    await expect(page.locator("#plan-lib-pro")).toHaveAttribute("data-state", "checked");
+    await expect(page.locator("#plan-lib-pro")).toHaveAttribute("data-checked", "");
     await page.locator("#entries-reset").click();
-    await expect(page.locator("#plan-lib-pro")).toHaveAttribute("data-state", "unchecked");
+    await expect(page.locator("#plan-lib-pro")).toHaveAttribute("data-unchecked", "");
     const entries = await submitAndRead(page, "#entries-submit", formResult(page));
     expect(hasKey(entries, "plan-lib")).toBe(false);
   });

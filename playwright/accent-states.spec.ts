@@ -462,7 +462,7 @@ test.describe("accent on active and selected states (row 389)", () => {
     await gotoHydrated(page, `${BASE_URL}/component/tabs/`);
     await expect(demoRoles(page, "tab").first()).toBeVisible();
     const trig = (cond: string) =>
-      `[...document.querySelectorAll('.dx-tabs-trigger[data-state="active"]')].find((e) => { const t = e.closest('.dx-tabs'); return ${cond}; })`;
+      `[...document.querySelectorAll('.dx-tabs-trigger[data-active]')].find((e) => { const t = e.closest('.dx-tabs'); return ${cond}; })`;
     await checkStates(page, [
       {
         label: "line bar (docs DEMO/CODE tabs)",
@@ -555,28 +555,28 @@ test.describe("accent on active and selected states (row 389)", () => {
     const pressed = "color-mix(in var(--dx-hover-mix-space), var(--dx-accent-tint), var(--dx-tint-step-ink) 15%)";
     const pressedPlain = "color-mix(in var(--dx-hover-mix-space), var(--dx-accent), var(--dx-foreground) 15%)";
     await gotoHydrated(page, `${BASE_URL}/component/toggle/`);
-    await demoFrame(page).locator('.dx-toggle[data-state="off"]').first().click();
+    await demoFrame(page).locator('.dx-toggle[aria-pressed=false]').first().click();
     await page.mouse.move(0, 0);
-    await expect(demoFrame(page).locator('.dx-toggle[data-state="on"]').first()).toBeVisible();
-    await checkStates(page, [{ label: "toggle on", find: `document.querySelector('#component-preview-frame .dx-toggle[data-state="on"]')`, prop: "background-color", plain: pressedPlain, next: pressed }]);
+    await expect(demoFrame(page).locator('.dx-toggle[aria-pressed=true]').first()).toBeVisible();
+    await checkStates(page, [{ label: "toggle on", find: `document.querySelector('#component-preview-frame .dx-toggle[aria-pressed=true]')`, prop: "background-color", plain: pressedPlain, next: pressed }]);
 
     await gotoHydrated(page, `${BASE_URL}/component/toggle_group/`);
-    await demoFrame(page).locator('.dx-toggle-group-item[data-state="off"]').first().click();
+    await demoFrame(page).locator('.dx-toggle-group-item[aria-pressed=false]').first().click();
     await page.mouse.move(0, 0);
-    await expect(demoFrame(page).locator('.dx-toggle-group-item[data-state="on"]').first()).toBeVisible();
+    await expect(demoFrame(page).locator('.dx-toggle-group-item[aria-pressed=true]').first()).toBeVisible();
     await checkStates(page, [
-      { label: "toggle group item on", find: `document.querySelector('#component-preview-frame .dx-toggle-group-item[data-state="on"]')`, prop: "background-color", plain: pressedPlain, next: pressed },
+      { label: "toggle group item on", find: `document.querySelector('#component-preview-frame .dx-toggle-group-item[aria-pressed=true]')`, prop: "background-color", plain: pressedPlain, next: pressed },
     ]);
 
     await gotoHydrated(page, `${BASE_URL}/component/toolbar/`);
-    const pressedButton = demoFrame(page).locator('.dx-toolbar-button[data-state="on"], .dx-toolbar-button[aria-pressed="true"]');
-    if ((await pressedButton.count()) === 0) await demoFrame(page).locator(".dx-toolbar-button[aria-pressed], .dx-toolbar-button[data-state]").first().click();
+    const pressedButton = demoFrame(page).locator('.dx-toolbar-button[aria-pressed=true], .dx-toolbar-button[aria-pressed="true"]');
+    if ((await pressedButton.count()) === 0) await demoFrame(page).locator(".dx-toolbar-button[aria-pressed]").first().click();
     await page.mouse.move(0, 0);
     await expect(pressedButton.first()).toBeVisible();
     await checkStates(page, [
       {
         label: "toolbar pressed",
-        find: `document.querySelector('#component-preview-frame .dx-toolbar-button[data-state="on"], #component-preview-frame .dx-toolbar-button[aria-pressed="true"]')`,
+        find: `document.querySelector('#component-preview-frame .dx-toolbar-button[aria-pressed=true], #component-preview-frame .dx-toolbar-button[aria-pressed="true"]')`,
         prop: "background-color",
         plain: "var(--dx-accent-selected)",
         next: "var(--dx-accent-tint-selected)",
@@ -714,11 +714,11 @@ test.describe("accent on active and selected states (row 389)", () => {
     await gotoHydrated(page, `${BASE_URL}/component/menubar/`);
     await demoFrame(page).locator(".dx-menubar-trigger").first().click();
     await page.mouse.move(0, 0);
-    await expect(page.locator('.dx-menubar-menu[data-state="open"] .dx-menubar-trigger').first()).toBeVisible();
+    await expect(page.locator('.dx-menubar-menu[data-open] .dx-menubar-trigger').first()).toBeVisible();
     await checkStates(page, [
       {
         label: "menubar open trigger",
-        find: `document.querySelector('.dx-menubar-menu[data-state="open"] .dx-menubar-trigger')`,
+        find: `document.querySelector('.dx-menubar-menu[data-open] .dx-menubar-trigger')`,
         prop: "background-color",
         plain: "var(--dx-muted)",
         next: "var(--dx-accent-tint)",
@@ -763,15 +763,15 @@ test.describe("accent on active and selected states (row 389)", () => {
 
   test("Table: the selected row takes the theme slot", async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/table/`);
-    // The demo has no selection: mark a body row selected (the sheet's rule is `[data-state="selected"]`).
+    // The demo has no selection: mark a body row selected (the sheet's rule is `[data-selected]`).
     const row = demoFrame(page).locator("tbody tr.dx-table-row").first();
     await expect(row).toBeVisible();
-    await row.evaluate((el) => el.setAttribute("data-state", "selected"));
+    await row.evaluate((el) => el.setAttribute("data-selected", ""));
     await page.mouse.move(0, 0);
     await checkStates(page, [
       {
         label: "selected table row",
-        find: `document.querySelector('#component-preview-frame tr[data-state="selected"]')`,
+        find: `document.querySelector('#component-preview-frame tr[data-selected]')`,
         prop: "background-color",
         plain: "var(--dx-muted)",
         next: "var(--dx-accent-tint)",

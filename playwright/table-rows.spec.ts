@@ -41,8 +41,8 @@ test.describe("TableRows", () => {
       await expect(spacer).toHaveAttribute("aria-hidden", "true");
       await expect(spacer.locator("td")).toHaveAttribute("colspan", "3");
     }
-    // The fixed selection renders `data-state="selected"` on the real row.
-    await expect(body(page).locator('tr[data-virtual-index="2"]')).toHaveAttribute("data-state", "selected");
+    // The fixed selection renders `data-selected` on the real row.
+    await expect(body(page).locator('tr[data-virtual-index="2"]')).toHaveAttribute("data-selected", "");
     // The whole table's height is there for the scrollbar.
     const { scrollHeight, clientHeight } = await scroller(page).evaluate((el) => ({
       scrollHeight: el.scrollHeight,

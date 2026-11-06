@@ -119,7 +119,7 @@ for (const m of ["light", "dark"] as const) {
         const textColour = await bar.evaluate((el) => getComputedStyle(el).color);
         expect(textColour, `${name} step ${step}: progress text colour`).toBe(mutedForeground);
         const segs = await bar.locator('[data-slot="questionnaire-checkpoint"]').evaluateAll((els) =>
-          els.map((el) => [getComputedStyle(el).backgroundColor, el.getAttribute("data-state")]),
+          els.map((el) => [getComputedStyle(el).backgroundColor, el.hasAttribute("data-done") ? "done" : "pending"]),
         );
         for (const [colour, state] of segs) {
           expect(colour, `${name} step ${step}: ${state} segment`).toBe(state === "done" ? primary : muted);

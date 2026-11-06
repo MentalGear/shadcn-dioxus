@@ -1031,8 +1031,8 @@ pub fn QuestionnaireInput(props: QuestionnaireInputProps) -> Element {
         disabled: disabled,
         aria_invalid: invalid.then_some("true"),
         aria_keyshortcuts: key_shortcuts,
-        "data-filled": filled.then_some("true"),
-        "data-empty": (!filled).then_some("true"),
+        "data-filled": filled.then_some(""),
+        ..state_attrs::presence(state_attrs::Flag::Empty, !filled),
         onfocus: move |_| {
             ctx.claim_focus(KeyTarget::Answer {
                 item: focus_item.clone(),
@@ -1187,8 +1187,8 @@ pub fn use_questionnaire_action(
         aria_hidden: (!visible).then_some("true"),
         tabindex: (!visible).then_some(-1),
         aria_keyshortcuts: shortcut.then_some("Enter"),
-        "data-visible": visible.then_some("true"),
-        "data-hidden": (!visible).then_some("true"),
+        "data-visible": visible.then_some(""),
+        ..state_attrs::presence(state_attrs::Flag::Hidden, !visible),
         "data-status": status.map(ItemStatus::as_str),
         onclick: move |_| {
             if let Some(command) = command.clone() {

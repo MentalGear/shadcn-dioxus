@@ -20,7 +20,7 @@
 
 /* The wrapper `div` `DialogRoot` renders around the `<dialog>` carries `data-dx-scrim` (`component.rs`): the
  * theme's one "The modal scrim without a top layer" rule paints it where there is no top layer (non-web
- * arm, `is_modal: false`), fades it with `data-state`, and drops it for `overlay: false`. Nothing to write here. */
+ * arm, `is_modal: false`), fades it with `data-open` / `data-closed`, and drops it for `overlay: false`. Nothing to write here. */
 
 /* The scrim (this dialog's top-layer `::backdrop`) is the ONE shared rule in
  * `dx-components-theme.css` ("The modal scrim, once"): keyed on any `<dialog>` with a `dx-`

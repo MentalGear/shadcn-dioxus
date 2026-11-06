@@ -154,7 +154,7 @@ pub(crate) fn use_popover_sync(
     });
 }
 
-/// Variant of [`use_popover_sync`] for content whose *own* `data-state`
+/// Variant of [`use_popover_sync`] for content whose *own* `data-open` / `data-closed`
 /// (Radix-style) animates through a "closed but still mounted" phase --
 /// `use_animated_open`-driven content, unlike every other
 /// `use_popover_sync` call site. Forwards native/browser closes to
@@ -173,15 +173,15 @@ pub(crate) fn use_popover_sync(
 /// `hidePopover()` the instant `open` goes `false`. That is exactly right
 /// for content with no exit animation (`Tooltip`/`HoverCard`/`Popover`/
 /// `DropdownMenu`/`ContextMenu`/`Menubar`, none of which keep their content
-/// mounted through a CSS animate-out -- Radix-style `data-state="closed"`
+/// mounted through a CSS animate-out -- Radix-style `data-closed`
 /// animations on those are cosmetic fades that finish well after the
 /// element would already be gone). `SelectList`/`ComboboxList` are
 /// different: both render through `use_animated_open`, which
-/// deliberately keeps the content mounted with `data-state="closed"` for
+/// deliberately keeps the content mounted with `data-closed` for
 /// its whole exit animation (plus a settle hold) before actually
 /// unmounting it -- `combobox.spec.ts`'s "keeps filtered options during
 /// keyboard close animation" test asserts exactly this, that the
-/// `data-state="closed"` element is still visible mid-animation.
+/// `data-closed` element is still visible mid-animation.
 ///
 /// **Bug 1 (animation race).** Calling [`use_popover_sync`] directly with the
 /// raw `open` signal fails that test: `hidePopover()` fires on the same
@@ -191,7 +191,7 @@ pub(crate) fn use_popover_sync(
 /// `getAnimations()` check ever runs, so it observes zero running
 /// animations and finishes the close cycle immediately -- the exit
 /// animation is skipped outright, and Playwright's `toBeVisible()` on the
-/// still-should-be-animating `data-state="closed"` element fails. Never
+/// still-should-be-animating `data-closed` element fails. Never
 /// calling `hidePopover()` from the closing path at all -- only from a real
 /// unmount, once `use_animated_open` itself has already decided the
 /// animation (and its settle hold) is done -- sidesteps this entirely: the
@@ -213,13 +213,13 @@ pub(crate) fn use_popover_sync(
 /// `true` -- click the trigger again to reopen. The trigger's own
 /// `pointerdown` is classified as "outside" by native light dismiss, which
 /// closes the *still-showing* popover for real (a genuine
-/// `showPopover`/`hidePopover` pair, not merely a `data-state` flip) --
+/// `showPopover`/`hidePopover` pair, not merely a `data-open` / `data-closed` flip) --
 /// forwarded correctly back into `on_native_close`, setting `open` to
 /// `false` -- **immediately followed**, same gesture, by the trigger's own
 /// `onclick` reading `open` and calling `set_open(true)` to reopen it. A
 /// one-time, mount-only `showPopover()` call never re-fires for this
 /// already-mounted instance, so `open` becomes `true` again in
-/// Rust/`data-state` while the actual DOM element stays hidden
+/// Rust/`data-open` while the actual DOM element stays hidden
 /// (`:not(:popover-open)`) -- a user-visible "second click does nothing"
 /// defect. Reacting to `open` on every transition (not just the first)
 /// avoids it the same way [`use_popover_sync`]'s own show effect does:

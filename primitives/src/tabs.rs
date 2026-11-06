@@ -346,7 +346,7 @@ pub struct TabTriggerProps {
 /// ## Styling
 ///
 /// The [`TabTrigger`] component defines the following data attributes you can use to control styling:
-/// - `data-state`: Indicates the state of the tab trigger. Values are `active` or `inactive`.
+/// - `data-active`: Present while this tab is the active one.
 /// - `data-active`: Present (empty) while this tab is the active one, absent otherwise.
 /// - `data-disabled`: Indicates if the tab trigger is disabled. Values are `true` or `false`.
 #[component]
@@ -369,7 +369,7 @@ pub fn TabTrigger(props: TabTriggerProps) -> Element {
 
     // `type` is an overridable default; the rest is this trigger's own
     // functional state (role/tabindex define the tab widget and its
-    // roving-focus wiring, aria_selected/data-state/data-disabled mirror
+    // roving-focus wiring, aria_selected/data-active/data-disabled mirror
     // its real state, aria_controls references its `TabContent` by id).
     let defaults = attributes!(button { r#type: "button" });
     let owned = attributes!(button {
@@ -507,7 +507,7 @@ pub struct TabContentProps {
 /// ## Styling
 ///
 /// The [`TabContent`] component defines the following data attributes you can use to control styling:
-/// - `data-state`: Indicates the state of the tab panel. Values are `active` or `inactive`.
+/// - `data-hidden`: Present while this panel is not the active one.
 /// - `data-hidden`: Present (empty) while this panel is not the active one, absent otherwise.
 ///
 /// An inactive panel carries the `hidden` attribute (`hidden="until-found"` with
@@ -573,7 +573,7 @@ mod tests {
         dioxus_ssr::render(&dom)
     }
 
-    /// `(data-state, HIDDEN)` of every tab panel, in document order.
+    /// `(is the panel the active one, HIDDEN)` of every tab panel, in document order.
     fn panels(html: &str) -> Vec<(String, Option<String>)> {
         find_elements(html, |a| {
             a.get("role").map(String::as_str) == Some("tabpanel")
@@ -581,7 +581,7 @@ mod tests {
         .into_iter()
         .map(|el| {
             (
-                el.attrs["data-state"].clone(),
+                (!el.attrs.contains_key("data-hidden")).to_string(),
                 el.attrs.get("HIDDEN").cloned(),
             )
         })
@@ -661,8 +661,8 @@ mod tests {
         assert_eq!(
             panels(&html),
             vec![
-                ("active".to_string(), None),
-                ("inactive".to_string(), Some(String::new())),
+                ("true".to_string(), None),
+                ("false".to_string(), Some(String::new())),
             ],
             "{html}"
         );
@@ -678,8 +678,8 @@ mod tests {
         assert_eq!(
             panels(&html),
             vec![
-                ("active".to_string(), None),
-                ("inactive".to_string(), Some("until-found".to_string())),
+                ("true".to_string(), None),
+                ("false".to_string(), Some("until-found".to_string())),
             ],
             "{html}"
         );

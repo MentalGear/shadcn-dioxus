@@ -78,13 +78,13 @@
   --dx-toggle-min-width: var(--dx-control-height-lg);
 }
 
-/* dev-docs/backlog.md row 89: `:hover` and `[data-state="on"]` both add exactly
+/* dev-docs/backlog.md row 89: `:hover` and `[aria-pressed="true"]` both add exactly
    one selector component on top of `.dx-toggle`, so they tie at (0,2,0), a
-   genuine tie broken only by source order: `[data-state="on"]` is declared
+   genuine tie broken only by source order: `[aria-pressed="true"]` is declared
    after this rule, so an ON toggle keeps its `on` background while hovered,
    in both themes.
    `:where(:hover)` makes that unconditional (drops this branch's
-   contribution to (0,1,0), below `[data-state="on"]`'s (0,2,0)) rather than
+   contribution to (0,1,0), below `[aria-pressed="true"]`'s (0,2,0)) rather than
    order-dependent, so reordering these rules -- or `:hover` later picking up
    an extra clause -- cannot silently flip the winner. `:focus-visible` keeps
    its own (0,2,0); only the hover/active tie is at issue. */
@@ -118,7 +118,7 @@
  * step, in either mode, under any base. Across every base x accent the step is
  * 20/255 or more from hover and 40/255 or more from rest, and the ink on it
  * stays at 5.2:1 or better (playwright/theme-preset-contrast.spec.ts). */
-.dx-toggle[data-state="on"] {
+.dx-toggle[aria-pressed="true"] {
   background-color: color-mix(in var(--dx-hover-mix-space), var(--dx-accent-tint), var(--dx-tint-step-ink) 15%);
   color: var(--dx-foreground);
 }

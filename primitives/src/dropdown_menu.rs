@@ -192,7 +192,7 @@ pub struct DropdownMenuProps {
 /// ## Styling
 ///
 /// The [`DropdownMenu`] component defines the following data attributes you can use to control styling:
-/// - `data-state`: Indicates the current state of the dropdown menu. values are `open` or `closed`.
+/// - `data-open` / `data-closed`: Exactly one is present: whether this part is open.
 /// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
 /// - `data-disabled`: Indicates if the dropdown menu is disabled. values are `true` or `false`.
 #[component]
@@ -475,7 +475,7 @@ pub struct DropdownMenuTriggerProps {
 /// ## Styling
 ///
 /// The [`DropdownMenuTrigger`] component defines the following data attributes you can use to control styling:
-/// - `data-state`: Indicates the current state of the dropdown menu. values are `open` or `closed`.
+/// - `data-open` / `data-closed`: Exactly one is present: whether this part is open.
 /// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
 /// - `data-popup-open`: Present (empty) while the popup this trigger controls is open.
 /// - `data-disabled`: Indicates if the dropdown menu is disabled. values are `true` or `false`.
@@ -649,7 +649,7 @@ pub struct DropdownMenuContentProps {
 /// ## Styling
 ///
 /// The [`DropdownMenuContent`] component defines the following data attributes you can use to control styling:
-/// - `data-state`: Indicates the current state of the dropdown menu. values are `open` or `closed`.
+/// - `data-open` / `data-closed`: Exactly one is present: whether this part is open.
 /// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
 #[component]
 pub fn DropdownMenuContent(props: DropdownMenuContentProps) -> Element {
@@ -879,7 +879,7 @@ pub type DropdownMenuRadioItemProps = MenuRadioItemProps;
 /// ## Styling
 ///
 /// The [`DropdownMenuCheckboxItem`] component defines the following data attributes you can use to control styling:
-/// - `data-state`: Whether the item is checked. Values are `checked` or `unchecked`.
+/// - `data-checked` / `data-unchecked`: Exactly one is present: whether the item is checked.
 /// - `data-checked` / `data-unchecked`: Present (empty) while checked / unchecked, absent otherwise.
 /// - `data-disabled`: Indicates whether the item is disabled. Values are `true` or `false`.
 /// - `data-highlighted`: Present (empty) while this item holds the roving focus, absent otherwise.
@@ -955,7 +955,7 @@ pub fn DropdownMenuRadioGroup(props: DropdownMenuRadioGroupProps) -> Element {
 /// ## Styling
 ///
 /// The [`DropdownMenuRadioItem`] component defines the following data attributes you can use to control styling:
-/// - `data-state`: Whether the item is checked. Values are `checked` or `unchecked`.
+/// - `data-checked` / `data-unchecked`: Exactly one is present: whether the item is checked.
 /// - `data-checked` / `data-unchecked`: Present (empty) while checked / unchecked, absent otherwise.
 /// - `data-disabled`: Indicates whether the item is disabled. Values are `true` or `false`.
 /// - `data-highlighted`: Present (empty) while this item holds the roving focus, absent otherwise.
@@ -1167,8 +1167,7 @@ pub type DropdownMenuSubTriggerProps = MenuSubTriggerProps;
 ///
 /// The [`DropdownMenuSubTrigger`] component defines the following data
 /// attributes you can use to control styling:
-/// - `data-state`: Indicates whether the submenu is open. Values are
-///   `open` or `closed`.
+/// - `data-open` / `data-closed`: Exactly one is present: whether this part is open.
 /// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
 /// - `data-popup-open`: Present (empty) while the popup this trigger controls is open.
 /// - `data-disabled`: Indicates if the sub-trigger is disabled. Values are
@@ -1192,8 +1191,7 @@ pub type DropdownMenuSubContentProps = MenuSubContentProps;
 ///
 /// The [`DropdownMenuSubContent`] component defines the following data
 /// attributes you can use to control styling:
-/// - `data-state`: Indicates the current state of the submenu. Values are
-///   `open` or `closed`.
+/// - `data-open` / `data-closed`: Exactly one is present: whether this part is open.
 /// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
 #[component]
 pub fn DropdownMenuSubContent(props: DropdownMenuSubContentProps) -> Element {

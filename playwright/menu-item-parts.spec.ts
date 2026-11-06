@@ -57,7 +57,7 @@ const HOSTS: Host[] = [
     open: async (page, scene) => {
       await gotoHydrated(page, block("dropdown_menu", scene === "parts" ? "shortcuts" : "destructive"));
       await page.getByRole("button", { name: scene === "parts" ? "Shortcuts menu" : "Danger zone" }).click();
-      await expect(page.getByRole("menu")).toHaveAttribute("data-state", "open");
+      await expect(page.getByRole("menu")).toHaveAttribute("data-open", "");
     },
     order: ["Profile", "Billing", "Settings", "Log out"],
     destructiveName: "Delete project",
@@ -74,7 +74,7 @@ const HOSTS: Host[] = [
       await page
         .getByRole("button", { name: scene === "parts" ? "Right click for groups" : "Right click for destructive" })
         .click({ button: "right" });
-      await expect(page.getByRole("menu")).toHaveAttribute("data-state", "open");
+      await expect(page.getByRole("menu")).toHaveAttribute("data-open", "");
       // The pointer is left over the new menu, which would hover its first row; park it.
       await page.mouse.move(1, 1);
     },
@@ -92,7 +92,7 @@ const HOSTS: Host[] = [
       await gotoHydrated(page, block("menubar", "shortcuts"));
       // `destructive` lives in the second menu ("Selection"), `parts` in the first ("Document").
       await page.getByRole("menuitem", { name: scene === "parts" ? "Document" : "Selection" }).click();
-      await expect(page.locator(".dx-menubar-content")).toHaveAttribute("data-state", "open");
+      await expect(page.locator(".dx-menubar-content")).toHaveAttribute("data-open", "");
       await page.mouse.move(1, 1);
     },
     order: ["New Tab", "New Window", "Print"],

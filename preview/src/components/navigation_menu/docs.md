@@ -96,7 +96,7 @@ Opening content slides in over `--dx-motion-duration-slow` and out over `--dx-mo
 
 `NavigationMenuIndicator` is shadcn's optional arrow under the open item's trigger. Put it inside the
 `NavigationMenuList`, after the items. It is decorative (`aria-hidden`), fades in while an item is open
-(`data-state="visible"`), and slides to the new trigger when the open item changes.
+(`data-open`), and slides to the new trigger when the open item changes.
 
 ```rust
 NavigationMenuList {

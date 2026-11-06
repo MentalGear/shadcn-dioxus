@@ -209,7 +209,7 @@ pub fn Collapsible(props: CollapsibleProps) -> Element {
     });
 
     let base = attributes!(div {
-        ..state_attrs::open_presence(open),
+        ..state_attrs::open(open),
         ..state_attrs::presence(state_attrs::Flag::Disabled, props.disabled),
     });
     let merged = merge_attributes(vec![base, props.attributes]);
@@ -306,7 +306,7 @@ pub fn CollapsibleContent(props: CollapsibleContentProps) -> Element {
     });
 
     let mut owned = attributes!(div {
-        ..state_attrs::open_presence(open),
+        ..state_attrs::open(open),
         ..state_attrs::presence(state_attrs::Flag::Disabled, ctx.disabled),
     });
     owned.push(hidden_attribute(hidden));
@@ -385,7 +385,7 @@ pub fn CollapsibleTrigger(props: CollapsibleTriggerProps) -> Element {
 
     let base = attributes!(button {
         r#type: "button",
-        ..state_attrs::open_presence(open),
+        ..state_attrs::open(open),
         ..state_attrs::presence(state_attrs::Flag::Disabled, ctx.disabled),
         disabled: ctx.disabled,
         "aria-controls": ctx.aria_controls_id,

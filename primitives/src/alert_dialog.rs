@@ -15,7 +15,7 @@
 //!   `crate::use_dialog_open_driver`/`crate::use_dialog_close_sync` pair
 //!   `dialog.rs` uses. Closing waits for the exit animation (the driver
 //!   defers `close()`; see `dialog.rs`), so the `<dialog>` carries its own
-//!   `data-state`. No backdrop-click dismiss: unlike `Dialog`,
+//!   `data-open` / `data-closed`. No backdrop-click dismiss: unlike `Dialog`,
 //!   `AlertDialogContent` has no outside-press arm (APG
 //!   discourages light-dismissing an alert dialog), and the web arm has no
 //!   equivalent either.
@@ -105,7 +105,7 @@ pub struct AlertDialogRootProps {
 /// ## Styling
 ///
 /// The [`AlertDialogRoot`] component defines the following data attributes you can use to control styling:
-/// - `data-state`: Indicates if the alert dialog is open or closed. It can be either "open" or "closed".
+/// - `data-open` / `data-closed`: Exactly one is present: whether this part is open.
 /// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
 #[component]
 pub fn AlertDialogRoot(props: AlertDialogRootProps) -> Element {
@@ -358,7 +358,7 @@ pub fn AlertDialogContent(props: AlertDialogContentProps) -> Element {
             aria_labelledby: ctx.labelledby.clone(),
             aria_describedby: ctx.describedby.clone(),
             // The dialog's own state: closing keeps it open (modal) while it animates out, so a
-            // stylesheet keys the exit on `[data-state="closed"]`. See `crate::use_dialog_open_driver`.
+            // stylesheet keys the exit on `[data-closed]`. See `crate::use_dialog_open_driver`.
             ..state_attrs::open(open()),
             "data-dx-overlay": crate::dialog::overlay_off(ctx.overlay),
         }),

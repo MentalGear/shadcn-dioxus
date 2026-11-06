@@ -179,7 +179,7 @@ const SCENES: Record<string, Scene> = {
     open: async (page) => {
       await gotoComponent(page, "select");
       await page.getByRole("combobox").filter({ hasText: /Select an option|Apple|Banana/ }).click();
-      await expect(page.getByRole("listbox")).toHaveAttribute("data-state", "open");
+      await expect(page.getByRole("listbox")).toHaveAttribute("data-open", "");
     },
     probes: [
       {
@@ -197,13 +197,13 @@ const SCENES: Record<string, Scene> = {
       const input = page.getByRole("combobox", { name: "Select framework" });
       await input.focus();
       await page.keyboard.press("ArrowDown");
-      await expect(page.locator("[role='listbox'][data-state='open']")).toBeVisible();
+      await expect(page.locator("[role='listbox'][data-open]")).toBeVisible();
     },
     probes: [
       {
         name: "combobox option hovered",
-        target: (page) => page.locator("[role='listbox'][data-state='open']").getByRole("option", { name: "SvelteKit" }),
-        surface: (page) => page.locator("[role='listbox'][data-state='open']"),
+        target: (page) => page.locator("[role='listbox'][data-open]").getByRole("option", { name: "SvelteKit" }),
+        surface: (page) => page.locator("[role='listbox'][data-open]"),
         enter: hover,
         rest: async (page) => away(page),
       },

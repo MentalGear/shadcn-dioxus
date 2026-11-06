@@ -12,14 +12,14 @@ test("pointer navigation", async ({ page }) => {
   await fileMenuButton.click();
   // Assert the menu is open
   const fileMenuContent = page.getByRole("menu").filter({ has: page.getByRole("menuitem", { name: "New" }) }).last();
-  await expect(fileMenuContent).toHaveAttribute("data-state", "open");
+  await expect(fileMenuContent).toHaveAttribute("data-open", "");
 
   // After the menu is open, hover over the Edit menu item
   const editMenuButton = page.getByRole("menuitem", { name: "Edit" });
   await editMenuButton.hover();
   // Assert the Edit menu content is open
   const editMenuContent = page.getByRole("menu").filter({ has: page.getByRole("menuitem", { name: "Cut" }) }).last();
-  await expect(editMenuContent).toHaveAttribute("data-state", "open");
+  await expect(editMenuContent).toHaveAttribute("data-open", "");
   // Assert the File menu content is closed
   await expect(fileMenuContent).toHaveCount(0);
 
@@ -47,7 +47,7 @@ test("keyboard navigation", async ({ page }) => {
   await page.keyboard.press("ArrowDown");
   // Assert the File menu content is open
   const fileMenuContent = page.getByRole("menu").filter({ has: page.getByRole("menuitem", { name: "New" }) }).last();
-  await expect(fileMenuContent).toHaveAttribute("data-state", "open");
+  await expect(fileMenuContent).toHaveAttribute("data-open", "");
 
   // assert the new item is focused
   const newItem = fileMenuContent.getByRole("menuitem", { name: "New" });
@@ -85,7 +85,7 @@ test("a raw .focus() call on the trigger does not close its own open content (ro
   const fileMenuContent = page.getByRole("menu").filter({ has: page.getByRole("menuitem", { name: "New" }) }).last();
 
   await fileMenuButton.click();
-  await expect(fileMenuContent).toHaveAttribute("data-state", "open");
+  await expect(fileMenuContent).toHaveAttribute("data-open", "");
   // Arrow-down so a `MenubarItem` genuinely holds DOM focus -- the
   // precondition an `onblur` close on `MenubarItem` would need.
   await page.keyboard.press("ArrowDown");
@@ -100,8 +100,8 @@ test("a raw .focus() call on the trigger does not close its own open content (ro
 
   await expect(fileMenuContent, "the content must not close").toHaveCount(1);
   await expect(fileMenuContent, "and must report itself open").toHaveAttribute(
-    "data-state",
-    "open",
+    "data-open",
+    "",
   );
   await expect(fileMenuButton, "the trigger must simply be focused in place").toBeFocused();
 });
@@ -133,25 +133,25 @@ test.describe("Checkable items", () => {
     await gotoHydrated(page, block("checkboxes"));
     await page.getByRole("menuitem", { name: "View" }).click();
     const view = popupHaving(page, page.getByRole("menuitemcheckbox", { name: "Always Show Full URLs" }));
-    await expect(view).toHaveAttribute("data-state", "open");
+    await expect(view).toHaveAttribute("data-open", "");
 
     await expect(view.getByRole("menuitemcheckbox"), "two checkbox items in View").toHaveCount(2);
     await expect(view.getByRole("menuitem"), "Reload and Force Reload stay plain menuitems").toHaveCount(2);
     const bookmarks = view.getByRole("menuitemcheckbox", { name: "Always Show Bookmarks Bar" });
     const fullUrls = view.getByRole("menuitemcheckbox", { name: "Always Show Full URLs" });
     await expect(bookmarks).toHaveAttribute("aria-checked", "false");
-    await expect(bookmarks).toHaveAttribute("data-state", "unchecked");
+    await expect(bookmarks).toHaveAttribute("data-unchecked", "");
     await expect(fullUrls).toHaveAttribute("aria-checked", "true");
-    await expect(fullUrls).toHaveAttribute("data-state", "checked");
+    await expect(fullUrls).toHaveAttribute("data-checked", "");
     // Plain items carry no aria-checked at all.
     await expect(view.getByRole("menuitem", { name: "Reload", exact: true })).not.toHaveAttribute("aria-checked", /.*/);
 
     await bookmarks.click();
     await expect(bookmarks).toHaveAttribute("aria-checked", "true");
-    await expect(view, "the default keeps the menu open").toHaveAttribute("data-state", "open");
+    await expect(view, "the default keeps the menu open").toHaveAttribute("data-open", "");
     await fullUrls.click();
     await expect(fullUrls).toHaveAttribute("aria-checked", "false");
-    await expect(view).toHaveAttribute("data-state", "open");
+    await expect(view).toHaveAttribute("data-open", "");
   });
 
   test("checkbox items: arrow keys skip the disabled item, Space and Enter toggle in place, typeahead reaches them", async ({ page }) => {
@@ -160,7 +160,7 @@ test.describe("Checkable items", () => {
     await viewTrigger.focus();
     await page.keyboard.press("ArrowDown");
     const view = popupHaving(page, page.getByRole("menuitemcheckbox", { name: "Always Show Full URLs" }));
-    await expect(view).toHaveAttribute("data-state", "open");
+    await expect(view).toHaveAttribute("data-open", "");
     const bookmarks = view.getByRole("menuitemcheckbox", { name: "Always Show Bookmarks Bar" });
     const fullUrls = view.getByRole("menuitemcheckbox", { name: "Always Show Full URLs" });
     const reload = view.getByRole("menuitem", { name: "Reload", exact: true });
@@ -178,11 +178,11 @@ test.describe("Checkable items", () => {
     // closing the menu" -- what the default gives.
     await page.keyboard.press("Space");
     await expect(bookmarks).toHaveAttribute("aria-checked", "true");
-    await expect(view).toHaveAttribute("data-state", "open");
+    await expect(view).toHaveAttribute("data-open", "");
     await expect(bookmarks, "focus stays on the toggled item").toBeFocused();
     await page.keyboard.press("Enter");
     await expect(bookmarks).toHaveAttribute("aria-checked", "false");
-    await expect(view).toHaveAttribute("data-state", "open");
+    await expect(view).toHaveAttribute("data-open", "");
 
     // Typeahead: both checkbox labels start with "Always", so repeating "a"
     // cycles them; a plain item (Reload, via its value) is a target too.
@@ -216,7 +216,7 @@ test.describe("Checkable items", () => {
     await expect(
       popupHaving(page, group),
       "the default keeps the menu open",
-    ).toHaveAttribute("data-state", "open");
+    ).toHaveAttribute("data-open", "");
 
     // The second menu's group is separate, and still on its own value.
     await page.getByRole("menuitem", { name: "Theme" }).hover();
@@ -239,7 +239,7 @@ test.describe("Checkable items", () => {
     await page.keyboard.press("Space");
     await expect(andy).toHaveAttribute("aria-checked", "true");
     await expect(benoit).toHaveAttribute("aria-checked", "false");
-    await expect(menu).toHaveAttribute("data-state", "open");
+    await expect(menu).toHaveAttribute("data-open", "");
 
     await page.keyboard.press("ArrowDown");
     await page.keyboard.press("ArrowDown");
@@ -247,7 +247,7 @@ test.describe("Checkable items", () => {
     await page.keyboard.press("Enter");
     await expect(luis).toHaveAttribute("aria-checked", "true");
     await expect(andy).toHaveAttribute("aria-checked", "false");
-    await expect(menu).toHaveAttribute("data-state", "open");
+    await expect(menu).toHaveAttribute("data-open", "");
 
     // A radio item has no text_value here: typeahead falls back to its value.
     await page.keyboard.press("b");
@@ -260,7 +260,7 @@ test.describe("Checkable items", () => {
     await options.click();
     const pinned = page.getByRole("menuitemcheckbox", { name: "Pinned" });
     const optionsMenu = popupHaving(page, pinned);
-    await expect(optionsMenu).toHaveAttribute("data-state", "open");
+    await expect(optionsMenu).toHaveAttribute("data-open", "");
     await expect(pinned).toHaveAttribute("aria-checked", "true");
 
     // Pointer: closes, the (controlled) state survives the close, and -- as
@@ -295,7 +295,7 @@ test.describe("Checkable items", () => {
     await page.keyboard.press("ArrowDown");
     const descending = page.getByRole("menuitemradio", { name: "Descending" });
     const modifyMenu = popupHaving(page, descending);
-    await expect(modifyMenu).toHaveAttribute("data-state", "open");
+    await expect(modifyMenu).toHaveAttribute("data-open", "");
     for (let i = 0; i < 3; i++) await page.keyboard.press("ArrowDown");
     await expect(descending).toBeFocused();
     await page.keyboard.press("Enter");
@@ -326,7 +326,7 @@ test.describe("An item press: touch commits on the tap, mouse on pointerdown (ro
     else await options.click();
     const pinned = page.getByRole("menuitemcheckbox", { name: "Pinned" });
     const menu = popupHaving(page, pinned);
-    await expect(menu).toHaveAttribute("data-state", "open");
+    await expect(menu).toHaveAttribute("data-open", "");
     await expect(pinned).toHaveAttribute("aria-checked", "true");
     await awaitSettled(page);
     return { options, pinned, menu };
@@ -357,7 +357,7 @@ test.describe("An item press: touch commits on the tap, mouse on pointerdown (ro
       await touch("touchEnd");
       await awaitSettled(page);
       expect(await page.evaluate(() => window.scrollY), "the drag scrolled the page").not.toBe(scrolledBefore);
-      await expect(menu, "a scroll that starts on an item leaves the menu open").toHaveAttribute("data-state", "open");
+      await expect(menu, "a scroll that starts on an item leaves the menu open").toHaveAttribute("data-open", "");
       await expect(pinned, "the item's action did not run").toHaveAttribute("aria-checked", "true");
       // A tap that opened the menu left focus on the trigger; a commit would have handed it back there from an item,
       // so the case is "focus is exactly where it was".
@@ -411,7 +411,7 @@ test.describe("Axe automated scan", () => {
     await gotoHydrated(page, `${BASE_URL}/component/menubar/`, { timeout: 20 * 60 * 1000 });
     await page.getByRole("menuitem", { name: "File" }).click();
     const fileMenuContent = page.getByRole("menu").filter({ has: page.getByRole("menuitem", { name: "New" }) }).last();
-    await expect(fileMenuContent).toHaveAttribute("data-state", "open");
+    await expect(fileMenuContent).toHaveAttribute("data-open", "");
     await expectNoAxeViolations(page, "menubar: File menu open", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });
 });
@@ -439,16 +439,16 @@ test.describe("open_on_hover: false (click activation)", () => {
     const tools = page.getByRole("menuitem", { name: "Tools", exact: true });
 
     await insert.click();
-    await expect(menuNamed(page, "Insert")).toHaveAttribute("data-state", "open");
+    await expect(menuNamed(page, "Insert")).toHaveAttribute("data-open", "");
 
     await tools.hover();
     // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
     await page.waitForTimeout(HOVER_SETTLE_MS);
-    await expect(menuNamed(page, "Insert")).toHaveAttribute("data-state", "open");
+    await expect(menuNamed(page, "Insert")).toHaveAttribute("data-open", "");
     await expect(menuNamed(page, "Tools")).toHaveCount(0);
 
     await tools.click();
-    await expect(menuNamed(page, "Tools")).toHaveAttribute("data-state", "open");
+    await expect(menuNamed(page, "Tools")).toHaveAttribute("data-open", "");
     await expect(menuNamed(page, "Insert")).toHaveCount(0);
   });
 
@@ -465,7 +465,7 @@ test.describe("open_on_hover: false (click activation)", () => {
     const insert = page.getByRole("menuitem", { name: "Insert", exact: true });
     await insert.focus();
     await page.keyboard.press("ArrowDown");
-    await expect(menuNamed(page, "Insert")).toHaveAttribute("data-state", "open");
+    await expect(menuNamed(page, "Insert")).toHaveAttribute("data-open", "");
     await expect(page.getByRole("menuitem", { name: "Table", exact: true })).toBeFocused();
   });
 });
@@ -483,9 +483,9 @@ test.describe("Open/close animation", () => {
   test("the fade animates translate/scale and leaves transform alone (open and close)", async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/menubar/`, { timeout: 20 * 60 * 1000 });
     await page.getByRole("menuitem", { name: "File" }).click();
-    const content = page.locator('.dx-menubar-content[data-state="open"]').last();
+    const content = page.locator('.dx-menubar-content[data-open]').last();
     await expect(content).toBeVisible();
     await expectFadeKeepsTransform(content, "menubar content, open");
-    await expectFadeKeepsTransform(content, "menubar content, close", { "data-state": "closed" });
+    await expectFadeKeepsTransform(content, "menubar content, close", { 'data-open': null, 'data-closed': '' });
   });
 });

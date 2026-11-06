@@ -138,7 +138,7 @@
     transition: opacity var(--dx-motion-duration-base) var(--dx-motion-ease-standard);
 }
 
-.dx-tabs-trigger[data-state="active"]::after {
+.dx-tabs-trigger[data-active]::after {
     opacity: 1;
 }
 
@@ -177,7 +177,7 @@
     height: var(--dx-tabs-icon-size);
 }
 
-.dx-tabs-trigger[data-state="active"] {
+.dx-tabs-trigger[data-active] {
     border-color: var(--dx-tabs-active-border-color);
     background-color: var(--dx-tabs-active-background);
     box-shadow: var(--dx-tabs-active-shadow);
@@ -190,7 +190,7 @@
 }
 
 /* A plain hover must never outrank the active tab's own
-   [data-state="active"] colour, so it is kept at zero specificity with
+   [data-active] colour, so it is kept at zero specificity with
    :where() (same class of bug as calendar/style.css's day hover: clicking a
    tab leaves the pointer on it, and a hover tint with normal specificity
    would repaint the active tab). Hover and active resolve to the same
@@ -203,7 +203,7 @@
 
 /* `focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50
    focus-visible:outline-1 focus-visible:outline-ring`. Kept out of the
-   :where(), and after [data-state="active"] at the same specificity, so it outranks that rule's border and shadow. */
+   :where(), and after [data-active] at the same specificity, so it outranks that rule's border and shadow. */
 .dx-tabs-trigger:focus-visible {
     border-color: var(--dx-ring-color);
     box-shadow: var(--dx-ring-focus);
@@ -212,7 +212,7 @@
 }
 
 /* A focused active tab keeps its active label colour (the accent ink under a picked accent, row 389). */
-.dx-tabs-trigger[data-state="active"]:focus-visible {
+.dx-tabs-trigger[data-active]:focus-visible {
     color: var(--dx-tabs-active-color);
 }
 
@@ -239,11 +239,11 @@
 }
 
 /* An inactive panel is `hidden`, which the browser already renders as
-   `display: none`. This stays for markup that sets `data-state` without
+   `display: none`. This stays for markup that sets `data-hidden` without
    `hidden`, but must skip `hidden="until-found"` (the `hidden_until_found`
    opt-in): an author `display: none` defeats the browser rule that keeps that
    content searchable by find-in-page and reachable by `#fragment`. */
-.dx-tabs-content[data-state="inactive"]:not([hidden="until-found"]) {
+.dx-tabs-content[data-hidden]:not([hidden="until-found"]) {
     display: none;
 }
 

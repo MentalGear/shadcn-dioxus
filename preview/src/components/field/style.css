@@ -106,7 +106,7 @@
  * its one `Field` child just grows to fill it; the label is only the *condition*
  * (`:has(...)`), never the subject.
  *
- * Checked is read off any descendant carrying `data-state="checked"` (Radio
+ * Checked is read off any descendant carrying `data-checked` (Radio
  * item, Switch and Checkbox all emit it), so no control's class is named here.
  * Dark mode is the theme's `--light`/`--dark` space toggle
  * (dx-components-theme.css): one of the two values is the empty
@@ -127,7 +127,7 @@
   }
 }
 
-.dx-field-label:has([data-state="checked"]) > .dx-field {
+.dx-field-label:has([data-checked]) > .dx-field {
   border-color:
     var(--light, color-mix(in oklab, var(--dx-primary) 30%, transparent))
     var(--dark, color-mix(in oklab, var(--dx-primary) 20%, transparent));

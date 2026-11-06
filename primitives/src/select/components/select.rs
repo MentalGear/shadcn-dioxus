@@ -314,7 +314,7 @@ fn use_select_root(
 /// ## Styling
 ///
 /// The [`Select`] component defines the following data attributes you can use to control styling:
-/// - `data-state`: Indicates the current state of the select. Values are `open` or `closed`.
+/// - `data-open` / `data-closed`: Exactly one is present: whether this part is open.
 /// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
 #[component]
 pub fn Select<T: Clone + PartialEq + 'static>(props: SelectProps<T>) -> Element {
@@ -503,7 +503,7 @@ pub fn Select<T: Clone + PartialEq + 'static>(props: SelectProps<T>) -> Element 
 /// ## Styling
 ///
 /// The [`SelectMulti`] component defines the following data attributes you can use to control styling:
-/// - `data-state`: Indicates the current state of the select. Values are `open` or `closed`.
+/// - `data-open` / `data-closed`: Exactly one is present: whether this part is open.
 /// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
 #[component]
 pub fn SelectMulti<T: Clone + PartialEq + 'static>(props: SelectMultiProps<T>) -> Element {

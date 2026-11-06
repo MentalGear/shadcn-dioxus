@@ -677,7 +677,7 @@ pub struct ResizableHandleProps {
 ///   `aria-orientation`, which is deliberately the inverse; see [`ResizableDirection`]'s own
 ///   doc).
 /// - `data-disabled`: Indicates if the handle is disabled. Values are `true` or `false`.
-/// - `data-state`: `dragging` while a pointer drag is in progress, `idle` otherwise.
+/// - `data-dragging`: Present while a pointer drag is in progress.
 #[component]
 pub fn ResizableHandle(props: ResizableHandleProps) -> Element {
     let ctx = use_context::<ResizableGroupContext>();
@@ -731,7 +731,6 @@ pub fn ResizableHandle(props: ResizableHandleProps) -> Element {
     let controls = use_memo(move || ctx.panel_id(index));
     let value_min = use_memo(move || primary().min_size);
     let value_max = use_memo(move || primary().max_size);
-    let data_state = use_memo(move || if dragging() { "dragging" } else { "idle" });
     let tabindex = use_memo(move || if (handle_disabled)() { "-1" } else { "0" });
 
     // All owned: role/tabindex/aria-orientation define this separator's
@@ -743,7 +742,7 @@ pub fn ResizableHandle(props: ResizableHandleProps) -> Element {
         aria_orientation,
         "data-orientation": data_orientation,
         ..state_attrs::presence(state_attrs::Flag::Disabled, handle_disabled),
-        ..state_attrs::state(data_state()),
+        ..state_attrs::presence(state_attrs::Flag::Dragging, dragging()),
         aria_valuenow: size_now,
         aria_valuemin: value_min,
         aria_valuemax: value_max,

@@ -50,7 +50,7 @@ for (const scheme of ["light", "dark"] as const) {
     await open(page, "toggle", scheme);
     const t = page.locator("#component-preview-frame").getByRole("button", { name: "Toggle bookmark", exact: true });
     await t.click();
-    await expect(t).toHaveAttribute("data-state", "on");
+    await expect(t).toHaveAttribute("aria-pressed", "true");
     await page.mouse.move(0, 0);
     await expectFill(page, t, bg(t), step("var(--dx-accent)", 15), "toggle on");
   });
@@ -59,7 +59,7 @@ for (const scheme of ["light", "dark"] as const) {
     await open(page, "toggle_group", scheme);
     const item = page.locator("#component-preview-frame .dx-toggle-group-item").first();
     await item.click();
-    await expect(item).toHaveAttribute("data-state", "on");
+    await expect(item).toHaveAttribute("aria-pressed", "true");
     await page.mouse.move(0, 0);
     await expectFill(page, item, bg(item), step("var(--dx-accent)", 15), "toggle_group on");
   });

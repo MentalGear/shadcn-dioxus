@@ -85,7 +85,7 @@ import type { StateCoverage } from "./computed-style-states";
  *    hover card) records the opened content too.
  *  - `open`: for each trigger (DERIVED: `aria-haspopup`, `aria-expanded`, `popovertarget`, `summary`,
  *    tooltip/hover-card `aria-describedby`, `*-trigger` classes, the first focusable inside a
- *    `data-state=closed` root; plus EVERY button on `PLAIN_TRIGGER_PAGES`, whose demos open overlays from
+ *    `data-closed` root; plus EVERY button on `PLAIN_TRIGGER_PAGES`, whose demos open overlays from
  *    plain `onclick` buttons) try click, right-click (context menus), hover, focus until the page changes;
  *    record the delta (content, its pseudo-elements, `::backdrop` of a top-layer `<dialog>`/`[popover]`);
  *    then hover each distinct item inside it (menu items, options, links) against the open-state

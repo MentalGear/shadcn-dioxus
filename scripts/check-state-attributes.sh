@@ -44,10 +44,13 @@ sys.path.insert(0, "scripts/lib")
 from allow import Allowlist  # noqa: E402
 
 VOCAB = [
-    "state", "checked", "unchecked", "indeterminate", "open", "closed", "popup-open", "panel-open",
+    "checked", "unchecked", "indeterminate", "open", "closed", "popup-open", "panel-open",
     "pressed", "disabled", "readonly", "highlighted", "selected", "invalid", "active", "dragging",
-    "complete", "progressing",
+    "complete", "progressing", "hidden", "loading", "loaded", "empty", "idle", "uploading", "processing",
+    "done",
 ]
+# `data-state` is retired (row 485): no emission anywhere in scope, the helper included.
+RETIRED = "data-state"
 HELPER = "primitives/src/state_attrs.rs"
 BASELINE = "scripts/check-state-attributes.baseline.tsv"
 DOC = "dev-docs/state-attributes.md"
@@ -125,6 +128,8 @@ def scan(path, src):
     """Findings for one file: [(kind, line, name, detail)]; kind is 'literal' or 'false'."""
     text = live(src)
     found = []
+    for m in re.finditer(r'"data-state"', text):
+        found.append(("retired", text.count("\n", 0, m.start()) + 1, RETIRED, ""))
     for m in list(KEY_RE.finditer(text)) + list(NEW_RE.finditer(text)):
         name = "data-" + m.group(1)
         line = text.count("\n", 0, m.start()) + 1
@@ -152,7 +157,7 @@ def files():
 
 def run_self_test():
     fixtures = [
-        ('rsx! { div { "data-state": if open { "open" } else { "closed" } } }', ["literal"]),
+        ('rsx! { div { "data-state": if open { "open" } else { "closed" } } }', ["retired"]),
         ('attributes!(div { "data-open": open })', ["literal"]),
         ('attributes!(div { "data-checked": c.then_some("") })', ["literal"]),
         ('attributes!(div { ..state_attrs::open(open()) })', []),
@@ -166,6 +171,8 @@ def run_self_test():
         ('let s = "// \\"data-open\\": x"; /* "data-active": y */', []),
         ('fn f() {}\n#[cfg(test)]\nmod t { fn g() { let _ = r#"data-state"#; "data-state": "x" } }', []),
         ('attributes!(div { "data-thing": other_false })', []),
+        ('Attribute::new("data-state", v, None, false)', ["retired"]),
+        ('fn f() -> Attribute { text("data-state", "open") }', ["retired"]),
     ]
     bad = 0
     for src, want in fixtures:
@@ -222,7 +229,10 @@ def main(argv):
         for kind, line, name, detail in found:
             if ALLOW.find(lambda e, p=path, n=name: e.path == p and e.name == n):
                 continue
-            if kind == "valued":
+            if kind == "retired":
+                errors.append(f"{path}:{line}: `data-state` is retired; state is a presence attribute or ARIA "
+                              f"(primitives/src/state_attrs.rs, dev-docs/state-attributes.md)")
+            elif kind == "valued":
                 errors.append(f"{path}:{line}: `state_attrs::{name}` is gone; a boolean state is a presence attribute: "
                               f"`state_attrs::presence(Flag::X, on)` (present while it holds, absent otherwise)")
             elif kind == "literal":
@@ -233,6 +243,10 @@ def main(argv):
         for call, n in calls.items():
             counts[(path, call)] = n
     errors += ALLOW.problems()
+    if os.path.exists(HELPER):
+        for kind, line, name, detail in scan(HELPER, open(HELPER).read())[0]:
+            if kind == "retired":
+                errors.append(f"{HELPER}:{line}: `data-state` is retired and must not be emitted here either")
 
     # The vocabulary is documented once, and every name is in it.
     if not os.path.exists(DOC):

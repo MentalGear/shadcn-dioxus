@@ -3,7 +3,7 @@ use dioxus::prelude::*;
 use dioxus_primitives::ContentSide;
 
 /// Radix's `forceMount` on `HoverCardContent`: the card stays in the DOM while it is closed
-/// (hidden, `data-state="closed"`), instead of being mounted when it opens and removed after its
+/// (hidden, `data-closed`), instead of being mounted when it opens and removed after its
 /// exit animation. It still opens, and fades out, exactly like the default card.
 #[component]
 pub fn Demo() -> Element {

@@ -169,7 +169,7 @@ const navigationMenuNav = (page: Page) => demoFrame(page).getByRole("navigation"
 const selectTrigger = (page: Page) => demoRole(page, "combobox");
 
 const comboboxInput = (page: Page) => demoRole(page, "combobox");
-const comboboxListbox = (page: Page) => page.locator("[role='listbox'][data-state='open']");
+const comboboxListbox = (page: Page) => page.locator("[role='listbox'][data-open]");
 
 const toastCloseButton = (page: Page) => page.getByRole("button", { name: "close", exact: true }).first();
 
@@ -203,7 +203,7 @@ const OVERLAY_SUBJECTS: OverlaySubject[] = [
     goto: (page) => goto(page, "sheet"),
     open: async (page) => {
       await demoRole(page, "button", 1).click(); // sheet demo: Top, Right, Bottom, Left
-      await expect(page.locator('[data-slot="sheet-root"]')).toHaveAttribute("data-state", "open");
+      await expect(page.locator('[data-slot="sheet-root"]')).toHaveAttribute("data-open", "");
     },
     close: async (page) => {
       await page.keyboard.press("Escape");
@@ -215,7 +215,7 @@ const OVERLAY_SUBJECTS: OverlaySubject[] = [
     goto: (page) => goto(page, "drawer"),
     open: async (page) => {
       await demoRole(page, "button").click();
-      await expect(page.locator('[data-slot="drawer-root"]')).toHaveAttribute("data-state", "open");
+      await expect(page.locator('[data-slot="drawer-root"]')).toHaveAttribute("data-open", "");
     },
     close: async (page) => {
       await page.keyboard.press("Escape");
@@ -270,12 +270,12 @@ const OVERLAY_SUBJECTS: OverlaySubject[] = [
     open: async (page) => {
       const trigger = demoRole(page, "button");
       await trigger.click();
-      await expect(trigger).toHaveAttribute("data-state", "open");
+      await expect(trigger).toHaveAttribute("data-open", "");
     },
     close: async (page) => {
       const trigger = demoRole(page, "button");
       await page.keyboard.press("Escape");
-      await expect(trigger).toHaveAttribute("data-state", "closed");
+      await expect(trigger).toHaveAttribute("data-closed", "");
     },
   },
   {
@@ -283,7 +283,7 @@ const OVERLAY_SUBJECTS: OverlaySubject[] = [
     goto: (page) => goto(page, "context_menu"),
     open: async (page) => {
       await demoRole(page, "button").click({ button: "right" });
-      await expect(page.getByRole("menu")).toHaveAttribute("data-state", "open");
+      await expect(page.getByRole("menu")).toHaveAttribute("data-open", "");
     },
     close: async (page) => {
       await page.keyboard.press("Escape");
@@ -299,7 +299,7 @@ const OVERLAY_SUBJECTS: OverlaySubject[] = [
     goto: (page) => goto(page, "menubar"),
     open: async (page) => {
       await demoRole(page, "menuitem", 0).click();
-      await expect(menubarFileMenu(page)).toHaveAttribute("data-state", "open");
+      await expect(menubarFileMenu(page)).toHaveAttribute("data-open", "");
     },
     close: async (page) => {
       await page.keyboard.press("Escape");
@@ -311,7 +311,7 @@ const OVERLAY_SUBJECTS: OverlaySubject[] = [
     goto: (page) => goto(page, "select"),
     open: async (page) => {
       await selectTrigger(page).click();
-      await expect(page.getByRole("listbox")).toHaveAttribute("data-state", "open");
+      await expect(page.getByRole("listbox")).toHaveAttribute("data-open", "");
     },
     close: async (page) => {
       await page.keyboard.press("Escape");
@@ -430,7 +430,7 @@ const OVERLAY_SUBJECTS: OverlaySubject[] = [
     goto: (page) => goto(page, "navbar"),
     open: async (page) => {
       await navbarInputsMenu(page).hover();
-      await expect(navbarInputsMenu(page)).toHaveAttribute("data-state", "open");
+      await expect(navbarInputsMenu(page)).toHaveAttribute("data-open", "");
     },
     close: async (page) => {
       // Escape closes the navbar dropdown the
@@ -438,7 +438,7 @@ const OVERLAY_SUBJECTS: OverlaySubject[] = [
       // exercised by navbar.spec.ts itself, which only tests navigation
       // away (a real click that leaves the page), not in-place closing.
       await page.keyboard.press("Escape");
-      await expect(navbarInputsMenu(page)).toHaveAttribute("data-state", "closed");
+      await expect(navbarInputsMenu(page)).toHaveAttribute("data-closed", "");
     },
   },
 ];
@@ -574,7 +574,7 @@ const FORM_CONTROL_SUBJECTS: FormControlSubject[] = [
     interact: async (page) => {
       const el = page.locator("#component-preview-frame").locator("button[aria-pressed]").first();
       await el.click();
-      await expect(el).toHaveAttribute("data-state", "on");
+      await expect(el).toHaveAttribute("aria-pressed", "true");
     },
   },
   {
@@ -583,7 +583,7 @@ const FORM_CONTROL_SUBJECTS: FormControlSubject[] = [
     interact: async (page) => {
       const el = demoRole(page, "button");
       await el.click();
-      await expect(el).toHaveAttribute("data-state", "on");
+      await expect(el).toHaveAttribute("aria-pressed", "true");
     },
   },
   {
@@ -687,9 +687,9 @@ const FORM_CONTROL_SUBJECTS: FormControlSubject[] = [
     interact: async (page) => {
       await demoRole(page, "button").click();
       const root = page.locator('[data-slot="drawer-root"]');
-      await expect(root).toHaveAttribute("data-state", "open");
+      await expect(root).toHaveAttribute("data-open", "");
       const content = page.locator('[data-slot="drawer-content"]');
-      // `data-state="open"` is set when the slide-in STARTS, not when it lands. Read straight away, the handle is
+      // `data-open` is set when the slide-in STARTS, not when it lands. Read straight away, the handle is
       // still below the fold: the press then hits nothing, no drag begins, and the drawer never dismisses. So wait
       // until the handle has stopped moving (two equal reads 100 ms apart).
       const handle = page.locator('[data-slot="drawer-handle"]');

@@ -34,7 +34,7 @@ const URL = `${BASE_URL}/component/combobox/`;
 type Rect = { top: number; left: number; right: number; bottom: number; width: number; height: number };
 
 const input = (page: Page) => page.getByRole("combobox", { name: "Select framework" });
-const list = (page: Page) => page.locator("[role='listbox'][data-state='open']");
+const list = (page: Page) => page.locator("[role='listbox'][data-open]");
 
 const rectOf = (l: Locator): Promise<Rect> =>
     readAtRest(l, (el) => {

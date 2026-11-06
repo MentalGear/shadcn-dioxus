@@ -22,16 +22,6 @@ pub enum AttachmentState {
 }
 
 impl AttachmentState {
-    pub fn class(&self) -> &'static str {
-        match self {
-            AttachmentState::Idle => "idle",
-            AttachmentState::Uploading => "uploading",
-            AttachmentState::Processing => "processing",
-            AttachmentState::Error => "error",
-            AttachmentState::Done => "done",
-        }
-    }
-
     /// Whether work is still in flight, which is what makes the title shimmer.
     fn is_busy(&self) -> bool {
         matches!(
@@ -127,10 +117,19 @@ pub fn Attachment(
         class: "dx-attachment", "data-dx-root": "",
         "data-slot": "attachment",
     });
-    // `data-state` / `data-size` / `data-orientation` reflect this wrapper's own
+    // the status attribute / `data-size` / `data-orientation` reflect this wrapper's own
     // typed props, not caller defaults -- owned-wins.
     let owned = attributes!(div {
-        ..state_attrs::state(state().class()),
+        ..state_attrs::presence(
+            match state() {
+                AttachmentState::Idle => state_attrs::Flag::Idle,
+                AttachmentState::Uploading => state_attrs::Flag::Uploading,
+                AttachmentState::Processing => state_attrs::Flag::Processing,
+                AttachmentState::Error => state_attrs::Flag::Error,
+                AttachmentState::Done => state_attrs::Flag::Done,
+            },
+            true,
+        ),
         "data-size": size.class(),
         "data-orientation": orientation.class(),
     });

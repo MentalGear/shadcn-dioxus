@@ -42,13 +42,13 @@ export interface AnimationProbe {
 
 /**
  * Probes every CSS animation attached to `content` (a running one or a `forwards`-filled one), with `attrs`
- * set on it for the duration of the probe -- `{ "data-state": "closed" }` selects the CLOSE animation of an
+ * set on it for the duration of the probe (a `null` value removes the attribute) -- `{ "data-open": null, "data-closed": "" }` selects the CLOSE animation of an
  * open panel without closing it (nothing re-renders in between: the attributes go on and come off inside one
  * synchronous evaluate, so the component never sees them).
  */
-export async function probeAnimations(content: Locator, attrs: Record<string, string> = {}): Promise<AnimationProbe[]> {
+export async function probeAnimations(content: Locator, attrs: Record<string, string | null> = {}): Promise<AnimationProbe[]> {
   return content.evaluate(async (el, { probe, attrs }) => {
-    // Two frames first: on an element that mounted a moment ago, flipping `data-state` before its first
+    // Two frames first: on an element that mounted a moment ago, flipping `data-open` / `data-closed` before its first
     // style resolution finds no CSS animation to probe (a close-state probe straight after
     // `toBeVisible()` would find none). Everything after this line is synchronous -- the attributes go on
     // and come off inside one task, so the component never sees them.
@@ -57,7 +57,10 @@ export async function probeAnimations(content: Locator, attrs: Record<string, st
     const prev = html.style.getPropertyValue("transform");
     const prevPriority = html.style.getPropertyPriority("transform");
     const prevAttrs = Object.keys(attrs).map((k) => [k, el.getAttribute(k)] as const);
-    for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+    for (const [k, v] of Object.entries(attrs)) {
+      if (v === null) el.removeAttribute(k);
+      else el.setAttribute(k, v);
+    }
     const anims = el.getAnimations().filter((a): a is CSSAnimation => "animationName" in a);
     html.style.setProperty("transform", probe);
     const read = (): { transform: string; scale: string; translate: string } => {
@@ -74,7 +77,7 @@ export async function probeAnimations(content: Locator, attrs: Record<string, st
           }
         }
         // Seek a CLONE of the keyframes, not the real animation: a script-driven pause()/finish() leaves the
-        // CSS animation behind when `data-state` flips later (the next probe then finds a stale one). The
+        // CSS animation behind when `data-open` / `data-closed` flips later (the next probe then finds a stale one). The
         // clone is a script animation, composited ABOVE the element's CSS animations, over the very same
         // properties -- whatever the keyframes set is what it shows.
         const clone = new Animation(new KeyframeEffect(el, keyframes, { duration: 1000, fill: "both" }), document.timeline);
@@ -106,7 +109,7 @@ export async function probeAnimations(content: Locator, attrs: Record<string, st
  * -- and that it really does move something (`scale` or `translate` differs between start and end), so a
  * fade without motion cannot pass as "composes fine".
  */
-export async function expectFadeKeepsTransform(content: Locator, label: string, attrs: Record<string, string> = {}): Promise<void> {
+export async function expectFadeKeepsTransform(content: Locator, label: string, attrs: Record<string, string | null> = {}): Promise<void> {
   const fades = (await probeAnimations(content, attrs)).filter((a) => a.keyframeProps.includes("opacity"));
   expect(fades.length, `${label}: expected a CSS fade (an animation with opacity keyframes) on the content`).toBeGreaterThan(0);
   for (const a of fades) {

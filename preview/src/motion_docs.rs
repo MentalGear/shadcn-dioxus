@@ -162,7 +162,7 @@ pub(crate) const MOTION_TABLE: &[[&str; 4]] = &[
         r#"Avatar (loading)"#,
         r#"placeholder opacity pulse, 1.5 s, only while the image is loading"#,
         r#"pause while loading (`use_motion_when`); nothing is subscribed once loaded"#,
-        r#"`animation` on `.dx-avatar[data-state="loading"]`; under reduced motion the placeholder is still (the theme's `[data-dx-motion-key]` rule)"#,
+        r#"`animation` on `.dx-avatar[data-loading]`; under reduced motion the placeholder is still (the theme's `[data-dx-motion-key]` rule)"#,
     ],
     [
         r#"Carousel autoplay"#,

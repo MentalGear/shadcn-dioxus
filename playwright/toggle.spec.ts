@@ -10,22 +10,22 @@ test('test', async ({ page }) => {
   let toggleElement = page.locator('#component-preview-frame').getByRole('button', { name: 'Toggle bookmark', exact: true });
   await expect(toggleElement).toBeVisible();
   // The toggle should not be checked initially
-  await expect(toggleElement).toHaveAttribute('data-state', 'off');
+  await expect(toggleElement).toHaveAttribute('aria-pressed', 'false');
   // // Clicking the toggle should check it
   await toggleElement.click();
-  await expect(toggleElement).toHaveAttribute('data-state', 'on');
+  await expect(toggleElement).toHaveAttribute('aria-pressed', 'true');
   // Pressing space should also toggle the toggle.
   // Use locator.press so the element is focused before the keystroke —
   // webkit does not always retain focus on a button after a synthetic click.
   // await toggleElement.press('Space');
   // await toggleElement.press('Space');
   await page.keyboard.press('Space');
-  await expect(toggleElement).toHaveAttribute('data-state', 'off');
+  await expect(toggleElement).toHaveAttribute('aria-pressed', 'false');
 });
 
 // HARDENING (dev-docs/backlog.md row 89): `.dx-toggle:hover`
-// and `.dx-toggle[data-state="on"]` tie at specificity (0,2,0), broken only by source order
-// (`[data-state="on"]` is declared after `:hover`), so the pressed background survives hover
+// and `.dx-toggle[aria-pressed=true]` tie at specificity (0,2,0), broken only by source order
+// (`[aria-pressed=true]` is declared after `:hover`), so the pressed background survives hover
 // (both themes, exact values below). `:where(:hover)` makes that
 // unconditional (specificity, not source order) so reordering the rules --
 // or `:hover` gaining an extra clause the way calendar/tabs's did --
@@ -37,7 +37,7 @@ for (const dark of [false, true]) {
     const toggle = page.locator('#component-preview-frame').getByRole('button', { name: 'Toggle bookmark', exact: true });
 
     await toggle.click();
-    await expect(toggle).toHaveAttribute('data-state', 'on');
+    await expect(toggle).toHaveAttribute('aria-pressed', 'true');
     await page.locator('body').hover({ position: { x: 0, y: 0 } });
     // Wait past the CSS transition (--dx-motion-duration-base, 150ms) before
     // reading computed style -- a mid-transition read returns an
@@ -96,7 +96,7 @@ for (const dark of [false, true]) {
       expect(await toggle.evaluate((el) => el.matches(':hover'))).toBe(true);
       const hovered = await paint();
       await toggle.click();
-      await expect(toggle).toHaveAttribute('data-state', 'on');
+      await expect(toggle).toHaveAttribute('aria-pressed', 'true');
       await page.locator('body').hover({ position: { x: 0, y: 0 } });
       const pressed = await paint();
 
@@ -166,7 +166,7 @@ test('disabled toggles (default and outline) ignore clicks', async ({ page }) =>
   for (const name of ['Toggle disabled', 'Toggle disabled outline']) {
     const t = variantFrame(page, 'disabled').getByRole('button', { name, exact: true });
     await expect(t).toBeDisabled();
-    await expect(t).toHaveAttribute('data-state', 'off');
+    await expect(t).toHaveAttribute('aria-pressed', 'false');
   }
 });
 
@@ -178,7 +178,7 @@ test.describe('Axe automated scan', () => {
   });
 });
 
-// `data-pressed` (row 482): a presence attribute next to `aria-pressed` and `data-state`.
+// `data-pressed` (row 482): a presence attribute next to `aria-pressed`.
 test('data-pressed is present only while the toggle is pressed', async ({ page }) => {
   await gotoHydrated(page, `${BASE_URL}/component/toggle/`, { timeout: 20 * 60 * 1000, waitUntil: 'networkidle' });
   const toggle = page.locator('#component-preview-frame').getByRole('button', { name: 'Toggle bookmark', exact: true });
@@ -186,9 +186,9 @@ test('data-pressed is present only while the toggle is pressed', async ({ page }
   await expect(toggle).not.toHaveAttribute('data-pressed');
   await toggle.click();
   await expect(toggle).toHaveAttribute('aria-pressed', 'true');
-  await expect(toggle).toHaveAttribute('data-state', 'on');
+  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
   await expect(toggle).toHaveAttribute('data-pressed', '');
   await toggle.click();
   await expect(toggle).not.toHaveAttribute('data-pressed');
-  await expect(toggle).toHaveAttribute('data-state', 'off');
+  await expect(toggle).toHaveAttribute('aria-pressed', 'false');
 });

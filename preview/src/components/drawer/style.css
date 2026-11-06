@@ -26,7 +26,7 @@
 
 /* The wrapper `div` `Drawer` renders around the `<dialog>` carries `data-dx-scrim` (`component.rs`): the
  * theme's one "The modal scrim without a top layer" rule paints it where there is no top layer (non-web
- * arm, `is_modal: false`), fades it with `data-state`, and drops it for `overlay: false`. Nothing to write here. */
+ * arm, `is_modal: false`), fades it with `data-open` / `data-closed`, and drops it for `overlay: false`. Nothing to write here. */
 
 /* The scrim (this dialog's top-layer `::backdrop`) is the ONE shared rule in
  * `dx-components-theme.css` ("The modal scrim, once"): keyed on any `<dialog>` with a `dx-`
@@ -38,7 +38,7 @@
  * Two independent motion systems share this element on purpose --
  * `primitives/src/drawer.rs`'s module doc has the full reasoning:
  *
- * - `translate`, via the recipe's `dx-edge-in-*`/`dx-edge-out-*` keyframes selected by `data-state`,
+ * - `translate`, via the recipe's `dx-edge-in-*`/`dx-edge-out-*` keyframes selected by `data-open` / `data-closed`,
  *   plays the programmatic (button/Escape/backdrop) slide-in/out.
  * - `transform`, set inline by the primitive only while a drag has moved the panel (and held while a
  *   drag-triggered close plays out), tracks the live pointer offset. A CSS `animation`'s value for a
@@ -255,7 +255,7 @@
   pointer-events: none;
 }
 
-.dx-drawer-root[data-dx-modal="false"] .dx-drawer:not([data-state="closed"]) {
+.dx-drawer-root[data-dx-modal="false"] .dx-drawer:not([data-closed]) {
   pointer-events: auto;
 }
 

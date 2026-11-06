@@ -175,7 +175,7 @@ pub struct ContextMenuProps {
 /// ## Styling
 ///
 /// The [`ContextMenu`] component defines the following data attributes you can use to control styling:
-/// - `data-state`: Indicates if the state of the context menu. Values are `open` or `closed`.
+/// - `data-open` / `data-closed`: Exactly one is present: whether this part is open.
 /// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
 /// - `data-disabled`: Indicates if the context menu is disabled. values are `true` or `false`.
 /// - `data-direction`: The resolved text direction. Values are `ltr` or `rtl`.
@@ -596,7 +596,7 @@ pub struct ContextMenuContentProps {
 /// ## Styling
 ///
 /// The [`ContextMenuContent`] component defines the following data attributes you can use to control styling:
-/// - `data-state`: Indicates if the state of the context menu. Values are `open` or `closed`.
+/// - `data-open` / `data-closed`: Exactly one is present: whether this part is open.
 /// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
 #[component]
 pub fn ContextMenuContent(props: ContextMenuContentProps) -> Element {
@@ -858,7 +858,7 @@ pub type ContextMenuRadioItemProps = MenuRadioItemProps;
 /// ## Styling
 ///
 /// The [`ContextMenuCheckboxItem`] component defines the following data attributes you can use to control styling:
-/// - `data-state`: Whether the item is checked. Values are `checked` or `unchecked`.
+/// - `data-checked` / `data-unchecked`: Exactly one is present: whether the item is checked.
 /// - `data-checked` / `data-unchecked`: Present (empty) while checked / unchecked, absent otherwise.
 /// - `data-disabled`: Indicates if the item is disabled. Possible values are `true` or `false`.
 /// - `data-highlighted`: Present (empty) while this item holds the roving focus, absent otherwise.
@@ -934,7 +934,7 @@ pub fn ContextMenuRadioGroup(props: ContextMenuRadioGroupProps) -> Element {
 /// ## Styling
 ///
 /// The [`ContextMenuRadioItem`] component defines the following data attributes you can use to control styling:
-/// - `data-state`: Whether the item is checked. Values are `checked` or `unchecked`.
+/// - `data-checked` / `data-unchecked`: Exactly one is present: whether the item is checked.
 /// - `data-checked` / `data-unchecked`: Present (empty) while checked / unchecked, absent otherwise.
 /// - `data-disabled`: Indicates if the item is disabled. Possible values are `true` or `false`.
 /// - `data-highlighted`: Present (empty) while this item holds the roving focus, absent otherwise.
@@ -1123,8 +1123,7 @@ pub type ContextMenuSubTriggerProps = MenuSubTriggerProps;
 ///
 /// The [`ContextMenuSubTrigger`] component defines the following data
 /// attributes you can use to control styling:
-/// - `data-state`: Indicates whether the submenu is open. Values are
-///   `open` or `closed`.
+/// - `data-open` / `data-closed`: Exactly one is present: whether this part is open.
 /// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
 /// - `data-popup-open`: Present (empty) while the popup this trigger controls is open.
 /// - `data-disabled`: Indicates if the sub-trigger is disabled. Values are
@@ -1148,8 +1147,7 @@ pub type ContextMenuSubContentProps = MenuSubContentProps;
 ///
 /// The [`ContextMenuSubContent`] component defines the following data
 /// attributes you can use to control styling:
-/// - `data-state`: Indicates the current state of the submenu. Values are
-///   `open` or `closed`.
+/// - `data-open` / `data-closed`: Exactly one is present: whether this part is open.
 /// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
 #[component]
 pub fn ContextMenuSubContent(props: ContextMenuSubContentProps) -> Element {

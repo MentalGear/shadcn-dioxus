@@ -60,7 +60,7 @@ test("states: each state is exposed; only uploading and processing shimmer the t
   const demo = variant(page, "states");
   const states = await demo.locator('[data-slot="attachment"]').evaluateAll((els) =>
     els.map((el) => ({
-      state: el.getAttribute("data-state"),
+      state: ["idle", "uploading", "processing", "error", "done"].find((s) => el.hasAttribute(`data-${s}`)) ?? null,
       shimmer: !!el.querySelector('[data-slot="attachment-title"].dx-shimmer'),
       borderStyle: getComputedStyle(el).borderTopStyle,
     })),
@@ -81,16 +81,16 @@ test("states: changing the attachment's state reaches its title (idle -> uploadi
   const card = demo.locator('[data-slot="attachment"]').nth(5);
   const title = card.locator('[data-slot="attachment-title"]');
   const advance = demo.getByRole("button", { name: "Advance lifecycle" });
-  await expect(card).toHaveAttribute("data-state", "idle");
+  await expect(card).toHaveAttribute("data-idle", "");
   await expect(title).not.toHaveClass(/dx-shimmer/);
   await advance.click();
-  await expect(card).toHaveAttribute("data-state", "uploading");
+  await expect(card).toHaveAttribute("data-uploading", "");
   await expect(title).toHaveClass(/dx-shimmer/);
   await advance.click();
-  await expect(card).toHaveAttribute("data-state", "processing");
+  await expect(card).toHaveAttribute("data-processing", "");
   await expect(title).toHaveClass(/dx-shimmer/);
   await advance.click();
-  await expect(card).toHaveAttribute("data-state", "done");
+  await expect(card).toHaveAttribute("data-done", "");
   await expect(title).not.toHaveClass(/dx-shimmer/);
   await expect(card).toContainText("PDF · 2.4 MB");
 });
@@ -346,7 +346,7 @@ for (const scheme of ["light", "dark"] as const) {
           return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
         };
         const ratio = (a: number[], b: number[]) => (Math.max(lum(a), lum(b)) + 0.05) / (Math.min(lum(a), lum(b)) + 0.05);
-        const card = frame.querySelector<HTMLElement>('[data-state="error"]')!;
+        const card = frame.querySelector<HTMLElement>('[data-slot="attachment"][data-error]')!;
         const cardBg = rgb(getComputedStyle(card).backgroundColor);
         const desc = rgb(getComputedStyle(card.querySelector('[data-slot="attachment-description"]')!).color);
         const media = card.querySelector<HTMLElement>('[data-slot="attachment-media"]')!;

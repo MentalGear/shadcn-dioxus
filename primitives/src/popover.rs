@@ -211,7 +211,7 @@ pub struct PopoverRootProps {
 /// ## Styling
 ///
 /// The [`PopoverRoot`] component defines the following data attributes you can use to control styling:
-/// - `data-state`: Indicates if the popover is open or closed. Values are `open` or `closed`.
+/// - `data-open` / `data-closed`: Exactly one is present: whether this part is open.
 /// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
 #[component]
 pub fn PopoverRoot(props: PopoverRootProps) -> Element {
@@ -364,7 +364,7 @@ pub struct PopoverContentProps {
 /// ## Styling
 ///
 /// The [`PopoverContent`] component defines the following data attributes you can use to control styling:
-/// - `data-state`: Indicates if the popover is open or closed. Values are `open` or `closed`.
+/// - `data-open` / `data-closed`: Exactly one is present: whether this part is open.
 /// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
 /// - `data-side`: Indicates the side where the popover is positioned relative to the trigger. Possible values are `top`, `right`, `bottom`, and `left`.
 /// - `data-align`: Indicates the alignment of the popover relative to the trigger. Possible values are `start`, `center`, and `end`.
@@ -490,7 +490,7 @@ fn PopoverModalContent(
     attributes: Vec<Attribute>,
     /// The popover's content.
     children: Element,
-    /// Whether the popover is open. Sets its `data-state`, and hides it from assistive technology while closed.
+    /// Whether the popover is open. Sets its `data-open` / `data-closed`, and hides it from assistive technology while closed.
     is_open: bool,
 ) -> Element {
     let ctx: PopoverCtx = use_context();
@@ -600,7 +600,7 @@ fn PopoverModalContent(
     attributes: Vec<Attribute>,
     /// The popover's content.
     children: Element,
-    /// Whether the popover is open. Sets its `data-state`, and hides it from assistive technology while closed.
+    /// Whether the popover is open. Sets its `data-open` / `data-closed`, and hides it from assistive technology while closed.
     is_open: bool,
 ) -> Element {
     let ctx: PopoverCtx = use_context();
@@ -706,7 +706,7 @@ fn PopoverModalContent(
 /// Uses `crate::top_layer::use_popover_shown_while_mounted`, not
 /// `use_popover_sync` (dev-docs/backlog.md row 19): this content is mounted by
 /// `render()` in `PopoverContent` above -- `use_animated_open` -- which
-/// keeps it in the DOM with `data-state="closed"` for its whole CSS close
+/// keeps it in the DOM with `data-closed` for its whole CSS close
 /// animation (plus a settle hold) before actually unmounting it.
 /// `use_popover_sync` calls `hidePopover()` the instant `open` (the real,
 /// non-animated signal) goes `false`, and the UA's
@@ -744,7 +744,7 @@ fn PopoverNonModalContent(
     attributes: Vec<Attribute>,
     /// The popover's content.
     children: Element,
-    /// Whether the popover is open. Sets its `data-state`, and hides it from assistive technology while closed.
+    /// Whether the popover is open. Sets its `data-open` / `data-closed`, and hides it from assistive technology while closed.
     is_open: bool,
 ) -> Element {
     let ctx: PopoverCtx = use_context();
@@ -828,7 +828,7 @@ fn PopoverNonModalContent(
     attributes: Vec<Attribute>,
     /// The popover's content.
     children: Element,
-    /// Whether the popover is open. Sets its `data-state`, and hides it from assistive technology while closed.
+    /// Whether the popover is open. Sets its `data-open` / `data-closed`, and hides it from assistive technology while closed.
     is_open: bool,
 ) -> Element {
     let ctx: PopoverCtx = use_context();

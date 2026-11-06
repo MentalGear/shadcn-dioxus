@@ -129,7 +129,7 @@ pub struct CheckboxProps {
 /// ## Styling
 ///
 /// The [`Checkbox`] component defines the following data attributes you can use to control styling:
-/// - `data-state`: The state of the checkbox. Possible values are `checked`, `indeterminate`, or `unchecked`.
+/// - `data-checked` / `data-unchecked` / `data-indeterminate`: Exactly one is present: the state of the control.
 /// - `data-checked` / `data-unchecked` / `data-indeterminate`: Present (empty) in the matching state, absent otherwise.
 /// - `data-disabled`: Indicates if the checkbox is disabled. values are `true` or `false`.
 /// - `data-readonly`: Present (empty) while the checkbox is read-only, absent otherwise. The
@@ -249,7 +249,7 @@ pub fn Checkbox(props: CheckboxProps) -> Element {
 /// ## Styling
 ///
 /// The [`CheckboxIndicator`] component defines the following data attributes you can use to control styling:
-/// - `data-state`: The state of the checkbox. Possible values are `checked`, `indeterminate`, or `unchecked`.
+/// - `data-checked` / `data-unchecked` / `data-indeterminate`: Exactly one is present: the state of the control.
 /// - `data-checked` / `data-unchecked` / `data-indeterminate`: Present (empty) in the matching state, absent otherwise.
 /// - `data-disabled`: Indicates if the checkbox is disabled. values are `true` or `false`.
 #[component]
