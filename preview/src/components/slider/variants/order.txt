@@ -3,3 +3,5 @@ dynamic_range
 range
 vertical
 disabled
+range_push
+edge

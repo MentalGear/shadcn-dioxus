@@ -468,3 +468,24 @@ test.describe("activate_on_focus", () => {
     await expect(tab1).toHaveAttribute("aria-selected", "true");
   });
 });
+
+// Base UI's presence attributes next to Radix's `data-state` (row 482): `data-active` on the selected tab,
+// `data-hidden` on every panel that is not the selected one.
+test("the selected tab carries data-active and the inactive panels carry data-hidden", async ({ page }) => {
+  await gotoHydrated(page, `${BASE_URL}/component/tabs/`);
+  const tab1 = page.getByRole("tab", { name: "Tab 1" });
+  const tab2 = page.getByRole("tab", { name: "Tab 2" });
+  await tab1.click();
+  await expect(tab1).toHaveAttribute("data-active", "");
+  await expect(tab2).not.toHaveAttribute("data-active", /.*/);
+  const panelOf = (tab: Locator) => tab.getAttribute("aria-controls").then((id) => page.locator(`[id="${id}"]`));
+  const panel1 = await panelOf(tab1);
+  const panel2 = await panelOf(tab2);
+  await expect(panel1).not.toHaveAttribute("data-hidden", /.*/);
+  await expect(panel2).toHaveAttribute("data-hidden", "");
+  await tab2.click();
+  await expect(tab2).toHaveAttribute("data-active", "");
+  await expect(tab1).not.toHaveAttribute("data-active", /.*/);
+  await expect(panel1).toHaveAttribute("data-hidden", "");
+  await expect(panel2).not.toHaveAttribute("data-hidden", /.*/);
+});
