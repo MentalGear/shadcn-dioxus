@@ -1,5 +1,5 @@
 use dioxus::prelude::*;
-use dioxus_icons::lucide::{GripVertical, X};
+use crate::components::icons::{GripVertical, X};
 use dioxus_primitives::dioxus_attributes::attributes;
 use dioxus_primitives::drag_and_drop_list::{
     self, DragAndDropContext, DragAndDropDropIndicatorProps, DragAndDropItemContext,

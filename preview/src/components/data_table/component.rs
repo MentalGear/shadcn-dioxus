@@ -19,7 +19,7 @@ use crate::components::button::{Button, ButtonSize, ButtonVariant};
 use crate::components::checkbox::Checkbox;
 use crate::components::table::{Table, TableBody, TableCell, TableHead, TableHeader, TableRow};
 use dioxus::prelude::*;
-use dioxus_icons::lucide::{ArrowDown, ArrowUp, ArrowUpDown};
+use crate::components::icons::{ArrowDown, ArrowUp, ArrowUpDown};
 use dioxus_primitives::dioxus_attributes::attributes;
 use dioxus_primitives::merge_attributes;
 use reorder::{use_row_reorder, ReorderableRow, RowHandle};

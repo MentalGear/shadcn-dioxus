@@ -1,7 +1,7 @@
 use crate::components::button::{Button, ButtonSize, ButtonVariant};
 use dioxus::prelude::*;
 use dioxus_primitives::AsChild;
-use dioxus_icons::lucide::ArrowDown;
+use crate::components::icons::ArrowDown;
 use dioxus_primitives::dioxus_attributes::attributes;
 use dioxus_primitives::merge_attributes;
 use dioxus_primitives::message_scroller::{

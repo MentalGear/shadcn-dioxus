@@ -1,5 +1,5 @@
 use dioxus::prelude::*;
-use dioxus_icons::lucide::{Check, Minus};
+use crate::components::icons::{Check, Minus};
 use dioxus_primitives::checkbox::{self, CheckboxProps};
 use dioxus_primitives::dioxus_attributes::attributes;
 use dioxus_primitives::merge_attributes;

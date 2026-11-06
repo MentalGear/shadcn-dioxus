@@ -1,0 +1,13 @@
+{
+  "name": "icons",
+  "description": "The Lucide glyphs the other components draw, as Dioxus components in one file.",
+  "authors": ["Claude"],
+  "exclude": ["variants", "docs.md", "component.json"],
+  "cargoDependencies": [
+    {
+      "name": "dioxus-primitives",
+      "git": "https://github.com/MentalGear/shadcn-dioxus"
+    }
+  ],
+  "globalAssets": ["../../../assets/dx-components-theme.css"]
+}

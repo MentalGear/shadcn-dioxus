@@ -1,5 +1,5 @@
 use dioxus::prelude::*;
-use dioxus_icons::lucide::{Check, ChevronRight};
+use crate::components::icons::{Check, ChevronRight};
 use dioxus_primitives::dioxus_attributes::attributes;
 use dioxus_primitives::dropdown_menu::{
     self, DropdownMenuCheckboxItemProps, DropdownMenuContentProps, DropdownMenuGroupProps, DropdownMenuSeparatorProps, DropdownMenuShortcutProps, DropdownMenuItemProps,

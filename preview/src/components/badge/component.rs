@@ -1,6 +1,6 @@
 use dioxus::prelude::*;
 use dioxus_primitives::AsChild;
-use dioxus_icons::lucide::BadgeCheck;
+use crate::components::icons::BadgeCheck;
 use dioxus_primitives::dioxus_attributes::attributes;
 use dioxus_primitives::merge_attributes;
 

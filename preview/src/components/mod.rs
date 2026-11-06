@@ -174,6 +174,7 @@ pub const CATALOG: &[(&str, Origin)] = &[
     ("empty", Origin::Shadcn),
     ("field", Origin::Shadcn),
     ("hover_card", Origin::Shadcn),
+    ("icons", Origin::Extra("The glyphs the other components draw, so none of them installs an icon crate.")),
     ("input", Origin::Shadcn),
     ("input_group", Origin::Shadcn),
     ("input_otp", Origin::Shadcn),
