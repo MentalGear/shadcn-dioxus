@@ -73,8 +73,8 @@ test("keyboard navigation", async ({ page }) => {
 // which does need one) -- `MenubarItem` has no `submenu_open_count`-style
 // escape hatch like `DropdownMenuTrigger`'s, so such a guard would fire on
 // this exact sequence unconditionally. By construction
-// `MenubarContentRendered` calls `use_outside_dismiss`
-// (`primitives/src/lib.rs`, the same DOM-truth-based check `ContextMenu`'s
+// `MenubarMenu` calls `dismiss::use_dismiss`
+// (`primitives/src/dismiss.rs`, the same DOM-truth-based check `ContextMenu`'s
 // own root uses), scoped to `MenubarMenu`'s own wrapping element
 // (`menu_ctx.root_id`) which covers both `MenubarTrigger` and
 // `MenubarContent`, and `MenubarTrigger`/`MenubarItem` carry no `onblur`

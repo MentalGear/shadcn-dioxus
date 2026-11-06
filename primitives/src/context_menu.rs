@@ -6,7 +6,7 @@
 //! row 68).
 //!
 //! This file is the ContextMenu *host* (backlog row 435): its trigger (a
-//! right-click or long-press target), its root (Escape and the focus/refocus
+//! right-click or long-press target), its root (the dismiss layer and the focus/refocus
 //! plumbing) and its point-anchored panel. The items, the checkable items,
 //! the submenu and the panel wiring are the menu family every host shares
 //! (`crate::menu_item`, `crate::menu_sub`, `crate::menu_root`), reading the
@@ -19,6 +19,7 @@ use crate::state_attrs;
 use crate::{
     collection::{use_collection_provider, CollectionState},
     direction::{use_direction, use_direction_signal, Direction},
+    dismiss::{self, Cause, Policy, Scope},
     fold_style_attributes,
     menu_item::{
         self, MenuCheckboxItemProps, MenuGroupProps, MenuItemProps, MenuRadioGroupProps,
@@ -26,7 +27,7 @@ use crate::{
         MenuSubProps, MenuSubTriggerProps, SelectOn,
     },
     menu_root::{self, MenuHost, PanelConfig, PanelPlacement, PanelPopover},
-    menu_sub, merge_attributes, use_controlled, use_id_or, use_outside_dismiss, use_unique_id,
+    menu_sub, merge_attributes, use_controlled, use_id_or, use_unique_id,
 };
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
@@ -57,10 +58,6 @@ struct ContextMenuCtx {
     // Focus state
     focus: CollectionState,
 
-    // Id on the root wrapper — covers both trigger and content, so
-    // `use_outside_dismiss` treats them as "inside".
-    root_id: Signal<String>,
-
     // Id of the trigger element: `ContextMenuContent`'s `aria-labelledby`.
     trigger_id: Signal<String>,
 
@@ -70,7 +67,7 @@ struct ContextMenuCtx {
     trigger: crate::TriggerHandle,
 
     // Set just before a close caused by interacting outside the menu (see
-    // `use_outside_dismiss` below), so the refocus hook knows to leave focus
+    // `ContextMenuCtx::dismiss`), so the refocus hook knows to leave focus
     // where the user put it instead of yanking it back to the trigger.
     // Reset to `false` whenever the menu opens.
     interacted_outside: Signal<bool>,
@@ -81,6 +78,16 @@ struct ContextMenuCtx {
     // still-held finger — that would otherwise look like an instant tap on the
     // menu item the menu just rendered over.
     long_press_just_fired: Signal<bool>,
+}
+
+impl ContextMenuCtx {
+    /// Close the menu for `cause`: the roving focus is cleared, and `interacted_outside` says whether focus goes
+    /// back to the trigger (it does not when the user acted somewhere else).
+    fn dismiss(&mut self, cause: Cause) {
+        self.interacted_outside.set(cause.interacted_outside());
+        self.focus.clear_focus();
+        self.set_open.call(false);
+    }
 }
 
 /// The props for the [`ContextMenu`] component.
@@ -184,7 +191,8 @@ pub fn ContextMenu(props: ContextMenuProps) -> Element {
     let direction_signal = use_direction_signal(direction);
     let position = use_signal(|| (0, 0));
     let client_position = use_signal(|| (0, 0));
-    let root_id = use_unique_id();
+    // Id on the root wrapper: covers both trigger and content, so the dismiss layer treats them as "inside".
+    let root_id = menu_root::use_root_id(&props.attributes);
     let trigger_id = use_unique_id();
     let trigger = crate::use_trigger_handle();
     let interacted_outside = use_signal(|| false);
@@ -200,7 +208,6 @@ pub fn ContextMenu(props: ContextMenuProps) -> Element {
         position,
         client_position,
         focus,
-        root_id,
         trigger_id,
         trigger,
         interacted_outside,
@@ -246,31 +253,31 @@ pub fn ContextMenu(props: ContextMenuProps) -> Element {
 
     // Escape and item-select close from inside the menu; Radix's
     // `onCloseAutoFocus` semantics restore focus to the trigger for those,
-    // but not for a dismiss caused by interacting outside (see
-    // `use_outside_dismiss` in `ContextMenuContent`, which sets
-    // `interacted_outside`).
+    // but not for a dismiss caused by interacting outside (the dismiss
+    // layer below sets `interacted_outside` from what caused the close).
     crate::use_refocus_on_close_unless(
         ctx.open,
         ctx.trigger,
         ReadSignal::new(ctx.interacted_outside),
     );
 
-    // Handle escape key to close the menu. Unlike `DropdownMenu`'s root
-    // keydown handler (`dropdown_menu.rs`), this one needs no compile-time
-    // wasm skip for Escape: `ContextMenuContentRendered`'s web arm renders
-    // `popover="manual"`, and WHATWG HTML's popover light-dismiss algorithm
-    // (the thing a `prevent_default()` here would otherwise race) only
-    // ever applies to `auto`/`hint` popovers -- a `manual` popover has no
-    // Escape-triggered close of its own to suppress, so `prevent_default()`
-    // unconditionally closing it here, on every target, has nothing to
-    // conflict with.
+    // One layer for the open menu, on the root: Escape, a press outside and focus leaving all close it
+    // (`Policy::MENU`), and what caused the close decides whether focus goes back to the trigger. The panel is a
+    // `manual` popover, which the platform never closes on its own, so the layer is the only dismissal path and
+    // the `toggle` echo of `use_menu_panel` only repeats a close this crate already made.
+    dismiss::use_dismiss(
+        root_id,
+        Scope::Element,
+        Policy::MENU,
+        Some(open.into()),
+        move |cause| {
+            let mut ctx = ctx;
+            ctx.dismiss(cause);
+        },
+    );
+
     let handle_keydown = move |event: Event<KeyboardData>| {
         ctx.trigger.press().key_pressed(&event);
-        if open() && event.key() == Key::Escape {
-            event.prevent_default();
-            set_open.call(false);
-            ctx.focus.clear_focus();
-        }
     };
 
     // Merged (caller-wins, deduped), not set-then-spread-over: see
@@ -285,9 +292,9 @@ pub fn ContextMenu(props: ContextMenuProps) -> Element {
     // rather than protecting it the way `toast.rs`
     // protects its always-addressed-by-id region: nothing here does its
     // own `document.getElementById(root_id)` lookup against a *fixed*
-    // expectation of winning -- `use_outside_dismiss`'s lookup already
-    // silently no-ops if a caller's override id makes it miss, on both
-    // render paths (server and client).
+    // expectation of winning -- `menu_root::use_root_id` writes a caller's
+    // override into `root_id`, so the dismiss layer's lookup finds the
+    // element that really carries the id.
     let attributes = merge_attributes(vec![
         attributes!(div {
             id: root_id,
@@ -423,6 +430,13 @@ pub fn ContextMenuTrigger(props: ContextMenuTriggerProps) -> Element {
         }
     };
 
+    // The dismiss layer registers a moment after the menu opens; an Escape in that gap is the trigger's, which holds
+    // focus after a right click (`dismiss::escape_in_gap`).
+    let handle_key_down = move |event: Event<KeyboardData>| {
+        let mut ctx = ctx;
+        dismiss::escape_in_gap(&event, (ctx.open)(), || ctx.dismiss(Cause::EscapeWithin));
+    };
+
     let handle_pointer_down = move |event: Event<PointerData>| {
         // Long-press fires for touch and pen (Apple Pencil etc.); mouse keeps
         // using the native `contextmenu` event.
@@ -511,6 +525,7 @@ pub fn ContextMenuTrigger(props: ContextMenuTriggerProps) -> Element {
     rsx! {
         div {
             oncontextmenu: handle_context_menu,
+            onkeydown: handle_key_down,
             onpointerdown: handle_pointer_down,
             onpointermove: handle_pointer_move,
             onpointerup: handle_pointer_end,
@@ -629,12 +644,12 @@ pub fn ContextMenuContent(props: ContextMenuContentProps) -> Element {
 /// scroll the document to it.
 ///
 /// `manual` (not `auto`) is also the dismissal decision: `auto`'s native light dismiss (Escape, outside
-/// pointerdown) would race this component's own `use_outside_dismiss` and the root's Escape handling, which
-/// already implement APG's exact close-and-refocus semantics (Radix's `onCloseAutoFocus`, `interacted_outside`
+/// pointerdown) would race this component's own dismiss layer, which
+/// implements APG's exact close-and-refocus semantics (Radix's `onCloseAutoFocus`, `interacted_outside`
 /// distinguishing an outside dismiss from an internal one -- see `ContextMenuCtx::interacted_outside`'s doc). A
 /// native light dismiss has no way to tell Rust *why* it closed, so marking every native close as an outside
 /// interaction would silently break `use_refocus_on_close_unless`'s Escape/select refocus. A `manual` popover is
-/// never closed by the platform on its own, so `use_outside_dismiss` and the root `Escape` handler stay the *only*
+/// never closed by the platform on its own, so the dismiss layer stays the *only*
 /// dismissal path, and the `toggle` echo of `use_menu_panel` only ever repeats a close this crate already made.
 #[component]
 fn ContextMenuContentRendered(
@@ -656,10 +671,7 @@ fn ContextMenuContentRendered(
     let mut typeahead = crate::typeahead::use_typeahead_state();
 
     let onkeydown = move |event: Event<KeyboardData>| {
-        if event.key() == Key::Escape {
-            // The root's Escape handler closes the menu; the roving focus is cleared first.
-            ctx.focus.clear_focus();
-        } else if !open() || !menu_root::nav_key(&event, ctx.focus, &mut typeahead) {
+        if !open() || !menu_root::nav_key(&event, ctx.focus, &mut typeahead) {
             // While closed (or mid close-animation) `ctx.focus` may still carry whatever it last held, so a
             // keystroke on an unrelated, no-longer-visible menu is ignored.
             return;
@@ -700,12 +712,6 @@ fn ContextMenuContentRendered(
         },
         attributes,
     );
-
-    use_outside_dismiss(ctx.root_id, move || {
-        ctx.interacted_outside.set(true);
-        ctx.focus.clear_focus();
-        ctx.set_open.call(false);
-    });
 
     rsx! {
         div {

@@ -250,6 +250,14 @@ for (const host of HOSTS) {
       await expect(trigger(host, page), "focus returns to the trigger").toBeFocused();
     });
 
+    test("Escape closes the menu while focus is on the page, not in the menu (the dismiss layer is document-wide)", async ({ page }) => {
+      await open(host, page);
+      await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+      expect(await page.evaluate(() => document.activeElement === document.body), "focus is on the page").toBe(true);
+      await page.keyboard.press("Escape");
+      await expect(anyMenu(page)).toHaveCount(0);
+    });
+
     test("Tab leaves the menu and closes it", async ({ page }) => {
       await open(host, page);
       await page.keyboard.press("ArrowDown");

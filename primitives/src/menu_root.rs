@@ -21,8 +21,9 @@
 //! - [`use_menu_content_lifecycle`] -- id resolution plus `use_animated_open`'s close-animation hold.
 //! - [`content_labelledby_attributes`] -- the panel's accessible name from its trigger.
 //!
-//! Escape, outside dismissal and focus return stay with the host's call sites of `use_outside_dismiss` and
-//! `use_refocus_on_close_unless` (`lib.rs`).
+//! Escape, a press outside and focus leaving are one `crate::dismiss::use_dismiss` layer per open host root
+//! ([`crate::dismiss::Policy::MENU`]) and per open submenu ([`crate::dismiss::Policy::MENU_SUB`]); the
+//! [`crate::dismiss::Cause`] it reports decides whether focus goes back to the trigger.
 //!
 //! `Navbar` and `NavigationMenu` are not menus in this sense (their items are links) and use none of this.
 
@@ -61,6 +62,35 @@ pub(crate) struct MenuHost {
     pub(crate) close: Callback<()>,
     /// A root-level item that held the roving focus lost DOM focus.
     pub(crate) blur: Callback<()>,
+}
+
+/// The id of a host's root element **as the DOM carries it**, for the dismiss layer that looks the root up by id.
+///
+/// A host renders `id: <generated>` first and the caller's attributes after, and a caller's `id` wins
+/// (`merge_attributes`), so a menu root given its own `id` carries that one and the generated id names nothing: the
+/// layer would find no root and never dismiss on a press or focus outside. The caller's id is written into the signal
+/// the way `use_id_or` does for a trigger. A hook: call it before any hook that reads the returned signal.
+pub(crate) fn use_root_id(attributes: &[Attribute]) -> Signal<String> {
+    let mut root_id = crate::use_unique_id();
+    let caller = caller_id(attributes);
+    use_effect(move || {
+        if let Some(id) = caller.clone() {
+            root_id.set(id);
+        }
+    });
+    root_id
+}
+
+/// The text of a caller-supplied `id` attribute, if there is a non-empty one.
+fn caller_id(attributes: &[Attribute]) -> Option<String> {
+    attributes.iter().find_map(|a| match (&a.value, a.name) {
+        (dioxus_core::AttributeValue::Text(id), "id")
+            if a.namespace.is_none() && !id.is_empty() =>
+        {
+            Some(id.clone())
+        }
+        _ => None,
+    })
 }
 
 /// Keeps `open` in sync with whether `focus`'s roving-focus collection currently holds DOM focus, skipped while
