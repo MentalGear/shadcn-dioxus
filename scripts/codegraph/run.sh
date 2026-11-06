@@ -3,17 +3,20 @@
 #
 #   CARGO_TARGET_DIR=<absolute isolated dir> scripts/codegraph/run.sh [--force] [--out DIR]
 #
-# Output (git-ignored, default <repo>/target-codegraph/): index.scip, graph.json, explorer.html, and one
-# *.key file per product. Open explorer.html from disk; it needs no network.
-# Staleness: each product is rebuilt only when its key changed.
-#   index.key  sha256 of the working-tree content hash of every *.rs and Cargo.toml that
-#              `git ls-files -co --exclude-standard` lists (so an uncommitted edit counts), Cargo.lock,
-#              and the rust-analyzer version
-#   graph.key  index.key + build_graph.py + comment_metrics.py + scripts/comment-scan.py + every tracked/untracked *.ts,
-#              *.css, *.html, *.js and *.txt (the static scans and the comment metrics M1-M5, which read every node's
-#              file text; the *.rs files are in index.key)
-#   page.key   graph.key + explorer.template.html + make_explorer.py + the cytoscape bundle
-# --force re-indexes (and so rebuilds the rest). The SCIP run holds the build lock (scripts/lane-lock.sh).
+# Output (git-ignored, default <repo>/target-codegraph/): index.scip, graph.json, comments.json, status.json, explorer.html,
+# and one *.key file per product. Open explorer.html from disk; it needs no network.
+# Each product has its own inputs and its own key, rebuilt only when its key changed:
+#   index.key     sha256 of the working-tree content hash of every *.rs and Cargo.toml that
+#                 `git ls-files -co --exclude-standard` lists, Cargo.lock and the rust-analyzer version, taken when the index
+#                 was built. The index is built when missing or with --force; a later source edit does not rebuild it, the
+#                 page shows it STALE (with the changed files) instead. index.files keeps the hashes it was built from.
+#   graph.key     index.key + build_graph.py + every *.ts and *.css (the extractor's static scans)
+#   comments.key  sha256 of the content hash of every *.rs, *.ts, *.css, *.html, *.js, *.mjs and *.txt + comment_metrics.py +
+#                 build_comments.py + scripts/comment-scan.py. File text only: a source edit rebuilds the metrics at once,
+#                 even while the index is stale.
+#   page.key      graph.key + comments.key + explorer.template.html + make_explorer.py + the cytoscape bundle + status.json
+# status.json records the HEAD, time and key each part was built from; the page's status line shows it.
+# --force re-indexes (and so rebuilds everything). The SCIP run holds the build lock (scripts/lane-lock.sh).
 set -euo pipefail
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo="$(cd "$here/../.." && pwd)"
@@ -60,15 +63,19 @@ hashes() {
   paste -d' ' <(xargs -d '\n' -r git hash-object -- < "$list") "$list"
   rm -f "$list"
 }
-index_key="$( { hashes '*.rs' ':(glob)**/Cargo.toml'; git hash-object Cargo.lock; echo "$ra_version"; } | sha)"
-graph_key="$( { echo "$index_key"; git hash-object "$here/build_graph.py" "$here/comment_metrics.py" "$repo/scripts/comment-scan.py"; hashes '*.ts' '*.css' '*.html' '*.js' '*.txt'; } | sha)"
-page_key="$( { echo "$graph_key"; git hash-object "$here/explorer.template.html" "$here/make_explorer.py" "$cyto"; } | sha)"
+rs_now="$out/rs.now"
+{ hashes '*.rs' ':(glob)**/Cargo.toml'; git hash-object Cargo.lock | sed 's/$/ Cargo.lock/'; } > "$rs_now"
+tree_key="$( { cat "$rs_now"; echo "$ra_version"; } | sha)"
+head_sha="$(git rev-parse --short=8 HEAD)"
+dirty=0; [ -z "$(git status --porcelain)" ] || dirty=1
 
 stored() { cat "$out/$1.key" 2>/dev/null || true; }
 status=""
 
+# index: built only when missing or forced. A source edit does NOT rebuild it: the page marks it stale instead, and the
+# comment metrics (file text only) and the page are rebuilt from the current tree.
 lock_before="$(git hash-object Cargo.lock)"
-if [ "$force" = 1 ] || [ "$(stored index)" != "$index_key" ] || [ ! -s "$out/index.scip" ]; then
+if [ "$force" = 1 ] || [ -z "$(stored index)" ] || [ ! -s "$out/index.scip" ]; then
   s0=$(date +%s)
   # nothing on the cargo side is fetched here: rust-analyzer loads the workspace as `cargo check` does
   CARGO_TARGET_DIR="$tgt" CARGO_INCREMENTAL=0 CARGO_NET_OFFLINE=true \
@@ -77,12 +84,20 @@ if [ "$force" = 1 ] || [ "$(stored index)" != "$index_key" ] || [ ! -s "$out/ind
     || { tail -5 "$out/scip.log" >&2; die "rust-analyzer scip failed (log: $out/scip.log)"; }
   mv "$out/index.scip.tmp" "$out/index.scip"
   [ "$(git hash-object Cargo.lock)" = "$lock_before" ] || die "Cargo.lock changed during the SCIP run"
-  echo "$index_key" > "$out/index.key"
-  rm -f "$out/graph.key" "$out/page.key"
+  echo "$tree_key" > "$out/index.key"
+  cp "$rs_now" "$out/index.files"
+  printf 'head=%s\ndirty=%s\nat=%s\nsecs=%s\n' "$head_sha" "$dirty" "$(date +%s)" "$(( $(date +%s) - s0 ))" > "$out/index.info"
+  rm -f "$out/graph.key" "$out/comments.key" "$out/page.key"
   status="index REBUILT $(( $(date +%s) - s0 ))s"
+elif [ "$(stored index)" != "$tree_key" ]; then
+  status="index reused, STALE (Rust/Cargo sources changed since it was built; --force re-indexes)"
 else
   status="index reused"
 fi
+index_key="$(stored index)"
+
+# graph: the index as built + the extractor + the static scans it reads
+graph_key="$( { echo "$index_key"; git hash-object "$here/build_graph.py"; hashes '*.ts' '*.css'; } | sha)"
 if [ "$(stored graph)" != "$graph_key" ] || [ ! -s "$out/graph.json" ]; then
   python3 -I "$here/build_graph.py" "$out/index.scip" "$out/graph.json" >"$out/graph.log" || die "extractor failed"
   echo "$graph_key" > "$out/graph.key"; rm -f "$out/page.key"
@@ -90,11 +105,61 @@ if [ "$(stored graph)" != "$graph_key" ] || [ ! -s "$out/graph.json" ]; then
 else
   status="$status, graph reused"
 fi
+
+# comment metrics: file text only, never the index
+comments_key="$( { hashes '*.rs' '*.ts' '*.css' '*.html' '*.js' '*.mjs' '*.txt'; git hash-object "$here/comment_metrics.py" "$here/build_comments.py" "$repo/scripts/comment-scan.py"; } | sha)"
+if [ "$(stored comments)" != "$comments_key" ] || [ ! -s "$out/comments.json" ]; then
+  python3 -I "$here/build_comments.py" "$out/comments.json" >"$out/comments.log" || die "comment metrics failed"
+  echo "$comments_key" > "$out/comments.key"; rm -f "$out/page.key"
+  printf 'head=%s\ndirty=%s\nat=%s\n' "$head_sha" "$dirty" "$(date +%s)" > "$out/comments.info"
+  status="$status, comments rebuilt"
+else
+  status="$status, comments reused"
+fi
+
+# status.json: what each part was built from, shown in the page's status line
+python3 -I - "$out" "$tree_key" "$head_sha" "$dirty" "$ra_version" <<'PY'
+import json, sys
+out, tree_key, head, dirty, ra = sys.argv[1:6]
+def info(name):
+    d = {}
+    try:
+        for ln in open(f"{out}/{name}.info"):
+            k, _, v = ln.strip().partition("=")
+            d[k] = v
+    except OSError:
+        pass
+    return d
+def rd(name):
+    try:
+        return open(f"{out}/{name}").read().strip()
+    except OSError:
+        return ""
+def files(name):
+    r = {}
+    for ln in rd(name).splitlines():
+        h, _, p = ln.partition(" ")
+        r[p] = h
+    return r
+old, new = files("index.files"), files("rs.now")
+changed = sorted(p for p in set(old) | set(new) if old.get(p) != new.get(p))
+ix, cm = info("index"), info("comments")
+status = {
+    "tree": {"head": head, "dirty": dirty == "1", "key": tree_key[:12]},
+    "index": {"key": rd("index.key")[:12], "head": ix.get("head", "?"), "dirty": ix.get("dirty") == "1", "at": int(ix.get("at") or 0),
+              "secs": int(ix.get("secs") or 0), "ra": ra, "stale": rd("index.key") != tree_key, "nchanged": len(changed), "changed": changed[:40]},
+    "comments": {"key": rd("comments.key")[:12], "head": cm.get("head", "?"), "dirty": cm.get("dirty") == "1", "at": int(cm.get("at") or 0)},
+}
+json.dump(status, open(f"{out}/status.json", "w"), separators=(",", ":"))
+PY
+rm -f "$rs_now"
+
+page_key="$( { echo "$graph_key"; echo "$comments_key"; git hash-object "$here/explorer.template.html" "$here/make_explorer.py" "$cyto" "$out/status.json"; } | sha)"
 if [ "$(stored page)" != "$page_key" ] || [ ! -s "$out/explorer.html" ]; then
-  python3 -I "$here/make_explorer.py" "$here/explorer.template.html" "$out/graph.json" "$cyto" "$out/explorer.html"
+  python3 -I "$here/make_explorer.py" "$here/explorer.template.html" "$out/graph.json" "$out/comments.json" "$out/status.json" "$cyto" "$out/explorer.html"
   echo "$page_key" > "$out/page.key"
   status="$status, page rebuilt"
 else
   status="$status, page reused"
 fi
-echo "codegraph: $status; index key ${index_key:0:12}; $(( $(date +%s) - t0 ))s; $out/explorer.html"
+echo "codegraph: $status; index key ${index_key:0:12}, tree key ${tree_key:0:12}; $(( $(date +%s) - t0 ))s; $out/explorer.html"
