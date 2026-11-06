@@ -67,6 +67,7 @@ Known limit: a `NativeSelect` whose owner passes no `value` attribute has nothin
 **Desktop** (reasoned from code, not run): both the listener and the read go through `document::eval`; the read is one IPC round trip later than on web, and the batching above holds the handlers until all values arrived, so it converges with a frame of lag, the same as the checkbox.
 
 Known limit: a field unmounted between the reset and the read has its handler called on a dropped signal; the window is one task.
+- Proof on the final tree (ab88b8e4, after the reset demo's `aria_label` additions), debug lane-ssg build: `form-reset-controlled.spec.ts` 3/3 green and `all-routes` `input` axe green (both red on base earlier); specs of every touched control (checkbox, switch, radio-group, select, native-select, input_otp, command, input, textarea, input_group, plus select-escape-race, select-scroll-buttons, user-select) 156/156; 54 form-adjacent spec files (native/check/radio/switch/input/textarea/select/command/combobox/field/date/slider/toggle/otp/dialog/sheet/popover) 677 passed, 1 skipped; `all-routes` axe for the 16 form routes 16/16. Two `all-routes` axe timeouts (carousel, calendar) in a wider run under box load (load average 7-8 from other builds) passed alone. The full `test:changed` selection (3,504 tests, 221 files) was stopped at ~200 tests (no red) as impractical on a loaded box. `clippy-server` PASS; `run-gates.sh --fast`: 95 of 103 gates, 0 red.
 
 ## Size
 
