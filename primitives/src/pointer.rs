@@ -1,4 +1,4 @@
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 
 use crate::js_listener::JsListeners;
 use dioxus::html::geometry::ClientPoint;
@@ -20,6 +20,28 @@ thread_local! {
     /// slider or resizable handle was touched, every `pointermove` anywhere on the page
     /// would cross the JS/wasm boundary for good (backlog row 159).
     static BRIDGE: RefCell<Option<JsListeners>> = const { RefCell::new(None) };
+
+    /// The epoch of the bridge that is allowed to write [`POINTERS`]. Every install takes a new
+    /// one and every removal retires the current one, and each install's handler carries the epoch
+    /// it was installed under. A mouse's `pointerId` is the same on every press, so the id alone
+    /// cannot tell a frame of the previous drag from a frame of the current one; on a renderer where
+    /// a bridge message waits behind unacknowledged work (desktop, mobile) the previous drag's
+    /// listener is still delivering frames, and its `up`, after the next drag's `pointerdown`.
+    /// Those frames carry a retired epoch and are dropped.
+    static EPOCH: Cell<u64> = const { Cell::new(0) };
+}
+
+/// Retires the current epoch: messages of any bridge installed before this call are ignored.
+fn retire_epoch() -> u64 {
+    EPOCH.with(|epoch| {
+        let next = epoch.get() + 1;
+        epoch.set(next);
+        next
+    })
+}
+
+fn epoch_is_current(epoch: u64) -> bool {
+    EPOCH.with(|current| current.get() == epoch)
 }
 
 /// Installs the bridge if it is not up. clientX/clientY (not pageX/pageY) must match element
@@ -30,6 +52,7 @@ fn ensure_bridge() {
         if bridge.borrow().is_some() {
             return;
         }
+        let epoch = retire_epoch();
         let listeners = JsListeners::install(
             "const send = (kind) => (e) => dioxus.send([kind, [e.pointerId, e.clientX, e.clientY]]);
             listen(window, 'pointerdown', send('down'));
@@ -37,7 +60,10 @@ fn ensure_bridge() {
             listen(window, 'pointerup', send('up'));
             listen(window, 'pointercancel', send('up'));",
         )
-        .on_message_in_root(|(event_type, (pointer_id, x, y)): (String, (i32, f64, f64))| {
+        .on_message_in_root(move |(event_type, (pointer_id, x, y)): (String, (i32, f64, f64))| {
+            if !epoch_is_current(epoch) {
+                return;
+            }
             let position = ClientPoint::new(x, y);
 
             match event_type.as_str() {
@@ -55,9 +81,16 @@ fn ensure_bridge() {
 fn release_bridge_if_idle(idle: bool) {
     if idle {
         // Taken out of the cell before it is dropped, so the drop never runs under a borrow.
-        let listeners = BRIDGE.with(|bridge| bridge.borrow_mut().take());
-        drop(listeners);
+        drop_bridge();
     }
+}
+
+/// Drops the bridge (removing its listeners) and retires its epoch, so whatever it still has queued
+/// toward Rust is ignored.
+fn drop_bridge() {
+    let listeners = BRIDGE.with(|bridge| bridge.borrow_mut().take());
+    retire_epoch();
+    drop(listeners);
 }
 
 pub(crate) fn track_pointer_down(pointer_id: i32, position: ClientPoint) {
@@ -67,8 +100,15 @@ pub(crate) fn track_pointer_down(pointer_id: i32, position: ClientPoint) {
 /// Forgets a pointer whose release was never seen, so it stops being tracked (and the bridge goes
 /// idle if it was the last one). `MoveInteraction::start_pointer` calls it when a new primary
 /// pointer goes down while an older one is still recorded as held.
+///
+/// A new gesture of a pointer id that is still tracked starts a new bridge epoch even when other
+/// pointers keep the bridge up, so the previous gesture's queued frames cannot land in the new one.
 pub(crate) fn release_pointer(pointer_id: i32) {
     remove_pointer(pointer_id);
+    if BRIDGE.with(|bridge| bridge.borrow().is_some()) {
+        drop_bridge();
+        ensure_bridge();
+    }
 }
 
 pub(crate) fn pointer_position(pointer_id: i32) -> Option<ClientPoint> {
@@ -121,6 +161,18 @@ fn remove_pointer(pointer_id: i32) {
 mod tests {
     use super::*;
     use crate::test_support::with_runtime;
+
+    #[test]
+    fn a_retired_epoch_is_not_current() {
+        let epoch = retire_epoch();
+        assert!(epoch_is_current(epoch));
+        let next = retire_epoch();
+        assert!(
+            !epoch_is_current(epoch),
+            "frames of a bridge installed under an earlier epoch are dropped"
+        );
+        assert!(epoch_is_current(next));
+    }
 
     #[test]
     fn upsert_pointer_updates_existing_pointer() {
