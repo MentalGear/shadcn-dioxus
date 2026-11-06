@@ -6,6 +6,7 @@ import { gotoHydrated } from './hydration';
 import { fixedViewportBox } from './viewport-box';
 import { expectFadeKeepsTransform } from './assert-anchor-transform';
 import { measureAtRest, readAtRest } from "./animations";
+import { pauseAppClock } from "./app-clock";
 
 const URL = `${BASE_URL}/component/navigation_menu/`;
 const GOTO = { timeout: 20 * 60 * 1000 }; // Increase timeout to 20 minutes
@@ -40,34 +41,19 @@ test('hover opens the panel', async ({ page }) => {
   await expect(trigger).toHaveAttribute('aria-expanded', 'true');
 });
 
-// Row 478 item 4: the open delay is Base UI's `NavigationMenu.Root` `delay` default, 50 ms. Measured in the page, from
-// the trigger's `mouseover` to the `aria-expanded` flip; the best of three hovers (a loaded debug build can delay one).
+// Row 478 item 4: the open delay is Base UI's `NavigationMenu.Root` `delay` default, 50 ms. The hover-intent timer is a
+// `setTimeout`, so the page clock (`app-clock.ts`) fixes the moment it fires: closed 49 ms after the pointer entered,
+// open by 109 ms (renders run on fake frames, hence the margin after the timer).
 test('hover opens the panel after the 50 ms intent delay', async ({ page }) => {
   await gotoHydrated(page, URL, GOTO);
   const trigger = nav(page).getByRole('button', { name: 'Getting started' });
-  const times: number[] = [];
-  for (let i = 0; i < 3; i++) {
-    await trigger.evaluate((el) => {
-      const w = window as unknown as { __navProbe?: { over: number | null; open: number | null } };
-      const probe = { over: null as number | null, open: null as number | null };
-      w.__navProbe = probe;
-      el.addEventListener('mouseover', () => { if (probe.over === null) probe.over = performance.now(); }, { capture: true, once: true });
-      new MutationObserver((_, obs) => {
-        if (probe.open === null && el.getAttribute('aria-expanded') === 'true') { probe.open = performance.now(); obs.disconnect(); }
-      }).observe(el, { attributes: true, attributeFilter: ['aria-expanded'] });
-    });
-    await trigger.hover();
-    await expect(trigger).toHaveAttribute('aria-expanded', 'true');
-    const t = await page.evaluate(() => {
-      const p = (window as unknown as { __navProbe: { over: number; open: number } }).__navProbe;
-      return p.open - p.over;
-    });
-    times.push(t);
-    await page.getByRole('heading', { level: 1 }).hover();
-    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
-  }
-  expect(Math.min(...times), `open delays ${times.join(', ')} ms`).toBeLessThan(120);
-  expect(Math.min(...times)).toBeGreaterThanOrEqual(40);
+  await pauseAppClock(page);
+  await trigger.hover();
+  await page.clock.runFor(49);
+  await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+  await page.clock.runFor(60);
+  await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+  await page.clock.resume();
 });
 
 // dev-docs/backlog.md row 189. Hover opens the panel after the 50ms intent delay; the click a user
