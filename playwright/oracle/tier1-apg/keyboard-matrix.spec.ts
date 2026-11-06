@@ -756,7 +756,7 @@ test.describe("APG Accordion pattern — Accordion", () => {
   // file's "do not rely on memory" rule, only the pinned commit's own text
   // counts.)
   const items = (page: Page) =>
-    page.locator("[data-open]").filter({ has: page.getByRole("button") });
+    page.locator("[data-open], [data-closed]").filter({ has: page.getByRole("button") });
 
   test("AccordionTrigger — Enter: \"expands the associated panel\" / collapses an expanded one", async ({ page }) => {
     await goto(page, "accordion");

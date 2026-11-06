@@ -438,7 +438,7 @@ test("View Code opens the source sheet and Escape closes it, returning focus", a
   await viewCode.click();
 
   const sheet = page.locator('[data-slot="sheet-root"]');
-  await expect(sheet).toHaveAttribute("data-state", "open");
+  await expect(sheet).toHaveAttribute("data-open", "");
   const dialog = page.getByRole("dialog", { name: "area_chart/variants/gradient/mod.rs" });
   await expect(dialog).toBeVisible();
   // ~700px wide, flush to the right edge (once the slide-in has settled).
@@ -488,7 +488,7 @@ test("View Code opens a bottom drawer on phones", async ({ page }) => {
   await viewCode.click();
 
   const drawer = page.locator('[data-slot="drawer-root"]');
-  await expect(drawer).toHaveAttribute("data-state", "open");
+  await expect(drawer).toHaveAttribute("data-open", "");
   await expect(page.locator('[data-slot="sheet-root"]')).toHaveCount(0);
   const dialog = page.getByRole("dialog", { name: "pie_chart/variants/donut/mod.rs" });
   await expect(dialog).toBeVisible();
@@ -584,7 +584,7 @@ test.describe("Axe automated scan", () => {
       .locator('.dx-charts-cell[data-variant="gradient"]')
       .getByRole("button", { name: /^View Code/ })
       .click();
-    await expect(page.locator('[data-slot="sheet-root"]')).toHaveAttribute("data-state", "open");
+    await expect(page.locator('[data-slot="sheet-root"]')).toHaveAttribute("data-open", "");
     await expectNoAxeViolations(page, "charts gallery: code sheet open");
   });
 });

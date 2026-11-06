@@ -600,7 +600,7 @@ const FORM_CONTROL_SUBJECTS: FormControlSubject[] = [
     name: "accordion",
     goto: (page) => goto(page, "accordion"),
     interact: async (page) => {
-      const items = page.locator("[data-open]").filter({ has: page.getByRole("button") });
+      const items = page.locator("[data-open], [data-closed]").filter({ has: page.getByRole("button") });
       await expect(items.first()).not.toHaveAttribute("data-disabled", { timeout: 30000 });
       await items.getByRole("button").first().click();
       await expect(items.first()).toHaveAttribute("data-open", "");

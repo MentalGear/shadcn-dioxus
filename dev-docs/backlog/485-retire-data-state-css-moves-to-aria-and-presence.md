@@ -69,3 +69,8 @@ not attributes, outside the chart spec, so its other specs moved with the attrib
 **User-facing change.** `dev-docs/state-attributes.md` carries the old-to-new selector table. The component docs pages (avatar, data
 table, field, hover card, navigation menu, table, tabs, toggle, virtual grid, carousel) say the new names. `CHANGELOG.md` starts at the
 repo root with an Unreleased entry (no release has happened, so no release note; owner 2026-10-29).
+
+**Verification state.** Compile (web arm), clippy in the three arms, `cargo test --workspace` and `cargo test -p preview --features server`, and the
+`--fast` gates were green on the tree at commit time. The Playwright run was cut short by a container restart (shard 1 of 6 on a debug
+SSG build: 4 accordion cases red from locators that matched the old valued `data-open`, since fixed in the specs). The one-verifier
+run is the main loop's. `scripts/check-public-api.sh` does not exist on this branch; the public API changed (see the commit).
