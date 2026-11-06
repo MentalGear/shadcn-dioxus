@@ -1,0 +1,8 @@
+{
+  "name": "ts-tools",
+  "private": true,
+  "packageManager": "pnpm@10.28.0",
+  "devDependencies": {
+    "typescript": "6.0.3"
+  }
+}

@@ -28,8 +28,9 @@
 // red, and a baseline row the tree does not need is red too ("stale": remove it). `--update-baseline` only ever
 // removes or lowers rows, never adds; a first baseline is written with `--init-baseline` when the file is absent.
 //
-// TypeScript is not pinned in the repo: `TS_MODULE` below is the ONE place the compiler is resolved (the sandbox
-// image's /opt/node-tools; `TS_SCAN_TYPESCRIPT` overrides it). Pinning it later is a change of that one line.
+// TypeScript is pinned in `scripts/ts-tools/package.json` (installed by `scripts/session-setup.sh`). `TS_MODULE`
+// below is the ONE place the compiler is resolved: the path in `scripts/lib/typescript-module.txt` (repo-relative,
+// shared with `scripts/check-bridge-behaviours.sh`); `TS_SCAN_TYPESCRIPT` overrides it.
 //
 // Usage: node scripts/ts-scan/scan.mjs [--self-test | --update-baseline | --init-baseline | --list]
 // Exit status: 0 = green, 1 = a rule is red, 2 = bad usage.
@@ -39,7 +40,9 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const TS_MODULE = process.env.TS_SCAN_TYPESCRIPT || "/opt/node-tools/node_modules/typescript";
+const TS_MODULE = process.env.TS_SCAN_TYPESCRIPT || path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)), "../..",
+  fs.readFileSync(new URL("../lib/typescript-module.txt", import.meta.url), "utf8").trim());
 const ts = createRequire(import.meta.url)(TS_MODULE);
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
