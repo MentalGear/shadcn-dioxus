@@ -32,8 +32,8 @@
  *
  * The method is row 204's: record the boxes of every element in `#main-content` on EVERY animation frame from the
  * first one (an init script, so the prerendered frame is included), hold the wasm back until the prerendered page
- * has been painted (+200 ms) so the prerendered frame is on screen at every width, and fail when any box changes
- * after the first paint and the end of the parse (+20 ms) -- through hydration and the 1.5 s after it. A box
+ * has been painted (+3 frames) so the prerendered frame is on screen at every width, and fail when any box changes
+ * after the first paint and the end of the parse (+20 ms) -- through hydration and until the page is quiet after it (`stability-window.ts`). A box
  * counts as changed when x, y, width or height differs by more than 0.5 px.
  *
  *   PLAYWRIGHT_BASE_URL=http://127.0.0.1:8145 npx playwright test --config=ssg.local.config.ts \
@@ -46,6 +46,7 @@
 import { test, expect } from "./fixtures";
 import { BASE_URL } from "./base-url";
 import { gotoPrerendered } from "./page-kinds";
+import { holdWasmUntilPainted, settleUntilQuiet, trackPendingTimers } from "./stability-window";
 
 type Box = { x: number; y: number; w: number; h: number };
 type BoxEvent = { t: number; f: number; id: number; cls: string; from: Box; to: Box };
@@ -124,23 +125,19 @@ for (const { route, scheme, widths } of GROUPS) {
     await context.addCookies([{ name: "dx_theme", value: scheme, url: BASE_URL }]);
     const page = await context.newPage();
     await page.addInitScript(RECORDER);
-    // Hydration waits until the prerendered page has been painted (+200 ms): the slow-wasm case, and the only one
+    await trackPendingTimers(page);
+    // Hydration waits until the prerendered page has been painted (+3 frames): the slow-wasm case, and the only one
     // in which every prerendered-vs-hydrated difference is on screen. Without it a fast machine hydrates before its
     // first paint and the same defect passes at that width.
-    await page.route("**/*.wasm", async (route) => {
-      for (let i = 0; i < 400 && !(await page.evaluate(() => performance.getEntriesByType("paint").length).catch(() => 0)); i++) await page.waitForTimeout(50);
-      await page.waitForTimeout(200);
-      await route.continue().catch(() => {});
-    });
+    await holdWasmUntilPainted(page);
     const failures: string[] = [];
 
     for (const width of ONLY.length ? ONLY : widths) {
       await page.setViewportSize({ width, height: HEIGHT });
       await gotoPrerendered(page, `${BASE_URL}${route}`, { waitUntil: "commit" });
       await page.waitForSelector('html[data-hydrated="true"]', { state: "attached", timeout: 120_000 });
-      await page.evaluate(() => document.fonts.ready.then(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))));
-      // timing-bound-ok: a settle window for real-time layout, animation or hydration after load, not the wait for an app timer; a slow machine only lengthens it
-      await page.waitForTimeout(1500); // no input: whatever still moves by itself shows up in this window
+      // No input: whatever still moves by itself shows up before the page is quiet (fonts, images, animations, 30 frames without a box event or a mutation; at most 1.5 s).
+      await settleUntilQuiet(page, "window.__chartsRec.events.length");
       const { events, paint, parsedAt, charts, measured } = await page.evaluate(() => ({
         events: (window as any).__chartsRec.events as BoxEvent[],
         parsedAt: (window as any).__chartsRec.parsedAt as number,
