@@ -461,7 +461,7 @@ test.describe("Combobox: a press outside closes the list, the clear button is in
     await root.scrollIntoViewIfNeeded();
     const input = root.getByRole("combobox", { name: "Frameworks with clear" });
     await input.click();
-    const list = page.locator("[role='listbox'][data-state='open']");
+    const list = page.locator("[role='listbox'][data-open]");
     await expect(list).toBeVisible();
     return { root, list, clear: root.getByRole("button", { name: "Clear" }) };
   };

@@ -32,7 +32,7 @@ test("opens from the focused input with the keyboard", async ({ page }) => {
     await expect(trigger).toHaveAttribute("aria-expanded", "true");
     await expect(list(page).getByRole("option", { name: "Next.js" })).toHaveAttribute(
         "data-highlighted",
-        "true",
+        "",
     );
 });
 
@@ -267,12 +267,12 @@ test("dynamic option removal updates filtering and keyboard selection", async ({
     await page.keyboard.press("ArrowDown");
     await expect(list(page).getByRole("option", { name: "Next.js" })).toHaveAttribute(
         "data-highlighted",
-        "true",
+        "",
     );
     await page.keyboard.press("ArrowDown");
     await expect(list(page).getByRole("option", { name: "SvelteKit" })).toHaveAttribute(
         "data-highlighted",
-        "true",
+        "",
     );
 
     // A press on a page control outside the combobox closes the list (Base UI's Combobox does the same); the

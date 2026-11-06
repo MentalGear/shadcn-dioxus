@@ -94,7 +94,14 @@ test("disabled Previous/Next: aria-disabled, no href, not focusable, click does 
   await expect(previous).toHaveAttribute("aria-disabled", "true");
   await expect(previous).toHaveAttribute("data-disabled", "");
   expect(await previous.getAttribute("href")).toBeNull();
-  expect(await previous.evaluate((el) => (el as HTMLElement).tabIndex), "an anchor without href is not tabbable").toBe(-1);
+  // `tabIndex` of an anchor reads 0 with or without `href`; focusability is what `focus()` can reach.
+  expect(
+    await previous.evaluate((el) => {
+      (el as HTMLElement).focus();
+      return document.activeElement === el;
+    }),
+    "an anchor without href is not focusable",
+  ).toBe(false);
   expect(await previous.evaluate((el) => getComputedStyle(el).pointerEvents)).toBe("none");
   expect(Number(await previous.evaluate((el) => getComputedStyle(el).opacity))).toBeLessThan(1);
 
