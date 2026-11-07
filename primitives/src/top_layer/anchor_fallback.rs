@@ -200,9 +200,10 @@ pub(super) fn use_placement(
                 PLACEMENT_HELPERS_JS,
                 PLACE_JS
             );
-            Some(crate::js_listener::JsListeners::install(&script).arg((
-                id, anchor_id, point, side, align, gap_px,
-            )))
+            Some(
+                crate::js_listener::JsListeners::install(&script)
+                    .arg((id, anchor_id, point, side, align, gap_px)),
+            )
         },
     );
 }
