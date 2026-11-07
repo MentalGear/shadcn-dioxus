@@ -35,8 +35,10 @@ pub(crate) fn variant_title(name: &str) -> String {
 /// The title a component page shows over one demo: its `title.txt` when it has one, else the title
 /// derived from its directory name ([`variant_title`]).
 pub(crate) fn demo_title(component: &str, name: &str) -> String {
-    variant_title_override(component, name)
-        .map(str::to_string)
+    VARIANT_TITLES
+        .iter()
+        .find(|(c, v, _)| *c == component && *v == name)
+        .map(|(_, _, title)| (*title).to_string())
         .unwrap_or_else(|| variant_title(name))
 }
 

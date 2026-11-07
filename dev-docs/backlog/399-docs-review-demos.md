@@ -4,7 +4,7 @@ title: "Demo batch from the docs review"
 status: "Both halves landed in PR #166 (2026-11-06). The Detail's 2026-10-25 owner items (the demo rename…"
 size: "S"
 area: docs
-updated: 2026-10-25
+updated: 2026-11-07
 ---
 
 # Row 399: Demo batch from the docs review
@@ -18,6 +18,18 @@ Supported modes with no demo: ScrollArea Both (the default) and `scroll_type`; P
 **Both halves landed in PR #166 (2026-11-06).** The Detail's 2026-10-25 owner items (the demo rename audit, the focus-target demos) are not recorded as done, so the row stays open. Found while building them: `ScrollType::Hidden` does not hide the bar (row [497](./done/497-scroll-area-scroll-type-hidden-shows-the-bar.md)); Pagination has no `disabled` prop, so the `disabled_ends` demo marks its unavailable links by hand (an owner decision whether to add the prop).
 
 **First half (lane `demos-399a`).** Seven demos added, one variant directory each: ScrollArea `both` (the default direction) and `scroll_type`; Progress `indeterminate`; Dialog `non_modal`; Collapsible `keep_mounted`; ButtonGroupText `text`; Avatar `rounded`; Pagination `disabled_ends`. Checked in a browser on a lane SSG build: the non-modal page button counts clicks while the dialog is open, the `keep_mounted` field keeps its text across close and reopen, the disabled Pagination links have no `href` and do not navigate, and `indeterminate` sets `data-state="indeterminate"`. **Open primitive bug, not fixed here:** `ScrollType::Hidden` does not hide the bar. The primitive (`primitives/src/scroll_area.rs`, the `owned` attributes) emits `scrollbar-width` as an HTML attribute, not a CSS declaration, so the computed `scrollbar-width` stays `auto` and the bar shows; the `scroll_type` demo's Hidden column shows it. Owner decision needed: fix the primitive (a `style` declaration) or drop the Hidden column until it is fixed. **Pagination has no `disabled` prop:** the demo marks the unavailable links with `aria-disabled`, no `href`, and the disabled opacity, which is a demo convention, not an API. The other half (DataTable reorder, Pie half-pie and padding, Line gaps, Input OTP letters and `on_complete`, Resizable controlled sizes, menus with `modal: false`) belongs to another lane and is not in this branch. Proof on a lane SSG build of this tree (100 routes, no stale HTML): `playwright test:changed` 698 passed, 0 failed (`CHANGED_RANGE` = the session branch; 42 specs plus the matrix specs its diff reaches, axe included). The first run of that suite failed one test: two Pagination `nav` landmarks both labelled "pagination" (axe `landmark-unique`), fixed by giving each its own label.
+
+**Owner items of 2026-10-25 (lane demos-399c, 2026-11-07).** *Titles:* a demo's heading is derived from its directory
+name (`variant_title`), so there was no way to retitle one without renaming the directory that specs address. A
+one-line `variants/<variant>/title.txt` now overrides the derived title (`preview/build.rs`
+`write_variant_titles_index`, `demo_title`); the Accordion `until_found` demo reads "Find in Accordion" (the page title-cases
+it to "Find In Accordion" through `text-transform: capitalize`). The audit of all 565 demo titles is
+`dev-docs/research/demo-title-audit-2026-11-07.md` (56 proposals plus a case rule for small words); **the rest of the
+renames wait for the owner's approval**, each one a `title.txt`. *Focus-target demos:* Dialog, AlertDialog and Popover
+`focus_target` show a line inside the panel, "Opened with: <modality>, focus on: <target>", read from
+`<html data-dx-modality>` through the bridge (`bridge::get`, no new JS), and their notes spell out each modality's
+result; the focus policy is unchanged. `playwright/focus-target-line.spec.ts` opens each by keyboard and by mouse and
+checks the line against the element that really has focus.
 
 Original status: BACKLOG. Found by row 387's first docs-clarity review; the evidence (file:line per finding) is in the project's shared files, `docs-clarity/2026-10-24-docs-clarity-review.md`.
 

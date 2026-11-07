@@ -288,7 +288,15 @@ pub fn App() -> Element {
 
 #[cfg(test)]
 mod variant_title_tests {
-    use super::variant_title;
+    use super::{demo_title, variant_title};
+
+    #[test]
+    fn title_txt_overrides_the_derived_title() {
+        assert_eq!(demo_title("accordion", "until_found"), "Find in Accordion");
+        // Another component with the same directory name keeps the derived title.
+        assert_eq!(demo_title("tabs", "until_found"), "until found");
+        assert_eq!(demo_title("tabs", "rtl"), "RTL");
+    }
 
     #[test]
     fn variant_titles_are_readable() {
