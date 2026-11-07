@@ -247,8 +247,7 @@ pub fn use_form_value_report(
         }
     }));
     let mut owner_value = use_hook(|| CopyValue::new(None::<String>));
-    owner_value
-        .set(text_value(attributes).or_else(|| owner_default.map(str::to_owned)));
+    owner_value.set(text_value(attributes).or_else(|| owner_default.map(str::to_owned)));
     use_dom_value_report(
         id,
         move || owner_value.cloned(),

@@ -24,9 +24,9 @@ mod as_child;
 pub mod aspect_ratio;
 pub mod avatar;
 pub mod bridge;
-mod caller_id;
 #[cfg(feature = "calendar")]
 pub mod calendar;
+mod caller_id;
 pub mod carousel;
 pub mod chart;
 pub mod checkbox;
@@ -36,6 +36,7 @@ mod collection;
 pub mod color_picker;
 pub mod combobox;
 pub mod command;
+mod constant_signal;
 pub mod context_menu;
 pub mod data_view;
 #[cfg(feature = "calendar")]

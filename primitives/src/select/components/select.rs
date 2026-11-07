@@ -1,5 +1,6 @@
 //! Main Select and SelectMulti component implementations.
 
+use crate::constant_signal::use_constant_signal;
 use crate::state_attrs;
 use core::panic;
 use std::time::Duration;
@@ -558,7 +559,7 @@ pub fn SelectMulti<T: Clone + PartialEq + 'static>(props: SelectMultiProps<T>) -
             // See `SelectContext::required`'s doc: `SelectMulti` has no
             // `required` prop, so this is a constant `false` rather than
             // anything forwarded from `props`.
-            required: ReadSignal::new(Signal::new(false)),
+            required: use_constant_signal(false),
             direction: direction_signal,
             position: props.position,
         },

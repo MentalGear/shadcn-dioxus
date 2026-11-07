@@ -1,6 +1,7 @@
 //! Defines the [`Slider`] and [`RangeSlider`] components and their sub-components, which provide
 //! a range input control for selecting a single value or a value range within a specified range.
 
+use crate::constant_signal::use_constant_signal;
 use crate::direction::{use_direction, use_direction_signal, Direction};
 use crate::merge_attributes;
 use crate::move_interaction::{use_move_interaction, MoveEvent};
@@ -317,13 +318,15 @@ pub fn Slider(props: SliderProps) -> Element {
         }
     });
 
+    let min_steps = use_constant_signal(0u32);
+
     rsx! {
         SliderImpl {
             thumbs,
             set_thumb,
             reset,
             on_commit,
-            min_steps: ReadSignal::new(Signal::new(0u32)),
+            min_steps,
             push: false,
             edge: props.thumb_alignment == ThumbAlignment::Edge,
             name: props.name,
