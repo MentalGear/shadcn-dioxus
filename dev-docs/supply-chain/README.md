@@ -138,6 +138,14 @@ package has no `main` and no compiler API (`createProgram`), which `scripts/ts-s
 
 ## Decisions recorded
 
+- **D6 exceptions granted by the owner, 2026-11-07** (row [371](../backlog/371-dependency-evaluation-keep-lift-drop.md)):
+  - `@axe-core/playwright` (MPL-2.0, fails D5's licence class): kept. It runs unmodified in the Playwright suite only and is
+    never distributed, so the licence's file-level obligations do not arise. End date: reviewed 2027-11-07, or at once if
+    it is ever bundled into anything shipped.
+  - `dioxus-code` (fails D2, first release 2026-05-05, and D3): kept. It runs only on the docs site, never in a user's
+    build; the one replacement that passes C23, `syntect`, is a 400-600 line rewrite. End date 2027-05-05, when D2 can
+    pass: re-check D1-D5 then, and lift the exception or replace it.
+
 - **No vendoring (`cargo vendor`), decided 2026-10-23** ([row 371](../backlog/371-dependency-evaluation-keep-lift-drop.md)). Vendored
   code needs the same security checks as the crate it copies; `Cargo.lock` checksums plus crates.io's immutable versions already
   pin the exact bytes; `cargo vet diff` reviews each update without copying source; a yanked version still builds from the
