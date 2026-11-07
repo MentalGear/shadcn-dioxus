@@ -281,7 +281,8 @@ impl Spec {
 /// stopped), as a registered `close` layer would, so an enclosing `<dialog>` keeps its own Escape.
 /// Returns whether it took the key.
 pub(crate) fn escape_in_gap(event: &KeyboardEvent, requested: bool, close: impl FnOnce()) -> bool {
-    if requested && event.key() == Key::Escape {
+    // An Escape that ends an input-method composition is the composition's, not a dismissal.
+    if requested && event.key() == Key::Escape && !event.is_composing() {
         close();
         event.prevent_default();
         event.stop_propagation();
@@ -496,6 +497,7 @@ mod tests {
             assert!(script.contains(message), "{message}");
         }
         assert!(script.contains("o.escape === 'native'"));
+        assert!(script.contains("e.isComposing"));
         assert!(script.contains("e.preventDefault()"));
         assert!(script.contains("o.also"));
         for mode in ["'outside'", "'backdrop'", "'ignore'"] {

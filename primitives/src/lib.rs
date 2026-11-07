@@ -367,7 +367,7 @@ const onBackdrop = e => { const d = roots()[0], r = d && d.getBoundingClientRect
 const outside = n => roots().length > 0 && !within(n); let press = null;
 layers.push(o), layers.sort((a, b) => a.seq - b.seq), cleanup(() => layers.splice(layers.indexOf(o), 1));
 listen(document, 'keydown', e => {
-    if (e.key !== 'Escape' || layers[layers.length - 1] !== o || o.escape === 'native') return;
+    if (e.key !== 'Escape' || e.isComposing || e.keyCode === 229 || layers[layers.length - 1] !== o || o.escape === 'native') return;
     e.preventDefault(), dioxus.send(within(document.activeElement) ? 'escape-within' : 'escape');
 });
 if (o.press !== 'ignore') {
@@ -385,8 +385,7 @@ if (o.press !== 'ignore') {
     listen(document, 'pointercancel', e => { if (press && press.id === e.pointerId) press = null; }, true);
 }
 if (o.focus) listen(document, 'focusin', e => {
-    if (outside(e.target) && !roots().some(r => e.target.contains(r))) dioxus.send('focus');
-}, true);";
+    if (outside(e.target) && !roots().some(r => e.target.contains(r))) dioxus.send('focus'); }, true);";
 
 /// Install [`DISMISS_JS`] for one layer; the returned value removes its listeners and its place in
 /// the Escape order when dropped.
@@ -886,7 +885,9 @@ fn use_animated_open(
         let open = open.cloned();
         if open {
             show_in_dom.set(open);
-        } else {
+        } else if *show_in_dom.peek() {
+            // Only an element that is in the DOM has a close animation to wait for; an overlay that is
+            // closed from its first render runs nothing.
             spawn(async move {
                 let id = id.cloned();
                 #[expect(
