@@ -23,6 +23,9 @@ batch of 4-5 into `queue/batch-N`, runs ONE full `scripts/run-gates.sh`, the rel
 (`scripts/deploy-preview.sh`, which runs the full Playwright suite on a release build). Procedure:
 [`lane-rules.md`](./lane-rules.md), "Merge queue".
 
+The no-base-path validation tree (`$LANE_TGT/release-template`) was removed on 2026-11-07 to free disk for lane builds;
+the next deploy first rebuilds it with `scripts/lane-target.sh warm-release` (a cold release build).
+
 ## Merged and deployed
 
 Merge queue batches 1-29 are on main (PRs #121-#155); PRs #156-#165 followed from session
