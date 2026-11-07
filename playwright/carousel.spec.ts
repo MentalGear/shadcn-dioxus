@@ -35,47 +35,6 @@ import {
   passesThroughAnIntermediateValue,
 } from "./carousel-helpers";
 
-for (const variant of ["main", "sizes", "peek", "vertical", "rtl"] as const) {
-  test.describe(`Carousel (${variant} variant): smoke + a11y attributes`, () => {
-    test(`region has role=region, aria-roledescription=carousel, and an accessible name that doesn't contain the word "carousel"`, async ({ page }) => {
-      await goto(page, variant);
-      const frame = demoFrame(page, variant);
-      const region = frame.getByRole("region");
-      await expect(region).toHaveAttribute("aria-roledescription", "carousel");
-      const name = await region.evaluate((el) => el.getAttribute("aria-label") ?? "");
-      expect(name.length).toBeGreaterThan(0);
-      expect(name.toLowerCase()).not.toContain("carousel");
-    });
-
-    test('first slide has role=group, aria-roledescription=slide, and a "N of M" accessible name', async ({ page }) => {
-      await goto(page, variant);
-      const frame = demoFrame(page, variant);
-      const firstSlide = frame.locator('[role="group"][aria-roledescription="slide"]').first();
-      await expect(firstSlide).toHaveAttribute("aria-label", /^1 of \d+$/);
-    });
-
-    test("Previous/Next are native buttons with real accessible names, and activating them never moves focus off itself unexpectedly", async ({ page }) => {
-      await goto(page, variant);
-      const frame = demoFrame(page, variant);
-      const previous = frame.getByRole("button", { name: "Previous slide" });
-      const next = frame.getByRole("button", { name: "Next slide" });
-      await expect(previous).toHaveJSProperty("tagName", "BUTTON");
-      await expect(next).toHaveJSProperty("tagName", "BUTTON");
-
-      await next.click();
-      // Native <button> semantics: activating it keeps focus on itself,
-      // it is never yanked elsewhere.
-      await expect(next).toBeFocused();
-    });
-
-    test("Previous is disabled at the first slide", async ({ page }) => {
-      await goto(page, variant);
-      const frame = demoFrame(page, variant);
-      await expect(frame.getByRole("button", { name: "Previous slide" })).toBeDisabled();
-    });
-  });
-}
-
 /**
  * shadcn-parity geometry: 28x28px buttons, no box-shadow, and visually
  * outside the track -- never overlapping a slide -- on every variant and
@@ -98,59 +57,95 @@ for (const variant of ["main", "sizes", "peek", "vertical", "rtl"] as const) {
  * what the next describe block tests) -- `region`'s box does not
  * mark the track's edge, only the track itself does.
  */
-test.describe("Carousel: shadcn-parity geometry (size, shadow, outside placement)", () => {
-  const BUTTON_SIZE_PX = 28;
-  const MIN_CLEAR_PX = 20 - 1; // 1px tolerance for sub-pixel layout rounding
+const BUTTON_SIZE_PX = 28;
+const MIN_CLEAR_PX = 20 - 1; // 1px tolerance for sub-pixel layout rounding
 
+// One load of the page serves every variant's read-only cases (the a11y attributes, Previous disabled at the first slide, the
+// geometry); the one case that pages the carousel (Next clicked) runs last in its variant.
+test("Carousel variants: smoke + a11y attributes, and shadcn-parity geometry (size, shadow, outside placement)", async ({ page }) => {
+  await goto(page, "main");
   for (const variant of ["main", "sizes", "peek", "vertical", "rtl"] as const) {
-    test(`${variant}: Previous/Next are 28x28, shadow-less, 20px clear of the track`, async ({ page }) => {
-      await goto(page, variant);
-      const frame = demoFrame(page, variant);
-      // The clipping viewport wrapper, NOT `.dx-carousel-content` itself:
-      // the gap model (backlog row 91's shadcn-parity addendum) gives the
-      // scroller its own negative `margin-inline-start`/`-block-start`
-      // (`--dx-carousel-gap`'s own compensation), which deliberately
-      // widens and shifts `.dx-carousel-content`'s own layout box by the
-      // gap's width -- clipped by this wrapper, so nothing about it looks
-      // different, but a raw `boundingBox()` of the scroller itself does
-      // not mark the track's own VISUAL edge. The viewport wrapper's own box is
-      // exactly the clipped, visual track edge, unaffected by the gap
-      // model either way.
-      const content = frame.locator('[data-slot="carousel-viewport"]');
-      const previous = frame.getByRole("button", { name: "Previous slide" });
-      const next = frame.getByRole("button", { name: "Next slide" });
+    await test.step(`${variant}: region has role=region, aria-roledescription=carousel, and an accessible name that doesn't contain the word "carousel"`, async () => {
 
-      await expect(previous).toHaveCSS("box-shadow", "none");
-      await expect(next).toHaveCSS("box-shadow", "none");
+        const frame = demoFrame(page, variant);
+        const region = frame.getByRole("region");
+        await expect(region).toHaveAttribute("aria-roledescription", "carousel");
+        const name = await region.evaluate((el) => el.getAttribute("aria-label") ?? "");
+        expect(name.length).toBeGreaterThan(0);
+        expect(name.toLowerCase()).not.toContain("carousel");
+    });
+    await test.step(`${variant}: first slide has role=group, aria-roledescription=slide, and a "N of M" accessible name`, async () => {
 
-      const [contentBox, previousBox, nextBox] = await Promise.all([
-        content.boundingBox(),
-        previous.boundingBox(),
-        next.boundingBox(),
-      ]);
-      expect(contentBox).not.toBeNull();
-      expect(previousBox).not.toBeNull();
-      expect(nextBox).not.toBeNull();
+        const frame = demoFrame(page, variant);
+        const firstSlide = frame.locator('[role="group"][aria-roledescription="slide"]').first();
+        await expect(firstSlide).toHaveAttribute("aria-label", /^1 of \d+$/);
+    });
+    await test.step(`${variant}: Previous is disabled at the first slide`, async () => {
 
-      for (const box of [previousBox!, nextBox!]) {
-        expect(box.width).toBeCloseTo(BUTTON_SIZE_PX, 0);
-        expect(box.height).toBeCloseTo(BUTTON_SIZE_PX, 0);
-      }
+        const frame = demoFrame(page, variant);
+        await expect(frame.getByRole("button", { name: "Previous slide" })).toBeDisabled();
+    });
+    await test.step(`${variant}: Previous/Next are 28x28, shadow-less, 20px clear of the track`, async () => {
 
-      if (variant === "vertical") {
-        // Block axis: Previous above the track, Next below it.
-        expect(contentBox!.y - (previousBox!.y + previousBox!.height)).toBeGreaterThanOrEqual(MIN_CLEAR_PX);
-        expect(nextBox!.y - (contentBox!.y + contentBox!.height)).toBeGreaterThanOrEqual(MIN_CLEAR_PX);
-      } else if (variant === "rtl") {
-        // Inline axis, mirrored: Previous (the *start* edge) resolves to
-        // the physical right under dir="rtl"; Next (the *end* edge) to the
-        // physical left -- the opposite pairing from every other variant.
-        expect(previousBox!.x - (contentBox!.x + contentBox!.width)).toBeGreaterThanOrEqual(MIN_CLEAR_PX);
-        expect(contentBox!.x - (nextBox!.x + nextBox!.width)).toBeGreaterThanOrEqual(MIN_CLEAR_PX);
-      } else {
-        expect(contentBox!.x - (previousBox!.x + previousBox!.width)).toBeGreaterThanOrEqual(MIN_CLEAR_PX);
-        expect(nextBox!.x - (contentBox!.x + contentBox!.width)).toBeGreaterThanOrEqual(MIN_CLEAR_PX);
-      }
+        const frame = demoFrame(page, variant);
+        // The clipping viewport wrapper, NOT `.dx-carousel-content` itself:
+        // the gap model (backlog row 91's shadcn-parity addendum) gives the
+        // scroller its own negative `margin-inline-start`/`-block-start`
+        // (`--dx-carousel-gap`'s own compensation), which deliberately
+        // widens and shifts `.dx-carousel-content`'s own layout box by the
+        // gap's width -- clipped by this wrapper, so nothing about it looks
+        // different, but a raw `boundingBox()` of the scroller itself does
+        // not mark the track's own VISUAL edge. The viewport wrapper's own box is
+        // exactly the clipped, visual track edge, unaffected by the gap
+        // model either way.
+        const content = frame.locator('[data-slot="carousel-viewport"]');
+        const previous = frame.getByRole("button", { name: "Previous slide" });
+        const next = frame.getByRole("button", { name: "Next slide" });
+
+        await expect(previous).toHaveCSS("box-shadow", "none");
+        await expect(next).toHaveCSS("box-shadow", "none");
+
+        const [contentBox, previousBox, nextBox] = await Promise.all([
+          content.boundingBox(),
+          previous.boundingBox(),
+          next.boundingBox(),
+        ]);
+        expect(contentBox).not.toBeNull();
+        expect(previousBox).not.toBeNull();
+        expect(nextBox).not.toBeNull();
+
+        for (const box of [previousBox!, nextBox!]) {
+          expect(box.width).toBeCloseTo(BUTTON_SIZE_PX, 0);
+          expect(box.height).toBeCloseTo(BUTTON_SIZE_PX, 0);
+        }
+
+        if (variant === "vertical") {
+          // Block axis: Previous above the track, Next below it.
+          expect(contentBox!.y - (previousBox!.y + previousBox!.height)).toBeGreaterThanOrEqual(MIN_CLEAR_PX);
+          expect(nextBox!.y - (contentBox!.y + contentBox!.height)).toBeGreaterThanOrEqual(MIN_CLEAR_PX);
+        } else if (variant === "rtl") {
+          // Inline axis, mirrored: Previous (the *start* edge) resolves to
+          // the physical right under dir="rtl"; Next (the *end* edge) to the
+          // physical left -- the opposite pairing from every other variant.
+          expect(previousBox!.x - (contentBox!.x + contentBox!.width)).toBeGreaterThanOrEqual(MIN_CLEAR_PX);
+          expect(contentBox!.x - (nextBox!.x + nextBox!.width)).toBeGreaterThanOrEqual(MIN_CLEAR_PX);
+        } else {
+          expect(contentBox!.x - (previousBox!.x + previousBox!.width)).toBeGreaterThanOrEqual(MIN_CLEAR_PX);
+          expect(nextBox!.x - (contentBox!.x + contentBox!.width)).toBeGreaterThanOrEqual(MIN_CLEAR_PX);
+        }
+    });
+    await test.step(`${variant}: Previous/Next are native buttons with real accessible names, and activating them never moves focus off itself unexpectedly`, async () => {
+
+        const frame = demoFrame(page, variant);
+        const previous = frame.getByRole("button", { name: "Previous slide" });
+        const next = frame.getByRole("button", { name: "Next slide" });
+        await expect(previous).toHaveJSProperty("tagName", "BUTTON");
+        await expect(next).toHaveJSProperty("tagName", "BUTTON");
+
+        await next.click();
+        // Native <button> semantics: activating it keeps focus on itself,
+        // it is never yanked elsewhere.
+        await expect(next).toBeFocused();
     });
   }
 });

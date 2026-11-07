@@ -165,64 +165,113 @@ for (const host of HOSTS) {
 
     // ---- anatomy ----
 
-    test("the open menu is a named role=menu of items; a disabled item is aria-disabled and data-disabled", async ({ page }) => {
-      await open(host, page);
-      const menu = rootMenu(page);
-      const named =
-        (await menu.getAttribute("aria-labelledby")) !== null || (await menu.getAttribute("aria-label")) !== null;
-      expect(named, "APG: a menu has an accessible name").toBe(true);
-      expect(await menu.locator(ITEM).count(), "the menu has items").toBeGreaterThanOrEqual(3);
-      const disabled = menu.locator(DISABLED);
-      expect(await disabled.count(), "the demo has a disabled item").toBeGreaterThanOrEqual(1);
-      await expect(disabled.first()).toHaveAttribute("data-disabled", "");
+    // The cases that select nothing share one load of the page: each opens its own menu (the previous one is closed first),
+    // and the disabled-item click runs before any selection exists, so "nothing is reported" still holds.
+    test("anatomy, keyboard roving, typeahead, a disabled-item click and every way to dismiss the menu", async ({ page }) => {
+      const closeMenu = async () => {
+        if ((await anyMenu(page).count()) > 0) await page.keyboard.press("Escape");
+        await expect(anyMenu(page)).toHaveCount(0);
+      };
+      await test.step("the open menu is a named role=menu of items; a disabled item is aria-disabled and data-disabled", async () => {
+        await closeMenu();
+        await open(host, page);
+        const menu = rootMenu(page);
+        const named =
+          (await menu.getAttribute("aria-labelledby")) !== null || (await menu.getAttribute("aria-label")) !== null;
+        expect(named, "APG: a menu has an accessible name").toBe(true);
+        expect(await menu.locator(ITEM).count(), "the menu has items").toBeGreaterThanOrEqual(3);
+        const disabled = menu.locator(DISABLED);
+        expect(await disabled.count(), "the demo has a disabled item").toBeGreaterThanOrEqual(1);
+        await expect(disabled.first()).toHaveAttribute("data-disabled", "");
+      });
+      await test.step("Down, Up, Home and End rove through the enabled items and wrap; a disabled item is skipped", async () => {
+        await closeMenu();
+        await open(host, page);
+        const enabled = rootMenu(page).locator(ENABLED);
+        const n = await enabled.count();
+        expect(n).toBeGreaterThanOrEqual(2);
+
+        await page.keyboard.press("ArrowDown");
+        await expect(enabled.nth(0)).toBeFocused();
+        for (let i = 1; i < n; i++) {
+          await page.keyboard.press("ArrowDown");
+          await expect(enabled.nth(i), `ArrowDown #${i + 1}`).toBeFocused();
+        }
+        await page.keyboard.press("ArrowDown");
+        await expect(enabled.nth(0), "ArrowDown wraps to the first").toBeFocused();
+        await page.keyboard.press("ArrowUp");
+        await expect(enabled.nth(n - 1), "ArrowUp wraps to the last").toBeFocused();
+        if (host.route !== "menubar") {
+          // In a Menubar, Home and End move along the row of menus instead (see the Menubar differences block).
+          await page.keyboard.press("Home");
+          await expect(enabled.nth(0)).toBeFocused();
+          await page.keyboard.press("End");
+          await expect(enabled.nth(n - 1)).toBeFocused();
+        }
+        await expect(rootMenu(page).locator(`${DISABLED}:focus`), "a disabled item never holds focus").toHaveCount(0);
+      });
+      await test.step("typeahead lands on an enabled item by the start of its label, never on a disabled one", async () => {
+        await closeMenu();
+        await open(host, page);
+        const menu = rootMenu(page);
+        const enabled = menu.locator(ENABLED);
+        await arrowTo(page, enabled.last());
+
+        const first = enabled.first();
+        const letter = (await label(first))[0].toLowerCase();
+        await page.keyboard.press(letter);
+        await expect(first, `typing "${letter}" moves to the first item (wrapping)`).toBeFocused();
+
+        // The typeahead buffer clears after TYPEAHEAD_RESET_MS (1 s); the disabled item's first letter then matches nothing.
+        // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
+        await page.waitForTimeout(1200);
+        const disabledLetter = (await label(menu.locator(DISABLED).first()))[0].toLowerCase();
+        await page.keyboard.press(disabledLetter);
+        await expect(first, "typeahead does not move onto a disabled item").toBeFocused();
+      });
+      await test.step("a click on a disabled item does nothing: the menu stays open and nothing is reported", async () => {
+        await closeMenu();
+        await open(host, page);
+        // `force`: Playwright otherwise waits for an aria-disabled element to become actionable.
+        await rootMenu(page).locator(DISABLED).first().click({ force: true });
+        await page.waitForTimeout(200);
+        await expect(rootMenu(page)).toHaveAttribute("data-open", "");
+        await expect(demoFrame(page)).not.toContainText("Selected:");
+      });
+      await test.step("Escape closes the menu and returns focus to the trigger", async () => {
+        await closeMenu();
+        await open(host, page);
+        await page.keyboard.press("ArrowDown");
+        await page.keyboard.press("Escape");
+        await expect(anyMenu(page)).toHaveCount(0);
+        await expect(trigger(host, page), "focus returns to the trigger").toBeFocused();
+      });
+      await test.step("Escape closes the menu while focus is on the page, not in the menu (the dismiss layer is document-wide)", async () => {
+        await closeMenu();
+        await open(host, page);
+        await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+        expect(await page.evaluate(() => document.activeElement === document.body), "focus is on the page").toBe(true);
+        await page.keyboard.press("Escape");
+        await expect(anyMenu(page)).toHaveCount(0);
+      });
+      await test.step("Tab leaves the menu and closes it", async () => {
+        await closeMenu();
+        await open(host, page);
+        await page.keyboard.press("ArrowDown");
+        await page.keyboard.press("Tab");
+        await expect(anyMenu(page)).toHaveCount(0);
+      });
+      await test.step("a press outside the menu closes it", async () => {
+        await closeMenu();
+        await open(host, page);
+        await page.locator("body").click({ position: { x: 0, y: 0 } });
+        await expect(anyMenu(page)).toHaveCount(0);
+      });
     });
 
     // ---- keyboard ----
 
-    test("Down, Up, Home and End rove through the enabled items and wrap; a disabled item is skipped", async ({ page }) => {
-      await open(host, page);
-      const enabled = rootMenu(page).locator(ENABLED);
-      const n = await enabled.count();
-      expect(n).toBeGreaterThanOrEqual(2);
 
-      await page.keyboard.press("ArrowDown");
-      await expect(enabled.nth(0)).toBeFocused();
-      for (let i = 1; i < n; i++) {
-        await page.keyboard.press("ArrowDown");
-        await expect(enabled.nth(i), `ArrowDown #${i + 1}`).toBeFocused();
-      }
-      await page.keyboard.press("ArrowDown");
-      await expect(enabled.nth(0), "ArrowDown wraps to the first").toBeFocused();
-      await page.keyboard.press("ArrowUp");
-      await expect(enabled.nth(n - 1), "ArrowUp wraps to the last").toBeFocused();
-      if (host.route !== "menubar") {
-        // In a Menubar, Home and End move along the row of menus instead (see the Menubar differences block).
-        await page.keyboard.press("Home");
-        await expect(enabled.nth(0)).toBeFocused();
-        await page.keyboard.press("End");
-        await expect(enabled.nth(n - 1)).toBeFocused();
-      }
-      await expect(rootMenu(page).locator(`${DISABLED}:focus`), "a disabled item never holds focus").toHaveCount(0);
-    });
-
-    test("typeahead lands on an enabled item by the start of its label, never on a disabled one", async ({ page }) => {
-      await open(host, page);
-      const menu = rootMenu(page);
-      const enabled = menu.locator(ENABLED);
-      await arrowTo(page, enabled.last());
-
-      const first = enabled.first();
-      const letter = (await label(first))[0].toLowerCase();
-      await page.keyboard.press(letter);
-      await expect(first, `typing "${letter}" moves to the first item (wrapping)`).toBeFocused();
-
-      // The typeahead buffer clears after TYPEAHEAD_RESET_MS (1 s); the disabled item's first letter then matches nothing.
-      // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
-      await page.waitForTimeout(1200);
-      const disabledLetter = (await label(menu.locator(DISABLED).first()))[0].toLowerCase();
-      await page.keyboard.press(disabledLetter);
-      await expect(first, "typeahead does not move onto a disabled item").toBeFocused();
-    });
 
     for (const [key, nth] of [
       ["Enter", 0],
@@ -242,28 +291,8 @@ for (const host of HOSTS) {
       });
     }
 
-    test("Escape closes the menu and returns focus to the trigger", async ({ page }) => {
-      await open(host, page);
-      await page.keyboard.press("ArrowDown");
-      await page.keyboard.press("Escape");
-      await expect(anyMenu(page)).toHaveCount(0);
-      await expect(trigger(host, page), "focus returns to the trigger").toBeFocused();
-    });
 
-    test("Escape closes the menu while focus is on the page, not in the menu (the dismiss layer is document-wide)", async ({ page }) => {
-      await open(host, page);
-      await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
-      expect(await page.evaluate(() => document.activeElement === document.body), "focus is on the page").toBe(true);
-      await page.keyboard.press("Escape");
-      await expect(anyMenu(page)).toHaveCount(0);
-    });
 
-    test("Tab leaves the menu and closes it", async ({ page }) => {
-      await open(host, page);
-      await page.keyboard.press("ArrowDown");
-      await page.keyboard.press("Tab");
-      await expect(anyMenu(page)).toHaveCount(0);
-    });
 
     // ---- pointer ----
 
@@ -277,20 +306,7 @@ for (const host of HOSTS) {
       await expect(trigger(host, page), "a mouse press hands focus back to the trigger").toBeFocused();
     });
 
-    test("a click on a disabled item does nothing: the menu stays open and nothing is reported", async ({ page }) => {
-      await open(host, page);
-      // `force`: Playwright otherwise waits for an aria-disabled element to become actionable.
-      await rootMenu(page).locator(DISABLED).first().click({ force: true });
-      await page.waitForTimeout(200);
-      await expect(rootMenu(page)).toHaveAttribute("data-open", "");
-      await expect(demoFrame(page)).not.toContainText("Selected:");
-    });
 
-    test(`a press outside the menu closes it`, async ({ page }) => {
-      await open(host, page);
-      await page.locator("body").click({ position: { x: 0, y: 0 } });
-      await expect(anyMenu(page)).toHaveCount(0);
-    });
 
     test(`the pointer commits on ${host.commit === "click" ? "click" : host.commit === "release" ? "release" : "press"} (SelectOn)`, async ({ page }) => {
       await open(host, page);
@@ -515,22 +531,26 @@ for (const host of HOSTS) {
   });
 }
 
-// ---- touch: a tap on an item selects it, in all three hosts (a Menubar item no longer commits on the touch's pointerdown) ----
+// ---- touch: the press alone selects nothing, then a tap selects (all three hosts, one load each) ----
 
 test.describe("menu family parity — touch", () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, colorScheme: "light" });
 
   for (const host of HOSTS) {
-    test(`${host.name}: a tap on an item selects it and closes the menu`, async ({ page }) => {
+    // The press case runs first, so "nothing is reported" holds; the menu it leaves open is closed before the tap case opens its own.
+    test(`${host.name}: a touch pointerdown with no release selects nothing; a tap on an item selects it and closes the menu`, async ({ page }) => {
       await goto(page, host);
-      const t = trigger(host, page);
-      if (host.route === "context_menu") {
-        // A touch long press opens the context menu: a touch `pointerdown` held past the long-press delay.
-        await t.evaluate((el) => {
+      await test.step("a touch pointerdown on an item, with no release, selects nothing", async () => {
+        // Opened by mouse (a context menu by a right click): this case is about the item press, not the opening gesture.
+        await open(host, page);
+        const menu = rootMenu(page);
+        await page.waitForTimeout(900);
+        const item = menu.locator(ENABLED).nth(1);
+        await item.evaluate((el) => {
           const r = el.getBoundingClientRect();
           el.dispatchEvent(
             new PointerEvent("pointerdown", {
-              pointerId: 7777,
+              pointerId: 7778,
               pointerType: "touch",
               isPrimary: true,
               clientX: r.x + r.width / 2,
@@ -542,55 +562,46 @@ test.describe("menu family parity — touch", () => {
             }),
           );
         });
-      } else {
-        await t.tap();
-      }
-      const menu = rootMenu(page);
-      await expect(menu).toHaveAttribute("data-open", "");
-      await awaitAnimationsSettled(menu);
-      // Outlive the 700 ms window in which a long-press-opened ContextMenu ignores the re-dispatched press.
-      await page.waitForTimeout(900);
-      const item = menu.locator(ENABLED).nth(1);
-      const text = await label(item);
-      await item.tap();
-      await expect(anyMenu(page)).toHaveCount(0);
-      await expect(demoFrame(page)).toContainText(new RegExp(`Selected: ${text}`, "i"));
-    });
-  }
-});
-
-// ---- touch: the press alone selects nothing (all three hosts) ----
-
-test.describe("menu family parity — touch press", () => {
-  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, colorScheme: "light" });
-
-  for (const host of HOSTS) {
-    test(`${host.name}: a touch pointerdown on an item, with no release, selects nothing`, async ({ page }) => {
-      await goto(page, host);
-      // Opened by mouse (a context menu by a right click): this case is about the item press, not the opening gesture.
-      await open(host, page);
-      const menu = rootMenu(page);
-      await page.waitForTimeout(900);
-      const item = menu.locator(ENABLED).nth(1);
-      await item.evaluate((el) => {
-        const r = el.getBoundingClientRect();
-        el.dispatchEvent(
-          new PointerEvent("pointerdown", {
-            pointerId: 7778,
-            pointerType: "touch",
-            isPrimary: true,
-            clientX: r.x + r.width / 2,
-            clientY: r.y + r.height / 2,
-            button: 0,
-            buttons: 1,
-            bubbles: true,
-            cancelable: true,
-          }),
-        );
+        await page.waitForTimeout(300);
+        await expect(menu, "a touch press without a release leaves the menu open").toHaveAttribute("data-open", "");
+        await expect(demoFrame(page)).not.toContainText("Selected:");
       });
-      await page.waitForTimeout(300);
-      await expect(menu, "a touch press without a release leaves the menu open").toHaveAttribute("data-open", "");
-      await expect(demoFrame(page)).not.toContainText("Selected:");
+      await page.keyboard.press("Escape");
+      await expect(anyMenu(page)).toHaveCount(0);
+      await test.step("a tap on an item selects it and closes the menu", async () => {
+        const t = trigger(host, page);
+        if (host.route === "context_menu") {
+          // A touch long press opens the context menu: a touch `pointerdown` held past the long-press delay.
+          await t.evaluate((el) => {
+            const r = el.getBoundingClientRect();
+            el.dispatchEvent(
+              new PointerEvent("pointerdown", {
+                pointerId: 7777,
+                pointerType: "touch",
+                isPrimary: true,
+                clientX: r.x + r.width / 2,
+                clientY: r.y + r.height / 2,
+                button: 0,
+                buttons: 1,
+                bubbles: true,
+                cancelable: true,
+              }),
+            );
+          });
+        } else {
+          await t.tap();
+        }
+        const menu = rootMenu(page);
+        await expect(menu).toHaveAttribute("data-open", "");
+        await awaitAnimationsSettled(menu);
+        // Outlive the 700 ms window in which a long-press-opened ContextMenu ignores the re-dispatched press.
+        await page.waitForTimeout(900);
+        const item = menu.locator(ENABLED).nth(1);
+        const text = await label(item);
+        await item.tap();
+        await expect(anyMenu(page)).toHaveCount(0);
+        await expect(demoFrame(page)).toContainText(new RegExp(`Selected: ${text}`, "i"));
+      });
     });
   }
 });
