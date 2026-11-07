@@ -80,3 +80,10 @@ for (const c of CASES) {
     }
   });
 }
+
+test("a demo's title.txt replaces the title derived from its directory, and the frame id stays the directory", async ({ page }) => {
+  await gotoHydrated(page, `${BASE_URL}/component/accordion/`, GOTO);
+  await expect(page.locator("h3.dx-component-variant-title", { hasText: /^Find in Accordion$/ })).toHaveCount(1);
+  await expect(page.locator("h3.dx-component-variant-title", { hasText: /Until Found/i })).toHaveCount(0);
+  await expect(page.locator("#component-preview-frame-until_found")).toHaveCount(1);
+});
