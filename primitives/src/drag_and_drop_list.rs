@@ -6,6 +6,7 @@
 //! and *controlled* when it also gets `order`: then it reports every move
 //! through `on_reorder` and shows exactly the order it is given.
 use crate::collection::{collection_item, use_collection_provider, use_item, CollectionState};
+use crate::constant_signal::use_constant_signal;
 use crate::data_view::KeyOrder;
 use crate::direction::use_direction;
 use crate::{fold_style_attributes, merge_attributes, use_unique_id};
@@ -454,7 +455,7 @@ pub fn DragAndDropList(props: DragAndDropListProps) -> Element {
         on_remove: props.on_remove,
     });
     let announcement = use_signal(String::new);
-    let focus = use_collection_provider(ReadSignal::new(Signal::new(true)));
+    let focus = use_collection_provider(use_constant_signal(true));
     let instructions_id = use_unique_id();
 
     // What the handlers see tracks the props: the config, and the items

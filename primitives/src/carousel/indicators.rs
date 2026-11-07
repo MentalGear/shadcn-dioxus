@@ -1,4 +1,5 @@
 use super::*;
+use crate::constant_signal::use_constant_signal;
 
 /// Shared roving-focus state for one [`CarouselIndicators`], consumed by its
 /// [`CarouselIndicator`] children -- the tablist's *own* [`CollectionState`],
@@ -83,9 +84,8 @@ pub fn CarouselIndicators(props: CarouselIndicatorsProps) -> Element {
         tablist_present.set(true);
     });
 
-    // Always wraps (`ReadSignal::new(Signal::new(true))`) -- see this
-    // component's own doc, "Arrow-key wrap."
-    let focus = use_collection_provider(ReadSignal::new(Signal::new(true)));
+    // Always wraps -- see this component's own doc, "Arrow-key wrap."
+    let focus = use_collection_provider(use_constant_signal(true));
     use_context_provider(|| CarouselIndicatorsContext {
         focus,
         direction: ctx.direction,

@@ -26,6 +26,7 @@ pub mod avatar;
 pub mod bridge;
 #[cfg(feature = "calendar")]
 pub mod calendar;
+mod caller_id;
 pub mod carousel;
 pub mod chart;
 pub mod checkbox;
@@ -35,6 +36,7 @@ mod collection;
 pub mod color_picker;
 pub mod combobox;
 pub mod command;
+mod constant_signal;
 pub mod context_menu;
 pub mod data_view;
 #[cfg(feature = "calendar")]
@@ -46,6 +48,7 @@ mod dismiss;
 pub mod drag_and_drop_list;
 pub mod drawer;
 pub mod dropdown_menu;
+mod escape;
 mod form_reset;
 pub use form_reset::{
     use_dom_value_report, use_dom_value_restore, use_form_value_report, MIRROR_AUTOCOMPLETE,
@@ -430,13 +433,13 @@ pub(crate) trait RefocusTrigger: Copy + 'static {
 
 impl RefocusTrigger for Signal<String> {
     fn refocus(self) {
-        let id = self.peek().clone();
+        let id = crate::escape::js_string(&self.peek());
         // Never by script after a touch or pen (`data-dx-modality`, `modality.rs`): nothing was
         // keyboard-focused to give back, and a script-focused trigger rings on iOS.
         // focus-ok: restore focus to the trigger on close
         #[expect(clippy::disallowed_methods, reason = "row 434: the bridge ports this page script")]
         document::eval(&format!(
-            "var e=document.getElementById('{id}');if(e&&!/^(touch|pen)$/.test(document.documentElement.getAttribute('data-dx-modality')||''))e.focus()"
+            "var e=document.getElementById({id});if(e&&!/^(touch|pen)$/.test(document.documentElement.getAttribute('data-dx-modality')||''))e.focus()"
         ));
     }
 }
@@ -645,7 +648,7 @@ fn use_dialog_open_driver(
 
     use_effect(move || {
         let want_open = open.cloned();
-        let id = id.cloned();
+        let id = crate::escape::js_string(&id.cloned());
         // `inject` is prepended into this exact script, not left to the
         // separate `use_effect(ensure_top_layer_ink_styles)` above -- see
         // that function's own doc (`top_layer.rs`), "First-paint window,"
@@ -669,7 +672,7 @@ fn use_dialog_open_driver(
             {modality};
             {open_focus}
             {forward}
-            const dialog = document.getElementById('{id}');
+            const dialog = document.getElementById({id});
             if (!dialog) return;
             const gen = (dialog.__dxDialogGen = (dialog.__dxDialogGen || 0) + 1);
             if ({want_open}) {{

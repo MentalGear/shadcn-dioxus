@@ -262,3 +262,15 @@ fn trigger_non_style_attributes_pass_through_untouched() {
         .any(|a| a.name == "id" && matches!(&a.value, Text(s) if s == "caller-id")));
     assert!(result.iter().any(|a| a.name == "role"));
 }
+
+#[cfg(feature = "web")]
+#[test]
+fn a_caller_id_with_css_punctuation_names_one_anchor_on_both_sides() {
+    // `a.b` as a bare ident would end at the dot, so the trigger and the content would name
+    // different anchors: the declarations carry the CSS-escaped id.
+    assert_eq!(anchor_name_style("a.b"), r"anchor-name: --dxa-a\.b;");
+    assert_eq!(
+        position_anchor_style("a.b"),
+        r"position-anchor: --dxa-a\.b;"
+    );
+}

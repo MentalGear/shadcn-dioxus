@@ -1,6 +1,7 @@
 //! Defines the [`Toolbar`] component and its sub-components, which provide a container to group related buttons and controls with keyboard navigation.
 
 use crate::collection::{collection_item, use_collection_provider, use_item, CollectionState};
+use crate::constant_signal::use_constant_signal;
 use crate::direction::{use_direction, use_direction_signal, Direction, HorizontalNav};
 use crate::merge_attributes;
 use crate::state_attrs;
@@ -105,7 +106,7 @@ pub struct ToolbarProps {
 pub fn Toolbar(props: ToolbarProps) -> Element {
     let direction = use_direction(props.dir);
     let direction_signal = use_direction_signal(direction);
-    let focus = use_collection_provider(ReadSignal::new(Signal::new(false)));
+    let focus = use_collection_provider(use_constant_signal(false));
     let mut ctx = use_context_provider(|| ToolbarCtx {
         disabled: props.disabled,
         focus,

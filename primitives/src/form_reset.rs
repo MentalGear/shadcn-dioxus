@@ -47,13 +47,14 @@ use dioxus::html::{FileData, FormData, FormValue, HasFileData, HasFormData};
 use dioxus::prelude::*;
 
 use crate::bridge::{self, Prop, Target};
+use crate::caller_id::caller_id;
 use crate::{use_form_reset_listener, use_unique_id};
 
-/// The text of the attribute `name` the caller passed, if it passed one as text.
-fn text_attribute(attributes: &[Attribute], name: &str) -> Option<String> {
+/// The text of the `value` attribute the caller passed, if it passed one as text.
+fn text_value(attributes: &[Attribute]) -> Option<String> {
     attributes
         .iter()
-        .find(|attribute| attribute.name == name)
+        .find(|attribute| attribute.name == "value")
         .and_then(|attribute| match &attribute.value {
             dioxus_core::AttributeValue::Text(text) => Some(text.to_string()),
             _ => None,
@@ -239,15 +240,14 @@ pub fn use_form_value_report(
     owner_default: Option<&'static str>,
 ) -> Vec<Attribute> {
     let mut id = use_unique_id();
-    let user_id = text_attribute(attributes, "id");
+    let user_id = caller_id(attributes);
     use_effect(use_reactive!(|user_id| {
         if let Some(user_id) = user_id {
             id.set(user_id);
         }
     }));
     let mut owner_value = use_hook(|| CopyValue::new(None::<String>));
-    owner_value
-        .set(text_attribute(attributes, "value").or_else(|| owner_default.map(str::to_owned)));
+    owner_value.set(text_value(attributes).or_else(|| owner_default.map(str::to_owned)));
     use_dom_value_report(
         id,
         move || owner_value.cloned(),
@@ -260,9 +260,39 @@ pub fn use_form_value_report(
             }
         },
     );
-    if text_attribute(attributes, "id").is_some() {
+    if caller_id(attributes).is_some() {
         Vec::new()
     } else {
         vec![Attribute::new("id", id(), None, false)]
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_support::with_runtime;
+
+    fn id_attribute(value: &str) -> Attribute {
+        Attribute::new("id", value.to_string(), None, false)
+    }
+
+    /// The attributes `use_form_value_report` hands back for a control given `attributes`.
+    fn owned_by_report(attributes: Vec<Attribute>) -> Vec<Attribute> {
+        with_runtime(move || use_form_value_report(&attributes, None, None, Some("")))
+    }
+
+    #[test]
+    fn a_control_with_an_empty_id_gets_a_generated_one() {
+        // `id=""` names nothing, so the listener and the read need an id of the report's own.
+        let owned = owned_by_report(vec![id_attribute("")]);
+        assert!(
+            owned.iter().any(|a| a.name == "id"),
+            "an empty caller id must not count as the caller's id"
+        );
+    }
+
+    #[test]
+    fn a_control_with_a_caller_id_keeps_it() {
+        assert!(owned_by_report(vec![id_attribute("name")]).is_empty());
     }
 }

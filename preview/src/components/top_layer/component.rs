@@ -275,6 +275,22 @@ pub fn TopLayerFixture() -> Element {
             }
 
             section { class: Styles::dx_top_layer_section,
+                h2 { "Ids with punctuation" }
+                p { class: Styles::dx_top_layer_hint,
+                    "A caller-supplied id is arbitrary text. This popover's trigger and content ids hold a dot, a "
+                    "colon and an apostrophe; it must open and sit next to its trigger like any other."
+                }
+                PopoverRoot { is_modal: false,
+                    PopoverTrigger { id: "odd.trigger:it's", "Odd-id trigger" }
+                    PopoverContent {
+                        "data-dx-surface": "floating",
+                        id: "odd.content:it's",
+                        "Content of the odd-id popover."
+                    }
+                }
+            }
+
+            section { class: Styles::dx_top_layer_section,
                 h2 { "Light dismiss, Escape, and stacking" }
                 p { class: Styles::dx_top_layer_hint,
                     "The red panel is a high-"

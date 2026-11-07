@@ -37,9 +37,9 @@ pub(super) enum Anchor {
 /// `data-placed-side` and `--dx-anchor-offset-x/-y` (the anchor's centre in the panel's own space).
 #[cfg(feature = "web")]
 const PLACE_JS: &str = r#"
-const [id, anchorId, point, SIDE, ALIGN, GAP] = await dioxus.recv();
+const [id, anchorSelector, point, SIDE, ALIGN, GAP] = await dioxus.recv();
 const content = document.getElementById(id);
-const trigger = point ? null : document.querySelector('[style*="anchor-name: --dxa-' + anchorId + ';"]');
+const trigger = point || !anchorSelector ? null : document.querySelector(anchorSelector);
 if (!content || (!point && !trigger)) return;
 const M = 4;
 const V = SIDE === 'top' || SIDE === 'bottom';
@@ -200,10 +200,14 @@ pub(super) fn use_placement(
                 PLACEMENT_HELPERS_JS,
                 PLACE_JS
             );
-            Some(
-                crate::js_listener::JsListeners::install(&script)
-                    .arg((id, anchor_id, point, side, align, gap_px)),
-            )
+            Some(crate::js_listener::JsListeners::install(&script).arg((
+                id,
+                crate::escape::anchor_selector(&anchor_id),
+                point,
+                side,
+                align,
+                gap_px,
+            )))
         },
     );
 }

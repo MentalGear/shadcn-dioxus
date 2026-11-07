@@ -90,6 +90,8 @@ gates=(
   # group: Rust and rsx source rules
   "check-preview-composition|scripts/check-preview-composition.sh"
   "check-cfg-axis|scripts/check-cfg-axis.sh"
+  "check-constant-signal|scripts/check-constant-signal.sh"
+  "check-id-interpolation|scripts/check-id-interpolation.sh"
   "check-hooks-in-closures|scripts/check-hooks-in-closures.sh"
   "check-self-subscribing-effects|scripts/check-self-subscribing-effects.sh"
   "check-component-call|scripts/check-component-call.sh"
@@ -119,6 +121,7 @@ gates=(
   "check-motion-gating|scripts/check-motion-gating.sh"
   "check-infinite-animations|scripts/check-infinite-animations.sh"
   "check-open-focus|scripts/check-open-focus.sh"
+  "check-unawaited-focus|scripts/check-unawaited-focus.sh"
   "check-theme-mode-writer|scripts/check-theme-mode-writer.sh"
   # group: Theme and component CSS
   "check-dx-class-prefix|scripts/check-dx-class-prefix.sh"
