@@ -2,7 +2,7 @@ The VirtualList component keeps a long list cheap. It has two modes, picked by t
 
 ## Component Structure
 
-```rust
+```rust ignore
 VirtualList {
     // Total number of items.
     count: 2000usize,
@@ -37,7 +37,7 @@ Give the list a height (or `max-height`) and `overflow-y: auto`: it is the scrol
 
 `Auto` uses `ContentVisibility` while `count <= auto_threshold` and `Windowed` above it. `auto_threshold` defaults to **1,000** rows, because the cost of keeping every row grows with the count: mounting them is one main-thread task proportional to the row count (in the demo, release build, headless Chromium: about 90 ms for 1,000 rows, 205 ms for 5,000, as one 147 ms task), while a window mounts about 40 rows whatever the count. The mode follows the live `count`: a list that grows past the threshold re-mounts its rows in the other mode (its scroll position resets), so choose an explicit mode if the count hovers around the threshold.
 
-```rust
+```rust ignore
 // Every row in the DOM, however many (a long list of one-line rows can afford it):
 VirtualList { count: 20_000usize, virtualize: VirtualizeMode::ContentVisibility, .. }
 // Windowed from the first row (heavy rows, or find-in-page is not needed):
@@ -133,7 +133,7 @@ Items outside the window do not exist: the browser's find-in-page and `#:~:text=
 
 `fade: ScrollFade` (`None` by default; `Y`, `X`, `Both`, `Top`, `Bottom`, `Start`, `End`) puts the matching `dx-scroll-fade-*` class on the container, which is the element that scrolls, exactly as on `ScrollArea`. The fade is a CSS scroll-driven mask driven by the container's own scroll offset, so it follows the scrollbar whichever rows or cells are mounted (a windowed list of 20,000 rows or a grid of 500,000 cells fades exactly like a short one), and a container whose content fits has no fade. `Both` masks all four edges of a container that scrolls on both axes (a `VirtualGrid`, or a justified wall with a `canvas_width`), each edge only while there is content past it.
 
-```rust
+```rust ignore
 VirtualList { count: 20_000usize, fade: ScrollFade::Y, render_item: .. }
 VirtualGrid { row_count: 1_000usize, column_count: 30usize, fade: ScrollFade::Both, render_cell: .. }
 ```
@@ -147,7 +147,7 @@ VirtualGrid { row_count: 1_000usize, column_count: 30usize, fade: ScrollFade::Bo
 
 `use_virtual_scroller()` returns a `VirtualScroller`, a `Copy` handle. Pass it as the list's `scroller` prop and call it from an event handler or an effect:
 
-```rust
+```rust ignore
 let scroller = use_virtual_scroller();
 rsx! {
     button { onclick: move |_| scroller.scroll_to_index(4_999, ScrollAlign::Center), "Row 5,000" }

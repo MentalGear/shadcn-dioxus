@@ -75,7 +75,7 @@ Two models for showing many photos of mixed shapes:
 - **Grid** (`VirtualGrid`, `VirtualWrapGrid`; the default): cells aligned in rows and columns, and the structure never depends on the content. A photo of any aspect is a presentation concern inside a uniform cell: `object-fit: contain` shows it whole on a mat, `cover` crops it to fill. Because rows and columns are independent, both axes window independently, `aria-colcount` is exact and the arrow keys move along straight columns. Pick it for anything tabular, for thumbnails where alignment and predictable scanning matter, and whenever items have no meaningful aspect ratio.
 - **Justified** (`VirtualJustifiedGrid`): the gapless, uncropped photo-wall look. Each row takes as many photos as fit at `target_row_height` and then shrinks to fill the width exactly, so a row's composition depends on the photos' aspect ratios and every tile IS its photo's aspect. There are no columns: `ArrowUp`/`ArrowDown` move to the tile of the next row whose horizontal centre is closest. Pick it when the photos themselves are the content and cropping or letterboxing would hurt.
 
-```rust
+```rust ignore
 // 20,000 photos; the aspect ratios (width / height) are all the layout needs.
 VirtualJustifiedGrid {
     aspects,                       // ReadSignal<Vec<f64>>
@@ -143,7 +143,7 @@ Three hooks let the grid host a data table. All are optional.
 
 `use_virtual_scroller()` returns a `VirtualScroller`, a `Copy` handle; pass it as the `scroller` prop of `VirtualGrid`, `VirtualWrapGrid` or `VirtualJustifiedGrid` and call it from an event handler or an effect:
 
-```rust
+```rust ignore
 let scroller = use_virtual_scroller();
 rsx! {
     button { onclick: move |_| scroller.scroll_to_cell(4_999, 30, ScrollAlign::Center), "Go" }
@@ -219,7 +219,7 @@ Items outside the window do not exist: the browser's find-in-page and `#:~:text=
 
 `fade: ScrollFade` (`None` by default; `Y`, `X`, `Both`, `Top`, `Bottom`, `Start`, `End`) puts the matching `dx-scroll-fade-*` class on the container, which is the element that scrolls, exactly as on `ScrollArea`. The fade is a CSS scroll-driven mask driven by the container's own scroll offset, so it follows the scrollbar whichever rows or cells are mounted (a windowed list of 20,000 rows or a grid of 500,000 cells fades exactly like a short one), and a container whose content fits has no fade. `Both` masks all four edges of a container that scrolls on both axes (a `VirtualGrid`, or a justified wall with a `canvas_width`), each edge only while there is content past it.
 
-```rust
+```rust ignore
 VirtualList { count: 20_000usize, fade: ScrollFade::Y, render_item: .. }
 VirtualGrid { row_count: 1_000usize, column_count: 30usize, fade: ScrollFade::Both, render_cell: .. }
 ```

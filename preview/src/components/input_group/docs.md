@@ -46,7 +46,7 @@ InputGroup {
 
 ```rust
 InputGroup {
-    InputGroupTextarea { placeholder: "Write a message...", oninput: move |e| text.set(e.value()) }
+    InputGroupTextarea { placeholder: "Write a message...", oninput: move |e: FormEvent| text.set(e.value()) }
     InputGroupAddon { align: InputGroupAlign::BlockEnd,
         InputGroupText { "{count} / 120" }
         Button { style: "margin-inline-start: auto;", size: ButtonSize::IconSm, ArrowUp {} }

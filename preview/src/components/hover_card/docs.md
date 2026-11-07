@@ -12,7 +12,7 @@ HoverCard {
     HoverCardContent {
         side: ContentSide::Bottom,
         align: ContentAlign::Start,
-        {children}
+        "Card content"
     }
 }
 ```
@@ -24,9 +24,9 @@ HoverCard {
 ```rust
 HoverCard {
     // How long the pointer must rest on the trigger before the card opens. Default 600 (Base UI).
-    delay: 10,
+    delay: 10u64,
     // How long the card stays open after the pointer leaves the trigger or the card. Default 300 (Base UI).
-    close_delay: 100,
+    close_delay: 100u64,
     HoverCardTrigger { "Hover Here" }
     HoverCardContent { "..." }
 }

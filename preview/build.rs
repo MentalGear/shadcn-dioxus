@@ -63,6 +63,7 @@ fn main() {
         walk_markdown_dir(&folder_path, &out_dir).unwrap();
     }
     write_variant_notes_index(&out_dir);
+    write_docs_samples(&out_dir);
 
     // The component/variant registry (backlog row 219): `examples.rs` is the one `examples!(..)`
     // invocation `components/mod.rs` includes, derived from the directories instead of a list that
@@ -72,6 +73,196 @@ fn main() {
     println!("cargo:rerun-if-changed=docs_groups.rs");
     let components = discover_components(std::path::Path::new("src/components"));
     write_if_changed(&out_dir.join("examples.rs"), &render_examples(&components));
+}
+
+/// One fenced `rust` block of a component's `docs.md`.
+struct DocsSample {
+    page: String,
+    /// 1-based position among the page's `rust` blocks, for the failure message.
+    ordinal: usize,
+    source: String,
+    /// The fence was ```` ```rust ignore ````: the block is a fragment that cannot compile on its own.
+    ignored: bool,
+}
+
+/// Every `rust` fence of every component's `docs.md`, in page order. Opening events only: a fence inside a
+/// list item or a block quote is found the same as one at the top level.
+fn docs_samples() -> Vec<DocsSample> {
+    use pulldown_cmark::{CodeBlockKind, Event, Parser, Tag, TagEnd};
+    let mut folders: Vec<_> = std::fs::read_dir("src/components")
+        .unwrap()
+        .flatten()
+        .filter(|f| f.file_type().unwrap().is_dir())
+        .collect();
+    folders.sort_by_key(|f| f.file_name());
+    let mut out = Vec::new();
+    for folder in folders {
+        let path = folder.path().join("docs.md");
+        let Ok(markdown) = std::fs::read_to_string(&path) else {
+            continue;
+        };
+        println!("cargo:rerun-if-changed={}", path.display());
+        let page = folder.file_name().to_string_lossy().to_string();
+        let mut current: Option<(bool, String)> = None;
+        let mut ordinal = 0;
+        for event in Parser::new(&markdown) {
+            match event {
+                Event::Start(Tag::CodeBlock(CodeBlockKind::Fenced(info))) => {
+                    let mut words = info.split_whitespace();
+                    if words.next() == Some("rust") {
+                        current = Some((words.any(|w| w == "ignore"), String::new()));
+                    }
+                }
+                Event::Text(text) => {
+                    if let Some((_, source)) = current.as_mut() {
+                        source.push_str(&text);
+                    }
+                }
+                Event::End(TagEnd::CodeBlock) => {
+                    if let Some((ignored, source)) = current.take() {
+                        ordinal += 1;
+                        out.push(DocsSample {
+                            page: page.clone(),
+                            ordinal,
+                            source,
+                            ignored,
+                        });
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+    out
+}
+
+/// A sample's first non-blank line: how the opt-out baseline names a block.
+fn first_line(source: &str) -> String {
+    source
+        .lines()
+        .find(|l| !l.trim().is_empty())
+        .unwrap_or_default()
+        .trim()
+        .to_string()
+}
+
+/// Splits a statement-style sample into the statements before its markup and the markup itself. The markup
+/// starts at the first column-0 line that opens an element or an `rsx!` (`Name {`, `div {`, `rsx! {`) and runs
+/// to the end of the block; everything before it is statements. A block with no such line is all statements.
+fn split_sample(source: &str) -> (String, String) {
+    let opens_markup = |line: &str| {
+        let ident = line
+            .chars()
+            .take_while(|c| c.is_ascii_alphanumeric() || matches!(*c, '_' | ':' | '<' | '>'))
+            .count();
+        ident > 0
+            && !line.starts_with("let ")
+            && (line[ident..].trim_start().starts_with('{') || line.starts_with("rsx!"))
+    };
+    let lines: Vec<&str> = source.lines().collect();
+    let at = lines
+        .iter()
+        .position(|l| opens_markup(l))
+        .unwrap_or(lines.len());
+    (lines[..at].join("\n"), lines[at..].join("\n"))
+}
+
+/// The generated test module of the docs samples (backlog row 392): one `mod` per `rust` block of every
+/// component `docs.md`, compiled only under `cfg(test)` by `cargo test -p preview`, so a sample that names a
+/// prop or a component that does not exist fails the existing test gate. A block that declares items
+/// (`#[component]`, `fn`) is emitted as written; any other block is statements followed by markup, wrapped in a
+/// `#[component]` that returns the markup. A block that cannot stand alone is fenced ```` ```rust ignore ````
+/// and listed with its reason in `docs-samples.optouts.tsv`, which `src/main.rs` holds to a shrink-only count.
+fn write_docs_samples(out_dir: &std::path::Path) {
+    let mut components: Vec<String> = std::fs::read_dir("src/components")
+        .unwrap()
+        .flatten()
+        .filter(|f| f.path().join("component.json").is_file())
+        .map(|f| f.file_name().to_string_lossy().to_string())
+        .collect();
+    components.sort();
+    println!("cargo:rerun-if-changed=docs_samples_prelude.rs");
+    let prelude_file = std::fs::read_to_string("docs_samples_prelude.rs").unwrap();
+    let (prelude_items, ambient) = prelude_file
+        .split_once("// --- ambient locals ---")
+        .expect("docs_samples_prelude.rs has no `// --- ambient locals ---` marker");
+    let ambient: Vec<(String, &str)> = ambient
+        .lines()
+        .filter(|l| l.starts_with("let "))
+        .map(|l| {
+            let name = l["let ".len()..]
+                .trim_start_matches("mut ")
+                .chars()
+                .take_while(|c| c.is_ascii_alphanumeric() || *c == '_')
+                .collect::<String>();
+            (name, l)
+        })
+        .collect();
+    let prelude = format!(
+        "use dioxus::prelude::*;\n    use crate::components::{{{}}};\n    use time::{{Date, Month}};\n{}",
+        components
+            .iter()
+            .map(|c| format!("{c}::*"))
+            .collect::<Vec<_>>()
+            .join(", "),
+        prelude_items
+            .lines()
+            .filter(|l| !l.starts_with("//"))
+            .collect::<Vec<_>>()
+            .join("\n")
+    );
+    let mut out =
+        String::from("// Generated by preview/build.rs (write_docs_samples). Do not edit.\n");
+    let mut opt_outs = String::new();
+    for sample in docs_samples() {
+        if sample.ignored {
+            opt_outs.push_str(&format!(
+                "    ({:?}, {:?}),\n",
+                sample.page,
+                first_line(&sample.source)
+            ));
+            continue;
+        }
+        let item_mode = sample.source.lines().any(|l| {
+            [
+                "#[", "fn ", "pub fn ", "struct ", "enum ", "impl ", "const ", "static ", "type ",
+                "mod ",
+            ]
+            .iter()
+            .any(|p| l.starts_with(p))
+        });
+        let body = if item_mode {
+            sample.source.clone()
+        } else {
+            let (statements, markup) = split_sample(&sample.source);
+            let mentions = |name: &str| {
+                sample
+                    .source
+                    .split(|c: char| !(c.is_ascii_alphanumeric() || c == '_'))
+                    .any(|word| word == name)
+            };
+            let ambient: String = ambient
+                .iter()
+                .filter(|(name, _)| mentions(name))
+                .map(|(_, line)| format!("{line}\n"))
+                .collect();
+            let markup = if markup.starts_with("rsx!") {
+                markup
+            } else {
+                format!("rsx! {{\n{markup}\n}}")
+            };
+            format!("#[component]\npub fn Sample() -> Element {{\n{ambient}{statements}\n{markup}\n}}\n")
+        };
+        out.push_str(&format!(
+            "/// `src/components/{page}/docs.md`, `rust` block {n}.\nmod {page}_{n} {{\n    {prelude}\n{body}}}\n",
+            page = sample.page,
+            n = sample.ordinal,
+        ));
+    }
+    out.push_str(&format!(
+        "/// The blocks fenced ```` ```rust ignore ````, as `(page, first line)`.\npub const OPT_OUTS: &[(&str, &str)] = &[\n{opt_outs}];\n"
+    ));
+    write_if_changed(&out_dir.join("docs_samples.rs"), &out);
 }
 
 /// One component directory as the registry sees it.

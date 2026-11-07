@@ -24,7 +24,7 @@ ToggleGroup {
         // The item's identity in the pressed set (shadcn's item `value`), unique within the group.
         value: "bold",
         // The position of the toggle item, used only to order keyboard focus.
-        index: 0,
+        index: 0usize,
         // The contents of the toggle item button
         {children}
     }

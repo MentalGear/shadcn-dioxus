@@ -44,7 +44,7 @@ Bare URLs (`https://example.com`, `www.example.org`) become links through the co
 
 A block is a plain `<pre><code class="language-rust">`. To highlight, pass `highlight`; it receives `CodeBlock { language, code }` and returns the contents of the `<pre>`:
 
-```rust
+```rust ignore
 Markdown {
     source,
     highlight: Callback::new(|block: CodeBlock| rsx! {

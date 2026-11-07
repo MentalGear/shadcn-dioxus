@@ -40,7 +40,7 @@ The toast is updated in place (same element, same place in the stack). A `ToastI
 
 `ToastType::Loading` (`toast_api.loading(..)`) shows a spinner and is never auto-dismissed while it is loading; move it on with `update`. `promise` does that for a future:
 
-```rust
+```rust ignore
 toast_api.promise(
     save(),
     PromiseMessages::new("Saving...", |v| format!("{v} saved"), |e| format!("Failed: {e}")),

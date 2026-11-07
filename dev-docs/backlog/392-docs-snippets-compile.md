@@ -50,8 +50,25 @@ build: `default_X` + `on_X_change` with no `X`, or `X` + `default_X` with no `on
 re-reads the pairs from each page's rendered props table and requires the section exactly when a pair exists, plus the
 eleven named pages. Not covered by name: Input (a native element: `value`/`oninput`, no props struct) and Navbar (its
 `value` belongs to one item, nothing is controlled), so neither has a pair to list. Spec: `playwright/controlled-docs.spec.ts`
-(written, run by the batch verifier). Still open: the gate that compiles every docs `rust` block (the "By construction"
-step; a marker opts a block out with a reason), which needs an owner decision on its shape.
+(written, run by the batch verifier).
+
+**Docs samples compile LANDED (lane docs-gate-392), by construction.** `preview/build.rs` (`write_docs_samples`) extracts
+every ```` ```rust ```` fence of every component `docs.md` into `OUT_DIR/docs_samples.rs`, one `mod <page>_<n>` per block
+with the prelude of `preview/docs_samples_prelude.rs` (the component globs, the shared imports, a few app-owned helpers
+and the `children`/`config`/`data` locals a reader takes from the prose). A block that declares items is emitted as
+written; any other is statements followed by markup, wrapped in a `#[component]` that returns the markup. `src/main.rs`
+compiles the module under `cfg(test)` only, so `cargo test -p preview` (the existing `test` gate) fails on a sample that
+names a prop or a component that does not exist; nothing runs, it is only type-checked. Proof: a planted `Dialog { opn: true, ..}`
+in `dialog/docs.md` fails the test build with E0599 (`no method named opn`), and removing it passes. The first run of the
+gate also found four real sample bugs, fixed in the docs: `hover_card` and `tooltip` passed bare integer literals for
+`delay`/`close_delay` (`u64`), `toggle_group` and `toolbar` for `index` (`usize`), plus an untyped `oninput` closure in
+`input_group` and an `alert_dialog` fragment that used `open` without declaring it. 166 blocks compile; 17 are fenced
+```` ```rust ignore ```` and listed with a reason in `preview/docs-samples.optouts.tsv` (the app's own types and data:
+`Route`, `Payment`, `messages`, `invoices`, `aspects`; or `..` standing for an elided prop in the virtual list and
+grid samples). `docs_sample_opt_outs_match_the_shrink_only_baseline` holds that file to the fences both ways, so an
+opt-out cannot be added without a reasoned row and a row cannot outlive its fence: the count only shrinks. Not checked:
+the text of an opted-out block, and any name the prelude declares ambiently (`children`, `config`, `data`, `color`, ...)
+would not be flagged if a sample forgot to declare it.
 
 ## Size
 
@@ -60,4 +77,4 @@ M
 ## Detail
 
 - Rewrite the samples with `default_*` and add one shared 'Controlled vs uncontrolled' paragraph that every page links to.
-- By construction: extract every rust block in `docs.md` into a compile check under the cargo gates (blocks that are fragments get a wrapper; a marker opts a block out with a reason).
+- By construction (landed, see Status): extract every rust block in `docs.md` into a compile check under the cargo gates.

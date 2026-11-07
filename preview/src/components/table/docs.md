@@ -35,7 +35,7 @@ Table {
 
 `TableBody` is for rows you write by hand. For a table of data, `TableRows` is the body: it takes a row count and a renderer, owns each `<tr>`, and keeps the table cheap with the same `virtualize` and `auto_threshold` props as `VirtualList`.
 
-```rust
+```rust ignore
 Table {
     // The container scrolls: give it a height, and `TableHeader` can stay put above the rows.
     // A scroll container must be keyboard-reachable: `tabindex`, a role and a name.
