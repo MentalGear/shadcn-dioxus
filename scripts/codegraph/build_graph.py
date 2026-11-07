@@ -84,6 +84,23 @@ for p in ts_files:
         q=os.path.normpath(os.path.join(os.path.dirname(p),m.group(1) or m.group(2)))
         for c in (q,q+'.ts',q+'/index.ts',re.sub(r'\.js$','.ts',q)):
             if c in tsset:fe[(p,c,'ts')]+=1;break
+# themed components: component.json marks one (it depends on dioxus-primitives)
+cdirs={}
+for d in sorted(os.listdir(os.path.join(REPO,'preview/src/components'))):
+    cj=os.path.join(REPO,'preview/src/components',d,'component.json')
+    if not os.path.isfile(cj):continue
+    deps=[x.get('name') for x in json.load(open(cj)).get('cargoDependencies',[])]
+    if 'dioxus-primitives' in deps:cdirs[d]=os.path.dirname(cj)
+# a themed component's `mod.rs` holds no definitions, so the index has no document for it; it is a node with an edge to
+# each module it declares (`mod component;`)
+mod_re=re.compile(r'^\s*(?:pub\s+)?mod\s+(\w+)\s*;',re.M)
+for d in cdirs:
+    p='preview/src/components/%s/mod.rs'%d
+    if os.path.isfile(os.path.join(REPO,p)):
+        files.add(p)
+        for m in mod_re.finditer(open(os.path.join(REPO,p),errors='replace').read()):
+            q='preview/src/components/%s/%s.rs'%(d,m.group(1))
+            if os.path.isfile(os.path.join(REPO,q)):files.add(q);fe[(p,q,'rs')]+=1
 # component mapping
 def comp(path):
     if path.startswith('ext:'):return path,'external',path[4:]
@@ -111,12 +128,40 @@ fidx={f:i for i,f in enumerate(allf)}
 for f in allf:
     cid,cr,name=comp(f)
     comps.setdefault(cid,{'id':cid,'crate':cr,'name':name})
-# component names that exist in both preview and primitives => paired
-pn=collections.defaultdict(set)
+# Pairing: a themed preview component and the primitive it wraps. component.json marks a themed component (it depends on
+# dioxus-primitives); the primitive is read from the `dioxus_primitives::<module>` paths in that component's own sources.
+# A module named like the component wins. Otherwise the module referenced most often wins, if it is unique and is not a
+# helper (a module with no preview component of its own that three or more components use, or any module ten or more
+# components use, such as `direction`). Each side lists the other in `pair`; `paired` is true when `pair` is not empty.
+refs={}
+use_re=re.compile(r'dioxus_primitives::(\w+)')
+brace_re=re.compile(r'dioxus_primitives::\{([^}]*)\}')
+for d,dd in cdirs.items():
+    cnt=collections.Counter()
+    for root,_,fs in os.walk(dd):
+        for f in fs:
+            if not f.endswith('.rs'):continue
+            t=open(os.path.join(root,f),errors='replace').read()
+            cnt.update(m.group(1) for m in use_re.finditer(t))
+            for m in brace_re.finditer(t):cnt.update(re.findall(r'(?:^|,)\s*(\w+)',m.group(1)))
+    refs[d]=cnt
+prim={c['name']:c['id'] for c in comps.values() if c['crate']=='primitives' and not c['name'].startswith('·') and '/' not in c['name']}
+referrers=collections.Counter(m for d,c in refs.items() for m in c if m!=d)
+def helper(m):return referrers[m]>=10 or (m not in cdirs and referrers[m]>=3)
+pairs=[]
+for d,cnt in sorted(refs.items()):
+    if d in prim:pairs.append((d,d));continue
+    c=[(n,m) for m,n in cnt.items() if m in prim and not helper(m)]
+    if c:
+        top=max(n for n,_ in c);best=[m for n,m in c if n==top]
+        if len(best)==1:pairs.append((d,best[0]))
+for c in comps.values():c['pair']=[]
+for d,m in pairs:
+    a,b='preview:'+d,prim[m]
+    if a in comps and b in comps:
+        comps[a]['pair'].append(b);comps[b]['pair'].append(a)
 for c in comps.values():
-    if c['crate'] in('preview','primitives'):pn[c['name']].add(c['crate'])
-for c in comps.values():
-    c['paired']=pn.get(c['name'])=={'preview','primitives'}
+    c['pair']=sorted(set(c['pair']));c['paired']=bool(c['pair'])
 # playwright specs -> component by name (select.spec.ts, native-select.spec.ts -> native_select)
 byname={c['name']:c for c in comps.values() if c['crate']=='preview'}
 for f in list(allf):

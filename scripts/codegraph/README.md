@@ -48,6 +48,14 @@ One file: the graph JSON and the Cytoscape.js bundle are inlined, so it opens fr
 `<script src>`, `<link>`, font or image from a URL). Layout is Cytoscape's built-in `cose` (compound nodes); `fcose` and its
 dependencies fail rule D4 and are not used. The ego view is a complete breadth-first search to the chosen radius.
 
+Picking a name selects the preview and primitives components of that name plus every component paired with them. A themed
+component is one with a `component.json` that depends on `dioxus-primitives`; the extractor reads the
+`dioxus_primitives::<module>` paths in its sources. A module named like the component wins; otherwise the most-referenced
+module wins if it is unique and not a helper (`direction`, `modality`, `activity` and the like). So `area_chart` pairs with
+`chart` and `data_table` with `data_view`, and `form` (a tie) pairs with nothing. Each side lists the other in the comp's
+`pair`. A themed component's `mod.rs` holds no definitions, so the index has no document for it; the extractor adds it as a
+node with an edge to the module it declares.
+
 The extractor model is files as nodes (`{id, comp, items}`; `items` is the definitions count) and `[src, dst, weight, kind]` edges, kinds `rs`, `ext`, `ts`, `asset`, `test`. Add per-node fields beside
 `items`.
 
@@ -130,7 +138,9 @@ matched marker word or history reason.
   change: 2 s, graph and page rebuilt, no SCIP. A new untracked `.rs` file changes the index key and starts the SCIP run.
 - Page, opened from `file:` at 1280 px (`node scripts/codegraph/smoke.js`, playwright from `playwright/node_modules`):
   no console error, no non-`file:` request (all aborted and reported), picker, crate, component and file levels render;
-  file level radius 1 for `button` is 154 nodes and radius 2 is 465 nodes. `cose` (with boxes) is the layout up to 250
+  file level radius 1 for `button` is 158 nodes and radius 2 is 468 nodes. For `select` (hubs shown, weight 1) radius 1 is 65 files
+  and radius 2 is 940, each equal to an independent breadth-first search in `smoke.js`; 60 preview components are paired with a primitive
+  (46 by name before), and 779 files sit in paired components (552 before). `cose` (with boxes) is the layout up to 250
   nodes; above that the ego view is a concentric ring layout by hop distance without boxes, because `cose` gives a hairball
   there. Raise the minimum edge weight to thin a big view.
 - Comment metrics (2026-11-05, `node scripts/codegraph/smoke.js`): `build_comments.py` takes about 15 to 26 s (the tokenizer
