@@ -496,6 +496,7 @@ mod tests {
             assert!(script.contains(message), "{message}");
         }
         assert!(script.contains("o.escape === 'native'"));
+        assert!(script.contains("e.isComposing"));
         assert!(script.contains("e.preventDefault()"));
         assert!(script.contains("o.also"));
         for mode in ["'outside'", "'backdrop'", "'ignore'"] {
