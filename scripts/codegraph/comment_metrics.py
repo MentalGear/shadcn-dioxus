@@ -39,11 +39,84 @@ _TICKED = re.compile(r"`([^`\n]{2,60})`")
 _CODEISH = re.compile(r"^[A-Za-z_][\w:<>.()!&*,\[\]]*$")
 _IDENT = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
 _STALE_MIN = 3
-# A comment that cites another library names that library's API ("Base UI's `onValueChange`"); this repo's own names are
-# snake_case or PascalCase, so a lowerCamelCase name, or any name on a line that cites an upstream, is not a candidate.
-_UPSTREAM = re.compile(r"Base UI|Radix|Sonner|shadcn|React|upstream|MUI|Floating UI|Headless|Recharts|Vaul|cmdk|[Ee]mbla|"
-                       r"@[a-z][\w-]*/|\.(?:mjs|tsx|jsx|ts|js)\b|\bwindow\.|\bdocument\.|\bMath\.|\bW3C\b|\bAPG\b|\bMDN\b")
+# N1 candidates are this repo's own names. A backticked name is not a candidate when a rule says it is not one of them:
+#   R1  not name-shaped: this repo's names are snake_case with an underscore, PascalCase with two humps or SCREAMING_SNAKE with
+#       an underscore, so a lone word (`rustc`, `signum`, `TAB`) is prose or a keyword, and a lowerCamelCase name is JS
+#   R2  cited source: the paragraph (consecutive non-blank comment lines) cites another source, so the names in it belong to
+#       that source: a URL, "Forked/Adapted from", "<name> <version>" or "<name>-<version>", a library or framework the
+#       comment names (_UPSTREAM), a ticked external crate of Cargo.lock (`dioxus-ssr`, `manganis-core::x`), a ticked file
+#       the repo does not have (`scheduler.rs`, `stack.c`), or a compiler or lint tool (`clippy`, `rustc`)
+#   R3  Web platform naming: PascalCase ending in Error, Exception, Event or Data (`InvalidStateError`, `SelectionData`)
+#   R4  a path into std, core, alloc, a primitive type or a tool namespace (`f64::signum`, `clippy::approx_constant`)
+#   R5  placeholders and patterns: `xxx`, a lone-capital prefix (`XProps`), a `*` wildcard (`MenuSub*`)
+#   R6  a naming-conversion example: the same line holds the name's kebab or snake spelling (`scroll-lock` -> `ScrollLock`)
+_UPSTREAM = re.compile(r"Base UI|Radix|radix-ui|Sonner|shadcn|React|react-[a-z-]+|upstream|MUI|Floating UI|Headless|Recharts|Vaul|cmdk|[Ee]mbla|"
+                       r"@[a-z][\w-]*/|\.(?:mjs|tsx|jsx|ts|js)\b|\bwindow\.|\bdocument\.|\bMath\.|\bW3C\b|\bAPG\b|\bMDN\b|"
+                       r"https?://|[Ff]ork(?:ed)?\b|[Aa]dapted\b|\bclippy\b|\brustc\b|\brustfmt\b|[\w-]+[ -]v?\d+\.\d+(?:\.\d+)?\b")
 _CAMEL = re.compile(r"^[a-z][a-z0-9]*[A-Z]")
+_PASCAL = re.compile(r"^(?:[A-Z][a-z0-9]+){2,}$")
+_SNAKE = re.compile(r"^[a-z][a-z0-9]*(?:_[a-z0-9]+)+$")
+_SCREAM = re.compile(r"^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+$")
+_WEB = re.compile(r"^[A-Z]\w*(?:Error|Exception|Event|Data)$")
+_STD_HEAD = {"std", "core", "alloc", "clippy", "rustc", "f32", "f64", "u8", "u16", "u32", "u64", "usize", "i8", "i16", "i32", "i64",
+             "isize", "str", "bool", "char", "String", "Vec", "Option", "Result"}
+_TICK_FILE = re.compile(r"`(?:[\w./-]*/)?([\w-]+\.(?:rs|c|h|ts|js|mjs|css|toml|sh))`")
+_TOKEN_EXTS = (".sh", ".py", ".toml", ".json", ".yml", ".yaml", ".cjs")
+_ext_crates, _repo_files = set(), set()
+
+
+def _lock_externals(repo):
+    """Cargo.lock packages that come from a registry or git (the workspace's own crates have no `source`), with `-` as `_`."""
+    out = set()
+    try:
+        with open(os.path.join(repo, "Cargo.lock"), encoding="utf-8") as fh:
+            for block in fh.read().split("\n\n"):
+                m = re.search(r'^name = "([^"]+)"', block, re.M)
+                if m and re.search(r"^source = ", block, re.M):
+                    out.add(m.group(1).replace("-", "_"))
+    except OSError:
+        pass
+    return out
+
+
+def _cites_source(para):
+    """R2: does this paragraph cite a source other than this repo?"""
+    if _UPSTREAM.search(para):
+        return True
+    for t in _TICKED.finditer(para):
+        c = t.group(1).strip()
+        head = re.split(r"::|'s$", c)[0].replace("-", "_")
+        head = re.sub(r"_\d[\d.]*$", "", head)
+        if head in _ext_crates:
+            return True
+    if any(w.replace("-", "_") in _ext_crates for w in re.findall(r"\b[a-z][a-z0-9]*(?:-[a-z0-9]+)+\b", para)):
+        return True  # a hyphenated crate name from Cargo.lock, ticked or not (dioxus-core)
+    return any(m.group(1) not in _repo_files for m in _TICK_FILE.finditer(para))
+
+
+def _cited_lines(text):
+    """The comment lines that sit in a paragraph (consecutive non-blank comment lines, across comment nodes) citing a source."""
+    body = {ln: b for kind, _i, _j, p in cs.walk_rust(text) if kind == "comment" for ln, b in p}
+    out, cur = set(), []
+    for ln in sorted(body) + [-9]:
+        if cur and (ln != cur[-1] + 1 or not body.get(ln, "").strip()):
+            if _cites_source(" ".join(body[k] for k in cur)):
+                out.update(cur)
+            cur = []
+        if ln > 0 and body[ln].strip():
+            cur.append(ln)
+    return out
+
+
+def _repo_style(ident, body):
+    """R1, R3 and R6 for one identifier of a ticked text found in the comment line `body`."""
+    if not (_SNAKE.match(ident) or _SCREAM.match(ident) or _PASCAL.match(ident)) or _WEB.match(ident):
+        return False
+    spelled = re.sub(r"[^a-z]", "", ident.lower())
+    # R6: the kebab spelling of the same name on the line (`scroll-lock` -> `ScrollLock`)
+    return not any(w.replace("-", "") == spelled for w in re.findall(r"[a-z]+(?:-[a-z]+)+", body.lower()))
+
+
 _DUP_ALPHA = 45
 
 
@@ -155,6 +228,7 @@ def _rust(text):
     com, doc, hist, js, jscode, words, todo = set(), set(), [], 0, 0, 0, []
     wline, tline, hline = [0] * (n + 2), [0] * (n + 2), [0] * (n + 2)
     cands, norm = [], []
+    cited = _cited_lines(text)
     for kind, i, _j, p in cs.walk_rust(text):
         if kind == "comment":
             is_doc = text.startswith("///", i) or text.startswith("//!", i)
@@ -174,10 +248,12 @@ def _rust(text):
                     hist.append([ln, why])
                     hline[ln] += 1
                 norm.append((ln, _norm(body)))
+                if ln in cited:
+                    continue
                 for t in _TICKED.finditer(body):
                     c = t.group(1).strip()
-                    if _CODEISH.match(c) and not _UPSTREAM.search(body):
-                        cands.append((ln, c))
+                    if _CODEISH.match(c) and "*" not in c and "xxx" not in c and c.split("::")[0] not in _STD_HEAD:
+                        cands.append((ln, c, body))
         elif len(p[3]) > 8:  # JS or CSS held in a Rust string: counted for the gate's history rule, apart from M1
             if cs.embedded_kind(p[3]):
                 clines = set()
@@ -262,9 +338,9 @@ def node_paths(repo):
 
 def _stale(cands, tokens):
     out = []
-    for ln, c in cands:
+    for ln, c, body in cands:
         for ident in _IDENT.findall(c):
-            if len(ident) >= _STALE_MIN and ident not in tokens and not ident.endswith("_") and not _CAMEL.match(ident):
+            if len(ident) >= _STALE_MIN and ident not in tokens and not ident.endswith("_") and _repo_style(ident, body):
                 out.append([ln, ident])
                 break
     return out
@@ -307,7 +383,10 @@ def _duplicates(norms):
 
 
 def measure(repo, paths):
+    global _ext_crates, _repo_files
     scan = scannable_paths(repo)
+    _ext_crates = _lock_externals(repo)
+    _repo_files = {os.path.basename(q) for q in scan}
     out, tokens, norms, cands = {}, set(), {}, {}
     for p in paths:
         if p not in scan:
@@ -319,6 +398,10 @@ def measure(repo, paths):
         if "norm" in extra:
             norms[p], cands[p] = extra["norm"], extra["cands"]
         out[p] = [counts, detail, items]
+    for p in scan:  # a name defined in a script or a config file is not stale either
+        if p.endswith(_TOKEN_EXTS) and p not in out:
+            with open(os.path.join(repo, p), encoding="utf-8", errors="replace") as fh:
+                tokens |= set(_IDENT.findall(fh.read()))
     dups = _duplicates(norms)
     si, di = CM_FIELDS.index("stale"), CM_FIELDS.index("dup")
     for p, (counts, detail, _items_) in out.items():
