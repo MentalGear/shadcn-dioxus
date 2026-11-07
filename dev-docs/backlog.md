@@ -112,7 +112,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [494](backlog/494-re-enable-the-timing-cases-after-the-rust-port.md) | Re-enable the @timing cases after the Rust port | BACKLOG, triggered: when the JavaScript plan's port rows are done (row 434 with rows 444-466, final… | S-M | playwright |
 | [496](backlog/496-incremental-gate-target.md) | Measure incremental compilation for the main loop's gate target | APPROVED (owner 2026-11-05: item 2 of the build and test-suite review), measure first. Runs when no… | S | tooling |
 | [499](backlog/499-safe-triangle-for-hover-menus.md) | A safe triangle for the hover menus, so they can take Base UI's short close delays | BACKLOG. Split out of row 478 item 4, whose open delays now follow Base UI. Land before row 456… | M | overlays |
-| [503](backlog/503-lane-ssg-builds-in-place-on-one-slot.md) | lane-ssg builds in the warm template under the lock instead of copying it | BACKLOG, 2026-11-07. Next tooling row after the deploy. | S-M | tooling |
+| [503](backlog/503-lane-ssg-builds-in-place-on-one-slot.md) | lane-ssg builds in the warm template under the lock instead of copying it | DONE 2026-11-07 (lane lanessg-503). lane-ssg.sh slot 0 builds in $LANE_TGT/template under… | S-M | tooling |
 | [504](backlog/504-server-rendered-textarea-shows-no-value.md) | A server-rendered Textarea shows no value: the JS-off page and the hydrated first frame hold an empty field | BACKLOG. Found by the first-paint fix lane (row 468's section "First paint of a controlled… | S | textarea |
 
 <!-- END GENERATED -->
