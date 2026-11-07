@@ -57,6 +57,9 @@
 # row is red, a row above the tree is red (stale), a row for a site that is gone is red. There is no raise path, so the
 # list only shrinks as the sites are ported to the bridge (dev-docs/js-interop.md). The self-test plants one sink per
 # case in a three-component copy of the tree and expects it to turn the gate red, and a variant or a comment to stay green.
+# Fourth part: an installed file has no bare `#[expect(clippy::disallowed_methods ..)]` (a user's project has no such
+# ban, so the expectation would be unfulfilled there); it writes `#[cfg_attr(dx_repo_lints, expect(..))]`, and
+# `--cfg dx_repo_lints` is passed only by this repo's clippy runs (`scripts/run-gates.sh`, after `--`).
 # `scripts/registry-install-smoke.sh` is the definitive (slow, pre-merge) check that this approximates.
 #
 # Usage: scripts/check-installed-paths.sh
@@ -274,6 +277,10 @@ RUST_SINKS = [
     ("ffi", re.compile(r"\b(?:web_sys|js_sys|wasm_bindgen|gloo_utils|evaluate_script|inline_js|srcdoc)\b|\bextern\s+\"")),
 ]
 STRING_SINK = re.compile(r"\bFunction\s*\(")
+# A bare `#[expect(clippy::disallowed_methods ..)]` is fulfilled only under this repo's clippy.toml ban; in a user's project
+# it is an unfulfilled expectation. An installed file wraps it: `#[cfg_attr(dx_repo_lints, expect(..))]`.
+BARE_EXPECT = re.compile(r"#\s*!?\s*\[\s*expect\s*\(([^\]]*)\)\s*\]", re.S)
+bare_expects = []
 JS_FILES = (".js", ".mjs", ".cjs", ".ts", ".tsx", ".jsx", ".html", ".htm")
 KINDS = {k for k, _ in RUST_SINKS} | {"script-file"}
 
@@ -315,6 +322,10 @@ def scan():
                     for m in rx.finditer(code):
                         line = text.count("\n", 0, m.start()) + 1
                         add(path, kind, line, lines[line - 1].strip())
+                for m in BARE_EXPECT.finditer(code):
+                    if "clippy::disallowed_methods" in re.sub(r"\s+", "", m.group(1)):
+                        line = text.count("\n", 0, m.start()) + 1
+                        bare_expects.append(f"{path}:{line}  {lines[line - 1].strip()}")
                 for lit in cs.literals_of(text):
                     if STRING_SINK.search(lit.content):
                         add(path, "eval", lit.line, lines[lit.line - 1].strip())
@@ -366,6 +377,9 @@ for key in sorted(set(sites) | set(rows)):
         problems.append(f"{path}: the TSV lists {want} {kind} site(s) but the tree has {have}:{listed}")
     else:
         problems.append(f"{path}: the TSV lists {want} {kind} site(s) but the tree has {have} (stale row; set the count to {have})")
+
+for b in bare_expects:
+    problems.append(f"{b}\n      bare expect(clippy::disallowed_methods): an installed file states nothing about this repo's lint config; write #[cfg_attr(dx_repo_lints, expect(..))]")
 
 if problems:
     print("check-installed-paths: installed component files contain a JavaScript sink (dx components add would ship it):", file=sys.stderr)
@@ -431,11 +445,16 @@ EOF
     fresh; printf 'export {};\n' > "$t/$comp/button/helper.ts"
     expect "a hand-written .ts in an installed component" 1
 
+    fresh; printf '\n#[expect(clippy::disallowed_methods, reason = "row 434: planted")]\nfn planted() { let _ = 1; }\n' >> "$t/$comp/form/component.rs"
+    expect "a bare expect(clippy::disallowed_methods) in an installed file" 1
+    fresh; printf '\n#[cfg_attr(dx_repo_lints, expect(clippy::disallowed_methods, reason = "row 434: planted"))]\nfn planted() { let _ = 1; }\n' >> "$t/$comp/form/component.rs"
+    expect "a cfg_attr-wrapped expect in an installed file" 0
+
     if [ "$fails" -ne 0 ]; then
         echo "check-installed-paths: self-test broke ($fails case(s))" >&2
         return 1
     fi
-    echo "check-installed-paths: sinks self-test OK -- 10/10 cases as expected."
+    echo "check-installed-paths: sinks self-test OK -- 12/12 cases as expected."
 }
 
 sinks_py | python3 -I - "$PWD" "$PWD/scripts" || exit 1

@@ -15,6 +15,10 @@
 //! so while one is active the handles are disabled.
 //!
 //! Same `#[path]` sibling wiring as `state.rs`.
+#![allow(
+    unexpected_cfgs,
+    reason = "dx_repo_lints is set only by the shadcn-dioxus repo's own clippy runs (`--cfg dx_repo_lints`, scripts/run-gates.sh)"
+)]
 
 use super::columns::DataTableState;
 use crate::components::button::{Button, ButtonSize, ButtonVariant};
@@ -285,7 +289,7 @@ pub(crate) fn ReorderableRow(props: ReorderableRowProps) -> Element {
         onmounted: move |event: MountedEvent| mounted.set(Some(event.data())),
         ondragover: move |event: DragEvent| {
             event.prevent_default();
-            #[expect(clippy::disallowed_methods, reason = "row 434: the bridge ports this DataTransfer write")]
+            #[cfg_attr(dx_repo_lints, expect(clippy::disallowed_methods, reason = "row 434: the bridge ports this DataTransfer write"))]
             event.data_transfer().set_drop_effect("move");
             async move {
                 let Some(row) = mounted() else {
@@ -363,12 +367,12 @@ pub(crate) fn RowHandle(props: RowHandleProps) -> Element {
         title: disabled.then_some("Clear the sort to reorder rows"),
         ondragstart: move |event: DragEvent| {
             reorder.start_drag(index);
-            #[expect(clippy::disallowed_methods, reason = "row 434: the bridge ports this DataTransfer write")]
+            #[cfg_attr(dx_repo_lints, expect(clippy::disallowed_methods, reason = "row 434: the bridge ports this DataTransfer write"))]
             event.data_transfer().set_effect_allowed("move");
-            #[expect(clippy::disallowed_methods, reason = "row 434: the bridge ports this DataTransfer write")]
+            #[cfg_attr(dx_repo_lints, expect(clippy::disallowed_methods, reason = "row 434: the bridge ports this DataTransfer write"))]
             event.data_transfer().set_drop_effect("move");
             // Firefox starts no drag without data on the transfer.
-            #[expect(clippy::disallowed_methods, reason = "row 434: the bridge ports this DataTransfer write")]
+            #[cfg_attr(dx_repo_lints, expect(clippy::disallowed_methods, reason = "row 434: the bridge ports this DataTransfer write"))]
             let _ = event.data_transfer().set_data("text/html", "");
         },
         ondragend: move |_| reorder.end(),
