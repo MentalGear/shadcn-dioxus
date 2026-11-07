@@ -47,6 +47,7 @@ Environment: `RATCHET_BASE_REF=<commit>` pins the base (the self-test, or a CI t
 skips the base compare; `RATCHET_REQUIRE_BASE=1` makes an unavailable base red. `--self-test` proves the rules.
 The module uses only the standard library and runs git without a shell.
 """
+import contextlib
 import os
 import re
 import subprocess
@@ -464,10 +465,28 @@ class Ratchet:
 
 
 # ---------------------------------------------------------------------------------------------------- self-test
+ENV_KEYS = ("RATCHET_BASE_REF", "RATCHET_NO_BASE", "RATCHET_REQUIRE_BASE")
+
+
+@contextlib.contextmanager
+def selftest_env(**overrides: str):
+    """The environment of one self-test scenario: the three base-policy variables are cleared (a self-test proves
+    the gate's logic and never inherits the caller's `RATCHET_REQUIRE_BASE=1` of a full run or a pinned base), then
+    `overrides` are set; the caller's values come back on exit. Every ratchet gate's `--self-test` builds its
+    scenarios inside this."""
+    saved = {k: os.environ.pop(k, None) for k in ENV_KEYS}
+    try:
+        os.environ.update(overrides)
+        yield
+    finally:
+        for k in ENV_KEYS:
+            os.environ.pop(k, None)
+        os.environ.update({k: v for k, v in saved.items() if v is not None})
+
+
 _GIT_ENV = {"GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@example.invalid", "GIT_COMMITTER_NAME": "t",
             "GIT_COMMITTER_EMAIL": "t@example.invalid", "GIT_CONFIG_GLOBAL": os.devnull,
             "GIT_CONFIG_SYSTEM": os.devnull}
-_ENV_KEYS = ("RATCHET_BASE_REF", "RATCHET_NO_BASE", "RATCHET_REQUIRE_BASE")
 _SOURCE = "".join(f"fn f{k}() -> u32 {{ {k} }}\n" for k in range(12))
 
 
@@ -518,27 +537,19 @@ def _self_test() -> int:
     def scenario(label: str, want: str, mutate, meas=None, env=None, pin=True, gate_cols=cols, files=None,
                  why: Optional[str] = None, show: Sequence[str] = ()) -> None:
         nonlocal ok
-        saved = {k: os.environ.pop(k, None) for k in _ENV_KEYS}
-        try:
-            with tempfile.TemporaryDirectory(prefix="ratchet-st.") as root:
-                _git_run(root, "init", "-q")
-                for p, t in (files or base_files).items():
-                    _write(root, p, t)
-                _git_run(root, "add", "-A")
-                _git_run(root, "commit", "-q", "-m", "base")
-                sha = _git_run(root, "rev-parse", "HEAD")
-                mutate(root)
-                _git_run(root, "add", "-A")
-                for k, v in (env or {}).items():
-                    os.environ[k] = v
-                R = Ratchet("selftest", tsv, gate_cols, root=root, total=total if gate_cols == cols else None,
-                            base_ref=sha if pin else None)
-                rep = R.check(meas if meas is not None else measured)
-                detail = R.format(rep)
-        finally:
-            for k in _ENV_KEYS:
-                os.environ.pop(k, None)
-            os.environ.update({k: v for k, v in saved.items() if v is not None})
+        with selftest_env(**(env or {})), tempfile.TemporaryDirectory(prefix="ratchet-st.") as root:
+            _git_run(root, "init", "-q")
+            for p, t in (files or base_files).items():
+                _write(root, p, t)
+            _git_run(root, "add", "-A")
+            _git_run(root, "commit", "-q", "-m", "base")
+            sha = _git_run(root, "rev-parse", "HEAD")
+            mutate(root)
+            _git_run(root, "add", "-A")
+            R = Ratchet("selftest", tsv, gate_cols, root=root, total=total if gate_cols == cols else None,
+                        base_ref=sha if pin else None)
+            rep = R.check(meas if meas is not None else measured)
+            detail = R.format(rep)
         got = "red" if rep.errors else "green"
         if got != want:
             fails.append(f"{label}: expected {want}, got {got}\n{detail}")
@@ -636,19 +647,15 @@ def _self_test() -> int:
     # the writer: `--allow-raise` writes a note only where the grant at the base already covers it
     def writer(label: str, reason: str, want_written: bool, why: str = "") -> None:
         nonlocal ok
-        saved = {k: os.environ.pop(k, None) for k in _ENV_KEYS}
-        try:
-            with tempfile.TemporaryDirectory(prefix="ratchet-st.") as root:
-                _git_run(root, "init", "-q")
-                for p, t in base_files.items():
-                    _write(root, p, t)
-                _git_run(root, "add", "-A")
-                _git_run(root, "commit", "-q", "-m", "base")
-                R = Ratchet("selftest", tsv, cols, root=root, total=total, base_ref=_git_run(root, "rev-parse", "HEAD"))
-                errors, wrote = R.update(up, reason)
-                rep = R.check(up) if wrote else None
-        finally:
-            os.environ.update({k: v for k, v in saved.items() if v is not None})
+        with selftest_env(), tempfile.TemporaryDirectory(prefix="ratchet-st.") as root:
+            _git_run(root, "init", "-q")
+            for p, t in base_files.items():
+                _write(root, p, t)
+            _git_run(root, "add", "-A")
+            _git_run(root, "commit", "-q", "-m", "base")
+            R = Ratchet("selftest", tsv, cols, root=root, total=total, base_ref=_git_run(root, "rev-parse", "HEAD"))
+            errors, wrote = R.update(up, reason)
+            rep = R.check(up) if wrote else None
         if wrote != want_written or (why and not any(why in e for e in errors)) or (rep and rep.errors):
             fails.append(f"{label}: wrote={wrote}, errors={errors}, check={rep.errors if rep else None}")
         else:

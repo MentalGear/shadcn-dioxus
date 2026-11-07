@@ -84,7 +84,7 @@ import tempfile
 
 HERE = os.getcwd()
 sys.path.insert(0, os.path.join(HERE, "scripts", "lib"))
-from ratchet import Ratchet  # noqa: E402
+from ratchet import Ratchet, selftest_env  # noqa: E402
 
 _spec = importlib.util.spec_from_file_location("comment_scan", os.path.join(HERE, "scripts", "comment-scan.py"))
 cs = importlib.util.module_from_spec(_spec)
@@ -423,11 +423,8 @@ def self_test():
         measured, _ = measure(root)
         R = ratchet(root)
         R.base_ref = None
-        os.environ["RATCHET_NO_BASE"] = "1"
-        try:
+        with selftest_env(RATCHET_NO_BASE="1"):
             errors, wrote = R.update(measured, None)
-        finally:
-            del os.environ["RATCHET_NO_BASE"]
         assert wrote, errors
         if note:
             with open(os.path.join(root, BASELINE), encoding="utf-8") as f:
@@ -444,19 +441,8 @@ def self_test():
             sha = make_base(root, files, base_note)
             mutate(root)
             git(root, "add", "-A")
-            saved = {k: os.environ.get(k) for k in ("RATCHET_BASE_REF", "RATCHET_NO_BASE")}
-            os.environ["RATCHET_BASE_REF"] = sha
-            os.environ.pop("RATCHET_NO_BASE", None)
-            for k, v in (env or {}).items():
-                os.environ[k] = v
-            try:
+            with selftest_env(RATCHET_BASE_REF=sha, **(env or {})):
                 R, rep, _ = run_check(root)
-            finally:
-                for k, v in saved.items():
-                    if v is None:
-                        os.environ.pop(k, None)
-                    else:
-                        os.environ[k] = v
             got = "red" if rep.errors else "green"
             detail = R.format(rep)
         if got == want and why and why not in detail:

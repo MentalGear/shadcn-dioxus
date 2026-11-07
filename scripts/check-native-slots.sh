@@ -38,7 +38,7 @@ import tempfile
 
 HERE = os.getcwd()
 sys.path.insert(0, os.path.join(HERE, "scripts", "lib"))
-from ratchet import Ratchet  # noqa: E402
+from ratchet import Ratchet, selftest_env  # noqa: E402
 
 _spec = importlib.util.spec_from_file_location("comment_scan", os.path.join(HERE, "scripts", "comment-scan.py"))
 cs = importlib.util.module_from_spec(_spec)
@@ -297,8 +297,7 @@ def self_test():
                 f.write("fn a() { rsx! { input { value: x } } }\n")
             run_git(root, "init", "-q")
             run_git(root, "add", "-A")
-            os.environ["RATCHET_NO_BASE"] = "1"
-            try:
+            with selftest_env(RATCHET_NO_BASE="1"):
                 errors, wrote = ratchet(root).update(measure(root)[0], None)
                 assert wrote, errors
                 if extra:
@@ -306,8 +305,6 @@ def self_test():
                         f.write(extra)
                     run_git(root, "add", "-A")
                 rep = ratchet(root).check(measure(root)[0])
-            finally:
-                del os.environ["RATCHET_NO_BASE"]
             got = "red" if rep.errors else "green"
             if got != want:
                 fails.append(f"{label}: want {want}, got {got}: {rep.errors}")
