@@ -747,8 +747,12 @@ pub fn NavigationMenuTrigger(props: NavigationMenuTriggerProps) -> Element {
                     ctx.hover.enter(index.cloned());
                 }
             },
-            onmouseleave: move |_| {
-                ctx.hover.leave(index.cloned());
+            onmouseleave: move |event: Event<MouseData>| {
+                ctx.hover.leave(
+                    index.cloned(),
+                    Some(crate::safe_triangle::Point::of(&event)),
+                    Some(item_ctx.content_id.cloned()),
+                );
             },
             onfocus: move |_| {
                 ctx.blur_close.cancel();
@@ -1052,7 +1056,7 @@ fn NavigationMenuContentRendered(
                 ctx.hover.hold();
             },
             onmouseleave: move |_| {
-                ctx.hover.leave(index.cloned());
+                ctx.hover.leave(index.cloned(), None, None);
             },
             ..attributes,
             {children}
@@ -1102,7 +1106,7 @@ fn NavigationMenuContentRendered(
                 ctx.hover.hold();
             },
             onmouseleave: move |_| {
-                ctx.hover.leave(index.cloned());
+                ctx.hover.leave(index.cloned(), None, None);
             },
             ..attributes,
             {children}
