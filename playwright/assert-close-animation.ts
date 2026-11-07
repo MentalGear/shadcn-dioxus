@@ -51,7 +51,7 @@ export function analyzeCloseSamples(samples: Sample[]): CloseAnimationReport {
   if (doneIndex === -1) doneIndex = mountedSamples.length - 1;
 
   // Sampling starts the moment the close click resolves, a few frames
-  // before the framework has re-rendered `data-open="false"` and the close
+  // before the framework has re-rendered `data-closed` and the close
   // animation has begun; those leading frames sit at the fully-open height
   // and are event/render latency, not animation jank. Plateau detection
   // therefore begins at the first frame the height actually moves.

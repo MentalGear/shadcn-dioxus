@@ -37,3 +37,17 @@ S
 - **Depends on:** None. The plan's `dropAnywhere` `dragSource` half (row 458) subsumes it; the clippy ban on the setters is in row 444.
 - **Proof:** A Playwright spec that fails before the fix and passes after; run on the web build and, where the bug is renderer-dependent, the desktop-cadence build of [row 442](./442-desktop-cadence-harness-and-desktop-pass.md).
 - **Hours (inferred):** not estimated (size guess S).
+
+## Analysis (lane 2026-11-06; inferred from sources, nothing measured: no desktop build here)
+
+- Inferred: on desktop the page's own `dragstart`/`dragover` run natively and Dioxus serializes the event to Rust
+  afterwards, so the no-op setters (`dioxus-html-0.7.9/src/data_transfer.rs`) change nothing on the page. Only
+  `prevent_default()` on `dragover`/`drop` takes effect, and the reorder relies on that, so it still works.
+- What is lost is cosmetic: the effect cursor (`dropEffect`/`effectAllowed` stay at the engine default, which can show a
+  copy cursor) and the drag-image/ghost control. The Firefox payload (`set_data("text/html", "")`) is not needed on the
+  desktop engines (WebKitGTK, WKWebView, WebView2 are not Firefox). Not measured.
+- No existing bridge op sets `dataTransfer` (`primitives/src/bridge/` has no drag verb; `dropAnywhere`'s `dragSource`
+  half is planned, row 458). Setting these page-side needs a `dragstart` behaviour with a TS module and vectors, i.e. new
+  JS, which this row may not add. Stopped; the construction is the row 458 `dragSource` behaviour on the list/row host
+  (`effectAllowed=move`, `dropEffect=move`, payload `text/html`), after which the three rsx setter sites are deleted.
+- Sites found beyond the row: `preview/src/components/virtual_list/variants/reorder/mod.rs:146-149,165`.

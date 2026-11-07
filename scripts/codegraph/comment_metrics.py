@@ -1,5 +1,5 @@
 # Per-file comment metrics M1-M5 for the code graph (row 486), from the repo's one comment tokenizer.
-# Imported by build_graph.py through importlib (a script run as `python3 -I` has no sibling imports); stdlib only.
+# Imported by build_comments.py through importlib (a script run as `python3 -I` has no sibling imports); stdlib only.
 #
 # measure(repo, paths) -> {path: (counts, detail)}
 #   counts  CM_FIELDS order, raw counts; the page sums them over files, so a component or crate ratio is the ratio of
@@ -111,6 +111,14 @@ def _other(path, text):
     counts = (0, 0, 0, 0, 0, 0, 0, len(todo), len(hist), 0)
     detail = {k: v for k, v in (("todo", todo), ("hist", hist)) if v}
     return counts, detail
+
+
+NODE_EXTS = (".rs", ".ts", ".css", ".html", ".js", ".mjs", ".txt")
+
+
+def node_paths(repo):
+    """Every scannable file a graph node can be: the Rust, TS, CSS, HTML, JS and TXT files the comment scanner reads."""
+    return sorted(p for p in scannable_paths(repo) if p.endswith(NODE_EXTS))
 
 
 def measure(repo, paths):

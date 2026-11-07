@@ -5,3 +5,4 @@ click_only_submenu
 icons
 groups
 destructive
+non_modal

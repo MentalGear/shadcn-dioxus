@@ -3,13 +3,17 @@ The DatePicker component is used to display a date input and a Calendar popover,
 ## Component Structure
 
 ```rust
+// Dates are the `time` crate's `time::Date`.
+let mut selected_date = use_signal(|| None::<Date>);
+
 DatePicker {
-    // The currently selected date in the date picker (if any).
-    selected_date,
+    // The currently selected date in the date picker (if any). Pair it with `on_value_change`, which sets it.
+    selected_date: selected_date(),
     on_value_change: move |v: Option<Date>| {
         // This callback is triggered when a date is selected in the
         // calendar or the user entered it from the keyboard.
         // The date parameter contains the selected date.
+        selected_date.set(v);
     },
     // Optional number of pre-composed calendar months to show in the popover.
     month_count: 1,
@@ -23,9 +27,9 @@ DatePicker {
     // Only with `confirm: false` -- how long the popover stays open after a selection (default 300 ms).
     close_delay: Duration::from_millis(300),
     // Optional placeholder formatters for the input fields.
-    on_format_day_placeholder: || "D",
-    on_format_month_placeholder: || "M",
-    on_format_year_placeholder: || "Y",
+    on_format_day_placeholder: || "D".to_string(),
+    on_format_month_placeholder: || "M".to_string(),
+    on_format_year_placeholder: || "Y".to_string(),
 }
 ```
 

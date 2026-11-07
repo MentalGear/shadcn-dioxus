@@ -229,7 +229,7 @@ pub fn Demo() -> Element {
                             key: "{series.key()}",
                             r#type: "button",
                             class: "dx-chart-interactive-toggle",
-                            "data-active": current == series,
+                            "data-active": (current == series).then_some(""),
                             "aria-pressed": current == series,
                             onclick: move |_| active.set(series),
                             span { class: "dx-chart-interactive-toggle-label", "{series.label()}" }

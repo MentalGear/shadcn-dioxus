@@ -140,7 +140,7 @@ pub fn SelectOption<T: PartialEq + Clone + 'static>(props: SelectOptionProps<T>)
         tabindex: if (option.focused)() { "0" } else { "-1" },
         aria_selected: (option.selected)(),
         aria_disabled: (option.disabled)(),
-        ..state_attrs::disabled((option.disabled)()),
+        ..state_attrs::presence(state_attrs::Flag::Disabled, (option.disabled)()),
         ..state_attrs::presence(state_attrs::Flag::Selected, (option.selected)()),
         ..state_attrs::presence(state_attrs::Flag::Highlighted, (option.focused)()),
     });

@@ -1,0 +1,46 @@
+# ts-scan baseline (row 444): the sites that predate the rules, shrink-only. `scripts/ts-scan/scan.mjs --update-baseline`
+# lowers or removes rows, never adds one; a new site or an edited baselined site is red. context = enclosing function
+# path, hash = sha1 of the whitespace-normalised expression text (a line move changes nothing).
+#! columns: file	rule	context	hash	count
+primitives/src/ts/bridge.ts	any	<module>	c5fe0200d1	1
+primitives/src/ts/bridge.ts	any	FIELD_GETTERS	c5fe0200d1	1
+primitives/src/ts/bridge.ts	any	METHODS	c5fe0200d1	2
+primitives/src/ts/bridge.ts	any	PROPS	c5fe0200d1	1
+primitives/src/ts/bridge.ts	any	bareOn	c5fe0200d1	2
+primitives/src/ts/bridge.ts	any	bareOn.h	c5fe0200d1	1
+primitives/src/ts/bridge.ts	any	behaviours	c5fe0200d1	1
+primitives/src/ts/bridge.ts	any	checkEvent	c5fe0200d1	1
+primitives/src/ts/bridge.ts	any	describe	c5fe0200d1	1
+primitives/src/ts/bridge.ts	any	elementRegs	c5fe0200d1	1
+primitives/src/ts/bridge.ts	any	hubAdd	c5fe0200d1	2
+primitives/src/ts/bridge.ts	any	hubAdd.handlers	c5fe0200d1	1
+primitives/src/ts/bridge.ts	any	installBehaviour.handler	c5fe0200d1	1
+primitives/src/ts/bridge.ts	any	isDoc	c5fe0200d1	1
+primitives/src/ts/bridge.ts	any	isEl	c5fe0200d1	1
+primitives/src/ts/bridge.ts	any	isWin	c5fe0200d1	1
+primitives/src/ts/bridge.ts	any	pickAll	c5fe0200d1	1
+primitives/src/ts/bridge.ts	any	read	c5fe0200d1	1
+primitives/src/ts/bridge.ts	any	receives	c5fe0200d1	1
+primitives/src/ts/bridge.ts	any	register	c5fe0200d1	1
+primitives/src/ts/bridge.ts	any	resolve	c5fe0200d1	1
+primitives/src/ts/bridge.ts	any	scrollOptions	c5fe0200d1	2
+primitives/src/ts/bridge.ts	any	scrollOptions.out	c5fe0200d1	1
+primitives/src/ts/bridge.ts	any	watchElement	c5fe0200d1	1
+primitives/src/ts/bridge.ts	as-any	W	339575a3ce	1
+primitives/src/ts/bridge.ts	as-any	channel	73c5596b9f	1
+primitives/src/ts/bridge.ts	computed-access	bareOn	f8c0ad2ecb	1
+primitives/src/ts/bridge.ts	computed-access	get	4707d7e346	1
+primitives/src/ts/bridge.ts	computed-access	installBehaviour.handler	64bd222e5e	1
+primitives/src/ts/bridge.ts	computed-access	installBehaviour.handler	9eb0dbc406	1
+primitives/src/ts/bridge.ts	computed-access	pickAll	a0afd3c903	1
+primitives/src/ts/bridge.ts	computed-access	register	42e07ddf3e	1
+primitives/src/ts/bridge.ts	computed-access	scope.s.dispose	b9cbb5c873	1
+primitives/src/ts/bridge.ts	computed-access	scope.s.observe.io.e	68ea2e14c4	1
+primitives/src/ts/bridge.ts	computed-access	scope.s.observe.ro.e	68ea2e14c4	1
+primitives/src/ts/bridge.ts	computed-access	scope.s.sample	901240719e	1
+primitives/src/ts/bridge.ts	computed-access	scope.s.sample.tick	40db5d23b3	1
+primitives/src/ts/bridge.ts	computed-access	scope.s.sample.tick	d0200d8099	1
+primitives/src/ts/bridge.ts	verb-row	PROPS.activeElement	381cd4a957	1
+primitives/src/ts/bridge.ts	verb-row	PROPS.popoverOpen	09e0563aae	1
+primitives/src/ts/bridge.ts	verb-row	PROPS.rect	663dece67e	1
+primitives/src/ts/bridge.ts	verb-row	PROPS.visualViewport	8b9682fb86	1

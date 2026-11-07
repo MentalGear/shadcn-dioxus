@@ -204,7 +204,7 @@ pub fn Navbar(props: NavbarProps) -> Element {
             // explicitly disclaims.
             role: "menubar",
             dir: direction.as_str(),
-            ..state_attrs::disabled((props.disabled)()),
+            ..state_attrs::presence(state_attrs::Flag::Disabled, (props.disabled)()),
             "data-direction": direction.as_str(),
             tabindex: (!ctx.focus.any_focused()).then_some("0"),
         }),
@@ -371,7 +371,7 @@ pub struct NavbarNavProps {
 /// ## Styling
 ///
 /// The [`NavbarNav`] component defines the following data attributes you can use to control styling:
-/// - `data-state`: Indicates if the nav is open or closed. Values are `open` or `closed`.
+/// - `data-open` / `data-closed`: Exactly one is present: whether this part is open.
 /// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
 /// - `data-disabled`: Indicates if the nav is disabled. Values are `true` or `false`.
 #[component]
@@ -418,7 +418,7 @@ pub fn NavbarNav(props: NavbarNavProps) -> Element {
             // literal.
             role: crate::menu_semantics::MENU_ROLE,
             ..state_attrs::open(is_open()),
-            ..state_attrs::disabled((ctx.disabled)() || (props.disabled)()),
+            ..state_attrs::presence(state_attrs::Flag::Disabled, (ctx.disabled)() || (props.disabled)()),
         }),
     ]);
 
@@ -770,7 +770,7 @@ pub struct NavbarContentProps {
 /// ## Styling
 ///
 /// The [`NavbarContent`] component defines the following data attributes you can use to control styling:
-/// - `data-state`: Indicates if the nav is open or closed. Values are `open` or `closed`.
+/// - `data-open` / `data-closed`: Exactly one is present: whether this part is open.
 /// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
 /// - `data-open-menu-direction`: Indicates the direction of the open menu relative to this content. Values are `start`, `end`, `open`, or `closed`.
 #[component]
@@ -900,7 +900,7 @@ fn NavbarContentRendered(
     // `use_popover_shown_while_mounted`, not the plain `use_popover_sync` --
     // this content, like `NavigationMenuContent`
     // (`navigation_menu.rs`), renders through [`use_animated_open`] above,
-    // which deliberately keeps the element mounted with `data-state="closed"`
+    // which deliberately keeps the element mounted with `data-closed`
     // for its whole exit animation (plus a settle hold) before actually
     // unmounting it. `use_popover_sync`'s "signal -> browser" effect calls
     // `hidePopover()` the instant `open` goes `false`, which (per the UA
@@ -1278,7 +1278,7 @@ pub fn NavbarItem(mut props: NavbarItemProps) -> Element {
             // semantics at all, so `data-disabled` alone would leave this
             // item looking, to assistive tech, like a normal active link.
             aria_disabled: is_disabled,
-            ..state_attrs::disabled(is_disabled),
+            ..state_attrs::presence(state_attrs::Flag::Disabled, is_disabled),
             tabindex: tabindex,
         }),
     ]);

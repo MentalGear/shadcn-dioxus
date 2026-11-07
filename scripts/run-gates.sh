@@ -37,7 +37,7 @@
 #  5. stylelint runs with `pnpm exec`, which never downloads: a worktree without node_modules fails loudly
 #     (`cd preview && pnpm install --frozen-lockfile`, or symlink the main checkout's node_modules --
 #     backlog rows 72, 359) instead of fetching an unvetted version.
-#  6. Reuse (backlog row 320). The cargo gates (CARGO_GATES: check-primitives-features, check-attr-spread-collision,
+#  6. Reuse (backlog row 320). The cargo gates (CARGO_GATES: check-primitives-features, check-attr-spread-collision, check-public-api,
 #     the three clippy arms, `cargo test`, `cargo test` on the server arm, check-rustdoc) are ~90 % of a full run, and a
 #     CSS-, spec- or docs-only batch cannot change their result. So a PASS is stored per (cargo-input hash,
 #     toolchain, command line) -- the key of scripts/gate-reuse.sh, whose inputs are scripts/cargo-inputs-hash.sh's
@@ -54,7 +54,7 @@
 set -uo pipefail
 
 # The cargo gates: the slow ones, whose PASS is reused for an identical cargo-input key (guard 6) and which --fast leaves out.
-CARGO_GATES='^(clippy-|test(-server)?$|check-rustdoc$|check-primitives-features$|check-attr-spread-collision$)'
+CARGO_GATES='^(clippy-|test(-server)?$|check-rustdoc$|check-primitives-features$|check-attr-spread-collision$|check-public-api$)'
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
@@ -78,6 +78,9 @@ while [ $# -gt 0 ]; do
     *) die "unknown option: $1 (try --help)" ;;
   esac
 done
+# A full run (no --fast, --only or --skip) is the one a merge batch quotes, so an unavailable merge base is red there
+# (scripts/lib/ratchet.py: RATCHET_REQUIRE_BASE); a partial run keeps the lenient default.
+if [ "$fast" = 0 ] && [ -z "$only" ] && [ -z "$skip" ]; then export RATCHET_REQUIRE_BASE=1; fi
 [ "$fast" = 0 ] || skip="${skip:+($skip)|}$CARGO_GATES"
 
 # --- the gate list, by group. name | command (run with bash -c from the repo root) -------
@@ -91,6 +94,7 @@ gates=(
   "check-component-call|scripts/check-component-call.sh"
   "check-test-harness-controlled|scripts/check-test-harness-controlled.sh"
   "check-attr-spread-collision|scripts/check-attr-spread-collision.sh"
+  "check-public-api|scripts/check-public-api.sh"
   "check-direction-keys|scripts/check-direction-keys.sh"
   "check-state-attributes|scripts/check-state-attributes.sh"
   "check-render-keys|scripts/check-render-keys.sh"
@@ -106,7 +110,11 @@ gates=(
   "check-blocking-scroll-listeners|scripts/check-blocking-scroll-listeners.sh"
   "check-js-listeners|scripts/check-js-listeners.sh"
   "check-bridge-behaviours|scripts/check-bridge-behaviours.sh"
+  "check-ts-scan|scripts/check-ts-scan.sh"
   "check-js-volume|scripts/check-js-volume.sh"
+  "check-ratchet-grant|scripts/check-ratchet-grant.sh"
+  "check-native-slots|scripts/check-native-slots.sh"
+  "check-hot-events|scripts/check-hot-events.sh"
   "check-motion-gating|scripts/check-motion-gating.sh"
   "check-infinite-animations|scripts/check-infinite-animations.sh"
   "check-open-focus|scripts/check-open-focus.sh"
@@ -371,7 +379,7 @@ for f in "$log_dir"/*.log; do
   [ -e "$f" ] || continue
   if grep -q '^RATCHET RAISES' "$f"; then
     echo "RATCHET RAISES (a deliberate raise is the owner's decision; quote it in the report):"
-    awk '/^RATCHET RAISES/ { p = 1; next } /^  / { if (p) print "  " $0; next } { p = 0 }' "$f"
+    awk '/^RATCHET RAISES/ { p = 1; print "  " $0; next } /^  / { if (p) print "  " $0; next } { p = 0 }' "$f"
   fi
 done
 if [ "${#red[@]}" -gt 0 ]; then

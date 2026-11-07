@@ -36,13 +36,13 @@ async function sampleCloseInApp(page: Page): Promise<Sample[]> {
   // `page.goto`) so that click can't land before hydration attaches
   // listeners.
   await gotoHydrated(page, APP_URL, { timeout: LOAD_TIMEOUT });
-  const accordionItems = page.locator("[data-open]").filter({ has: page.getByRole("button") });
+  const accordionItems = page.locator(".dx-accordion-item").filter({ has: page.getByRole("button") });
   const firstItem = accordionItems.first();
   const button = accordionItems.getByRole("button").first();
 
   await button.click();
   await page.waitForFunction(
-    (el) => el?.getAttribute("data-open") === "true",
+    (el) => el?.hasAttribute("data-open") === true,
     await firstItem.elementHandle()
   );
   await page.waitForTimeout(500); // let the open animation fully settle

@@ -35,7 +35,7 @@ const TOWARD_CLOSE: Record<Side, [number, number]> = { bottom: [0, 1], top: [0, 
 async function open(page: import('@playwright/test').Page, side: Side) {
   await gotoHydrated(page, URL, GOTO_OPTS);
   await page.getByRole('button', { name: OPENERS[side] }).click();
-  await expect(page.locator(ROOT)).toHaveAttribute('data-state', 'open');
+  await expect(page.locator(ROOT)).toHaveAttribute('data-open', '');
   await awaitAnimationsSettled(page.locator(CONTENT));
   // Content that scrolls ALONG THE CROSS AXIS (what a user scrolls), plus a row that scrolls along
   // the dismiss axis is not needed: the panel itself (`overflow: auto`) is the cross-axis scroller.
@@ -95,7 +95,7 @@ for (const side of ['bottom', 'top', 'left', 'right'] as const) {
       const seen = await touchPath(page, pts);
       expect(seen.every((t) => !t.includes('translate'))).toBe(true);
       await page.waitForTimeout(700);
-      await expect(page.locator(ROOT)).toHaveAttribute('data-state', 'open');
+      await expect(page.locator(ROOT)).toHaveAttribute('data-open', '');
       expect(await transformOf(page)).toBe('');
     });
 
@@ -108,7 +108,7 @@ for (const side of ['bottom', 'top', 'left', 'right'] as const) {
       const seen = await touchPath(page, pts);
       expect(seen.every((t) => !t.includes('translate'))).toBe(true);
       await page.waitForTimeout(700);
-      await expect(page.locator(ROOT)).toHaveAttribute('data-state', 'open');
+      await expect(page.locator(ROOT)).toHaveAttribute('data-open', '');
     });
 
     test('movement under the lock distance does not move the panel', async ({ page }) => {
@@ -117,7 +117,7 @@ for (const side of ['bottom', 'top', 'left', 'right'] as const) {
       const seen = await touchPath(page, [[ux * 2, uy * 2], [ux * 5, uy * 5]]);
       expect(seen.every((t) => !t.includes('translate'))).toBe(true);
       await page.waitForTimeout(700);
-      await expect(page.locator(ROOT)).toHaveAttribute('data-state', 'open');
+      await expect(page.locator(ROOT)).toHaveAttribute('data-open', '');
     });
 
     test('a clear swipe toward the closing edge dismisses it', async ({ page }) => {
@@ -152,7 +152,7 @@ for (const side of ['bottom', 'top', 'left', 'right'] as const) {
       }
       await send('touchEnd');
       expect(styles.every((t) => !t.includes('translate'))).toBe(true);
-      await expect(page.locator(ROOT)).toHaveAttribute('data-state', 'open');
+      await expect(page.locator(ROOT)).toHaveAttribute('data-open', '');
       const scrolled = await page.locator(CONTENT).evaluate((el, v) => (v ? el.scrollLeft : el.scrollTop), v);
       expect(scrolled).toBeGreaterThan(0);
     });

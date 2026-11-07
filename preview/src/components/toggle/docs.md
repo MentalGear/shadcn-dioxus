@@ -24,4 +24,4 @@ An icon that should fill with the ink while the toggle is pressed (shadcn's `gro
 
 ## State attributes
 
-A pressed toggle carries `aria-pressed="true"`, `data-state="on"` and a `data-pressed` presence attribute; an unpressed one carries `aria-pressed="false"`, `data-state="off"` and no `data-pressed`. Style on `[aria-pressed="true"]` (as the shipped sheet does), `[data-state="on"]` or `[data-pressed]`. `ToggleGroup` items are toggles, so they carry the same attributes.
+A pressed toggle carries `aria-pressed="true"` and a `data-pressed` presence attribute; an unpressed one carries `aria-pressed="false"` and no `data-pressed`. Style on `[aria-pressed="true"]` (as the shipped sheet does) or `[data-pressed]`. `ToggleGroup` items are toggles, so they carry the same attributes.

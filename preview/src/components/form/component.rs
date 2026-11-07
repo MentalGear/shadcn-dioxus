@@ -218,7 +218,7 @@ fn read_form_data_js(form_id: &str, result_id: &str) -> String {
 /// matching a real browser's own reportValidity() behavior of focusing and
 /// bubble-anchoring on just the first invalid control, not every one at
 /// once -- while every blocked control's visible counterpart gets
-/// `data-invalid="true"` (styled by this page's `style.css`) so the whole
+/// `data-invalid` (styled by this page's `style.css`) so the whole
 /// batch is visible, not just the focused one. Cleared once the control's
 /// underlying constraint validation actually resolves (checked via
 /// `checkValidity()` on interaction, or unconditionally on the form's own
@@ -262,7 +262,7 @@ fn watch_invalid_js(form_id: &str, report_id: &str) -> String {
                         for (const invalidTarget of order) {{
                             const visible = visibleCounterpart(invalidTarget);
                             if (!visible) continue;
-                            visible.setAttribute('data-invalid', 'true');
+                            visible.setAttribute('data-invalid', '');
                             if (!focused) {{
                                 visible.focus();
                                 focused = true;
@@ -316,7 +316,7 @@ fn watch_invalid_js(form_id: &str, report_id: &str) -> String {
             // live `ValidityState` read with no such side effect.
             function reviewInvalidMarkers() {{
                 setTimeout(() => {{
-                    form.querySelectorAll('[data-invalid=\"true\"]').forEach((visible) => {{
+                    form.querySelectorAll('[data-invalid]').forEach((visible) => {{
                         let hidden = null;
                         if (visible.getAttribute('aria-hidden') === 'true') {{
                             hidden = visible;

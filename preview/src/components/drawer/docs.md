@@ -3,8 +3,12 @@ The drawer component is a panel that slides in from the edge of the screen, like
 ## Component Structure
 
 ```rust
+let mut open = use_signal(|| false);
+
 Drawer {
+    // Pair `open` with `on_open_change`: the drawer calls it when the user closes it, so it can close.
     open: open(),
+    on_open_change: move |v| open.set(v),
     // Which edge to slide in from. Available sides: Auto (default), Top, Right, Bottom, Left.
     // Leave it out for Auto: the bottom on a phone, a floating right panel on a wider screen.
     side: DrawerSide::Auto,
@@ -41,6 +45,9 @@ The look follows the side. A **bottom** (or top) drawer is docked flush and roun
 Put a `Drawer` inside another `DrawerContent` and it nests, as Vaul's `NestedRoot` does -- no separate component:
 
 ```rust
+let mut open = use_signal(|| false);
+let mut nested = use_signal(|| false);
+
 Drawer { open: open(), on_open_change: move |v| open.set(v),
     DrawerContent {
         DrawerTitle { "Parent" }
@@ -52,7 +59,7 @@ Drawer { open: open(), on_open_change: move |v| open.set(v),
 }
 ```
 
-While the nested drawer is open the parent steps back (`data-nested-open="true"`: a 4% shrink toward its docked edge and a 16px push away from it, `--dx-drawer-nest-scale` and `--dx-drawer-nest-shift`); it is restored the moment the nested one starts closing. Only the top-most drawer reacts to Escape, a tap on the scrim and a drag, and the page's scroll lock stays one lock until the last drawer closes.
+While the nested drawer is open the parent steps back (`data-nested-open`: a 4% shrink toward its docked edge and a 16px push away from it, `--dx-drawer-nest-scale` and `--dx-drawer-nest-shift`); it is restored the moment the nested one starts closing. Only the top-most drawer reacts to Escape, a tap on the scrim and a drag, and the page's scroll lock stays one lock until the last drawer closes.
 
 ## Drag to dismiss
 
@@ -65,6 +72,8 @@ A drag never starts from an interactive descendant (a button, link, or form cont
 `snap_points` (Base UI's `snapPoints`) makes the drawer rest at partial extents instead of fully open. A `SnapPoint` is a fraction of the viewport along the drawer's axis (`Fraction(0.5)`: half the height of a top/bottom drawer, half the width of a left/right one; measured against the layout viewport) or a length (`Px(355.0)`); `Fraction(1.0)` is fully open.
 
 ```rust
+let mut active = use_signal(|| None::<SnapPoint>);
+
 Drawer {
     side: DrawerSide::Bottom,
     snap_points: vec![SnapPoint::Px(148.0), SnapPoint::Px(355.0), SnapPoint::Fraction(1.0)],

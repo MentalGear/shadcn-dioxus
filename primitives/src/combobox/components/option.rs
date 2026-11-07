@@ -161,9 +161,9 @@ pub fn ComboboxOption<T: PartialEq + Clone + 'static>(props: ComboboxOptionProps
         role: "option",
         aria_selected: (option.selected)(),
         aria_disabled: (option.disabled)(),
-        ..state_attrs::valued(state_attrs::Flag::Highlighted, (option.focused)()),
-        ..state_attrs::disabled((option.disabled)()),
-        ..state_attrs::valued(state_attrs::Flag::Selected, (option.selected)()),
+        ..state_attrs::presence(state_attrs::Flag::Highlighted, (option.focused)()),
+        ..state_attrs::presence(state_attrs::Flag::Disabled, (option.disabled)()),
+        ..state_attrs::presence(state_attrs::Flag::Selected, (option.selected)()),
     });
     let merged = merge_attributes(vec![
         order.marker_attribute(),

@@ -14,13 +14,13 @@ test("test", async ({ page }) => {
   const u_button = mainDemo(page).getByRole("button", { name: "Toggle strikethrough", exact: true });
 
   // The buttons should not be selected initially
-  await expect(b_button).toHaveAttribute("data-state", "off");
-  await expect(i_button).toHaveAttribute("data-state", "off");
-  await expect(u_button).toHaveAttribute("data-state", "off");
+  await expect(b_button).toHaveAttribute("aria-pressed", "false");
+  await expect(i_button).toHaveAttribute("aria-pressed", "false");
+  await expect(u_button).toHaveAttribute("aria-pressed", "false");
 
   // Click the "Toggle bold" button and check its state
   await b_button.click();
-  await expect(b_button).toHaveAttribute("data-state", "on");
+  await expect(b_button).toHaveAttribute("aria-pressed", "true");
 
   // Pressing right arrow should focus the "Toggle italic" button
   await page.keyboard.press("ArrowRight");
@@ -28,7 +28,7 @@ test("test", async ({ page }) => {
 
   // Pressing enter should press the "Toggle italic" button
   await page.keyboard.press("Enter");
-  await expect(i_button).toHaveAttribute("data-state", "on");
+  await expect(i_button).toHaveAttribute("aria-pressed", "true");
 
   // Pressing right two more times should bring us back to "Toggle bold"
   await page.keyboard.press("ArrowRight");
@@ -45,7 +45,7 @@ for (const dark of [false, true]) {
     const bButton = mainDemo(page).getByRole("button", { name: "Toggle bold", exact: true });
 
     await bButton.click();
-    await expect(bButton).toHaveAttribute("data-state", "on");
+    await expect(bButton).toHaveAttribute("aria-pressed", "true");
     await page.locator("body").hover({ position: { x: 0, y: 0 } });
     // Wait past the CSS transition (--dx-motion-duration-slow, 200ms)
     // before reading computed style -- a mid-transition read returns an
@@ -102,7 +102,7 @@ for (const dark of [false, true]) {
 
       // Bold pressed, italic hovered, strikethrough resting: all three states at once.
       await item("Toggle bold").click();
-      await expect(item("Toggle bold")).toHaveAttribute("data-state", "on");
+      await expect(item("Toggle bold")).toHaveAttribute("aria-pressed", "true");
       await item("Toggle italic").hover();
       expect(await item("Toggle italic").evaluate((el) => el.matches(":hover"))).toBe(true);
       const pressed = await paint("Toggle bold");
@@ -178,20 +178,20 @@ test("sizes: sm and default groups are 28 and 32px high", async ({ page }) => {
   expect(await num(def.first(), "height")).toBe(32);
   await expect(group(page, "sizes", "Small placement")).toHaveAttribute("data-size", "sm");
   // Single-select, "Top" pressed to start with.
-  await expect(sm.first()).toHaveAttribute("data-state", "on");
+  await expect(sm.first()).toHaveAttribute("aria-pressed", "true");
   await sm.nth(1).click();
-  await expect(sm.nth(1)).toHaveAttribute("data-state", "on");
-  await expect(sm.first()).toHaveAttribute("data-state", "off");
+  await expect(sm.nth(1)).toHaveAttribute("aria-pressed", "true");
+  await expect(sm.first()).toHaveAttribute("aria-pressed", "false");
 });
 
 test("outline: a single-select group with All pressed", async ({ page }) => {
   await gotoHydrated(page, `${BASE_URL}/component/toggle_group/`);
   const all = frameOf(page, "outline").getByRole("button", { name: "Toggle all", exact: true });
   const missed = frameOf(page, "outline").getByRole("button", { name: "Toggle missed", exact: true });
-  await expect(all).toHaveAttribute("data-state", "on");
+  await expect(all).toHaveAttribute("aria-pressed", "true");
   await missed.click();
-  await expect(missed).toHaveAttribute("data-state", "on");
-  await expect(all).toHaveAttribute("data-state", "off");
+  await expect(missed).toHaveAttribute("aria-pressed", "true");
+  await expect(all).toHaveAttribute("aria-pressed", "false");
 });
 
 test("vertical: a column with spacing 1 (4px), navigated with ArrowUp/ArrowDown", async ({ page }) => {
@@ -204,9 +204,9 @@ test("vertical: a column with spacing 1 (4px), navigated with ArrowUp/ArrowDown"
   expect(a.x).toBeCloseTo(b.x, 0);
   expect(b.y - (a.y + a.height)).toBeCloseTo(4, 0);
   // Bold and italic start pressed.
-  await expect(items.nth(0)).toHaveAttribute("data-state", "on");
-  await expect(items.nth(1)).toHaveAttribute("data-state", "on");
-  await expect(items.nth(2)).toHaveAttribute("data-state", "off");
+  await expect(items.nth(0)).toHaveAttribute("aria-pressed", "true");
+  await expect(items.nth(1)).toHaveAttribute("aria-pressed", "true");
+  await expect(items.nth(2)).toHaveAttribute("aria-pressed", "false");
   await items.nth(0).focus();
   await page.keyboard.press("ArrowDown");
   await expect(items.nth(1)).toBeFocused();
@@ -234,17 +234,17 @@ test("font weight: a controlled single-select of 4rem tiles that names the chose
   await gotoHydrated(page, `${BASE_URL}/component/toggle_group/`);
   const root = group(page, "font_weight", "Font Weight");
   const tile = (n: string) => root.getByRole("button", { name: n, exact: true });
-  await expect(tile("Normal")).toHaveAttribute("data-state", "on");
+  await expect(tile("Normal")).toHaveAttribute("aria-pressed", "true");
   expect(await num(tile("Normal"), "height")).toBe(64);
   expect(await num(tile("Normal"), "width")).toBe(64);
   await expect(frameOf(page, "font_weight")).toContainText("font-normal");
   await tile("Bold").click();
-  await expect(tile("Bold")).toHaveAttribute("data-state", "on");
-  await expect(tile("Normal")).toHaveAttribute("data-state", "off");
+  await expect(tile("Bold")).toHaveAttribute("aria-pressed", "true");
+  await expect(tile("Normal")).toHaveAttribute("aria-pressed", "false");
   await expect(frameOf(page, "font_weight")).toContainText("font-bold");
   // Single-select: pressing the chosen tile again keeps it chosen.
   await tile("Bold").click();
-  await expect(tile("Bold")).toHaveAttribute("data-state", "on");
+  await expect(tile("Bold")).toHaveAttribute("aria-pressed", "true");
 });
 
 test.describe("Axe automated scan", () => {
@@ -266,43 +266,43 @@ test.describe("pressed state follows the item value (row 364)", () => {
 
   test("uncontrolled multiple: default and clicked items stay pressed across reverse and insert", async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/toggle_group/`);
-    await expect(multi(page, "italic")).toHaveAttribute("data-state", "on"); // default_value
+    await expect(multi(page, "italic")).toHaveAttribute("aria-pressed", "true"); // default_value
     await multi(page, "bold").click();
-    await expect(multi(page, "bold")).toHaveAttribute("data-state", "on");
-    await expect(multi(page, "underline")).toHaveAttribute("data-state", "off");
+    await expect(multi(page, "bold")).toHaveAttribute("aria-pressed", "true");
+    await expect(multi(page, "underline")).toHaveAttribute("aria-pressed", "false");
 
     await frame(page).getByRole("button", { name: "Reverse order", exact: true }).click();
     await expect.poll(() => order(page)).toEqual(["multi underline", "multi italic", "multi bold"]);
-    await expect(multi(page, "bold")).toHaveAttribute("data-state", "on");
-    await expect(multi(page, "italic")).toHaveAttribute("data-state", "on");
-    await expect(multi(page, "underline")).toHaveAttribute("data-state", "off");
+    await expect(multi(page, "bold")).toHaveAttribute("aria-pressed", "true");
+    await expect(multi(page, "italic")).toHaveAttribute("aria-pressed", "true");
+    await expect(multi(page, "underline")).toHaveAttribute("aria-pressed", "false");
 
     await frame(page).getByRole("button", { name: "Insert first", exact: true }).click();
     await expect.poll(() => order(page)).toEqual(["multi new1", "multi underline", "multi italic", "multi bold"]);
-    await expect(multi(page, "new1")).toHaveAttribute("data-state", "off");
-    await expect(multi(page, "bold")).toHaveAttribute("data-state", "on");
-    await expect(multi(page, "italic")).toHaveAttribute("data-state", "on");
-    await expect(multi(page, "underline")).toHaveAttribute("data-state", "off");
+    await expect(multi(page, "new1")).toHaveAttribute("aria-pressed", "false");
+    await expect(multi(page, "bold")).toHaveAttribute("aria-pressed", "true");
+    await expect(multi(page, "italic")).toHaveAttribute("aria-pressed", "true");
+    await expect(multi(page, "underline")).toHaveAttribute("aria-pressed", "false");
 
     // Still toggles by value afterwards (multiple: several may be pressed).
     await multi(page, "new1").click();
-    await expect(multi(page, "new1")).toHaveAttribute("data-state", "on");
-    await expect(multi(page, "bold")).toHaveAttribute("data-state", "on");
+    await expect(multi(page, "new1")).toHaveAttribute("aria-pressed", "true");
+    await expect(multi(page, "bold")).toHaveAttribute("aria-pressed", "true");
   });
 
   test("controlled single: the chosen value follows the item, replaces rather than adds", async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/toggle_group/`);
-    await expect(single(page, "italic")).toHaveAttribute("data-state", "on");
+    await expect(single(page, "italic")).toHaveAttribute("aria-pressed", "true");
     await frame(page).getByRole("button", { name: "Insert first", exact: true }).click();
     await frame(page).getByRole("button", { name: "Reverse order", exact: true }).click();
-    await expect(single(page, "italic")).toHaveAttribute("data-state", "on");
-    await expect(single(page, "bold")).toHaveAttribute("data-state", "off");
+    await expect(single(page, "italic")).toHaveAttribute("aria-pressed", "true");
+    await expect(single(page, "bold")).toHaveAttribute("aria-pressed", "false");
     await single(page, "bold").click();
-    await expect(single(page, "bold")).toHaveAttribute("data-state", "on");
-    await expect(single(page, "italic")).toHaveAttribute("data-state", "off");
+    await expect(single(page, "bold")).toHaveAttribute("aria-pressed", "true");
+    await expect(single(page, "italic")).toHaveAttribute("aria-pressed", "false");
     await expect(frame(page).getByTestId("toggle-group-chosen")).toHaveText("Chosen: bold");
     await frame(page).getByRole("button", { name: "Insert first", exact: true }).click();
-    await expect(single(page, "bold")).toHaveAttribute("data-state", "on");
-    await expect(single(page, "new2")).toHaveAttribute("data-state", "off");
+    await expect(single(page, "bold")).toHaveAttribute("aria-pressed", "true");
+    await expect(single(page, "new2")).toHaveAttribute("aria-pressed", "false");
   });
 });

@@ -42,6 +42,11 @@
   box-shadow: var(--dx-ring-focus);
 }
 
+/* Zeroed with the focused descendant's ring (theme "Focus modality"). */
+.dx-attachment:has([data-dx-pointer-focus]) {
+  --dx-ring-focus: 0 0 #0000;
+}
+
 /* A card with a trigger or link directly in it is clickable as a whole. */
 @media (hover: hover) and (pointer: fine) {
   .dx-attachment:has(> a, > button):hover {
@@ -49,11 +54,11 @@
   }
 }
 
-.dx-attachment[data-state="error"] {
+.dx-attachment[data-error] {
   border-color: color-mix(in oklab, var(--dx-destructive) 30%, transparent);
 }
 
-.dx-attachment[data-state="idle"] {
+.dx-attachment[data-idle] {
   border-style: dashed;
 }
 
@@ -148,7 +153,7 @@
   pointer-events: none;
 }
 
-.dx-attachment[data-state="error"] .dx-attachment-media {
+.dx-attachment[data-error] .dx-attachment-media {
   background-color: color-mix(in oklab, var(--dx-destructive) 10%, transparent);
   color: var(--dx-attachment-destructive-ink);
 }
@@ -164,8 +169,8 @@
   opacity: 0.6;
 }
 
-.dx-attachment[data-state="idle"] .dx-attachment-media[data-variant="image"],
-.dx-attachment[data-state="done"] .dx-attachment-media[data-variant="image"] {
+.dx-attachment[data-idle] .dx-attachment-media[data-variant="image"],
+.dx-attachment[data-done] .dx-attachment-media[data-variant="image"] {
   opacity: 1;
 }
 
@@ -199,7 +204,7 @@
   white-space: nowrap;
 }
 
-.dx-attachment[data-state="error"] .dx-attachment-description {
+.dx-attachment[data-error] .dx-attachment-description {
   color: var(--dx-attachment-destructive-ink);
 }
 

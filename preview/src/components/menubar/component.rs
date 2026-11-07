@@ -1,5 +1,5 @@
 use dioxus::prelude::*;
-use dioxus_icons::lucide::Check;
+use crate::components::icons::Check;
 use dioxus_primitives::dioxus_attributes::attributes;
 use dioxus_primitives::menubar::{
     self, MenubarCheckboxItemProps, MenubarContentProps, MenubarGroupProps, MenubarSeparatorProps, MenubarShortcutProps, MenubarItemProps, MenubarMenuProps,
@@ -92,7 +92,7 @@ pub fn MenubarItem(props: MenubarItemProps) -> Element {
 /// reserves `padding-inline-start`; the three
 /// `--dx-menu-item-indicator-*` tokens and the construction are the same.
 /// The icon carries `dx-menubar-item-indicator`; it is drawn only while the
-/// primitive reports `data-state="checked"`.
+/// primitive reports `data-checked`.
 #[component]
 pub fn MenubarCheckboxItem(props: MenubarCheckboxItemProps) -> Element {
     let base = attributes!(div {

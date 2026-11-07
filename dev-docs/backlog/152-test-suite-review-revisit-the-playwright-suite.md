@@ -15,11 +15,11 @@ Test-suite review: revisit the Playwright suite (~1,786 tests, ~21 min on a rele
 
 ## Status / trigger
 
-**IN PROGRESS 2026-10-24. Done: 152a (below); the shared-page fixture, through rows 327, 358 and 334 (`all-routes` loads each route once and runs every probe in both schemes on that load). 152b slice 1, branch `claude/axe-at-rest-fold`: the per-component at-rest axe scans are folded into `all-routes` (Detail (a); see "152b slice 1" below). Left for 152b: the same fold in the files batch 14 and row 267 touch (`button_group`, `calendar`, `carousel*`, `date-picker`, `popover`, `spinner`, `toast` specs), then Detail (b)-(d): the route matrices that rows 331 and 334 did not already shrink, the light/dark and preset matrices, and the oracle-vs-component overlap.**
+**IN PROGRESS 2026-10-24. Done: 152a (below); the shared-page fixture, through rows 327, 358 and 334 (`all-routes` loads each route once and runs every probe in both schemes on that load). 152b slice 1, branch `claude/axe-at-rest-fold`: the per-component at-rest axe scans are folded into `all-routes` (Detail (a); see "152b slice 1" below). 152b slice 2 (2026-11-06, lane prune-152): the same fold in `button_group`, `calendar`, `carousel*`, `date-picker`, `popover`, `spinner`, `toast`, and the `all-routes` scheme-switch wait (see "152b slice 2" below). Left for 152b: Detail (b)-(d): the route matrices that rows 331 and 334 did not already shrink, the light/dark and preset matrices, and the oracle-vs-component overlap.**
 
 **NARROWED 2026-10-19: speed half 152a DONE (lane suite-speed badc56d7): measured (3,752 tests, 183 files, 14,168 s test time on debug; all-routes 16%, first-paint 7.7%; fixed sleeps < 2%, no external waits), duration-balanced shards + 3 workers about 1.4x faster on the same build, release about 1.47x faster than debug and runs the timing specs, changed-files spec selector playwright/tools/select.mjs, slow-spec budget gate check-slow-spec-budget on playwright/durations.json, serve-spa.py serves 404.html like Pages (four not-found specs no longer hang). Remaining: per-file page reuse via a shared-page fixture (all-routes loads each route three times), then 152b (prune, merge, re-tier specs)** -- owner note 2026-10-05; nothing was run for this row, the evidence below is read from the round-2 full-suite report
 
-**Next target (owner 2026-11-05: item 4 of the build and test-suite review).** `all-routes.spec.ts` is the longest file, at 859 s of 13,255 s (`playwright/durations.json`, debug build, 2 workers); `first-paint-styles` (512 s) follows. Start the remaining 152b work there, after the 2026-11-05 lane batch has merged, since that batch edits `dismiss-parity` and `menu-family-parity`.
+**Next target (owner 2026-11-05: item 4 of the build and test-suite review).** `all-routes.spec.ts` is the longest file, at 859 s of 13,255 s (`playwright/durations.json`, debug build, 2 workers); `first-paint-styles` (512 s) follows. Start the remaining 152b work there, after the 2026-11-05 lane batch has merged, since that batch edits `dismiss-parity` and `menu-family-parity`. `all-routes` is now profiled ("152b slice 2"): axe is 51 % of it and has no dominant rule to trim, so what is left of it is the two axe scans per route, the navigation and the 390px reading; `first-paint-styles` was not touched (its per-route tests already run on `SUBJECTS` only in a lane, row 325; the 512 s is the `FIRST_PAINT_ROUTES=all` deploy sweep).
 
 ## Size
 
@@ -45,4 +45,54 @@ route-list check spells. Self-test 133 checks (2 new), the four mutations of `sc
 
 Measured on one debug SSG build of main e5782224, 2 workers: the 103 removed tests passed and took 414 worker-seconds
 (about 3.7% of the 11,273 s in `playwright/durations.json`).
+
+## 152b slice 2: at-rest axe fold in the rest of the specs, all-routes scheme-switch wait (2026-11-06)
+
+**Profile of `all-routes.spec.ts`** (debug SSG build of main d040554a, 2 workers, JSON report step times, 93 tests, 1,138.7 s on a
+loaded box): the `axe` steps are 582.9 s (51 %, two scans per route, about 3.2 s each), the 390px overflow step 174.1 s, the
+forced-colors walk 64.7 s, the rest (navigate, hydrate, first settle) about 317 s. Per-rule axe timing on `/component/calendar/` and
+`/component/button/`: no rule dominates (`color-contrast` about 10 %, then `hidden-content`, `scrollable-region-focusable`,
+`region`, each 3-6 %), so a rule-subset second scan would save little and would stop the dark pass from proving the structure
+rules; not done. The one measurable fixed cost was `ensureScheme`: every in-place light/dark switch ran `settle` with its
+400 ms quiet window for late `document::Link` sheets (the overflow step's dark switch and the axe step's light switch, two per
+route). A scheme switch only rewrites `data-theme` and CSS variables, so no component renders and no sheet can arrive; it now
+settles without the window (`watchNewSheets: false`; the viewport changes keep it). Same spec, same 93 tests, same probes:
+1,138.7 s -> 991.9 s summed test time (axe step 582.9 -> 501.7 s, overflow 174.1 -> 131.6 s), wall 9 m 38 s -> 8 m 22 s, 93/93
+green both times, the second run on a quieter box (load average 1.9 against 4-6 earlier), so the true saving is the removed
+400 ms x 2 x 91 routes (about 73 s) plus whatever the load difference adds.
+
+**Fold.** Removed the at-rest axe scans that `all-routes` already runs on the same page, in the same two schemes, with the same
+tag set (each was a scan right after load, nothing clicked): `button_group` "loaded", `spinner` "loaded" (both specs keep their
+behaviour tests), `calendar` "loaded", `date-picker` "loaded (popover closed)", `popover` "loaded (popover closed)", `toast`
+"loaded (no toast)", `carousel.spec.ts` "carousel component page (every variant mounted)", `carousel-paging-inert` "axe: clean with
+non-visible slides inert (main variant)", `carousel-rewind-autoplay` rewind, autoplay and indicators variant scans,
+`carousel-virtual` "virtual_loop and virtual_many" (its own comment said the all-variants scan already covered both; that scan now
+lives in `all-routes` `carousel`), and the first-slide half of `carousel-nav-opacity`'s hidden-arrow scan (the last-slide half is
+a state reached by clicking and stays). 12 tests removed (the 293 that remain in these 11 files pass), plus one scan. Kept: every
+open/focused/clicked state (`calendar` day focused, `date-picker` popover open, `popover` open and modal open, `toast` shown,
+`carousel-virtual` `virtual_loop_rtl` after key presses, `carousel-nav-opacity` last slide). The scans the fold removed were scoped
+`include` scans of one variant's frame; `all-routes` scans the whole `/component/carousel/` page (a superset of those frames).
+
+Before/after on the same build, 2 workers (test seconds, tests): button_group 14.8 s (5) -> 12.1 s (4); calendar 111.7 (23) ->
+90.1 (22); carousel 268.7 (59) -> 196.3 (58); carousel-nav-opacity 105.0 (18) -> 83.9 (18); carousel-paging-inert 87.4 (17) ->
+63.0 (16); carousel-rewind-autoplay 146.6 (27) -> 99.0 (24); carousel-virtual 113.8 (16) -> 88.5 (15); date-picker 343.2 (83) ->
+293.9 (82); popover 80.0 (24) -> 63.6 (23); spinner 9.5 (3) -> 4.6 (2); toast 27.8 (7) -> 19.8 (6): 1,308.5 s -> 1,014.7 s over the 11
+files (the old run took 11 m 30 s wall, the new 9 m 0 s; the machine was not equally loaded, `oracle/tier1-apg/carousel.spec.ts`,
+untouched, went 54.2 s -> 49.3 s in the same pair, so about 9 % of the gain is load). `playwright/durations.json` carries the
+changed files' entries scaled by their measured before/after ratio (its seconds come from another, differently loaded run).
+
+## 152b slice 3: the second colour scheme runs only the colour rules (2026-11-06)
+
+The structure rules of axe (landmarks, names, roles, ARIA, headings, lists) read the DOM, and the colour scheme changes only
+`data-theme` and CSS variables, so a second full scan in dark re-proves nothing. `all-routes.spec.ts` now runs every rule in
+light and, in dark, only the rules of axe's `cat.color` category that the repo's tag set selects (`colorRuleIds()` in
+`playwright/axe.ts`, read from axe-core's own metadata: `color-contrast` and `link-in-text-block`; `color-contrast-enhanced` is
+outside the tag set). The premise is checked per route instead of assumed: `structureSignature` hashes, for every element of
+every frame, tag, role, `aria-*` and name-bearing attributes, `hidden`/`inert`/`tabindex`, own text and the computed `display` and
+`visibility`, once before the dark scan and once before the light scan; when the two differ the route runs every rule in dark too
+and the test records an annotation saying so. A failing dark colour scan is reported under the same step as before.
+
+Not measured in this lane: the build slot was withdrawn (disk), so the spec is syntax-checked (`playwright test --list`, 93 tests)
+and the batch verifier's before/after of `all-routes` gives the seconds and `durations.json` entry. Expected from the slice 2
+profile: the dark scan is about half the axe step (about 250 of 500 s), and the colour rules are roughly 10-15 % of a scan.
 

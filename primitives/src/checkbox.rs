@@ -129,7 +129,7 @@ pub struct CheckboxProps {
 /// ## Styling
 ///
 /// The [`Checkbox`] component defines the following data attributes you can use to control styling:
-/// - `data-state`: The state of the checkbox. Possible values are `checked`, `indeterminate`, or `unchecked`.
+/// - `data-checked` / `data-unchecked` / `data-indeterminate`: Exactly one is present: the state of the control.
 /// - `data-checked` / `data-unchecked` / `data-indeterminate`: Present (empty) in the matching state, absent otherwise.
 /// - `data-disabled`: Indicates if the checkbox is disabled. values are `true` or `false`.
 /// - `data-readonly`: Present (empty) while the checkbox is read-only, absent otherwise. The
@@ -164,7 +164,7 @@ pub fn Checkbox(props: CheckboxProps) -> Element {
         aria_checked: checked().to_aria_checked(),
         aria_required: props.required,
         ..state_attrs::checked(checked()),
-        ..state_attrs::disabled(props.disabled),
+        ..state_attrs::presence(state_attrs::Flag::Disabled, props.disabled),
         aria_readonly: (props.read_only)().then_some("true"),
         ..state_attrs::readonly(props.read_only),
     });
@@ -249,7 +249,7 @@ pub fn Checkbox(props: CheckboxProps) -> Element {
 /// ## Styling
 ///
 /// The [`CheckboxIndicator`] component defines the following data attributes you can use to control styling:
-/// - `data-state`: The state of the checkbox. Possible values are `checked`, `indeterminate`, or `unchecked`.
+/// - `data-checked` / `data-unchecked` / `data-indeterminate`: Exactly one is present: the state of the control.
 /// - `data-checked` / `data-unchecked` / `data-indeterminate`: Present (empty) in the matching state, absent otherwise.
 /// - `data-disabled`: Indicates if the checkbox is disabled. values are `true` or `false`.
 #[component]
@@ -263,7 +263,7 @@ pub fn CheckboxIndicator(
 
     let owned = attributes!(span {
         ..state_attrs::checked(checked),
-        ..state_attrs::disabled(ctx.disabled),
+        ..state_attrs::presence(state_attrs::Flag::Disabled, ctx.disabled),
         ..state_attrs::readonly(ctx.read_only),
     });
     let merged = merge_attributes(vec![attributes, owned]);
@@ -338,6 +338,8 @@ fn BubbleInput(
         r#type: "checkbox",
         aria_hidden: "true",
         tabindex: "-1",
+        // Rust is the only writer of this mirror: the browser must not restore a form-state value into it.
+        autocomplete: crate::MIRROR_AUTOCOMPLETE,
         // The `checked` content attribute: the server HTML carries it (so a no-script form post
         // and the parser's `.defaultChecked` are right before hydration) and a client-created
         // input gets the live state from it, and every later change is written as the live property.

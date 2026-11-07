@@ -10,8 +10,8 @@ const LOAD_TIMEOUT = 20 * 60 * 1000;
 
 async function loadAccordion(page: Page) {
   await gotoHydrated(page, URL, { timeout: LOAD_TIMEOUT, waitUntil: 'networkidle' });
-  const accordionItems = page.locator("[data-open]").filter({ has: page.getByRole("button") });
-  await expect(accordionItems.first()).toHaveAttribute("data-disabled", "false", {
+  const accordionItems = page.locator(".dx-accordion-item").filter({ has: page.getByRole("button") });
+  await expect(accordionItems.first()).not.toHaveAttribute("data-disabled", {
     timeout: 30000,
   });
   return accordionItems;
@@ -20,7 +20,7 @@ async function loadAccordion(page: Page) {
 async function clickOpen(button: Locator, item: Locator) {
   await expect(button).toBeEnabled();
   await button.click();
-  await expect(item).toHaveAttribute("data-open", "true");
+  await expect(item).toHaveAttribute("data-open", "");
 }
 
 test("test", async ({ page }) => {
@@ -31,14 +31,14 @@ test("test", async ({ page }) => {
 
   const secondAccordionItem = accordionItems.nth(1);
   await clickOpen(buttons.nth(1), secondAccordionItem);
-  await expect(firstAccordionItem).toHaveAttribute("data-open", "false");
+  await expect(firstAccordionItem).not.toHaveAttribute("data-open");
 });
 
 test("keyboard navigation skips disabled items", async ({ page }) => {
   const accordionItems = await loadAccordion(page);
   const buttons = accordionItems.getByRole("button");
 
-  await expect(accordionItems.nth(2)).toHaveAttribute("data-disabled", "true");
+  await expect(accordionItems.nth(2)).toHaveAttribute("data-disabled", "");
   await expect(buttons.nth(2)).toBeDisabled();
 
   await buttons.nth(1).focus();
@@ -60,7 +60,7 @@ test("keyboard navigation skips disabled items", async ({ page }) => {
  * `AccordionContent` only mounts once an item starts opening
  * (`use_animated_open`), so a plain `transition` on `grid-template-rows`
  * never has an earlier frame to interpolate from: the brand-new element's
- * very first paint already has `data-open="true"`, and the panel snaps
+ * very first paint already has `data-open`, and the panel snaps
  * open instantly. The close direction needs no such care because there the
  * element already exists when `data-open` flips to `false`, so its
  * transition does have a prior frame.
@@ -207,11 +207,11 @@ test.describe("hidden_until_found", () => {
       await expect(trigger(name)).toHaveAttribute("aria-expanded", String(name === open));
       if (name === open) {
         await expect(panelOf(name)).not.toHaveAttribute("hidden", /.*/);
-        await expect(panelOf(name)).toHaveAttribute("data-open", "true");
+        await expect(panelOf(name)).toHaveAttribute("data-open", "");
       } else {
         // Closed again: its close animation finishes, then it is re-hidden but stays mounted.
         await expect(panelOf(name)).toHaveAttribute("hidden", "until-found", { timeout: 5000 });
-        await expect(panelOf(name)).toHaveAttribute("data-open", "false");
+        await expect(panelOf(name)).not.toHaveAttribute("data-open");
       }
     }
   }
@@ -233,7 +233,7 @@ test.describe("hidden_until_found", () => {
 
   test("a closed until-found panel at rest runs no animation", async ({ page }) => {
     await load(page);
-    // `data-open="false"` is also how a closed panel looks at rest; the close animation must be
+    // `data-closed` is also how a closed panel looks at rest; the close animation must be
     // keyed on `data-closing`, or every closed panel would play it on page load.
     expect(
       await page.evaluate(() =>
@@ -383,9 +383,9 @@ test.describe("allow_multiple_open", () => {
     const { item, trigger } = await load(page);
     await expect(trigger("Privacy & Security")).toHaveAttribute("aria-expanded", "false");
     await trigger("Privacy & Security").click();
-    await expect(item("Privacy & Security")).toHaveAttribute("data-open", "true");
+    await expect(item("Privacy & Security")).toHaveAttribute("data-open", "");
     await expect(trigger("Notification Settings")).toHaveAttribute("aria-expanded", "true");
-    await expect(item("Notification Settings")).toHaveAttribute("data-open", "true");
+    await expect(item("Notification Settings")).toHaveAttribute("data-open", "");
 
     await trigger("Billing & Subscription").click();
     for (const name of ["Notification Settings", "Privacy & Security", "Billing & Subscription"]) {
@@ -398,7 +398,7 @@ test.describe("allow_multiple_open", () => {
     await trigger("Privacy & Security").click();
     await expect(trigger("Privacy & Security")).toHaveAttribute("aria-expanded", "true");
     await trigger("Notification Settings").click();
-    await expect(item("Notification Settings")).toHaveAttribute("data-open", "false");
+    await expect(item("Notification Settings")).not.toHaveAttribute("data-open");
     await expect(trigger("Notification Settings")).toHaveAttribute("aria-expanded", "false");
     await expect(trigger("Privacy & Security")).toHaveAttribute("aria-expanded", "true");
   });
@@ -415,7 +415,7 @@ test("a default-open item renders its content with JavaScript off", async ({ bro
   const page = await ctx.newPage();
   await gotoPrerendered(page, `${BASE_URL}/component/accordion/`, { timeout: LOAD_TIMEOUT });
   const item = page.locator(".dx-accordion-item", { has: page.getByRole("button", { name: "Notification Settings", exact: true }) });
-  await expect(item).toHaveAttribute("data-open", "true");
+  await expect(item).toHaveAttribute("data-open", "");
   await expect(item.locator(".dx-accordion-content")).toContainText("Manage how you receive notifications");
   await ctx.close();
 });

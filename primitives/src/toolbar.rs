@@ -118,7 +118,7 @@ pub fn Toolbar(props: ToolbarProps) -> Element {
         // APG toolbar: a vertical toolbar says so (the role's implicit orientation is horizontal).
         aria_orientation: ctx.orientation(),
         "data-orientation": ctx.orientation(),
-        ..state_attrs::disabled((props.disabled)()),
+        ..state_attrs::presence(state_attrs::Flag::Disabled, (props.disabled)()),
         "data-direction": direction.as_str(),
     });
     let merged = merge_attributes(vec![props.attributes.clone(), owned]);
@@ -206,7 +206,7 @@ pub fn ToolbarButton(props: ToolbarButtonProps) -> Element {
     let defaults = attributes!(button { r#type: "button" });
     let owned = attributes!(button {
         tabindex: "0",
-        ..state_attrs::disabled(disabled()),
+        ..state_attrs::presence(state_attrs::Flag::Disabled, disabled()),
     });
     let merged = merge_attributes(vec![defaults, props.attributes.clone(), owned]);
 

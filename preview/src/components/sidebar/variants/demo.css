@@ -34,7 +34,7 @@
   transition: transform 200ms ease-out;
 }
 
-.dx-sidebar-menu-disclosure-button[data-open="true"] .dx-sidebar-chevron {
+.dx-sidebar-menu-disclosure-button[data-open] .dx-sidebar-chevron {
   transform: rotate(90deg);
 }
 

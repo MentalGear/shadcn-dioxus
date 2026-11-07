@@ -256,7 +256,7 @@
    source order. That scheme depends on Tailwind's centrally-controlled emit
    order and on every utility staying single-condition; neither invariant
    holds for hand-written compound selectors like this file's (this exact
-   rule already carries a `:not([data-disabled="true"])` clause that pushes
+   rule already carries a `:not([data-disabled])` clause that pushes
    its specificity to (0,4,0), tying or beating some state rules below by
    accident), so :where() is used instead -- it needs no such invariant. */
 
@@ -265,7 +265,7 @@
    half-strength muted is the lighter step the Button's own ghost hover takes, and today's hover has a
    rule of its own (below). */
 @media (hover: hover) and (pointer: fine) {
-    :where(.dx-calendar-grid-cell[data-month="current"]:not([data-disabled="true"]):hover) {
+    :where(.dx-calendar-grid-cell[data-month="current"]:not([data-disabled]):hover) {
         background-color: var(--light, var(--dx-muted))
             var(--dark, color-mix(in oklab, var(--dx-muted) 50%, transparent));
     }
@@ -280,20 +280,20 @@
 
 .dx-calendar-grid-cell[data-month="last"],
 .dx-calendar-grid-cell[data-month="next"],
-.dx-calendar-grid-cell[data-disabled="true"] {
+.dx-calendar-grid-cell[data-disabled] {
     color: var(--dx-muted-foreground);
     cursor: not-allowed;
 }
 
 /* A selected day of a neighbouring month (a range spilling over): the theme's selected-on-a-surface
    fill, not `--dx-accent`, which dark muted / accent ties with everything around it. */
-.dx-calendar-grid-cell[data-month="last"][data-selected="true"],
-.dx-calendar-grid-cell[data-month="next"][data-selected="true"] {
+.dx-calendar-grid-cell[data-month="last"][data-selected],
+.dx-calendar-grid-cell[data-month="next"][data-selected] {
     background-color: var(--dx-accent-selected);
     color: var(--dx-accent-selected-foreground);
 }
 
-.dx-calendar-grid-cell[data-month="current"][data-selected="true"] {
+.dx-calendar-grid-cell[data-month="current"][data-selected] {
     background-color: var(--dx-primary);
     color: var(--dx-primary-foreground);
 }
@@ -313,7 +313,7 @@
     padding-inline: 0;
 }
 
-/* Nova `day`: `[&:first-child[data-selected=true]_button]:rounded-l-(--cell-radius)` and the `:last-child`
+/* Nova `day`: `[&:first-child[data-selected]_button]:rounded-l-(--cell-radius)` and the `:last-child`
    twin -- an in-range cell at the end of a week rounds its outer edge. */
 .dx-calendar-grid-week td:first-child .dx-calendar-grid-cell[data-selection-between="true"],
 .dx-calendar-grid-week .dx-calendar-grid-weeknum + td .dx-calendar-grid-cell[data-selection-between="true"] {
@@ -370,14 +370,14 @@ td:has(.dx-calendar-grid-cell[data-selection-end="true"]) {
    clicking it -- selecting it does not teleport the mouse -- so ":hover" and "just-selected" are the
    common case, not an edge case (an active state on a selected date must
    win over the hover state, or it is not visible after a click). The generic hover rule
-   above is :where()-wrapped (specificity (0,0,0)), so the plain state rules -- [data-selected="true"],
+   above is :where()-wrapped (specificity (0,0,0)), so the plain state rules -- [data-selected],
    [data-selection-start/-between/-end], the [data-today="true"] one below -- outrank it by construction
    and none of them re-declares a colour for its own `:hover` (a re-declaration whose light and dark arms
    drift apart lets the selected pill vanish into the plain hover square in dark mode). Only the
    light-mode bold-on-hover nicety is worth keeping, and it is harmless at zero specificity since nothing
    else sets font-weight here. */
 @media (hover: hover) and (pointer: fine) {
-    :where(.dx-calendar-grid-cell[data-month="current"][data-selected="true"]:hover) {
+    :where(.dx-calendar-grid-cell[data-month="current"][data-selected]:hover) {
         font-weight: var(--light, 550) var(--dark, inherit);
     }
 }
@@ -389,7 +389,7 @@ td:has(.dx-calendar-grid-cell[data-selection-end="true"]) {
    rest fill and a step by construction, distinct from rest in both modes (checked by
    playwright/dark-surface-contrast.spec.ts, "calendar today cell hovered"). */
 .dx-calendar-grid-cell[data-month="current"][data-today="true"]:not(
-        [data-selected="true"]
+        [data-selected]
     ) {
     border-radius: var(--dx-calendar-cell-radius);
     background-color: var(--dx-muted);
@@ -398,8 +398,8 @@ td:has(.dx-calendar-grid-cell[data-selection-end="true"]) {
 
 @media (hover: hover) and (pointer: fine) {
     .dx-calendar-grid-cell[data-month="current"][data-today="true"]:not(
-            [data-selected="true"],
-            [data-disabled="true"]
+            [data-selected],
+            [data-disabled]
         ):hover {
         background-color: color-mix(in var(--dx-hover-mix-space), var(--dx-accent-selected), var(--dx-foreground) 6%);
     }
@@ -443,7 +443,7 @@ td:has(.dx-calendar-grid-cell[data-selection-end="true"]) {
 }
 
 /* Calendar states */
-.dx-calendar[data-disabled="true"] {
+.dx-calendar[data-disabled] {
     opacity: var(--dx-opacity-disabled);
     pointer-events: none;
 }
@@ -473,6 +473,12 @@ td:has(.dx-calendar-grid-cell[data-selection-end="true"]) {
 .dx-calendar-year-select-container:has(:focus-visible) {
     border-color: var(--dx-ring-color);
     box-shadow: var(--dx-ring-focus);
+}
+
+/* Zeroed with the focused select's ring (theme "Focus modality"). */
+.dx-calendar-month-select-container:has([data-dx-pointer-focus]),
+.dx-calendar-year-select-container:has([data-dx-pointer-focus]) {
+    --dx-ring-focus: 0 0 #0000;
 }
 
 .dx-calendar-month-select,

@@ -117,7 +117,7 @@ test.describe("motion gating", () => {
     const root = "#component-preview-frame-autoplay";
     const label = () =>
       page
-        .locator(`${root} [role="group"][aria-roledescription="slide"][data-selected="true"]`)
+        .locator(`${root} [role="group"][aria-roledescription="slide"][data-selected]`)
         .first()
         .getAttribute("aria-label");
     await expect.poll(label, { timeout: 5 * 60 * 1000 }).not.toBeNull();
@@ -324,10 +324,10 @@ test.describe("motion gating", () => {
       { page: "skeleton", html: '<div id="zz" class="dx-skeleton" data-dx-motion-key="zz1" style="height:1rem;width:5rem"></div>', target: "#zz" },
       {
         page: "progress",
-        html: '<div id="zz" class="dx-progress" data-state="indeterminate" data-dx-motion-key="zz2"><div class="dx-progress-indicator"></div></div>',
+        html: '<div id="zz" class="dx-progress" data-indeterminate="" data-dx-motion-key="zz2"><div class="dx-progress-indicator"></div></div>',
         target: "#zz .dx-progress-indicator",
       },
-      { page: "avatar", html: '<div id="zz" class="dx-avatar" data-state="loading" data-dx-motion-key="zz3" style="height:2rem;width:2rem"></div>', target: "#zz" },
+      { page: "avatar", html: '<div id="zz" class="dx-avatar" data-loading="" data-dx-motion-key="zz3" style="height:2rem;width:2rem"></div>', target: "#zz" },
     ];
     for (const c of cases) {
       await gotoHydrated(page, `${BASE_URL}/component/${c.page}/`, NAV);

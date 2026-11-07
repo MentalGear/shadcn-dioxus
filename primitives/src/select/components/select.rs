@@ -314,7 +314,7 @@ fn use_select_root(
 /// ## Styling
 ///
 /// The [`Select`] component defines the following data attributes you can use to control styling:
-/// - `data-state`: Indicates the current state of the select. Values are `open` or `closed`.
+/// - `data-open` / `data-closed`: Exactly one is present: whether this part is open.
 /// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
 #[component]
 pub fn Select<T: Clone + PartialEq + 'static>(props: SelectProps<T>) -> Element {
@@ -380,7 +380,7 @@ pub fn Select<T: Clone + PartialEq + 'static>(props: SelectProps<T>) -> Element 
 
     let owned = attributes!(div {
         ..state_attrs::open(open()),
-        ..state_attrs::disabled((props.disabled)()),
+        ..state_attrs::presence(state_attrs::Flag::Disabled, (props.disabled)()),
         "data-direction": (ctx.direction)().as_str(),
     });
     let merged = merge_attributes(vec![props.attributes.clone(), owned]);
@@ -417,6 +417,8 @@ pub fn Select<T: Clone + PartialEq + 'static>(props: SelectProps<T>) -> Element 
             disabled: (props.disabled)(),
             aria_hidden: "true",
             tabindex: "-1",
+            // Rust is the only writer of this mirror: the browser must not restore a form-state value into it.
+            autocomplete: crate::MIRROR_AUTOCOMPLETE,
             position: "absolute",
             pointer_events: "none",
             opacity: "0",
@@ -501,7 +503,7 @@ pub fn Select<T: Clone + PartialEq + 'static>(props: SelectProps<T>) -> Element 
 /// ## Styling
 ///
 /// The [`SelectMulti`] component defines the following data attributes you can use to control styling:
-/// - `data-state`: Indicates the current state of the select. Values are `open` or `closed`.
+/// - `data-open` / `data-closed`: Exactly one is present: whether this part is open.
 /// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
 #[component]
 pub fn SelectMulti<T: Clone + PartialEq + 'static>(props: SelectMultiProps<T>) -> Element {
@@ -579,7 +581,7 @@ pub fn SelectMulti<T: Clone + PartialEq + 'static>(props: SelectMultiProps<T>) -
 
     let owned = attributes!(div {
         ..state_attrs::open(open()),
-        ..state_attrs::disabled((props.disabled)()),
+        ..state_attrs::presence(state_attrs::Flag::Disabled, (props.disabled)()),
         "data-direction": (ctx.direction)().as_str(),
     });
     let merged = merge_attributes(vec![props.attributes.clone(), owned]);
@@ -605,6 +607,8 @@ pub fn SelectMulti<T: Clone + PartialEq + 'static>(props: SelectMultiProps<T>) -
             disabled: (props.disabled)(),
             aria_hidden: "true",
             tabindex: "-1",
+            // Rust is the only writer of this mirror: the browser must not restore a form-state value into it.
+            autocomplete: crate::MIRROR_AUTOCOMPLETE,
             position: "absolute",
             pointer_events: "none",
             opacity: "0",

@@ -44,7 +44,7 @@ served below a base path, prefix each `href` with it yourself.
 ## Open on hover, or click only
 
 By default a trigger opens its panel when the pointer rests on it for a
-moment (150 ms), and the panel closes again when the pointer leaves the
+moment (50 ms), and the panel closes again when the pointer leaves the
 trigger and the panel. Pass `open_on_hover: false` to the `NavigationMenu` for
 **click activation** instead:
 
@@ -96,7 +96,7 @@ Opening content slides in over `--dx-motion-duration-slow` and out over `--dx-mo
 
 `NavigationMenuIndicator` is shadcn's optional arrow under the open item's trigger. Put it inside the
 `NavigationMenuList`, after the items. It is decorative (`aria-hidden`), fades in while an item is open
-(`data-state="visible"`), and slides to the new trigger when the open item changes.
+(`data-open`), and slides to the new trigger when the open item changes.
 
 ```rust
 NavigationMenuList {

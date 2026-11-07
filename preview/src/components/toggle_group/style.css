@@ -177,7 +177,7 @@
 
 /* dev-docs/backlog.md row 89: same construction as `toggle/style.css`'s
    identical fix -- see that file's own comment for the full writeup.
-   `:hover` and `[data-state="on"]` tie at (0,2,0) on top of
+   `:hover` and `[aria-pressed="true"]` tie at (0,2,0) on top of
    `.dx-toggle-group-item`, broken only by source order (an ON item
    keeps its `on` background while hovered, in both themes).
    `:where(:hover)` makes that unconditional instead of order-dependent.
@@ -199,17 +199,17 @@
 
 /* Pressed: the hover surface pushed 15% toward the ink, so it follows a preset
  * and always differs from hover -- see `toggle/style.css` for why. */
-.dx-toggle-group-item[data-state="on"] {
+.dx-toggle-group-item[aria-pressed="true"] {
   background-color: color-mix(in var(--dx-hover-mix-space), var(--dx-accent-tint), var(--dx-tint-step-ink) 15%);
   color: var(--dx-foreground);
 }
 
 /* Disabled: Nova's `disabled:pointer-events-none disabled:opacity-50`, per
  * item (a group-level `disabled` reaches every item as its own `disabled`
- * attribute and `data-disabled="true"`). Items are `.dx-toggle-group-item`, not
+ * attribute and `data-disabled`). Items are `.dx-toggle-group-item`, not
  * `.dx-toggle`, so `toggle/style.css`'s rule does not cover them. */
 .dx-toggle-group-item:disabled,
-.dx-toggle-group-item[data-disabled="true"] {
+.dx-toggle-group-item[data-disabled] {
   opacity: var(--dx-opacity-disabled);
   pointer-events: none;
 }

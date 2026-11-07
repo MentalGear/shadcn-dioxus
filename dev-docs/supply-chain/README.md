@@ -89,7 +89,7 @@ requires every `enforced`/`manual` path to exist and every `planned` script to s
 | C06 | A component's directory, manifest and the crates its sources name are complete: every external crate a component's Rust files use is in `cargoDependencies` of the component or its `componentDependencies` closure | T8 T4: an install that needs a crate nobody declared, so the declared set understates what compiles | `scripts/check-installed-paths.sh` | `preview/src/components/*/component.json`, `component.json` | run-gates | enforced | Specific to the `dx components` layout; copy only with that layout |
 | C07 | Generated JS is committed with a manifest of sha256 sums (source `.ts` and output `.js`); edit of either side without a rebuild is red; with the recorded `bun` version the gate also rebuilds and compares bytes. `dioxus-primitives` has no `build.rs` and no bundler crate runs in a user's build | T5 T2: drift between source and shipped artifact; a build-time code runner in every consumer's build | `scripts/check-js-bundle.sh`, `scripts/build-js-bundle.sh` | `primitives/src/js/bundle.manifest` | run-gates | enforced | Copy both scripts; set the two directories at the top and record your bundler version |
 | C08 | Every spelling of the registry URL is the one constant: bare-name `componentDependencies` are rejected (dx resolves them in its default registry), `dioxus-primitives` entries carry the registry `git`, README, CLI and starter template agree | T7: an install silently reading upstream's registry or crate | `scripts/check-registry-url.sh` | `preview/src/main.rs`, `cli/src/registry.rs`, `templates/starter/Cargo.toml.liquid`, `templates/starter/Dioxus.toml` | run-gates | enforced | Only if you publish a `dx components` registry; edit the constant's location |
-| C09 | No JS dependency may run an install script: `onlyBuiltDependencies: []` (pnpm 10 runs no dependency lifecycle scripts unless listed) | T2: a malicious `postinstall` | none (pnpm itself) | `playwright/pnpm-workspace.yaml`, `preview/pnpm-workspace.yaml`, `scripts/codegraph/pnpm-workspace.yaml` | pnpm | enforced | Copy the line into your `pnpm-workspace.yaml`; pnpm 10 or newer |
+| C09 | No JS dependency may run an install script: `onlyBuiltDependencies: []` (pnpm 10 runs no dependency lifecycle scripts unless listed) | T2: a malicious `postinstall` | none (pnpm itself) | `playwright/pnpm-workspace.yaml`, `preview/pnpm-workspace.yaml`, `scripts/codegraph/pnpm-workspace.yaml`, `scripts/ts-tools/pnpm-workspace.yaml` | pnpm | enforced | Copy the line into your `pnpm-workspace.yaml`; pnpm 10 or newer |
 | C10 | Node dependencies install from the committed lock only: `pnpm install --frozen-lockfile`, never `add`/`update`/plain `install`; the session bootstrap does exactly that | T1 T3: a lock-rewriting install pulling a different build | `scripts/session-setup.sh` | `playwright/pnpm-lock.yaml`, `preview/pnpm-lock.yaml` | session-start | enforced | Copy the rule and the setup function; the rule is in `CLAUDE.md`, and no gate detects a lock-rewriting install made by hand |
 | C11 | A throwaway `file://` registry copy of the tree, a starter app with no crates but `dioxus`, `dx components add` of every component, then `cargo check` | T8 T7: what users compile differs from what we tested; a manifest that omits a crate | `scripts/registry-install-smoke.sh` | `templates/starter/Cargo.toml.liquid` | manual | manual | Copy if you ship an installable registry; run before merging any manifest change; needs about 6 GB |
 | C12 | Release pin: `scripts/stamp-release-rev.sh <sha>` writes one `rev` into every `dioxus-primitives` entry and the starter, refuses a commit whose primitives differ from the tree, `--check` reports disagreement | T11 T7: registry sources and primitives crate resolving to different commits | `scripts/stamp-release-rev.sh` | `preview/src/components/*/component.json`, `templates/starter/Dioxus.toml` | manual (release step) | manual | Copy if you publish git-sourced crates; adjust the stamped file list |
@@ -126,6 +126,16 @@ cargo-installed tools ([`research/dependency-scanners.md`](../research/dependenc
 - **D6 Exceptions.** Only the owner grants one. It is written into the row that needs it with a reason and an end date, as a
   `minimumReleaseAgeExclude` entry is.
 
+## Pinned dev tools, owner-approved (C23 evidence)
+
+| Package | Pin | Where | Evidence (2026-11-06) |
+|---|---|---|---|
+| `cytoscape` | 3.34.3 | `scripts/codegraph/package.json` | [row 486](../backlog/486-code-graph-explorer-tools-codegraph.md) |
+| `typescript` | 6.0.3 (dev dependency) | `scripts/ts-tools/package.json`, `pnpm-lock.yaml`; the module path is `scripts/lib/typescript-module.txt` | D1 published 2026-04-16 (204 days); D2 first release 2012-10-01; D3 413,436,863 npm downloads last week 2026-10-30..11-05 (api.npmjs.org; stars unreadable here, downloads stand-in, unverified); D4 latest line is 7.0.2 (2026-07-08), not deprecated; D5 exact pin, Apache-2.0, no dependencies, no install script, installed with `onlyBuiltDependencies: []` |
+
+`typescript` is 6.0.3 and not the newer 7.0.2 (2026-07-08, 121 days, also passes D1-D5) because 7.x is the native compiler: its
+package has no `main` and no compiler API (`createProgram`), which `scripts/ts-scan/scan.mjs` needs; 6.x is the last line that has it.
+
 ## Decisions recorded
 
 - **No vendoring (`cargo vendor`), decided 2026-10-23** ([row 371](../backlog/371-dependency-evaluation-keep-lift-drop.md)). Vendored
@@ -138,6 +148,11 @@ cargo-installed tools ([`research/dependency-scanners.md`](../research/dependenc
   tool; vet adds exact-version trust that deny's name-level allowlist cannot. `cargo-audit` is a strict subset of deny's
   advisories check, so not both. OSV-Scanner, cargo-geiger, cargo-crev, Socket, Dependabot and Renovate are not in the gate
   list, with reasons per tool in [`research/dependency-scanners.md`](../research/dependency-scanners.md).
+- **Lifted code is recorded here, one bullet per lift (row 371).** `preview/stylelint-idiomatic-order.yaml` is the
+  property-order list of `stylelint-config-idiomatic-order@10.0.0` (MIT, 2026-11-06, owner's decision on the C23 failure:
+  last release 2023-12-09). It carries `lifted-from: stylelint-config-idiomatic-order@10.0.0` and the MIT notice at its top,
+  and is YAML, not JavaScript, so it adds nothing to the hand-written JS count of `check-js-volume.sh`. `stylelint-order`
+  stays a dev dependency. Proof: the resolved stylelint config and the output over the repo's CSS are identical before and after.
 - **Gates are offline and deterministic.** Facts that change with the calendar (new advisories, yanks, publisher changes)
   live in a separate networked refresh step that writes a committed snapshot; the gate reads the snapshot (C18).
 - **Ratchets, not budgets.** A budget with headroom creeps; a baseline that may only shrink, with reasoned allowlists and

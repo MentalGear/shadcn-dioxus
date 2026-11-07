@@ -25,7 +25,7 @@
  * keyboard user must Tab from the top of the document to get back to where
  * they were.
  *
- * Why a separate oracle: asserting `data-state="closed"` after Escape never shows
+ * Why a separate oracle: asserting `data-closed` after Escape never shows
  * *where focus went*, so a focus-return defect is invisible to the component specs.
  */
 
@@ -61,12 +61,12 @@ test("DropdownMenu returns focus to its trigger on Escape", async ({ page }) => 
 
   const trigger = demoRole(page, "button");
   await trigger.click();
-  await expect(trigger).toHaveAttribute("data-state", "open");
+  await expect(trigger).toHaveAttribute("data-open", "");
 
   // Move focus onto an item, as a keyboard user would.
   await page.keyboard.press("ArrowDown");
   await page.keyboard.press("Escape");
-  await expect(trigger).toHaveAttribute("data-state", "closed");
+  await expect(trigger).toHaveAttribute("data-closed", "");
 
   expect(
     await focusReport(page),
@@ -84,7 +84,7 @@ test("Select returns focus to its trigger on Escape", async ({ page }) => {
   // does not match the trigger.
   const trigger = demoRole(page, "combobox");
   await trigger.click();
-  await expect(page.getByRole("listbox")).toHaveAttribute("data-state", "open");
+  await expect(page.getByRole("listbox")).toHaveAttribute("data-open", "");
 
   await page.keyboard.press("ArrowDown");
   await page.keyboard.press("Escape");
@@ -102,7 +102,7 @@ test("Menubar returns focus to its menu item on Escape", async ({ page }) => {
   const fileMenu = demoRole(page, "menuitem", 0);
   await fileMenu.click();
   const fileContent = page.locator(".dx-menubar-content");
-  await expect(fileContent).toHaveAttribute("data-state", "open");
+  await expect(fileContent).toHaveAttribute("data-open", "");
 
   await page.keyboard.press("ArrowDown");
   await page.keyboard.press("Escape");
@@ -119,7 +119,7 @@ test("ContextMenu returns focus to its trigger on Escape", async ({ page }) => {
 
   const trigger = demoRole(page, "button");
   await trigger.click({ button: "right" });
-  await expect(page.getByRole("menu")).toHaveAttribute("data-state", "open");
+  await expect(page.getByRole("menu")).toHaveAttribute("data-open", "");
 
   await page.keyboard.press("ArrowDown");
   await page.keyboard.press("Escape");
@@ -159,7 +159,7 @@ test("Menubar returns focus to its trigger after a pointer selection", async ({ 
   const fileMenu = demoRole(page, "menuitem", 0);
   await fileMenu.click();
   const fileContent = page.locator(".dx-menubar-content");
-  await expect(fileContent).toHaveAttribute("data-state", "open");
+  await expect(fileContent).toHaveAttribute("data-open", "");
 
   await fileContent.getByRole("menuitem").nth(2).click(); // menubar File menu: New, Open (disabled), Save
   await expect(fileContent).toHaveCount(0);
@@ -176,10 +176,10 @@ test("DropdownMenu returns focus to its trigger after a pointer selection", asyn
 
   const trigger = demoRole(page, "button");
   await trigger.click();
-  await expect(trigger).toHaveAttribute("data-state", "open");
+  await expect(trigger).toHaveAttribute("data-open", "");
 
   await popupItem(page, "menu", "menuitem", 2).click(); // dropdown_menu / context_menu demos: Edit, Undo (disabled), Duplicate, ...
-  await expect(trigger).toHaveAttribute("data-state", "closed");
+  await expect(trigger).toHaveAttribute("data-closed", "");
 
   expect(
     await focusReport(page),
@@ -193,7 +193,7 @@ test("ContextMenu returns focus to its trigger after a pointer selection", async
 
   const trigger = demoRole(page, "button");
   await trigger.click({ button: "right" });
-  await expect(page.getByRole("menu")).toHaveAttribute("data-state", "open");
+  await expect(page.getByRole("menu")).toHaveAttribute("data-open", "");
 
   await popupItem(page, "menu", "menuitem", 2).click(); // dropdown_menu / context_menu demos: Edit, Undo (disabled), Duplicate, ...
   await expect(page.getByRole("menu")).toHaveCount(0);

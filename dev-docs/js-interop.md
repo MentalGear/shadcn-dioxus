@@ -11,18 +11,22 @@ when the rule you need depends on something that is not.
 
 ## Landed and planned
 
-| | on main | on `lane/js-bridge-3-0` (lane 3.0; not on main until its batch merges) | planned (row 434 step 3) |
-|---|---|---|---|
-| `check-js-volume` | counts per file: eval sinks (`document::eval`, `use ... eval`, `eval(`; **not** a function pointer through a module alias such as `dd::eval`), `document::*`, `Script`/`script {`/`create_script`, `dangerous_inner_html`, `web_sys`/`js_sys`/`wasm_bindgen`/`gloo_utils`/`evaluate_script`/`inline_js`/`srcdoc` (**not** `gloo_events`), JS in Rust strings, every tracked `.js`/`.ts` line (**including** `.d.ts`, `*.gen.ts` and `ts-test`), `JsListeners::install`, inline `<script>` bytes. Universe: `.rs`, `.js`/`.ts` and `.html` files, **not** `.md` or `.svg`. A rise fails against the baseline and against the merge base's; a raise is self-service with a `# raised:` note and prints under `RATCHET RAISES` | the same script and rules; its baseline gains rows for the bridge | the grant rule (a raise needs an open row with `js-grant:` at the merge base), clippy `disallowed_methods` for every sink, coverage of function pointers, `gloo_events`, `.md` and `.svg`, counting what ships, the legacy freeze for scripts and sinks (`js-fix:` grant for a bug fix) |
-| older gates | `check-js-bundle`, `check-js-listeners`, `check-uncleared-intervals`, `check-blocking-scroll-listeners`, `check-theme-mode-writer`, `check-open-focus` | the same | their JS halves retire with the last legacy script |
-| `check-bridge-behaviours` | none | kind parity with the generated file, behaviour modules pure, budgets (held in a dict inside the script), one place for cancel and frames, closed surface, eval only inside `bridge/`, `Program` closed and sealed, no gesture verbs | `Decision<E>` effect typing and a DOM-less compile for `ts/behaviours/`, a witness test per effect at each `site!` (item 0.3 builds the checks over those artefacts), the lease check on the generated file, single-member-call verb rows, `FORBIDDEN_VERBS` (item 0.1 owns the list; derived from the slot table), `REDUCERS`, budgets in a TSV, `check-hot-events`, the clippy ban on the `DataTransfer` setters, the native-slot sink scan (an rsx and `Attribute` scan with a shrink-only baseline, not clippy: rsx attributes expand to consts) |
-| the bridge | `primitives/src/bridge/` does not exist | closed verbs over closed tables; `Program { Serve, Pump, Legacy(&str) }`, sealed to `bridge/`; one FIFO pump for element operations; latest-wins streams; an epoch on every install and a default lease on every non-passive behaviour; one test fixture; the `__dxBridgeDelayFrames` harness with the stuck setting `"never"` | `Program::Frozen`, the rest of the verb rows (each added by the first row that needs it), the closed `REDUCERS` table |
-| named behaviours | none | `Behaviour::Fixture`, a test fixture, only | `otpFilter` (proof port A), `scrollLock`, `dropAnywhere`, `pan`, `settle`, `openFocus`, `stickToEnd`, `scrollOwner` (the one-shot kind first), `labelClick`, and `hotkey` (built by the first of 3.OV and 3.GS that opens, only if its witness is red or a UA-reserved shortcut needs it); `roving` only if the phase-0 focus-write witness is red; `scrollStep`, `wheelBand`, `pan`'s page-side output variants and the `release` effect are on the plan's exits list. The executor is a bridge internal, not an entry |
-| the executor (the reconciled kinds: popover and modal open, `indeterminate`, `defaultChecked`, then `value`, `checked`, `selected`, `hidden=until-found`) | none | a comment seam (`pageObserver`) | item 0.4 builds the one page executor for every reconciled kind, the native slot kinds included (round 6: no per-kind choice and no Rust `transaction` branch), and owns the hook spreads; item 0.6 builds the witness harness |
-| the order runtime (epoch rule, each owner's own rsx handler as the vdom carrier and a fallback port only for `beforematch`, one inbound pump, slot table keyed `(scope, nonce)` and stable across hydration, focus owner, `scrollOwner`) | none (the as-built `Epoch::next` is one process-global Rust counter and cannot lose to the page) | the same | item 0.7 (pump, slot table, per-slot epochs, gesture epoch, focus owner, the one-shot scroll classifier), then the first row that consumes an owner builds it (`scrollOwner` in 3.VS) |
-| the paint-safe gate, the boot probe | none | none | lane 3.PL |
-| the pre-wasm class | `PREPAINT_JS` and the modality writer, copies kept identical by `check-theme-mode-writer` and `check-open-focus`; their baseline rows carry no reason and `PREPAINT_JS` has inline `listener-ok` markers | the same | one `.ts` generates the copies and the writer becomes a bridge-load internal (lane 3.PW); reasoned allowlist rows, no inline marker |
-| hooks that call scripts | `use_popover_sync`, `use_popover_shown_while_mounted`, `use_dialog_open_driver`, `use_global_keydown_listener`, `use_dismiss`, `use_anchor_position_fallback`, `use_scroll_lock`, `use_move_interaction`, `use_js_listeners` | the same | each is ported by its lane; calling one adds nothing to the baseline |
+| | on main | planned (row 434 step 3) |
+| --- | --- | --- |
+| `check-js-volume` | counts per file: eval sinks (`document::eval`, `use ... eval`, `eval(`; **not** a function pointer through a module alias such as `dd::eval`), `document::*`, `Script`/`script {`/`create_script`, `dangerous_inner_html`, `web_sys`/`js_sys`/`wasm_bindgen`/`gloo_utils`/`evaluate_script`/`inline_js`/`srcdoc` (**not** `gloo_events`), JS in Rust strings, every tracked `.js`/`.ts` line (**including** `.d.ts`, `*.gen.ts` and `ts-test`), `JsListeners::install`, inline `<script>` bytes. Universe: `.rs`, `.js`/`.ts` and `.html` files, **not** `.md` or `.svg`. A rise fails against the baseline and against the merge base's; a raise passes only against a grant row at the base (see "The baseline") and prints under `RATCHET RAISES`. Its baseline carries the bridge's rows | clippy `disallowed_methods` for every sink, coverage of function pointers, `gloo_events`, `.md` and `.svg`, counting what ships, the legacy freeze for scripts and sinks (`js-fix:` grant for a bug fix) |
+| `check-ts-scan` | the TypeScript compiler-API scan of `primitives/src/ts/**` (`scripts/ts-scan/scan.mjs`; its checker resolves types, so an `any` receiver does not hide a shape): computed access with a non-literal key outside `own()`, string sinks, dynamic-key `Reflect`/`Object` calls, `.constructor`, the verb-row cap, `any`/`as any` against a shrink-only baseline, and under `ts/behaviours/` the hard rules (free-identifier allowlist, banned members, import allowlist) | `Decision<E>` effect typing and the DOM-less compile |
+| `check-native-slots` | every Rust site that writes `value`, `checked`, `selected`, `open` or `hidden` on a page-writable element through an rsx attribute, `Attribute::new` or `attributes!`, held in a shrink-only per-file baseline; a new site is red | the mount-frozen helper, after which sites leave the baseline |
+| `check-installed-paths` (sink arm) | an installed component contains no sink: `scripts/check-installed-paths.sinks.tsv` names the banned shapes | |
+| `check-ratchet-grant` | the self-tests of the grant rule of `scripts/lib/ratchet.py` and of the platform-rule TSV reader `scripts/lib/platform_rules.py` (`primitives/conformance/platform-rules.tsv`) | the platform rules' consumers |
+| older gates | `check-js-bundle`, `check-js-listeners`, `check-uncleared-intervals`, `check-blocking-scroll-listeners`, `check-theme-mode-writer`, `check-open-focus` | their JS halves retire with the last legacy script |
+| `check-bridge-behaviours` | kind parity with the generated file, behaviour modules pure, budgets (held in a dict inside the script), one place for cancel and frames, closed surface, eval only inside `bridge/`, `Program` closed and sealed, no gesture verbs | `Decision<E>` effect typing and a DOM-less compile for `ts/behaviours/`, a witness test per effect at each `site!` (item 0.3 builds the checks over those artefacts), the lease check on the generated file, `FORBIDDEN_VERBS` (item 0.1 owns the list; derived from the slot table), `REDUCERS`, budgets in a TSV, `check-hot-events`, the clippy ban on the `DataTransfer` setters |
+| the bridge | closed verbs over closed tables; `Program { Serve, Pump, Legacy(&str) }`, sealed to `bridge/`; one FIFO pump for element operations; latest-wins streams; an epoch on every install and a default lease on every non-passive behaviour; one test fixture; the `__dxBridgeDelayFrames` harness with the stuck setting `"never"` | `Program::Frozen`, the rest of the verb rows (each added by the first row that needs it), the closed `REDUCERS` table |
+| named behaviours | `Behaviour::Fixture`, a test fixture, only | `otpFilter` (proof port A), `scrollLock`, `dropAnywhere`, `pan`, `settle`, `openFocus`, `stickToEnd`, `scrollOwner` (the one-shot kind first), `labelClick`, and `hotkey` (built by the first of 3.OV and 3.GS that opens, only if its witness is red or a UA-reserved shortcut needs it); `roving` only if the phase-0 focus-write witness is red; `scrollStep`, `wheelBand`, `pan`'s page-side output variants and the `release` effect are on the plan's exits list. The executor is a bridge internal, not an entry |
+| the executor (the reconciled kinds: popover and modal open, `indeterminate`, `defaultChecked`, then `value`, `checked`, `selected`, `hidden=until-found`) | a comment seam (`pageObserver`) | item 0.4 builds the one page executor for every reconciled kind, the native slot kinds included (round 6: no per-kind choice and no Rust `transaction` branch), and owns the hook spreads; item 0.6 builds the witness harness |
+| the order runtime (epoch rule, each owner's own rsx handler as the vdom carrier and a fallback port only for `beforematch`, one inbound pump, slot table keyed `(scope, nonce)` and stable across hydration, focus owner, `scrollOwner`) | none (the as-built `Epoch::next` is one process-global Rust counter and cannot lose to the page) | item 0.7 (pump, slot table, per-slot epochs, gesture epoch, focus owner, the one-shot scroll classifier), then the first row that consumes an owner builds it (`scrollOwner` in 3.VS) |
+| the paint-safe gate, the boot probe | none | lane 3.PL |
+| the pre-wasm class | `PREPAINT_JS` and the modality writer, copies kept identical by `check-theme-mode-writer` and `check-open-focus`; their baseline rows carry no reason and `PREPAINT_JS` has inline `listener-ok` markers | one `.ts` generates the copies and the writer becomes a bridge-load internal (lane 3.PW); reasoned allowlist rows, no inline marker |
+| hooks that call scripts | `use_popover_sync`, `use_popover_shown_while_mounted`, `use_dialog_open_driver`, `use_global_keydown_listener`, `use_dismiss`, `use_anchor_position_fallback`, `use_scroll_lock`, `use_move_interaction`, `use_js_listeners` | each is ported by its lane; calling one adds nothing to the baseline |
 
 **Scope 2, approved by the owner 2026-10-26** (root doc section 5.0): the construct (the sink, the
 ratchet, the deadline rule, admission, a legacy freeze, two proof ports: `otpFilter` and the executor) comes first; every other port is then a backlog
@@ -161,7 +165,7 @@ effect a site did not declare (no per-site typestate and no coverage hook: round
 internals (the modality writer, the one page executor, its exit wait, G's watchdog) are admitted as wholes by the reds they
 already have, not per kind.
 
-Planned registry (each is added by the row that ports its block; **today none exists but a test fixture on lane 3.0**):
+Planned registry (each is added by the row that ports its block; **today none exists but a test fixture**):
 `otpFilter` (the proof port), `scrollLock`, `dropAnywhere`, `pan`, `settle`, `openFocus`, `stickToEnd`, `scrollOwner` (the
 page-side half of every Rust-written scroller, the one-shot kind first: it classifies the user's input by the realized
 default action into transitions and applies `based_on` writes) and `labelClick` (the label's double-click default action; its user-select half
@@ -178,9 +182,9 @@ the behaviour moves to an rsx handler; a test says so.
 A stateful heuristic over a stream (a trackpad classifier, a scroll mode machine) is **not** a behaviour: it is Rust over
 `listen`/`sample`, because it may answer late.
 
-## The bridge (lane 3.0's branch; not on main)
+## The bridge
 
-It lives in `primitives/src/bridge/` (`dioxus_primitives::bridge`) on `origin/lane/js-bridge-3-0`. Rust sends closed enums;
+It lives in `primitives/src/bridge/` (`dioxus_primitives::bridge`). Rust sends closed enums;
 the page maps each through a closed own-property table with a receiver kind per row (`EVENTS`, `FIELD_GETTERS`, `METHODS`,
 `PROPS` in `ts/bridge.ts`); a name outside a table is an error, never a property read. A verb row is **one member call or one
 member read, plus at most one guard `if`**; anything bigger is a behaviour. There are no gesture verbs and no `commit`:
@@ -233,7 +237,7 @@ Web is the tested target; every desktop claim in the plan reads "web-verified; d
 
 ## What is forbidden, and which gate says so
 
-"Landed" means the gate exists on main; the first table says what lane 3.0's branch adds.
+"Landed" means the gate exists on main; the first table says what is planned.
 
 | Forbidden | Gate | Instead |
 |---|---|---|
@@ -246,13 +250,13 @@ Web is the tested target; every desktop claim in the plan reads "web-verified; d
 | a vdom `onscroll`, `onresize`, `onpointermove`, `onmousemove`, `onwheel`, `ontouchmove`, `ondrag`, `ondragover` or `onmounted` handler | `check-hot-events` (**planned**; per event name, app-wide, shrink-only baseline) | `listen`/`observe`/`sample` |
 | an rsx `prevent_default` on a payload event (`submit`, `input`, `change`, `paste`, `drop`) | the `check-hot-events` family (**planned**) | a declarative cancel or a page-side behaviour |
 | a `DataTransfer` setter in an rsx handler | clippy `disallowed_methods` (**planned**; three sites ship today) | `dropAnywhere`'s `dragSource` half |
-| a plain `focus`, `setPointerCapture` or `commit` verb | `check-bridge-behaviours` on lane 3.0's branch (landed there) | a behaviour's effect |
+| a plain `focus`, `setPointerCapture` or `commit` verb | `check-bridge-behaviours` (landed) | a behaviour's effect |
 | a verb that writes a slot (`showPopover`, `showModal`, popover hide or toggle, close, scroll, selection, blur) outside its owner or the executor | `FORBIDDEN_VERBS` in `check-bridge-behaviours` (**planned**; derived from the slot table) | the owner operation or the executor |
-| a vdom write of a native slot (`value`, `checked`, `selected`, `indeterminate`) through an rsx attribute, `Attribute::new`, `attributes!` or a caller spread; more than one owner for `checked` or `indeterminate` on an element | the native-slot sink scan (**planned**; shrink-only baseline) | the owner write over the bridge, with the mount-frozen helper for the first render |
+| a vdom write of a native slot (`value`, `checked`, `selected`, `indeterminate`) through an rsx attribute, `Attribute::new`, `attributes!` or a caller spread; more than one owner for `checked` or `indeterminate` on an element | `check-native-slots` (landed; shrink-only baseline) | the owner write over the bridge, with the mount-frozen helper for the first render |
 | a `MountedData` write (`set_focus`, `scroll_to`) | **only if** item 0.6's focus-write witness is red: then clippy `disallowed_methods` with per-site `#[expect]`; otherwise not banned (**planned**) | the focus owner and the slot's `scrollOwner`; `MountedData` for reads |
-| `preventDefault`, `stopPropagation`, `requestAnimationFrame` or an observer in a `ts/` file outside `bridge.ts` and `ts/behaviours/`; a computed member access or string-form `setTimeout`/`Function` in `ts/` | `check-bridge-behaviours` (identifier part on lane 3.0's branch; the compiler-API scan is **planned**) | a named behaviour or the bridge |
-| a behaviour module that reads the DOM, a timer or the clock; a verb row with more than one member call and guard; an effect with no witness; a `prevent`/`stop` variant with no lease; a Rust variant without its module, bundle, generated kind or vector | `check-bridge-behaviours` (purity, parity and vectors on lane 3.0's branch; the rest **planned**) | keep `decide` pure; go through the closed tables |
-| a hand-edited `js/*.js` or `behaviours.gen.ts`, or a `.ts` edit without `scripts/build-js-bundle.sh` | `check-js-bundle`; `cargo test` (`the_generated_ts_is_current`, on lane 3.0's branch) | rebuild; `DX_BLESS=1 cargo test -p dioxus-primitives behaviours` |
+| `preventDefault`, `stopPropagation`, `requestAnimationFrame` or an observer in a `ts/` file outside `bridge.ts` and `ts/behaviours/`; a computed member access or string-form `setTimeout`/`Function` in `ts/` | `check-bridge-behaviours` (identifier part; landed) and `check-ts-scan` (compiler-API scan; landed) | a named behaviour or the bridge |
+| a behaviour module that reads the DOM, a timer or the clock; a verb row with more than one member call and guard; an effect with no witness; a `prevent`/`stop` variant with no lease; a Rust variant without its module, bundle, generated kind or vector | `check-bridge-behaviours` (purity, parity and vectors; landed; the rest **planned**) | keep `decide` pure; go through the closed tables |
+| a hand-edited `js/*.js` or `behaviours.gen.ts`, or a `.ts` edit without `scripts/build-js-bundle.sh` | `check-js-bundle`; `cargo test` (`the_generated_ts_is_current`) | rebuild; `DX_BLESS=1 cargo test -p dioxus-primitives behaviours` |
 | a raw `addEventListener`, an uncleared interval, a blocking wheel listener in a script | `check-js-listeners`, `check-uncleared-intervals`, `check-blocking-scroll-listeners` (landed; retire when the last legacy script goes) | `listen`; Rust timers |
 | a comment that calls `document::eval` the crate's pattern | `check-js-volume` (`comment_eval`; landed) | link this page |
 
@@ -261,10 +265,7 @@ Web is the tested target; every desktop claim in the plan reads "web-verified; d
 `scripts/check-js-volume.baseline.tsv` holds one row per file with a non-zero count. A port lowers its own file's row and
 runs `scripts/check-js-volume.sh --update-baseline`; rows belong to files, so lanes that lower different files merge
 cleanly. Your report quotes `scripts/check-js-volume.sh --report` before and after. A rise fails, and a baseline edited to
-match is compared with the baseline at the merge base. **Today** a raise passes with a note on the baseline row and prints
-under `RATCHET RAISES`; **planned:** a raise passes only against a grant row that exists at the merge base (a backlog row,
-open, whose front matter says `js-grant: <column>=<n>`), a lane cannot grant itself, and a new behaviour likewise needs a row
-at the merge base with `adds: [<kind>]`; citing the umbrella row 434 does not count. If you think you must raise, say so in
+match is compared with the baseline at the merge base. A raise passes only against a grant row: `# raised: row N` in the baseline row, where row N exists and is open at the base (origin/main or origin/queue/*) with `js-grant: <column>=<n>`, n at least the raise (the sum for a total raise, `#! total-raised: row N total=<n>`). A grant in your own diff does not count: ask the owner for a grant row. `--allow-raise` only writes the note. A baseline starts with a `#! columns: c1 c2 ...` header line naming its columns; a column the base's header lacks is compared with the tree only and printed as "introduced". `RATCHET_REQUIRE_BASE=1` (set by a full `scripts/run-gates.sh` run) makes an unavailable base red instead of a compare with the tree alone. A new behaviour likewise needs a row at the merge base with `adds: [<kind>]` (planned); citing the umbrella row 434 does not count. If you think you must raise, say so in
 the report with the row and the measured reason, and wait for the owner. **Today the volume counts every tracked `.ts` line,
 so `.d.ts`, generated files and tests are in it;** the plan counts what ships (bundle bytes and JS held in Rust). Moving a
 script from a Rust string into a new `.ts` still has to come out lower.
@@ -284,7 +285,7 @@ identical until they are generated from one `.ts`.
 
 ## Adding a verb row or a named behaviour
 
-- **A verb row is data.** (This describes lane 3.0's branch.) A variant in the Rust enum (`Method`, `Prop`, `EventKind`,
+- **A verb row is data.** A variant in the Rust enum (`Method`, `Prop`, `EventKind`,
   `EventField`), one row in the matching TS table with its receiver kind, then `scripts/build-js-bundle.sh`. **The row that
   first needs the verb adds it, with its grant row**: a new row raises `bridge.ts`'s count. `cargo test -p dioxus-primitives
   bridge` compares every Rust name with its row; `bun test primitives/ts-test` covers the page side.
@@ -294,9 +295,10 @@ identical until they are generated from one `.ts`.
   dioxus-primitives behaviours` to regenerate the TS types, `scripts/build-js-bundle.sh` (one bundle per behaviour), one
   witness per effect at its `site!` (authored by item 0.6 or a lane other than the behaviour's own; an unbuilt variant's
   witness is a `test.fixme` keyed to the site list), a Playwright spec tag, and a budget row. Behaviour lanes never edit a gate script.
-- **The gates, by name.** Landed on main: `check-js-bundle`, `check-js-volume`, the three legacy script gates,
-  `check-open-focus` and `check-theme-mode-writer`. On lane 3.0's branch: `check-bridge-behaviours`. Planned: the grant rule
-  in `check-js-volume`, `check-hot-events`, the legacy freeze, the witness check, the native-slot sink scan.
+- **The gates, by name.** Landed: `check-js-bundle`, `check-js-volume` (with the grant rule), the three legacy script gates,
+  `check-open-focus`, `check-theme-mode-writer`, `check-bridge-behaviours`, `check-ts-scan`, `check-native-slots`,
+  `check-installed-paths` (sink arm) and `check-ratchet-grant` (the self-tests of the grant rule and the platform-rule
+  reader). Planned: `check-hot-events`, the legacy freeze, the witness check.
 
 ## Why not a script
 

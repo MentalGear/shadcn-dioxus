@@ -68,7 +68,7 @@
 //! # Header sort, row selection and controls in cells
 //!
 //! [`VirtualGridProps::column_sort`] sets `aria-sort` on a column header,
-//! [`VirtualGridProps::row_selected`] marks rows `aria-selected` / `data-state="selected"` by the
+//! [`VirtualGridProps::row_selected`] marks rows `aria-selected` / `data-selected` by the
 //! row's identity (`row_key`), and a cell may hold **one control** (a checkbox, switch, button or
 //! link): the APG grid's "focus the widget" model. The control, not its cell, is then the grid's
 //! one tab stop; the arrows still move between cells (focus lands on the next cell's control),
@@ -173,7 +173,7 @@ pub struct VirtualGridProps {
     pub column_sort: Option<Callback<usize, Option<SortDirection>>>,
     /// Whether the row whose [`row_key`](Self::row_key) is `key` is selected (the key is the
     /// index as a string without `row_key`). When given, every mounted row carries
-    /// `aria-selected="true|false"`, and a selected one also `data-state="selected"` (the
+    /// `aria-selected="true|false"`, and a selected one also `data-selected` (the
     /// style hook). Keyed by the row's identity, not its slot: the callback is asked about the
     /// row each DOM node holds, so a selection survives a sort and a window move. Read while
     /// rendering, so signals it reads re-render the grid.
@@ -1938,7 +1938,7 @@ fn row_attributes(
     })
 }
 
-/// The row's `data-state`: `selected` for a selected row, nothing otherwise.
+/// The row's `data-selected`: present for a selected row, absent otherwise.
 fn selected_state(
     row_selected: Option<Callback<String, bool>>,
     row_key: Option<Callback<usize, String>>,

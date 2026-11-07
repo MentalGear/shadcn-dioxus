@@ -209,8 +209,8 @@ pub fn Collapsible(props: CollapsibleProps) -> Element {
     });
 
     let base = attributes!(div {
-        ..state_attrs::open_valued(open),
-        ..state_attrs::disabled(props.disabled),
+        ..state_attrs::open(open),
+        ..state_attrs::presence(state_attrs::Flag::Disabled, props.disabled),
     });
     let merged = merge_attributes(vec![base, props.attributes]);
 
@@ -306,8 +306,8 @@ pub fn CollapsibleContent(props: CollapsibleContentProps) -> Element {
     });
 
     let mut owned = attributes!(div {
-        ..state_attrs::open_valued(open),
-        ..state_attrs::disabled(ctx.disabled),
+        ..state_attrs::open(open),
+        ..state_attrs::presence(state_attrs::Flag::Disabled, ctx.disabled),
     });
     owned.push(hidden_attribute(hidden));
     let merged = merge_attributes(vec![props.attributes.clone(), owned]);
@@ -385,8 +385,8 @@ pub fn CollapsibleTrigger(props: CollapsibleTriggerProps) -> Element {
 
     let base = attributes!(button {
         r#type: "button",
-        ..state_attrs::open_valued(open),
-        ..state_attrs::disabled(ctx.disabled),
+        ..state_attrs::open(open),
+        ..state_attrs::presence(state_attrs::Flag::Disabled, ctx.disabled),
         disabled: ctx.disabled,
         "aria-controls": ctx.aria_controls_id,
         "aria-expanded": open,
@@ -424,7 +424,7 @@ mod tests {
     /// The `hidden` slot of the content element (`None`: no such attribute).
     fn content_hidden(html: &str) -> Option<String> {
         let content = find_element(html, |a| {
-            a.contains_key("id") && a.contains_key("data-open")
+            a.contains_key("id") && (a.contains_key("data-open") || a.contains_key("data-closed"))
         })
         .expect("the content element renders");
         content.attrs.get("HIDDEN").cloned()

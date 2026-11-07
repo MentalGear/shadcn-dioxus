@@ -38,7 +38,7 @@
 
 /* A segmented bar for a custom progress indicator (children of `QuestionnaireProgress`): one segment per
  * item, `done` in the primary colour and `pending` as the muted track, as shadcn's Progress paints them.
- * Driven by `data-state`, not an inline `style`, because a `style` string that changes with the step is
+ * Driven by `data-done`, not an inline `style`, because a `style` string that changes with the step is
  * patched property by property and loses the properties the new string does not repeat. */
 .dx-questionnaire-checkpoints {
   display: flex;
@@ -53,7 +53,7 @@
   background: var(--dx-muted);
 }
 
-.dx-questionnaire-checkpoint[data-state="done"] {
+.dx-questionnaire-checkpoint[data-done] {
   background: var(--dx-primary);
 }
 

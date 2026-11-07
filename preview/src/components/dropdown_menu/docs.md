@@ -8,18 +8,19 @@ DropdownMenu {
     // The dropdown menu trigger is the button that will display the dropdown menu when clicked.
     DropdownMenuTrigger {
         // The content of the trigger to display inside the button.
-        {children}
+        "Open menu"
     }
     // The dropdown menu content contains all the items that will be displayed in the dropdown menu.
     DropdownMenuContent {
         // Each dropdown menu item represents an individual option in the dropdown menu. Arrow keys move through the items in document order.
         DropdownMenuItem {
             // The value of the item which will be passed to the on_select callback when the item is selected.
-            value: "",
+            value: "open".to_string(),
             on_select: |value: String| {
                 // This callback is triggered when the item is selected.
                 // The value parameter contains the value of the selected item.
             },
+            "Open"
         }
     }
 }
@@ -46,7 +47,7 @@ DropdownMenuContent {
         // Only rendered while the submenu is open.
         DropdownMenuSubContent {
             DropdownMenuSubItem {
-                value: "duplicate",
+                value: "duplicate".to_string(),
                 on_select: |value: String| {
                     // Selecting a sub-item closes the entire menu tree,
                     // not just this submenu.
@@ -60,7 +61,7 @@ DropdownMenuContent {
 ### Open on hover, or click only
 
 By default hovering a `DropdownMenuSubTrigger` opens its submenu after a short
-delay (200 ms) and leaving it closes the submenu again after a short grace
+delay (100 ms) and leaving it closes the submenu again after a short grace
 delay, so a diagonal move toward the submenu is not misread as leaving. Pass
 `open_on_hover: false` to the `DropdownMenuSub` for **click activation**:
 
@@ -90,6 +91,9 @@ hover timers. See the `click_only_submenu` variant.
 `aria-label` or `aria-labelledby`). They work in a `DropdownMenuContent` and in a `DropdownMenuSubContent`.
 
 ```rust
+let mut show_status_bar = use_signal(|| false);
+let mut position = use_signal(|| "top".to_string());
+
 DropdownMenuContent {
     DropdownMenuCheckboxItem {
         // Controlled: `checked` + `on_checked_change`. Uncontrolled:

@@ -19,6 +19,7 @@ git worktree add -q --detach "$wt" "$c" || exit 2
 trap 'cd "$repo" && git worktree remove --force "$wt" >/dev/null 2>&1' EXIT
 ln -sfn "$repo/preview/node_modules" "$wt/preview/node_modules"
 ln -sfn "$repo/playwright/node_modules" "$wt/playwright/node_modules"
+ln -sfn "$repo/scripts/ts-tools/node_modules" "$wt/scripts/ts-tools/node_modules"
 cd "$wt"
 # Class `gate` in the lane-lock queue (row 221): a merge gate goes before every waiting lane build, and the
 # wrapper script paths are the MAIN checkout's, because an older commit under test may not have them.

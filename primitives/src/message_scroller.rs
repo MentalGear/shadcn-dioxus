@@ -708,7 +708,7 @@ pub fn MessageScrollerViewport(props: MessageScrollerViewportProps) -> Element {
         "aria-label": "Messages",
         tabindex: "0",
         "data-message-scroller-viewport": "",
-        "data-preserve-scroll-on-prepend": if preserve { "true" } else { "false" },
+        "data-preserve-scroll-on-prepend": preserve.then_some(""),
         "data-pending-scroll": pending.then_some(""),
     });
     let merged = merge_attributes(vec![
@@ -817,7 +817,7 @@ pub struct MessageScrollerItemProps {
 pub fn MessageScrollerItem(props: MessageScrollerItemProps) -> Element {
     let base = attributes!(div {
         "data-message-id": props.message_id.clone(),
-        "data-scroll-anchor": if props.scroll_anchor { "true" } else { "false" },
+        "data-scroll-anchor": props.scroll_anchor.then_some(""),
     });
     let merged = merge_attributes(vec![base, props.attributes]);
 
@@ -952,7 +952,7 @@ pub struct MessageScrollerButtonProps {
 ///
 /// Scrolls to the end (or start) of the transcript and, with `auto_scroll`,
 /// re-engages following. A real `<button>`: while there is nothing to scroll
-/// toward it is `inert` with `tabindex="-1"` and `data-active="false"`, all
+/// toward it is `inert` with `tabindex="-1"` and no `data-active`, all
 /// written by the controller (the styled version slides and fades it out).
 /// When it turns inert after being activated, focus moves to the viewport.
 ///
@@ -962,7 +962,7 @@ pub struct MessageScrollerButtonProps {
 ///
 /// ## Styling
 ///
-/// - `data-active`: `"true"` when there is content in this direction.
+/// - `data-active`: present when there is content in this direction.
 /// - `data-direction`: `"start"` or `"end"`.
 #[component]
 pub fn MessageScrollerButton(props: MessageScrollerButtonProps) -> Element {
@@ -979,7 +979,6 @@ pub fn MessageScrollerButton(props: MessageScrollerButtonProps) -> Element {
         r#type: "button",
         "data-message-scroller-button": "",
         "data-direction": direction.as_str(),
-        "data-active": "false",
         "inert": true,
         tabindex: "-1",
         onclick: move |event: MouseEvent| {
@@ -1225,14 +1224,11 @@ mod tests {
         .unwrap();
         assert_eq!(
             anchor.attrs.get("data-scroll-anchor").map(String::as_str),
-            Some("true")
+            Some("")
         );
         // A row without an id renders no `data-message-id` at all.
-        let plain = find_element(&html, |a| {
-            a.get("data-scroll-anchor").map(String::as_str) == Some("false")
-        })
-        .unwrap();
-        assert!(!plain.attrs.contains_key("data-message-id"));
+        // and only the anchor row carries `data-scroll-anchor`.
+        assert_eq!(html.matches("data-scroll-anchor").count(), 1, "{html}");
 
         let spacer =
             find_element(&html, |a| a.contains_key("data-message-scroller-spacer")).unwrap();
@@ -1252,9 +1248,8 @@ mod tests {
             assert_eq!(
                 viewport
                     .attrs
-                    .get("data-preserve-scroll-on-prepend")
-                    .map(String::as_str),
-                Some(if preserve { "true" } else { "false" })
+                    .contains_key("data-preserve-scroll-on-prepend"),
+                preserve
             );
         }
     }
@@ -1271,10 +1266,7 @@ mod tests {
             assert_eq!(button.attrs.get("type").map(String::as_str), Some("button"));
             assert!(button.attrs.contains_key("inert"));
             assert_eq!(button.attrs.get("tabindex").map(String::as_str), Some("-1"));
-            assert_eq!(
-                button.attrs.get("data-active").map(String::as_str),
-                Some("false")
-            );
+            assert!(!button.attrs.contains_key("data-active"));
         }
         assert_eq!(
             buttons[0].attrs.get("data-direction").map(String::as_str),

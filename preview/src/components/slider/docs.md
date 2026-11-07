@@ -4,7 +4,8 @@ The slider component allows users to select a value from a range by sliding a ha
 
 ```rust
 Slider {
-    value: 0.0,
+    // The starting value. The slider tracks the drag itself; to control it, pass `value` (a signal) and set it in `on_value_change`.
+    default_value: 0.0,
     horizontal: true,
     on_value_change: |value: f64| {
         // Handle the change in slider value.
@@ -32,7 +33,7 @@ RangeSlider {
 Give the slider a `name` and it submits its value with the nearest `<form>` (or the one whose id is passed as `form: "form-id".to_string()`), through a hidden input per thumb: a `Slider` submits one value under its name, a `RangeSlider` two under the same name, start first. The value is printed at the step's precision (`0.3`, not `0.30000000000000004`). A disabled slider submits nothing and an empty `name` (the default) submits nothing. The form's reset restores `default_value`; for a controlled slider it calls `on_value_change` with the default, so the owner of the value follows. See the `form` variant.
 
 ```rust
-DemoForm {
+form {
     Slider { label: "Volume", name: "volume", default_value: 30.0 }
     RangeSlider { label: "Price", name: "price", default_value: 20.0..80.0 }
 }
@@ -45,3 +46,11 @@ DemoForm {
 ## Keeping thumbs apart
 
 `RangeSlider` takes `min_steps_between_thumbs: u32` (default 0, the thumbs may meet). The start thumb stops that many steps short of the end thumb and the end thumb that many steps past the start thumb; the thumbs' `aria-valuemin`/`aria-valuemax` follow.
+
+## Pushing the other thumb
+
+`RangeSlider` takes `thumb_collision: ThumbCollision`. `Clamp` (the default) stops a thumb short of the other one. `Push` moves the other thumb along, keeping `min_steps_between_thumbs` steps between them, until it reaches `min` or `max`. A pushed thumb stays where it was pushed when the first thumb moves back.
+
+## Edge alignment
+
+`Slider` and `RangeSlider` take `thumb_alignment: ThumbAlignment`. `Center` (the default) puts the thumb's centre on its value, so half a thumb hangs past the track at `min` and `max`. `Edge` keeps the thumb inside the track, its edge on the track's end at `min` and `max`, and maps the pointer onto the distance the thumb's centre can travel. The thumb's size is measured once it is mounted, so the server-rendered page draws it centred first.

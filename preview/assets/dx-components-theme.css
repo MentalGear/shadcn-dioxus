@@ -930,10 +930,10 @@ html[data-theme="light"] [class~="dxc-system"] {
  *
  *   - `:not([popover])` leaves the non-modal Popover arm (`<dialog popover="auto">`) alone: it
  *     paints no scrim, as shadcn's popover has none.
- *   - The scrim is visible only while `[open][data-state="open"]` (never `[open]` alone: `[open]`
- *     outlives `data-state="open"` through the exit). It fades in via `@starting-style` and out
+ *   - The scrim is visible only while `[open][data-open]` (never `[open]` alone: `[open]`
+ *     outlives `data-open` through the exit). It fades in via `@starting-style` and out
  *     because its `background`/`backdrop-filter` fall back to transparent/none the moment
- *     `data-state` flips to "closed" while the dialog is STILL open and modal:
+ *     `data-closed` replaces `data-open` while the dialog is STILL open and modal:
  *     `use_dialog_open_driver` (`primitives/src/lib.rs`) calls `close()` only once the panel's and
  *     the scrim's animations have settled, so the `::backdrop` stays in the top layer for the whole
  *     exit on every engine. Nothing here depends on `transition: overlay allow-discrete`. In and
@@ -953,15 +953,15 @@ html[data-theme="light"] [class~="dxc-system"] {
     background-color var(--dx-overlay-duration) var(--dx-overlay-ease);
 }
 
-:where(dialog[class^="dx-"][open][data-state="open"]:not([popover]))::backdrop,
-:where(dialog[class*=" dx-"][open][data-state="open"]:not([popover]))::backdrop {
+:where(dialog[class^="dx-"][open][data-open]:not([popover]))::backdrop,
+:where(dialog[class*=" dx-"][open][data-open]:not([popover]))::backdrop {
   backdrop-filter: blur(var(--dx-overlay-blur));
   background: var(--dx-overlay-scrim);
 }
 
 @starting-style {
-  :where(dialog[class^="dx-"][open][data-state="open"]:not([popover]))::backdrop,
-  :where(dialog[class*=" dx-"][open][data-state="open"]:not([popover]))::backdrop {
+  :where(dialog[class^="dx-"][open][data-open]:not([popover]))::backdrop,
+  :where(dialog[class*=" dx-"][open][data-open]:not([popover]))::backdrop {
     backdrop-filter: none;
     background: transparent;
   }
@@ -988,9 +988,9 @@ html[data-theme="light"] [class~="dxc-system"] {
  *   - On the web arm the wrapper has the `<dialog>` as a direct child and paints nothing (the
  *     `::backdrop` above is the scrim): `:has(> dialog)` takes the fill and the blur away.
  *   - `data-dx-overlay="off"` is set on the wrapper as well as on the `<dialog>` (`overlay: false`).
- *   - `data-state` ("open" / "closed", set by the primitive's `use_animated_open`) fades it in and out
+ *   - `data-open` / `data-closed` (set by the primitive's `use_animated_open`) fades it in and out
  *     over `--dx-overlay-duration`, then `pointer-events: none` while it leaves. `opacity: 0` is the rest
- *     state, so a wrapper with no `data-state` yet is invisible.
+ *     state, so a wrapper with neither yet is invisible.
  *   - `scripts/check-theme-baseline.sh` fails a component sheet that paints the scrim itself
  *     (`background: var(--dx-overlay-scrim)`) and fails if any of these rules goes.
  * ========================================================================== */
@@ -1014,24 +1014,24 @@ html[data-theme="light"] [class~="dxc-system"] {
   background: transparent;
 }
 
-:where([data-dx-scrim][data-state="closed"]) {
+:where([data-dx-scrim][data-closed]) {
   animation: dx-fade-out var(--dx-overlay-duration) var(--dx-overlay-ease) forwards;
   pointer-events: none;
 }
 
-:where([data-dx-scrim][data-state="open"]) {
+:where([data-dx-scrim][data-open]) {
   animation: dx-fade-in var(--dx-overlay-duration) var(--dx-overlay-ease) forwards;
 }
 
 /* Reduced motion (backlog row 441): the wrapper scrim appears and leaves without its fade. The rule
  * is ONE zero-specificity `:where()` placed after the two state rules above, so it wins by source
- * order, where a per-sheet media rule lost on specificity to `[data-state]`.
+ * order, where a per-sheet media rule lost on specificity to `[data-open]` / `[data-closed]`.
  * It shortens the duration to `--dx-motion-duration-reduced` and keeps the animation: `animation:
  * none` would leave the rest state `opacity: 0` in place and the open scrim would never show.
  * The `::backdrop` of a native `<dialog>` is not here: its `transition-duration` is already
  * reduced by the media block in the modal-scrim section above. */
 @media (prefers-reduced-motion: reduce) {
-  :where([data-dx-scrim][data-state]) {
+  :where([data-dx-scrim]:is([data-open], [data-closed])) {
     animation-duration: var(--dx-motion-duration-reduced);
   }
 }
@@ -1266,7 +1266,7 @@ html[data-theme="light"] [class~="dxc-system"] {
  * settings) and the `[tabindex]` catch-all (prose and scrollers). Same zero specificity and `dx-` scoping as
  * the baselines above, so a component keeps what is genuinely its own: `grab`/`grabbing` on a drag handle,
  * `col-resize` on a resizer, `text` on a field. A disabled control (`:disabled`, `aria-disabled="true"`,
- * `data-disabled="true"`) is left out of the list altogether, so it keeps its own disabled cursor
+ * `data-disabled`) is left out of the list altogether, so it keeps its own disabled cursor
  * (`not-allowed`, or the UA's arrow where its recipe is `pointer-events: none`) in both settings.
  *
  * What a component sheet may NOT do is declare `cursor: pointer` or `cursor: default` on a control: at
@@ -1312,7 +1312,7 @@ html[data-theme="light"] [class~="dxc-system"] {
     [role="slider"][class^="dx-"],
     [role="slider"][class*=" dx-"],
     [data-dx-menu-item]
-  ):not(:disabled, [aria-disabled="true"], [data-disabled="true"])
+  ):not(:disabled, [aria-disabled="true"], [data-disabled])
 ) {
   cursor: var(--dx-interactive-element-cursor, default);
 }
@@ -1789,19 +1789,19 @@ html:not([data-dx-press-feedback="off"]) [role="radio"][class*=" dx-"]:not([disa
   color: var(--dx-background);
 }
 
-:where([data-dx-surface="floating"][data-state="open"]) {
+:where([data-dx-surface="floating"][data-open]) {
   animation: var(--dx-floating-enter, dx-pop-in) var(--dx-floating-duration) var(--dx-floating-ease-enter) forwards;
 }
 
-:where([data-dx-surface="floating"][data-state="closed"]) {
+:where([data-dx-surface="floating"][data-closed]) {
   animation: var(--dx-floating-exit, dx-pop-out) var(--dx-floating-duration) var(--dx-floating-ease-exit) forwards;
   opacity: 0;
   pointer-events: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  :where([data-dx-surface="floating"][data-state="open"]),
-  :where([data-dx-surface="floating"][data-state="closed"]) {
+  :where([data-dx-surface="floating"][data-open]),
+  :where([data-dx-surface="floating"][data-closed]) {
     animation-duration: var(--dx-motion-duration-reduced);
   }
 }
@@ -1895,19 +1895,19 @@ html:not([data-dx-press-feedback="off"]) [role="radio"][class*=" dx-"]:not([disa
   overflow-wrap: anywhere;
 }
 
-:where([data-dx-menu-item][data-disabled="true"]) {
+:where([data-dx-menu-item][data-disabled]) {
   cursor: not-allowed;
   opacity: var(--dx-opacity-disabled);
 }
 
 :where([data-dx-menu-item]:focus-visible),
-:where([data-dx-menu-item][data-state="open"]) {
+:where([data-dx-menu-item][data-open]) {
   background: var(--dx-accent-tint);
   color: var(--dx-accent-foreground);
 }
 
 @media (hover: hover) and (pointer: fine) {
-  :where([data-dx-menu-item]:hover:not([data-disabled="true"])) {
+  :where([data-dx-menu-item]:hover:not([data-disabled])) {
     background: var(--dx-accent-tint);
     color: var(--dx-accent-foreground);
   }
@@ -1933,7 +1933,7 @@ html:not([data-dx-press-feedback="off"]) [role="radio"][class*=" dx-"]:not([disa
 }
 
 /* `visibility`, not `display`: an unchecked item keeps its slot, so labels never shift on toggle. */
-:where([data-dx-menu-item][data-state="unchecked"] > [data-dx-menu-item-indicator]) {
+:where([data-dx-menu-item][data-unchecked] > [data-dx-menu-item-indicator]) {
   visibility: hidden;
 }
 
@@ -1973,12 +1973,12 @@ html:not([data-dx-press-feedback="off"]) [role="radio"][class*=" dx-"]:not([disa
 
 /* A highlighted item takes the shortcut into its own ink (accent-foreground, or the destructive ink). */
 [data-dx-menu-item]:focus-visible [data-dx-menu-shortcut],
-[data-dx-menu-item][data-state="open"] [data-dx-menu-shortcut] {
+[data-dx-menu-item][data-open] [data-dx-menu-shortcut] {
   color: inherit;
 }
 
 @media (hover: hover) and (pointer: fine) {
-  [data-dx-menu-item]:hover:not([data-disabled="true"]) [data-dx-menu-shortcut] {
+  [data-dx-menu-item]:hover:not([data-disabled]) [data-dx-menu-shortcut] {
     color: inherit;
   }
 }
@@ -2002,7 +2002,7 @@ html:not([data-dx-press-feedback="off"]) [role="radio"][class*=" dx-"]:not([disa
 }
 
 @media (hover: hover) and (pointer: fine) {
-  [data-dx-menu-item][data-variant="destructive"]:hover:not([data-disabled="true"]) {
+  [data-dx-menu-item][data-variant="destructive"]:hover:not([data-disabled]) {
     background-color: var(--light, color-mix(in oklab, var(--dx-destructive) 10%, transparent))
       var(--dark, color-mix(in oklab, var(--dx-destructive) 20%, transparent));
   }
@@ -2212,18 +2212,18 @@ html:not([data-dx-press-feedback="off"]) [role="radio"][class*=" dx-"]:not([disa
   left: var(--dx-edge-travel);
 }
 
-:where([data-dx-surface="edge"][data-state="open"]) {
+:where([data-dx-surface="edge"][data-open]) {
   animation: var(--dx-edge-enter) var(--dx-edge-duration-enter, 500ms) var(--dx-edge-ease-enter, ease-in-out) forwards;
 }
 
-:where([data-dx-surface="edge"][data-state="closed"]) {
+:where([data-dx-surface="edge"][data-closed]) {
   animation: var(--dx-edge-exit) var(--dx-edge-duration-exit, var(--dx-motion-duration-slower)) var(--dx-edge-ease-exit, ease-in-out) forwards;
   pointer-events: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  :where([data-dx-surface="edge"][data-state="open"]),
-  :where([data-dx-surface="edge"][data-state="closed"]) {
+  :where([data-dx-surface="edge"][data-open]),
+  :where([data-dx-surface="edge"][data-closed]) {
     animation-duration: var(--dx-motion-duration-reduced);
   }
 }
@@ -2366,7 +2366,7 @@ html:not([data-dx-press-feedback="off"]) [role="radio"][class*=" dx-"]:not([disa
 :where([data-dx-interactive]):disabled,
 :where([data-dx-interactive])[disabled],
 :where([data-dx-interactive])[aria-disabled="true"],
-:where([data-dx-interactive])[data-disabled="true"] {
+:where([data-dx-interactive])[data-disabled] {
   opacity: var(--dx-opacity-disabled);
   pointer-events: none;
 }
@@ -2458,11 +2458,18 @@ html:not([data-dx-press-feedback="off"]) [role="radio"][class*=" dx-"]:not([disa
  *    panel when that focus counts as keyboard-ish, which no sheet reset. Flat lists and zero specificity on
  *    purpose: a control's own rule still wins, and no selector list sits inside `:not()` (see the
  *    `touch-action` rule in `main.css`).
- * 2. Under a mouse, touch or pen the non-field ring tokens resolve to nothing, so a trigger that was
- *    focused by script after a tap (Safari does not focus a tapped button; a menu, a roving menubar and a
- *    popover's first control all move focus) cannot draw a ring. `--dx-ring-field` is deliberately NOT
- *    touched: a text field the user tapped is still focused and still rings, as in shadcn. Keyboard modality
- *    (or no attribute at all, no script) keeps every ring. Forced colors (below) is unaffected. */
+ * 2. Under a mouse, touch or pen the non-field ring tokens resolve to nothing on the FOCUSED element, so a
+ *    trigger that was focused by script after a tap (Safari does not focus a tapped button; a menu, a roving
+ *    menubar and a popover's first control all move focus) cannot draw a ring. `--dx-ring-field` is
+ *    deliberately NOT touched: a text field the user tapped is still focused and still rings, as in shadcn.
+ *    Keyboard modality (or no script at all) keeps every ring. Forced colors (below) is unaffected.
+ *
+ *    The gate is `data-dx-pointer-focus`, which the modality script puts on the focused element while the
+ *    modality is not `keyboard` (and takes off when focus leaves or the modality becomes `keyboard`). It sits
+ *    on that one element, never on `:root`: a custom property redefined on `:root`, or any rule keyed off an
+ *    attribute of `<html>` whose subject is `:focus-visible`, makes the engine restyle every element on the
+ *    page for the first key press. A ring drawn on a CONTAINER from a focused descendant
+ *    (`.x:has(:focus-visible)`) repeats this reset on the container with `.x:has([data-dx-pointer-focus])`. */
 :where(dialog):focus,
 :where([popover]):focus,
 :where([role="listbox"]):focus,
@@ -2472,7 +2479,7 @@ html:not([data-dx-press-feedback="off"]) [role="radio"][class*=" dx-"]:not([disa
   outline: none;
 }
 
-:root[data-dx-modality]:not([data-dx-modality="keyboard"]) {
+[data-dx-pointer-focus] {
   --dx-ring: 0 0 #0000;
   --dx-ring-focus: 0 0 #0000;
   --dx-ring-focus-inset: 0 0 #0000;
@@ -2493,8 +2500,8 @@ html:not([data-dx-press-feedback="off"]) [role="radio"][class*=" dx-"]:not([disa
  * `playwright/all-routes.spec.ts` (forced-colors keyboard-focus check). */
 @media (forced-colors: active) {
   :focus-visible:not(main),
-  [class*="dx-"][data-highlighted="true"],
-  .dx-input-otp-slot[data-active="true"] {
+  [class*="dx-"][data-highlighted],
+  .dx-input-otp-slot[data-active] {
     outline: 2px solid Highlight !important;
     outline-offset: -2px !important;
   }
@@ -2535,7 +2542,7 @@ html:not([data-dx-press-feedback="off"]) [role="radio"][class*=" dx-"]:not([disa
  *   --dx-ring-invalid        the 3px halo: destructive/20 in light, /40 in dark  (pairs with --dx-ring-focus)
  *   --dx-ring-invalid-field  edge + halo as one inset-edge box-shadow            (pairs with --dx-ring-field)
  *
- * A control selects `[aria-invalid="true"]` (and, for the Form submit marker, `[data-invalid="true"]`)
+ * A control selects `[aria-invalid="true"]` (and, for the Form submit marker, `[data-invalid]`)
  * AFTER its `:focus-visible` rule, so a focused invalid control stays red, as in shadcn. `Field`'s
  * `invalid` prop styles the label, description and error text; the control carries its own
  * `aria-invalid` (the attribute assistive technology reads), exactly as in shadcn.

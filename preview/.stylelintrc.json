@@ -1,5 +1,5 @@
 {
-  "extends": ["stylelint-config-standard", "stylelint-config-idiomatic-order"],
+  "extends": ["stylelint-config-standard", "./stylelint-idiomatic-order.yaml"],
   "rules": {
     "number-max-precision": null,
     "no-descending-specificity": null,

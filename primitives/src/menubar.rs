@@ -182,7 +182,7 @@ pub fn Menubar(props: MenubarProps) -> Element {
         attributes!(div {
             role: "menubar",
             dir: direction.as_str(),
-            ..state_attrs::disabled((props.disabled)()),
+            ..state_attrs::presence(state_attrs::Flag::Disabled, (props.disabled)()),
             "data-direction": direction.as_str(),
             tabindex: (!ctx.focus.any_focused()).then_some("0"),
         }),
@@ -319,7 +319,7 @@ pub struct MenubarMenuProps {
 /// ## Styling
 ///
 /// The [`MenubarMenu`] component defines the following data attributes you can use to control styling:
-/// - `data-state`: Indicates if the menu is open or closed. Values are `open` or `closed`.
+/// - `data-open` / `data-closed`: Exactly one is present: whether this part is open.
 /// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
 /// - `data-disabled`: Indicates if the menu is disabled. Values are `true` or `false`.
 #[component]
@@ -440,7 +440,7 @@ pub fn MenubarMenu(props: MenubarMenuProps) -> Element {
             id: root_id.cloned(),
             role: crate::menu_semantics::MENU_ROLE,
             ..state_attrs::open(is_open()),
-            ..state_attrs::disabled((ctx.disabled)() || (props.disabled)()),
+            ..state_attrs::presence(state_attrs::Flag::Disabled, (ctx.disabled)() || (props.disabled)()),
         }),
         props.attributes,
     ]);
@@ -792,7 +792,7 @@ pub struct MenubarContentProps {
 /// ## Styling
 ///
 /// The [`MenubarContent`] component defines the following data attributes you can use to control styling:
-/// - `data-state`: Indicates if the menu is open or closed. Values are `open` or `closed`.
+/// - `data-open` / `data-closed`: Exactly one is present: whether this part is open.
 /// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
 #[component]
 pub fn MenubarContent(props: MenubarContentProps) -> Element {
@@ -1030,7 +1030,7 @@ pub type MenubarRadioItemProps = MenuRadioItemProps;
 /// ## Styling
 ///
 /// The [`MenubarCheckboxItem`] component defines the following data attributes you can use to control styling:
-/// - `data-state`: Whether the item is checked. Values are `checked` or `unchecked`.
+/// - `data-checked` / `data-unchecked`: Exactly one is present: whether the item is checked.
 /// - `data-checked` / `data-unchecked`: Present (empty) while checked / unchecked, absent otherwise.
 /// - `data-disabled`: Indicates if the item is disabled. Values are `true` or `false`.
 /// - `data-highlighted`: Present (empty) while this item holds the roving focus, absent otherwise.
@@ -1107,7 +1107,7 @@ pub fn MenubarRadioGroup(props: MenubarRadioGroupProps) -> Element {
 /// ## Styling
 ///
 /// The [`MenubarRadioItem`] component defines the following data attributes you can use to control styling:
-/// - `data-state`: Whether the item is checked. Values are `checked` or `unchecked`.
+/// - `data-checked` / `data-unchecked`: Exactly one is present: whether the item is checked.
 /// - `data-checked` / `data-unchecked`: Present (empty) while checked / unchecked, absent otherwise.
 /// - `data-disabled`: Indicates if the item is disabled. Values are `true` or `false`.
 /// - `data-highlighted`: Present (empty) while this item holds the roving focus, absent otherwise.

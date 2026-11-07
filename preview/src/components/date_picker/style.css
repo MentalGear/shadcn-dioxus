@@ -29,18 +29,18 @@
     --dx-popover-trigger-icon-size: 1.25rem;
 }
 
-.dx-date-picker [data-state="open"] .dx-date-picker-trigger {
+.dx-date-picker [data-open] .dx-date-picker-trigger {
     rotate: 180deg;
 }
 
 /*
- * Not inside the popover panel: the calendar's day cells are `data-disabled="true"` too when a day is
+ * Not inside the popover panel: the calendar's day cells are `data-disabled` too when a day is
  * unavailable, and that state is already drawn by calendar/style.css (the muted-foreground token +
  * line-through, at full opacity). Fading it a second time here would wash unavailable days out to ~2:1
  * contrast instead of the designed look.
  */
-.dx-date-picker[data-disabled="true"],
-.dx-date-picker [data-disabled="true"]:not(.dx-date-picker-popover-content *) {
+.dx-date-picker[data-disabled],
+.dx-date-picker [data-disabled]:not(.dx-date-picker-popover-content *) {
     cursor: not-allowed;
     opacity: var(--dx-opacity-disabled);
 }
@@ -80,7 +80,7 @@
 /* Invalid (the state recipe, after the focus rule so a focused invalid field stays red): the group is the
    field, so it takes the ring when it, or any control inside it (a segment, the input), is invalid. */
 .dx-date-picker-group[aria-invalid="true"],
-.dx-date-picker-group[data-invalid="true"],
+.dx-date-picker-group[data-invalid],
 .dx-date-picker-group:has([aria-invalid="true"]) {
     box-shadow: var(--dx-ring-invalid-field);
 }

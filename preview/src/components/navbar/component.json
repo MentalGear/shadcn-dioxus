@@ -8,11 +8,10 @@
       "name": "dioxus-primitives",
       "git": "https://github.com/MentalGear/shadcn-dioxus",
       "features": ["router"]
-    },
-    {
-      "name": "dioxus-icons",
-      "version": "=0.1.0"
     }
+  ],
+  "componentDependencies": [
+    { "name": "icons", "git": "https://github.com/MentalGear/shadcn-dioxus" }
   ],
   "globalAssets": ["../../../assets/dx-components-theme.css"]
 }

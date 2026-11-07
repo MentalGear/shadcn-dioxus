@@ -103,7 +103,7 @@ test.describe("delay / close_delay (backlog row 166)", () => {
   const SLOP = 40; // timer clamping / clock granularity between two performance.now() stamps
   const button = (page: Page, name: string) => page.getByRole("button", { name, exact: true });
   const surface = (page: Page) => page.getByRole("tooltip");
-  const openSurface = (page: Page) => page.locator('[role="tooltip"][data-state="open"]');
+  const openSurface = (page: Page) => page.locator('[role="tooltip"][data-open]');
 
   test("nothing opens before `delay`: a `delay: 600` tooltip waits 600 ms of pointer rest", async ({ page }) => {
     await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
@@ -206,7 +206,7 @@ test.describe("delay / close_delay (backlog row 166)", () => {
 
 // dev-docs/backlog.md row 292 -- the "Rich content" demo stacks its title and body. The
 // body is a flex row (icon-plus-text and Kbd tooltips rely on it), so a `display: inline-flex`
-// keyed on `[data-state="open"]` alone would stack the paragraphs ONLY during the closing fade, when
+// keyed on `[data-open]` alone would stack the paragraphs ONLY during the closing fade, when
 // the rule stops matching. Two invariants: the demo stacks them at rest, and a tooltip lays out
 // the same in the closed (fading) state as in the open one.
 test.describe("Rich content layout (row 292)", () => {
@@ -248,7 +248,7 @@ test.describe("Rich content layout (row 292)", () => {
 test.describe("Base UI defaults (backlog row 478)", () => {
   const URL = `${BASE_URL}/component/tooltip/`;
   const button = (page: Page, name: string) => page.getByRole("button", { name, exact: true });
-  const surface = (page: Page) => page.locator('[role="tooltip"][data-state="open"]');
+  const surface = (page: Page) => page.locator('[role="tooltip"][data-open]');
 
   test("a press on the trigger closes the open tooltip and keeps it closed", async ({ page }) => {
     await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });

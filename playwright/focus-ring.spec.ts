@@ -130,7 +130,7 @@ const FIELDS: Field[] = [
         name: "Input OTP (ring on the active slot)",
         url: page_("input_otp"),
         focus: (page) => page.locator("#otp-main"),
-        ring: (page) => page.locator("#otp-main + div .dx-input-otp-slot[data-active='true']"),
+        ring: (page) => page.locator("#otp-main + div .dx-input-otp-slot[data-active]"),
         resting: (page) => page.locator("#otp-main + div .dx-input-otp-slot").first(),
         ringIsOnAnotherElement: true,
     },

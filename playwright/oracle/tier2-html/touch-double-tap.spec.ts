@@ -220,7 +220,7 @@ test.describe("overlay-gated elements", () => {
     const trigger = demoRole(page, "combobox");
     await trigger.focus();
     await page.keyboard.press("ArrowDown");
-    await expect(page.locator("[role='listbox'][data-state='open']")).toBeVisible();
+    await expect(page.locator("[role='listbox'][data-open]")).toBeVisible();
     assertAllManipulation(await scan(page), `${route} (list open)`);
   });
 
@@ -255,7 +255,7 @@ test.describe("overlay-gated elements", () => {
     await gotoHydrated(page, route, { timeout: 60000 });
     const trigger = demoRole(page, "button");
     await trigger.click({ timeout: 10000 });
-    await expect(page.locator('[role="menu"][data-state="open"]')).toBeVisible();
+    await expect(page.locator('[role="menu"][data-open]')).toBeVisible();
     assertAllManipulation(await scan(page), `${route} (menu open)`);
   });
 

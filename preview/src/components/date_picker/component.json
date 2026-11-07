@@ -10,10 +10,6 @@
       "features": ["calendar"]
     },
     {
-      "name": "dioxus-icons",
-      "version": "=0.1.0"
-    },
-    {
       "name": "time",
       "version": "0.3.47"
     }
@@ -21,6 +17,7 @@
   "componentDependencies": [
     { "name": "button", "git": "https://github.com/MentalGear/shadcn-dioxus" },
     { "name": "calendar", "git": "https://github.com/MentalGear/shadcn-dioxus" },
+    { "name": "icons", "git": "https://github.com/MentalGear/shadcn-dioxus" },
     { "name": "popover", "git": "https://github.com/MentalGear/shadcn-dioxus" }
   ],
   "globalAssets": ["../../../assets/dx-components-theme.css"]

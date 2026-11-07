@@ -30,7 +30,7 @@
 # replaces to be red.
 #
 # SCOPE is derived, not listed, so a new overlay cannot dodge it: a component is "animated" when its
-# `preview/src/components/<c>/style.css` animates a `[data-state=open|closed]` rule, or its sources emit
+# `preview/src/components/<c>/style.css` animates a `[data-open]` / `[data-closed]` rule, or its sources emit
 # `data-dx-surface` (the theme's floating-surface enter/exit animation), and every
 # `playwright/<c>.spec.ts` / `<c>-*.spec.ts` (with `_` and `-` interchangeable) is in scope. EXTRA_SPECS adds the
 # cross-component specs that open overlays and measure them.
@@ -109,16 +109,22 @@ EXTRA_SPECS = [
     "overlay-switch.spec.ts",
     "modal-exit.spec.ts",
     "modal-initial-focus.spec.ts",
-    "toast.spec.ts",        # toasts slide in (an animation keyed on the container, not a data-state rule)
+    "toast.spec.ts",        # toasts slide in (an animation keyed on the container, not a data-open / data-closed rule)
     "date-picker.spec.ts",  # the calendar popup animates through the date picker's own sheet
 ]
 
 # (file suffix, substring of the code line ('' = every hit in the file), reason)
 ALLOW = Allowlist("check-spec-at-rest", [
+    ("playwright/accordion-animation.spec.ts", "frames.push({ t: performance.now() - t0, h: exists",
+     "samples the panel height every frame to prove the open animation is smooth: the animation is the subject"),
+    ("playwright/accordion.spec.ts", "frames.push({ exists: !!el, h: el ? el.getBoundingClientRect().height : null });",
+     "samples the panel height every frame to prove a revealed or reopened panel snaps or animates: the animation is the subject"),
+    ("playwright/accordion.spec.ts", "h: el.getBoundingClientRect().height,",
+     "samples the panel during the close animation to prove the height never jumps: the animation is the subject"),
 ], fields=("suffix", "needle"))
 
 def animated_components():
-    """Components whose surface plays an enter/exit animation: the sheet animates a `[data-state=open|closed]`
+    """Components whose surface plays an enter/exit animation: the sheet animates a `[data-open]` / `[data-closed]`
     rule, or the sources emit `data-dx-surface` (the theme's floating-surface animation). Animations on other
     states (an avatar's loading shimmer, a chart's draw-in, a progress bar's indeterminate sweep) are not
     overlay surfaces and not this gate's subject."""
@@ -134,7 +140,7 @@ def animated_components():
             with open(css, encoding="utf-8") as fh:
                 sheet_rules = css_rules(fh.read())
             for r in sheet_rules:
-                if re.search(r"(?<![\w-])animation(?:-name)?\s*:", r.body) and re.search(r"data-state=[\"']?(?:open|closed)", r.prelude):
+                if re.search(r"(?<![\w-])animation(?:-name)?\s*:", r.body) and re.search(r"data-(?:open|closed)\b|data-state=[\"']?(?:open|closed)", r.prelude):
                     hit = True
                     break
         if not hit:

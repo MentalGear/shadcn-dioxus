@@ -23,7 +23,7 @@
  * `close()`d. Dialog, AlertDialog, Sheet, Drawer and CommandDialog get that from the
  * shared `use_dialog_open_driver` (`primitives/src/lib.rs`); the modal Popover from
  * `popover.rs`'s own driver of the same construction. Their stylesheets key the exit on
- * `data-state="closed"` and carry no `transition: overlay allow-discrete` (Chromium-only
+ * `data-closed` and carry no `transition: overlay allow-discrete` (Chromium-only
  * keep-alive these sheets do not use). `assert-modal-exit.ts` pins the panel half of that
  * (same size, always modal, `close()` after the exit); `modal-exit.spec.ts` runs both
  * over every consumer derived from the source. The numbers come from one token set
@@ -50,7 +50,7 @@ export const DEFAULT_OVERLAY_MS = 200;
 const NO_TRANSITION_GRACE_MS = 600;
 
 export interface BackdropTransition {
-  /** `"close"` once the dialog was closing as the transition started (`[open]` gone, or its `data-state` already `"closed"`), else `"open"`. */
+  /** `"close"` once the dialog was closing as the transition started (`[open]` gone, or its `data-closed` already present), else `"open"`. */
   phase: "open" | "close";
   property: string;
   /** The transition's own resolved duration in ms (`getComputedTiming().duration`). */
@@ -121,11 +121,11 @@ export async function captureBackdrop(
         const at = props.indexOf(ev.propertyName);
         const raw = at < 0 ? "0s" : durs[at % durs.length];
         const d = raw.endsWith("ms") ? parseFloat(raw) : parseFloat(raw) * 1000;
-        // Closing is the dialog's own (or its wrapper's) `data-state` already "closed" while
+        // Closing is the dialog's own (or its wrapper's) `data-closed` already present while
         // the dialog is still held open -- every overlay waits out its exit before calling
         // `close()` -- or, for a native close that bypassed that (a `method="dialog"` form),
         // the `[open]` attribute already gone.
-        const closing = !dlg.open || (dlg.closest("[data-state]") as HTMLElement | null)?.dataset.state === "closed";
+        const closing = !dlg.open || dlg.closest("[data-open], [data-closed]")?.hasAttribute("data-closed") === true;
         st.transitions.push({
           phase: closing ? "close" : "open",
           property: ev.propertyName,

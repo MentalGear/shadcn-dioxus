@@ -49,21 +49,18 @@ prop there, never the preview's default.
 ## Component Structure
 
 ```rust
-Checkbox { name: "terms-lib", value: "accepted", required: true,
-    CheckboxIndicator { "✓" }
-}
-Switch { name: "opt-in-lib", value: "subscribed", required: true,
-    SwitchThumb {}
-}
+// The themed Checkbox and Switch draw their own indicator and thumb: they take no children.
+Checkbox { name: "terms-lib", value: "accepted", required: true }
+Switch { name: "opt-in-lib", value: "subscribed", required: true }
 RadioGroup { name: "tier-lib", required: true,
     RadioItem { value: "small".to_string(), "Small" }
     RadioItem { value: "medium".to_string(), "Medium" }
     RadioItem { value: "large".to_string(), "Large" }
 }
 Select::<String> { name: "fruit-lib",
-    SelectTrigger { SelectValue {} }
-    SelectList {
-        SelectOption::<String> { value: "apple", "Apple" }
+    item_to_label: |value: String| label_of(&value), // required: the trigger's text, read at render time
+    SelectGroup {
+        SelectOption::<String> { value: "apple".to_string(), "Apple" }
     }
 }
 ```

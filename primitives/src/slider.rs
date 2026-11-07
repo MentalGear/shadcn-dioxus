@@ -99,6 +99,75 @@ fn home_end_target(key: &Key, vmin: f64, vmax: f64) -> Option<f64> {
     }
 }
 
+/// What a [`RangeSlider`] thumb does when it reaches its neighbour.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum ThumbCollision {
+    /// The moving thumb stops `min_steps_between_thumbs` steps short of its neighbour.
+    #[default]
+    Clamp,
+    /// The moving thumb pushes its neighbour along, keeping `min_steps_between_thumbs` steps between
+    /// them, until the neighbour reaches `min` or `max`. A pushed thumb stays where it was pushed.
+    Push,
+}
+
+/// Where a thumb sits at the ends of the track.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum ThumbAlignment {
+    /// The thumb's centre is on the value's position, so at `min` and `max` half of it hangs past the
+    /// track's ends.
+    #[default]
+    Center,
+    /// The thumb stays inside the track: its edge is on the track's end at `min` and `max`, and the
+    /// pointer maps onto the distance the thumb's centre can travel. The thumb's size is measured
+    /// once it is mounted, so before hydration it is drawn as [`ThumbAlignment::Center`].
+    Edge,
+}
+
+/// A CSS length for a thumb centre at `percent` along the track: plain percent when `inset` is `0`,
+/// else the percent plus the px that keeps the thumb inside the track.
+fn edge_position(percent: f64, inset: f64) -> String {
+    if inset == 0.0 {
+        format!("{percent}%")
+    } else {
+        format!("calc({percent}% + {}px)", edge_offset(percent, inset))
+    }
+}
+
+/// The thumb values after the thumb at `index` is set to `next`. A single value, or `push` off,
+/// changes only that thumb; with `push` on, the other thumb of a pair is moved to stay `gap` away.
+/// `next` must already be inside the bounds [`SliderContext::bounds_for`] gives the thumb.
+fn place_thumb(
+    values: &[f64],
+    index: usize,
+    next: f64,
+    gap: f64,
+    lo: f64,
+    hi: f64,
+    push: bool,
+) -> Vec<f64> {
+    let mut out = values.to_vec();
+    let Some(slot) = out.get_mut(index) else {
+        return out;
+    };
+    *slot = next;
+    if push {
+        if let [start, end] = out.as_mut_slice() {
+            if index == 0 {
+                *end = end.max(*start + gap).min(hi);
+            } else {
+                *start = start.min(*end - gap).max(lo);
+            }
+        }
+    }
+    out
+}
+
+/// Where the centre of a thumb of `thumb_size` px sits for a value at `percent` along the track, as
+/// the px offset from `percent` of the track: zero when the thumb is centred on its value.
+fn edge_offset(percent: f64, thumb_size: f64) -> f64 {
+    thumb_size * (0.5 - percent / 100.0)
+}
+
 fn clamp_to_step_bounds(raw: f64, lo: f64, hi: f64, step: f64) -> f64 {
     let snapped = snap_value(raw.clamp(lo, hi), step);
     if snapped > hi {
@@ -143,6 +212,10 @@ pub struct SliderProps {
     /// Inverts the order of the values
     #[props(default)]
     pub inverted: bool,
+
+    /// Where the thumb sits at the ends of the track, see [`ThumbAlignment`].
+    #[props(default)]
+    pub thumb_alignment: ThumbAlignment,
 
     /// The text direction, for a horizontal slider's pointer/keyboard value
     /// mapping and which physical edge its thumb/range anchor to. Never
@@ -245,6 +318,8 @@ pub fn Slider(props: SliderProps) -> Element {
             reset,
             on_commit,
             min_steps: ReadSignal::new(Signal::new(0u32)),
+            push: false,
+            edge: props.thumb_alignment == ThumbAlignment::Edge,
             name: props.name,
             form: props.form,
             min: props.min,
@@ -314,6 +389,15 @@ pub struct RangeSliderProps {
     /// Defaults to 0, which lets the thumbs meet.
     #[props(default)]
     pub min_steps_between_thumbs: ReadSignal<u32>,
+
+    /// What a thumb does when it reaches the other one: stop short of it
+    /// ([`ThumbCollision::Clamp`], the default) or push it along ([`ThumbCollision::Push`]).
+    #[props(default)]
+    pub thumb_collision: ThumbCollision,
+
+    /// Where the thumbs sit at the ends of the track, see [`ThumbAlignment`].
+    #[props(default)]
+    pub thumb_alignment: ThumbAlignment,
 
     /// The name submitted with a form: the range slider renders one hidden `<input>` per thumb,
     /// both under this name (the start value first). An empty name submits nothing.
@@ -390,13 +474,28 @@ pub fn RangeSlider(props: RangeSliderProps) -> Element {
         let v = value();
         vec![v.start, v.end]
     });
+    let push = props.thumb_collision == ThumbCollision::Push;
     let set_thumb = use_callback(move |(idx, v): (usize, f64)| {
         let cur = value();
-        // Preserve each thumb's identity at collision instead of reordering the pair and
+        let gap = f64::from((props.min_steps_between_thumbs)()) * (props.step)();
+        // Without push, preserve each thumb's identity at collision instead of reordering the pair and
         // silently turning the active start thumb into the end thumb (or vice versa).
-        let next = match idx {
-            0 => v.min(cur.end)..cur.end,
-            _ => cur.start..v.max(cur.start),
+        let next = if push {
+            let placed = place_thumb(
+                &[cur.start, cur.end],
+                idx,
+                v,
+                gap,
+                (props.min)(),
+                (props.max)(),
+                true,
+            );
+            placed[0]..placed[1]
+        } else {
+            match idx {
+                0 => v.min(cur.end)..cur.end,
+                _ => cur.start..v.max(cur.start),
+            }
         };
         set_value.call(next);
     });
@@ -414,6 +513,8 @@ pub fn RangeSlider(props: RangeSliderProps) -> Element {
             reset,
             on_commit,
             min_steps: props.min_steps_between_thumbs,
+            push,
+            edge: props.thumb_alignment == ThumbAlignment::Edge,
             name: props.name,
             form: props.form,
             min: props.min,
@@ -439,6 +540,10 @@ struct SliderImplProps {
     /// Receives every thumb's value when the user finishes a change.
     on_commit: Callback<Vec<f64>>,
     min_steps: ReadSignal<u32>,
+    /// Whether a thumb pushes its neighbour (see [`ThumbCollision::Push`]).
+    push: bool,
+    /// Whether thumbs are edge-aligned (see [`ThumbAlignment::Edge`]).
+    edge: bool,
     name: ReadSignal<String>,
     form: ReadSignal<Option<String>>,
     min: ReadSignal<f64>,
@@ -468,6 +573,7 @@ fn SliderImpl(props: SliderImplProps) -> Element {
     // Index of the thumb currently being interacted with via pointer. Only meaningful while
     // `dragging` is true; reads outside a drag may return a stale value from the prior interaction.
     let active_thumb = use_signal(|| 0usize);
+    let thumb_size = use_signal(|| 0.0f64);
 
     let ctx = use_context_provider(|| SliderContext {
         thumbs: props.thumbs,
@@ -484,6 +590,9 @@ fn SliderImpl(props: SliderImplProps) -> Element {
         label: props.label,
         min_steps: props.min_steps,
         commit: props.on_commit,
+        push: props.push,
+        edge: props.edge,
+        thumb_size,
     });
 
     // The hidden inputs carry the value into a form. The first one's id lets the form-reset
@@ -543,7 +652,8 @@ fn SliderImpl(props: SliderImplProps) -> Element {
             delta_pos
         };
 
-        let value_delta = delta_pos / size * ctx.range_size();
+        // An edge-aligned thumb's centre travels the track less one thumb.
+        let value_delta = delta_pos / (size - ctx.inset()).max(1.0) * ctx.range_size();
 
         let idx = ctx.active_thumb.cloned();
         let mut current = granular_thumbs.cloned();
@@ -561,7 +671,7 @@ fn SliderImpl(props: SliderImplProps) -> Element {
     // with these literals on the same element (backlog row 93).
     let owned = attributes!(div {
         role: "group",
-        ..state_attrs::disabled(props.disabled),
+        ..state_attrs::presence(state_attrs::Flag::Disabled, props.disabled),
         "data-orientation": orientation,
         "data-direction": direction.as_str(),
     });
@@ -619,7 +729,10 @@ fn SliderImpl(props: SliderImplProps) -> Element {
                         } else {
                             offset
                         };
-                        let raw = (offset / size) * ctx.range_size() + (ctx.min)();
+                        // An edge-aligned thumb's centre travels the track less one thumb, starting half a thumb in.
+                        let inset = ctx.inset();
+                        let raw = ((offset - inset / 2.0) / (size - inset).max(1.0)) * ctx.range_size()
+                            + (ctx.min)();
 
                         let idx = ctx.closest_thumb(raw);
                         let mut active = ctx.active_thumb;
@@ -715,7 +828,7 @@ pub fn SliderTrack(props: SliderTrackProps) -> Element {
     };
 
     let owned = attributes!(div {
-        ..state_attrs::disabled(ctx.disabled),
+        ..state_attrs::presence(state_attrs::Flag::Disabled, ctx.disabled),
         "data-orientation": orientation,
     });
     let merged = merge_attributes(vec![props.attributes.clone(), owned]);
@@ -794,6 +907,10 @@ pub fn SliderRange(props: SliderRangeProps) -> Element {
 
         let start_percent = ctx.as_percent(start);
         let end_percent = ctx.as_percent(end);
+        let inset = ctx.inset();
+        // The range runs from the start thumb's centre to the end thumb's centre.
+        let from_start = edge_position(start_percent, inset);
+        let from_end = edge_position(100.0 - end_percent, inset);
 
         if ctx.horizontal {
             // RTL anchors the same two percentages to the *opposite* CSS
@@ -801,17 +918,17 @@ pub fn SliderRange(props: SliderRangeProps) -> Element {
             // (`slider.tsx` L595-601 equivalent): `right`/`left` instead of
             // `left`/`right`, same numbers.
             if mirror_horizontal(ctx.horizontal, (ctx.direction)()) {
-                format!("right: {}%; left: {}%", start_percent, 100.0 - end_percent)
+                format!("right: {from_start}; left: {from_end}")
             } else {
-                format!("left: {}%; right: {}%", start_percent, 100.0 - end_percent)
+                format!("left: {from_start}; right: {from_end}")
             }
         } else {
-            format!("bottom: {}%; top: {}%", start_percent, 100.0 - end_percent)
+            format!("bottom: {from_start}; top: {from_end}")
         }
     });
 
     let owned = attributes!(div {
-        ..state_attrs::disabled(ctx.disabled),
+        ..state_attrs::presence(state_attrs::Flag::Disabled, ctx.disabled),
         "data-orientation": orientation,
         style,
     });
@@ -903,16 +1020,17 @@ pub fn SliderThumb(props: SliderThumbProps) -> Element {
     let value = use_memo(move || bounds().0);
 
     let percent = ctx.as_percent(value());
+    let position = edge_position(percent, ctx.inset());
     let style = if ctx.horizontal {
         // RTL anchors the same percent to `right` instead of `left` --
         // matches Radix's `startEdge` swap (`slider.tsx` L722 equivalent).
         if mirror_horizontal(ctx.horizontal, (ctx.direction)()) {
-            format!("right: {percent}%")
+            format!("right: {position}")
         } else {
-            format!("left: {percent}%")
+            format!("left: {position}")
         }
     } else {
-        format!("bottom: {percent}%")
+        format!("bottom: {position}")
     };
 
     let mut button_ref: Signal<Option<Rc<MountedData>>> = use_signal(|| None);
@@ -946,9 +1064,9 @@ pub fn SliderThumb(props: SliderThumbProps) -> Element {
         aria_valuemax: vmax,
         aria_valuenow: value,
         aria_orientation: orientation,
-        ..state_attrs::disabled(ctx.disabled),
+        ..state_attrs::presence(state_attrs::Flag::Disabled, ctx.disabled),
         "data-orientation": orientation,
-        ..state_attrs::valued(state_attrs::Flag::Dragging, ctx.dragging),
+        ..state_attrs::presence(state_attrs::Flag::Dragging, ctx.dragging),
         "data-index": index as i64,
         "data-direction": (ctx.direction)().as_str(),
         style,
@@ -958,9 +1076,16 @@ pub fn SliderThumb(props: SliderThumbProps) -> Element {
 
     rsx! {
         button {
-            onmounted: move |evt| {
+            onmounted: move |evt| async move {
                 // Store the mounted data for focus management
                 button_ref.set(Some(evt.data()));
+                if ctx.edge {
+                    // The thumb's size along the track places it (and the range) inside the track.
+                    if let Ok(rect) = evt.data().get_client_rect().await {
+                        let mut thumb_size = ctx.thumb_size;
+                        thumb_size.set(if ctx.horizontal { rect.width() } else { rect.height() });
+                    }
+                }
             },
             // Don't focus the button. The dragging state will handle focus. A tap's compat
             // `mousedown` (the event whose default action focuses) is covered here; there is
@@ -1027,18 +1152,37 @@ struct SliderContext {
     min_steps: ReadSignal<u32>,
     /// Receives every thumb's value when the user finishes a change.
     commit: Callback<Vec<f64>>,
+    /// A thumb pushes its neighbour instead of stopping short of it.
+    push: bool,
+    /// Thumbs are edge-aligned: they stay inside the track at `min` and `max`.
+    edge: bool,
+    /// The measured size of a thumb along the track in px; `0` until measured and when not edge-aligned.
+    thumb_size: Signal<f64>,
 }
 
 impl SliderContext {
+    /// The px a thumb's centre cannot reach at either end of the track: the thumb's size when
+    /// edge-aligned, else `0`.
+    fn inset(&self) -> f64 {
+        if self.edge {
+            (self.thumb_size)()
+        } else {
+            0.0
+        }
+    }
+
     /// The lowest and highest value the given thumb can reach: the global min/max and, in range
     /// mode, the neighbouring thumb held `min_steps` steps away.
     fn bounds_for(&self, index: usize) -> (f64, f64) {
         let t = (self.thumbs)();
         let (lo, hi) = ((self.min)(), (self.max)());
         let gap = f64::from((self.min_steps)()) * (self.step)();
-        match (t.len(), index) {
-            (2, 0) => (lo, (t[1] - gap).max(lo)),
-            (2, _) => ((t[0] + gap).min(hi), hi),
+        match (t.len(), index, self.push) {
+            // A pushing thumb is bounded by the room its neighbour needs, not by the neighbour.
+            (2, 0, true) => (lo, (hi - gap).max(lo)),
+            (2, _, true) => ((lo + gap).min(hi), hi),
+            (2, 0, false) => (lo, (t[1] - gap).max(lo)),
+            (2, _, false) => ((t[0] + gap).min(hi), hi),
             _ => (lo, hi),
         }
     }
@@ -1046,12 +1190,21 @@ impl SliderContext {
     /// Applies `next` to the given thumb and reports the finished change to `on_value_commit`
     /// when it differs from the thumb's current value. For a keyboard step.
     fn set_and_commit(&self, index: usize, next: f64) {
-        let mut all = (self.thumbs)();
-        let changed = all.get(index).is_some_and(|current| *current != next);
+        let all = (self.thumbs)();
+        let gap = f64::from((self.min_steps)()) * (self.step)();
+        let placed = place_thumb(
+            &all,
+            index,
+            next,
+            gap,
+            (self.min)(),
+            (self.max)(),
+            self.push,
+        );
+        let changed = placed != all;
         self.set_thumb.call((index, next));
         if changed {
-            all[index] = next;
-            self.commit.call(all);
+            self.commit.call(placed);
         }
     }
 
@@ -1300,7 +1453,54 @@ mod tests {
             dragging: dragging_sig.into(),
             active_thumb,
             label: label_sig.into(),
+            push: false,
+            edge: false,
+            thumb_size: use_signal(|| 0.0),
         }
+    }
+
+    #[test]
+    fn a_pushing_thumb_moves_its_neighbour_to_keep_the_gap() {
+        // Start thumb pushed past the end thumb.
+        assert_eq!(
+            place_thumb(&[20.0, 30.0], 0, 50.0, 5.0, 0.0, 100.0, true),
+            vec![50.0, 55.0]
+        );
+        // End thumb pushed below the start thumb.
+        assert_eq!(
+            place_thumb(&[40.0, 60.0], 1, 20.0, 5.0, 0.0, 100.0, true),
+            vec![15.0, 20.0]
+        );
+        // A neighbour that is already far enough stays.
+        assert_eq!(
+            place_thumb(&[20.0, 80.0], 0, 50.0, 5.0, 0.0, 100.0, true),
+            vec![50.0, 80.0]
+        );
+        // Without push only the moved thumb changes.
+        assert_eq!(
+            place_thumb(&[20.0, 30.0], 0, 25.0, 5.0, 0.0, 100.0, false),
+            vec![25.0, 30.0]
+        );
+    }
+
+    #[test]
+    fn a_pushing_thumb_is_bounded_by_the_room_its_neighbour_needs() {
+        with_runtime(|| {
+            let mut ctx = make_context_with_gap(0.0, 100.0, 1.0, false, vec![20.0, 30.0], 5);
+            ctx.push = true;
+            assert_eq!(ctx.bounds_for(0), (0.0, 95.0));
+            assert_eq!(ctx.bounds_for(1), (5.0, 100.0));
+        });
+    }
+
+    #[test]
+    fn an_edge_aligned_thumb_stays_inside_the_track_at_both_ends() {
+        // A 12px thumb: its centre is 6px in at 0% and 6px short of the end at 100%.
+        assert_eq!(edge_offset(0.0, 12.0), 6.0);
+        assert_eq!(edge_offset(100.0, 12.0), -6.0);
+        assert_eq!(edge_offset(50.0, 12.0), 0.0);
+        assert_eq!(edge_position(50.0, 0.0), "50%");
+        assert_eq!(edge_position(0.0, 12.0), "calc(0% + 6px)");
     }
 
     #[test]

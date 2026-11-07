@@ -9,16 +9,16 @@ test('test', async ({ page }) => {
   let checkbox = page.locator('#component-preview-frame').getByRole('checkbox', { name: 'Accept terms and conditions', exact: true });
   await expect(checkbox).toBeVisible();
   // The checkbox should not be checked initially
-  await expect(checkbox).toHaveAttribute('data-state', 'unchecked');
+  await expect(checkbox).toHaveAttribute('data-unchecked', '');
   // Clicking the checkbox should check it
   await checkbox.click();
-  await expect(checkbox).toHaveAttribute('data-state', 'checked');
+  await expect(checkbox).toHaveAttribute('data-checked', '');
   // Pressing space should also toggle the checkbox.
   // // Use locator.press so the element is focused before the keystroke —
   // // webkit does not always retain focus on a button after a synthetic click.
   // await checkbox.press('Space');
   await page.keyboard.press('Space');
-  await expect(checkbox).toHaveAttribute('data-state', 'unchecked');
+  await expect(checkbox).toHaveAttribute('data-unchecked', '');
 });
 
 test.describe('Axe automated scan', () => {
@@ -51,7 +51,7 @@ test('the box and its indicator keep one constant size whether or not it is chec
 
   const unchecked = await boxes();
   await checkbox.click();
-  await expect(checkbox).toHaveAttribute('data-state', 'checked');
+  await expect(checkbox).toHaveAttribute('data-checked', '');
   const checked = await boxes();
 
   for (const [state, b] of [['unchecked', unchecked], ['checked', checked]] as const) {

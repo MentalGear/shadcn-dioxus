@@ -79,7 +79,7 @@ pub struct TableRowsProps {
     /// move with the row through a sort, and the measured row heights of a windowed body follow
     /// the item. Read while rendering, so signals it reads re-render the body.
     pub item_key: Option<Callback<usize, String>>,
-    /// Extra attributes for the `<tr>` of row `idx`: a class, `data-state`, `aria-selected`.
+    /// Extra attributes for the `<tr>` of row `idx`: a class, `data-selected`, `aria-selected`.
     /// The body's own `data-virtual-index` and `aria-rowindex` win over a same-named one.
     pub row_attributes: Option<Callback<usize, Vec<Attribute>>>,
     /// How many rows precede the first data row in the table (the header). `aria-rowindex` of

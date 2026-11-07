@@ -45,14 +45,14 @@ test("CommandShortcut sits at the inline end, muted, and takes the foreground wh
 
   await root.getByRole("combobox").focus();
   await page.keyboard.press("ArrowDown");
-  const highlighted = root.locator('.dx-command-item[data-highlighted="true"]');
+  const highlighted = root.locator('.dx-command-item[data-highlighted]');
   await expect(highlighted).toHaveCount(1);
   const ink = await highlighted.locator(".dx-command-shortcut").evaluate((h) => ({
     color: getComputedStyle(h).color,
     item: getComputedStyle(h.parentElement as HTMLElement).color,
   }));
   expect(ink.color, "takes the highlighted row's ink").toBe(ink.item);
-  if (!(await option.evaluate((el) => el.getAttribute("data-highlighted") === "true"))) {
+  if (!(await option.evaluate((el) => el.getAttribute("data-highlighted") !== null))) {
     expect(rest.color, "muted at rest").not.toBe(rest.itemColor);
   }
 });

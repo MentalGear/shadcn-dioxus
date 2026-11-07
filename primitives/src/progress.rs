@@ -59,7 +59,7 @@ pub struct ProgressProps {
 /// ## Styling
 ///
 /// The [`Progress`] component defines the following data attributes you can use to control styling:
-/// - `data-state`: Indicates the state of the progress. Values are `loading` or `indeterminate`.
+/// - `data-indeterminate` / `data-progressing` / `data-complete`: Exactly one is present: no value, a value below the maximum, or the maximum.
 /// - `data-indeterminate`: Present (empty) while no value is set, absent otherwise.
 /// - `data-progressing`: Present (empty) while a value below the maximum is set, absent otherwise.
 /// - `data-complete`: Present (empty) once the value reaches the maximum, absent otherwise.
@@ -70,7 +70,7 @@ pub struct ProgressProps {
 /// - `--progress-value`: A value between 0 and 100 representing the current progress percentage.
 #[component]
 pub fn Progress(props: ProgressProps) -> Element {
-    // Calculate percentage for styling and "data-state"
+    // Calculate percentage for styling and the state attributes
     let percentage = use_memo(move || {
         props.value.cloned().map(|v| {
             let max = (props.max)();

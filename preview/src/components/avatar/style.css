@@ -44,7 +44,7 @@
 }
 
 /* The picture and the fallback share ONE grid cell, the picture on top, so neither one's box depends on whether
- * the other exists. The prerendered page is `data-state="empty"`, which renders BOTH (the fallback only leaves
+ * the other exists. The prerendered page is `data-empty`, which renders BOTH (the fallback only leaves
  * once the hydrated component reaches `loaded`): as a centred flex row would seat the picture ~8px left of the circle
  * with the initials beside it, then jump it to the centre at hydration, on every avatar of the home page's
  * masonry (`playwright/layout-stability.spec.ts`). Stacked, the prerendered and the hydrated avatar are the
@@ -99,12 +99,12 @@
 /* The placeholder for a picture that is still loading and has no `AvatarFallback` to stand in for it (or whose
  * fallback is held back by its `delay`): a pulsing muted disc. With a fallback showing, the initials are the
  * stand-in and nothing pulses. */
-.dx-avatar[data-state="loading"]:not(:has(> .dx-avatar-fallback)) {
+.dx-avatar[data-loading]:not(:has(> .dx-avatar-fallback)) {
     animation: dx-pulse 1.5s infinite ease-in-out;
     background: var(--dx-muted);
 }
 
-.dx-avatar[data-state="empty"] {
+.dx-avatar[data-empty] {
     background: var(--dx-muted);
 }
 

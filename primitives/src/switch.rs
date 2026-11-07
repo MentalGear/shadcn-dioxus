@@ -82,7 +82,7 @@ pub struct SwitchProps {
 /// ## Styling
 ///
 /// The [`Switch`] component defines the following data attributes you can use to control styling:
-/// - `data-state`: Indicates the state of the switch. Values are `checked` or `unchecked`.
+/// - `data-checked` / `data-unchecked`: Exactly one is present: whether the item is checked.
 /// - `data-checked` / `data-unchecked`: Present (empty) while checked / unchecked, absent otherwise.
 /// - `data-disabled`: Indicates if the switch is disabled. Values are `true` or `false`.
 /// - `data-readonly`: Present (empty) while the switch is read-only, absent otherwise. The
@@ -120,7 +120,7 @@ pub fn Switch(props: SwitchProps) -> Element {
         aria_required: props.required,
         ..state_attrs::checked(checked()),
         // Only add data-disabled when actually disabled
-        ..state_attrs::disabled(props.disabled),
+        ..state_attrs::presence(state_attrs::Flag::Disabled, props.disabled),
         aria_readonly: (props.read_only)().then_some("true"),
         ..state_attrs::readonly(props.read_only),
     });
@@ -168,6 +168,8 @@ pub fn Switch(props: SwitchProps) -> Element {
             type: "checkbox",
             aria_hidden: true,
             tabindex: -1,
+            // Rust is the only writer of this mirror: the browser must not restore a form-state value into it.
+            autocomplete: crate::MIRROR_AUTOCOMPLETE,
             name: props.name,
             form: props.form,
             value: props.value,

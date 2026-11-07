@@ -275,7 +275,7 @@ function scheduleVisibility() {
 // document order, so their tops are monotonic: a binary search reads O(log n)
 // boxes instead of laying out every skipped chunk.
 function currentAnchorId(list) {
-  const anchors = list.filter((row) => row.dataset.scrollAnchor === "true" && row.dataset.messageId);
+  const anchors = list.filter((row) => row.dataset.scrollAnchor !== undefined && row.dataset.messageId);
   const line = cfg.margin + cfg.peek + EPS;
   let lo = 0;
   let hi = anchors.length - 1;
@@ -404,14 +404,14 @@ function elementScrollTop(el, align, margin) {
 
 function lastAnchor(list) {
   for (let i = list.length - 1; i >= 0; i--) {
-    if (list[i].dataset.scrollAnchor === "true") return list[i];
+    if (list[i].dataset.scrollAnchor !== undefined) return list[i];
   }
   return null;
 }
 
 function newAnchor(list, previousCount) {
   for (let i = previousCount; i < list.length; i++) {
-    if (list[i].dataset.scrollAnchor === "true") return list[i];
+    if (list[i].dataset.scrollAnchor !== undefined) return list[i];
   }
   return null;
 }
@@ -419,7 +419,7 @@ function newAnchor(list, previousCount) {
 function manyNewAnchors(list, previousCount) {
   let count = 0;
   for (let i = previousCount; i < list.length; i++) {
-    if (list[i].dataset.scrollAnchor === "true" && ++count > 1) return true;
+    if (list[i].dataset.scrollAnchor !== undefined && ++count > 1) return true;
   }
   return false;
 }
@@ -429,7 +429,7 @@ function manyNewAnchors(list, previousCount) {
 function takeFreshAnchor(list) {
   let fresh = null;
   for (const item of list) {
-    const isAnchor = item.dataset.scrollAnchor === "true";
+    const isAnchor = item.dataset.scrollAnchor !== undefined;
     if (isAnchor && !fresh && anchorSeen.get(item) !== true) fresh = item;
     anchorSeen.set(item, isAnchor);
   }
@@ -474,7 +474,7 @@ function ready() {
 function updateButtons(state) {
   for (const button of root.querySelectorAll("[data-message-scroller-button]")) {
     const active = button.getAttribute("data-direction") === "start" ? state.start : state.end;
-    button.setAttribute("data-active", active ? "true" : "false");
+    button.toggleAttribute("data-active", !!active);
     button.toggleAttribute("inert", !active);
     if (active) button.removeAttribute("tabindex");
     else button.setAttribute("tabindex", "-1");
@@ -804,7 +804,7 @@ function handleContentChange() {
       commitScrollState();
       return;
     }
-    const preserve = viewport.getAttribute("data-preserve-scroll-on-prepend") !== "false";
+    const preserve = viewport.hasAttribute("data-preserve-scroll-on-prepend");
     const firstIndex = previousFirst ? list.indexOf(previousFirst) : -1;
     if (preserve && firstIndex > 0) {
       // Prepended rows are not new appends.

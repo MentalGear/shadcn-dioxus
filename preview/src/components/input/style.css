@@ -85,7 +85,7 @@
 /* `aria-invalid:border-destructive ring-3 ring-destructive/20 dark:ring-destructive/40`, after the focus
  * rule so a focused invalid field stays red. `[data-invalid]` is Form's blocked-submit marker. */
 .dx-input[aria-invalid="true"],
-.dx-input[data-invalid="true"] {
+.dx-input[data-invalid] {
   box-shadow: var(--dx-input-invalid-shadow, var(--dx-ring-invalid-field));
 }
 

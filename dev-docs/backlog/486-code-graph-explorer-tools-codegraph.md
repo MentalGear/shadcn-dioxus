@@ -4,7 +4,7 @@ title: "Code graph explorer: SCIP-derived graph with a granularity slider (scrip
 status: "BUILT, minimal scope (2026-11-03): scripts/codegraph/ (run.sh, build_graph.py, make_explorer.py…"
 size: "S-M for the minimal scope; the rest is…"
 area: tooling
-updated: 2026-11-05
+updated: 2026-11-06
 ---
 
 # Row 486: Code graph explorer
@@ -39,7 +39,10 @@ lenses, a details-panel table, outlier rings and a Comments worst-files tab. Sti
 Measured: primitives crate M1 0.48, M2 80.5 %, M3 97.7 %; M4 total 0 (equals `check-history-comments.sh`, 0; a planted
 history comment read 1 on both); M5 total 2 (two `TODO` words in `preview/src/site`); M6 dense outliers 22 files, sparse 4
 (the sparse fence is on a log scale because the plain one is negative). Rebuilding the graph with the metrics takes about 14
-s. Nice-to-have N1 to N6 are not built. Numbers and how to read them: `scripts/codegraph/README.md`.
+s. Separate staleness keys (2026-11-06): the metrics live in `comments.json` (file text only, `build_comments.py`), the graph in
+`graph.json` (SCIP index); a `.rs` edit no longer re-indexes, it rebuilds the metrics and the page at once and the page
+marks the index stale (changed files listed); `--force` re-indexes. `status.json` and the page's status line show the HEAD,
+key and time each part was built from. Nice-to-have N1 to N6 are not built. Numbers and how to read them: `scripts/codegraph/README.md`.
 
 Researched 2026-10-29 and 2026-10-31 at the owner's request; a prototype exists. The research, the tool comparison and the
 measured numbers are in [`research/code-graph-explorer-2026-10-31.md`](../research/code-graph-explorer-2026-10-31.md), and
@@ -194,6 +197,8 @@ Playbook: [`supply-chain/README.md`](../supply-chain/README.md). Control ids are
   (`git hash-object`) of the `*.rs` and `Cargo.toml` files that `git ls-files -co --exclude-standard` lists, so an
   uncommitted edit counts; plus `Cargo.lock` and the rust-analyzer version. The key is stored beside the index. When only
   the extractor or the page template changed, only `graph.json` and `explorer.html` are rebuilt. `--force` re-indexes.
+  Refined by the owner's follow-up: the index key is the tree it was built from, a later `.rs` edit marks the index stale in the
+  page instead of re-indexing (the comment metrics, which need no index, are rebuilt at once); `--force` or a missing index builds it.
 - **(c) Libraries.** Cytoscape.js is pinned through the repo's package setup per C23 and S1-S10 (S3 to S6), inlined into
   the page, and loaded from no CDN. The new `pnpm-workspace.yaml` goes in the C09 and C19 config columns and the frozen
   install in `scripts/session-setup.sh` (C10). fcose is replaced by Cytoscape's built-in `cose` (dependency rule);
@@ -228,7 +233,7 @@ the choice.
 - `scripts/codegraph/run.sh` on the current HEAD builds `index.scip`, `graph.json` and `explorer.html` in
   `target-codegraph/` from a fresh index.
 - A second run with no source change reports the cached index and skips rust-analyzer; a `.rs` edit, committed or not,
-  re-indexes; an extractor or page-only change rebuilds graph and page without SCIP; `--force` re-indexes.
+  rebuilds the metrics and the page and marks the index stale; an extractor or page-only change rebuilds graph and page without SCIP; `--force` re-indexes.
 - `Cargo.lock` is unchanged after the run; `git status` shows no generated artefact; the page has no `http(s)` URL
   outside the allowlist; opened from `file:` it renders every level with no console errors and no network request,
   checked by hand in a browser.

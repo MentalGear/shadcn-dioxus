@@ -6,6 +6,7 @@ import { gotoHydrated } from './hydration';
 import { fixedViewportBox } from './viewport-box';
 import { expectFadeKeepsTransform } from './assert-anchor-transform';
 import { measureAtRest, readAtRest } from "./animations";
+import { pauseAppClock } from "./app-clock";
 
 const URL = `${BASE_URL}/component/navigation_menu/`;
 const GOTO = { timeout: 20 * 60 * 1000 }; // Increase timeout to 20 minutes
@@ -31,7 +32,7 @@ test('hover opens the panel', async ({ page }) => {
   const trigger = nav(page).getByRole('button', { name: 'Getting started' });
   await expect(trigger).toHaveAttribute('aria-expanded', 'false');
   await trigger.hover();
-  // primitives/src/navigation_menu.rs's HOVER_OPEN_INTENT_DELAY (150ms) --
+  // primitives/src/navigation_menu.rs's HOVER_OPEN_INTENT_DELAY (50ms) --
   // expect()'s own auto-retry tolerates the delay without this test
   // asserting its exact length (a tight "still closed immediately after
   // hover" window would be flaky under load, not a real methodology
@@ -40,7 +41,22 @@ test('hover opens the panel', async ({ page }) => {
   await expect(trigger).toHaveAttribute('aria-expanded', 'true');
 });
 
-// dev-docs/backlog.md row 189. Hover opens the panel after the 150ms intent delay; the click a user
+// Row 478 item 4: the open delay is Base UI's `NavigationMenu.Root` `delay` default, 50 ms. The hover-intent timer is a
+// `setTimeout`, so the page clock (`app-clock.ts`) fixes the moment it fires: closed 49 ms after the pointer entered,
+// open by 109 ms (renders run on fake frames, hence the margin after the timer).
+test('hover opens the panel after the 50 ms intent delay', async ({ page }) => {
+  await gotoHydrated(page, URL, GOTO);
+  const trigger = nav(page).getByRole('button', { name: 'Getting started' });
+  await pauseAppClock(page);
+  await trigger.hover();
+  await page.clock.runFor(49);
+  await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+  await page.clock.runFor(60);
+  await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+  await page.clock.resume();
+});
+
+// dev-docs/backlog.md row 189. Hover opens the panel after the 50ms intent delay; the click a user
 // then makes on the same trigger must not TOGGLE it shut (the panel would flash open then closed).
 // A click on a panel the pointer opened confirms it (it stays open); the click after that is an
 // ordinary toggle. (Radix itself closes here and only blocks hover re-opening; Base UI's
@@ -56,7 +72,7 @@ test('a click on a trigger whose panel hover just opened keeps it open; the next
   // 150ms intent timer, time to land before asserting.
   await page.waitForTimeout(400);
   await expect(trigger).toHaveAttribute('aria-expanded', 'true');
-  await expect(trigger).toHaveAttribute('data-state', 'open');
+  await expect(trigger).toHaveAttribute('data-open', '');
 
   // The click claimed the panel: a second click is an ordinary toggle and closes it, and the
   // pointer still resting on the trigger does not re-open it.
@@ -188,7 +204,7 @@ test.describe('Open animation never reflows the content', () => {
     await expect(trigger).toHaveAttribute('aria-expanded', 'false');
 
     await trigger.hover();
-    // Spans HOVER_OPEN_INTENT_DELAY (150ms) plus the open transition's own
+    // Spans HOVER_OPEN_INTENT_DELAY (50ms) plus the open transition's own
     // --dx-motion-duration-slow (200ms), with margin --
     // primitives/src/navigation_menu.rs and this component's style.css.
     const widths = await sampleWidthEveryFrame(page, 500);
@@ -207,7 +223,7 @@ test.describe('Open animation never reflows the content', () => {
   test('the open/close motion actually animates transform, not just opacity', async ({ page }) => {
     // Guards the entrance motion behind the reflow invariant (not a literal `width`
     // transition): `preview/src/components/navigation_menu/style.css`'s
-    // `[data-state]` motion rules must not tie in CSS specificity with the shared,
+    // `[data-open]` / `[data-closed]` motion rules must not tie in CSS specificity with the shared,
     // engine-injected anchor-positioning stylesheet's own `transform: none` reset
     // (primitives/src/top_layer/styles.rs), which -- injected later in the cascade -- would
     // win and silently kill the scale/slide entrance motion (opacity would be the
@@ -245,13 +261,14 @@ test.describe('Open animation never reflows the content', () => {
     // still winning, this would also read as identity instead.
     expect(settledTransform).toMatch(PLACEMENT_ONLY);
 
-    // Flip `data-state` directly on the real, mounted element (bypassing
+    // Flip `data-open` / `data-closed` directly on the real, mounted element (bypassing
     // this primitive's own hover/focus lifecycle entirely) to isolate
     // exactly what the CSS cascade computes for "closed", independent of
     // timing -- the technique that isolates this cascade case.
     await page.evaluate(() => {
       const el = document.querySelector('.dx-navigation-menu-content');
-      el?.setAttribute('data-state', 'closed');
+      el?.removeAttribute('data-open');
+      el?.setAttribute('data-closed', '');
     });
     // Read past this file's own --dx-motion-duration-base (150ms)
     // transition so this is the *settled* value, not a mid-transition one.
@@ -286,7 +303,7 @@ test.describe('Panel layout matches shadcn: panel width, featured card and list 
   // shadcn-ui/ui@295a1f1 apps/v4/registry/new-york-v4/examples/
   // navigation-menu-demo.tsx (grid `md:w-[400px] lg:w-[500px]
   // lg:grid-cols-[.75fr_1fr]`, featured `from-muted/50 to-muted`, `ListItem`).
-  const OPEN_PANEL = '.dx-navigation-menu-content[data-state="open"]';
+  const OPEN_PANEL = '.dx-navigation-menu-content[data-open]';
 
   async function openPanel(page: Page, name: string) {
     const trigger = nav(page).getByRole('button', { name });
@@ -462,7 +479,7 @@ test.describe('Axe automated scan', () => {
 // test above.
 // ---------------------------------------------------------------------------
 test.describe('open_on_hover: false (click activation)', () => {
-  const HOVER_SETTLE_MS = 1000; // >> HOVER_OPEN_INTENT_DELAY (150ms) + HOVER_CLOSE_GRACE_DELAY (300ms)
+  const HOVER_SETTLE_MS = 1000; // >> HOVER_OPEN_INTENT_DELAY (50ms) + HOVER_CLOSE_GRACE_DELAY (300ms)
 
   function clickNav(page: Page) {
     return page.getByRole('navigation', { name: 'Click-only navigation menu' });
@@ -603,9 +620,9 @@ test.describe('Open/close animation', () => {
     const trigger = nav(page).getByRole('button', { name: 'Getting started' });
     await trigger.hover();
     await expect(trigger).toHaveAttribute('aria-expanded', 'true');
-    const content = page.locator('.dx-navigation-menu-content[data-state="open"]').first();
+    const content = page.locator('.dx-navigation-menu-content[data-open]').first();
     await expect(content).toBeVisible();
     await expectFadeKeepsTransform(content, 'navigation menu content, open');
-    await expectFadeKeepsTransform(content, 'navigation menu content, close', { 'data-state': 'closed' });
+    await expectFadeKeepsTransform(content, 'navigation menu content, close', { 'data-open': null, 'data-closed': '' });
   });
 });

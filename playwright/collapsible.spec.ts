@@ -55,7 +55,7 @@ test.describe("hidden_until_found", () => {
     const { panel } = await load(page);
     await expect(panel).toHaveCount(1);
     await expect(panel).toHaveAttribute("hidden", "until-found");
-    await expect(panel).toHaveAttribute("data-open", "false");
+    await expect(panel).not.toHaveAttribute("data-open");
     expect(await panel.evaluate((el) => el.textContent)).toContain(TEXT);
     // Skipped by layout and paint like display:none, but still a real box for the find-in-page.
     expect(
@@ -89,7 +89,7 @@ test.describe("hidden_until_found", () => {
     });
 
     await expect(trigger).toHaveAttribute("aria-expanded", "true");
-    await expect(panel).toHaveAttribute("data-open", "true");
+    await expect(panel).toHaveAttribute("data-open", "");
     await expect(panel).not.toHaveAttribute("hidden", /.*/);
     await expect(page.locator("#quokka-target")).toBeVisible();
   });
@@ -99,7 +99,7 @@ test.describe("hidden_until_found", () => {
     await panel.dispatchEvent("beforematch");
 
     await expect(trigger).toHaveAttribute("aria-expanded", "true");
-    await expect(panel).toHaveAttribute("data-open", "true");
+    await expect(panel).toHaveAttribute("data-open", "");
     await expect(panel).not.toHaveAttribute("hidden", /.*/);
   });
 

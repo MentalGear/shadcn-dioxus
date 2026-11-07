@@ -60,7 +60,7 @@ test('test', async ({ page }) => {
 test('a press inside the dialog released over its backdrop does not dismiss it (text selection, drags); a real backdrop click does', async ({ page }) => {
   // A press inside the panel and a release over the `::backdrop` produce a `click` whose target is
   // the dialog itself, outside its box -- identical, by target and coordinates, to a backdrop click.
-  // `use_dialog_backdrop_dismiss` (primitives/src/lib.rs) also requires the PRESS to have begun
+  // the dismiss core's backdrop press (primitives/src/dismiss.rs, `Press::Backdrop`) also requires the PRESS to have begun
   // on the backdrop (so a drag up on the Drawer's handle, which ends over the backdrop, does not dismiss).
   await gotoHydrated(page, `${BASE_URL}/component/dialog/`, { timeout: 20 * 60 * 1000 });
   await page.getByRole('button', { name: 'Show Dialog', exact: true }).click();
@@ -76,7 +76,7 @@ test('a press inside the dialog released over its backdrop does not dismiss it (
   await page.mouse.up();
   await page.waitForTimeout(700);
   await expect(dialog).toBeVisible();
-  await expect(dialog).toHaveAttribute('data-state', 'open');
+  await expect(dialog).toHaveAttribute('data-open', '');
 
   // Press AND release on the backdrop: dismissed.
   await page.mouse.click(2, 2);

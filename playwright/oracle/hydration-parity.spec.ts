@@ -161,7 +161,7 @@
  *     <button id="dxc-238" type="button" style="anchor-name: --dxa-dxc-240;"
  *             id="clip-popover-trigger" ...>
  *   duplicate "id" in ContextMenuRoot (`context_menu.rs`):
- *     <div id="dxc-232" tabindex=0 data-state="closed" data-disabled=false
+ *     <div id="dxc-232" tabindex=0 data-closed=""
  *          id="clip-context-menu-root" ...>
  *   duplicate "id" in ContextMenuTrigger (`context_menu.rs`):
  *     <div id="dxc-233" tabindex="-1" role="button" aria-haspopup="menu"
@@ -684,16 +684,16 @@ test.describe("hydration parity — SSG server markup vs. wasm client", () => {
       .locator('article.dx-component-card:has(a[href^="/component/dropdown_menu/"]) button.dx-dropdown-menu-trigger')
       .first();
     await expect(trigger).toBeVisible();
-    await expect(trigger).toHaveAttribute("data-state", "closed");
+    await expect(trigger).toHaveAttribute("data-closed", "");
 
     await trigger.click();
 
     await expect(
       trigger,
       "clicking 'Open Menu' on a hard-loaded page did not open the menu " +
-        "(data-state never became 'open'): a hard-loaded page must be " +
+        "(data-open never appeared): a hard-loaded page must be " +
         "interactive after hydration",
-    ).toHaveAttribute("data-state", "open");
+    ).toHaveAttribute("data-open", "");
     // `menuitem`, not `option`: DropdownMenu's items carry the APG Menu
     // Button pattern role (dev-docs/backlog.md row 24, `menu-roles.spec.ts`),
     // not the listbox `option` role. Scoped through
@@ -704,7 +704,7 @@ test.describe("hydration parity — SSG server markup vs. wasm client", () => {
     // page-wide locator hits a strict-mode "2 elements" violation across
     // the two components' items.
     await expect(
-      page.locator('.dx-dropdown-menu-content[data-state="open"]').getByRole("menuitem").first(),
+      page.locator('.dx-dropdown-menu-content[data-open]').getByRole("menuitem").first(),
     ).toBeVisible();
   });
 

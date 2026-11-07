@@ -645,7 +645,7 @@ pub fn Markdown(
         "data-slot": "markdown",
     });
     let owned = attributes!(div {
-        "data-streaming": if streaming { "true" } else { "false" },
+        "data-streaming": streaming.then_some(""),
     });
     let merged = merge_attributes(vec![base, attributes, owned]);
     let healed;
@@ -743,7 +743,7 @@ fn render_element(kind: &Kind, children: &[Node], ctx: Ctx) -> Element {
             rsx! {
                 li {
                     class: "dx-markdown-item",
-                    "data-task": if task { "true" } else { "false" },
+                    "data-task": task.then_some(""),
                     {inner}
                 }
             }

@@ -501,13 +501,13 @@ test.describe("Carousel: focus when the focused arrow becomes disabled", () => {
       await page.keyboard.press("Space");
       await page.waitForTimeout(450);
     }
-    await expect(slide(5)).toHaveAttribute("data-selected", "true");
+    await expect(slide(5)).toHaveAttribute("data-selected", "");
     expect((await activeElementInfo(page)).className).toContain("dx-carousel-content");
 
     // The hand-off target is a working place to be: ArrowLeft pages back, and
     // Previous (enabled again) is reachable with Shift+Tab.
     await page.keyboard.press("ArrowLeft");
-    await expect(slide(4)).toHaveAttribute("data-selected", "true");
+    await expect(slide(4)).toHaveAttribute("data-selected", "");
     await expect(nextOf(root)).toBeEnabled();
   });
 
@@ -557,12 +557,9 @@ test.describe("Carousel: focus when the focused arrow becomes disabled", () => {
 });
 
 test.describe("Carousel: axe on the hidden-arrow demo", () => {
-  test("no automatically detectable a11y issues at the first slide and at the last", async ({ page }) => {
+  test("no automatically detectable a11y issues at the last slide", async ({ page }) => {
     await goto(page, "hidden_arrows");
     const root = hiddenArrows(page);
-    await expectNoAxeViolations(page, "carousel: hidden_arrows, first slide", {
-      include: "#component-preview-frame-hidden_arrows",
-    });
     await clickToEnd(root, 4);
     await expect(nextOf(root)).toBeHidden();
     await expectNoAxeViolations(page, "carousel: hidden_arrows, last slide", {

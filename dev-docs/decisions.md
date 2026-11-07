@@ -66,3 +66,8 @@ the line here is the pointer, so when a row's text and this line disagree, the r
   builders, `#[expect]` with a reason, and the conventions in [`guides/rust-conventions.md`](./guides/rust-conventions.md).
   2026-10-21 (row [355](./backlog/done/355-adopt-google-rust-style-guide-items.md)).
 - Remote branch deletion needs the owner's explicit go; none is deleted without it. 2026-10-24 (row [266](./backlog/266-repo-cleanup-archive-historical-dev-docs.md)).
+- A question for the owner is first deconstructed to its root cause and solved by construction; only what is still
+  open after that (an exception under C23 D6, a device check, a taste call with no better version) goes to the owner,
+  with a recommendation. 2026-11-06.
+- Controlled-versus-uncontrolled guidance is written once (`/docs#controlled`) and each component page's block is
+  generated from its own props, so it cannot drift or be missing. 2026-11-06 (rows 392, 387).

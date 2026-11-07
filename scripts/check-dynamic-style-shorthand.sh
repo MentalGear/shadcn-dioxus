@@ -7,7 +7,7 @@
 # `var()`-valued shorthand from an inline `style` the first time the string is re-set (the server markup is right, the
 # hydrated page loses the border) and keeps stale longhands when one string is swapped for another. Declare the
 # shorthand in a stylesheet or `style {}` rule keyed by a class or data attribute and keep only computed numbers
-# inline, spell the longhands, or paint by `data-state`. Reasoned allowlists, stale entries fail.
+# inline, spell the longhands, or paint by a state attribute. Reasoned allowlists, stale entries fail.
 #
 # Dioxus's web renderer (dioxus-interpreter-js 0.7.x, `setAttributeInner`, case "style") re-sets an inline
 # `style` like this: remember every longhand the element's style declares, `setAttribute("style", value)`,
@@ -35,7 +35,7 @@
 # chosen at run time by `if`/`match`, can hit it. The class is made unable to recur by construction:
 #
 #   ARM 2. A rsx `style:` attribute must not be an `if` or `match` expression choosing between whole style
-#   strings. State-dependent paint goes through a class or a `data-state` attribute with a rule in the
+#   strings. State-dependent paint goes through a class or a state attribute with a rule in the
 #   component's `style.css`, or the two states are two static `if`/`else` elements (a static literal is never
 #   re-set). Reasoned exceptions are in ALLOW_CHOICE below.
 #

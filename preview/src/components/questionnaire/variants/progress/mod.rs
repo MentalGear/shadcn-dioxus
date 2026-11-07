@@ -43,7 +43,7 @@ fn items() -> Vec<ItemDef> {
     ]
 }
 
-/// A segmented bar inside the named progressbar. The segments are styled by `data-state` classes, never by a
+/// A segmented bar inside the named progressbar. The segments are styled by `data-done` classes, never by a
 /// `style` string that changes with the step (Dioxus patches a changed `style` string property by property and
 /// drops the properties the new string does not repeat).
 #[component]
@@ -57,7 +57,7 @@ fn Checkpoints() -> Element {
                         key: "{index}",
                         class: "dx-questionnaire-checkpoint",
                         "data-slot": "questionnaire-checkpoint",
-                        "data-state": if index < progress.current { "done" } else { "pending" },
+                        "data-done": (index < progress.current).then_some(""),
                     }
                 }
             }

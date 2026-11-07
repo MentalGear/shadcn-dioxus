@@ -49,7 +49,7 @@
 //!   belongs here.
 //!
 //! A drag that began inside the drawer and ended over its `::backdrop` is not a
-//! backdrop click: `crate::use_dialog_backdrop_dismiss` requires the PRESS to have
+//! backdrop click: the dismiss core's `Backdrop` press requires the PRESS to have
 //! started on the backdrop too, so that rule is dialog-wide, not drawer-specific.
 //!
 //! Gating *where* a drag may start still needs the real DOM target (Dioxus's
@@ -71,7 +71,7 @@
 //! sets `transform` replaces whatever `transform` the element already has for as long
 //! as it runs (`scripts/check-anchored-keyframes.sh`). It has to be a keyframe, not a
 //! `transition`, because a plain CSS `transition` never runs on an element's first
-//! style computation and this panel's `data-state` is already `"open"` at the moment
+//! style computation and this panel's `data-open` is already present at the moment
 //! it is first inserted (`use_animated_open` only mounts it once `open` is true).
 //!
 //! Per the CSS Animations cascade, a *running or forwards-held* animation's value for
@@ -135,7 +135,7 @@
 //!
 //! A [`Drawer`] rendered inside another [`DrawerContent`] is nested (Vaul's
 //! `NestedRoot`, without a separate component: the context decides). While the child
-//! is open the parent carries `data-nested-open="true"`, which the theme turns into a
+//! is open the parent carries `data-nested-open`, which the theme turns into a
 //! small scale and offset, and closing the child (the moment its close STARTS)
 //! restores it. Escape closes only the top-most because the browser's `cancel` goes
 //! to the top-most modal `<dialog>` only; a drag closes only the top-most because
@@ -872,7 +872,7 @@ pub struct DrawerRootProps {
 ///
 /// [`DrawerContent`] defines the following data attributes you can use to
 /// control styling:
-/// - `data-state`: `"open"` or `"closed"`.
+/// - `data-open` / `data-closed`: Exactly one is present: whether this part is open.
 /// - `data-open` / `data-closed`: Present (empty) while open / closed, absent otherwise.
 /// - `data-side`: `"top"`, `"right"`, `"bottom"`, or `"left"` -- the RESOLVED side
 ///   (never `"auto"`; see [`EdgeSide::Auto`]).
@@ -980,7 +980,7 @@ pub struct DrawerContentProps {
 /// The content of the drawer -- must be used inside a [`Drawer`]. Renders
 /// [`crate::dialog::DialogContent`] (so it inherits that primitive's focus
 /// trap/restore, inertness, top layer and Escape handling) with
-/// `data-side`/`data-state`/`data-dragging` data attributes and, while a
+/// `data-side`/`data-open`/`data-dragging` data attributes and, while a
 /// drag has moved the panel, an inline `transform` (see this module's doc
 /// for why `transform` and not `translate`) tracking the pointer.
 ///
@@ -1176,8 +1176,8 @@ pub fn DrawerContent(props: DrawerContentProps) -> Element {
         "data-dx-drawer": "content",
         "data-side": side.cloned().as_str(),
         ..state_attrs::open(is_open),
-        ..state_attrs::valued(state_attrs::Flag::Dragging, dragging()),
-        "data-nested-open": if open_children() > 0 { "true" } else { "false" },
+        ..state_attrs::presence(state_attrs::Flag::Dragging, dragging()),
+        "data-nested-open": (open_children() > 0).then_some(""),
         "data-snap": snap_state,
         style: style,
     });

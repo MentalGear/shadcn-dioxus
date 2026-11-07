@@ -46,20 +46,20 @@
 
 /* `data-open:bg-muted/50`: an open trigger is half a hover, so open and hovered differ in dark too
  * (`--dx-muted` is the same #262626 as `--dx-accent` there, so the pair would otherwise tie). */
-.dx-navigation-menu-item[data-state="open"] .dx-navigation-menu-trigger {
+.dx-navigation-menu-item[data-open] .dx-navigation-menu-trigger {
   background-color: color-mix(in oklab, var(--dx-muted) 50%, transparent);
 }
 
-.dx-navigation-menu-trigger[data-disabled="true"],
-.dx-navigation-menu-link[data-disabled="true"] {
+.dx-navigation-menu-trigger[data-disabled],
+.dx-navigation-menu-link[data-disabled] {
   color: var(--dx-muted-foreground);
   cursor: not-allowed;
   opacity: var(--dx-opacity-disabled);
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .dx-navigation-menu-trigger:hover:not([data-disabled="true"]),
-  .dx-navigation-menu-item > .dx-navigation-menu-link:hover:not([data-disabled="true"]) {
+  .dx-navigation-menu-trigger:hover:not([data-disabled]),
+  .dx-navigation-menu-item > .dx-navigation-menu-link:hover:not([data-disabled]) {
     background: var(--dx-muted);
     outline: none;
   }
@@ -69,7 +69,7 @@
  * `data-[active=true]:bg-muted/50`): the theme's selected tint, hued by a picked accent (row 389). Hover and
  * focus below paint over it, as they do over any link. `background-color`, not the shorthand: the featured
  * card keeps its gradient. */
-.dx-navigation-menu-link[data-active="true"] {
+.dx-navigation-menu-link[data-active] {
   background-color: var(--dx-accent-tint-selected);
 }
 
@@ -91,7 +91,7 @@
   transition: rotate var(--dx-motion-duration-slower) var(--dx-motion-ease-standard);
 }
 
-.dx-navigation-menu-item[data-state="open"] .dx-navigation-menu-expand-icon {
+.dx-navigation-menu-item[data-open] .dx-navigation-menu-expand-icon {
   rotate: 180deg;
 }
 
@@ -154,7 +154,7 @@
  * stylesheet's `.dx-anchor-navigation-menu[popover] { ...; transform: none;
  * ... }` rule (primitives/src/top_layer/styles.rs's `ANCHOR_POSITIONING_CSS_JS_
  * LITERAL`, appended to `<head>` well after this file's own `<link>`) ties
- * `transition`-based `[data-state]` rules at the exact same specificity (one
+ * `transition`-based `[data-open]` / `[data-closed]` rules at the exact same specificity (one
  * class + one attribute each) and, being later-injected, wins the cascade.
  *
  * (2) The deeper reason a plain CSS fix (even a higher-specificity one)
@@ -190,7 +190,7 @@
  * `getAnimations()` (`use_animated_open` in `primitives/src/lib.rs`) treats
  * a running `CSSAnimation` exactly like a `CSSTransition` -- both are
  * `Animation` instances -- so this swap needs no Rust-side change. */
-.dx-navigation-menu-content[data-state="closed"] {
+.dx-navigation-menu-content[data-closed] {
   animation: dx-navigation-menu-content-animate-out var(--dx-floating-duration) var(--dx-floating-ease-exit) forwards;
 }
 
@@ -214,7 +214,7 @@
   }
 }
 
-.dx-navigation-menu-content[data-state="open"] {
+.dx-navigation-menu-content[data-open] {
   animation: dx-navigation-menu-content-animate-in var(--dx-motion-duration-slow) var(--dx-motion-ease-emphasized) forwards;
   pointer-events: auto;
 }
@@ -239,7 +239,7 @@
  * content's open/close motion is animated content, so it needs its own
  * override, matching the per-component convention `input_otp`/`spinner`/
  * `../tooltip/style.css`/`../popover/style.css`/`../drawer/style.css`
- * already carry. Both `animation-duration` (this file's `[data-state]`
+ * already carry. Both `animation-duration` (this file's `[data-open]` / `[data-closed]`
  * rules above) and `transition-duration` (the plain `background-color`/
  * `rotate` transitions elsewhere in this file, e.g. the expand icon) --
  * `../drawer/style.css`'s identical block sets both for the same reason:
@@ -337,7 +337,7 @@
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .dx-navigation-menu-content .dx-navigation-menu-link:hover:not([data-disabled="true"]) {
+  .dx-navigation-menu-content .dx-navigation-menu-link:hover:not([data-disabled]) {
     background-color: var(--dx-muted);
     outline: none;
   }
@@ -403,7 +403,7 @@
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .dx-navigation-menu-content .dx-navigation-menu-featured:hover:not([data-disabled="true"]) {
+  .dx-navigation-menu-content .dx-navigation-menu-featured:hover:not([data-disabled]) {
     --dx-navigation-menu-featured-surface: color-mix(in var(--dx-hover-mix-space), var(--dx-muted), var(--dx-foreground) 8%);
   }
 }
@@ -444,7 +444,7 @@
     opacity var(--dx-motion-duration-fast) var(--dx-motion-ease-out);
 }
 
-.dx-navigation-menu-indicator[data-state="visible"] {
+.dx-navigation-menu-indicator[data-open] {
   opacity: 1;
 }
 

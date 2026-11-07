@@ -1,4 +1,4 @@
-The Toast component is used to display brief messages to the user, typically for notifications or alerts. The toast messages can be focused with the keyboard with the `f6` key: one handler per page, however many providers it mounts. It goes to the region of the most recent toast, pressing it again cycles through the other regions that hold toasts (wrapping), and with no toast anywhere it does nothing. Providers only register their region with that handler; they never listen themselves.
+The Toast component is used to display brief messages to the user, typically for notifications or alerts. The toast messages can be focused with the keyboard with the `F6` key: one handler per page, however many providers it mounts. It goes to the region of the most recent toast, pressing it again cycles through the other regions that hold toasts (wrapping), and with no toast anywhere it does nothing. Providers only register their region with that handler; they never listen themselves.
 
 ## Component Structure
 

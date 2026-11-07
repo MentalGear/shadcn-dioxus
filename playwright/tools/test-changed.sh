@@ -45,6 +45,9 @@ if grep -q 'hydration-parity\.spec\.ts$' <<<"$(printf '%s\n' "${specs[@]}")"; th
 # tools/timing-switch.sh says `off` that pass prints it is deactivated and runs nothing.
 inv="@timing"
 [ -n "$grep_invert" ] && inv="(?:$grep_invert)|@timing"
+# `pnpm run test:changed -- --workers=2` hands this script a literal `--` first; Playwright would read every flag after
+# it as a file filter, so the separator is dropped here and the flags reach Playwright as flags.
+[ "${1:-}" = "--" ] && shift
 # Not `exec`: a server site_server_ready started is stopped by this shell's EXIT trap.
 rc=0
 pnpm exec playwright test -c ssg.local.config.ts "${specs[@]}" --grep-invert "$inv" --pass-with-no-tests "$@" || rc=$?

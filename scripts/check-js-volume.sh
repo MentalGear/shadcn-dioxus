@@ -45,10 +45,13 @@
 # (`path<TAB>sink<TAB>js_lit<TAB>js_file<TAB>install<TAB>inline_script<TAB>comment_eval`, files with a non-zero count
 # only, no totals line) is the tree's number per file. A count that rises fails; a count that fell and was not
 # written back fails (run `--update-baseline`); a new file with a count fails; a row for a file that is gone fails.
-# A deliberate raise is `--update-baseline --allow-raise "row N reason"`: it writes a visible `# raised: row N reason`
-# note on the row (and a `#! total-raised:` line when the total rises), the note counts only when the merge base's
-# baseline does not already have it, and every allowed raise prints under a `RATCHET RAISES` heading at each run,
-# so the owner sees it at the merge. There is no inline marker. An exception is a baseline row with a row number.
+# A raise passes only against a GRANT: the row `N` in the baseline row's `# raised: row N <reason>` note must exist, be
+# open at the base (origin/main or origin/queue/*) and carry `js-grant: <column>=<n>` with n at least the raise
+# (scripts/lib/rows.py); a grant written in the lane's own diff is not at the base, so a lane cannot grant itself:
+# ask the owner for a grant row. `--allow-raise "row N reason"` only writes the note (and the `#! total-raised:
+# row N total=<n>` line) and refuses unless the grant at the base already covers it. Own and inherited raises print
+# separately under `RATCHET RAISES` at each run. There is no inline marker. An exception is a baseline row with a row
+# number.
 #
 # NOT SEEN: JS assembled at run time (`format!` pieces, `[a, b].join("")`) is seen only through the sink count; the
 # sinks are closed by clippy `disallowed_methods` (a cargo gate) and the bridge's own gate in row 434; a computed
@@ -60,8 +63,9 @@
 #   scripts/check-js-volume.sh --inventory              every counted site: file:line kind
 #   scripts/check-js-volume.sh --update-baseline [--allow-raise "row N reason"]
 #   scripts/check-js-volume.sh --self-test              mutations (added eval, aliased `use ... eval as`, `concat!` split, inline
-#       `document::Script`, new `.js`/`.ts`, raised count without a note, a raise only the merge-base compare sees, total rise) must turn red
-# Environment: RATCHET_BASE_REF pins the merge base, RATCHET_NO_BASE=1 skips that half (scripts/lib/ratchet.py).
+#       `document::Script`, new `.js`/`.ts`, raised count without a note or without a grant at the base, a raise only the merge-base compare sees, total rise, wrong total) must turn red
+# Environment: RATCHET_BASE_REF pins the base, RATCHET_NO_BASE=1 skips that half, RATCHET_REQUIRE_BASE=1 makes "no base"
+# red (scripts/lib/ratchet.py).
 # Exit status: 0 clean; 1 a count rose, fell unwritten, or is stale; 2 bad usage or a broken self-test.
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
@@ -80,7 +84,7 @@ import tempfile
 
 HERE = os.getcwd()
 sys.path.insert(0, os.path.join(HERE, "scripts", "lib"))
-from ratchet import Ratchet  # noqa: E402
+from ratchet import Ratchet, selftest_env  # noqa: E402
 
 _spec = importlib.util.spec_from_file_location("comment_scan", os.path.join(HERE, "scripts", "comment-scan.py"))
 cs = importlib.util.module_from_spec(_spec)
@@ -95,8 +99,7 @@ JS_EXT = (".js", ".mjs", ".cjs", ".ts", ".tsx", ".jsx")
 HTML_EXT = (".html", ".htm")
 ADVICE = ("Browser work goes through the bridge in primitives/src/bridge/ (it lands with row 434 lane 3.0; until then add "
           "no JS, lower a count, or ask the owner): dev-docs/js-interop.md#i-want-to--use-this. A new bridge verb or "
-          "rule is the only new JS, with a backlog row; a baseline raise is the owner's decision "
-          "(--update-baseline --allow-raise \"row N reason\").")
+          "rule is the only new JS, with a backlog row; a baseline raise needs a grant row from the owner.")
 
 
 def total_of(c):
@@ -390,6 +393,7 @@ GIT_ENV = {"GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@example.invalid", "GIT
            "GIT_COMMITTER_EMAIL": "t@example.invalid", "GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_SYSTEM": os.devnull}
 
 CLEAN_RS = 'fn plain() -> u32 { 1 }\n'
+GRANT_ROW = '---\nid: {n}\ntitle: "t"\nstatus: "{status}"\njs-grant: {grant}\nadds: []\n---\n\n# Row {n}\n'
 EVAL_RS = ('use dioxus::document::eval;\n'
            'fn go() {\n    let _ = eval(r#"\n        const el = document.getElementById("a");\n        el.focus();\n    "#);\n}\n')
 
@@ -419,11 +423,8 @@ def self_test():
         measured, _ = measure(root)
         R = ratchet(root)
         R.base_ref = None
-        os.environ["RATCHET_NO_BASE"] = "1"
-        try:
+        with selftest_env(RATCHET_NO_BASE="1"):
             errors, wrote = R.update(measured, None)
-        finally:
-            del os.environ["RATCHET_NO_BASE"]
         assert wrote, errors
         if note:
             with open(os.path.join(root, BASELINE), encoding="utf-8") as f:
@@ -440,19 +441,8 @@ def self_test():
             sha = make_base(root, files, base_note)
             mutate(root)
             git(root, "add", "-A")
-            saved = {k: os.environ.get(k) for k in ("RATCHET_BASE_REF", "RATCHET_NO_BASE")}
-            os.environ["RATCHET_BASE_REF"] = sha
-            os.environ.pop("RATCHET_NO_BASE", None)
-            for k, v in (env or {}).items():
-                os.environ[k] = v
-            try:
+            with selftest_env(RATCHET_BASE_REF=sha, **(env or {})):
                 R, rep, _ = run_check(root)
-            finally:
-                for k, v in saved.items():
-                    if v is None:
-                        os.environ.pop(k, None)
-                    else:
-                        os.environ[k] = v
             got = "red" if rep.errors else "green"
             detail = R.format(rep)
         if got == want and why and why not in detail:
@@ -463,7 +453,10 @@ def self_test():
             ok_count += 1
         return detail
 
-    base = {"primitives/src/a.rs": EVAL_RS, "primitives/src/clean.rs": CLEAN_RS}
+    base = {"primitives/src/a.rs": EVAL_RS, "primitives/src/clean.rs": CLEAN_RS,
+            "dev-docs/backlog/434-grant.md": GRANT_ROW.format(n=434, grant="sink=10, js_lit=100, js_file=100", status="APPROVED"),
+            "dev-docs/backlog/435-small.md": GRANT_ROW.format(n=435, grant="js_file=1", status="APPROVED"),
+            "dev-docs/backlog/done/436-closed.md": GRANT_ROW.format(n=436, grant="sink=10", status="APPROVED")}
 
     def append(path, text):
         return lambda root: write(root, path, open(os.path.join(root, path), encoding="utf-8").read() + text)
@@ -475,24 +468,15 @@ def self_test():
                 write(root, BASELINE, fn(f.read()))
         return mut
 
+    def write_rows(root, note=None, note_path="primitives/src/a.rs", directive=None):
+        # the baseline is rewritten to match the code, as an agent would; the note and the directive are the lane's claim
+        measured, _ = measure(root)
+        R = ratchet(root)
+        rows = {p: (c, note if note and p == note_path else "") for p, c in R._clean(measured).items()}
+        write(root, BASELINE, R.render(rows, [directive] if directive else []))
+
     def bump_baseline(note):
-        # the code is already raised (by `append`), now the tree's baseline is rewritten to match, as an agent would
-        def mut(root):
-            measured, _ = measure(root)
-            R = ratchet(root)
-            os.environ["RATCHET_NO_BASE"] = "1"
-            try:
-                R.update(measured, "row 434 test")
-            finally:
-                del os.environ["RATCHET_NO_BASE"]
-            with open(os.path.join(root, BASELINE), encoding="utf-8") as f:
-                lines = f.read().split("\n")
-            for k, ln in enumerate(lines):
-                if ln.startswith("primitives/src/a.rs\t"):
-                    parts = [x for x in ln.split("\t") if not x.startswith("#")]
-                    lines[k] = "\t".join(parts + ([note] if note else []))
-            write(root, BASELINE, "\n".join(lines))
-        return mut
+        return lambda root: write_rows(root, note)
 
     scenario("control: an unchanged tree", "green", base, lambda r: None)
     scenario("control: eval named only in a comment and a string", "green", base,
@@ -529,7 +513,7 @@ def self_test():
              lambda r: write(r, "primitives/src/a.rs", "fn gone() {}\n"), why='lock the drop in')
     scenario("a baseline row whose file is gone", "red", base,
              lambda r: os.remove(os.path.join(r, "primitives/src/a.rs")), why='stale baseline row')
-    scenario("a baseline that was deleted", "red", base, lambda r: os.remove(os.path.join(r, BASELINE)), why='is missing but the merge base')
+    scenario("a baseline that was deleted", "red", base, lambda r: os.remove(os.path.join(r, BASELINE)), why='is missing but the base')
     # raised counts: the code and the baseline agree, only the merge-base compare can see it
     raised_code = append("primitives/src/a.rs", 'fn two() { let _ = eval("x"); }\n')
 
@@ -539,42 +523,41 @@ def self_test():
             bump_baseline(note)(root)
         return mut
 
-    scenario("a raised count with no note (tree and baseline agree)", "red", base, raise_with(None), why='rises above the merge base')
-    detail = scenario("a raised count with a `# raised: row N` note", "green", base,
+    scenario("a raised count with no note (tree and baseline agree)", "red", base, raise_with(None), why='rises above the base')
+    detail = scenario("a raised count with a `# raised: row N` note and a grant at the base", "green", base,
                       raise_with("# raised: row 434 test raise"))
     if "RATCHET RAISES" not in detail or "test raise" not in detail:
         fails.append("a raise with a note must print under the RATCHET RAISES heading, got:\n" + detail)
+    scenario("a note that cites a row with no grant at the base", "red", base, raise_with("# raised: row 999 self-service"),
+             why='row 999 does not exist at the base')
+    scenario("a note that cites a closed row", "red", base, raise_with("# raised: row 436 test"), why='is under done/')
+    scenario("a note that cites a grant too small for the raise", "red", base, raise_with("# raised: row 435 test"),
+             why='row 435 grants sink=0')
     scenario("a malformed note (no row number)", "red", base, raise_with("# raised: because"), why='malformed')
     scenario("a note the merge base already has cannot be spent again", "red", base, raise_with("# raised: row 434 old"),
              base_note="# raised: row 434 old", why='already has')
     scenario("the same raise passes when only the tree is compared (the merge-base half is what catches it)", "green",
              base, raise_with(None), env={"RATCHET_NO_BASE": "1"})
+    scenario("the same raise fails under RATCHET_REQUIRE_BASE with no base", "red", base, raise_with(None),
+             env={"RATCHET_NO_BASE": "1", "RATCHET_REQUIRE_BASE": "1"}, why='RATCHET_REQUIRE_BASE')
     # the total
     moved_files = dict(base)
 
-    def move_into_ts(note):
+    def move_into_ts(directive):
         def mut(root):
             write(root, "primitives/src/a.rs", CLEAN_RS)  # js_lit of a.rs drops to zero (3 lines)
             write(root, "primitives/src/ts/new.ts", "\n".join(f"const v{k} = {k};" for k in range(30)) + "\n")
             git(root, "add", "-A")
-            measured, _ = measure(root)
-            R = ratchet(root)
-            os.environ["RATCHET_NO_BASE"] = "1"
-            try:
-                R.update(measured, "row 434 moved")
-            finally:
-                del os.environ["RATCHET_NO_BASE"]
-            if note is not None:
-                p = os.path.join(root, BASELINE)
-                with open(p, encoding="utf-8") as f:
-                    txt = f.read()
-                write(root, BASELINE, txt.replace("#! total-raised:", "#! total-raised-removed:") if note == "drop" else txt)
+            write_rows(root, "# raised: row 434 moved", "primitives/src/ts/new.ts", directive)
         return mut
 
-    scenario("moving lines into a new .ts raises the total", "red", moved_files, move_into_ts("drop"), why='total rose')
-    detail = scenario("the same move with a `#! total-raised:` line", "green", moved_files, move_into_ts(None))
+    scenario("moving lines into a new .ts raises the total", "red", moved_files, move_into_ts(None), why='total rose')
+    detail = scenario("the same move with a `#! total-raised:` line", "green", moved_files,
+                      move_into_ts("#! total-raised: row 434 total=30 moved"))
     if "TOTAL" not in detail:
         fails.append("a total raise must be listed under RATCHET RAISES, got:\n" + detail)
+    scenario("the same move with a wrong total number", "red", moved_files, move_into_ts("#! total-raised: row 434 total=1 moved"),
+             why='carries total=1')
     for f in fails:
         print("self-test FAIL: " + f, file=sys.stderr)
     if fails:

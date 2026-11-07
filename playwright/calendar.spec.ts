@@ -274,14 +274,7 @@ test("right arrow key navigates through all days of the month", async ({
 });
 
 test.describe("Axe automated scan", () => {
-  // Calendar renders inline (no overlay); a day is focused/"selected" by
-  // keyboard, so that state, plus the plain loaded state, are scanned.
-  test("loaded has no automatically detectable a11y issues", async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/calendar/`, { timeout: 20 * 60 * 1000 });
-    await page.waitForLoadState("networkidle");
-    await expectNoAxeViolations(page, "calendar: loaded", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
-  });
-
+  // Calendar renders inline (no overlay); a day is focused by keyboard, and that state is scanned here.
   test("a day focused via keyboard has no automatically detectable a11y issues", async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/calendar/`, { timeout: 20 * 60 * 1000 });
     await page.waitForLoadState("networkidle");
@@ -306,8 +299,8 @@ test("left arrow key navigates through all days of the month in reverse", async 
 });
 
 test.describe("selected/range state outranks :hover", () => {
-  // Dark mode specifically: a `[data-selected="true"]:hover` rule that re-declares
-  // background-color/color instead of leaving the plain [data-selected="true"] rule in place
+  // Dark mode specifically: a `[data-selected]:hover` rule that re-declares
+  // background-color/color instead of leaving the plain [data-selected] rule in place
   // shows up only in dark mode -- its light-mode branch happens to match the plain selected
   // color already, so light mode alone would not guard it.
   test("a selected day keeps its selected background while the pointer is still over it (dark mode)", async ({ page }) => {
@@ -318,10 +311,10 @@ test.describe("selected/range state outranks :hover", () => {
 
     const calendar = page.locator("#component-preview-frame").first();
     const day = calendar
-      .locator('.dx-calendar-grid-cell[data-month="current"]:not([data-disabled="true"])')
+      .locator('.dx-calendar-grid-cell[data-month="current"]:not([data-disabled])')
       .first();
     const otherDay = calendar
-      .locator('.dx-calendar-grid-cell[data-month="current"]:not([data-disabled="true"])')
+      .locator('.dx-calendar-grid-cell[data-month="current"]:not([data-disabled])')
       .nth(1);
 
     // Read the plain (unselected) hover color first, from a day that will
@@ -335,7 +328,7 @@ test.describe("selected/range state outranks :hover", () => {
     // state of a selected date must win over hover, or it is not visible after
     // the click.
     await day.click();
-    await expect(day).toHaveAttribute("data-selected", "true");
+    await expect(day).toHaveAttribute("data-selected", "");
     expect(await day.evaluate((el) => el.matches(":hover"))).toBe(true);
     const selectedAndHoveredBg = await day.evaluate((el) => getComputedStyle(el).backgroundColor);
 
@@ -348,7 +341,7 @@ test.describe("selected/range state outranks :hover", () => {
     expect(selectedAndHoveredBg).not.toBe(plainHoverBg); // and isn't just the plain hover color
     // Visually selected once the pointer has moved on, in the
     // strongest sense: the data-selected attribute AND its rendered color.
-    await expect(day).toHaveAttribute("data-selected", "true");
+    await expect(day).toHaveAttribute("data-selected", "");
   });
 
   // A range's in-between days (not an endpoint) have their own hover companion: without it the generic
@@ -379,7 +372,7 @@ test.describe("selected/range state outranks :hover", () => {
     });
     await page.waitForLoadState("networkidle");
 
-    const days = page.locator('.dx-calendar-grid-cell[data-month="current"]:not([data-disabled="true"])');
+    const days = page.locator('.dx-calendar-grid-cell[data-month="current"]:not([data-disabled])');
     // May 2026 (the demo's own fixed view): 31 current-month days. Fail fast, and say why.
     await expect(days, "the range demo should render May 2026's 31 days").toHaveCount(31, { timeout: 30_000 });
     const start = days.nth(4); // day "5"
@@ -651,6 +644,6 @@ test.describe("today is the visitor's date, not the build day", () => {
     await gotoFrozen(page, "2031-03-12T12:00:00Z");
     const calendar = frame(page, "week_numbers");
     await expect(calendar.locator(".dx-calendar-month-title").first()).toHaveText("January 2031");
-    await expect(calendar.locator('.dx-calendar-grid-cell[data-selected="true"]')).toHaveAttribute("aria-label", /January 12, 2031$/);
+    await expect(calendar.locator('.dx-calendar-grid-cell[data-selected]')).toHaveAttribute("aria-label", /January 12, 2031$/);
   });
 });

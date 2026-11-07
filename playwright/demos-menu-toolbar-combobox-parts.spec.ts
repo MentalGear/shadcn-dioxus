@@ -36,7 +36,7 @@ const rect = (el: Locator) =>
     const r = e.getBoundingClientRect();
     return { top: r.top, right: r.right, bottom: r.bottom, left: r.left, width: r.width, height: r.height };
   });
-const openList = (page: Page) => page.locator("[role='listbox'][data-state='open']");
+const openList = (page: Page) => page.locator("[role='listbox'][data-open]");
 const formEntries = (root: Locator, name: string) =>
   root.locator("form").evaluate((form, n) => new FormData(form as HTMLFormElement).getAll(n), name);
 
@@ -55,7 +55,7 @@ for (const mode of ["light", "dark"] as const) {
       for (const { name, side } of cases) {
         const trigger = root.getByRole("button", { name });
         await trigger.click();
-        const menu = page.locator("[role='menu'][data-state='open']");
+        const menu = page.locator("[role='menu'][data-open]");
         await expect(menu).toBeVisible();
         await expect(menu).toHaveAttribute("data-placed-side", side);
         // The pop-in scales the panel: measure once it has settled.
@@ -138,7 +138,7 @@ for (const mode of ["light", "dark"] as const) {
 
       // ArrowDown from the last fruit lands on the first vegetable: the groups share one order.
       for (let i = 0; i < 5; i++) await input.press("ArrowDown");
-      await expect(list.getByRole("option", { name: "Broccoli" })).toHaveAttribute("data-highlighted", "true");
+      await expect(list.getByRole("option", { name: "Broccoli" })).toHaveAttribute("data-highlighted", "");
 
       await input.fill("car");
       await expect(list.getByRole("group")).toHaveCount(1);
@@ -152,10 +152,10 @@ for (const mode of ["light", "dark"] as const) {
       await input.click();
       await input.pressSequentially("ru");
       const rust = openList(page).getByRole("option", { name: "Rust" });
-      await expect(rust).toHaveAttribute("data-highlighted", "true");
+      await expect(rust).toHaveAttribute("data-highlighted", "");
       await expect(input).toHaveAttribute("aria-activedescendant", (await rust.getAttribute("id"))!);
       await input.pressSequentially("b");
-      await expect(openList(page).getByRole("option", { name: "Ruby" })).toHaveAttribute("data-highlighted", "true");
+      await expect(openList(page).getByRole("option", { name: "Ruby" })).toHaveAttribute("data-highlighted", "");
       await input.press("Enter");
       await expect(input).toHaveValue("Ruby");
       await expectNoAxeViolations(page, `combobox/auto_highlight ${mode}`);

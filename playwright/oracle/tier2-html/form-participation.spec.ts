@@ -192,7 +192,7 @@ test.describe("Rule 1 — a named control contributes name=value to FormData on 
   test("RadioGroup: once an item is checked, contributes name=value", async ({ page }) => {
     await gotoForm(page);
     await page.locator("#plan-lib-pro").click();
-    await expect(page.locator("#plan-lib-pro")).toHaveAttribute("data-state", "checked");
+    await expect(page.locator("#plan-lib-pro")).toHaveAttribute("data-checked", "");
     const entries = await submitAndRead(page, "#entries-submit", formResult(page));
     expect(
       hasEntry(entries, "plan-lib", "pro"),
@@ -462,7 +462,7 @@ test.describe("Rule 4 — required with no value blocks submission and sets vali
  * hidden control or show its native validation bubble on one (the console
  * says "An invalid form control ... is not focusable."). `component.rs`'s `watch_invalid_js` bridges this onto the
  * VISIBLE control (fixture-only fix, not a primitives change -- see that
- * function's doc for why): `data-invalid="true"` on every blocked control's
+ * function's doc for why): `data-invalid` on every blocked control's
  * visible counterpart, and focus on the first one, matching a real
  * browser's own reportValidity() behavior of focusing/bubble-anchoring
  * only the first invalid control.
@@ -480,36 +480,36 @@ test.describe("Rule 4 extension — a blocked submit gives visible feedback on t
     await gotoForm(page);
     await submitRequiredAndRead(page);
 
-    await expect(page.locator("#chk-required-lib")).toHaveAttribute("data-invalid", "true");
-    await expect(page.locator("#switch-required-lib")).toHaveAttribute("data-invalid", "true");
+    await expect(page.locator("#chk-required-lib")).toHaveAttribute("data-invalid", "");
+    await expect(page.locator("#switch-required-lib")).toHaveAttribute("data-invalid", "");
     // The first radio in the group -- native reportValidity() itself
     // focuses/anchors on the first radio of an unsatisfied required group,
     // so this fixture's bridge follows the same convention.
-    await expect(page.locator("#tier-lib-small")).toHaveAttribute("data-invalid", "true");
+    await expect(page.locator("#tier-lib-small")).toHaveAttribute("data-invalid", "");
     // dev-docs/backlog.md row 8: SelectTrigger's role is "combobox".
     await expect(
       page.getByRole("combobox", { name: "Fruit, required (library)" }),
-    ).toHaveAttribute("data-invalid", "true");
+    ).toHaveAttribute("data-invalid", "");
   });
 
   test("clears data-invalid once the control is fixed", async ({ page }) => {
     await gotoForm(page);
     await submitRequiredAndRead(page);
-    await expect(page.locator("#chk-required-lib")).toHaveAttribute("data-invalid", "true");
+    await expect(page.locator("#chk-required-lib")).toHaveAttribute("data-invalid", "");
 
     await page.locator("#chk-required-lib").click();
 
-    await expect(page.locator("#chk-required-lib")).not.toHaveAttribute("data-invalid", "true");
+    await expect(page.locator("#chk-required-lib")).not.toHaveAttribute("data-invalid", "");
   });
 
   test("clears every data-invalid marker on form reset", async ({ page }) => {
     await gotoForm(page);
     await submitRequiredAndRead(page);
-    await expect(page.locator('[data-invalid="true"]').first()).toBeVisible();
+    await expect(page.locator('[data-invalid]').first()).toBeVisible();
 
     await page.locator("#required-reset").click();
 
-    await expect(page.locator('[data-invalid="true"]')).toHaveCount(0);
+    await expect(page.locator('[data-invalid]')).toHaveCount(0);
   });
 });
 
@@ -527,7 +527,7 @@ test.describe("axe: invalid state after a blocked submit", () => {
   test("blocked required-fields submit has no automatically detectable a11y issues", async ({ page }) => {
     await gotoForm(page);
     await submitRequiredAndRead(page);
-    await expect(page.locator('[data-invalid="true"]').first()).toBeVisible();
+    await expect(page.locator('[data-invalid]').first()).toBeVisible();
     await expectNoAxeViolations(page, "form: invalid state after blocked submit", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });
 });
@@ -555,14 +555,14 @@ test.describe("Rule 6 — form reset restores the initial value", () => {
     const hidden = page.locator('input[name="terms-lib"]');
     await page.locator("#chk-lib").click(); // uncheck it
     await expect(hidden).not.toBeChecked();
-    await expect(page.locator("#chk-lib")).toHaveAttribute("data-state", "unchecked");
+    await expect(page.locator("#chk-lib")).toHaveAttribute("data-unchecked", "");
     await page.locator("#entries-reset").click();
     await expect(hidden).toBeChecked();
     await expect(
       page.locator("#chk-lib"),
       "the visible Checkbox button's own (Dioxus) state must resync too, not " +
         "just the hidden mirror input's DOM state",
-    ).toHaveAttribute("data-state", "checked");
+    ).toHaveAttribute("data-checked", "");
     const entries = await submitAndRead(page, "#entries-submit", formResult(page));
     expect(hasEntry(entries, "terms-lib", "accepted")).toBe(true);
   });
@@ -585,17 +585,17 @@ test.describe("Rule 6 — form reset restores the initial value", () => {
     // content attribute already means "unchecked", and this fixture's
     // Switch default happens to be unchecked (a `default_checked: true`
     // Switch would fail for the reason Checkbox would; see its rule 6
-    // test). The `data-state` assertion below is the part that cannot pass
+    // test). The `data-open` assertion below is the part that cannot pass
     // by coincidence: nothing but a working reset listener flips the
     // *visible* button back after it was toggled on.
     await gotoForm(page);
     const hidden = page.locator('input[name="notify-lib"]');
     await page.locator("#switch-lib").click(); // check it
     await expect(hidden).toBeChecked();
-    await expect(page.locator("#switch-lib")).toHaveAttribute("data-state", "checked");
+    await expect(page.locator("#switch-lib")).toHaveAttribute("data-checked", "");
     await page.locator("#entries-reset").click();
     expect(await hidden.isChecked()).toBe(false);
-    await expect(page.locator("#switch-lib")).toHaveAttribute("data-state", "unchecked");
+    await expect(page.locator("#switch-lib")).toHaveAttribute("data-unchecked", "");
     const entries = await submitAndRead(page, "#entries-submit", formResult(page));
     expect(hasKey(entries, "notify-lib")).toBe(false);
   });
@@ -618,9 +618,9 @@ test.describe("Rule 6 — form reset restores the initial value", () => {
     // default (dev-docs/plan.md Phase 1.2).
     await gotoForm(page);
     await page.locator("#plan-lib-pro").click();
-    await expect(page.locator("#plan-lib-pro")).toHaveAttribute("data-state", "checked");
+    await expect(page.locator("#plan-lib-pro")).toHaveAttribute("data-checked", "");
     await page.locator("#entries-reset").click();
-    await expect(page.locator("#plan-lib-pro")).toHaveAttribute("data-state", "unchecked");
+    await expect(page.locator("#plan-lib-pro")).toHaveAttribute("data-unchecked", "");
     const entries = await submitAndRead(page, "#entries-submit", formResult(page));
     expect(hasKey(entries, "plan-lib")).toBe(false);
   });

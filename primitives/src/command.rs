@@ -102,7 +102,7 @@ use crate::{
         RcPartialEqValue, SelectableContext, SelectableOptionConfig, SelectionMode,
         SingleSelectableValue,
     },
-    use_controlled, use_id_or, use_unique_id, Controlled,
+    use_controlled, use_dom_value_report, use_id_or, use_unique_id, Controlled,
 };
 
 /// Marker provided by [`CommandDialog`]: its presence tells [`CommandInput`] it is inside a
@@ -333,7 +333,7 @@ pub fn Command<T: Clone + PartialEq + 'static>(props: CommandProps<T>) -> Elemen
     let attributes = merge_attributes(vec![
         props.attributes,
         attributes!(div {
-            ..state_attrs::disabled((props.disabled)()),
+            ..state_attrs::presence(state_attrs::Flag::Disabled, (props.disabled)()),
         }),
     ]);
 
@@ -406,6 +406,14 @@ pub fn CommandInput(props: CommandInputProps) -> Element {
     let query = ctx.query;
     let set_query = ctx.set_query;
     let user_onmounted = props.onmounted;
+    // A form reset puts the input's `value` content attribute back without an `input` event; the
+    // query follows through its change callback (`form_reset.rs`). The input is `autocomplete=off`, so
+    // the browser restores nothing into it.
+    use_dom_value_report(
+        id,
+        move || Some(query.peek().clone()),
+        move |dom: String| set_query.call(dom),
+    );
     // Dialog-aware default: only a `CommandDialog` ancestor needs the input to claim focus.
     let in_dialog = try_use_context::<CommandDialogContext>().is_some();
     let autofocus = props.autofocus.unwrap_or(in_dialog);
@@ -766,9 +774,9 @@ pub fn CommandItem<T: PartialEq + Clone + 'static>(props: CommandItemProps<T>) -
             role: "option",
             aria_selected: (option.selected)(),
             aria_disabled: (option.disabled)(),
-            ..state_attrs::valued(state_attrs::Flag::Highlighted, (option.focused)()),
-            ..state_attrs::disabled((option.disabled)()),
-            ..state_attrs::valued(state_attrs::Flag::Selected, (option.selected)()),
+            ..state_attrs::presence(state_attrs::Flag::Highlighted, (option.focused)()),
+            ..state_attrs::presence(state_attrs::Flag::Disabled, (option.disabled)()),
+            ..state_attrs::presence(state_attrs::Flag::Selected, (option.selected)()),
         }),
     ]);
 

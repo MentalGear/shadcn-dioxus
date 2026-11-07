@@ -64,8 +64,8 @@ pub fn Field(
     let owned = attributes!(div {
         role: "group",
         "data-orientation": orientation.class(),
-        ..state_attrs::valued(state_attrs::Flag::Invalid, invalid),
-        ..state_attrs::disabled(disabled),
+        ..state_attrs::presence(state_attrs::Flag::Invalid, invalid),
+        ..state_attrs::presence(state_attrs::Flag::Disabled, disabled),
     });
     let merged = merge_attributes(vec![base, attributes, owned]);
 

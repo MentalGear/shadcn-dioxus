@@ -107,7 +107,7 @@ pub fn ComboboxList(props: ComboboxListProps) -> Element {
 /// [`crate::use_animated_open`] (`ComboboxList`, above). It matters here
 /// specifically: `combobox.spec.ts`'s "keeps
 /// filtered options during keyboard close animation" test (an Enter-key,
-/// script-driven close) requires the `data-state="closed"` element to stay
+/// script-driven close) requires the `data-closed` element to stay
 /// visible through its exit animation, which binding
 /// `showPopover()`/`hidePopover()` to the raw `open` signal breaks (see the
 /// linked doc for the exact mechanism) -- this reasoning is orthogonal to
@@ -126,15 +126,18 @@ fn ComboboxListRendered(
     let mut selectable = ctx.selectable;
     let open = selectable.open;
 
-    // Escape closes the open list wherever focus is (the dismiss core). A press elsewhere is
-    // deliberately not a dismissal here (a page control may act on the options while the list
-    // stays open, `combobox.spec.ts` "dynamic option removal"), and the input's `onblur` is the
-    // focus arm.
+    // Escape closes the open list wherever focus is (the dismiss core), and so does a press outside the
+    // input, the list and the clear button: a mouse press at once, a touch or pen press as a tap (the
+    // input does not blur on a touch tap). The input's `onblur` is the focus arm.
     let list_id = use_signal(|| id.clone());
-    crate::dismiss::use_dismiss(
+    crate::dismiss::use_dismiss_within(
         list_id,
+        move || {
+            let input = ctx.input_id.cloned();
+            vec![super::super::multi::clear_id(&input), input]
+        },
         crate::dismiss::Scope::Element,
-        crate::dismiss::Policy::ESCAPE,
+        crate::dismiss::Policy::ESCAPE_AND_PRESS,
         Some(open.into()),
         move |_| selectable.set_open(false),
     );

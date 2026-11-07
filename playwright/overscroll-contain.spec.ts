@@ -42,7 +42,7 @@ const SURFACES: Surface[] = [
     url: `${BASE_URL}/component/combobox/`,
     height: 360,
     trigger: (page) => page.getByRole("combobox", { name: "Select framework" }),
-    panel: (page) => page.locator("[role='listbox'][data-state='open']"),
+    panel: (page) => page.locator("[role='listbox'][data-open]"),
   },
   {
     name: "DropdownMenu",
@@ -153,7 +153,7 @@ for (const surface of SURFACES) {
     const panel = surface.panel(page);
     await trigger.evaluate((el) => el.scrollIntoView({ block: "center", inline: "center" }));
     await trigger.click();
-    await expect(panel).toHaveAttribute("data-state", "open");
+    await expect(panel).toHaveAttribute("data-open", "");
     await awaitAnimationsSettled(panel);
 
     // The list scrolls, and it is the element whose overscroll is contained.
@@ -190,6 +190,6 @@ for (const surface of SURFACES) {
     await page.mouse.wheel(0, 300);
     await settle(panel);
     expect(await page.evaluate(() => window.scrollY), "the page scrolls from outside the panel").toBeGreaterThan(atEndY);
-    await expect(panel).toHaveAttribute("data-state", "open");
+    await expect(panel).toHaveAttribute("data-open", "");
   });
 }

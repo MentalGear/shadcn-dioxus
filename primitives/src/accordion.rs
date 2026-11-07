@@ -332,7 +332,7 @@ pub fn Accordion(props: AccordionProps) -> Element {
     });
 
     let owned = attributes!(div {
-        ..state_attrs::disabled((props.disabled)()),
+        ..state_attrs::presence(state_attrs::Flag::Disabled, (props.disabled)()),
         "data-chevron": (props.chevron)().as_str(),
     });
     let merged = merge_attributes(vec![props.attributes.clone(), owned]);
@@ -454,8 +454,8 @@ pub fn AccordionItem(props: AccordionItemProps) -> Element {
     });
 
     let owned = attributes!(div {
-        ..state_attrs::open_valued(ctx.is_open(&item.key())),
-        ..state_attrs::disabled(ctx.is_disabled() || item.is_disabled()),
+        ..state_attrs::open(ctx.is_open(&item.key())),
+        ..state_attrs::presence(state_attrs::Flag::Disabled, ctx.is_disabled() || item.is_disabled()),
     });
     let merged = merge_attributes(vec![props.attributes.clone(), owned]);
 
@@ -520,7 +520,7 @@ pub struct AccordionContentProps {
 /// - `data-closed`: Present (empty) while the item is closed, absent otherwise (`data-open` stays valued, `true` or `false`).
 /// - `data-closing`: Present (`true`) only while the close animation runs: the item is closed but
 ///   the content has not been removed (or re-hidden) yet. Style the close animation on this, not on
-///   `data-open="false"`, which is also what a closed `hidden="until-found"` panel looks like.
+///   `data-closed`, which is also what a closed `hidden="until-found"` panel looks like.
 /// - `data-revealed`: Present (`true`) while the item is open because the browser revealed it for a
 ///   find-in-page or `#fragment` match, or because it was open at mount (`default_open`). It is
 ///   already at full size (and scrolled to), so it should not play the open animation. A later close
@@ -569,7 +569,7 @@ pub fn AccordionContent(props: AccordionContentProps) -> Element {
     });
 
     let mut owned = attributes!(div {
-        ..state_attrs::open_valued(open()),
+        ..state_attrs::open(open()),
         "data-closing": closing.then_some("true"),
         "data-revealed": (open() && revealed()).then_some("true"),
     });
@@ -759,12 +759,12 @@ mod tests {
     /// `data-open` but no `data-disabled` (the item and root divs carry `data-disabled`).
     fn contents(html: &str) -> Vec<(String, Option<String>)> {
         find_elements(html, |a| {
-            a.contains_key("id") && a.contains_key("data-open") && !a.contains_key("data-disabled")
+            a.contains_key("id") && (a.contains_key("data-open") || a.contains_key("data-closed"))
         })
         .into_iter()
         .map(|el| {
             (
-                el.attrs["data-open"].clone(),
+                el.attrs.contains_key("data-open").to_string(),
                 el.attrs.get("HIDDEN").cloned(),
             )
         })

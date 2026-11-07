@@ -1,5 +1,5 @@
 use dioxus::prelude::*;
-use dioxus_icons::lucide::{Check, ChevronsUpDown, X};
+use crate::components::icons::{Check, ChevronsUpDown, X};
 use dioxus_primitives::combobox::{
     self, default_combobox_filter, ComboboxEmptyProps, ComboboxGroupLabelProps, ComboboxGroupProps,
     ComboboxOptionProps,

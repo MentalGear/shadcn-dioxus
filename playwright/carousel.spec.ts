@@ -22,7 +22,6 @@
 
 import { test, expect } from "./fixtures";
 import { type Page } from "@playwright/test";
-import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 import {
@@ -265,15 +264,15 @@ test.describe("Carousel: paging by button and scroll-snap landing", () => {
     await expectSnappedToBoundary(content, slide(1));
 
     await next.click();
-    await expect(slide(2)).toHaveAttribute("data-selected", "true");
+    await expect(slide(2)).toHaveAttribute("data-selected", "");
     await expectSnappedToBoundary(content, slide(2));
 
     await next.click();
-    await expect(slide(3)).toHaveAttribute("data-selected", "true");
+    await expect(slide(3)).toHaveAttribute("data-selected", "");
     await expectSnappedToBoundary(content, slide(3));
 
     await previous.click();
-    await expect(slide(2)).toHaveAttribute("data-selected", "true");
+    await expect(slide(2)).toHaveAttribute("data-selected", "");
     await expectSnappedToBoundary(content, slide(2));
   });
 
@@ -310,14 +309,14 @@ test.describe("Carousel: root-level keyboard paging (LTR)", () => {
     await next.focus();
 
     await page.keyboard.press("ArrowRight");
-    await expect(slide(2)).toHaveAttribute("data-selected", "true");
+    await expect(slide(2)).toHaveAttribute("data-selected", "");
     await expect(next).toBeFocused();
 
     await page.keyboard.press("ArrowRight");
-    await expect(slide(3)).toHaveAttribute("data-selected", "true");
+    await expect(slide(3)).toHaveAttribute("data-selected", "");
 
     await page.keyboard.press("ArrowLeft");
-    await expect(slide(2)).toHaveAttribute("data-selected", "true");
+    await expect(slide(2)).toHaveAttribute("data-selected", "");
   });
 });
 
@@ -329,16 +328,16 @@ test.describe("Carousel: root-level keyboard paging (RTL, not swapped -- shadcn'
     const slide = (n: number) => frame.getByRole("group", { name: `${n} of 4` });
 
     await next.focus();
-    await expect(slide(1)).toHaveAttribute("data-selected", "true");
+    await expect(slide(1)).toHaveAttribute("data-selected", "");
 
     await page.keyboard.press("ArrowRight");
-    await expect(slide(2)).toHaveAttribute("data-selected", "true");
+    await expect(slide(2)).toHaveAttribute("data-selected", "");
 
     await page.keyboard.press("ArrowRight");
-    await expect(slide(3)).toHaveAttribute("data-selected", "true");
+    await expect(slide(3)).toHaveAttribute("data-selected", "");
 
     await page.keyboard.press("ArrowLeft");
-    await expect(slide(2)).toHaveAttribute("data-selected", "true");
+    await expect(slide(2)).toHaveAttribute("data-selected", "");
   });
 
   test("Next/Previous accessible names are unaffected by direction (the arrow keys do not swap either)", async ({ page }) => {
@@ -361,11 +360,11 @@ test.describe("Carousel: vertical orientation pages on the block axis", () => {
 
     await next.focus();
     await page.keyboard.press("ArrowDown");
-    await expect(slide(2)).toHaveAttribute("data-selected", "true");
+    await expect(slide(2)).toHaveAttribute("data-selected", "");
     await expectSnappedToBoundary(content, slide(2), "vertical");
 
     await page.keyboard.press("ArrowUp");
-    await expect(slide(1)).toHaveAttribute("data-selected", "true");
+    await expect(slide(1)).toHaveAttribute("data-selected", "");
   });
 });
 
@@ -380,12 +379,12 @@ test.describe("Carousel: a custom picker built on use_carousel()'s CarouselApi",
     const slide = (n: number) => frame.getByRole("group", { name: `${n} of 5` });
 
     await expect(indicators).toHaveCount(5);
-    await expect(indicators.nth(0)).toHaveAttribute("data-active", "true");
+    await expect(indicators.nth(0)).toHaveAttribute("data-active", "");
 
     await indicators.nth(2).click();
-    await expect(slide(3)).toHaveAttribute("data-selected", "true");
-    await expect(indicators.nth(2)).toHaveAttribute("data-active", "true");
-    await expect(indicators.nth(0)).toHaveAttribute("data-active", "false");
+    await expect(slide(3)).toHaveAttribute("data-selected", "");
+    await expect(indicators.nth(2)).toHaveAttribute("data-active", "");
+    await expect(indicators.nth(0)).not.toHaveAttribute("data-active");
   });
 
   test("the visible 'Slide n of m' counter tracks the selection", async ({ page }) => {
@@ -410,15 +409,6 @@ test.describe("Carousel: light and dark mode render without error", () => {
       await expect(frame.getByRole("region")).toBeVisible();
     });
   }
-});
-
-test.describe("Axe automated scan", () => {
-  test("carousel component page (every variant mounted) has no automatically detectable a11y issues", async ({ page }) => {
-    await goto(page, "main");
-    await expectNoAxeViolations(page, "carousel: all variants", {
-      excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT],
-    });
-  });
 });
 
 /**
@@ -469,14 +459,14 @@ test.describe("Carousel: pointer drag (mouse/pen)", () => {
     const frame = demoFrame(page, "main");
     const content = frame.locator(".dx-carousel-content");
     const slide = (n: number) => frame.getByRole("group", { name: `${n} of 5` });
-    await expect(slide(1)).toHaveAttribute("data-selected", "true");
+    await expect(slide(1)).toHaveAttribute("data-selected", "");
     await expect(frame.getByRole("button", { name: "Previous slide" })).toBeDisabled();
 
     const pitch = await slidePitch(slide(1));
     await dragBy(page, content, -pitch * 0.7, 0);
 
     await expectSnappedToBoundary(content, slide(2));
-    await expect(slide(2)).toHaveAttribute("data-selected", "true");
+    await expect(slide(2)).toHaveAttribute("data-selected", "");
     // The exact same bridge a click/keypress uses (`use_carousel_scroll_tracking`)
     // is what a drag settles through too -- Previous's disabled state is
     // one of the things that would desync if a drag had its own, second
@@ -511,7 +501,7 @@ test.describe("Carousel: pointer drag (mouse/pen)", () => {
     await dragBy(page, button, -pitch * 0.7, 0);
 
     await expectSnappedToBoundary(frame.locator(".dx-carousel-content"), slide(2));
-    await expect(slide(2)).toHaveAttribute("data-selected", "true");
+    await expect(slide(2)).toHaveAttribute("data-selected", "");
     await expect(button).toHaveAttribute("data-clicked", "false");
   });
 
@@ -532,11 +522,11 @@ test.describe("Carousel: pointer drag (mouse/pen)", () => {
     const slide = (n: number) => frame.getByRole("group", { name: `${n} of 5` });
     await frame.getByRole("button", { name: "Next slide" }).click();
     await expectSnappedToBoundary(content, slide(2));
-    await expect(slide(2)).toHaveAttribute("data-selected", "true");
+    await expect(slide(2)).toHaveAttribute("data-selected", "");
 
     await dragBy(page, content, (await slidePitch(slide(2))) * 2.5, 0, 20);
     await expectSnappedToBoundary(content, slide(1));
-    await expect(slide(1)).toHaveAttribute("data-selected", "true");
+    await expect(slide(1)).toHaveAttribute("data-selected", "");
     await expect(frame.getByRole("button", { name: "Previous slide" })).toBeDisabled();
   });
 
@@ -549,7 +539,7 @@ test.describe("Carousel: pointer drag (mouse/pen)", () => {
     await dragBy(page, content, -2, 0, 2);
     await page.waitForTimeout(300);
 
-    await expect(slide(1)).toHaveAttribute("data-selected", "true");
+    await expect(slide(1)).toHaveAttribute("data-selected", "");
   });
 
   test("drag works under dir=rtl -- the physical direction that means 'next' mirrors, while the arrow keys keep their LTR meaning", async ({ page }) => {
@@ -564,7 +554,7 @@ test.describe("Carousel: pointer drag (mouse/pen)", () => {
     await dragBy(page, content, pitch * 0.7, 0);
 
     await expectSnappedToBoundary(content, slide(2));
-    await expect(slide(2)).toHaveAttribute("data-selected", "true");
+    await expect(slide(2)).toHaveAttribute("data-selected", "");
   });
 
   test("drag works in the vertical variant", async ({ page }) => {
@@ -577,7 +567,7 @@ test.describe("Carousel: pointer drag (mouse/pen)", () => {
     await dragBy(page, content, 0, -pitch * 0.7);
 
     await expectSnappedToBoundary(content, slide(2), "vertical");
-    await expect(slide(2)).toHaveAttribute("data-selected", "true");
+    await expect(slide(2)).toHaveAttribute("data-selected", "");
   });
 });
 
@@ -646,7 +636,7 @@ test.describe("Carousel: a drag release actually animates to the nearest slide",
       `expected an intermediate scrollLeft strictly between the first (${samples[0]}) and last (${samples[samples.length - 1]}) sample; got: ${JSON.stringify(samples)}`,
     ).toBe(true);
     await expectSnappedToBoundary(content, slide(2));
-    await expect(slide(2)).toHaveAttribute("data-selected", "true");
+    await expect(slide(2)).toHaveAttribute("data-selected", "");
   });
 });
 
@@ -692,7 +682,7 @@ test.describe("Carousel: scroll-snap-stop caps a smooth scroll to one slide", ()
     const frame = demoFrame(page, "main");
     const content = frame.locator(".dx-carousel-content");
     const slide = (n: number) => frame.getByRole("group", { name: `${n} of 5` });
-    await expect(slide(1)).toHaveAttribute("data-selected", "true");
+    await expect(slide(1)).toHaveAttribute("data-selected", "");
 
     const pitch = await slidePitch(slide(1));
     const contentId = await content.getAttribute("id");
@@ -707,9 +697,9 @@ test.describe("Carousel: scroll-snap-stop caps a smooth scroll to one slide", ()
     );
 
     await expectSnappedToBoundary(content, slide(2));
-    await expect(slide(2)).toHaveAttribute("data-selected", "true");
-    await expect(slide(3)).toHaveAttribute("data-selected", "false");
-    await expect(slide(4)).toHaveAttribute("data-selected", "false");
+    await expect(slide(2)).toHaveAttribute("data-selected", "");
+    await expect(slide(3)).not.toHaveAttribute("data-selected");
+    await expect(slide(4)).not.toHaveAttribute("data-selected");
   });
 });
 

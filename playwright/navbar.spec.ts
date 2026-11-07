@@ -11,7 +11,7 @@ test('hover navigation', async ({ page }) => {
   await expect(page.getByRole('menuitem', { name: 'Inputs' })).toHaveCSS('border-width', '0px');
   const inputsNav = page.getByRole('menu').filter({ has: page.getByRole('menuitem', { name: 'Inputs' }) }).first();
   await inputsNav.hover();
-  await expect(inputsNav).toHaveAttribute('data-state', 'open');
+  await expect(inputsNav).toHaveAttribute('data-open', '');
   const calendar = page.getByRole('menuitem', { name: 'Calendar' });
   await expect(calendar).toBeVisible();
   await calendar.evaluate((element) => {
@@ -49,7 +49,7 @@ test('keyboard navigation', async ({ page }) => {
   await page.keyboard.press('ArrowDown');
   // Assert the focus is on the calendar menu item
   await expect(page.getByRole('menuitem', { name: 'Calendar' })).toBeFocused();
-  await expect(page.getByRole('menuitem', { name: 'Slider' })).toHaveAttribute('data-disabled', 'true');
+  await expect(page.getByRole('menuitem', { name: 'Slider' })).toHaveAttribute('data-disabled', "");
   await page.keyboard.press('ArrowDown');
   // Assert the disabled slider item is skipped
   await expect(page.getByRole('menuitem', { name: 'Checkbox' })).toBeFocused();
@@ -73,7 +73,7 @@ test.describe('Close animation is not skipped', () => {
   // This block asserts the construction directly: the content must stay
   // mounted and mid-animation for a real stretch of frames after closing,
   // not vanish within one or two.
-  type Sample = { t: number; opacity: string; dataState: string | null; connected: boolean };
+  type Sample = { t: number; opacity: string; closed: boolean; connected: boolean };
 
   declare global {
     interface Window {
@@ -104,7 +104,7 @@ test.describe('Close animation is not skipped', () => {
         window.__navbarCloseSamples!.push({
           t: performance.now(),
           opacity: getComputedStyle(el!).opacity,
-          dataState: el!.getAttribute('data-state'),
+          closed: el!.hasAttribute('data-closed'),
           connected: el!.isConnected,
         });
         requestAnimationFrame(tick);
@@ -125,7 +125,7 @@ test.describe('Close animation is not skipped', () => {
     const trigger = page.getByRole('menuitem', { name: 'Inputs' });
     await expect(trigger).toHaveCSS('border-width', '0px');
     await trigger.hover();
-    const content = page.locator('.dx-navbar-content[data-state="open"]');
+    const content = page.locator('.dx-navbar-content[data-open]');
     await expect(content).toBeVisible();
     await expect(page.getByRole('menuitem', { name: 'Calendar' })).toBeVisible();
 
@@ -157,12 +157,12 @@ test.describe('Close animation is not skipped', () => {
 
     // Real close animations are never instant: some meaningful stretch of
     // frames must show the content still connected to the DOM with
-    // `data-state="closed"` (the animating-out phase `use_animated_open`
+    // `data-closed` (the animating-out phase `use_animated_open`
     // holds it in during) before it actually unmounts. Without the hold this
     // window is one frame wide (often zero, since the very next sample
     // already reads `connected: false`) -- this asserts a real hold, not a
     // one-frame technicality.
-    const closedWhileConnected = samples.filter((s) => s.dataState === 'closed' && s.connected);
+    const closedWhileConnected = samples.filter((s) => s.closed && s.connected);
     expect(closedWhileConnected.length).toBeGreaterThan(3);
 
     // The fade must be gradual: at least one sampled frame mid-close reads
@@ -187,7 +187,7 @@ test.describe('Axe automated scan', () => {
     await gotoHydrated(page, `${BASE_URL}/component/navbar/`, { timeout: 20 * 60 * 1000 });
     const inputsNav = page.getByRole('menu').filter({ has: page.getByRole('menuitem', { name: 'Inputs' }) }).first();
     await inputsNav.hover();
-    await expect(inputsNav).toHaveAttribute('data-state', 'open');
+    await expect(inputsNav).toHaveAttribute('data-open', '');
     await expectNoAxeViolations(page, 'navbar: Inputs dropdown open', { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });
 });
@@ -204,7 +204,7 @@ test.describe('open_on_hover: false (click activation)', () => {
   const HOVER_SETTLE_MS = 1000;
 
   // A `NavbarNav` is a `role="menu"` wrapper around its trigger + content;
-  // its `data-state` is what flips open/closed.
+  // its `data-open` / `data-closed` is what flips.
   function clickNav(page: Page, trigger: string) {
     return page
       .getByRole('menu')
@@ -218,15 +218,15 @@ test.describe('open_on_hover: false (click activation)', () => {
     // state -- `goto` only waits for the document, not the wasm app.
     await expect(page.getByRole('menuitem', { name: 'Layout', exact: true })).toBeVisible({ timeout: 60_000 });
     const layout = clickNav(page, 'Layout');
-    await expect(layout).toHaveAttribute('data-state', 'closed');
+    await expect(layout).toHaveAttribute('data-closed', '');
 
     await page.getByRole('menuitem', { name: 'Layout', exact: true }).hover();
     // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
     await page.waitForTimeout(HOVER_SETTLE_MS);
-    await expect(layout).toHaveAttribute('data-state', 'closed');
+    await expect(layout).toHaveAttribute('data-closed', '');
 
     await page.getByRole('menuitem', { name: 'Layout', exact: true }).click();
-    await expect(layout).toHaveAttribute('data-state', 'open');
+    await expect(layout).toHaveAttribute('data-open', '');
     await expect(page.getByRole('menuitem', { name: 'Card', exact: true })).toBeVisible();
   });
 
@@ -234,12 +234,12 @@ test.describe('open_on_hover: false (click activation)', () => {
     await gotoHydrated(page, `${BASE_URL}/component/navbar/`, { timeout: 20 * 60 * 1000 });
     const layout = clickNav(page, 'Layout');
     await page.getByRole('menuitem', { name: 'Layout', exact: true }).click();
-    await expect(layout).toHaveAttribute('data-state', 'open');
+    await expect(layout).toHaveAttribute('data-open', '');
 
     await page.getByRole('heading', { level: 1 }).hover();
     // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
     await page.waitForTimeout(HOVER_SETTLE_MS);
-    await expect(layout).toHaveAttribute('data-state', 'open');
+    await expect(layout).toHaveAttribute('data-open', '');
   });
 
   test('hovering another trigger while one is open does not switch; clicking it does', async ({ page }) => {
@@ -247,17 +247,17 @@ test.describe('open_on_hover: false (click activation)', () => {
     const layout = clickNav(page, 'Layout');
     const overlays = clickNav(page, 'Overlays');
     await page.getByRole('menuitem', { name: 'Layout', exact: true }).click();
-    await expect(layout).toHaveAttribute('data-state', 'open');
+    await expect(layout).toHaveAttribute('data-open', '');
 
     await page.getByRole('menuitem', { name: 'Overlays', exact: true }).hover();
     // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
     await page.waitForTimeout(HOVER_SETTLE_MS);
-    await expect(layout).toHaveAttribute('data-state', 'open');
-    await expect(overlays).toHaveAttribute('data-state', 'closed');
+    await expect(layout).toHaveAttribute('data-open', '');
+    await expect(overlays).toHaveAttribute('data-closed', '');
 
     await page.getByRole('menuitem', { name: 'Overlays', exact: true }).click();
-    await expect(overlays).toHaveAttribute('data-state', 'open');
-    await expect(layout).toHaveAttribute('data-state', 'closed');
+    await expect(overlays).toHaveAttribute('data-open', '');
+    await expect(layout).toHaveAttribute('data-closed', '');
   });
 
   test('keyboard opens and Escape closes', async ({ page }) => {
@@ -265,19 +265,19 @@ test.describe('open_on_hover: false (click activation)', () => {
     const layout = clickNav(page, 'Layout');
     await page.getByRole('menuitem', { name: 'Layout', exact: true }).focus();
     await page.keyboard.press('ArrowDown');
-    await expect(layout).toHaveAttribute('data-state', 'open');
+    await expect(layout).toHaveAttribute('data-open', '');
     await expect(page.getByRole('menuitem', { name: 'Card', exact: true })).toBeFocused();
     await page.keyboard.press('Escape');
-    await expect(layout).toHaveAttribute('data-state', 'closed');
+    await expect(layout).toHaveAttribute('data-closed', '');
   });
 
   test('a press outside closes a click-opened dropdown', async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/navbar/`, { timeout: 20 * 60 * 1000 });
     const layout = clickNav(page, 'Layout');
     await page.getByRole('menuitem', { name: 'Layout', exact: true }).click();
-    await expect(layout).toHaveAttribute('data-state', 'open');
+    await expect(layout).toHaveAttribute('data-open', '');
     await page.getByRole('heading', { level: 1 }).click();
-    await expect(layout).toHaveAttribute('data-state', 'closed');
+    await expect(layout).toHaveAttribute('data-closed', '');
   });
 });
 
@@ -296,13 +296,14 @@ test.describe('Open/close animation', () => {
     const trigger = page.getByRole('menuitem', { name: 'Inputs' });
     await expect(trigger).toHaveCSS('border-width', '0px');
     await trigger.hover();
-    const content = page.locator('.dx-navbar-content[data-state="open"]');
+    const content = page.locator('.dx-navbar-content[data-open]');
     await expect(content).toBeVisible();
     await expectFadeKeepsTransform(content, 'navbar content, open');
     // One keyframe pair per `data-open-menu-direction` (navbar/style.css).
     for (const direction of ['closed', 'start', 'end']) {
       await expectFadeKeepsTransform(content, `navbar content, close (${direction})`, {
-        'data-state': 'closed',
+        'data-open': null,
+        'data-closed': '',
         'data-open-menu-direction': direction,
       });
     }
@@ -326,9 +327,9 @@ test.describe('Open/close animation', () => {
       await expect(trigger).toHaveCSS('border-width', '0px');
       if (rtl) await page.evaluate(() => document.documentElement.setAttribute('dir', 'rtl'));
       await trigger.hover();
-      const content = page.locator('.dx-navbar-content[data-state="open"]');
+      const content = page.locator('.dx-navbar-content[data-open]');
       await expect(content).toBeVisible();
-      const attrs = { 'data-state': 'closed', 'data-open-menu-direction': direction };
+      const attrs = { 'data-open': null, 'data-closed': '', 'data-open-menu-direction': direction };
       const fades = (await probeAnimations(content, attrs)).filter((a) => a.keyframeProps.includes('opacity'));
       expect(fades.length, `navbar close (${direction}, ${rtl ? 'rtl' : 'ltr'}): the fade animation`).toBe(1);
       // The twins are fades too: they must leave `transform` alone like the LTR keyframes.

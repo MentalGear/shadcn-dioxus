@@ -16,7 +16,7 @@ test('sheet basic interactions', async ({ page }) => {
 
   // Assert the sheet is open
   const sheet = page.locator('[data-slot="sheet-root"]');
-  await expect(sheet).toHaveAttribute('data-state', 'open');
+  await expect(sheet).toHaveAttribute('data-open', '');
 
   // Assert the first input is focused (focus trap)
   const nameInput = page.locator('#sheet-demo-name');
@@ -61,7 +61,7 @@ test('sheet basic interactions', async ({ page }) => {
 
   // Reopen the sheet
   await page.getByRole('button', { name: 'Right' }).click();
-  await expect(sheet).toHaveAttribute('data-state', 'open');
+  await expect(sheet).toHaveAttribute('data-open', '');
 
   // Click the close button
   await closeButton.click();
@@ -76,21 +76,21 @@ test('sheet opens from different sides', async ({ page }) => {
 
   // Test Top
   await page.getByRole('button', { name: 'Top' }).click();
-  await expect(sheet).toHaveAttribute('data-state', 'open');
+  await expect(sheet).toHaveAttribute('data-open', '');
   await expect(sheetContent).toHaveAttribute('data-side', 'top');
   await page.keyboard.press('Escape');
   await expect(sheet).toHaveCount(0);
 
   // Test Bottom
   await page.getByRole('button', { name: 'Bottom' }).click();
-  await expect(sheet).toHaveAttribute('data-state', 'open');
+  await expect(sheet).toHaveAttribute('data-open', '');
   await expect(sheetContent).toHaveAttribute('data-side', 'bottom');
   await page.keyboard.press('Escape');
   await expect(sheet).toHaveCount(0);
 
   // Test Left
   await page.getByRole('button', { name: 'Left' }).click();
-  await expect(sheet).toHaveAttribute('data-state', 'open');
+  await expect(sheet).toHaveAttribute('data-open', '');
   await expect(sheetContent).toHaveAttribute('data-side', 'left');
   await page.keyboard.press('Escape');
   await expect(sheet).toHaveCount(0);
@@ -106,7 +106,7 @@ test('right sheet content geometry matches shadcn spec at desktop and near-break
   const content = page.locator('[data-slot="sheet-content"]');
 
   await page.getByRole('button', { name: 'Right' }).click();
-  await expect(sheet).toHaveAttribute('data-state', 'open');
+  await expect(sheet).toHaveAttribute('data-open', '');
 
   // At 1280px, 75vw (960px) is well past the 384px cap, so the panel should
   // land exactly on min(75vw, 384px) = 384px.
@@ -130,7 +130,7 @@ test('right sheet content geometry matches shadcn spec at desktop and near-break
   // is actually checking (that the cap does not apply here at all).
   await page.setViewportSize({ width: 600, height: 800 });
   await page.getByRole('button', { name: 'Right' }).click();
-  await expect(sheet).toHaveAttribute('data-state', 'open');
+  await expect(sheet).toHaveAttribute('data-open', '');
   box = await measureAtRest(content);
   expect(box).not.toBeNull();
   expect(box!.width).toBeGreaterThan(400); // clearly past the 384px cap
@@ -178,11 +178,11 @@ test('sheet content is anchored flush to its own edge, not centered', async ({ p
 
   async function openAndMeasure(side: string) {
     await page.getByRole('button', { name: side, exact: true }).click();
-    await expect(sheet).toHaveAttribute('data-state', 'open');
+    await expect(sheet).toHaveAttribute('data-open', '');
     // Content slides in over 500ms (style.css's `dx-slide-in-*` animations);
     // `getBoundingClientRect()` (what `boundingBox()` uses) reflects the
     // CURRENT, still-animating transform, not the final resting position --
-    // measuring immediately after the `data-state` flip catches the panel
+    // measuring immediately after the `data-open` flip catches the panel
     // still near its off-screen starting `translate`, not where it settles.
     await page.waitForTimeout(700);
     const box = (await measureAtRest(content));
@@ -217,12 +217,12 @@ test('close button matches Nova spec: 16px icon, ghost icon-sm (28px, full opaci
 
   const sheet = page.locator('[data-slot="sheet-root"]');
   await page.getByRole('button', { name: 'Right' }).click();
-  await expect(sheet).toHaveAttribute('data-state', 'open');
+  await expect(sheet).toHaveAttribute('data-open', '');
 
   const content = page.locator('[data-slot="sheet-content"]');
   const closeButton = sheet.getByRole('button').last();
 
-  // `data-state="open"` flips synchronously with the state change, well
+  // `data-open` flips synchronously with the state change, well
   // before the 500ms slide-in (`dx-slide-in-right` et al., style.css)
   // finishes -- geometry and computed-style reads taken before it settles
   // are unstable (the panel, and everything positioned inside/relative to
@@ -271,7 +271,7 @@ test.describe('Axe automated scan', () => {
   test('open has no automatically detectable a11y issues', async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/sheet/`, { timeout: 20 * 60 * 1000 });
     await page.getByRole('button', { name: 'Right' }).click();
-    await expect(page.locator('[data-slot="sheet-root"]')).toHaveAttribute('data-state', 'open');
+    await expect(page.locator('[data-slot="sheet-root"]')).toHaveAttribute('data-open', '');
     await expectNoAxeViolations(page, 'sheet: open', { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });
 });

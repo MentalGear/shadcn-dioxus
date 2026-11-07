@@ -290,7 +290,7 @@ pub struct ToggleItemProps {
 /// ## Styling
 ///
 /// The [`ToggleItem`] component defines the following data attributes you can use to control styling:
-/// - `data-state`: Indicates the state of the toggle. Values are `on` or `off`.
+/// - `data-pressed`: Present while the toggle is pressed.
 /// - `data-pressed`: Present (empty) while the toggle is pressed, absent otherwise.
 /// - `data-disabled`: Indicates if the toggle is disabled. Values are `true` or `false`.
 /// - `data-orientation`: Indicates the orientation of the toggle group. Values are `horizontal` or `vertical`.

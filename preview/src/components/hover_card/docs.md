@@ -36,7 +36,7 @@ Leaving the trigger before `delay` cancels the open. After the pointer leaves, t
 
 ## Force mount
 
-By default a closed card is not in the DOM: it is mounted when it opens and removed after its exit animation. `HoverCardContent { force_mount: true }` (Radix's `forceMount`) keeps it in the DOM while it is closed, hidden and with `data-state="closed"`, for an animation library that drives the card itself or for content that should exist in the markup. It opens and fades out like the default card.
+By default a closed card is not in the DOM: it is mounted when it opens and removed after its exit animation. `HoverCardContent { force_mount: true }` (Radix's `forceMount`) keeps it in the DOM while it is closed, hidden and with `data-closed`, for an animation library that drives the card itself or for content that should exist in the markup. It opens and fades out like the default card.
 
 ## No click-only mode
 

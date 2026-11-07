@@ -11,7 +11,7 @@ pub(crate) const PAGE_HEADING_VARIANTS: &str = "Examples";
 /// "Usage" is reserved too: the text before a docs.md's first `##` is rendered under "Usage notes", so
 /// a docs h2 called "Usage" would read as a nested duplicate of it.
 #[cfg(test)]
-pub(crate) const TEMPLATE_H2_HEADINGS: [&str; 7] = [
+pub(crate) const TEMPLATE_H2_HEADINGS: [&str; 8] = [
     docs_groups::BASIC_HEADING,
     docs_groups::SPECIFIC_HEADING,
     docs_groups::Basic::Installation.heading(),
@@ -19,6 +19,7 @@ pub(crate) const TEMPLATE_H2_HEADINGS: [&str; 7] = [
     docs_groups::Basic::PropsReference.heading(),
     "Usage",
     PAGE_HEADING_VARIANTS,
+    crate::controlled_scan::SECTION_HEADING,
 ];
 
 /// Prefixes the app base path (`dx --base-path`, e.g. `/shadcn-dioxus`)
@@ -88,7 +89,7 @@ pub(crate) fn use_open_section_for_hash() {
                  if (trigger) trigger.click();
                  const closed = [];
                  for (let p = target.parentElement; p; p = p.parentElement) {
-                     if (p.id && (p.getAttribute('hidden') === 'until-found' || p.getAttribute('data-open') === 'false')) closed.push(p);
+                     if (p.id && (p.getAttribute('hidden') === 'until-found' || p.hasAttribute('data-closed'))) closed.push(p);
                  }
                  closed.forEach((p) => p.dispatchEvent(new Event('beforematch')));
                  let frames = 0;

@@ -31,7 +31,7 @@
     margin-inline-start: auto;
 }
 
-.dx-progress[data-state='indeterminate'] .dx-progress-indicator {
+.dx-progress[data-indeterminate] .dx-progress-indicator {
     width: 50%;
     animation: dx-indeterminate 1s infinite linear;
 }
@@ -58,7 +58,7 @@
     }
 }
 
-[dir="rtl"] .dx-progress[data-state='indeterminate'] .dx-progress-indicator {
+[dir="rtl"] .dx-progress[data-indeterminate] .dx-progress-indicator {
     animation-name: dx-indeterminate-rtl;
 }
 
@@ -78,7 +78,7 @@
    a still half-width bar would read as 50%. Draw "busy, amount unknown" without motion instead: the
    whole track filled with diagonal stripes. */
 @media (prefers-reduced-motion: reduce) {
-    .dx-progress[data-state='indeterminate'] .dx-progress-indicator {
+    .dx-progress[data-indeterminate] .dx-progress-indicator {
         width: 100%;
         background-image: repeating-linear-gradient(
             135deg,

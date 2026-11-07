@@ -424,6 +424,7 @@ const BASELINE: &[(&str, &str)] = &[
     ("avatar/main", AVATAR),
     ("avatar/dropdown", AVATAR),
     ("avatar/states", AVATAR),
+    ("avatar/rounded", AVATAR),
     ("carousel/align", CAROUSEL),
     ("carousel/api", CAROUSEL),
     ("carousel/autoplay", CAROUSEL),

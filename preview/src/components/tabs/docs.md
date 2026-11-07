@@ -1,5 +1,7 @@
 The Tabs component is used to create a tabbed interface, allowing users to switch between different views or sections of content.
 
+shadcn names the parts `TabsList`, `TabsTrigger` and `TabsContent`; here they are `TabList`, `TabTrigger` and `TabContent`.
+
 ## Component Structure
 
 ```rust
@@ -12,7 +14,7 @@ Tabs {
             // The value of the tab trigger, which must be unique and is used to identify the active tab.
             value: "tab1",
             // The contents of the tab trigger button
-            {children}
+            "Account"
         }
     }
     // The TabContent component contains the content that is displayed when the corresponding tab is active.
@@ -20,7 +22,7 @@ Tabs {
         // The value of the tab content, which must match the value of the corresponding TabTrigger to be displayed.
         value: "tab1",
         // The content of the tab, which is displayed when the tab is active.
-        {children}
+        "Account settings go here."
     }
 }
 ```
@@ -71,7 +73,7 @@ Tabs { size: TabsSize::Sm, default_value: "a".to_string(), /* ... */ }
 
 ## Searchable inactive tabs
 
-By default inactive panels are unmounted (an empty `hidden` element), so find-in-page (Ctrl+F) cannot see their text and a `#fragment` link cannot open them. Pass `hidden_until_found: true` on `Tabs` to keep every panel's content mounted and mark inactive panels `hidden="until-found"`. The browser then searches them, and when a match is inside an inactive panel it reveals the panel and its tab becomes the active one: `aria-selected` and `data-state` follow, and `on_value_change` is called with that tab's value (a controlled `value` should follow it). See the `until_found` variant: try Ctrl+F for the word in its hint.
+By default inactive panels are unmounted (an empty `hidden` element), so find-in-page (Ctrl+F) cannot see their text and a `#fragment` link cannot open them. Pass `hidden_until_found: true` on `Tabs` to keep every panel's content mounted and mark inactive panels `hidden="until-found"`. The browser then searches them, and when a match is inside an inactive panel it reveals the panel and its tab becomes the active one: `aria-selected` and `data-active` follow, and `on_value_change` is called with that tab's value (a controlled `value` should follow it). See the `until_found` variant: try Ctrl+F for the word in its hint.
 
 ```rust
 Tabs {

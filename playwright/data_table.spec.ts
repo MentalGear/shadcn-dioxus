@@ -180,7 +180,7 @@ test("selection is kept by row across pages, sorting and filtering", async ({ pa
   await page.getByRole("checkbox", { name: "Select row PMT-03" }).click(); // alexandra, page 1
   await expect(selectedSummary(page)).toHaveText("1 of 12 row(s) selected.");
   await expect(selectAllCheckbox(page)).toHaveAttribute("aria-checked", "mixed");
-  await expect(table(page).locator("tbody tr[data-state=selected]")).toHaveCount(1);
+  await expect(table(page).locator("tbody tr[data-selected]")).toHaveCount(1);
 
   // Page 2 shows none of it, but the footer counts it.
   await nextButton(page).click();

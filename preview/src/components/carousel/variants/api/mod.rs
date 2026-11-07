@@ -107,7 +107,7 @@ fn CustomDotPicker() -> Element {
                     key: "{i}",
                     class: "dx-carousel-picker-dot",
                     r#type: "button",
-                    "data-active": i == api.selected,
+                    "data-active": (i == api.selected).then_some(""),
                     "aria-label": "Go to slide {i + 1}",
                     onclick: move |_| api.scroll_to(i),
                 }

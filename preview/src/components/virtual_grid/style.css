@@ -88,11 +88,11 @@
 /* A selected row (`row_selected`): the Nova table's `data-[state=selected]:bg-muted`. Its pinned
  * cells show the selected fill as an image layer over their opaque base, so a row hover (which
  * out-ranks this rule) and the selected fill read the same on pinned and scrolling cells. */
-.dx-virtual-grid [role="row"][data-state="selected"]:not(:where([popover], dialog) *) {
+.dx-virtual-grid [role="row"][data-selected]:not(:where([popover], dialog) *) {
   background-color: var(--dx-table-selected-background);
 }
 
-.dx-virtual-grid [role="row"][data-state="selected"] [data-grid-pinned]:not(:where([popover], dialog) *) {
+.dx-virtual-grid [role="row"][data-selected] [data-grid-pinned]:not(:where([popover], dialog) *) {
   --dx-press-under: linear-gradient(var(--dx-table-selected-background), var(--dx-table-selected-background));
 
   background-image: var(--dx-press-under);
@@ -103,6 +103,11 @@
  * for a click on its padding. */
 .dx-virtual-grid [data-grid-has-control]:has(:focus-visible):not(:where([popover], dialog) *) {
   box-shadow: var(--dx-ring-focus-inset);
+}
+
+/* Zeroed with the focused control's ring (theme "Focus modality"). */
+.dx-virtual-grid [data-grid-has-control]:has([data-dx-pointer-focus]):not(:where([popover], dialog) *) {
+  --dx-ring-focus-inset: 0 0 #0000;
 }
 
 /* The gallery: rows are CSS grids of equal tracks; the gap is part of the measured row. */

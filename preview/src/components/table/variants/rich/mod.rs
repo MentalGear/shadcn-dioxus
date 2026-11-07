@@ -43,7 +43,7 @@ const ORDERS: [Order; 4] = [
 /// A leading selection column (each `Checkbox` named by its own `aria_label`), a `Badge` status
 /// column and right-aligned amounts with a footer total, rendered from the Data Table's model
 /// (`use_data_table`: the rows, their keys, the selection and the header checkbox's all / some / none
-/// state all come from it), so a selected row renders `data-state="selected"`.
+/// state all come from it), so a selected row renders `data-selected`.
 #[component]
 pub fn Demo() -> Element {
     let rows = use_signal(|| ORDERS.to_vec());

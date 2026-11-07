@@ -5,8 +5,9 @@ The Switch component allows users to toggle between two states, such as on and o
 ```rust
 // The Switch component includes the switch thumb.
 Switch {
-    // The current state of the switch, true for on and false for off.
-    checked: true,
+    // The state the switch starts in, true for on and false for off. The switch tracks the user's toggles itself;
+    // to control it, pass `checked` (a signal) and set it in `on_checked_change`.
+    default_checked: true,
     // Callback function triggered when the switch state changes.
     on_checked_change: |checked: bool| {
         // Handle the change in switch state.

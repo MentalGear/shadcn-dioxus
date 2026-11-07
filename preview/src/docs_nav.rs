@@ -10,9 +10,9 @@
 //! source, so with no script at all the page is the default.
 //!
 //! The switch is our own [`ToggleGroup`] (controlled, radio-style: pressing the pressed item is ignored). Its
-//! items' `data-state` / `aria-pressed` are Rust state, so the pressed LOOK is not read from `data-state`:
-//! `main.css` paints it from `<html data-nav-sort>` at a higher specificity than the component's `[data-state=on]`
-//! rule, so it is right on the first frame even though the SSG's `data-state` is the A-Z default. The switch is
+//! items' `aria-pressed` is Rust state, so the pressed LOOK is not read from it:
+//! `main.css` paints it from `<html data-nav-sort>` at a higher specificity than the component's `[aria-pressed="true"]`
+//! rule, so it is right on the first frame even though the SSG's `aria-pressed` is the A-Z default. The switch is
 //! `position: sticky` at the top of the sidebar's scroller over an opaque sidebar background; in Category order
 //! each group label sticks right under it while its group scrolls. A chevron beside the switch opens a
 //! `DropdownMenu` of the categories (`ComponentCategory::ALL`): picking one runs the Category click path

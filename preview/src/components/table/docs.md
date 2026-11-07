@@ -29,7 +29,7 @@ Table {
 }
 ```
 
-`TableHead` defaults to `scope="col"`; pass `scope: "row"` to use it as a row header instead. `TableRow` accepts an optional `selected: ReadSignal<bool>` prop that sets `data-state="selected"` for row-selection styling — used by the [Data Table](/component/data_table/) composition pattern, which builds sorting, filtering, pagination, and row selection on top of this component.
+`TableHead` defaults to `scope="col"`; pass `scope: "row"` to use it as a row header instead. `TableRow` accepts an optional `selected: ReadSignal<bool>` prop that sets `data-selected` for row-selection styling — used by the [Data Table](/component/data_table/) composition pattern, which builds sorting, filtering, pagination, and row selection on top of this component.
 
 ## Long tables: `TableRows`
 
@@ -57,7 +57,7 @@ Table {
             TableCell { "{invoices[idx].status}" }
             TableCell { "{invoices[idx].amount}" }
         },
-        // Optional: `data-state="selected"` on the row.
+        // Optional: `data-selected` on the row.
         row_selected: move |idx: usize| selected().contains(&idx),
         // Optional: `Auto` (the default), `ContentVisibility` or `Windowed`.
         virtualize: VirtualizeMode::Auto,

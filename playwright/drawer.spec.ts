@@ -82,7 +82,7 @@ test('opens and traps focus, Escape closes and restores focus to the trigger', a
   await page.keyboard.press('Enter');
 
   const root = page.locator('[data-slot="drawer-root"]');
-  await expect(root).toHaveAttribute('data-state', 'open');
+  await expect(root).toHaveAttribute('data-open', '');
 
   // First focusable element inside the content in tree order -- WHATWG
   // `showModal()`'s own autofocus algorithm. `DrawerHandle` is
@@ -96,7 +96,7 @@ test('opens and traps focus, Escape closes and restores focus to the trigger', a
   await expect(trigger).toBeFocused();
 });
 
-test('data-state transitions from closed to open to closed', async ({ page }) => {
+test('data-open is present while the drawer is open and the root unmounts on close', async ({ page }) => {
   await gotoHydrated(page, URL, GOTO_OPTS);
   const root = page.locator('[data-slot="drawer-root"]');
   const content = page.locator('[data-slot="drawer-content"]');
@@ -104,8 +104,8 @@ test('data-state transitions from closed to open to closed', async ({ page }) =>
   await expect(root).toHaveCount(0);
 
   await page.getByRole('button', { name: 'Move Goal' }).click();
-  await expect(root).toHaveAttribute('data-state', 'open');
-  await expect(content).toHaveAttribute('data-state', 'open');
+  await expect(root).toHaveAttribute('data-open', '');
+  await expect(content).toHaveAttribute('data-open', '');
   await expect(content).toHaveAttribute('data-side', 'bottom');
 
   await page.keyboard.press('Escape');
@@ -118,7 +118,7 @@ test('opens from the top side with side-specific data attributes', async ({ page
 
   const content = page.locator('[data-slot="drawer-content"]');
   await expect(content).toHaveAttribute('data-side', 'top');
-  await expect(content).toHaveAttribute('data-state', 'open');
+  await expect(content).toHaveAttribute('data-open', '');
 
   await page.keyboard.press('Escape');
   await expect(page.locator('[data-slot="drawer-root"]')).toHaveCount(0);
@@ -182,7 +182,7 @@ test('a drag away from the dismiss direction never exposes the viewport edge', a
   }
   // Read while the pointer is still down, so a `getComputedStyle` cannot land on a
   // closed/unmounted panel (backlog row 115). This gesture ends 160px above the handle,
-  // over the dialog's `::backdrop`; `use_dialog_backdrop_dismiss` must not read that as a
+  // over the dialog's `::backdrop`; the backdrop press must not read that as a
   // backdrop click that closes the drawer (dragging UP must not close it) -- the
   // dedicated tests below pin that.
   const filterValue = await content.evaluate((el) => getComputedStyle(el).filter);
@@ -253,8 +253,8 @@ test('a long, slow drag past the dismiss threshold closes the drawer', async ({ 
 
   const root = page.locator('[data-slot="drawer-root"]');
   const content = page.locator('[data-slot="drawer-content"]');
-  await expect(root).toHaveAttribute('data-state', 'open');
-  // `data-state="open"` is set before the panel has slid in: the handle is still below the fold
+  await expect(root).toHaveAttribute('data-open', '');
+  // `data-open` is set before the panel has slid in: the handle is still below the fold
   // (y ~ 749 of a 720px viewport) and a pointer pressed there lands on nothing, so the drag never
   // starts. Measure the settled panel (backlog row 115's class; the sibling drag tests above do).
   await awaitAnimationsSettled(content);
@@ -298,7 +298,7 @@ test('a short, slow drag snaps back without closing the drawer', async ({ page }
 
   const root = page.locator('[data-slot="drawer-root"]');
   const content = page.locator('[data-slot="drawer-content"]');
-  await expect(root).toHaveAttribute('data-state', 'open');
+  await expect(root).toHaveAttribute('data-open', '');
   await awaitAnimationsSettled(content); // see the long-drag test above: the handle is off-screen mid slide-in
 
   const handleBox = await measureAtRest(page.locator('[data-slot="drawer-handle"]'));
@@ -322,7 +322,7 @@ test('a short, slow drag snaps back without closing the drawer', async ({ page }
   await page.waitForTimeout(150);
   await page.mouse.up();
 
-  await expect(root).toHaveAttribute('data-state', 'open');
+  await expect(root).toHaveAttribute('data-open', '');
   await expect(content).toHaveCount(1);
   // The live drag offset is carried by an inline `transform` (see
   // primitives/src/drawer.rs's module doc for why not `translate`) --
@@ -393,14 +393,14 @@ const ROOT = '[data-slot="drawer-root"]';
 async function openBottom(page: import('@playwright/test').Page) {
   await gotoHydrated(page, URL, GOTO_OPTS);
   await page.getByRole('button', { name: 'Move Goal' }).click();
-  await expect(page.locator(ROOT)).toHaveAttribute('data-state', 'open');
+  await expect(page.locator(ROOT)).toHaveAttribute('data-open', '');
   await awaitAnimationsSettled(page.locator(CONTENT));
 }
 
 async function openTop(page: import('@playwright/test').Page) {
   await gotoHydrated(page, URL, GOTO_OPTS);
   await page.getByRole('button', { name: 'Open from Top' }).click();
-  await expect(page.locator(ROOT)).toHaveAttribute('data-state', 'open');
+  await expect(page.locator(ROOT)).toHaveAttribute('data-open', '');
   await awaitAnimationsSettled(page.locator(CONTENT));
 }
 
@@ -408,7 +408,7 @@ async function openTop(page: import('@playwright/test').Page) {
 async function expectStillOpenAtRest(page: import('@playwright/test').Page) {
   // Longer than the exit (200ms) plus the driver's wait, so a dismissal that was merely slow cannot pass.
   await page.waitForTimeout(900);
-  await expect(page.locator(ROOT)).toHaveAttribute('data-state', 'open');
+  await expect(page.locator(ROOT)).toHaveAttribute('data-open', '');
   await expect(page.locator(CONTENT)).toHaveCount(1);
   expect(await page.locator(CONTENT).evaluate((el) => (el as HTMLDialogElement).matches(':modal'))).toBe(true);
   await expect.poll(async () => (await page.locator(CONTENT).getAttribute('style')) ?? '').not.toContain('transform');
@@ -505,7 +505,7 @@ test.describe('top drawer: the closing edge is UP', () => {
     await openTop(page);
     await pointerDrag(page, GRAB, { kind: 'mouse', dx: 0, dy: 300, steps: 6, stepMs: 8, flick: true });
     await page.waitForTimeout(900);
-    await expect(page.locator(ROOT)).toHaveAttribute('data-state', 'open');
+    await expect(page.locator(ROOT)).toHaveAttribute('data-open', '');
     await expect(page.locator(CONTENT)).toHaveCount(1);
   });
 
@@ -580,7 +580,7 @@ test.describe('Axe automated scan', () => {
   test('open has no automatically detectable a11y issues', async ({ page }) => {
     await gotoHydrated(page, URL, GOTO_OPTS);
     await page.getByRole('button', { name: 'Move Goal' }).click();
-    await expect(page.locator('[data-slot="drawer-root"]')).toHaveAttribute('data-state', 'open');
+    await expect(page.locator('[data-slot="drawer-root"]')).toHaveAttribute('data-open', '');
     // Named via DrawerTitle so axe's `aria-dialog-name` rule passes -- see
     // primitives/src/drawer.rs's `DrawerTitle` doc (the same rule as
     // `primitives/src/command.rs`'s `CommandDialog`).
@@ -596,7 +596,7 @@ test.describe('Axe automated scan', () => {
     // background.
     await gotoHydrated(page, `${URL}?dark_mode=true`, GOTO_OPTS);
     await page.getByRole('button', { name: 'Open from Top' }).click();
-    await expect(page.locator('[data-slot="drawer-root"]')).toHaveAttribute('data-state', 'open');
+    await expect(page.locator('[data-slot="drawer-root"]')).toHaveAttribute('data-open', '');
     await expectNoAxeViolations(page, 'drawer: top variant, dark mode, open', {
       excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT],
     });
@@ -709,7 +709,7 @@ test.describe('Auto side (the default)', () => {
     // The grab surface is the panel itself (the handle is hidden on a side drawer).
     await pointerDrag(page, '[data-slot="drawer-title"]', { kind: 'mouse', dx: -300, dy: 0, steps: 6, stepMs: 8, flick: true });
     await page.waitForTimeout(900);
-    await expect(page.locator(ROOT)).toHaveAttribute('data-state', 'open');
+    await expect(page.locator(ROOT)).toHaveAttribute('data-open', '');
     await pointerDrag(page, '[data-slot="drawer-title"]', { kind: 'mouse', dx: w * 0.5, dy: 0, steps: 8, stepMs: 60, pauseBeforeUpMs: 200 });
     await expect(page.locator(ROOT)).toHaveCount(0);
   });
@@ -759,9 +759,9 @@ test.describe('Nested drawers', () => {
     page.evaluate(() => [...document.querySelectorAll('dialog')].filter((d) => d.open && d.matches(':modal')).length);
   const parentState = (page: import('@playwright/test').Page) =>
     page.evaluate(() => {
-      const el = document.querySelector('dialog[data-slot="drawer-content"][data-nested-open]') as HTMLElement;
+      const el = document.querySelector('dialog[data-slot="drawer-content"]') as HTMLElement;
       const cs = getComputedStyle(el);
-      return { nested: el.getAttribute('data-nested-open'), scale: cs.scale, transform: cs.transform, open: el.getAttribute('data-state') };
+      return { nested: el.hasAttribute('data-nested-open'), scale: cs.scale, transform: cs.transform, open: el.hasAttribute('data-open') };
     });
 
   async function openParent(page: import('@playwright/test').Page) {
@@ -778,11 +778,11 @@ test.describe('Nested drawers', () => {
 
   test('opening the child scales and offsets the parent; closing it restores the parent', async ({ page }) => {
     await openParent(page);
-    expect(await parentState(page)).toMatchObject({ nested: 'false', scale: 'none' });
+    expect(await parentState(page)).toMatchObject({ nested: false, scale: 'none' });
 
     await openChild(page);
     // The parent steps back: `scale` 0.96 and a vertical offset, once its transition has played.
-    await expect.poll(async () => (await parentState(page)).nested).toBe('true');
+    await expect.poll(async () => (await parentState(page)).nested).toBe(true);
     await expect.poll(async () => parseFloat((await parentState(page)).scale)).toBeCloseTo(0.96, 2);
     await expect.poll(async () => (await parentState(page)).transform).not.toBe('none');
     expect(await openModals(page)).toBe(2);
@@ -791,7 +791,7 @@ test.describe('Nested drawers', () => {
     await page.keyboard.press('Escape');
     await expect(page.locator(CHILD_TITLE)).toHaveCount(0);
     expect(await openModals(page)).toBe(1);
-    await expect.poll(async () => parentState(page)).toMatchObject({ nested: 'false', scale: 'none', transform: 'none', open: 'open' });
+    await expect.poll(async () => parentState(page)).toMatchObject({ nested: false, scale: 'none', transform: 'none', open: true });
     // Focus is back on the button that opened the child, inside the still-open parent.
     await expect(page.getByRole('button', { name: 'Open nested drawer', exact: true })).toBeFocused();
   });
@@ -825,7 +825,7 @@ test.describe('Nested drawers', () => {
     await expect(page.getByText('Parent drawer', { exact: true })).toBeVisible();
     expect(await openModals(page)).toBe(1);
     expect(await scrollLocked(page)).toBe(true);
-    await expect.poll(async () => parentState(page)).toMatchObject({ nested: 'false', scale: 'none', open: 'open' });
+    await expect.poll(async () => parentState(page)).toMatchObject({ nested: false, scale: 'none', open: true });
     // And now the parent, alone on top, drags normally.
     const ph = (await measureAtRest(page.locator(CONTENT))).height;
     await pointerDrag(page, '[data-slot="drawer-content"] > [data-slot="drawer-handle"]', { kind: 'mouse', dx: 0, dy: ph * 0.5, steps: 8, stepMs: 60, pauseBeforeUpMs: 200 });

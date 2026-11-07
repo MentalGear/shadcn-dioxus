@@ -102,7 +102,7 @@
  * the exact submenu element by its own name instead (`aria-labelledby`
  * resolving to the sub-trigger's own id and text, per this file's
  * general-menu rule) -- unambiguous, since only the one submenu is named
- * "More tools", and every `data-state`/`aria-labelledby`/item-count/
+ * "More tools", and every `data-open`/`aria-labelledby`/item-count/
  * visibility check downstream is graded against that one element.
  */
 
@@ -112,6 +112,7 @@ import { BASE_URL } from "../../base-url";
 import { gotoHydrated } from "../../hydration";
 import { demoFrame, demoRole } from "../../demo-frame";
 import { awaitAnimationsSettled, measureAtRest } from "../../animations";
+import { pauseAppClock } from "../../app-clock";
 
 const BASE = `${BASE_URL}/component/`;
 // Demo items are located by role and position (backlog row 220), never by their copy.
@@ -130,52 +131,31 @@ const goto = (page: Page, name: string) =>
   gotoHydrated(page, `${BASE}${name}/`, { timeout: 20 * 60 * 1000 });
 
 // `crate::menu_sub::SUBMENU_OPEN_INTENT_DELAY`/`SUBMENU_CLOSE_GRACE_DELAY`
-// are both 200ms (`primitives/src/menu_sub.rs`) -- generous margins below
+// are 100ms and 200ms (`primitives/src/menu_sub.rs`) -- generous margins below
 // so this file's own timing never races the implementation's.
 const PAST_INTENT_DELAY_MS = 500;
 
 /**
- * Hover a submenu trigger and measure, IN THE PAGE, from its `mouseover` to the `aria-expanded="true"` flip
- * (`performance.now()` stamps, the pattern of `hover-delay-probe.ts`). Timing from the spec process adds the
- * protocol round trip to both ends and, on a slow debug build, makes the "opens only after the intent delay" test
- * flaky (backlog row 115); a delay is a lower bound the product promises, so only that bound is asserted.
+ * Hover a submenu trigger under the test's page clock (`app-clock.ts`; the hover-intent timer is a `setTimeout`) and
+ * check the intent delay, `SUBMENU_OPEN_INTENT_DELAY` (100 ms): still closed 99 ms after the pointer entered, open
+ * by 159 ms. No wall-clock reading, so a loaded machine cannot move the verdict.
  */
-async function hoverAndTimeOpen(subTrigger: Locator): Promise<{ elapsedMs: number }> {
-  await subTrigger.evaluate((el) => {
-    const w = window as unknown as { __intentProbe?: { over: number | null; open: number | null; stop: () => void } };
-    w.__intentProbe?.stop();
-    const probe = { over: null as number | null, open: null as number | null, stop: () => {} };
-    const onOver = () => {
-      if (probe.over === null) probe.over = performance.now();
-    };
-    const obs = new MutationObserver(() => {
-      if (probe.open === null && el.getAttribute("aria-expanded") === "true") probe.open = performance.now();
-    });
-    el.addEventListener("mouseover", onOver, true);
-    obs.observe(el, { attributes: true, attributeFilter: ["aria-expanded"] });
-    probe.stop = () => {
-      el.removeEventListener("mouseover", onOver, true);
-      obs.disconnect();
-    };
-    w.__intentProbe = probe;
-  });
+async function hoverAndCheckIntentDelay(page: Page, subTrigger: Locator): Promise<void> {
   // The menu is absolute in the document: a hover that starts while it animates is retried by Playwright with
   // `scrollIntoView({ block: 'start' })`, which scrolls the page under it.
   await awaitAnimationsSettled(subTrigger);
-  await subTrigger.hover();
-  await expect(subTrigger, "opens once the intent delay elapses").toHaveAttribute("aria-expanded", "true");
-  const r = await subTrigger.evaluate(() => {
-    const w = window as unknown as { __intentProbe: { over: number | null; open: number | null; stop: () => void } };
-    const { over, open } = w.__intentProbe;
-    w.__intentProbe.stop();
-    return { over, open };
-  });
-  expect(r.over, "the page saw the pointer enter the trigger").not.toBeNull();
-  expect(r.open, "the page saw aria-expanded flip to true").not.toBeNull();
-  return { elapsedMs: (r.open as number) - (r.over as number) };
+  await pauseAppClock(page);
+  // A raw pointer move: the `hover()` wrapper of fixtures.ts waits for the panel's animations, which a paused page
+  // clock never finishes. The panel is already settled above.
+  const box = await subTrigger.boundingBox(); // rest-ok: settled by awaitAnimationsSettled above
+  if (!box) throw new Error("sub-trigger has no bounding box");
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.clock.runFor(99);
+  await expect(subTrigger, "no instant flash: closed just before the intent delay").toHaveAttribute("aria-expanded", "false");
+  await page.clock.runFor(60);
+  await expect(subTrigger, "open once the 100 ms intent delay has run").toHaveAttribute("aria-expanded", "true");
+  await page.clock.resume();
 }
-// A little under crate::menu_sub::SUBMENU_OPEN_INTENT_DELAY (200 ms) for timer granularity.
-const MIN_INTENT_DELAY_MS = 180;
 
 test.describe("APG Menu and Menubar pattern — DropdownMenu.Sub", () => {
   test.beforeEach(async ({ page }) => {
@@ -224,8 +204,8 @@ test.describe("APG Menu and Menubar pattern — DropdownMenu.Sub", () => {
 
     const submenu = submenuOf(page);
     await expect(submenu, "the opened submenu is role=\"menu\"").toHaveAttribute(
-      "data-state",
-      "open",
+      "data-open",
+      "",
     );
     expect(await submenu.getAttribute("id"), "aria-controls resolves to the submenu's id").toBe(
       controlsId,
@@ -312,7 +292,7 @@ test.describe("APG Menu and Menubar pattern — DropdownMenu.Sub", () => {
     await expect(
       trigger,
       "the parent (root) menu stays open when a submenu closes",
-    ).toHaveAttribute("data-state", "open");
+    ).toHaveAttribute("data-open", "");
   });
 
   test('Escape: "closes the menu that contains focus and returns focus to ... the parent menuitem ... from which the menu was opened" — the parent menu stays open', async ({
@@ -340,7 +320,7 @@ test.describe("APG Menu and Menubar pattern — DropdownMenu.Sub", () => {
     await expect(
       trigger,
       "only the submenu closed -- the root menu that contains it is untouched",
-    ).toHaveAttribute("data-state", "open");
+    ).toHaveAttribute("data-open", "");
   });
 
   test("hover: opens after a short intent delay, not instantly; leaving to a sibling item closes it", async ({
@@ -349,12 +329,9 @@ test.describe("APG Menu and Menubar pattern — DropdownMenu.Sub", () => {
     const subTrigger = rootItem(page, 3);
     const submenu = submenuOf(page);
 
-    const { elapsedMs } = await hoverAndTimeOpen(subTrigger);
-    expect(
-      elapsedMs,
-      "a pointer merely passing over the trigger must not flash the " +
-        "submenu open instantly (crate::menu_sub::SUBMENU_OPEN_INTENT_DELAY)",
-    ).toBeGreaterThanOrEqual(MIN_INTENT_DELAY_MS);
+    // Base UI's `SubmenuTrigger` `delay` (100 ms): a pointer merely passing over the trigger must not flash the
+    // submenu open (crate::menu_sub::SUBMENU_OPEN_INTENT_DELAY).
+    await hoverAndCheckIntentDelay(page, subTrigger);
     await expect(submenu).toBeVisible();
 
     // Moving to a sibling item (not into the submenu itself) closes it.
@@ -459,7 +436,7 @@ test.describe("APG Menu and Menubar pattern — DropdownMenu.Sub", () => {
   // focus move this crate's own click/keyboard code drives (all of which
   // update that signal *before* moving DOM focus), but it is never told
   // about a focus move arriving any other way. A violation looks like this:
-  // `trigger` ends up `data-state="closed"` and the "More tools" sub-trigger
+  // `trigger` ends up `data-closed` and the "More tools" sub-trigger
   // is gone from the DOM entirely (the whole menu unmounted), with focus
   // reverted to `trigger` itself. Instead
   // `DropdownMenuContentRendered` puts the menu's dismiss layer on the root
@@ -485,7 +462,7 @@ test.describe("APG Menu and Menubar pattern — DropdownMenu.Sub", () => {
     // completed.
     await page.waitForTimeout(150);
 
-    await expect(trigger, "the whole menu must not close").toHaveAttribute("data-state", "open");
+    await expect(trigger, "the whole menu must not close").toHaveAttribute("data-open", "");
     await expect(
       subTrigger,
       "the sub-trigger must simply be focused in place, not torn out of the DOM by the whole menu unmounting",
@@ -521,7 +498,7 @@ test.describe("APG Menu and Menubar pattern — ContextMenu.Sub", () => {
     await subTrigger.click();
 
     const submenu = submenuOf(page);
-    await expect(submenu).toHaveAttribute("data-state", "open");
+    await expect(submenu).toHaveAttribute("data-open", "");
     expect(
       await submenu.getAttribute("aria-labelledby"),
       "dev-docs/backlog.md row 25's rule, applied to this new component -- " +
@@ -558,8 +535,8 @@ test.describe("APG Menu and Menubar pattern — ContextMenu.Sub", () => {
     await expect(subTrigger, "closes the submenu").toHaveAttribute("aria-expanded", "false");
     await expect(subTrigger, "returns focus to the parent menuitem").toBeFocused();
     await expect(rootMenu, "the root context menu stays open").toHaveAttribute(
-      "data-state",
-      "open",
+      "data-open",
+      "",
     );
 
     // Re-open and close with Enter/Escape this time, same contract.
@@ -569,8 +546,8 @@ test.describe("APG Menu and Menubar pattern — ContextMenu.Sub", () => {
     await expect(subTrigger).toHaveAttribute("aria-expanded", "false");
     await expect(subTrigger).toBeFocused();
     await expect(rootMenu, "still open after the submenu's own Escape").toHaveAttribute(
-      "data-state",
-      "open",
+      "data-open",
+      "",
     );
   });
 
@@ -580,8 +557,7 @@ test.describe("APG Menu and Menubar pattern — ContextMenu.Sub", () => {
     const subTrigger = rootItem(page, 4);
     const submenu = submenuOf(page);
 
-    const { elapsedMs } = await hoverAndTimeOpen(subTrigger);
-    expect(elapsedMs, "no instant flash: opens only after the intent delay").toBeGreaterThanOrEqual(MIN_INTENT_DELAY_MS);
+    await hoverAndCheckIntentDelay(page, subTrigger);
     await expect(submenu).toBeVisible();
 
     await rootItem(page, 0).hover();
@@ -671,7 +647,7 @@ test.describe("APG Menu and Menubar pattern — ContextMenu.Sub", () => {
     await subTrigger.focus();
     await page.waitForTimeout(150);
 
-    await expect(rootMenu, "the whole menu must not close").toHaveAttribute("data-state", "open");
+    await expect(rootMenu, "the whole menu must not close").toHaveAttribute("data-open", "");
     await expect(subTrigger, "the sub-trigger must simply be focused in place").toBeFocused();
   });
 });

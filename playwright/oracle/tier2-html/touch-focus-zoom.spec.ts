@@ -301,7 +301,7 @@ test.describe("overlay-gated elements (coarse pointer, desktop-width viewport)",
     const trigger = demoRole(page, "combobox");
     await trigger.focus();
     await page.keyboard.press("ArrowDown");
-    await expect(page.locator("[role='listbox'][data-state='open']")).toBeVisible();
+    await expect(page.locator("[role='listbox'][data-open]")).toBeVisible();
     assertAllAtLeast16(await scan(page), `${route} (list open)`);
   });
 });

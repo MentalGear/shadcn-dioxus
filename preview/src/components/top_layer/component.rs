@@ -286,7 +286,9 @@ pub fn TopLayerFixture() -> Element {
                     ") should render its content above that sibling (top layer "
                     "stacking). Clicking elsewhere, or pressing Escape, should "
                     "close it and sync back to "
-                    code { "data-state" }
+                    code { "data-open" }
+                    " / "
+                    code { "data-closed" }
                     " on the root/trigger -- the Rust signal must never strand."
                 }
                 div { class: Styles::dx_top_layer_stack_area,

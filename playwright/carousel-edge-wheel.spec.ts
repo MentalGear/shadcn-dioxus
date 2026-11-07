@@ -70,7 +70,7 @@ test.describe("Carousel: wheel/trackpad edge band (mode D, platform-aware)", () 
     const frame = demoFrame(page, "main");
     const content = frame.locator(".dx-carousel-content");
     const slide = (n: number) => frame.getByRole("group", { name: `${n} of 5` });
-    await expect(slide(1)).toHaveAttribute("data-selected", "true");
+    await expect(slide(1)).toHaveAttribute("data-selected", "");
     expect(await readContentTransform(content)).toBe("");
 
     // Negative deltaX at slide 1 asks for more "previous" than exists.
@@ -86,7 +86,7 @@ test.describe("Carousel: wheel/trackpad edge band (mode D, platform-aware)", () 
     expect(rec.owned).toBe(true);
     expect(rec.releasedBy, "the momentum tail is what released it").toBe("smooth-decay");
     // THE RULE: the band never moved `selected`.
-    await expect(slide(1)).toHaveAttribute("data-selected", "true");
+    await expect(slide(1)).toHaveAttribute("data-selected", "");
   });
 
   test("an owned push at the end edge draws a band in the other direction and springs back", async ({ page }) => {
@@ -100,7 +100,7 @@ test.describe("Carousel: wheel/trackpad edge band (mode D, platform-aware)", () 
       await next.click();
       await expectSnappedToBoundary(content, slide(i + 2));
     }
-    await expect(slide(5)).toHaveAttribute("data-selected", "true");
+    await expect(slide(5)).toHaveAttribute("data-selected", "");
 
     const run = await playWheel(content, { deltas: WHEEL.rampAndDecay, tailMs: 900 });
     expect(Math.min(...run.samples.map((s) => s.v)), "pushing left past the end, the band translates left").toBeLessThan(-5);
@@ -109,7 +109,7 @@ test.describe("Carousel: wheel/trackpad edge band (mode D, platform-aware)", () 
     const [rec] = (await wheelRecords(content)).slice(-1);
     expect(rec.startedAtEdge).toBe("right");
     expect(rec.owned).toBe(true);
-    await expect(slide(5)).toHaveAttribute("data-selected", "true");
+    await expect(slide(5)).toHaveAttribute("data-selected", "");
   });
 
   /**
@@ -128,7 +128,7 @@ test.describe("Carousel: wheel/trackpad edge band (mode D, platform-aware)", () 
     const frame = demoFrame(page, "main");
     const content = frame.locator(".dx-carousel-content");
     const slide = (n: number) => frame.getByRole("group", { name: `${n} of 5` });
-    await expect(slide(1)).toHaveAttribute("data-selected", "true");
+    await expect(slide(1)).toHaveAttribute("data-selected", "");
 
     const sustained = Array.from({ length: 20 }, (_, i) => -(150 + (i % 3) * 7));
     // Momentum all the way down, as a real tail runs (~0.93 per event, to a
@@ -146,7 +146,7 @@ test.describe("Carousel: wheel/trackpad edge band (mode D, platform-aware)", () 
     expect(run.finalTransform).toBe("");
     const [rec] = (await wheelRecords(content)).slice(-1);
     expect(rec.releasedBy).toBe("smooth-decay");
-    await expect(slide(1)).toHaveAttribute("data-selected", "true");
+    await expect(slide(1)).toHaveAttribute("data-selected", "");
   });
 
   test("a fling that arrives at slide 1 from another slide with momentum draws NO band (the platform's edge)", async ({
@@ -312,7 +312,7 @@ test.describe("Carousel: wheel/trackpad edge band (mode D, platform-aware)", () 
     const frame = demoFrame(page, "vertical");
     const content = frame.locator(".dx-carousel-content");
     const slide = (n: number) => frame.getByRole("group", { name: `${n} of 4` });
-    await expect(slide(1)).toHaveAttribute("data-selected", "true");
+    await expect(slide(1)).toHaveAttribute("data-selected", "");
 
     const sideways = await playWheel(content, { deltas: neg(WHEEL.rampAndDecay), axis: "x", tailMs: 100 });
     expect(maxAbsBand(sideways), "deltaX is not a vertical carousel's axis").toBe(0);
@@ -324,7 +324,7 @@ test.describe("Carousel: wheel/trackpad edge band (mode D, platform-aware)", () 
     expect(run.finalTransform).toBe("");
     const recs = await wheelRecords(content);
     expect(recs.map((r) => r.startedAtEdge)).toContain("top");
-    await expect(slide(1)).toHaveAttribute("data-selected", "true");
+    await expect(slide(1)).toHaveAttribute("data-selected", "");
   });
 
   test("RTL: an owned push at slide 1 (the physical right edge) draws a leftward band", async ({ page }) => {
@@ -333,7 +333,7 @@ test.describe("Carousel: wheel/trackpad edge band (mode D, platform-aware)", () 
     const frame = demoFrame(page, "rtl");
     const content = frame.locator(".dx-carousel-content");
     const slide = (n: number) => frame.getByRole("group", { name: `${n} of 4` });
-    await expect(slide(1)).toHaveAttribute("data-selected", "true");
+    await expect(slide(1)).toHaveAttribute("data-selected", "");
 
     // Under RTL, slide 1 rests at the physical RIGHT; positive deltaX pushes
     // past it. All geometry is physical, so nothing here is mirrored by hand.
@@ -345,7 +345,7 @@ test.describe("Carousel: wheel/trackpad edge band (mode D, platform-aware)", () 
     const [rec] = (await wheelRecords(content)).slice(-1);
     expect(rec.startedAtEdge).toBe("right");
     expect(rec.owned).toBe(true);
-    await expect(slide(1)).toHaveAttribute("data-selected", "true");
+    await expect(slide(1)).toHaveAttribute("data-selected", "");
   });
 
   /**
@@ -362,7 +362,7 @@ test.describe("Carousel: wheel/trackpad edge band (mode D, platform-aware)", () 
     const content = region.locator(".dx-carousel-content");
     const slide = (n: number) => region.getByRole("group", { name: `${n} of 5` });
     const next = region.getByRole("button", { name: "Next slide" });
-    await expect(slide(1)).toHaveAttribute("data-selected", "true");
+    await expect(slide(1)).toHaveAttribute("data-selected", "");
     expect(await content.getAttribute("data-loop")).toBe("true");
 
     // Slide 1 (rest at the physical start), slide 3 (middle), slide 5 (end).
@@ -395,7 +395,7 @@ test.describe("Carousel: wheel/trackpad edge band (mode D, platform-aware)", () 
     await goto(page, "virtual_loop");
     const frame = demoFrame(page, "virtual_loop");
     const content = frame.locator(".dx-carousel-content");
-    await expect.poll(() => frame.locator('[data-selected="true"]').getAttribute("aria-label")).toBe("1 of 12");
+    await expect.poll(() => frame.locator('[data-selected]').getAttribute("aria-label")).toBe("1 of 12");
 
     // Jump to the window's own physical start and push into it in the same
     // task, before any re-anchor can run: the bridge is attached, and it is
@@ -467,7 +467,7 @@ test.describe("Carousel: wheel/trackpad edge band (mode D, platform-aware)", () 
     });
     expect(Math.max(...start), "a band at the start edge").toBeGreaterThan(0);
     await expectBandGone(content);
-    await expect(slide(1)).toHaveAttribute("data-selected", "true");
+    await expect(slide(1)).toHaveAttribute("data-selected", "");
 
     for (let i = 0; i < 4; i++) {
       await next.click();
@@ -479,7 +479,7 @@ test.describe("Carousel: wheel/trackpad edge band (mode D, platform-aware)", () 
     });
     expect(Math.min(...end), "a band at the end edge").toBeLessThan(0);
     await expectBandGone(content);
-    await expect(slide(5)).toHaveAttribute("data-selected", "true");
+    await expect(slide(5)).toHaveAttribute("data-selected", "");
   });
 
   test("a mid-range wheel scroll produces no lingering transform and pages correctly", async ({
@@ -497,7 +497,7 @@ test.describe("Carousel: wheel/trackpad edge band (mode D, platform-aware)", () 
     }
 
     await expectSnappedToBoundary(content, slide(2));
-    await expect(slide(2)).toHaveAttribute("data-selected", "true");
+    await expect(slide(2)).toHaveAttribute("data-selected", "");
     await expectBandGone(content, 2000);
   });
 });

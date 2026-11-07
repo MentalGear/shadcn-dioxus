@@ -89,7 +89,7 @@ async function open(host: Host, page: Page, variant = "main"): Promise<void> {
   if (host.route === "context_menu") await t.click({ button: "right" });
   else await t.click();
   const menu = rootMenu(page);
-  await expect(menu).toHaveAttribute("data-state", "open");
+  await expect(menu).toHaveAttribute("data-open", "");
   await awaitAnimationsSettled(menu);
 }
 
@@ -122,7 +122,7 @@ const HOSTS: Host[] = [
       reach: async (page) => {
         await rootMenu(page).locator(`${ITEM}[aria-haspopup]`).click();
         const sub = innermostMenu(page);
-        await expect(sub).toHaveAttribute("data-state", "open");
+        await expect(sub).toHaveAttribute("data-open", "");
         await awaitAnimationsSettled(sub);
         return sub.locator('[role="menuitemcheckbox"]').last();
       },
@@ -138,7 +138,7 @@ const HOSTS: Host[] = [
       reach: async (page) => {
         await rootMenu(page).locator(`${ITEM}[aria-haspopup]`).click();
         const sub = innermostMenu(page);
-        await expect(sub).toHaveAttribute("data-state", "open");
+        await expect(sub).toHaveAttribute("data-open", "");
         await awaitAnimationsSettled(sub);
         return sub.locator('[role="menuitemcheckbox"]').last();
       },
@@ -174,7 +174,7 @@ for (const host of HOSTS) {
       expect(await menu.locator(ITEM).count(), "the menu has items").toBeGreaterThanOrEqual(3);
       const disabled = menu.locator(DISABLED);
       expect(await disabled.count(), "the demo has a disabled item").toBeGreaterThanOrEqual(1);
-      await expect(disabled.first()).toHaveAttribute("data-disabled", "true");
+      await expect(disabled.first()).toHaveAttribute("data-disabled", "");
     });
 
     // ---- keyboard ----
@@ -282,7 +282,7 @@ for (const host of HOSTS) {
       // `force`: Playwright otherwise waits for an aria-disabled element to become actionable.
       await rootMenu(page).locator(DISABLED).first().click({ force: true });
       await page.waitForTimeout(200);
-      await expect(rootMenu(page)).toHaveAttribute("data-state", "open");
+      await expect(rootMenu(page)).toHaveAttribute("data-open", "");
       await expect(demoFrame(page)).not.toContainText("Selected:");
     });
 
@@ -308,13 +308,13 @@ for (const host of HOSTS) {
         return;
       }
       await page.waitForTimeout(150);
-      await expect(menu, "pressing alone does not select").toHaveAttribute("data-state", "open");
+      await expect(menu, "pressing alone does not select").toHaveAttribute("data-open", "");
       await expect(demoFrame(page)).not.toContainText("Selected:");
       // Release off the item: nothing is selected.
       await page.mouse.move(2, 2);
       await page.mouse.up();
       await page.waitForTimeout(150);
-      await expect(menu, "a press that ends off the item selects nothing").toHaveAttribute("data-state", "open");
+      await expect(menu, "a press that ends off the item selects nothing").toHaveAttribute("data-open", "");
       await expect(demoFrame(page)).not.toContainText("Selected:");
       // Press and release on the item: selected.
       await item.click();
@@ -342,7 +342,7 @@ for (const host of HOSTS) {
         await expect(anyMenu(page)).toHaveCount(1);
         await expect(st).toBeFocused();
         await expect(st).toHaveAttribute("aria-expanded", "false");
-        await expect(rootMenu(page), "the root menu stays open").toHaveAttribute("data-state", "open");
+        await expect(rootMenu(page), "the root menu stays open").toHaveAttribute("data-open", "");
       });
 
       for (const key of ["Enter", "Space"]) {
@@ -356,7 +356,7 @@ for (const host of HOSTS) {
           await page.keyboard.press("Escape");
           await expect(anyMenu(page), "Escape closes only the menu that holds focus").toHaveCount(1);
           await expect(st).toBeFocused();
-          await expect(rootMenu(page)).toHaveAttribute("data-state", "open");
+          await expect(rootMenu(page)).toHaveAttribute("data-open", "");
         });
       }
 
@@ -427,7 +427,7 @@ for (const host of HOSTS) {
       for (let i = 0; i < count; i++) {
         const checked = await boxes.nth(i).getAttribute("aria-checked");
         expect(checked, `checkbox ${i} always carries aria-checked`).toMatch(/^(true|false)$/);
-        await expect(boxes.nth(i)).toHaveAttribute("data-state", checked === "true" ? "checked" : "unchecked");
+        await expect(boxes.nth(i)).toHaveAttribute(checked === "true" ? "data-checked" : "data-unchecked", "");
       }
 
       const enabledBoxes = menu.locator('[role="menuitemcheckbox"]:not([aria-disabled="true"])');
@@ -435,7 +435,7 @@ for (const host of HOSTS) {
       const before = await target.getAttribute("aria-checked");
       await target.click();
       await expect(target).toHaveAttribute("aria-checked", before === "true" ? "false" : "true");
-      await expect(menu, "a toggle keeps the menu open").toHaveAttribute("data-state", "open");
+      await expect(menu, "a toggle keeps the menu open").toHaveAttribute("data-open", "");
 
       // Keyboard: focus the second enabled checkbox, Space then Enter toggle it in place.
       const other = enabledBoxes.nth(1);
@@ -446,7 +446,7 @@ for (const host of HOSTS) {
       await expect(other, "focus stays on the toggled item").toBeFocused();
       await page.keyboard.press("Enter");
       await expect(other).toHaveAttribute("aria-checked", start ?? "false");
-      await expect(menu).toHaveAttribute("data-state", "open");
+      await expect(menu).toHaveAttribute("data-open", "");
 
       const disabledBox = menu.locator('[role="menuitemcheckbox"][aria-disabled="true"]');
       if ((await disabledBox.count()) > 0) {
@@ -489,7 +489,7 @@ for (const host of HOSTS) {
       await clicked.click();
       await expect(clicked).toHaveAttribute("aria-checked", "true");
       expect(await checkedCount(), "still exactly one checked").toBe(1);
-      await expect(menu, "choosing keeps the menu open").toHaveAttribute("data-state", "open");
+      await expect(menu, "choosing keeps the menu open").toHaveAttribute("data-open", "");
 
       // Keyboard: Space / Enter on another radio moves the check to it.
       const byKey = await firstUnchecked();
@@ -546,7 +546,7 @@ test.describe("menu family parity — touch", () => {
         await t.tap();
       }
       const menu = rootMenu(page);
-      await expect(menu).toHaveAttribute("data-state", "open");
+      await expect(menu).toHaveAttribute("data-open", "");
       await awaitAnimationsSettled(menu);
       // Outlive the 700 ms window in which a long-press-opened ContextMenu ignores the re-dispatched press.
       await page.waitForTimeout(900);
@@ -589,7 +589,7 @@ test.describe("menu family parity — touch press", () => {
         );
       });
       await page.waitForTimeout(300);
-      await expect(menu, "a touch press without a release leaves the menu open").toHaveAttribute("data-state", "open");
+      await expect(menu, "a touch press without a release leaves the menu open").toHaveAttribute("data-open", "");
       await expect(demoFrame(page)).not.toContainText("Selected:");
     });
   }
@@ -606,14 +606,14 @@ test.describe("menu family differences — DropdownMenu", () => {
   test("the trigger toggles; ArrowDown on the closed trigger opens the menu on its first item, ArrowUp on the last", async ({ page }) => {
     const t = trigger(host, page);
     await t.click();
-    await expect(rootMenu(page)).toHaveAttribute("data-state", "open");
+    await expect(rootMenu(page)).toHaveAttribute("data-open", "");
     await t.click();
     await expect(anyMenu(page), "a second click closes").toHaveCount(0);
 
     await t.focus();
     await page.keyboard.press("ArrowDown");
     const menu = rootMenu(page);
-    await expect(menu).toHaveAttribute("data-state", "open");
+    await expect(menu).toHaveAttribute("data-open", "");
     await expect(menu.locator(ENABLED).first()).toBeFocused();
     await page.keyboard.press("Escape");
     await expect(anyMenu(page)).toHaveCount(0);
@@ -648,7 +648,7 @@ test.describe("menu family differences — ContextMenu", () => {
     const y = rest.y + rest.height / 2;
     await page.mouse.click(x, y, { button: "right" });
     const menu = rootMenu(page);
-    await expect(menu).toHaveAttribute("data-state", "open");
+    await expect(menu).toHaveAttribute("data-open", "");
     await awaitAnimationsSettled(menu);
     const box = await measureAtRest(menu);
     expect(Math.abs(box.x - x), "the menu's leading edge is at the pointer").toBeLessThan(3);
@@ -667,12 +667,12 @@ test.describe("menu family differences — Menubar", () => {
 
   test("ArrowRight on an open menu moves to the neighbouring menu and opens it", async ({ page }) => {
     await open(host, page);
-    await expect(rootMenu(page)).toHaveAttribute("data-state", "open");
+    await expect(rootMenu(page)).toHaveAttribute("data-open", "");
     await page.keyboard.press("ArrowRight");
     const next = triggers(page).nth(1);
     await expect(next, "focus is on the next trigger").toBeFocused();
     await expect(anyMenu(page), "one menu is open, the neighbour's").toHaveCount(1);
-    await expect(next.locator('xpath=following-sibling::*[@role="menu"]')).toHaveAttribute("data-state", "open");
+    await expect(next.locator('xpath=following-sibling::*[@role="menu"]')).toHaveAttribute("data-open", "");
   });
 
   test("Home and End on an open menu move to the first and last menu of the bar and open it", async ({ page }) => {
@@ -680,7 +680,7 @@ test.describe("menu family differences — Menubar", () => {
     await page.keyboard.press("End");
     const last = triggers(page).last();
     await expect(last, "End moves to the last menu's trigger").toBeFocused();
-    await expect(last.locator('xpath=following-sibling::*[@role="menu"]')).toHaveAttribute("data-state", "open");
+    await expect(last.locator('xpath=following-sibling::*[@role="menu"]')).toHaveAttribute("data-open", "");
     await page.keyboard.press("Home");
     await expect(triggers(page).first(), "Home moves back to the first menu's trigger").toBeFocused();
     await expect(anyMenu(page)).toHaveCount(1);
@@ -695,6 +695,6 @@ test.describe("menu family differences — Menubar", () => {
     await second.hover();
     await expect(second, "hover moves the roving focus to the hovered trigger").toBeFocused();
     await expect(anyMenu(page)).toHaveCount(1);
-    await expect(second.locator('xpath=following-sibling::*[@role="menu"]')).toHaveAttribute("data-state", "open");
+    await expect(second.locator('xpath=following-sibling::*[@role="menu"]')).toHaveAttribute("data-open", "");
   });
 });

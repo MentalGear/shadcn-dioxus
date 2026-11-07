@@ -177,42 +177,42 @@ const SURFACES: Surface[] = [
     open: async (page) => {
       await goto(page, "menubar");
       await demoRole(page, "menuitem", 0).click(); // menubar demo: File, Edit
-      await expect(page.locator('.dx-menubar-content[data-state="open"]')).toBeVisible();
+      await expect(page.locator('.dx-menubar-content[data-open]')).toBeVisible();
     },
-    wrapper: (page) => page.locator('.dx-menubar-content[data-state="open"]'),
-    text: (page) => page.locator('.dx-menubar-content[data-state="open"]').getByRole("menuitem").first(),
+    wrapper: (page) => page.locator('.dx-menubar-content[data-open]'),
+    text: (page) => page.locator('.dx-menubar-content[data-open]').getByRole("menuitem").first(),
   },
   {
     name: "navbar",
     open: async (page) => {
       await goto(page, "navbar");
       await demoRole(page, "menuitem", 0).hover(); // navbar demo: Inputs, Information, Home
-      await expect(page.locator('.dx-navbar-content[data-state="open"]')).toBeVisible();
+      await expect(page.locator('.dx-navbar-content[data-open]')).toBeVisible();
     },
-    wrapper: (page) => page.locator('.dx-navbar-content[data-state="open"]'),
-    text: (page) => page.locator('.dx-navbar-content[data-state="open"]').getByRole("menuitem").first(),
+    wrapper: (page) => page.locator('.dx-navbar-content[data-open]'),
+    text: (page) => page.locator('.dx-navbar-content[data-open]').getByRole("menuitem").first(),
   },
   {
     name: "dropdown_menu",
     open: async (page) => {
       await goto(page, "dropdown_menu");
       await demoRole(page, "button").click();
-      await expect(page.locator('.dx-dropdown-menu-content[data-state="open"]')).toBeVisible();
+      await expect(page.locator('.dx-dropdown-menu-content[data-open]')).toBeVisible();
     },
-    wrapper: (page) => page.locator('.dx-dropdown-menu-content[data-state="open"]'),
+    wrapper: (page) => page.locator('.dx-dropdown-menu-content[data-open]'),
     text: (page) =>
-      page.locator('.dx-dropdown-menu-content[data-state="open"] .dx-dropdown-menu-item').first(),
+      page.locator('.dx-dropdown-menu-content[data-open] .dx-dropdown-menu-item').first(),
   },
   {
     name: "context_menu",
     open: async (page) => {
       await goto(page, "context_menu");
       await demoRole(page, "button").click({ button: "right" });
-      await expect(page.locator('.dx-context-menu-content[data-state="open"]')).toBeVisible();
+      await expect(page.locator('.dx-context-menu-content[data-open]')).toBeVisible();
     },
-    wrapper: (page) => page.locator('.dx-context-menu-content[data-state="open"]'),
+    wrapper: (page) => page.locator('.dx-context-menu-content[data-open]'),
     text: (page) =>
-      page.locator('.dx-context-menu-content[data-state="open"] .dx-context-menu-item').first(),
+      page.locator('.dx-context-menu-content[data-open] .dx-context-menu-item').first(),
   },
   {
     // Non-modal `Popover` arm (`popover="auto"`, not a modal `<dialog>`).
@@ -237,9 +237,9 @@ const SURFACES: Surface[] = [
     open: async (page) => {
       await goto(page, "popover");
       await demoRole(page, "button").click();
-      await expect(page.locator('.dx-popover-content[data-state="open"]')).toBeVisible();
+      await expect(page.locator('.dx-popover-content[data-open]')).toBeVisible();
     },
-    wrapper: (page) => page.locator('.dx-popover-content[data-state="open"]'),
+    wrapper: (page) => page.locator('.dx-popover-content[data-open]'),
     text: (page) => page.locator(".dx-popover-content .dx-popover-title"),
   },
   {
@@ -252,9 +252,9 @@ const SURFACES: Surface[] = [
       // `/component/popover/variant=modal&` (query text glued to a path route) is a 404 that never sets data-hydrated.
       await goto(page, "popover");
       await demoRole(page, "button", 0, "modal").click();
-      await expect(page.locator('.dx-popover-content[data-state="open"]')).toBeVisible();
+      await expect(page.locator('.dx-popover-content[data-open]')).toBeVisible();
     },
-    wrapper: (page) => page.locator('.dx-popover-content[data-state="open"]'),
+    wrapper: (page) => page.locator('.dx-popover-content[data-open]'),
     // The demo's "Dimensions" heading (`PopoverTitle`, `.dx-popover-title`) in shadcn's Dimensions form. The
     // heading has to pick up its class's declared color (not inherited); asserted against the shared ink token
     // here since that's also `.dx-popover-title`'s own declared value.
@@ -265,10 +265,10 @@ const SURFACES: Surface[] = [
     open: async (page) => {
       await goto(page, "hover_card");
       await demoRole(page, "button").hover();
-      await expect(page.locator('.dx-hover-card-content[data-state="open"]')).toBeVisible();
+      await expect(page.locator('.dx-hover-card-content[data-open]')).toBeVisible();
     },
-    wrapper: (page) => page.locator('.dx-hover-card-content[data-state="open"]'),
-    text: (page) => page.locator('.dx-hover-card-content[data-state="open"] div').first(),
+    wrapper: (page) => page.locator('.dx-hover-card-content[data-open]'),
+    text: (page) => page.locator('.dx-hover-card-content[data-open] div').first(),
   },
   {
     // The load-bearing negative case: the tooltip is the theme's inverted floating surface
@@ -323,10 +323,10 @@ const SURFACES: Surface[] = [
       // (`dev-docs/backlog.md` row 8); a `button` locator never matches and
       // hangs the click (and the test) until the 5-minute ceiling.
       await demoRole(page, "combobox").click();
-      await expect(page.locator('.dx-select-list[data-state="open"]')).toBeVisible();
+      await expect(page.locator('.dx-select-list[data-open]')).toBeVisible();
     },
-    wrapper: (page) => page.locator('.dx-select-list[data-state="open"]'),
-    text: (page) => page.locator('.dx-select-list[data-state="open"]').getByRole("option").first(),
+    wrapper: (page) => page.locator('.dx-select-list[data-open]'),
+    text: (page) => page.locator('.dx-select-list[data-open]').getByRole("option").first(),
     expectedVar: "--dx-popover-foreground",
   },
   {
@@ -339,13 +339,13 @@ const SURFACES: Surface[] = [
       const input = demoRole(page, "combobox");
       await input.focus();
       await page.keyboard.press("ArrowDown");
-      await expect(page.locator('.dx-combobox-list[data-state="open"]')).toBeVisible();
+      await expect(page.locator('.dx-combobox-list[data-open]')).toBeVisible();
     },
-    wrapper: (page) => page.locator('.dx-combobox-list[data-state="open"]'),
+    wrapper: (page) => page.locator('.dx-combobox-list[data-open]'),
     // The first option is highlighted on open and so carries `--dx-accent-foreground`
     // (its own, deliberate colour, row 111); the first un-highlighted one inherits the list's.
     text: (page) =>
-      page.locator('.dx-combobox-list[data-state="open"] .dx-combobox-option:not([data-highlighted="true"])').first(),
+      page.locator('.dx-combobox-list[data-open] .dx-combobox-option:not([data-highlighted])').first(),
     expectedVar: "--dx-popover-foreground",
   },
   {

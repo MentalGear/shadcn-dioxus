@@ -15,18 +15,31 @@ absolute, isolated directory; `run.sh` refuses a relative one or the repo-root `
 build lock (`scripts/lane-lock.sh`), so it may wait behind a gate or a build. The last line it prints names what was
 reused and what was rebuilt, for example `index reused, graph reused, page reused; index key 3f2a9c0b11de; 1s`.
 
-## Pipeline and staleness key
+## Pipeline and staleness keys
+
+The graph depends on the SCIP index; the comment metrics depend only on file text. They are separate products with
+separate keys, so a source edit updates the metrics at once while the (8 minute) index stays as it was and is shown as stale.
 
 | Product | Made by | Key (sha256 of) |
 |---|---|---|
-| `index.scip` | `rust-analyzer scip` (rustup component) with `CARGO_INCREMENTAL=0`, `CARGO_NET_OFFLINE=true` | content hash (`git hash-object`) of every `*.rs` and `Cargo.toml` that `git ls-files -co --exclude-standard` lists (an uncommitted edit counts), `Cargo.lock`, the rust-analyzer version |
-| `graph.json` | `build_graph.py` + `comment_metrics.py` (Python stdlib, run as `python3 -I`) | index key, `build_graph.py`, `comment_metrics.py`, `scripts/comment-scan.py`, every `*.ts`, `*.css`, `*.html`, `*.js` and `*.txt` (the static scans and the comment metrics) |
-| `explorer.html` | `make_explorer.py` (stdlib) | graph key, `explorer.template.html`, `make_explorer.py`, the Cytoscape bundle |
+| `index.scip` | `rust-analyzer scip` (rustup component) with `CARGO_INCREMENTAL=0`, `CARGO_NET_OFFLINE=true` | taken when it is built: content hash (`git hash-object`) of every `*.rs` and `Cargo.toml` that `git ls-files -co --exclude-standard` lists (an uncommitted edit counts), `Cargo.lock`, the rust-analyzer version. Built when missing or with `--force`; `index.files` keeps the hashes it was built from and `index.info` its HEAD, time and cold seconds |
+| `graph.json` | `build_graph.py` (Python stdlib, run as `python3 -I`) | the index key as stored, `build_graph.py`, every `*.ts` and `*.css` (the extractor's static scans) |
+| `comments.json` | `build_comments.py` + `comment_metrics.py` (stdlib) | content hash of every `*.rs`, `*.ts`, `*.css`, `*.html`, `*.js`, `*.mjs` and `*.txt`, `comment_metrics.py`, `build_comments.py`, `scripts/comment-scan.py`. No index involved |
+| `status.json` | `run.sh` | not keyed; rewritten each run: HEAD, time and key each part was built from, whether the index is stale and which Rust/Cargo files differ from the tree it was built from |
+| `explorer.html` | `make_explorer.py` (stdlib) | graph key, comments key, `explorer.template.html`, `make_explorer.py`, the Cytoscape bundle, `status.json` |
 
 Each key is stored beside its product as `<name>.key`. A changed key rebuilds that product and the ones after it; an
-unchanged key reuses it. A source edit re-indexes; an extractor or page change rebuilds only the graph or the page.
-`--force` re-indexes. The run fails if `Cargo.lock` changed during the SCIP run. rust-analyzer loads the workspace as
-`cargo check` does, so it runs the workspace's own build scripts and proc-macros; the tool adds no Cargo dependency.
+unchanged key reuses it. **A `.rs` or `Cargo.toml` edit does not re-index**: the metrics and the page are rebuilt from the
+current tree, the index is reused and the page marks it stale. `--force` re-indexes (and so rebuilds everything), and so does
+a missing index. The last line `run.sh` prints names what was reused and rebuilt, for example
+`index reused, STALE (...), graph reused, comments rebuilt, page rebuilt; index key 3f2a9c0b11de, tree key 9c01b7e4a2d5; 16s`.
+The run fails if `Cargo.lock` changed during the SCIP run. rust-analyzer loads the workspace as `cargo check` does, so it runs the
+workspace's own build scripts and proc-macros; the tool adds no Cargo dependency.
+
+The page's status line shows the inputs of each part: the graph (the HEAD, key, cold seconds and time of the index), a chip
+`index up to date` or `index STALE: N Rust/Cargo files changed since it was built` (hover for the file names; the graph's edges
+and item counts are then from the older tree), and the comment metrics (the working tree HEAD, key and time they were built
+from, independent of the index).
 
 ## The page
 
@@ -34,18 +47,16 @@ One file: the graph JSON and the Cytoscape.js bundle are inlined, so it opens fr
 `<script src>`, `<link>`, font or image from a URL). Layout is Cytoscape's built-in `cose` (compound nodes); `fcose` and its
 dependencies fail rule D4 and are not used. The ego view is a complete breadth-first search to the chosen radius.
 
-The extractor model is files as nodes (`{id, comp, items, cm?, d?, t?}`; `items` is the definitions count, `cm` the comment
-counts below) and `[src, dst, weight, kind]` edges, kinds `rs`, `ext`, `ts`, `asset`, `test`. Add per-node fields beside
+The extractor model is files as nodes (`{id, comp, items}`; `items` is the definitions count) and `[src, dst, weight, kind]` edges, kinds `rs`, `ext`, `ts`, `asset`, `test`. Add per-node fields beside
 `items`.
 
 ## Comment metrics (M1 to M6)
 
 The tool shows what the comment gates enforce; it enforces nothing (no gate, not in `run-gates.sh`). One pass of the repo's
 comment tokenizer (`scripts/comment-scan.py`: `walk_rust`, `code_of`, `embedded_comments`, `history_reason`, the same
-functions the history gate calls) runs per file in `comment_metrics.py`, called by `build_graph.py` on every graph build,
-over the working tree. The file set is the one the history gate reads (`tracked_files`: tracked, minus its skip lists),
-restricted to the graph's nodes. Per file the graph stores raw counts `nodes[i].cm` in the order of `meta.cm_fields`
-(`code com doc pubs doced fields fdoced todo hist js`), the detail lists `nodes[i].d` (undocumented pub names, TODO and
+functions the history gate calls) runs per file in `comment_metrics.py`, called by `build_comments.py`, over the working tree. The file set is the one the history gate reads (`tracked_files`: tracked, minus its skip lists),
+restricted to the graph's nodes. Per file `comments.json` stores raw counts `cm` in the order of `fields`
+(`code com doc pubs doced fields fdoced todo hist js`), the detail lists `d` (undocumented pub names, TODO and
 history-hit lines) and `t:1` for a test file. The page sums numerators and denominators to component and crate, so a ratio
 is always the ratio of the sums, never an average of ratios. A Rust file gets every field; a TS, CSS or other scanned file
 gets only the TODO and history counts (its code lines are not tokenized, a ratio over it would mean nothing).
@@ -72,9 +83,9 @@ filtered by minimum code lines, crate, tests (exclude, include, only), a path su
 outliers; a row opens its file or component in the graph. Read M6 next to M2: a prop-heavy file is dense by construction
 because every `pub` field has a doc line.
 
-The metrics are rebuilt with every `graph.json` build, from the working tree. A `.rs` edit also changes the index key, so
-it re-indexes first (the SCIP run is the slow part); an edit to a TS, CSS, HTML, JS or TXT node file, `comment_metrics.py`
-or `comment-scan.py` rebuilds only the graph and page. No comment text goes into the page except line numbers and the
+The metrics live in `comments.json` (`{fields, files: {path: {cm, d, t}}}`), not in `graph.json`: the page joins them to the nodes by file
+id, so they are rebuilt from the working tree on every key change, whatever state the index is in. A node that is not in `comments.json`
+(an external crate, a file of another type) has no metrics. No comment text goes into the page except line numbers and the
 matched marker word or history reason.
 
 ## Dependencies and security (rule C23, requirements S1-S10)
@@ -104,7 +115,7 @@ matched marker word or history reason.
   file level radius 1 for `button` is 154 nodes and radius 2 is 465 nodes. `cose` (with boxes) is the layout up to 250
   nodes; above that the ego view is a concentric ring layout by hop distance without boxes, because `cose` gives a hairball
   there. Raise the minimum edge weight to thin a big view.
-- Comment metrics (2026-11-05, `node scripts/codegraph/smoke.js`): the graph rebuild with the metrics takes about 14 s (the tokenizer
+- Comment metrics (2026-11-05, `node scripts/codegraph/smoke.js`): `build_comments.py` takes about 15 to 26 s (the tokenizer
   pass over 1,387 files; the SCIP part is unchanged). `graph.json` is 396 KB. Primitives crate: comment ratio 0.48, doc
   share 80.5 %, pub doc coverage 97.7 %; repo totals 0 history-rule hits (the gate reads 0) and 2 TODO words; file-level M6
   fences sparse < 0.002 and dense > 0.96 over 276 files with 100+ code lines: 22 dense, 4 sparse outliers (densest

@@ -40,7 +40,7 @@ const NO_FADE_MS = 0.011;
 async function readScrim(page: Page): Promise<ScrimStyle> {
   return page.evaluate(() => {
     const wrapper = document.querySelector<HTMLElement>(
-      '#component-preview-frame [data-dx-scrim][data-state="open"]',
+      '#component-preview-frame [data-dx-scrim][data-open]',
     );
     const dialog = document.querySelector<HTMLDialogElement>("dialog[open]");
     if (!wrapper || !dialog) throw new Error("no open scrim wrapper or dialog");
@@ -60,7 +60,7 @@ async function openDemoDialog(page: Page) {
   await demoRole(page, "button", 0).click();
   const dialog = page.getByRole("dialog");
   await expect(dialog).toBeVisible();
-  await expect(demoFrame(page).locator('[data-dx-scrim][data-state="open"]')).toHaveCount(1);
+  await expect(demoFrame(page).locator('[data-dx-scrim][data-open]')).toHaveCount(1);
   return dialog;
 }
 
@@ -69,7 +69,7 @@ test.describe("modal scrim motion", () => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await gotoHydrated(page, `${BASE_URL}/component/dialog/`, { timeout: 20 * 60 * 1000 });
 
-    // Record the wrapper's computed animation as its data-state turns "closed", before the
+    // Record the wrapper's computed animation as its `data-closed` appears, before the
     // dialog is removed. The wrapper mounts only with the open dialog, so the MutationObserver
     // watches the demo frame's subtree and reads the style at the moment of the change.
     await page.evaluate(() => {
@@ -80,11 +80,11 @@ test.describe("modal scrim motion", () => {
       new MutationObserver((records) => {
         for (const r of records) {
           const el = r.target as HTMLElement;
-          if (!el.matches("[data-dx-scrim]") || el.dataset.state !== "closed" || w.__scrimClosed) continue;
+          if (!el.matches("[data-dx-scrim]") || !el.hasAttribute("data-closed") || w.__scrimClosed) continue;
           const cs = getComputedStyle(el);
           w.__scrimClosed = { name: cs.animationName, duration: cs.animationDuration };
         }
-      }).observe(frame, { subtree: true, attributes: true, attributeFilter: ["data-state"] });
+      }).observe(frame, { subtree: true, attributes: true, attributeFilter: ["data-open", "data-closed"] });
     });
 
     await openDemoDialog(page);

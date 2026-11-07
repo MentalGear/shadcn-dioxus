@@ -83,8 +83,8 @@ test.describe("Line chart", () => {
     const desktopToggle = scope.getByRole("button", { name: /Desktop/ });
     const mobileToggle = scope.getByRole("button", { name: /Mobile/ });
 
-    await expect(desktopToggle).toHaveAttribute("data-active", "true");
-    await expect(mobileToggle).toHaveAttribute("data-active", "false");
+    await expect(desktopToggle).toHaveAttribute("data-active", "");
+    await expect(mobileToggle).not.toHaveAttribute("data-active");
     // Only the active series is ever configured/drawn (see the variant's
     // own doc comment) -- one line, never two, in either state.
     await expect(scope.locator('[data-slot="chart-line"]')).toHaveCount(1);
@@ -92,8 +92,8 @@ test.describe("Line chart", () => {
 
     await mobileToggle.click();
 
-    await expect(mobileToggle).toHaveAttribute("data-active", "true");
-    await expect(desktopToggle).toHaveAttribute("data-active", "false");
+    await expect(mobileToggle).toHaveAttribute("data-active", "");
+    await expect(desktopToggle).not.toHaveAttribute("data-active");
     await expect(scope.locator('[data-slot="chart-line"]')).toHaveCount(1);
     await expect(scope.locator('svg[role="img"]')).toHaveAccessibleName(/Mobile/);
   });
@@ -172,7 +172,7 @@ test.describe("Line chart", () => {
       await scope.getByRole("button", { name: /Mobile/ }).click();
       await expect(scope.getByRole("button", { name: /Mobile/ })).toHaveAttribute(
         "data-active",
-        "true",
+        "",
       );
       await expectNoAxeViolations(page, "line_chart: interactive (Mobile selected)", {
         include: [`#${FRAME_IDS.interactive}`],

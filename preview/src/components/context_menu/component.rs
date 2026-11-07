@@ -1,5 +1,5 @@
 use dioxus::prelude::*;
-use dioxus_icons::lucide::{Check, ChevronRight};
+use crate::components::icons::{Check, ChevronRight};
 use dioxus_primitives::context_menu::{
     self, ContextMenuCheckboxItemProps, ContextMenuContentProps, ContextMenuGroupProps, ContextMenuSeparatorProps, ContextMenuShortcutProps, ContextMenuItemProps,
     ContextMenuProps, ContextMenuRadioGroupProps, ContextMenuRadioItemProps,
@@ -167,7 +167,7 @@ pub fn ContextMenuSubItem(props: ContextMenuSubItemProps) -> Element {
 /// `DropdownMenuCheckboxItem` wrapper -- see that component's doc. The icon
 /// carries `dx-context-menu-item-indicator`, so it sits in the item's
 /// reserved inline-end slot and a long label can never meet it; it is drawn
-/// only while the primitive reports `data-state="checked"`.
+/// only while the primitive reports `data-checked`.
 #[component]
 pub fn ContextMenuCheckboxItem(props: ContextMenuCheckboxItemProps) -> Element {
     let base = attributes!(div {

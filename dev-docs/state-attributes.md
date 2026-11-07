@@ -1,6 +1,8 @@
-# State attributes: one helper, two vocabularies
+# State attributes: one helper, one vocabulary
 
-Backlog [row 481](./backlog/481-state-attributes-one-helper-emits-data-state-and-presence.md). Source of the vocabulary:
+Backlog rows [481](./backlog/481-state-attributes-one-helper-emits-data-state-and-presence.md),
+[484](./backlog/484-convert-remaining-valued-boolean-state-attributes-to-presence.md) and
+[485](./backlog/485-retire-data-state-css-moves-to-aria-and-presence.md). Source of the vocabulary:
 [`research/radix-vs-base-ui-2026-10-28.md`](./research/radix-vs-base-ui-2026-10-28.md), appendix B.
 
 **Owner decision (2026-10-29): Base UI's state-attribute model is the long-term vocabulary.** Our CSS selects each state with the
@@ -8,87 +10,97 @@ selector kind shadcn's `base-nova` classes use for that state: a Base UI presenc
 e.g. `data-checked`, `data-open`) in nearly all cases, and an ARIA attribute only where base-nova itself styles from ARIA
 (`aria-pressed` for Toggle, `aria-invalid` for fields). Components with no base-nova counterpart use presence attributes.
 Valued attributes only for genuinely multi-valued states (`data-side`, `data-orientation`); no `="false"` attributes; and
-`data-state` retired at the end. A state with no Base UI counterpart reuses Base UI's name for the analogous part where one
-exists (Sidebar expanded/collapsed -> `data-open`/`data-closed`, as Collapsible; Resizable handle dragging -> `data-dragging`, as
-Slider; NavigationMenu viewport visible/hidden -> `data-open`/`data-closed`); otherwise it takes a `data-<adjective>` presence
-attribute (Avatar `data-loading`, `data-loaded`, `data-error`, `data-empty`; verify against Base UI 1.9.0 Avatar, which is not
-installed in this checkout). A converter from Base UI selectors to this
-format is rejected: users would have to run it, it would not remove the valued-boolean trap, some names have no one-to-one
-mapping, and it is upkeep. The conversion is [row 484](./backlog/484-convert-remaining-valued-boolean-state-attributes-to-presence.md)
-(valued booleans to presence, Accordion and Collapsible `data-open` first) and [row 485](./backlog/485-retire-data-state-css-moves-to-aria-and-presence.md)
-(retire `data-state`). Until they land, the valued booleans and `data-state` in the tables below are still emitted.
+no `data-state`. A state with no Base UI counterpart reuses Base UI's name for the analogous part where one exists (Sidebar
+expanded/collapsed -> `data-open`/`data-closed`, as Collapsible; Resizable handle dragging -> `data-dragging`, as Slider;
+NavigationMenu viewport visible/hidden -> `data-open`/`data-closed`); otherwise it takes a `data-<adjective>` presence attribute
+(Avatar `data-loading`, `data-loaded`, `data-error`, `data-empty`; Attachment `data-idle`, `data-uploading`, `data-processing`,
+`data-error`, `data-done`). A converter from Base UI selectors to this format is rejected: users would have to run it, it would not
+remove the valued-boolean trap, some names have no one-to-one mapping, and it is upkeep.
+
+Rows 484 and 485 have landed: no valued boolean and no `data-state` remains in the components. The one exception is the chart
+primitives (`primitives/src/chart/`): they keep Recharts' `data-active="true|false"` on bars and arcs and `data-state="open|closed"` on
+the chart tooltip, a conformance surface with its own harness and outside the gate.
 
 ## The rule
 
-A component never writes a state attribute (`data-state`, `data-checked`, `data-open`, `data-disabled`, ...) by hand. It spreads
+A component never writes a state attribute (`data-checked`, `data-open`, `data-disabled`, ...) by hand. It spreads
 what one function of `primitives/src/state_attrs.rs` returns:
 
 ```rust
 let owned = attributes!(button {
     role: "checkbox",
-    ..state_attrs::checked(checked()),     // data-state + data-checked | data-unchecked | data-indeterminate
-    ..state_attrs::disabled(props.disabled),
+    ..state_attrs::checked(checked()),     // data-checked | data-unchecked | data-indeterminate
+    ..state_attrs::presence(state_attrs::Flag::Disabled, props.disabled),
     ..state_attrs::readonly(props.read_only),
 });
 ```
 
-`scripts/check-state-attributes.sh` fails a file that writes a name of the table below as a literal key, and a `data-*` attribute given
-the constant `false` or `"false"`. In an `rsx!` element the spread goes after the last named attribute and before the children;
-`attributes!` takes it anywhere.
+`scripts/check-state-attributes.sh` fails a file that writes a name of the table below as a literal key, any emission of `data-state`
+(`state_attrs.rs` included), any call of a deleted valued helper, and a `data-*` attribute given the constant `false` or `"false"`.
+In an `rsx!` element the spread goes after the last named attribute and before the children; `attributes!` takes it anywhere.
 
-## Two vocabularies from one call
+## One vocabulary
 
-| Vocabulary | Shape | Who selects on it |
-|---|---|---|
-| Radix | `data-state="checked"`, `"open"`, `"on"`, `"active"`, ... | the shipped stylesheets, the `tier3-radix` oracle, 88 Playwright files; kept |
-| Base UI | a presence attribute: `data-checked=""` while true, **absent** while false | shadcn's `base-nova` class strings and Tailwind's `data-open:` variants |
-
-A presence attribute never takes a boolean value: `data-x=false` would match the presence selector `[data-x]`. The presence helpers
-emit an empty value or nothing.
+Every state is a Base UI presence attribute: `data-checked=""` while true, **absent** while false. It is what shadcn's `base-nova` class
+strings and Tailwind's `data-open:` variants select on. A presence attribute never takes a boolean value: `data-x=false` would match the
+presence selector `[data-x]`. The helpers emit an empty value or nothing. ARIA (`aria-pressed`, `aria-invalid`, `aria-expanded`,
+`aria-selected`, ...) is emitted beside it where the role calls for it.
 
 ## The vocabulary
 
-| Name | Helper | Emitted as | Base UI part |
-|---|---|---|---|
-| `data-state` | `open`, `trigger_open`, `checked`, `pressed`, `active`, `panel_hidden`, `selected`, `progress`, `state` | Radix values | all of them |
-| `data-checked` / `data-unchecked` | `checked`, `presence(Flag::Checked \| Unchecked)` | presence | Checkbox, Switch, Radio, CheckboxItem, RadioItem |
-| `data-indeterminate` | `checked(Checked::Indeterminate)`, `progress` | presence | Checkbox, Progress |
-| `data-open` / `data-closed` | `open`, `trigger_open`, `open_valued` | presence; `data-open` stays valued (below) on Accordion and Collapsible | Dialog, Popover, Tooltip, Menu, Select, Collapsible, Accordion |
-| `data-popup-open` | `trigger_open`, `popup_open` | presence | triggers of popups |
-| `data-panel-open` | `panel_open` | presence | Accordion and Collapsible triggers |
-| `data-pressed` | `pressed` | presence | Toggle |
-| `data-active` | `active`; `valued`/`presence_true` where legacy | presence on Tabs | Tabs.Tab, NavigationMenu.Link |
-| `data-readonly` | `readonly` | presence | Checkbox, Switch, Radio, DatePicker |
-| `data-highlighted` | `presence(Flag::Highlighted, ..)` | presence on menu items and Select options | Menu.Item, Select.Item |
-| `data-selected` | `selected`, `presence(Flag::Selected, ..)` | presence on Select options and selected rows | Select.Item, rows |
-| `data-disabled` | `disabled` | **valued** `true` \| `false` (legacy) | every part |
-| `data-invalid`, `data-dragging` | `valued`, `presence_true` | **valued** (legacy) | Field, Slider |
-| `data-hidden` | `panel_hidden` | presence on inactive Tabs panels | Tabs.Panel |
-| `data-complete` / `data-progressing` | `progress` | presence | Progress |
+| Name | Helper | Base UI part |
+|---|---|---|
+| `data-open` / `data-closed` | `open`, `trigger_open` | Dialog, Popover, Tooltip, Menu, Select, Collapsible, Accordion, NavigationMenu viewport, Sidebar |
+| `data-popup-open` | `trigger_open`, `popup_open` | triggers of popups |
+| `data-panel-open` | `panel_open` | Accordion and Collapsible triggers |
+| `data-checked` / `data-unchecked` | `checked`, `presence(Flag::Checked \| Unchecked)` | Checkbox, Switch, Radio, CheckboxItem, RadioItem |
+| `data-indeterminate` | `checked(Checked::Indeterminate)`, `progress` | Checkbox, Progress |
+| `data-pressed` | `pressed` | Toggle |
+| `data-active` | `active`, `presence(Flag::Active, ..)` | Tabs.Tab, NavigationMenu.Link, Input OTP slots, Pagination, Sidebar |
+| `data-hidden` | `panel_hidden` | Tabs.Panel |
+| `data-readonly` | `readonly` | Checkbox, Switch, Radio, DatePicker |
+| `data-highlighted` | `presence(Flag::Highlighted, ..)` | Menu.Item, Select.Item |
+| `data-selected` | `selected`, `presence(Flag::Selected, ..)` | Select.Item, rows, Tag, Carousel items |
+| `data-disabled` | `presence(Flag::Disabled, ..)` | every part |
+| `data-invalid`, `data-dragging` | `presence(Flag::Invalid \| Dragging, ..)` | Field, Slider, Resizable handle, Drawer |
+| `data-complete` / `data-progressing` | `progress` | Progress |
+| `data-loading`, `data-loaded`, `data-error`, `data-empty` | `presence(Flag::Loading \| Loaded \| Error \| Empty, true)` | Avatar (no Base UI 1.9.0 counterpart in this checkout to verify against) |
+| `data-idle`, `data-uploading`, `data-processing`, `data-done` | `presence(Flag::Idle \| Uploading \| Processing \| Done, true)` | Attachment (`data-error` shared with Avatar) |
 
-`data-state` values the helper writes: `open`/`closed`, `checked`/`unchecked`/`indeterminate`, `on`/`off`, `active`/`inactive`,
-`selected`, `loading`/`indeterminate` (Progress), and through `state(value)` the parts with no Base UI counterpart (Avatar
-`loading|loaded|error|empty`, the NavigationMenu viewport `visible|hidden`, a Resizable handle `dragging|idle`, the Sidebar
-`expanded|collapsed`).
+## From `data-state` to the presence form
 
-## Valued booleans are legacy
+`data-state` is no longer emitted. A consumer who selects it in their own CSS or tests moves with this table:
 
-`data-disabled`, `data-open` (Accordion, Collapsible), `data-selected`/`data-highlighted` (Combobox option, Command item, Tag, Carousel
-item), `data-active` (Input OTP slot, NavigationMenu link, Pagination, Sidebar), `data-invalid` (Field) and `data-dragging` are still
-emitted `true | false`, because stylesheets and specs select `[data-disabled="true"]` (about 150 selectors) and some assert
-`data-disabled="false"`. They go through `state_attrs::valued`, `disabled`, `open_valued` and `presence_true` (Questionnaire:
-`true` while it holds, absent otherwise, so `[data-x]` and `[data-x="true"]` both match exactly the true case). The gate counts each
-call per file in `scripts/check-state-attributes.baseline.tsv` (shrink-only); a new component uses `presence`.
+| Was | Is |
+|---|---|
+| `[data-state="open"]` / `[data-state="closed"]` | `[data-open]` / `[data-closed]` |
+| `[data-state="checked"]` / `"unchecked"` / `"indeterminate"` | `[data-checked]` / `[data-unchecked]` / `[data-indeterminate]` |
+| `[data-state="on"]` / `"off"` (Toggle, ToggleGroup) | `[aria-pressed="true"]` (or `[data-pressed]`) / `[aria-pressed="false"]` |
+| `[data-state="active"]` (Tabs.Tab) / `"inactive"` | `[data-active]` / `:not([data-active])` |
+| `[data-state="inactive"]` (Tabs.Panel) | `[data-hidden]` |
+| `[data-state="selected"]` (rows) | `[data-selected]` |
+| `[data-state="loading"]` / `"loaded"` / `"error"` / `"empty"` (Avatar) | `[data-loading]` / `[data-loaded]` / `[data-error]` / `[data-empty]` |
+| `[data-state="idle"]` / `"uploading"` / `"processing"` / `"error"` / `"done"` (Attachment) | `[data-idle]` / `[data-uploading]` / `[data-processing]` / `[data-error]` / `[data-done]` |
+| `[data-state="visible"]` / `"hidden"` (NavigationMenu viewport) | `[data-open]` / `[data-closed]` |
+| `[data-state="dragging"]` / `"idle"` (Resizable handle) | `[data-dragging]` / `:not([data-dragging])` |
+| `[data-state="expanded"]` / `"collapsed"` (Sidebar) | `[data-open]` / `[data-closed]` |
+| `[data-state="loading"]` / `"indeterminate"` (Progress) | `[data-progressing]` or `[data-complete]` / `[data-indeterminate]` |
+| `[data-x="true"]` / `[data-x="false"]` (a boolean) | `[data-x]` / `:not([data-x])` |
 
-Moving a flag to presence is one edit in `state_attrs.rs` (`valued` -> `presence`) plus the selectors and specs that read the old
-value (`rg 'data-disabled="?(true|false)'`). `data-state` goes last, after the CSS and the `tier3-radix` oracle have moved.
+## No valued booleans
+
+A boolean state is a presence attribute, present (and empty) while it holds and absent otherwise; `state_attrs::presence` writes it and
+there is no valued form. A stylesheet asks for the true case with `[data-disabled]` and the false case with `:not([data-disabled])`; a
+Playwright spec asserts `toHaveAttribute("data-disabled", "")` and `not.toHaveAttribute("data-disabled")`. This covers `data-disabled`,
+`data-open`/`data-closed` (Accordion, Collapsible), `data-selected`, `data-highlighted`, `data-active`, `data-invalid`, `data-dragging`,
+`data-nested-open`, `data-streaming`, `data-task`, `data-show-on-hover`, `data-scroll-anchor` and `data-preserve-scroll-on-prepend`, the
+Calendar day cell's `data-selected`/`data-disabled`, and the attributes the page scripts write (the Message Scroller's jump button
+`data-active`, the Carousel's `data-dragging`, the Form's `data-invalid` marker). The helpers `valued`, `disabled`, `open_valued` and
+`presence_true` are deleted and the gate fails any call to one; its baseline of constant-false writes is empty.
 
 ## Not in the vocabulary (left as they are)
 
 Component-specific attributes keep their own handling: `data-orientation`, `data-direction`, `data-side`, `data-align`, `data-slot`,
 `data-index`, `data-position`, `data-variant`, `data-size`, `data-type`, `data-status`, `data-required`, `data-multiple`,
-`data-visible`, `data-removed`, `data-collapsed`, `data-placeholder`. The valued booleans `data-nested-open`, `data-streaming`,
-`data-task`, `data-show-on-hover`, `data-scroll-anchor` and `data-preserve-scroll-on-prepend` become presence attributes in row
-484. The chart
-primitives (`primitives/src/chart/`) keep Recharts' `data-active`/`data-state` (a conformance surface with its own harness). The
-Message Scroller's `data-active` is written by its page script. `SwitchThumb` renders no state attribute (it has no context yet).
+`data-visible`, `data-removed`, `data-collapsed`, `data-placeholder`. The chart
+primitives (`primitives/src/chart/`) keep Recharts' `data-active`/`data-state` (a conformance surface with its own harness). `SwitchThumb` renders no state attribute (it has no context yet).

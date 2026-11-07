@@ -599,7 +599,7 @@ pub fn CarouselVirtualContent<T: Clone + PartialEq + 'static>(
             "data-index": data_index,
             "data-position": position,
             inert,
-            ..state_attrs::valued(state_attrs::Flag::Selected, is_selected),
+            ..state_attrs::presence(state_attrs::Flag::Selected, is_selected),
         });
         rsx! {
             div {

@@ -1063,7 +1063,7 @@
   border-inline-start: 1px solid var(--dx-border);
 }
 
-.dx-chart-interactive-toggle[data-active="true"] {
+.dx-chart-interactive-toggle[data-active] {
   /* the selected fill, not `--dx-accent`: in dark the accent equals the card's neighbours (#262626 on #171717, 1.18:1) */
   background-color: var(--dx-accent-selected);
 }
