@@ -505,13 +505,13 @@ function transaction(ops: DxOp[]): DxOpResult[] {
 
 /** Registrations on an element, ended by `sweep` when the element leaves the document. */
 const elementRegs = new Set<{ el: any; off: () => void }>();
-// SEAM (not built, row 434 step 3.0b): the command reconciler is ONE document-scoped observer installed with
-// the bridge at boot (`subtree`, `childList`, an attribute filter), not one per element; it would share this
-// observer's registry (`elementRegs`) rather than add another.
-let pageObserver: { disconnect(): void } | null = null;
+// SEAM (row 434 step 3.0b): the command reconciler would share this one observer and registry.
+let pageMo: { disconnect(): void } | null = null;
 
-function sweep(): void {
-  for (const reg of [...elementRegs]) if (!reg.el.isConnected) reg.off();
+/** A batch that removed no node ends no registration. */
+function sweep(b: MutationRecord[]): void {
+  if (b.some((r) => r.removedNodes.length))
+    for (const g of [...elementRegs]) if (!g.el.isConnected) g.off();
 }
 
 /**
@@ -521,18 +521,18 @@ function sweep(): void {
  */
 function watchElement(el: any, off: () => void): () => void {
   if (!isEl(el) || !el.isConnected) return () => {};
-  const reg = { el, off };
-  elementRegs.add(reg);
-  if (!pageObserver) {
+  const g = { el, off };
+  elementRegs.add(g);
+  if (!pageMo) {
     const mo = new W.MutationObserver(sweep);
     mo.observe(W.document.documentElement, { childList: true, subtree: true });
-    pageObserver = mo;
+    pageMo = mo;
   }
   return () => {
-    elementRegs.delete(reg);
-    if (!elementRegs.size && pageObserver) {
-      pageObserver.disconnect();
-      pageObserver = null;
+    elementRegs.delete(g);
+    if (!elementRegs.size && pageMo) {
+      pageMo.disconnect();
+      pageMo = null;
     }
   };
 }

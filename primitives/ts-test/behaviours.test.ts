@@ -247,7 +247,7 @@ describe("ref-counted registration", () => {
     install(bridge.scope(makeChannel()), fixture(), 1);
     expect(el.count("click")).toBe(1);
     el.isConnected = false;
-    for (const mo of win.MutationObserver.all) if (!mo.disconnected) mo.callback([]);
+    for (const mo of win.MutationObserver.all) if (!mo.disconnected) mo.callback([{ addedNodes: [], removedNodes: [el] }]);
     expect(el.count()).toBe(0);
   });
 
@@ -255,7 +255,7 @@ describe("ref-counted registration", () => {
     const { bridge, el, win } = setup();
     install(bridge.scope(makeChannel()), fixture({ leaseMs: 5000 }), 1);
     el.isConnected = false;
-    for (const mo of win.MutationObserver.all) if (!mo.disconnected) mo.callback([]);
+    for (const mo of win.MutationObserver.all) if (!mo.disconnected) mo.callback([{ addedNodes: [], removedNodes: [el] }]);
     expect(win.timers.length).toBe(0);
     el.isConnected = true;
     install(bridge.scope(makeChannel()), fixture(), 1);

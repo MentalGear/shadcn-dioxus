@@ -68,7 +68,7 @@ primitives/src/drawer.rs	0	136	0	3	0	0	0
 primitives/src/hover_intent.rs	0	10	0	1	0	0	0
 primitives/src/input_otp.rs	1	59	0	2	0	0	1
 primitives/src/js/behaviours/fixture.js	0	0	553	0	0	0	0
-primitives/src/js/bridge.js	0	0	19907	0	0	0	0
+primitives/src/js/bridge.js	0	0	19900	0	0	0	0
 primitives/src/js/focus-trap.js	0	0	1505	0	0	0	0
 primitives/src/js_listener.rs	1	7	0	0	0	0	0
 primitives/src/keyboard_inset.rs	0	88	0	1	0	0	0
@@ -86,7 +86,7 @@ primitives/src/select/components/list.rs	0	65	0	1	0	0	0
 primitives/src/toast.rs	1	166	0	3	0	0	1
 primitives/src/top_layer/anchor_fallback.rs	0	127	0	1	0	0	0
 primitives/src/top_layer/popover_sync.rs	2	21	0	2	0	0	2
-primitives/src/top_layer/scroll_clamp.rs	0	69	0	1	0	0	0
+primitives/src/top_layer/scroll_clamp.rs	0	67	0	1	0	0	0
 primitives/src/top_layer/styles.rs	2	12	0	0	0	0	2
 primitives/src/virtual/bridge.rs	2	50	0	1	0	0	2
 primitives/src/virtual/find.rs	1	36	0	1	0	0	1
