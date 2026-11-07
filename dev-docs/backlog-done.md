@@ -6,7 +6,7 @@ resolves here by id.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Done rows (391)
+## Done rows (407)
 
 | # | Item | Updated |
 |---|---|---|
@@ -357,6 +357,7 @@ resolves here by id.
 | [389](backlog/done/389-accent-active-selected-states.md) | Active and selected states take the picked accent (mark, ink, tint slots) | 2026-10-26 |
 | [390](backlog/done/390-base-accent-preset-split.md) | Base and accent presets own disjoint variables; charts follow the accent | 2026-11-06 |
 | [391](backlog/done/391-wrappers-forward-primitive-props.md) | Themed wrappers forward every primitive prop, enforced by a props-diff gate | 2026-10-24 |
+| [392](backlog/done/392-docs-snippets-compile.md) | Compile-check the docs.md code samples; samples use the uncontrolled props | 2026-10-24 |
 | [393](backlog/done/393-docs-contradict-code.md) | Fix the docs statements the code contradicts | 2026-10-25 |
 | [394](backlog/done/394-coming-from-shadcn-radix-tanstack.md) | A 'Coming from shadcn / Radix / TanStack' table on every component page | 2026-10-24 |
 | [395](backlog/done/395-as-keeps-children.md) | `as` keeps the component's children and handlers (Radix asChild semantics) | 2026-10-24 |
@@ -397,9 +398,24 @@ resolves here by id.
 | [437](backlog/done/437-pipefail-early-exit-reader.md) | No early-exit reader on the right of a pipe in a pipefail script (grep -q, head, sed q, awk exit) | 2026-10-25 |
 | [439](backlog/done/439-chart-prehydration-geometry-flake.md) | chart-prehydration geometry flake: the two loads race font-display: optional | 2026-10-25 |
 | [441](backlog/done/441-reduced-motion-scrim.md) | The modal scrim fade ignores prefers-reduced-motion: the per-sheet rule never won on specificity | 2026-10-26 |
+| [468](backlog/done/468-bug-form-reset-leaves-controlled-input-out-of-sync.md) | Bug: form reset leaves a controlled text input showing empty while Rust keeps the old value | 2026-10-26 |
 | [470](backlog/done/470-bug-carousel-autoplay-tick-fights-a-user-swipe.md) | Bug: the carousel autoplay tick fights a user swipe (the scroller is pulled forward and bounces back) | 2026-10-26 |
+| [472](backlog/done/472-chart-tooltip-fade.md) | Chart tooltips fade in and out with the theme's floating motion tokens | 2026-10-26 |
 | [474](backlog/done/474-bug-input-otp-paste-loses-digits-to-maxlength.md) | Bug: Input OTP paste loses digits because maxlength truncates before the filter runs | 2026-10-31 |
+| [475](backlog/done/475-bug-resizable-and-slider-drag-frames-leak-into-the-next-drag-on-desktop.md) | Bug: Resizable and Slider on desktop: a previous drag's queued per-move frames can land in the next drag | 2026-11-06 |
+| [482](backlog/done/482-control-gaps-slider-form-participation-read-only-and-small-attributes.md) | Control gaps: Slider form participation, read_only, Toggle data-pressed, Tabs activate_on_focus | 2026-10-28 |
 | [483](backlog/done/483-playwright-anchored-panel-settle-fixture.md) | Playwright waits for a just-opened anchored panel to settle before acting inside it (fixture, not per spec) | 2026-10-29 |
+| [484](backlog/done/484-convert-remaining-valued-boolean-state-attributes-to-presence.md) | Convert the remaining valued boolean state attributes to presence attributes (Base UI vocabulary) | 2026-11-06 |
+| [485](backlog/done/485-retire-data-state-css-moves-to-aria-and-presence.md) | Retire data-state: our CSS styles from ARIA and presence attributes | 2026-11-06 |
+| [487](backlog/done/487-one-dismiss-core-escape-outside-dismiss-and-focus-return.md) | One dismiss core: Escape, outside dismiss and focus return for every overlay | 2026-11-06 |
+| [489](backlog/done/489-menubar-items-select-on-pointerdown-touch-scroll.md) | Menubar items select on pointerdown, so a touch scroll that starts on an item selects it | 2026-11-06 |
+| [490](backlog/done/490-first-key-press-restyles-the-page-focus-modality-tokens-on-root.md) | The first key press restyles the whole page: focus-modality tokens are redefined on :root | 2026-11-06 |
 | [492](backlog/done/492-bug-colorpicker-panel-clips-to-half-height-on-close.md) | Bug: ColorPicker's panel clips to about half its height when it closes | 2026-11-01 |
+| [495](backlog/done/495-slow-observation-window-specs.md) | The two ~32 s-per-test specs wait on signals, not on fixed observation windows | 2026-11-05 |
+| [497](backlog/done/497-scroll-area-scroll-type-hidden-shows-the-bar.md) | ScrollArea ScrollType::Hidden shows the scrollbar | 2026-11-07 |
+| [498](backlog/done/498-pagination-disabled-link.md) | Pagination links have a disabled state | 2026-11-06 |
+| [500](backlog/done/500-axe-split-structure-signature-falls-back.md) | The all-routes axe split falls back to a full dark scan on 88 of 94 routes | 2026-11-07 |
+| [501](backlog/done/501-select-escape-race-flake.md) | select-escape-race.spec.ts:32 is flaky under load (also on the deployed base) | 2026-11-07 |
+| [502](backlog/done/502-installed-components-carry-repo-lint-expects.md) | Installed components carry #[expect(clippy::disallowed_methods)] that a user's project cannot fulfil | 2026-11-07 |
 
 <!-- END GENERATED -->

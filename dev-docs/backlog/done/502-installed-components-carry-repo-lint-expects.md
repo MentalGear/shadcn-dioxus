@@ -1,7 +1,7 @@
 ---
 id: 502
 title: "Installed components carry #[expect(clippy::disallowed_methods)] that a user's project cannot fulfil"
-status: "BACKLOG, found 2026-11-07. Check first: run cargo clippy in the registry-install-smoke app and…"
+status: "DONE 2026-11-07, landed in PR #168 (lane installed-expects-502). Found 2026-11-07 by row 444's lane…"
 size: "S"
 area: tooling
 updated: 2026-11-07
@@ -18,10 +18,9 @@ reason = ...)]` at each existing site. Some sites are in installable components 
 
 ## Status / trigger
 
-BACKLOG, found 2026-11-07. Check first: run `cargo clippy` in the registry-install-smoke app and count the
-`unfulfilled_lint_expectations` warnings.
+DONE 2026-11-07, landed in PR #168 (lane `installed-expects-502`). Found 2026-11-07 by row 444's lane D: installed components carried expects that a user's clippy cannot fulfil.
 
-Done 2026-11-07. Installed files are the member directories minus `exclude` (`variants/` never installs):
+Installed files are the member directories minus `exclude` (`variants/` never installs):
 `data_table/{component,reorder}.rs`, `form/component.rs` and `code_block/component.rs` (9 expects); `top_layer` is not a
 root member, so its expect stays plain. Each of the 9 is `#[cfg_attr(dx_repo_lints, expect(..))]`, and the file carries
 `#![allow(unexpected_cfgs, reason = ..)]` because a user's rustc warns on an unknown cfg name (measured in a scratch

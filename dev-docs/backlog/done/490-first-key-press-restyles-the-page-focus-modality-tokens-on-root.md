@@ -1,7 +1,7 @@
 ---
 id: 490
 title: "The first key press restyles the whole page: focus-modality tokens are redefined on :root"
-status: "Found 2026-11-01 while root-causing a release-suite timing red (main-thread.spec combobox open, 52…"
+status: "FIXED 2026-11-06, landed in PR #166 (lane lane/modality-490; see \"Fix\" below). Found 2026-11-01…"
 size: "S-M"
 area: "theme / performance"
 updated: 2026-11-06
@@ -20,8 +20,7 @@ hit on the first keyboard input of any page, and it is about half of the Combobo
 
 ## Status / trigger
 
-Found 2026-11-01 while root-causing a release-suite timing red (main-thread.spec combobox open, 52 ms vs 50 ms).
-Fixed 2026-11-06 on `lane/modality-490` (see "Fix" below); awaiting merge.
+FIXED 2026-11-06, landed in PR #166 (lane `lane/modality-490`; see "Fix" below). Found 2026-11-01 while root-causing a release-suite timing red (main-thread.spec combobox open, 52 ms vs 50 ms).
 
 ## Size
 

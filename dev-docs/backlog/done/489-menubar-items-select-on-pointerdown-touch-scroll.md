@@ -1,7 +1,7 @@
 ---
 id: 489
 title: "Menubar items select on pointerdown, so a touch scroll that starts on an item selects it"
-status: "DONE on lane/menu-dismiss-489 (2026-11-06), not yet merged. Found by row 435 (2026-10-31): Menubar…"
+status: "DONE 2026-11-06, landed in PR #165 (lane lane/menu-dismiss-489). Found by row 435 (2026-10-31)…"
 size: "S"
 area: overlays
 updated: 2026-11-06
@@ -17,7 +17,7 @@ ContextMenu, which shares the family's item code, commits on `pointerup` and dro
 
 ## Status / trigger
 
-DONE on `lane/menu-dismiss-489` (2026-11-06), not yet merged. Found by row 435 (2026-10-31): Menubar keeps its PressStart selection model; on touch this conflicts with row 477's rule that a scroll must not act.
+DONE 2026-11-06, landed in PR #165 (lane `lane/menu-dismiss-489`). Found by row 435 (2026-10-31): Menubar keeps its PressStart selection model; on touch this conflicts with row 477's rule that a scroll must not act.
 
 **What changed.** `SelectOn::commits_on_press(pointer_type)` / `records_press(pointer_type)` (`primitives/src/menu_item.rs`) pick the path per pointer type inside the one item: a mouse press on a `PressStart` host still commits on `pointerdown`; a touch or pen press records the press on `pointerdown`, commits on the release (the `click` after it) and drops it on `pointercancel`, exactly as `ContextMenu`'s items do. There is no new `SelectOn` variant and no host change (`menubar.rs` still says `PressStart`).
 

@@ -30,4 +30,4 @@ M
 - **Migration.** Dual-emit first (no CSS change). Then move CSS and specs to the presence attributes gradually, `data-state` last: 94 `data-state` selectors in 29 preview CSS files and 88 Playwright files depend on it today, and the `tier3-radix` oracle compares against it.
 - **Files owned:** `primitives/src/lib.rs` (helper), every primitive's `attributes!` site for state, the gate script, then preview CSS per component.
 - **Proof:** a unit test of the helper (both attributes, presence omitted when false); the gate with its self-test; the existing specs green on dual-emit.
-- **Related:** [row 482](./482-control-gaps-slider-form-participation-read-only-and-small-attributes.md) adds `data-pressed` on Toggle and `read_only`, which use this helper.
+- **Related:** [row 482](./done/482-control-gaps-slider-form-participation-read-only-and-small-attributes.md) adds `data-pressed` on Toggle and `read_only`, which use this helper.

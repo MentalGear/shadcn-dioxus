@@ -1,7 +1,7 @@
 ---
 id: 498
 title: "Pagination links have a disabled state"
-status: "DONE (2026-11-06). Proof below."
+status: "DONE 2026-11-06, landed in PR #166 (2ee7fd3f). Proof below."
 size: "S"
 area: components
 updated: 2026-11-06
@@ -19,7 +19,7 @@ instead of hand-written `aria-disabled` and inline styles.
 
 ## Status / trigger
 
-DONE (2026-11-06). Proof below.
+DONE 2026-11-06, landed in PR #166 (`2ee7fd3f`). Proof below.
 
 ## Size
 

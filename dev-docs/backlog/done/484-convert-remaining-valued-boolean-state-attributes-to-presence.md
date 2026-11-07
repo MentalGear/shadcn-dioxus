@@ -1,7 +1,7 @@
 ---
 id: 484
 title: "Convert the remaining valued boolean state attributes to presence attributes (Base UI vocabulary)"
-status: "Owner decision 2026-10-29. Row 485 (retire data-state) depends on this row: every state gets its…"
+status: "DONE 2026-11-06, landed in PR #166 (lane lane/base-vocab-484; see \"Result\"). Owner decision…"
 size: "M"
 area: primitives
 updated: 2026-11-06
@@ -11,12 +11,11 @@ updated: 2026-11-06
 
 ## Item
 
-Base UI's state-attribute model is the library's long-term vocabulary (owner decision 2026-10-29). Our selectors mirror shadcn's `base-nova` classes: each state uses the selector kind base-nova uses for it, which is a presence attribute (present when true, absent when false) in nearly all cases and an ARIA attribute only where base-nova itself styles from ARIA (`aria-pressed` for Toggle, `aria-invalid` for fields). Components with no base-nova counterpart use presence attributes. Valued attributes only for genuinely multi-valued states, and no `="false"` attributes. This row converts the valued booleans that remain, so that a Base UI selector (`[data-disabled]`, Tailwind's `data-disabled:`) matches exactly when the state holds. The model and the gate are in [row 481](./481-state-attributes-one-helper-emits-data-state-and-presence.md) and [`dev-docs/state-attributes.md`](../state-attributes.md).
+Base UI's state-attribute model is the library's long-term vocabulary (owner decision 2026-10-29). Our selectors mirror shadcn's `base-nova` classes: each state uses the selector kind base-nova uses for it, which is a presence attribute (present when true, absent when false) in nearly all cases and an ARIA attribute only where base-nova itself styles from ARIA (`aria-pressed` for Toggle, `aria-invalid` for fields). Components with no base-nova counterpart use presence attributes. Valued attributes only for genuinely multi-valued states, and no `="false"` attributes. This row converts the valued booleans that remain, so that a Base UI selector (`[data-disabled]`, Tailwind's `data-disabled:`) matches exactly when the state holds. The model and the gate are in [row 481](../481-state-attributes-one-helper-emits-data-state-and-presence.md) and [`dev-docs/state-attributes.md`](../../state-attributes.md).
 
 ## Status / trigger
 
-Owner decision 2026-10-29. Row 485 (retire `data-state`) depends on this row: every state gets its ARIA or presence form before `data-state` goes.
-Done 2026-11-06 on `lane/base-vocab-484`, awaiting merge (see "Result").
+DONE 2026-11-06, landed in PR #166 (lane `lane/base-vocab-484`; see "Result"). Owner decision 2026-10-29: row 485 (retire `data-state`) depends on this row.
 
 ## Size
 

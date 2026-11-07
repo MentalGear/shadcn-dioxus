@@ -1,7 +1,7 @@
 ---
 id: 501
 title: "select-escape-race.spec.ts:32 is flaky under load (also on the deployed base)"
-status: "DONE 2026-11-07. Root cause: the press's deferred open (OpenGap::defer, one task after pointerdown)…"
+status: "DONE 2026-11-07, landed in PR #168. Root cause: the press's deferred open (OpenGap::defer, one task…"
 size: "S"
 area: playwright
 updated: 2026-11-07
@@ -17,7 +17,7 @@ base (`d040554a`), so the batch did not cause it.
 
 ## Status / trigger
 
-DONE 2026-11-07. Root cause: the press's deferred open (`OpenGap::defer`, one task after `pointerdown`) was only
+DONE 2026-11-07, landed in PR #168. Root cause: the press's deferred open (`OpenGap::defer`, one task after `pointerdown`) was only
 cancelled by an Escape that reached the trigger. In the failing interleaving the press's task had not run yet when
 ArrowDown (a keydown on the trigger) opened the list and moved focus onto an option; the dismiss layer registered, Escape
 was taken by it (focus was on the option, so the trigger's gap arm never saw the key) and closed the list

@@ -1,7 +1,7 @@
 ---
 id: 392
 title: "Compile-check the docs.md code samples; samples use the uncontrolled props"
-status: "PARTLY LANDED 2026-11-06 (lane docs-samples-392). Every sample the row names is fixed and compiles…"
+status: "LANDED 2026-11-06 (lane docs-samples-392): the sample fixes and the controlled section in PR #166…"
 size: "M"
 area: docs
 updated: 2026-10-24
@@ -15,7 +15,7 @@ Docs samples pass a literal to the controlled prop and freeze the component (Rad
 
 ## Status / trigger
 
-**PARTLY LANDED 2026-11-06 (lane docs-samples-392).** Every sample the row names is fixed and compiles: RadioGroup,
+**LANDED 2026-11-06 (lane docs-samples-392): the sample fixes and the controlled section in PR #166, the compile gate in PR #168.** Every sample the row names is fixed and compiles: RadioGroup,
 Slider, Switch and Select now take `default_*` (or pair the signal with its `on_*_change`), Select's callback takes
 `Option<String>`, Dialog, Drawer and Sheet pair `open` with `on_open_change`, Calendar and DatePicker use `time::Date`
 with a signal (the row's `CalendarDate` does not exist), Navbar items and `NavbarNav` take `index` (and items `to`).

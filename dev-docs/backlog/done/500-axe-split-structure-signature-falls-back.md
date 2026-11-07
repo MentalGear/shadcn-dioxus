@@ -1,7 +1,7 @@
 ---
 id: 500
 title: "The all-routes axe split falls back to a full dark scan on 88 of 94 routes"
-status: "DONE 2026-11-07 (lane axe-root-500): the split is reverted; see Detail."
+status: "DONE 2026-11-07, landed in PR #168 (lane axe-root-500): the split is reverted; see Detail."
 size: "S-M"
 area: playwright
 updated: 2026-11-07
@@ -18,7 +18,7 @@ nearly every route runs the full dark scan as well, and `all-routes` is slower t
 
 ## Status / trigger
 
-DONE 2026-11-07 (lane axe-root-500): the split is reverted; see Detail.
+DONE 2026-11-07, landed in PR #168 (lane `axe-root-500`): the split is reverted; see Detail.
 
 ## Size
 

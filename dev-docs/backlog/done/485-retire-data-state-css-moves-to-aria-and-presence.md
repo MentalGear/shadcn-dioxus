@@ -1,7 +1,7 @@
 ---
 id: 485
 title: "Retire data-state: our CSS styles from ARIA and presence attributes"
-status: "Owner decision 2026-10-29. Depends on row 484, which converted the valued booleans to presence…"
+status: "DONE 2026-11-06, landed in PR #166 (lane lane/base-vocab-484; see \"Result\"). Owner decision…"
 size: "M-L"
 area: styling
 updated: 2026-11-06
@@ -11,12 +11,11 @@ updated: 2026-11-06
 
 ## Item
 
-Our own stylesheets and specs select on the ARIA and presence attributes, not on `data-state`, and `data-state` is no longer emitted (owner decision 2026-10-29: Base UI's state-attribute vocabulary is the long-term model). This is a user-facing change: a consumer who selects `data-state` in their own CSS or tests must move. The model is in [`dev-docs/state-attributes.md`](../state-attributes.md); the presence conversion it depends on is [row 484](./484-convert-remaining-valued-boolean-state-attributes-to-presence.md).
+Our own stylesheets and specs select on the ARIA and presence attributes, not on `data-state`, and `data-state` is no longer emitted (owner decision 2026-10-29: Base UI's state-attribute vocabulary is the long-term model). This is a user-facing change: a consumer who selects `data-state` in their own CSS or tests must move. The model is in [`dev-docs/state-attributes.md`](../../state-attributes.md); the presence conversion it depends on is [row 484](./484-convert-remaining-valued-boolean-state-attributes-to-presence.md).
 
 ## Status / trigger
 
-Owner decision 2026-10-29. Depends on row 484, which converted the valued booleans to presence attributes first (done 2026-11-06).
-Done 2026-11-06 on `lane/base-vocab-484`, awaiting merge (see "Result").
+DONE 2026-11-06, landed in PR #166 (lane `lane/base-vocab-484`; see "Result"). Owner decision 2026-10-29; it depends on row 484.
 
 ## Size
 

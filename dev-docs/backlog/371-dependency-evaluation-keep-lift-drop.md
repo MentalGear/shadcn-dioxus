@@ -1,7 +1,7 @@
 ---
 id: 371
 title: "Dependency evaluation: keep, feature-gate, replace, lift or drop (rule of 2026-10-23)"
-status: "BACKLOG: unparked by the owner 2026-10-24, stage 4 of the adopted order (after the structure rows…"
+status: "PARTLY APPLIED, OPEN (2026-11-07). Unparked by the owner 2026-10-24; the dependency review's…"
 size: "S each outcome"
 area: build
 updated: 2026-11-06
@@ -15,7 +15,7 @@ Apply the owner's dependency rule (2026-10-23) to every dependency a user's `dx 
 
 ## Status / trigger
 
-**BACKLOG: unparked by the owner 2026-10-24, stage 4 of the adopted order (after the structure rows, before the review pass and row 365).** Inventory done; each outcome goes to the owner before it is applied.
+**PARTLY APPLIED, OPEN (2026-11-07).** Unparked by the owner 2026-10-24; the dependency review's proposals are settled (D6 exceptions 2026-11-07); the construction half is not built. Inventory done; each outcome goes to the owner before it is applied.
 
 **Applied 2026-10-25 (owner-approved, branch `lane/row-371-dep-trims`):** (1) `palette` with `default-features = false, features = ["std"]`; (2) `time` without `macros` (the 10 library `date!` defaults are `const` dates in `primitives/src/calendar/mod.rs`; `macros` moved to primitives' `[dev-dependencies]`; `preview` keeps its own `macros`); (3) `cargo install ... --locked` in every copy of the install line (README, `cli/README.md`, `templates/starter/README.md`, `cli/Cargo.toml`, `preview/src/main.rs` which renders the docs pages; `scripts/check-registry-url.sh` requires it in `cli/README.md`); (4) version floors equal to the lock in `primitives/Cargo.toml` (`tokio` 1.52.3 both entries, `serde` 1.0.228, `gloo-timers` 0.3.0) and rule 7 of `scripts/check-cargo-dep-versions.sh`, which fails when a registry-sourced `[dependencies]` or `[target.*.dependencies]` entry of primitives has a floor other than the lock version. **Deferred by the owner 2026-10-25:** the `dioxus-icons` lift (outcome 3). Open: outcome 4 (`gloo-timers` replace) and the construction half.
 

@@ -1,7 +1,7 @@
 ---
 id: 472
 title: "Chart tooltips fade in and out with the theme's floating motion tokens"
-status: "DONE on lane lane/chart-tooltip-472 (owner request 2026-10-26: \"chart tooltips should have a fade…"
+status: "DONE 2026-10-26, landed in PR #155 (lane lane/chart-tooltip-472; owner request: \"chart tooltips…"
 size: "S"
 area: components
 updated: 2026-10-26
@@ -15,7 +15,7 @@ The chart tooltip (`.dx-chart-tooltip`, `preview/src/components/chart/style.css`
 
 ## Status / trigger
 
-DONE on lane `lane/chart-tooltip-472` (owner request 2026-10-26: "chart tooltips should have a fade in/out transition (use a standard design token)").
+DONE 2026-10-26, landed in PR #155 (lane `lane/chart-tooltip-472`; owner request: "chart tooltips should have a fade in/out transition (use a standard design token)").
 
 Fix: `preview/src/components/chart/style.css` "Tooltip": opacity and a discrete `display` transition on `--dx-floating-duration` with the
 floating ease tokens, `@starting-style` for the open fade, `visibility: hidden` only while open and unplaced, closed `opacity: 0`

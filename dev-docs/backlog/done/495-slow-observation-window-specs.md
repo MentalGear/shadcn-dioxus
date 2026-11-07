@@ -1,7 +1,7 @@
 ---
 id: 495
 title: "The two ~32 s-per-test specs wait on signals, not on fixed observation windows"
-status: "Lane slow-specs-495: done, awaiting merge. Both specs wait on signals through…"
+status: "DONE, landed in PR #165 (lane slow-specs-495). Both specs wait on signals through…"
 size: "S-M"
 area: playwright
 updated: 2026-11-05
@@ -19,7 +19,7 @@ buffer read, `page.clock`, a stable-frame count), without dropping any assertion
 
 ## Status / trigger
 
-Lane `slow-specs-495`: done, awaiting merge. Both specs wait on signals through `playwright/stability-window.ts`.
+DONE, landed in PR #165 (lane `slow-specs-495`). Both specs wait on signals through `playwright/stability-window.ts`.
 Same debug build (`lane-ssg`), 2 workers, serial runs under `pw.lock`, summed test seconds (box shared with other lanes,
 so only same-session pairs compare): `layout-stability` 766 s -> 627 s (wall 6.5 -> 5.3 min), `charts-hydration-stability`
 273 s -> 191 s (wall 2.5 -> 1.7 min); per case e.g. `/` light 306 -> 246 s, `/docs/` light 72 -> 60 s, a charts tab
