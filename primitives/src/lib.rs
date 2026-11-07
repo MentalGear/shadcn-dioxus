@@ -24,6 +24,7 @@ mod as_child;
 pub mod aspect_ratio;
 pub mod avatar;
 pub mod bridge;
+mod caller_id;
 #[cfg(feature = "calendar")]
 pub mod calendar;
 pub mod carousel;
