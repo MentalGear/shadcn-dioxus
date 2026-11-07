@@ -96,8 +96,14 @@ fn value_report_event(value: String) -> FormEvent {
     )
 }
 
-/// A control that heard a reset or mounted: its id and what to do with its value once read.
-type Waiting = (String, Box<dyn FnMut(String)>);
+/// What a read found in a control: its `value` and its `defaultValue` (what the server rendered).
+struct Read {
+    value: String,
+    default: Option<String>,
+}
+
+/// A control that heard a reset or mounted: its id and what to do with what is read.
+type Waiting = (String, Box<dyn FnMut(Read)>);
 
 thread_local! {
     /// The controls waiting for the one read; `None` while no read is scheduled.
@@ -105,7 +111,7 @@ thread_local! {
 }
 
 /// Adds a control to the next read, scheduling it when it is the first.
-fn queue_read(id: String, on_value: Box<dyn FnMut(String)>) {
+fn queue_read(id: String, on_value: Box<dyn FnMut(Read)>) {
     let first = QUEUE.with(|queue| {
         let mut queue = queue.borrow_mut();
         match queue.as_mut() {
@@ -132,17 +138,23 @@ fn queue_read(id: String, on_value: Box<dyn FnMut(String)>) {
                 .unwrap_or_default();
             let mut transaction = bridge::Transaction::new();
             for (id, _) in &waiting {
-                transaction = transaction.get(Target::id(id.clone()), [Prop::Value]);
+                transaction =
+                    transaction.get(Target::id(id.clone()), [Prop::Value, Prop::DefaultValue]);
             }
             let Ok(results) = transaction.run().await else {
                 return;
             };
-            let values: Vec<Option<String>> = results
+            let values: Vec<Option<Read>> = results
                 .into_iter()
                 .map(|result| match result {
                     bridge::OpResult::Ok { ok, .. } => serde_json::from_value::<bridge::Props>(ok)
                         .ok()
-                        .and_then(|props| props.string(&Prop::Value).map(str::to_owned)),
+                        .and_then(|props| {
+                            Some(Read {
+                                value: props.string(&Prop::Value)?.to_owned(),
+                                default: props.string(&Prop::DefaultValue).map(str::to_owned),
+                            })
+                        }),
                     _ => None,
                 })
                 .collect();
@@ -159,9 +171,10 @@ fn queue_read(id: String, on_value: Box<dyn FnMut(String)>) {
 /// it, because the primitive that renders it is its only writer.
 pub const MIRROR_AUTOCOMPLETE: &str = "off";
 
-/// Reports the value of the control with `id` once after mount when it differs from `owner_value`: a
-/// form-state restore put text into the server-rendered control before the wasm hydrated, or the
-/// user typed before it did.
+/// Reports the value of the control with `id` once after mount when it differs from `owner_value` and
+/// from the control's `defaultValue`: a form-state restore put text into the server-rendered control
+/// before the wasm hydrated, or the user typed before it did. A control still holding what the server
+/// rendered is not reported, even when that is less than the owner holds.
 ///
 /// `owner_value` is the value the owner's Rust state holds, `None` when the owner holds none the
 /// control could be compared with (then nothing is reported); it is read once, at mount. `report`
@@ -177,9 +190,14 @@ pub fn use_dom_value_restore(
         let mut report = report.clone();
         queue_read(
             id.peek().clone(),
-            Box::new(move |dom: String| {
-                if owner_value().is_some_and(|owner| owner != dom) {
-                    report(dom);
+            Box::new(move |read: Read| {
+                // Only a value that differs from the server's default is a browser restore or an edit the
+                // owner was not told about; a control the server rendered with less than the owner holds
+                // (a `<textarea>` has no `value` attribute) still holds its default.
+                if read.default.as_deref() != Some(read.value.as_str())
+                    && owner_value().is_some_and(|owner| owner != read.value)
+                {
+                    report(read.value);
                 }
             }),
         );
@@ -196,7 +214,11 @@ pub fn use_dom_value_report(
 ) {
     let on_reset = report.clone();
     use_form_reset_listener(id, move || {
-        queue_read(id.peek().clone(), Box::new(on_reset.clone()));
+        let mut on_reset = on_reset.clone();
+        queue_read(
+            id.peek().clone(),
+            Box::new(move |read: Read| on_reset(read.value)),
+        );
     });
     use_dom_value_restore(id, owner_value, report);
 }

@@ -12,6 +12,9 @@
     align-items: center;
     padding: var(--dx-space-2) 0;
 
+    /* The thumb's size along the track, which `ThumbAlignment::Edge` reads to keep the thumb inside the track. */
+    --dx-slider-thumb-size: var(--dx-coarse-slider-thumb-size);
+
     /* A drag surface (the thumb is moved by pointer events), so the browser's own pan must not
        start on it and cancel the pointer. Effective `touch-action` is the intersection down the
        ancestor chain, so this also keeps the thumb's `manipulation` (the theme's shared rule)

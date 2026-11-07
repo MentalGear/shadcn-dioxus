@@ -118,18 +118,24 @@ pub enum ThumbAlignment {
     #[default]
     Center,
     /// The thumb stays inside the track: its edge is on the track's end at `min` and `max`, and the
-    /// pointer maps onto the distance the thumb's centre can travel. The thumb's size is measured
-    /// once it is mounted, so before hydration it is drawn as [`ThumbAlignment::Center`].
+    /// pointer maps onto the distance the thumb's centre can travel. The thumb and range are placed
+    /// with `calc()` from the `--dx-slider-thumb-size` custom property (the thumb's size along the
+    /// track, a length the stylesheet sets; `0px` when unset), so the server-rendered first paint is
+    /// already final. The pointer mapping uses the thumb's size measured once it is mounted.
     Edge,
 }
 
-/// A CSS length for a thumb centre at `percent` along the track: plain percent when `inset` is `0`,
-/// else the percent plus the px that keeps the thumb inside the track.
-fn edge_position(percent: f64, inset: f64) -> String {
-    if inset == 0.0 {
-        format!("{percent}%")
+/// A CSS length for a thumb centre at `percent` along the track: plain percent when not
+/// edge-aligned, else the percent plus the part of the thumb's size (`--dx-slider-thumb-size`) that
+/// keeps the thumb inside the track. A pure function of the value, so server and client agree.
+fn edge_position(percent: f64, edge: bool) -> String {
+    if edge {
+        format!(
+            "calc({percent}% + {} * var(--dx-slider-thumb-size, 0px))",
+            edge_factor(percent)
+        )
     } else {
-        format!("calc({percent}% + {}px)", edge_offset(percent, inset))
+        format!("{percent}%")
     }
 }
 
@@ -162,10 +168,10 @@ fn place_thumb(
     out
 }
 
-/// Where the centre of a thumb of `thumb_size` px sits for a value at `percent` along the track, as
-/// the px offset from `percent` of the track: zero when the thumb is centred on its value.
-fn edge_offset(percent: f64, thumb_size: f64) -> f64 {
-    thumb_size * (0.5 - percent / 100.0)
+/// The share of the thumb's size to add to `percent` of the track so the thumb's centre sits inside
+/// the track: half at `0%`, none at `50%`, minus half at `100%`.
+fn edge_factor(percent: f64) -> f64 {
+    0.5 - percent / 100.0
 }
 
 fn clamp_to_step_bounds(raw: f64, lo: f64, hi: f64, step: f64) -> f64 {
@@ -907,10 +913,10 @@ pub fn SliderRange(props: SliderRangeProps) -> Element {
 
         let start_percent = ctx.as_percent(start);
         let end_percent = ctx.as_percent(end);
-        let inset = ctx.inset();
+        let edge = ctx.edge;
         // The range runs from the start thumb's centre to the end thumb's centre.
-        let from_start = edge_position(start_percent, inset);
-        let from_end = edge_position(100.0 - end_percent, inset);
+        let from_start = edge_position(start_percent, edge);
+        let from_end = edge_position(100.0 - end_percent, edge);
 
         if ctx.horizontal {
             // RTL anchors the same two percentages to the *opposite* CSS
@@ -1020,7 +1026,7 @@ pub fn SliderThumb(props: SliderThumbProps) -> Element {
     let value = use_memo(move || bounds().0);
 
     let percent = ctx.as_percent(value());
-    let position = edge_position(percent, ctx.inset());
+    let position = edge_position(percent, ctx.edge);
     let style = if ctx.horizontal {
         // RTL anchors the same percent to `right` instead of `left` --
         // matches Radix's `startEdge` swap (`slider.tsx` L722 equivalent).
@@ -1495,12 +1501,15 @@ mod tests {
 
     #[test]
     fn an_edge_aligned_thumb_stays_inside_the_track_at_both_ends() {
-        // A 12px thumb: its centre is 6px in at 0% and 6px short of the end at 100%.
-        assert_eq!(edge_offset(0.0, 12.0), 6.0);
-        assert_eq!(edge_offset(100.0, 12.0), -6.0);
-        assert_eq!(edge_offset(50.0, 12.0), 0.0);
-        assert_eq!(edge_position(50.0, 0.0), "50%");
-        assert_eq!(edge_position(0.0, 12.0), "calc(0% + 6px)");
+        // The thumb's centre is half a thumb in at 0% and half a thumb short of the end at 100%.
+        assert_eq!(edge_factor(0.0), 0.5);
+        assert_eq!(edge_factor(100.0), -0.5);
+        assert_eq!(edge_factor(50.0), 0.0);
+        assert_eq!(edge_position(50.0, false), "50%");
+        assert_eq!(
+            edge_position(0.0, true),
+            "calc(0% + 0.5 * var(--dx-slider-thumb-size, 0px))"
+        );
     }
 
     #[test]
