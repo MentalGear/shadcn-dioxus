@@ -73,83 +73,80 @@ const RUBBER_BAND_ASSERT_SLACK_PX = 6;
 // edge-clamping assertions use for the same reason).
 const FLUSH_TOLERANCE_PX = 1;
 
-test('opens and traps focus, Escape closes and restores focus to the trigger', async ({ page }) => {
+// The four open-and-Escape cases share one load: each leaves the drawer closed (the root unmounted) for the next.
+test('opens, traps focus and closes on Escape; data-open and the root lifecycle; the top side; the panel is flush against its edge', async ({ page }) => {
   await gotoHydrated(page, URL, GOTO_OPTS);
-  const trigger = page.getByRole('button', { name: 'Move Goal' });
-  // Opened from the keyboard, so the first control takes focus; a pointer/touch open focuses the
-  // panel instead (row 206, modal-initial-focus.spec.ts).
-  await trigger.focus();
-  await page.keyboard.press('Enter');
+  await test.step("opens and traps focus, Escape closes and restores focus to the trigger", async () => {
+    const trigger = page.getByRole('button', { name: 'Move Goal' });
+    // Opened from the keyboard, so the first control takes focus; a pointer/touch open focuses the
+    // panel instead (row 206, modal-initial-focus.spec.ts).
+    await trigger.focus();
+    await page.keyboard.press('Enter');
 
-  const root = page.locator('[data-slot="drawer-root"]');
-  await expect(root).toHaveAttribute('data-open', '');
+    const root = page.locator('[data-slot="drawer-root"]');
+    await expect(root).toHaveAttribute('data-open', '');
 
-  // First focusable element inside the content in tree order -- WHATWG
-  // `showModal()`'s own autofocus algorithm. `DrawerHandle` is
-  // `aria-hidden` and not focusable, so the "Decrease goal" icon button
-  // (the drawer's own first real control) is the expected stop.
-  await expect(page.getByRole('button', { name: 'Decrease goal' })).toBeFocused();
+    // First focusable element inside the content in tree order -- WHATWG
+    // `showModal()`'s own autofocus algorithm. `DrawerHandle` is
+    // `aria-hidden` and not focusable, so the "Decrease goal" icon button
+    // (the drawer's own first real control) is the expected stop.
+    await expect(page.getByRole('button', { name: 'Decrease goal' })).toBeFocused();
 
-  // APG Dialog (Modal): Escape closes and returns focus to the invoker.
-  await page.keyboard.press('Escape');
-  await expect(root).toHaveCount(0);
-  await expect(trigger).toBeFocused();
-});
+    // APG Dialog (Modal): Escape closes and returns focus to the invoker.
+    await page.keyboard.press('Escape');
+    await expect(root).toHaveCount(0);
+    await expect(trigger).toBeFocused();
+  });
+  await test.step("data-open is present while the drawer is open and the root unmounts on close", async () => {
+    const root = page.locator('[data-slot="drawer-root"]');
+    const content = page.locator('[data-slot="drawer-content"]');
 
-test('data-open is present while the drawer is open and the root unmounts on close', async ({ page }) => {
-  await gotoHydrated(page, URL, GOTO_OPTS);
-  const root = page.locator('[data-slot="drawer-root"]');
-  const content = page.locator('[data-slot="drawer-content"]');
+    await expect(root).toHaveCount(0);
 
-  await expect(root).toHaveCount(0);
+    await page.getByRole('button', { name: 'Move Goal' }).click();
+    await expect(root).toHaveAttribute('data-open', '');
+    await expect(content).toHaveAttribute('data-open', '');
+    await expect(content).toHaveAttribute('data-side', 'bottom');
 
-  await page.getByRole('button', { name: 'Move Goal' }).click();
-  await expect(root).toHaveAttribute('data-open', '');
-  await expect(content).toHaveAttribute('data-open', '');
-  await expect(content).toHaveAttribute('data-side', 'bottom');
+    await page.keyboard.press('Escape');
+    await expect(root).toHaveCount(0);
+  });
+  await test.step("opens from the top side with side-specific data attributes", async () => {
+    await page.getByRole('button', { name: 'Open from Top' }).click();
 
-  await page.keyboard.press('Escape');
-  await expect(root).toHaveCount(0);
-});
+    const content = page.locator('[data-slot="drawer-content"]');
+    await expect(content).toHaveAttribute('data-side', 'top');
+    await expect(content).toHaveAttribute('data-open', '');
 
-test('opens from the top side with side-specific data attributes', async ({ page }) => {
-  await gotoHydrated(page, URL, GOTO_OPTS);
-  await page.getByRole('button', { name: 'Open from Top' }).click();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('[data-slot="drawer-root"]')).toHaveCount(0);
+  });
+  await test.step("the panel sits flush against its own edge at rest, bottom and top variants", async () => {
+    // The web arm's `DrawerContent` is a real, modal `<dialog>`
+    // (primitives/src/dialog.rs), and Chromium's own `dialog`/`dialog:modal`
+    // UA rules (`margin: auto` + `inset-block: 0` with no `inset-inline` +
+    // `width`/`height: fit-content`) would center it -- both axes -- instead of
+    // anchoring it to any edge: the bottom variant's computed `margin` would
+    // have equal top/bottom AND left/right values, i.e. a floating card, not a
+    // bottom sheet.
+    const viewport = await fixedViewportBox(page);
 
-  const content = page.locator('[data-slot="drawer-content"]');
-  await expect(content).toHaveAttribute('data-side', 'top');
-  await expect(content).toHaveAttribute('data-open', '');
+    await page.getByRole('button', { name: 'Move Goal' }).click();
+    await awaitAnimationsSettled(page.locator('[data-slot="drawer-content"]'));
+    const bottomBox = await measureAtRest(page.locator('[data-slot="drawer-content"]'));
+    if (!bottomBox) throw new Error('drawer content has no bounding box');
+    // Flush with the viewport's bottom edge: no gap below.
+    expect(Math.abs(viewport.height - (bottomBox.y + bottomBox.height))).toBeLessThanOrEqual(FLUSH_TOLERANCE_PX);
+    await page.keyboard.press('Escape');
+    await expect(page.locator('[data-slot="drawer-root"]')).toHaveCount(0);
 
-  await page.keyboard.press('Escape');
-  await expect(page.locator('[data-slot="drawer-root"]')).toHaveCount(0);
-});
-
-test('the panel sits flush against its own edge at rest, bottom and top variants', async ({ page }) => {
-  // The web arm's `DrawerContent` is a real, modal `<dialog>`
-  // (primitives/src/dialog.rs), and Chromium's own `dialog`/`dialog:modal`
-  // UA rules (`margin: auto` + `inset-block: 0` with no `inset-inline` +
-  // `width`/`height: fit-content`) would center it -- both axes -- instead of
-  // anchoring it to any edge: the bottom variant's computed `margin` would
-  // have equal top/bottom AND left/right values, i.e. a floating card, not a
-  // bottom sheet.
-  await gotoHydrated(page, URL, GOTO_OPTS);
-  const viewport = await fixedViewportBox(page);
-
-  await page.getByRole('button', { name: 'Move Goal' }).click();
-  await awaitAnimationsSettled(page.locator('[data-slot="drawer-content"]'));
-  const bottomBox = await measureAtRest(page.locator('[data-slot="drawer-content"]'));
-  if (!bottomBox) throw new Error('drawer content has no bounding box');
-  // Flush with the viewport's bottom edge: no gap below.
-  expect(Math.abs(viewport.height - (bottomBox.y + bottomBox.height))).toBeLessThanOrEqual(FLUSH_TOLERANCE_PX);
-  await page.keyboard.press('Escape');
-  await expect(page.locator('[data-slot="drawer-root"]')).toHaveCount(0);
-
-  await page.getByRole('button', { name: 'Open from Top' }).click();
-  await awaitAnimationsSettled(page.locator('[data-slot="drawer-content"]'));
-  const topBox = await measureAtRest(page.locator('[data-slot="drawer-content"]'));
-  if (!topBox) throw new Error('drawer content has no bounding box');
-  // Flush with the viewport's top edge: no gap above.
-  expect(Math.abs(topBox.y)).toBeLessThanOrEqual(FLUSH_TOLERANCE_PX);
+    await page.getByRole('button', { name: 'Open from Top' }).click();
+    await awaitAnimationsSettled(page.locator('[data-slot="drawer-content"]'));
+    const topBox = await measureAtRest(page.locator('[data-slot="drawer-content"]'));
+    if (!topBox) throw new Error('drawer content has no bounding box');
+    // Flush with the viewport's top edge: no gap above.
+    expect(Math.abs(topBox.y)).toBeLessThanOrEqual(FLUSH_TOLERANCE_PX);
+  });
 });
 
 test('a drag away from the dismiss direction never exposes the viewport edge', async ({ page }) => {
@@ -390,15 +387,15 @@ const CONTENT = '[data-slot="drawer-content"]';
 const HANDLE = '[data-slot="drawer-handle"]';
 const ROOT = '[data-slot="drawer-root"]';
 
-async function openBottom(page: import('@playwright/test').Page) {
-  await gotoHydrated(page, URL, GOTO_OPTS);
+async function openBottom(page: import('@playwright/test').Page, opts: { load?: boolean } = {}) {
+  if (opts.load !== false) await gotoHydrated(page, URL, GOTO_OPTS);
   await page.getByRole('button', { name: 'Move Goal' }).click();
   await expect(page.locator(ROOT)).toHaveAttribute('data-open', '');
   await awaitAnimationsSettled(page.locator(CONTENT));
 }
 
-async function openTop(page: import('@playwright/test').Page) {
-  await gotoHydrated(page, URL, GOTO_OPTS);
+async function openTop(page: import('@playwright/test').Page, opts: { load?: boolean } = {}) {
+  if (opts.load !== false) await gotoHydrated(page, URL, GOTO_OPTS);
   await page.getByRole('button', { name: 'Open from Top' }).click();
   await expect(page.locator(ROOT)).toHaveAttribute('data-open', '');
   await awaitAnimationsSettled(page.locator(CONTENT));
@@ -461,39 +458,34 @@ test('a text selection or drag that starts inside a dialog and ends on its backd
 });
 
 for (const kind of ['mouse', 'touch', 'pen'] as const) {
-  test.describe(`${kind} pointer on a bottom drawer`, () => {
-    test(`dragging UP, far and fast, never closes it`, async ({ page }) => {
-      await openBottom(page);
+  // One load per pointer kind: the gestures that leave the drawer open run first, on the one open drawer, then the two that
+  // close it, the drawer being opened again (without a reload) after the first.
+  test(`${kind} pointer on a bottom drawer: up never closes, short drags and twitches snap back, a long drag and a flick down close`, async ({ page }) => {
+    await openBottom(page);
+    await test.step('dragging UP, far and fast, never closes it', async () => {
       await pointerDrag(page, HANDLE, { kind, dx: 0, dy: -300, steps: 6, stepMs: 8, flick: true });
       await expectStillOpenAtRest(page);
     });
-
-    test(`dragging DOWN past the threshold closes it`, async ({ page }) => {
-      await openBottom(page);
+    await test.step('a short, slow drag DOWN snaps back', async () => {
+      await pointerDrag(page, HANDLE, { kind, dx: 0, dy: 24, steps: 4, stepMs: 60, pauseBeforeUpMs: 150 });
+      await expectStillOpenAtRest(page);
+    });
+    await test.step('a twitch of a few pixels is no flick', async () => {
+      await pointerDrag(page, HANDLE, { kind, dx: 0, dy: 4, steps: 2, stepMs: 2, flick: true });
+      await expectStillOpenAtRest(page);
+    });
+    await test.step('dragging DOWN past the threshold closes it', async () => {
       const h = (await measureAtRest(page.locator(CONTENT))).height;
       // 40% of the panel, slowly, then held still before release: the distance rule, not a flick.
       await pointerDrag(page, HANDLE, { kind, dx: 0, dy: h * 0.4, steps: 8, stepMs: 60, pauseBeforeUpMs: 200 });
       await expect(page.locator(ROOT)).toHaveCount(0);
     });
-
-    test(`a short, slow drag DOWN snaps back`, async ({ page }) => {
-      await openBottom(page);
-      await pointerDrag(page, HANDLE, { kind, dx: 0, dy: 24, steps: 4, stepMs: 60, pauseBeforeUpMs: 150 });
-      await expectStillOpenAtRest(page);
-    });
-
-    test(`a flick DOWN closes it even though it is short`, async ({ page }) => {
-      await openBottom(page);
+    await test.step('a flick DOWN closes it even though it is short', async () => {
+      await openBottom(page, { load: false });
       const h = (await measureAtRest(page.locator(CONTENT))).height;
       // 15% of the panel (under the 25% distance threshold) in ~12ms: only the velocity can close it.
       await pointerDrag(page, HANDLE, { kind, dx: 0, dy: h * 0.15, steps: 3, stepMs: 4, flick: true });
       await expect(page.locator(ROOT)).toHaveCount(0);
-    });
-
-    test(`a twitch of a few pixels is no flick`, async ({ page }) => {
-      await openBottom(page);
-      await pointerDrag(page, HANDLE, { kind, dx: 0, dy: 4, steps: 2, stepMs: 2, flick: true });
-      await expectStillOpenAtRest(page);
     });
   });
 }
@@ -501,26 +493,26 @@ for (const kind of ['mouse', 'touch', 'pen'] as const) {
 test.describe('top drawer: the closing edge is UP', () => {
   const GRAB = '[data-slot="drawer-title"]';
 
-  test('dragging DOWN (toward the open side) never closes it', async ({ page }) => {
+  // One load: the gesture that leaves it open first, then the two that close it, the drawer opened again between them.
+  test('dragging DOWN (toward the open side) never closes it; dragging UP past the threshold and a flick UP close it', async ({ page }) => {
     await openTop(page);
-    await pointerDrag(page, GRAB, { kind: 'mouse', dx: 0, dy: 300, steps: 6, stepMs: 8, flick: true });
-    await page.waitForTimeout(900);
-    await expect(page.locator(ROOT)).toHaveAttribute('data-open', '');
-    await expect(page.locator(CONTENT)).toHaveCount(1);
-  });
-
-  test('dragging UP past the threshold closes it', async ({ page }) => {
-    await openTop(page);
-    const h = (await measureAtRest(page.locator(CONTENT))).height;
-    await pointerDrag(page, GRAB, { kind: 'mouse', dx: 0, dy: -h * 0.5, steps: 8, stepMs: 60, pauseBeforeUpMs: 200 });
-    await expect(page.locator(ROOT)).toHaveCount(0);
-  });
-
-  test('a flick UP closes it', async ({ page }) => {
-    await openTop(page);
-    const h = (await measureAtRest(page.locator(CONTENT))).height;
-    await pointerDrag(page, GRAB, { kind: 'touch', dx: 0, dy: -h * 0.15, steps: 3, stepMs: 4, flick: true });
-    await expect(page.locator(ROOT)).toHaveCount(0);
+    await test.step('dragging DOWN (toward the open side) never closes it', async () => {
+      await pointerDrag(page, GRAB, { kind: 'mouse', dx: 0, dy: 300, steps: 6, stepMs: 8, flick: true });
+      await page.waitForTimeout(900);
+      await expect(page.locator(ROOT)).toHaveAttribute('data-open', '');
+      await expect(page.locator(CONTENT)).toHaveCount(1);
+    });
+    await test.step('dragging UP past the threshold closes it', async () => {
+      const h = (await measureAtRest(page.locator(CONTENT))).height;
+      await pointerDrag(page, GRAB, { kind: 'mouse', dx: 0, dy: -h * 0.5, steps: 8, stepMs: 60, pauseBeforeUpMs: 200 });
+      await expect(page.locator(ROOT)).toHaveCount(0);
+    });
+    await test.step('a flick UP closes it', async () => {
+      await openTop(page, { load: false });
+      const h = (await measureAtRest(page.locator(CONTENT))).height;
+      await pointerDrag(page, GRAB, { kind: 'touch', dx: 0, dy: -h * 0.15, steps: 3, stepMs: 4, flick: true });
+      await expect(page.locator(ROOT)).toHaveCount(0);
+    });
   });
 });
 

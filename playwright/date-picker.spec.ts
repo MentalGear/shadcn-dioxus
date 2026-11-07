@@ -70,15 +70,6 @@ async function rectOf(page: Page, locator: ReturnType<typeof trigger>) {
  */
 const ROOMY_VIEWPORT = { width: 1280, height: 900 };
 
-test("opens the calendar popover on trigger click", async ({ page }) => {
-  await gotoDatePicker(page);
-  await expect(content(page)).toBeHidden();
-
-  await trigger(page).click();
-
-  await expect(content(page)).toBeVisible();
-});
-
 test("anchors the popup next to its trigger, not viewport-centered or offset", async ({ page }) => {
   await page.setViewportSize(ROOMY_VIEWPORT); // see ROOMY_VIEWPORT: at 720px tall the panel correctly flips above
   await gotoDatePicker(page);
@@ -186,9 +177,12 @@ test("offset to trigger holds after scrolling (CSS anchor tracks scroll natively
   expect(after.left, debug).toBeCloseTo(before.left, 0);
 });
 
-test("Escape closes the popup", async ({ page }) => {
+test("opens the calendar popover on trigger click; Escape closes the popup", async ({ page }) => {
   await gotoDatePicker(page);
+  await expect(content(page)).toBeHidden();
+
   await trigger(page).click();
+
   await expect(content(page)).toBeVisible();
 
   await page.keyboard.press("Escape");
@@ -1749,41 +1743,42 @@ test.describe("Apply / Cancel footer (confirm, the default) -- single picker (va
     await expect(footerButton(dialog, "Apply")).toBeDisabled();
   }
 
-  test("Cancel restores the previous value and closes", async ({ page }) => {
+  // One load for the restore paths: each leaves the dialog reopened on the committed 15 (what `expectRestored` asserts), so the
+  // next path stages 20 from there instead of committing 15 on a fresh page again.
+  test("Cancel, Escape, an outside click and the trigger each restore the previous value and close; picking the committed day again stages nothing", async ({ page }) => {
     await gotoDatePicker(page);
     const dialog = await commitFifteenThenStageTwenty(page);
-    await footerButton(dialog, "Cancel").click();
-    await expectRestored(page, dialog);
-  });
-
-  test("Escape restores the previous value and closes", async ({ page }) => {
-    await gotoDatePicker(page);
-    const dialog = await commitFifteenThenStageTwenty(page);
-    await page.keyboard.press("Escape");
-    await expectRestored(page, dialog);
-  });
-
-  test("an outside click restores the previous value and closes", async ({ page }) => {
-    await gotoDatePicker(page);
-    const dialog = await commitFifteenThenStageTwenty(page);
-    await page.getByRole("heading", { level: 1 }).first().click();
-    await expectRestored(page, dialog);
-  });
-
-  test("the trigger closes it like Cancel", async ({ page }) => {
-    await gotoDatePicker(page);
-    const dialog = await commitFifteenThenStageTwenty(page);
-    await pickerTrigger(page).click();
-    await expectRestored(page, dialog);
-  });
-
-  test("picking the committed day again stages nothing new: Apply stays disabled", async ({ page }) => {
-    await gotoDatePicker(page);
-    const dialog = await commitFifteenThenStageTwenty(page);
-    // 20 -> back to 15: the calendar reads it as a fresh selection, equal to the committed value.
-    await dayCell(dialog, 15).click();
-    await expect(dayCell(dialog, 15)).toHaveAttribute("data-selected", "");
-    await expect(footerButton(dialog, "Apply")).toBeDisabled();
+    const stageTwenty = async () => {
+      await dayCell(dialog, 20).click();
+      await expect(dayCell(dialog, 20)).toHaveAttribute("data-selected", "");
+      await expect(footerButton(dialog, "Apply")).toBeEnabled();
+    };
+    await test.step("Cancel restores the previous value and closes", async () => {
+      await footerButton(dialog, "Cancel").click();
+      await expectRestored(page, dialog);
+    });
+    await test.step("Escape restores the previous value and closes", async () => {
+      await stageTwenty();
+      await page.keyboard.press("Escape");
+      await expectRestored(page, dialog);
+    });
+    await test.step("an outside click restores the previous value and closes", async () => {
+      await stageTwenty();
+      await page.getByRole("heading", { level: 1 }).first().click();
+      await expectRestored(page, dialog);
+    });
+    await test.step("the trigger closes it like Cancel", async () => {
+      await stageTwenty();
+      await pickerTrigger(page).click();
+      await expectRestored(page, dialog);
+    });
+    await test.step("picking the committed day again stages nothing new: Apply stays disabled", async () => {
+      await stageTwenty();
+      // 20 -> back to 15: the calendar reads it as a fresh selection, equal to the committed value.
+      await dayCell(dialog, 15).click();
+      await expect(dayCell(dialog, 15)).toHaveAttribute("data-selected", "");
+      await expect(footerButton(dialog, "Apply")).toBeDisabled();
+    });
   });
 });
 
@@ -1943,108 +1938,104 @@ test.describe("Natural language picker (variant=natural_language)", () => {
     return sentence(page).locator("span").first();
   }
 
-  test("starts as 'In 2 days' with shadcn's label and placeholder, and the sentence shows that date", async ({ page }) => {
+  // The cases that only read the demo, type into its field and open its calendar share one load, in an order that keeps each
+  // premise (the initial state first, the viewport change last); an open calendar is closed before the next step.
+  test("the field, the sentence, the calendar button, the parser and the calendar (one load)", async ({ page }) => {
     await gotoDatePicker(page);
-    await expect(frame(page, VARIANT).getByText("Schedule Date", { exact: true })).toBeVisible();
-    await expect(field(page)).toHaveValue("In 2 days");
-    await expect(field(page)).toHaveAttribute("placeholder", "Tomorrow or next week");
-    await expect(boldDate(page)).toHaveText(expectedDate(2));
-    await expect(sentence(page)).toHaveText(/^Your post will be published on .+\.$/);
-  });
+    await test.step("starts as 'In 2 days' with shadcn's label and placeholder, and the sentence shows that date", async () => {
+      await expect(frame(page, VARIANT).getByText("Schedule Date", { exact: true })).toBeVisible();
+      await expect(field(page)).toHaveValue("In 2 days");
+      await expect(field(page)).toHaveAttribute("placeholder", "Tomorrow or next week");
+      await expect(boldDate(page)).toHaveText(expectedDate(2));
+      await expect(sentence(page)).toHaveText(/^Your post will be published on .+\.$/);
+    });
+    await test.step("the sentence takes the same box for every month's date, so the layout never depends on the date", async () => {
+      const group = sentence(page);
+      await expect(boldDate(page)).toHaveText(expectedDate(2));
+      const box = () => readAtRest(group, (el) => ({ h: el.getBoundingClientRect().height, w: (el.querySelector("span") as HTMLElement).getBoundingClientRect().width }));
+      const first = await box();
+      const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+      for (const month of months) {
+        await field(page).fill(`${month} 28 2026`);
+        await expect(boldDate(page)).toHaveText(`${month} 28, 2026`);
+        const now = await box();
+        expect(now, `${month}: the reserved width is the widest date text, so the box does not move`).toEqual(first);
+      }
+    });
+    await test.step("the calendar button sits INSIDE the input group, labelled 'Select date'", async () => {
+      const group = frame(page, VARIANT).locator(".dx-input-group");
+      await expect(group.locator("#date-picker-natural-language-input")).toHaveCount(1);
+      const button = group.getByRole("button", { name: "Select date" });
+      await expect(button).toBeVisible();
+      // Inside the group's box, beside (not below) the field.
+      const [g, b, f] = await Promise.all([
+        readAtRest(group, (el) => el.getBoundingClientRect().toJSON()),
+        readAtRest(button, (el) => el.getBoundingClientRect().toJSON()),
+        readAtRest(field(page), (el) => el.getBoundingClientRect().toJSON()),
+      ]);
+      expect(b.left).toBeGreaterThanOrEqual(g.left);
+      expect(b.right).toBeLessThanOrEqual(g.right + 0.5);
+      expect(b.top).toBeGreaterThanOrEqual(g.top - 0.5);
+      expect(b.bottom).toBeLessThanOrEqual(g.bottom + 0.5);
+      expect(b.left, "the button is at the inline end of the field").toBeGreaterThanOrEqual(f.left + f.width / 2);
+    });
+    await test.step("typing 'tomorrow' sets the date and the sentence; typing garbage keeps the previous date", async () => {
+      await field(page).fill("tomorrow");
+      await expect(boldDate(page)).toHaveText(expectedDate(1));
+      await field(page).fill("asdf qwer");
+      await expect(field(page)).toHaveValue("asdf qwer");
+      await expect(boldDate(page)).toHaveText(expectedDate(1)); // unchanged
+      await field(page).fill("in 3 days");
+      await expect(boldDate(page)).toHaveText(expectedDate(3));
+      await field(page).fill("2027-03-04");
+      await expect(boldDate(page)).toHaveText("March 04, 2027");
+    });
+    await test.step("ArrowDown in the field opens the calendar, which opens on the parsed date", async () => {
+      await field(page).fill("2027-03-04");
+      await field(page).press("ArrowDown");
+      const dialog = pickerContent(page, VARIANT);
+      await expect(dialog).toBeVisible();
+      await expect(dayCell(dialog, 4)).toHaveAttribute("data-selected", "");
+      await page.keyboard.press("Escape");
+      await expect(pickerContent(page, VARIANT)).toBeHidden();
+    });
+    await test.step("the calendar uses shadcn's captionLayout=\"dropdown\": labelled Month and Year selects, and picking a year keeps the popover open", async () => {
+      await field(page).fill("2027-03-04");
+      await frame(page, VARIANT).getByRole("button", { name: "Select date" }).click();
+      const dialog = pickerContent(page, VARIANT);
+      await expect(dialog).toBeVisible();
+      const month = dialog.getByRole("combobox", { name: "Month" });
+      const year = dialog.getByRole("combobox", { name: "Year" });
+      await expect(month).toHaveCount(1);
+      await expect(year).toHaveCount(1);
+      await expect(month).toHaveValue("3");
+      await expect(year).toHaveValue("2027");
 
-  test("the sentence takes the same box for every month's date, so the layout never depends on the date", async ({ page }) => {
-    await gotoDatePicker(page);
-    const group = sentence(page);
-    await expect(boldDate(page)).toHaveText(expectedDate(2));
-    const box = () => readAtRest(group, (el) => ({ h: el.getBoundingClientRect().height, w: (el.querySelector("span") as HTMLElement).getBoundingClientRect().width }));
-    const first = await box();
-    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-    for (const month of months) {
-      await field(page).fill(`${month} 28 2026`);
-      await expect(boldDate(page)).toHaveText(`${month} 28, 2026`);
-      const now = await box();
-      expect(now, `${month}: the reserved width is the widest date text, so the box does not move`).toEqual(first);
-    }
-  });
-
-  test("the calendar button sits INSIDE the input group, labelled 'Select date'", async ({ page }) => {
-    await gotoDatePicker(page);
-    const group = frame(page, VARIANT).locator(".dx-input-group");
-    await expect(group.locator("#date-picker-natural-language-input")).toHaveCount(1);
-    const button = group.getByRole("button", { name: "Select date" });
-    await expect(button).toBeVisible();
-    // Inside the group's box, beside (not below) the field.
-    const [g, b, f] = await Promise.all([
-      readAtRest(group, (el) => el.getBoundingClientRect().toJSON()),
-      readAtRest(button, (el) => el.getBoundingClientRect().toJSON()),
-      readAtRest(field(page), (el) => el.getBoundingClientRect().toJSON()),
-    ]);
-    expect(b.left).toBeGreaterThanOrEqual(g.left);
-    expect(b.right).toBeLessThanOrEqual(g.right + 0.5);
-    expect(b.top).toBeGreaterThanOrEqual(g.top - 0.5);
-    expect(b.bottom).toBeLessThanOrEqual(g.bottom + 0.5);
-    expect(b.left, "the button is at the inline end of the field").toBeGreaterThanOrEqual(f.left + f.width / 2);
-  });
-
-  test("typing 'tomorrow' sets the date and the sentence; typing garbage keeps the previous date", async ({ page }) => {
-    await gotoDatePicker(page);
-    await field(page).fill("tomorrow");
-    await expect(boldDate(page)).toHaveText(expectedDate(1));
-    await field(page).fill("asdf qwer");
-    await expect(field(page)).toHaveValue("asdf qwer");
-    await expect(boldDate(page)).toHaveText(expectedDate(1)); // unchanged
-    await field(page).fill("in 3 days");
-    await expect(boldDate(page)).toHaveText(expectedDate(3));
-    await field(page).fill("2027-03-04");
-    await expect(boldDate(page)).toHaveText("March 04, 2027");
-  });
-
-  test("ArrowDown in the field opens the calendar, which opens on the parsed date", async ({ page }) => {
-    await gotoDatePicker(page);
-    await field(page).fill("2027-03-04");
-    await field(page).press("ArrowDown");
-    const dialog = pickerContent(page, VARIANT);
-    await expect(dialog).toBeVisible();
-    await expect(dayCell(dialog, 4)).toHaveAttribute("data-selected", "");
-  });
-
-  test("the popover is end-aligned to the calendar button", async ({ page }) => {
-    await page.setViewportSize(ROOMY_VIEWPORT);
-    await gotoDatePicker(page);
-    const button = frame(page, VARIANT).getByRole("button", { name: "Select date" });
-    await button.click();
-    const dialog = pickerContent(page, VARIANT);
-    await expect(dialog).toBeVisible();
-    await waitSettled(dialog);
-    const [d, b] = await Promise.all([
-      readAtRest(dialog, (el) => el.getBoundingClientRect().toJSON()),
-      readAtRest(button, (el) => el.getBoundingClientRect().toJSON()),
-    ]);
-    expect(Math.abs(d.right - b.right), `dialog right ${d.right} vs button right ${b.right}`).toBeLessThanOrEqual(4);
-  });
-
-  test("the calendar uses shadcn's captionLayout=\"dropdown\": labelled Month and Year selects, and picking a year keeps the popover open", async ({ page }) => {
-    await gotoDatePicker(page);
-    await field(page).fill("2027-03-04");
-    await frame(page, VARIANT).getByRole("button", { name: "Select date" }).click();
-    const dialog = pickerContent(page, VARIANT);
-    await expect(dialog).toBeVisible();
-    const month = dialog.getByRole("combobox", { name: "Month" });
-    const year = dialog.getByRole("combobox", { name: "Year" });
-    await expect(month).toHaveCount(1);
-    await expect(year).toHaveCount(1);
-    await expect(month).toHaveValue("3");
-    await expect(year).toHaveValue("2027");
-
-    // Both are real selects: they take focus and a pick moves the grid, not the field.
-    await year.focus();
-    await expect(year).toBeFocused();
-    await year.selectOption("2030");
-    await expect(dialog).toBeVisible();
-    await expect(dialog.locator('.dx-calendar-grid-cell[data-month="current"]').first()).toHaveAttribute("aria-label", /March 1, 2030$/);
-    await month.selectOption("11");
-    await expect(dialog.locator('.dx-calendar-grid-cell[data-month="current"]').first()).toHaveAttribute("aria-label", /November 1, 2030$/);
-    await expect(field(page)).toHaveValue("2027-03-04"); // browsing does not select
+      // Both are real selects: they take focus and a pick moves the grid, not the field.
+      await year.focus();
+      await expect(year).toBeFocused();
+      await year.selectOption("2030");
+      await expect(dialog).toBeVisible();
+      await expect(dialog.locator('.dx-calendar-grid-cell[data-month="current"]').first()).toHaveAttribute("aria-label", /March 1, 2030$/);
+      await month.selectOption("11");
+      await expect(dialog.locator('.dx-calendar-grid-cell[data-month="current"]').first()).toHaveAttribute("aria-label", /November 1, 2030$/);
+      await expect(field(page)).toHaveValue("2027-03-04"); // browsing does not select
+      await page.keyboard.press("Escape");
+      await expect(pickerContent(page, VARIANT)).toBeHidden();
+    });
+    await test.step("the popover is end-aligned to the calendar button", async () => {
+      await page.setViewportSize(ROOMY_VIEWPORT);
+      const button = frame(page, VARIANT).getByRole("button", { name: "Select date" });
+      await button.click();
+      const dialog = pickerContent(page, VARIANT);
+      await expect(dialog).toBeVisible();
+      await waitSettled(dialog);
+      const [d, b] = await Promise.all([
+        readAtRest(dialog, (el) => el.getBoundingClientRect().toJSON()),
+        readAtRest(button, (el) => el.getBoundingClientRect().toJSON()),
+      ]);
+      expect(Math.abs(d.right - b.right), `dialog right ${d.right} vs button right ${b.right}`).toBeLessThanOrEqual(4);
+    });
   });
 
   test("picking a day writes the formatted date into the field, updates the sentence and closes the popover", async ({ page }) => {

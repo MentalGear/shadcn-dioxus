@@ -3,9 +3,9 @@
   "build": "debug",
   "workers": "2",
   "date": "2026-10-21",
-  "tests": 4195,
+  "tests": 4113,
   "files": 282,
-  "total_seconds": 13053,
+  "total_seconds": 12799,
   "budget_seconds": 17000,
   "max_file_seconds": 3000,
   "note": "seconds = sum of test durations (worker time) on the DEBUG SSG build, 2 workers, 4-core box shared with other lanes; main-thread.spec.ts and scroll-main-thread.spec.ts are release-only (skipped on debug) and carry their RELEASE seconds. release_total_seconds = the same run on a release build. Refresh: playwright/tools/run-suite.sh, then durations.mjs chunk-*.json --write",
@@ -317,9 +317,9 @@
    "retried": 0
   },
   "carousel-virtual-wheel.spec.ts": {
-   "tests": 38,
-   "seconds": 277.2,
-   "passed": 38,
+   "tests": 32,
+   "seconds": 221.5,
+   "passed": 32,
    "failed": 0,
    "skipped": 0,
    "retried": 0
@@ -341,9 +341,9 @@
    "retried": 0
   },
   "carousel.spec.ts": {
-   "tests": 58,
-   "seconds": 176,
-   "passed": 58,
+   "tests": 34,
+   "seconds": 79.0,
+   "passed": 34,
    "failed": 0,
    "skipped": 0,
    "retried": 0
@@ -685,9 +685,9 @@
    "retried": 0
   },
   "date-picker.spec.ts": {
-   "tests": 79,
-   "seconds": 165.1,
-   "passed": 78,
+   "tests": 68,
+   "seconds": 162.4,
+   "passed": 68,
    "failed": 1,
    "skipped": 0,
    "retried": 0
@@ -885,9 +885,9 @@
    "retried": 0
   },
   "drawer.spec.ts": {
-   "tests": 46,
-   "seconds": 129.9,
-   "passed": 46,
+   "tests": 29,
+   "seconds": 99.6,
+   "passed": 29,
    "failed": 0,
    "skipped": 0,
    "retried": 0
@@ -1357,9 +1357,9 @@
    "retried": 0
   },
   "oracle/tier1-apg/menu-family-parity.spec.ts": {
-   "tests": 67,
-   "seconds": 271.1,
-   "passed": 67,
+   "tests": 43,
+   "seconds": 202.3,
+   "passed": 43,
    "failed": 0,
    "skipped": 0,
    "retried": 0
