@@ -614,13 +614,14 @@ fn MenuSubContentRendered(
     // One layer for the open submenu, over its content and its sub-trigger (neither holds the other, and the
     // enclosing menu's other items are not inside it): `Policy::MENU_SUB`. It registers after the enclosing menu's
     // layer, so it is the topmost and takes the first Escape: only the submenu closes, and the key never reaches
-    // the enclosing menu's layer.
+    // the enclosing menu's layer. The layer is active only while the submenu is open, so a closed submenu that
+    // is still mounted for its close animation leaves the Escape order and the enclosing menu takes the key.
     crate::dismiss::use_dismiss_within(
         sub.content_id,
         move || vec![sub.trigger_id.cloned()],
         crate::dismiss::Scope::Element,
         crate::dismiss::Policy::MENU_SUB,
-        None,
+        Some(sub.open.into()),
         move |cause| close(Some(cause)),
     );
 
