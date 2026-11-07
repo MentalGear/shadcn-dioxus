@@ -44,7 +44,7 @@ pub fn Demo() -> Element {
         }
         Dialog {
             open: open(),
-            on_open_change: move |v| set_open(v),
+            on_open_change: set_open,
             show_close_button: false,
             initial_focus: Callback::new(|m: OpenModality| match m {
                 OpenModality::Keyboard => FocusTarget::selector("#dialog-focus-second"),
