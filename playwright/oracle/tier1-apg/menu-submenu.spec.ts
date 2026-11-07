@@ -147,7 +147,7 @@ async function hoverAndCheckIntentDelay(page: Page, subTrigger: Locator): Promis
   await pauseAppClock(page);
   // A raw pointer move: the `hover()` wrapper of fixtures.ts waits for the panel's animations, which a paused page
   // clock never finishes. The panel is already settled above.
-  const box = await subTrigger.boundingBox();
+  const box = await subTrigger.boundingBox(); // rest-ok: settled by awaitAnimationsSettled above
   if (!box) throw new Error("sub-trigger has no bounding box");
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
   await page.clock.runFor(99);

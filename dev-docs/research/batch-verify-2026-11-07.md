@@ -47,3 +47,44 @@ After the fixes, the reds rerun x3: 150 passed except menu-submenu:322 (then fix
 94 tests passed in 8m11s wall (2 workers, debug build), 88 of 94 routes carry the annotation
 `structure differs between light and dark, so dark ran every rule`, so the split falls back to the full dark scan on
 almost every route. Base comparison and durations below.
+
+## Red on base (`d040554a` debug build, HEAD specs overlaid; dismiss-parity and combobox from `f3a273d3`)
+
+Red on base, green on HEAD (the batch's proof):
+
+| Lane / row | Cases red on base |
+|---|---|
+| 490 modality | modality-restyle 4/4 |
+| 498 pagination | `pagination.spec.ts` disabled Previous/Next |
+| combobox Base UI | combobox.spec "dynamic option removal"; dismiss-parity "a mouse press on a control that keeps the input focused closes the list". The touch clear-button case was green on base (not red as listed). |
+| 392/387 controlled docs | controlled-docs: the page case and 9 per-component cases |
+| 478 item 4 navmenu | navigation_menu "hover opens the panel after the 50 ms intent delay" and the open-motion transform case; menu-submenu hover intent for DropdownMenu.Sub and ContextMenu.Sub |
+| 487 dismiss | dismiss-parity touch Combobox scroll and Dialog drag-from-backdrop cases |
+
+Caveat: `dropdown-menu.spec.ts:9` is also red on base, but through the `data-open` vocabulary of the overlaid spec, not
+the delay case (the delay cases live in navigation_menu and menu-submenu). The skeleton reduced-motion case has no
+spec of its own beyond `dx-class-migration.spec.ts` (green in the full selection).
+
+`select-escape-race.spec.ts:32` is flaky on BASE too (4 of 48 with 4 workers x12; HEAD 2 of 48): not caused by the batch.
+It belongs to the select/Escape-race work and is left for its owner.
+
+## all-routes timing (row 152), debug, 2 workers, same machine
+
+| Run | Tests | Wall | Sum of test seconds | axe "structure differs" annotations |
+|---|---|---|---|---|
+| base build, base spec (`d040554a` all-routes.spec.ts + axe.ts) | 93 | 6m38s | 788 | n/a |
+| base build, HEAD spec | 93 | 7m24s | 880 | 87 |
+| HEAD build, HEAD spec | 94 | 8m11s | 973 | 88 |
+
+The axe split did not shorten the file here: 88 of 94 routes report that the light and dark structures differ, so the
+dark pass runs every rule on nearly every route, and the HEAD spec does more per route. Left for lane `axe-split-152`:
+find why the structure differs (a theme-dependent node, or the comparison key) before the split can save anything.
+`playwright/durations.json` now carries measured entries for all-routes (973 s, 94 tests), controlled-docs, demo-modes,
+modality-restyle and pagination.
+
+## Left open
+
+- Lane axe-split-152: the fallback above.
+- select-escape-race flake (pre-existing).
+- The full selection was run only on HEAD (twice, see notes); no base run of the full selection.
+- Not run: the registry install smoke (no component source changed in the fixes).
