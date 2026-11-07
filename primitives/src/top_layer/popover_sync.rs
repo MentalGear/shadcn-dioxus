@@ -143,13 +143,14 @@ pub(crate) fn use_popover_sync(
         // safe to assume, and why prepending (one synchronous script, not
         // two separately-ordered ones) is what actually closes the gap.
         let inject = TOP_LAYER_INK_STYLES_INJECT_JS;
+        let id = crate::escape::js_string(&id);
         #[expect(
             clippy::disallowed_methods,
             reason = "row 452: this page script is ported by row 452"
         )]
         document::eval(&format!(
             "{inject}
-            const el = document.getElementById('{id}');
+            const el = document.getElementById({id});
             if (!el) return;
             const isOpen = el.matches(':popover-open');
             if ({want_open} && !isOpen) el.showPopover();
@@ -298,6 +299,7 @@ pub(crate) fn use_popover_shown_while_mounted(
         let inject = TOP_LAYER_INK_STYLES_INJECT_JS;
         let modality = crate::modality::MODALITY_JS;
         let open_focus = crate::modality::OPEN_FOCUS_JS;
+        let id = crate::escape::js_string(&id);
         #[expect(
             clippy::disallowed_methods,
             reason = "row 452: this page script is ported by row 452"
@@ -306,7 +308,7 @@ pub(crate) fn use_popover_shown_while_mounted(
             "{inject}
             {modality};
             {open_focus}
-            const el = document.getElementById('{id}');
+            const el = document.getElementById({id});
             if (!el || el.matches(':popover-open')) return;
             // A `<dialog popover>` is a dialog panel (the non-modal Popover, so DatePicker and
             // ColorPicker): where focus lands follows the opening modality like a modal's does

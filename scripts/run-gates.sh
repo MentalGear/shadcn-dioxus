@@ -90,6 +90,7 @@ gates=(
   "check-preview-composition|scripts/check-preview-composition.sh"
   "check-cfg-axis|scripts/check-cfg-axis.sh"
   "check-constant-signal|scripts/check-constant-signal.sh"
+  "check-id-interpolation|scripts/check-id-interpolation.sh"
   "check-hooks-in-closures|scripts/check-hooks-in-closures.sh"
   "check-self-subscribing-effects|scripts/check-self-subscribing-effects.sh"
   "check-component-call|scripts/check-component-call.sh"

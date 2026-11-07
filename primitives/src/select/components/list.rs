@@ -112,9 +112,9 @@ pub fn SelectList(props: SelectListProps) -> Element {
 /// collision, the popper's rule (`data-side` names the side for the CSS).
 #[cfg(feature = "web")]
 const ITEM_ALIGNED_JS: &str = r#"
-const [id, triggerId] = await dioxus.recv();
+const [id, triggerSelector] = await dioxus.recv();
 const list = document.getElementById(id);
-const trigger = document.querySelector('[style*="anchor-name: --dxa-' + triggerId + ';"]');
+const trigger = triggerSelector ? document.querySelector(triggerSelector) : null;
 if (!list || !trigger) return;
 const MARGIN = 8;
 const GAP = 4;
@@ -193,7 +193,10 @@ fn use_item_aligned(id: String, ctx: SelectContext) {
                 crate::top_layer::PLACEMENT_HELPERS_JS,
                 ITEM_ALIGNED_JS
             ))
-            .arg((id.clone(), ctx.selectable.trigger_id.cloned())),
+            .arg((
+                id.clone(),
+                crate::escape::anchor_selector(&ctx.selectable.trigger_id.cloned()),
+            )),
         )
     });
 }

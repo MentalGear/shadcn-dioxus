@@ -2,20 +2,27 @@
 //!
 //! A wrapper that renders its own element tags it with a generated id (listeners and reads find the
 //! element by id) unless the caller supplied one. "Supplied one" is decided here for every wrapper:
-//! a text `id` with no namespace and at least one character. `id=""` names nothing, so it counts as
+//! a text (or number) `id` with no namespace and at least one character. `id=""` names nothing, so it counts as
 //! no id and the wrapper's generated id stays in force.
 
 use dioxus::prelude::*;
 
-/// The text of the caller's `id` attribute, if the caller passed a usable one.
+/// The caller's `id` attribute as text (a number or bool is written out), if the caller passed a
+/// usable one.
 pub(crate) fn caller_id(attributes: &[Attribute]) -> Option<String> {
-    attributes.iter().find_map(|a| match (&a.value, a.name) {
-        (dioxus_core::AttributeValue::Text(id), "id")
-            if a.namespace.is_none() && !id.is_empty() =>
-        {
-            Some(id.clone())
+    use dioxus_core::AttributeValue as V;
+    attributes.iter().find_map(|a| {
+        if a.name != "id" || a.namespace.is_some() {
+            return None;
         }
-        _ => None,
+        let id = match &a.value {
+            V::Text(id) => id.clone(),
+            V::Float(id) => id.to_string(),
+            V::Int(id) => id.to_string(),
+            V::Bool(id) => id.to_string(),
+            _ => return None,
+        };
+        (!id.is_empty()).then_some(id)
     })
 }
 
@@ -43,6 +50,12 @@ mod tests {
     #[test]
     fn a_namespaced_id_is_none() {
         assert_eq!(caller_id(&[attr("id", Some("svg"), "menu")]), None);
+    }
+
+    #[test]
+    fn a_number_is_written_out() {
+        let id = Attribute::new("id", 5_i64, None, false);
+        assert_eq!(caller_id(&[id]), Some("5".to_string()));
     }
 
     #[test]

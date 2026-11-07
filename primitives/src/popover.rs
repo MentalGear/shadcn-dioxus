@@ -928,20 +928,10 @@ pub struct PopoverTriggerProps {
 pub fn PopoverTrigger(props: PopoverTriggerProps) -> Element {
     let ctx: PopoverCtx = use_context();
     let mut id = ctx.labelledby;
-    let id_attribute = props
-        .attributes
-        .iter()
-        .find(|attr| attr.name == "id")
-        .cloned();
+    let id_attribute = crate::caller_id::caller_id(&props.attributes);
     use_effect(use_reactive!(|id_attribute| {
         if let Some(id_attribute) = id_attribute {
-            match &id_attribute.value {
-                dioxus_core::AttributeValue::Text(val) => id.set(val.to_string()),
-                dioxus_core::AttributeValue::Float(val) => id.set(val.to_string()),
-                dioxus_core::AttributeValue::Int(val) => id.set(val.to_string()),
-                dioxus_core::AttributeValue::Bool(val) => id.set(val.to_string()),
-                _ => {}
-            }
+            id.set(id_attribute);
         }
     }));
 

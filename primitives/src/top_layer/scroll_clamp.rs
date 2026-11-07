@@ -117,12 +117,10 @@ pub(crate) enum ScrollClose {
 #[cfg(feature = "web")]
 const CLOSE_ON_SCROLL_JS: &str = r#"
 const id = await dioxus.recv();
-const anchorId = await dioxus.recv();
+const anchorSelector = await dioxus.recv();
 const QUIET_MS = 300;
 const content = document.getElementById(id);
-const trigger = anchorId
-    ? document.querySelector('[style*="anchor-name: --dxa-' + anchorId + ';"]')
-    : null;
+const trigger = anchorSelector ? document.querySelector(anchorSelector) : null;
 let sent = false;
 let quietUntil = performance.now() + QUIET_MS;
 const quiet = () => { quietUntil = performance.now() + QUIET_MS; };
@@ -159,7 +157,7 @@ pub(crate) fn use_close_on_scroll(
         Some(
             crate::js_listener::JsListeners::install(CLOSE_ON_SCROLL_JS)
                 .arg(content_id.clone())
-                .arg(anchor_id.clone())
+                .arg(crate::escape::anchor_selector(&anchor_id))
                 .on_message(move |_: bool| set_open.call(false)),
         )
     });

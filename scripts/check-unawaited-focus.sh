@@ -32,7 +32,10 @@ awaited = 0
 for path in files:
     with open(path, encoding="utf-8") as fh:
         lines = fh.read().split("\n")
-    end = next((i for i, l in enumerate(lines) if re.match(r"\s*#\[cfg\(test\)\]", l)), len(lines))
+    # test code starts at the first inline `#[cfg(..test..)] mod x {` (a `#[cfg(test)] use` or `mod x;` is not it)
+    end = next((i for i, l in enumerate(lines)
+                if re.match(r"\s*#\[cfg\((all\()?test", l) and i + 1 < len(lines)
+                and re.match(r"\s*(pub(\(crate\))?\s+)?mod\s+\w+\s*\{", lines[i + 1])), len(lines))
     for i in range(end):
         line = lines[i]
         if re.match(r"\s*//", line):

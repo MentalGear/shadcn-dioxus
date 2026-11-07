@@ -36,7 +36,7 @@ use super::*;
 /// site.
 #[cfg(feature = "web")]
 pub(crate) fn anchor_name_style(id: &str) -> String {
-    format!("anchor-name: --dxa-{id};")
+    format!("anchor-name: --dxa-{};", crate::escape::css_ident(id))
 }
 
 /// See [`anchor_name_style`]. Set on the content element, referencing the
@@ -46,7 +46,7 @@ pub(crate) fn anchor_name_style(id: &str) -> String {
 /// solve), so -- like [`PopoverKind`] -- this has no native counterpart.
 #[cfg(feature = "web")]
 pub(crate) fn position_anchor_style(id: &str) -> String {
-    format!("position-anchor: --dxa-{id};")
+    format!("position-anchor: --dxa-{};", crate::escape::css_ident(id))
 }
 
 /// Which anchored overlay a panel is: the value of the one attribute the engine's stylesheet selects
