@@ -70,6 +70,7 @@ mod move_interaction;
 pub mod nav_link;
 #[cfg(feature = "router")]
 pub mod navbar;
+mod safe_triangle;
 // Deliberately NOT gated on `feature = "router"`, unlike `navbar` above:
 // `NavigationMenuLink` renders a plain `a[href]` itself rather than
 // `dioxus_router::Link`, so this module has no router dependency -- see

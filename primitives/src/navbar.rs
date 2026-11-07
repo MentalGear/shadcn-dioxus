@@ -436,8 +436,12 @@ pub fn NavbarNav(props: NavbarNavProps) -> Element {
                     ctx.hover.enter(nav_ctx.index.cloned());
                 }
             },
-            onmouseleave: move |_| {
-                ctx.hover.leave(nav_ctx.index.cloned());
+            onmouseleave: move |event: Event<MouseData>| {
+                ctx.hover.leave(
+                    nav_ctx.index.cloned(),
+                    Some(crate::safe_triangle::Point::of(&event)),
+                    Some(nav_ctx.content_id.cloned()),
+                );
             },
             onkeydown: move |event: Event<KeyboardData>| {
                 // A key press is a deliberate action: a pending hover open or
