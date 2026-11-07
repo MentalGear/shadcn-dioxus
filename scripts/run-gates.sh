@@ -169,6 +169,7 @@ gates=(
   "check-markdown-parser|scripts/check-markdown-parser.sh"
   "check-js-bundle|scripts/check-js-bundle.sh"
   "check-cargo-locks|scripts/check-cargo-locks.sh"
+  "check-dependency-register|scripts/check-dependency-register.sh"
   # group: Playwright specs
   "check-playwright-fixture-import|scripts/check-playwright-fixture-import.sh"
   "check-spec-viewport-bound|scripts/check-spec-viewport-bound.sh"
