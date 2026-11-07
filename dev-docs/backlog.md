@@ -126,7 +126,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [498](backlog/498-pagination-disabled-link.md) | Pagination links have a disabled state | DONE (2026-11-06). Proof below. | S | components |
 | [499](backlog/499-safe-triangle-for-hover-menus.md) | A safe triangle for the hover menus, so they can take Base UI's short close delays | BACKLOG. Split out of row 478 item 4, whose open delays now follow Base UI. Land before row 456… | M | overlays |
 | [500](backlog/500-axe-split-structure-signature-falls-back.md) | The all-routes axe split falls back to a full dark scan on 88 of 94 routes | BACKLOG. Found by the batch verifier, 2026-11-07. | S-M | playwright |
-| [501](backlog/501-select-escape-race-flake.md) | select-escape-race.spec.ts:32 is flaky under load (also on the deployed base) | BACKLOG. Found by the batch verifier, 2026-11-07. | S | playwright |
+| [501](backlog/501-select-escape-race-flake.md) | select-escape-race.spec.ts:32 is flaky under load (also on the deployed base) | DONE 2026-11-07. Root cause: the press's deferred open (OpenGap::defer, one task after pointerdown)… | S | playwright |
 | [502](backlog/502-installed-components-carry-repo-lint-expects.md) | Installed components carry #[expect(clippy::disallowed_methods)] that a user's project cannot fulfil | BACKLOG, found 2026-11-07. Check first: run cargo clippy in the registry-install-smoke app and… | S | tooling |
 
 <!-- END GENERATED -->

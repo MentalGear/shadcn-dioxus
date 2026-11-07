@@ -113,8 +113,9 @@ pub fn SelectTrigger(props: SelectTriggerProps) -> Element {
     // `use_id_or(ctx.dialog_labelledby, props.id)` (`dialog.rs`).
     let id = use_id_or(ctx.selectable.trigger_id, props.id);
     let mut press = use_signal(|| TriggerPress::None);
-    // The open one task after a mouse press; an Escape in that gap cancels it.
-    let gap = crate::dismiss::use_open_gap();
+    // The open one task after a mouse press; an Escape in that gap cancels it, and any other write
+    // to the open state (a key that opened it, a close from the list) voids it.
+    let gap = crate::dismiss::use_open_gap(ctx.selectable.open_writes);
     // A mouse press whose `click` never reached the trigger (the button was released over the list)
     // must not swallow the next click once the list is closed.
     use_effect(move || {
