@@ -11,14 +11,21 @@ test.describe('overlay engine', () => {
     await trigger.click();
     await expect(trigger).toHaveAttribute('data-open', '');
     const sub = page.getByRole('menuitem', { name: 'Export as' });
-    const submenu = page.getByRole('menu', { name: 'Export as' });
     await sub.click();
     await expect(page.getByRole('menuitem', { name: 'PDF document' })).toBeFocused();
 
+    // The held window is the close eval's wait for a frame (plus the animation, where one runs); a slow frame
+    // makes it long enough to hit with a key press, whatever the browser's motion setting.
+    await page.evaluate(() => {
+      const raf = window.requestAnimationFrame.bind(window);
+      (window as any).__restoreRaf = () => { window.requestAnimationFrame = raf; };
+      window.requestAnimationFrame = (cb) => window.setTimeout(() => raf(cb), 1500);
+    });
     await page.keyboard.press('ArrowLeft');
     // The closed submenu stays mounted for its close animation plus a hold; the Escape lands in that window.
-    await expect(submenu).toHaveAttribute('data-closed', '');
+    await expect(page.locator('[role="menu"][data-closed]')).toHaveCount(1);
     await page.keyboard.press('Escape');
+    await page.evaluate(() => (window as any).__restoreRaf());
     await expect(trigger).toHaveAttribute('data-closed', '');
   });
 
@@ -51,19 +58,19 @@ test.describe('overlay engine', () => {
     await trigger.evaluate((el) => {
       (el as HTMLElement).style.position = 'fixed';
       (el as HTMLElement).style.top = '60px';
-      (el as HTMLElement).style.left = '40px';
+      (el as HTMLElement).style.left = '400px';
       (el as HTMLElement).style.width = '400px';
       (el as HTMLElement).style.height = '200px';
     });
     const menu = page.getByRole('menu');
-    await page.mouse.click(80, 100, { button: 'right' });
+    await page.mouse.click(440, 100, { button: 'right' });
     await expect(menu).toHaveAttribute('data-open', '');
-    await page.mouse.click(300, 220, { button: 'right' });
+    await page.mouse.click(700, 220, { button: 'right' });
     await expect(menu).toHaveAttribute('data-open', '');
     await expect.poll(async () => {
       const box = await menu.boundingBox();
       return box ? [Math.round(box.x), Math.round(box.y)] : null;
-    }, { message: 'the menu corner sits at the second point' }).toEqual([300, 220]);
+    }, { message: 'the menu corner sits at the second point' }).toEqual([700, 220]);
   });
 
   test('F11: Escape during IME composition does not close an overlay', async ({ page }) => {
