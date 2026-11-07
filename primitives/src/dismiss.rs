@@ -281,7 +281,8 @@ impl Spec {
 /// stopped), as a registered `close` layer would, so an enclosing `<dialog>` keeps its own Escape.
 /// Returns whether it took the key.
 pub(crate) fn escape_in_gap(event: &KeyboardEvent, requested: bool, close: impl FnOnce()) -> bool {
-    if requested && event.key() == Key::Escape {
+    // An Escape that ends an input-method composition is the composition's, not a dismissal.
+    if requested && event.key() == Key::Escape && !event.is_composing() {
         close();
         event.prevent_default();
         event.stop_propagation();
