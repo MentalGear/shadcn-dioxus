@@ -29,10 +29,10 @@
 /* `ScrollType::Hidden` puts the presence attribute `data-scrollbar-hidden` on the scroller (primitives/src/scroll_area.rs);
  * the sheet gives it meaning: no bar, the box still scrolls. `scrollbar-width` is a CSS property, so it cannot be
  * emitted as an attribute. `::-webkit-scrollbar` covers engines without the standard property. */
-[data-scroll-direction][data-scrollbar-hidden] {
+[data-scrollbar-hidden]:is(.dx-scroll-area-auto-hide, .dx-scroll-area-always-show) {
   scrollbar-width: none;
 }
 
-[data-scroll-direction][data-scrollbar-hidden]::-webkit-scrollbar {
+[data-scrollbar-hidden]:is(.dx-scroll-area-auto-hide, .dx-scroll-area-always-show)::-webkit-scrollbar {
   display: none;
 }
