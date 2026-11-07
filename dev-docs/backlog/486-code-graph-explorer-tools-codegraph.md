@@ -4,7 +4,7 @@ title: "Code graph explorer: SCIP-derived graph with a granularity slider (scrip
 status: "BUILT, minimal scope (2026-11-03): scripts/codegraph/ (run.sh, build_graph.py, make_explorer.py…"
 size: "S-M for the minimal scope; the rest is…"
 area: tooling
-updated: 2026-11-06
+updated: 2026-11-07
 ---
 
 # Row 486: Code graph explorer
@@ -42,7 +42,10 @@ history comment read 1 on both); M5 total 2 (two `TODO` words in `preview/src/si
 s. Separate staleness keys (2026-11-06): the metrics live in `comments.json` (file text only, `build_comments.py`), the graph in
 `graph.json` (SCIP index); a `.rs` edit no longer re-indexes, it rebuilds the metrics and the page at once and the page
 marks the index stale (changed files listed); `--force` re-indexes. `status.json` and the page's status line show the HEAD,
-key and time each part was built from. Nice-to-have N1 to N6 are not built. Numbers and how to read them: `scripts/codegraph/README.md`.
+key and time each part was built from. Nice-to-have N1 to N6 BUILT (2026-11-07, built in the order N1, N6, N4, N2/N3, N5: defect-finding and text-only first, `git blame` last):
+stale-looking backticked identifiers, comment lines and code lines of JS/CSS in Rust strings, comment words, repeated comment
+blocks, per-item comment numbers (8,238 items, a Comments-tab row level; no item nodes or item edges in the graph, the slider
+stays crate/component/file) and comment age vs code age (`run.sh --blame`). Details and limits: `scripts/codegraph/README.md`. Numbers and how to read them: `scripts/codegraph/README.md`.
 
 Researched 2026-10-29 and 2026-10-31 at the owner's request; a prototype exists. The research, the tool comparison and the
 measured numbers are in [`research/code-graph-explorer-2026-10-31.md`](../research/code-graph-explorer-2026-10-31.md), and

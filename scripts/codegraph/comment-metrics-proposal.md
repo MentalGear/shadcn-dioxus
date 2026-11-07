@@ -2,7 +2,7 @@
 
 Status: M1 to M6 are built (`comment_metrics.py`, `build_graph.py`, `explorer.template.html`; how to read them is in
 `README.md`). The `_walk_rust` and `_embedded_comments` names below are now `walk_rust` and `embedded_comments` in
-`scripts/comment-scan.py`. N1 to N6 are not built. Where the build differs from this text (sparse fence on a log scale,
+`scripts/comment-scan.py`. N1 to N6 are built too (all but N5 in the same pass; N5 behind `run.sh --blame`). Where the build differs from this text (sparse fence on a log scale,
 `pub mod x;` skipped by M3) `README.md` says so.
 
 Scope: dev tool only, `scripts/codegraph/`, stdlib Python run as `python3 -I`, no dependency beyond the pinned Cytoscape
