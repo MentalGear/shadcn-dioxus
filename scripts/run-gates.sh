@@ -50,7 +50,8 @@
 #  7. One log directory per run (backlog row 440). Every run writes to its own $CARGO_TARGET_DIR/run-gates/<UTC time>-<pid>/
 #     and prints it, so two runs on one target never overwrite each other's logs and a log a reader opens belongs to the
 #     summary that named it. `run-gates/latest` is a symlink to the newest FINISHED run, switched by a rename at the end.
-#     The newest $RUN_GATES_KEEP (default 20) run directories are kept; older ones are deleted at the start of a run.
+#     The newest $RUN_GATES_KEEP (default 20) run directories are kept; older FINISHED ones (a `finished` marker is written
+#     after `latest` is switched) are deleted at the start of a run, and an unfinished one only once idle for 2 hours.
 set -uo pipefail
 
 # The cargo gates: the slow ones, whose PASS is reused for an identical cargo-input key (guard 6) and which --fast leaves out.
@@ -188,6 +189,7 @@ gates=(
   "check-gates-doc|scripts/check-gates-doc.sh"
   "check-lane-lock|scripts/check-lane-lock.sh"
   "check-gate-reuse|scripts/check-gate-reuse.sh"
+  "check-gate-logs|scripts/check-gate-logs.sh"
   "check-gate-kit|scripts/check-gate-kit.sh"
   "check-lane-target|scripts/check-lane-target.sh"
   "check-merge-drivers|scripts/check-merge-drivers.sh"
@@ -236,11 +238,16 @@ if [ -n "$log_dir" ]; then
 else
   log_dir="$runs_root/$(date -u +%Y%m%dT%H%M%SZ)-$$"; own_run_dir=1
   mkdir -p "$runs_root" && mkdir "$log_dir" || die "cannot create log dir $log_dir"
-  # Guard 7 retention: keep the newest RUN_GATES_KEEP run directories (names sort by time), never this run's.
+  # Guard 7 retention: keep the newest RUN_GATES_KEEP run directories (names sort by time), never this run's, and never
+  # a run still in progress (no `finished` marker, touched within RUN_GATES_LIVE_MIN minutes, default 120).
   keep="${RUN_GATES_KEEP:-20}"
   case "$keep" in ''|*[!0-9]*) keep=20 ;; esac
-  find "$runs_root" -mindepth 1 -maxdepth 1 -type d -regex '.*/[0-9]\{8\}T[0-9]\{6\}Z-[0-9]+' | sort -r \
-    | tail -n +$((keep + 1)) | while IFS= read -r old; do [ "$old" = "$log_dir" ] || rm -rf "$old"; done
+  find "$runs_root" -mindepth 1 -maxdepth 1 -type d -regextype posix-extended -regex '.*/[0-9]{8}T[0-9]{6}Z-[0-9]+' | sort -r \
+    | tail -n +$((keep + 1)) | while IFS= read -r old; do
+        [ "$old" = "$log_dir" ] && continue
+        [ -e "$old/finished" ] || [ -z "$(find "$old" -maxdepth 0 -mmin "-${RUN_GATES_LIVE_MIN:-120}" 2>/dev/null)" ] || continue
+        rm -rf "$old"
+      done
 fi
 summary_tsv="$log_dir/summary.tsv"
 : > "$summary_tsv"
@@ -361,6 +368,7 @@ fi
 if [ "$own_run_dir" = 1 ]; then
   ln -sfn "$log_dir" "$runs_root/.latest.$$" && mv -T "$runs_root/.latest.$$" "$runs_root/latest" 2>/dev/null \
     || rm -f "$runs_root/.latest.$$"
+  : > "$log_dir/finished"
 fi
 
 echo
