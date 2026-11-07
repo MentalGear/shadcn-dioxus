@@ -40,7 +40,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (83)
+## Open rows (84)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -73,7 +73,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [440](backlog/440-run-gates-per-run-log-dir.md) | run-gates.sh writes logs to a shared directory: two concurrent runs on one target overwrite each other's logs | DONE 2026-11-05 (lane gate-logs-440), awaiting merge. Found by the row 433 lane (2026-10-26).… | S | tooling |
 | [442](backlog/442-desktop-cadence-harness-and-desktop-pass.md) | Desktop proof for the JS plan: a desktop-cadence web build, Playwright WebKit and Firefox, and a recorded desktop-pass stamp | BACKLOG. Filed 2026-10-26 from the row 434 step 3 adversarial board. The bridge-latency hook… | M | tooling |
 | [443](backlog/443-owner-measurement-kit-perf-recorder-and-impl-switch.md) | The owner's measurement kit for the row 434 ports: __dxPerf, bridge delay and spin, and the ?dx-impl legacy switch | BACKLOG. Filed 2026-10-26 from the row 434 step 3 adversarial board. The bridge-delay hook is… | M | tooling |
-| [444](backlog/444-gate-half-of-lane-3-0b-grants-bans-and-witness-presence.md) | Phase 0.1: the gate half of lane 3.0 (grant rows, sink and setter bans, FORBIDDEN_VERBS, gates over existing artefacts only) | APPROVED 2026-10-26 (owner: "okay for the plan"; scope 2, the recommended default, since no scope… | L | tooling |
+| [444](backlog/444-gate-half-of-lane-3-0b-grants-bans-and-witness-presence.md) | Phase 0.1: the gate half of lane 3.0 (grant rows, sink and setter bans, FORBIDDEN_VERBS, gates over existing artefacts only) | LANDED on the session branch (2026-11-07), phase 0.1's gates over the artefacts that exist: the… | L | tooling |
 | [445](backlog/445-phase-0-2-the-legacy-freeze.md) | Phase 0.2: freeze the legacy scripts and sinks (script hashes, per-site sink freeze, js-fix grant) | APPROVED 2026-10-26 (owner: "okay for the plan"; scope 2, the recommended default, since no scope… | S | tooling |
 | [446](backlog/446-phase-0-6-witness-harness-and-the-first-witnesses.md) | Phase 0.6: the witness harness and the first witnesses | APPROVED 2026-10-26 (owner: "okay for the plan"; scope 2, the recommended default, since no scope… | L | tests |
 | [447](backlog/447-phase-0-7-the-order-runtime.md) | Phase 0.7: the order runtime (inbound pump, per-slot epochs, vdom carrier, slot table, focus owner, one-shot scroll classifier) | APPROVED 2026-10-26 (owner: "okay for the plan"; scope 2, the recommended default, since no scope… | M | primitives |
@@ -127,5 +127,6 @@ proposing one is closed as out of scope (row 337 is the first).
 | [499](backlog/499-safe-triangle-for-hover-menus.md) | A safe triangle for the hover menus, so they can take Base UI's short close delays | BACKLOG. Split out of row 478 item 4, whose open delays now follow Base UI. Land before row 456… | M | overlays |
 | [500](backlog/500-axe-split-structure-signature-falls-back.md) | The all-routes axe split falls back to a full dark scan on 88 of 94 routes | BACKLOG. Found by the batch verifier, 2026-11-07. | S-M | playwright |
 | [501](backlog/501-select-escape-race-flake.md) | select-escape-race.spec.ts:32 is flaky under load (also on the deployed base) | BACKLOG. Found by the batch verifier, 2026-11-07. | S | playwright |
+| [502](backlog/502-installed-components-carry-repo-lint-expects.md) | Installed components carry #[expect(clippy::disallowed_methods)] that a user's project cannot fulfil | BACKLOG, found 2026-11-07. Check first: run cargo clippy in the registry-install-smoke app and… | S | tooling |
 
 <!-- END GENERATED -->

@@ -1,7 +1,7 @@
 ---
 id: 444
 title: "Phase 0.1: the gate half of lane 3.0 (grant rows, sink and setter bans, FORBIDDEN_VERBS, gates over existing artefacts only)"
-status: "APPROVED 2026-10-26 (owner: \"okay for the plan\"; scope 2, the recommended default, since no scope…"
+status: "LANDED on the session branch (2026-11-07), phase 0.1's gates over the artefacts that exist: the…"
 size: "L"
 area: tooling
 js-grant: js_file=10 (owner 2026-11-06: lane B2 closes the bridge global and registration; measured +10 lines: register.ts +1, ts-test/bridge.test.ts +9)
@@ -18,6 +18,8 @@ The enforcement half of the row 434 construct: the grant rule and the ratchet-ba
 Part of the [row 434](./434-javascript-in-typescript-modules-not-rust-strings.md) step 3 plan; source: [`sync-js-root-2026-10-26.md`](../research/sync-js-root-2026-10-26.md) section 5.4 (phase 0).
 
 ## Status / trigger
+
+**LANDED on the session branch (2026-11-07), phase 0.1's gates over the artefacts that exist:** the grant rule and the ratchet base (A1: `scripts/lib/rows.py`, `ratchet.py`, `check-ratchet-grant`; a raise needs an open row at the base with `js-grant`), what `check-js-volume` counts (A2: bytes of JS files, md/svg scanned, sinks split by kind, `expect_disallowed`, the clippy pin, the reasoned allowlist rows V5, V8, V9, V11 and `theme_seed` the owner approved), the TypeScript scanner (B1: `check-ts-scan`, `typescript` pinned exactly at 6.0.3 in `scripts/ts-tools/`), the `check-bridge-behaviours` core (B2: budgets TSV, `FORBIDDEN_VERBS`, `Program::Frozen`, frozen `__dxBridge`, `adds:` rows; its `js_file=10` raise is this row's grant), the clippy ban on the page-script sink and the `DataTransfer` setters with 77 per-site `#[expect]`s (D), `check-hot-events` (E), `check-native-slots` (F), the installed-components sink check (G) and the platform-rule reader (H). Open, because the artefacts they read are built by later items: the `REDUCERS` cap, the `desktop-pass.md` count (row 442), platform-rule rows (owner decisions on a `site!`, item 0.3), the `MountedData` ban (0.6), the `site!`, witness, scenario-binding, DOM-less program and lease checks (0.3), the slot-table partition (0.7); removing `register` from `__dxBridge` waits for 0.3's `decide`.
 
 APPROVED 2026-10-26 (owner: "okay for the plan"; scope 2, the recommended default, since no scope was named). Phase 0 of the row 434 step 3 plan; it starts once the rows ordered before the plan have landed (STATUS.md, "Next", owner 2026-10-26).
 
