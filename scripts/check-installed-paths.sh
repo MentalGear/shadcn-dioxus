@@ -388,7 +388,7 @@ sinks_self_test() {
     fresh() {
         rm -rf "$t/$comp"
         mkdir -p "$t/$comp"
-        cp -r "$comp/button" "$comp/form" "$comp/code_block" "$t/$comp/"
+        cp -r "$comp/button" "$comp/form" "$comp/code_block" "$comp/textarea" "$t/$comp/"
         cp scripts/check-installed-paths.sinks.tsv "$t/scripts/"
     }
     expect() { # name, want exit status; the case's mutation has been applied

@@ -53,4 +53,4 @@ form {
 
 ## Edge alignment
 
-`Slider` and `RangeSlider` take `thumb_alignment: ThumbAlignment`. `Center` (the default) puts the thumb's centre on its value, so half a thumb hangs past the track at `min` and `max`. `Edge` keeps the thumb inside the track, its edge on the track's end at `min` and `max`, and maps the pointer onto the distance the thumb's centre can travel. The thumb's size is measured once it is mounted, so the server-rendered page draws it centred first.
+`Slider` and `RangeSlider` take `thumb_alignment: ThumbAlignment`. `Center` (the default) puts the thumb's centre on its value, so half a thumb hangs past the track at `min` and `max`. `Edge` keeps the thumb inside the track, its edge on the track's end at `min` and `max`, and maps the pointer onto the distance the thumb's centre can travel. The thumb's size comes from the `--dx-slider-thumb-size` custom property (the theme sets it to the thumb's width), so the server-rendered page already draws it inside the track; the pointer mapping uses the thumb's size measured once it is mounted.

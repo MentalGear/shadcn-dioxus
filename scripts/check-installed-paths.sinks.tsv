@@ -3,3 +3,4 @@
 # as each site is ported to the bridge (dev-docs/js-interop.md, row 434 step 3); a row is deleted at zero.
 preview/src/components/form/component.rs	eval	3	the three form demos read their fields through document::eval(read_form_data_js(..))
 preview/src/components/code_block/component.rs	eval	1	the copy button writes the clipboard through document::eval
+preview/src/components/textarea/component.rs	dangerous_inner_html	1	the textarea renders its first value as server-rendered content (a text child carries hydration comments a textarea shows as text)
