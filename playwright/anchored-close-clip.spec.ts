@@ -87,47 +87,50 @@ const VIEWPORTS = {
 
 for (const [vpName, viewport] of Object.entries(VIEWPORTS)) {
   for (const placement of ["below", "above"] as const) {
-    for (const [closerName, close] of Object.entries(CLOSERS)) {
-      test(`ColorPicker ${placement} its trigger (${vpName}): the panel keeps its open height through the close (${closerName})`, async ({
-        page,
-      }) => {
-        await page.setViewportSize(viewport);
-        await gotoHydrated(page, PAGE_URL, { timeout: NAV_TIMEOUT });
-        const trigger = page.getByRole("button", { name: /Color picker/i }).first();
-        await page.evaluate(() => {
-          document.body.style.paddingTop = "3000px";
-          document.body.style.paddingBottom = "3000px";
-        });
-        await trigger.evaluate((el, p) => {
-          el.scrollIntoView({ block: p === "above" ? "end" : "start" });
-          window.scrollBy(0, p === "above" ? 24 : -24);
-        }, placement);
-        await trigger.click();
-        const panel = page.locator("[data-dx-anchored][popover]").first();
-        await expect(panel).toBeVisible();
-        await awaitAnchoredPanelSettled(panel);
-        const openFrame = await panel.evaluate((el) => ({
-          h: el.getBoundingClientRect().height,
-          top: el.getBoundingClientRect().top,
-        }));
-        const triggerTop = await trigger.evaluate((el) => el.getBoundingClientRect().top);
-        expect(openFrame.top < triggerTop ? "above" : "below", "the side the panel opened on").toBe(placement);
-
-        await startRecording(page);
-        await close(page);
-        const frames = await stopRecording(page);
-        if (process.env.RECORD_CLOSE) console.log(JSON.stringify({ vpName, placement, closerName, open: openFrame, frames }));
-
-        expect(frames.length, "frames recorded").toBeGreaterThan(2);
-        const rendered = frames.filter((f) => f.display !== "none");
-        expect(
-          rendered.filter((f) => !f.open),
-          "frames that paint the panel outside the top layer",
-        ).toEqual([]);
-        const clipped = rendered.filter((f) => Math.abs(f.h - openFrame.h) > 1);
-        expect(clipped, `frames whose height differs from the open height ${openFrame.h}px`).toEqual([]);
+    // One load per viewport and placement; the three ways of closing run one after the other on it, each reopening the panel.
+    test(`ColorPicker ${placement} its trigger (${vpName}): the panel keeps its open height through the close (every closer)`, async ({
+      page,
+    }) => {
+      await page.setViewportSize(viewport);
+      await gotoHydrated(page, PAGE_URL, { timeout: NAV_TIMEOUT });
+      const trigger = page.getByRole("button", { name: /Color picker/i }).first();
+      await page.evaluate(() => {
+        document.body.style.paddingTop = "3000px";
+        document.body.style.paddingBottom = "3000px";
       });
-    }
+      await trigger.evaluate((el, p) => {
+        el.scrollIntoView({ block: p === "above" ? "end" : "start" });
+        window.scrollBy(0, p === "above" ? 24 : -24);
+      }, placement);
+      for (const [closerName, close] of Object.entries(CLOSERS)) {
+        await test.step(closerName, async () => {
+          await trigger.click();
+          const panel = page.locator("[data-dx-anchored][popover]").first();
+          await expect(panel).toBeVisible();
+          await awaitAnchoredPanelSettled(panel);
+          const openFrame = await panel.evaluate((el) => ({
+            h: el.getBoundingClientRect().height,
+            top: el.getBoundingClientRect().top,
+          }));
+          const triggerTop = await trigger.evaluate((el) => el.getBoundingClientRect().top);
+          expect(openFrame.top < triggerTop ? "above" : "below", `${closerName}: the side the panel opened on`).toBe(placement);
+
+          await startRecording(page);
+          await close(page);
+          const frames = await stopRecording(page);
+          if (process.env.RECORD_CLOSE) console.log(JSON.stringify({ vpName, placement, closerName, open: openFrame, frames }));
+
+          expect(frames.length, `${closerName}: frames recorded`).toBeGreaterThan(2);
+          const rendered = frames.filter((f) => f.display !== "none");
+          expect(
+            rendered.filter((f) => !f.open),
+            `${closerName}: frames that paint the panel outside the top layer`,
+          ).toEqual([]);
+          const clipped = rendered.filter((f) => Math.abs(f.h - openFrame.h) > 1);
+          expect(clipped, `${closerName}: frames whose height differs from the open height ${openFrame.h}px`).toEqual([]);
+        });
+      }
+    });
   }
 }
 
@@ -145,7 +148,16 @@ const OVERLAYS: { name: string; url: string; open: (page: Page) => Promise<void>
       await page.keyboard.press("ArrowDown");
     },
   },
-  { name: "Tooltip", url: FIXTURE, open: (page) => page.locator("#clip-tooltip-trigger").focus() },
+  {
+    name: "Tooltip",
+    url: FIXTURE,
+    // The tooltip opens on focus; a trigger that kept focus through the first close is blurred so the second open is a focus event.
+    open: async (page) => {
+      const trigger = page.locator("#clip-tooltip-trigger");
+      await trigger.blur();
+      await trigger.focus();
+    },
+  },
   { name: "Navbar", url: FIXTURE, open: (page) => page.locator("#clip-navbar-trigger").click() },
   { name: "NavigationMenu", url: FIXTURE, open: (page) => page.locator("#clip-navigation-menu-trigger").click() },
   {
@@ -156,35 +168,38 @@ const OVERLAYS: { name: string; url: string; open: (page: Page) => Promise<void>
 ];
 
 for (const overlay of OVERLAYS) {
-  for (const closerName of ["Escape", "outside press"] as const) {
-    test(`${overlay.name}: no frame of a native close paints the panel outside the top layer (${closerName})`, async ({
-      page,
-    }) => {
-      await gotoHydrated(page, overlay.url, { timeout: NAV_TIMEOUT });
-      await overlay.open(page);
-      const panel = page.locator("[data-dx-anchored][popover]:popover-open").first();
-      await expect(panel).toBeVisible();
-      await awaitAnchoredPanelSettled(panel);
-      await page.evaluate(() => {
-        const w = window as unknown as { __stray: string[]; __sampling: boolean };
-        w.__stray = [];
-        w.__sampling = true;
-        const t0 = performance.now();
-        const tick = () => {
-          for (const el of document.querySelectorAll<HTMLElement>("[data-dx-anchored][popover]")) {
-            if (!el.matches(":popover-open") && getComputedStyle(el).display !== "none") {
-              w.__stray.push(`${el.id || el.className} at ${Math.round(performance.now() - t0)} ms`);
+  // One load per overlay; both ways of closing run on it, each reopening the panel.
+  test(`${overlay.name}: no frame of a native close paints the panel outside the top layer (Escape, outside press)`, async ({
+    page,
+  }) => {
+    await gotoHydrated(page, overlay.url, { timeout: NAV_TIMEOUT });
+    for (const closerName of ["Escape", "outside press"] as const) {
+      await test.step(closerName, async () => {
+        await overlay.open(page);
+        const panel = page.locator("[data-dx-anchored][popover]:popover-open").first();
+        await expect(panel).toBeVisible();
+        await awaitAnchoredPanelSettled(panel);
+        await page.evaluate(() => {
+          const w = window as unknown as { __stray: string[]; __sampling: boolean };
+          w.__stray = [];
+          w.__sampling = true;
+          const t0 = performance.now();
+          const tick = () => {
+            for (const el of document.querySelectorAll<HTMLElement>("[data-dx-anchored][popover]")) {
+              if (!el.matches(":popover-open") && getComputedStyle(el).display !== "none") {
+                w.__stray.push(`${el.id || el.className} at ${Math.round(performance.now() - t0)} ms`);
+              }
             }
-          }
-          if (performance.now() - t0 < 600) requestAnimationFrame(tick);
-          else w.__sampling = false;
-        };
-        requestAnimationFrame(tick);
+            if (performance.now() - t0 < 600) requestAnimationFrame(tick);
+            else w.__sampling = false;
+          };
+          requestAnimationFrame(tick);
+        });
+        await (closerName === "Escape" ? page.keyboard.press("Escape") : page.mouse.click(2, 2));
+        await page.waitForFunction(() => !(window as unknown as { __sampling: boolean }).__sampling);
+        const stray = await page.evaluate(() => (window as unknown as { __stray: string[] }).__stray);
+        expect(stray, `${closerName}: panels painted outside the top layer`).toEqual([]);
       });
-      await (closerName === "Escape" ? page.keyboard.press("Escape") : page.mouse.click(2, 2));
-      await page.waitForFunction(() => !(window as unknown as { __sampling: boolean }).__sampling);
-      const stray = await page.evaluate(() => (window as unknown as { __stray: string[] }).__stray);
-      expect(stray, "panels painted outside the top layer").toEqual([]);
-    });
-  }
+    }
+  });
 }
