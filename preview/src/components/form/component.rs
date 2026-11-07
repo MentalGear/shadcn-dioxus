@@ -1,3 +1,7 @@
+#![allow(
+    unexpected_cfgs,
+    reason = "dx_repo_lints is set only by the shadcn-dioxus repo's own clippy runs (`--cfg dx_repo_lints`, scripts/run-gates.sh)"
+)]
 // Composition rule for this fixture (and every other preview page): compose
 // ONLY themed wrappers from `crate::components::*`, never a bare
 // `dioxus_primitives::` component directly. `preview/src/components/<name>/
@@ -408,7 +412,7 @@ pub fn FormFixture() -> Element {
                     "data-dx-root": "",
                     show_status: false,
                     onsubmit: move |_: FormEvent| {
-                        #[expect(clippy::disallowed_methods, reason = "row 458: this page script is ported by row 458")]
+                        #[cfg_attr(dx_repo_lints, expect(clippy::disallowed_methods, reason = "row 458: this page script is ported by row 458"))]
                         let _ = document::eval(&read_form_data_js("entries-form", "form-result"));
                     },
 
@@ -642,7 +646,7 @@ pub fn FormFixture() -> Element {
                     "data-dx-root": "",
                     show_status: false,
                     onsubmit: move |_: FormEvent| {
-                        #[expect(clippy::disallowed_methods, reason = "row 458: this page script is ported by row 458")]
+                        #[cfg_attr(dx_repo_lints, expect(clippy::disallowed_methods, reason = "row 458: this page script is ported by row 458"))]
                         let _ = document::eval(&read_form_data_js("outside-form", "outside-result"));
                     },
                     div { class: "dx-form-actions",
@@ -677,7 +681,7 @@ pub fn FormFixture() -> Element {
                     "data-dx-root": "",
                     show_status: false,
                     onsubmit: move |_: FormEvent| {
-                        #[expect(clippy::disallowed_methods, reason = "row 458: this page script is ported by row 458")]
+                        #[cfg_attr(dx_repo_lints, expect(clippy::disallowed_methods, reason = "row 458: this page script is ported by row 458"))]
                         let _ = document::eval(&read_form_data_js("form-required", "required-result"));
                     },
 

@@ -1,3 +1,7 @@
+#![allow(
+    unexpected_cfgs,
+    reason = "dx_repo_lints is set only by the shadcn-dioxus repo's own clippy runs (`--cfg dx_repo_lints`, scripts/run-gates.sh)"
+)]
 use crate::components::button::{Button, ButtonSize, ButtonVariant};
 use dioxus::prelude::*;
 use crate::components::icons::{Check, Copy};
@@ -195,7 +199,7 @@ pub fn CodeBlockCopyButton(
             onclick: move |_| {
                 let text = value.clone();
                 spawn(async move {
-                    #[expect(clippy::disallowed_methods, reason = "row 434: the bridge ports this page script")]
+                    #[cfg_attr(dx_repo_lints, expect(clippy::disallowed_methods, reason = "row 434: the bridge ports this page script"))]
                     let mut clip = document::eval(
                         r#"
                         const text = await dioxus.recv();

@@ -287,7 +287,7 @@ SINK_RX = [
     ("dangerous_inner_html", re.compile(r"\bdangerous_inner_html\b")),
     ("ffi", re.compile(r"\b(?:web_sys|js_sys|wasm_bindgen|gloo_utils|gloo_events|gloo_file|evaluate_script|inline_js|srcdoc)\b|\bextern\s+\"")),
 ]
-EXPECT_RX = re.compile(r"#\s*!?\s*\[\s*expect\s*\(([^\]]*)\)\s*\]", re.S)
+EXPECT_RX = re.compile(r"#\s*!?\s*\[\s*(?:cfg_attr\s*\(\s*dx_repo_lints\s*,\s*)?expect\s*\(([^\]]*)\)\s*\]", re.S)
 # `#[allow(clippy::disallowed_methods)]` (and the sibling lints, inner attributes, `cfg_attr`) silences the sink ban
 ALLOW_LINT_RX = re.compile(r"\ballow\s*\([^\]]*?clippy\s*::\s*disallowed_", re.S)
 INSTALL_RX = re.compile(r"\bJsListeners\s*::\s*install\b")
