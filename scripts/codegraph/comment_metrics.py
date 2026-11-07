@@ -11,7 +11,8 @@
 # A Rust file gets every field. Any other file the comment scanner reads (TS, CSS, shell, ...) gets only `todo` and
 # `hist`: its code lines are not tokenized here, so a ratio over it would be meaningless.
 #   M1-M5  comment ratio, doc share, pub doc coverage, history hits, TODO markers
-#   N1     stale: a backticked identifier in a comment that appears in no code of the repo (a candidate, not an error)
+#   N1     stale: a backticked snake_case or PascalCase identifier in a comment that appears in no code of the repo and
+#          is not cited as another library's name (a candidate, not an error)
 #   N2     jscode / js: code lines and comment lines of the JS or CSS held in Rust strings
 #   N3     words: whitespace-separated words in comment lines
 #   N4     dup: comment lines inside a run of 3+ lines whose normalised text also occurs in another file
@@ -38,6 +39,11 @@ _TICKED = re.compile(r"`([^`\n]{2,60})`")
 _CODEISH = re.compile(r"^[A-Za-z_][\w:<>.()!&*,\[\]]*$")
 _IDENT = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
 _STALE_MIN = 3
+# A comment that cites another library names that library's API ("Base UI's `onValueChange`"); this repo's own names are
+# snake_case or PascalCase, so a lowerCamelCase name, or any name on a line that cites an upstream, is not a candidate.
+_UPSTREAM = re.compile(r"Base UI|Radix|Sonner|shadcn|React|upstream|MUI|Floating UI|Headless|Recharts|Vaul|cmdk|[Ee]mbla|"
+                       r"@[a-z][\w-]*/|\.(?:mjs|tsx|jsx|ts|js)\b|\bwindow\.|\bdocument\.|\bMath\.|\bW3C\b|\bAPG\b|\bMDN\b")
+_CAMEL = re.compile(r"^[a-z][a-z0-9]*[A-Z]")
 _DUP_ALPHA = 45
 
 
@@ -170,7 +176,7 @@ def _rust(text):
                 norm.append((ln, _norm(body)))
                 for t in _TICKED.finditer(body):
                     c = t.group(1).strip()
-                    if _CODEISH.match(c):
+                    if _CODEISH.match(c) and not _UPSTREAM.search(body):
                         cands.append((ln, c))
         elif len(p[3]) > 8:  # JS or CSS held in a Rust string: counted for the gate's history rule, apart from M1
             if cs.embedded_kind(p[3]):
@@ -258,7 +264,7 @@ def _stale(cands, tokens):
     out = []
     for ln, c in cands:
         for ident in _IDENT.findall(c):
-            if len(ident) >= _STALE_MIN and ident not in tokens:
+            if len(ident) >= _STALE_MIN and ident not in tokens and not ident.endswith("_") and not _CAMEL.match(ident):
                 out.append([ln, ident])
                 break
     return out
