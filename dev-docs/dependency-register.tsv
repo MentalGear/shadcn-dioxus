@@ -1,0 +1,43 @@
+# Dependency register (C23, row 371): one row per direct dependency of every workspace crate, detached crate and package.json,
+# plus the cargo-installed tool dx. Read by scripts/check-dependency-register.sh, which fails on a declared dependency with no
+# row, a row with no declaration, a version that differs from the lock (a bump re-opens the row: re-evaluate, then update
+# version and evidence_date together) and an exception whose exception_end is before today.
+# Columns: version is the resolved lock version (comma-separated where the locks differ); outcome is keep, lift, drop or
+# exception (a D6 exception, owner-granted, needs exception_end); reach is the strongest way the code touches the user or
+# the machine (compile-time-code, unsafe, untrusted-input, fs-network, none); scope is who compiles or runs it
+# (user-closure, site, cli, lab, dev, tool); evidence_date is the date the row was last evaluated.
+# Evidence per row: dev-docs/research/dependency-review-2026-11-06.md. Tab-separated.
+name	ecosystem	version	outcome	reach	scope	evidence_date	exception_end	note
+anyhow	cargo	1.0.102	keep	unsafe	cli	2026-11-06		CLI errors
+clap	cargo	4.5.61	keep	untrusted-input	cli	2026-11-06		argv parsing; features trimmed (P7)
+dioxus	cargo	0.7.10,0.7.9	keep	compile-time-code	user-closure	2026-11-06		framework veto; default features off (P1)
+dioxus-code	cargo	0.1.2	exception	compile-time-code	site	2026-11-06	2027-05-05	fails D2 and D3; docs site only; owner 2026-11-07
+dioxus-core	cargo	0.7.10	keep	none	lab	2026-11-06		detached oracle crate only
+dioxus-icons	cargo	0.1.0	lift	compile-time-code	site	2026-11-06		lifted for users (row 371 P2: the icons component); the site keeps the crate for demos; build.rs (lazy-js-bundle); D2 and D3 fail with no exception recorded
+dioxus-rsx	cargo	0.7.9	keep	compile-time-code	user-closure	2026-11-06		framework; proc-macro parsing for dioxus-attributes
+dioxus-ssr	cargo	0.7.10,0.7.9	keep	compile-time-code	site	2026-11-06		docs build.rs rendering and SSR parity tests
+gloo-timers	cargo	0.3.0	keep	none	user-closure	2026-11-06		wasm sleep; replacing it is optional (P8)
+js-sys	cargo	0.3.106	keep	unsafe	lab	2026-11-06		carousel-lab only, never shipped
+palette	cargo	0.7.6	keep	compile-time-code	user-closure	2026-11-06		colour science veto; std only for users
+proc-macro2	cargo	1.0.106	keep	compile-time-code	user-closure	2026-11-06		proc-macro toolchain every Dioxus build has
+pulldown-cmark	cargo	0.13.4	keep	untrusted-input	user-closure	2026-11-06		parser veto; exact pin; re-open on each 0.13.x
+quote	cargo	1.0.45	keep	compile-time-code	user-closure	2026-11-06		proc-macro toolchain every Dioxus build has
+serde	cargo	1.0.228	keep	compile-time-code	user-closure	2026-11-06		derive for the JS bridge messages
+serde_json	cargo	1.0.149,1.0.151	keep	untrusted-input	user-closure	2026-11-06		parses bridge messages from JS
+syn	cargo	2.0.117	keep	compile-time-code	user-closure	2026-11-06		proc-macro toolchain; extra-traits off (P6)
+tempfile	cargo	3.27.0	keep	fs-network	dev	2026-11-06		CLI tests
+time	cargo	0.3.47	keep	unsafe	user-closure	2026-11-06		calendar arithmetic veto; macros is dev and site only
+tokio	cargo	1.52.3	keep	unsafe	user-closure	2026-11-06		time feature only, native targets
+toml_edit	cargo	0.25.5	keep	untrusted-input	cli	2026-11-06		edits the app Cargo.toml and Dioxus.toml; parser veto
+tracing	cargo	0.1.44	keep	none	user-closure	2026-11-06		dioxus brings it
+web-sys	cargo	0.3.106	keep	unsafe	lab	2026-11-06		carousel-lab only, never shipped
+@axe-core/playwright	npm	4.10.2	exception	none	dev	2026-11-06	2027-11-07	MPL-2.0 outside D5 licence class; test-only, never distributed; owner 2026-11-07
+@playwright/test	npm	1.60.0	keep	fs-network	dev	2026-11-06		e2e suite
+axe-playwright	npm	2.1.0	keep	none	dev	2026-11-06		axe route checks
+cytoscape	npm	3.34.3	keep	none	tool	2026-11-06		code-graph explorer page; owner-approved pin
+playwright	npm	1.60.0	keep	fs-network	dev	2026-11-06		browser install and inspect script
+stylelint	npm	16.26.1	keep	none	dev	2026-11-06		CSS gate
+stylelint-config-standard	npm	38.0.0	keep	none	dev	2026-11-06		base ruleset
+stylelint-order	npm	6.0.4	keep	none	dev	2026-11-06		property order rule; peer of the lifted ordering config
+typescript	npm	6.0.3	keep	none	tool	2026-11-06		ts-scan compiler API; 6.x is the last line with createProgram
+dx	tool	0.7.9	keep	fs-network	tool	2026-11-06		framework CLI; prebuilt release binary installed by session-setup.sh
