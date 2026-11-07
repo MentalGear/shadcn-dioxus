@@ -345,13 +345,15 @@ const focusEscaped = (page: Page, selector: string) =>
     return !!a && a !== document.body && a !== document.documentElement && !a.closest(sel);
   }, selector);
 
+// Size and scheme are independent axes (the size decides the box assertions, the scheme only the colours the swatches
+// resolve to), so each size runs in one scheme and each scheme at one size: a full product would repeat every probe.
 const PHONES = [
-  { width: 390, height: 844 },
-  { width: 360, height: 740 },
+  { width: 390, height: 844, schemes: ["light"] as const },
+  { width: 360, height: 740, schemes: ["dark"] as const },
 ];
 
-for (const { width, height } of PHONES) {
-  for (const scheme of ["light", "dark"] as const) {
+for (const { width, height, schemes } of PHONES) {
+  for (const scheme of schemes) {
     test.describe(`phone ${width}x${height} ${scheme}`, () => {
       test.use({ viewport: { width, height }, hasTouch: true, isMobile: true, colorScheme: scheme });
       test.skip(({ browserName }) => browserName === "firefox", "Firefox has no mobile emulation");
@@ -680,63 +682,61 @@ test.describe("base and accent axes", () => {
   const MODES = ["light", "dark"] as const;
   const bases: (string | null)[] = [null, ...baseNames];
 
-  test("no accent: every base shows the library's chart palette", async ({ page }) => {
-    const tokens = CHARTS.map((c) => `--dx-${c}`);
-    const sweeps = MODES.flatMap((mode) => bases.map((base) => ({ mode, base, accent: null })));
+  // One sweep over every mode x base x (no accent | accent) serves the three checks below: the no-accent chart palette, an
+  // accent's chart ramp under each base, and the base's secondary under an accent. Each was a sweep of its own, and
+  // the first two were subsets of the third's states.
+  test("chart palette per base, an accent's chart ramp under every base, and the base's own secondary under an accent", async ({ page }) => {
+    const tokens = [...CHARTS.map((c) => `--dx-${c}`), "--dx-secondary", "--dx-secondary-foreground"];
+    const sweeps = MODES.flatMap((mode) => bases.flatMap((base) => [null, ...accentNames].map((accent) => ({ mode, base, accent }))));
     const got = await resolve(page, sweeps, tokens);
-    const wrong: string[] = [];
+
+    // No accent: every base shows the library's chart palette.
+    const paletteWrong: string[] = [];
     for (const mode of MODES) {
       for (const c of CHARTS) {
         const want = await expectedRgb(page, libraryChart(c)[mode]);
         for (const base of bases) {
           const have = got[`${mode}|${base ?? "none"}|none`][`--dx-${c}`];
-          if (!close(have, want)) wrong.push(`${mode} base=${base ?? "none"} --dx-${c}: ${have} (library ${want})`);
+          if (!close(have, want)) paletteWrong.push(`${mode} base=${base ?? "none"} --dx-${c}: ${have} (library ${want})`);
         }
       }
     }
-    expect(wrong).toEqual([]);
-  });
+    expect.soft(paletteWrong, "no accent: the library's chart palette").toEqual([]);
 
-  test("an accent's chart ramp shows under every base", async ({ page }) => {
-    const tokens = CHARTS.map((c) => `--dx-${c}`);
-    const sweeps = MODES.flatMap((mode) => bases.flatMap((base) => accentNames.map((accent) => ({ mode, base, accent }))));
-    const got = await resolve(page, sweeps, tokens);
-    const wrong: string[] = [];
+    // An accent's chart ramp shows under every base.
+    const rampWrong: string[] = [];
     for (const mode of MODES) {
       for (const accent of accentNames) {
         for (const c of CHARTS) {
           const want = await expectedRgb(page, presetPair("accent", accent, c)[mode]);
           for (const base of bases) {
             const have = got[`${mode}|${base ?? "none"}|${accent}`][`--dx-${c}`];
-            if (!close(have, want)) wrong.push(`${mode} base=${base ?? "none"} accent=${accent} --dx-${c}: ${have} (ramp ${want})`);
+            if (!close(have, want)) rampWrong.push(`${mode} base=${base ?? "none"} accent=${accent} --dx-${c}: ${have} (ramp ${want})`);
           }
         }
       }
     }
-    expect(wrong).toEqual([]);
-  });
+    expect.soft(rampWrong, "an accent's chart ramp").toEqual([]);
 
-  test("an accent leaves the base's secondary alone", async ({ page }) => {
-    const tokens = ["--dx-secondary", "--dx-secondary-foreground"];
-    const sweeps = MODES.flatMap((mode) => bases.flatMap((base) => [null, ...accentNames].map((accent) => ({ mode, base, accent }))));
-    const got = await resolve(page, sweeps, tokens);
+    // An accent leaves the base's secondary alone.
+    const secondary = ["--dx-secondary", "--dx-secondary-foreground"];
     const wrong: string[] = [];
     for (const mode of MODES) {
       for (const base of bases) {
         const rest = got[`${mode}|${base ?? "none"}|none`];
         for (const accent of accentNames) {
-          for (const t of tokens) {
+          for (const t of secondary) {
             const have = got[`${mode}|${base ?? "none"}|${accent}`][t];
             if (have !== rest[t]) wrong.push(`${mode} base=${base ?? "none"} accent=${accent} ${t}: ${have} (base alone ${rest[t]})`);
           }
         }
       }
     }
-    expect(wrong).toEqual([]);
+    expect.soft(wrong, "an accent leaves the base's secondary alone").toEqual([]);
     // A tinted base shows its own tinted secondary under an accent, not a fixed grey.
     const stone = presetPair("base", "stone", "secondary");
-    expect(close(got["light|stone|amber"]["--dx-secondary"], await expectedRgb(page, stone.light))).toBe(true);
-    expect(close(got["dark|stone|amber"]["--dx-secondary"], await expectedRgb(page, stone.dark))).toBe(true);
+    expect.soft(close(got["light|stone|amber"]["--dx-secondary"], await expectedRgb(page, stone.light))).toBe(true);
+    expect.soft(close(got["dark|stone|amber"]["--dx-secondary"], await expectedRgb(page, stone.dark))).toBe(true);
   });
 
   // What shadcn's base data gives each base as its primary with no accent picked, written down here so a change to the
