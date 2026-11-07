@@ -210,6 +210,7 @@ pub fn use_js_listeners(mut setup: impl FnMut() -> Option<JsListeners> + 'static
 /// and `setup(&deps)` installs new ones. `use_js_listeners` alone re-runs only when a signal `setup` read changes,
 /// so a plain value it captured stays at whatever the first run saw; passing the values here makes that
 /// impossible, because `setup` has nothing to capture but `deps`.
+#[cfg(feature = "web")]
 pub(crate) fn use_js_listeners_with<D: Clone + PartialEq + 'static>(
     deps: D,
     mut setup: impl FnMut(&D) -> Option<JsListeners> + 'static,

@@ -202,7 +202,7 @@ pub(super) fn use_placement(
             );
             Some(crate::js_listener::JsListeners::install(&script).arg((
                 id,
-                crate::escape::anchor_selector(&anchor_id),
+                crate::escape::anchor_selector(anchor_id),
                 point,
                 side,
                 align,

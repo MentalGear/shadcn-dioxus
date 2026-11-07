@@ -6,11 +6,13 @@
 //! these, one per context, and `scripts/check-id-interpolation.sh` fails a site that formats an id
 //! by hand:
 //!
-//! - [`css_ident`]: the characters after `--dxa-` in an `anchor-name` / `position-anchor` value;
-//! - [`css_string`]: the inside of a double-quoted CSS string;
-//! - [`anchor_selector`]: the selector that finds the element whose `style` declares an id's anchor,
+//! - `css_ident`: the characters after `--dxa-` in an `anchor-name` / `position-anchor` value;
+//! - `css_string`: the inside of a double-quoted CSS string;
+//! - `anchor_selector`: the selector that finds the element whose `style` declares an id's anchor,
 //!   sent to the page script as data so it never concatenates an id into a selector;
 //! - [`js_string`]: a complete JavaScript string literal.
+//!
+//! The first three exist only where the page scripts do (the `web` feature and tests).
 
 /// `id` as the tail of a CSS identifier (the semantics of `CSS.escape`, for a name that already
 /// starts with `--dxa-`, so no leading-digit rule applies).
