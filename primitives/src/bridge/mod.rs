@@ -1049,15 +1049,17 @@ mod tests {
         let end = start + js[start..].find("\n};").expect("end of PROPS");
         let table = &js[start..end];
         for prop in &props {
+            // A row is written `"name": on(recv, get)` (one member read) or `"name": { .. }` (a longer getter).
+            let row = format!("\n  \"{}\": ", prop.wire());
             assert!(
-                table.contains(&format!("\n  \"{}\": {{", prop.wire())),
+                table.contains(&format!("{row}{{")) || table.contains(&format!("{row}on(")),
                 "{}",
                 prop.wire()
             );
         }
         let rows = table
             .lines()
-            .filter(|l| l.starts_with("  \"") && l.contains("\": {"))
+            .filter(|l| l.starts_with("  \"") && (l.contains("\": {") || l.contains("\": on(")))
             .count();
         assert_eq!(rows, props.len(), "PROPS has a row Rust does not name");
     }
