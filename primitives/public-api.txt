@@ -3349,7 +3349,7 @@ resizable::ResizablePanelProps.index  field usize
 resizable::ResizablePanelProps.max_size  field f64  #[props(default = 100.0)]
 resizable::ResizablePanelProps.min_size  field f64  #[props(default = 10.0)]
 scroll_area  mod
-scroll_area::ScrollArea  fn ScrollArea(props: ScrollAreaProps) -> Element  #[component]
+scroll_area::ScrollArea  fn ScrollArea(props: ScrollAreaProps) -> Element  #[doc = " - `data-scrollbar-hidden`: Present with [`ScrollType::Hidden`]; the component sheet hides the native scrollbar on it."]  #[component]
 scroll_area::ScrollAreaProps  struct ScrollAreaProps  #[derive(Props, Clone, PartialEq)]
 scroll_area::ScrollAreaProps.always_show_scrollbars  field ReadSignal<bool>  #[props(default)]
 scroll_area::ScrollAreaProps.attributes  field Vec<Attribute>  #[props(extends = GlobalAttributes)]
@@ -3580,6 +3580,7 @@ state_attrs::Flag::PopupOpen  variant PopupOpen
 state_attrs::Flag::Pressed  variant Pressed
 state_attrs::Flag::Processing  variant Processing
 state_attrs::Flag::Readonly  variant Readonly
+state_attrs::Flag::ScrollbarHidden  variant ScrollbarHidden
 state_attrs::Flag::Selected  variant Selected
 state_attrs::Flag::Unchecked  variant Unchecked
 state_attrs::Flag::Uploading  variant Uploading

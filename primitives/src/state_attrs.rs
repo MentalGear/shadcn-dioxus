@@ -163,6 +163,8 @@ pub enum Flag {
     Processing,
     /// `data-done`.
     Done,
+    /// `data-scrollbar-hidden`: a scroller whose native scrollbar is not drawn while it still scrolls.
+    ScrollbarHidden,
 }
 
 impl Flag {
@@ -191,6 +193,7 @@ impl Flag {
             Flag::Uploading => "data-uploading",
             Flag::Processing => "data-processing",
             Flag::Done => "data-done",
+            Flag::ScrollbarHidden => "data-scrollbar-hidden",
         }
     }
 }
