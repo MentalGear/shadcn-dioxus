@@ -6,7 +6,7 @@ import { gotoHydrated } from "./hydration";
 
 test("test", async ({ page }) => {
   await gotoHydrated(page, `${BASE_URL}/component/tabs/`);
-  let activeTab = page.locator('[role="tabpanel"][data-active]:not(#component-preview-frame)')
+  let activeTab = page.locator('[role="tabpanel"]:not([data-hidden]):not(#component-preview-frame)')
     .filter({ hasText: /^Tab \d Content$/ });
   let tab1Button = page.getByRole("tab", { name: "Tab 1" });
   let tab2Button = page.getByRole("tab", { name: "Tab 2" });
@@ -89,7 +89,7 @@ test.describe("Axe automated scan", () => {
     // resolves to two elements (a Playwright strict-mode violation).
     await expect(
       page
-        .locator('[role="tabpanel"][data-active]:not(#component-preview-frame)')
+        .locator('[role="tabpanel"]:not([data-hidden]):not(#component-preview-frame)')
         .filter({ hasText: /^Tab \d Content$/ }),
     ).toContainText("Tab 2 Content");
     await expectNoAxeViolations(page, "tabs: tab 2 selected", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
@@ -425,7 +425,7 @@ test.describe("the docs demo frame keeps its own chrome", () => {
 
   test("a default Tabs panel is framed by the zero-specificity default", async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/tabs/`);
-    const panel = page.locator('.dx-tabs[data-variant="default"] .dx-tabs-content-themed[data-active]').first();
+    const panel = page.locator('.dx-tabs[data-variant="default"] .dx-tabs-content-themed:not([data-hidden])').first();
     await expect(panel).toBeVisible();
     await expect(panel).toHaveCSS("border-top-width", "1px");
     expect(await panel.evaluate((el) => getComputedStyle(el).backgroundColor)).not.toBe("rgba(0, 0, 0, 0)");

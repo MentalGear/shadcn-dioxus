@@ -241,9 +241,8 @@ test.describe("Click-to-caret positioning: a click on a slot places the caret at
       await expect(input, `clicking empty slot ${idx}`).toHaveJSProperty("selectionStart", 0);
       await expect(page.locator(`#otp-main + div [data-slot-index="0"]`)).toHaveAttribute("data-active", "");
       if (idx !== 0) {
-        await expect(page.locator(`#otp-main + div [data-slot-index="${idx}"]`)).toHaveAttribute(
+        await expect(page.locator(`#otp-main + div [data-slot-index="${idx}"]`)).not.toHaveAttribute(
           "data-active",
-          "false",
         );
       }
     }

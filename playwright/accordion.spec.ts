@@ -10,7 +10,7 @@ const LOAD_TIMEOUT = 20 * 60 * 1000;
 
 async function loadAccordion(page: Page) {
   await gotoHydrated(page, URL, { timeout: LOAD_TIMEOUT, waitUntil: 'networkidle' });
-  const accordionItems = page.locator("[data-open], [data-closed]").filter({ has: page.getByRole("button") });
+  const accordionItems = page.locator(".dx-accordion-item").filter({ has: page.getByRole("button") });
   await expect(accordionItems.first()).not.toHaveAttribute("data-disabled", {
     timeout: 30000,
   });

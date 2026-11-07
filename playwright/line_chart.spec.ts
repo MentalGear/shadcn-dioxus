@@ -172,7 +172,7 @@ test.describe("Line chart", () => {
       await scope.getByRole("button", { name: /Mobile/ }).click();
       await expect(scope.getByRole("button", { name: /Mobile/ })).toHaveAttribute(
         "data-active",
-        "true",
+        "",
       );
       await expectNoAxeViolations(page, "line_chart: interactive (Mobile selected)", {
         include: [`#${FRAME_IDS.interactive}`],

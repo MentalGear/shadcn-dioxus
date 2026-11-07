@@ -145,7 +145,11 @@ async function hoverAndCheckIntentDelay(page: Page, subTrigger: Locator): Promis
   // `scrollIntoView({ block: 'start' })`, which scrolls the page under it.
   await awaitAnimationsSettled(subTrigger);
   await pauseAppClock(page);
-  await subTrigger.hover();
+  // A raw pointer move: the `hover()` wrapper of fixtures.ts waits for the panel's animations, which a paused page
+  // clock never finishes. The panel is already settled above.
+  const box = await subTrigger.boundingBox();
+  if (!box) throw new Error("sub-trigger has no bounding box");
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
   await page.clock.runFor(99);
   await expect(subTrigger, "no instant flash: closed just before the intent delay").toHaveAttribute("aria-expanded", "false");
   await page.clock.runFor(60);

@@ -681,7 +681,7 @@ test.describe("APG Combobox pattern (editable) — Combobox", () => {
     await expect(i, "APG's combobox technique: DOM focus never leaves the input").toBeFocused();
     await expect(listbox(page).getByRole("option").first()).toHaveAttribute(
       "data-highlighted",
-      "true",
+      "",
     );
   });
 
@@ -756,7 +756,7 @@ test.describe("APG Accordion pattern — Accordion", () => {
   // file's "do not rely on memory" rule, only the pinned commit's own text
   // counts.)
   const items = (page: Page) =>
-    page.locator("[data-open], [data-closed]").filter({ has: page.getByRole("button") });
+    page.locator(".dx-accordion-item").filter({ has: page.getByRole("button") });
 
   test("AccordionTrigger — Enter: \"expands the associated panel\" / collapses an expanded one", async ({ page }) => {
     await goto(page, "accordion");
@@ -865,7 +865,7 @@ test.describe("APG Alert Dialog pattern — AlertDialog", () => {
 // ============================================================================
 test.describe("APG Tabs pattern — Tabs", () => {
   const activeTabPanel = (page: Page) =>
-    demoFrame(page).locator('[role="tabpanel"][data-active]');
+    demoFrame(page).locator('[role="tabpanel"]:not([data-hidden])');
 
   test("TabTrigger — Right Arrow: \"Moves focus to the next tab\" WITHOUT activating it (this component implements manual activation)", async ({ page }) => {
     await goto(page, "tabs");
