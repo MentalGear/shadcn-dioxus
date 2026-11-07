@@ -40,7 +40,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (84)
+## Open rows (85)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -128,5 +128,6 @@ proposing one is closed as out of scope (row 337 is the first).
 | [500](backlog/500-axe-split-structure-signature-falls-back.md) | The all-routes axe split falls back to a full dark scan on 88 of 94 routes | BACKLOG. Found by the batch verifier, 2026-11-07. | S-M | playwright |
 | [501](backlog/501-select-escape-race-flake.md) | select-escape-race.spec.ts:32 is flaky under load (also on the deployed base) | BACKLOG. Found by the batch verifier, 2026-11-07. | S | playwright |
 | [502](backlog/502-installed-components-carry-repo-lint-expects.md) | Installed components carry #[expect(clippy::disallowed_methods)] that a user's project cannot fulfil | BACKLOG, found 2026-11-07. Check first: run cargo clippy in the registry-install-smoke app and… | S | tooling |
+| [503](backlog/503-server-rendered-textarea-shows-no-value.md) | A server-rendered Textarea shows no value: the JS-off page and the hydrated first frame hold an empty field | BACKLOG. Found by the first-paint fix lane (row 468's section "First paint of a controlled… | S | textarea |
 
 <!-- END GENERATED -->

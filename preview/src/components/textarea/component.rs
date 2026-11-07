@@ -77,19 +77,6 @@ pub fn Textarea(
     // A form reset or a restored field changes the DOM value without an `input` event; the handlers hear it
     // as an edit, so an owner that mirrors the field into a signal follows (`primitives/src/form_reset.rs`).
     let id = use_form_value_report(&attributes, oninput, onchange, Some(""));
-    // A `<textarea>` has no `value` attribute: its server-rendered value is its text content. Without it the
-    // static page draws an empty field, and the DOM value the mount report reads ("") overwrites the owner's.
-    // Raw, because a text child would carry the renderer's hydration comments, which a textarea shows as text.
-    // Fixed at the first render: the content is the field's default, which a form reset restores, so later
-    // values of the owner's signal must not move it.
-    let initial = use_hook(|| {
-        attributes.iter().find_map(|attribute| match (attribute.name, &attribute.value) {
-            ("value", dioxus::dioxus_core::AttributeValue::Text(text)) => {
-                Some(text.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;"))
-            }
-            _ => None,
-        })
-    });
     let merged = merge_attributes(vec![base, attributes, owned, id]);
 
     rsx! {
@@ -114,7 +101,6 @@ pub fn Textarea(
             oncut: move |e| _ = oncut.map(|callback| callback(e)),
             onpaste: move |e| _ = onpaste.map(|callback| callback(e)),
             onmounted: move |e| _ = onmounted.map(|callback| callback(e)),
-            dangerous_inner_html: initial.clone(),
             ..merged,
         }
     }

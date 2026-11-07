@@ -266,6 +266,7 @@ bridge::Prop::ClientHeight  variant ClientHeight
 bridge::Prop::ClientLeft  variant ClientLeft
 bridge::Prop::ClientTop  variant ClientTop
 bridge::Prop::ClientWidth  variant ClientWidth
+bridge::Prop::DefaultValue  variant DefaultValue
 bridge::Prop::DevicePixelRatio  variant DevicePixelRatio
 bridge::Prop::InnerHeight  variant InnerHeight
 bridge::Prop::InnerWidth  variant InnerWidth
