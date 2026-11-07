@@ -53,7 +53,7 @@ BreadcrumbItem {
 
 `BreadcrumbLink { r#as }` renders the crumb as the element the callback returns (shadcn's `render` prop). The callback gets the crumb's attributes and children as an `AsChild`; pass the attributes to your router's link and the children inside it, so a click navigates in-app:
 
-```rust
+```rust ignore
 BreadcrumbItem {
     BreadcrumbLink {
         r#as: |el: AsChild| rsx! {

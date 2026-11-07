@@ -26,7 +26,7 @@ Both layouts read one table look from the theme's `--dx-table-*` tokens (text si
 
 ## Component Structure
 
-```rust
+```rust ignore
 let columns = vec![
     Column::new("email", "Email", |p: &Payment| rsx! { "{p.email}" })
         .sortable(|p| p.email)
