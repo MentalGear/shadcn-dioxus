@@ -261,6 +261,10 @@ pub(crate) fn measured_px(size: f64) -> u32 {
 
 /// Moves a container's scroll position by id.
 fn set_scroll_top(container_id: String, top: u32) {
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "row 457: this page script is ported by row 457"
+    )]
     let eval = document::eval(
         r#"
         const [id, top] = await dioxus.recv();
@@ -274,6 +278,10 @@ fn set_scroll_top(container_id: String, top: u32) {
 /// Moves a container's scroll position on either axis by id. `left` is the distance from the
 /// inline start, so it is negated in RTL.
 fn set_scroll(container_id: String, top: Option<u32>, left: Option<u32>) {
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "row 457: this page script is ported by row 457"
+    )]
     let eval = document::eval(
         r#"
         const [id, top, left] = await dioxus.recv();

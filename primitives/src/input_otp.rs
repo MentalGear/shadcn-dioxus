@@ -628,6 +628,10 @@ async fn snap_caret_to_slot(
     client_x: f64,
     client_y: f64,
 ) -> Option<usize> {
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "row 458: this page script is ported by row 458"
+    )]
     let mut eval = document::eval(
         r#"
         const id = await dioxus.recv();

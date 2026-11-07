@@ -90,6 +90,10 @@ pub(super) fn use_scroll_memory(
         let view = view();
         let _ = shown();
         let offset = memory.offset(&view);
+        #[expect(
+            clippy::disallowed_methods,
+            reason = "row 434: the bridge ports this page script"
+        )]
         let mut eval = document::eval(
             r#"
             const selector = await dioxus.recv();

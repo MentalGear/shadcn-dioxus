@@ -122,6 +122,10 @@ pub(crate) fn use_find_in_page(
 /// Scrolls the real item `selector` names into the middle of the container `container_id`, once
 /// it is mounted (see `SETTLE_MATCH_JS`).
 fn settle_match(container_id: String, selector: String) {
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "row 457: this page script is ported by row 457"
+    )]
     let eval = document::eval(SETTLE_MATCH_JS);
     let _ = eval.send((container_id, selector));
 }

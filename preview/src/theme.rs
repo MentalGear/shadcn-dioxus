@@ -143,7 +143,11 @@ const DEFAULT_RADIUS: &str = "0.625";
 pub const PREPAINT_JS: &str = "(function(){var K=['theme','theme-base','theme-accent','theme-radius','dx-press-feedback','dx-coarse','dx-contrast','dx-interactive-element-cursor'],R=document.documentElement,Q=window.matchMedia&&matchMedia('(prefers-color-scheme: dark)');function M(m){if(m)R.setAttribute('data-theme',m);else R.removeAttribute('data-theme');R.classList.toggle('dark',m?m==='dark':!!(Q&&Q.matches))}function A(k,v){if(K.indexOf(k)<0)return;var ok=!!v&&/^[a-z0-9.]{1,16}$/.test(v)&&(k!=='theme'||v==='dark'||v==='light')&&(k!=='dx-press-feedback'||v==='off')&&(k!=='dx-coarse'||v==='on'||v==='off')&&(k!=='dx-contrast'||v==='wcag'||v==='shadcn')&&(k!=='dx-interactive-element-cursor'||v==='pointer'||v==='default');if(k==='theme')M(ok?v:null);else if(ok)R.setAttribute('data-'+k,v);else R.removeAttribute('data-'+k)}window.__dxApplyMode=M;window.__dxTheme=A;if(Q&&!window.__dxModeWatch){window.__dxModeWatch=1;try{/*listener-ok: lives as long as the page*/Q.addEventListener('change',function(){if(!R.hasAttribute('data-theme'))M(null)})}catch(e){}}try{var C=document.cookie.split(';');K.forEach(function(k){var n='dx_'+k.replace('-','_')+'=',v=null;C.forEach(function(c){c=c.trim();if(c.indexOf(n)===0)v=decodeURIComponent(c.slice(n.length))});A(k,v)})}catch(e){}})();(function(){var W=window,D=document,R=D.documentElement,N='data-dx-modality',A='data-dx-pointer-focus';if(W.__dxModality)return;W.__dxModality=1;function G(){return R.getAttribute(N)}function M(e){if(e&&e!==R&&e!==D.body)e.toggleAttribute(A,G()!=='keyboard')}function S(m){if(G()!==m){R.setAttribute(N,m);M(D.activeElement)}}var Q=W.matchMedia&&W.matchMedia('(any-pointer: coarse) and (hover: none)');if(!G())S(Q&&Q.matches?'touch':'mouse');var K=/^(Shift|Control|Alt|AltGraph|Meta|CapsLock|Fn(Lock)?|Hyper|Super|OS)$/;function P(t){return t==='touch'||t==='pen'?t:'mouse'}function L(t,f){/*listener-ok: page-lifetime writer*/W.addEventListener(t,f,true)}try{L('pointerdown',function(e){S(P(e.pointerType))});L('keydown',function(e){if(!K.test(e.key))S('keyboard')});L('click',function(e){if(e.detail===0){S('keyboard')}else if(G()==='keyboard')S(P(e.pointerType||(Q&&Q.matches?'touch':'mouse')))});L('focusin',function(e){M(e.target)});L('focusout',function(e){e.target.removeAttribute(A)})}catch(x){}})()";
 
 pub fn theme_seed() {
-    _ = document::eval(&format!(
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "row 434: the bridge ports this page script"
+    )]
+    let _ = document::eval(&format!(
         r#"
         (function () {{
           if (window.__dx_theme_seeded) return;
@@ -177,7 +181,11 @@ pub fn set_pref(pref: Pref, value: Option<&str>) {
         _ => "null".to_string(),
     };
 
-    _ = document::eval(&format!(
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "row 434: the bridge ports this page script"
+    )]
+    let _ = document::eval(&format!(
         r#"
         (function () {{
           const key = '{key}';
@@ -296,6 +304,10 @@ impl ThemeState {
             self.cursor,
         );
         spawn(async move {
+            #[expect(
+                clippy::disallowed_methods,
+                reason = "row 434: the bridge ports this page script"
+            )]
             let mut eval = document::eval(
                 r#"const r = document.documentElement;
                 dioxus.send([r.getAttribute('data-theme-base') || '', r.getAttribute('data-theme-accent') || '', r.getAttribute('data-theme-radius') || '', r.getAttribute('data-dx-press-feedback') || '', r.getAttribute('data-dx-coarse') || '', r.getAttribute('data-dx-contrast') || '', r.getAttribute('data-dx-interactive-element-cursor') || ''].join('|'));"#,

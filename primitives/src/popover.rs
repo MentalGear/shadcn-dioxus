@@ -516,6 +516,10 @@ fn PopoverModalContent(
 
     let id_for_trap = id.clone();
     use_effect(move || {
+        #[expect(
+            clippy::disallowed_methods,
+            reason = "row 452: this page script is ported by row 452"
+        )]
         let eval = document::eval(
             r#"let id = await dioxus.recv();
             let is_open = await dioxus.recv();

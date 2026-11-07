@@ -200,6 +200,7 @@ fn use_ctx() -> Ctx {
 
 /// Asks the browser for the ids of the form's controls that fail constraint validation.
 async fn invalid_control_ids(form_id: String) -> HashSet<String> {
+    #[expect(clippy::disallowed_methods, reason = "row 458: this page script is ported by row 458")]
     let mut eval = document::eval(
         "const id = await dioxus.recv();
         const form = document.getElementById(id);
@@ -480,6 +481,10 @@ pub fn Questionnaire(props: QuestionnaireProps) -> Element {
         if ops.is_empty() {
             return;
         }
+        #[expect(
+            clippy::disallowed_methods,
+            reason = "row 458: this page script is ported by row 458"
+        )]
         let eval = document::eval(
             "const ops = await dioxus.recv();
             for (const [kind, id] of ops) {

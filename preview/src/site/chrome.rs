@@ -64,6 +64,10 @@ pub(crate) fn NavigationLayout() -> Element {
             return;
         }
 
+        #[expect(
+            clippy::disallowed_methods,
+            reason = "row 434: the bridge ports this page script"
+        )]
         let eval = document::eval(
             "let route = await dioxus.recv();
             window.top.postMessage({ 'route': route }, '*');",

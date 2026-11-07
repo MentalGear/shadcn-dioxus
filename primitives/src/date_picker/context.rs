@@ -45,6 +45,10 @@ pub const DEFAULT_CLOSE_DELAY: Duration = Duration::from_millis(300);
 /// be found from wherever focus is without this crate knowing its element. A no-op when focus is
 /// not inside a popover, so it never steals focus from somewhere the user moved it to.
 pub(super) fn return_focus_to_trigger() {
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "row 434: the bridge ports this page script"
+    )]
     let _ = dioxus::document::eval(
         r#"const open = document.activeElement && document.activeElement.closest('[popover][aria-labelledby], dialog[aria-labelledby]');
         const trigger = open && document.getElementById(open.getAttribute('aria-labelledby'));

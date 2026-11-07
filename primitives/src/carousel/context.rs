@@ -178,6 +178,10 @@ pub(super) fn use_nav_focus_hand_off(
         if target.is_empty() {
             return;
         }
+        #[expect(
+            clippy::disallowed_methods,
+            reason = "row 464: this page script is ported by row 464"
+        )]
         document::eval(&format!(
             "var root = document.getElementById('{target}'); \
              if (root) {{ root.focus({{ preventScroll: true }}); }}"
