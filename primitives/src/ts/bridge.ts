@@ -1050,7 +1050,7 @@ if (!W.__dxBridge) {
     behaviours,
     register,
   };
-  W.__dxBridge = bridge;
+  Object.defineProperty(W, "__dxBridge", { value: Object.freeze(bridge), writable: false, configurable: false, enumerable: true });
 }
 
 export {};

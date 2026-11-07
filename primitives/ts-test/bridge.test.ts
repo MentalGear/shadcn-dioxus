@@ -578,6 +578,16 @@ describe("the bridge's exports", () => {
     expect(bridge.rules).toBeUndefined();
     expect(bridge.version).toBe(3);
   });
+
+  test("window.__dxBridge is frozen and cannot be replaced, deleted or extended", () => {
+    const { win, bridge } = setup();
+    const d = Object.getOwnPropertyDescriptor(win, "__dxBridge");
+    expect([d?.writable, d?.configurable, Object.isFrozen(bridge)]).toEqual([false, false, true]);
+    expect(() => { win.__dxBridge = {}; }).toThrow();
+    expect(() => { delete win.__dxBridge; }).toThrow();
+    expect(() => { bridge.eval = () => 1; }).toThrow();
+    expect(() => { bridge.call = () => 1; }).toThrow();
+  });
 });
 
 describe("pump (the ordered fire-and-forget channel)", () => {

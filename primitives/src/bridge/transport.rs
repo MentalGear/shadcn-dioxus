@@ -129,7 +129,17 @@ pub(in crate::bridge) enum Program<'a> {
     /// The body of a `js_listener` script, quarantined in [`legacy`](super::legacy) and gone with that
     /// module.
     Legacy(&'a str),
+    /// A frozen module: a fixed script chosen by id from the closed [`FrozenModule`] list, never by text.
+    #[expect(dead_code, reason = "row 434 3.FZ")]
+    Frozen {
+        /// Which frozen module runs.
+        module: FrozenModule,
+    },
 }
+
+/// The ids of the frozen modules a [`Program::Frozen`] may run: a closed list, empty until a lane adds
+/// the first module together with its script.
+pub(in crate::bridge) enum FrozenModule {}
 
 impl Program<'_> {
     fn script(&self) -> String {
@@ -139,6 +149,7 @@ impl Program<'_> {
             Program::Legacy(body) => {
                 format!("{READY}await (async (dioxus) => {{\n{body}\n}})(__dxB.channel(dioxus));")
             }
+            Program::Frozen { module } => match *module {},
         }
     }
 }
@@ -161,6 +172,7 @@ fn ensure_installed() {
         return;
     }
     provide_root_context(Installed);
+    #[expect(clippy::disallowed_methods, reason = "row 434: the one eval sink")]
     let _ = document::eval(BRIDGE_JS);
 }
 
@@ -178,12 +190,14 @@ pub(in crate::bridge) fn ensure_module(kind: &'static str, js: &'static str) {
         loaded
     });
     if loaded.0.borrow_mut().insert(kind) {
+        #[expect(clippy::disallowed_methods, reason = "row 434: the one eval sink")]
         let _ = document::eval(&format!("{READY}{js}"));
     }
 }
 
 /// Starts `program` in the page after the ready handshake. The returned [`Eval`] is its channel: send it
 /// parameters, receive what it `dioxus.send`s. Only meaningful inside the Dioxus runtime.
+#[expect(clippy::disallowed_methods, reason = "row 434: the one eval sink")]
 pub(in crate::bridge) fn open(program: Program<'_>) -> Eval {
     ensure_installed();
     document::eval(&program.script())
