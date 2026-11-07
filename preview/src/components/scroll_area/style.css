@@ -25,3 +25,14 @@
     scrollbar-color: var(--dx-foreground) transparent;
   }
 }
+
+/* `ScrollType::Hidden` puts the presence attribute `data-scrollbar-hidden` on the scroller (primitives/src/scroll_area.rs);
+ * the sheet gives it meaning: no bar, the box still scrolls. `scrollbar-width` is a CSS property, so it cannot be
+ * emitted as an attribute. `::-webkit-scrollbar` covers engines without the standard property. */
+[data-scroll-direction][data-scrollbar-hidden] {
+  scrollbar-width: none;
+}
+
+[data-scroll-direction][data-scrollbar-hidden]::-webkit-scrollbar {
+  display: none;
+}

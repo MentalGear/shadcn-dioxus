@@ -66,6 +66,7 @@ presence selector `[data-x]`. The helpers emit an empty value or nothing. ARIA (
 | `data-complete` / `data-progressing` | `progress` | Progress |
 | `data-loading`, `data-loaded`, `data-error`, `data-empty` | `presence(Flag::Loading \| Loaded \| Error \| Empty, true)` | Avatar (no Base UI 1.9.0 counterpart in this checkout to verify against) |
 | `data-idle`, `data-uploading`, `data-processing`, `data-done` | `presence(Flag::Idle \| Uploading \| Processing \| Done, true)` | Attachment (`data-error` shared with Avatar) |
+| `data-scrollbar-hidden` | `presence(Flag::ScrollbarHidden, ..)` | ScrollArea with `ScrollType::Hidden` (no Base UI counterpart) |
 
 ## From `data-state` to the presence form
 
