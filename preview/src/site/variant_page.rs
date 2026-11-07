@@ -32,6 +32,14 @@ pub(crate) fn variant_title(name: &str) -> String {
     }
 }
 
+/// The title a component page shows over one demo: its `title.txt` when it has one, else the title
+/// derived from its directory name ([`variant_title`]).
+pub(crate) fn demo_title(component: &str, name: &str) -> String {
+    variant_title_override(component, name)
+        .map(str::to_string)
+        .unwrap_or_else(|| variant_title(name))
+}
+
 #[component]
 pub(crate) fn ComponentVariantHighlight(
     variant: ComponentVariantDemoData,
@@ -72,7 +80,7 @@ pub(crate) fn ComponentVariantHighlight(
     };
     rsx! {
         if !main_variant {
-            h3 { class: "dx-component-variant-title", "{variant_title(name)}" }
+            h3 { class: "dx-component-variant-title", "{demo_title(owner, name)}" }
         }
         Tabs {
             default_value: "Demo",
@@ -210,7 +218,7 @@ pub(crate) fn BlockComponentVariantHighlight(
 
     rsx! {
         if !main_variant {
-            h3 { class: "dx-component-variant-title", "{variant_title(name)}" }
+            h3 { class: "dx-component-variant-title", "{demo_title(component_name, name)}" }
         }
         Tabs {
             default_value: "Preview",
@@ -251,7 +259,7 @@ pub(crate) fn BlockComponentVariantHighlight(
                     overflow_x: "auto",
                     iframe {
                         // axe `frame-title`: every block demo is built here, so one title names them all.
-                        title: "{component_name} {variant_title(name)} demo",
+                        title: "{component_name} {demo_title(component_name, name)} demo",
                         src: "{iframe_src}",
                         width: "100%",
                         // Block demos embed here at whatever width this
