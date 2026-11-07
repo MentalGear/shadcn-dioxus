@@ -114,6 +114,6 @@ proposing one is closed as out of scope (row 337 is the first).
 | [499](backlog/499-safe-triangle-for-hover-menus.md) | A safe triangle for the hover menus, so they can take Base UI's short close delays | BACKLOG. Split out of row 478 item 4, whose open delays now follow Base UI. Land before row 456… | M | overlays |
 | [503](backlog/503-lane-ssg-builds-in-place-on-one-slot.md) | lane-ssg builds in the warm template under the lock instead of copying it | DONE 2026-11-07 (lane lanessg-503). lane-ssg.sh slot 0 builds in $LANE_TGT/template under… | S-M | tooling |
 | [504](backlog/504-server-rendered-textarea-shows-no-value.md) | A server-rendered Textarea shows no value: the JS-off page and the hydrated first frame hold an empty field | BACKLOG. Found by the first-paint fix lane (row 468's section "First paint of a controlled… | S | textarea |
-| [505](backlog/505-js-lit-counts-lines-not-bytes.md) | check-js-volume counts JavaScript held in Rust strings by lines, so a reformat hides growth | BACKLOG. Found 2026-11-07 merging row 436's overlay lane: the IME Escape condition (e.isComposing… | S | tooling |
+| [505](backlog/505-js-lit-counts-lines-not-bytes.md) | The JS volume ratchets measure text, so a reformat or a shorter name passes for less JavaScript | BACKLOG. Found 2026-11-07 merging row 436's overlay lane: the IME Escape condition (e.isComposing… | S | tooling |
 
 <!-- END GENERATED -->
