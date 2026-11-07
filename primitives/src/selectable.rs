@@ -71,7 +71,7 @@ impl ListboxFocus {
 pub(crate) struct SelectableContext {
     pub(crate) open: Memo<bool>,
     pub(crate) set_open: Callback<bool>,
-    /// How many times `set_open` has been called: a pending, deferred open (`dismiss::OpenGap`)
+    /// How many times `set_open` has changed the open state: a pending, deferred open (`dismiss::OpenGap`)
     /// is void once this has moved.
     pub(crate) open_writes: ReadSignal<u64>,
     pub(crate) values: Memo<Vec<RcPartialEqValue>>,
@@ -305,7 +305,11 @@ pub(crate) fn use_selectable_root(
     let (open, set_controlled) = use_controlled(open.value, open.default.cloned(), open.on_change);
     let mut open_writes = use_signal(|| 0u64);
     let set_open = use_callback(move |value: bool| {
-        *open_writes.write() += 1;
+        // Only a write that changes the state counts: the popover's close echo, which can land
+        // after a new press, repeats a `false` that is already there.
+        if *open.peek() != value {
+            *open_writes.write() += 1;
+        }
         set_controlled.call(value);
     });
     let options: Signal<Vec<OptionState>> = use_signal(Vec::default);

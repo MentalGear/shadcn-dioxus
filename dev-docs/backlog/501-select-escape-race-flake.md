@@ -26,8 +26,9 @@ reopened the list (`aria-expanded` true, focus on the listbox), which stayed ope
 listeners and a MutationObserver on a failing run: `keydown:ArrowDown`, focusin option, `keydown:Escape`, focusin
 trigger, `aria-expanded=false`, focusin listbox, `aria-expanded=true`. Under 4 workers on the debug SSG build the spec
 failed 17 of 20 runs on the base (`--repeat-each=20`). Fix: a deferred open is void once anything else has written the
-open state since the press (`SelectableContext::open_writes`, bumped by every `set_open` call, read by
-`OpenGap::current`), so a late timer cannot repeat or undo what a key, a selection or a dismissal did; `pending()` is
+open state since the press (`SelectableContext::open_writes`, bumped by every `set_open` call that changes the state, read by
+`OpenGap::current`; a call that repeats the current value does not count, because the popover's late close echo
+would void the next press's open), so a late timer cannot repeat or undo what a key, a selection or a dismissal did; `pending()` is
 false for a voided wait, so the trigger's Escape arm no longer swallows a key for it. Subsumes every close source
 (dismiss layer, option blur, list blur, selection, popover close echo). After: 200 of 200 passed at
 `--repeat-each=50 --workers=4` (all four tests of the spec).
