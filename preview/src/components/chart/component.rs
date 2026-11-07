@@ -89,7 +89,7 @@ pub fn ChartContainer(props: ChartContainerProps) -> Element {
 /// props type), so every field forwards with no mapping needed. This is a
 /// fix by construction: a hand-listed forward silently drops any field
 /// the list doesn't (yet) name, with no compile error (a demo setting
-/// `x_label`/`max_x_ticks` would be silently ignored). `ChartTooltip`/
+/// `x_label`/`min_tick_gap` would be silently ignored). `ChartTooltip`/
 /// `ChartLegend`/`ChartContainer` use the identical shape.
 #[component]
 pub fn Chart(props: ChartProps) -> Element {

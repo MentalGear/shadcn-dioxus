@@ -94,7 +94,7 @@ fn monotone_tangents(points: &[(f64, f64)]) -> Vec<f64> {
     if n == 2 {
         // Two points define a straight line: both tangents equal to the
         // one secant, which the Bezier control-point construction in
-        // `monotone_path` reproduces exactly as that same line (there is
+        // `Path::build`'s `Curve::Monotone` arm reproduces exactly as that same line (there is
         // no interior point to apply the three-point `slope3` formula to).
         // d3-shape special-cases this to a plain `lineTo` rather than a
         // Bezier -- a differently-serialized but geometrically identical
