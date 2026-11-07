@@ -180,31 +180,31 @@ pub(super) fn use_placement(
     align: crate::ContentAlign,
     gap_px: u32,
 ) {
-    crate::js_listener::use_js_listeners(move || {
-        if !open.cloned() {
-            return None;
-        }
-        let (anchor_id, point) = match &anchor {
-            Anchor::Element(anchor_id) => (anchor_id.clone(), None),
-            Anchor::Point(x, y) => (String::new(), Some((*x, *y))),
-        };
-        // The stylesheet insertion rides in the same script, so the first `getBoundingClientRect()`
-        // already sees the `anchor()` rules (`anchor_positioning_inject_js`).
-        let script = format!(
-            "{}{}{}",
-            anchor_positioning_inject_js(),
-            PLACEMENT_HELPERS_JS,
-            PLACE_JS
-        );
-        Some(crate::js_listener::JsListeners::install(&script).arg((
-            id.clone(),
-            anchor_id,
-            point,
-            side.as_str(),
-            align.as_str(),
-            gap_px,
-        )))
-    });
+    let (anchor_id, point) = match &anchor {
+        Anchor::Element(anchor_id) => (anchor_id.clone(), None),
+        Anchor::Point(x, y) => (String::new(), Some((*x, *y))),
+    };
+    // The placement inputs are plain values that change with a render (a context menu re-pointed while open, a
+    // submenu whose side flips with the direction), so they are the hook's `deps`, not captures.
+    crate::js_listener::use_js_listeners_with(
+        (id, anchor_id, point, side.as_str(), align.as_str(), gap_px),
+        move |(id, anchor_id, point, side, align, gap_px)| {
+            if !open.cloned() {
+                return None;
+            }
+            // The stylesheet insertion rides in the same script, so the first `getBoundingClientRect()`
+            // already sees the `anchor()` rules (`anchor_positioning_inject_js`).
+            let script = format!(
+                "{}{}{}",
+                anchor_positioning_inject_js(),
+                PLACEMENT_HELPERS_JS,
+                PLACE_JS
+            );
+            Some(crate::js_listener::JsListeners::install(&script).arg((
+                id, anchor_id, point, side, align, gap_px,
+            )))
+        },
+    );
 }
 
 /// Places an anchored overlay next to its trigger (`anchor_id` is the id
