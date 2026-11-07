@@ -7,7 +7,7 @@
 //! component that needs a glyph imports it from here (`crate::components::icons::Check`); no icon
 //! crate is installed with it.
 //!
-//! The paths are Lucide's (https://lucide.dev), distributed under the ISC licence:
+//! The paths are Lucide's (<https://lucide.dev>), distributed under the ISC licence:
 //!
 //! ```text
 //! ISC License
@@ -54,6 +54,8 @@
 //! SOFTWARE.
 //! ```
 use dioxus::prelude::*;
+use dioxus_primitives::dioxus_attributes::attributes;
+use dioxus_primitives::merge_attributes;
 
 /// The props every glyph takes.
 #[derive(Clone, PartialEq, Props)]
@@ -78,18 +80,21 @@ fn Svg(
     children: Element,
 ) -> Element {
     let stroke = if attributes.iter().any(|a| a.name == "stroke") { None } else { Some("currentColor") };
+    let defaults = attributes!(svg {
+        xmlns: "http://www.w3.org/2000/svg",
+        view_box: "0 0 24 24",
+        fill: "none",
+        stroke_width: "2",
+        stroke_linecap: "round",
+        stroke_linejoin: "round",
+    });
+    let merged = merge_attributes(vec![defaults, attributes]);
     rsx! {
         svg {
-            xmlns: "http://www.w3.org/2000/svg",
             width: "{size}",
             height: "{size}",
-            view_box: "0 0 24 24",
-            fill: "none",
             stroke,
-            stroke_width: "2",
-            stroke_linecap: "round",
-            stroke_linejoin: "round",
-            ..attributes,
+            ..merged,
             {children}
         }
     }
