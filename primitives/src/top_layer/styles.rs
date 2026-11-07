@@ -334,8 +334,7 @@ pub(crate) fn ensure_top_layer_ink_styles() {
 /// [`use_popover_shown_while_mounted`]/`lib.rs`'s `use_dialog_open_driver`
 /// each *also* prepend verbatim onto the front of their own "signal ->
 /// browser" show script -- same two-guard shape as
-/// `anchor_positioning_inject_js` above and `toast.rs`'s
-/// `TOAST_BASE_STYLES_INJECT_JS`, and the same prepend-don't-sequence
+/// `anchor_positioning_inject_js` above, and the same prepend-don't-sequence
 /// reason [`anchor_positioning_inject_js`]'s own doc gives (see
 /// [`ensure_top_layer_ink_styles`]'s doc, "First-paint window," for the
 /// full account). `pub(crate)`, not private to this module, so `lib.rs`'s

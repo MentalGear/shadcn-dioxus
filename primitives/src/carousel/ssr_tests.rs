@@ -888,8 +888,8 @@ fn an_inline_flex_basis_override_wins_over_the_default_calc() {
 
 // Uses an explicit `loop_mode: LoopMode::Rewind` -- see `LoopMode`'s own
 // doc: for the plain children API, `r#loop: true` alone (the default
-// `LoopMode::Seamless`) is a no-op, and `SeamlessLoopCarousel`/its own
-// tests just below pin exactly that. Only the explicit opt-in wraps,
+// `LoopMode::Seamless`) is a no-op, and `SeamlessDefaultLoopCarousel`
+// and its tests just below pin exactly that. Only the explicit opt-in wraps,
 // which is what this fixture needs.
 #[component]
 fn RewindLoopCarousel() -> Element {
