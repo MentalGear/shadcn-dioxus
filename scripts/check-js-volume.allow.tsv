@@ -1,0 +1,16 @@
+# check-js-volume.allow.tsv: the reasoned exceptions of scripts/check-js-volume.sh (read by `load_allow`).
+# kind<TAB>target<TAB>spec<TAB>anchor<TAB>reason. Every row is the OWNER's decision (V5, V8, V9, V11 and theme_seed:
+# owner-approved, row 444); a lane never adds one. A row that matches nothing is stale and fails the gate.
+#   exclude-glob  target = fnmatch pattern against "/<path>"; matched files leave the universe (vendored or minified
+#                 third-party code). No row today: no tracked file is vendored or `.min.js`, so a row would be stale.
+#   exclude-file  target = a path that is only a displayed code sample (a .js/.ts file shown on a page, never loaded).
+#   allow         target = path, spec = column=n[,column=n]: that many counts of the column are excused; the anchor
+#                 text must still occur in the file; fewer counts than the row allows is stale, more are ratcheted.
+#   pin           the parsed `disallowed-methods` section of clippy.toml, `absent` or `sha256=<hex>`; --update-baseline
+#                 rewrites it after a reviewed clippy.toml change.
+allow	preview/src/eager_head.rs	sink=12,js_lit=2	data-covers	V11: the Document the app launches with; it inserts head links synchronously through the document's own eval before the wasm and the bridge exist, so no bridge verb can carry it (the hand-written JS is the data-covers guard)
+allow	preview/src/theme.rs	sink=1,js_lit=14	__dx_theme_seeded	theme_seed: runs the pre-paint theme script for hosts without preview/index.html, before first paint and before the bridge is loaded; preview-only
+allow	preview/src/theme.rs	sink=2,js_lit=32	BroadcastChannel	V5: preview-only theme picker; the preference cookie, the BroadcastChannel cross-tab sync and the reading of the html attributes have no bridge verb
+allow	preview/src/site/chrome.rs	sink=1,js_lit=2	window.top.postMessage	V8: preview-only; an iframe tells window.top its route through postMessage, which has no bridge verb
+allow	preview/src/site/code.rs	sink=1,js_lit=7	await fetch(url)	V9: preview-only, debug builds only; fetches a same-origin asset's text for the lazy CSS code block, and fetch has no bridge verb
+pin	clippy.toml#disallowed-methods	sha256=b6979b7c498bc4db71efe6721cba4e09b7691afad08ee633d920294d60614d2c	-	the sink ban list is held by hash so that weakening it is a deliberate, reviewed step
