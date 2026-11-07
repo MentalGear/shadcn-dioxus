@@ -28,8 +28,8 @@ use crate::components::{
 };
 use crate::nav_link::NavLink;
 use crate::{
-    components, installed_source, variant_title, ComponentVariantDemoData, DocsLayout,
-    DocsNavActive, HighlightedCode, Navbar, PreviewCode, Route, MAIN_ID,
+    components, demo_title, installed_source, ComponentVariantDemoData, DocsLayout, DocsNavActive,
+    HighlightedCode, Navbar, PreviewCode, Route, MAIN_ID,
 };
 use dioxus::prelude::*;
 use dioxus_icons::lucide::{
@@ -449,7 +449,7 @@ fn ChartsCard(
     // What `dx components add` makes of the file, so Copy / View Code hand
     // out code that compiles in the user's app (see `installed_source`).
     let code = installed_source::installed(kind.demo_name(), name, &rs_highlighted);
-    let title = variant_title(name);
+    let title = demo_title(kind.demo_name(), name);
     let filename = format!("{}/variants/{name}/mod.rs", kind.demo_name());
     let span = if kind.is_hero(name) { "full" } else { "single" };
 
