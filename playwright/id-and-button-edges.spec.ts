@@ -4,8 +4,8 @@
  *   - a caller-supplied id with CSS and script punctuation (`odd.content:it's`) opens its popover and anchors it
  *     to its trigger: the id reaches `anchor-name`, the lookup selector and the show script escaped, not raw;
  *   - a press with a non-primary button (a middle press, a pen's barrel button) on a slider thumb starts no drag
- *     and is not consumed: its `pointerdown` is neither default-prevented nor stopped, while a primary press is
- *     consumed (the control that proves the probe sees what a handler stops).
+ *     and is not consumed: its `pointerdown` is not default-prevented, while a primary press is (the control that
+ *     proves the probe sees a handler's cancel).
  */
 import { test, expect } from "./fixtures";
 import { BASE_URL } from "./base-url";
@@ -47,8 +47,8 @@ async function pointerdownProbe(page: import("@playwright/test").Page, button: "
 test("a middle press on a slider thumb is left to the browser, a primary press is consumed", async ({ page }) => {
   await gotoHydrated(page, `${BASE_URL}/component/slider/`, { timeout: NAV_TIMEOUT });
   const middle = await pointerdownProbe(page, "middle");
-  expect(middle, "a non-primary press reaches the page above the slider, unstopped").not.toBeNull();
-  expect(middle!.defaultPrevented).toBe(false);
+  expect(middle, "the press reaches the page above the slider").not.toBeNull();
+  expect(middle!.defaultPrevented, "a middle press is not default-prevented").toBe(false);
   const primary = await pointerdownProbe(page, "left");
-  expect(primary, "a primary press is stopped by the slider").toBeNull();
+  expect(primary?.defaultPrevented, "a primary press starts a drag and is default-prevented").toBe(true);
 });
