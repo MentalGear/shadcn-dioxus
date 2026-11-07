@@ -134,7 +134,7 @@ _EMBED_JS = re.compile(r"=>|\)\s*\{|\b(?:function|const|let|var|return|typeof|do
 _EMBED_CSS = re.compile(r"\{[^{}]*:[^{}]*\}")
 
 
-def _embedded_kind(content):
+def embedded_kind(content):
     if "/*" not in content and "//" not in content:
         return None
     if re.search(r"[;{}]", content) and _EMBED_JS.search(content):
@@ -145,7 +145,7 @@ def _embedded_kind(content):
 
 
 def embedded_comments(content, char_lines):
-    kind = _embedded_kind(content)
+    kind = embedded_kind(content)
     if not kind:
         return
     if kind == "js":

@@ -1,9 +1,9 @@
-# page template + graph.json + comments.json + status.json + cytoscape.min.js -> one self-contained explorer.html (stdlib only).
-# usage: python3 -I make_explorer.py <template> <graph.json> <comments.json> <status.json> <cytoscape.min.js> <out.html>
+# page template + graph.json + comments.json + blame.json + status.json + cytoscape.min.js -> one self-contained explorer.html (stdlib only).
+# usage: python3 -I make_explorer.py <template> <graph.json> <comments.json> <blame.json> <status.json> <cytoscape.min.js> <out.html>
 import sys
-tpl, graph, comments, status, lib, out = sys.argv[1:7]
+tpl, graph, comments, blame, status, lib, out = sys.argv[1:8]
 t = open(tpl).read()
-data = {'__GRAPH__': graph, '__COMMENTS__': comments, '__STATUS__': status}
+data = {'__GRAPH__': graph, '__COMMENTS__': comments, '__BLAME__': blame, '__STATUS__': status}
 for token in ('__CYTOSCAPE__', *data):
     assert t.count(token) == 1, token + ' must occur once in the template'
 c = open(lib).read().replace('</script', '<\\/script')
