@@ -22,6 +22,10 @@ members = [
 # The one exception is `preview/src/wasm_libc_shim.rs`, which allows it with its reason.
 unsafe_code = "deny"
 
+[workspace.lints.rust.unexpected_cfgs]
+level = "warn"
+check-cfg = ['cfg(dx_repo_lints)']
+
 [workspace.lints.clippy]
 # `#[allow]` and `#[expect]` say why; a lint that fires in every build is silenced with `#[expect]`,
 # so a stale one fails (`unfulfilled_lint_expectations`). `#[allow]` stays for a lint that fires in

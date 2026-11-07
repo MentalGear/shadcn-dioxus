@@ -296,34 +296,55 @@ pub(crate) fn escape_in_gap(event: &KeyboardEvent, requested: bool, close: impl 
 /// A mouse press on a trigger opens one task later, after the press's `mousedown` has moved focus
 /// onto it. Until that task has run, the overlay is neither open nor a layer, yet the user has asked
 /// for it: [`OpenGap::escape`] cancels the wait.
+///
+/// The wait is also void once anything else has written the overlay's open state since the press
+/// (`writes`, the count of those writes): a key that opened the overlay first, an Escape the
+/// dismiss layer took with focus already inside the list, a selection that closed it. The task then
+/// does not run, so a late timer cannot reopen what the user has already closed.
 #[derive(Clone, Copy)]
 pub(crate) struct OpenGap {
     task: Signal<Option<dioxus::core::Task>>,
+    /// The value of `writes` when the wait began.
+    since: Signal<u64>,
+    writes: ReadSignal<u64>,
 }
 
-/// Create an [`OpenGap`]. A hook: call it unconditionally, once per render.
-pub(crate) fn use_open_gap() -> OpenGap {
+/// Create an [`OpenGap`] for an overlay whose every open-state write bumps `writes`. A hook: call
+/// it unconditionally, once per render.
+pub(crate) fn use_open_gap(writes: ReadSignal<u64>) -> OpenGap {
     OpenGap {
         task: use_signal(|| None),
+        since: use_signal(|| 0),
+        writes,
     }
 }
 
 impl OpenGap {
-    /// Run `open` one task from now, replacing a wait already pending.
+    /// Run `open` one task from now, replacing a wait already pending, unless the open state is
+    /// written by something else first.
     pub(crate) fn defer(mut self, open: impl FnOnce() + 'static) {
         self.cancel();
+        self.since.set(*self.writes.peek());
         let mut slot = self.task;
+        let this = self;
         let task = spawn(async move {
             crate::sleep::sleep(std::time::Duration::ZERO).await;
             slot.set(None);
-            open();
+            if this.current() {
+                open();
+            }
         });
         self.task.set(Some(task));
     }
 
+    /// Whether no other write to the open state has happened since the wait began.
+    fn current(self) -> bool {
+        *self.writes.peek() == *self.since.peek()
+    }
+
     /// Whether an open is waiting for its task.
     pub(crate) fn pending(self) -> bool {
-        self.task.peek().is_some()
+        self.task.peek().is_some() && self.current()
     }
 
     /// Drop the wait, if any.

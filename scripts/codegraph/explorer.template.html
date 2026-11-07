@@ -96,8 +96,11 @@ td.p button{font:inherit;color:var(--accent);background:none;border:0;padding:0;
         <option value="ratio">comment ratio</option>
         <option value="cov">doc coverage (low = hot)</option>
         <option value="todo">TODOs</option>
-        <option value="hist">history-rule hits</option></select></label>
-      <label>Node size <select id="size"><option value="items" selected>items defined</option><option value="code">code lines</option><option value="flat">uniform</option></select></label>
+        <option value="hist">history-rule hits</option>
+        <option value="stale">stale-looking identifiers</option>
+        <option value="dup">duplicated comment lines</option>
+        <option value="age">comment age vs code age</option></select></label>
+      <label>Node size <select id="size"><option value="items" selected>items defined</option><option value="code">code lines</option><option value="words">comment words</option><option value="flat">uniform</option></select></label>
       <label>Direction <select id="dir"><option value="both">both (uses + used by)</option><option value="out">uses (dependencies)</option><option value="in">used by (dependents)</option></select></label>
     </div>
     <div class="checks">
@@ -118,10 +121,10 @@ td.p button{font:inherit;color:var(--accent);background:none;border:0;padding:0;
   </div>
   <section class="panel" id="v-comm" role="tabpanel" aria-labelledby="t-comm" hidden>
     <h2 style="font-size:14px;margin:0 0 2px">Comments: worst first</h2>
-    <p class="tag" style="margin:0 0 8px">Same numbers as the lenses, as a list. A row opens its file or component in the graph. Outlier = comment ratio beyond 1.5 IQR of the repo's entities with at least 100 code lines (dense: above Q3 + 1.5 IQR; sparse: below Q1 - 1.5 IQR on a log scale; a sparse test-only entity is not flagged).</p>
+    <p class="tag" style="margin:0 0 8px">Same numbers as the lenses, as a list. A row opens its file or component in the graph. Outlier = comment ratio beyond 1.5 IQR of the repo's entities with at least 100 code lines (20 for items) (dense: above Q3 + 1.5 IQR; sparse: below Q1 - 1.5 IQR on a log scale; a sparse test-only entity is not flagged).</p>
     <div class="cfilters">
-      <label>Rows <select id="c-lvl"><option value="2" selected>files</option><option value="1">components</option><option value="0">crates</option></select></label>
-      <label>Rank by <select id="c-rank"><option value="sparse" selected>sparsest (lowest ratio)</option><option value="dense">densest (highest ratio)</option><option value="undoc">undocumented pub items</option><option value="todo">TODOs</option><option value="hist">history-rule hits</option></select></label>
+      <label>Rows <select id="c-lvl"><option value="2" selected>files</option><option value="1">components</option><option value="0">crates</option><option value="3">items</option></select></label>
+      <label>Rank by <select id="c-rank"><option value="sparse" selected>sparsest (lowest ratio)</option><option value="dense">densest (highest ratio)</option><option value="undoc">undocumented pub items</option><option value="todo">TODOs</option><option value="hist">history-rule hits</option><option value="stale">stale-looking identifiers</option><option value="dup">repeated comment lines</option><option value="age">comment older than code</option></select></label>
       <label>Min code lines <input type="number" id="c-min" value="100" min="0" step="20"></label>
       <label>Crate <select id="c-crate"><option value="">all</option></select></label>
       <label>Tests <select id="c-tests"><option value="no" selected>exclude</option><option value="yes">include</option><option value="only">only tests</option></select></label>
@@ -130,7 +133,7 @@ td.p button{font:inherit;color:var(--accent);background:none;border:0;padding:0;
       <div class="checks"><label><input type="checkbox" id="c-und"> only with undocumented pub</label><label><input type="checkbox" id="c-out"> only outliers</label></div>
     </div>
     <p class="tag" id="c-scope" hidden></p>
-    <div class="scroll"><table><thead><tr><th>Name</th><th class="n">Code</th><th class="n">Comment</th><th class="n">Ratio</th><th>Ratio vs median</th><th class="n">Doc share</th><th class="n">Pub doc</th><th class="n">Undoc pub</th><th class="n">TODO</th><th class="n">Hist</th><th>Outlier</th></tr></thead>
+    <div class="scroll"><table><thead><tr><th>Name</th><th class="n">Code</th><th class="n">Comment</th><th class="n">Ratio</th><th>Ratio vs median</th><th class="n">Doc share</th><th class="n">Pub doc</th><th class="n">Undoc pub</th><th class="n">TODO</th><th class="n">Hist</th><th class="n">Stale</th><th class="n">Dup</th><th>Outlier</th></tr></thead>
       <tbody id="c-body"></tbody></table></div>
     <p class="tag" id="c-count" style="margin-top:8px"></p>
   </section>
@@ -138,15 +141,17 @@ td.p button{font:inherit;color:var(--accent);background:none;border:0;padding:0;
 <script>__CYTOSCAPE__</script>
 <script type="application/json" id="graph">__GRAPH__</script>
 <script type="application/json" id="comments">__COMMENTS__</script>
+<script type="application/json" id="blamedata">__BLAME__</script>
 <script type="application/json" id="builddata">__STATUS__</script>
 <script>
 (function(){
 const G=JSON.parse(document.getElementById('graph').textContent);
 const C=JSON.parse(document.getElementById('comments').textContent);
 const S=JSON.parse(document.getElementById("builddata").textContent);
+const B=JSON.parse(document.getElementById('blamedata').textContent);
 const N=G.nodes,E=G.edges;
 // the comment metrics come from file text (comments.json), the graph from the SCIP index: joined by file id
-N.forEach(n=>{const e=C.files[n.id];if(e){n.cm=e.cm;if(e.d)n.d=e.d;if(e.t)n.t=1}});
+N.forEach(n=>{const e=C.files[n.id];if(e){n.cm=e.cm;if(e.d)n.d=e.d;if(e.t)n.t=1;if(e.it)n.it=e.it}const b=B.files[n.id];if(b)n.bl=b});
 const comps={};G.comps.forEach(c=>comps[c.id]=c);
 const fileComp=N.map(n=>n.comp);
 const crateOf=i=>{const c=comps[fileComp[i]].crate;return c==='external'?'external':c};
@@ -158,15 +163,27 @@ const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',
 
 // ---- comment metrics M1-M6: per-file raw counts (n.cm, order C.fields) summed per level, ratios from the sums
 const CF=C.fields,NF=CF.length,FI={};CF.forEach((f,i)=>FI[f]=i);
-const IT=NF,NFILES=NF+1,NTEST=NF+2; // extra slots of an aggregate: items defined, files, test files
+const IT=NF,NFILES=NF+1,NTEST=NF+2,BL=NF+3,AL=NF+7; // extra slots of an aggregate: items defined, files, test files, then the blame sums (comment age, comment lines, code age, code lines)
 const keyAt=(l,i)=>l===0?crateOf(i):l===1?fileComp[i]:N[i].id;
 const keyOf=i=>keyAt(st.lvl,i);
 const aggCache={};
+// level 3 = items: one row per Rust item (comments.json `it`), keyed `file\u0001index`, with the same slots as a file
+const ITEMS=new Map(); // key -> [file index, item row]
 function aggAt(l){
   if(aggCache[l])return aggCache[l];
   const m=new Map();
-  N.forEach((n,i)=>{const k=keyAt(l,i);let a=m.get(k);if(!a){a=new Array(NF+3).fill(0);m.set(k,a)}
-    const c=n.cm;if(c)for(let j=0;j<NF;j++)a[j]+=c[j];a[IT]+=n.items;a[NFILES]++;if(n.t)a[NTEST]++});
+  if(l===3){
+    const IF=C.item_fields,X={};IF.forEach((f,i)=>X[f]=i);
+    N.forEach((n,fi)=>{if(!n.it)return;n.it.forEach((r,j)=>{
+      const a=new Array(AL).fill(0),k=n.id+'\u0001'+j;
+      a[FI.code]=r[X.code];a[FI.com]=r[X.com];a[FI.doc]=r[X.doc];a[FI.words]=r[X.words];a[FI.todo]=r[X.todo];a[FI.hist]=r[X.hist];
+      a[FI.pubs]=r[X.pub];a[FI.doced]=r[X.pub]&&r[X.documented]?1:0;a[IT]=1;a[NFILES]=1;a[NTEST]=n.t?1:0;
+      m.set(k,a);ITEMS.set(k,[fi,r])})});
+    return aggCache[l]=m;
+  }
+  N.forEach((n,i)=>{const k=keyAt(l,i);let a=m.get(k);if(!a){a=new Array(AL).fill(0);m.set(k,a)}
+    const c=n.cm;if(c)for(let j=0;j<NF;j++)a[j]+=c[j];a[IT]+=n.items;a[NFILES]++;if(n.t)a[NTEST]++;
+    if(n.bl){a[BL]+=n.bl[0];a[BL+1]+=n.bl[1];a[BL+2]+=n.bl[2];a[BL+3]+=n.bl[3]}});
   return aggCache[l]=m;
 }
 const M={
@@ -174,10 +191,16 @@ const M={
   share:a=>a[FI.com]?a[FI.doc]/a[FI.com]:null,
   cov:a=>{const n=a[FI.pubs]+a[FI.fields];return n?(a[FI.doced]+a[FI.fdoced])/n:null},
   und:a=>a[FI.pubs]+a[FI.fields]-a[FI.doced]-a[FI.fdoced],
-  todo:a=>a[FI.todo],hist:a=>a[FI.hist]
+  todo:a=>a[FI.todo],hist:a=>a[FI.hist],
+  stale:a=>a[FI.stale],
+  dup:a=>a[FI.com]?a[FI.dup]/a[FI.com]:null,
+  wpl:a=>a[FI.code]?a[FI.words]/a[FI.code]:null, // N3: comment words per code line
+  jsShare:a=>(a[FI.js]+a[FI.jscode])?a[FI.js]/(a[FI.js]+a[FI.jscode]):null, // N2
+  // N5: mean days since the last change of a comment line minus the same for a code line; > 0 = the comments are older than the code
+  age:a=>(a[BL+1]&&a[BL+3])?a[BL]/a[BL+1]-a[BL+2]/a[BL+3]:null
 };
-const TOT=new Array(NF+3).fill(0);N.forEach(n=>{if(n.cm)n.cm.forEach((v,j)=>TOT[j]+=v)});
-const REPO={ratio:M.ratio(TOT),share:M.share(TOT),cov:M.cov(TOT)};
+const TOT=new Array(AL).fill(0);N.forEach(n=>{if(n.cm)n.cm.forEach((v,j)=>TOT[j]+=v);if(n.bl)n.bl.slice(0,4).forEach((v,j)=>TOT[BL+j]+=v)});
+const REPO={ratio:M.ratio(TOT),share:M.share(TOT),cov:M.cov(TOT),dup:M.dup(TOT),wpl:M.wpl(TOT),age:M.age(TOT)};
 const pc=x=>x==null?'n/a':(x*100).toFixed(1)+' %';
 const r2=x=>x==null?'n/a':x.toFixed(2);
 const fmt=n=>n.toLocaleString('en-US');
@@ -185,13 +208,13 @@ const fmt=n=>n.toLocaleString('en-US');
 // Sparse = M1 below Q1 - 1.5 IQR computed on ln(M1 + 0.02): M1 is skewed and bounded at 0, so the plain fence is
 // negative and flags nothing; on the log scale it flags the bare large entities. A sparse entity made only of test
 // files is not flagged (a test file is allowed to be bare).
-const MINCODE=100;
+const MINC=[100,100,100,20],MINCODE=100; // items are small: the outlier fences use entities with 20+ code lines at the item level
 const LNE=0.02,ln=x=>Math.log(x+LNE);
 const quant=(a,p)=>{const x=(a.length-1)*p,lo=Math.floor(x),hi=Math.ceil(x);return a[lo]+(a[hi]-a[lo])*(x-lo)};
 const outCache={};
 function outliers(l){
   if(outCache[l])return outCache[l];
-  const rows=[...aggAt(l)].filter(([,a])=>a[FI.code]>=MINCODE).map(([k,a])=>[k,M.ratio(a),a]);
+  const rows=[...aggAt(l)].filter(([,a])=>a[FI.code]>=MINC[l]).map(([k,a])=>[k,M.ratio(a),a]);
   const rs=rows.map(r=>r[1]).sort((x,y)=>x-y);
   const o={flag:new Map(),q1:null,q3:null,lo:null,hi:null,median:null,dense:[],sparse:[]};
   if(rs.length>=4){
@@ -232,7 +255,9 @@ $('c-crate').innerHTML+=KNOWN.map(k=>'<option value="'+k+'">'+k+'</option>').joi
     :'<span class="chip" id="chip-stale">index up to date</span>';
   $('status').innerHTML+=
     '<span class="chip" id="chip-index">graph: SCIP index of '+esc(ix.head)+(ix.dirty?' + uncommitted':'')+', key '+esc(ix.key)+', '+ix.secs+' s cold, built '+when(ix.at)+'</span>'+stale+
-    '<span class="chip" id="chip-comments">comment metrics: working tree '+esc(tree)+', key '+esc(cmx.key)+', built '+when(cmx.at)+' (independent of the index)</span>';
+    '<span class="chip" id="chip-comments">comment metrics: working tree '+esc(tree)+', key '+esc(cmx.key)+', built '+when(cmx.at)+' (independent of the index)</span>'+
+    '<span class="chip" id="chip-blame">comment age: '+(S.blame.built?'git blame at '+esc(S.blame.head)+', built '+when(S.blame.at):'not built (run.sh --blame)')+'</span>'+
+    '<span class="chip" id="chip-stale-n">stale candidates '+TOT[FI.stale]+'</span><span class="chip" id="chip-dup">repeated comment lines '+TOT[FI.dup]+'</span>';
 })();
 
 function seedFromName(n){
@@ -252,6 +277,7 @@ function crateOfKey(key){
   return crateOf(fileIdx[key]);
 }
 const fileIdx={};N.forEach((n,i)=>fileIdx[n.id]=i);
+const IX={};C.item_fields.forEach((f,i)=>IX[f]=i);
 
 let cy=null;
 function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim()}
@@ -262,7 +288,10 @@ const LENS={
   ratio:{val:a=>M.ratio(a),heat:v=>Math.min(1,v/0.8),lo:'0.0',hi:'0.8+ comment lines per code line',fmt:r2,title:'comment ratio'},
   cov:{val:a=>M.cov(a),heat:v=>Math.min(1,(1-v)/0.35),lo:'100 % documented',hi:'65 % or less',fmt:pc,title:'pub doc coverage'},
   todo:{val:a=>a[FI.todo],heat:v=>v?1:0,lo:'0',hi:'1+',fmt:String,title:'TODO/FIXME/HACK/XXX',zero:true},
-  hist:{val:a=>a[FI.hist],heat:v=>v?1:0,lo:'0',hi:'1+',fmt:String,title:'history-rule hits',zero:true}
+  hist:{val:a=>a[FI.hist],heat:v=>v?1:0,lo:'0',hi:'1+',fmt:String,title:'history-rule hits',zero:true},
+  stale:{val:a=>a[FI.stale],heat:v=>v?Math.min(1,.35+.65*v/10):0,lo:'0',hi:'10+ candidates',fmt:String,title:'stale-looking identifiers',zero:true},
+  dup:{val:a=>M.dup(a),heat:v=>Math.min(1,v/0.3),lo:'0 %',hi:'30 %+ of comment lines repeated in another file',fmt:pc,title:'duplicated comment lines'},
+  age:{val:a=>M.age(a),heat:v=>Math.min(1,Math.max(0,v)/45),lo:'comments as new as the code',hi:'45+ days older than the code',fmt:v=>v.toFixed(1)+' d',title:'comment age minus code age'}
 };
 const hex=c=>{c=c.replace('#','');if(c.length===3)c=c.replace(/./g,'$&$&');return [0,2,4].map(i=>parseInt(c.slice(i,i+2),16))};
 function ramp(t){
@@ -279,6 +308,7 @@ function fillOf(k,cr){
 function sizeOf(k,a){
   if(st.size==='flat')return 22;
   if(st.size==='code')return 8+6*Math.log10(1+(a?a[FI.code]:0));
+  if(st.size==='words')return 8+6*Math.log10(1+(a?a[FI.words]:0));
   return 14+Math.min(26,4*Math.sqrt((a?a[IT]:0)||1));
 }
 function recolor(){
@@ -308,7 +338,8 @@ function legend(){
     '<span><span class="sw"></span>'+(L.zero?'none':'no data')+'</span>'+
     '<span><span class="ringd"></span>dense outlier</span><span><span class="rings"></span>sparse outlier</span>'+
     '<span class="tag">'+esc(L.title)+', '+range+'; outliers are for the '+LV[st.lvl]+' level</span>';
-  if(L.zero&&R&&vmax<=0){ban.hidden=false;ban.textContent=(st.lens==='todo'?'0 TODO/FIXME/HACK/XXX in every node of this view. The repo tracks work in backlog rows, so an empty map is the expected result.':'0 history-rule hits in every node of this view. check-history-comments.sh enforces this; the lens shows a dirty tree before the gate run.')}
+  if(L.zero&&R&&vmax<=0){ban.hidden=false;ban.textContent=(st.lens==='todo'?'0 TODO/FIXME/HACK/XXX in every node of this view. The repo tracks work in backlog rows, so an empty map is the expected result.':st.lens==='stale'?'No stale-looking identifier in this view.':'0 history-rule hits in every node of this view. check-history-comments.sh enforces this; the lens shows a dirty tree before the gate run.')}
+  else if(st.lens==='age'&&!S.blame.built){ban.hidden=false;ban.textContent='No blame data: run scripts/codegraph/run.sh --blame (git blame per file, about 2 minutes, cached by blob hash).'}
   else ban.hidden=true;
 }
 
@@ -412,7 +443,11 @@ function metricRows(a){
     ['Pub items + fields documented',pc(M.cov(a)),barHtml(M.cov(a),1,REPO.cov),'repo '+pc(REPO.cov)+'; undocumented '+M.und(a)],
     ['TODO / FIXME / HACK / XXX',String(a[FI.todo]),'',''],
     ['History-rule hits',String(a[FI.hist]),'','check-history-comments.sh'],
-    ['Comment lines in Rust strings',String(a[FI.js]),'','JS/CSS held in strings, not in the ratio']
+    ['Comment lines in Rust strings (N2)',a[FI.js]+' of '+(a[FI.js]+a[FI.jscode])+' JS/CSS lines',barHtml(M.jsShare(a),1,null),'held in strings, not in the ratio'],
+    ['Comment words per code line (N3)',a[FI.code]?r2(M.wpl(a)):'n/a',barHtml(M.wpl(a),12,REPO.wpl),fmt(a[FI.words])+' words; repo '+r2(REPO.wpl)],
+    ['Stale-looking identifiers (N1)',String(a[FI.stale]),'','backticked, in no code of the repo: candidates'],
+    ['Repeated comment lines (N4)',pc(M.dup(a)),barHtml(M.dup(a),1,REPO.dup),a[FI.dup]+' lines; repo '+pc(REPO.dup)],
+    ['Comment age vs code age (N5)',M.age(a)==null?'not built':(M.age(a)>=0?'+':'')+M.age(a).toFixed(1)+' d',M.age(a)==null?'':barHtml(Math.max(0,M.age(a)),90,null),M.age(a)==null?'run.sh --blame':'mean '+(a[BL]/a[BL+1]).toFixed(1)+' d (comments) vs '+(a[BL+2]/a[BL+3]).toFixed(1)+' d (code)']
   ];
   return rs.map(r=>'<tr><td>'+r[0]+(r[3]?'<div class="tag">'+esc(r[3])+'</div>':'')+'</td><td class="n">'+r[1]+'</td><td>'+r[2]+'</td></tr>').join('');
 }
@@ -423,6 +458,13 @@ function detailLists(k,a){
     if(d.und&&d.und.length)h+='<h3>Undocumented pub items ('+d.und.length+')</h3><ul>'+d.und.slice(0,12).map(u=>'<li><span class="mono">'+esc(u[1])+'</span> line '+u[0]+'</li>').join('')+(d.und.length>12?'<li>and '+(d.und.length-12)+' more</li>':'')+'</ul>';
     if(d.todo)h+='<h3>TODO markers</h3><ul>'+d.todo.map(u=>'<li>'+esc(u[1])+' line '+u[0]+'</li>').join('')+'</ul>';
     if(d.hist)h+='<h3>History-rule hits</h3><ul>'+d.hist.map(u=>'<li>'+esc(u[1])+' line '+u[0]+'</li>').join('')+'</ul>';
+    if(d.stale)h+='<h3>Stale-looking identifiers ('+d.stale.length+')</h3><ul>'+d.stale.slice(0,12).map(u=>'<li><span class="mono">'+esc(u[1])+'</span> line '+u[0]+'</li>').join('')+(d.stale.length>12?'<li>and '+(d.stale.length-12)+' more</li>':'')+'</ul>';
+    if(d.dup)h+='<h3>Repeated comment blocks ('+d.dup.length+')</h3><ul>'+d.dup.slice(0,8).map(u=>'<li>lines '+u[0]+'-'+u[1]+' also in '+u[2]+' file'+(u[2]===2?'':'s')+': <span class="mono">'+u[3].map(esc).join(', ')+'</span></li>').join('')+'</ul>';
+    const nd=N[fileIdx[k]],its=nd.it||[];
+    if(its.length){const IF=C.item_fields,X={};IF.forEach((f,i)=>X[f]=i);
+      h+='<h3>Items ('+its.length+', largest first)</h3><div class="scroll"><table id="item-table"><thead><tr><th>Item</th><th class="n">Lines</th><th class="n">Code</th><th class="n">Comment</th><th class="n">Ratio</th><th>Doc</th></tr></thead><tbody>'+
+        its.slice().sort((x,y)=>y[X.code]-x[X.code]).slice(0,10).map(r=>'<tr><td class="mono">'+esc(C.item_kinds[r[X.kind]]+' '+r[X.name])+(r[X.pub]?' (pub)':'')+'</td><td class="n">'+r[X.start]+'-'+r[X.end]+'</td><td class="n">'+r[X.code]+'</td><td class="n">'+r[X.com]+'</td><td class="n">'+(r[X.code]?(r[X.com]/r[X.code]).toFixed(2):'n/a')+'</td><td>'+(r[X.documented]?'yes':'no')+'</td></tr>').join('')+'</tbody></table></div>'}
+    if(nd.bl)h+='<h3>Comment age (git blame)</h3><p class="tag">median comment line '+nd.bl[4]+' d old, median code line '+nd.bl[5]+' d old ('+nd.bl[1]+' comment lines, '+nd.bl[3]+' code lines)</p>';
   }else{
     const fs=[];N.forEach((n,i)=>{if(keyOf(i)===k&&n.cm)fs.push(n)});
     const top=(f,t)=>{const l=fs.filter(n=>f(n)>0).sort((x,y)=>f(y)-f(x)).slice(0,5);return l.length?'<h3>'+t+'</h3><ul>'+l.map(n=>'<li><span class="mono">'+esc(n.id)+'</span> '+f(n)+'</li>').join('')+'</ul>':''};
@@ -441,7 +483,7 @@ function showInfo(k){
   const out=[],inn=[];
   R.edges.forEach(e=>{if(e.x===k)out.push([e.y,e.w]);if(e.y===k)inn.push([e.x,e.w])});
   const top=l=>l.sort((a,b)=>b[1]-a[1]).slice(0,6).map(([x,w])=>esc(label(x))+' <b>'+w+'</b>').join(', ')||'-';
-  const a=R.agg.get(k)||new Array(NF+3).fill(0);
+  const a=R.agg.get(k)||new Array(AL).fill(0);
   const files=st.lvl<2?a[NFILES]+' files, ':'';
   $('info').innerHTML='<b>'+esc(k.replace(/\u0001/g,' '))+'</b> ('+crateOfKey(k)+'): '+files+a[IT]+' items. Uses: '+top(out)+'. Used by: '+top(inn)+'. <button id="rc">re-centre here</button>'+
     '<h3>Comments</h3><div class="scroll"><table id="cm-table"><thead><tr><th>Metric</th><th class="n">Value</th><th>vs repo</th></tr></thead><tbody>'+metricRows(a)+'</tbody></table></div>'+
@@ -459,34 +501,42 @@ function setPick(n){
   st.pickName=n;st.seedFiles=seedFromName(n);render();
 }
 
-// ---- Comments view: worst entities by metric, with filters
+// ---- Comments view: worst entities by metric, with filters (rows: files, components, crates or items)
+const LVN=['crate','component','file','item'];
 const cstate=()=>({lvl:+$('c-lvl').value,rank:$('c-rank').value,min:+$('c-min').value||0,crate:$('c-crate').value,tests:$('c-tests').value,
   q:$('c-q').value.trim().toLowerCase(),n:Math.max(1,+$('c-n').value||25),und:$('c-und').checked,out:$('c-out').checked});
+const fileOfRow=(l,k)=>l===2?fileIdx[k]:l===3?fileIdx[k.split('\u0001')[0]]:-1;
+function itemName(k){const [fi,r]=ITEMS.get(k);const X=IX;return N[fi].id+':'+r[X.start]+' '+C.item_kinds[r[X.kind]]+' '+r[X.name]}
+function rowName(l,k){return l===1?comps[k].name+' ('+comps[k].crate+')':l===3?itemName(k):k}
 function commentRows(){
   const c=cstate(),agg=aggAt(c.lvl),o=outliers(c.lvl);
+  let sc=null;
+  if(st.scope){const files=new Set(),keys=new Set();N.forEach((n,i)=>{if(keyAt(st.scope.lvl,i)===st.scope.key){files.add(i);keys.add(keyAt(Math.min(c.lvl,2),i))}});sc={files,keys}}
   let rows=[...agg].map(([k,a])=>({k,a,r:M.ratio(a),und:M.und(a),flag:o.flag.get(k)||''}));
   rows=rows.filter(({k,a,und,flag})=>{
-    const cr=c.lvl===0?k:c.lvl===1?comps[k].crate:crateOf(fileIdx[k]);
+    const fi=fileOfRow(c.lvl,k);
+    const cr=c.lvl===0?k:c.lvl===1?comps[k].crate:crateOf(fi);
     if(a[FI.code]<c.min||(!a[FI.code]&&(c.rank==='sparse'||c.rank==='dense')))return false;
     if(c.crate&&cr!==c.crate)return false;
     const allTest=a[NTEST]===a[NFILES],anyTest=a[NTEST]>0;
     if(c.tests==='no'&&allTest&&a[NFILES]>0)return false;
     if(c.tests==='only'&&!anyTest)return false;
-    if(c.q&&!k.toLowerCase().includes(c.q))return false;
+    if(c.q&&!rowName(c.lvl,k).toLowerCase().includes(c.q))return false;
     if(c.und&&!und)return false;
     if(c.out&&!flag)return false;
     if(c.rank==='todo'&&!a[FI.todo])return false;
     if(c.rank==='hist'&&!a[FI.hist])return false;
     if(c.rank==='undoc'&&!und)return false;
-    if(st.scope&&st.scope.lvl===c.lvl&&k!==st.scope.key)return false;
+    if(c.rank==='stale'&&!a[FI.stale])return false;
+    if(c.rank==='dup'&&!a[FI.dup])return false;
+    if(c.rank==='age'&&M.age(a)==null)return false;
+    if(sc){if(c.lvl>=2){if(!sc.files.has(fi))return false}else if(!sc.keys.has(k))return false}
     return true;
   });
-  if(st.scope&&st.scope.lvl!==c.lvl){ // a scope set at another level: keep the entities whose files fall inside it
-    const keep=new Set();N.forEach((n,i)=>{if(keyAt(st.scope.lvl,i)===st.scope.key)keep.add(keyAt(c.lvl,i))});
-    rows=rows.filter(r=>keep.has(r.k));
-  }
+  const ageOf=a=>{const v=M.age(a);return v==null?-1e9:v};
   const cmp={sparse:(x,y)=>x.r-y.r,dense:(x,y)=>y.r-x.r,undoc:(x,y)=>y.und-x.und||y.a[FI.code]-x.a[FI.code],
-    todo:(x,y)=>y.a[FI.todo]-x.a[FI.todo],hist:(x,y)=>y.a[FI.hist]-x.a[FI.hist]}[c.rank];
+    todo:(x,y)=>y.a[FI.todo]-x.a[FI.todo],hist:(x,y)=>y.a[FI.hist]-x.a[FI.hist],stale:(x,y)=>y.a[FI.stale]-x.a[FI.stale],
+    dup:(x,y)=>y.a[FI.dup]-x.a[FI.dup],age:(x,y)=>ageOf(y.a)-ageOf(x.a)}[c.rank];
   rows.sort(cmp);
   return {rows,c,o};
 }
@@ -496,17 +546,18 @@ function renderComments(){
   const sc=$('c-scope');
   if(st.scope){sc.hidden=false;sc.innerHTML='Scope: '+LV[st.scope.lvl]+' <b>'+esc(st.scope.key)+'</b> <button id="c-clear">clear</button>';$('c-clear').onclick=()=>{st.scope=null;renderComments()}}
   else sc.hidden=true;
-  $('c-body').innerHTML=rows.slice(0,c.n).map(({k,a,r,und,flag})=>{
-    const nm=c.lvl===1?comps[k].name+' ('+comps[k].crate+')':k;
-    return '<tr><td class="p"><button data-k="'+esc(k)+'">'+esc(nm)+'</button></td><td class="n">'+fmt(a[FI.code])+'</td><td class="n">'+fmt(a[FI.com])+'</td>'+
+  $('c-body').innerHTML=rows.slice(0,c.n).map(({k,a,r,und,flag})=>
+    '<tr><td class="p"><button data-k="'+esc(k)+'">'+esc(rowName(c.lvl,k))+'</button></td><td class="n">'+fmt(a[FI.code])+'</td><td class="n">'+fmt(a[FI.com])+'</td>'+
       '<td class="n">'+r2(r)+'</td><td style="min-width:90px">'+barHtml(r,1.2,med)+'</td><td class="n">'+pc(M.share(a))+'</td><td class="n">'+pc(M.cov(a))+'</td>'+
-      '<td class="n">'+und+'</td><td class="n">'+a[FI.todo]+'</td><td class="n">'+a[FI.hist]+'</td><td>'+(flag==='d'?'dense':flag==='s'?'sparse':'')+'</td></tr>'}).join('')||
-    '<tr><td colspan="11" class="tag">no entity matches</td></tr>';
-  $('c-count').textContent=Math.min(c.n,rows.length)+' of '+rows.length+' '+LV[c.lvl]+'s shown. Median ratio '+r2(med)+' over '+LV[c.lvl]+'s with '+MINCODE+'+ code lines (tick); outlier fences: sparse below '+
-    (o.lo==null?'n/a':r2(o.lo))+', dense above '+(o.hi==null?'n/a':r2(o.hi))+'. Doc coverage is lexical here; the missing_docs lint and the props/slot gates are the authority.';
+      '<td class="n">'+und+'</td><td class="n">'+a[FI.todo]+'</td><td class="n">'+a[FI.hist]+'</td><td class="n">'+a[FI.stale]+'</td><td class="n">'+a[FI.dup]+'</td><td>'+(flag==='d'?'dense':flag==='s'?'sparse':'')+'</td></tr>').join('')||
+    '<tr><td colspan="13" class="tag">no entity matches</td></tr>';
+  $('c-count').textContent=Math.min(c.n,rows.length)+' of '+rows.length+' '+LVN[c.lvl]+'s shown. Median ratio '+r2(med)+' over '+LVN[c.lvl]+'s with '+MINC[c.lvl]+'+ code lines (tick); outlier fences: sparse below '+
+    (o.lo==null?'n/a':r2(o.lo))+', dense above '+(o.hi==null?'n/a':r2(o.hi))+'. Doc coverage is lexical here; the missing_docs lint and the props/slot gates are the authority.'+
+    (c.lvl===3?' An item row counts its whole span, nested items included.':'');
   document.querySelectorAll('#c-body [data-k]').forEach(b=>b.addEventListener('click',()=>openInGraph(c.lvl,b.dataset.k)));
 }
 function openInGraph(lvl,k){
+  if(lvl===3){k=k.split('\u0001')[0];lvl=2}
   let seed;
   if(lvl===2){seed=new Set([fileIdx[k]])}
   else{seed=new Set();N.forEach((n,i)=>{if(keyAt(lvl,i)===k)seed.add(i)})}
@@ -514,8 +565,7 @@ function openInGraph(lvl,k){
   st.seedFiles=lvl===2?new Set([...N.keys()].filter(i=>fileComp[i]===fileComp[fileIdx[k]])):seed;
   $('pick').value=lvl===1&&comps[k]?comps[k].name:'';
   showTab('graph');
-  if(lvl===2&&cy.getElementById(k).length)showInfo(k);
-  else if(lvl===1&&cy.getElementById(k).length)showInfo(k);
+  if(cy.getElementById(k).length)showInfo(k);
 }
 function openComments(scope){st.scope=scope;$('c-lvl').value=2;showTab('comm')}
 function showTab(t){
@@ -544,6 +594,8 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{if(cy)
 window.__setState=(o)=>{Object.assign(st,o);if(o.seedName!==undefined){$('pick').value=o.seedName;setPick(o.seedName);return}render()};
 // test hooks: the numbers behind the page (read by smoke.js)
 window.__cm={fields:CF,agg:(l,k)=>{const a=aggAt(l).get(k);return a?a.slice():null},total:()=>TOT.slice(),outliers:l=>{const o=outliers(l);return {q1:o.q1,q3:o.q3,lo:o.lo,hi:o.hi,median:o.median,dense:o.dense,sparse:o.sparse}},
+itemCount:()=>aggAt(3).size,blameBuilt:()=>S.blame.built,
+  itemOf:(file,name)=>{const fi=fileIdx[file];const r=(N[fi].it||[]).find(x=>x[IX.name]===name);if(!r)return null;const o={};C.item_fields.forEach((f,i)=>o[f]=r[i]);return o},
   setLens:v=>{$('lens').value=v;st.lens=v;recolor()},show:showTab,info:showInfo,comments:()=>commentRows().rows.length};
 if(innerWidth<700){const d=document.querySelector('details.panel');if(d)d.open=false}
 $('pick').value='select';setPick('select');

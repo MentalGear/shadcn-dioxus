@@ -10,7 +10,7 @@ Toolbar {
     // The ToolbarButton component represents each individual button in the toolbar.
     ToolbarButton {
         // The index of the toolbar button, used to determine the order in which buttons are focused.
-        index: 0,
+        index: 0usize,
         on_click: |_: ()| {
             // This callback is triggered when the button is clicked.
         },

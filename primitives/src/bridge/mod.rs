@@ -399,6 +399,9 @@ pub enum Prop {
     Value,
     /// A checkbox or radio's `checked`.
     Checked,
+    /// A text control's `defaultValue`: the value the server rendered, which a browser restore or an edit
+    /// leaves alone.
+    DefaultValue,
     /// A text control's `selectionStart`.
     SelectionStart,
     /// A text control's `selectionEnd`.
@@ -438,6 +441,7 @@ impl Prop {
             Prop::DevicePixelRatio => "devicePixelRatio".into(),
             Prop::Value => "value".into(),
             Prop::Checked => "checked".into(),
+            Prop::DefaultValue => "defaultValue".into(),
             Prop::SelectionStart => "selectionStart".into(),
             Prop::SelectionEnd => "selectionEnd".into(),
             Prop::Open => "open".into(),
@@ -1034,6 +1038,7 @@ mod tests {
             Prop::DevicePixelRatio,
             Prop::Value,
             Prop::Checked,
+            Prop::DefaultValue,
             Prop::SelectionStart,
             Prop::SelectionEnd,
             Prop::Open,
@@ -1044,15 +1049,17 @@ mod tests {
         let end = start + js[start..].find("\n};").expect("end of PROPS");
         let table = &js[start..end];
         for prop in &props {
+            // A row is written `"name": on(recv, get)` (one member read) or `"name": { .. }` (a longer getter).
+            let row = format!("\n  \"{}\": ", prop.wire());
             assert!(
-                table.contains(&format!("\n  \"{}\": {{", prop.wire())),
+                table.contains(&format!("{row}{{")) || table.contains(&format!("{row}on(")),
                 "{}",
                 prop.wire()
             );
         }
         let rows = table
             .lines()
-            .filter(|l| l.starts_with("  \"") && l.contains("\": {"))
+            .filter(|l| l.starts_with("  \"") && (l.contains("\": {") || l.contains("\": on(")))
             .count();
         assert_eq!(rows, props.len(), "PROPS has a row Rust does not name");
     }

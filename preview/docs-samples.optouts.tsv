@@ -1,0 +1,20 @@
+# Docs samples that do not compile on their own: page<TAB>first line of the block<TAB>reason.
+# Shrink-only: `docs_sample_opt_outs_match_the_shrink_only_baseline` (src/main.rs) fails a block fenced `rust ignore` with no row
+# here and a row whose block no longer opts out. Make the sample compile and delete its row.
+breadcrumb	BreadcrumbItem {	names the app's own `Route` enum
+checkpoint	Checkpoint {	refers to the app's own `messages` signal and `index`
+data_table	let columns = vec![	refers to the app's own `Payment` row type and `payments`
+drag_and_drop_list	DragAndDropList {	every prop is the app's own value (`items`, `order`, `on_reorder`, ...)
+markdown	Markdown {	refers to the app's own `MyHighlighter` component
+message_scroller	MessageScrollerProvider { auto_scroll: true,	refers to the app's own `messages` signal and message type
+message_scroller	MessageScrollerContent {	refers to the app's own `messages` list
+message_scroller	MessageScrollerViewport { fade: ScrollFade::Top,	`..` elides the viewport's content
+table	Table {	refers to the app's own `invoices` and `selected` state
+toast	toast_api.promise(	`save()` is the app's own future
+virtual_grid	// 20,000 photos; the aspect ratios (width / height) are all the layout needs.	refers to the app's own `aspects` and `photo_url`
+virtual_grid	let scroller = use_virtual_scroller();	`render_cell: ..` elides a prop
+virtual_grid	VirtualList { count: 20_000usize, fade: ScrollFade::Y, render_item: .. }	`render_item: ..` and `render_cell: ..` elide props
+virtual_list	VirtualList {	refers to the app's own `rows`
+virtual_list	// Every row in the DOM, however many (a long list of one-line rows can afford it):	`..` elides the render props
+virtual_list	VirtualList { count: 20_000usize, fade: ScrollFade::Y, render_item: .. }	`render_item: ..` and `render_cell: ..` elide props
+virtual_list	let scroller = use_virtual_scroller();	`render_item: ..` elides a prop

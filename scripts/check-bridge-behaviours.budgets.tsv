@@ -2,6 +2,6 @@
 #! columns: bytes
 # path	bytes
 primitives/src/ts/behaviours/fixture.ts	891
-primitives/src/ts/bridge.ts	42820
+primitives/src/ts/bridge.ts	42789
 primitives/src/ts/lib/register.ts	777
 primitives/src/ts/types/bridge.d.ts	6111

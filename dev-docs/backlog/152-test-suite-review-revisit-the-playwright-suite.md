@@ -81,18 +81,24 @@ files (the old run took 11 m 30 s wall, the new 9 m 0 s; the machine was not equ
 untouched, went 54.2 s -> 49.3 s in the same pair, so about 9 % of the gain is load). `playwright/durations.json` carries the
 changed files' entries scaled by their measured before/after ratio (its seconds come from another, differently loaded run).
 
-## 152b slice 3: the second colour scheme runs only the colour rules (2026-11-06)
+## 152b slice 3: the colour-rules-only dark scan, tried and reverted (2026-11-07, row 500)
 
-The structure rules of axe (landmarks, names, roles, ARIA, headings, lists) read the DOM, and the colour scheme changes only
-`data-theme` and CSS variables, so a second full scan in dark re-proves nothing. `all-routes.spec.ts` now runs every rule in
-light and, in dark, only the rules of axe's `cat.color` category that the repo's tag set selects (`colorRuleIds()` in
-`playwright/axe.ts`, read from axe-core's own metadata: `color-contrast` and `link-in-text-block`; `color-contrast-enhanced` is
-outside the tag set). The premise is checked per route instead of assumed: `structureSignature` hashes, for every element of
-every frame, tag, role, `aria-*` and name-bearing attributes, `hidden`/`inert`/`tabindex`, own text and the computed `display` and
-`visibility`, once before the dark scan and once before the light scan; when the two differ the route runs every rule in dark too
-and the test records an annotation saying so. A failing dark colour scan is reported under the same step as before.
+Idea: structure rules do not depend on the colour scheme, so run every axe rule in light and only the `cat.color` rules in
+dark, guarded by a per-route structure signature. Two results, both measured on one debug SSG build:
 
-Not measured in this lane: the build slot was withdrawn (disk), so the spec is syntax-checked (`playwright test --list`, 93 tests)
-and the batch verifier's before/after of `all-routes` gives the seconds and `durations.json` entry. Expected from the slice 2
-profile: the dark scan is about half the axe step (about 250 of 500 s), and the colour rules are roughly 10-15 % of a scan.
+1. The guard fired on 88 of 94 routes at first. Root cause (printed per route, 17 routes): the only scheme-dependent
+   structure is the header theme toggle (two buttons and two icons, one `display: none` per scheme, labelled "Enable dark
+   mode" / "Enable light mode"), plus an animated Progress demo (`aria-valuenow`). An axe colour scan and a light-dark-light
+   round trip changed nothing in the signature, so scan order and ids were not causes. With the toggle and the animated values
+   excluded and only rendered elements walked, 0 of 94 routes fell back.
+2. The premise "dark is cheaper" is false. Timed on `/component/button/`, `calendar` and `sidebar`, the colour rules alone cost
+   as much as the whole rule set (button 1.3 s full / 1.2 s colour; calendar 6.9 / 6.2 s; sidebar 1.9 / 1.7 s, two runs each):
+   `color-contrast` is the cost of a scan, the other rules are cheap beside it. (The per-rule timings measured in slice 2, each
+   rule in its own `axe.run`, hid this by charging the shared style and background work to every run.) Whole file with the
+   corrected guard, same build, 2 workers, load average about 5: 830.6 s against 862.0 s without the split (axe step 419 s
+   against 431 s), within noise of 4 %, for a signature walk that costs code and review.
+
+The split is reverted (`playwright/all-routes.spec.ts`, `playwright/axe.ts` back to their pre-split form). `all-routes` stays at
+two full axe scans per route; what is left of its time is the colour-rule work itself, which only a smaller DOM or fewer pages
+would cut. `playwright/durations.json`: `all-routes.spec.ts` 862.0 s (94 tests) as measured on that build.
 

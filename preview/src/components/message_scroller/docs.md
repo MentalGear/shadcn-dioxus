@@ -4,7 +4,7 @@ It is a port of shadcn/ui's `message-scroller`. The one rule behind every behavi
 
 ## Component Structure
 
-```rust
+```rust ignore
 MessageScrollerProvider { auto_scroll: true,
     MessageScroller {
         MessageScrollerViewport {
@@ -70,7 +70,7 @@ MessageScrollerProvider { virtualize: Virtualization::ContentVisibility, /* ... 
 
 **Long threads: render the rows through `MessageScrollerRows`.** The browser does per-frame work for every element it may skip, so skipping each row separately costs main-thread time proportional to the row count on every scroll frame: 20.3 ms per frame for the 2,000-row example below (release build, headless Chromium, 4-core VM), against a 16.7 ms frame budget. `MessageScrollerRows` groups the rows in chunks of 20 and the browser skips each chunk as one element, which holds the same scroll to 3.7 ms per frame (measured on a heavily loaded machine, which includes the scroller's own controller work; the spec asserts under 8 ms on a release build). Use it in place of a `for` loop of `MessageScrollerItem`s; the scroller treats the chunks as transparent, so following the stream, anchoring, prepend preservation and jumping to a message work as before, and the chunk holding the live edge, focus or an end of the selection is the one that stays rendered:
 
-```rust
+```rust ignore
 MessageScrollerContent {
     MessageScrollerRows {
         count: messages.len(),
@@ -156,7 +156,7 @@ The button carries `data-active` (`"true"` when there is content in its directio
 
 `MessageScrollerViewport` takes `fade: ScrollFade`, which puts the matching `dx-scroll-fade-*` class on the viewport, the element that actually scrolls (never the root frame). The default is `ScrollFade::Bottom`, Nova's end-edge hint; `ScrollFade::Top` suits a thread that opens at its newest messages and loads history upward, `ScrollFade::Y` fades both edges and `ScrollFade::None` adds nothing.
 
-```rust
+```rust ignore
 MessageScrollerViewport { fade: ScrollFade::Top,
     MessageScrollerContent { .. }
 }

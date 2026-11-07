@@ -1,10 +1,10 @@
 ---
 id: 497
 title: "ScrollArea ScrollType::Hidden shows the scrollbar"
-status: "BACKLOG. Found by row 399's first-half lane (2026-11-06); measured on a debug SSG build in Chromium."
+status: "FIXED on lane/scrollarea-497, awaiting merge (2026-11-07). Found by row 399's first-half lane…"
 size: "S"
 area: components
-updated: 2026-11-06
+updated: 2026-11-07
 ---
 
 # Row 497: ScrollArea ScrollType::Hidden shows the scrollbar
@@ -19,7 +19,13 @@ side with Auto and Always.
 
 ## Status / trigger
 
-BACKLOG. Found by row 399's first-half lane (2026-11-06); measured on a debug SSG build in Chromium.
+FIXED on lane/scrollarea-497, awaiting merge (2026-11-07). Found by row 399's first-half lane (2026-11-06); measured on a
+debug SSG build in Chromium. `ScrollType::Hidden` now puts the presence attribute `data-scrollbar-hidden`
+(`state_attrs::Flag::ScrollbarHidden`) on the scroller and `preview/src/components/scroll_area/style.css` maps it to
+`scrollbar-width: none` plus `::-webkit-scrollbar { display: none }`. Spec `playwright/scroll-area-scroll-type.spec.ts`
+(red on a base build: computed `scrollbar-width` is `auto`; Rust unit test in `scroll_area.rs`). The other `ScrollArea`
+attributes (`dir`, `data-scroll-direction`, `data-direction`, `data-scroll-fade*`, `class`, `style`) are real attributes
+or the style string; none was a CSS property.
 
 ## Size
 

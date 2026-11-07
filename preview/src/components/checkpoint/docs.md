@@ -2,7 +2,7 @@ The Checkpoint component marks a point in the conversation you can return to: a 
 
 ## Component Structure
 
-```rust
+```rust ignore
 Checkpoint {
     label: "Before refactor",
     on_restore: move |_| messages.write().truncate(index + 1),

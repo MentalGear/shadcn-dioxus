@@ -14,6 +14,10 @@
 //! their own. The actual sort/filter/pagination *state* is owned by the
 //! caller (see `variants/main/mod.rs`); `state.rs` (this folder) is the
 //! pure, unit-tested transform logic those state signals are fed through.
+#![allow(
+    unexpected_cfgs,
+    reason = "dx_repo_lints is set only by the shadcn-dioxus repo's own clippy runs (`--cfg dx_repo_lints`, scripts/run-gates.sh)"
+)]
 
 use crate::components::button::{Button, ButtonSize, ButtonVariant};
 use crate::components::checkbox::Checkbox;
@@ -534,7 +538,7 @@ fn DataTableTable<T: Clone + PartialEq + 'static>(props: DataTableProps<T>) -> E
             ondragover: move |event: DragEvent| {
                 // Drops can land in the gaps between rows: the body accepts them.
                 event.prevent_default();
-                #[expect(clippy::disallowed_methods, reason = "row 434: the bridge ports this DataTransfer write")]
+                #[cfg_attr(dx_repo_lints, expect(clippy::disallowed_methods, reason = "row 434: the bridge ports this DataTransfer write"))]
                 event.data_transfer().set_drop_effect("move");
             },
             ondrop: move |event: DragEvent| {

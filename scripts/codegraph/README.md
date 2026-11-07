@@ -7,7 +7,7 @@ or any `component.json`, not in `run-gates.sh`, nothing under `primitives/`, `pr
 ## Run
 
 ```
-CARGO_TARGET_DIR=/home/user/tgt/codegraph LANE_SLOTS=1 scripts/codegraph/run.sh [--force] [--out DIR]
+CARGO_TARGET_DIR=/home/user/tgt/codegraph LANE_SLOTS=1 scripts/codegraph/run.sh [--force] [--blame] [--out DIR]
 ```
 
 Open `target-codegraph/explorer.html` (git-ignored through `target-*/`) from disk. `CARGO_TARGET_DIR` must be an
@@ -25,6 +25,7 @@ separate keys, so a source edit updates the metrics at once while the (8 minute)
 | `index.scip` | `rust-analyzer scip` (rustup component) with `CARGO_INCREMENTAL=0`, `CARGO_NET_OFFLINE=true` | taken when it is built: content hash (`git hash-object`) of every `*.rs` and `Cargo.toml` that `git ls-files -co --exclude-standard` lists (an uncommitted edit counts), `Cargo.lock`, the rust-analyzer version. Built when missing or with `--force`; `index.files` keeps the hashes it was built from and `index.info` its HEAD, time and cold seconds |
 | `graph.json` | `build_graph.py` (Python stdlib, run as `python3 -I`) | the index key as stored, `build_graph.py`, every `*.ts` and `*.css` (the extractor's static scans) |
 | `comments.json` | `build_comments.py` + `comment_metrics.py` (stdlib) | content hash of every `*.rs`, `*.ts`, `*.css`, `*.html`, `*.js`, `*.mjs` and `*.txt`, `comment_metrics.py`, `build_comments.py`, `scripts/comment-scan.py`. No index involved |
+| `blame.json` | `build_blame.py` (stdlib) from cached `git blame` output | only with `--blame`: `comments.key`, HEAD, `build_blame.py`; reused while that key matches, else an empty `{"files":{}}` |
 | `status.json` | `run.sh` | not keyed; rewritten each run: HEAD, time and key each part was built from, whether the index is stale and which Rust/Cargo files differ from the tree it was built from |
 | `explorer.html` | `make_explorer.py` (stdlib) | graph key, comments key, `explorer.template.html`, `make_explorer.py`, the Cytoscape bundle, `status.json` |
 
@@ -56,7 +57,7 @@ The tool shows what the comment gates enforce; it enforces nothing (no gate, not
 comment tokenizer (`scripts/comment-scan.py`: `walk_rust`, `code_of`, `embedded_comments`, `history_reason`, the same
 functions the history gate calls) runs per file in `comment_metrics.py`, called by `build_comments.py`, over the working tree. The file set is the one the history gate reads (`tracked_files`: tracked, minus its skip lists),
 restricted to the graph's nodes. Per file `comments.json` stores raw counts `cm` in the order of `fields`
-(`code com doc pubs doced fields fdoced todo hist js`), the detail lists `d` (undocumented pub names, TODO and
+(`code com doc pubs doced fields fdoced todo hist js jscode words stale dup`), the detail lists `d` (undocumented pub names, TODO and
 history-hit lines) and `t:1` for a test file. The page sums numerators and denominators to component and crate, so a ratio
 is always the ratio of the sums, never an average of ratios. A Rust file gets every field; a TS, CSS or other scanned file
 gets only the TODO and history counts (its code lines are not tokenized, a ratio over it would mean nothing).
@@ -69,6 +70,23 @@ gets only the TODO and history counts (its code lines are not tokenized, a ratio
 | M4 | history-rule hits | comment lines (and embedded-string comment lines) for which `history_reason()` returns a reason, over every scanned node file; the same function and file universe as `check-history-comments.sh`, so on a clean tree both read 0 |
 | M5 | TODO / FIXME / HACK / XXX | comment lines with the word (word boundary, comment text only, so the string `"TODO"` is not counted); line numbers in the panel |
 | M6 | density outliers | per level (file, component, crate) over entities with at least 100 code lines: dense = M1 above Q3 + 1.5 IQR; sparse = M1 below Q1 - 1.5 IQR computed on ln(M1 + 0.02). The plain sparse fence is negative (M1 is skewed and bounded at 0) and flags nothing, so the log scale is used on that side only. A sparse entity made only of test files is not flagged. Quartiles use linear interpolation |
+
+### Nice-to-have metrics (N1 to N6)
+
+Built in this order, by value over cost: **N1** first (it finds comments that name something that no longer exists, the
+one metric that points at a defect, and it needs only file text), **N6** (the item level: it narrows a dense or bare file to
+the item, and reuses the M1 to M5 machinery), **N4** (repeated comment blocks: copy-paste a reader can act on), **N2** and **N3**
+(trivial counters from the same pass), **N5** last (it needs `git blame`, minutes, so it runs only with `--blame`).
+All but N5 are in `comments.json` and come from the one tokenizer pass; none needs the SCIP index.
+
+| # | Metric | Definition and limits |
+|---|---|---|
+| N1 | stale-looking identifiers | a backticked identifier in a Rust comment that occurs in no code of the repo (code views of every Rust file, comments blanked and string contents kept, plus the text of TS, JS, CSS, HTML and TXT node files). Candidates, never errors. Shape: `foo`, `Foo`, `foo()`, `a::b::C`, `Vec<T>`; names of three or more characters. Skipped: lowerCamelCase names, names ending in `_`, and every name on a line that cites an upstream (Base UI, Radix, Sonner, React, `.mjs`/`.ts`/`.js` files, `window.`, `document.` and the like), because those name another library's API. The test is repo-wide, not per crate, so a name that exists in another crate does not show; the list is mixed (a real leftover such as a removed function sits beside a std or dioxus name the repo never uses) |
+| N2 | JS or CSS held in Rust strings | comment lines (`js`) and code lines (`jscode`: source lines of the string with text on them, minus the lines that carry a comment) of a literal the comment scanner reads as JS or CSS; the panel shows `js` of `js + jscode` |
+| N3 | comment words | whitespace-separated words in comment lines; the panel shows words per code line; node size can be comment words |
+| N4 | repeated comment lines | comment lines inside a run of 3 or more consecutive lines (with at least 45 letters in the 3-line window) whose text, lower-cased with digits and backticked spans collapsed, also occurs in another file; the panel lists the line range and up to three sibling files. Prop descriptions that a themed component repeats from its primitive are repeats by this definition |
+| N5 | comment age vs code age | `git blame --line-porcelain` per tracked node file (about 2 minutes for the tree, cached by blob hash in `blame/`), line ages in days; the lens and the table use the mean age of comment lines minus the mean age of code lines (positive = the comments are older than the code), summed over lines so a component is a true mean; the panel shows the per-file medians. A shallow clone dates every older line at its boundary commit. Built only with `run.sh --blame` (an existing `blame.json` is reused while its key matches) |
+| N6 | items | every Rust item (`fn struct enum trait union type static mod const impl macro_rules!`, any visibility) with its lexical span: its `///` block through its closing brace or semicolon, found on the comment-and-string-free code view. Per item: code, comment, doc, TODO, history and word counts, `pub` and `documented`. A nested item is counted in its parent too. The Comments tab has Rows: items (worst items, same ranks and filters, outlier fences over items with 20+ code lines), and a file's panel lists its 10 largest items. There are no item nodes or item edges in the graph: the slider stays crate, component, file |
 
 How to read them: a lens recolours the nodes (Metric lens: comment ratio, doc coverage with low = hot, TODOs, history hits;
 `dependencies` is the crate colour of before). The ramp is `--heat-lo` to `--heat-hi`; a ratio of 0.48 has no fixed meaning,

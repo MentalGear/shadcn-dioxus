@@ -17,7 +17,7 @@ Tooltip {
         // The alignment of the TooltipContent relative to the TooltipTrigger. Can be one of Start, Center, or End.
         align: ContentAlign::Center,
         // The content of the tooltip, which can include text, images, or any other elements.
-        {children}
+        "Tooltip text"
     }
 }
 ```
@@ -29,9 +29,9 @@ Tooltip {
 ```rust
 Tooltip {
     // How long the pointer must rest on the trigger before the tooltip opens. Styled default 0.
-    delay: 600,
+    delay: 600u64,
     // How long the tooltip stays open after the pointer leaves. Default 0; above 0 the pointer can move onto the tooltip, which holds it open.
-    close_delay: 400,
+    close_delay: 400u64,
     TooltipTrigger { "Hover" }
     TooltipContent { "Add to library" }
 }

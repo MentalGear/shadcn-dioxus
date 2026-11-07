@@ -58,6 +58,7 @@ AlertDialog {
 `AlertDialogAction { variant }` takes `AlertDialogActionVariant::Destructive` (the default, a red confirm button) or `Primary` for a prompt that is not destructive; the button carries `data-style`, the Button vocabulary.
 
 ```rust
+let mut open = use_signal(|| false);
 AlertDialog { size: AlertDialogSize::Sm, open: open(), on_open_change: move |v| open.set(v),
     AlertDialogMedia { BluetoothConnected {} }
     AlertDialogTitle { "Allow Bluetooth pairing?" }

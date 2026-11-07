@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Code graph explorer (backlog row 486): rust-analyzer SCIP index -> graph.json -> explorer.html.
 #
-#   CARGO_TARGET_DIR=<absolute isolated dir> scripts/codegraph/run.sh [--force] [--out DIR]
+#   CARGO_TARGET_DIR=<absolute isolated dir> scripts/codegraph/run.sh [--force] [--blame] [--out DIR]
 #
 # Output (git-ignored, default <repo>/target-codegraph/): index.scip, graph.json, comments.json, status.json, explorer.html,
 # and one *.key file per product. Open explorer.html from disk; it needs no network.
@@ -15,17 +15,21 @@
 #                 build_comments.py + scripts/comment-scan.py. File text only: a source edit rebuilds the metrics at once,
 #                 even while the index is stale.
 #   page.key      graph.key + comments.key + explorer.template.html + make_explorer.py + the cytoscape bundle + status.json
+#   blame.key     (only with --blame, or while a blame.json whose key still matches exists) comments.key + HEAD +
+#                 build_blame.py. `git blame --line-porcelain` per tracked node file, cached by the file's blob hash in
+#                 blame/; build_blame.py turns it into the mean and median age of comment lines and of code lines.
 # status.json records the HEAD, time and key each part was built from; the page's status line shows it.
 # --force re-indexes (and so rebuilds everything). The SCIP run holds the build lock (scripts/lane-lock.sh).
 set -euo pipefail
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo="$(cd "$here/../.." && pwd)"
-force=0; out="$repo/target-codegraph"
+force=0; blame=0; out="$repo/target-codegraph"
 while [ $# -gt 0 ]; do
   case "$1" in
     --force) force=1 ;;
+    --blame) blame=1 ;;
     --out) out="${2:?--out needs a directory}"; shift ;;
-    *) echo "usage: CARGO_TARGET_DIR=<abs dir> $0 [--force] [--out DIR]" >&2; exit 2 ;;
+    *) echo "usage: CARGO_TARGET_DIR=<abs dir> $0 [--force] [--blame] [--out DIR]" >&2; exit 2 ;;
   esac
   shift
 done
@@ -117,6 +121,30 @@ else
   status="$status, comments reused"
 fi
 
+# comment age vs code age (N5): git blame is slow (about 2 minutes for the whole tree), so it runs only with --blame
+blame_key="$( { echo "$comments_key"; git rev-parse HEAD; git hash-object "$here/build_blame.py"; } | sha)"
+if [ "$blame" = 1 ] || { [ -s "$out/blame.json" ] && [ "$(stored blame)" = "$blame_key" ]; }; then
+  if [ "$(stored blame)" != "$blame_key" ] || [ ! -s "$out/blame.json" ]; then
+    mkdir -p "$out/blame"; : > "$out/blame.index"
+    git ls-files -z -- '*.rs' '*.ts' '*.css' '*.html' '*.js' '*.mjs' | while IFS= read -r -d '' f; do
+      [ -f "$f" ] || continue
+      bh="$(git hash-object -- "$f")"
+      [ -s "$out/blame/$bh" ] || git blame --line-porcelain -- "$f" 2>/dev/null | grep -E '^(author-time |[0-9a-f]{40} )' > "$out/blame/$bh" || true
+      printf '%s %s\n' "$bh" "$f" >> "$out/blame.index"
+    done
+    python3 -I "$here/build_blame.py" "$out" "$out/blame.json" >"$out/blame.log" || die "blame metrics failed"
+    echo "$blame_key" > "$out/blame.key"; rm -f "$out/page.key"
+    printf 'head=%s\nat=%s\n' "$head_sha" "$(date +%s)" > "$out/blame.info"
+    status="$status, blame rebuilt"
+  else
+    status="$status, blame reused"
+  fi
+else
+  rm -f "$out/blame.json" "$out/blame.key" "$out/blame.info"
+  echo '{"files":{}}' > "$out/blame.json"
+  status="$status, blame off (--blame)"
+fi
+
 # status.json: what each part was built from, shown in the page's status line
 python3 -I - "$out" "$tree_key" "$head_sha" "$dirty" "$ra_version" <<'PY'
 import json, sys
@@ -143,20 +171,21 @@ def files(name):
     return r
 old, new = files("index.files"), files("rs.now")
 changed = sorted(p for p in set(old) | set(new) if old.get(p) != new.get(p))
-ix, cm = info("index"), info("comments")
+ix, cm, bl = info("index"), info("comments"), info("blame")
 status = {
     "tree": {"head": head, "dirty": dirty == "1", "key": tree_key[:12]},
     "index": {"key": rd("index.key")[:12], "head": ix.get("head", "?"), "dirty": ix.get("dirty") == "1", "at": int(ix.get("at") or 0),
               "secs": int(ix.get("secs") or 0), "ra": ra, "stale": rd("index.key") != tree_key, "nchanged": len(changed), "changed": changed[:40]},
     "comments": {"key": rd("comments.key")[:12], "head": cm.get("head", "?"), "dirty": cm.get("dirty") == "1", "at": int(cm.get("at") or 0)},
+    "blame": {"built": bool(bl), "head": bl.get("head", ""), "at": int(bl.get("at") or 0)},
 }
 json.dump(status, open(f"{out}/status.json", "w"), separators=(",", ":"))
 PY
 rm -f "$rs_now"
 
-page_key="$( { echo "$graph_key"; echo "$comments_key"; git hash-object "$here/explorer.template.html" "$here/make_explorer.py" "$cyto" "$out/status.json"; } | sha)"
+page_key="$( { echo "$graph_key"; echo "$comments_key"; git hash-object "$here/explorer.template.html" "$here/make_explorer.py" "$cyto" "$out/status.json" "$out/blame.json"; } | sha)"
 if [ "$(stored page)" != "$page_key" ] || [ ! -s "$out/explorer.html" ]; then
-  python3 -I "$here/make_explorer.py" "$here/explorer.template.html" "$out/graph.json" "$out/comments.json" "$out/status.json" "$cyto" "$out/explorer.html"
+  python3 -I "$here/make_explorer.py" "$here/explorer.template.html" "$out/graph.json" "$out/comments.json" "$out/blame.json" "$out/status.json" "$cyto" "$out/explorer.html"
   echo "$page_key" > "$out/page.key"
   status="$status, page rebuilt"
 else

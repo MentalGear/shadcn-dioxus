@@ -2,7 +2,7 @@
 
 use crate::direction::{use_direction, Direction};
 use crate::js_listener::{use_js_listeners, JsListeners};
-use crate::{merge_attributes, use_unique_id};
+use crate::{merge_attributes, state_attrs, use_unique_id};
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
 
@@ -257,6 +257,7 @@ pub enum ScrollType {
 /// - `data-scroll-direction`: Indicates the scroll direction. Values are `vertical`, `horizontal`, or `both`.
 /// - `data-direction`: The resolved text direction. Values are `ltr` or `rtl`.
 /// - `data-scroll-fade`: Present with the `fade` prop; `y`, `x`, `both`, `top`, `bottom`, `start` or `end`.
+/// - `data-scrollbar-hidden`: Present with [`ScrollType::Hidden`]; the component sheet hides the native scrollbar on it.
 ///
 /// ## Scroll fade
 ///
@@ -270,21 +271,21 @@ pub fn ScrollArea(props: ScrollAreaProps) -> Element {
     let always_show = props.always_show_scrollbars;
     let text_direction = use_direction(props.dir);
 
-    let (overflow_x, overflow_y, scrollbar_width) = match scroll_type() {
+    let (overflow_x, overflow_y) = match scroll_type() {
         ScrollType::Auto => match direction() {
-            ScrollDirection::Vertical => (Some("hidden"), Some("auto"), None),
-            ScrollDirection::Horizontal => (Some("auto"), Some("hidden"), None),
-            ScrollDirection::Both => (Some("auto"), Some("auto"), None),
+            ScrollDirection::Vertical => (Some("hidden"), Some("auto")),
+            ScrollDirection::Horizontal => (Some("auto"), Some("hidden")),
+            ScrollDirection::Both => (Some("auto"), Some("auto")),
         },
         ScrollType::Always => match direction() {
-            ScrollDirection::Vertical => (Some("hidden"), Some("scroll"), None),
-            ScrollDirection::Horizontal => (Some("scroll"), Some("hidden"), None),
-            ScrollDirection::Both => (Some("scroll"), Some("scroll"), None),
+            ScrollDirection::Vertical => (Some("hidden"), Some("scroll")),
+            ScrollDirection::Horizontal => (Some("scroll"), Some("hidden")),
+            ScrollDirection::Both => (Some("scroll"), Some("scroll")),
         },
         ScrollType::Hidden => match direction() {
-            ScrollDirection::Vertical => (Some("hidden"), Some("scroll"), Some("none")),
-            ScrollDirection::Horizontal => (Some("scroll"), Some("hidden"), Some("none")),
-            ScrollDirection::Both => (Some("scroll"), Some("scroll"), Some("none")),
+            ScrollDirection::Vertical => (Some("hidden"), Some("scroll")),
+            ScrollDirection::Horizontal => (Some("scroll"), Some("hidden")),
+            ScrollDirection::Both => (Some("scroll"), Some("scroll")),
         },
     };
 
@@ -297,8 +298,9 @@ pub fn ScrollArea(props: ScrollAreaProps) -> Element {
     });
 
     // `class` always concatenates regardless of merge order; the rest is
-    // this scroll area's own computed state (`scrollbar-width`/the
-    // `data-*` pair).
+    // this scroll area's own computed state (the `data-*` attributes). `scrollbar-width` is a CSS
+    // property, not an attribute: `ScrollType::Hidden` is the presence attribute
+    // `data-scrollbar-hidden`, and the component sheet turns it into `scrollbar-width: none`.
     //
     // The overflow is a `style` attribute of the same list, not separate style fields next to the
     // spread: a spread `style` placed beside explicit style fields replaces them (a group given
@@ -314,13 +316,13 @@ pub fn ScrollArea(props: ScrollAreaProps) -> Element {
     });
     let fade = use_scroll_fade(props.fade);
     let owned = attributes!(div {
-        "scrollbar-width": scrollbar_width,
         "data-scroll-direction": match direction() {
             ScrollDirection::Vertical => "vertical",
             ScrollDirection::Horizontal => "horizontal",
             ScrollDirection::Both => "both",
         },
         "data-direction": text_direction.as_str(),
+        ..state_attrs::presence(state_attrs::Flag::ScrollbarHidden, scroll_type() == ScrollType::Hidden),
     });
     let merged = merge_attributes(vec![defaults, fade, props.attributes.clone(), owned]);
     // One `style` is built from the plain one and the shorthand-namespaced ones (`width: ".."`)
@@ -361,6 +363,32 @@ mod tests {
         assert_ne!(ScrollFade::Both.class(), ScrollFade::Y.class());
         assert_ne!(ScrollFade::Both.class(), ScrollFade::X.class());
         assert_eq!(ScrollFade::Both.attributes().len(), 2);
+    }
+
+    #[component]
+    fn Hidden() -> Element {
+        rsx! { ScrollArea { scroll_type: ScrollType::Hidden, "x" } }
+    }
+
+    #[component]
+    fn Shown() -> Element {
+        rsx! { ScrollArea { scroll_type: ScrollType::Always, "x" } }
+    }
+
+    /// `ScrollType::Hidden` is the presence attribute the sheet keys on; `scrollbar-width` is never an
+    /// HTML attribute, and no other type carries the presence attribute.
+    #[test]
+    fn hidden_type_is_a_presence_attribute_not_a_scrollbar_width_attribute() {
+        let render = |app: fn() -> Element| {
+            let mut dom = VirtualDom::new(app);
+            dom.rebuild_in_place();
+            dioxus_ssr::render(&dom)
+        };
+        let hidden = render(Hidden);
+        assert!(hidden.contains("data-scrollbar-hidden"), "{hidden}");
+        assert!(!hidden.contains("scrollbar-width"), "{hidden}");
+        let shown = render(Shown);
+        assert!(!shown.contains("data-scrollbar-hidden"), "{shown}");
     }
 
     /// A caller's own `style` is added to the scroll area's overflow, never a replacement for it.

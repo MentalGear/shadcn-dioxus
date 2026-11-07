@@ -40,7 +40,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (84)
+## Open rows (86)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -122,11 +122,13 @@ proposing one is closed as out of scope (row 337 is the first).
 | [494](backlog/494-re-enable-the-timing-cases-after-the-rust-port.md) | Re-enable the @timing cases after the Rust port | BACKLOG, triggered: when the JavaScript plan's port rows are done (row 434 with rows 444-466, final… | S-M | playwright |
 | [495](backlog/495-slow-observation-window-specs.md) | The two ~32 s-per-test specs wait on signals, not on fixed observation windows | Lane slow-specs-495: done, awaiting merge. Both specs wait on signals through… | S-M | playwright |
 | [496](backlog/496-incremental-gate-target.md) | Measure incremental compilation for the main loop's gate target | APPROVED (owner 2026-11-05: item 2 of the build and test-suite review), measure first. Runs when no… | S | tooling |
-| [497](backlog/497-scroll-area-scroll-type-hidden-shows-the-bar.md) | ScrollArea ScrollType::Hidden shows the scrollbar | BACKLOG. Found by row 399's first-half lane (2026-11-06); measured on a debug SSG build in Chromium. | S | components |
+| [497](backlog/497-scroll-area-scroll-type-hidden-shows-the-bar.md) | ScrollArea ScrollType::Hidden shows the scrollbar | FIXED on lane/scrollarea-497, awaiting merge (2026-11-07). Found by row 399's first-half lane… | S | components |
 | [498](backlog/498-pagination-disabled-link.md) | Pagination links have a disabled state | DONE (2026-11-06). Proof below. | S | components |
 | [499](backlog/499-safe-triangle-for-hover-menus.md) | A safe triangle for the hover menus, so they can take Base UI's short close delays | BACKLOG. Split out of row 478 item 4, whose open delays now follow Base UI. Land before row 456… | M | overlays |
-| [500](backlog/500-axe-split-structure-signature-falls-back.md) | The all-routes axe split falls back to a full dark scan on 88 of 94 routes | BACKLOG. Found by the batch verifier, 2026-11-07. | S-M | playwright |
-| [501](backlog/501-select-escape-race-flake.md) | select-escape-race.spec.ts:32 is flaky under load (also on the deployed base) | BACKLOG. Found by the batch verifier, 2026-11-07. | S | playwright |
+| [500](backlog/500-axe-split-structure-signature-falls-back.md) | The all-routes axe split falls back to a full dark scan on 88 of 94 routes | DONE 2026-11-07 (lane axe-root-500): the split is reverted; see Detail. | S-M | playwright |
+| [501](backlog/501-select-escape-race-flake.md) | select-escape-race.spec.ts:32 is flaky under load (also on the deployed base) | DONE 2026-11-07. Root cause: the press's deferred open (OpenGap::defer, one task after pointerdown)… | S | playwright |
 | [502](backlog/502-installed-components-carry-repo-lint-expects.md) | Installed components carry #[expect(clippy::disallowed_methods)] that a user's project cannot fulfil | BACKLOG, found 2026-11-07. Check first: run cargo clippy in the registry-install-smoke app and… | S | tooling |
+| [503](backlog/503-lane-ssg-builds-in-place-on-one-slot.md) | lane-ssg builds in the warm template under the lock instead of copying it | BACKLOG, 2026-11-07. Next tooling row after the deploy. | S-M | tooling |
+| [504](backlog/504-server-rendered-textarea-shows-no-value.md) | A server-rendered Textarea shows no value: the JS-off page and the hydrated first frame hold an empty field | BACKLOG. Found by the first-paint fix lane (row 468's section "First paint of a controlled… | S | textarea |
 
 <!-- END GENERATED -->

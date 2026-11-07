@@ -2,7 +2,7 @@ Allows users to create vertically sortable lists supporting drag and drop, touch
 
 ## Component Structure
 
-```rust
+```rust ignore
 DragAndDropList {
     // Items to be rendered
     items,
