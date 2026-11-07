@@ -4,13 +4,13 @@
 the page as stale and check `git log` and the flag files named here.** What each batch contained is in `git log` and the
 backlog row files, not here: this page says only what is deployed, what runs, what is next and what waits for the owner.
 
-Last updated: **2026-10-31**. Several sessions work in parallel; who holds what is on the `claims` branch (`CLAIMS.md`).
-Preview site: https://mentalgear.github.io/shadcn-dioxus/ (deployed from main `7d50e068`, PR #156, deploy commit `3896d87c`).
+Last updated: **2026-11-07**. Several sessions work in parallel; who holds what is on the `claims` branch (`CLAIMS.md`).
+Preview site: https://mentalgear.github.io/shadcn-dioxus/ (deployed from main `d040554a`, PR #165, deploy commit `e22e81aa`; main is at `77f21ed2` with PRs #166 and #167, whose deploy waits on the two blockers in "Next").
 
 ## Where a fresh session picks up
 
-Nothing runs and nothing is in the merge queue: rows 477-482 (overlay placement, Base UI defaults, scroll lock, keyboard inset,
-state attributes, control gaps) landed in PR #156 and are deployed; their owner iPhone checks are open (row Status lines). A new
+Session `session_01MsL6RCeq7QSe81nNBiuKP1` owns merges and deploys. Main (`77f21ed2`) carries PRs #166 and #167
+(the batch of 2026-11-06/07 and phase 0.1 of the JavaScript plan); its deploy waits on the two blockers in "Next". A new
 session reads this page, then takes the first open row of "Next" below; each row file under [`backlog/`](./backlog/)
 says what to build, which files, its proof and its size. The rules are [`../CLAUDE.md`](../CLAUDE.md) and
 [`lane-rules.md`](./lane-rules.md); the owner's decisions are [`decisions.md`](./decisions.md).
@@ -26,34 +26,33 @@ batch of 4-5 into `queue/batch-N`, runs ONE full `scripts/run-gates.sh`, the rel
 
 ## Merged and deployed
 
-Merge queue batches 1-29 are on main (PRs #121-#155); PR #156 (rows 477-482, merged by session
-`session_01MsL6RCeq7QSe81nNBiuKP1` at the owner's request) is deployed (main `7d50e068`, release suite 4019 passed, 0 failed,
-install smoke 82/82). What each batch carried is in `git log` and the row files under
+Merge queue batches 1-29 are on main (PRs #121-#155); PRs #156-#165 followed from session
+`session_01MsL6RCeq7QSe81nNBiuKP1` and are deployed (main `d040554a`, release suite 4159 passed, 0 failed). PRs #166
+and #167 are on main, not yet deployed. What each batch carried is in `git log` and the row files under
 [`backlog/done/`](./backlog/done/).
 
 ## Next
 
-The owner's order of 2026-10-26: **every row that can be done before the JavaScript plan comes first**, then the plan,
-then the final review. Rows in one step are independent unless a row says otherwise, so a step runs as parallel lanes.
+The owner's order of 2026-11-07 (refining 2026-10-26): **phase 0.1 of the JavaScript plan (row 444) is finished as far as
+its artefacts exist (on main, PR #167); before the plan continues, every row that would be needed whether or not the
+port happens comes first**, then the rest of the plan, then the final review. Rows in one step are independent unless a
+row says otherwise, so a step runs as parallel lanes (one verifier per batch, `lane-rules.md`).
 
-**Before the JavaScript plan**
+**Before the plan continues (port-independent)**
 
-1. Bugs and approved fixes (owner 2026-10-26), each reproduced first: **468** (form reset desync), **474** (Input OTP
-   paste), **473** (date picker segments), **471** and **475** (desktop only; reasoned from code, since the sandbox has no
-   desktop build), **390** (theme preset split; the one item that changes CSS users write), **476** (iPhone checkbox and radio tap lag on the home page) and
-   **472** (chart tooltip fade). **469** only on the owner's word. **477** (anchored overlays placed in document coordinates) and
-   **296** (the iPhone Combobox drift) have landed in PR #156 and are deployed; they close after the owner's iPhone check, so
-   nothing is left to build there.
-2. Structure: **435** (one menu family behind DropdownMenu, ContextMenu and Menubar) and **487** (one dismiss core: Escape,
-   outside dismiss and focus return for every overlay): finish the single overlay engine before the Rust ports (owner
-   2026-10-31), so the overlay port, row 456, ports one family and one core; then **436** (code-quality review of the
-   refactored code).
-3. **371** (dependency review; each outcome goes to the owner before it is applied), **440** (per-run gate log
-   directory) and **266** part (c) (`cargo public-api` report with a diff gate).
-4. Docs on the settled API: **392**, **399**, **422**, then the standing review **387** (394 is not planned, owner 2026-10-31).
-5. Tests: the **152** suite prune (before the plan adds its specs).
-6. At any point: **153**, **268**, **170**, and the Radix-versus-Base-UI scan rows ([`research/radix-vs-base-ui-2026-10-28.md`](./research/radix-vs-base-ui-2026-10-28.md)): **478** (overlay defaults), **479**
-   (scroll-lock method), **480** (keyboard inset re-diff), **481** (state attributes), **482** (control gaps), **484** (valued booleans to presence attributes, Base UI vocabulary) and **485** (retire `data-state`, after 484).
+1. Deploy blockers: the textarea first paint (row 468) and `select-escape-race` (row 501).
+2. The code-quality findings of row **436** (12, each reproduced first): the overlay group (submenu layer during the
+   close hold, the mount-time eval of closed overlays, stale captured values in script listeners, Escape during IME
+   composition), the class group (unescaped caller ids, per-render signals, the two `caller_id` helpers, the dropped
+   focus future, the swallowed non-primary slider press, the bridge sweep), then one cancellable delayed-task helper and
+   per-window state (after the first two, which touch the same files).
+3. **497** (`ScrollType::Hidden`), **499** (safe triangle; after 436's overlay group), **500** (the axe split's
+   structure signature), **502** (installed components' repo-only lint expects), the no-JS textarea row, **392**'s
+   gate that compiles docs samples, **486**'s remaining explorer features, **152** (the prune continues), **488**
+   (Combobox in RTL), then **387** (the standing docs review) and **496** (incremental gates, on an idle machine).
+4. Owner and hardware: the iPhone checks (rows 028, 030, 295, 296, 305, 476, 477, 479, 480), Android (473), a desktop
+   build (023), Firefox and Safari (153), and the owner's open questions (004/033 CI, 266 remote branches, 372 part 1,
+   412-415, 469).
 
 **The JavaScript plan** (row **434**; approved 2026-10-26 with scope 2). The whole plan is recorded, not only its first
 step: the decided plan is [`research/sync-js-root-2026-10-26.md`](./research/sync-js-root-2026-10-26.md) (with

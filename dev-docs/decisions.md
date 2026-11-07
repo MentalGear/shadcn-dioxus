@@ -71,3 +71,5 @@ the line here is the pointer, so when a row's text and this line disagree, the r
   with a recommendation. 2026-11-06.
 - Controlled-versus-uncontrolled guidance is written once (`/docs#controlled`) and each component page's block is
   generated from its own props, so it cannot drift or be missing. 2026-11-06 (rows 392, 387).
+- Order (owner 2026-11-07): phase 0.1 of the JavaScript plan first (done as far as its artefacts exist), then every row
+  that is needed whether or not the port happens, then the rest of the plan. `STATUS.md` "Next" carries the order.
