@@ -26,8 +26,12 @@ BUILT, minimal scope (2026-11-03): `scripts/codegraph/` (`run.sh`, `build_graph.
 `explorer.template.html`, `smoke.js`, a pnpm folder with Cytoscape.js 3.34.3, `README.md`). Delivery route: the preferred
 pnpm folder (S3), because it conflicts with no rule: `scripts/codegraph/` has its own `package.json`,
 `pnpm-workspace.yaml` and lock like `playwright/` and `preview/`. The staleness key, the C09/C19 config columns and the
-session-setup frozen install are in. Recommended: full radius 2 done; pairing through `component.json` not done
-(`component.json` names no primitive, so the name match stays). Optional items open. The page switches to a concentric
+session-setup frozen install are in. Recommended: full radius 2 done (the ego view is a complete breadth-first search; `smoke.js` checks the radius 1 and 2 sizes
+against an independent search); pairing through `component.json` done (2026-11-07): `component.json` marks a themed
+component and names no primitive, so the primitive is read from the `dioxus_primitives::<module>` paths in its sources
+(same-named module first, else the unique most-referenced non-helper module); preview components paired with a primitive
+46 -> 60, files in paired components 552 -> 779, and the 84 themed `mod.rs` files (absent from the SCIP index, e.g.
+`preview/src/components/select/mod.rs`) are nodes. Optional items open. The page switches to a concentric
 layout above 250 nodes because `cose` gives a hairball there (`cose` is kept up to that size, with boxes). Proof numbers
 are in the README. Dev tool only (owner 2026-11-02).
 
