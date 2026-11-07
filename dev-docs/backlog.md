@@ -128,7 +128,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [500](backlog/500-axe-split-structure-signature-falls-back.md) | The all-routes axe split falls back to a full dark scan on 88 of 94 routes | DONE 2026-11-07 (lane axe-root-500): the split is reverted; see Detail. | S-M | playwright |
 | [501](backlog/501-select-escape-race-flake.md) | select-escape-race.spec.ts:32 is flaky under load (also on the deployed base) | DONE 2026-11-07. Root cause: the press's deferred open (OpenGap::defer, one task after pointerdown)… | S | playwright |
 | [502](backlog/502-installed-components-carry-repo-lint-expects.md) | Installed components carry #[expect(clippy::disallowed_methods)] that a user's project cannot fulfil | BACKLOG, found 2026-11-07. Check first: run cargo clippy in the registry-install-smoke app and… | S | tooling |
-| [503](backlog/503-lane-ssg-builds-in-place-on-one-slot.md) | lane-ssg builds in the warm template under the lock instead of copying it | BACKLOG, 2026-11-07. Next tooling row after the deploy. | S-M | tooling |
+| [503](backlog/503-lane-ssg-builds-in-place-on-one-slot.md) | lane-ssg builds in the warm template under the lock instead of copying it | DONE 2026-11-07 (lane lanessg-503). lane-ssg.sh slot 0 builds in $LANE_TGT/template under… | S-M | tooling |
 | [504](backlog/504-server-rendered-textarea-shows-no-value.md) | A server-rendered Textarea shows no value: the JS-off page and the hydrated first frame hold an empty field | BACKLOG. Found by the first-paint fix lane (row 468's section "First paint of a controlled… | S | textarea |
 
 <!-- END GENERATED -->
