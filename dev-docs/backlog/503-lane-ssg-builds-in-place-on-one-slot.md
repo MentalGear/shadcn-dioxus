@@ -1,7 +1,7 @@
 ---
 id: 503
 title: "lane-ssg builds in the warm template under the lock instead of copying it"
-status: "BACKLOG, 2026-11-07. Next tooling row after the deploy."
+status: "DONE 2026-11-07 (lane lanessg-503). lane-ssg.sh slot 0 builds in $LANE_TGT/template under…"
 size: "S-M"
 area: tooling
 updated: 2026-11-07
@@ -18,7 +18,15 @@ time, and on this 38 GB quota (14 GB of it warm trees) it refused lane builds ag
 
 ## Status / trigger
 
-BACKLOG, 2026-11-07. Next tooling row after the deploy.
+DONE 2026-11-07 (lane lanessg-503). `lane-ssg.sh` slot 0 builds in `$LANE_TGT/template` under `lockq/template.lock`
+(`lane-slot-target.sh copy` from the template takes the same lock, which also covers `lane-target.sh create`), touches
+through `lane-touch.sh` (non-forced, stamp-aware), guards disk with the pub dir + margin and publishes the pub dir
+atomically. Proof, `LANE_SLOTS=1`: build A (worktree with MARKERAAA) served 2 files with A, 0 with B; build B (temporary
+worktree with MARKERBBB) served B only, stamp = B; a planted `compile_error!` failed in-place (exit 1, previous pub dir
+intact, template intact); the next build after the revert (MARKERCCC) served C only, none of the planted text. Free disk
+was 2937 MB before, 2527 MB minimum during (other lanes' writes included), 5613 MB after; the build itself adds no
+copy. Time saved per build is only the copy: 1 GB of the template copies in 4.9 s, so ~20 s of a 9-12 min build; the
+gain is the ~4 GB of disk and the refusals below 5.9 GB free.
 
 ## Size
 

@@ -5,12 +5,11 @@ the page as stale and check `git log` and the flag files named here.** What each
 backlog row files, not here: this page says only what is deployed, what runs, what is next and what waits for the owner.
 
 Last updated: **2026-11-07**. Several sessions work in parallel; who holds what is on the `claims` branch (`CLAIMS.md`).
-Preview site: https://mentalgear.github.io/shadcn-dioxus/ (deployed from main `d040554a`, PR #165, deploy commit `e22e81aa`; main is at `77f21ed2` with PRs #166 and #167, whose deploy waits on the two blockers in "Next").
+Preview site: https://mentalgear.github.io/shadcn-dioxus/ (deployed from main `f38662dc`, PRs #166-#168, deploy commit `85c05466`; release suite 4192 passed, 0 failed).
 
 ## Where a fresh session picks up
 
-Session `session_01MsL6RCeq7QSe81nNBiuKP1` owns merges and deploys. Main (`77f21ed2`) carries PRs #166 and #167
-(the batch of 2026-11-06/07 and phase 0.1 of the JavaScript plan); its deploy waits on the two blockers in "Next". A new
+Session `session_01MsL6RCeq7QSe81nNBiuKP1` owns merges and deploys. Main carries PRs #166-#168 and is deployed (`85c05466`). A new
 session reads this page, then takes the first open row of "Next" below; each row file under [`backlog/`](./backlog/)
 says what to build, which files, its proof and its size. The rules are [`../CLAUDE.md`](../CLAUDE.md) and
 [`lane-rules.md`](./lane-rules.md); the owner's decisions are [`decisions.md`](./decisions.md).
@@ -24,11 +23,13 @@ batch of 4-5 into `queue/batch-N`, runs ONE full `scripts/run-gates.sh`, the rel
 (`scripts/deploy-preview.sh`, which runs the full Playwright suite on a release build). Procedure:
 [`lane-rules.md`](./lane-rules.md), "Merge queue".
 
+The no-base-path validation tree (`$LANE_TGT/release-template`) was removed on 2026-11-07 to free disk for lane builds;
+the next deploy first rebuilds it with `scripts/lane-target.sh warm-release` (a cold release build).
+
 ## Merged and deployed
 
 Merge queue batches 1-29 are on main (PRs #121-#155); PRs #156-#165 followed from session
-`session_01MsL6RCeq7QSe81nNBiuKP1` and are deployed (main `d040554a`, release suite 4159 passed, 0 failed). PRs #166
-and #167 are on main, not yet deployed. What each batch carried is in `git log` and the row files under
+`session_01MsL6RCeq7QSe81nNBiuKP1` and are deployed (main `d040554a`, release suite 4159 passed, 0 failed). PRs #166-#168 are deployed (main `f38662dc`, deploy `85c05466`, release suite 4192 passed, 0 failed). What each batch carried is in `git log` and the row files under
 [`backlog/done/`](./backlog/done/).
 
 ## Next
@@ -40,7 +41,7 @@ row says otherwise, so a step runs as parallel lanes (one verifier per batch, `l
 
 **Before the plan continues (port-independent)**
 
-1. Deploy blockers: the textarea first paint (row 468) and `select-escape-race` (row 501).
+1. Done: the deploy blockers (rows 468 and 501) landed in PR #168 and are deployed.
 2. The code-quality findings of row **436** (12, each reproduced first): the overlay group (submenu layer during the
    close hold, the mount-time eval of closed overlays, stale captured values in script listeners, Escape during IME
    composition), the class group (unescaped caller ids, per-render signals, the two `caller_id` helpers, the dropped

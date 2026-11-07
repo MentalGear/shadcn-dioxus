@@ -1,8 +1,8 @@
 # State attributes: one helper, one vocabulary
 
 Backlog rows [481](./backlog/481-state-attributes-one-helper-emits-data-state-and-presence.md),
-[484](./backlog/484-convert-remaining-valued-boolean-state-attributes-to-presence.md) and
-[485](./backlog/485-retire-data-state-css-moves-to-aria-and-presence.md). Source of the vocabulary:
+[484](./backlog/done/484-convert-remaining-valued-boolean-state-attributes-to-presence.md) and
+[485](./backlog/done/485-retire-data-state-css-moves-to-aria-and-presence.md). Source of the vocabulary:
 [`research/radix-vs-base-ui-2026-10-28.md`](./research/radix-vs-base-ui-2026-10-28.md), appendix B.
 
 **Owner decision (2026-10-29): Base UI's state-attribute model is the long-term vocabulary.** Our CSS selects each state with the

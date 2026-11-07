@@ -6,6 +6,7 @@
 #   scripts/lane-slot-target.sh reserve <dir>       the same check, then records a reservation for the caller's pid
 #   scripts/lane-slot-target.sh release             drops it (also dropped when the pid dies)
 #   scripts/lane-slot-target.sh copy <src> <dest>   copy of src without .tree-owner and without `incremental/` dirs
+#   scripts/lane-slot-target.sh template-lock       print the path of the template lock (row 503)
 #
 # Slot 0 uses $LANE_TGT/<name> (check, gates, ...), the dir a single-slot run uses. A slot >= 1 compiles
 # at the same time as slot 0 and so cannot share its target dir; its dir (<name>-s1) is created
@@ -58,7 +59,14 @@ release() { rm -f "$RES/$RESERVE_PID"; }
 
 # copy <src> <dest>: a warm copy that never carries the source's .tree-owner, so a partial dest
 # (ENOSPC, kill) can not name another worktree and look like a stale foreign tree (row 356).
+# Row 503: the warm template is built IN PLACE by `lane-ssg.sh` on a single slot, under an exclusive flock on
+# $Q/template.lock. A copy FROM the template (a slot >= 1 build, `lane-target.sh create`, the slot-1 warm dirs) takes
+# the same lock, so it never reads the template while a build writes into it; it waits for the build to end.
+TEMPLATE_LOCK="$Q/template.lock"
 copy_tree() {
+  if [ "$(readlink -f "$1")" = "$(readlink -f "$T/template")" ]; then
+    mkdir -p "$Q"; exec 204>>"$TEMPLATE_LOCK"; flock 204
+  fi
   mkdir -p "$2"
   if [ "${LANE_COPY_INCREMENTAL:-0}" = 1 ]; then
     find "$1" -mindepth 1 -maxdepth 1 ! -name .tree-owner -exec cp -a --reflink=auto -t "$2" {} +
@@ -75,6 +83,7 @@ case "$cmd" in
   reserve) check_disk "${1:?dir}" reserve ;;   # reservation is owned by $LANE_RESERVE_PID (default: the caller)
   release) release ;;
   copy) copy_tree "${1:?src}" "${2:?dest}" ;;
+  template-lock) mkdir -p "$Q"; echo "$TEMPLATE_LOCK" ;;
   dir)
     name="${1:?name}"; suffix="${LANE_SLOT_SUFFIX:-}"
     src="$T/$name"; dest="$T/$name$suffix"

@@ -33,4 +33,4 @@ S-M
 5. The four `carousel-virtual-wheel.spec.ts` cases that bound a frame-sampled stall at 200 ms ("long real flicks never stall at a rendered slice end") carry the tag and are dormant with the pass; their first run in the pass is the re-enable's measurement of them (row 493).
 6. Move this row to done in the same commit: `scripts/check-timing-tags.sh` fails while the switch is off and this row is not open.
 
-Related: [row 493](./493-timing-cases-run-alone-on-a-quiet-machine.md) (the tag, the pass, the evidence), [row 490](./490-first-key-press-restyles-the-page-focus-modality-tokens-on-root.md), [row 434](./434-javascript-in-typescript-modules-not-rust-strings.md).
+Related: [row 493](./493-timing-cases-run-alone-on-a-quiet-machine.md) (the tag, the pass, the evidence), [row 490](./done/490-first-key-press-restyles-the-page-focus-modality-tokens-on-root.md), [row 434](./434-javascript-in-typescript-modules-not-rust-strings.md).
