@@ -73,7 +73,7 @@ test.describe('overlay engine', () => {
     }, { message: 'the menu corner sits at the second point' }).toEqual([700, 220]);
   });
 
-  test('F11: Escape during IME composition does not close an overlay (the trigger's own handler and the page layer)', async ({ page }) => {
+  test('F11: Escape during IME composition does not close an overlay (trigger handler and page layer)', async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/dropdown_menu/`, { timeout: 20 * 60 * 1000 });
     const trigger = page.getByRole('button', { name: 'Actions', exact: true });
     await trigger.click();
