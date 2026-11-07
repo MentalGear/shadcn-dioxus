@@ -78,7 +78,7 @@ const page_path = path.resolve(process.argv[2] || path.resolve(__dirname, '../..
   await p.click('#t-comm'); await p.waitForTimeout(300);
   const rows = async () => p.evaluate(() => [...document.querySelectorAll('#c-body tr')].map(r => [...r.children].map(c => c.innerText.trim())));
   let tr = await rows();
-  check('Comments table renders rows', tr.length > 1 && tr[0].length === 11, { rows: tr.length, first: tr[0] && tr[0].slice(0, 4) });
+  check('Comments table renders rows', tr.length > 1 && tr[0].length === 13, { rows: tr.length, first: tr[0] && tr[0].slice(0, 4) });
   const ratios = tr.map(r => parseFloat(r[3])).filter(x => !isNaN(x));
   check('sparsest first: ratios ascend', ratios.every((x, i) => i === 0 || x >= ratios[i - 1]), ratios.slice(0, 5));
   await p.selectOption('#c-rank', 'dense'); await p.waitForTimeout(200);
@@ -89,8 +89,47 @@ const page_path = path.resolve(process.argv[2] || path.resolve(__dirname, '../..
   check('path filter narrows the table', tr.length > 0 && tr.every(r => r[0].includes('primitives/src/select') || r[0] === 'no entity matches'), { rows: tr.length });
   await p.fill('#c-q', ''); await p.check('#c-out'); await p.waitForTimeout(200);
   tr = await rows();
-  check('only-outliers filter keeps flagged rows', tr.every(r => /dense|sparse/.test(r[10]) || r[0].startsWith('no entity')), { rows: tr.length });
+  check('only-outliers filter keeps flagged rows', tr.every(r => /dense|sparse/.test(r[12]) || r[0].startsWith('no entity')), { rows: tr.length });
   await p.uncheck('#c-out');
+  // ---- N1-N6
+  const ext = await p.evaluate(() => {
+    const c = window.__cm, f = c.fields, T = c.total(), t = {}; f.forEach((n, i) => t[n] = T[i]);
+    
+    return { total: t, itemCount: c.itemCount(), blame: c.blameBuilt() };
+  });
+  console.log('N1 stale candidates', ext.total.stale, '| N2 js comment/code lines', ext.total.js + '/' + ext.total.jscode, '| N3 words', ext.total.words, '| N4 repeated lines', ext.total.dup, '| N6 items', ext.itemCount);
+  check('N1: stale candidates counted', ext.total.stale > 0, ext.total.stale);
+  check('N2: JS code lines in strings counted', ext.total.jscode > 0 && ext.total.js > 0, { js: ext.total.js, jscode: ext.total.jscode });
+  check('N3: comment words counted', ext.total.words > ext.total.com, ext.total.words);
+  check('N4: repeated comment lines counted', ext.total.dup > 0, ext.total.dup);
+  check('N6: items rolled up', ext.itemCount > 1000, ext.itemCount);
+  // an item's own numbers: the lib.rs `pub mod accordion;` line is an item span of one code line
+  const item = await p.evaluate(() => { const a = window.__cm.itemOf('primitives/src/lib.rs', 'accordion'); return a; });
+  check('N6: item numbers for a known item (pub mod accordion; in lib.rs)', item && item.code === 1 && item.pub === 1, item);
+  // a lens per metric recolours; the Comments tab ranks by stale, dup, and lists items
+  await p.click('#t-graph'); await p.waitForTimeout(300);
+  for (const lens of ['stale', 'dup', 'age']) {
+    await p.selectOption('#lens', lens); await p.waitForTimeout(200);
+    const leg = await p.evaluate(() => document.getElementById('legend').innerText);
+    check('lens "' + lens + '" shows a legend', /in view|older|repeated|stale/i.test(leg), leg.slice(0, 80));
+  }
+  await p.selectOption('#lens', 'deps');
+  await p.click('#t-comm'); await p.waitForTimeout(300);
+  await p.selectOption('#c-lvl', '3'); await p.selectOption('#c-rank', 'dense'); await p.fill('#c-min', '20'); await p.waitForTimeout(300);
+  tr = await rows();
+  check('Comments table lists items (rows: items)', tr.length > 1 && /:\d+ (fn|struct|enum|impl|const|mod|type|trait|static) /.test(tr[0][0]), tr[0] && tr[0].slice(0, 4));
+  await p.selectOption('#c-lvl', '2'); await p.selectOption('#c-rank', 'stale'); await p.waitForTimeout(300);
+  tr = await rows();
+  check('rank by stale: first row has stale candidates', tr.length > 0 && parseInt(tr[0][10]) > 0, tr[0] && [tr[0][0], tr[0][10]]);
+  await p.selectOption('#c-rank', 'dup'); await p.waitForTimeout(300);
+  tr = await rows();
+  check('rank by repeated lines: first row has repeats', tr.length > 0 && parseInt(tr[0][11]) > 0, tr[0] && [tr[0][0], tr[0][11]]);
+  if (ext.blame) {
+    await p.selectOption('#c-rank', 'age'); await p.waitForTimeout(300);
+    tr = await rows();
+    check('rank by comment age: rows exist when blame is built', tr.length > 0, tr[0] && tr[0][0]);
+  }
+  await p.selectOption('#c-lvl', '2'); await p.selectOption('#c-rank', 'sparse'); await p.fill('#c-min', '100');
   console.log('M6 file-level fences', JSON.stringify({ lo: cm.out.file.lo, hi: cm.out.file.hi, median: cm.out.file.median }));
   console.log('M6 densest files', JSON.stringify(cm.out.file.dense.slice(0, 5).map(([k, r]) => [k, +r.toFixed(2)])));
   console.log('M6 sparsest files', JSON.stringify(cm.out.file.sparse.slice(0, 5).map(([k, r]) => [k, +r.toFixed(2)])));

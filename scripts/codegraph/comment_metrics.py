@@ -16,6 +16,7 @@
 #   N3     words: whitespace-separated words in comment lines
 #   N4     dup: comment lines inside a run of 3+ lines whose normalised text also occurs in another file
 #   N6     items
+#   N5     line_kinds(): which lines are comment and which are code, for build_blame.py (ages come from git blame)
 import bisect, importlib.util, os, re
 
 CM_FIELDS = ("code", "com", "doc", "pubs", "doced", "fields", "fdoced", "todo", "hist", "js", "jscode", "words", "stale", "dup")
@@ -232,6 +233,17 @@ def _other(path, text):
     counts[CM_FIELDS.index("todo")], counts[CM_FIELDS.index("hist")] = len(todo), len(hist)
     detail = {k: v for k, v in (("todo", todo), ("hist", hist)) if v}
     return counts, detail, [], {"tokens": set(_IDENT.findall(text))}
+
+
+def line_kinds(path, text):
+    """(comment line numbers, code line numbers) of one file, for the comment-age metric (N5)."""
+    if path.endswith(".rs"):
+        com = {ln for kind, _i, _j, p in cs.walk_rust(text) if kind == "comment" for ln, _b in p}
+        code = {k for k, c in enumerate(cs.code_of(text, keep_strings=True).split("\n"), 1) if c.strip()}
+        return com, code
+    com = {ln for ln, _b in cs.EXTRACTORS[cs.EXT_KIND[os.path.splitext(path)[1]]](text)}
+    code = {k for k, c in enumerate(text.split("\n"), 1) if c.strip() and k not in com}
+    return com, code
 
 
 NODE_EXTS = (".rs", ".ts", ".css", ".html", ".js", ".mjs", ".txt")
