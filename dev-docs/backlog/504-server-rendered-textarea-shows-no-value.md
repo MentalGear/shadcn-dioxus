@@ -1,5 +1,5 @@
 ---
-id: 503
+id: 504
 title: "A server-rendered Textarea shows no value: the JS-off page and the hydrated first frame hold an empty field"
 status: "BACKLOG. Found by the first-paint fix lane (row 468's section \"First paint of a controlled…"
 size: "S"
@@ -7,7 +7,7 @@ area: textarea
 updated: 2026-11-07
 ---
 
-# Row 503: a server-rendered Textarea shows no value
+# Row 504: a server-rendered Textarea shows no value
 
 ## Item
 
