@@ -333,6 +333,10 @@ pub fn AvatarImage(props: AvatarImageProps) -> Element {
         }
 
         let image_id_value = image_id();
+        #[expect(
+            clippy::disallowed_methods,
+            reason = "row 434: the bridge ports this page script"
+        )]
         let mut eval = document::eval(
             r#"
             const imageId = await dioxus.recv();

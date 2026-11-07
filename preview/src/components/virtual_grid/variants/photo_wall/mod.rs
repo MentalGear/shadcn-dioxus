@@ -416,6 +416,7 @@ pub fn Demo() -> Element {
                         variant: ButtonVariant::Outline,
                         onclick: move |_| {
                             spawn(async move {
+                                #[expect(clippy::disallowed_methods, reason = "row 457: this page script is ported by row 457")]
                                 let mut random = document::eval("dioxus.send([Math.random(), Math.random()])");
                                 if let Ok([r, c]) = random.recv::<[f64; 2]>().await {
                                     let row = ((r * SIDE as f64) as usize).min(SIDE - 1);
@@ -424,6 +425,7 @@ pub fn Demo() -> Element {
                                         // The justified grid reveals and focuses a tile written into its active signal.
                                         active_index.set(row * SIDE + column);
                                     } else {
+                                        #[expect(clippy::disallowed_methods, reason = "row 457: this page script is ported by row 457")]
                                         let _ = document::eval(JUMP_JS).send((ROOT_ID, row, column, TILE));
                                     }
                                 }

@@ -35,6 +35,10 @@ pub fn use_default_checked(
     default: impl Fn() -> bool + 'static,
 ) {
     use_effect(move || {
+        #[expect(
+            clippy::disallowed_methods,
+            reason = "row 458: this page script is ported by row 458"
+        )]
         let js = eval(
             r#"
             const id = await dioxus.recv();

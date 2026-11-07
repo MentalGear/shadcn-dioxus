@@ -607,6 +607,7 @@ pub fn DragAndDropListItems(props: DragAndDropListItemsProps) -> Element {
                 // nearest item still owns target calculation, but the list
                 // must accept the final drop for those gap targets.
                 event.prevent_default();
+                #[expect(clippy::disallowed_methods, reason = "row 434: the bridge ports this DataTransfer write")]
                 event.data_transfer().set_drop_effect("move");
             },
             ondrop: move |event: Event<DragData>| {
@@ -859,9 +860,12 @@ pub fn DragAndDropListItem(props: DragAndDropListItemProps) -> Element {
             },
             ondragstart: move |event: Event<DragData>| {
                 ctx.start_drag(index);
+                #[expect(clippy::disallowed_methods, reason = "row 434: the bridge ports this DataTransfer write")]
                 event.data_transfer().set_effect_allowed("move");
+                #[expect(clippy::disallowed_methods, reason = "row 434: the bridge ports this DataTransfer write")]
                 event.data_transfer().set_drop_effect("move");
                 // Note: this is only for Firefox (without it, DnD won't work)
+                #[expect(clippy::disallowed_methods, reason = "row 434: the bridge ports this DataTransfer write")]
                 let _ = event.data_transfer().set_data("text/html", "");
                 native_drag.set(true);
             },
@@ -871,6 +875,7 @@ pub fn DragAndDropListItem(props: DragAndDropListItemProps) -> Element {
             },
             ondragover: move |event: Event<DragData>| {
                 event.prevent_default();
+                #[expect(clippy::disallowed_methods, reason = "row 434: the bridge ports this DataTransfer write")]
                 event.data_transfer().set_drop_effect("move");
                 async move {
                     if let Some(md) = item_ref() {

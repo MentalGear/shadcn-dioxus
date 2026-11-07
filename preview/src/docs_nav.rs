@@ -171,6 +171,10 @@ pub(crate) fn DocsComponentNav(active: DocsNavActive) -> Element {
     // CSS), then bring the current link into view in whichever list is showing.
     use_effect(move || {
         spawn(async move {
+            #[expect(
+                clippy::disallowed_methods,
+                reason = "row 434: the bridge ports this page script"
+            )]
             let mut read = document::eval(READ_NAV_SORT_JS);
             if let Ok(value) = read.recv::<String>().await {
                 sort.set(if value == "category" {
@@ -179,12 +183,20 @@ pub(crate) fn DocsComponentNav(active: DocsNavActive) -> Element {
                     NavSort::Az
                 });
             }
+            #[expect(
+                clippy::disallowed_methods,
+                reason = "row 434: the bridge ports this page script"
+            )]
             document::eval(SCROLL_CURRENT_JS);
         });
     });
 
     let mut choose = move |next: NavSort| {
         sort.set(next);
+        #[expect(
+            clippy::disallowed_methods,
+            reason = "row 434: the bridge ports this page script"
+        )]
         document::eval(SCROLL_CURRENT_JS);
     };
 
@@ -244,6 +256,7 @@ pub(crate) fn DocsComponentNav(active: DocsNavActive) -> Element {
                                 text_value: cat.label(),
                                 on_select: move |cat: ComponentCategory| {
                                     sort.set(NavSort::Category);
+                                    #[expect(clippy::disallowed_methods, reason = "row 434: the bridge ports this page script")]
                                     document::eval(
                                         &format!("{CHOOSE_CATEGORY_JS};{}", jump_to_category_js(&category_id(cat))),
                                     );

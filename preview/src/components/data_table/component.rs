@@ -534,6 +534,7 @@ fn DataTableTable<T: Clone + PartialEq + 'static>(props: DataTableProps<T>) -> E
             ondragover: move |event: DragEvent| {
                 // Drops can land in the gaps between rows: the body accepts them.
                 event.prevent_default();
+                #[expect(clippy::disallowed_methods, reason = "row 434: the bridge ports this DataTransfer write")]
                 event.data_transfer().set_drop_effect("move");
             },
             ondrop: move |event: DragEvent| {

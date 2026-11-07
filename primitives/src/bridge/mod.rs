@@ -255,6 +255,8 @@ pub struct ScrollIntoView {
 
 /// A method the bridge may call on an element: a closed list, never `el[name](...)`. The popover and
 /// dialog methods tolerate the state they are called in (showing an open popover is not an error).
+/// Every variant writes a slot (open, focus, scroll or caret), so none is named outside `bridge/`
+/// (`FORBIDDEN_VERBS` in `scripts/check-bridge-behaviours.sh`).
 #[derive(Clone, Debug, PartialEq)]
 pub enum Method {
     /// `showPopover()`.

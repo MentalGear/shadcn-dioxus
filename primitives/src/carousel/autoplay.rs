@@ -122,6 +122,10 @@ pub fn CarouselAutoplay(props: CarouselAutoplayProps) -> Element {
         let mut playing = autoplay.playing;
         playing.set((props.default_playing)());
         spawn(async move {
+            #[expect(
+                clippy::disallowed_methods,
+                reason = "row 464: this page script is ported by row 464"
+            )]
             let mut eval = document::eval(CAROUSEL_REDUCED_MOTION_JS);
             if let Ok(true) = eval.recv::<bool>().await {
                 playing.set(false);

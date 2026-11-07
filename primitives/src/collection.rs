@@ -171,6 +171,10 @@ impl CollectionState {
         pending.set(true);
         let mut collection = *self;
         Runtime::current().spawn(order.scope, async move {
+            #[expect(
+                clippy::disallowed_methods,
+                reason = "row 451: this page script is ported by row 451"
+            )]
             let mut eval = document::eval(DOM_ORDER_JS);
             let slots = match eval.send(order.marker_prefix.peek().clone()) {
                 Ok(()) => eval.recv::<Vec<usize>>().await.ok(),

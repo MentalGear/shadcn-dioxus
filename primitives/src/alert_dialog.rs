@@ -257,6 +257,10 @@ pub fn AlertDialogContent(props: AlertDialogContentProps) -> Element {
     crate::scroll_lock::use_scroll_lock(open);
 
     use_effect(move || {
+        #[expect(
+            clippy::disallowed_methods,
+            reason = "row 456: this page script is ported by row 456"
+        )]
         let eval = document::eval(
             r#"let id = await dioxus.recv();
             let is_open = await dioxus.recv();

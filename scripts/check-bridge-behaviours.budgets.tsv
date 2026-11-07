@@ -1,0 +1,7 @@
+# check-bridge-behaviours baseline (scripts/lib/ratchet.py): shrink-only per-file counts, regenerate with --update-baseline.
+#! columns: bytes
+# path	bytes
+primitives/src/ts/behaviours/fixture.ts	891
+primitives/src/ts/bridge.ts	42820
+primitives/src/ts/lib/register.ts	777
+primitives/src/ts/types/bridge.d.ts	6111

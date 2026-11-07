@@ -143,6 +143,10 @@ pub(crate) fn use_popover_sync(
         // safe to assume, and why prepending (one synchronous script, not
         // two separately-ordered ones) is what actually closes the gap.
         let inject = TOP_LAYER_INK_STYLES_INJECT_JS;
+        #[expect(
+            clippy::disallowed_methods,
+            reason = "row 452: this page script is ported by row 452"
+        )]
         document::eval(&format!(
             "{inject}
             const el = document.getElementById('{id}');
@@ -294,6 +298,10 @@ pub(crate) fn use_popover_shown_while_mounted(
         let inject = TOP_LAYER_INK_STYLES_INJECT_JS;
         let modality = crate::modality::MODALITY_JS;
         let open_focus = crate::modality::OPEN_FOCUS_JS;
+        #[expect(
+            clippy::disallowed_methods,
+            reason = "row 452: this page script is ported by row 452"
+        )]
         document::eval(&format!(
             "{inject}
             {modality};

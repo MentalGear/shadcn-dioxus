@@ -435,6 +435,7 @@ impl RefocusTrigger for Signal<String> {
         // Never by script after a touch or pen (`data-dx-modality`, `modality.rs`): nothing was
         // keyboard-focused to give back, and a script-focused trigger rings on iOS.
         // focus-ok: restore focus to the trigger on close
+        #[expect(clippy::disallowed_methods, reason = "row 434: the bridge ports this page script")]
         document::eval(&format!(
             "var e=document.getElementById('{id}');if(e&&!/^(touch|pen)$/.test(document.documentElement.getAttribute('data-dx-modality')||''))e.focus()"
         ));
@@ -663,6 +664,7 @@ fn use_dialog_open_driver(
         let open_focus = crate::modality::OPEN_FOCUS_JS;
         let forward = DIALOG_CLOSE_FORWARD_JS;
         let timeout = DIALOG_EXIT_TIMEOUT_MS;
+        #[expect(clippy::disallowed_methods, reason = "row 434: the bridge ports this page script")]
         document::eval(&format!(
             "{inject}
             {modality};
@@ -887,6 +889,10 @@ fn use_animated_open(
         } else {
             spawn(async move {
                 let id = id.cloned();
+                #[expect(
+                    clippy::disallowed_methods,
+                    reason = "row 434: the bridge ports this page script"
+                )]
                 let mut eval = dioxus::document::eval(
                     r#"const id = await dioxus.recv();
                     await new Promise(resolve => requestAnimationFrame(resolve));

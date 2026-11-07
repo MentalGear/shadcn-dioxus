@@ -156,6 +156,10 @@ pub(crate) fn LazyCssCodeBlock(asset: Asset) -> Element {
 /// snippet (ported by row 434), not a persistent listener.
 #[cfg(debug_assertions)]
 pub(crate) async fn fetch_asset_text(url: String) -> Option<String> {
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "row 434: the bridge ports this page script"
+    )]
     let mut eval = document::eval(
         r#"
         const url = await dioxus.recv();

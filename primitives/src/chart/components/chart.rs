@@ -690,6 +690,7 @@ pub fn Chart(props: ChartProps) -> Element {
                 mounted.set(Some(evt.data()));
                 if animate_prop && hydrated {
                     spawn(async move {
+                        #[expect(clippy::disallowed_methods, reason = "row 434: the bridge ports this page script")]
                         let mut eval = dioxus::document::eval(PAINTED_IN_VIEW_JS);
                         let _ = eval.send(paint_key.cloned());
                         if let Ok(seen) = eval.recv::<bool>().await {

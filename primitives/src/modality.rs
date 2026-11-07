@@ -208,6 +208,10 @@ pub(crate) fn use_close_focus(id: String, open: impl Readable<Target = bool> + C
         was_open.set(now);
         if before && !now {
             let id = id.clone();
+            #[expect(
+                clippy::disallowed_methods,
+                reason = "row 434: the bridge ports this page script"
+            )]
             document::eval(&format!(
                 "{OPEN_FOCUS_JS}
                 const panel = document.getElementById('{id}');
