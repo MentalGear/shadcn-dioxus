@@ -45,6 +45,79 @@ for d in docs:
         if r&1 and not sym.startswith('local '):
             defs[sym]=d['path'];items[d['path']]+=1
 STD={'core','alloc','std'}
+# Symbols with no definition occurrence of their own. rust-analyzer emits none for what a macro generates (derive output,
+# #[component] and Props builders) and none for a module, so each is mapped to the definition that owns it:
+#   owner   the type or function named in the descriptor (`impl#[T<..>][Trait]m().`, `T#0.`, `Props...Builder`,
+#           `...WithOwner`, `F_completions/Component#F#` -> `F().`) when that has a definition
+#   module  else the file of the module the symbol sits in (`a/b/` -> a/b.rs or a/b/mod.rs), shortening the path until a file exists
+def split_desc(desc):
+    parts=[];cur='';depth=0;bt=False
+    for ch in desc:
+        if ch=='`':bt=not bt
+        elif not bt:
+            if ch=='[':depth+=1
+            elif ch==']':depth-=1
+        if ch=='/' and not bt and depth==0:parts.append(cur);cur=''
+        else:cur+=ch
+    return parts,cur
+def crate_src(path):
+    d=os.path.dirname(path)
+    while d and not os.path.isfile(os.path.join(REPO,d,'Cargo.toml')):d=os.path.dirname(d)
+    return os.path.join(d,'src') if d else None
+pkg_src={}
+for sym,path in defs.items():
+    pkg_src.setdefault(pkg(sym),crate_src(path))
+def head(sym):return ' '.join(sym.split(' ',4)[:4])+' '
+extra_files=set()
+def module_file(sym):
+    src=pkg_src.get(pkg(sym))
+    if not src:return None
+    mods,_=split_desc(sym.split(' ',4)[4])
+    while True:
+        m=[x.strip('`').removeprefix('r#') for x in mods if x]
+        base=os.path.join(src,*m) if m else None
+        for c in ((base+'.rs',os.path.join(base,'mod.rs')) if m else (os.path.join(src,'lib.rs'),os.path.join(src,'main.rs'))):
+            if os.path.isfile(os.path.join(REPO,c)):return c
+        if not m:return None
+        mods=mods[:-1]
+def owner_names(last):
+    names=[]
+    for t in re.findall(r'\[`?([A-Za-z_]\w*)',last):names.append(t)
+    m=re.match(r'([A-Za-z_]\w*)#',last)
+    if m:names.append(m.group(1))
+    return names
+# a type whose own definition occurrence is missing still has its fields and variants (`ButtonProps#variant.`)
+owned={}
+for sym,path in defs.items():
+    h=head(sym);desc=sym.split(' ',4)[4];i=desc.find('#')
+    if i>0 and not desc.startswith('impl#') and '/impl#' not in desc[:i+1]:owned.setdefault(h+desc[:i+1],path)
+resolved={}
+def resolve(sym):
+    if sym in resolved:return resolved[sym]
+    h=head(sym);mods,last=split_desc(sym.split(' ',4)[4])
+    pre=''.join(x+'/' for x in mods)
+    res=None
+    if mods and mods[-1].endswith('_completions'):
+        n=mods[-1][:-len('_completions')];pre=''.join(x+'/' for x in mods[:-1])
+        for c in (pre+n+'().',pre+n+'#'):
+            if h+c in defs:res=(defs[h+c],'owner');break
+    elif last:
+        for n in owner_names(last):
+            cands=[n]
+            for suf in ('Builder','WithOwner'):
+                if n.endswith(suf):cands.append(n[:-len(suf)])
+            for c in cands:
+                for k in ('#','().'):
+                    t=defs.get(h+pre+c+k) or (owned.get(h+pre+c+k) if k=='#' else None)
+                    if t:res=(t,'owner');break
+                if res:break
+            if res:break
+    if not res:
+        f=module_file(sym)
+        if f:res=(f,'module')
+    resolved[sym]=res
+    return res
+rtier=collections.Counter()
 fe=collections.Counter();unres=0;ext=collections.Counter();stdn=0;itemedges=set()
 for d in docs:
     for sym,r in d['occ']:
@@ -55,10 +128,15 @@ for d in docs:
         else:
             p=pkg(sym)
             if p in STD:stdn+=1
-            elif p in WS or p is None:unres+=1
+            elif p in WS or p is None:
+                q=resolve(sym)
+                if q:
+                    rtier[q[1]]+=1;extra_files.add(q[0])
+                    if q[0]!=d['path']:fe[(d['path'],q[0],'rs')]+=1;itemedges.add((d['path'],sym))
+                else:unres+=1
             else:ext[(d['path'],'ext:'+p)]+=1
 for (a,b),c in ext.items():fe[(a,b,'ext')]+=c
-files={d['path'] for d in docs}
+files={d['path'] for d in docs}|extra_files
 # static scans: asset!/include_str! refs, TS imports
 asset_re=re.compile(r'(?:include_str|include_bytes|asset)!\(\s*"([^"]+)"')
 def crate_dir(p):return p.split('/')[0]
@@ -179,7 +257,7 @@ for f in allf:
     cid,cr,name=comp(f)
     nodes.append({'id':f,'comp':cid,'items':items.get(f,0)})
 edges=[[fidx[a],fidx[b],c,k] for (a,b,k),c in fe.items() if a in fidx and b in fidx]
-g={'meta':{'scip_documents':len(docs),'items_defined':len(defs),'unresolved_workspace_refs':unres,'std_refs':stdn,'item_level_edges':len(itemedges)},
+g={'meta':{'resolved_by_owner':rtier['owner'],'resolved_by_module':rtier['module'],'scip_documents':len(docs),'items_defined':len(defs),'unresolved_workspace_refs':unres,'std_refs':stdn,'item_level_edges':len(itemedges)},
    'comps':list(comps.values()),'nodes':nodes,'edges':edges}
 json.dump(g,open(out,'w'),separators=(',',':'))
 kinds=collections.Counter(e[3] for e in edges)
