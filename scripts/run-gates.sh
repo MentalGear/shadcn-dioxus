@@ -119,6 +119,7 @@ gates=(
   "check-motion-gating|scripts/check-motion-gating.sh"
   "check-infinite-animations|scripts/check-infinite-animations.sh"
   "check-open-focus|scripts/check-open-focus.sh"
+  "check-unawaited-focus|scripts/check-unawaited-focus.sh"
   "check-theme-mode-writer|scripts/check-theme-mode-writer.sh"
   # group: Theme and component CSS
   "check-dx-class-prefix|scripts/check-dx-class-prefix.sh"

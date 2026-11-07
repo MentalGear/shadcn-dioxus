@@ -264,6 +264,34 @@ fn select_list_onkeydown(mut ctx: SelectContext) -> impl FnMut(KeyboardEvent) {
     }
 }
 
+/// Whether the list holds the roving focus on its container (nothing inside it is focused yet), and
+/// the effect that moves DOM focus to the container while that holds. A hook.
+///
+/// See `SelectContext::keep_trigger_focus`'s doc: an Alt+ArrowDown open must leave DOM focus on the
+/// trigger, so this "nothing focused yet -- focus the listbox container" fallback must not fire for
+/// that open.
+fn use_listbox_container_focus(
+    ctx: SelectContext,
+    listbox_ref: Signal<Option<std::rc::Rc<MountedData>>>,
+) -> impl Fn() -> bool + Copy {
+    let open = ctx.selectable.open;
+    let focused =
+        move || open() && !ctx.selectable.collection.any_focused() && !(ctx.keep_trigger_focus)();
+
+    use_effect(move || {
+        let Some(listbox_ref) = listbox_ref() else {
+            return;
+        };
+        if focused() {
+            spawn(async move {
+                // focus-ok: the listbox container takes focus for its keys (a container: no outline, no editable)
+                _ = listbox_ref.set_focus(true).await;
+            });
+        }
+    });
+    focused
+}
+
 /// Web arm: promote the listbox to the top layer via `popover="manual"` so it escapes
 /// clipping/transformed ancestors, the same construction as `Tooltip`/`HoverCard`/`Combobox`
 /// (dev-docs/plan.md Phase 4.4). The placement is the engine's anchored popper, or the item-aligned
@@ -318,23 +346,7 @@ fn SelectListRendered(
     // Scroll buttons render only inside this subtree and read the list's scroll state
     // (`scroll_button.rs`).
     let list_scroll = use_context_provider(|| ListScroll::new(listbox_ref));
-    // See `SelectContext::keep_trigger_focus`'s doc: an Alt+ArrowDown open
-    // must leave DOM focus on the trigger, so this "nothing focused yet --
-    // focus the listbox container" fallback must not fire for that open.
-    let focused =
-        move || open() && !ctx.selectable.collection.any_focused() && !(ctx.keep_trigger_focus)();
-
-    use_effect(move || {
-        let Some(listbox_ref) = listbox_ref() else {
-            return;
-        };
-        if focused() {
-            spawn(async move {
-                // focus-ok: the listbox container takes focus for its keys (a container: no outline, no editable)
-                _ = listbox_ref.set_focus(true);
-            });
-        }
-    });
+    let focused = use_listbox_container_focus(ctx, listbox_ref);
 
     let onkeydown = select_list_onkeydown(ctx);
 
@@ -491,23 +503,7 @@ fn SelectListRendered(
     // Scroll buttons render only inside this subtree and read the list's scroll state
     // (`scroll_button.rs`).
     let list_scroll = use_context_provider(|| ListScroll::new(listbox_ref));
-    // See `SelectContext::keep_trigger_focus`'s doc: an Alt+ArrowDown open
-    // must leave DOM focus on the trigger, so this "nothing focused yet --
-    // focus the listbox container" fallback must not fire for that open.
-    let focused =
-        move || open() && !ctx.selectable.collection.any_focused() && !(ctx.keep_trigger_focus)();
-
-    use_effect(move || {
-        let Some(listbox_ref) = listbox_ref() else {
-            return;
-        };
-        if focused() {
-            spawn(async move {
-                // focus-ok: the listbox container takes focus for its keys (a container: no outline, no editable)
-                _ = listbox_ref.set_focus(true);
-            });
-        }
-    });
+    let focused = use_listbox_container_focus(ctx, listbox_ref);
 
     let onkeydown = select_list_onkeydown(ctx);
     // See the web arm's identical construction (dev-docs/backlog.md row 34) for
