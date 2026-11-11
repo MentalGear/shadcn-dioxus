@@ -294,8 +294,13 @@ mod variant_title_tests {
     fn title_txt_overrides_the_derived_title() {
         // Shown exactly as written: a title.txt author's own casing of a small word is not disturbed.
         assert_eq!(demo_title("accordion", "until_found"), "Find in Accordion");
-        // Another component with the same directory name keeps the derived title.
-        assert_eq!(demo_title("tabs", "until_found"), "Until Found");
+        assert_eq!(demo_title("tabs", "until_found"), "Find in Tabs");
+        assert_eq!(
+            demo_title("collapsible", "until_found"),
+            "Find in Collapsible"
+        );
+        // A component with no override for that directory name keeps the derived title.
+        assert_eq!(demo_title("message_scroller", "fade"), "Fade");
         assert_eq!(demo_title("tabs", "rtl"), "RTL");
     }
 
