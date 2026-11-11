@@ -1,32 +1,48 @@
 use super::*;
 
-/// Display title for a variant's `h3` on a component page, derived from the
-/// variant's identifier: underscores become spaces and a known acronym is
-/// upper-cased, so `rtl` reads "RTL" rather than "Rtl". An acronym that
-/// *qualifies* another variant name goes in parentheses, so
-/// `virtual_loop_rtl` reads "virtual loop (RTL)". (`.dx-component-variant-title`
-/// then title-cases the words via CSS `text-transform: capitalize`, which
-/// leaves an already upper-case acronym alone.)
+/// Display title for a variant's `h3` on a component page, derived from the variant's identifier:
+/// underscores become spaces, each word is capitalized, and a known acronym is upper-cased instead,
+/// so `rtl` reads "RTL" rather than "Rtl". A small word (`a`, `an`, `in`, `of`, `the`, `to`, `and`,
+/// `or`) stays lowercase unless it is the first word, so `until_found` reads "Until Found" but
+/// `date_of_birth` reads "Date of Birth". An acronym that *qualifies* another variant name goes in
+/// parentheses, so `virtual_loop_rtl` reads "Virtual Loop (RTL)". The casing is done here, not by
+/// CSS: a `title.txt` override ([`demo_title`]) is shown exactly as written, with no casing applied,
+/// so an author can choose a small word's case deliberately (row 399).
 pub(crate) fn variant_title(name: &str) -> String {
     const ACRONYMS: &[&str] = &["api", "ltr", "otp", "rtl", "ssr", "ui", "url"];
+    const SMALL: &[&str] = &["a", "an", "in", "of", "the", "to", "and", "or"];
     let words: Vec<&str> = name.split('_').filter(|w| !w.is_empty()).collect();
     let is_acronym = |w: &str| ACRONYMS.contains(&w);
-    let render = |w: &str| {
+    let capitalize = |w: &str| {
+        let mut chars = w.chars();
+        match chars.next() {
+            Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
+            None => String::new(),
+        }
+    };
+    let render = |w: &str, first: bool| {
         if is_acronym(w) {
             w.to_uppercase()
-        } else {
+        } else if !first && SMALL.contains(&w) {
             w.to_string()
+        } else {
+            capitalize(w)
         }
     };
     match words.as_slice() {
         [rest @ .., last] if !rest.is_empty() && is_acronym(last) => format!(
             "{} ({})",
-            rest.iter().map(|w| render(w)).collect::<Vec<_>>().join(" "),
-            render(last)
+            rest.iter()
+                .enumerate()
+                .map(|(i, w)| render(w, i == 0))
+                .collect::<Vec<_>>()
+                .join(" "),
+            render(last, false)
         ),
         _ => words
             .iter()
-            .map(|w| render(w))
+            .enumerate()
+            .map(|(i, w)| render(w, i == 0))
             .collect::<Vec<_>>()
             .join(" "),
     }

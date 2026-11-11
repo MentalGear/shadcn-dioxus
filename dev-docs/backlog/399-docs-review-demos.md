@@ -4,7 +4,7 @@ title: "Demo batch from the docs review"
 status: "Both halves landed in PR #166 (2026-11-06). The Detail's 2026-10-25 owner items (the demo rename…"
 size: "S"
 area: docs
-updated: 2026-11-07
+updated: 2026-11-11
 ---
 
 # Row 399: Demo batch from the docs review
@@ -19,13 +19,19 @@ Supported modes with no demo: ScrollArea Both (the default) and `scroll_type`; P
 
 **First half (lane `demos-399a`).** Seven demos added, one variant directory each: ScrollArea `both` (the default direction) and `scroll_type`; Progress `indeterminate`; Dialog `non_modal`; Collapsible `keep_mounted`; ButtonGroupText `text`; Avatar `rounded`; Pagination `disabled_ends`. Checked in a browser on a lane SSG build: the non-modal page button counts clicks while the dialog is open, the `keep_mounted` field keeps its text across close and reopen, the disabled Pagination links have no `href` and do not navigate, and `indeterminate` sets `data-state="indeterminate"`. **Open primitive bug, not fixed here:** `ScrollType::Hidden` does not hide the bar. The primitive (`primitives/src/scroll_area.rs`, the `owned` attributes) emits `scrollbar-width` as an HTML attribute, not a CSS declaration, so the computed `scrollbar-width` stays `auto` and the bar shows; the `scroll_type` demo's Hidden column shows it. Owner decision needed: fix the primitive (a `style` declaration) or drop the Hidden column until it is fixed. **Pagination has no `disabled` prop:** the demo marks the unavailable links with `aria-disabled`, no `href`, and the disabled opacity, which is a demo convention, not an API. The other half (DataTable reorder, Pie half-pie and padding, Line gaps, Input OTP letters and `on_complete`, Resizable controlled sizes, menus with `modal: false`) belongs to another lane and is not in this branch. Proof on a lane SSG build of this tree (100 routes, no stale HTML): `playwright test:changed` 698 passed, 0 failed (`CHANGED_RANGE` = the session branch; 42 specs plus the matrix specs its diff reaches, axe included). The first run of that suite failed one test: two Pagination `nav` landmarks both labelled "pagination" (axe `landmark-unique`), fixed by giving each its own label.
 
-**Owner items of 2026-10-25 (lane demos-399c, 2026-11-07).** *Titles:* a demo's heading is derived from its directory
-name (`variant_title`), so there was no way to retitle one without renaming the directory that specs address. A
-one-line `variants/<variant>/title.txt` now overrides the derived title (`preview/build.rs`
-`write_variant_titles_index`, `demo_title`); the Accordion `until_found` demo reads "Find in Accordion" (the page title-cases
-it to "Find In Accordion" through `text-transform: capitalize`). The audit of all 565 demo titles is
-`dev-docs/research/demo-title-audit-2026-11-07.md` (56 proposals plus a case rule for small words); **the rest of the
-renames wait for the owner's approval**, each one a `title.txt`. *Focus-target demos:* Dialog, AlertDialog and Popover
+**Owner items of 2026-10-25 (lane demos-399c, 2026-11-07; renames and the case rule approved and applied by the
+owner 2026-11-11).** *Titles:* a demo's heading is derived from its directory name (`variant_title`), so there was no
+way to retitle one without renaming the directory that specs address. A one-line `variants/<variant>/title.txt` now
+overrides the derived title (`preview/build.rs` `write_variant_titles_index`, `demo_title`). The audit of all 565 demo
+titles, `dev-docs/research/demo-title-audit-2026-11-07.md`, found 56 rows worth a rename (one became 78 `title.txt`
+files once a row covering several directories, such as the `overlay`/`click_only`/`read_only`/`non_modal` families, was
+split one file per directory) and a case rule: `.dx-component-variant-title`'s blanket CSS `text-transform: capitalize`
+was turning "Find in Accordion" into "Find In Accordion", so `variant_title()` (`preview/src/site/variant_page.rs`) now
+does its own casing — capitalizing each word except `a`, `an`, `in`, `of`, `the`, `to`, `and`, `or` unless the word is
+first — and the CSS rule is removed; a `title.txt` is shown exactly as written either way. Not touched (a separate,
+undecided finding): the component page's own `h1` and the home gallery's card title use a different, unaudited
+casing path (`name.replace("_", " ")` plus the same blanket CSS capitalize) that has the identical bug for a component
+whose own name has a small word (`drag_and_drop_list` reads "Drag And Drop List"); row 399 does not cover it. *Focus-target demos:* Dialog, AlertDialog and Popover
 `focus_target` show a line inside the panel, "Opened with: <modality>, focus on: <target>", read from
 `<html data-dx-modality>` through the bridge (`bridge::get`, no new JS), and their notes spell out each modality's
 result; the focus policy is unchanged. `playwright/focus-target-line.spec.ts` opens each by keyboard and by mouse and
