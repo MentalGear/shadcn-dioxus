@@ -1,6 +1,7 @@
 use super::super::component::*;
 use dioxus::prelude::*;
-use dioxus_icons::lucide::{FileCode, FileText, Table, X};
+use crate::components::icons::X;
+use dioxus_icons::lucide::{FileCode, FileText, Table};
 
 const WORKSPACE: Asset = asset!("/src/components/attachment/variants/image_gallery/workspace.svg");
 

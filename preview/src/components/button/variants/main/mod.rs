@@ -3,7 +3,7 @@
 // `all_variants` demo below it.
 use super::super::component::*;
 use dioxus::prelude::*;
-use dioxus_icons::lucide::ArrowUp;
+use crate::components::icons::ArrowUp;
 
 #[component]
 pub fn Demo() -> Element {

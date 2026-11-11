@@ -5,7 +5,7 @@ use crate::components::dropdown_menu::{
 };
 use dioxus::prelude::*;
 use dioxus_primitives::AsChild;
-use dioxus_icons::lucide::Ellipsis;
+use crate::components::icons::Ellipsis;
 
 /// shadcn's "Dropdown Menu" example: a "Follow" button beside an overflow
 /// button that opens a `DropdownMenu` of items.

@@ -1,7 +1,8 @@
 use super::super::component::*;
 use crate::components::button::{Button, ButtonSize, ButtonVariant};
 use dioxus::prelude::*;
-use dioxus_icons::lucide::{Minus, Plus};
+use crate::components::icons::Minus;
+use dioxus_icons::lucide::Plus;
 
 /// shadcn's "Orientation" example: a vertical group of icon buttons (zoom in /
 /// zoom out) -- `orientation_vertical` stacks the buttons and merges their

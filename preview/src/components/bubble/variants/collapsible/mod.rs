@@ -3,7 +3,7 @@ use crate::components::button::{Button, ButtonVariant};
 use crate::components::collapsible::{Collapsible, CollapsibleContent, CollapsibleTrigger};
 use dioxus::prelude::*;
 use dioxus_primitives::AsChild;
-use dioxus_icons::lucide::ChevronDown;
+use crate::components::icons::ChevronDown;
 
 const TEXT: &str = "The accessibility review found two focus states that were visually too subtle in dark mode.\n\nI checked the dialog, menu, and drawer paths because each one renders focusable controls inside a layered surface.\n\nThe dialog and drawer are fine. The menu needs the hover and focus tokens split so keyboard focus stays visible when the pointer is not involved.\n\nI also recommend keeping the change in the style file instead of the primitive so the other themes can choose their own focus treatment later.";
 

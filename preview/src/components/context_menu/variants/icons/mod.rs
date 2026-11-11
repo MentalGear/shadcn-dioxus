@@ -2,7 +2,8 @@ use super::super::component::{
     ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger,
 };
 use dioxus::prelude::*;
-use dioxus_icons::lucide::{Copy as CopyIcon, Download, Eye, FileText, FolderOpen, Link2, Trash2};
+use crate::components::icons::Copy as CopyIcon;
+use dioxus_icons::lucide::{Download, Eye, FileText, FolderOpen, Link2, Trash2};
 
 /// A file-row context menu: right-click the row and each action leads with a
 /// lucide icon (shadcn's context-menu "icons" shape). The item is a flex row

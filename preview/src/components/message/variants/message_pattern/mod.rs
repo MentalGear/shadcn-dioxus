@@ -3,7 +3,8 @@ use crate::components::bubble::{Bubble, BubbleContent, BubbleVariant};
 use crate::components::button::{Button, ButtonSize, ButtonVariant};
 use crate::components::markdown::Markdown;
 use dioxus::prelude::*;
-use dioxus_icons::lucide::{Check, Copy, Pencil, RefreshCw, ThumbsDown, ThumbsUp};
+use crate::components::icons::{Check, Copy};
+use dioxus_icons::lucide::{Pencil, RefreshCw, ThumbsDown, ThumbsUp};
 
 const REPLY: &str = "Install Dialog, then open it from the gear button in `site-header.tsx`.\n\n```bash\nnpx shadcn@latest add dialog\n```\n\nWrap the button in a `DialogTrigger` and put the settings form in `DialogContent`. Focus moves into the dialog when it opens, and **Esc** closes it.";
 

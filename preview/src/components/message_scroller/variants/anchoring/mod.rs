@@ -8,7 +8,8 @@ use crate::components::{
     toggle_group::{ToggleGroup, ToggleItem},
 };
 use dioxus::prelude::*;
-use dioxus_icons::lucide::{ArrowUp, MessageCircleDashed, RotateCw};
+use crate::components::icons::ArrowUp;
+use dioxus_icons::lucide::{MessageCircleDashed, RotateCw};
 use std::collections::HashSet;
 
 /// `(id, is_user, text)`: a scripted conversation sent one turn per press.

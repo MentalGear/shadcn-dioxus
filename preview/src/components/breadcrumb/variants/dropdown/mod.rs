@@ -5,7 +5,7 @@ use crate::components::dropdown_menu::{
 };
 use dioxus::prelude::*;
 use dioxus_primitives::AsChild;
-use dioxus_icons::lucide::ChevronDown;
+use crate::components::icons::ChevronDown;
 
 const SECTIONS: &[&str] = &["Documentation", "Themes", "GitHub"];
 

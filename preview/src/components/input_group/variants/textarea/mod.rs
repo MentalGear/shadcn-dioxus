@@ -1,7 +1,7 @@
 use super::super::component::*;
 use crate::components::button::{Button, ButtonSize};
 use dioxus::prelude::*;
-use dioxus_icons::lucide::ArrowUp;
+use crate::components::icons::ArrowUp;
 
 const LIMIT: usize = 120;
 

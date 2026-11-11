@@ -1,7 +1,7 @@
 use super::super::component::*;
 use crate::components::button::{Button, ButtonVariant};
 use dioxus::prelude::*;
-use dioxus_icons::lucide::{ChevronLeft, ChevronRight};
+use crate::components::icons::{ChevronLeft, ChevronRight};
 use dioxus_primitives::direction::{Direction, DirectionProvider};
 
 /// RTL fixture: a pagination-style group under `dir="rtl"`. The group's

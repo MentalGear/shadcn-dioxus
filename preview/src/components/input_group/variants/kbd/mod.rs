@@ -1,7 +1,7 @@
 use super::super::component::*;
 use crate::components::kbd::{Kbd, KbdGroup};
 use dioxus::prelude::*;
-use dioxus_icons::lucide::Search;
+use crate::components::icons::Search;
 
 /// A keyboard-shortcut hint in the trailing addon.
 #[component]

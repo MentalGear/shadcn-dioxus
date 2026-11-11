@@ -3,7 +3,7 @@ use crate::components::button::{Button, ButtonSize, ButtonVariant};
 use crate::components::checkbox::Checkbox;
 use crate::components::label::Label;
 use dioxus::prelude::*;
-use dioxus_icons::lucide::GripVertical;
+use crate::components::icons::GripVertical;
 use dioxus_primitives::dioxus_attributes::attributes;
 use dioxus_primitives::direction::Direction;
 use dioxus_primitives::drag_and_drop_list::reorder::{

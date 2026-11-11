@@ -1,7 +1,8 @@
 use super::super::component::*;
 use dioxus::prelude::*;
 use dioxus_primitives::AsChild;
-use dioxus_icons::lucide::{ChevronRight, ExternalLink};
+use crate::components::icons::ChevronRight;
+use dioxus_icons::lucide::ExternalLink;
 
 #[component]
 pub fn Demo() -> Element {
