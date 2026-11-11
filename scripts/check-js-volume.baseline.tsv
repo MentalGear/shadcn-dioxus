@@ -1,6 +1,7 @@
 # check-js-volume baseline (scripts/lib/ratchet.py): shrink-only per-file counts, regenerate with --update-baseline.
 #! columns: sink js_lit js_file_bytes install inline_script comment_eval expect_disallowed
 # path	sink	js_lit	js_file_bytes	install	inline_script	comment_eval	expect_disallowed
+#! total-raised: row 505 total=508767 revert the bridge.ts name-shortening (pageObserver/reg/batch restored) (total 508711->508767)
 labs/carousel-lab/src/main.rs	2	0	0	0	0	0	0
 preview/build.rs	0	12	0	0	0	0	0
 preview/index.html	0	0	0	0	7453	0	0
@@ -68,7 +69,7 @@ primitives/src/drawer.rs	0	136	0	3	0	0	0
 primitives/src/hover_intent.rs	0	10	0	1	0	0	0
 primitives/src/input_otp.rs	1	59	0	2	0	0	1
 primitives/src/js/behaviours/fixture.js	0	0	553	0	0	0	0
-primitives/src/js/bridge.js	0	0	19900	0	0	0	0
+primitives/src/js/bridge.js	0	0	19956	0	0	0	0	# raised: row 505 revert the bridge.ts name-shortening (pageObserver/reg/batch restored) (js_file_bytes 19900->19956)
 primitives/src/js/focus-trap.js	0	0	1505	0	0	0	0
 primitives/src/js_listener.rs	1	7	0	0	0	0	0
 primitives/src/keyboard_inset.rs	0	88	0	1	0	0	0

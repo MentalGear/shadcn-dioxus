@@ -506,12 +506,12 @@ function transaction(ops: DxOp[]): DxOpResult[] {
 /** Registrations on an element, ended by `sweep` when the element leaves the document. */
 const elementRegs = new Set<{ el: any; off: () => void }>();
 // SEAM (row 434 step 3.0b): the command reconciler would share this one observer and registry.
-let pageMo: { disconnect(): void } | null = null;
+let pageObserver: { disconnect(): void } | null = null;
 
 /** A batch that removed no node ends no registration. */
-function sweep(b: MutationRecord[]): void {
-  if (b.some((r) => r.removedNodes.length))
-    for (const g of [...elementRegs]) if (!g.el.isConnected) g.off();
+function sweep(batch: MutationRecord[]): void {
+  if (batch.some((r) => r.removedNodes.length))
+    for (const reg of [...elementRegs]) if (!reg.el.isConnected) reg.off();
 }
 
 /**
@@ -521,18 +521,18 @@ function sweep(b: MutationRecord[]): void {
  */
 function watchElement(el: any, off: () => void): () => void {
   if (!isEl(el) || !el.isConnected) return () => {};
-  const g = { el, off };
-  elementRegs.add(g);
-  if (!pageMo) {
+  const reg = { el, off };
+  elementRegs.add(reg);
+  if (!pageObserver) {
     const mo = new W.MutationObserver(sweep);
     mo.observe(W.document.documentElement, { childList: true, subtree: true });
-    pageMo = mo;
+    pageObserver = mo;
   }
   return () => {
-    elementRegs.delete(g);
-    if (!elementRegs.size && pageMo) {
-      pageMo.disconnect();
-      pageMo = null;
+    elementRegs.delete(reg);
+    if (!elementRegs.size && pageObserver) {
+      pageObserver.disconnect();
+      pageObserver = null;
     }
   };
 }
