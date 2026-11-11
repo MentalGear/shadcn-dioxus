@@ -25,7 +25,7 @@ below are collected under "Unreleased" and move under a version heading at the f
 - Pressing Escape just after a submenu starts closing (during its close animation) no longer swallows the key: the
   enclosing menu now receives it and closes too, instead of being left open.
 - A non-primary pointer button (middle-click, a stylus's barrel button) on a Slider, Resizable handle or
-  ColorPicker's track is no longer intercepted; only a primary press starts the drag, so the browser's own handling
-  of other buttons (e.g. middle-click autoscroll) reaches the element again.
+  ColorPicker's draggable area is no longer intercepted; only a primary press starts the drag, so the browser's own
+  handling of other buttons (e.g. middle-click autoscroll) reaches the element again.
 - Escape no longer closes an open Dialog, Menu or Popover while an IME composition (e.g. typing Japanese or Chinese)
   is in progress; it now only cancels the composition, as the input method expects.

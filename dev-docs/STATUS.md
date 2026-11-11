@@ -6,18 +6,19 @@ backlog row files, not here: this page says only what is deployed, what runs, wh
 
 Last updated: **2026-11-11**. Several sessions work in parallel; who holds what is on the `claims` branch (`CLAIMS.md`).
 Preview site: https://mentalgear.github.io/shadcn-dioxus/ (still serving main `f38662dc`, PRs #166-#168, deploy commit
-`85c05466`; release suite 4192 passed, 0 failed). **Main itself is ahead of the live site**: PR #170 (2026-11-11, the
-2026-11-07 batch plus the icon-dedup and demo-title work below) and PR #171 (2026-11-11, a comment-analysis pass and
-the paragraph below) are merged (main is at `b077881b`), full gate green (113/113), `registry-install-smoke` green
-(83/83), but **the deploy is parked, not forced through**: the release suite on PR #170's head (`b78c231e`, before
-PR #171's docs-only commit) failed two tests, neither confirmed real nor confirmed a flake (row
-[506](./backlog/506-release-suite-two-failures-block-deploy.md)). The next session's first job is closing that row,
-then deploying.
+`85c05466`; release suite 4192 passed, 0 failed). **Main itself is ahead of the live site**: PRs #170-#173 (all
+2026-11-11: the 2026-11-07 batch plus the icon-dedup and demo-title work below, a comment-analysis pass, and two
+documentation-review passes that fixed stale status text these PRs themselves left behind) are merged, full gate
+green (113/113), `registry-install-smoke` green (83/83), but **the deploy is parked, not forced through**: the
+release suite on PR #170's head (`b78c231e`, before the later docs-only commits) failed two tests, neither confirmed
+real nor confirmed a flake (row [506](./backlog/506-release-suite-two-failures-block-deploy.md)). Check `git log
+origin/main -1` for the exact tip rather than trusting a SHA frozen here. The next session's first job is closing
+row 506, then deploying.
 
 ## Where a fresh session picks up
 
-Session `session_01MsL6RCeq7QSe81nNBiuKP1` owns merges and deploys. Main carries PRs #170-#171 (`b077881b`, not yet
-deployed; see row 506). A new
+Session `session_01MsL6RCeq7QSe81nNBiuKP1` owns merges and deploys. Main carries PRs #170-#173 (not yet deployed;
+see row 506). A new
 session reads this page, then takes the first open row of "Next" below; each row file under [`backlog/`](./backlog/)
 says what to build, which files, its proof and its size. The rules are [`../CLAUDE.md`](../CLAUDE.md) and
 [`lane-rules.md`](./lane-rules.md); the owner's decisions are [`decisions.md`](./decisions.md).
@@ -61,6 +62,12 @@ row says otherwise, so a step runs as parallel lanes (one verifier per batch, `l
    readable-name revert it covers.
    Done, merged in PR #171 (2026-11-11, on top of #170): **486**'s N1 rules and **507**'s first comment-analysis pass
    over `primitives` (two more stale names fixed; three follow-ups left open, below).
+   PRs #172-#173 (2026-11-11, docs-only): two review passes over #170/#171's own row and status text, each one
+   finding real staleness the previous pass's fixes had themselves introduced or missed (a row's opening sentence
+   not updated when later work in the same row superseded it, byte counts stale after a later commit touched the
+   same file, STATUS.md's own "main is at `<sha>`" line going stale the moment another PR merged). If a future pass
+   finds the same class again, the fix belongs in the process (what makes a row's own first sentence go stale
+   unnoticed), not in a fourth review pass.
 3. Open from row 436: one cancellable delayed-task helper and per-window state (F7, F3), and `menu_root::use_root_id`,
    which still writes a caller's `id` once (needs `use_reactive!`).
 4. Open elsewhere: **504** (the hydrated Textarea shows no value; a fix is built on `lane/textarea-ssr-504`, local

@@ -40,7 +40,6 @@ the line here is the pointer, so when a row's text and this line disagree, the r
   dependency install script. 2026-10-22 (row [359](./backlog/done/359-js-tooling-pnpm-minimum-release-age.md)).
 - Supply-chain scope: SECURITY covers everything that builds or touches the project; performance budgets are measured on
   the closure users compile. 2026-10-23 ([`supply-chain/README.md`](./supply-chain/README.md), row [217](./backlog/done/217-dependency-audit-follow-ups-what-users-pay-for.md)).
-- The dependency evaluation (keep, lift, drop) is parked until the owner reopens it. 2026-10-23 (row [371](./backlog/371-dependency-evaluation-keep-lift-drop.md)).
 - `dioxus-icons`: no shipped component depends on it any more (the lifted central `preview/src/components/icons/`
   covers every shipped icon need); confirmed, not a new decision. The 14 of its demo-only uses that duplicated an
   already-lifted glyph move to the central library too; the owner still decides between a dated D6 exception for the
