@@ -1,7 +1,7 @@
 ---
 id: 505
 title: "The JS volume ratchets measure text, so a reformat or a shorter name passes for less JavaScript"
-status: "PARTLY ADDRESSED, the construction itself still BACKLOG. Of the two instances found 2026-11-07/08…"
+status: "PARTLY ADDRESSED, the construction itself still BACKLOG. Of the two instances found 2026-11-07, one…"
 size: "S"
 area: tooling
 updated: 2026-11-11
@@ -26,7 +26,7 @@ exchange rate. Once it lands, the readable names shortened to fit a byte budget 
 
 ## Status / trigger
 
-PARTLY ADDRESSED, the construction itself still BACKLOG. Of the two instances found 2026-11-07/08, one is reverted
+PARTLY ADDRESSED, the construction itself still BACKLOG. Of the two instances found 2026-11-07, one is reverted
 under a grant (not fixed by construction, which still needs building); the other still stands, waiting on the same
 construction.
 

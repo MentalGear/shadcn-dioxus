@@ -30,7 +30,7 @@ FIXED 2026-11-07, class group (lane q436-classes; F5, F6, F8, F9, F10, F12 of th
 - F8 two id readers: `primitives/src/caller_id.rs` is the one reader (non-namespaced, non-empty; numbers written out); `form_reset`, `menu_root` and the popover trigger (a third reader the review did not list) use it; `check-id-interpolation.sh` fails a `.name == "id"` read elsewhere.
 - F9 unawaited focus: `use_listbox_container_focus` (one effect for both arms, awaits); gate `check-unawaited-focus.sh`.
 - F10: `MoveInteraction::start_pointer` tests the button before it cancels (slider, resizable and colour picker share it).
-- F12: the bridge's `sweep` returns on a batch with no `removedNodes`; `bridge.ts` 42789 -> 42736 bytes, `bridge.js` 19907 -> 19900, no grant needed.
+- F12: the bridge's `sweep` returns on a batch with no `removedNodes`; `bridge.ts` 42789 -> 42736 bytes, `bridge.js` 19907 -> 19900 at the time, no grant needed. (Those bytes moved again 2026-11-11, unrelated to this fix: the same commit shortened `bridge.ts` locals only to fit the budget, which row 505 had the owner revert under a grant -- `bridge.ts`/`bridge.js` read 42732/19956 today.)
 
 ## Size
 
