@@ -1,7 +1,10 @@
 # Demo title audit, 2026-11-07 (row 399)
 
-Scope: every `preview/src/components/*/variants/<variant>/` directory (565 demos; `main` shows no title). Owner
-review is pending for everything except the first row.
+**Owner-approved and applied 2026-11-11**, as proposed below: all 56 rows (split to 78 `title.txt` files, one per
+directory, where a row named several) and the small-word case rule. Row 399's Status has the landing summary; this
+page stays as the audit record.
+
+Scope: every `preview/src/components/*/variants/<variant>/` directory (565 demos; `main` shows no title).
 
 ## How a title is made
 

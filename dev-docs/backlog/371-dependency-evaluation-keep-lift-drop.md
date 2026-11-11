@@ -35,6 +35,23 @@ Apply the owner's dependency rule (2026-10-23) to every dependency a user's `dx 
 
 **P2 done (lane icons-371b):** the glyphs the shipped `component.rs` files draw (19, not 12: arrow-down, arrow-up, arrow-up-down, badge-check, check, chevron-down, chevron-left, chevron-right, chevron-up, chevrons-up-down, copy, ellipsis, grip-vertical, loader-circle, minus, panel-left, search, trending-up, x) are one installable component, `preview/src/components/icons` (a `glyph!` per icon, an `Extra` catalog row, a docs page and a gallery demo), with the Lucide ISC notice, the Feather MIT notice for the ten glyphs derived from it, and a `lifted-from: dioxus-icons@0.1.0` line. The 28 components import `crate::components::icons::*`; `scripts/gen-component-manifests.sh` rewrote their manifests (`dioxus-icons` gone from every `cargoDependencies`, `icons` added to `componentDependencies`). `check-cargo-dep-versions.sh` now fails any component that lists `dioxus-icons`. `preview` keeps `dioxus-icons` for the site's own glyphs and the demos. The self-test of `check-component-manifests.sh` mutated `accordion`'s icons pin; it now mutates `calendar`'s `time` pin.
 
+**Owner question answered, 2026-11-11: no shipped component still uses `dioxus-icons`.** P2 (above) already moved
+every shipped component off it; `check-cargo-dep-versions.sh` enforces that no component's manifest lists it again.
+A central icon library already exists (`preview/src/components/icons/`) and is in active use. The open part was
+`preview`'s own demo code: of the roughly 85 Lucide names its demos import from `dioxus-icons`, 14 duplicate a glyph
+the central library already has (`ArrowUp`, `BadgeCheck`, `Check`, `ChevronDown`, `ChevronLeft`, `ChevronRight`,
+`ChevronUp`, `Copy`, `Ellipsis`, `GripVertical`, `Minus`, `Search`, `TrendingUp`, `X`; confirmed byte-identical SVG
+path data against the vendored `dioxus-icons` 0.1.0 source, so the swap changes no pixel), across 115 demo files,
+mostly `TrendingUp` in every chart demo and `ChevronLeft`/`ChevronRight` in every carousel demo. Those are moved to
+`crate::components::icons::*` (lanes `icons-carousel-371c`, `icons-charts-371c`, `icons-rest-371c`), closing the
+duplication. **Still open, the owner's call:** the other ~70 names are decorative, demo-only icons with no central
+equivalent (`Brain`, `ThumbsUp`, `Bold`/`Italic`/`Underline`, `Bell`, ...). D2 and D3 still fail for `dioxus-icons`
+in `preview`'s own manifest with no exception recorded. Two ways to close that: (a) a dated D6 exception for
+`dioxus-icons` as the demo site's own dependency (never shipped to a user), matching the `dioxus-code`/`axe-core`
+pattern; or (b) lift the remaining ~70 glyphs into the central library too and drop the dependency from `preview`
+entirely (more licence-notice volume to maintain, no loss to developers either way: "If `dioxus-icons` is replaced
+by the lifted glyphs, the full `dioxus-icons` set stays available to developers as an opt-in" below still holds).
+
 Owner notes for when it is picked up:
 
 - If `dioxus-icons` is replaced by the lifted glyphs, the full `dioxus-icons` set stays available to developers as an opt-in.

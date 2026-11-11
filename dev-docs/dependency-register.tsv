@@ -13,7 +13,7 @@ clap	cargo	4.5.61	keep	untrusted-input	cli	2026-11-06		argv parsing; features tr
 dioxus	cargo	0.7.10,0.7.9	keep	compile-time-code	user-closure	2026-11-06		framework veto; default features off (P1)
 dioxus-code	cargo	0.1.2	exception	compile-time-code	site	2026-11-06	2027-05-05	fails D2 and D3; docs site only; owner 2026-11-07
 dioxus-core	cargo	0.7.10	keep	none	lab	2026-11-06		detached oracle crate only
-dioxus-icons	cargo	0.1.0	lift	compile-time-code	site	2026-11-06		lifted for users (row 371 P2: the icons component); the site keeps the crate for demos; build.rs (lazy-js-bundle); D2 and D3 fail with no exception recorded
+dioxus-icons	cargo	0.1.0	lift	compile-time-code	site	2026-11-06		lifted for users (row 371 P2: the icons component); the site keeps the crate for demos; build.rs (lazy-js-bundle); D2 and D3 fail with no exception recorded; 14 of ~85 preview demo names duplicated the lifted set and are moved off it 2026-11-11 (row 371); ~70 decorative-only names remain, D6 exception vs. full lift still open
 dioxus-rsx	cargo	0.7.9	keep	compile-time-code	user-closure	2026-11-06		framework; proc-macro parsing for dioxus-attributes
 dioxus-ssr	cargo	0.7.10,0.7.9	keep	compile-time-code	site	2026-11-06		docs build.rs rendering and SSR parity tests
 gloo-timers	cargo	0.3.0	keep	none	user-closure	2026-11-06		wasm sleep; replacing it is optional (P8)
