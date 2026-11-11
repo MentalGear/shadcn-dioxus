@@ -4,7 +4,8 @@ title: "The JS volume ratchets measure text, so a reformat or a shorter name pas
 status: "BACKLOG. Found 2026-11-07 merging row 436's overlay lane: the IME Escape condition (e.isComposing…"
 size: "S"
 area: tooling
-updated: 2026-11-07
+updated: 2026-11-11
+js-grant: "bytes=56 js_file_bytes=56 (owner 2026-11-11: revert the two name-shortening instances in primitives/src/ts/bridge.ts this row found -- pageObserver/reg/batch restored from pageMo/g/b -- so readable names are not lost from code the Rust port will read; measured raise bridge.ts 42676->42732, bridge.js 19900->19956)"
 ---
 
 # Row 505: the JS volume ratchets measure text, not code
@@ -29,7 +30,8 @@ BACKLOG. Found 2026-11-07 merging row 436's overlay lane: the IME Escape conditi
 e.keyCode === 229`) grew `DISMISS_JS` in `primitives/src/lib.rs` by about 40 bytes, and the lane joined the `focusin`
 block's closing `}, true);` onto the line before it, so `js_lit` for `lib.rs` stayed at 182 and the gate passed. The
 condition itself is needed (an Escape that ends an IME composition must not dismiss the layer); the growth is real and
-small, and it is the owner's call whether it stands under a grant once the unit is tokens. The same day row 436's class
+small; the owner granted the readable-name instance below under this row on 2026-11-11, pending the token-count
+construction proposed here. The same day row 436's class
 lane brought `bridge.js` under its byte budget by renaming locals in `primitives/src/ts/bridge.ts` (`pageObserver` to
 `pageMo`, `reg` to `g`): a second instance of the class, so the row covers every volume column, not only `js_lit`. Land before row 445 (the
 legacy freeze), which relies on the same counts.
