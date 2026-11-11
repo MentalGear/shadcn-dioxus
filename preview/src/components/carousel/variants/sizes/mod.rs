@@ -1,7 +1,7 @@
 use super::super::component::*;
 use crate::components::card::{Card, CardContent};
+use crate::components::icons::{ChevronLeft, ChevronRight};
 use dioxus::prelude::*;
-use dioxus_icons::lucide::{ChevronLeft, ChevronRight};
 
 /// shadcn's "Sizes" demo (`carousel-size.tsx`): whole slides only, never a
 /// partial peek -- `--dx-carousel-per-view: 2` by default, `3` at a wider

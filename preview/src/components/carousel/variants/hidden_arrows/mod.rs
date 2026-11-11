@@ -1,7 +1,7 @@
 use super::super::component::*;
 use crate::components::card::{Card, CardContent};
+use crate::components::icons::{ChevronLeft, ChevronRight};
 use dioxus::prelude::*;
-use dioxus_icons::lucide::{ChevronLeft, ChevronRight};
 
 /// `nav_disabled_opacity: 0.0` on the root: the arrow at the first/last slide
 /// fades out completely instead of dimming to the theme's 0.5, and is then

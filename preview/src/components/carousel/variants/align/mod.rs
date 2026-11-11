@@ -1,7 +1,7 @@
 use super::super::component::*;
 use crate::components::card::{Card, CardContent};
+use crate::components::icons::{ChevronLeft, ChevronRight};
 use dioxus::prelude::*;
-use dioxus_icons::lucide::{ChevronLeft, ChevronRight};
 
 /// `align` (`start` | `center` | `end`, default `start`): where each slide
 /// rests against the scrollport. Not a shadcn demo of its own -- shadcn's

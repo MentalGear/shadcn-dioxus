@@ -1,7 +1,7 @@
 use super::super::component::*;
 use crate::components::card::{Card, CardContent};
+use crate::components::icons::{ChevronLeft, ChevronRight};
 use dioxus::prelude::*;
-use dioxus_icons::lucide::{ChevronLeft, ChevronRight};
 use dioxus_primitives::direction::{Direction, DirectionProvider};
 
 /// The explicit `LoopMode::Rewind` opt-in (see `LoopMode`'s own doc, and
