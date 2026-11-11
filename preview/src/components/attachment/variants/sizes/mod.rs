@@ -1,6 +1,7 @@
 use super::super::component::*;
 use dioxus::prelude::*;
-use dioxus_icons::lucide::{FileText, X};
+use crate::components::icons::X;
+use dioxus_icons::lucide::FileText;
 
 #[component]
 pub fn Demo() -> Element {

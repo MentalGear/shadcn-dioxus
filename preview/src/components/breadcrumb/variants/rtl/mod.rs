@@ -1,6 +1,6 @@
 use super::super::component::*;
 use dioxus::prelude::*;
-use dioxus_icons::lucide::ChevronLeft;
+use crate::components::icons::ChevronLeft;
 use dioxus_primitives::direction::{Direction, DirectionProvider};
 
 #[component]

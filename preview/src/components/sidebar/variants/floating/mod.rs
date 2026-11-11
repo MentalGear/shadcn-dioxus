@@ -13,7 +13,8 @@ use crate::components::sidebar::{
     SidebarTrigger, SidebarVariant,
 };
 use crate::components::skeleton::Skeleton;
-use dioxus_icons::lucide::{ChevronRight, Circle};
+use crate::components::icons::ChevronRight;
+use dioxus_icons::lucide::Circle;
 use dioxus::prelude::*;
 use dioxus_primitives::AsChild;
 

@@ -4,7 +4,7 @@ use crate::components::popover::{
     PopoverContent, PopoverDescription, PopoverHeader, PopoverRoot, PopoverTitle,
 };
 use dioxus::prelude::*;
-use dioxus_icons::lucide::ChevronDown;
+use crate::components::icons::ChevronDown;
 use dioxus_primitives::popover::PopoverTrigger;
 
 /// shadcn's "Popover" example: a "Copilot" button beside a chevron

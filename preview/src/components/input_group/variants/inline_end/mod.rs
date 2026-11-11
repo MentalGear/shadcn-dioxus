@@ -1,6 +1,6 @@
 use super::super::component::*;
 use dioxus::prelude::*;
-use dioxus_icons::lucide::Search;
+use crate::components::icons::Search;
 
 /// Addons at the inline end of the input: a trailing icon, and trailing text.
 #[component]

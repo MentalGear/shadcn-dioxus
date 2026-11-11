@@ -7,7 +7,8 @@ use crate::components::{
 };
 use dioxus::prelude::*;
 use dioxus_primitives::AsChild;
-use dioxus_icons::lucide::{Minus, Plus};
+use crate::components::icons::Minus;
+use dioxus_icons::lucide::Plus;
 
 const GOAL_STEP: i32 = 10;
 const MIN_GOAL: i32 = 200;

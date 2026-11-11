@@ -1,7 +1,8 @@
 use super::super::component::*;
 use dioxus::prelude::*;
 use dioxus_primitives::AsChild;
-use dioxus_icons::lucide::{ChevronRight, File, Folder, FolderOpen};
+use crate::components::icons::ChevronRight;
+use dioxus_icons::lucide::{File, Folder, FolderOpen};
 
 #[derive(Clone, Copy, PartialEq)]
 enum Node {

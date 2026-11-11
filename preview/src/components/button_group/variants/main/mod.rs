@@ -1,7 +1,7 @@
 use super::super::component::*;
 use crate::components::button::{Button, ButtonVariant};
 use dioxus::prelude::*;
-use dioxus_icons::lucide::{ChevronLeft, ChevronRight, Ellipsis};
+use crate::components::icons::{ChevronLeft, ChevronRight, Ellipsis};
 
 #[component]
 pub fn Demo() -> Element {
