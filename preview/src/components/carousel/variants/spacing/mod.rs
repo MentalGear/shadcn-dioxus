@@ -1,7 +1,7 @@
 use super::super::component::*;
 use crate::components::card::{Card, CardContent};
+use crate::components::icons::{ChevronLeft, ChevronRight};
 use dioxus::prelude::*;
-use dioxus_icons::lucide::{ChevronLeft, ChevronRight};
 
 /// shadcn's "Spacing" demo (`carousel-spacing.tsx`): the inter-slide gap is
 /// a compositional choice at the call site (the `gap` prop on

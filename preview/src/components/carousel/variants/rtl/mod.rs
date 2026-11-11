@@ -1,7 +1,7 @@
 use super::super::component::*;
 use crate::components::card::{Card, CardContent};
+use crate::components::icons::{ChevronLeft, ChevronRight};
 use dioxus::prelude::*;
-use dioxus_icons::lucide::{ChevronLeft, ChevronRight};
 use dioxus_primitives::direction::{Direction, DirectionProvider};
 
 /// RTL fixture (dev-docs/backlog.md row 13's own convention -- see

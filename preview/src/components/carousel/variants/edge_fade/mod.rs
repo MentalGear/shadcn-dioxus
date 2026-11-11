@@ -1,7 +1,7 @@
 use super::super::component::*;
 use crate::components::card::{Card, CardContent};
+use crate::components::icons::{ChevronLeft, ChevronRight};
 use dioxus::prelude::*;
-use dioxus_icons::lucide::{ChevronLeft, ChevronRight};
 
 /// `class: "dx-carousel-fade"` on the root: the slides fade out toward the
 /// track's edges to show there is more to scroll, and each fade is gone once

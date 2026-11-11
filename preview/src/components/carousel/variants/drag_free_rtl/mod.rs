@@ -1,7 +1,7 @@
 use super::super::component::*;
 use crate::components::card::{Card, CardContent};
+use crate::components::icons::{ChevronLeft, ChevronRight};
 use dioxus::prelude::*;
-use dioxus_icons::lucide::{ChevronLeft, ChevronRight};
 use dioxus_primitives::direction::{Direction, DirectionProvider};
 
 /// Right-to-left twin of `drag_free` (the RTL fixture, row 13's convention).

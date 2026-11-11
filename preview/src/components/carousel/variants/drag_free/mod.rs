@@ -1,7 +1,7 @@
 use super::super::component::*;
 use crate::components::card::{Card, CardContent};
+use crate::components::icons::{ChevronLeft, ChevronRight};
 use dioxus::prelude::*;
-use dioxus_icons::lucide::{ChevronLeft, ChevronRight};
 
 /// Embla `dragFree` demo: `drag_free: true`, slides of different widths
 /// (`flex: 0 0 auto`, shadcn's `basis-auto`). A released mouse drag coasts

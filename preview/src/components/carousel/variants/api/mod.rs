@@ -1,7 +1,7 @@
 use super::super::component::*;
 use crate::components::card::{Card, CardContent};
+use crate::components::icons::{ChevronLeft, ChevronRight};
 use dioxus::prelude::*;
-use dioxus_icons::lucide::{ChevronLeft, ChevronRight};
 
 /// shadcn's "API" demo (`carousel-api.tsx`): a real, visible "Slide {n} of
 /// {m}" counter -- a genuine DOM element, not an aria-only label -- built

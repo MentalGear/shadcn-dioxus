@@ -1,7 +1,8 @@
 use super::super::component::*;
 use crate::components::card::{Card, CardContent};
+use crate::components::icons::{ChevronLeft, ChevronRight};
 use dioxus::prelude::*;
-use dioxus_icons::lucide::{ChevronLeft, ChevronRight, Play};
+use dioxus_icons::lucide::Play;
 
 /// The APG "auto-rotating" carousel: `CarouselRotationControl` is placed
 /// **first**, before `CarouselPrevious`/`CarouselNext`, so it is the first

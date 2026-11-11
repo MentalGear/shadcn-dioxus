@@ -1,6 +1,6 @@
 use super::super::component::*;
+use crate::components::icons::{ChevronLeft, ChevronRight};
 use dioxus::prelude::*;
-use dioxus_icons::lucide::{ChevronLeft, ChevronRight};
 
 /// Slide 1's placeholder is a real `<button>` (the rest stay plain `div`s,
 /// matching every other variant) rather than a second demo variant, so

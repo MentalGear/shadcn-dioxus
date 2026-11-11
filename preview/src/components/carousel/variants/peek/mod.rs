@@ -1,7 +1,7 @@
 use super::super::component::*;
 use crate::components::card::{Card, CardContent};
+use crate::components::icons::{ChevronLeft, ChevronRight};
 use dioxus::prelude::*;
-use dioxus_icons::lucide::{ChevronLeft, ChevronRight};
 
 /// An explicit, opt-in "peek" layout: `--dx-carousel-peek` shows a sliver
 /// of the *next* slide alongside the current one; `--dx-carousel-per-view`
