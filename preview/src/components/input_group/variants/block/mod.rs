@@ -1,7 +1,7 @@
 use super::super::component::*;
 use crate::components::button::{Button, ButtonSize, ButtonVariant};
 use dioxus::prelude::*;
-use dioxus_icons::lucide::ArrowUp;
+use crate::components::icons::ArrowUp;
 
 /// Block addons: a full-width row below (`BlockEnd`) or above (`BlockStart`) the control, the
 /// shape of a chat composer's toolbar.

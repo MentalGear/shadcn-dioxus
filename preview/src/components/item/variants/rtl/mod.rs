@@ -2,7 +2,7 @@ use super::super::component::*;
 use crate::components::button::{Button, ButtonVariant};
 use dioxus::prelude::*;
 use dioxus_primitives::AsChild;
-use dioxus_icons::lucide::{BadgeCheck, ChevronLeft};
+use crate::components::icons::{BadgeCheck, ChevronLeft};
 use dioxus_primitives::direction::{Direction, DirectionProvider};
 
 #[component]

@@ -502,6 +502,8 @@ describe("the slow-channel mode", () => {
 });
 
 describe("element lifetime", () => {
+  /** A mutation record that removed `node`. */
+  const removal = (node: any) => ({ addedNodes: [], removedNodes: [node] });
   /** The page-wide observer that ends registrations of removed elements. */
   const pageObserver = (win: any) => win.MutationObserver.all.find((o: any) => o.observed.some(([el]: any) => el === win.document.documentElement));
 
@@ -516,14 +518,14 @@ describe("element lifetime", () => {
     const mo = pageObserver(win);
     expect(mo).toBeDefined();
     a.isConnected = false;
-    mo.callback([]);
+    mo.callback([removal(a)]);
     expect(a.count()).toBe(0);
     expect(b.count()).toBe(1);
     expect(win.count()).toBe(1);
     expect(win.__dxJsListeners.live.size).toBe(2);
     expect(mo.disconnected).toBe(false);
     b.isConnected = false;
-    mo.callback([]);
+    mo.callback([removal(b)]);
     expect(mo.disconnected).toBe(true);
     expect(win.count()).toBe(1);
   });
@@ -537,9 +539,28 @@ describe("element lifetime", () => {
     s.on(a, "click", () => {});
     s.on(detached, "click", () => {});
     const mo = pageObserver(win);
-    mo.callback([]);
+    mo.callback([removal(a)]);
     expect(a.count()).toBe(1);
     expect(detached.count()).toBe(1);
+  });
+
+  test("a batch that removed no node does not look at any registration", () => {
+    const { win, bridge, doc } = setup();
+    const els = [doc.add("a"), doc.add("b"), doc.add("c")];
+    const s = bridge.scope();
+    let reads = 0;
+    for (const el of els) {
+      s.on(el, "click", () => {});
+      let connected = true;
+      Object.defineProperty(el, "isConnected", { get: () => (reads++, connected), set: (v) => void (connected = v) });
+    }
+    const mo = pageObserver(win);
+    mo.callback([{ addedNodes: [doc.add("n")], removedNodes: [] }]);
+    expect(reads).toBe(0);
+    els[0].isConnected = false;
+    mo.callback([removal(els[0])]);
+    expect(els[0].count()).toBe(0);
+    expect(els[1].count()).toBe(1);
   });
 
   test("an off before the element leaves does not leave the observer behind", () => {

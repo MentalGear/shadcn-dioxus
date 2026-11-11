@@ -2,6 +2,6 @@
 #! columns: bytes
 # path	bytes
 primitives/src/ts/behaviours/fixture.ts	891
-primitives/src/ts/bridge.ts	42789
+primitives/src/ts/bridge.ts	42732	# raised: row 505 revert the bridge.ts name-shortening (pageObserver/reg/batch restored) (bytes 42676->42732)
 primitives/src/ts/lib/register.ts	777
 primitives/src/ts/types/bridge.d.ts	6111

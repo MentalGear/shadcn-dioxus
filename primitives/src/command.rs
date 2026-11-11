@@ -87,6 +87,7 @@
 //! dispatcher that would actually fire the action on that key combo is a
 //! separate, unscoped feature -- not built here, per the plan doc.
 
+use crate::constant_signal::use_constant_signal;
 use crate::state_attrs;
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
@@ -253,8 +254,8 @@ fn use_command_root<T: Clone + PartialEq + 'static>(
     );
 
     let always_open = Controlled {
-        value: ReadSignal::new(Signal::new(Some(true))),
-        default: ReadSignal::new(Signal::new(true)),
+        value: use_constant_signal(Some(true)),
+        default: use_constant_signal(true),
         on_change: Callback::default(),
     };
     let selectable = use_selectable_root(

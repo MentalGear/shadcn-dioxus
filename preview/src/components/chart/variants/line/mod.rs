@@ -2,7 +2,7 @@ use super::super::component::*;
 use dioxus::prelude::*;
 
 /// A single series with the default monotone curve and a dot at each data point
-/// (`show_dots`).
+/// (`LineOptions::dots`).
 fn generate_data() -> Vec<ChartDatum> {
     const MONTHS: [&str; 6] = ["January", "February", "March", "April", "May", "June"];
     MONTHS

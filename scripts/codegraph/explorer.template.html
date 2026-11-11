@@ -263,7 +263,10 @@ $('c-crate').innerHTML+=KNOWN.map(k=>'<option value="'+k+'">'+k+'</option>').joi
 function seedFromName(n){
   const s=new Set();
   if(!n)return s;
-  G.comps.forEach(c=>{if(c.name===n&&(c.crate==='preview'||c.crate==='primitives'))N.forEach((f,i)=>{if(f.comp===c.id)s.add(i)})});
+  // a name selects the preview and primitives components of that name plus the components paired with them through component.json
+  const ids=new Set();
+  G.comps.forEach(c=>{if(c.name===n&&(c.crate==='preview'||c.crate==='primitives')){ids.add(c.id);c.pair.forEach(q=>ids.add(q))}});
+  N.forEach((f,i)=>{if(ids.has(f.comp))s.add(i)});
   return s;
 }
 function label(key){
@@ -593,6 +596,7 @@ document.querySelectorAll('.tabs button').forEach(b=>b.addEventListener('keydown
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{if(cy){applyStyle();recolor()}});
 window.__setState=(o)=>{Object.assign(st,o);if(o.seedName!==undefined){$('pick').value=o.seedName;setPick(o.seedName);return}render()};
 // test hooks: the numbers behind the page (read by smoke.js)
+window.__g={G,N,st};
 window.__cm={fields:CF,agg:(l,k)=>{const a=aggAt(l).get(k);return a?a.slice():null},total:()=>TOT.slice(),outliers:l=>{const o=outliers(l);return {q1:o.q1,q3:o.q3,lo:o.lo,hi:o.hi,median:o.median,dense:o.dense,sparse:o.sparse}},
 itemCount:()=>aggAt(3).size,blameBuilt:()=>S.blame.built,
   itemOf:(file,name)=>{const fi=fileIdx[file];const r=(N[fi].it||[]).find(x=>x[IX.name]===name);if(!r)return null;const o={};C.item_fields.forEach((f,i)=>o[f]=r[i]);return o},

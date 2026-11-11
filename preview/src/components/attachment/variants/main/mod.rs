@@ -1,7 +1,8 @@
 use super::super::component::*;
 use crate::components::spinner::Spinner;
 use dioxus::prelude::*;
-use dioxus_icons::lucide::{FileCode, X};
+use crate::components::icons::X;
+use dioxus_icons::lucide::FileCode;
 
 const WORKSPACE: Asset = asset!("/src/components/attachment/variants/image_gallery/workspace.svg");
 const DESK: Asset = asset!("/src/components/attachment/variants/image_gallery/desk-reference.svg");

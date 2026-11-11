@@ -1,7 +1,7 @@
 use super::super::component::*;
 use dioxus::prelude::*;
 use dioxus_primitives::AsChild;
-use dioxus_icons::lucide::X;
+use crate::components::icons::X;
 
 const WORKSPACE: Asset = asset!("/src/components/attachment/variants/image_gallery/workspace.svg");
 const DESK: Asset = asset!("/src/components/attachment/variants/image_gallery/desk-reference.svg");

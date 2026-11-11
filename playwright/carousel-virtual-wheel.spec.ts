@@ -230,67 +230,65 @@ const VIRTUAL: Variant[] = ["virtual_loop", "virtual_loop_rtl", "virtual_many"];
 /** +1 scrolls toward the next slide (physical direction flips under RTL). */
 const FORWARD: Record<Variant, number> = { virtual_loop: 1, virtual_loop_rtl: -1, virtual_many: 1, main: 1, rewind: 1, rtl: -1, vertical: 1 };
 
+/** A trusted trackpad-shaped flick on the opened `variant`: no component scroll write and no window re-render while input is arriving; clean rest after. */
+async function expectQuietFlick(page: Page, content: Locator, variant: Variant): Promise<void> {
+  await startRecording(content);
+  for (const d of FLICK) {
+    await page.mouse.wheel(FORWARD[variant] * d, 0);
+    await page.waitForTimeout(12);
+  }
+  const rec = await stopRecording(content, 1800);
+  const first = rec.wheels[0];
+  const last = rec.wheels[rec.wheels.length - 1];
+  expect(rec.wheels.length).toBeGreaterThan(20);
+  expect(during(rec.writes, first, last), "component scroll writes while wheel input was still arriving").toEqual([]);
+  expect(during(rec.windowChanges, first, last), "virtual window re-rendered while wheel input was still arriving").toEqual([]);
+  const sels = new Set(during(rec.frames, first, last).map((f) => f.sel));
+  expect(sels.size, `selected changed mid-gesture: ${[...sels].join(" -> ")}`).toBe(1);
+
+  // At rest: snapped, and the selected slide is the one actually showing.
+  const tail = rec.frames.filter((f) => f.t > rec.frames[rec.frames.length - 1].t - 400);
+  const end = tail[tail.length - 1];
+  expect(end.off).toBeLessThan(1);
+  expect(end.sel).toBe(end.aligned);
+  // ...and nothing moves once it has come to rest.
+  expect(new Set(tail.map((f) => `${Math.round(f.pos)}|${f.sel}|${f.win}`)).size, "the visible slide changed after rest").toBe(1);
+}
+
 test.describe("Carousel virtual content: every slide is exactly one snapport wide (no oversized snap areas)", () => {
   for (const variant of VIRTUAL) {
-    test(`${variant}: each rendered slide's border box matches the scroller's own snapport`, async ({ page }) => {
+    // One load per variant: the read-only geometry first, then the two trackpad inputs, each of which ends at rest on a slide boundary.
+    test(`${variant}: slides match the snapport; a small wheel nudge snaps back; a trackpad-shaped flick is quiet while it arrives`, async ({ page }) => {
       const { content } = await open(page, variant);
-      const sizes = await content.evaluate((node) => {
-        const el = node as HTMLElement;
-        return {
-          port: el.clientWidth,
-          slides: Array.from(el.children).map((c) => (c as HTMLElement).getBoundingClientRect().width),
-          boxSizing: Array.from(el.children).map((c) => getComputedStyle(c).boxSizing),
-        };
+      await test.step("each rendered slide's border box matches the scroller's own snapport", async () => {
+        const sizes = await content.evaluate((node) => {
+          const el = node as HTMLElement;
+          return {
+            port: el.clientWidth,
+            slides: Array.from(el.children).map((c) => (c as HTMLElement).getBoundingClientRect().width),
+            boxSizing: Array.from(el.children).map((c) => getComputedStyle(c).boxSizing),
+          };
+        });
+        for (const w of sizes.slides) expect(Math.abs(w - sizes.port), `slide ${w}px vs snapport ${sizes.port}px`).toBeLessThan(0.5);
+        expect(new Set(sizes.boxSizing)).toEqual(new Set(["border-box"]));
+        expect(await restingOffset(content), "at rest, a slide sits exactly on the snapport's start edge").toBeLessThan(1);
       });
-      for (const w of sizes.slides) expect(Math.abs(w - sizes.port), `slide ${w}px vs snapport ${sizes.port}px`).toBeLessThan(0.5);
-      expect(new Set(sizes.boxSizing)).toEqual(new Set(["border-box"]));
-      expect(await restingOffset(content), "at rest, a slide sits exactly on the snapport's start edge").toBeLessThan(1);
-    });
-
-    test(`${variant}: a small trusted wheel nudge at rest snaps back to the slide boundary (no free play)`, async ({ page }) => {
-      const { content } = await open(page, variant);
-      for (const d of [6, 5, 4]) {
-        await page.mouse.wheel(FORWARD[variant] * d, 0);
-        await page.waitForTimeout(40);
-      }
-      await startRecording(content);
-      const rec = await stopRecording(content, 900);
-      const last = rec.frames[rec.frames.length - 1];
-      expect(last.off, "the browser's own mandatory snap brings it back to a boundary").toBeLessThan(1);
+      await test.step("a small trusted wheel nudge at rest snaps back to the slide boundary (no free play)", async () => {
+        for (const d of [6, 5, 4]) {
+          await page.mouse.wheel(FORWARD[variant] * d, 0);
+          await page.waitForTimeout(40);
+        }
+        await startRecording(content);
+        const rec = await stopRecording(content, 900);
+        const last = rec.frames[rec.frames.length - 1];
+        expect(last.off, "the browser's own mandatory snap brings it back to a boundary").toBeLessThan(1);
+      });
+      await test.step("a trusted trackpad-shaped flick -- no component scroll write and no window re-render while input is arriving; clean rest after", () => expectQuietFlick(page, content, variant));
     });
   }
 });
 
 test.describe("Carousel: scroll-end reactions wait until the browser is truly idle", () => {
-  for (const variant of VIRTUAL) {
-    test(`${variant}: a trusted trackpad-shaped flick -- no component scroll write and no window re-render while input is arriving; clean rest after`, async ({
-      page,
-    }) => {
-      const { content } = await open(page, variant);
-      await startRecording(content);
-      for (const d of FLICK) {
-        await page.mouse.wheel(FORWARD[variant] * d, 0);
-        await page.waitForTimeout(12);
-      }
-      const rec = await stopRecording(content, 1800);
-      const first = rec.wheels[0];
-      const last = rec.wheels[rec.wheels.length - 1];
-      expect(rec.wheels.length).toBeGreaterThan(20);
-      expect(during(rec.writes, first, last), "component scroll writes while wheel input was still arriving").toEqual([]);
-      expect(during(rec.windowChanges, first, last), "virtual window re-rendered while wheel input was still arriving").toEqual([]);
-      const sels = new Set(during(rec.frames, first, last).map((f) => f.sel));
-      expect(sels.size, `selected changed mid-gesture: ${[...sels].join(" -> ")}`).toBe(1);
-
-      // At rest: snapped, and the selected slide is the one actually showing.
-      const tail = rec.frames.filter((f) => f.t > rec.frames[rec.frames.length - 1].t - 400);
-      const end = tail[tail.length - 1];
-      expect(end.off).toBeLessThan(1);
-      expect(end.sel).toBe(end.aligned);
-      // ...and nothing moves once it has come to rest.
-      expect(new Set(tail.map((f) => `${Math.round(f.pos)}|${f.sel}|${f.win}`)).size, "the visible slide changed after rest").toBe(1);
-    });
-  }
-
   test("virtual_loop: a scrollend while input is still arriving does not settle; the settle follows once input goes quiet", async ({
     page,
   }) => {

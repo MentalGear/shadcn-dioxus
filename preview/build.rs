@@ -63,6 +63,7 @@ fn main() {
         walk_markdown_dir(&folder_path, &out_dir).unwrap();
     }
     write_variant_notes_index(&out_dir);
+    write_variant_titles_index(&out_dir);
     write_docs_samples(&out_dir);
 
     // The component/variant registry (backlog row 219): `examples.rs` is the one `examples!(..)`
@@ -1158,6 +1159,40 @@ fn write_variant_notes_index(out_dir: &std::path::Path) {
         arms.concat()
     );
     std::fs::write(out_dir.join("variant_notes.rs"), source).unwrap();
+}
+
+/// Display titles for demos whose directory name does not read well (row 399): `variants/<variant>/title.txt`
+/// is one line, the title the component page shows over that demo. The directory name stays the demo's
+/// identity (`#component-preview-frame-<variant>`, routes, specs); a demo with no `title.txt` is titled from
+/// its directory name (`variant_title`). This writes `OUT_DIR/variant_titles.rs`, an array expression of
+/// `(component, variant, title)` rows that `site/mod.rs` `include!`s into `VARIANT_TITLES`. `variants/` is
+/// excluded from the installed component, so a title file never reaches a user's app.
+fn write_variant_titles_index(out_dir: &std::path::Path) {
+    let mut rows = Vec::new();
+    for component in std::fs::read_dir("src/components").unwrap().flatten() {
+        let Ok(variants) = std::fs::read_dir(component.path().join("variants")) else {
+            continue;
+        };
+        for variant in variants.flatten() {
+            let path = variant.path().join("title.txt");
+            let Ok(text) = std::fs::read_to_string(&path) else {
+                continue;
+            };
+            println!("cargo:rerun-if-changed={}", path.display());
+            let title = text.trim();
+            assert!(
+                !title.is_empty() && !title.contains('\n'),
+                "{} must hold one non-empty line",
+                path.display()
+            );
+            let component = component.file_name().to_string_lossy().into_owned();
+            let variant = variant.file_name().to_string_lossy().into_owned();
+            rows.push(format!("({component:?}, {variant:?}, {title:?}),"));
+        }
+    }
+    rows.sort();
+    let source = format!("[\n{}\n]\n", rows.join("\n"));
+    std::fs::write(out_dir.join("variant_titles.rs"), source).unwrap();
 }
 
 fn read_component_description(component_json_path: &std::path::Path) -> String {

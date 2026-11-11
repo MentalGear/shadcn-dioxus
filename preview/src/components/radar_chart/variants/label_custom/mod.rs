@@ -2,8 +2,8 @@ use super::super::component::*;
 use crate::components::card::{
     Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle,
 };
+use crate::components::icons::TrendingUp;
 use dioxus::prelude::*;
-use dioxus_icons::lucide::TrendingUp;
 
 /// Each month labelled with its two values over its name (`RadarOptions::ticks`),
 /// inside a 10px margin.

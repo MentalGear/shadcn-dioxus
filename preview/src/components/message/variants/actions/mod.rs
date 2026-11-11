@@ -2,7 +2,8 @@ use super::super::component::*;
 use crate::components::bubble::{Bubble, BubbleContent, BubbleVariant};
 use crate::components::button::{Button, ButtonSize, ButtonVariant};
 use dioxus::prelude::*;
-use dioxus_icons::lucide::{Copy, RefreshCw, ThumbsDown, ThumbsUp};
+use crate::components::icons::Copy;
+use dioxus_icons::lucide::{RefreshCw, ThumbsDown, ThumbsUp};
 
 /// Message-level actions live in the footer. They are icon-only, so each
 /// carries an `aria-label`.

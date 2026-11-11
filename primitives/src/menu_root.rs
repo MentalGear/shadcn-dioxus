@@ -72,25 +72,13 @@ pub(crate) struct MenuHost {
 /// the way `use_id_or` does for a trigger. A hook: call it before any hook that reads the returned signal.
 pub(crate) fn use_root_id(attributes: &[Attribute]) -> Signal<String> {
     let mut root_id = crate::use_unique_id();
-    let caller = caller_id(attributes);
+    let caller = crate::caller_id::caller_id(attributes);
     use_effect(move || {
         if let Some(id) = caller.clone() {
             root_id.set(id);
         }
     });
     root_id
-}
-
-/// The text of a caller-supplied `id` attribute, if there is a non-empty one.
-fn caller_id(attributes: &[Attribute]) -> Option<String> {
-    attributes.iter().find_map(|a| match (&a.value, a.name) {
-        (dioxus_core::AttributeValue::Text(id), "id")
-            if a.namespace.is_none() && !id.is_empty() =>
-        {
-            Some(id.clone())
-        }
-        _ => None,
-    })
 }
 
 /// Keeps `open` in sync with whether `focus`'s roving-focus collection currently holds DOM focus, skipped while

@@ -1,0 +1,52 @@
+# Crates with a build script or a proc-macro in the closure a user installs (dioxus-primitives with all features on
+# wasm32 and the host, plus every registry crate a component.json names). A shrink-only ratchet read by
+# scripts/check-dependency-register.sh: a crate or kind that is not listed is red, a listed one that is gone is red.
+# Regenerate with scripts/dependency-register.py --closure-update.
+crate	kinds
+anyhow	build-script
+async-trait	proc-macro
+const-serialize-macro	proc-macro
+const_format_proc_macros	proc-macro
+darling_macro	proc-macro
+dioxus-attributes	proc-macro
+dioxus-config-macro	proc-macro
+dioxus-core-macro	proc-macro
+dioxus-document	build-script
+dioxus-html-internal-macro	proc-macro
+dioxus-router-macro	proc-macro
+dioxus-stores-macro	proc-macro
+displaydoc	proc-macro
+enumset_derive	proc-macro
+generic-array	build-script
+icu_locid_transform_data	build-script
+icu_normalizer_data	build-script
+icu_properties_data	build-script
+icu_provider_macros	proc-macro
+libc	build-script
+manganis-macro	proc-macro
+num-traits	build-script
+palette	build-script
+palette_derive	proc-macro
+parking_lot_core	build-script
+pin-project-internal	proc-macro
+proc-macro2	build-script
+proc-macro2-diagnostics	build-script
+pulldown-cmark	build-script
+quote	build-script
+rustversion	build-script,proc-macro
+serde	build-script
+serde_core	build-script
+serde_derive	proc-macro
+serde_json	build-script
+slotmap	build-script
+thiserror	build-script
+thiserror-impl	proc-macro
+tracing-attributes	proc-macro
+warnings-macro	proc-macro
+wasm-bindgen	build-script
+wasm-bindgen-macro	proc-macro
+wasm-bindgen-shared	build-script
+yoke-derive	proc-macro
+zerofrom-derive	proc-macro
+zerovec-derive	proc-macro
+zmij	build-script

@@ -3,7 +3,7 @@ use crate::components::button_group::ButtonGroup;
 use crate::components::input::Input;
 use crate::components::input_group::*;
 use dioxus::prelude::*;
-use dioxus_icons::lucide::Search;
+use crate::components::icons::Search;
 
 /// Addon examples built from `InputGroup`: a search field with a leading icon
 /// and a domain field with text addons on both ends. The last example joins a

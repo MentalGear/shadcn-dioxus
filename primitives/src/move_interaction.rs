@@ -117,12 +117,14 @@ impl MoveInteraction {
     }
 
     pub(crate) fn start_pointer(&mut self, event: &Event<PointerData>) -> bool {
-        event.prevent_default();
-        event.stop_propagation();
-
+        // Only a primary press starts a drag; any other button (a pen's barrel button, a middle
+        // press) is left to the browser and to the handlers above this control.
         if event.trigger_button() != Some(MouseButton::Primary) {
             return false;
         }
+
+        event.prevent_default();
+        event.stop_propagation();
 
         // A drag ends when the window bridge sees the pointer's `pointerup`/`pointercancel`. If that
         // release is ever lost (a window listener that never ran, a touch the OS took over), the
@@ -294,5 +296,112 @@ mod tests {
             ),
             None
         );
+    }
+
+    struct TestPointerData {
+        button: MouseButton,
+    }
+
+    impl InteractionLocation for TestPointerData {
+        fn client_coordinates(&self) -> ClientPoint {
+            ClientPoint::new(1.0, 2.0)
+        }
+
+        fn screen_coordinates(&self) -> dioxus::html::geometry::ScreenPoint {
+            dioxus::html::geometry::ScreenPoint::new(1.0, 2.0)
+        }
+
+        fn page_coordinates(&self) -> dioxus::html::geometry::PagePoint {
+            dioxus::html::geometry::PagePoint::new(1.0, 2.0)
+        }
+    }
+
+    impl dioxus::html::InteractionElementOffset for TestPointerData {
+        fn element_coordinates(&self) -> dioxus::html::geometry::ElementPoint {
+            dioxus::html::geometry::ElementPoint::new(1.0, 2.0)
+        }
+    }
+
+    impl ModifiersInteraction for TestPointerData {
+        fn modifiers(&self) -> Modifiers {
+            Modifiers::empty()
+        }
+    }
+
+    impl dioxus::html::PointerInteraction for TestPointerData {
+        fn trigger_button(&self) -> Option<MouseButton> {
+            Some(self.button)
+        }
+
+        fn held_buttons(&self) -> dioxus::html::input_data::MouseButtonSet {
+            dioxus::html::input_data::MouseButtonSet::empty()
+        }
+    }
+
+    impl dioxus::html::HasPointerData for TestPointerData {
+        fn pointer_id(&self) -> i32 {
+            1
+        }
+
+        fn width(&self) -> f64 {
+            1.0
+        }
+
+        fn height(&self) -> f64 {
+            1.0
+        }
+
+        fn pressure(&self) -> f32 {
+            0.5
+        }
+
+        fn tangential_pressure(&self) -> f32 {
+            0.0
+        }
+
+        fn tilt_x(&self) -> i32 {
+            0
+        }
+
+        fn tilt_y(&self) -> i32 {
+            0
+        }
+
+        fn twist(&self) -> i32 {
+            0
+        }
+
+        fn pointer_type(&self) -> String {
+            "pen".to_string()
+        }
+
+        fn is_primary(&self) -> bool {
+            true
+        }
+
+        fn as_any(&self) -> &dyn std::any::Any {
+            self
+        }
+    }
+
+    /// Presses `button` on a control and reports `(started a drag, default action enabled,
+    /// propagates)`.
+    fn press(button: MouseButton) -> (bool, bool, bool) {
+        crate::test_support::with_runtime(move || {
+            let mut interaction = use_move_interaction(use_signal(|| false));
+            let event: Event<PointerData> =
+                Event::new(Rc::new(PointerData::new(TestPointerData { button })), true);
+            let started = interaction.start_pointer(&event);
+            (started, event.default_action_enabled(), event.propagates())
+        })
+    }
+
+    #[test]
+    fn a_secondary_button_press_is_left_to_the_browser() {
+        // A pen barrel button or a middle button starts no drag, so it must not be consumed: the
+        // context menu, autoscroll and parent handlers still see it.
+        for button in [MouseButton::Secondary, MouseButton::Auxiliary] {
+            assert_eq!(press(button), (false, true, true), "{button:?}");
+        }
     }
 }

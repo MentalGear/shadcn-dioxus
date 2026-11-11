@@ -3,8 +3,9 @@
 
 use super::super::component::*;
 use crate::components::card::{Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle};
+use crate::components::icons::TrendingUp;
 use dioxus::prelude::*;
-use dioxus_icons::lucide::{Activity, TrendingUp};
+use dioxus_icons::lucide::Activity;
 
 /// The chart's rows, `(month, desktop)`, values in config order.
 pub(crate) fn chart_data() -> Vec<ChartDatum> {

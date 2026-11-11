@@ -3,7 +3,7 @@ use crate::components::button::{Button, ButtonSize, ButtonVariant};
 use crate::components::tooltip::{Tooltip, TooltipContent, TooltipTrigger};
 use dioxus::prelude::*;
 use dioxus_primitives::AsChild;
-use dioxus_icons::lucide::Check;
+use crate::components::icons::Check;
 
 /// A tooltip on a bubble's reaction: `TooltipTrigger`'s `as` renders the trigger as a ghost
 /// icon `Button`, so the read receipt is one focusable control with a hover and focus hint.

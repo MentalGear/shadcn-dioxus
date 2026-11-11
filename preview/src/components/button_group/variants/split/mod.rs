@@ -5,7 +5,7 @@ use crate::components::dropdown_menu::{
 };
 use dioxus::prelude::*;
 use dioxus_primitives::AsChild;
-use dioxus_icons::lucide::ChevronDown;
+use crate::components::icons::ChevronDown;
 
 /// shadcn's "Split" example: a primary "Follow" button plus a chevron button
 /// that opens a `DropdownMenu` of related actions.

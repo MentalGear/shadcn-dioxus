@@ -1,7 +1,8 @@
 use super::super::component::*;
 use crate::components::button::ButtonVariant;
 use dioxus::prelude::*;
-use dioxus_icons::lucide::{Check, Copy, Eye, EyeOff, X};
+use crate::components::icons::{Check, Copy, X};
+use dioxus_icons::lucide::{Eye, EyeOff};
 
 /// `InputGroupButton` in each size: an icon-only copy button that confirms (`IconXs`), a text button with
 /// an icon (`Xs`, the default), a secondary text button (`Sm`) and a password reveal (`IconSm`).

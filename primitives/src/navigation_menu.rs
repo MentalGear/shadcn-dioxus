@@ -159,6 +159,7 @@ use crate::collection::{
     collection_item, use_collection_provider, use_item, use_item_index, CollectionOptions,
     CollectionPlacement, CollectionState, ItemIndex,
 };
+use crate::constant_signal::use_constant_signal;
 use crate::direction::{use_direction, use_direction_signal, Direction};
 use crate::hover_intent::{use_hover_intent, HoverIntent};
 use crate::menu_sub::{use_delayed_action, DelayedAction};
@@ -301,7 +302,7 @@ pub fn NavigationMenu(props: NavigationMenuProps) -> Element {
     // `Math.max`/`Math.min` indices, `js/disclosureMenu.js`'s
     // `controlFocusByKey` -- Left/Right stop at the first/last item rather
     // than wrapping).
-    let focus = use_collection_provider(ReadSignal::new(Signal::new(false)));
+    let focus = use_collection_provider(use_constant_signal(false));
 
     // Each `use_delayed_action()` call is itself a hook (it wraps
     // `use_signal`, `menu_sub.rs`), so -- like `open`/`focus` above -- it
@@ -746,8 +747,12 @@ pub fn NavigationMenuTrigger(props: NavigationMenuTriggerProps) -> Element {
                     ctx.hover.enter(index.cloned());
                 }
             },
-            onmouseleave: move |_| {
-                ctx.hover.leave(index.cloned());
+            onmouseleave: move |event: Event<MouseData>| {
+                ctx.hover.leave(
+                    index.cloned(),
+                    Some(crate::safe_triangle::Point::of(&event)),
+                    Some(item_ctx.content_id.cloned()),
+                );
             },
             onfocus: move |_| {
                 ctx.blur_close.cancel();
@@ -1051,7 +1056,7 @@ fn NavigationMenuContentRendered(
                 ctx.hover.hold();
             },
             onmouseleave: move |_| {
-                ctx.hover.leave(index.cloned());
+                ctx.hover.leave(index.cloned(), None, None);
             },
             ..attributes,
             {children}
@@ -1101,7 +1106,7 @@ fn NavigationMenuContentRendered(
                 ctx.hover.hold();
             },
             onmouseleave: move |_| {
-                ctx.hover.leave(index.cloned());
+                ctx.hover.leave(index.cloned(), None, None);
             },
             ..attributes,
             {children}

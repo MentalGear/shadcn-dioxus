@@ -8,7 +8,8 @@ use crate::components::{
     select::{Select, SelectGroup, SelectOption},
 };
 use dioxus::prelude::*;
-use dioxus_icons::lucide::{ArrowUp, MessageCircleDashed, RotateCw};
+use crate::components::icons::ArrowUp;
+use dioxus_icons::lucide::{MessageCircleDashed, RotateCw};
 
 /// The user messages, one per press of send. Short on purpose: the demo is about the bubble's entrance,
 /// so nothing else (no assistant reply, no streamed text) competes with it.

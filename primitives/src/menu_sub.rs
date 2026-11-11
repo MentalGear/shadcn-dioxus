@@ -34,6 +34,7 @@
 use std::time::Duration;
 
 use crate::dismiss::Cause;
+use crate::safe_triangle::{use_safe_close, Point, SafeClose};
 use crate::sleep::sleep;
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
@@ -79,17 +80,13 @@ pub(crate) const SUBMENU_OPEN_INTENT_DELAY: Duration = Duration::from_millis(100
 /// Grace delay before a pointer leaving a sub-trigger (without entering its
 /// own submenu content) closes it.
 ///
-/// Without this, the physical gap between a trigger and its anchored
-/// content -- however small; see `MenuSubContentRendered`'s zero-gap
-/// anchor choice, which exists specifically to shrink this window -- would
-/// make an ordinary diagonal mouse move from the trigger toward its own
-/// submenu register as "the pointer left," closing the submenu out from
-/// under the pointer before it ever arrives. Same non-normative status as
-/// [`SUBMENU_OPEN_INTENT_DELAY`] above. Base UI's `closeDelay` is 0
-/// (`MenuSubmenuTrigger.mjs:41`) because a `safePolygon` with `blockPointerEvents`
-/// (`MenuSubmenuTrigger.mjs:154`) holds the submenu open on the way to it; this crate has no safe
-/// triangle, so the grace delay stays at 200 ms.
-pub(crate) const SUBMENU_CLOSE_GRACE_DELAY: Duration = Duration::from_millis(200);
+/// Base UI's `closeDelay` of 0 (`@base-ui/react` 1.9.0, `menu/submenu-trigger/MenuSubmenuTrigger.mjs:41`).
+/// The physical gap between a trigger and its anchored content would make an ordinary diagonal mouse
+/// move toward the submenu register as "the pointer left"; the safe triangle
+/// ([`crate::safe_triangle`], Base UI's `safePolygon`, `MenuSubmenuTrigger.mjs:154`) holds the
+/// submenu open on that path, so the delay itself can be zero. Leaving the submenu's own content
+/// closes it after this delay too.
+pub(crate) const SUBMENU_CLOSE_GRACE_DELAY: Duration = Duration::from_millis(0);
 
 /// Whether `key` is this pattern's direction-aware submenu **open** arrow
 /// key -- `ArrowRight` in LTR, `ArrowLeft` in RTL. Callers combine this with
@@ -232,7 +229,7 @@ pub(crate) struct SubMenuState {
     /// same contract the trigger has) closes that gap: the submenu
     /// only closes once the pointer has left *both* the trigger and its
     /// content without re-entering either within the grace window.
-    hover_close: DelayedAction,
+    hover_close: SafeClose,
     /// Whether a pointer *hovering* (rather than clicking) opens this
     /// submenu. Default `true` (see `DropdownMenuSubProps::open_on_hover`);
     /// `false` makes it click/Enter/Space/arrow-key only.
@@ -307,14 +304,21 @@ impl SubMenuState {
     /// and, after [`SUBMENU_CLOSE_GRACE_DELAY`], close unless the pointer
     /// reached the content (or came back) first. A no-op unless
     /// [`Self::open_on_hover`].
-    pub(crate) fn hover_leave_trigger(&mut self) {
+    ///
+    /// `at` is where the pointer left: the close waits while the pointer travels inside the safe
+    /// triangle toward the content ([`crate::safe_triangle`]).
+    pub(crate) fn hover_leave_trigger(&mut self, at: Point) {
         if !(self.open_on_hover)() {
             return;
         }
         self.hover_open.cancel();
         let set_open = self.set_open;
-        self.hover_close
-            .schedule(SUBMENU_CLOSE_GRACE_DELAY, move || set_open.call(false));
+        self.hover_close.leave(
+            Some(at),
+            Some(self.content_id.cloned()),
+            SUBMENU_CLOSE_GRACE_DELAY,
+            Callback::new(move |()| set_open.call(false)),
+        );
     }
 
     /// The pointer entered this submenu's own content: hovering it is as good
@@ -336,8 +340,10 @@ impl SubMenuState {
             return;
         }
         let set_open = self.set_open;
-        self.hover_close
-            .schedule(SUBMENU_CLOSE_GRACE_DELAY, move || set_open.call(false));
+        self.hover_close.schedule(
+            SUBMENU_CLOSE_GRACE_DELAY,
+            Callback::new(move |()| set_open.call(false)),
+        );
     }
 }
 
@@ -360,7 +366,7 @@ pub(crate) fn use_sub_menu_state(
         trigger_id: use_unique_id(),
         content_id: use_unique_id(),
         hover_open: use_delayed_action(),
-        hover_close: use_delayed_action(),
+        hover_close: use_safe_close(),
         open_on_hover,
     }
 }
@@ -460,8 +466,8 @@ pub(crate) fn render_sub_trigger(props: MenuSubTriggerProps) -> Element {
             }
             sub.hover_enter_trigger();
         },
-        onmouseleave: move |_| {
-            sub.hover_leave_trigger();
+        onmouseleave: move |event: Event<MouseData>| {
+            sub.hover_leave_trigger(Point::of(&event));
         },
 
         onclick: move |event: Event<MouseData>| {
@@ -542,7 +548,7 @@ pub(crate) fn render_sub_content(props: MenuSubContentProps) -> Element {
 /// The submenu panel. On the web it is a `popover="auto"` top-layer element anchored to its sub-trigger on the
 /// inline axis (`Right` in LTR, `Left` in RTL, flipped by the shared engine when it would overflow), with no gap:
 /// trigger and submenu sit in the same logical menu, and abutting shrinks the dead zone the close grace delay
-/// ([`SUBMENU_CLOSE_GRACE_DELAY`]) covers for a diagonal pointer move. `auto` lets an outside press
+/// covers for a diagonal pointer move (the safe triangle, [`crate::safe_triangle`]). `auto` lets an outside press
 /// light-dismiss just this submenu (Escape is the dismiss layer's), and a click on a sibling of the enclosing menu is "outside" it. Without the
 /// popover API it is a plain in-flow element.
 ///
@@ -614,13 +620,14 @@ fn MenuSubContentRendered(
     // One layer for the open submenu, over its content and its sub-trigger (neither holds the other, and the
     // enclosing menu's other items are not inside it): `Policy::MENU_SUB`. It registers after the enclosing menu's
     // layer, so it is the topmost and takes the first Escape: only the submenu closes, and the key never reaches
-    // the enclosing menu's layer.
+    // the enclosing menu's layer. The layer is active only while the submenu is open, so a closed submenu that
+    // is still mounted for its close animation leaves the Escape order and the enclosing menu takes the key.
     crate::dismiss::use_dismiss_within(
         sub.content_id,
         move || vec![sub.trigger_id.cloned()],
         crate::dismiss::Scope::Element,
         crate::dismiss::Policy::MENU_SUB,
-        None,
+        Some(sub.open.into()),
         move |cause| close(Some(cause)),
     );
 

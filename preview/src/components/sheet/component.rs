@@ -151,7 +151,7 @@ fn SheetPanel(
 pub fn SheetContentClose(#[props(extends = GlobalAttributes)] attributes: Vec<Attribute>) -> Element {
     // axe `button-name` (dev-docs/backlog.md row 34): this button's
     // only content is the `X` icon, with no text and no accessible name --
-    // `DialogClose`/`AlertDialogClose` get theirs per call site
+    // `DialogClose` gets its label per call site
     // (`dialog/variants/main/mod.rs`'s `aria_label: "Close"`); it is baked in
     // here because both call sites
     // (`sheet/variants/main/mod.rs`, `sidebar/component.rs`) render this

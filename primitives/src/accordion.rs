@@ -102,6 +102,7 @@ impl AccordionContext {
             hidden_until_found,
             chevron,
             focus: CollectionState::new(
+                // constant-signal-ok: built inside `use_context_provider`'s closure, once per instance
                 ReadSignal::new(Signal::new(true)),
                 CollectionOptions::default(),
                 focus_id,

@@ -9,7 +9,7 @@ Backs rows [477](../backlog/477-anchored-overlays-placed-in-document-coordinates
 [478](../backlog/478-overlay-defaults-to-base-ui.md), [479](../backlog/479-scroll-lock-method-and-the-touch-carve-out.md),
 [480](../backlog/480-re-diff-keyboard-inset-against-base-ui-1-9-0.md),
 [481](../backlog/481-state-attributes-one-helper-emits-data-state-and-presence.md) and
-[482](../backlog/482-control-gaps-slider-form-participation-read-only-and-small-attributes.md); touches rows
+[482](../backlog/done/482-control-gaps-slider-form-participation-read-only-and-small-attributes.md); touches rows
 [296](../backlog/296-combobox-list-drifts-from-its-input-on-ios-after.md),
 [268](../backlog/268-select-scroll-buttons-and-item-aligned-position.md),
 [435](../backlog/done/435-one-menu-family-behind-three-hosts.md),

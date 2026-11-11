@@ -102,3 +102,77 @@ The split is reverted (`playwright/all-routes.spec.ts`, `playwright/axe.ts` back
 two full axe scans per route; what is left of its time is the colour-rule work itself, which only a smaller DOM or fewer pages
 would cut. `playwright/durations.json`: `all-routes.spec.ts` 862.0 s (94 tests) as measured on that build.
 
+
+## 152b slice 4: profile of the next 15 files and four cuts (2026-11-07, lane prune-152b)
+
+Profile: the 15 slowest files of `playwright/durations.json` other than `all-routes`, `first-paint-styles` and the specs other lanes
+edit. 13 were run on one debug SSG build of main f38662dc (2 workers, load average 17-21, so absolute seconds are about 1.5-2x
+a quiet box; the pairs below ran back to back): `top-layer` 644 s (103 tests), `date-picker` 408, `menu-family-parity` 364,
+`carousel-virtual-wheel` 329, `drawer` 275, `listener-inventory` 254, `carousel` 242, `theme-preset` 191, `accent-states` 184,
+`popup-style-isolation` 184, `chart-entry-animation` 159, `anchored-close-clip` 98, `first-paint-text` 15 (its 84-test
+duration entry is the `FIRST_PAINT_ROUTES=all` sweep). `layout-stability` (627 s) and `charts-hydration-stability` (191 s) were
+read, not run: each test is a width sweep whose points are the coverage, and the waits are already signals
+(`stability-window.ts`).
+
+Cut (same build, before = the old spec from git, after = the edited one, test seconds): `anchored-close-clip` 164.7 s (28
+tests) -> 91.7 s (12): one load per ColorPicker viewport x placement and per overlay, with the three (two) closers run on it, each
+reopening the panel (a Tooltip is blurred before its second focus); `accent-states` 388.1 s -> 225.3 s: the five tests per
+mode x contrast each recomputed the same 190-state in-page sweep after their own page load, now one sweep per pair per worker is
+shared and a test that finds it cached loads no page; `theme-preset` 224.1 s (30) -> 206.1 s (24): the phone matrix 2 sizes x 2
+schemes runs 390 light and 360 dark (size and scheme are independent axes: size decides the box assertions, scheme the colours),
+and the three mode x base x accent sweeps ("no accent chart palette", "accent chart ramp", "accent leaves secondary alone", the
+first two subsets of the third's states) are one test with one sweep and soft assertions; `chart-entry-animation` 160.6 s (25) ->
+169.4 s (19, no gain beyond noise at this load): the six `/component/<kind>_chart/` first-paint tests are the first half of the
+below-the-fold test that loads the same page and waits the same 1.5 s, which now runs the same first-paint assertions before it
+scrolls (`assertFirstPaintFinal`). `playwright/durations.json` carries these four files scaled by the measured after/before
+ratio (its seconds come from another run) and the new test counts; meta totals recomputed.
+
+Not cut, with the reason: `top-layer` open-state axe (10 tests, 11-13 s each): the fixture's markup differs from the demos'
+component-spec scans (Select `aria-labelledby` override, row 36); Rule 11 (a)/(b)/(c) run at different viewports and engines;
+`listener-inventory`: the 800 ms / 500 ms / 2200 ms waits are "nothing may happen" windows (the 2200 ms covers the 1500 ms dialog
+exit hold); `popup-style-isolation` `site-home` (57 s): one walk of eleven popup kinds, no repeat; `carousel-virtual-wheel`,
+`date-picker`, `drawer`, `menu-family-parity`, `carousel`: per-demo or per-state tests with no identical probe found in the time
+available; not audited further.
+
+## 152c slice 5: shared loads in the five files slice 4 left (2026-11-07, lane prune-152c)
+
+The five files slice 4 profiled and left (`date-picker`, `menu-family-parity`, `carousel-virtual-wheel`, `drawer`, `carousel`), cut by
+the same two constructions: cases that need a fresh page only because they run in separate tests share one load when each leaves
+the page in the state the next one assumes (closed menu, closed dialog, restored value), and every assertion keeps running as a
+named `test.step`. Page loads fall by the number of tests removed (one load each), `drawer` also reopens without a reload.
+
+Same debug build of c778ec04, 2 workers, "before" = the old specs from git. The two runs were NOT under equal load (before: load
+average 15, after: 7), so the second column's gain is partly load; judge by tests and page loads. Test seconds:
+
+| file | tests before -> after | loads saved | seconds before -> after |
+|---|---|---|---|
+| `carousel.spec.ts` | 58 -> 34 | 24 | 392.2 -> 176.1 |
+| `oracle/tier1-apg/menu-family-parity.spec.ts` | 73 -> 49 | 24 | 290.2 -> 216.6 |
+| `drawer.spec.ts` | 46 -> 29 | 17 | 228.0 -> 174.8 |
+| `carousel-virtual-wheel.spec.ts` | 38 -> 32 | 6 | 383.5 -> 306.4 |
+| `date-picker.spec.ts` | 82 -> 71 | 11 | 379.2 -> 373.0 (452.7 raw; two unchanged tests stalled 46 s and 43 s in that run, counted at their 7 s and 3 s of the other run) |
+
+What was merged, and why each premise holds:
+- `carousel`: the four per-variant smoke tests (region name, first slide group, Previous/Next native buttons, Previous disabled) and
+  the per-variant geometry test (5 variants x 5 = 25 tests) are one test on one load, a step per variant and case. The only case
+  that pages a carousel (Next clicked) runs last in its variant, after "Previous is disabled at the first slide" and the geometry.
+- `menu-family-parity`, per host: anatomy, roving, typeahead, a disabled-item click and the four dismissals (Escape, Escape with
+  focus on the page, Tab, press outside) select nothing; one test closes the previous menu before each step, and the disabled
+  click runs before any selection exists, so "nothing is reported" still holds. The selection cases (Enter, Space, click, the
+  pointer-commit mode) stay separate: a later selection of an already-reported label would pass without the commit. Touch: the
+  press-without-release case runs first, then the tap case after Escape.
+- `drawer`: the four open-and-Escape cases (focus trap, `data-open`/root lifecycle, top side, flush edges) leave the root unmounted
+  for the next; per pointer kind the gestures that leave the drawer open (up, short drag, twitch) run on one open drawer, then the
+  two that close it with a reopen between; the top drawer likewise.
+- `carousel-virtual-wheel`, per virtual variant: snapport geometry (read-only), the small wheel nudge (ends on a boundary) and the
+  trackpad-shaped flick (`expectQuietFlick`) share one `open`.
+- `date-picker`: "opens on click" + "Escape closes"; the four restore paths (Cancel, Escape, outside click, trigger) and "picking
+  the committed day stages nothing" chain on one load, each ending in the reopened dialog on the committed 15 that
+  `expectRestored` asserts; the natural-language group's seven read, type and open cases share one load in an order that keeps the
+  initial state first and the viewport change last.
+
+Not merged, with the reason: the "has no automatically detectable a11y issues" scans and the dwell tests (each starts from a fresh
+open and measures time); `carousel` arrows-never-overflow (2 schemes x 6 widths): a resize in place is not a load at that width
+(the layout can depend on the hydrated width); the carousel pointer-drag tests (each pages the one carousel); the three `@timing`
+recorded flicks in `carousel-virtual-wheel` (deactivated). `playwright/durations.json` carries the five files scaled by the
+measured ratio (date-picker with the stalls removed) and the removed test counts.

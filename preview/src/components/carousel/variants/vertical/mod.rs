@@ -1,7 +1,7 @@
 use super::super::component::*;
 use crate::components::card::{Card, CardContent};
+use crate::components::icons::{ChevronDown, ChevronUp};
 use dioxus::prelude::*;
-use dioxus_icons::lucide::{ChevronDown, ChevronUp};
 
 /// `CarouselOrientation::Vertical` is the horizontal construction on the
 /// other axis (see `primitives/src/carousel/mod.rs`'s module doc). A vertical

@@ -1,7 +1,8 @@
 use super::super::component::*;
 use dioxus::prelude::*;
 use dioxus_primitives::AsChild;
-use dioxus_icons::lucide::{FileText, X};
+use crate::components::icons::X;
+use dioxus_icons::lucide::FileText;
 
 /// The trigger fills the card behind the actions, so activating the card and
 /// removing it are separately clickable and focusable.

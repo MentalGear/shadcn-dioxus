@@ -26,6 +26,7 @@ pub mod avatar;
 pub mod bridge;
 #[cfg(feature = "calendar")]
 pub mod calendar;
+mod caller_id;
 pub mod carousel;
 pub mod chart;
 pub mod checkbox;
@@ -35,6 +36,7 @@ mod collection;
 pub mod color_picker;
 pub mod combobox;
 pub mod command;
+mod constant_signal;
 pub mod context_menu;
 pub mod data_view;
 #[cfg(feature = "calendar")]
@@ -46,6 +48,7 @@ mod dismiss;
 pub mod drag_and_drop_list;
 pub mod drawer;
 pub mod dropdown_menu;
+mod escape;
 mod form_reset;
 pub use form_reset::{
     use_dom_value_report, use_dom_value_restore, use_form_value_report, MIRROR_AUTOCOMPLETE,
@@ -70,6 +73,7 @@ mod move_interaction;
 pub mod nav_link;
 #[cfg(feature = "router")]
 pub mod navbar;
+mod safe_triangle;
 // Deliberately NOT gated on `feature = "router"`, unlike `navbar` above:
 // `NavigationMenuLink` renders a plain `a[href]` itself rather than
 // `dioxus_router::Link`, so this module has no router dependency -- see
@@ -367,7 +371,7 @@ const onBackdrop = e => { const d = roots()[0], r = d && d.getBoundingClientRect
 const outside = n => roots().length > 0 && !within(n); let press = null;
 layers.push(o), layers.sort((a, b) => a.seq - b.seq), cleanup(() => layers.splice(layers.indexOf(o), 1));
 listen(document, 'keydown', e => {
-    if (e.key !== 'Escape' || layers[layers.length - 1] !== o || o.escape === 'native') return;
+    if (e.key !== 'Escape' || e.isComposing || e.keyCode === 229 || layers[layers.length - 1] !== o || o.escape === 'native') return;
     e.preventDefault(), dioxus.send(within(document.activeElement) ? 'escape-within' : 'escape');
 });
 if (o.press !== 'ignore') {
@@ -385,8 +389,7 @@ if (o.press !== 'ignore') {
     listen(document, 'pointercancel', e => { if (press && press.id === e.pointerId) press = null; }, true);
 }
 if (o.focus) listen(document, 'focusin', e => {
-    if (outside(e.target) && !roots().some(r => e.target.contains(r))) dioxus.send('focus');
-}, true);";
+    if (outside(e.target) && !roots().some(r => e.target.contains(r))) dioxus.send('focus'); }, true);";
 
 /// Install [`DISMISS_JS`] for one layer; the returned value removes its listeners and its place in
 /// the Escape order when dropped.
@@ -431,13 +434,13 @@ pub(crate) trait RefocusTrigger: Copy + 'static {
 
 impl RefocusTrigger for Signal<String> {
     fn refocus(self) {
-        let id = self.peek().clone();
+        let id = crate::escape::js_string(&self.peek());
         // Never by script after a touch or pen (`data-dx-modality`, `modality.rs`): nothing was
         // keyboard-focused to give back, and a script-focused trigger rings on iOS.
         // focus-ok: restore focus to the trigger on close
         #[expect(clippy::disallowed_methods, reason = "row 434: the bridge ports this page script")]
         document::eval(&format!(
-            "var e=document.getElementById('{id}');if(e&&!/^(touch|pen)$/.test(document.documentElement.getAttribute('data-dx-modality')||''))e.focus()"
+            "var e=document.getElementById({id});if(e&&!/^(touch|pen)$/.test(document.documentElement.getAttribute('data-dx-modality')||''))e.focus()"
         ));
     }
 }
@@ -646,7 +649,7 @@ fn use_dialog_open_driver(
 
     use_effect(move || {
         let want_open = open.cloned();
-        let id = id.cloned();
+        let id = crate::escape::js_string(&id.cloned());
         // `inject` is prepended into this exact script, not left to the
         // separate `use_effect(ensure_top_layer_ink_styles)` above -- see
         // that function's own doc (`top_layer.rs`), "First-paint window,"
@@ -670,7 +673,7 @@ fn use_dialog_open_driver(
             {modality};
             {open_focus}
             {forward}
-            const dialog = document.getElementById('{id}');
+            const dialog = document.getElementById({id});
             if (!dialog) return;
             const gen = (dialog.__dxDialogGen = (dialog.__dxDialogGen || 0) + 1);
             if ({want_open}) {{
@@ -886,7 +889,9 @@ fn use_animated_open(
         let open = open.cloned();
         if open {
             show_in_dom.set(open);
-        } else {
+        } else if *show_in_dom.peek() {
+            // Only an element that is in the DOM has a close animation to wait for; an overlay that is
+            // closed from its first render runs nothing.
             spawn(async move {
                 let id = id.cloned();
                 #[expect(

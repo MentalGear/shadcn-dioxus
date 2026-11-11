@@ -2,7 +2,8 @@ use super::super::component::*;
 use crate::components::spinner::Spinner;
 use dioxus::prelude::*;
 use dioxus_primitives::AsChild;
-use dioxus_icons::lucide::{ChevronRight, CircleUserRound, Clock, FileText, GitBranch};
+use crate::components::icons::ChevronRight;
+use dioxus_icons::lucide::{CircleUserRound, Clock, FileText, GitBranch};
 
 #[component]
 pub fn Demo() -> Element {

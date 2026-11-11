@@ -1,6 +1,6 @@
 use super::super::component::*;
+use crate::components::icons::TrendingUp;
 use dioxus::prelude::*;
-use dioxus_icons::lucide::TrendingUp;
 
 /// One browser's visitors.
 fn chart_data() -> Vec<ChartDatum> {

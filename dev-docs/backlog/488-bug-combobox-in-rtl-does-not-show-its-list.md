@@ -1,7 +1,7 @@
 ---
 id: 488
 title: "Bug: Combobox in RTL does not show its list"
-status: "BACKLOG, low priority: for much later (owner report 2026-10-31). Reproduce first."
+status: "Does not reproduce (2026-11-07, lane/combobox-rtl-488, debug SSG build on main f38662dc). The…"
 size: "S"
 area: overlays
 updated: 2026-10-31
@@ -15,7 +15,13 @@ Owner report (2026-10-31): the Combobox's option list does not appear in a right
 
 ## Status / trigger
 
-BACKLOG, low priority: for much later (owner report 2026-10-31). Reproduce first.
+Does not reproduce (2026-11-07, `lane/combobox-rtl-488`, debug SSG build on main `f38662dc`). The report is probably fixed by row 477's placement rule (document coordinates, `rtl`-aware alignment in `PLACE_JS`). `playwright/anchored-rtl.spec.ts` stays as the guard.
+
+- **Real RTL demos** (`#component-preview-frame-rtl` on the combobox, select and dropdown_menu pages): the open panel is inside the viewport and overlaps its trigger's columns; the Combobox list's right edge equals the chips field's right edge (inline start), l 562.5 / r 882.5 against the field's 562.5 / 882.5.
+- **`top_layer` fixture with the direction flipped** (`html` and every `dir="ltr"` on the way, after hydration): Popover, DropdownMenu and Combobox are inside the viewport and overlap their trigger, on the engine path and on the script path (`stripAnchorSupportsBlock`); the Combobox list's right edge is the input's right edge.
+- `combobox-placement.spec.ts`, `anchored-placement.spec.ts` and `anchored-rtl.spec.ts`: 106 passed before the spec was reshaped, 9/9 after.
+- **Two traps for the next reproduction.** Setting only `<html dir="rtl">` changes nothing on a component page: the demo frame carries an explicit `dir="ltr"`. A `Select` takes its direction from `DirectionProvider`, not the DOM (its panel carries `dir`/`data-direction` from the context), so a Select on the fixture, which has no provider, stays LTR by design.
+- An isolated harness running the real `PLACE_JS`, `PLACEMENT_HELPERS_JS` and `anchor.css` placed a start-aligned list at the input's right edge in all eight combinations (ltr/rtl, engine/script, with and without `data-side`).
 
 ## Size
 

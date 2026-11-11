@@ -288,16 +288,34 @@ pub fn App() -> Element {
 
 #[cfg(test)]
 mod variant_title_tests {
-    use super::variant_title;
+    use super::{demo_title, variant_title};
+
+    #[test]
+    fn title_txt_overrides_the_derived_title() {
+        // Shown exactly as written: a title.txt author's own casing of a small word is not disturbed.
+        assert_eq!(demo_title("accordion", "until_found"), "Find in Accordion");
+        assert_eq!(demo_title("tabs", "until_found"), "Find in Tabs");
+        assert_eq!(
+            demo_title("collapsible", "until_found"),
+            "Find in Collapsible"
+        );
+        // A component with no override for that directory name keeps the derived title.
+        assert_eq!(demo_title("message_scroller", "fade"), "Fade");
+        assert_eq!(demo_title("tabs", "rtl"), "RTL");
+    }
 
     #[test]
     fn variant_titles_are_readable() {
         assert_eq!(variant_title("rtl"), "RTL");
         assert_eq!(variant_title("api"), "API");
-        assert_eq!(variant_title("virtual_loop_rtl"), "virtual loop (RTL)");
-        assert_eq!(variant_title("virtual_many"), "virtual many");
-        assert_eq!(variant_title("multi_month"), "multi month");
-        assert_eq!(variant_title("sizes"), "sizes");
+        assert_eq!(variant_title("virtual_loop_rtl"), "Virtual Loop (RTL)");
+        assert_eq!(variant_title("virtual_many"), "Virtual Many");
+        assert_eq!(variant_title("multi_month"), "Multi Month");
+        assert_eq!(variant_title("sizes"), "Sizes");
+        // A small word stays lowercase unless it is the first word.
+        assert_eq!(variant_title("date_of_birth"), "Date of Birth");
+        assert_eq!(variant_title("in_button"), "In Button");
+        assert_eq!(variant_title("wrap_and_footer"), "Wrap and Footer");
     }
 }
 

@@ -1,6 +1,6 @@
 use super::super::component::*;
+use crate::components::icons::TrendingUp;
 use dioxus::prelude::*;
-use dioxus_icons::lucide::TrendingUp;
 
 /// Visitor counts per browser.
 fn chart_data() -> Vec<ChartDatum> {

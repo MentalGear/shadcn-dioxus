@@ -505,13 +505,13 @@ function transaction(ops: DxOp[]): DxOpResult[] {
 
 /** Registrations on an element, ended by `sweep` when the element leaves the document. */
 const elementRegs = new Set<{ el: any; off: () => void }>();
-// SEAM (not built, row 434 step 3.0b): the command reconciler is ONE document-scoped observer installed with
-// the bridge at boot (`subtree`, `childList`, an attribute filter), not one per element; it would share this
-// observer's registry (`elementRegs`) rather than add another.
+// SEAM (row 434 step 3.0b): the command reconciler would share this one observer and registry.
 let pageObserver: { disconnect(): void } | null = null;
 
-function sweep(): void {
-  for (const reg of [...elementRegs]) if (!reg.el.isConnected) reg.off();
+/** A batch that removed no node ends no registration. */
+function sweep(batch: MutationRecord[]): void {
+  if (batch.some((r) => r.removedNodes.length))
+    for (const reg of [...elementRegs]) if (!reg.el.isConnected) reg.off();
 }
 
 /**

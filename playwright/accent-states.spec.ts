@@ -170,12 +170,25 @@ test.describe("accent on active and selected states (row 389)", () => {
   });
 
   test.describe("token sweep", () => {
-    test.beforeEach(async ({ page }) => {
+    const load = async (page: Page) => {
       await gotoHydrated(page, `${BASE_URL}/component/input/`);
       await install(page);
-    });
+    };
 
-    const sweep = (page: Page, mode: "light" | "dark", contrast: string | null) =>
+    /** The sweep is a pure function of (mode, contrast): a worker runs it once per pair and its tests share the rows, and a test that finds them cached loads no page. */
+    const sweepRows = new Map<string, Promise<Row[]>>();
+    const sweep = (page: Page, mode: "light" | "dark", contrast: string | null): Promise<Row[]> => {
+      const key = `${mode}|${contrast}`;
+      if (!sweepRows.has(key)) {
+        sweepRows.set(
+          key,
+          load(page).then(() => sweepOnPage(page, mode, contrast)),
+        );
+      }
+      return sweepRows.get(key)!;
+    };
+
+    const sweepOnPage = (page: Page, mode: "light" | "dark", contrast: string | null) =>
       page.evaluate(
         ({ mode, bases, accents, contrast, tokens }) => {
           const A = (window as unknown as { __acc: { set: Function; tokenRgb: (t: string) => number[]; tokenStr: (t: string) => string } }).__acc;
@@ -371,6 +384,7 @@ test.describe("accent on active and selected states (row 389)", () => {
     }
 
     test("the slots take the accent's mark, a page-level --primary alone does not", async ({ page }) => {
+      await load(page);
       // A host that pastes shadcn's `--primary` without a picked accent keeps its plain look: the slots are untouched.
       const r = await page.evaluate(() => {
         const A = (window as unknown as { __acc: { set: Function; tokenStr: (t: string) => string } }).__acc;

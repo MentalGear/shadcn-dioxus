@@ -123,15 +123,29 @@ const onScreenIndexes = async (page: Page): Promise<number[]> => {
 // One tab / component page per chart kind. The gallery's first card and a component page's first
 // demo both sit in the first screen at this viewport.
 const KINDS = ["area", "bar", "line", "pie", "radar", "radial"] as const;
-const PAGES = [
-  ...KINDS.map((k) => ({ name: `/charts/${k}/`, url: `${BASE_URL}/charts/${k}/` })),
-  ...KINDS.map((k) => ({ name: `${k}_chart component page`, url: `${BASE_URL}/component/${k}_chart/` })),
-];
+// The component pages (`/component/<kind>_chart/`) get the same first-paint check inside the below-the-fold test
+// that loads them anyway (`assertFirstPaintFinal`), so only the gallery tabs are loaded for it alone.
+const PAGES = KINDS.map((k) => ({ name: `/charts/${k}/`, url: `${BASE_URL}/charts/${k}/` }));
 
 test.beforeEach(async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.addInitScript(installRecorder);
 });
+
+/** The first-paint check: every chart on the first screen was measured (hydrated), ran no animation and drew its final marks in every recorded frame. */
+async function assertFirstPaintFinal(page: Page): Promise<void> {
+  const visible = await onScreenIndexes(page);
+  expect(visible.length, "a chart is on the first screen").toBeGreaterThan(0);
+  const r = await rec(page);
+  expect(r.frames, "the recorder sampled many frames").toBeGreaterThan(30);
+  for (const i of visible) {
+    expect(r.measured[i], `chart ${i} was measured (hydrated) inside the window`).toBe("true");
+    expect(r.anims[i] ?? 0, `chart ${i} ran no CSS animation: ${r.names[i]}`).toBe(0);
+    expect(r.animateAttr[i], `chart ${i} never got data-animate`).toBeNull();
+  }
+  const bad = r.bad.filter((b) => visible.includes(b.i));
+  expect(bad, `frames whose marks differ from the first (final) frame: first=${JSON.stringify(r.first)}`).toEqual([]);
+}
 
 test.describe("Chart entry animation: a chart in the first paint never restarts", () => {
   for (const { name, url } of PAGES) {
@@ -139,17 +153,7 @@ test.describe("Chart entry animation: a chart in the first paint never restarts"
       await gotoHydrated(page, url, NAV);
       // timing-bound-ok: a settle window for real-time layout, animation or hydration after load, not the wait for an app timer; a slow machine only lengthens it
       await page.waitForTimeout(1500); // the measured render and any (wrong) entrance would have started by now
-      const visible = await onScreenIndexes(page);
-      expect(visible.length, "a chart is on the first screen").toBeGreaterThan(0);
-      const r = await rec(page);
-      expect(r.frames, "the recorder sampled many frames").toBeGreaterThan(30);
-      for (const i of visible) {
-        expect(r.measured[i], `chart ${i} was measured (hydrated) inside the window`).toBe("true");
-        expect(r.anims[i] ?? 0, `chart ${i} ran no CSS animation: ${r.names[i]}`).toBe(0);
-        expect(r.animateAttr[i], `chart ${i} never got data-animate`).toBeNull();
-      }
-      const bad = r.bad.filter((b) => visible.includes(b.i));
-      expect(bad, `frames whose marks differ from the first (final) frame: first=${JSON.stringify(r.first)}`).toEqual([]);
+      await assertFirstPaintFinal(page);
     });
   }
 });
@@ -172,6 +176,7 @@ test.describe("Chart entry animation: a chart below the fold animates once, when
       await gotoHydrated(page, `${BASE_URL}/component/${kind}_chart/`, NAV);
       // timing-bound-ok: a settle window for real-time layout, animation or hydration after load, not the wait for an app timer; a slow machine only lengthens it
       await page.waitForTimeout(1500);
+      await test.step("every frame from first paint shows the final drawing", () => assertFirstPaintFinal(page));
       const count = await page.locator('[data-slot="chart-svg"]').count();
       expect(count, "the page stacks several charts").toBeGreaterThan(2);
       const last = count - 1;

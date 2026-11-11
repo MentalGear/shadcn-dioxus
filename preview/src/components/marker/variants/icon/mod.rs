@@ -1,6 +1,7 @@
 use super::super::component::*;
 use dioxus::prelude::*;
-use dioxus_icons::lucide::{BookOpenCheck, GitBranch, Search};
+use crate::components::icons::Search;
+use dioxus_icons::lucide::{BookOpenCheck, GitBranch};
 
 /// An icon next to its text in each variant, and a marker turned into a column (icon above text)
 /// with a plain `flex-direction` on the root.

@@ -1,6 +1,7 @@
 use super::super::component::*;
 use dioxus::prelude::*;
-use dioxus_icons::lucide::{FileText, Search, Terminal};
+use crate::components::icons::Search;
+use dioxus_icons::lucide::{FileText, Terminal};
 
 #[component]
 pub fn Demo() -> Element {

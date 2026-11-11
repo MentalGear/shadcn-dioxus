@@ -10,7 +10,8 @@
 #                 `git ls-files -co --exclude-standard` lists, Cargo.lock and the rust-analyzer version, taken when the index
 #                 was built. The index is built when missing or with --force; a later source edit does not rebuild it, the
 #                 page shows it STALE (with the changed files) instead. index.files keeps the hashes it was built from.
-#   graph.key     index.key + build_graph.py + every *.ts and *.css (the extractor's static scans)
+#   graph.key     index.key + build_graph.py + every *.ts and *.css, and the themed components' component.json and .rs
+#                 files (the extractor's static scans: pairing reads them as text)
 #   comments.key  sha256 of the content hash of every *.rs, *.ts, *.css, *.html, *.js, *.mjs and *.txt + comment_metrics.py +
 #                 build_comments.py + scripts/comment-scan.py. File text only: a source edit rebuilds the metrics at once,
 #                 even while the index is stale.
@@ -100,8 +101,8 @@ else
 fi
 index_key="$(stored index)"
 
-# graph: the index as built + the extractor + the static scans it reads
-graph_key="$( { echo "$index_key"; git hash-object "$here/build_graph.py"; hashes '*.ts' '*.css'; } | sha)"
+# graph: the index as built + the extractor + the static scans it reads (pairing reads component.json and the components' .rs)
+graph_key="$( { echo "$index_key"; git hash-object "$here/build_graph.py"; hashes '*.ts' '*.css' 'preview/src/components/*/component.json' 'preview/src/components/*.rs'; } | sha)"
 if [ "$(stored graph)" != "$graph_key" ] || [ ! -s "$out/graph.json" ]; then
   python3 -I "$here/build_graph.py" "$out/index.scip" "$out/graph.json" >"$out/graph.log" || die "extractor failed"
   echo "$graph_key" > "$out/graph.key"; rm -f "$out/page.key"

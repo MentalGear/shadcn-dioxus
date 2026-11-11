@@ -1,7 +1,8 @@
 use super::super::component::*;
 use crate::components::dialog::{Dialog, DialogDescription, DialogTitle};
 use dioxus::prelude::*;
-use dioxus_icons::lucide::{Copy, FileSearch, X};
+use crate::components::icons::{Copy, X};
+use dioxus_icons::lucide::FileSearch;
 
 /// The trigger fills the card and opens a real `Dialog`; the copy and remove actions stay
 /// independently clickable above it. Opening is a plain controlled `open` signal: the trigger sets

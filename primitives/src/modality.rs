@@ -207,14 +207,14 @@ pub(crate) fn use_close_focus(id: String, open: impl Readable<Target = bool> + C
         let before = *was_open.peek();
         was_open.set(now);
         if before && !now {
-            let id = id.clone();
+            let id = crate::escape::js_string(&id);
             #[expect(
                 clippy::disallowed_methods,
                 reason = "row 434: the bridge ports this page script"
             )]
             document::eval(&format!(
                 "{OPEN_FOCUS_JS}
-                const panel = document.getElementById('{id}');
+                const panel = document.getElementById({id});
                 if (panel) dxCloseFocus(panel, true);"
             ));
         }
@@ -307,25 +307,15 @@ pub(crate) fn focus_table(f: Option<FocusTargetFn>) -> Option<String> {
     }
     let body: Vec<String> = entries
         .iter()
-        .map(|(m, t)| format!("\"{}\":{}", m.as_str(), json_string(&t.encode())))
+        .map(|(m, t)| {
+            format!(
+                "\"{}\":{}",
+                m.as_str(),
+                crate::escape::js_string(&t.encode())
+            )
+        })
         .collect();
     Some(format!("{{{}}}", body.join(",")))
-}
-
-/// A JSON string literal (quotes, backslashes and control characters escaped).
-fn json_string(s: &str) -> String {
-    let mut out = String::with_capacity(s.len() + 2);
-    out.push('"');
-    for c in s.chars() {
-        match c {
-            '"' => out.push_str("\\\""),
-            '\\' => out.push_str("\\\\"),
-            c if (c as u32) < 0x20 => out.push_str(&format!("\\u{:04x}", c as u32)),
-            c => out.push(c),
-        }
-    }
-    out.push('"');
-    out
 }
 
 /// The `data-dx-initial-focus` / `data-dx-final-focus` attributes for a panel's props, appended to
@@ -410,7 +400,7 @@ mod tests {
         assert_eq!(FocusTarget::None.encode(), "none");
         assert_eq!(FocusTarget::selector("#a").encode(), "selector:#a");
         assert_eq!(
-            json_string("selector:[x=\"y\"]"),
+            crate::escape::js_string("selector:[x=\"y\"]"),
             "\"selector:[x=\\\"y\\\"]\""
         );
     }

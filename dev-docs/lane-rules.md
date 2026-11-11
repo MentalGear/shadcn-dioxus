@@ -10,8 +10,15 @@ Session tooling (paths below default to `LANE_TGT=/home/user/tgt`):
   in front of `LANE_SLOTS` slots, row 221); everything below takes it.
 - `scripts/lane-cargo.sh [--label T] -- cargo ...` -- the one command lanes use for cargo: queue, slot target dir,
   source touch, `CARGO_BUILD_JOBS=2`, `CARGO_INCREMENTAL=0`.
-- `scripts/lane-ssg.sh <worktree> <lane> [port]` -- debug SSG of a worktree inside the queue, from a fresh
-  copy of the warm template, served on `port` (the server starts outside the lock).
+- `scripts/lane-ssg.sh <worktree> <lane> [port]` -- debug SSG of a worktree inside the queue, served on `port` (the
+  server starts outside the lock). Slot 0 (every build with `LANE_SLOTS=1`) builds IN the warm template under an
+  exclusive template lock (`$LANE_TGT/lockq/template.lock`, row 503): `lane-touch.sh` touches the worktree's sources when
+  the template's `.tree-owner` stamp names another worktree, so cargo rebuilds what differs, and `public/` is published
+  to `pub-<lane>` atomically (a failed build leaves the previous pub dir and a usable template). The disk guard needs
+  only the pub dir plus the 2 GB margin, not the template's 3 GB (a copy was refused below ~5.9 GB free). A slot >= 1
+  build (or `LANE_SSG_COPY=1`) still copies the template to a scratch target and keeps the old guard. Every copy
+  FROM the template (that, `lane-target.sh create`, the slot-1 warm dirs) takes the same template lock, so a `dx
+  serve` copy waits for a running build instead of reading a half-written target.
 - `scripts/gate-at.sh <commit> <log>` -- `scripts/run-gates.sh` on a pinned commit in its own worktree (class `gate`). Each
   `run-gates.sh` run writes its per-gate logs to its own `$CARGO_TARGET_DIR/run-gates/<UTC time>-<pid>/` (the summary's
   `logs:` line; `run-gates/latest` points at the newest finished run; the newest 20 are kept, `RUN_GATES_KEEP`), so

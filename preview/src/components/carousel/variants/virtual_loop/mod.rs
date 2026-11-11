@@ -1,7 +1,7 @@
 use super::super::component::*;
 use crate::components::card::{Card, CardContent};
+use crate::components::icons::{ChevronLeft, ChevronRight};
 use dioxus::prelude::*;
-use dioxus_icons::lucide::{ChevronLeft, ChevronRight};
 
 /// `CarouselVirtualContent` with `loop: true` and a small data set (12
 /// items) -- the seamless-loop path, and this component's own canonical

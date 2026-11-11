@@ -1693,10 +1693,11 @@ html[data-nav-sort="category"] .dx-nav-sort .dx-nav-sort-option[data-nav-sort-op
 }
 
 .dx-component-variant-title {
+  /* No text-transform: variant_title() (preview/src/site/variant_page.rs) already cases its own
+   * output (small words stay lowercase mid-title), and a title.txt override must show as written. */
   margin: 0 0 0.75rem;
   color: var(--dx-foreground);
   font-size: 1rem;
-  text-transform: capitalize;
 }
 
 /* Homepage component catalog. Width/border/centering live on

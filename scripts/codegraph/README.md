@@ -23,7 +23,7 @@ separate keys, so a source edit updates the metrics at once while the (8 minute)
 | Product | Made by | Key (sha256 of) |
 |---|---|---|
 | `index.scip` | `rust-analyzer scip` (rustup component) with `CARGO_INCREMENTAL=0`, `CARGO_NET_OFFLINE=true` | taken when it is built: content hash (`git hash-object`) of every `*.rs` and `Cargo.toml` that `git ls-files -co --exclude-standard` lists (an uncommitted edit counts), `Cargo.lock`, the rust-analyzer version. Built when missing or with `--force`; `index.files` keeps the hashes it was built from and `index.info` its HEAD, time and cold seconds |
-| `graph.json` | `build_graph.py` (Python stdlib, run as `python3 -I`) | the index key as stored, `build_graph.py`, every `*.ts` and `*.css` (the extractor's static scans) |
+| `graph.json` | `build_graph.py` (Python stdlib, run as `python3 -I`) | the index key as stored, `build_graph.py`, every `*.ts` and `*.css`, and each themed component's `component.json` and `.rs` files (the extractor's static scans; pairing reads them as text) |
 | `comments.json` | `build_comments.py` + `comment_metrics.py` (stdlib) | content hash of every `*.rs`, `*.ts`, `*.css`, `*.html`, `*.js`, `*.mjs` and `*.txt`, `comment_metrics.py`, `build_comments.py`, `scripts/comment-scan.py`. No index involved |
 | `blame.json` | `build_blame.py` (stdlib) from cached `git blame` output | only with `--blame`: `comments.key`, HEAD, `build_blame.py`; reused while that key matches, else an empty `{"files":{}}` |
 | `status.json` | `run.sh` | not keyed; rewritten each run: HEAD, time and key each part was built from, whether the index is stale and which Rust/Cargo files differ from the tree it was built from |
@@ -42,11 +42,25 @@ The page's status line shows the inputs of each part: the graph (the HEAD, key, 
 and item counts are then from the older tree), and the comment metrics (the working tree HEAD, key and time they were built
 from, independent of the index).
 
+References without a definition occurrence: rust-analyzer emits none for what a macro generates (derive output such as
+`impl#[T][Clone]clone().`, `Props` builders, `#[component]`'s `F_completions/Component#F#`, `#[derive(Store)]` extension
+traits) and none for a module. `build_graph.py` maps each to the definition that owns it (the type or function in the
+descriptor, a type known from its fields or variants) and otherwise to the file of its module (`a/b/` -> `a/b.rs` or
+`a/b/mod.rs`). `meta` records `resolved_by_owner`, `resolved_by_module` and `unresolved_workspace_refs` (0 at HEAD).
+
 ## The page
 
 One file: the graph JSON and the Cytoscape.js bundle are inlined, so it opens from `file:` with no network request (no
 `<script src>`, `<link>`, font or image from a URL). Layout is Cytoscape's built-in `cose` (compound nodes); `fcose` and its
 dependencies fail rule D4 and are not used. The ego view is a complete breadth-first search to the chosen radius.
+
+Picking a name selects the preview and primitives components of that name plus every component paired with them. A themed
+component is one with a `component.json` that depends on `dioxus-primitives`; the extractor reads the
+`dioxus_primitives::<module>` paths in its sources. A module named like the component wins; otherwise the most-referenced
+module wins if it is unique and not a helper (`direction`, `modality`, `activity` and the like). So `area_chart` pairs with
+`chart` and `data_table` with `data_view`, and `form` (a tie) pairs with nothing. Each side lists the other in the comp's
+`pair`. A themed component's `mod.rs` holds no definitions, so the index has no document for it; the extractor adds it as a
+node with an edge to the module it declares.
 
 The extractor model is files as nodes (`{id, comp, items}`; `items` is the definitions count) and `[src, dst, weight, kind]` edges, kinds `rs`, `ext`, `ts`, `asset`, `test`. Add per-node fields beside
 `items`.
@@ -81,7 +95,7 @@ All but N5 are in `comments.json` and come from the one tokenizer pass; none nee
 
 | # | Metric | Definition and limits |
 |---|---|---|
-| N1 | stale-looking identifiers | a backticked identifier in a Rust comment that occurs in no code of the repo (code views of every Rust file, comments blanked and string contents kept, plus the text of TS, JS, CSS, HTML and TXT node files). Candidates, never errors. Shape: `foo`, `Foo`, `foo()`, `a::b::C`, `Vec<T>`; names of three or more characters. Skipped: lowerCamelCase names, names ending in `_`, and every name on a line that cites an upstream (Base UI, Radix, Sonner, React, `.mjs`/`.ts`/`.js` files, `window.`, `document.` and the like), because those name another library's API. The test is repo-wide, not per crate, so a name that exists in another crate does not show; the list is mixed (a real leftover such as a removed function sits beside a std or dioxus name the repo never uses) |
+| N1 | stale-looking identifiers | a backticked identifier in a Rust comment that occurs in no code of the repo (code views of every Rust file, comments blanked and string contents kept, plus the text of TS, JS, CSS, HTML and TXT node files). Candidates, never errors. Shape: `foo`, `Foo`, `foo()`, `a::b::C`, `Vec<T>`; names of three or more characters. Skipped by rule (R1 to R6 in `comment_metrics.py`): a name that is not repo-shaped (a lone word, ALLCAPS without an underscore, lowerCamelCase, a placeholder such as `XProps` or `initial_xxx`, a `*` pattern); every name in a paragraph that cites another source (a URL, "Forked/Adapted from", "name 1.2.3", an upstream library or framework, a Cargo.lock external crate such as `dioxus-ssr`, a file the repo does not have, `clippy`/`rustc`); Web platform names (PascalCase ending in Error, Exception, Event, Data); paths into std, a primitive type or a lint namespace; a name whose kebab spelling is on the line (`scroll-lock` -> `ScrollLock`); and names that occur in a script or config file (`.sh`, `.py`, `.toml`, `.json`, `.yml`). The test is repo-wide, not per crate, so a name that exists in another crate does not show; what is left is a real leftover (a removed function or component) or an upstream API name with no citation next to it |
 | N2 | JS or CSS held in Rust strings | comment lines (`js`) and code lines (`jscode`: source lines of the string with text on them, minus the lines that carry a comment) of a literal the comment scanner reads as JS or CSS; the panel shows `js` of `js + jscode` |
 | N3 | comment words | whitespace-separated words in comment lines; the panel shows words per code line; node size can be comment words |
 | N4 | repeated comment lines | comment lines inside a run of 3 or more consecutive lines (with at least 45 letters in the 3-line window) whose text, lower-cased with digits and backticked spans collapsed, also occurs in another file; the panel lists the line range and up to three sibling files. Prop descriptions that a themed component repeats from its primitive are repeats by this definition |
@@ -130,7 +144,9 @@ matched marker word or history reason.
   change: 2 s, graph and page rebuilt, no SCIP. A new untracked `.rs` file changes the index key and starts the SCIP run.
 - Page, opened from `file:` at 1280 px (`node scripts/codegraph/smoke.js`, playwright from `playwright/node_modules`):
   no console error, no non-`file:` request (all aborted and reported), picker, crate, component and file levels render;
-  file level radius 1 for `button` is 154 nodes and radius 2 is 465 nodes. `cose` (with boxes) is the layout up to 250
+  file level radius 1 for `button` is 158 nodes and radius 2 is 468 nodes. For `select` (hubs shown, weight 1) radius 1 is 65 files
+  and radius 2 is 940, each equal to an independent breadth-first search in `smoke.js`; 60 preview components are paired with a primitive
+  (46 by name before), and 779 files sit in paired components (552 before). `cose` (with boxes) is the layout up to 250
   nodes; above that the ego view is a concentric ring layout by hop distance without boxes, because `cose` gives a hairball
   there. Raise the minimum edge weight to thin a big view.
 - Comment metrics (2026-11-05, `node scripts/codegraph/smoke.js`): `build_comments.py` takes about 15 to 26 s (the tokenizer

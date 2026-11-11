@@ -11,7 +11,8 @@ use crate::components::{
 };
 use dioxus::prelude::*;
 use dioxus_primitives::AsChild;
-use dioxus_icons::lucide::{ArrowUp, RotateCw};
+use crate::components::icons::ArrowUp;
+use dioxus_icons::lucide::RotateCw;
 
 const DEFAULT_PEEK: f64 = 64.0;
 

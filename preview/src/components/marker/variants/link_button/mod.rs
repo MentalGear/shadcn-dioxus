@@ -1,7 +1,8 @@
 use super::super::component::*;
 use dioxus::prelude::*;
 use dioxus_primitives::AsChild;
-use dioxus_icons::lucide::{ChevronRight, Clock, FileText};
+use crate::components::icons::ChevronRight;
+use dioxus_icons::lucide::{Clock, FileText};
 
 /// `as` turns the whole marker into a real link or button.
 #[component]

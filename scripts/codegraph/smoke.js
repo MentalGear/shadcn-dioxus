@@ -28,6 +28,31 @@ const page_path = path.resolve(process.argv[2] || path.resolve(__dirname, '../..
   // ---- comment metrics (M1-M6)
   const checks = [];
   const check = (name, ok, detail) => { checks.push([name, !!ok]); console.log(ok ? 'ok  ' : 'FAIL', name, detail === undefined ? '' : JSON.stringify(detail)); };
+  // ---- pairing through component.json, and the complete radius-2 neighbourhood
+  const setRange = async (id, v) => { await p.evaluate(([id, v]) => { const e = document.getElementById(id); e.value = v; e.dispatchEvent(new Event('input')); }, [id, v]); await p.waitForTimeout(300); };
+  await p.fill('#pick', 'select'); await p.dispatchEvent('#pick', 'change'); await p.waitForTimeout(300);
+  await lvl(2); await p.uncheck('#hubs'); await setRange('thr', 1);
+  const pg = await p.evaluate(() => {
+    const { G, N, st } = window.__g;
+    const seed = [...st.seedFiles].map(i => N[i].id);
+    const comp = id => G.comps.find(c => c.id === id);
+    // independent breadth-first search over every file-level edge (hubs shown, weight >= 1, both directions)
+    const adj = new Map(); G.edges.forEach(([a, b]) => { (adj.get(a) || adj.set(a, []).get(a)).push(b); (adj.get(b) || adj.set(b, []).get(b)).push(a); });
+    const bfs = r => { const keep = new Set(st.seedFiles); let fr = [...keep]; for (let k = 0; k < r; k++) { const nx = []; fr.forEach(u => (adj.get(u) || []).forEach(v => { if (!keep.has(v)) { keep.add(v); nx.push(v); } })); fr = nx; } return keep.size; };
+    const view = r => { const e = document.getElementById('rad'); e.value = r; e.dispatchEvent(new Event('input')); return window.__last.keep.size; };
+    const r1 = view(1), r2 = view(2);
+    return { seed, seedN: seed.length, pairSel: comp('preview:select').pair, pairPrim: comp('primitives:select').pair, r1, r2, b1: bfs(1), b2: bfs(2), pairedBy: G.comps.filter(c => c.paired && c.crate === 'preview').length };
+  });
+  check('pick "select" seeds the themed component incl. mod.rs and its primitive', pg.seed.includes('preview/src/components/select/mod.rs') && pg.seed.includes('preview/src/components/select/component.rs') && pg.seed.includes('primitives/src/select/mod.rs'), { files: pg.seedN, pair: pg.pairSel, back: pg.pairPrim });
+  check('a component without a same-named primitive pairs through its sources (area_chart -> chart)', await p.evaluate(() => window.__g.G.comps.find(c => c.id === 'preview:area_chart').pair.join() === 'primitives:chart'));
+  // ---- references without a definition occurrence of their own
+  const refs = await p.evaluate(() => { const { G, N } = window.__g; const m = G.meta, ix = Object.fromEntries(N.map((f, i) => [f.id, i]));
+    const to = ix['preview/src/components/button/mod.rs']; return { meta: m, modEdges: G.edges.filter(e => e[1] === to && e[3] === 'rs').length, hasMod: to !== undefined }; });
+  check('macro and module references resolve to an owner (derive, Props builder, #[component], module)', refs.meta.unresolved_workspace_refs === 0 && refs.meta.resolved_by_owner > 5000 && refs.meta.resolved_by_module > 500, refs.meta);
+  check('a module reference reaches its mod.rs (components/button/ -> button/mod.rs)', refs.hasMod && refs.modEdges > 0, { edges: refs.modEdges });
+  check('radius 1 view equals an independent breadth-first search', pg.r1 === pg.b1, { page: pg.r1, bfs: pg.b1 });
+  check('radius 2 view lists the complete neighbourhood (equals an independent breadth-first search)', pg.r2 === pg.b2 && pg.r2 > pg.r1, { page: pg.r2, bfs: pg.b2, radius1: pg.r1, themedPaired: pg.pairedBy });
+  await p.check('#hubs'); await setRange('thr', 2); await setRange('rad', 1); await lvl(1);
   const cm = await p.evaluate(() => {
     const c = window.__cm, f = c.fields, ix = k => f.indexOf(k), o = {};
     const get = (l, k) => { const a = c.agg(l, k); if (!a) return null; const r = {}; f.forEach((n, i) => r[n] = a[i]); return r; };
@@ -44,6 +69,8 @@ const page_path = path.resolve(process.argv[2] || path.resolve(__dirname, '../..
   // a known file: the doc-line count of primitives/src/lib.rs, counted here by a plain line match
   const libText = fs.readFileSync(path.resolve(__dirname, '../../primitives/src/lib.rs'), 'utf8');
   const docLines = libText.split('\n').filter(l => /^\s*\/\/[\/!]/.test(l)).length;
+  const st1 = await p.evaluate(() => ['cli/src/add.rs', 'primitives/src/lib.rs', 'primitives/src/dialog.rs'].map(k => { const a = __cm.agg(2, k); return a && a[__cm.fields.indexOf('stale')]; }));
+  check('N1: an upstream citation (cli/src/add.rs) and Web names (InvalidStateError in lib.rs, dialog.rs) are not stale candidates', st1[0] === 0 && st1[1] === 0 && st1[2] === 0, st1);
   check('lib.rs doc lines equal an independent line count', cm.file && cm.file.doc === docLines, { page: cm.file && cm.file.doc, plain: docLines });
   check('lib.rs: pub items counted, `pub mod x;` lines skipped', cm.file && cm.file.pubs >= 0 && cm.file.pubs <= (libText.match(/^\s*pub\s+(?:fn|struct|enum|trait|const|static|type|mod)\s/gm) || []).length, cm.file && { pubs: cm.file.pubs, doced: cm.file.doced });
   // status line: what the graph (index) and the comment metrics were each built from
@@ -98,7 +125,7 @@ const page_path = path.resolve(process.argv[2] || path.resolve(__dirname, '../..
     return { total: t, itemCount: c.itemCount(), blame: c.blameBuilt() };
   });
   console.log('N1 stale candidates', ext.total.stale, '| N2 js comment/code lines', ext.total.js + '/' + ext.total.jscode, '| N3 words', ext.total.words, '| N4 repeated lines', ext.total.dup, '| N6 items', ext.itemCount);
-  check('N1: stale candidates counted', ext.total.stale > 0, ext.total.stale);
+  check('N1: stale candidates counted, only name-shaped ones outside citations', ext.total.stale > 0 && ext.total.stale < 40, ext.total.stale);
   check('N2: JS code lines in strings counted', ext.total.jscode > 0 && ext.total.js > 0, { js: ext.total.js, jscode: ext.total.jscode });
   check('N3: comment words counted', ext.total.words > ext.total.com, ext.total.words);
   check('N4: repeated comment lines counted', ext.total.dup > 0, ext.total.dup);

@@ -354,8 +354,9 @@ async function openAndProbe(
       continue;
     }
     // The pointer must not rest on the panel's controls (a `:hover` fill is a state, not an ancestry difference);
-    // hover/focus-opened popups (tooltip, hover card) need the pointer where it is.
-    if (h === "click" || h === "contextmenu") await page.mouse.move(1, 1);
+    // hover/focus-opened popups (tooltip, hover card) need the pointer where it is, and so does a NavigationMenu or
+    // Navbar panel: its pointer leaving closes it after 50 ms, before the first probe.
+    if ((h === "click" || h === "contextmenu") && !/navigation-menu-trigger|navbar-trigger/.test(cls)) await page.mouse.move(1, 1);
     for (let t = 0; t < (h === "hover" || h === "focus" ? 10 : 5); t++) {
       await page.waitForTimeout(h === "hover" || h === "focus" ? 150 : 100);
       const p = await probe(page, skipKinds, hostile);

@@ -115,13 +115,13 @@ Every row below is **APPROVED 2026-10-26 (owner: "okay for the plan"; scope 2)**
 
 | row | what | hours (I) | depends on |
 |---|---|---|---|
-| [468](./468-bug-form-reset-leaves-controlled-input-out-of-sync.md) | Bug: form reset leaves a controlled text input showing empty while Rust keeps the old value | not estimated | none |
+| [468](./done/468-bug-form-reset-leaves-controlled-input-out-of-sync.md) | Bug: form reset leaves a controlled text input showing empty while Rust keeps the old value | not estimated | none |
 | [469](./469-bug-text-typed-before-hydration-is-wiped-on-the-ssg-site.md) | Bug: text typed before hydration is wiped by the first post-hydration render on the SSG site | not estimated | none |
 | [470](./done/470-bug-carousel-autoplay-tick-fights-a-user-swipe.md) | Bug: the carousel autoplay tick fights a user swipe (the scroller is pulled forward and bounces back) | not estimated | none |
 | [471](./471-bug-datatransfer-setters-are-no-ops-on-desktop.md) | Bug: DataTransfer setters in rsx drag handlers are silent no-ops on desktop | not estimated | none |
 | [473](./473-bug-date-picker-segments-let-the-browser-edit-the-vdom-text-node.md) | Bug: date picker segments let the browser edit the text node the vdom also writes (Backspace, Delete and Android IME are not cancelled) | not estimated | none |
 | [474](./done/474-bug-input-otp-paste-loses-digits-to-maxlength.md) | Bug: Input OTP paste loses digits because `maxlength` truncates before the filter runs | not estimated | none |
-| [475](./475-bug-resizable-and-slider-drag-frames-leak-into-the-next-drag-on-desktop.md) | Bug: Resizable and Slider on desktop: a previous drag's queued per-move frames can land in the next drag, so the handle jumps on a quick re-grab | not estimated | none |
+| [475](./done/475-bug-resizable-and-slider-drag-frames-leak-into-the-next-drag-on-desktop.md) | Bug: Resizable and Slider on desktop: a previous drag's queued per-move frames can land in the next drag, so the handle jumps on a quick re-grab | not estimated | none |
 
 ### Adversarial board
 

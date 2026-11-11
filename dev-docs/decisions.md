@@ -21,6 +21,9 @@ the line here is the pointer, so when a row's text and this line disagree, the r
 - RTL demos come last in a component's demo list; the docs header has no language switcher; the docs preview card keeps
   its near-white light tint (a docs-page detail). 2026-10-20, 2026-10-21, 2026-10-22 (rows [351](./backlog/done/351-rtl-demos-always-come-last.md), [354](./backlog/done/354-remove-the-docs-header-language-switcher.md), [285](./backlog/done/285-docs-preview-card-light-mode-tint.md)).
 - No upstream engagement: local fixes and workarounds stay, nothing is filed with Dioxus or the forks. 2026-10-22 (rows [6](./backlog/done/006-upstream-engagement-where-fixes-land-open.md), [14](./backlog/done/014-nudge-dioxus-framework-issues-2962-onclose-4319.md)).
+- Demo titles: the audit's 56 renames (78 `title.txt` files, one per directory a row named several) are applied, and
+  `variant_title()` does its own word casing (a small word stays lowercase unless first) instead of a blanket CSS
+  `text-transform: capitalize`, so a `title.txt` shows exactly as written. 2026-11-11 (row [399](./backlog/399-docs-review-demos.md), [`research/demo-title-audit-2026-11-07.md`](./research/demo-title-audit-2026-11-07.md)).
 
 - Order: every row that can land before the JavaScript plan goes first, then the plan, then the final review (row 383);
   the order itself is [`STATUS.md`](./STATUS.md), "Next". 2026-10-26.
@@ -38,6 +41,10 @@ the line here is the pointer, so when a row's text and this line disagree, the r
 - Supply-chain scope: SECURITY covers everything that builds or touches the project; performance budgets are measured on
   the closure users compile. 2026-10-23 ([`supply-chain/README.md`](./supply-chain/README.md), row [217](./backlog/done/217-dependency-audit-follow-ups-what-users-pay-for.md)).
 - The dependency evaluation (keep, lift, drop) is parked until the owner reopens it. 2026-10-23 (row [371](./backlog/371-dependency-evaluation-keep-lift-drop.md)).
+- `dioxus-icons`: no shipped component depends on it any more (the lifted central `preview/src/components/icons/`
+  covers every shipped icon need); confirmed, not a new decision. The 14 of its demo-only uses that duplicated an
+  already-lifted glyph move to the central library too; the owner still decides between a dated D6 exception for the
+  remaining ~70 decorative demo-only names and lifting those as well. 2026-11-11 (row [371](./backlog/371-dependency-evaluation-keep-lift-drop.md)).
 
 ## Process, gates and the merge queue
 
@@ -73,3 +80,9 @@ the line here is the pointer, so when a row's text and this line disagree, the r
   generated from its own props, so it cannot drift or be missing. 2026-11-06 (rows 392, 387).
 - Order (owner 2026-11-07): phase 0.1 of the JavaScript plan first (done as far as its artefacts exist), then every row
   that is needed whether or not the port happens, then the rest of the plan. `STATUS.md` "Next" carries the order.
+- A JS-volume ratchet raise is never paid for by shortening a readable name (the ratchets measure text, not code;
+  row 505 proposes counting tokens so a rename or reformat stops mattering). A reversal of such a shortening is
+  granted at face value through the normal grant row. 2026-11-11 (row [505](./backlog/505-js-lit-counts-lines-not-bytes.md), PR #169).
+- The code graph explorer (`scripts/codegraph/`, row 486) is correctly placed (it mirrors `playwright/`'s and
+  `preview/`'s own-pnpm-project convention, which the row itself chose deliberately) but was missing from the
+  `dev-docs/README.md` map; added. 2026-11-11.

@@ -1,7 +1,7 @@
 use super::super::component::*;
 use crate::components::input_group::{InputGroup, InputGroupAddon, InputGroupInput};
 use dioxus::prelude::*;
-use dioxus_icons::lucide::Search;
+use crate::components::icons::Search;
 
 #[component]
 pub fn Demo() -> Element {
