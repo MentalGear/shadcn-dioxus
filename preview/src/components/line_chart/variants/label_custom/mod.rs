@@ -3,8 +3,8 @@
 
 use super::super::component::*;
 use crate::components::card::{Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle};
+use crate::components::icons::TrendingUp;
 use dioxus::prelude::*;
-use dioxus_icons::lucide::TrendingUp;
 
 /// The chart's rows, `(browser, visitors, color)`: each point's dot takes
 /// its browser's color (`ChartDatum::color`).

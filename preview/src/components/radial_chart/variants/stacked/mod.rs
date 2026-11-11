@@ -1,6 +1,6 @@
 use super::super::component::*;
+use crate::components::icons::TrendingUp;
 use dioxus::prelude::*;
-use dioxus_icons::lucide::TrendingUp;
 
 /// January's mobile and desktop visitors, stacked into one half-turn ring
 /// (mobile first, from three o'clock).
