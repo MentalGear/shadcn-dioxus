@@ -40,7 +40,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (71)
+## Open rows (73)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -115,5 +115,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [503](backlog/503-lane-ssg-builds-in-place-on-one-slot.md) | lane-ssg builds in the warm template under the lock instead of copying it | DONE 2026-11-07 (lane lanessg-503). lane-ssg.sh slot 0 builds in $LANE_TGT/template under… | S-M | tooling |
 | [504](backlog/504-server-rendered-textarea-shows-no-value.md) | A server-rendered Textarea shows no value: the JS-off page and the hydrated first frame hold an empty field | BACKLOG. Found by the first-paint fix lane (row 468's section "First paint of a controlled… | S | textarea |
 | [505](backlog/505-js-lit-counts-lines-not-bytes.md) | The JS volume ratchets measure text, so a reformat or a shorter name passes for less JavaScript | BACKLOG. Found 2026-11-07 merging row 436's overlay lane: the IME Escape condition (e.isComposing… | S | tooling |
+| [506](backlog/506-release-suite-two-failures-block-deploy.md) | The release suite failed twice on main b78c231e; neither failure is confirmed real or confirmed a flake | OPEN, 2026-11-11. Found running the deploy after merging PR #170. The suite run… | S (to re-run both cleanly and read the… | tooling |
+| [507](backlog/507-codegraph-comment-analysis-findings.md) | Code analyzer -&gt; comment analysis: a standing backlog for what the tool's metrics turn up | OPEN, STANDING. Owner-requested 2026-11-11: run the comment analysis and record what can be learned… | S per pass (a read of the Comments tab… | tooling |
 
 <!-- END GENERATED -->

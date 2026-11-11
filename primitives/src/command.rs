@@ -52,8 +52,7 @@
 //!   anywhere -- it is always an in-flow child of `Command`, the same shape
 //!   `ComboboxListRendered`'s `#[cfg(not(feature = "web"))]` arm already
 //!   renders unconditionally -- so there is no anchor to bind.
-//! - No `set_open`/`open_with_empty_query_and_focus_first`/`_last`: a
-//!   command palette's list has no open/closed state of its own to toggle --
+//! - No `set_open`: a command palette's list has no open/closed state of its own to toggle --
 //!   the surrounding `CommandDialog` (or whatever the caller composes
 //!   `Command` into) owns visibility. `CommandContext` still carries a
 //!   `SelectableContext` (so it can reuse `use_selectable_root`/

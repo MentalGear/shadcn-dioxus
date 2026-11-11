@@ -54,6 +54,10 @@ stale-looking backticked identifiers, comment lines and code lines of JS/CSS in 
 blocks, per-item comment numbers (8,238 items, a Comments-tab row level; no item nodes or item edges in the graph, the slider
 stays crate/component/file) and comment age vs code age (`run.sh --blame`). Details and limits: `scripts/codegraph/README.md`. Numbers and how to read them: `scripts/codegraph/README.md`.
 
+**What the metrics turn up, pass by pass, is its own standing row:** [row 507](./507-codegraph-comment-analysis-findings.md)
+("code analyzer -> comment analysis"), kept separate from this row (which is about the tool itself) so the running
+list of findings and follow-ups has one home across passes.
+
 Researched 2026-10-29 and 2026-10-31 at the owner's request; a prototype exists. The research, the tool comparison and the
 measured numbers are in [`research/code-graph-explorer-2026-10-31.md`](../research/code-graph-explorer-2026-10-31.md), and
 the tool is in [`scripts/codegraph/`](../../scripts/codegraph/) (the prototype sources moved there).
