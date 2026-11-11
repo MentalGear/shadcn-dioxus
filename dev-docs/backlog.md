@@ -40,7 +40,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (86)
+## Open rows (87)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -130,5 +130,6 @@ proposing one is closed as out of scope (row 337 is the first).
 | [502](backlog/502-installed-components-carry-repo-lint-expects.md) | Installed components carry #[expect(clippy::disallowed_methods)] that a user's project cannot fulfil | BACKLOG, found 2026-11-07. Check first: run cargo clippy in the registry-install-smoke app and… | S | tooling |
 | [503](backlog/503-lane-ssg-builds-in-place-on-one-slot.md) | lane-ssg builds in the warm template under the lock instead of copying it | BACKLOG, 2026-11-07. Next tooling row after the deploy. | S-M | tooling |
 | [504](backlog/504-server-rendered-textarea-shows-no-value.md) | A server-rendered Textarea shows no value: the JS-off page and the hydrated first frame hold an empty field | BACKLOG. Found by the first-paint fix lane (row 468's section "First paint of a controlled… | S | textarea |
+| [505](backlog/505-js-lit-counts-lines-not-bytes.md) | The JS volume ratchets measure text, so a reformat or a shorter name passes for less JavaScript | BACKLOG. Found 2026-11-07 merging row 436's overlay lane: the IME Escape condition (e.isComposing… | S | tooling |
 
 <!-- END GENERATED -->
