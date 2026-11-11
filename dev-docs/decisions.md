@@ -86,3 +86,12 @@ the line here is the pointer, so when a row's text and this line disagree, the r
 - The code graph explorer (`scripts/codegraph/`, row 486) is correctly placed (it mirrors `playwright/`'s and
   `preview/`'s own-pnpm-project convention, which the row itself chose deliberately) but was missing from the
   `dev-docs/README.md` map; added. 2026-11-11.
+- The code analyzer's comment analysis gets its own standing backlog row, separate from row 486 (the tool itself),
+  so each pass's findings and follow-ups keep one home. Pass 1 (owner-requested, `preview` out of scope) fixed two
+  stale names in `primitives` (`SelectRoot` to `Select`, two invented Command methods to the real `set_open`) and
+  left three follow-ups: an N1 citation-rule gap, N4's duplicate comment blocks in the menu family and the date
+  pickers as input for the Rust port, and an M3 metric-accuracy note. 2026-11-11 (row
+  [507](./backlog/507-codegraph-comment-analysis-findings.md)).
+- A release-suite failure found while deploying is never forced through with `DEPLOY_SUITE=skip`: that switch is for
+  an emergency fix only. Two unconfirmed failures on `b78c231e` park the deploy as backlog row 506 instead, for the
+  next session with a clean machine and the time to let a rerun finish. 2026-11-11.

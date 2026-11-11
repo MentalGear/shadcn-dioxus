@@ -376,7 +376,7 @@ fn SelectListRendered(
         Some(open.into()),
         move |cause| {
             // Escape hands focus back to the trigger; an outside press or focus leaving leaves it
-            // where the user put it (`SelectRoot`'s `use_refocus_on_close_unless`).
+            // where the user put it (`Select`'s `use_refocus_on_close_unless`).
             if cause.interacted_outside() {
                 ctx.selectable.interacted_outside.set(true);
             }
