@@ -46,9 +46,9 @@ S
   whose body holds ten paragraphs in a `no-scrollbar overflow-y-auto` container, with Submit and Cancel in the footer,
   which is the pattern the variant implements. The name was first unconfirmed on 2026-11-01: the docs page at
   `https://ui.shadcn.com/docs/components/drawer` lists no example by that title in its own sections, so the example
-  lives only in the registry source. The variant's display title is derived by `variant_title` (`preview/src/site/variant_page.rs`):
-  `scrollable_content` reads "scrollable content", which `.dx-component-variant-title`'s `text-transform: capitalize`
-  shows as "Scrollable Content", so it already matches upstream and nothing was renamed. The directory is unchanged.
+  lives only in the registry source. The variant's display title is derived by `variant_title`
+  (`preview/src/site/variant_page.rs`): `scrollable_content` reads "Scrollable Content" (each word capitalized), so
+  it already matches upstream and nothing was renamed. The directory is unchanged.
 
 So this row is not a new demo. It closes the gaps between the existing demo and what the row asks for.
 

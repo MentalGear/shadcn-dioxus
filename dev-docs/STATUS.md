@@ -7,15 +7,16 @@ backlog row files, not here: this page says only what is deployed, what runs, wh
 Last updated: **2026-11-11**. Several sessions work in parallel; who holds what is on the `claims` branch (`CLAIMS.md`).
 Preview site: https://mentalgear.github.io/shadcn-dioxus/ (still serving main `f38662dc`, PRs #166-#168, deploy commit
 `85c05466`; release suite 4192 passed, 0 failed). **Main itself is ahead of the live site**: PR #170 (2026-11-11, the
-2026-11-07 batch plus the icon-dedup and demo-title work below) is merged (`b78c231e`), full gate green
-(113/113), `registry-install-smoke` green (83/83), but **the deploy is parked, not forced through**: the release
-suite on `b78c231e` failed two tests, neither confirmed real nor confirmed a flake (row
+2026-11-07 batch plus the icon-dedup and demo-title work below) and PR #171 (2026-11-11, a comment-analysis pass and
+the paragraph below) are merged (main is at `b077881b`), full gate green (113/113), `registry-install-smoke` green
+(83/83), but **the deploy is parked, not forced through**: the release suite on PR #170's head (`b78c231e`, before
+PR #171's docs-only commit) failed two tests, neither confirmed real nor confirmed a flake (row
 [506](./backlog/506-release-suite-two-failures-block-deploy.md)). The next session's first job is closing that row,
 then deploying.
 
 ## Where a fresh session picks up
 
-Session `session_01MsL6RCeq7QSe81nNBiuKP1` owns merges and deploys. Main carries PR #170 (`b78c231e`, not yet
+Session `session_01MsL6RCeq7QSe81nNBiuKP1` owns merges and deploys. Main carries PRs #170-#171 (`b077881b`, not yet
 deployed; see row 506). A new
 session reads this page, then takes the first open row of "Next" below; each row file under [`backlog/`](./backlog/)
 says what to build, which files, its proof and its size. The rules are [`../CLAUDE.md`](../CLAUDE.md) and
@@ -51,13 +52,15 @@ row says otherwise, so a step runs as parallel lanes (one verifier per batch, `l
 1. **First: row 506** (two unconfirmed release-suite failures are parking the deploy of `b78c231e`). Nothing else in
    this step matters until the site is caught up to main.
 2. Done, merged in PR #170 (2026-11-11): the deploy blockers of PR #168 (rows 468, 501); row **436**'s overlay and
-   class groups (F1, F2, F4, F5, F6, F8, F9, F10, F11, F12), each reproduced red first; **499** (safe triangle); **152**
-   slices 4-5; **371**'s dependency register gate (C23 enforced) and the demo-site icon deduplication (115 files moved
-   off `dioxus-icons` onto the lifted central library; row 371's own stale-name fix too); **440**'s concurrent
-   run-gates self-test; **486**'s pairing, resolved references and N1 rules, plus **507**'s first comment-analysis
-   pass over `primitives`;
-   **399**'s `title.txt` override, the small-word case rule and its 78 renames; **488** (no repro; RTL guard spec);
-   **491** (name confirmed); **505**'s grant (PR #169) and the readable-name revert it covers.
+   class groups (F1, F2, F4, F5, F6, F8, F9, F10, F11, F12), each reproduced red first (CHANGELOG.md has the
+   user-visible ones: F1, F10, F11); **499** (safe triangle; CHANGELOG.md too); **152** slices 4-5; **371**'s
+   dependency register gate (C23 enforced) and the demo-site icon deduplication (115 files moved off `dioxus-icons`
+   onto the lifted central library; row 371's own stale-name fix too); **440**'s concurrent run-gates self-test;
+   **486**'s pairing and resolved references; **399**'s `title.txt` override, the small-word case rule and its 78
+   renames; **488** (no repro; RTL guard spec); **491** (name confirmed); **505**'s grant (PR #169) and the
+   readable-name revert it covers.
+   Done, merged in PR #171 (2026-11-11, on top of #170): **486**'s N1 rules and **507**'s first comment-analysis pass
+   over `primitives` (two more stale names fixed; three follow-ups left open, below).
 3. Open from row 436: one cancellable delayed-task helper and per-window state (F7, F3), and `menu_root::use_root_id`,
    which still writes a caller's `id` once (needs `use_reactive!`).
 4. Open elsewhere: **504** (the hydrated Textarea shows no value; a fix is built on `lane/textarea-ssr-504`, local

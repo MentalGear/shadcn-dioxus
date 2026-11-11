@@ -1,10 +1,10 @@
 ---
 id: 436
 title: "Code-quality skill review: code-review and simplify skills over the whole codebase, after the row 426-435 refactors"
-status: "BACKLOG. It was in the plan next to row 365 but never had a row, so 365 ran without it. The owner…"
+status: "PARTLY FIXED (PR #170, 2026-11-11): 10 of the review's 12 findings (F1, F2, F4-F6, F8-F12) are…"
 size: "M for the review. Each accepted finding…"
 area: process
-updated: 2026-11-06
+updated: 2026-11-11
 ---
 
 # Row 436: Code-quality skill review
@@ -15,9 +15,10 @@ A subagent pass with the session's code-quality skills over the whole codebase. 
 
 ## Status / trigger
 
-BACKLOG. It was in the plan next to row 365 but never had a row, so 365 ran without it. The owner said on 2026-10-25: "wait for the code review etc after the refactor above". It runs once rows 426-435 have landed, so it reviews the refactored code, and it comes before row 383.
-
-## Status
+PARTLY FIXED (PR #170, 2026-11-11): 10 of the review's 12 findings (F1, F2, F4-F6, F8-F12) are landed, each reproduced
+red first. Open: F3 and F7 (one cancellable delayed-task helper and per-window state), and one gap F4's construction
+did not cover, `menu_root::use_root_id` (needs `use_reactive!`). It was in the plan next to row 365 but never had a
+row, so 365 ran without it; the owner said on 2026-10-25: "wait for the code review etc after the refactor above".
 
 REVIEWED 2026-11-06 (one read-only lane, Sonnet, by hand with both skills' criteria): [`../research/code-quality-review-2026-11-06.md`](../research/code-quality-review-2026-11-06.md). 12 findings: 0 high, 3 medium, 9 low; sized S 9, M 3. Scope was the overlay engine, the newest shared code and the row 426-435 files; `preview/src`, `scripts/` and `playwright/` were not reviewed. Nothing is verified in a browser. The accepted findings become rows after the owner reviews the table.
 
