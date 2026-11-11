@@ -2,8 +2,8 @@ use super::super::component::*;
 use crate::components::card::{
     Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle,
 };
+use crate::components::icons::TrendingUp;
 use dioxus::prelude::*;
-use dioxus_icons::lucide::TrendingUp;
 
 /// Two overlapping series: desktop at 60% opacity under an opaque mobile.
 fn generate_data() -> Vec<ChartDatum> {

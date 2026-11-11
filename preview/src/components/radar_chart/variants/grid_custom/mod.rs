@@ -2,8 +2,8 @@ use super::super::component::*;
 use crate::components::card::{
     Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle,
 };
+use crate::components::icons::TrendingUp;
 use dioxus::prelude::*;
-use dioxus_icons::lucide::TrendingUp;
 
 /// A single polygon ring 90px out (`polarRadius={[90]}`), no spokes.
 fn generate_data() -> Vec<ChartDatum> {

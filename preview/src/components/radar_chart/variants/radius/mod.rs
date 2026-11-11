@@ -2,8 +2,8 @@ use super::super::component::*;
 use crate::components::card::{
     Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle,
 };
+use crate::components::icons::TrendingUp;
 use dioxus::prelude::*;
-use dioxus_icons::lucide::TrendingUp;
 
 /// Two series without month labels; the radius axis' tick values run along the
 /// 60-degree spoke (`radius_axis`).

@@ -1,6 +1,6 @@
 use super::super::component::*;
+use crate::components::icons::TrendingUp;
 use dioxus::prelude::*;
-use dioxus_icons::lucide::TrendingUp;
 
 /// Desktop and mobile visitors per month, one color per month.
 fn chart_data() -> Vec<ChartDatum> {
