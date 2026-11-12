@@ -1,7 +1,7 @@
 ---
 id: 506
 title: "The release suite failed twice on main b78c231e: one stale locator that waited 20 minutes, one racy geometry read"
-status: "FIXED IN LANE suite-506, 2026-11-12, awaiting the full release suite on the merged tree (the…"
+status: "DONE 2026-11-12: fixed in PR #175 (merge b69c006d), and the full release suite on main edb71de0 (PR…"
 size: "S, done in the lane; the full release…"
 area: tooling
 updated: 2026-11-12
@@ -17,8 +17,12 @@ product bug, and the suite now bounds a hang like the first in minutes.
 
 ## Status / trigger
 
-FIXED IN LANE suite-506, 2026-11-12, awaiting the full release suite on the merged tree (the deploy's run). Neither
-failure was a product bug or an environment fault.
+DONE 2026-11-12: fixed in PR #175 (merge `b69c006d`), and the full release suite on main `edb71de0` (PR #176) is green
+on the exact tree deployed: 4106 passed, 0 failed, 0 flaky, 14 skipped; site published by deploy commit `c34eda92`.
+Neither failure was a product bug or an environment fault. The chunk wall limit added here read six lines of the shard
+table as one number and turned the first deploy attempt red in five seconds; PR #176 reads one line and refuses a
+limit that is not a plain number of seconds. The class behind the stale locator (a demo found by its title) is closed
+by row [512](./512-specs-locate-variants-by-slug.md).
 
 **`tag_group.spec.ts:156` "Delete works for non-selectable removable tags"** (measured, reproduced on a release build of
 main `bdb41d2a`, whose code equals `b78c231e` plus docs commits, served by the pre-change `serve-spa.py`):

@@ -5,25 +5,13 @@ the page as stale and check `git log` and the flag files named here.** What each
 backlog row files, not here: this page says only what is deployed, what runs, what is next and what waits for the owner.
 
 Last updated: **2026-11-12**. Several sessions work in parallel; who holds what is on the `claims` branch (`CLAIMS.md`).
-Preview site: https://mentalgear.github.io/shadcn-dioxus/ (still serving main `f38662dc`, PRs #166-#168, deploy commit
-`85c05466`; release suite 4192 passed, 0 failed). **Main itself is ahead of the live site**: PRs #170-#173 (all
-2026-11-11: the 2026-11-07 batch plus the icon-dedup and demo-title work below, a comment-analysis pass, and two
-documentation-review passes that fixed stale status text these PRs themselves left behind) are merged, full gate
-green (113/113), `registry-install-smoke` green (83/83), but **the deploy is parked, not forced through**: the
-release suite on PR #170's head (`b78c231e`, before the later docs-only commits) failed two tests, neither confirmed
-real nor confirmed a flake (row [506](./backlog/506-release-suite-two-failures-block-deploy.md)). Check `git log
-origin/main -1` for the exact tip rather than trusting a SHA frozen here. The next session's first job is closing
-row 506, then deploying.
-
-**2026-11-12:** row 506 is explained and fixed in the batch that follows PR #174 (a stale title locator behind a
-20-minute timeout, a tooltip position read before it settled, and the test server's listen backlog of 5); the deploy
-runs the full release suite on that merged tree.
-
-## Where a fresh session picks up
+Preview site: https://mentalgear.github.io/shadcn-dioxus/ serves main `edb71de0` (PRs #170-#176, deploy commit
+`c34eda92`; release suite 4106 passed, 0 failed, 0 flaky, 14 skipped on that exact tree, the `@timing` cases
+deactivated per row 494). Main is ahead of the site only by PRs #177 and #178, which change no source the site is
+built from. Check `git log origin/main -1` for the exact tip rather than trusting a SHA frozen here.
 
 Session `session_01MsL6RCeq7QSe81nNBiuKP1` owned merges and deploys through PR #173 and is archived; session
-`session_01MsL6RCa7c4QWmqNtUYQ8RE` merges and deploys the 2026-11-12 batches. Main carries PRs #170-#174 (not yet
-deployed; see row 506). A new
+`session_01MsL6RCa7c4QWmqNtUYQ8RE` merges and deploys the 2026-11-12 batches. A new
 session reads this page, then takes the first open row of "Next" below; each row file under [`backlog/`](./backlog/)
 says what to build, which files, its proof and its size. The rules are [`../CLAUDE.md`](../CLAUDE.md) and
 [`lane-rules.md`](./lane-rules.md); the owner's decisions are [`decisions.md`](./decisions.md).
@@ -43,7 +31,7 @@ the next deploy first rebuilds it with `scripts/lane-target.sh warm-release` (a 
 ## Merged and deployed
 
 Merge queue batches 1-29 are on main (PRs #121-#155); PRs #156-#165 followed from session
-`session_01MsL6RCeq7QSe81nNBiuKP1` and are deployed (main `d040554a`, release suite 4159 passed, 0 failed). PRs #166-#168 are deployed (main `f38662dc`, deploy `85c05466`, release suite 4192 passed, 0 failed). What each batch carried is in `git log` and the row files under
+`session_01MsL6RCeq7QSe81nNBiuKP1` and are deployed (main `d040554a`, release suite 4159 passed, 0 failed). PRs #166-#168 are deployed (main `f38662dc`, deploy `85c05466`, release suite 4192 passed, 0 failed). PRs #170-#176 are deployed (main `edb71de0`, deploy `c34eda92`, release suite 4106 passed, 0 failed). What each batch carried is in `git log` and the row files under
 [`backlog/done/`](./backlog/done/).
 
 ## Next
@@ -55,9 +43,8 @@ row says otherwise, so a step runs as parallel lanes (one verifier per batch, `l
 
 **Before the plan continues (port-independent)**
 
-1. **First: row 506** (two release-suite failures parked the deploy of `b78c231e`). Both are test-side and fixed
-   (2026-11-12); the row closes when the full release suite is green on the merged tree and the site is deployed.
-   Then **row 511** (the primitives' renderer switch is inverted so the browser arm needs no feature; one construction,
+1. Row 506 is closed (2026-11-12): both failures were test-side, the release suite is green on `edb71de0` and the
+   site is deployed. **First now: row 511** (the primitives' renderer switch is inverted so the browser arm needs no feature; one construction,
    measured, awaiting the owner's approval): it is port-independent and row 448's deletion waits for it.
 2. Done, merged in PR #170 (2026-11-11): the deploy blockers of PR #168 (rows 468, 501); row **436**'s overlay and
    class groups (F1, F2, F4, F5, F6, F8, F9, F10, F11, F12), each reproduced red first (CHANGELOG.md has the
