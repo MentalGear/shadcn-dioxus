@@ -6,7 +6,7 @@ size: "L"
 area: overlays
 js-grant: js_file=24 (relocated lines, root doc section 5.4; the main loop's grant row at the merge base is the number the gate reads)
 adds: []
-updated: 2026-10-31
+updated: 2026-11-12
 ---
 
 # Row 452: Port 3.PL: placement (T1, T2, T8-T12, S1), the paint-safe gate and the boot probe
@@ -36,3 +36,4 @@ Re-scoped 2026-10-31 against the tree after [row 477](./477-anchored-overlays-pl
 - **Depends on:** [row 449](./449-phase-0-4-proof-port-b-the-executor-and-popover-spreads.md) (the executor), [row 444](./444-gate-half-of-lane-3-0b-grants-bans-and-witness-presence.md), [row 445](./445-phase-0-2-the-legacy-freeze.md); a grant row.
 - **Proof:** The boot-probe spec, a nested-submenu and a reopen x3 spec, the first-frame spec (this row's, not phase 0's), `g-latency`, top-layer and select specs on a release build, `playwright/anchored-placement.spec.ts`; Firefox and WebKit via [row 442](./442-desktop-cadence-harness-and-desktop-pass.md).
 - **Hours:** the plan's 28 h (inferred, a full-lane figure) predates 477; re-estimate when taken.
+- **Decision in Rust:** the logic this row moves is a pure Rust function over typed inputs; only reading and writing the page goes through the bridge ([`decisions.md`](../decisions.md), "Behaviour is decided in Rust").

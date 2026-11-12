@@ -6,7 +6,7 @@ size: "L"
 area: primitives
 js-grant: js_file=40 (inferred ceiling, only if built: the `roving` behaviour about 40 lines; the main loop's grant row at the merge base is the number the gate reads)
 adds: [roving] (only if the witness is red)
-updated: 2026-10-26
+updated: 2026-11-12
 ---
 
 # Row 462: Port: roving focus (about 28 real DOM focus writes in 18 files through the focus owner), conditional on the focus-write witness
@@ -31,3 +31,5 @@ L
 - **Depends on:** [row 446](./446-phase-0-6-witness-harness-and-the-first-witnesses.md) (the focus-write witness that decides whether this row exists), [row 447](./447-phase-0-7-the-order-runtime.md) (focus owner), [row 448](./448-phase-0-3-proof-port-a-focus-trap-and-otpfilter.md), [row 449](./449-phase-0-4-proof-port-b-the-executor-and-popover-spreads.md), [row 452](./452-port-3-pl-placement-anchor-fallback-and-the-paint-safe-gate.md), [row 455](./455-port-3-gs-gestures-slider-resizable-drawer-toast-pan.md), [row 456](./456-port-3-ov-overlay-core-escape-dismiss-open-focus.md), [row 458](./458-port-3-fc-form-and-input-primitives-and-the-native-slot-kinds.md) (file overlap).
 - **Proof:** A key-repeat spec per widget family; the `roving` behaviour's witness (2-4 h, only if red).
 - **Hours (inferred):** about 16 (12-20), **conditional**, not in the firm total: 30 (26-34) before round 7 (32 files at about 0.6-0.8 h), cut by the census to 18 files at about 0.6-0.8 h each, a key-repeat spec per widget family, 2-4 h for the `roving` behaviour and 2 h for the date segments and the focus owner's ensure-visible hand-off.
+- **Decision contract (row 509):** each behaviour this row adds has its `decide` in Rust and a TypeScript adapter only ([row 509](./509-rust-decision-contract.md)). The `js-grant` above is a ceiling inferred before that rule; the row re-measures it when it opens.
+- **Blitz arm:** this row does not remove the rsx route from an existing `#[cfg(not(feature = "web"))]` arm, and the gates allow it there ([row 509](./509-rust-decision-contract.md), item 5). It need not create such an arm.

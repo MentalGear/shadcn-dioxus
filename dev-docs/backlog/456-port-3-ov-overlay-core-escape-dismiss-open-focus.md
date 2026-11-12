@@ -6,7 +6,7 @@ size: "L"
 area: overlays
 js-grant: js_file=124 (relocated lines, root doc section 5.4; the main loop's grant row at the merge base is the number the gate reads)
 adds: [openFocus]
-updated: 2026-10-31
+updated: 2026-11-12
 ---
 
 # Row 456: Port 3.OV: overlay core (L1-L3, L5-L9, L16-L17, L22, L26) with openFocus
@@ -37,3 +37,4 @@ Re-scoped 2026-10-31 after [row 477](./477-anchored-overlays-placed-in-document-
 - **Depends on:** [row 487](./done/487-one-dismiss-core-escape-outside-dismiss-and-focus-return.md) and [row 435](./done/435-one-menu-family-behind-three-hosts.md) (unify first), [row 449](./449-phase-0-4-proof-port-b-the-executor-and-popover-spreads.md) (modal executor), [row 448](./448-phase-0-3-proof-port-a-focus-trap-and-otpfilter.md) (`lib.rs` order), [row 447](./447-phase-0-7-the-order-runtime.md) (focus owner), [row 444](./444-gate-half-of-lane-3-0b-grants-bans-and-witness-presence.md); an `adds: [openFocus]` row (and `[hotkey]` if L6's witness is red and this row builds it first).
 - **Proof:** The witness per `openFocus` effect; nested-layer and Escape specs, the dismiss parity spec of row 487, `touch-open-focus.spec.ts`, native-dialog specs on a release build.
 - **Hours:** the plan's 29 (inferred) predates these rows; re-estimate when taken.
+- **Decision contract (row 509):** each behaviour this row adds has its `decide` in Rust and a TypeScript adapter only ([row 509](./509-rust-decision-contract.md)). The `js-grant` above is a ceiling inferred before that rule; the row re-measures it when it opens.

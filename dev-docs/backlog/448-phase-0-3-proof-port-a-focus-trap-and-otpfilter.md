@@ -6,7 +6,7 @@ size: "L"
 area: overlays
 js-grant: js_file=200 (inferred ceiling: otp_filter.ts about 30 relocated, the adapter extension in bridge.ts about 150, focus-trap.ts is deleted; the main loop's grant row at the merge base is the number the gate reads)
 adds: [otpFilter]
-updated: 2026-10-26
+updated: 2026-11-12
 ---
 
 # Row 448: Phase 0.3: proof port A (the 16 dead not(web) eval sites, focus-trap.ts, and the otpFilter behaviour for S11)
@@ -28,6 +28,6 @@ L
 ## Detail
 
 - **Files owned:** `dialog.rs`, `alert_dialog.rs`, `popover.rs`, `dropdown_menu.rs`, `menubar.rs`, `context_menu.rs` (the `not(web)` arms only), `lib.rs` (the focus-trap bundle constants only), `ts/focus-trap.ts`, `primitives/src/js/focus-trap.js` and its manifest line, `input_otp.rs` (S11's script and install only), `ts/behaviours/otp_filter.ts`, `bridge/behaviours/mod.rs` (the registry macro, replacing `bridge/behaviours.rs`), `bridge/behaviours/otp_filter.rs`, `primitives/conformance/behaviours/otp_filter.json`, `bridge/session.rs` (`use_behaviour` only), `ts/bridge.ts` (the adapter's per-install effect-set refusal), `primitives/tsconfig.json`, the site scan and presence check under `scripts/check-bridge-behaviours.*` (after 0.1). Must not touch `top_layer/`, the rest of `lib.rs` (L1, L2 and L6 are 3.OV's), `label.rs`, the rest of `input_otp.rs` (3.FC).
-- **Depends on:** [row 444](./444-gate-half-of-lane-3-0b-grants-bans-and-witness-presence.md), [row 446](./446-phase-0-6-witness-harness-and-the-first-witnesses.md) (the `otpFilter` witness `test.fixme` it turns green), [row 447](./447-phase-0-7-the-order-runtime.md) (`session.rs` order).
+- **Depends on:** [row 444](./444-gate-half-of-lane-3-0b-grants-bans-and-witness-presence.md), [row 446](./446-phase-0-6-witness-harness-and-the-first-witnesses.md) (the `otpFilter` witness `test.fixme` it turns green), [row 447](./447-phase-0-7-the-order-runtime.md) (`session.rs` order); [row 509](./509-rust-decision-contract.md) for the `otpFilter` half only (its `decide` is Rust and `ts/behaviours/otp_filter.ts` is its adapter); the 3.DJ half, the deletions, depends on nothing in rows 508 or 509 and may land first.
 - **Proof:** `witness(otpFilter, prevent)` and `witness(otpFilter, setValue)` go from `test.fixme` to red-then-passing expected failures; the input-otp, dialog, alert-dialog and menu specs on a release build; `check-bridge-behaviours`.
 - **Hours (inferred):** about 12: 13 in round 6, less about 3 for the typestate and 2 for the coverage hook that round 7 cut, plus about 4 for the checks that item 0.1 hands over (S11's 25 lines stay counted in 3.FC's relocated column).

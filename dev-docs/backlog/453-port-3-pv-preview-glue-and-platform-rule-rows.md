@@ -6,7 +6,7 @@ size: "M"
 area: preview
 js-grant: none
 adds: []
-updated: 2026-10-26
+updated: 2026-11-12
 ---
 
 # Row 453: Port 3.PV: preview glue (V3-V23) with the V14 allowlist row and the Ctrl/Cmd+B platform rule row
@@ -31,3 +31,4 @@ M
 - **Depends on:** [row 452](./452-port-3-pl-placement-anchor-fallback-and-the-paint-safe-gate.md) (V19 needs the pending CSS), [row 455](./455-port-3-gs-gestures-slider-resizable-drawer-toast-pan.md) or [row 456](./456-port-3-ov-overlay-core-escape-dismiss-open-focus.md), whichever builds `hotkey` first (V22), [row 457](./457-port-3-vs-virtual-settle-and-the-scrollowner-behaviour.md) (V6 only, ported last), [row 444](./444-gate-half-of-lane-3-0b-grants-bans-and-witness-presence.md) (allowlist and platform-rule rows; the owner approves each platform rule row).
 - **Proof:** The preview specs of the touched pages; V22's check line in `desktop-pass.md` (a platform rule row is checked, not witnessed).
 - **Hours (inferred):** 11 (10 before round 5; +1 for V22's platform rule row and V14's allowlist row); removes about 245 lines (22 per hour).
+- **Decision in Rust:** the logic this row moves is a pure Rust function over typed inputs; only reading and writing the page goes through the bridge ([`decisions.md`](../decisions.md), "Behaviour is decided in Rust").

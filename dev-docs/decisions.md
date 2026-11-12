@@ -30,6 +30,18 @@ the line here is the pointer, so when a row's text and this line disagree, the r
 - JavaScript: the row 434 step 3 plan is approved with scope 2: the construct and two proof ports first (phase 0, rows
   444-450), then every other port as an ordinary row in order of JavaScript removed per hour; the uncertain ports go last,
   one at a time, with the old version switchable so the owner measures each. 2026-10-26 (row [434](./backlog/434-javascript-in-typescript-modules-not-rust-strings.md), [`js-interop.md`](./js-interop.md)).
+- Renderer targets: web; native through the desktop and mobile webview now; Blitz (dioxus-native, which runs no
+  JavaScript) later, when row 438's start conditions hold. No port makes the later Blitz arm harder. 2026-11-11 (rows
+  [434](./backlog/434-javascript-in-typescript-modules-not-rust-strings.md), [438](./backlog/438-blitz-native-renderer.md)).
+- Behaviour is decided in Rust: every behaviour's decision is one pure Rust function over typed inputs, the same
+  function on every renderer. Where it must run on the page's thread, inside an event's dispatch (web and webview), it
+  runs there as a small wasm module the bridge loads, the decision kernel; on Blitz it is a direct call. TypeScript is
+  the bridge's transport and DOM adapter only: it carries events, applies effects and keeps the bridge's own ordering,
+  and no component behaviour is decided in it. The kernel route stands on row 508's proof; if that proof fails, the owner
+  decides again before any behaviour row opens. 2026-11-11 (rows
+  [434](./backlog/434-javascript-in-typescript-modules-not-rust-strings.md),
+  [508](./backlog/508-decision-kernel-proof.md), [509](./backlog/509-rust-decision-contract.md);
+  [`js-interop.md`](./js-interop.md), "Named behaviours").
 
 ## Dependencies and supply chain
 
@@ -59,8 +71,9 @@ the line here is the pointer, so when a row's text and this line disagree, the r
 - The fast loop: iterate on `dx serve`, verify with the diff-based `test:changed`, leave the full suite to the batch.
   2026-10-21 (row [326](./backlog/done/326-lanes-iterate-with-dx-serve-hot-reload-and.md)).
 - Change only what a measurement shows holds up (test-speed and gate-speed work). 2026-10-21 (rows [331](./backlog/done/331-audit-5-delete-the-sweeps-that-a-static.md), [320](./backlog/done/320-skip-the-cargo-gates-when-the-rust-tree.md)).
-- Sonnet and Haiku subagents do lane work; never substitute Opus for them; the evidence log of `agent-model-fit.md` is
-  closed. 2026-10-20, 2026-10-24 ([`agent-model-fit.md`](./agent-model-fit.md), row [266](./backlog/266-repo-cleanup-archive-historical-dev-docs.md)).
+- Subagents do the delegated work on the lowest tier a complexity assessment says fits: Haiku, then Sonnet, then Opus
+  for judgment over a whole design; a higher tier never stands in for a rate-limited lower one; the evidence log of
+  `agent-model-fit.md` is closed. 2026-10-20, 2026-10-24, 2026-11-12 ([`agent-model-fit.md`](./agent-model-fit.md), row [266](./backlog/266-repo-cleanup-archive-historical-dev-docs.md)).
 - The docs site is built from the library's own components (no native `details`/`summary`). 2026-10-19
   ([`check-docs-own-components.sh`](./gates.md)).
 - Code comments describe only the current state; history is linked to its row, not retold. 2026-10-20

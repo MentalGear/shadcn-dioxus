@@ -6,7 +6,7 @@ size: "L"
 area: components
 js-grant: js_file=40 (stickToEnd about 40 lines; the main loop's grant row at the merge base is the number the gate reads)
 adds: [stickToEnd]
-updated: 2026-10-26
+updated: 2026-11-12
 ---
 
 # Row 465: Measured port 2: 3.MS message scroller (the Rust invariant, native anchoring as accelerator, stickToEnd on every engine)
@@ -31,3 +31,4 @@ L
 - **Depends on:** [row 463](./463-port-3-fz-freeze-legacy-scripts-behind-legacy-impl.md) (freeze), [row 457](./457-port-3-vs-virtual-settle-and-the-scrollowner-behaviour.md) (the one-shot `scrollOwner`, which this row extends with the level kind), [row 443](./443-owner-measurement-kit-perf-recorder-and-impl-switch.md); an `adds: [stickToEnd]` row; the witness runs under fallback emulation (`overflow-anchor: none !important`).
 - **Proof:** The owner's `verdict.json` for the message scroller; chat-stream specs; the `stickToEnd` witness pair.
 - **Hours (inferred):** 31-46 (inferred; 30-45 in round 6, +1 for the level kind of `scrollOwner`), time-boxed; removes 1,025 at the legacy removal (+40 added) (27 per hour).
+- **Decision contract (row 509):** each behaviour this row adds has its `decide` in Rust and a TypeScript adapter only ([row 509](./509-rust-decision-contract.md)). The `js-grant` above is a ceiling inferred before that rule; the row re-measures it when it opens.
