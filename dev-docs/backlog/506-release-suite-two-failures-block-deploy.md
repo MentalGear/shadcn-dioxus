@@ -68,7 +68,8 @@ S, done in the lane; the full release suite on the merged tree is the main loop'
 What changed (all under `playwright/` and `scripts/serve-spa.py`, no product code):
 
 - `tag_group.spec.ts`: the states demo is found by the test id it contains, not by its title; no `serial`, no 20 minute
-  timeout (the config's 90 s per test applies); `gotoHydrated` uses the test's timeout.
+  timeout (the config's 90 s per test applies; the whole file sums to 20 s in `durations.json`, so no test of it exceeds
+  20 s, a margin of at least 4.5x); `gotoHydrated` uses the test's timeout.
 - `chart_tooltip_follow.spec.ts`: `expectInsideBesidePoint` polls the inside-the-chart and beside-the-point conditions
   until two reads 100 ms or more apart agree on the box, instead of one read after `open`.
 - `scripts/serve-spa.py`: `request_queue_size = 1024` (the kernel caps it at `net.core.somaxconn`, 4096 here).
