@@ -23,6 +23,22 @@ use super::transport;
 use super::{Behaviour, Epoch, Target};
 use crate::js_listener::{receive, TEARDOWN};
 
+/// One row of the `publish` option of [`ListenOptions`] and [`ObserveOptions`]: the page copies one observed
+/// number into the custom property `var` (`--dx-` only) of the observed element, as it observes it, so a
+/// scroll-linked value is written in the frame it is measured and never crosses to Rust. This is transport:
+/// a measurement and a unit go to a variable; the option has no condition and reads no component state.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+pub struct Publish {
+    /// The custom property, `--dx-name`.
+    pub var: &'static str,
+    /// What is copied: the wire name of an [`EventField`] for a listener, a key of the message
+    /// ([`Size`] or [`Intersection`], camelCase) for an observer.
+    pub field: &'static str,
+    /// Appended to the number (`"px"`); empty for a plain number.
+    #[serde(skip_serializing_if = "str::is_empty")]
+    pub unit: &'static str,
+}
+
 /// The options of a streaming listener. A streaming listener can never cancel an event, so it is
 /// always passive and there is no `passive` option (a decision made inside the event is a
 /// [`Behaviour`], which declares its own passivity).
@@ -34,6 +50,10 @@ pub struct ListenOptions {
     /// Remove the listener after it fires once.
     #[serde(skip_serializing_if = "std::ops::Not::not")]
     pub once: bool,
+    /// Copy event fields into custom properties of the target element, in the page (see [`Publish`]). A
+    /// listener that publishes and names no field to send sends nothing to Rust.
+    #[serde(skip_serializing_if = "<[Publish]>::is_empty")]
+    pub publish: &'static [Publish],
 }
 
 impl ListenOptions {
@@ -41,6 +61,7 @@ impl ListenOptions {
     pub const CAPTURE: ListenOptions = ListenOptions {
         capture: true,
         once: false,
+        publish: &[],
     };
 }
 
@@ -101,6 +122,10 @@ pub struct ObserveOptions {
     /// Mutation: observe text changes.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub character_data: Option<bool>,
+    /// Resize and intersection: copy message numbers into custom properties of the observed element, in
+    /// the page (see [`Publish`]). An observer that publishes sends nothing to Rust.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub publish: Vec<Publish>,
 }
 
 /// When a batched sample field is delivered.
@@ -733,10 +758,40 @@ mod tests {
         assert_eq!(
             serde_json::to_value(ListenOptions {
                 capture: false,
-                once: true
+                once: true,
+                publish: &[],
             })
             .expect("serialises"),
             json!({"once": true})
+        );
+    }
+
+    #[test]
+    fn a_publish_option_is_data_the_page_copies() {
+        const ROWS: &[Publish] = &[Publish {
+            var: "--dx-scroll-top",
+            field: "target.scrollTop",
+            unit: "px",
+        }];
+        assert_eq!(
+            serde_json::to_value(ListenOptions {
+                publish: ROWS,
+                ..ListenOptions::default()
+            })
+            .expect("serialises"),
+            json!({"publish": [{"var": "--dx-scroll-top", "field": "target.scrollTop", "unit": "px"}]})
+        );
+        assert_eq!(
+            serde_json::to_value(ObserveOptions {
+                publish: vec![Publish {
+                    var: "--dx-w",
+                    field: "width",
+                    unit: ""
+                }],
+                ..ObserveOptions::default()
+            })
+            .expect("serialises"),
+            json!({"publish": [{"var": "--dx-w", "field": "width"}]})
         );
     }
 

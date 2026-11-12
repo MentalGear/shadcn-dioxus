@@ -133,8 +133,8 @@ pub use session::{
     use_behaviour, use_document_listener, use_element_listener, use_event_listener,
     use_intersection_observer, use_media_query, use_mutation_observer, use_observer,
     use_resize_observer, use_sample, use_window_listener, use_window_size, Command, Flush,
-    Intersection, ListenOptions, MediaChange, Mutation, ObserveOptions, ObserverKind, ResizeBox,
-    SampleField, Sampled, Session, Size, Subscription, Until, WindowSize,
+    Intersection, ListenOptions, MediaChange, Mutation, ObserveOptions, ObserverKind, Publish,
+    ResizeBox, SampleField, Sampled, Session, Size, Subscription, Until, WindowSize,
 };
 pub use transport::{is_unsupported, BRIDGE_JS};
 
@@ -179,9 +179,24 @@ pub enum Target {
     },
     /// `document.activeElement`.
     Active,
+    /// `window.visualViewport`, which receives the events a window-only row (`resize`, `scroll`) names.
+    VisualViewport,
+    /// The nearest ancestor of the active element, strictly inside the element with id `within`, whose
+    /// computed `overflow-y` is `auto`, `scroll` or `overlay`; that element itself when there is none.
+    Scroller {
+        /// The `id` of the element that bounds the search.
+        within: String,
+    },
 }
 
 impl Target {
+    /// The nearest vertical scroller of the active element inside the element with id `within`.
+    pub fn scroller(within: impl Into<String>) -> Self {
+        Target::Scroller {
+            within: within.into(),
+        }
+    }
+
     /// The element with this `id`.
     pub fn id(id: impl Into<String>) -> Self {
         Target::Id { id: id.into() }
@@ -410,6 +425,15 @@ pub enum Prop {
     Open,
     /// Whether a popover is open (`:popover-open`).
     PopoverOpen,
+    /// `document.visibilityState`, on the document.
+    VisibilityState,
+    /// `el.checkVisibility({ contentVisibilityAuto: true })`: whether the element is laid out, not inside a
+    /// skipped `content-visibility` subtree; null where the browser has no `checkVisibility`.
+    CheckVisibility,
+    /// An inline style value (`el.style.getPropertyValue(name)`), a string (empty when unset).
+    Inline(String),
+    /// `CSS.supports(declaration)` on the window, a bool, e.g. `"animation-timeline: scroll()"`.
+    Supports(String),
 }
 
 impl Prop {
@@ -446,6 +470,44 @@ impl Prop {
             Prop::SelectionEnd => "selectionEnd".into(),
             Prop::Open => "open".into(),
             Prop::PopoverOpen => "popoverOpen".into(),
+            Prop::VisibilityState => "visibilityState".into(),
+            Prop::CheckVisibility => "checkVisibility".into(),
+            Prop::Inline(name) => format!("inline:{name}"),
+            Prop::Supports(declaration) => format!("supports:{declaration}"),
+        }
+    }
+}
+
+/// A page-written slot Rust may write on an element whose attributes and inline style it does not own: a
+/// closed list, one row of `WRITES` in `ts/bridge.ts` each.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum Slot {
+    /// The `data-dx-keyboard` attribute of a modal panel (`keyboard_inset.rs`).
+    KeyboardOpen,
+    /// The `data-dx-keyboard-slack` marker of the scroller that holds the keyboard's scroll room.
+    KeyboardSlack,
+    /// The inline `padding-bottom`.
+    PaddingBottom,
+    /// The inline `overflow-anchor`.
+    OverflowAnchor,
+}
+
+impl Slot {
+    /// Every slot, in table order.
+    pub const ALL: &'static [Slot] = &[
+        Slot::KeyboardOpen,
+        Slot::KeyboardSlack,
+        Slot::PaddingBottom,
+        Slot::OverflowAnchor,
+    ];
+
+    /// The name the bridge's `write` takes.
+    pub const fn wire(self) -> &'static str {
+        match self {
+            Slot::KeyboardOpen => "data-dx-keyboard",
+            Slot::KeyboardSlack => "data-dx-keyboard-slack",
+            Slot::PaddingBottom => "padding-bottom",
+            Slot::OverflowAnchor => "overflow-anchor",
         }
     }
 }
@@ -496,6 +558,17 @@ impl Props {
     /// `prop` as a string, if it is one.
     pub fn string(&self, prop: &Prop) -> Option<&str> {
         self.value(prop).and_then(Value::as_str)
+    }
+
+    /// `prop` as a pixel length: a number, or a computed length such as `"1px"` (0.5px, `"0px"`); `None`
+    /// for anything else (`""`, `"auto"`, `"medium"`).
+    pub fn px(&self, prop: &Prop) -> Option<f64> {
+        let value = self.value(prop)?;
+        value.as_f64().or_else(|| {
+            value
+                .as_str()
+                .and_then(|text| text.trim().strip_suffix("px")?.trim().parse().ok())
+        })
     }
 
     /// [`Prop::Rect`] as a [`Rect`].
@@ -567,6 +640,18 @@ pub enum Op {
         #[serde(skip_serializing_if = "Option::is_none")]
         epoch: Option<Epoch>,
     },
+    /// A [`Slot`] write.
+    Write {
+        /// The element.
+        target: Target,
+        /// The slot's wire name (see [`Slot::wire`]).
+        slot: &'static str,
+        /// The value; `None` removes the attribute or the inline style.
+        value: Option<String>,
+        /// Dropped when a newer epoch for its key already ran on the target.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        epoch: Option<Epoch>,
+    },
 }
 
 /// The result of one [`Op`].
@@ -589,6 +674,19 @@ pub enum OpResult {
         /// The error's text.
         err: String,
     },
+}
+
+impl OpResult {
+    /// The answer of a [`get`](Transaction::get) op as [`Props`]; `None` for an op that threw, was
+    /// dropped as stale or was not a read.
+    pub fn props(&self) -> Option<Props> {
+        match self {
+            OpResult::Ok {
+                ok, dropped: false, ..
+            } => serde_json::from_value(ok.clone()).ok(),
+            _ => None,
+        }
+    }
 }
 
 /// Several ops run in ONE JS turn, in order: a write and the read that must see it, or two calls that
@@ -657,6 +755,18 @@ impl Transaction {
         self
     }
 
+    /// Adds a [`Slot`] write; `None` removes the attribute or inline style.
+    #[must_use]
+    pub fn write(mut self, target: impl Into<Target>, slot: Slot, value: Option<String>) -> Self {
+        self.ops.push(Op::Write {
+            target: target.into(),
+            slot: slot.wire(),
+            value,
+            epoch: None,
+        });
+        self
+    }
+
     /// Puts `epoch` on the LAST op added (a call, a read or a write): the page drops it when a newer
     /// epoch for the same key already ran on that target, and the reply echoes it.
     #[must_use]
@@ -664,7 +774,8 @@ impl Transaction {
         match self.ops.last_mut() {
             Some(Op::Call { epoch: slot, .. })
             | Some(Op::Get { epoch: slot, .. })
-            | Some(Op::Set { epoch: slot, .. }) => *slot = Some(epoch),
+            | Some(Op::Set { epoch: slot, .. })
+            | Some(Op::Write { epoch: slot, .. }) => *slot = Some(epoch),
             None => {}
         }
         self
@@ -967,6 +1078,22 @@ mod tests {
     }
 
     #[test]
+    fn a_pixel_length_reads_as_its_number() {
+        let props: Props = serde_json::from_value(json!({
+            "offsetWidth": 12.5, "style:a": "1px", "style:b": " 0.5px ", "style:c": "", "style:d": "auto",
+            "style:e": "12", "style:f": null,
+        }))
+        .expect("props deserialize");
+        let style = |name: &str| props.px(&Prop::Style(name.into()));
+        assert_eq!(props.px(&Prop::OffsetWidth), Some(12.5));
+        assert_eq!(style("a"), Some(1.0));
+        assert_eq!(style("b"), Some(0.5));
+        for name in ["c", "d", "e", "f", "missing"] {
+            assert_eq!(style(name), None, "{name}");
+        }
+    }
+
+    #[test]
     fn a_transaction_serialises_to_the_ops_the_page_runs() {
         let tx = Transaction::new()
             .call("p", Method::ShowPopover)
@@ -1043,6 +1170,8 @@ mod tests {
             Prop::SelectionEnd,
             Prop::Open,
             Prop::PopoverOpen,
+            Prop::VisibilityState,
+            Prop::CheckVisibility,
         ];
         let js = include_str!("../ts/bridge.ts");
         let start = js.find("const PROPS").expect("PROPS table");
@@ -1062,6 +1191,50 @@ mod tests {
             .filter(|l| l.starts_with("  \"") && (l.contains("\": {") || l.contains("\": on(")))
             .count();
         assert_eq!(rows, props.len(), "PROPS has a row Rust does not name");
+    }
+
+    /// Every `Slot` is one row of the page's `WRITES` table, and the table has no other.
+    #[test]
+    fn the_writes_table_is_this_enum() {
+        let js = include_str!("../ts/bridge.ts");
+        let start = js.find("const WRITES").expect("WRITES table");
+        let end = start + js[start..].find("\n};").expect("end of WRITES");
+        let table = &js[start..end];
+        for slot in Slot::ALL {
+            assert!(
+                table.contains(&format!("\n  \"{}\": {{ run:", slot.wire())),
+                "{}",
+                slot.wire()
+            );
+        }
+        assert_eq!(
+            table.matches("\": { run:").count(),
+            Slot::ALL.len(),
+            "WRITES has a row Rust does not name"
+        );
+    }
+
+    #[test]
+    fn a_write_and_the_new_targets_serialise_for_the_page() {
+        let tx = Transaction::new()
+            .write("p", Slot::KeyboardOpen, Some("open".into()))
+            .write(Target::scroller("p"), Slot::PaddingBottom, None)
+            .get(
+                Target::VisualViewport,
+                [Prop::Inline("padding-bottom".into())],
+            );
+        assert_eq!(
+            serde_json::to_value(tx.ops()).expect("serialises"),
+            json!([
+                {"op": "write", "target": {"kind": "id", "id": "p"}, "slot": "data-dx-keyboard", "value": "open"},
+                {"op": "write", "target": {"kind": "scroller", "within": "p"}, "slot": "padding-bottom", "value": null},
+                {"op": "get", "target": {"kind": "visualViewport"}, "props": ["inline:padding-bottom"]},
+            ])
+        );
+        assert_eq!(
+            Prop::Supports("animation-timeline: scroll()".into()).wire(),
+            "supports:animation-timeline: scroll()"
+        );
     }
 
     #[test]
