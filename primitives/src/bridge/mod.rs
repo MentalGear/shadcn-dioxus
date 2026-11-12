@@ -1243,7 +1243,7 @@ mod tests {
             json!([
                 {"op": "write", "target": {"kind": "id", "id": "p"}, "slot": "data-dx-keyboard", "value": "open"},
                 {"op": "write", "target": {"kind": "scroller", "within": "p"}, "slot": "padding-bottom", "value": null},
-                {"op": "get", "target": {"kind": "visualViewport"}, "props": ["inline:padding-bottom"]},
+                {"op": "get", "target": {"kind": "visualViewport"}, "props": ["inlinePaddingBottom"]},
             ])
         );
     }

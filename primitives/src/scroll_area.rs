@@ -1,8 +1,8 @@
 //! Defines the [`ScrollArea`] component for creating scrollable areas with customizable scrollbars.
 
 use crate::bridge::{
-    self, use_event_listener, use_resize_observer, ElementExt, EventKind, ListenOptions,
-    ObserveOptions, Prop, Props, Publish, Size, Target,
+    self, use_resize_observer, Command, ElementExt, EventKind, ListenOptions, ObserveOptions, Prop,
+    Props, Publish, Session, Size, Target,
 };
 use crate::direction::{use_direction, Direction};
 use crate::{merge_attributes, state_attrs, use_unique_id};
