@@ -10,7 +10,10 @@
 // 4. the title shapes of the matrix specs (select-titles.mjs) against the real spec files: a spec whose titles do not
 //    follow the shape the table expects fails here, instead of silently keeping every test;
 // 5. the `--grep-invert` pattern select.mjs builds really drops exactly the dropped tests (escaping, anchoring);
-// 6. the real tree: `--pages` narrows the biggest matrix spec and the broad behaviour comes back with --no-css-narrow.
+// 6. the real tree: `--pages` narrows the biggest matrix spec and the broad behaviour comes back with --no-css-narrow;
+// 7. the component use graph (component-graph.mjs, row 510): a synthetic tree (direct, transitive, demo-only and css-only
+//    consumers, a variants-only change that must not fan out) and the real tree (the class, not today's numbers: every
+//    dependency the manifests declare is seen, no use is unreadable, a change to Button reaches its consumers).
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -21,6 +24,7 @@ import { fromDir } from "./site-index.mjs";
 import { buildContext, impactOfChanges, routeKey } from "./css-impact.mjs";
 import { makeTitleScopes } from "./select-titles.mjs";
 import { pickBase } from "./select-base.mjs";
+import { buildComponentGraph, rustRefs } from "./component-graph.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PW = path.resolve(HERE, "..");
@@ -196,6 +200,47 @@ try {
   }
 }
 
+// ---- 7a. the component use graph on a synthetic tree (row 510) ---------------------------------------------------------
+{
+  const g = fs.mkdtempSync(path.join(os.tmpdir(), "select-graph-"));
+  try {
+    const write = (rel, text) => { const f = path.join(g, "preview/src/components", rel); fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, text); };
+    const comps = ["base", "mid", "top", "lone", "demoer", "styler", "grouped", "sib", "base_extra"];
+    for (const c of comps) { write(`${c}/component.rs`, `// crate::components::lone is a comment\n`); write(`${c}/style.css`, `.dx-${c.replace(/_/g, "-")} { color: red }`); write(`${c}/component.json`, `{"name":"${c}"}`); }
+    write("mid/component.rs", `use crate::components::base::Base;\nfn m() {}`);                              // direct code consumer of base
+    write("top/component.rs", `use crate::components::mid::Mid;`);                                          // consumer of a consumer
+    write("demoer/variants/main/mod.rs", `use crate::components::base::Base;`);                              // base only in its demo
+    write("demoer/component.rs", `fn d() {}`);
+    write("styler/style.css", `.dx-styler .dx-base-icon { gap: 0 } .dx-styler .dx-base-extra-x { gap: 0 }`);  // names base's class, and base_extra's
+    write("grouped/component.rs", `use crate::components::{base::Base, mid, sib::{A, B}};`);                 // a use group
+    write("sib/component.rs", `use super::super::base::Base;`);                                              // super::super from component.rs
+    write("lone/component.json", `{"name":"lone","componentDependencies":[{"name":"base"}]}`);               // declared only in the manifest
+    write("base/variants/main/mod.rs", `use crate::components::lone::Lone;`);                                 // base's demo uses lone: no edge into base
+    fs.mkdirSync(path.join(g, "preview/src/site"), { recursive: true });
+    fs.writeFileSync(path.join(g, "preview/src/site/page.rs"), `use crate::components::{mid::Mid, lone};`);
+    const gr = buildComponentGraph({ root: g, comps });
+    const consumers = (c, rel = "component.rs") => [...gr.reachOf(c, rel).consumers.keys()].sort();
+    eq("graph: a comment names no component", [...gr.rustCode.get("lone")], []);
+    eq("graph: consumers of base = direct, transitive, group, super::super, manifest, demo and css users", consumers("base"), ["demoer", "grouped", "lone", "mid", "sib", "styler", "top"]);
+    check("graph: the edge kind is in the explanation", /top \(code\)/.test(gr.reachOf("base", "component.rs").consumers.get("top")) && /mid \(code\)/.test(gr.reachOf("base", "component.rs").consumers.get("top")) && /\(demo\)/.test(gr.reachOf("base", "style.css").consumers.get("demoer")) && /\(css\)/.test(gr.reachOf("base", "style.css").consumers.get("styler")));
+    eq("graph: a demo consumer is not a code consumer (base's demo uses lone: lone reaches base's page, not base's consumers)", consumers("lone"), ["base"]);
+    eq("graph: a change under variants/ does not fan out", consumers("base", "variants/main/mod.rs"), []);
+    eq("graph: docs.md, notes.md and component.json do not fan out", ["docs.md", "notes.md", "component.json"].map((r) => consumers("base", r).length), [0, 0, 0]);
+    eq("graph: style.css and a sibling .rs file fan out", [consumers("base", "style.css").length > 0, consumers("base", "columns.rs").length > 0], [true, true]);
+    eq("graph: the css edge takes the longest component prefix (.dx-base-extra-x is base_extra's, not base's)", consumers("base_extra"), ["styler"]);
+    eq("graph: a site file naming a component is reported for it and for the components that render it", gr.reachOf("base", "component.rs").sites.map((x) => `${x.comp}:${path.basename(x.file)}`).sort(), ["mid:page.rs", "lone:page.rs"].sort());
+    eq("graph: a group names its top-level entries only", [...rustRefs("use crate::components::{a::{b, c}, d};", { fromComponentFile: false })].sort(), ["a", "d"]);
+    // a component added later with a new dependency is picked up with no edit to the selector
+    write("newcomer/component.rs", `use crate::components::base::Base;`); write("newcomer/style.css", ``); write("newcomer/component.json", `{"name":"newcomer"}`);
+    const gr2 = buildComponentGraph({ root: g, comps: [...comps, "newcomer"] });
+    check("graph: a component added later is a consumer with no selector edit", gr2.reachOf("base", "component.rs").consumers.has("newcomer"));
+    write("lone/component.rs", `use crate::components::*;`);
+    check("graph: a use the scan cannot attribute (a glob) is reported", buildComponentGraph({ root: g, comps }).unreadable.some((u) => u.startsWith("lone:")));
+  } finally {
+    fs.rmSync(g, { recursive: true, force: true });
+  }
+}
+
 let LISTED = null; // spec file -> every test title path, from `playwright test --list` (section 4)
 const QUICK = process.env.SELECT_SELFTEST_QUICK === "1"; // sections 1-3 only (the mutation proof of the CSS half)
 if (!QUICK) {
@@ -326,17 +371,77 @@ eq("titles: alias matches a squashed name", SCOPES["oracle/tier1-apg/keyboard-ma
   const vmod = run("--files", "primitives/src/virtual/mod.rs");
   check("primitive submodule: virtual/mod.rs keeps every engine user (Carousel, Message Scroller, the tables)", ["carousel.spec.ts", "message_scroller.spec.ts", "table.spec.ts", "virtual_list.spec.ts"].every((f) => vmod.specs.includes(f)) && !vmod.specs.includes("dx-class-migration.spec.ts"), vmod.specs.join(" "));
   // A component's at-rest axe scan lives only in all-routes (row 152): a change to the component runs that page's test.
-  const comp = run("--files", "preview/src/components/kbd/component.rs");
+  // a component no other component or site file renders: its at-rest scan is the only page added
+  const leafGraph = buildComponentGraph({ root: ROOT, comps });
+  const leaf = comps.find((c) => !/^(accordion|button|site)/.test(c) && leafGraph.reachOf(c, "component.rs").consumers.size === 0 && leafGraph.reachOf(c, "component.rs").sites.length === 0);
+  check("component change: some component has no consumer", !!leaf);
+  const comp = run("--files", `preview/src/components/${leaf}/component.rs`);
   const ar = comp.narrowed.find((n) => n.file === "all-routes.spec.ts");
   check("component change: all-routes runs, narrowed to the component's page", comp.specs.includes("all-routes.spec.ts") && !!ar && ar.kept >= 2 && ar.kept < 10, JSON.stringify(ar && [ar.kept, ar.total]));
   const arTitles = LISTED?.get("all-routes.spec.ts");
   if (arTitles && comp.grepInvert) {
     const re = new RegExp(comp.grepInvert, "i");
     const kept = arTitles.filter((t) => !re.test(`chromium all-routes.spec.ts ${t}`));
-    check("component change: the kept all-routes tests are the component's page and the page-less ones", kept.some((t) => t.startsWith("kbd: ")) && !kept.some((t) => /^(accordion|button|site-home): /.test(t)), kept.join(" | ").slice(0, 300));
+    check("component change: the kept all-routes tests are the component's page and the page-less ones", kept.some((t) => t.startsWith(`${leaf}: `)) && !kept.some((t) => /^(accordion|button|site-home): /.test(t)), kept.join(" | ").slice(0, 300));
   }
 }
 
+}
+
+// ---- 7b. the component use graph on the real tree, and the rule through select.mjs (row 510) ---------------------------------
+if (!QUICK) {
+  const comps = fs.readdirSync(path.join(ROOT, "preview/src/components"), { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name);
+  const gr = buildComponentGraph({ root: ROOT, comps });
+  eq("real graph: no component use is unreadable (a glob, an alias)", gr.unreadable, []);
+  // the manifest's `componentDependencies` is what an install brings; a dependency it declares that the source scan does not
+  // see is either a stale manifest or a spelling the scan cannot read, and either is a selector hole
+  const unseen = comps.flatMap((c) => [...gr.manifest.get(c)].filter((d) => !gr.rustCode.get(c).has(d)).map((d) => `${c}->${d}`));
+  eq("real graph: every manifest dependency is also seen in the Rust source", unseen, []);
+  const named = comps.flatMap((c) => [...gr.rustCode.get(c)].filter((d) => !gr.manifest.get(c).has(d)).map((d) => `${c}->${d}`));
+  eq("real graph: every Rust dependency of a component's own files is in its manifest", named, []);
+  const sum = (c, rel) => gr.reachOf(c, rel).consumers.size;
+  check("real graph: Button has code consumers (dialog composes it) and demo consumers", gr.reachOf("button", "component.rs").consumers.get("dialog")?.includes("(code)") && [...gr.reachOf("button", "component.rs").consumers.values()].some((w) => w.includes("(demo)")));
+  check("real graph: a transitive consumer is reached (top_layer composes dialog, dialog composes button)", gr.reachOf("button", "component.rs").consumers.has("top_layer"));
+  eq("real graph: Button's variants and docs reach no other component", [sum("button", "variants/main/mod.rs"), sum("button", "docs.md")], [0, 0]);
+  // a site file that names a component is seen, and a module root that only imports (`use super::*` children) is resolved to
+  // the children that spell the imported types
+  check("real graph: the dashboard's compose pane is a site user of Input", gr.siteUsers.get("input").some((x) => /dashboard\/views\/email_client\/compose\.rs$/.test(x)));
+  check("real graph: site/mod.rs only imports: Checkbox is resolved to the file that renders it", gr.siteUsers.get("checkbox").length > 0 && !gr.siteUsers.get("checkbox").includes("preview/src/site/mod.rs"), gr.siteUsers.get("checkbox").join(" "));
+  eq("real graph: a #[cfg(test)] module's strings are no rendering (installed_source.rs)", comps.filter((c) => gr.siteUsers.get(c).includes("preview/src/installed_source.rs")), []);
+  // through the selector: the specs of a consumer come with the change
+  const node = process.execPath;
+  const env = { ...process.env };
+  for (const k of ["PLAYWRIGHT_BASE_URL", "SELECT_SSG_DIR", "SSG_SITE_DIR"]) delete env[k];
+  const run = (...a) => JSON.parse(execFileSync(node, [path.join(HERE, "select.mjs"), "--format", "json", ...a], { cwd: ROOT, env, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], maxBuffer: 1 << 28 }));
+  const specsAbout = (c) => fs.readdirSync(PW).filter((f) => f.startsWith(c) && f.endsWith(".spec.ts"));
+  const btn = run("--files", "preview/src/components/button/component.rs");
+  const dlg = specsAbout("dialog"), grp = specsAbout("data_table").concat(specsAbout("data-table"));
+  check("select: a Button change selects the spec files of a component that composes it", dlg.length > 0 && dlg.every((f) => btn.specs.includes(f)), `dialog specs ${dlg.join(" ")}`);
+  check("select: a Button change selects data_table's specs (a code consumer)", grp.length > 0 && grp.every((f) => btn.specs.includes(f)), grp.join(" "));
+  check("select: a Button change is shared plumbing (more consumers than the cut-off): the BROAD set is added", Object.values(btn.reasons).some((r) => r.some((x) => /shared plumbing: \d+ components render it/.test(x))) && btn.specs.includes("preview.spec.ts"));
+  const demo = run("--files", "preview/src/components/button/variants/main/mod.rs");
+  const fanned = (r) => Object.values(r.reasons).flat().filter((x) => /<-|shared plumbing|renders/.test(x));
+  check("select: a change under button/variants/ selects no consumer (no edge in any reason) and no broad set", fanned(demo).length === 0 && !demo.specs.includes("preview.spec.ts"), fanned(demo).slice(0, 2).join(" | "));
+  check("select: ... while a change to button/component.rs does name its edges", fanned(btn).length > 0);
+  eq("select: a change under button/docs.md selects what a variant does", run("--files", "preview/src/components/button/docs.md").specs, demo.specs);
+  // a component only the dashboard renders (outside its own consumers): the dashboard's specs, not the BROAD set
+  const dashOnly = comps.find((c) => gr.siteUsers.get(c).length > 0 && gr.siteUsers.get(c).every((x) => /^preview\/src\/dashboard\//.test(x)) && gr.reachOf(c, "component.rs").sites.every((x) => /^preview\/src\/dashboard\//.test(x.file)) && gr.reachOf(c, "component.rs").consumers.size <= 30);
+  check("select: some component is rendered by the dashboard alone", !!dashOnly);
+  if (dashOnly) {
+    const r = run("--files", `preview/src/components/${dashOnly}/component.rs`);
+    check(`select: ${dashOnly} (rendered by the dashboard alone) selects the dashboard's spec and no BROAD set`, r.specs.includes("email-client-scroll.spec.ts") && !r.specs.includes("preview.spec.ts"), r.specs.join(" ").slice(0, 200));
+  }
+  // below the cut-off: a leaf-ish component's consumers, and only those, are added
+  const small = comps.filter((c) => { const n = gr.reachOf(c, "component.rs").consumers.size; return n >= 2 && n <= 8 && gr.reachOf(c, "component.rs").sites.length === 0; });
+  check("select: some component sits below the cut-off with consumers (the narrow case is exercised)", small.length > 0);
+  if (small.length) {
+    const c = small[0], cons = [...gr.reachOf(c, "component.rs").consumers.keys()];
+    const r = run("--files", `preview/src/components/${c}/component.rs`);
+    check(`select: ${c} (${cons.length} consumers, below the cut-off) adds no broad set`, !r.specs.includes("preview.spec.ts") && !Object.values(r.reasons).some((rs) => rs.some((x) => /shared plumbing/.test(x))));
+    const unreached = r.specs.filter((f) => !specsAbout(c).includes(f));
+    const named = cons.filter((k) => specsAbout(k.replace(/_/g, "-")).concat(specsAbout(k)).some((f) => r.specs.includes(f)));
+    check(`select: ${c} selects the specs of its consumers (${named.length} of ${cons.length} have a spec file named for them)`, named.length > 0 || unreached.length > 0);
+  }
 }
 
 console.log(failed ? `select-selftest: FAIL -- ${failed} of ${passed + failed} checks` : `select-selftest: OK -- ${passed} checks`);

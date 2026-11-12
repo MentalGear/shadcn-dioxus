@@ -166,7 +166,11 @@ Use the cheapest tool that answers the question, in this order:
    `CHANGED_MATRIX=1` to add the route-matrix specs; "no spec covers the diff" means docs/gates/tooling only; a changed `preview/assets/*.css` is read rule by rule -- the page-scoped matrix specs run only the tests of the pages the changed rules reach, the owning component's specs and every spec that spells a changed class are added, anything it cannot place keeps the whole broad set; `node playwright/tools/select.mjs --explain` says why, `CHANGED_FULL_CSS=1` forces the old behaviour; row 323).
    Quote its summary line in your report. Do not pick the specs by hand: `node playwright/tools/select.mjs --explain` lists the specs
    that cover your diff (default range `<nearest base>...HEAD`, the nearest of `origin/main` and any `origin/queue/*` ref (row 418), plus uncommitted files; `--range A..B`, `--files f...`).
-   Map: a component directory -> the specs about that component (file named for it, or naming its page); a primitive
+   Map: a component directory -> the specs about that component (file named for it, or naming its page) and, for a file
+   that changes what renders (not `variants/`, `docs.md`, `notes.md`, `component.json`), the specs of every component that
+   renders it: its code consumers transitively, the components whose demos or `style.css` name it, and the site pages
+   that embed it, all read from the sources by `playwright/tools/component-graph.mjs` (more than 30 such components =
+   shared plumbing, the broad set is added; `--explain` names the edge of each added spec); a primitive
    -> the specs of every component that uses it, directly or through another primitive (more than 30 components =
    shared plumbing, the broad set is added); theme CSS, `main.rs`, `site/`, `eager_head.rs`, `index.html`, `components/mod.rs` ->
    the broad set (every spec that names more than 12 components, i.e. the route and subject matrices
@@ -177,7 +181,7 @@ Use the cheapest tool that answers the question, in this order:
    `PW_SPECS_FILE=<file> pnpm exec playwright test --config=suite.local.config.ts` (`select.mjs > <file>`) under
    `flock $LANE_TGT/pw.lock`. The full suite is the main loop's, run as duration-balanced chunks
    (`playwright/tools/run-suite.sh`, "Running the suite" below). A change to shared plumbing (a primitive, `merge_attributes`, the theme, a component other
-   components compose such as Button) also needs the specs of its consumers: each lane green alone proves nothing about
+   components compose such as Button) selects the specs of its consumers: each lane green alone proves nothing about
    the merge (row 224).
 4. Wait in the foreground for queued builds (long timeouts) instead of handing back early.
 
@@ -284,6 +288,15 @@ cores, so a batch's verification runs once for the batch, not once per lane:
   back without an SSG build.
 - **Debugging lanes** (a bug row that must be red on the base build, a primitive whose behaviour is the change) keep
   their own build loop, because their iteration needs it.
+- **A lane never runs the broad set.** A lane's own Playwright run names the spec files of what it changed (plus two
+  or three untouched consumers of a helper it edited). When `select.mjs` maps a diff to most of the suite (a primitive
+  many components use, the bridge, a shared helper, `fixtures.ts`), that selection is the batch's: on a debug build at
+  two workers it holds `pw.lock` for about two hours per lane, and the same set then runs again on the merged batch and
+  again at the deploy (measured 2026-11-12: two lanes' broad runs kept a deploy waiting over an hour).
+- **One full suite per batch, on a release build of the merged tree.** When the batch's diff selects a large part of
+  the suite, the batch is verified by `scripts/deploy-preview.sh --suite-only` on the merged branch before it merges.
+  The run is recorded against the exact tree (`$LANE_TGT/release-suite/<tree>.pass`), a merge commit on an unmoved main
+  has the same tree, and the deploy reuses the stamp instead of running the suite again.
 - **The verifier** (one agent per batch) builds the shared base once, merges the batch's edit lanes, builds once, runs
   `test:changed` over the union, and bisects any red to its lane, which gets it back to fix.
 

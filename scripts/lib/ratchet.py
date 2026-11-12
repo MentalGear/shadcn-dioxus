@@ -56,7 +56,7 @@ import tempfile
 from typing import Callable, Dict, List, Optional, Sequence, Tuple
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from rows import row_at, parse_columns  # noqa: E402
+from rows import row_at, parse_columns, row_problems, GRANT_COLUMNS  # noqa: E402
 
 __all__ = ["Ratchet", "Report", "RAISE_NOTE", "TOTAL_NOTE"]
 
@@ -223,6 +223,10 @@ class Ratchet:
             return f"row {n} does not exist at the base {sha[:10]}"
         if not row.open:
             return f"row {n} is closed at the base ({row.why_closed()})"
+        valid = GRANT_COLUMNS + tuple(c for c in self.columns if c not in GRANT_COLUMNS)
+        bad = row_problems(row.fm, valid)
+        if bad:
+            return f"row {n} ({row.path}): {bad[0]}"
         if not row.grant:
             return f"row {n} has no `js-grant: <column>=<n>` at the base"
         for c, d in sorted(need.items()):
@@ -676,10 +680,11 @@ def _self_test() -> int:
             ok += 1
     row = row_at(".", "HEAD", 446)
     if row is not None:
-        if row.grant.get("js_file") == 360 and row.open:
+        # The live row is read for its shape, never for today's number: an open row with a grant in a real column.
+        if row.open and row.grant and not row.problems:
             ok += 1
         else:
-            fails.append(f"rows.py: row 446 at HEAD reads as grant {row.grant}, open {row.open}")
+            fails.append(f"rows.py: row 446 at HEAD reads as grant {row.grant}, open {row.open}, problems {row.problems}")
 
     for f in fails:
         print("ratchet --self-test FAIL: " + f, file=sys.stderr)

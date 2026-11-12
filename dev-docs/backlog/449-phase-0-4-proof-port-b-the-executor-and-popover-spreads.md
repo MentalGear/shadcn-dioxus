@@ -4,7 +4,7 @@ title: "Phase 0.4: proof port B (the reconciled-kinds executor, the popover hook
 status: "APPROVED 2026-10-26 (owner: \"okay for the plan\"; scope 2, the recommended default, since no scope…"
 size: "L"
 area: overlays
-js-grant: js_file=250 (inferred ceiling: executor.ts about 250, an internal and not a registry entry; the main loop's grant row at the merge base is the number the gate reads)
+js-grant: js_file_bytes=4580 (250 lines at 18.3 bundle bytes per source line, inferred ceiling: executor.ts about 250, an internal and not a registry entry; the main loop's grant row at the merge base is the number the gate reads)
 adds: []
 updated: 2026-10-26
 ---

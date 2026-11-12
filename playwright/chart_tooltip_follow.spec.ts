@@ -116,6 +116,40 @@ async function expectInside(tooltip: Locator, chart: Box, message: string) {
 }
 
 /**
+ * Waits until the tooltip rests inside the chart and, where one side of the point has room for it, beside the point
+ * `px` (page x) rather than over it (a tooltip wider than either side could only be pinned over it). It stays `open`
+ * while the pointer moves from one category to the next, so its box is the previous category's until the move lands:
+ * one read taken right after `data-state="open"` can be that stale box. A box counts as at rest when two polls in a
+ * row (100 ms or more apart) read the same position and size.
+ */
+async function expectInsideBesidePoint(tooltip: Locator, chart: Box, px: number, message: string) {
+  let previous: Box | undefined;
+  await expect
+    .poll(
+      async () => {
+        const t = await box(tooltip);
+        const last = previous;
+        previous = t;
+        const atRest =
+          !!last && [t.x - last.x, t.y - last.y, t.width - last.width, t.height - last.height].every((d) => Math.abs(d) < 0.5);
+        const slack = 0.75;
+        const inside =
+          t.x >= chart.x - slack &&
+          t.y >= chart.y - slack &&
+          t.x + t.width <= chart.x + chart.width + slack &&
+          t.y + t.height <= chart.y + chart.height + slack;
+        const room = Math.max(px - chart.x, chart.x + chart.width - px) - OFFSET;
+        const beside = room < t.width || t.x >= px || t.x + t.width <= px;
+        return atRest && inside && beside
+          ? "inside, beside its point"
+          : `${atRest ? "at rest" : "moving"}, ${inside ? "inside" : "outside"} the chart, ${beside ? "beside" : "over"} its point: tooltip ${JSON.stringify(t)} chart ${JSON.stringify(chart)} point x ${px}`;
+      },
+      { message },
+    )
+    .toBe("inside, beside its point");
+}
+
+/**
  * Page points (viewport coordinates) well inside `target`: the pointer hits it there, and still does
  * `margin` px away in every direction, so a half-pixel of coordinate rounding cannot put one outside.
  */
@@ -579,12 +613,7 @@ test.describe("Narrow chart (phone)", () => {
     for (let i = 0; i < m.bands.length; i++) {
       await page.mouse.move(m.chart.x + m.pointX(i), m.chart.y + m.plot.top + 40);
       await expect(tooltip).toHaveAttribute("data-state", "open");
-      await expectInside(tooltip, m.chart, `category ${i}`);
-      const t = await box(tooltip);
-      const px = m.chart.x + m.pointX(i);
-      // Beside the point, not over it (a tooltip wider than either side could be pinned over it).
-      const room = Math.max(px - m.chart.x, m.chart.x + m.chart.width - px) - OFFSET;
-      if (room >= t.width) expect(t.x >= px || t.x + t.width <= px, `category ${i}: not over its point`).toBe(true);
+      await expectInsideBesidePoint(tooltip, m.chart, m.chart.x + m.pointX(i), `category ${i}`);
     }
   });
 });

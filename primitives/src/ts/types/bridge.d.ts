@@ -7,7 +7,10 @@ type DxTarget =
   | { kind: "document" }
   | { kind: "id"; id: string }
   | { kind: "selector"; selector: string }
-  | { kind: "active" };
+  | { kind: "active" }
+  | { kind: "visualViewport" }
+  /** The nearest vertical scroller between the active element and the element with this id, else that element. */
+  | { kind: "scroller"; within: string };
 /** A target as the verbs take it: the spec Rust sends, an element id, or a live object (bespoke scripts). */
 type DxTargetish = DxTarget | EventTarget | string | null | undefined;
 
@@ -18,6 +21,13 @@ interface DxEpoch {
 }
 
 type DxFields = Record<string, unknown>;
+
+/** One row of a `publish` option: copy the event `field` into the custom property `var` (`--dx-` only) of the listened element. */
+interface DxPublish {
+  var: string;
+  field: string;
+  unit?: "px";
+}
 
 /** What a behaviour decided; the adapter in `bridge.ts` applies it (the only code that cancels an event). */
 interface DxDecision {
@@ -48,7 +58,7 @@ interface DxBehaviourImpl<B> {
 
 /** A command a Rust session sends to `serve`. */
 type DxCommand =
-  | { cmd: "listen"; target: DxTargetish; event: string; options?: { capture?: boolean; once?: boolean }; fields?: string[]; initial?: boolean }
+  | { cmd: "listen"; target: DxTargetish; event: string; options?: { capture?: boolean; once?: boolean; publish?: DxPublish[] }; fields?: string[]; initial?: boolean }
   | { cmd: "observe"; target: DxTargetish; kind: "resize" | "intersection" | "mutation"; options?: DxFields }
   | { cmd: "media"; query: string }
   | { cmd: "sample"; target: DxTargetish; fields: DxSampleField[]; until: DxSampleUntil; onlyChanged?: boolean }
@@ -85,7 +95,8 @@ type DxSampleUntil =
 type DxOp =
   | { op: "call"; target: DxTargetish; method: string; args?: unknown[]; epoch?: DxEpoch | null }
   | { op: "get"; target: DxTargetish; props: string[]; epoch?: DxEpoch | null }
-  | { op: "set"; target: DxTargetish; name: string; value: string | null; epoch?: DxEpoch | null };
+  | { op: "set"; target: DxTargetish; name: string; value: string | null; epoch?: DxEpoch | null }
+  | { op: "write"; target: DxTargetish; slot: string; value: string | null; epoch?: DxEpoch | null };
 /** `dropped`: an op of a newer epoch had already run on the target, so this one did nothing. A reply echoes the epoch it answers. */
 type DxOpResult = { ok: unknown; dropped?: true; epoch?: DxEpoch } | { err: string };
 

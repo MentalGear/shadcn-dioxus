@@ -821,3 +821,173 @@ describe("sample, flush per task", () => {
     s.dispose();
   });
 });
+
+describe("publish (observed numbers copied to custom properties in the page)", () => {
+  test("a hot listener publishes the latest event's fields in the frame, and a listener that names no field sends nothing", () => {
+    const { win, bridge, doc } = setup();
+    const el = doc.add("sc");
+    const ch = makeChannel();
+    const s = bridge.scope(ch);
+    s.listen({
+      target: "sc",
+      event: "scroll",
+      options: { publish: [{ var: "--dx-scroll-top", field: "target.scrollTop", unit: "px" }, { var: "--dx-raw", field: "target.scrollLeft" }] },
+      fields: [],
+    });
+    el.scrollTop = 40;
+    (el as any).scrollLeft = -3;
+    el.dispatch("scroll", { target: el });
+    el.dispatch("scroll", { target: el });
+    // nothing is written before the frame; one write per frame, no unit when the row has none
+    expect(el.customProps.size).toBe(0);
+    win.step();
+    expect(el.customProps.get("--dx-scroll-top")).toBe("40px");
+    expect(el.customProps.get("--dx-raw")).toBe("-3");
+    expect(ch.sent).toEqual([]);
+  });
+
+  test("an initial message publishes too, so the page seeds the variables before any event", () => {
+    const { bridge, doc } = setup();
+    const el = doc.add("sc");
+    el.scrollTop = 12;
+    const ch = makeChannel();
+    bridge.scope(ch).listen({
+      target: "sc",
+      event: "scroll",
+      initial: true,
+      options: { publish: [{ var: "--dx-scroll-top", field: "target.scrollTop", unit: "px" }] },
+      fields: [],
+    });
+    expect(el.customProps.get("--dx-scroll-top")).toBe("12px");
+    expect(ch.sent).toEqual([]);
+  });
+
+  test("a listener that names fields sends them as well, writes no non-number, and refuses a name outside --dx-", () => {
+    const { bridge, doc } = setup();
+    const el = doc.add("sc");
+    const ch = makeChannel();
+    const s = bridge.scope(ch);
+    s.listen({
+      target: "sc",
+      event: "click",
+      options: { publish: [{ var: "--dx-key", field: "key" }, { var: "--dx-x", field: "clientX", unit: "px" }] },
+      fields: ["button"],
+    });
+    el.dispatch("click", { target: el, button: 1, clientX: 9, key: "a" });
+    expect(ch.sent).toEqual([{ button: 1 }]);
+    expect(el.customProps.has("--dx-key")).toBe(false);
+    expect(el.customProps.get("--dx-x")).toBe("9px");
+    s.listen({ target: "sc", event: "click", options: { publish: [{ var: "width", field: "clientX" }] }, fields: [] });
+    expect(() => el.dispatch("click", { target: el, clientX: 1 })).toThrow("--dx-");
+  });
+});
+
+describe("the visual viewport and the viewport fields", () => {
+  test("it receives window events, and a field reads the viewport whatever the event target is", () => {
+    const { win, bridge } = setup();
+    const vv: any = Object.assign(win.visualViewport, { listeners: [] as any[] });
+    vv.addEventListener = (type: string, fn: any) => vv.listeners.push({ type, fn });
+    vv.removeEventListener = (type: string, fn: any) => vv.listeners.splice(vv.listeners.findIndex((l: any) => l.type === type && l.fn === fn), 1);
+    const ch = makeChannel();
+    const s = bridge.scope(ch);
+    const fields = ["viewport.height", "viewport.offsetTop", "viewport.scale", "viewport.innerHeight"];
+    s.listen({ target: { kind: "visualViewport" }, event: "resize", fields, initial: true });
+    s.listen({ target: { kind: "visualViewport" }, event: "scroll", fields });
+    expect(vv.listeners.map((l: any) => l.type)).toEqual(["resize", "scroll"]);
+    expect(ch.sent).toEqual([{ "viewport.height": 600, "viewport.offsetTop": 0, "viewport.scale": 1, "viewport.innerHeight": 768 }]);
+    vv.height = 300;
+    vv.offsetTop = 12;
+    vv.listeners[0].fn({ type: "resize", target: vv });
+    win.step();
+    expect(ch.sent[1]).toEqual({ "viewport.height": 300, "viewport.offsetTop": 12, "viewport.scale": 1, "viewport.innerHeight": 768 });
+    s.dispose();
+    expect(vv.listeners).toEqual([]);
+    // an element is still not a receiver of resize
+    expect(() => bridge.scope(makeChannel()).listen({ target: { kind: "window" }, event: "keydown", fields: ["viewport.scale"] })).not.toThrow();
+  });
+
+  test("with no visual viewport the listener is ignored", () => {
+    const { win, bridge } = setup();
+    win.visualViewport = undefined;
+    const s = bridge.scope(makeChannel());
+    s.listen({ target: { kind: "visualViewport" }, event: "resize", fields: ["viewport.height"] });
+    expect(win.count()).toBe(0);
+  });
+});
+
+describe("the scroller target, the new reads and write", () => {
+  const tree = () => {
+    const { win, bridge, doc } = setup();
+    const panel = doc.add("panel");
+    const scroller: any = doc.add("sc");
+    const wrap: any = doc.add("wrap");
+    const field: any = doc.add("field");
+    field.parentElement = wrap;
+    wrap.parentElement = scroller;
+    scroller.parentElement = panel;
+    wrap.styles = { "overflow-y": "visible" };
+    scroller.styles = { "overflow-y": "auto" };
+    doc.activeElement = field;
+    return { win, bridge, doc, panel, scroller, wrap, field };
+  };
+
+  test("the scroller is the nearest vertical scroller between the active element and the root, else the root", () => {
+    const { bridge, doc, panel, scroller, wrap } = tree();
+    const at = (within: string) => bridge.get({ kind: "scroller", within }, ["matches:#sc", "matches:#panel"]);
+    expect(at("panel")).toEqual({ "matches:#sc": true, "matches:#panel": false });
+    for (const value of ["scroll", "overlay"]) {
+      scroller.styles = { "overflow-y": value };
+      expect(at("panel")["matches:#sc"]).toBe(true);
+    }
+    scroller.styles = { "overflow-y": "hidden" };
+    expect(at("panel")).toEqual({ "matches:#sc": false, "matches:#panel": true });
+    // a hidden-overflow ancestor between them is skipped: only auto, scroll and overlay scroll
+    scroller.styles = { "overflow-y": "auto" };
+    wrap.styles = { "overflow-y": "hidden" };
+    expect(at("panel")["matches:#sc"]).toBe(true);
+    scroller.styles = { "overflow-y": "hidden" };
+    // an unknown root resolves to nothing
+    expect(bridge.get({ kind: "scroller", within: "nope" }, ["matches:#sc"])).toEqual({ "matches:#sc": null });
+    void doc;
+    void wrap;
+  });
+
+  test("inline style, supports, visibilityState and checkVisibility are reads", () => {
+    const { win, bridge, doc, field } = tree();
+    (field as any).style.paddingBottom = "4px";
+    (field as any).checkVisibility = (o: unknown) => JSON.stringify(o) === '{"contentVisibilityAuto":true}';
+    (doc as any).visibilityState = "visible";
+    win.CSS = { supports: (declaration: string) => declaration === "animation-timeline: scroll()" };
+    expect(bridge.get("field", ["inlinePaddingBottom", "inlineOverflowAnchor", "checkVisibility", "visibilityState"])).toEqual({
+      inlinePaddingBottom: "4px",
+      inlineOverflowAnchor: null,
+      checkVisibility: true,
+      visibilityState: null,
+    });
+    expect(bridge.get({ kind: "document" }, ["visibilityState"])).toEqual({ visibilityState: "visible" });
+    expect(bridge.get({ kind: "window" }, ["scrollTimelineSupported"])).toEqual({ scrollTimelineSupported: true });
+    expect(bridge.get("field", ["scrollTimelineSupported"])).toEqual({ scrollTimelineSupported: null });
+    delete (field as any).checkVisibility;
+    expect(bridge.get("field", ["checkVisibility"])).toEqual({ checkVisibility: null });
+  });
+
+  test("write is a closed table of slots, in a transaction too", async () => {
+    const { bridge, panel, scroller } = tree();
+    const out = await bridge.transaction([
+      { op: "write", target: "panel", slot: "data-dx-keyboard", value: "open" },
+      { op: "write", target: { kind: "scroller", within: "panel" }, slot: "padding-bottom", value: "40px" },
+      { op: "write", target: { kind: "scroller", within: "panel" }, slot: "data-dx-keyboard-slack", value: "" },
+      { op: "write", target: "panel", slot: "width", value: "1px" },
+      { op: "write", target: "panel", slot: "constructor", value: "1px" },
+    ]);
+    expect(panel.getAttribute("data-dx-keyboard")).toBe("open");
+    expect(scroller.customProps.get("padding-bottom")).toBe("40px");
+    expect(scroller.getAttribute("data-dx-keyboard-slack")).toBe("");
+    expect(out.slice(0, 3)).toEqual([{ ok: null }, { ok: null }, { ok: null }]);
+    expect((out[3] as any).err).toContain("no such slot");
+    expect((out[4] as any).err).toContain("no such slot");
+    (panel as any).removeAttribute = (name: string) => panel.attrs.delete(name);
+    await bridge.transaction([{ op: "write", target: "panel", slot: "data-dx-keyboard", value: null }]);
+    expect(panel.hasAttribute("data-dx-keyboard")).toBe(false);
+  });
+});

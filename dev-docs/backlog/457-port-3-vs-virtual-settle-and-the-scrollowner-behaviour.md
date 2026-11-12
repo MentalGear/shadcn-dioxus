@@ -4,7 +4,7 @@ title: "Port 3.VS: virtual settle (W1-W7) and the scrollOwner one-shot kind"
 status: "APPROVED 2026-10-26 (scope 2): after phase 0, taken as an ordinary row in order of JavaScript…"
 size: "M"
 area: virtual
-js-grant: js_file=122 (relocated lines, root doc section 5.4; the main loop's grant row at the merge base is the number the gate reads)
+js-grant: js_file_bytes=2240 (122 lines at 18.3 bundle bytes per source line, relocated lines, root doc section 5.4; the main loop's grant row at the merge base is the number the gate reads)
 adds: [settle, scrollOwner]
 updated: 2026-11-12
 ---

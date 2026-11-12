@@ -4,7 +4,7 @@ title: "Port 3.SL: scroll lock (L10, L11, L13)"
 status: "APPROVED 2026-10-26 (scope 2): after phase 0, taken as an ordinary row in order of JavaScript…"
 size: "M"
 area: overlays
-js-grant: js_file=94 (relocated lines, root doc section 5.4; the main loop's grant row at the merge base is the number the gate reads)
+js-grant: js_file_bytes=1720 (94 lines at 18.3 bundle bytes per source line, relocated lines, root doc section 5.4; the main loop's grant row at the merge base is the number the gate reads)
 adds: [scrollLock]
 updated: 2026-11-12
 ---

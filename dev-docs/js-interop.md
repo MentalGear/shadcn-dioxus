@@ -13,7 +13,7 @@ when the rule you need depends on something that is not.
 
 | | on main | planned (row 434 step 3) |
 | --- | --- | --- |
-| `check-js-volume` | counts per file: eval sinks (`document::eval`, `use ... eval`, `eval(`; **not** a function pointer through a module alias such as `dd::eval`), `document::*`, `Script`/`script {`/`create_script`, `dangerous_inner_html`, `web_sys`/`js_sys`/`wasm_bindgen`/`gloo_utils`/`evaluate_script`/`inline_js`/`srcdoc` (**not** `gloo_events`), JS in Rust strings, every tracked `.js`/`.ts` line (**including** `.d.ts`, `*.gen.ts` and `ts-test`), `JsListeners::install`, inline `<script>` bytes. Universe: `.rs`, `.js`/`.ts` and `.html` files, **not** `.md` or `.svg`. A rise fails against the baseline and against the merge base's; a raise passes only against a grant row at the base (see "The baseline") and prints under `RATCHET RAISES`. Its baseline carries the bridge's rows | clippy `disallowed_methods` for every sink, coverage of function pointers, `gloo_events`, `.md` and `.svg`, counting what ships, the legacy freeze for scripts and sinks (`js-fix:` grant for a bug fix) |
+| `check-js-volume` | counts per file: eval sinks (`document::eval`, `use ... eval`, `eval(`; **not** a function pointer through a module alias such as `dd::eval`), `document::*`, `Script`/`script {`/`create_script`, `dangerous_inner_html`, `web_sys`/`js_sys`/`wasm_bindgen`/`gloo_utils`/`evaluate_script`/`inline_js`/`srcdoc` (**not** `gloo_events`), JS in Rust strings, every tracked `.js`/`.ts` line (**including** `.d.ts`, `*.gen.ts` and `ts-test`), `JsListeners::install`, inline `<script>` bytes. Universe: `.rs`, `.js`/`.ts` and `.html` files, **not** `.md` or `.svg`. A rise fails against the baseline and against the merge base's; a raise passes only against a grant row at the base (see "The baseline") and prints under `RATCHET RAISES`. Its baseline carries the bridge's rows. The legacy freeze: a hash per legacy script and per sink site, delete-only, a bug fix only against a `js-fix: <path>` grant row at the base (see "Legacy scripts and the pre-wasm class") | clippy `disallowed_methods` for every sink, coverage of function pointers, `gloo_events`, `.md` and `.svg`, counting what ships |
 | `check-ts-scan` | the TypeScript compiler-API scan of `primitives/src/ts/**` (`scripts/ts-scan/scan.mjs`; its checker resolves types, so an `any` receiver does not hide a shape): computed access with a non-literal key outside `own()`, string sinks, dynamic-key `Reflect`/`Object` calls, `.constructor`, the verb-row cap, `any`/`as any` against a shrink-only baseline, and under `ts/behaviours/` the hard rules (free-identifier allowlist, banned members, import allowlist) | `Decision<E>` effect typing and the DOM-less compile |
 | `check-native-slots` | every Rust site that writes `value`, `checked`, `selected`, `open` or `hidden` on a page-writable element through an rsx attribute, `Attribute::new` or `attributes!`, held in a shrink-only per-file baseline; a new site is red | the mount-frozen helper, after which sites leave the baseline |
 | `check-installed-paths` (sink arm) | an installed component contains no sink: `scripts/check-installed-paths.sinks.tsv` names the banned shapes | |
@@ -254,7 +254,7 @@ Web is the tested target; every desktop claim in the plan reads "web-verified; d
 | `document::eval`, `use ... eval as run`, `eval(`, `document::*` | `check-js-volume` (landed). A function pointer through a module alias (`dd::eval`) is **not** counted; clippy `disallowed_methods` and the `Program` argument check are planned | a bridge verb or behaviour |
 | `document::Script { "..." }`, `script {}`, `dangerous_inner_html` on a script, `create_script` | `check-js-volume` (landed) | `Script { src: <asset> }` for the bridge only, owner-approved |
 | JS split into `concat!` pieces, a script held in a `const` | `check-js-volume` (`js_lit`, pieces joined; landed) | a verb row or a named behaviour |
-| a new `.js`/`.ts` file, an `include_str!`/`asset!` of one | `check-js-volume` (`js_file`, sink; landed) | a verb row or a named behaviour with a row |
+| a new `.js`/`.ts` file, an `include_str!`/`asset!` of one | `check-js-volume` (`js_file_bytes`, sink; landed) | a verb row or a named behaviour with a row |
 | an inline `<script>` in an `.html` file, an `on...=` attribute, a `javascript:` href | `check-js-volume` (`inline_script`, sink; landed). Raw HTML with a handler in a `.md` or `.svg` is **not** scanned yet (planned) | `PREPAINT_JS` copies stay as they are |
 | `web_sys`, `js_sys`, `wasm_bindgen`, `gloo_utils`, `evaluate_script` | `check-js-volume` (sink; landed). `gloo_events` and `gloo_file` are planned | the bridge's transport is the one place |
 | a vdom `onscroll`, `onresize`, `onpointermove`, `onmousemove`, `onwheel`, `ontouchmove`, `ondrag`, `ondragover` or `onmounted` handler | `check-hot-events` (**planned**; per event name, app-wide, shrink-only baseline) | `listen`/`observe`/`sample` |
@@ -275,7 +275,7 @@ Web is the tested target; every desktop claim in the plan reads "web-verified; d
 `scripts/check-js-volume.baseline.tsv` holds one row per file with a non-zero count. A port lowers its own file's row and
 runs `scripts/check-js-volume.sh --update-baseline`; rows belong to files, so lanes that lower different files merge
 cleanly. Your report quotes `scripts/check-js-volume.sh --report` before and after. A rise fails, and a baseline edited to
-match is compared with the baseline at the merge base. A raise passes only against a grant row: `# raised: row N` in the baseline row, where row N exists and is open at the base (origin/main or origin/queue/*) with `js-grant: <column>=<n>`, n at least the raise (the sum for a total raise, `#! total-raised: row N total=<n>`). A grant in your own diff does not count: ask the owner for a grant row. `--allow-raise` only writes the note. A baseline starts with a `#! columns: c1 c2 ...` header line naming its columns; a column the base's header lacks is compared with the tree only and printed as "introduced". `RATCHET_REQUIRE_BASE=1` (set by a full `scripts/run-gates.sh` run) makes an unavailable base red instead of a compare with the tree alone. A new behaviour likewise needs a row at the merge base with `adds: [<kind>]` (planned); citing the umbrella row 434 does not count. If you think you must raise, say so in
+match is compared with the baseline at the merge base. A raise passes only against a grant row: `# raised: row N` in the baseline row, where row N exists and is open at the base (origin/main or origin/queue/*) with `js-grant: <column>=<n>`, n at least the raise, the column one of `check-js-volume`'s (`js_file_bytes` counts BYTES of the bundle and the hand-written JS, never lines; a key that is no column, such as the legacy `js_file`, is red on the row itself, naming the row, the key and the columns) (the sum for a total raise, `#! total-raised: row N total=<n>`). A grant in your own diff does not count: ask the owner for a grant row. `--allow-raise` only writes the note. A baseline starts with a `#! columns: c1 c2 ...` header line naming its columns; a column the base's header lacks is compared with the tree only and printed as "introduced". `RATCHET_REQUIRE_BASE=1` (set by a full `scripts/run-gates.sh` run) makes an unavailable base red instead of a compare with the tree alone. A new behaviour likewise needs a row at the merge base with `adds: [<kind>]` (planned); citing the umbrella row 434 does not count. If you think you must raise, say so in
 the report with the row and the measured reason, and wait for the owner. **Today the volume counts every tracked `.ts` line,
 so `.d.ts`, generated files and tests are in it;** the plan counts what ships (bundle bytes and JS held in Rust). Moving a
 script from a Rust string into a new `.ts` still has to come out lower.
@@ -285,8 +285,14 @@ script from a Rust string into a new `.ts` still has to come out lower.
 Everything counted in the baseline today is legacy, being ported by row 434
 ([`research/sync-js-root-2026-10-26.md`](./research/sync-js-root-2026-10-26.md) section 5.4); the audit
 ([`research/js-audit-2026-10-25.md`](./research/js-audit-2026-10-25.md)) classes each block, and root section 3.3 gives every
-id its placement and lane. **Do not edit a legacy script except to port it:** the legacy freeze (planned, item 0.2) will make
-an edit a red gate, but today an edit that keeps the line count passes. The legacy message scroller and carousel scripts are
+id its placement and lane. **Do not edit a legacy script except to port it:** the legacy freeze of `check-js-volume` (row 445)
+makes an edit a red gate. Every legacy script (a Rust string that reads as JS, a hand-written `.js`/`.ts`, an inline
+`<script>`) is held by the hash of its exact text and every sink site by the hash of what it runs
+(`scripts/check-js-volume.freeze.tsv`, listed from the tree by the gate itself): an entry may be deleted, never edited,
+re-pointed, copied or added. A port that deletes a script or site runs `scripts/check-js-volume.sh --update-baseline`,
+which lowers the baseline and the freeze together and refuses to add to either. A legitimate bug fix in a frozen
+script needs a grant row, open at the merge base, with front matter `js-fix: <path>` naming the file; then
+`scripts/check-js-volume.sh --update-freeze --js-fix "row N <why>"` records it (listed under `FREEZE FIXES`). The legacy message scroller and carousel scripts are
 (planned, with the owner-measured ports) frozen into `ts/legacy/` behind a non-default `legacy-impl` feature for the owner's
 A/B measurement, and removed when the owner's `verdict.json` says `pass`, never on a date and never on a `fail`. The one
 class that stays JavaScript on purpose is code that must run before wasm loads (`PREPAINT_JS`, the modality writer's
@@ -308,7 +314,7 @@ identical until they are generated from one `.ts`.
 - **The gates, by name.** Landed: `check-js-bundle`, `check-js-volume` (with the grant rule), the three legacy script gates,
   `check-open-focus`, `check-theme-mode-writer`, `check-bridge-behaviours`, `check-ts-scan`, `check-native-slots`,
   `check-installed-paths` (sink arm) and `check-ratchet-grant` (the self-tests of the grant rule and the platform-rule
-  reader). Planned: `check-hot-events`, the legacy freeze, the witness check.
+  reader). Planned: `check-hot-events`, the witness check. The legacy freeze is part of `check-js-volume`.
 
 ## Why not a script
 

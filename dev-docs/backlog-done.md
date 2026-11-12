@@ -6,7 +6,7 @@ resolves here by id.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Done rows (407)
+## Done rows (411)
 
 | # | Item | Updated |
 |---|---|---|
@@ -397,6 +397,7 @@ resolves here by id.
 | [435](backlog/done/435-one-menu-family-behind-three-hosts.md) | One menu-family implementation behind three hosts (DropdownMenu, ContextMenu, Menubar) | 2026-10-31 |
 | [437](backlog/done/437-pipefail-early-exit-reader.md) | No early-exit reader on the right of a pipe in a pipefail script (grep -q, head, sed q, awk exit) | 2026-10-25 |
 | [439](backlog/done/439-chart-prehydration-geometry-flake.md) | chart-prehydration geometry flake: the two loads race font-display: optional | 2026-10-25 |
+| [440](backlog/done/440-run-gates-per-run-log-dir.md) | run-gates.sh writes logs to a shared directory: two concurrent runs on one target overwrite each other's logs | 2026-11-12 |
 | [441](backlog/done/441-reduced-motion-scrim.md) | The modal scrim fade ignores prefers-reduced-motion: the per-sheet rule never won on specificity | 2026-10-26 |
 | [468](backlog/done/468-bug-form-reset-leaves-controlled-input-out-of-sync.md) | Bug: form reset leaves a controlled text input showing empty while Rust keeps the old value | 2026-10-26 |
 | [470](backlog/done/470-bug-carousel-autoplay-tick-fights-a-user-swipe.md) | Bug: the carousel autoplay tick fights a user swipe (the scroller is pulled forward and bounces back) | 2026-10-26 |
@@ -410,12 +411,15 @@ resolves here by id.
 | [487](backlog/done/487-one-dismiss-core-escape-outside-dismiss-and-focus-return.md) | One dismiss core: Escape, outside dismiss and focus return for every overlay | 2026-11-06 |
 | [489](backlog/done/489-menubar-items-select-on-pointerdown-touch-scroll.md) | Menubar items select on pointerdown, so a touch scroll that starts on an item selects it | 2026-11-06 |
 | [490](backlog/done/490-first-key-press-restyles-the-page-focus-modality-tokens-on-root.md) | The first key press restyles the whole page: focus-modality tokens are redefined on :root | 2026-11-06 |
+| [491](backlog/done/491-drawer-shadcn-scrollable-content-demo.md) | Drawer: add shadcn's scrollable content demo | 2026-11-12 |
 | [492](backlog/done/492-bug-colorpicker-panel-clips-to-half-height-on-close.md) | Bug: ColorPicker's panel clips to about half its height when it closes | 2026-11-01 |
 | [495](backlog/done/495-slow-observation-window-specs.md) | The two ~32 s-per-test specs wait on signals, not on fixed observation windows | 2026-11-05 |
 | [497](backlog/done/497-scroll-area-scroll-type-hidden-shows-the-bar.md) | ScrollArea ScrollType::Hidden shows the scrollbar | 2026-11-07 |
 | [498](backlog/done/498-pagination-disabled-link.md) | Pagination links have a disabled state | 2026-11-06 |
+| [499](backlog/done/499-safe-triangle-for-hover-menus.md) | A safe triangle for the hover menus, so they can take Base UI's short close delays | 2026-11-12 |
 | [500](backlog/done/500-axe-split-structure-signature-falls-back.md) | The all-routes axe split falls back to a full dark scan on 88 of 94 routes | 2026-11-07 |
 | [501](backlog/done/501-select-escape-race-flake.md) | select-escape-race.spec.ts:32 is flaky under load (also on the deployed base) | 2026-11-07 |
 | [502](backlog/done/502-installed-components-carry-repo-lint-expects.md) | Installed components carry #[expect(clippy::disallowed_methods)] that a user's project cannot fulfil | 2026-11-07 |
+| [503](backlog/done/503-lane-ssg-builds-in-place-on-one-slot.md) | lane-ssg builds in the warm template under the lock instead of copying it | 2026-11-12 |
 
 <!-- END GENERATED -->

@@ -74,6 +74,16 @@ the line here is the pointer, so when a row's text and this line disagree, the r
 - Subagents do the delegated work on the lowest tier a complexity assessment says fits: Haiku, then Sonnet, then Opus
   for judgment over a whole design; a higher tier never stands in for a rate-limited lower one; the evidence log of
   `agent-model-fit.md` is closed. 2026-10-20, 2026-10-24, 2026-11-12 ([`agent-model-fit.md`](./agent-model-fit.md), row [266](./backlog/266-repo-cleanup-archive-historical-dev-docs.md)).
+- Work is checked for a local minimum at fixed points (a batch's dispatch and merge, a blocked lane, a third patch, a
+  stacked workaround, a doc that contradicts the source); on a yes, the issues are taken apart and their highest shared
+  root is fixed by construction. 2026-11-12 ([`../agent-rules/code-rules.md`](../agent-rules/code-rules.md)).
+- The decision kernel stands (row 508, verdict `KERNEL`, 2026-11-12; an adversarial review upheld it with one blocking
+  condition, carried in row 509: the adapter's field lists and wire keys are generated from the Rust input types and a
+  gate holds the kinds equal to the kernel's exports). The proof's fixed 50,000-byte line is replaced by a gzip-size
+  ratchet and a first-call budget. 2026-11-12 (rows 508, 509; [`research/decision-kernel-proof.md`](./research/decision-kernel-proof.md)).
+- Decisions reach the owner taken apart: whatever evidence, a rule or a recorded decision settles is acted on and
+  reported; for the rest, one best construction is put forward to approve, not a list of options. 2026-11-12
+  ([`../agent-rules/session-and-backlog.md`](../agent-rules/session-and-backlog.md)).
 - The docs site is built from the library's own components (no native `details`/`summary`). 2026-10-19
   ([`check-docs-own-components.sh`](./gates.md)).
 - Code comments describe only the current state; history is linked to its row, not retold. 2026-10-20

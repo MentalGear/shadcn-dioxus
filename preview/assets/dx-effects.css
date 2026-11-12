@@ -58,10 +58,11 @@
  *   --dx-scrollbar-inline-size            width of the vertical scrollbar's gutter
  *   --dx-scrollbar-block-size             height of the horizontal scrollbar's
  *                                         gutter
- *   Both are measured and written by the scroller's own script (`use_scroll_fade`
- *   in `primitives/src/scroll_area.rs`, one ResizeObserver, which also drives the
- *   edges where scroll-driven animations are missing); with no script they stay
- *   0px and the scrollbar simply fades with the content.
+ *   Both are measured and written by the scroller's own runtime (`use_scroll_fade`
+ *   in `primitives/src/scroll_area.rs`: a resize observer and Rust arithmetic, which
+ *   also publishes the numbers the edges are computed from where scroll-driven
+ *   animations are missing); with no runtime they stay 0px and the scrollbar
+ *   simply fades with the content.
  *
  * In Rust: `ScrollArea`, `VirtualList`, `VirtualGrid` and `MessageScrollerViewport` take a
  * `fade: ScrollFade` prop (`None`, `Y`, `X`, `Both`, `Top`, `Bottom`, `Start`, `End`: one
@@ -70,6 +71,38 @@
  * `globalAssets`. Documented in `scroll_area/docs.md` ("Edge fade").
  * ---------------------------------------------------------------------------
  */
+
+/* Written by the scroller's runtime (`use_scroll_fade`); universal syntax keeps an unwritten one invalid, so a
+   `var()` fallback applies. */
+@property --dx-scrollbar-inline-size {
+  inherits: true;
+  syntax: "*";
+}
+
+@property --dx-scrollbar-block-size {
+  inherits: true;
+  syntax: "*";
+}
+
+@property --dx-scroll-top {
+  inherits: false;
+  syntax: "*";
+}
+
+@property --dx-scroll-left {
+  inherits: false;
+  syntax: "*";
+}
+
+@property --dx-scroll-range-y {
+  inherits: false;
+  syntax: "*";
+}
+
+@property --dx-scroll-range-x {
+  inherits: false;
+  syntax: "*";
+}
 
 @property --dx-scroll-fade-t {
   inherits: false;
@@ -620,15 +653,28 @@
   }
 }
 
-/* No scroll-driven animations: a static fade on the selected edge(s). */
+/* No scroll-driven animations: an edge fades only while more than 1px of content lies past it. The scroller's
+   runtime (`use_scroll_fade` in `primitives/src/scroll_area.rs`) publishes the numbers this needs: how far each
+   axis scrolls (`--dx-scroll-range-y`, `--dx-scroll-range-x`) and where it is scrolled to (`--dx-scroll-top`,
+   `--dx-scroll-left`, negative in RTL), all in px. The threshold is the `* 1000` ramp: 0 up to 1px of content
+   past the edge, the full depth from a thousandth of that depth on. Where nothing is published (no script
+   yet) the defaults put every edge past its threshold, a static fade on the selected edge(s). */
 @supports not (animation-timeline: scroll()) {
   .dx-scroll-fade,
   .dx-scroll-fade-y,
   .dx-scroll-fade-xy,
   .dx-scroll-fade-t,
   .dx-scroll-fade-b {
-    --dx-scroll-fade-t: var(--dx-internal-scroll-fade-size-t);
-    --dx-scroll-fade-b: var(--dx-internal-scroll-fade-size-b);
+    --dx-scroll-fade-t: clamp(
+      0px,
+      calc((var(--dx-scroll-top, 1000px) - 1px) * 1000),
+      var(--dx-internal-scroll-fade-size-t)
+    );
+    --dx-scroll-fade-b: clamp(
+      0px,
+      calc((var(--dx-scroll-range-y, 1000px) - var(--dx-scroll-top, 0px) - 1px) * 1000),
+      var(--dx-internal-scroll-fade-size-b)
+    );
   }
 
   .dx-scroll-fade-x,
@@ -637,8 +683,16 @@
   .dx-scroll-fade-r,
   .dx-scroll-fade-s,
   .dx-scroll-fade-e {
-    --dx-scroll-fade-s: var(--dx-internal-scroll-fade-size-s);
-    --dx-scroll-fade-e: var(--dx-internal-scroll-fade-size-e);
+    --dx-scroll-fade-s: clamp(
+      0px,
+      calc((abs(var(--dx-scroll-left, 1000px)) - 1px) * 1000),
+      var(--dx-internal-scroll-fade-size-s)
+    );
+    --dx-scroll-fade-e: clamp(
+      0px,
+      calc((var(--dx-scroll-range-x, 1000px) - abs(var(--dx-scroll-left, 0px)) - 1px) * 1000),
+      var(--dx-internal-scroll-fade-size-e)
+    );
   }
 }
 

@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize, Serializer};
 /// Which targets an event may be listened on.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Receivers {
-    /// `window`.
+    /// `window`, and `window.visualViewport`.
     pub window: bool,
     /// `document`.
     pub document: bool,
@@ -217,6 +217,10 @@ fields! {
     TargetInnerWidth => "target.innerWidth";
     TargetInnerHeight => "target.innerHeight";
     CurrentTargetId => "currentTarget.id";
+    ViewportHeight => "viewport.height";
+    ViewportOffsetTop => "viewport.offsetTop";
+    ViewportScale => "viewport.scale";
+    ViewportInnerHeight => "viewport.innerHeight";
 }
 
 impl Serialize for EventField {
