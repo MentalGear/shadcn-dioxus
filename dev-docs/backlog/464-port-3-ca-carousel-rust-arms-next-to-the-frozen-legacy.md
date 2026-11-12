@@ -4,7 +4,7 @@ title: "Measured port 1: 3.CA carousel (C1-C4, C6, L20) as Rust arms next to the
 status: "APPROVED 2026-10-26 (scope 2): after phase 0, taken as an ordinary row in order of JavaScript…"
 size: "L"
 area: components
-js-grant: js_file=60 (inferred ceiling: the snap kind of scrollOwner; the main loop's grant row at the merge base is the number the gate reads)
+js-grant: js_file_bytes=1100 (60 lines at 18.3 bundle bytes per source line, inferred ceiling: the snap kind of scrollOwner; the main loop's grant row at the merge base is the number the gate reads)
 adds: []
 updated: 2026-11-12
 ---

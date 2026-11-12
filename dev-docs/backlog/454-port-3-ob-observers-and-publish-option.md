@@ -4,7 +4,7 @@ title: "Port 3.OB: observers and the publish option (L27, S16, S14)"
 status: "BUILT on lane/port-ob-454, awaiting merge (2026-11-12): L27, S16, S14 are Rust over the bridge…"
 size: "S"
 area: primitives
-js-grant: none
+js-grant: js_file_bytes=2400, bytes=4900 (measured on lane/port-ob-454: js/bridge.js +2,358 bytes; ts/bridge.ts +4,340 and types/bridge.d.ts +518 bytes, for the publish option and the rows L27, S16 and S14 first need; the JavaScript total falls by about 13,000; the row that first needs a verb adds it, root doc section 5.2)
 adds: []
 updated: 2026-11-12
 ---

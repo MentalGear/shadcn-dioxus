@@ -15,10 +15,15 @@ real nor confirmed a flake (row [506](./backlog/506-release-suite-two-failures-b
 origin/main -1` for the exact tip rather than trusting a SHA frozen here. The next session's first job is closing
 row 506, then deploying.
 
+**2026-11-12:** row 506 is explained and fixed in the batch that follows PR #174 (a stale title locator behind a
+20-minute timeout, a tooltip position read before it settled, and the test server's listen backlog of 5); the deploy
+runs the full release suite on that merged tree.
+
 ## Where a fresh session picks up
 
-Session `session_01MsL6RCeq7QSe81nNBiuKP1` owns merges and deploys. Main carries PRs #170-#173 (not yet deployed;
-see row 506). A new
+Session `session_01MsL6RCeq7QSe81nNBiuKP1` owned merges and deploys through PR #173 and is archived; session
+`session_01MsL6RCa7c4QWmqNtUYQ8RE` merges and deploys the 2026-11-12 batches. Main carries PRs #170-#174 (not yet
+deployed; see row 506). A new
 session reads this page, then takes the first open row of "Next" below; each row file under [`backlog/`](./backlog/)
 says what to build, which files, its proof and its size. The rules are [`../CLAUDE.md`](../CLAUDE.md) and
 [`lane-rules.md`](./lane-rules.md); the owner's decisions are [`decisions.md`](./decisions.md).
@@ -50,8 +55,10 @@ row says otherwise, so a step runs as parallel lanes (one verifier per batch, `l
 
 **Before the plan continues (port-independent)**
 
-1. **First: row 506** (two unconfirmed release-suite failures are parking the deploy of `b78c231e`). Nothing else in
-   this step matters until the site is caught up to main.
+1. **First: row 506** (two release-suite failures parked the deploy of `b78c231e`). Both are test-side and fixed
+   (2026-11-12); the row closes when the full release suite is green on the merged tree and the site is deployed.
+   Then **row 511** (the primitives' renderer switch is inverted so the browser arm needs no feature; one construction,
+   measured, awaiting the owner's approval): it is port-independent and row 448's deletion waits for it.
 2. Done, merged in PR #170 (2026-11-11): the deploy blockers of PR #168 (rows 468, 501); row **436**'s overlay and
    class groups (F1, F2, F4, F5, F6, F8, F9, F10, F11, F12), each reproduced red first (CHANGELOG.md has the
    user-visible ones: F1, F10, F11); **499** (safe triangle; CHANGELOG.md too); **152** slices 4-5; **371**'s
@@ -68,6 +75,9 @@ row says otherwise, so a step runs as parallel lanes (one verifier per batch, `l
    same file, STATUS.md's own "main is at `<sha>`" line going stale the moment another PR merged). If a future pass
    finds the same class again, the fix belongs in the process (what makes a row's own first sentence go stale
    unnoticed), not in a fourth review pass.
+   Done 2026-11-12 (the batch after PR #174): rows 440, 491, 499 and 503 moved to done; **510** (the spec selector
+   follows component-to-component edges); **445** (the legacy freeze, taken early because it only guards); the
+   grant-key refusal (16 open rows named a JavaScript-volume column the gate no longer has; all converted to bytes).
 3. Open from row 436: one cancellable delayed-task helper and per-window state (F7, F3), and `menu_root::use_root_id`,
    which still writes a caller's `id` once (needs `use_reactive!`).
 4. Open elsewhere: **504** (the hydrated Textarea shows no value; a fix is built on `lane/textarea-ssr-504`, local
@@ -85,11 +95,13 @@ step: the decided plan is [`research/sync-js-root-2026-10-26.md`](./research/syn
 [`research/sync-js-residue-2026-10-26.md`](./research/sync-js-residue-2026-10-26.md) for the three feel-critical
 ports), its working form is [`js-interop.md`](./js-interop.md), and every item has a row:
 
-7. Phase 0, the construct and two proof ports: **508** (the decision-kernel proof; it depends on nothing unlanded) and
-   **509** (the Rust decision contract; before 448's `otpFilter` and every behaviour row), **444** (gates), **445**
-   (legacy freeze), **446** (witness harness),
+7. Phase 0, the construct and two proof ports: **508** (the decision-kernel proof: verdict `KERNEL`, 2026-11-12,
+   upheld by an adversarial review with one blocking condition) and **509** (the Rust decision contract, open, size L;
+   it carries that condition and comes before 448's `otpFilter` and every behaviour row), **444** (gates), **445**
+   (legacy freeze, landed 2026-11-12), **446** (witness harness),
    **447** (order runtime), **448** (proof port A), **449** (proof port B), **450** (bridge stats and the desktop latency
    session); about 111 h, nearly all one chain through `ts/bridge.ts`, so it runs mostly serially.
+   Row 448's first half (deleting the `not(web)` focus trap) waits for row 511; its site list is corrected in the row.
 8. The ports, as ordinary rows by yield (lines of JavaScript removed per hour, highest first; a row whose dependencies
    have not landed waits, and each row names them): **451** (3.SC, 27-30/h), **452** (3.PL, 27/h), **453** (3.PV, 22/h),
    **454** (3.OB, 21/h), **455** (3.GS, 15/h), **456** (3.OV, 9/h), **457** (3.VS, 6/h), **458** (3.FC, 5/h), **461**
@@ -124,7 +136,9 @@ ports), its working form is [`js-interop.md`](./js-interop.md), and every item h
   branches; the 30 unmerged ones are kept).
 - CI back on (rows 4, 33): every workflow except `mutants.yml` is deleted, so reactivation means a new workflow that
   runs `scripts/run-gates.sh`.
-- Row 508's verdict: on `MIRROR` the owner approves the rewritten contract before row 509 opens. On `KERNEL`, loading the
+- Row 511: approve or reject the one construction in the row (browser arm by default, Blitz as the `native` opt-in,
+  a compile-time assert against dioxus's own renderer).
+- Row 508's verdict is `KERNEL`, so row 509 opens without a further decision. Loading the
   kernel inside the desktop webview stays unproven until a desktop build exists (row 23).
 
 ## Rules and decisions in force

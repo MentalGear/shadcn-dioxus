@@ -4,7 +4,6 @@ import { BASE_URL as BASE } from "./base-url";
 import { gotoHydrated } from "./hydration";
 
 const URL = `${BASE}/component/tag_group/`;
-const LOAD_TIMEOUT = 20 * 60 * 1000;
 
 function multiVariant(page: Page) {
   return page
@@ -12,10 +11,12 @@ function multiVariant(page: Page) {
     .filter({ has: page.getByRole("heading", { name: "multi" }) });
 }
 
+// The variant that holds the disabled / non-selectable / mixed-removable groups, found by what it contains: its
+// heading is a demo title (`variants/states/title.txt`), which a rename must not be able to break.
 function statesVariant(page: Page) {
   return page
     .locator(".dx-component-variant")
-    .filter({ has: page.getByRole("heading", { name: "states" }) });
+    .filter({ has: page.getByTestId("tag-group-nonselectable") });
 }
 
 function tag(page: Page, name: string) {
@@ -26,7 +27,7 @@ function tag(page: Page, name: string) {
 // after navigating, on the SSG lane -- `gotoHydrated` so that can't land
 // before hydration attaches listeners.
 async function loadTagGroup(page: Page) {
-  await gotoHydrated(page, URL, { timeout: LOAD_TIMEOUT });
+  await gotoHydrated(page, URL);
   const variant = multiVariant(page);
   await variant.scrollIntoViewIfNeeded();
   await expect(variant.getByText("Labels", { exact: true })).toBeVisible({
@@ -36,9 +37,8 @@ async function loadTagGroup(page: Page) {
 }
 
 test.describe("Tag group", () => {
-  // One page load at a time — parallel navigations contend with the preview webServer build.
-  test.describe.configure({ mode: "serial", timeout: LOAD_TIMEOUT });
-
+  // Every test loads its own page and shares nothing, so the tests run in parallel under the config's per-test
+  // timeout: a locator that matches nothing fails the test there instead of retrying for the whole budget.
   test.beforeEach(async ({ page }) => {
     await loadTagGroup(page);
   });

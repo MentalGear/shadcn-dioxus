@@ -28,7 +28,9 @@ The owner asked on 2026-10-25 whether the library could target Blitz, the native
 - **What row 434 leaves ready for this row.** Every named behaviour's decision is a pure Rust function that
   `dioxus-primitives` can call directly, with no bridge (row [509](./509-rust-decision-contract.md), item 1), and
   `check-native-slots` and `check-hot-events` allow an rsx slot write and an rsx scroll or pointer handler under
-  `#[cfg(not(feature = "web"))]` (item 5).
+  the Blitz arm's cfg (item 5), spelled `#[cfg(feature = "native")]` once row [511](./511-primitives-web-feature-contract.md)
+  lands. This row inherits row 511's single opt-in, `dioxus-primitives/native` next to `dioxus/native`, the
+  compile-time assert that holds the two equal, and `NATIVE_ARM` for styled components.
 - **What this row still builds, per behaviour.** A Blitz adapter: deliver the event from an rsx handler, call the
   behaviour's `decide`, apply the effects it returns through rsx and `MountedData`. Also a Rust arm for each kind the
   page executor reconciles (row [449](./449-phase-0-4-proof-port-b-the-executor-and-popover-spreads.md)), and a
