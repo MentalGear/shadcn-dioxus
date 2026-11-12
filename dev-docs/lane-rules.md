@@ -288,6 +288,15 @@ cores, so a batch's verification runs once for the batch, not once per lane:
   back without an SSG build.
 - **Debugging lanes** (a bug row that must be red on the base build, a primitive whose behaviour is the change) keep
   their own build loop, because their iteration needs it.
+- **A lane never runs the broad set.** A lane's own Playwright run names the spec files of what it changed (plus two
+  or three untouched consumers of a helper it edited). When `select.mjs` maps a diff to most of the suite (a primitive
+  many components use, the bridge, a shared helper, `fixtures.ts`), that selection is the batch's: on a debug build at
+  two workers it holds `pw.lock` for about two hours per lane, and the same set then runs again on the merged batch and
+  again at the deploy (measured 2026-11-12: two lanes' broad runs kept a deploy waiting over an hour).
+- **One full suite per batch, on a release build of the merged tree.** When the batch's diff selects a large part of
+  the suite, the batch is verified by `scripts/deploy-preview.sh --suite-only` on the merged branch before it merges.
+  The run is recorded against the exact tree (`$LANE_TGT/release-suite/<tree>.pass`), a merge commit on an unmoved main
+  has the same tree, and the deploy reuses the stamp instead of running the suite again.
 - **The verifier** (one agent per batch) builds the shared base once, merges the batch's edit lanes, builds once, runs
   `test:changed` over the union, and bisects any red to its lane, which gets it back to fix.
 
