@@ -2,7 +2,7 @@
 // hand-kept list: a component added later, or a new use of one component by another, is picked up as it is written.
 //
 // Three kinds of edge `A -> B` ("A depends on B", so a change to B's code reaches A's rendering), each read from text:
-//   code  A's own files (everything in preview/src/components/A/ outside variants/) name B as `crate::components::B`,
+//   code  A's own files (everything in the directory of A under preview/src/components/, outside variants/) name B as `crate::components::B`,
 //         `crate::components::{B::.., ..}` or, from A/component.rs, `super::super::B`; or A's component.json lists B in
 //         `componentDependencies` (the installer's closure; scripts/check-installed-paths.sh keeps it equal to the imports
 //         of component.rs). A's page, A's specs and every consumer of A render B's code.
