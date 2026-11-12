@@ -69,7 +69,7 @@ M (inferred)
 ```rust
 /// Whether dioxus is built with its native (Blitz) renderer, read from dioxus's own `native!` config macro.
 const DIOXUS_NATIVE: bool = {
-    #[allow(unused_mut, reason = "assigned only when dioxus has its native renderer")]
+    #[allow(unused_mut, unused_assignments, reason = "assigned only when dioxus has its native renderer")]
     let mut on = false;
     dioxus::prelude::native! { on = true; }
     on
@@ -135,7 +135,17 @@ The residue, and what covers each part:
 
 ### Open before building
 
-A separate agent is running two experiments; the main loop adds their results here.
+Two experiments decide the exact shape. The first is measured (2026-11-12, scratch crates outside the repo); the
+second waits for disk (under 8 GB was free when it was due, and the Blitz dependency tree is large).
+
+**Result of experiment 1 (measured).** The form works with one more lint allowed. With the macro's `native` feature
+on, `let mut on = false; native! { on = true; }` fails under `-D warnings` on `unused_assignments`; with
+`#[allow(unused_mut, unused_assignments, reason = ...)]` both arms check and pass `cargo clippy --all-targets -- -D
+warnings`. The statement-position macro, the hygiene of `on` and the assert in a const all hold. A broken tie fails at
+compile time in both directions with `error[E0080]: evaluation panicked: <the assert's message>`. Through
+`dioxus::prelude::native!` (dioxus `["lib", "launch"]`; the re-export is gated by `launch` only) the no-feature arm
+compiles clean; a cold `cargo check` of that crate took 1 min 20 s and 320 MB. The `+native` arm through dioxus
+itself is experiment 2.
 
 1. Does the const-block form `native! { on = true; }` compile, resolve `on` hygienically, and stay clean under `-D warnings`, both with dioxus `["lib", "launch"]` and with `+native` added?
 2. Does a `dioxus/native` build compile in this sandbox, and what does it cost in time and disk?
