@@ -13,6 +13,9 @@ Path-scoped stubs in `.claude/rules/` load when you touch matching files; the ta
   in-flight agent or are staged for a later commit, continue silently; act only on finished work to commit and push.
 - Whenever a preview deploy is ready (Pages publish succeeded), always post the site link in the chat:
   https://mentalgear.github.io/shadcn-dioxus/ (with the main commit it was built from).
+- The end-of-round report that carries the preview link also lists the tests since the previous deploy: every test run
+  with its counts (the release suite, gate runs, lane runs), every spec, unit test and gate added, changed or removed,
+  and what did not run (owner 2026-11-12).
 
 ## If you are about to ... then (read the file first)
 
