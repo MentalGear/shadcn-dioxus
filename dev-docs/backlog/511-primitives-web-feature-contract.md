@@ -136,7 +136,7 @@ The residue, and what covers each part:
 ### Open before building
 
 Two experiments decide the exact shape. The first is measured (2026-11-12, scratch crates outside the repo); the
-second waits for disk (under 8 GB was free when it was due, and the Blitz dependency tree is large).
+second ran once disk was free.
 
 **Result of experiment 1 (measured).** The form works with one more lint allowed. With the macro's `native` feature
 on, `let mut on = false; native! { on = true; }` fails under `-D warnings` on `unused_assignments`; with
@@ -146,6 +146,15 @@ compile time in both directions with `error[E0080]: evaluation panicked: <the as
 `dioxus::prelude::native!` (dioxus `["lib", "launch"]`; the re-export is gated by `launch` only) the no-feature arm
 compiles clean; a cold `cargo check` of that crate took 1 min 20 s and 320 MB. The `+native` arm through dioxus
 itself is experiment 2.
+
+**Result of experiment 2 (measured).** A dioxus `["lib", "launch", "native"]` crate checks in this sandbox: no system
+library is missing and the network policy refuses nothing. Cold `cargo check` with two jobs and no incremental cache:
+3 min 27 s, about 480 crates, a 1.2 GB target. With the Blitz tree built, a recheck of the scratch crate takes under a
+second; a recheck of the primitives on top of it is not measured. Through the real path, dioxus `native` on with the
+crate's own `native` off fails to compile with the assert's message. Peak memory is not measured.
+
+So the build fits the gates: the first variant below is the one to build (`native = ["dioxus/native"]`), at a one-time
+cost of about 3.5 minutes and 1.2 GB on the gate target.
 
 1. Does the const-block form `native! { on = true; }` compile, resolve `on` hygienically, and stay clean under `-D warnings`, both with dioxus `["lib", "launch"]` and with `+native` added?
 2. Does a `dioxus/native` build compile in this sandbox, and what does it cost in time and disk?
