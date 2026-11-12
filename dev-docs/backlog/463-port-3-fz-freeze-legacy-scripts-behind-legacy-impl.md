@@ -4,7 +4,7 @@ title: "Measured group support: 3.FZ freeze (legacy message scroller and carouse
 status: "APPROVED 2026-10-26 (scope 2): after phase 0, taken as an ordinary row in order of JavaScript…"
 size: "M"
 area: primitives
-js-grant: js_file=0 (the legacy scripts move into ts/legacy and keep counting; the main loop's grant row at the merge base is the number the gate reads)
+js-grant: js_file_bytes=0 (the legacy scripts move into ts/legacy and keep counting; the main loop's grant row at the merge base is the number the gate reads)
 adds: []
 updated: 2026-10-26
 ---

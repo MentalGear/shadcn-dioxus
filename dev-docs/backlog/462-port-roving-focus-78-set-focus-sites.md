@@ -4,7 +4,7 @@ title: "Port: roving focus (about 28 real DOM focus writes in 18 files through t
 status: "BACKLOG. Conditional (round 7): exists only if the phase-0 focus-write witness is red; the row 434…"
 size: "L"
 area: primitives
-js-grant: js_file=40 (inferred ceiling, only if built: the `roving` behaviour about 40 lines; the main loop's grant row at the merge base is the number the gate reads)
+js-grant: js_file_bytes=740 (40 lines at 18.3 bundle bytes per source line, inferred ceiling, only if built: the `roving` behaviour about 40 lines; the main loop's grant row at the merge base is the number the gate reads)
 adds: [roving] (only if the witness is red)
 updated: 2026-11-12
 ---

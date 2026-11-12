@@ -4,7 +4,7 @@ title: "Port 3.OV: overlay core (L1-L3, L5-L9, L16-L17, L22, L26) with openFocus
 status: "APPROVED 2026-10-26 (scope 2): after phase 0, taken as an ordinary row in order of JavaScript…"
 size: "L"
 area: overlays
-js-grant: js_file=124 (relocated lines, root doc section 5.4; the main loop's grant row at the merge base is the number the gate reads)
+js-grant: js_file_bytes=2270 (124 lines at 18.3 bundle bytes per source line, relocated lines, root doc section 5.4; the main loop's grant row at the merge base is the number the gate reads)
 adds: [openFocus]
 updated: 2026-11-12
 ---

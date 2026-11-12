@@ -4,7 +4,7 @@ title: "Port 3.FC: form and input primitives, label click, and the native slot o
 status: "APPROVED 2026-10-26 (scope 2): after phase 0, taken as an ordinary row in order of JavaScript…"
 size: "L"
 area: inputs
-js-grant: js_file=46 (relocated lines, root doc section 5.4; the main loop's grant row at the merge base is the number the gate reads)
+js-grant: js_file_bytes=850 (46 lines at 18.3 bundle bytes per source line, relocated lines, root doc section 5.4; the main loop's grant row at the merge base is the number the gate reads)
 adds: [dropAnywhere, labelClick]
 updated: 2026-11-12
 ---

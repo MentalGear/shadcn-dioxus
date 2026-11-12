@@ -4,7 +4,7 @@ title: "Measured port 2: 3.MS message scroller (the Rust invariant, native ancho
 status: "APPROVED 2026-10-26 (scope 2): after phase 0, taken as an ordinary row in order of JavaScript…"
 size: "L"
 area: components
-js-grant: js_file=40 (stickToEnd about 40 lines; the main loop's grant row at the merge base is the number the gate reads)
+js-grant: js_file_bytes=740 (40 lines at 18.3 bundle bytes per source line, stickToEnd about 40 lines; the main loop's grant row at the merge base is the number the gate reads)
 adds: [stickToEnd]
 updated: 2026-11-12
 ---

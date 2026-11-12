@@ -4,7 +4,7 @@ title: "Port 3.GS: gestures and toast (L21, L28-L30, O1, O3, O5 with the pan beh
 status: "APPROVED 2026-10-26 (scope 2): after phase 0, taken as an ordinary row in order of JavaScript…"
 size: "L"
 area: primitives
-js-grant: js_file=193 (relocated lines, root doc section 5.4; the main loop's grant row at the merge base is the number the gate reads)
+js-grant: js_file_bytes=3530 (193 lines at 18.3 bundle bytes per source line, relocated lines, root doc section 5.4; the main loop's grant row at the merge base is the number the gate reads)
 adds: [pan]
 updated: 2026-11-12
 ---
