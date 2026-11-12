@@ -40,7 +40,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (75)
+## Open rows (76)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -119,5 +119,6 @@ proposing one is closed as out of scope (row 337 is the first).
 | [507](backlog/507-codegraph-comment-analysis-findings.md) | Code analyzer -&gt; comment analysis: a standing backlog for what the tool's metrics turn up | OPEN, STANDING. Owner-requested 2026-11-11: run the comment analysis and record what can be learned… | S per pass (a read of the Comments tab… | tooling |
 | [508](backlog/508-decision-kernel-proof.md) | Proof: a behaviour's Rust decide runs in the page as a wasm kernel, inside an event's dispatch | APPROVED 2026-11-11 (owner). A proof on a branch (lane/decision-kernel-proof), not queued for… | S | primitives |
 | [509](backlog/509-rust-decision-contract.md) | The Rust decision contract: one decide per behaviour, the decision kernel as a committed artefact, and the gates | APPROVED 2026-11-11 (owner). Opens when row 508's verdict is KERNEL. On MIRROR, items 2 to 4 are… | M | primitives |
+| [510](backlog/510-spec-selector-component-edges.md) | The spec selector has no component-to-component edge: a Button change selects none of its consumers' specs | BUILT on lane/select-edges-510, awaiting merge. The selector reads the component use graph from the… | S (one helper module of about 170… | tests |
 
 <!-- END GENERATED -->
