@@ -207,3 +207,87 @@ scripts/lane-lock.sh lane --label k -- env CARGO_TARGET_DIR=/home/user/tgt/kerne
 scripts/lane-lock.sh lane --label k -- env CARGO_TARGET_DIR=/home/user/tgt/kernel-508 scripts/build-kernel.sh
 scripts/build-js-bundle.sh && (cd primitives && bun test ts-test)
 ```
+
+## Adversarial review, 2026-11-12
+
+A read-only review of the proof branch (`lane/decision-kernel-proof`, head `0739d919`), trying to refute `KERNEL`.
+Labels: **[src]** read in source, **[me]** measured by the reviewer (bun 1.4.4, which runs JavaScriptCore, on this box
+at load average 6 to 7 on 4 cores; no Playwright, dx or SSG run), **[inf]** inferred.
+
+**Verdict: `KERNEL STANDS WITH A BLOCKING CONDITION`.** No pass line is refuted. The one change that must happen before
+any behaviour row builds on the kernel is finding 1; it is carried as the blocking item of
+[row 509](../backlog/509-rust-decision-contract.md), with the other findings as its conditions.
+
+Re-checked pass lines. Line 1 holds [src]: `keyboard.type("abc")` leaving the value `""` can only come from a
+`preventDefault` inside the keydown's dispatch, so no asynchronous or after-the-fact path passes it. "Fixture tests
+unchanged" is true: against main only `fake-dom.ts` (`loadBridge` loads the kernel by default) and one `kernel.load`
+line of `bridge-dom.spec.ts` change. `bun test ts-test`: 82 pass [me]; `cargo test -p decision-kernel`: 5 pass [me];
+a rebuild with `build-kernel.sh --out` gives sha256 `a557cfa6…`, the committed module [me]. JavaScriptCore compiles
+the module synchronously (bun: mode `sync`, 1.5 ms) [me], evidence for WKWebView and WebKitGTK, not a webview run.
+
+Findings, most severe first:
+
+1. **Blocking: a TS and Rust drift silently disables a behaviour on web and webview only** [src]. `kernel.ts`
+   `decide` answers `{}` without a warning for a kind the module does not export and for a malformed request
+   (`n < 0`). The inputs are three unlinked hand lists: the TS `fields` / `reads` (`fixture.ts`), the Rust keys of
+   `Config/Snapshot/Event::from_value` (`fixture.rs`), and the serde camelCase renames of
+   `primitives/src/bridge/behaviours.rs`. One typo, and the behaviour never decides in a page while Blitz's direct
+   call works. Fix: generate the lists and keys from the Rust input types, a gate holding the kinds equal to the
+   exports, `warnOnce` plus a report to Rust on a stand-down.
+2. **The tail is the codec, and the first call is cold** [me]. Interleaving the full `kernel.decide` with a raw wasm
+   boundary call under the same load: full p999 0.09 to 2.7 ms and maximum 0.55 to 129 ms; raw p999 0.01 to 0.03 ms
+   and maximum under 0.8 ms. The first call in a fresh process: 1.3 to 11.6 ms over 5 runs (JIT and Liftoff); the
+   10,000-event p99 hides it, and the first keystroke is the one a user meets. Per call the JS side allocates [src]:
+   the outer request array, `Object.entries` arrays per object, an `encodeInto` result and a `buf.subarray` view per
+   string, the `items` / `pairs` arrays and `Object.fromEntries` per answer object, partly forced by `check-ts-scan`.
+   Separate box from design with Chromium `--js-flags=--trace-gc` (stall indices matched to scavenges), an in-place
+   encoder as the variant, and a first-call measurement on a page.
+3. **Item-shaped snapshots break the 0.5 ms line** [me]. A memory of 1,000 `{id, disabled}` objects is a 37,049-byte
+   request at p50 0.41 ms and p99 1.6 ms; the same list as 1,000 booleans is 1,158 bytes at p50 0.02 ms. The note's
+   "1 to 2 KB for 1,000 items" holds only for a packed shape: roving focus and a carousel need packed snapshots and a
+   timed vector at their largest snapshot.
+4. **A trap in one kind stands every kind down for good, and Rust is not told** [src]. The catch in `decide` sets the
+   page-wide state `failed`: a panic in `pan` also turns off `scrollLock`, `otpFilter` and the focus behaviours until a
+   reload, while Rust keeps a half-done gesture (attributes set, a start `send` with no end). The kernel keeps no state
+   between calls, only its I/O buffers, so re-instantiating from the cached module is safe [inf]. No state was found
+   in which an event is mis-decided: a bad answer tag throws inside the try, an encode error reaches the bridge's catch.
+5. **Reproducibility hangs on an unpinned toolchain** [src]. The bytes embed `/rustc/2d8144b…/library/std/...` and
+   `dlmalloc-0.2.13` (std's wasm32 thread-local, RwLock and panic paths) [me, `strings`]. There is no
+   `rust-toolchain` file, no CI toolchain step, and `session-setup.sh` installs whatever is current; the manifest's
+   `rustc -Vv` comparison includes `host:`, so a macOS host or a newer container skips the rebuild half for good. The
+   manifest does not hash the root `[profile.release]` the kernel shares with every crate. Two lanes that add a
+   behaviour each conflict on `.wasm`, `.b64` and `kernel.manifest`, which `.gitattributes` has no driver for.
+6. **The size line does not match the plan** [src, inf]. The planned registry is 9 firm kinds (`otpFilter`,
+   `scrollLock`, `dropAnywhere`, `pan`, `settle`, `openFocus`, `stickToEnd`, `scrollOwner`, `labelClick`), plus
+   `hotkey` and `roving` if their witnesses are red and `scrollStep`, `wheelBand` on the exits list (`js-interop.md`,
+   the `adds:` of rows 448 to 467). At 1.9 KB each, 11 kinds are about 46.6 KB and 13 about 50.4 KB, and the 1.9 KB is
+   toy-shaped. The 50,000 figure appears nowhere but row 508 (no derivation). The real costs are the main-thread
+   synchronous compile (1.1 to 6.9 ms at 25.7 KB) and the first call; the kernel is 10,637 bytes gzip against a page
+   wasm of 5.6 MB gzip.
+7. **Floats can differ by renderer** [inf]. Transcendental functions come from Rust's bundled libm on wasm32 and from
+   the system libm natively: a threshold in `pan` or `settle` can flip by one ulp. `usize` is safe, every length
+   crosses as `u32` [src].
+8. **CSP adds no source on web and does not close the PR #5194 route** [inf, src]. The Dioxus web app compiles its own
+   wasm, which under CSP Level 3 already needs `'wasm-unsafe-eval'`. The route is coupled, not closed: `KERNEL_B64` is
+   spliced into the eval's format string in `transport.rs`, so the kernel's delivery should be one seam function. On
+   desktop a host's `evaluate_script` is not page-CSP-governed but the compile inside it is; no documented size limit
+   of wry's `evaluate_script` on WKWebView, WebView2 or WebKitGTK was found (not confirmed either way), and the 34 KB
+   rides the same path as the untested 20 KB bridge. Chromium raised its main-thread synchronous-compile cap from 4 KB
+   to 8 MB (chromium/src commit d1a1a8fd, "Increase the limit on sync compilation on the main thread"), and Chrome's
+   blink-dev Intent to Ship "Deprecate module size limit for WebAssembly.Module()" called the cap Chrome-only (Safari
+   and Firefox did not enforce one); the lane's 8 MB test sat at that cap. Gecko not confirmed.
+9. **A gate-ownership conflict** [src]. Row 509 must not touch `check-js-volume`, which the lane found red on
+   `ffi.rs` (every `extern "C"` counts as a sink); the 34 KB of base64 is invisible to that gate; and row 509's
+   `js_file=0` grant was 4,270 bytes short. Resolved in row 509: a fixed export set, one owner `allow` row for
+   `ffi.rs`, the base64 held by `check-decision-kernel`'s gzip ratchet.
+10. **The design is not a local minimum** [inf]. On web, Rust decides synchronously only through rsx handlers, which
+    cannot attach at the window, the document or the capture phase; reaching the app's own wasm from the bridge needs
+    `wasm-bindgen` exports, which the bridge forbids; the webview needs the kernel anyway. `MIRROR` is a TypeScript
+    copy, against the owner's goal. The cost: under row 509, `decide` and the codec ship twice on web (in the app's
+    wasm and in the kernel), about 2 KB per kind plus the base64 overhead. Of the page wasm's 48,325-byte growth,
+    34,268 is the base64 and 4,270 the bridge; about 9.8 KB is not attributed. The answer would change only if a
+    renderer cannot compile wasm in the page (an asynchronous-only webview) or if packed-snapshot vectors still miss
+    the time budget.
+
+Reviewer's scratch scripts (not committed): a bun benchmark of `kernel.decide`, a split into wasm-only and JS-only
+cost, an interleaved full-against-raw run, and a fresh-process first-call timer.

@@ -31,7 +31,10 @@ events. The proof code stays on `lane/decision-kernel-proof` (head `0739d919`, n
 desktop webview (row 23); the call's tail (p999 0.4 to 15 ms on a loaded box); row 509's gate and JS-grant work, whose
 `js_file=0` grant does not hold (the loader and codec are +4,270 bytes of `bridge.js`, the deleted TypeScript `decide`
 was 15). Numbers, design, rejected routes and gate findings:
-[research/decision-kernel-proof.md](../research/decision-kernel-proof.md).
+[research/decision-kernel-proof.md](../research/decision-kernel-proof.md). The adversarial review of
+2026-11-12 upholds the verdict with one blocking condition (the adapter's inputs generated from the Rust types, the
+kinds held equal to the kernel's exports, a kind that cannot decide reporting to Rust), carried as the blocking item of
+row [509](./509-rust-decision-contract.md) with the review's other conditions; the review is the note's last section.
 
 ## Size
 
