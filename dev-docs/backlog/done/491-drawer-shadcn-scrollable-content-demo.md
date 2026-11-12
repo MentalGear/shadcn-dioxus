@@ -1,10 +1,10 @@
 ---
 id: 491
 title: "Drawer: add shadcn's scrollable content demo"
-status: "DONE 2026-11-06, landed in PR #165. scrollable_content now ends its body in a \"Feedback\" Input, and…"
+status: "DONE 2026-11-06, landed in PR #165 (merge d040554a). scrollable_content now ends its body in a…"
 size: "S"
 area: components
-updated: 2026-11-06
+updated: 2026-11-12
 ---
 
 # Row 491: Drawer: add shadcn's scrollable content demo
@@ -17,7 +17,7 @@ keyboard up, is brought into the visible band.
 
 ## Status / trigger
 
-DONE 2026-11-06, landed in PR #165. `scrollable_content` now ends its body in a "Feedback" `Input`, and
+DONE 2026-11-06, landed in PR #165 (merge `d040554a`). `scrollable_content` now ends its body in a "Feedback" `Input`, and
 `playwright/drawer-scrollable-content.spec.ts` (phone width, light and dark, axe) asserts: the body is the scroll
 container (`overflow-y: auto`, panel not scrolling), header and footer keep their position while the body scrolls,
 `window.scrollY` stays put (gap 1); and with a stubbed `visualViewport` keyboard of 336px (`data-dx-keyboard`,

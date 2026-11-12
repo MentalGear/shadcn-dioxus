@@ -1,10 +1,10 @@
 ---
 id: 499
 title: "A safe triangle for the hover menus, so they can take Base UI's short close delays"
-status: "FIXED, merged in PR #170 (2026-11-11). Split out of row 478 item 4, whose open delays now follow…"
+status: "FIXED, merged in PR #170 (merge b78c231e, 2026-11-11). Split out of row 478 item 4, whose open…"
 size: "M"
 area: overlays
-updated: 2026-11-11
+updated: 2026-11-12
 ---
 
 # Row 499: A safe triangle for the hover menus
@@ -15,7 +15,7 @@ Base UI closes a hover-opened NavigationMenu panel 50 ms after the pointer leave
 
 ## Status / trigger
 
-FIXED, merged in PR #170 (2026-11-11). Split out of row [478](./478-overlay-defaults-to-base-ui.md) item 4, whose open delays now follow Base UI. Lands before row [456](./456-port-3-ov-overlay-core-escape-dismiss-open-focus.md), which ports the overlay core.
+FIXED, merged in PR #170 (merge `b78c231e`, 2026-11-11). Split out of row [478](../478-overlay-defaults-to-base-ui.md) item 4, whose open delays now follow Base UI. Lands before row [456](../456-port-3-ov-overlay-core-escape-dismiss-open-focus.md), which ports the overlay core.
 
 **What exists (built 2026-11-07, `lane/safe-triangle-499`, merged into main 2026-11-11 in PR #170).** `primitives/src/safe_triangle.rs` is the one rule: pure geometry (`Point`, `Rect`, `Triangle::toward(origin, panel)`, `contains`, unit-tested, 2 px slack) and `SafeClose`, the thin wiring. On a pointer leaving a trigger, `SafeClose::leave` reads the panel's rect (`MountedData::get_client_rect`, a `PanelHandle` the host puts on its panel's `onmounted`) and builds the triangle from the leave point to the panel's near edge. While a close is pending it listens to the document's `mousemove` through the bridge (`use_event_listener` with `EventKind::Mousemove`, at most one message per frame, installed only while a close is pending; no new JS). A move inside the triangle keeps the panel open and restarts a 100 ms stall timer (`SAFE_TRIANGLE_STALL`); a move outside it, or no move for the stall, starts the close after the host's delay; the host's existing enter/hold/cancel calls drop it. Without a mounted panel, an unreadable rect or a leave from inside the panel, it is the plain delay.
 - **Users, one rule:** `HoverIntent` (`hover_intent.rs`: NavigationMenu and Navbar, trigger/nav leave passes the panel; leaving the panel itself is the plain delay) and `SubMenuState::hover_leave_trigger` (`menu_sub.rs`: the submenus of DropdownMenu and ContextMenu; Menubar has no submenus). `HOVER_CLOSE_GRACE_DELAY` is 50 ms and `SUBMENU_CLOSE_GRACE_DELAY` 0 ms.

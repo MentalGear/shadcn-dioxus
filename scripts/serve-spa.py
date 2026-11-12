@@ -9,6 +9,11 @@ boots the app, whose router then renders the not-found page. So a spec of a not-
 `/component/no-such-component/`, `/charts/no-such-chart/`) would time out at 90 s on the bare server (four tests = 6 of the
 121 minutes of a full debug run) and be a red that says nothing about the site. This server does what Pages does:
 status 404 with `<dir>/404.html` as the body when that file exists, the stock 404 otherwise.
+
+The listen backlog is `Server.request_queue_size` (1024), not the stdlib's 5: a page load of the preview opens a few
+dozen connections at once and a worker pool several page loads at once, so a backlog of 5 overflows (the kernel logs
+`Possible SYN flooding`, counts `ListenOverflows`, and the client's SYN retries stall a request for seconds). The
+kernel caps the value at `net.core.somaxconn`.
 """
 import functools
 import http.server
@@ -34,7 +39,11 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         pass
 
 
+class Server(http.server.ThreadingHTTPServer):
+    request_queue_size = 1024
+
+
 if __name__ == "__main__":
     directory, port = os.path.abspath(sys.argv[1]), int(sys.argv[2])
     handler = functools.partial(Handler, directory=directory)
-    http.server.ThreadingHTTPServer(("127.0.0.1", port), handler).serve_forever()
+    Server(("127.0.0.1", port), handler).serve_forever()

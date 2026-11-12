@@ -4,7 +4,7 @@ title: "Port 3.SC: shared collection and activity scripts (S7, S15)"
 status: "APPROVED 2026-10-26 (scope 2): after phase 0, taken as an ordinary row in order of JavaScript…"
 size: "S"
 area: primitives
-js-grant: none
+js-grant: js_file_bytes=1200 (inferred ceiling: five closed bridge rows for S7 and S15, about 450 bytes of TypeScript plus about 350 in the bundle, with margin; the row that first needs a verb adds it, root doc section 5.2)
 adds: []
 updated: 2026-11-12
 ---

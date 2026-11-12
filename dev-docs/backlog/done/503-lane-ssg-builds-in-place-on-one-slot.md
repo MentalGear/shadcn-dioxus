@@ -1,10 +1,10 @@
 ---
 id: 503
 title: "lane-ssg builds in the warm template under the lock instead of copying it"
-status: "DONE 2026-11-07 (lane lanessg-503). lane-ssg.sh slot 0 builds in $LANE_TGT/template under…"
+status: "DONE 2026-11-07 (lane lanessg-503, landed by merge bae54003). lane-ssg.sh slot 0 builds in…"
 size: "S-M"
 area: tooling
-updated: 2026-11-07
+updated: 2026-11-12
 ---
 
 # Row 503: lane-ssg builds in place on one slot
@@ -18,7 +18,7 @@ time, and on this 38 GB quota (14 GB of it warm trees) it refused lane builds ag
 
 ## Status / trigger
 
-DONE 2026-11-07 (lane lanessg-503). `lane-ssg.sh` slot 0 builds in `$LANE_TGT/template` under `lockq/template.lock`
+DONE 2026-11-07 (lane lanessg-503, landed by merge `bae54003`). `lane-ssg.sh` slot 0 builds in `$LANE_TGT/template` under `lockq/template.lock`
 (`lane-slot-target.sh copy` from the template takes the same lock, which also covers `lane-target.sh create`), touches
 through `lane-touch.sh` (non-forced, stamp-aware), guards disk with the pub dir + margin and publishes the pub dir
 atomically. Proof, `LANE_SLOTS=1`: build A (worktree with MARKERAAA) served 2 files with A, 0 with B; build B (temporary

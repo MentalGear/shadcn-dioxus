@@ -14,6 +14,11 @@
 // The map (a COVER relation, deliberately over-inclusive: a missed spec is a hole, an extra one is only minutes):
 //   preview/src/components/<c>/**            -> specs about component <c>, plus all-routes' test of <c>'s page (the
 //                                               page's at-rest axe scan lives only there, row 152)
+//                                            and, for a change that reaches rendering (not variants/, docs.md, notes.md,
+//                                            component.json), the specs of every component that renders it: its code
+//                                            consumers transitively, the components whose demos or style.css name it, and
+//                                            the site pages that embed it (component-graph.mjs; more than BROAD_AT
+//                                            components = shared plumbing, the BROAD set is added)
 //   primitives/src/<p>.rs | <p>/** | js/ts   -> specs of every component that uses primitive <p>, directly or through
 //                                               another primitive (transitive), plus those components' all-routes
 //                                               tests; if that is > BROAD_AT components the change is shared plumbing
@@ -59,6 +64,7 @@ import { loadIndex } from "./site-index.mjs";
 import { buildContext, impactOfChanges } from "./css-impact.mjs";
 import { makeTitleScopes } from "./select-titles.mjs";
 import { pickBase } from "./select-base.mjs";
+import { buildComponentGraph } from "./component-graph.mjs";
 
 const PW = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const ROOT = path.resolve(PW, "..");
@@ -72,6 +78,16 @@ const BROAD_EXTRA = [
   "theme-picker-phone.spec.ts", "nav-scroll-instant.spec.ts", "press-feedback.spec.ts", "hover-mix-space.spec.ts",
   "component-catalog.spec.ts",
 ];
+
+// A site page's own specs: the page's route is spelled in the spec (not the page's word: prose says "docs" everywhere).
+const SITE_SPEC_RE = {
+  "site:home": /(?:BASE(?:_URL)?|HOST|origin|baseURL)\}\/[`"'?#]|goto\w*\([^)]*["'`]\/["'`?]/,
+  "site:docs": /["'`/}]\/docs[/"'`?#]/,
+  "site:demos": /["'`/}]\/demos[/"'`?#]/,
+  "site:charts": /["'`/}]\/charts[/"'`?#]/,
+  "site:dashboard": /\/dashboard\/email-client/,
+  "site:component-index": /\/component\/(?:block\/)?[`"'?]/,
+};
 
 const args = process.argv.slice(2);
 if (args.includes("--self-test")) await import("./select-selftest.mjs"); // node only; exits with its own status
@@ -160,6 +176,7 @@ const primText = (m) => {
   return t;
 };
 const compText = (c) => walk(path.join(ROOT, "preview/src/components", c)).filter((x) => /\.(rs|toml|json)$/.test(x)).map((x) => noComments(fs.readFileSync(x, "utf8"))).join("\n");
+const graph = buildComponentGraph({ root: ROOT, comps });
 const compTexts = Object.fromEntries(comps.map((c) => [c, compText(c)]));
 // `r#`: a module named by a keyword (`mod r#virtual`) is spelled `crate::r#virtual::...` by its users
 const usesPrim = (text, m, ns) => new RegExp(`${ns}::(?:(?:r#)?${m}\\b|\\{[^}]*\\b${m}\\b[^}]*\\})`, "s").test(text);
@@ -244,6 +261,33 @@ const noSpec = [];
 const AT_REST = "all-routes.spec.ts";
 const atRestKeys = new Set();
 const cssChanged = []; // theme / site sheets: resolved rule by rule after the loop (row 323)
+// The components a change reaches (a primitive's users, a component's consumers): their specs, their page's at-rest axe
+// scan, and past BROAD_AT components the BROAD set, as that many components means shared plumbing.
+function addReach(users, f, label) {
+  for (const [c, why] of users) for (const s of specsOf(c)) add(s, why ? `${f}: ${why}` : `${f} -> ${c}`);
+  if (users.size > BROAD_AT) { addBroad(`${f} (shared plumbing: ${users.size} ${label})`); return; }
+  for (const c of users.keys()) atRestKeys.add(`c:${c}`);
+  if (opt.matrix) for (const s of matrixSpecs) add(s, `${f} (matrix)`);
+}
+// A site file that names a component renders it. A file whose route is unambiguous (SITE_FILE_PAGE) adds that page's own
+// specs and its at-rest scan, as a component's own page does; any other (the docs shell, the theme picker, the blocks) is on
+// every page or on one this cannot place: the BROAD set.
+const SITE_FILE_PAGE = [
+  [/^preview\/src\/dashboard\//, ["site:dashboard"]],
+  [/^preview\/src\/(?:coarse|contrast|motion|utilities)_docs\.rs$/, ["site:docs"]],
+  [/^preview\/src\/(?:charts_gallery|chart_parity|chart_tooltip_parity|polar_parity)\.rs$/, ["site:charts"]],
+  [/^preview\/src\/site\/(?:home|blocks|gallery)\.rs$/, ["site:home", "site:docs", "site:demos"]], // the gallery is on the home page and in the docs layout
+];
+function addSiteUsers(sites, f) {
+  for (const { comp, file } of sites) {
+    const keys = SITE_FILE_PAGE.find(([re]) => re.test(file))?.[1];
+    if (!keys) { addBroad(`${f} (${file} renders ${comp})`); continue; }
+    for (const key of keys) {
+      atRestKeys.add(key);
+      for (const sp of specs) if (!matrixSpecs.has(sp) && !BROAD_EXTRA.includes(sp) && SITE_SPEC_RE[key].test(src[sp])) add(sp, `${f} -> ${key}: ${file} renders ${comp}`);
+    }
+  }
+}
 const isSheet = (f) => /^preview\/assets\/[^/]+\.css$/.test(f);
 
 for (const f of changed) {
@@ -252,6 +296,9 @@ for (const f of changed) {
     for (const s of specsOf(m[1])) add(s, f);
     atRestKeys.add(`c:${m[1]}`);
     if (opt.matrix) for (const s of matrixSpecs) add(s, `${f} (matrix)`);
+    const { consumers, sites } = graph.reachOf(m[1], f.slice(m[0].length));
+    addReach(consumers, f, "components render it");
+    addSiteUsers(sites, f);
   } else if (isSheet(f) && opt.cssNarrow) {
     cssChanged.push(f);
   } else if (f === "preview/src/components/mod.rs" || /^preview\/(assets\/|index\.html|build\.rs|Cargo\.toml)/.test(f) ||
@@ -265,10 +312,7 @@ for (const f of changed) {
   } else if ((m = f.match(/^primitives\/src\/(?:ts\/|js\/)?([^/.]+)(?:\.[a-z]+|\/)/)) && primMods.includes(m[1])) {
     const sub = f.match(/^primitives\/src\/[^/.]+\/([^/.]+)(?:\.rs$|\/)/);
     const users = (sub && compsUsingSubmodule(m[1], sub[1])) ?? compsUsingPrim(m[1]);
-    for (const c of users) for (const s of specsOf(c)) add(s, `${f} -> ${c}`);
-    if (users.size <= BROAD_AT) for (const c of users) atRestKeys.add(`c:${c}`);
-    if (users.size > BROAD_AT) addBroad(`${f} (shared plumbing: ${users.size} components)`);
-    else if (opt.matrix) for (const s of matrixSpecs) add(s, `${f} (matrix)`);
+    addReach(new Map([...users].map((c) => [c, null])), f, "components");
     if (users.size === 0) addBroad(`${f} (no component uses it: assume shared)`);
   } else if (/^primitives\//.test(f) || /^dioxus-attributes\//.test(f) || /^Cargo\.(toml|lock)$/.test(f)) {
     addBroad(f);
@@ -283,15 +327,6 @@ for (const f of changed) {
 
 // ---- CSS: rule-level impact (row 323) ------------------------------------------------------------------------
 const TITLE_SCOPED = makeTitleScopes(comps);
-// A site page's own specs: the page's route is spelled in the spec (not the page's word: prose says "docs" everywhere).
-const SITE_SPEC_RE = {
-  "site:home": /(?:BASE(?:_URL)?|HOST|origin|baseURL)\}\/[`"'?#]|goto\w*\([^)]*["'`]\/["'`?]/,
-  "site:docs": /["'`/}]\/docs[/"'`?#]/,
-  "site:demos": /["'`/}]\/demos[/"'`?#]/,
-  "site:charts": /["'`/}]\/charts[/"'`?#]/,
-  "site:dashboard": /\/dashboard\/email-client/,
-  "site:component-index": /\/component\/(?:block\/)?[`"'?]/,
-};
 
 function listTitles(files) {
   // `playwright test --list` LOADS each file: a spec that builds while it loads (hydration-parity runs `cargo build`

@@ -1,67 +1,96 @@
 ---
 id: 506
-title: "The release suite failed twice on main b78c231e; neither failure is confirmed real or confirmed a flake"
-status: "OPEN, 2026-11-11. Found running the deploy after merging PR #170. The suite run…"
-size: "S (to re-run both cleanly and read the…"
+title: "The release suite failed twice on main b78c231e: one stale locator that waited 20 minutes, one racy geometry read"
+status: "FIXED IN LANE suite-506, 2026-11-12, awaiting the full release suite on the merged tree (the…"
+size: "S, done in the lane; the full release…"
 area: tooling
-updated: 2026-11-11
+updated: 2026-11-12
 ---
 
-# Row 506: two unconfirmed release-suite failures block the deploy
+# Row 506: the two release-suite failures on b78c231e, explained and bounded
 
 ## Item
 
-`scripts/deploy-preview.sh` on main `b78c231e` (PR #170) ran the full release suite once and failed two tests. A
-second, narrower attempt to settle whether either is real hung rather than answering the question. The site is not
-deployed from this commit; the live preview still serves the older `85c05466`.
+`scripts/deploy-preview.sh` on main `b78c231e` (PR #170) ran the full release suite once and failed two tests; a narrower
+re-run of the first hung twice. The site was not deployed from that commit. Both failures are test-side, neither is a
+product bug, and the suite now bounds a hang like the first in minutes.
 
 ## Status / trigger
 
-OPEN, 2026-11-11. Found running the deploy after merging PR #170.
+FIXED IN LANE suite-506, 2026-11-12, awaiting the full release suite on the merged tree (the deploy's run). Neither
+failure was a product bug or an environment fault.
 
-**The suite run** (`/home/user/tgt/release-suite/run-b1c062864c55c02d4d611be6784fa78f93108e3f`, 6 chunks, 3 workers):
-4100 passed, 2 failed, 18 skipped. Chunks 1-4 and 6 took 569-686s each; chunk 5 took 1754s, about 3x the others, and
-the kernel log for that window shows `TCP: request_sock_TCP: Possible SYN flooding on port 127.0.0.1:4830` (the
-suite's own test server). Disk ran out during an unrelated side task later in the same session (a `cargo build`
-while this run's own warm-tree copy was still on disk), which is evidence the box was tight on resources that day,
-not evidence about this specific run, since the disk was not yet exhausted while the suite itself ran.
+**`tag_group.spec.ts:156` "Delete works for non-selectable removable tags"** (measured, reproduced on a release build of
+main `bdb41d2a`, whose code equals `b78c231e` plus docs commits, served by the pre-change `serve-spa.py`):
 
-- **`tag_group.spec.ts:156` "Delete works for non-selectable removable tags"**: failed with a 1,200,000 ms (20
-  minute) test timeout, then "Target page, context or browser has been closed" -- consistent with the browser or
-  node process dying under load (an OOM kill, a wedged server under the SYN-flood symptom above), not a locator
-  finding the wrong thing. A direct re-run (serving a freshly built release copy on a different port, no sibling
-  load) hung the same way **twice in a row**, each attempt killed after it sat unresponsive past its own 20-minute
-  timeout with no further progress logged. That rules out "this test is simply slow under load" (a quiet machine
-  reproduced the hang too) without yet pointing at a cause: it could be the test harness's re-run path (the same
-  long-lived dev server across repeat-each), a real hang in the primitive under a specific input this test hits, or
-  something about this container page server. Not resolved.
-- **`chart_tooltip_follow.spec.ts:571` "Narrow chart (phone): where neither side has room the tooltip pins beside
-  its point on the roomier side, inside the chart"**: failed on a plain, synchronous geometry assertion (`category 1:
-  not over its point`, `t.x`/`t.width` computed from measured DOM rects) -- not a timeout, not a crash. Nothing in
-  PR #170 touches the chart tooltip's positioning code (`primitives/src/chart/components/tooltip.rs`, which has its
-  own flip/clamp logic, not the shared `anchor_fallback.rs`/`js_listener.rs` row 436 touched); `git log` over the
-  PR's range confirms no commit touches `primitives/src/chart/**`. That makes it very unlikely this PR caused it, but
-  "unlikely" here is inference from the diff, not a red-on-base-then-green-on-head proof: the retry that would have
-  supplied that proof (rerun this one test, isolated) never got past the tag_group hang above to reach it.
+- Not a hang of the browser, the server or the component. `statesVariant()` located the demo by its heading,
+  `getByRole("heading", { name: "states" })`. Row 399's title audit (`d892fb1e`, PR #170, 2026-11-11) renamed that demo's
+  heading to "Disabled and non-selectable" (`variants/states/title.txt`), so the locator matched nothing. A click on a
+  locator that matches nothing retries until the test timeout, and this file set that timeout to 20 minutes
+  (`LOAD_TIMEOUT`, written for a cold `dx serve` build) inside a `serial` describe, where it overrides the CLI
+  `--timeout`. Reproduced: the worker sat at 0.8 % CPU with no connection open to the server and a healthy server
+  (`curl` 200 in 1.4 ms) for 6+ minutes until killed. With each step logged and the click bounded to 8 s the call log
+  reads `waiting for locator(... getByTestId('tag-group-nonselectable').getByRole('row', { name: 'alpha' }))`; the page's
+  variants are `["Multi", "Disabled and non-selectable"]` and the group is present under the second. The "Target page,
+  context or browser has been closed" of the original report is the runner closing the browser when the 20 minutes ended,
+  which is why the load, OOM and SYN-flood readings could not explain the isolated re-runs.
+- `serial` mode skips the rest of the file after the first failure, and the sibling test `Delete keeps selected tags that
+  do not have a remove button` uses the same locator (it would fail the same way).
+- Why the file was serial: it shares no state; the comment said "parallel navigations contend with the preview webServer
+  build", a `dx serve` concern that does not exist on the served SSG build. The whole file is 13 tests and 20 s of test
+  time in `playwright/durations.json`.
 
-**Left undecided:** whether either failure recurs on a clean attempt uncomplicated by the hang; whether the hang
-itself is this repo's bug or an environment one; whether the chart tooltip assertion is a genuine edge-case gap in
-the "neither side has room" branch of the flip/clamp logic. **The deploy is parked here rather than forced through**
-(`DEPLOY_SUITE=skip:<reason>` was available and not used): a skip reason is for an emergency fix, and this is routine
-backlog work the next session can pick up with a clean machine and the time to let both reruns finish.
+**`chart_tooltip_follow.spec.ts:571` "Narrow chart (phone): where neither side has room ..."** (measured):
+
+- Not reproduced alone: 20 of 20 passed (`--repeat-each=20`, 2 workers). Reproduced once under load: the 16 chart spec
+  files at `--workers=3 --repeat-each=2`: 573 passed, 1 failed, this test, at the `not over its point` assertion.
+- Cause: the tooltip stays `data-state="open"` while the pointer moves from one category to the next, so
+  `toHaveAttribute("data-state", "open")` and `expectInside` are satisfied by the previous category's box, and the
+  one-shot `box(tooltip)` after them can read that box before the move lands. A diagnostic copy of the loop (6 runs x 6
+  categories x 6 passes = 216 reads, 3 workers) compared each immediate read with the position 250 ms later: 3 of 216
+  immediate reads differed (for example x 66 immediate, x 118.6 at rest, `data-placed` already `true`), and the at-rest
+  position was beside its point in all 216. So `chart/components/tooltip.rs`'s flip/clamp shows no gap here (from 216 rest
+  reads at one phone width, not a proof for every width); the assertion read before rest.
+
+**Server** (measured): `scripts/serve-spa.py`'s `ThreadingHTTPServer` listened with the stdlib backlog of 5. Three bursts
+of 400 simultaneous connections: `ListenOverflows` +4,580, `Possible SYN flooding on port` in `dmesg`, 149 of 400
+requests failed in the second burst, worst connect 28.9 s (SYN retries). With `request_queue_size = 1024`: three bursts
+of 400, 0 failures, worst 0.42 s, `ListenOverflows` unchanged. A page load of the preview issues 42 requests over 42
+connections on the HTTP/1.0 handler and 18 connections with `protocol_version = "HTTP/1.1"` (measured); that change is
+not made, because with the backlog fixed nothing fails on 1.0 and keep-alive adds idle server threads.
 
 ## Size
 
-S (to re-run both cleanly and read the result); unknown until then whether a real fix follows.
+S, done in the lane; the full release suite on the merged tree is the main loop's.
 
 ## Detail
 
-- First step: re-run the full release suite once more, alone, nothing else active on the box, and read whether both
-  failures recur, recur differently, or are gone. If the hang recurs in isolation, it stops being a load story and
-  becomes this repo's own bug to find (start from `tag_group.spec.ts:156`'s own body and `fixtures.ts`'s locator
-  wrapper, which is where the stack trace points).
-- If `chart_tooltip_follow.spec.ts:571` still fails alone, read `primitives/src/chart/components/tooltip.rs`'s
-  "neither side has room" branch against the assertion's own math (`room = max(px - chart.x, chart.x + chart.width -
-  px) - OFFSET`) for an off-by-one or a rounding case the narrow-phone width exposes.
-- Proof when closed: the release suite green on the exact commit being deployed, or (if a real bug is found and
-  fixed) a red-on-base reproduction of it plus the fix, same as any other row.
+What changed (all under `playwright/` and `scripts/serve-spa.py`, no product code):
+
+- `tag_group.spec.ts`: the states demo is found by the test id it contains, not by its title; no `serial`, no 20 minute
+  timeout (the config's 90 s per test applies; the whole file sums to 20 s in `durations.json`, so no test of it exceeds
+  20 s, a margin of at least 4.5x); `gotoHydrated` uses the test's timeout.
+- `chart_tooltip_follow.spec.ts`: `expectInsideBesidePoint` polls the inside-the-chart and beside-the-point conditions
+  until two reads 100 ms or more apart agree on the box, instead of one read after `open`.
+- `scripts/serve-spa.py`: `request_queue_size = 1024` (the kernel caps it at `net.core.somaxconn`, 4096 here).
+- `playwright/tools/run-suite.sh`: each chunk runs under `--global-timeout` = 3 x the chunk's expected wall time (its
+  summed table seconds / workers, at least 900 s; 6 chunks and 3 workers give 2,142 s against the 569-686 s the 2026-11-11
+  chunks took; `--limit-factor` overrides the 3). A chunk that hits it still writes its JSON report, with the unfinished
+  tests `skipped` and two `errors` ("Timed out waiting Ns for the test suite to run"); `suite_verdict` in
+  `scripts/deploy-preview.sh` counts a report with `errors` as a missing chunk, so the run is red and the lock is freed.
+  Checked on a scratch spec: 1 passed, 2 skipped, 2 errors.
+- Not set, on purpose: `actionTimeout` / `navigationTimeout` in the configs. The config's per-test timeout (90 s) already
+  caps every action and navigation of a test without its own `setTimeout`; the tests with one are the sweeps
+  (`computed-style-snapshot` 90 min, `layout-stability` and `charts-hydration-stability` 45 min,
+  `demo-forms-no-navigation` 30 min, `docs-structure` 10 min), whose slowest single action was not measured, so a
+  per-action bound would be a guess that can create the flakes it is meant to prevent. The chunk limit bounds them. No
+  retries were added (an owner decision).
+
+Proof (served release build of main `bdb41d2a`, new `serve-spa.py`): `tag_group.spec.ts` and
+`chart_tooltip_follow.spec.ts` `--repeat-each=3` at 3 workers: 135 passed; the 16 chart files plus `tag_group.spec.ts`
+`--repeat-each=2` at 3 workers (the load that failed before): 598 passed, 0 failed; `all-routes`, `layout-stability`,
+`carousel` at 2 workers: 170 passed (10.0 min).
+
+Open: the full release suite on the merged tree (the deploy's run), then the deploy. Any other spec that finds a demo
+by its title (`getByRole("heading", { name })` on a variant title) breaks the same way when a title is renamed; the
+2026-11-11 suite found only this one.
