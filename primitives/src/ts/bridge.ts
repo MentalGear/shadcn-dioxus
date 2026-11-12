@@ -470,7 +470,7 @@ function read(el: any, prop: string): unknown {
   if (prop.startsWith("style:")) return isEl(el) ? W.getComputedStyle(el).getPropertyValue(prop.slice(6)) : null;
   if (prop.startsWith("attr:")) return isEl(el) ? el.getAttribute(prop.slice(5)) : null;
   if (prop.startsWith("matches:")) return isEl(el) && !!el.matches && el.matches(prop.slice(8));
-  if (prop.startsWith("attrsOf:") && el.querySelectorAll) return Array.from(el.querySelectorAll(prop.slice(prop.indexOf(" ") + 1)), (n: any) => n.getAttribute(prop.slice(8, prop.indexOf(" "))));
+  if (prop.startsWith("attrsOf:") && el.querySelectorAll) return Array.from(el.querySelectorAll(prop.slice(prop.indexOf(" ") + 1)), (n: Element) => n.getAttribute(prop.slice(8, prop.indexOf(" "))));
   const row = own(PROPS, prop);
   if (!row || !receives(row.recv, el)) return null;
   return norm(row.get(el));

@@ -21,7 +21,7 @@ Part of the [row 434](./434-javascript-in-typescript-modules-not-rust-strings.md
 
 Built on lane/port-sc-451, awaiting merge: S7 and S15 run on the bridge; three closed rows added, the legacy scripts are gone. (APPROVED 2026-10-26, scope 2.)
 
-**Grant (set on main by the main loop):** `js_file_bytes=1200`. Measured on top of row 454's own raise: `primitives/src/js/bridge.js` 22234 -> 22558 (+324 bytes) is the only `js_file_bytes` file this row raises; `bridge.d.ts` is unchanged. The TypeScript source `bridge.ts` grew 47097 -> 47500 bytes (+403), which the `check-bridge-behaviours` budget counts in canonical tokens, not `js_file_bytes`. The grant covers the raise (324 of 1200). Neither `check-js-volume` nor `check-bridge-behaviours` is re-baselined here.
+**Grant (set on main by the main loop):** `js_file_bytes=1200`. Measured on top of row 454's own raise: `primitives/src/js/bridge.js` 22234 -> 22558 (+324 bytes) is the only `js_file_bytes` file this row raises; `bridge.d.ts` is unchanged. The TypeScript source `bridge.ts` grew 47097 -> 47504 bytes (+407), which the `check-bridge-behaviours` budget counts in canonical tokens, not `js_file_bytes`. The grant covers the raise (324 of 1200). Neither `check-js-volume` nor `check-bridge-behaviours` is re-baselined here.
 
 ## Size
 
@@ -62,7 +62,7 @@ Of the five additions specified at stage 1, row 454 had already added two: `Prop
 
 ### JavaScript removed and added (measured with `check-js-volume --report`)
 
-Removed: `activity.rs` js_lit 108 -> 0 and install 1 -> 0; `collection.rs` js_lit 6 -> 0, sink 1 -> 0, expect_disallowed 1 -> 0: 114 lines, 1 sink, 1 install, 1 waiver. Added: `bridge.js` +324 bytes (`bridge.ts` +403 bytes of source). Global total `js_lit * 120 + js_file_bytes`: about -13,400.
+Removed: `activity.rs` js_lit 108 -> 0 and install 1 -> 0; `collection.rs` js_lit 6 -> 0, sink 1 -> 0, expect_disallowed 1 -> 0: 114 lines, 1 sink, 1 install, 1 waiver. Added: `bridge.js` +324 bytes (`bridge.ts` +407 bytes of source). Global total `js_lit * 120 + js_file_bytes`: about -13,400.
 
 ### Differences from the old registry (findings)
 
