@@ -846,6 +846,22 @@ describe("publish (observed numbers copied to custom properties in the page)", (
     expect(ch.sent).toEqual([]);
   });
 
+  test("an initial message publishes too, so the page seeds the variables before any event", () => {
+    const { bridge, doc } = setup();
+    const el = doc.add("sc");
+    el.scrollTop = 12;
+    const ch = makeChannel();
+    bridge.scope(ch).listen({
+      target: "sc",
+      event: "scroll",
+      initial: true,
+      options: { publish: [{ var: "--dx-scroll-top", field: "target.scrollTop", unit: "px" }] },
+      fields: [],
+    });
+    expect(el.customProps.get("--dx-scroll-top")).toBe("12px");
+    expect(ch.sent).toEqual([]);
+  });
+
   test("a listener that names fields sends them as well, writes no non-number, and refuses a name outside --dx-", () => {
     const { bridge, doc } = setup();
     const el = doc.add("sc");
@@ -863,18 +879,6 @@ describe("publish (observed numbers copied to custom properties in the page)", (
     expect(el.customProps.get("--dx-x")).toBe("9px");
     s.listen({ target: "sc", event: "click", options: { publish: [{ var: "width", field: "clientX" }] }, fields: [] });
     expect(() => el.dispatch("click", { target: el, clientX: 1 })).toThrow("--dx-");
-  });
-
-  test("an observer publishes the keys of its message and then sends nothing", () => {
-    const { win, bridge, doc } = setup();
-    const el = doc.add("o");
-    const ch = makeChannel();
-    const s = bridge.scope(ch);
-    s.observe({ target: "o", kind: "resize", options: { publish: [{ var: "--dx-w", field: "width", unit: "px" }] } });
-    const [ro] = win.ResizeObserver.all;
-    ro.callback([{ contentRect: { width: 10, height: 20 }, borderBoxSize: [{ inlineSize: 12, blockSize: 22 }] }]);
-    expect(el.customProps.get("--dx-w")).toBe("10px");
-    expect(ch.sent).toEqual([]);
   });
 });
 
@@ -937,6 +941,11 @@ describe("the scroller target, the new reads and write", () => {
     }
     scroller.styles = { "overflow-y": "hidden" };
     expect(at("panel")).toEqual({ "matches:#sc": false, "matches:#panel": true });
+    // a hidden-overflow ancestor between them is skipped: only auto, scroll and overlay scroll
+    scroller.styles = { "overflow-y": "auto" };
+    wrap.styles = { "overflow-y": "hidden" };
+    expect(at("panel")["matches:#sc"]).toBe(true);
+    scroller.styles = { "overflow-y": "hidden" };
     // an unknown root resolves to nothing
     expect(bridge.get({ kind: "scroller", within: "nope" }, ["matches:#sc"])).toEqual({ "matches:#sc": null });
     void doc;
@@ -945,22 +954,19 @@ describe("the scroller target, the new reads and write", () => {
 
   test("inline style, supports, visibilityState and checkVisibility are reads", () => {
     const { win, bridge, doc, field } = tree();
-    (field as any).style.getPropertyValue = (name: string) => (name === "padding-bottom" ? "4px" : "");
+    (field as any).style.paddingBottom = "4px";
     (field as any).checkVisibility = (o: unknown) => JSON.stringify(o) === '{"contentVisibilityAuto":true}';
     (doc as any).visibilityState = "visible";
     win.CSS = { supports: (declaration: string) => declaration === "animation-timeline: scroll()" };
-    expect(bridge.get("field", ["inline:padding-bottom", "inline:overflow-anchor", "checkVisibility", "visibilityState"])).toEqual({
-      "inline:padding-bottom": "4px",
-      "inline:overflow-anchor": "",
+    expect(bridge.get("field", ["inlinePaddingBottom", "inlineOverflowAnchor", "checkVisibility", "visibilityState"])).toEqual({
+      inlinePaddingBottom: "4px",
+      inlineOverflowAnchor: null,
       checkVisibility: true,
       visibilityState: null,
     });
     expect(bridge.get({ kind: "document" }, ["visibilityState"])).toEqual({ visibilityState: "visible" });
-    expect(bridge.get({ kind: "window" }, ["supports:animation-timeline: scroll()", "supports:color: nope"])).toEqual({
-      "supports:animation-timeline: scroll()": true,
-      "supports:color: nope": false,
-    });
-    expect(bridge.get("field", ["supports:animation-timeline: scroll()"])).toEqual({ "supports:animation-timeline: scroll()": null });
+    expect(bridge.get({ kind: "window" }, ["scrollTimelineSupported"])).toEqual({ scrollTimelineSupported: true });
+    expect(bridge.get("field", ["scrollTimelineSupported"])).toEqual({ scrollTimelineSupported: null });
     delete (field as any).checkVisibility;
     expect(bridge.get("field", ["checkVisibility"])).toEqual({ checkVisibility: null });
   });

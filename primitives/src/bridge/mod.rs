@@ -430,10 +430,13 @@ pub enum Prop {
     /// `el.checkVisibility({ contentVisibilityAuto: true })`: whether the element is laid out, not inside a
     /// skipped `content-visibility` subtree; null where the browser has no `checkVisibility`.
     CheckVisibility,
-    /// An inline style value (`el.style.getPropertyValue(name)`), a string (empty when unset).
-    Inline(String),
-    /// `CSS.supports(declaration)` on the window, a bool, e.g. `"animation-timeline: scroll()"`.
-    Supports(String),
+    /// The inline `padding-bottom` (`el.style.paddingBottom`), a string, empty when unset.
+    InlinePaddingBottom,
+    /// The inline `overflow-anchor`, a string, empty when unset.
+    InlineOverflowAnchor,
+    /// `CSS.supports("animation-timeline: scroll()")` on the window, a bool: whether scroll-driven
+    /// animations exist.
+    ScrollTimelineSupported,
 }
 
 impl Prop {
@@ -472,8 +475,9 @@ impl Prop {
             Prop::PopoverOpen => "popoverOpen".into(),
             Prop::VisibilityState => "visibilityState".into(),
             Prop::CheckVisibility => "checkVisibility".into(),
-            Prop::Inline(name) => format!("inline:{name}"),
-            Prop::Supports(declaration) => format!("supports:{declaration}"),
+            Prop::InlinePaddingBottom => "inlinePaddingBottom".into(),
+            Prop::InlineOverflowAnchor => "inlineOverflowAnchor".into(),
+            Prop::ScrollTimelineSupported => "scrollTimelineSupported".into(),
         }
     }
 }
@@ -1183,6 +1187,9 @@ mod tests {
             Prop::PopoverOpen,
             Prop::VisibilityState,
             Prop::CheckVisibility,
+            Prop::InlinePaddingBottom,
+            Prop::InlineOverflowAnchor,
+            Prop::ScrollTimelineSupported,
         ];
         let js = BRIDGE_TS;
         let start = js.find("const PROPS").expect("PROPS table");
@@ -1230,10 +1237,7 @@ mod tests {
         let tx = Transaction::new()
             .write("p", Slot::KeyboardOpen, Some("open".into()))
             .write(Target::scroller("p"), Slot::PaddingBottom, None)
-            .get(
-                Target::VisualViewport,
-                [Prop::Inline("padding-bottom".into())],
-            );
+            .get(Target::VisualViewport, [Prop::InlinePaddingBottom]);
         assert_eq!(
             serde_json::to_value(tx.ops()).expect("serialises"),
             json!([
@@ -1241,10 +1245,6 @@ mod tests {
                 {"op": "write", "target": {"kind": "scroller", "within": "p"}, "slot": "padding-bottom", "value": null},
                 {"op": "get", "target": {"kind": "visualViewport"}, "props": ["inline:padding-bottom"]},
             ])
-        );
-        assert_eq!(
-            Prop::Supports("animation-timeline: scroll()".into()).wire(),
-            "supports:animation-timeline: scroll()"
         );
     }
 

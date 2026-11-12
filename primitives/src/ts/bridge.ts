@@ -298,6 +298,9 @@ const PROPS: Record<string, { recv: Recv | "any"; get: (el: any) => unknown }> =
   "open": { recv: "e", get: (el) => !!el.open },
   "popoverOpen": { recv: "e", get: (el) => !!el.matches && el.matches(":popover-open") },
   "visibilityState": on("d", (el) => el.visibilityState),
+  "scrollTimelineSupported": on("w", (el) => el.CSS.supports("animation-timeline: scroll()")),
+  "inlinePaddingBottom": on("e", (el) => el.style.paddingBottom),
+  "inlineOverflowAnchor": on("e", (el) => el.style.overflowAnchor),
   "checkVisibility": on("e", (el) => (typeof el.checkVisibility === "function" ? el.checkVisibility({ contentVisibilityAuto: true }) : null)),
   "rect": {
     recv: "e",
@@ -396,7 +399,12 @@ function resolve(target: DxTargetish): any {
   return null;
 }
 
-/** The nearest vertical scroller between the active element and `root` (exclusive), else `root`. */
+/**
+ * The nearest vertical scroller between the active element and `root` (exclusive), else `root`. A resolver, like
+ * `resolve`'s other targets: which element scrolls is a fact about the rendered page that the adapter reads (the
+ * computed `overflow-y` of the ancestors); it decides nothing about a component. Rust takes the element it
+ * returns and decides everything else.
+ */
 function scrollerOf(root: HTMLElement | null): HTMLElement | null {
   for (let el = W.document.activeElement?.parentElement; root && el && el !== root; el = el.parentElement) {
     const overflow = W.getComputedStyle(el).getPropertyValue("overflow-y");
@@ -461,8 +469,6 @@ function read(el: any, prop: string): unknown {
   if (prop.startsWith("style:")) return isEl(el) ? W.getComputedStyle(el).getPropertyValue(prop.slice(6)) : null;
   if (prop.startsWith("attr:")) return isEl(el) ? el.getAttribute(prop.slice(5)) : null;
   if (prop.startsWith("matches:")) return isEl(el) && !!el.matches && el.matches(prop.slice(8));
-  if (prop.startsWith("inline:")) return isEl(el) && el.style ? el.style.getPropertyValue(prop.slice(7)) : null;
-  if (prop.startsWith("supports:")) return isWin(el) ? W.CSS.supports(prop.slice(9)) : null;
   const row = own(PROPS, prop);
   if (!row || !receives(row.recv, el)) return null;
   return norm(row.get(el));
@@ -792,7 +798,7 @@ function installBehaviour(sc: Scope, spec: Omit<BehaviourSpec, "cmd">): () => vo
 // ---------------------------------------------------------------- publish
 
 /**
- * The `publish` option of `listen` and `observe`: each row copies one observed number into a `--dx-` custom
+ * The `publish` option of `listen`: each row copies one event field into a `--dx-` custom
  * property of the observed element, in the page, at the moment it is observed. It is transport: a measured value
  * and a unit go to a variable, with no branch on any component state, and nothing crosses to Rust for it.
  */
@@ -819,12 +825,6 @@ function scope(raw?: DioxusChannel): Scope {
   const on: Scope["on"] = (target, type, handler, options) => {
     if (done) return () => {};
     return bareOn(target, type, handler, options, (off) => offs.push(off));
-  };
-  /** An observer's message: its numbers are published first (`options.publish`), then sent unless that is all it was for. */
-  const emitObserved = (el: HTMLElement, spec: Omit<ObserveSpec, "cmd">, message: Fields) => {
-    const rows = (spec.options as { publish?: DxPublish[] } | undefined)?.publish;
-    publish(el, rows, (field) => own(message, field));
-    if (!rows?.length) send(message);
   };
   const s: Scope = {
     channel: ch as DioxusChannel,
@@ -876,7 +876,11 @@ function scope(raw?: DioxusChannel): Scope {
         { capture: !!spec.options?.capture, passive: true, once: !!spec.options?.once },
       );
       if (row.hot) offs.push(() => frame && W.cancelAnimationFrame(frame));
-      if (spec.initial) emit(pickAll({ type: "initial", target: el, currentTarget: el }, fields));
+      if (spec.initial) {
+        const first = { type: "initial", target: el, currentTarget: el };
+        publish(el, rows, (field) => own(FIELD_GETTERS, field)?.(first));
+        emit(pickAll(first, fields));
+      }
       return off;
     },
     observe(spec) {
@@ -888,7 +892,7 @@ function scope(raw?: DioxusChannel): Scope {
           const ro = new W.ResizeObserver((entries: ResizeObserverEntry[]) => {
             const e = entries[entries.length - 1];
             const box = e.borderBoxSize?.[0];
-            emitObserved(el, spec, {
+            send({
               width: e.contentRect.width,
               height: e.contentRect.height,
               borderWidth: box ? box.inlineSize : e.contentRect.width,
@@ -906,7 +910,7 @@ function scope(raw?: DioxusChannel): Scope {
             (entries: IntersectionObserverEntry[]) => {
               const e = entries[entries.length - 1];
               const r = e.boundingClientRect;
-              emitObserved(el, spec, {
+              send({
                 isIntersecting: e.isIntersecting,
                 ratio: e.intersectionRatio,
                 top: r.top,

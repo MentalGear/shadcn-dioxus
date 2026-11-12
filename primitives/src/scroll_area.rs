@@ -140,6 +140,8 @@ impl ScrollFade {
 /// value that crossed the IPC hop would land a frame late. Installed only where `dx-effects.css` has no
 /// scroll-driven animations; its `@supports not (animation-timeline: scroll())` block turns these two
 /// numbers and the two ranges below into the four edge depths.
+/// Its only writer: the listener seeds them at install (`initial`) and publishes every scroll after, so a
+/// late reading can never overwrite a newer position.
 const SCROLL_POSITION: &[Publish] = &[
     Publish {
         var: "--dx-scroll-top",
@@ -198,6 +200,15 @@ fn scroller_vars(props: &Props) -> ScrollerVars {
             scroll_range(num(Prop::ScrollWidth), num(Prop::ClientWidth)),
         ),
     }
+}
+
+/// The custom properties a reading writes where the CSS computes the depths: the ranges only. The scroll
+/// position is written by [`SCROLL_POSITION`]'s publisher alone.
+fn range_vars(vars: ScrollerVars) -> [(&'static str, f64); 2] {
+    [
+        ("--dx-scroll-range-y", vars.ranges.0),
+        ("--dx-scroll-range-x", vars.ranges.1),
+    ]
 }
 
 /// The props one reading asks for.
@@ -259,9 +270,11 @@ fn use_scroll_fade_runtime(fade: ScrollFade, key: Signal<String>) {
             return;
         }
         spawn(async move {
-            let supports = Prop::Supports("animation-timeline: scroll()".into());
-            let read = bridge::get(Target::Window, [supports.clone()]).await;
-            driven.set(read.ok().and_then(|props| props.bool(&supports)));
+            let read = bridge::get(Target::Window, [Prop::ScrollTimelineSupported]).await;
+            driven.set(
+                read.ok()
+                    .and_then(|props| props.bool(&Prop::ScrollTimelineSupported)),
+            );
         });
     });
 
@@ -286,13 +299,7 @@ fn use_scroll_fade_runtime(fade: ScrollFade, key: Signal<String>) {
                 );
             }
             if *driven.peek() == Some(false) {
-                let num = |prop: Prop| props.f64(&prop).unwrap_or(0.0);
-                for (name, value) in [
-                    ("--dx-scroll-range-y", vars.ranges.0),
-                    ("--dx-scroll-range-x", vars.ranges.1),
-                    ("--dx-scroll-top", num(Prop::ScrollTop)),
-                    ("--dx-scroll-left", num(Prop::ScrollLeft)),
-                ] {
+                for (name, value) in range_vars(vars) {
                     target.set_var(name, Some(&format!("{value}px")));
                 }
             }
@@ -310,16 +317,24 @@ fn use_scroll_fade_runtime(fade: ScrollFade, key: Signal<String>) {
             measure.call(());
         }
     });
-    use_event_listener(
-        move || (active && driven() == Some(false)).then(scroller).flatten(),
-        EventKind::Scroll,
-        ListenOptions {
-            publish: SCROLL_POSITION,
-            ..ListenOptions::default()
-        },
-        &[],
-        |_: serde_json::Value| {},
-    );
+    crate::use_effect_with_cleanup(move || {
+        let target = (active && driven() == Some(false)).then(scroller).flatten();
+        let subscription = target.map(|target| {
+            Session::new()
+                .command(Command::Listen {
+                    target,
+                    event: EventKind::Scroll,
+                    options: ListenOptions {
+                        publish: SCROLL_POSITION,
+                        ..ListenOptions::default()
+                    },
+                    fields: Vec::new(),
+                    initial: true,
+                })
+                .open(|_: serde_json::Value| {})
+        });
+        move || drop(subscription)
+    });
 }
 
 /// The attributes a scroller carries for `fade` (see [`ScrollFade::attributes`]) plus the runtime that
@@ -515,6 +530,20 @@ mod tests {
         assert_eq!(scrollbar_gutter(202.0, 200.0, 1.0, 1.0), 0.0);
         assert_eq!(scrollbar_gutter(200.0, 200.0, 0.0, 0.0), 0.0);
         assert_eq!(scrollbar_gutter(201.0, 200.0, 2.0, 2.0), 0.0);
+    }
+
+    /// A reading writes the ranges and never the scroll position: the publisher is that position's only writer.
+    #[test]
+    fn a_reading_never_writes_the_scroll_position() {
+        let vars = ScrollerVars {
+            inline_gutter: 0.0,
+            block_gutter: 0.0,
+            ranges: (10.0, 20.0),
+        };
+        let written: Vec<&str> = range_vars(vars).iter().map(|(name, _)| *name).collect();
+        assert_eq!(written, ["--dx-scroll-range-y", "--dx-scroll-range-x"]);
+        let published: Vec<&str> = SCROLL_POSITION.iter().map(|row| row.var).collect();
+        assert_eq!(published, ["--dx-scroll-top", "--dx-scroll-left"]);
     }
 
     #[test]

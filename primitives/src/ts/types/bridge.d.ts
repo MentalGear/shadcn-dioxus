@@ -22,7 +22,7 @@ interface DxEpoch {
 
 type DxFields = Record<string, unknown>;
 
-/** One row of a `publish` option: copy the observed `field` into the custom property `var` (`--dx-` only) of the observed element. */
+/** One row of a `publish` option: copy the event `field` into the custom property `var` (`--dx-` only) of the listened element. */
 interface DxPublish {
   var: string;
   field: string;

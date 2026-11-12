@@ -191,7 +191,7 @@ fn scroll_delta(scroller: (f64, f64), field: (f64, f64), visible: (f64, f64)) ->
 const TEXT_FIELD: &str = "textarea, \
     input:not([type=checkbox i]):not([type=radio i]):not([type=button i]):not([type=submit i]):not([type=reset i]):not([type=range i]):not([type=file i]):not([type=color i]):not([type=image i]):not([type=hidden i]), \
     :is([contenteditable=\"\"], [contenteditable=true i], [contenteditable=plaintext-only i]), \
-    :is([contenteditable=\"\"], [contenteditable=true i], [contenteditable=plaintext-only i]) *:not([contenteditable=false i])";
+    :is([contenteditable=\"\"], [contenteditable=true i], [contenteditable=plaintext-only i]) *:not([contenteditable=false i], [contenteditable=false i] *)";
 
 /// The one message of the session: the viewport numbers, and the event they came with.
 #[derive(Deserialize)]
@@ -372,8 +372,8 @@ async fn bring_into_view(panel_id: &str, state: &State, reduced: ReadSignal<bool
             [
                 Prop::Rect,
                 Prop::Style("padding-bottom".into()),
-                Prop::Inline("padding-bottom".into()),
-                Prop::Inline("overflow-anchor".into()),
+                Prop::InlinePaddingBottom,
+                Prop::InlineOverflowAnchor,
                 Prop::Attr(Slot::KeyboardSlack.wire().into()),
             ],
         )
@@ -426,11 +426,11 @@ async fn bring_into_view(panel_id: &str, state: &State, reduced: ReadSignal<bool
             if !marked {
                 *state.slack.borrow_mut() = Some(Slack {
                     padding: held
-                        .string(&Prop::Inline("padding-bottom".into()))
+                        .string(&Prop::InlinePaddingBottom)
                         .unwrap_or_default()
                         .to_string(),
                     anchor: held
-                        .string(&Prop::Inline("overflow-anchor".into()))
+                        .string(&Prop::InlineOverflowAnchor)
                         .unwrap_or_default()
                         .to_string(),
                     base,
@@ -721,6 +721,20 @@ mod tests {
         }
         assert!(TEXT_FIELD.starts_with("textarea, input:not("));
         assert!(TEXT_FIELD.contains("contenteditable"));
+    }
+
+    /// A node inside a `contenteditable=false` island of an editable host is not editable, so the descendant
+    /// clause excludes the island and everything under it. (A selector is evaluated by the page; the clause
+    /// is pinned here and exercised by the keyboard-inset specs.)
+    #[test]
+    fn the_descendant_clause_excludes_a_non_editable_island() {
+        let descendants = TEXT_FIELD
+            .rsplit_once(" *:not(")
+            .expect("the descendant clause");
+        assert_eq!(
+            descendants.1,
+            "[contenteditable=false i], [contenteditable=false i] *)"
+        );
     }
 
     /// The contract a stylesheet reads: the names are the public API of this module.
