@@ -10,13 +10,14 @@ end takes one row per delegated lane.
 
 ## The standing rule (owner)
 
-Consider a Haiku subagent first for any delegated task, after a complexity assessment (owner 2026-10-25): the two
-lists below are that assessment. A task on the "good fit" list goes to Haiku; a task on the "not a fit" list goes to
-Sonnet; a task on neither is judged by how much construction it needs (a known idiom to copy is Haiku, a new decision is
-Sonnet). The main loop keeps review, delegation and high-level decisions, and reviews every Haiku diff. Escalate only
-after a failed attempt or for unusually judgment-heavy work (a headless state machine such as the Questionnaire).
-**Never substitute Opus for a Sonnet or Haiku lane** (owner 2026-10-20: when Sonnet is limited, wait, or use Haiku where
-it fits below); a lane stopped by a usage limit is resumed by message with its context, which beat a fresh agent.
+Every delegated task gets a complexity assessment, and the lowest tier that fits takes it: Haiku, then Sonnet, then
+Opus (owner 2026-10-25, 2026-11-12). The lists below are that assessment. A task on the Haiku list goes to Haiku; a task
+on the Sonnet list goes to Sonnet; a task on the Opus list goes to Opus; a task on none is judged by how much
+construction it needs (a known idiom to copy is Haiku, a new decision is Sonnet, a judgment over a whole design is
+Opus). The main loop stays clear: it keeps review, delegation and high-level decisions, and reviews every Haiku diff.
+A higher tier is chosen for the task's complexity or after a failed attempt, **never because a lower tier is
+rate-limited** (owner 2026-10-20: when Sonnet is limited, wait, or use Haiku where it fits below); a lane stopped by a
+usage limit is resumed by message with its context, which beat a fresh agent.
 
 ## Haiku is a good fit for
 
@@ -41,6 +42,14 @@ it fits below); a lane stopped by a usage limit is resumed by message with its c
   work still queued.
 - Reports that must separate "measured" from "inferred" (pass and fail tallies across reruns).
 
+## Opus is a fit for
+
+- Evaluating or revising a plan: whether its reasons still hold, what it costs, what a changed goal does to it.
+- An architecture or design review, and an adversarial review of a finished design.
+- A question whose answer needs a large body of material read whole (a research note with its review rounds, every row
+  of a plan) and weighed against a goal.
+- Not lane work: an edit, a port, a gate or a debugging loop stays Haiku or Sonnet however large it is.
+
 ## In every lane brief, whatever the model
 
 1. [`lane-rules.md`](./lane-rules.md) plus the lane's own prompt; the files it owns and the ones it must not touch.
@@ -51,6 +60,8 @@ it fits below); a lane stopped by a usage limit is resumed by message with its c
 4. Every cargo or dx command through the build lock (`scripts/lane-cargo.sh`, `scripts/lane-ssg.sh`).
 5. Waiting on the lock or a queued build is not a reason to hand back: block on it, in the foreground.
 6. Push the branch after every commit; nothing lives only in the container (row 250).
+7. The owner's goal for the work, in the owner's words: a brief that names the wrong target gets a confident answer to
+   the wrong question (the running log's `eval-port-speed` row).
 
 ## Whatever the model, the main loop
 
@@ -147,3 +158,14 @@ on a shared or copied target untrustworthy until the sources were touched. Squas
 | 2026-11-11 | `icons-carousel-371c` (row 371: 17 carousel demo files off `dioxus-icons`) | Haiku | Fit: a closed file list, one mechanical import swap, a verifying gate. A flaky wheel-replay test under sibling load needed a rerun and a judgment call the main loop reviewed. |
 | 2026-11-11 | `icons-charts-371c` (row 371: 50 chart demo files off `dioxus-icons`) | Haiku | Fit: the same mechanical swap at larger scale; one import-ordering slip was caught by rustfmt and fixed on the next pass. |
 | 2026-11-11 | `icons-rest-371c` (row 371: 48 varied demo files off `dioxus-icons`) | Sonnet | Partly: dispatched to Sonnet for the file set's variety (an alias, two substring near-misses), but the lane's own report judged the task Haiku-rated once exact-identifier parsing resolved those cases; Haiku would likely have fit here too. |
+| 2026-11-11 | `eval-backlog-inventory` (read-only: open and done rows, estimates, closure rate) | Haiku | Fit: a run-and-report inventory with exact counts and the commands named. It wrote three temp files outside the scratchpad and removed them itself. |
+| 2026-11-11 | `eval-js-volume` (read-only: remaining JS and TS, eval sites, the bridge's size) | Haiku | Fit: a closed measurement list answered from `wc`, `grep` and the baseline file, with measured and inferred kept apart. |
+| 2026-11-11 | `eval-design` (read-only design review of primitives, wrappers and the CLI) | Sonnet | Partly: of its nine debts an adversarial check refuted three and found three overstated; it missed the wrapper-props gates of rows 391 and 428 and misread the history-in-comments rule. A design review needs "search the gates and done rows before calling something a debt" in its brief. |
+| 2026-11-11 | `eval-process` (read-only: gate inventory, where commits and wall time go) | Sonnet | Fit: it separated measured from inferred and quoted its timings from rows 320, 496 and 506 instead of re-measuring them. |
+| 2026-11-11 | `eval-port-speed` (read-only: quicker routes for the row 434 plan) | Opus | Misfit caused by the brief, which named "desktop" as the native target where the owner means Blitz: its headline saving (keep the carousel and the message scroller as frozen TypeScript) was withdrawn. State the owner's goal in the brief. |
+| 2026-11-11 | `eval-port-review` (read-only: the full research and board rounds against web, webview and Blitz) | Opus | Fit: with the goal stated it found no hours to cut and said so, and classed each port row by what runs on Blitz; the main loop spot-checked its citations. |
+| 2026-11-11 | `eval-design-verify` (read-only: refute the nine design claims) | Sonnet | Fit: file-and-line evidence per claim, counts across the whole repo, and a search of the gates and rows before each verdict. |
+| 2026-11-11 | `eval-playwright-speed` (read-only: where the release suite's time goes) | Sonnet | Fit: causes with citations (the `networkidle` floor, the server backlog, the selector's missing component edges), each proposal with the one measurement that settles it; the main loop spot-checked the citations. |
+| 2026-11-11 | `eval-cargo-speed` (the one lane running cargo: clippy arms, test compile, row 496's incremental experiment) | Sonnet | Fit: measured on isolated targets inside its budget (about 49 minutes) and listed what it did not reach. It left one results file outside the scratchpad, which the main loop moved. |
+| 2026-11-11 | `eval-playwright-stats` (read-only: statistics over `playwright/durations.json` and the spec sources) | Haiku | Fit: a run-and-report job with scripts kept in the scratchpad; it flagged that the durations snapshot no longer matches the listed tests. |
+| 2026-11-12 | `decision-docs-a`, `-b`, `-c` (rows 434, 438, 508, 509: the owner-approved decision text into the docs and rows) | main-loop forks | Not a model choice: the approved wording existed only in the main loop's conversation, so three context-inheriting forks applied it over disjoint file sets. A fork runs on the main loop's model, not Haiku. |
