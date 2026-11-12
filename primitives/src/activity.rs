@@ -221,7 +221,10 @@ if (mode === 'doc' || el) {
 mod decide {
     #![cfg_attr(
         not(test),
-        expect(dead_code, reason = "row 451 wires these to the bridge's reads and observers")
+        expect(
+            dead_code,
+            reason = "row 451 wires these to the bridge's reads and observers"
+        )
     )]
 
     use super::ENTER_RATIO;
@@ -352,7 +355,9 @@ mod decide {
             assert_eq!(ENTER_THRESHOLDS.len(), 11);
             assert_eq!(ENTER_THRESHOLDS[0], 0.0);
             assert_eq!(ENTER_THRESHOLDS[10], 1.0);
-            assert!(ENTER_THRESHOLDS.windows(2).all(|w| (w[1] - w[0] - 0.1).abs() < 1e-9));
+            assert!(ENTER_THRESHOLDS
+                .windows(2)
+                .all(|w| (w[1] - w[0] - 0.1).abs() < 1e-9));
         }
     }
 }

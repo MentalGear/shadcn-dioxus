@@ -28,7 +28,10 @@ dioxus.send(slots);
 /// prefix or has no number after it names no slot and is dropped.
 #[cfg_attr(
     not(test),
-    expect(dead_code, reason = "row 451 feeds it the bridge's document-order read")
+    expect(
+        dead_code,
+        reason = "row 451 feeds it the bridge's document-order read"
+    )
 )]
 fn slots_from_markers(prefix: &str, markers: &[Option<String>]) -> Vec<usize> {
     markers
