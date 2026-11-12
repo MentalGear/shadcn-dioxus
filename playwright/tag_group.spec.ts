@@ -2,21 +2,18 @@ import { test, expect } from "./fixtures";
 import { type Page } from "@playwright/test";
 import { BASE_URL as BASE } from "./base-url";
 import { gotoHydrated } from "./hydration";
+import { demoFrame } from "./demo-frame";
 
 const URL = `${BASE}/component/tag_group/`;
 
+// A variant is addressed by its directory name (`variants/multi/`), the id of its demo frame, never by its displayed title.
 function multiVariant(page: Page) {
-  return page
-    .locator(".dx-component-variant")
-    .filter({ has: page.getByRole("heading", { name: "multi" }) });
+  return demoFrame(page, "multi");
 }
 
-// The variant that holds the disabled / non-selectable / mixed-removable groups, found by what it contains: its
-// heading is a demo title (`variants/states/title.txt`), which a rename must not be able to break.
+// The variant that holds the disabled / non-selectable / mixed-removable groups (`variants/states/`).
 function statesVariant(page: Page) {
-  return page
-    .locator(".dx-component-variant")
-    .filter({ has: page.getByTestId("tag-group-nonselectable") });
+  return demoFrame(page, "states");
 }
 
 function tag(page: Page, name: string) {
