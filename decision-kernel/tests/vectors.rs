@@ -219,6 +219,12 @@ fn the_native_call_is_cheap() {
         Value::Obj(vec![("type".into(), Value::Str("keydown".into()))]),
     ])
     .encode(&mut request);
+    let answer = wire::decide_fixture(&request).unwrap();
+    println!(
+        "request {} bytes, answer {} bytes",
+        request.len(),
+        answer.len()
+    );
     let mut direct = Vec::with_capacity(10_000);
     let mut bytes = Vec::with_capacity(10_000);
     for _ in 0..10_000 {
