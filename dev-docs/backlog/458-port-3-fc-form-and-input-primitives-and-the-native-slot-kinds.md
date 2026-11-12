@@ -6,7 +6,7 @@ size: "L"
 area: inputs
 js-grant: js_file=46 (relocated lines, root doc section 5.4; the main loop's grant row at the merge base is the number the gate reads)
 adds: [dropAnywhere, labelClick]
-updated: 2026-10-26
+updated: 2026-11-12
 ---
 
 # Row 458: Port 3.FC: form and input primitives, label click, and the native slot owners
@@ -31,3 +31,5 @@ L
 - **Depends on:** [row 449](./449-phase-0-4-proof-port-b-the-executor-and-popover-spreads.md) (executor), [row 457](./457-port-3-vs-virtual-settle-and-the-scrollowner-behaviour.md) (S4), [row 447](./447-phase-0-7-the-order-runtime.md) (value owner), [row 444](./444-gate-half-of-lane-3-0b-grants-bans-and-witness-presence.md); `adds:` rows for the two kinds (`dropAnywhere`, `labelClick`).
 - **Proof:** The witness per effect for each behaviour (the `dragSource` half is expected green on Chromium and judged on Firefox or under fallback emulation); form-reset and pre-hydration typing specs (see rows 468 and 469); the OTP paste spec of [row 474](./done/474-bug-input-otp-paste-loses-digits-to-maxlength.md); the date-picker segment specs of [row 473](./473-bug-date-picker-segments-let-the-browser-edit-the-vdom-text-node.md); otp-input, label, checkbox, accordion, combobox specs.
 - **Hours (inferred):** 19 (18 after round 5, 10 before it; round 6 +2 for the owner-write carrier, the IME hold and draining the sink scan's baseline, -1 for `otpFilter`, built in item 0.3); removes about 91 lines, relocates 46 (5 per hour).
+- **Decision contract (row 509):** each behaviour this row adds has its `decide` in Rust and a TypeScript adapter only ([row 509](./509-rust-decision-contract.md)). The `js-grant` above is a ceiling inferred before that rule; the row re-measures it when it opens.
+- **Blitz arm:** this row does not remove the rsx route from an existing `#[cfg(not(feature = "web"))]` arm, and the gates allow it there ([row 509](./509-rust-decision-contract.md), item 5). It need not create such an arm.

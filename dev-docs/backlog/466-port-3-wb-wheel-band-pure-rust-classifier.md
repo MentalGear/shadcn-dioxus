@@ -6,7 +6,7 @@ size: "M"
 area: components
 js-grant: none (a `wheelBand` entry would need the owner's lag or order verdict and its own row)
 adds: []
-updated: 2026-10-26
+updated: 2026-11-12
 ---
 
 # Row 466: Measured port 3: 3.WB wheel band (C5 to a pure Rust classifier)
@@ -31,3 +31,4 @@ M
 - **Depends on:** [row 463](./463-port-3-fz-freeze-legacy-scripts-behind-legacy-impl.md), [row 464](./464-port-3-ca-carousel-rust-arms-next-to-the-frozen-legacy.md) (C4's bounce lines and C1's true-end attribute), [row 443](./443-owner-measurement-kit-perf-recorder-and-impl-switch.md); the owner's measurement of 3.CA comes first.
 - **Proof:** The owner's `verdict.json` for the wheel band; parity against the recorded fixture.
 - **Hours (inferred):** 12-16 (inferred); removes 477 (0 if Rust loses) (34 per hour).
+- **Decision in Rust:** the logic this row moves is a pure Rust function over typed inputs; only reading and writing the page goes through the bridge ([`decisions.md`](../decisions.md), "Behaviour is decided in Rust").

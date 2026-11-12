@@ -6,7 +6,7 @@ size: "L"
 area: primitives
 js-grant: js_file=193 (relocated lines, root doc section 5.4; the main loop's grant row at the merge base is the number the gate reads)
 adds: [pan]
-updated: 2026-10-26
+updated: 2026-11-12
 ---
 
 # Row 455: Port 3.GS: gestures and toast (L21, L28-L30, O1, O3, O5 with the pan behaviour, V17)
@@ -31,3 +31,4 @@ L
 - **Depends on:** [row 452](./452-port-3-pl-placement-anchor-fallback-and-the-paint-safe-gate.md) (O3 needs the pending CSS), [row 448](./448-phase-0-3-proof-port-a-focus-trap-and-otpfilter.md) (the registry macro and `site!`; this row builds `hotkey` for O1 unless 3.OV has), [row 447](./447-phase-0-7-the-order-runtime.md) (one pump, the gesture epoch and the vdom carrier), [row 444](./444-gate-half-of-lane-3-0b-grants-bans-and-witness-presence.md); an `adds: [pan]` row (and `[hotkey]` if this row builds it for O1).
 - **Proof:** The witness per `pan` effect (capture, click suppression); drawer, slider, resizable, toast specs on a release build; the touch specs.
 - **Hours (inferred):** 17 (unchanged by round 7: the gesture epoch replaces the port; 16 after round 5, 13 before it); removes about 246 lines, relocates 193 (15 per hour).
+- **Decision contract (row 509):** each behaviour this row adds has its `decide` in Rust and a TypeScript adapter only ([row 509](./509-rust-decision-contract.md)). The `js-grant` above is a ceiling inferred before that rule; the row re-measures it when it opens.

@@ -6,7 +6,7 @@ size: "S"
 area: primitives
 js-grant: none
 adds: []
-updated: 2026-10-26
+updated: 2026-11-12
 ---
 
 # Row 451: Port 3.SC: shared collection and activity scripts (S7, S15)
@@ -31,3 +31,4 @@ S
 - **Depends on:** [row 444](./444-gate-half-of-lane-3-0b-grants-bans-and-witness-presence.md) (grant rule) and [row 445](./445-phase-0-2-the-legacy-freeze.md) (legacy freeze); a candidate row also needs its own grant row, and an `adds:` row where it adds a behaviour.
 - **Proof:** The components that use them (specs of `collection`/`activity` consumers on a release build); `check-js-volume` baseline rows lowered.
 - **Hours (inferred):** 4 (inferred); removes about 118 lines (27-30 per hour).
+- **Decision in Rust:** the logic this row moves is a pure Rust function over typed inputs; only reading and writing the page goes through the bridge ([`decisions.md`](../decisions.md), "Behaviour is decided in Rust").

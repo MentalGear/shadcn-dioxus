@@ -4,7 +4,7 @@
 the page as stale and check `git log` and the flag files named here.** What each batch contained is in `git log` and the
 backlog row files, not here: this page says only what is deployed, what runs, what is next and what waits for the owner.
 
-Last updated: **2026-11-11**. Several sessions work in parallel; who holds what is on the `claims` branch (`CLAIMS.md`).
+Last updated: **2026-11-12**. Several sessions work in parallel; who holds what is on the `claims` branch (`CLAIMS.md`).
 Preview site: https://mentalgear.github.io/shadcn-dioxus/ (still serving main `f38662dc`, PRs #166-#168, deploy commit
 `85c05466`; release suite 4192 passed, 0 failed). **Main itself is ahead of the live site**: PRs #170-#173 (all
 2026-11-11: the 2026-11-07 batch plus the icon-dedup and demo-title work below, a comment-analysis pass, and two
@@ -85,7 +85,9 @@ step: the decided plan is [`research/sync-js-root-2026-10-26.md`](./research/syn
 [`research/sync-js-residue-2026-10-26.md`](./research/sync-js-residue-2026-10-26.md) for the three feel-critical
 ports), its working form is [`js-interop.md`](./js-interop.md), and every item has a row:
 
-7. Phase 0, the construct and two proof ports: **444** (gates), **445** (legacy freeze), **446** (witness harness),
+7. Phase 0, the construct and two proof ports: **508** (the decision-kernel proof; it depends on nothing unlanded) and
+   **509** (the Rust decision contract; before 448's `otpFilter` and every behaviour row), **444** (gates), **445**
+   (legacy freeze), **446** (witness harness),
    **447** (order runtime), **448** (proof port A), **449** (proof port B), **450** (bridge stats and the desktop latency
    session); about 111 h, nearly all one chain through `ts/bridge.ts`, so it runs mostly serially.
 8. The ports, as ordinary rows by yield (lines of JavaScript removed per hour, highest first; a row whose dependencies
@@ -122,6 +124,8 @@ ports), its working form is [`js-interop.md`](./js-interop.md), and every item h
   branches; the 30 unmerged ones are kept).
 - CI back on (rows 4, 33): every workflow except `mutants.yml` is deleted, so reactivation means a new workflow that
   runs `scripts/run-gates.sh`.
+- Row 508's verdict: on `MIRROR` the owner approves the rewritten contract before row 509 opens. On `KERNEL`, loading the
+  kernel inside the desktop webview stays unproven until a desktop build exists (row 23).
 
 ## Rules and decisions in force
 

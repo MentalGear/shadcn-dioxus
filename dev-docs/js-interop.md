@@ -22,6 +22,7 @@ when the rule you need depends on something that is not.
 | `check-bridge-behaviours` | kind parity with the generated file, behaviour modules pure, budgets (a ratchet over `scripts/check-bridge-behaviours.budgets.tsv`, bytes), `FORBIDDEN_VERBS` (the slot-writing `Method` variants are named only inside `bridge/`), `Program::Frozen`, a frozen `window.__dxBridge` whose `register` takes only the generated kinds, one place for cancel and frames, closed surface, eval only inside `bridge/`, `Program` closed and sealed, no gesture verbs | `Decision<E>` effect typing and a DOM-less compile for `ts/behaviours/`, a witness test per effect at each `site!` (item 0.3 builds the checks over those artefacts), the lease check on the generated file, the `FORBIDDEN_VERBS` list derived from the slot table (item 0.7), `REDUCERS` |
 | the bridge | closed verbs over closed tables; `Program { Serve, Pump, Legacy(&str) }`, sealed to `bridge/`; one FIFO pump for element operations; latest-wins streams; an epoch on every install and a default lease on every non-passive behaviour; one test fixture; the `__dxBridgeDelayFrames` harness with the stuck setting `"never"` | `Program::Frozen`, the rest of the verb rows (each added by the first row that needs it), the closed `REDUCERS` table |
 | named behaviours | `Behaviour::Fixture`, a test fixture, only | `otpFilter` (proof port A), `scrollLock`, `dropAnywhere`, `pan`, `settle`, `openFocus`, `stickToEnd`, `scrollOwner` (the one-shot kind first), `labelClick`, and `hotkey` (built by the first of 3.OV and 3.GS that opens, only if its witness is red or a UA-reserved shortcut needs it); `roving` only if the phase-0 focus-write witness is red; `scrollStep`, `wheelBand`, `pan`'s page-side output variants and the `release` effect are on the plan's exits list. The executor is a bridge internal, not an entry |
+| the decision kernel | none: the fixture's `decide` is TypeScript | a behaviour's Rust `decide` as a wasm module the bridge loads, committed and checked by `check-decision-kernel`; one set of vectors on both routes; a `#[cfg(not(feature = "web"))]` exemption in `check-native-slots` and `check-hot-events` (row 508 proves the mechanism, row 509 builds it) |
 | the executor (the reconciled kinds: popover and modal open, `indeterminate`, `defaultChecked`, then `value`, `checked`, `selected`, `hidden=until-found`) | a comment seam (`pageObserver`) | item 0.4 builds the one page executor for every reconciled kind, the native slot kinds included (round 6: no per-kind choice and no Rust `transaction` branch), and owns the hook spreads; item 0.6 builds the witness harness |
 | the order runtime (epoch rule, each owner's own rsx handler as the vdom carrier and a fallback port only for `beforematch`, one inbound pump, slot table keyed `(scope, nonce)` and stable across hydration, focus owner, `scrollOwner`) | none (the as-built `Epoch::next` is one process-global Rust counter and cannot lose to the page) | item 0.7 (pump, slot table, per-slot epochs, gesture epoch, focus owner, the one-shot scroll classifier), then the first row that consumes an owner builds it (`scrollOwner` in 3.VS) |
 | the paint-safe gate, the boot probe | none | lane 3.PL |
@@ -35,15 +36,19 @@ script. Call its hook; do not copy its string.**
 
 1. **Rust owns behaviour.** A Dioxus `on*` handler, a signal, a `MountedData` read, `sleep`/`use_interval` and CSS
    (anchor positioning, `scroll-padding`, `overflow-anchor`, `linear()`) come first. If one of them does it, nothing else
-   is written.
+   is written. A decision is a pure Rust function over typed inputs, the same on every renderer: web, the webview, and
+   Blitz later ([`decisions.md`](./decisions.md)).
 2. **Browser APIs Dioxus does not wrap go through the bridge** (`primitives/src/bridge/`, not on main yet): closed verbs,
-   and a closed registry of **named behaviours** for the few decisions that must be made on the page's thread. Where your
-   code goes is decided by the **deadline table** below.
+   and a closed registry of **named behaviours** for the few decisions that must be made on the page's thread. Such a
+   decision is Rust too: the bridge runs it in the page through the decision kernel (planned: rows 508 and 509). Where
+   your code goes is decided by the **deadline table** below.
 3. **No JS in Rust strings, no new script.** Not `document::eval`, not `document::Script { "..." }`, not `script {}`, not
    `concat!` pieces, not an `include_str!` of a `.js`, not a new `.js`/`.ts` file, not an inline `<script>`, not
    `web_sys`/`js_sys`.
-4. **The only new JS is a new verb row or a new named behaviour**, and a behaviour needs a backlog row that exists
-   before your lane starts (planned rule). If what you need is missing, say so in your report; do not route around it.
+4. **The only new JS is a new verb row or a named behaviour's adapter** (the event fields it reads, the attributes it
+   reads, applying its effects); a behaviour's `decide` is never TypeScript (planned rule, row 509), and a behaviour
+   needs a backlog row that exists before your lane starts (planned rule). If what you need is missing, say so in your
+   report; do not route around it.
 
 ## I want to ... use this
 
@@ -140,8 +145,10 @@ Two kinds of decision, placed by that table:
 ## Named behaviours
 
 A behaviour is a closed registry entry, not a script and not a predicate language: a Rust `Behaviour` variant with typed
-parameters, one pure `decide(config, memory, snapshot, event) -> Decision<E>` in
-`primitives/src/ts/behaviours/<kind>.ts`, and a thin DOM adapter that applies the effects. **Admission is derived per effect from the deadline table, with two grounds, never a declaration** (planned): the
+parameters, one pure Rust `decide(config, memory, snapshot, event) -> Decision<E>`, and a thin TypeScript adapter in
+`primitives/src/ts/behaviours/<kind>.ts` that names the event fields and attribute reads and applies the effects. On web
+and the webview the bridge runs `decide` in the page through the decision kernel; on a renderer with no page it is a
+direct call (planned, rows 508 and 509; today the one fixture's `decide` is TypeScript). **Admission is derived per effect from the deadline table, with two grounds, never a declaration** (planned): the
 **counterfactual witness**, or a **platform rule row** from a closed, cited category table: (a) `prevent` of a UA-reserved
 shortcut (F6, Ctrl/Cmd+B), (b) an activation-gated API effect (`clipboardWrite`: on WKWebView the call arrives by
 `evaluate_script`, outside the gesture, so no delay counterfactual can witness it; **not in use** while no library code uses
@@ -234,6 +241,9 @@ Web is the tested target; every desktop claim in the plan reads "web-verified; d
   limit, and release desktop builds install a document `contextmenu` listener that prevents default.
 - **Web `eval` is `new Function`**, so an app under a strict Content-Security-Policy needs `unsafe-eval` for the bridge's
   transport.
+- **Blitz has no page.** `document::eval` is unsupported there and the bridge answers "unsupported", so what must work
+  on Blitz is an rsx handler, a signal, `MountedData`, or a behaviour's Rust `decide` called directly. Write a
+  `not(web)` arm with that in mind (row 438).
 
 ## What is forbidden, and which gate says so
 

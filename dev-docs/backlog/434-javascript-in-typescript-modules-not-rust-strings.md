@@ -4,7 +4,7 @@ title: "Cut JavaScript to what Rust cannot do: audit every eval block, move the 
 status: "BACKLOG. Umbrella for rows 444-467 (the step 3 plan; the paper review is closed after seven rounds…"
 size: "L"
 area: primitives
-updated: 2026-10-26
+updated: 2026-11-12
 ---
 
 # Row 434: Cut JavaScript to what Rust cannot do
@@ -67,6 +67,31 @@ The owner asked whether the "synchronous" residue could be bridged too. Analysis
 - **Dioxus best-practice review** ([`../research/dioxus-best-practice-review-2026-10-26.md`](../research/dioxus-best-practice-review-2026-10-26.md)): an eval bridge with no web-sys is what the Dioxus docs prescribe and what upstream dioxus-primitives does; no 0.8 API makes it redundant. Folded into lane 3.0: one transport seam (hooks never call `document::eval`; it owns the delay hook, a Blitz "unsupported" answer and a future web-sys backend, PR #5194), the bridge loaded by eval after boot (the `asset!` + `document::Script` form needs a provider in every app, #5919, #5183, and was not adopted), teardown over the existing channel (#4064), G fail-open in CSS and on the page (the harness has a stuck `"never"` setting, #5734), leptos-use/dioxus-sdk hook names without a dioxus-sdk dependency. Web eval uses `new Function`, so strict-CSP apps need `unsafe-eval`.
 - **Risk:** desktop and mobile are not in CI; G and R latency there is inferred. WebKitGTK anchor-positioning support is unknown, so the Rust placement arm stays until probed. Chromium is the only engine installed here, so A's Firefox/WebKit claims wait for row 442. The schedule is lock- and disk-bound (one lane build copy fits at a time).
 
+### Renderer targets and the Rust decision (owner 2026-11-11)
+
+The owner named the targets: web, native through the desktop and mobile webview now, and Blitz later (row
+[438](./438-blitz-native-renderer.md)). The adopted plan places a named behaviour's `decide` in
+`ts/behaviours/<kind>.ts`; that runs on web and the webview and cannot run on Blitz, which has no page. The owner
+decided that every behaviour's decision is one pure Rust function, the same on every renderer, and that TypeScript is
+the bridge's transport and DOM adapter only.
+
+- **What changes in the plan.** A behaviour's `decide` is Rust. Where the deadline table puts the decision on the
+  page's thread, the function runs there as a wasm module the bridge loads, the decision kernel
+  ([row 508](./508-decision-kernel-proof.md) proves the mechanism, [row 509](./509-rust-decision-contract.md) is the
+  contract and its gates). A row that ports Rust logic over bridge verbs keeps its decision a pure function over typed
+  inputs, so only reading and writing the page goes through the bridge.
+- **What does not change.** The deadline table, the closed verbs, the one transport seam, admission by witness or
+  platform rule row, the order runtime and the executor (bridge internals, TypeScript, with no meaning on a renderer
+  that has no page), the measured group and its owner verdicts.
+- **What stays TypeScript until its row.** The legacy scripts, frozen by row 445 and parked by row 463, until rows
+  464-466 replace them.
+- **Order.** Row 508 runs first and depends on nothing unlanded. Row 509 lands before the `otpFilter` half of row 448
+  and before every row whose `adds:` names a behaviour. Rows 445, 451 and 454 are unaffected and may start.
+- **Hours.** The figures below were inferred before this decision. A row that adds a behaviour re-estimates when it
+  opens; the phase-0 total gains rows 508 and 509.
+- **If row 508's verdict is `MIRROR`.** The Rust `decide` remains the source of truth and a TypeScript copy is held
+  equal by the shared vectors; the owner approves that text before row 509 opens.
+
 ### The plan as backlog rows (owner: "backlog it", 2026-10-26)
 
 Every row below is **APPROVED 2026-10-26 (owner: "okay for the plan"; scope 2)**: phase 0 (rows 444-450) first, then the ports as ordinary rows by yield (the bug rows 468-471 and 473-475 excepted: they are independent of it). This row stays the umbrella and the tracker for item 0.0 (lane 3.0, the bridge, and lane VR, the ratchet: landed with batch 29, main 4afa18c2, and get no row of their own). Hours are the plan's own inference (root doc section 5.4); each row names its files, dependencies, proof and hours. Rows [442](./442-desktop-cadence-harness-and-desktop-pass.md) (the desktop-cadence harness and the desktop-pass stamp, about 14 h) and [443](./443-owner-measurement-kit-perf-recorder-and-impl-switch.md) (the owner's measurement kit) stay and gate the measured ports. The whole plan is about **340-370 agent-hours firm, 363-401 with the two conditional rows** (inferred); the root doc's ["Where the paper review stands"](../research/sync-js-root-2026-10-26.md) says where the paper review is: **seven rounds ran and the review is closed** (converged in substance, not at zero); the plan awaits the owner's approval and scope.
@@ -77,6 +102,8 @@ Every row below is **APPROVED 2026-10-26 (owner: "okay for the plan"; scope 2)**
 | row | what | hours (I) | depends on |
 |---|---|---|---|
 | [444](./444-gate-half-of-lane-3-0b-grants-bans-and-witness-presence.md) | Phase 0.1: the gate half of lane 3.0 (grant rows, sink and setter bans, FORBIDDEN_VERBS (one owner), gates only over artefacts that exist when it runs) | 36 (30-45) | 0.0 |
+| [508](./508-decision-kernel-proof.md) | Proof: a behaviour's Rust decide runs in the page as a wasm kernel, inside an event's dispatch (owner 2026-11-11) | 4-6 | 444 |
+| [509](./509-rust-decision-contract.md) | The Rust decision contract: one decide per behaviour, the kernel as a committed artefact, the gates (owner 2026-11-11) | not estimated | 508, 444 |
 | [445](./445-phase-0-2-the-legacy-freeze.md) | Phase 0.2: freeze the legacy scripts and sinks (script hashes, per-site sink freeze, js-fix grant) | 4 | 444 |
 | [446](./446-phase-0-6-witness-harness-and-the-first-witnesses.md) | Phase 0.6: the witness harness and the first witnesses | 14 | 444 |
 | [447](./447-phase-0-7-the-order-runtime.md) | Phase 0.7: the order runtime (inbound pump, per-slot epochs with every-slot `based_on` and a gesture epoch, the vdom carrier on the owners' own rsx handlers and the `beforematch` fallback port, slot table, focus owner, one-shot scroll classifier) | 20 | 444, 446 |

@@ -2,7 +2,7 @@
 
 The durable version of the rules that grew during the 2026-10-14/15 rounds (backlog rows 216, 221, 224). Give every
 lane agent this file plus its own prompt. Terminology: a **lane** is a work stream with its own file set and worktree;
-an **agent** is the Haiku or Sonnet subagent that executes it (model choice: `agent-model-fit.md`; lanes add no rows
+an **agent** is the Haiku, Sonnet or Opus subagent that executes it (model choice: `agent-model-fit.md`; lanes add no rows
 to it, its evidence log is closed).
 
 Session tooling (paths below default to `LANE_TGT=/home/user/tgt`):

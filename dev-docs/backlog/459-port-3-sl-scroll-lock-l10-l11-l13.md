@@ -6,7 +6,7 @@ size: "M"
 area: overlays
 js-grant: js_file=94 (relocated lines, root doc section 5.4; the main loop's grant row at the merge base is the number the gate reads)
 adds: [scrollLock]
-updated: 2026-10-26
+updated: 2026-11-12
 ---
 
 # Row 459: Port 3.SL: scroll lock (L10, L11, L13)
@@ -31,3 +31,4 @@ M
 - **Depends on:** [row 449](./449-phase-0-4-proof-port-b-the-executor-and-popover-spreads.md) (the scroll save and restore that replaces `scroll_lock.rs:267-298`), [row 448](./448-phase-0-3-proof-port-a-focus-trap-and-otpfilter.md) (the registry macro and adapter), [row 452](./452-port-3-pl-placement-anchor-fallback-and-the-paint-safe-gate.md) (`context_menu.rs` order: 0.3, 0.4, 3.PL, then this row), [row 444](./444-gate-half-of-lane-3-0b-grants-bans-and-witness-presence.md); an `adds: [scrollLock]` row.
 - **Proof:** The witness per `scrollLock` effect; characterisation specs written first; context-menu and dialog scroll-lock specs.
 - **Hours (inferred):** 7 (8 in round 6; round 7 -1: no document-scroller owner); removes about 2 lines, relocates 94.
+- **Decision contract (row 509):** each behaviour this row adds has its `decide` in Rust and a TypeScript adapter only ([row 509](./509-rust-decision-contract.md)). The `js-grant` above is a ceiling inferred before that rule; the row re-measures it when it opens.
