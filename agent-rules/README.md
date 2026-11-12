@@ -7,4 +7,4 @@ CLAUDE.md names the trigger; the file here carries the rule text. Read the file 
 - commits: writing a commit message
 - merge-and-install: merging lane branches, adding or changing a component
 - code-rules: comments, test titles, demo text, JS interop, a repeated problem
-- session-and-backlog: a fresh container without dx, editing a backlog row
+- session-and-backlog: a fresh container without dx, editing a backlog row, bringing a decision to the owner
