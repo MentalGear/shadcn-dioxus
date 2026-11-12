@@ -65,8 +65,8 @@ use dioxus::prelude::*;
 use serde::Deserialize;
 
 use crate::bridge::{
-    use_media_query, Command, ElementExt, EventField, EventKind, ListenOptions, Method, Prop,
-    ScrollMotion, Session, Slot, Target, Transaction,
+    use_media_query, Command, ElementExt, EventField, EventKind, ListenOptions, Prop, ScrollMotion,
+    Session, Slot, Target, Transaction,
 };
 use crate::{use_id_or, use_unique_id};
 
@@ -135,13 +135,13 @@ fn needs_reveal(before: Keyboard, after: Keyboard) -> bool {
     }
 }
 
-/// The scroll room one scroller holds for the keyboard, and what it had before: the inline values to give
-/// back and the padding the room is added to.
+/// The scroll room one scroller holds for the keyboard: the inline values to give back and the padding the
+/// room is added to.
 #[derive(Clone, Debug, PartialEq)]
 struct Slack {
-    /// The scroller's inline `padding-bottom` before the room was added (empty when unset).
+    /// The scroller's own inline `padding-bottom`, given back with the room (empty when unset).
     padding: String,
-    /// The scroller's inline `overflow-anchor` before (empty when unset).
+    /// The scroller's own inline `overflow-anchor`, given back with the room (empty when unset).
     anchor: String,
     /// The padding the room is added to: the scroller's own, over a floor of [`KEYBOARD_VISIBILITY_MARGIN_PX`].
     base: f64,
@@ -480,15 +480,14 @@ async fn bring_into_view(panel_id: &str, state: &State, reduced: ReadSignal<bool
         (field_rect.top, field_rect.bottom),
         visible,
     ) {
-        scroller.call(Method::ScrollBy {
-            left: None,
-            top: Some(top),
-            behavior: Some(if reduced() {
+        scroller.scroll_by_top(
+            top,
+            if reduced() {
                 ScrollMotion::Auto
             } else {
                 ScrollMotion::Smooth
-            }),
-        });
+            },
+        );
     }
 }
 

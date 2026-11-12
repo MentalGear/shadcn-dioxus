@@ -846,7 +846,7 @@ describe("publish (observed numbers copied to custom properties in the page)", (
     expect(ch.sent).toEqual([]);
   });
 
-  test("a listener that names fields still sends them, and a non-number is not written, and a name outside --dx- is refused", () => {
+  test("a listener that names fields sends them as well, writes no non-number, and refuses a name outside --dx-", () => {
     const { bridge, doc } = setup();
     const el = doc.add("sc");
     const ch = makeChannel();

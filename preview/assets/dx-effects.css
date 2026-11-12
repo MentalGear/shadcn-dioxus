@@ -72,6 +72,38 @@
  * ---------------------------------------------------------------------------
  */
 
+/* Written by the scroller's runtime (`use_scroll_fade`); universal syntax keeps an unwritten one invalid, so a
+   `var()` fallback applies. */
+@property --dx-scrollbar-inline-size {
+  syntax: "*";
+  inherits: true;
+}
+
+@property --dx-scrollbar-block-size {
+  syntax: "*";
+  inherits: true;
+}
+
+@property --dx-scroll-top {
+  syntax: "*";
+  inherits: false;
+}
+
+@property --dx-scroll-left {
+  syntax: "*";
+  inherits: false;
+}
+
+@property --dx-scroll-range-y {
+  syntax: "*";
+  inherits: false;
+}
+
+@property --dx-scroll-range-x {
+  syntax: "*";
+  inherits: false;
+}
+
 @property --dx-scroll-fade-t {
   inherits: false;
   initial-value: 0;

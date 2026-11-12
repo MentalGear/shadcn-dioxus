@@ -397,7 +397,7 @@ function resolve(target: DxTargetish): any {
 }
 
 /** The nearest vertical scroller between the active element and `root` (exclusive), else `root`. */
-function scrollerOf(root: any): any {
+function scrollerOf(root: HTMLElement | null): HTMLElement | null {
   for (let el = W.document.activeElement?.parentElement; root && el && el !== root; el = el.parentElement) {
     const overflow = W.getComputedStyle(el).getPropertyValue("overflow-y");
     if (overflow === "auto" || overflow === "scroll" || overflow === "overlay") return el;
@@ -491,7 +491,7 @@ function set(target: DxTargetish, name: string, value: string | null, epoch?: Dx
  * `data-dx-*` attributes and two inline styles. A name outside the table is an error. `null` removes.
  * Mirrors `Slot` in `bridge/mod.rs`.
  */
-const WRITES: Record<string, { run: (el: any, value: string | null) => void }> = {
+const WRITES: Record<string, { run: (el: HTMLElement, value: string | null) => void }> = {
   "data-dx-keyboard": { run: (el, value) => (value === null ? el.removeAttribute("data-dx-keyboard") : el.setAttribute("data-dx-keyboard", value)) },
   "data-dx-keyboard-slack": { run: (el, value) => (value === null ? el.removeAttribute("data-dx-keyboard-slack") : el.setAttribute("data-dx-keyboard-slack", value)) },
   "padding-bottom": { run: (el, value) => el.style.setProperty("padding-bottom", value ?? "") },
@@ -796,7 +796,7 @@ function installBehaviour(sc: Scope, spec: Omit<BehaviourSpec, "cmd">): () => vo
  * property of the observed element, in the page, at the moment it is observed. It is transport: a measured value
  * and a unit go to a variable, with no branch on any component state, and nothing crosses to Rust for it.
  */
-function publish(el: any, rows: DxPublish[] | undefined, read: (field: string) => unknown): void {
+function publish(el: HTMLElement, rows: DxPublish[] | undefined, read: (field: string) => unknown): void {
   for (const row of rows ?? []) {
     const value = read(row.field);
     if (typeof value === "number") set(el, row.var, value + (oneOf(row.unit, ["px"] as const) ?? ""));
@@ -821,7 +821,7 @@ function scope(raw?: DioxusChannel): Scope {
     return bareOn(target, type, handler, options, (off) => offs.push(off));
   };
   /** An observer's message: its numbers are published first (`options.publish`), then sent unless that is all it was for. */
-  const emitObserved = (el: any, spec: Omit<ObserveSpec, "cmd">, message: Fields) => {
+  const emitObserved = (el: HTMLElement, spec: Omit<ObserveSpec, "cmd">, message: Fields) => {
     const rows = (spec.options as { publish?: DxPublish[] } | undefined)?.publish;
     publish(el, rows, (field) => own(message, field));
     if (!rows?.length) send(message);

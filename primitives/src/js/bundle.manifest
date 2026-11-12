@@ -4,7 +4,7 @@
 bun 1.4.4
 ts 5e1d0728a425d7a690887487950b1d8a6b3c6032fbd63346eca74bf46e7d4c34  behaviours/behaviours.gen.ts
 ts f1ca028046ec61d38cacb364aea64c06db12b06b76da787afa58c24738430183  behaviours/fixture.ts
-ts 9a81db157c32f23d90223c0e0b5c9b2309e5ef6f00264fb2edd43427f47d63a5  bridge.ts
+ts 3c6da4f8cdcefd1008d27a3318be17d59eb9890c8a75b004b9465cbe0426fb8d  bridge.ts
 ts 3e97e2ea12e7fb372db078a6d28910847c524f1a55f12668279bdf6c5ac4a8a4  focus-trap.ts
 ts 5c7fbc6b8a200efebd4ca1a0dc8b2a2b3f5b3f849b58ee1ce2169313f8731a2a  lib/register.ts
 ts 099fc2209e30bdc77b0900b0cbb3acd285572a62c863956a8f05ac18d68d6258  types/bridge.d.ts

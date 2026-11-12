@@ -932,6 +932,15 @@ pub trait ElementExt {
         self.call(Method::Close(None));
     }
 
+    /// `scrollBy({ top, behavior })`: scrolls the element's own box vertically by `top` px.
+    fn scroll_by_top(&self, top: f64, behavior: ScrollMotion) {
+        self.call(Method::ScrollBy {
+            left: None,
+            top: Some(top),
+            behavior: Some(behavior),
+        });
+    }
+
     /// `scrollIntoView(options)`.
     fn scroll_into_view(&self, options: ScrollIntoView) {
         self.call(Method::ScrollIntoView(options));
