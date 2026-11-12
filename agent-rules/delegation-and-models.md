@@ -27,6 +27,10 @@ Read this when you are about to delegate a task, brief a lane agent or choose a 
   the source before its first edit and, where one is false, stops and reports instead of working around it. Measured
   2026-11-12: a lane found row 451's missing bridge rows in under a minute this way, and row 448's "dead" sites were
   caught by a read-only check before a deletion lane was sent.
+- **A brief names the lane's verification, and it is never the broad set.** Own-component specs by name in the lane;
+  the broad selection once per batch on a release build ([`dev-docs/lane-rules.md`](../dev-docs/lane-rules.md), "One
+  verifier per batch"). A new piece of tooling a lane could not run end to end is run once by the main loop before
+  anything depends on it (2026-11-12: an unrun chunk limit turned a deploy red in five seconds).
 - A **lane** is the work stream (file set, worktree); the **agent** is the Haiku, Sonnet or Opus subagent that executes
   it, never "a Haiku lane". Every lane agent gets [`dev-docs/lane-rules.md`](../dev-docs/lane-rules.md) plus its own
   prompt (worktree, build lock, mtime touch, gate procedure, merge queue, web-request rules). Each delegated lane adds a

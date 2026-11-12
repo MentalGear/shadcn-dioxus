@@ -95,8 +95,9 @@ step: the decided plan is [`research/sync-js-root-2026-10-26.md`](./research/syn
 [`research/sync-js-residue-2026-10-26.md`](./research/sync-js-residue-2026-10-26.md) for the three feel-critical
 ports), its working form is [`js-interop.md`](./js-interop.md), and every item has a row:
 
-7. Phase 0, the construct and two proof ports: **508** (the decision-kernel proof; it depends on nothing unlanded) and
-   **509** (the Rust decision contract; before 448's `otpFilter` and every behaviour row), **444** (gates), **445**
+7. Phase 0, the construct and two proof ports: **508** (the decision-kernel proof: verdict `KERNEL`, 2026-11-12,
+   upheld by an adversarial review with one blocking condition) and **509** (the Rust decision contract, open, size L;
+   it carries that condition and comes before 448's `otpFilter` and every behaviour row), **444** (gates), **445**
    (legacy freeze, landed 2026-11-12), **446** (witness harness),
    **447** (order runtime), **448** (proof port A), **449** (proof port B), **450** (bridge stats and the desktop latency
    session); about 111 h, nearly all one chain through `ts/bridge.ts`, so it runs mostly serially.
@@ -137,7 +138,7 @@ ports), its working form is [`js-interop.md`](./js-interop.md), and every item h
   runs `scripts/run-gates.sh`.
 - Row 511: approve or reject the one construction in the row (browser arm by default, Blitz as the `native` opt-in,
   a compile-time assert against dioxus's own renderer).
-- Row 508's verdict: on `MIRROR` the owner approves the rewritten contract before row 509 opens. On `KERNEL`, loading the
+- Row 508's verdict is `KERNEL`, so row 509 opens without a further decision. Loading the
   kernel inside the desktop webview stays unproven until a desktop build exists (row 23).
 
 ## Rules and decisions in force

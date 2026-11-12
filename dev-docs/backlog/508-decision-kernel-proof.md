@@ -1,7 +1,7 @@
 ---
 id: 508
 title: "Proof: a behaviour's Rust decide runs in the page as a wasm kernel, inside an event's dispatch"
-status: "APPROVED 2026-11-11 (owner). A proof on a branch (lane/decision-kernel-proof), not queued for…"
+status: "KERNEL (2026-11-12, lane decision-kernel-proof). All five pass lines hold: the fixture's Rust…"
 size: "S"
 area: primitives
 js-grant: none
@@ -24,8 +24,17 @@ Part of [row 434](./434-javascript-in-typescript-modules-not-rust-strings.md).
 
 ## Status / trigger
 
-APPROVED 2026-11-11 (owner). A proof on a branch (`lane/decision-kernel-proof`), not queued for merge: only this row's
-verdict and the research note land. Starts now; it depends on nothing unlanded.
+KERNEL (2026-11-12, lane decision-kernel-proof). All five pass lines hold: the fixture's Rust `decide` runs as a
+25,700-byte wasm kernel that the bridge calls synchronously in a capture-phase, non-passive listener on a release SSG
+build in Chromium; it fails open; two clean builds are byte-identical; the call's p99 is 0.045 to 0.075 ms over 10,000
+events. The proof code stays on `lane/decision-kernel-proof` (head `0739d919`, not for merge). Open: loading in the
+desktop webview (row 23); the call's tail (p999 0.4 to 15 ms on a loaded box); row 509's gate and JS-grant work, whose
+`js_file=0` grant does not hold (the loader and codec are +4,270 bytes of `bridge.js`, the deleted TypeScript `decide`
+was 15). Numbers, design, rejected routes and gate findings:
+[research/decision-kernel-proof.md](../research/decision-kernel-proof.md). The adversarial review of
+2026-11-12 upholds the verdict with one blocking condition (the adapter's inputs generated from the Rust types, the
+kinds held equal to the kernel's exports, a kind that cannot decide reporting to Rust), carried as the blocking item of
+row [509](./509-rust-decision-contract.md) with the review's other conditions; the review is the note's last section.
 
 ## Size
 
