@@ -680,10 +680,11 @@ def _self_test() -> int:
             ok += 1
     row = row_at(".", "HEAD", 446)
     if row is not None:
-        if row.grant.get("js_file") == 360 and row.open:
+        # The live row is read for its shape, never for today's number: an open row with a grant in a real column.
+        if row.open and row.grant and not row.problems:
             ok += 1
         else:
-            fails.append(f"rows.py: row 446 at HEAD reads as grant {row.grant}, open {row.open}")
+            fails.append(f"rows.py: row 446 at HEAD reads as grant {row.grant}, open {row.open}, problems {row.problems}")
 
     for f in fails:
         print("ratchet --self-test FAIL: " + f, file=sys.stderr)
