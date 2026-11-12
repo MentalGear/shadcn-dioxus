@@ -316,6 +316,10 @@ pub struct Intersection {
     pub width: f64,
     /// The target's bounding box: height.
     pub height: f64,
+    /// `intersectionRect.height`: how much of the target's height is inside the root.
+    pub intersection_height: f64,
+    /// The root's height (`rootBounds.height`; the window's inner height without a root box).
+    pub root_height: f64,
 }
 
 /// A summary of one `MutationObserver` callback.

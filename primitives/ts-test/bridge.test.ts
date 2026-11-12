@@ -178,6 +178,16 @@ describe("call", () => {
 });
 
 describe("get", () => {
+  test("attrsOf lists the attribute of every matching descendant in order", () => {
+    const { bridge, doc } = setup();
+    doc.add("a").setAttribute("data-collection-item", "c1:2");
+    doc.add("b").setAttribute("data-collection-item", "c2:0");
+    doc.add("c").setAttribute("data-collection-item", "c1:1");
+    const prop = 'attrsOf:data-collection-item [data-collection-item^="c1:"]';
+    expect(bridge.get({ kind: "document" }, [prop])).toEqual({ [prop]: ["c1:2", "c1:1"] });
+    expect(bridge.get("missing", [prop])).toEqual({ [prop]: null });
+  });
+
   test("reads computed style, geometry, attributes and state in one call", () => {
     const { bridge, doc } = setup();
     const el = doc.add("g");
@@ -231,14 +241,14 @@ describe("observe", () => {
     expect(ro.observed).toEqual([[el, { box: "border-box" }]]);
     expect(io.init).toEqual({ root: null, rootMargin: "10px", threshold: [0, 1] });
     ro.callback([{ contentRect: { width: 10, height: 20 }, borderBoxSize: [{ inlineSize: 12, blockSize: 22 }] }]);
-    io.callback([{ isIntersecting: true, intersectionRatio: 0.5, boundingClientRect: { top: 1, left: 2, width: 3, height: 4 } }]);
+    io.callback([{ isIntersecting: true, intersectionRatio: 0.5, boundingClientRect: { top: 1, left: 2, width: 3, height: 4 }, intersectionRect: { height: 2 }, rootBounds: { height: 800 } }]);
     mo.callback([
       { attributeName: "class", addedNodes: [1, 2], removedNodes: [] },
       { attributeName: "class", addedNodes: [], removedNodes: [1] },
     ]);
     expect(ch.sent).toEqual([
       { width: 10, height: 20, borderWidth: 12, borderHeight: 22 },
-      { isIntersecting: true, ratio: 0.5, top: 1, left: 2, width: 3, height: 4 },
+      { isIntersecting: true, ratio: 0.5, top: 1, left: 2, width: 3, height: 4, intersectionHeight: 2, rootHeight: 800 },
       { count: 2, attributes: ["class"], added: 2, removed: 1 },
     ]);
     s.dispose();

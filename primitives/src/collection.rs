@@ -6,33 +6,28 @@ use std::rc::Rc;
 use dioxus::core::{current_scope_id, use_drop, Runtime, ScopeId};
 use dioxus::prelude::*;
 
+use crate::bridge::{self, Prop, Target};
 use crate::{use_effect_cleanup, use_unique_id};
 
 /// The attribute that marks a derived-index item's element for the DOM-order
 /// pass: `"{collection id}:{slot}"`.
 const ORDER_MARKER: &str = "data-collection-item";
 
-/// Lists the slots of one collection's marked elements in document order
-/// (`querySelectorAll` returns document order).
-const DOM_ORDER_JS: &str = r#"
-const prefix = await dioxus.recv();
-const slots = [];
-for (const el of document.querySelectorAll('[data-collection-item^="' + prefix + '"]')) {
-  slots.push(Number(el.getAttribute('data-collection-item').slice(prefix.length)));
+/// The document-order read of one collection's marked elements: the marker attribute of every
+/// element whose marker starts with `prefix` (`querySelectorAll` returns document order).
+fn marker_read(prefix: &str) -> Prop {
+    Prop::AttrsOf {
+        attr: ORDER_MARKER.into(),
+        selector: format!(
+            "[{ORDER_MARKER}^=\"{}\"]",
+            prefix.replace('\\', "\\\\").replace('"', "\\\"")
+        ),
+    }
 }
-dioxus.send(slots);
-"#;
 
 /// The slots of the marker attribute values a document-order read returned (document order), with
 /// the collection's `prefix` (`"{collection id}:"`) removed. A value that is missing, lacks the
 /// prefix or has no number after it names no slot and is dropped.
-#[cfg_attr(
-    not(test),
-    expect(
-        dead_code,
-        reason = "row 451 feeds it the bridge's document-order read"
-    )
-)]
 fn slots_from_markers(prefix: &str, markers: &[Option<String>]) -> Vec<usize> {
     markers
         .iter()
@@ -188,15 +183,13 @@ impl CollectionState {
         pending.set(true);
         let mut collection = *self;
         Runtime::current().spawn(order.scope, async move {
-            #[expect(
-                clippy::disallowed_methods,
-                reason = "row 451: this page script is ported by row 451"
-            )]
-            let mut eval = document::eval(DOM_ORDER_JS);
-            let slots = match eval.send(order.marker_prefix.peek().clone()) {
-                Ok(()) => eval.recv::<Vec<usize>>().await.ok(),
-                Err(_) => None,
-            };
+            let prefix = order.marker_prefix.peek().clone();
+            let read = marker_read(&prefix);
+            let markers = bridge::get(Target::Document, [read.clone()])
+                .await
+                .ok()
+                .and_then(|props| props.strings(&read));
+            let slots = markers.map(|markers| slots_from_markers(&prefix, &markers));
             if let Some(slots) = slots {
                 collection.apply_dom_order(&slots);
             }
@@ -1139,6 +1132,15 @@ mod tests {
         dom.in_runtime(|| collection.apply_dom_order(&slots));
         dom.render_immediate_to_vec();
         assert_eq!(probes(&render(&dom)), after);
+    }
+
+    #[test]
+    fn the_order_read_selects_the_collections_markers_by_prefix() {
+        assert_eq!(
+            marker_read("c7:").wire(),
+            "attrsOf:data-collection-item [data-collection-item^=\"c7:\"]"
+        );
+        assert!(marker_read("a\"b").wire().ends_with("^=\"a\\\"b\"]"));
     }
 
     #[test]
