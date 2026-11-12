@@ -28,7 +28,7 @@ test.describe("details", () => {
     await gotoHydrated(page, `${BASE_URL}/component/calendar/`, { timeout: 20 * 60 * 1000 }); // Increase timeout to 20 minutes
 
     // Wait for the page to fully load
-    let componentSection = page.getByRole("heading", { name: "calendar" });
+    let componentSection = page.getByRole("heading", { level: 1, name: "calendar" });
     await componentSection.waitFor({ state: "visible" });
 
     await expectNoAxeViolations(page, "component/calendar", {
@@ -51,7 +51,7 @@ test.describe("style tab", () => {
     // text, not a blank/loading/error placeholder.
     await gotoHydrated(page, `${BASE_URL}/component/kbd/`);
 
-    await page.getByRole("heading", { name: "kbd" }).waitFor({ state: "visible" });
+    await page.getByRole("heading", { level: 1, name: "kbd" }).waitFor({ state: "visible" });
     // The sections are the library's Accordion/Collapsible: their triggers work once hydrated.
     await page.waitForSelector('html[data-hydrated="true"]', { state: "attached" });
     // Installation and "Manual installation files" are both closed by default (rows 233, 236): the

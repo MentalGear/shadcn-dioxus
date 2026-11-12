@@ -31,7 +31,10 @@ type Role = Parameters<Page["getByRole"]>[0];
 /**
  * A demo's frame: the page's main demo (`variant` omitted or `"main"`, id `component-preview-frame`) or another
  * variant by its code name (`"checkboxes"` -> `#component-preview-frame-checkboxes`). The variant names are the
- * directory names under `preview/src/components/<c>/variants/`, i.e. identifiers, not demo copy.
+ * directory names under `preview/src/components/<c>/variants/`, i.e. identifiers, not demo copy. This is how every spec
+ * addresses a variant ("the variant card"): the heading over a variant is its `title.txt` (or a title derived from the
+ * directory), copy that is edited freely, and `scripts/check-demo-text-locators.sh` refuses a locator that finds a
+ * variant through it. Frame ids are unique per page.
  */
 export function demoFrame(page: Page, variant = "main"): Locator {
   return page.locator(variant === "main" ? DEMO_FRAME : `${DEMO_FRAME}-${variant}`).first();
