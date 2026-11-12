@@ -40,7 +40,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (71)
+## Open rows (72)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -75,7 +75,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [445](backlog/445-phase-0-2-the-legacy-freeze.md) | Phase 0.2: freeze the legacy scripts and sinks (script hashes, per-site sink freeze, js-fix grant) | APPROVED 2026-10-26 (owner: "okay for the plan"; scope 2, the recommended default, since no scope… | S | tooling |
 | [446](backlog/446-phase-0-6-witness-harness-and-the-first-witnesses.md) | Phase 0.6: the witness harness and the first witnesses | APPROVED 2026-10-26 (owner: "okay for the plan"; scope 2, the recommended default, since no scope… | L | tests |
 | [447](backlog/447-phase-0-7-the-order-runtime.md) | Phase 0.7: the order runtime (inbound pump, per-slot epochs, vdom carrier, slot table, focus owner, one-shot scroll classifier) | APPROVED 2026-10-26 (owner: "okay for the plan"; scope 2, the recommended default, since no scope… | M | primitives |
-| [448](backlog/448-phase-0-3-proof-port-a-focus-trap-and-otpfilter.md) | Phase 0.3: proof port A (the 16 dead not(web) eval sites, focus-trap.ts, and the otpFilter behaviour for S11) | APPROVED 2026-10-26 (owner: "okay for the plan"; scope 2, the recommended default, since no scope… | L | overlays |
+| [448](backlog/448-phase-0-3-proof-port-a-focus-trap-and-otpfilter.md) | Phase 0.3: proof port A (the not(web) focus trap's 3 eval sites, focus-trap.ts, and the otpFilter behaviour for S11) | APPROVED 2026-10-26 (owner: "okay for the plan"; scope 2, the recommended default, since no scope… | L | overlays |
 | [449](backlog/449-phase-0-4-proof-port-b-the-executor-and-popover-spreads.md) | Phase 0.4: proof port B (the reconciled-kinds executor, the popover hooks that return the attribute to spread, the owners' onbeforetoggle handlers) | APPROVED 2026-10-26 (owner: "okay for the plan"; scope 2, the recommended default, since no scope… | L | overlays |
 | [450](backlog/450-phase-0-5-dxbridgestats-and-the-latency-session.md) | Phase 0.5: __dxBridgeStats, a desktop smoke launch and the one latency session | APPROVED 2026-10-26 (owner: "okay for the plan"; scope 2, the recommended default, since no scope… | M | tooling |
 | [451](backlog/451-port-3-sc-shared-collection-and-activity.md) | Port 3.SC: shared collection and activity scripts (S7, S15) | APPROVED 2026-10-26 (scope 2): after phase 0, taken as an ordinary row in order of JavaScript… | S | primitives |
@@ -115,5 +115,6 @@ proposing one is closed as out of scope (row 337 is the first).
 | [507](backlog/507-codegraph-comment-analysis-findings.md) | Code analyzer -&gt; comment analysis: a standing backlog for what the tool's metrics turn up | OPEN, STANDING. Owner-requested 2026-11-11: run the comment analysis and record what can be learned… | S per pass (a read of the Comments tab… | tooling |
 | [508](backlog/508-decision-kernel-proof.md) | Proof: a behaviour's Rust decide runs in the page as a wasm kernel, inside an event's dispatch | APPROVED 2026-11-11 (owner). A proof on a branch (lane/decision-kernel-proof), not queued for… | S | primitives |
 | [509](backlog/509-rust-decision-contract.md) | The Rust decision contract: one decide per behaviour, the decision kernel as a committed artefact, and the gates | APPROVED 2026-11-11 (owner). Opens when row 508's verdict is KERNEL. On MIRROR, items 2 to 4 are… | M | primitives |
+| [511](backlog/511-primitives-web-feature-contract.md) | The primitives' web feature is the browser-engine switch and nothing states or enforces it: a CLI-installed app silently gets the Blitz arms | OPEN, found 2026-11-12. Needs the owner's choice between options A, B and C before any code. Found… | M (inferred); A is S, C is S to M, B is… | primitives |
 
 <!-- END GENERATED -->
