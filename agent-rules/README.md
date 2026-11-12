@@ -6,5 +6,5 @@ CLAUDE.md names the trigger; the file here carries the rule text. Read the file 
 - build-and-fast-loop: cargo/dx/SSG builds, dx serve, Playwright
 - commits: writing a commit message
 - merge-and-install: merging lane branches, adding or changing a component
-- code-rules: comments, test titles, demo text, JS interop, a repeated problem
+- code-rules: comments, test titles, demo text, JS interop, a repeated problem, the local-minimum checkpoints
 - session-and-backlog: a fresh container without dx, editing a backlog row, bringing a decision to the owner

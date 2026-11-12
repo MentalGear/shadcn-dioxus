@@ -25,6 +25,9 @@ Path-scoped stubs in `.claude/rules/` load when you touch matching files; the ta
   [code-rules](./agent-rules/code-rules.md).
 - **See the same problem a second time** -> fix the class by construction. Read
   [code-rules](./agent-rules/code-rules.md).
+- **Dispatch or merge a batch, get a lane back blocked, patch the same area a third time, or stack a workaround** ->
+  ask whether this is a local minimum; if so zoom out, take the issues apart and fix their highest shared root by
+  construction. Read [code-rules](./agent-rules/code-rules.md).
 - **Bring a decision to the owner** -> first take it apart: evidence, an existing rule or a recorded decision may
   settle it, and then it is not a decision. For what is left, put the one best construction forward to approve, with
   its residue, not a menu. Read [session-and-backlog](./agent-rules/session-and-backlog.md).
