@@ -215,6 +215,148 @@ if (mode === 'doc' || el) {
 }
 "#;
 
+/// The activity decisions: pure functions over the typed facts the page reports (tab visibility,
+/// the observer's answer, whether a `content-visibility: auto` subtree skips the element), the same
+/// on every renderer (row 451).
+mod decide {
+    #![cfg_attr(
+        not(test),
+        expect(dead_code, reason = "row 451 wires these to the bridge's reads and observers")
+    )]
+
+    use super::ENTER_RATIO;
+
+    /// The `IntersectionObserver` thresholds of an entrance: every tenth, so the observer reports
+    /// each step of the ratio and the height rule below is checked as the element scrolls in.
+    pub(super) const ENTER_THRESHOLDS: [f64; 11] =
+        [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0];
+
+    /// What an `IntersectionObserver` entry reports, as far as the decisions read it.
+    #[derive(Clone, Copy, Debug, PartialEq)]
+    pub(super) struct Sighting {
+        /// The entry intersects the root (with its margin).
+        pub(super) is_intersecting: bool,
+        /// `intersectionRatio`.
+        pub(super) ratio: f64,
+        /// `intersectionRect.height`.
+        pub(super) intersection_height: f64,
+        /// The root's height (`rootBounds.height`, the window's inner height without a root).
+        pub(super) root_height: f64,
+    }
+
+    /// Whether a loop's element counts as on screen: any intersection with the margin-grown root.
+    pub(super) fn loop_seen(sighting: Sighting) -> bool {
+        sighting.is_intersecting
+    }
+
+    /// Whether an entrance's element counts as seen: [`ENTER_RATIO`] of its own area, or of the
+    /// root's height when the element is taller than the root.
+    pub(super) fn enter_seen(sighting: Sighting) -> bool {
+        sighting.is_intersecting
+            && (sighting.ratio >= ENTER_RATIO
+                || sighting.intersection_height >= ENTER_RATIO * sighting.root_height)
+    }
+
+    /// The motion of an element loop: `None` until the observer has answered while the tab is
+    /// visible (nothing is reported yet), `Some(false)` in a hidden tab, in a skipped
+    /// `content-visibility` subtree or off screen.
+    pub(super) fn loop_active(tab_hidden: bool, seen: Option<bool>, skipped: bool) -> Option<bool> {
+        if tab_hidden {
+            return Some(false);
+        }
+        seen.map(|seen| seen && !skipped)
+    }
+
+    /// The motion of a document-level subscription: the tab alone.
+    pub(super) fn document_active(tab_hidden: bool) -> bool {
+        !tab_hidden
+    }
+
+    /// Whether an entrance fires now: the element is seen, the tab is visible and no skipped
+    /// subtree holds it. The owner latches the first `true`.
+    pub(super) fn entered(tab_hidden: bool, seen: bool, skipped: bool) -> bool {
+        !tab_hidden && seen && !skipped
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        fn sighting(is_intersecting: bool, ratio: f64, height: f64, root: f64) -> Sighting {
+            Sighting {
+                is_intersecting,
+                ratio,
+                intersection_height: height,
+                root_height: root,
+            }
+        }
+
+        #[test]
+        fn a_loop_is_unknown_until_the_observer_answers() {
+            assert_eq!(loop_active(false, None, false), None);
+            assert_eq!(loop_active(false, None, true), None);
+        }
+
+        #[test]
+        fn a_hidden_tab_is_an_answer_without_the_observer() {
+            assert_eq!(loop_active(true, None, false), Some(false));
+            assert_eq!(loop_active(true, Some(true), false), Some(false));
+        }
+
+        #[test]
+        fn a_loop_runs_only_when_seen_and_not_skipped() {
+            assert_eq!(loop_active(false, Some(true), false), Some(true));
+            assert_eq!(loop_active(false, Some(false), false), Some(false));
+            assert_eq!(loop_active(false, Some(true), true), Some(false));
+        }
+
+        #[test]
+        fn the_document_subscription_follows_the_tab_alone() {
+            assert!(document_active(false));
+            assert!(!document_active(true));
+        }
+
+        #[test]
+        fn a_loop_counts_any_intersection_with_the_margin_as_seen() {
+            assert!(loop_seen(sighting(true, 0.0, 0.0, 800.0)));
+            assert!(!loop_seen(sighting(false, 0.0, 0.0, 800.0)));
+        }
+
+        #[test]
+        fn an_entrance_needs_forty_percent_of_the_element() {
+            assert!(enter_seen(sighting(true, 0.4, 10.0, 800.0)));
+            assert!(!enter_seen(sighting(true, 0.39, 10.0, 800.0)));
+        }
+
+        #[test]
+        fn a_tall_element_enters_at_forty_percent_of_the_root_height() {
+            assert!(enter_seen(sighting(true, 0.1, 320.0, 800.0)));
+            assert!(!enter_seen(sighting(true, 0.1, 319.0, 800.0)));
+        }
+
+        #[test]
+        fn a_non_intersecting_entry_is_never_seen() {
+            assert!(!enter_seen(sighting(false, 1.0, 900.0, 800.0)));
+        }
+
+        #[test]
+        fn an_entrance_waits_for_a_visible_tab_and_an_unskipped_element() {
+            assert!(entered(false, true, false));
+            assert!(!entered(true, true, false));
+            assert!(!entered(false, true, true));
+            assert!(!entered(false, false, false));
+        }
+
+        #[test]
+        fn the_thresholds_step_by_a_tenth_up_to_one() {
+            assert_eq!(ENTER_THRESHOLDS.len(), 11);
+            assert_eq!(ENTER_THRESHOLDS[0], 0.0);
+            assert_eq!(ENTER_THRESHOLDS[10], 1.0);
+            assert!(ENTER_THRESHOLDS.windows(2).all(|w| (w[1] - w[0] - 0.1).abs() < 1e-9));
+        }
+    }
+}
+
 /// Which signals decide `active`.
 #[derive(Clone, Copy)]
 enum Mode {

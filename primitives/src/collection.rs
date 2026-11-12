@@ -23,6 +23,20 @@ for (const el of document.querySelectorAll('[data-collection-item^="' + prefix +
 dioxus.send(slots);
 "#;
 
+/// The slots of the marker attribute values a document-order read returned (document order), with
+/// the collection's `prefix` (`"{collection id}:"`) removed. A value that is missing, lacks the
+/// prefix or has no number after it names no slot and is dropped.
+#[cfg_attr(
+    not(test),
+    expect(dead_code, reason = "row 451 feeds it the bridge's document-order read")
+)]
+fn slots_from_markers(prefix: &str, markers: &[Option<String>]) -> Vec<usize> {
+    markers
+        .iter()
+        .filter_map(|marker| marker.as_deref()?.strip_prefix(prefix)?.parse().ok())
+        .collect()
+}
+
 #[derive(Clone, PartialEq)]
 struct CollectionItemState {
     index: usize,
@@ -1122,6 +1136,19 @@ mod tests {
         dom.in_runtime(|| collection.apply_dom_order(&slots));
         dom.render_immediate_to_vec();
         assert_eq!(probes(&render(&dom)), after);
+    }
+
+    #[test]
+    fn markers_become_slots_in_the_order_given() {
+        let markers = [
+            Some("c7:12".to_string()),
+            Some("c7:3".to_string()),
+            None,
+            Some("c70:5".to_string()),
+            Some("c7:".to_string()),
+            Some("c7:9".to_string()),
+        ];
+        assert_eq!(slots_from_markers("c7:", &markers), [12, 3, 9]);
     }
 
     #[test]
