@@ -43,7 +43,9 @@
 //! What lives here, so that it lives once:
 //!
 //! * **Loading.** The bridge bundle ([`BRIDGE_JS`]) is evaluated through the same eval queue as the
-//!   scripts that use it, once per webview, so a verb never runs before the bridge exists. The
+//!   scripts that use it, once per webview, so a verb never runs before the bridge exists. The decision
+//!   kernel (`KERNEL_B64`) rides in that same eval as base64 and is compiled synchronously, so it is ready
+//!   when the eval returns; a webview that refuses the compile leaves every behaviour standing down. The
 //!   alternative, `asset!` plus `document::Script` from a root provider (upstream's shape for its
 //!   focus trap), was not adopted: it needs every consuming app to mount a provider, the `<script>` is
 //!   inserted by a queued head effect while an eval runs immediately (DioxusLabs/dioxus#5919: eval
@@ -97,6 +99,11 @@ use super::BridgeError;
 /// The bundled bridge script, `primitives/src/js/bridge.js` (built from `src/ts/bridge.ts` by
 /// `scripts/build-js-bundle.sh`, checked by `scripts/check-js-bundle.sh`).
 pub const BRIDGE_JS: &str = include_str!("../js/bridge.js");
+
+/// The decision kernel (`decision-kernel`, built for `wasm32-unknown-unknown` by `scripts/build-kernel.sh`) as one
+/// line of base64, loaded into the page in the same eval as the bridge: the bridge compiles it synchronously, so
+/// it is ready before any event can need a decision.
+const KERNEL_B64: &str = include_str!("../kernel/decision-kernel.b64");
 
 /// The bounded wait of the handshake, then the bridge as `__dxB`.
 const READY: &str = "let __dxB = window.__dxBridge;\n\
@@ -173,7 +180,9 @@ fn ensure_installed() {
     }
     provide_root_context(Installed);
     #[expect(clippy::disallowed_methods, reason = "row 434: the one eval sink")]
-    let _ = document::eval(BRIDGE_JS);
+    let _ = document::eval(&format!(
+        "{BRIDGE_JS}\nwindow.__dxBridge.kernel.load(\"{KERNEL_B64}\");"
+    ));
 }
 
 /// Evaluates the bundled module `js` of the behaviour `kind` once in this webview, after the bridge it

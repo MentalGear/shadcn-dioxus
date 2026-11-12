@@ -11,6 +11,7 @@ members = [
     "preview",
     "test-harness",
     "dioxus-attributes",
+    "decision-kernel",
     "scripts/attr-spread-collision-checker",
 ]
 

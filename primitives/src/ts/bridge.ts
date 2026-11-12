@@ -61,6 +61,8 @@
 /// <reference path="./types/dioxus.d.ts" />
 /// <reference path="./types/bridge.d.ts" />
 
+import { kernel } from "./lib/kernel";
+
 type Recv = "w" | "d" | "e" | "we" | "wd" | "de" | "wde";
 type Fields = Record<string, unknown>;
 
@@ -1053,6 +1055,7 @@ if (!W.__dxBridge) {
     transaction,
     behaviours,
     register,
+    kernel,
   };
   Object.defineProperty(W, "__dxBridge", { value: Object.freeze(bridge), writable: false, configurable: false, enumerable: true });
 }

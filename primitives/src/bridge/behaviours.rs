@@ -1,11 +1,14 @@
 //! Named behaviours: the decisions that must be made on the page's thread, inside an event's
 //! dispatch, because a message to Rust would arrive after the browser committed the event's default
 //! action (backlog row 434 step 3). A behaviour is NOT an interpreter and NOT a predicate language:
-//! it is a name, typed parameters, and one pure `decide()` function in `ts/behaviours/<kind>.ts`.
+//! it is a name, typed parameters, and one pure Rust `decide()` in the decision kernel
+//! (`decision-kernel/src/<kind>.rs`, a wasm module the bridge calls synchronously inside the dispatch),
+//! with `ts/behaviours/<kind>.ts` declaring the event fields and attribute reads it needs.
 //!
 //! * [`Behaviour`] has one variant per named behaviour. Today there is one, [`Behaviour::Fixture`], a
 //!   test fixture no component uses; a real behaviour (`hotkey`, `scrollLock`, `otpFilter`, ...) is
-//!   added by a lane that ports one block, by adding a variant, its TS module and its vectors.
+//!   added by a lane that ports one block, by adding a variant, its kernel function, its TS module and
+//!   its vectors.
 //! * **Parity by generation.** `cargo test` writes `ts/behaviours/behaviours.gen.ts` (the kinds, one
 //!   interface per variant, the declarations) from this enum and fails on drift; a TS module is
 //!   typed against the generated union, and `bun test` asserts the registry's keys equal the

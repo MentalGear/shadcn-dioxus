@@ -109,6 +109,17 @@ interface DxScope {
   run(command: DxCommand): void;
 }
 
+/** The decision kernel (`ts/lib/kernel.ts`): the wasm module that holds each behaviour's Rust `decide`. */
+interface DxKernel {
+  /** Compiles and instantiates the module (bytes or base64 text); resolves true when ready, false when not. */
+  load(source: BufferSource | string, mode?: "auto" | "async"): Promise<boolean>;
+  /** The kernel's decision for a behaviour kind: `{}` (stand down) unless the kernel is ready. */
+  decide(kind: string, behaviour: unknown, event: unknown, snapshot: unknown, memory: unknown): DxDecision;
+  readonly state: "absent" | "loading" | "ready" | "failed";
+  /** How and when the module became ready, in `performance.now()` milliseconds. */
+  readonly stats: { mode: "sync" | "async" | null; startMs: number | null; readyMs: number | null };
+}
+
 interface DxBridge {
   version: number;
   channel(raw: DioxusChannel): DioxusChannel;
@@ -123,6 +134,8 @@ interface DxBridge {
   behaviours: Record<string, DxBehaviourImpl<any>>;
   /** Called by a behaviour module as it is evaluated. */
   register(kind: string, impl: DxBehaviourImpl<any>): void;
+  /** The decision kernel. */
+  kernel: DxKernel;
 }
 
 interface Window {
