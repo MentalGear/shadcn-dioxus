@@ -1,7 +1,7 @@
 ---
 id: 451
 title: "Port 3.SC: shared collection and activity scripts (S7, S15)"
-status: "Stage 1 built on lane/port-sc-451, awaiting merge: the pure decisions are written; the bridge…"
+status: "Built on lane/port-sc-451, awaiting merge: S7 and S15 run on the bridge; three closed rows added…"
 size: "M"
 area: primitives
 js-grant: js_file_bytes=1200 (inferred ceiling: five closed bridge rows for S7 and S15, about 450 bytes of TypeScript plus about 350 in the bundle, with margin; the row that first needs a verb adds it, root doc section 5.2)
@@ -19,11 +19,9 @@ Part of the [row 434](./434-javascript-in-typescript-modules-not-rust-strings.md
 
 ## Status / trigger
 
-Stage 1 built on `lane/port-sc-451`, awaiting merge: the pure decisions are written; the bridge additions wait for row 454. (APPROVED 2026-10-26, scope 2.)
+Built on lane/port-sc-451, awaiting merge: S7 and S15 run on the bridge; three closed rows added, the legacy scripts are gone. (APPROVED 2026-10-26, scope 2.)
 
-**What the row found.** Neither script ports with the verbs on main: S7 needs a document-order read, S15 needs tab visibility, the `content-visibility` signal and two intersection fields (spec below). Section 5.2 of the root doc makes the row that first needs a verb the row that adds it, so this row owns the bridge additions; `js-grant: none` and the old "Files owned" line were wrong.
-
-**Grant this row needs (inferred):** `js_file_bytes=1200` (the five additions below are about 450 bytes of TypeScript and about 350 bytes in the bundle, about 800 in all, rounded up). The ported `activity.rs` script (110 lines) and `collection.rs` script (8 lines) leave `js_lit`, so the global total `js_lit * 120 + js_file_bytes` falls by about 13,000. The front-matter `js-grant:` line stays as is; the main loop sets the grant on main, because the gate reads it at the merge base.
+**Grant (set on main by the main loop):** `js_file_bytes=1200`. Measured on top of row 454's own raise: `primitives/src/js/bridge.js` 22234 -> 22558 (+324 bytes) is the only `js_file_bytes` file this row raises; `bridge.d.ts` is unchanged. The TypeScript source `bridge.ts` grew 47097 -> 47500 bytes (+403), which the `check-bridge-behaviours` budget counts in canonical tokens, not `js_file_bytes`. The grant covers the raise (324 of 1200). Neither `check-js-volume` nor `check-bridge-behaviours` is re-baselined here.
 
 ## Size
 
@@ -41,27 +39,52 @@ M
 
 It stores the row's `MountedData` handle (a Rust-side value: `set_focus` goes through it) and calls `request_order_pass`. It reads nothing from the page and needs no bridge verb of its own: its order trigger rides the document-order read below, and the handle stays because the roving hub's focus writes use it (row 462 owns that). On desktop it is one blocking request per row; removing it means replacing the handle with a focus-owner write, which is row 462's, so this row leaves it.
 
-### The decisions (stage 1, written, not yet wired)
+### The construction as built
 
-- S15, `activity.rs` private module `decide`: `loop_active(tab_hidden, seen, skipped) -> Option<bool>` (unknown until the observer answers, a hidden tab is an answer), `document_active`, `entered`, `loop_seen`, `enter_seen` (the 0.4 ratio or 0.4 of the root height rule), `ENTER_THRESHOLDS`; `ROOT_MARGIN` and `ENTER_RATIO` stay the module's constants. 10 unit tests.
-- S7, `collection.rs`: `apply_dom_order` is already pure Rust with tests (ascending no-op, fresh ascending range, creation order); `slots_from_markers(prefix, markers)` turns the read's attribute values into slots. 1 new unit test.
+- **S15, `activity.rs`.** `use_activity` keeps the same hooks (`use_motion`, `use_motion_when`, `use_motion_active_for`, `use_entered_view_when`, `use_document_visible`) and their signals. Per subscriber: one bridge `IntersectionObserver` (`rootMargin` `ROOT_MARGIN` for a loop; the eleven `ENTER_THRESHOLDS` for an entrance), whose entry feeds `decide::loop_seen` / `decide::enter_seen`; the element's skipped state is read with `Prop::CheckVisibility` when it is seen and again after a `contentvisibilityautostatechange`; the output is `decide::loop_active`, `document_active` or `entered`. The page-wide facts are shared: the first mounted subscriber holds the two document listeners (`visibilitychange`, then a `Prop::VisibilityState` read; `contentvisibilityautostatechange`, which moves a counter), through the `LISTENERS` / `TAB_HIDDEN` / `CV_EPOCH` globals; when it unmounts the next subscriber takes over. Deadline: none (R), one hop later than the page-side registry.
+- **S7, `collection.rs`.** `request_order_pass` reads `Prop::AttrsOf` of the collection's marker attribute on the document (`marker_read`), turns the answer into slots with `slots_from_markers`, and feeds the unchanged `apply_dom_order`. Deadline: none; the initial focus placement already waits for `order_pending`.
+- **The per-row `onmounted`** stays: it stores the `MountedData` handle that the roving hub's focus writes use (row 462) and asks for the order pass; it reads nothing from the page.
 
-### Bridge additions this row makes
+### The decisions
 
-Each stays inside the section 5.2 closed surface: one member call or read per verb row, at most one guard; none is a registry program. Sizes are estimates (inferred) in bytes, the unit of the `js_file_bytes` grant column, which counts `.ts` source and the bundle together.
+- `activity.rs` module `decide`: `loop_active`, `document_active`, `entered`, `loop_seen`, `enter_seen`, `ENTER_THRESHOLDS`; 10 unit tests.
+- `collection.rs`: `apply_dom_order` (3 tests), `slots_from_markers` and `marker_read` (2 tests).
 
-| # | Rust | TypeScript | receiver | fires | bytes (inferred) |
-|---|---|---|---|---|---|
-| 1. S7 document order | `Prop::AttrsOf { selector, attr }`, wire `attrsOf:{attr}\u0000{selector}` | a `read()` branch like `attr:`: `Array.from(el.querySelectorAll(sel), (n) => n.getAttribute(attr))`, one call, no guard | document (`Target::Document`) | once per order pass: an item mount or a registration effect, human rate | about 150 ts, 120 bundle |
-| 2. tab visibility | `Prop::VisibilityState`, wire `visibilityState` | `PROPS` row `on("d", (el) => el.visibilityState)` | document | one read at subscribe, one per `visibilitychange` | about 70 ts, 55 bundle |
-| 3. content-visibility signal | `EventKind::Contentvisibilityautostatechange`, wire `contentvisibilityautostatechange`, receivers `d`, not hot, listened with `ListenOptions::CAPTURE` and no fields | an `EVENTS` row `"contentvisibilityautostatechange": { recv: "d" },` | document | when a `content-visibility: auto` subtree starts or stops being skipped: scroll-driven, bursty, but each is one message and Rust coalesces them to one batch of reads per frame | about 55 ts, 50 bundle |
-| 4. is the element skipped | `Prop::ContentSkipped`, wire `contentSkipped` | `PROPS` row `on("e", (el) => !el.checkVisibility({ contentVisibilityAuto: true }))`, one call | element (the subscribed one) | read at subscribe, and for every subscribed element after a batch of event 3 | about 85 ts, 70 bundle |
-| 5. intersection fields | `Intersection { intersection_height: f64, root_height: f64 }` | two more members in the existing observer message: `intersectionHeight: e.intersectionRect.height`, `rootHeight: e.rootBounds ? e.rootBounds.height : W.innerHeight` (the old script's own fallback) | the observed element | with every observer callback, as today | about 100 ts, 55 bundle |
+### Bridge additions this row made
 
-**How Rust learns that a subscribed element is inside a skipped subtree.** The old script kept a set of skipped roots from the event's `target` and tested containment. The smallest construction that keeps the decision in Rust is a trigger plus a read: the event (3) carries no field and says only "something changed"; Rust then reads `contentSkipped` (4) for each subscribed element and decides with `loop_active` / `entered`. `checkVisibility({ contentVisibilityAuto: true })` is false exactly for an element in a skipped `content-visibility: auto` subtree (or one with no rendered box, which the observer already reports as not intersecting, so the decision is unchanged). A page-side reducer would keep the old containment set on the page and send a bool per element, which is a registry program with state over a stream (the plan's "a reducer that needs state over a stream is Rust's"), so it is not used. The cost is N reads per batch of events for N subscribed elements, in one `get` message each; the batch is coalesced to one per frame in Rust.
+Of the five additions specified at stage 1, row 454 had already added two: `Prop::VisibilityState` (tab visibility) and `Prop::CheckVisibility` (the skipped-subtree read: `checkVisibility({ contentVisibilityAuto: true })`, null where the browser has none, which the decision reads as not skipped). Those are reused. Three remain, each one member call or read with no guard, closed on both sides, with parity tests (`the_events_table_is_this_enum`, `the_props_table_is_this_enum`'s neighbour test for the parameterised read, the `ts-test` observer and `attrsOf` tests, `public-api.txt`):
 
-Behaviour differences to confirm at stage 2 (findings, not decided here): (a) an element that is already skipped when it subscribes is read as skipped, where the old script learned it only from a later event; (b) each subscriber owns its observer, where the old registry shared one per kind, which changes callback counts, not answers; (c) event 3 on an engine without it never fires, as before (the read in 4 is `true` there).
+| Rust | TypeScript | receiver | fires |
+|---|---|---|---|
+| `Prop::AttrsOf { attr, selector }`, wire `attrsOf:{attr} {selector}`; `Props::strings` | a `read()` branch like `attr:`: `Array.from(el.querySelectorAll(sel), n => n.getAttribute(attr))` | document or element | once per order pass |
+| `EventKind::Contentvisibilityautostatechange` | `EVENTS` row `{ recv: "d" }` | document, listened with capture | when a `content-visibility: auto` subtree starts or stops being skipped |
+| `Intersection { intersection_height, root_height }` | two members of the existing observer message (`rootBounds` falls back to `innerHeight`) | the observed element | with every observer callback |
 
-Row 3.OB's S16 (`checkVisibility`) wants the same member; if it lands first, row 4 reuses its row instead of adding `contentSkipped`.
+### JavaScript removed and added (measured with `check-js-volume --report`)
 
-**Renderer notes for the additions (inferred).** Web and webview: all five go through `document::eval` via the bridge. Blitz: `get`, `listen` and `observe` are `Unsupported` there, so S15 keeps its "active" default (the server's too) and S7 keeps creation order; a Blitz arm would need `onvisible`-style native visibility and a native document-order query, neither of which exists yet.
+Removed: `activity.rs` js_lit 108 -> 0 and install 1 -> 0; `collection.rs` js_lit 6 -> 0, sink 1 -> 0, expect_disallowed 1 -> 0: 114 lines, 1 sink, 1 install, 1 waiver. Added: `bridge.js` +324 bytes (`bridge.ts` +403 bytes of source). Global total `js_lit * 120 + js_file_bytes`: about -13,400.
+
+### Differences from the old registry (findings)
+
+1. An element already skipped when it comes into view is read as skipped (the old script learned it only from a later event).
+2. One observer per subscriber, where the old registry shared one per kind. Cost reasoning (inferred, not measured on a desktop webview): a browser `IntersectionObserver` per element is the normal pattern and each observer holds one target, so the per-element work is the same as one shared observer with N targets; the bridge opens one eval per subscriber, as `use_js_listeners` did. What would have grown with N is the document-level work (N `visibilitychange` and N `contentvisibilityautostatechange` listeners, each one IPC message per event, and N skipped-state reads per event); that is why the document facts are shared through one leader, and why a skipped-state read runs only for subscribers currently in view. The cost class of the page-wide signals is therefore unchanged, and no shared observer per kind is needed.
+3. The tab's initial visibility is a read after mount (one hop), where the old script read it synchronously at subscribe; until it answers the motion is the optimistic `true`, as before the observer answered.
+
+### Renderer notes (inferred except where a spec ran)
+
+- Web: runs, proven on Chromium by the specs below.
+- Desktop and mobile webview: all reads and observers go through `document::eval` via the bridge, with the IPC hop per message; the decisions are the same Rust.
+- Blitz: `get`, `listen` and `observe` answer `Unsupported`, so every subscriber keeps its optimistic default (active) and S7 keeps creation order, exactly as a failed eval did before. A native arm would need a visibility signal and a document-order query from the renderer.
+
+### Proof
+
+Built with `lane-ssg.sh` (the wasm contains `attrsOf`), Chromium only (the WebKit and Firefox builds are not installed in this container; the Chromium revision was linked under a scratch `PLAYWRIGHT_BROWSERS_PATH` because `/opt/pw-browsers` has revision 1243 where the pinned Playwright asks for 1223). Specs by name: `oracle/tier2-html/motion-gating`, `carousel-rewind-autoplay`, `chart-entry-animation`, `toast-pause`, `spinner`, `bridge-dom`, `attribute-listeners`, `tabs`, `toolbar`, `radio-group`, `tag_group`, `combobox`. The motion-gating spec's two probes of the old `window.__dxActivity` registry now assert the observable behaviour (the bridge is up before the parked check; the document listener inventory returns to its baseline).
+
+### What `dev-docs/js-interop.md` needs
+
+The "hooks that call scripts" row no longer lists `use_js_listeners` users `activity.rs`; the `use_motion` family and `collection.rs` are bridge consumers, and the closed reads gain `AttrsOf`, the closed events gain `contentvisibilityautostatechange`.
+
+### Open
+
+- The main loop records the bridge byte raises under the grant and lowers the volume baseline on the merged tree.
+- No spec pins an element that is already skipped at subscribe, or a skipped-subtree change while in view; the `contentvisibilityautostatechange` path is exercised only by the listener inventory.

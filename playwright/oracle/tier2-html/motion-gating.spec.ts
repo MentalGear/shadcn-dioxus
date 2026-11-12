@@ -12,8 +12,8 @@
  *   - Page Visibility: `visibilitychange` on `document` when the tab is hidden:
  *       https://www.w3.org/TR/page-visibility-2/
  *
- * The construction under test is `primitives/src/activity.rs` (one shared IntersectionObserver +
- * `visibilitychange` + `contentvisibilityautostatechange`), which components subscribe to:
+ * The construction under test is `primitives/src/activity.rs` (one bridge IntersectionObserver per subscriber, plus one
+ * shared pair of document listeners, `visibilitychange` and `contentvisibilityautostatechange`), which components subscribe to:
  *   1. CSS LOOPS: a spinner / skeleton far outside the viewport reports `playState: "paused"` and
  *      `data-dx-motion="paused"`, and runs again (same animation object, phase kept) once scrolled in.
  *   2. CAROUSEL AUTOPLAY: no slide change while the carousel is off-screen or the tab is hidden; on
@@ -130,7 +130,7 @@ test.describe("motion gating", () => {
 
     // Off-screen: nothing changes for three delays.
     await park(page, root);
-    await expect.poll(() => page.evaluate(() => !!(window as any).__dxActivity)).toBe(true);
+    await expect.poll(() => page.evaluate(() => !!(window as any).__dxBridge)).toBe(true);
     await page.waitForTimeout(500); // observer report + the task being dropped
     const parked = await label();
     // timing-bound-ok: nothing may happen in this window, so a loaded machine only lengthens it
@@ -374,7 +374,6 @@ test.describe("motion gating", () => {
     await gotoHydrated(page, `${BASE_URL}/component/spinner/`, NAV);
     await expect(page.locator(".dx-spinner").first()).toBeVisible({ timeout: 5 * 60 * 1000 });
     await expect.poll(inventory).toEqual(["contentvisibilityautostatechange", "visibilitychange"]);
-    await expect.poll(() => page.evaluate(() => (window as any).__dxActivity?.subs.size ?? 0)).toBeGreaterThan(0);
 
     // Unmount without a reload: swap the route through the SPA router.
     // The link's href carries the deployment's base path (`/shadcn-dioxus/...` on the Pages build).
@@ -387,7 +386,6 @@ test.describe("motion gating", () => {
       (link as HTMLElement | undefined)?.click();
     }, basePath);
     await expect(page.locator(".dx-spinner")).toHaveCount(0, { timeout: 30_000 });
-    await expect.poll(() => page.evaluate(() => !!(window as any).__dxActivity), { timeout: 10_000 }).toBe(false);
-    expect(await inventory()).toEqual(baseline);
+    await expect.poll(inventory, { timeout: 10_000 }).toEqual(baseline);
   });
 });
