@@ -184,6 +184,7 @@ bridge::ElementExt::call_value  async fn call_value(&self, method: Method) -> Re
 bridge::ElementExt::close_dialog  fn close_dialog(&self)  [default body]
 bridge::ElementExt::get  async fn get(&self, props: impl IntoIterator<Item = Prop>) -> Result<Props, BridgeError>  [default body]
 bridge::ElementExt::hide_popover  fn hide_popover(&self)  [default body]
+bridge::ElementExt::scroll_by_top  fn scroll_by_top(&self, top: f64, behavior: ScrollMotion)  [default body]
 bridge::ElementExt::scroll_into_view  fn scroll_into_view(&self, options: ScrollIntoView)  [default body]
 bridge::ElementExt::set_selection_range  fn set_selection_range(&self, start: u32, end: u32)  [default body]
 bridge::ElementExt::set_var  fn set_var(&self, name: &str, value: Option<&str>)  [default body]
@@ -212,7 +213,8 @@ bridge::ListenOptions  struct ListenOptions  #[derive(Clone, Copy, Debug, Defaul
 bridge::ListenOptions  use session::ListenOptions
 bridge::ListenOptions.capture  field bool
 bridge::ListenOptions.once  field bool
-bridge::ListenOptions::CAPTURE  const CAPTURE: ListenOptions = ListenOptions { capture: true, once: false }
+bridge::ListenOptions.publish  field &'static[Publish]
+bridge::ListenOptions::CAPTURE  const CAPTURE: ListenOptions = ListenOptions { capture: true, once: false, publish: &[] }
 bridge::MediaChange  struct MediaChange  #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Eq)]
 bridge::MediaChange  use session::MediaChange
 bridge::MediaChange.matches  field bool
@@ -255,12 +257,15 @@ bridge::Op  enum Op  #[derive(Clone, Debug, PartialEq, Serialize)]
 bridge::Op::Call  variant Call { target: Target, method: &'static str, args: Vec<Value>, epoch: Option<Epoch> }
 bridge::Op::Get  variant Get { target: Target, props: Vec<String>, epoch: Option<Epoch> }
 bridge::Op::Set  variant Set { target: Target, name: String, value: Option<String>, epoch: Option<Epoch> }
+bridge::Op::Write  variant Write { target: Target, slot: &'static str, value: Option<String>, epoch: Option<Epoch> }
 bridge::OpResult  enum OpResult  #[derive(Clone, Debug, PartialEq, Deserialize)]
 bridge::OpResult::Err  variant Err { err: String }
 bridge::OpResult::Ok  variant Ok { ok: Value, dropped: bool, epoch: Option<Epoch> }
+bridge::OpResult::props  fn props(&self) -> Option<Props>
 bridge::Prop  enum Prop  #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 bridge::Prop::ActiveElement  variant ActiveElement
 bridge::Prop::Attr  variant Attr(String)
+bridge::Prop::CheckVisibility  variant CheckVisibility
 bridge::Prop::Checked  variant Checked
 bridge::Prop::ClientHeight  variant ClientHeight
 bridge::Prop::ClientLeft  variant ClientLeft
@@ -268,6 +273,8 @@ bridge::Prop::ClientTop  variant ClientTop
 bridge::Prop::ClientWidth  variant ClientWidth
 bridge::Prop::DefaultValue  variant DefaultValue
 bridge::Prop::DevicePixelRatio  variant DevicePixelRatio
+bridge::Prop::InlineOverflowAnchor  variant InlineOverflowAnchor
+bridge::Prop::InlinePaddingBottom  variant InlinePaddingBottom
 bridge::Prop::InnerHeight  variant InnerHeight
 bridge::Prop::InnerWidth  variant InnerWidth
 bridge::Prop::Matches  variant Matches(String)
@@ -280,6 +287,7 @@ bridge::Prop::PopoverOpen  variant PopoverOpen
 bridge::Prop::Rect  variant Rect
 bridge::Prop::ScrollHeight  variant ScrollHeight
 bridge::Prop::ScrollLeft  variant ScrollLeft
+bridge::Prop::ScrollTimelineSupported  variant ScrollTimelineSupported
 bridge::Prop::ScrollTop  variant ScrollTop
 bridge::Prop::ScrollWidth  variant ScrollWidth
 bridge::Prop::ScrollX  variant ScrollX
@@ -288,15 +296,22 @@ bridge::Prop::SelectionEnd  variant SelectionEnd
 bridge::Prop::SelectionStart  variant SelectionStart
 bridge::Prop::Style  variant Style(String)
 bridge::Prop::Value  variant Value
+bridge::Prop::VisibilityState  variant VisibilityState
 bridge::Prop::VisualViewport  variant VisualViewport
 bridge::Prop::wire  fn wire(&self) -> String
 bridge::Props  struct Props  #[derive(Clone, Debug, Default, PartialEq, Deserialize)]
 bridge::Props.0  field serde_json::Map<String, Value>
 bridge::Props::bool  fn bool(&self, prop: &Prop) -> Option<bool>
 bridge::Props::f64  fn f64(&self, prop: &Prop) -> Option<f64>
+bridge::Props::px  fn px(&self, prop: &Prop) -> Option<f64>
 bridge::Props::rect  fn rect(&self) -> Option<Rect>
 bridge::Props::string  fn string(&self, prop: &Prop) -> Option<&str>
 bridge::Props::value  fn value(&self, prop: &Prop) -> Option<&Value>
+bridge::Publish  struct Publish  #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+bridge::Publish  use session::Publish
+bridge::Publish.field  field &'static str
+bridge::Publish.unit  field &'static str
+bridge::Publish.var  field &'static str
 bridge::Rect  struct Rect  #[derive(Clone, Copy, Debug, Default, PartialEq, Deserialize)]
 bridge::Rect.bottom  field f64
 bridge::Rect.height  field f64
@@ -349,6 +364,13 @@ bridge::Size.border_height  field f64
 bridge::Size.border_width  field f64
 bridge::Size.height  field f64
 bridge::Size.width  field f64
+bridge::Slot  enum Slot  #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+bridge::Slot::ALL  const ALL: &'static[Slot] = &[Slot::KeyboardOpen, Slot::KeyboardSlack, Slot::PaddingBottom, Slot::OverflowAnchor]
+bridge::Slot::KeyboardOpen  variant KeyboardOpen
+bridge::Slot::KeyboardSlack  variant KeyboardSlack
+bridge::Slot::OverflowAnchor  variant OverflowAnchor
+bridge::Slot::PaddingBottom  variant PaddingBottom
+bridge::Slot::wire  const fn wire(self) -> &'static str
 bridge::Subscription  impl Drop for Subscription
 bridge::Subscription  struct Subscription  [private fields]  #[must_use = "dropping a `Subscription` ends it at once"]
 bridge::Subscription  use session::Subscription
@@ -360,9 +382,12 @@ bridge::Target  impl From<String> for Target
 bridge::Target::Active  variant Active
 bridge::Target::Document  variant Document
 bridge::Target::Id  variant Id { id: String }
+bridge::Target::Scroller  variant Scroller { within: String }
 bridge::Target::Selector  variant Selector { selector: String }
+bridge::Target::VisualViewport  variant VisualViewport
 bridge::Target::Window  variant Window
 bridge::Target::id  fn id(id: impl Into<String>) -> Self
+bridge::Target::scroller  fn scroller(within: impl Into<String>) -> Self
 bridge::Target::selector  fn selector(selector: impl Into<String>) -> Self
 bridge::Transaction  struct Transaction  [private fields]  #[derive(Clone, Debug, Default, PartialEq)]
 bridge::Transaction::call  fn call(mut self, target: impl Into<Target>, method: Method) -> Self  #[must_use]
@@ -373,6 +398,7 @@ bridge::Transaction::new  fn new() -> Self
 bridge::Transaction::ops  fn ops(&self) -> &[Op]
 bridge::Transaction::run  async fn run(self) -> Result<Vec<OpResult>, BridgeError>
 bridge::Transaction::set_var  fn set_var(mut self, target: impl Into<Target>, name: impl Into<String>, value: Option<String>) -> Self  #[must_use]
+bridge::Transaction::write  fn write(mut self, target: impl Into<Target>, slot: Slot, value: Option<String>) -> Self  #[must_use]
 bridge::Until  enum Until  #[derive(Clone, Debug, PartialEq, Serialize)]
 bridge::Until  use session::Until
 bridge::Until::Attr  variant Attr { name: String, value: Option<String> }
