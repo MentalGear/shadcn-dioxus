@@ -40,7 +40,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (75)
+## Open rows (71)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -69,7 +69,6 @@ proposing one is closed as out of scope (row 337 is the first).
 | [434](backlog/434-javascript-in-typescript-modules-not-rust-strings.md) | Cut JavaScript to what Rust cannot do: audit every eval block, move the rest into Rust, TypeScript only for the remainder | BACKLOG. Umbrella for rows 444-467 (the step 3 plan; the paper review is closed after seven rounds… | L | primitives |
 | [436](backlog/436-code-quality-skill-review.md) | Code-quality skill review: code-review and simplify skills over the whole codebase, after the row 426-435 refactors | PARTLY FIXED (PR #170, 2026-11-11): 10 of the review's 12 findings (F1, F2, F4-F6, F8-F12) are… | M for the review. Each accepted finding… | process |
 | [438](backlog/438-blitz-native-renderer.md) | dioxus-native (Blitz) as a supported renderer: parked, research-gated, after row 434 | PARKED. Start when all of these hold: 1. Dioxus 0.8 is stable and the primitives build on it. 2.… | Estimates from the research: tier 0 M… | primitives |
-| [440](backlog/440-run-gates-per-run-log-dir.md) | run-gates.sh writes logs to a shared directory: two concurrent runs on one target overwrite each other's logs | DONE 2026-11-05 (lane gate-logs-440), landed in PR #165; the automated concurrent-run test landed… | S | tooling |
 | [442](backlog/442-desktop-cadence-harness-and-desktop-pass.md) | Desktop proof for the JS plan: a desktop-cadence web build, Playwright WebKit and Firefox, and a recorded desktop-pass stamp | BACKLOG. Filed 2026-10-26 from the row 434 step 3 adversarial board. The bridge-latency hook… | M | tooling |
 | [443](backlog/443-owner-measurement-kit-perf-recorder-and-impl-switch.md) | The owner's measurement kit for the row 434 ports: __dxPerf, bridge delay and spin, and the ?dx-impl legacy switch | BACKLOG. Filed 2026-10-26 from the row 434 step 3 adversarial board. The bridge-delay hook is… | M | tooling |
 | [444](backlog/444-gate-half-of-lane-3-0b-grants-bans-and-witness-presence.md) | Phase 0.1: the gate half of lane 3.0 (grant rows, sink and setter bans, FORBIDDEN_VERBS, gates over existing artefacts only) | LANDED in PR #167 (2026-11-07), phase 0.1's gates over the artefacts that exist: the grant rule and… | L | tooling |
@@ -107,12 +106,9 @@ proposing one is closed as out of scope (row 337 is the first).
 | [481](backlog/481-state-attributes-one-helper-emits-data-state-and-presence.md) | State attributes: one helper emits data-state and Base UI presence attributes | IN PROGRESS (2026-10-29). The presence part is MERGED in PR #156 (7d50e068), DEPLOYED in 1ea333fa.… | M | primitives |
 | [486](backlog/486-code-graph-explorer-tools-codegraph.md) | Code graph explorer: SCIP-derived graph with a granularity slider (scripts/codegraph) | BUILT, minimal scope (2026-11-03): scripts/codegraph/ (run.sh, build_graph.py, make_explorer.py… | S-M for the minimal scope; the rest is… | tooling |
 | [488](backlog/488-bug-combobox-in-rtl-does-not-show-its-list.md) | Bug: Combobox in RTL does not show its list | Does not reproduce (2026-11-07, lane/combobox-rtl-488, debug SSG build on main f38662dc). The… | S | overlays |
-| [491](backlog/491-drawer-shadcn-scrollable-content-demo.md) | Drawer: add shadcn's scrollable content demo | DONE 2026-11-06, landed in PR #165. scrollable_content now ends its body in a "Feedback" Input, and… | S | components |
 | [493](backlog/493-timing-cases-run-alone-on-a-quiet-machine.md) | Timing cases run alone, on a quiet machine: the @timing tag and the timing pass | The construction is MERGED in PR #160 (8edeb5f1) and DEPLOYED in 1ea333fa: the tag, the pass, the… | M | playwright |
 | [494](backlog/494-re-enable-the-timing-cases-after-the-rust-port.md) | Re-enable the @timing cases after the Rust port | BACKLOG, triggered: when the JavaScript plan's port rows are done (row 434 with rows 444-466, final… | S-M | playwright |
 | [496](backlog/496-incremental-gate-target.md) | Measure incremental compilation for the main loop's gate target | APPROVED (owner 2026-11-05: item 2 of the build and test-suite review), measure first. Runs when no… | S | tooling |
-| [499](backlog/499-safe-triangle-for-hover-menus.md) | A safe triangle for the hover menus, so they can take Base UI's short close delays | FIXED, merged in PR #170 (2026-11-11). Split out of row 478 item 4, whose open delays now follow… | M | overlays |
-| [503](backlog/503-lane-ssg-builds-in-place-on-one-slot.md) | lane-ssg builds in the warm template under the lock instead of copying it | DONE 2026-11-07 (lane lanessg-503). lane-ssg.sh slot 0 builds in $LANE_TGT/template under… | S-M | tooling |
 | [504](backlog/504-server-rendered-textarea-shows-no-value.md) | A server-rendered Textarea shows no value: the JS-off page and the hydrated first frame hold an empty field | BACKLOG. Found by the first-paint fix lane (row 468's section "First paint of a controlled… | S | textarea |
 | [505](backlog/505-js-lit-counts-lines-not-bytes.md) | The JS volume ratchets measure text, so a reformat or a shorter name passes for less JavaScript | PARTLY ADDRESSED, the construction itself still BACKLOG. Of the two instances found 2026-11-07, one… | S | tooling |
 | [506](backlog/506-release-suite-two-failures-block-deploy.md) | The release suite failed twice on main b78c231e; neither failure is confirmed real or confirmed a flake | OPEN, 2026-11-11. Found running the deploy after merging PR #170. The suite run… | S (to re-run both cleanly and read the… | tooling |
