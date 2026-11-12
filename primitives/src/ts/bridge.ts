@@ -139,6 +139,7 @@ const EVENTS: Record<string, { recv: Recv; hot?: 1 }> = {
   "cut": { recv: "wde" },
   "paste": { recv: "wde" },
   "visibilitychange": { recv: "d" },
+  "contentvisibilityautostatechange": { recv: "d" },
   "selectionchange": { recv: "d" },
   "pagehide": { recv: "w" },
   "pageshow": { recv: "w" },
@@ -271,7 +272,7 @@ const describe = (el: any): { id: string; tagName: string } | null =>
 /** A read of one property of the element itself or the window. */
 const on = (recv: Recv, get: (typeof PROPS)[string]["get"]) => ({ recv, get });
 
-/** The reads Rust may ask for. Mirrors `Prop` in `bridge/mod.rs`; `style:`, `attr:` and `matches:` take an argument. */
+/** The reads Rust may ask for. Mirrors `Prop` in `bridge/mod.rs`; `style:`, `attr:`, `matches:` and `attrsOf:` take an argument. */
 const PROPS: Record<string, { recv: Recv | "any"; get: (el: any) => unknown }> = {
   "offsetWidth": on("e", (el) => el.offsetWidth),
   "offsetHeight": on("e", (el) => el.offsetHeight),
@@ -469,6 +470,7 @@ function read(el: any, prop: string): unknown {
   if (prop.startsWith("style:")) return isEl(el) ? W.getComputedStyle(el).getPropertyValue(prop.slice(6)) : null;
   if (prop.startsWith("attr:")) return isEl(el) ? el.getAttribute(prop.slice(5)) : null;
   if (prop.startsWith("matches:")) return isEl(el) && !!el.matches && el.matches(prop.slice(8));
+  if (prop.startsWith("attrsOf:") && el.querySelectorAll) return Array.from(el.querySelectorAll(prop.slice(prop.indexOf(" ") + 1)), (n: Element) => n.getAttribute(prop.slice(8, prop.indexOf(" "))));
   const row = own(PROPS, prop);
   if (!row || !receives(row.recv, el)) return null;
   return norm(row.get(el));
@@ -917,6 +919,8 @@ function scope(raw?: DioxusChannel): Scope {
                 left: r.left,
                 width: r.width,
                 height: r.height,
+                intersectionHeight: e.intersectionRect.height,
+                rootHeight: e.rootBounds ? e.rootBounds.height : W.innerHeight,
               });
             },
             { root: o.root == null ? null : resolve(o.root), rootMargin: o.rootMargin, threshold: o.threshold },

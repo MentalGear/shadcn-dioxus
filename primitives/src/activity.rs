@@ -69,17 +69,18 @@
 //!
 //! # Cost and lifetime
 //!
-//! Each subscription is one `document::eval` script through [`crate::js_listener`]: its removal is
-//! derived from the owning scope. The page-wide registry (`window.__dxActivity`) is reference
-//! counted: the first subscriber installs the two document listeners and the observer, the last
-//! one to unmount removes them, so the listener inventory returns to its baseline. Before the
+//! Each subscription owns one bridge `IntersectionObserver` ([`crate::bridge`]); its removal is
+//! derived from the owning scope. The page-wide facts are shared: the first mounted subscriber
+//! holds the two document listeners (`visibilitychange` and `contentvisibilityautostatechange`),
+//! and when it unmounts the next one takes them over, so the listener inventory returns to its
+//! baseline. The decisions (`decide`) are pure Rust over the facts the page reports. Before the
 //! observer reports (and on the server, and when the element cannot be found) a motion is
 //! active, which is also what the server renders, so there is no hydration mismatch.
 
 use dioxus::prelude::*;
 
+use crate::bridge::{self, EventKind, Intersection, ListenOptions, ObserveOptions, Prop, Target};
 use crate::dioxus_attributes::attributes;
-use crate::js_listener::{use_js_listeners, JsListeners};
 
 /// The observer's `rootMargin`: how far outside the viewport a motion keeps running.
 ///
@@ -101,122 +102,147 @@ pub const ROOT_MARGIN: &str = "200px";
 /// is simply missed.
 pub const ENTER_RATIO: f64 = 0.4;
 
-/// The page-wide registry and the per-subscription body. The first script to run creates the
-/// registry; its two document listeners and its observer live exactly as long as it has
-/// subscribers.
-const SCRIPT: &str = r#"
-const sel = await dioxus.recv();
-const mode = await dioxus.recv();
-const ROOT_MARGIN = await dioxus.recv();
-const ENTER_RATIO = await dioxus.recv();
-const make = () => {
-    const subs = new Set();
-    // One observer per kind, created on first use and shared by every subscriber of that kind:
-    // `loop` (pre-roll margin) and `enter` (no margin, visible past a threshold).
-    const ios = { loop: null, enter: null };
-    const byEl = { loop: new Map(), enter: new Map() };
-    const skipped = new Set();
-    const hidden = () => document.visibilityState === 'hidden';
-    // loop: unknown (`vis === null`: the observer has not reported yet) sends nothing, so the
-    // first message is a real answer; a hidden tab is a real answer without waiting for it.
-    // enter: sends `true` exactly once, when the element is past the threshold with the tab
-    // visible, then the subscription lets go of the observer.
-    const emit = (s) => {
-        const h = hidden();
-        if (s.kind === 'enter') {
-            if (!s.last && !h && s.vis && !s.skip) { s.last = true; s.cb(true); drop(s); }
-            return;
+/// The activity decisions: pure functions over the typed facts the page reports (tab visibility,
+/// the observer's answer, whether a `content-visibility: auto` subtree skips the element), the same
+/// on every renderer (row 451).
+mod decide {
+    use super::ENTER_RATIO;
+
+    /// The `IntersectionObserver` thresholds of an entrance: every tenth, so the observer reports
+    /// each step of the ratio and the height rule below is checked as the element scrolls in.
+    pub(super) const ENTER_THRESHOLDS: [f64; 11] =
+        [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0];
+
+    /// What an `IntersectionObserver` entry reports, as far as the decisions read it.
+    #[derive(Clone, Copy, Debug, PartialEq)]
+    pub(super) struct Sighting {
+        /// The entry intersects the root (with its margin).
+        pub(super) is_intersecting: bool,
+        /// `intersectionRatio`.
+        pub(super) ratio: f64,
+        /// `intersectionRect.height`.
+        pub(super) intersection_height: f64,
+        /// The root's height (`rootBounds.height`, the window's inner height without a root).
+        pub(super) root_height: f64,
+    }
+
+    /// Whether a loop's element counts as on screen: any intersection with the margin-grown root.
+    pub(super) fn loop_seen(sighting: Sighting) -> bool {
+        sighting.is_intersecting
+    }
+
+    /// Whether an entrance's element counts as seen: [`ENTER_RATIO`] of its own area, or of the
+    /// root's height when the element is taller than the root.
+    pub(super) fn enter_seen(sighting: Sighting) -> bool {
+        sighting.is_intersecting
+            && (sighting.ratio >= ENTER_RATIO
+                || sighting.intersection_height >= ENTER_RATIO * sighting.root_height)
+    }
+
+    /// The motion of an element loop: `None` until the observer has answered while the tab is
+    /// visible (nothing is reported yet), `Some(false)` in a hidden tab, in a skipped
+    /// `content-visibility` subtree or off screen.
+    pub(super) fn loop_active(tab_hidden: bool, seen: Option<bool>, skipped: bool) -> Option<bool> {
+        if tab_hidden {
+            return Some(false);
         }
-        if (!h && s.el && s.vis === null) return;
-        const a = !h && (s.el === null || (s.vis && !s.skip));
-        if (a !== s.last) { s.last = a; s.cb(a); }
-    };
-    const inSkipped = (el) => {
-        for (const r of skipped) {
-            if (!r.isConnected) skipped.delete(r);
-            else if (r.contains(el)) return true;
+        seen.map(|seen| seen && !skipped)
+    }
+
+    /// The motion of a document-level subscription: the tab alone.
+    pub(super) fn document_active(tab_hidden: bool) -> bool {
+        !tab_hidden
+    }
+
+    /// Whether an entrance fires now: the element is seen, the tab is visible and no skipped
+    /// subtree holds it. The owner latches the first `true`.
+    pub(super) fn entered(tab_hidden: bool, seen: bool, skipped: bool) -> bool {
+        !tab_hidden && seen && !skipped
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        fn sighting(is_intersecting: bool, ratio: f64, height: f64, root: f64) -> Sighting {
+            Sighting {
+                is_intersecting,
+                ratio,
+                intersection_height: height,
+                root_height: root,
+            }
         }
-        return false;
-    };
-    const onVis = () => subs.forEach(emit);
-    const onCv = (e) => {
-        if (e.skipped) skipped.add(e.target); else skipped.delete(e.target);
-        subs.forEach((s) => {
-            if (s.el && e.target.contains(s.el)) { s.skip = inSkipped(s.el); emit(s); }
-        });
-    };
-    const onIo = (kind) => (entries) => {
-        for (const en of entries) {
-            const set = byEl[kind].get(en.target);
-            if (!set) continue;
-            const room = en.rootBounds ? en.rootBounds.height : innerHeight;
-            const seen = kind === 'loop'
-                ? en.isIntersecting
-                : en.isIntersecting && (en.intersectionRatio >= ENTER_RATIO
-                    || en.intersectionRect.height >= ENTER_RATIO * room);
-            for (const s of [...set]) { s.vis = seen; emit(s); }
+
+        #[test]
+        fn a_loop_is_unknown_until_the_observer_answers() {
+            assert_eq!(loop_active(false, None, false), None);
+            assert_eq!(loop_active(false, None, true), None);
         }
-    };
-    const observe = (s) => {
-        if (!ios[s.kind]) {
-            ios[s.kind] = s.kind === 'loop'
-                ? new IntersectionObserver(onIo('loop'), { rootMargin: ROOT_MARGIN })
-                : new IntersectionObserver(onIo('enter'), {
-                    threshold: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1],
-                });
+
+        #[test]
+        fn a_hidden_tab_is_an_answer_without_the_observer() {
+            assert_eq!(loop_active(true, None, false), Some(false));
+            assert_eq!(loop_active(true, Some(true), false), Some(false));
         }
-        let set = byEl[s.kind].get(s.el);
-        if (!set) { set = new Set(); byEl[s.kind].set(s.el, set); ios[s.kind].observe(s.el); }
-        set.add(s);
-    };
-    const unobserve = (s) => {
-        const set = s.el && byEl[s.kind].get(s.el);
-        if (!set) return;
-        set.delete(s);
-        if (set.size === 0) { byEl[s.kind].delete(s.el); if (ios[s.kind]) ios[s.kind].unobserve(s.el); }
-    };
-    // An entrance has done its one job: let go of the observer, keep the subscription (and so
-    // the registry) until the owner unmounts.
-    const drop = (s) => unobserve(s);
-    const start = () => {
-        // listener-ok: reference-counted by the registry; removed in stop() when the last subscriber leaves
-        document.addEventListener('visibilitychange', onVis);
-        // listener-ok: reference-counted by the registry; removed in stop() when the last subscriber leaves
-        document.addEventListener('contentvisibilityautostatechange', onCv, true);
-    };
-    const stop = () => {
-        document.removeEventListener('visibilitychange', onVis);
-        document.removeEventListener('contentvisibilityautostatechange', onCv, true);
-        for (const k of ['loop', 'enter']) { if (ios[k]) ios[k].disconnect(); ios[k] = null; }
-        skipped.clear();
-        if (window.__dxActivity === reg) delete window.__dxActivity;
-    };
-    const reg = {
-        subs,
-        add(el, kind, cb) {
-            if (subs.size === 0) start();
-            const s = { el, kind, cb, vis: null, skip: false, last: kind === 'enter' ? false : null };
-            subs.add(s);
-            if (el) { observe(s); s.skip = inSkipped(el); }
-            emit(s);
-            return () => {
-                unobserve(s);
-                subs.delete(s);
-                if (subs.size === 0) stop();
-            };
-        },
-    };
-    return reg;
-};
-const reg = window.__dxActivity || (window.__dxActivity = make());
-const el = mode === 'doc' ? null : document.querySelector(sel);
-if (mode === 'doc' || el) {
-    cleanup(reg.add(el, mode === 'enter' ? 'enter' : 'loop', (a) => dioxus.send(a)));
+
+        #[test]
+        fn a_loop_runs_only_when_seen_and_not_skipped() {
+            assert_eq!(loop_active(false, Some(true), false), Some(true));
+            assert_eq!(loop_active(false, Some(false), false), Some(false));
+            assert_eq!(loop_active(false, Some(true), true), Some(false));
+        }
+
+        #[test]
+        fn the_document_subscription_follows_the_tab_alone() {
+            assert!(document_active(false));
+            assert!(!document_active(true));
+        }
+
+        #[test]
+        fn a_loop_counts_any_intersection_with_the_margin_as_seen() {
+            assert!(loop_seen(sighting(true, 0.0, 0.0, 800.0)));
+            assert!(!loop_seen(sighting(false, 0.0, 0.0, 800.0)));
+        }
+
+        #[test]
+        fn an_entrance_needs_forty_percent_of_the_element() {
+            assert!(enter_seen(sighting(true, 0.4, 10.0, 800.0)));
+            assert!(!enter_seen(sighting(true, 0.39, 10.0, 800.0)));
+        }
+
+        #[test]
+        fn a_tall_element_enters_at_forty_percent_of_the_root_height() {
+            assert!(enter_seen(sighting(true, 0.1, 320.0, 800.0)));
+            assert!(!enter_seen(sighting(true, 0.1, 319.0, 800.0)));
+        }
+
+        #[test]
+        fn a_non_intersecting_entry_is_never_seen() {
+            assert!(!enter_seen(sighting(false, 1.0, 900.0, 800.0)));
+        }
+
+        #[test]
+        fn an_entrance_waits_for_a_visible_tab_and_an_unskipped_element() {
+            assert!(entered(false, true, false));
+            assert!(!entered(true, true, false));
+            assert!(!entered(false, true, true));
+            assert!(!entered(false, false, false));
+        }
+
+        #[test]
+        fn the_thresholds_step_by_a_tenth_up_to_one() {
+            assert_eq!(ENTER_THRESHOLDS.len(), 11);
+            assert_eq!(ENTER_THRESHOLDS[0], 0.0);
+            assert_eq!(ENTER_THRESHOLDS[10], 1.0);
+            assert!(ENTER_THRESHOLDS
+                .windows(2)
+                .all(|w| (w[1] - w[0] - 0.1).abs() < 1e-9));
+        }
+    }
 }
-"#;
 
 /// Which signals decide `active`.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq)]
 enum Mode {
     /// Viewport + `content-visibility` + tab.
     Element,
@@ -226,35 +252,179 @@ enum Mode {
     Enter,
 }
 
-impl Mode {
-    fn as_str(self) -> &'static str {
-        match self {
-            Mode::Element => "el",
-            Mode::Document => "doc",
-            Mode::Enter => "enter",
-        }
-    }
-}
-
 /// Escapes `id` for use inside `[id="..."]`.
 fn id_selector(id: &str) -> String {
     format!("[id=\"{}\"]", id.replace('\\', "\\\\").replace('"', "\\\""))
+}
+
+/// The page-wide facts every subscriber shares, kept by ONE subscriber at a time (the leader, the
+/// first of [`LISTENERS`]): whether the tab is hidden, and a counter that moves whenever a
+/// `content-visibility: auto` subtree starts or stops being skipped. One pair of document listeners
+/// serves the whole page, so the cost does not grow with the number of subscribers.
+static TAB_HIDDEN: GlobalSignal<bool> = Global::new(|| false);
+/// Whether the tab's visibility has been read at least once.
+static TAB_KNOWN: GlobalSignal<bool> = Global::new(|| false);
+/// Moves on every `contentvisibilityautostatechange`.
+static CV_EPOCH: GlobalSignal<u64> = Global::new(|| 0);
+/// The mounted subscribers, in mount order; the first one holds the document listeners.
+static LISTENERS: GlobalSignal<Vec<usize>> = Global::new(Vec::new);
+
+fn next_subscriber() -> usize {
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    static NEXT: AtomicUsize = AtomicUsize::new(1);
+    NEXT.fetch_add(1, Ordering::Relaxed)
+}
+
+/// Reads the tab's visibility into [`TAB_HIDDEN`].
+async fn read_tab_visibility() {
+    let Ok(props) = bridge::get(Target::Document, [Prop::VisibilityState]).await else {
+        return;
+    };
+    let Some(state) = props.string(&Prop::VisibilityState) else {
+        return;
+    };
+    let hidden = state == "hidden";
+    if *TAB_HIDDEN.peek() != hidden {
+        *TAB_HIDDEN.write() = hidden;
+    }
+    if !*TAB_KNOWN.peek() {
+        *TAB_KNOWN.write() = true;
+    }
+}
+
+/// Whether a `content-visibility: auto` subtree skips the element `selector` names; `None` when the
+/// page cannot answer (no `checkVisibility`, no element, no page).
+async fn read_skipped(selector: String) -> Option<bool> {
+    let props = bridge::get(Target::selector(selector), [Prop::CheckVisibility])
+        .await
+        .ok()?;
+    props.bool(&Prop::CheckVisibility).map(|visible| !visible)
 }
 
 /// Subscribes the calling component to the activity of the element `selector()` names (`None`:
 /// nothing to observe yet, the motion stays active). Re-subscribes when a signal `selector`
 /// reads changes.
 fn use_activity(
-    mut selector: impl FnMut() -> Option<String> + 'static,
+    selector: impl FnMut() -> Option<String> + 'static,
     mode: Mode,
     mut active: Signal<bool>,
     mut known: Signal<bool>,
 ) {
-    use_js_listeners(move || {
-        let Some(selector) = selector() else {
+    let selector = use_memo(selector);
+    let mut seen: Signal<Option<bool>> = use_signal(|| None);
+    let mut skipped = use_signal(|| false);
+
+    // The document facts: one subscriber holds the two listeners for the page.
+    let id = use_hook(next_subscriber);
+    use_effect(move || LISTENERS.write().push(id));
+    use_drop(move || LISTENERS.write().retain(|other| *other != id));
+    let leader = use_memo(move || LISTENERS.read().first() == Some(&id));
+    bridge::use_event_listener(
+        move || leader().then_some(Target::Document),
+        EventKind::Visibilitychange,
+        ListenOptions::default(),
+        &[],
+        move |_: serde_json::Value| {
+            spawn(read_tab_visibility());
+        },
+    );
+    bridge::use_event_listener(
+        move || leader().then_some(Target::Document),
+        EventKind::Contentvisibilityautostatechange,
+        ListenOptions::CAPTURE,
+        &[],
+        move |_: serde_json::Value| *CV_EPOCH.write() += 1,
+    );
+    use_effect(move || {
+        if leader() {
+            spawn(read_tab_visibility());
+        }
+    });
+
+    // A new element starts unseen.
+    use_effect(move || {
+        selector();
+        seen.set(None);
+        skipped.set(false);
+    });
+
+    // The element's own visibility, from an observer of its own.
+    let options = match mode {
+        Mode::Enter => ObserveOptions {
+            threshold: decide::ENTER_THRESHOLDS.to_vec(),
+            ..ObserveOptions::default()
+        },
+        _ => ObserveOptions {
+            root_margin: Some(ROOT_MARGIN.into()),
+            ..ObserveOptions::default()
+        },
+    };
+    bridge::use_intersection_observer(
+        move || {
+            if mode == Mode::Document {
+                None
+            } else {
+                selector()
+            }
+            .map(Target::selector)
+        },
+        options,
+        move |entry: Intersection| {
+            let sighting = decide::Sighting {
+                is_intersecting: entry.is_intersecting,
+                ratio: entry.ratio,
+                intersection_height: entry.intersection_height,
+                root_height: entry.root_height,
+            };
+            let now = if mode == Mode::Enter {
+                decide::enter_seen(sighting)
+            } else {
+                decide::loop_seen(sighting)
+            };
+            if *seen.peek() != Some(now) {
+                seen.set(Some(now));
+            }
+            // Only a seen element's skipped state matters; read it as the element comes into view.
+            if now {
+                if let Some(selector) = selector.peek().clone() {
+                    spawn(async move {
+                        if let Some(now) = read_skipped(selector).await {
+                            if *skipped.peek() != now {
+                                skipped.set(now);
+                            }
+                        }
+                    });
+                }
+            }
+        },
+    );
+
+    // A skipped-subtree change re-reads the elements that are in view.
+    use_effect(move || {
+        CV_EPOCH();
+        if *seen.peek() == Some(true) {
+            if let Some(selector) = selector.peek().clone() {
+                spawn(async move {
+                    if let Some(now) = read_skipped(selector).await {
+                        if *skipped.peek() != now {
+                            skipped.set(now);
+                        }
+                    }
+                });
+            }
+        }
+    });
+
+    // The decision.
+    use_effect(move || {
+        let hidden = TAB_HIDDEN();
+        let tab_known = TAB_KNOWN();
+        let seen = seen();
+        let skipped = skipped();
+        if selector().is_none() {
             // An entrance keeps its answer (the owner latches it); the others fall back to the
             // optimistic default.
-            if !matches!(mode, Mode::Enter) {
+            if mode != Mode::Enter {
                 if !*active.peek() {
                     active.set(true);
                 }
@@ -262,23 +432,20 @@ fn use_activity(
                     known.set(false);
                 }
             }
-            return None;
+            return;
+        }
+        let now = match mode {
+            Mode::Document => tab_known.then(|| decide::document_active(hidden)),
+            Mode::Element => decide::loop_active(hidden, seen, skipped),
+            Mode::Enter => decide::entered(hidden, seen == Some(true), skipped).then_some(true),
         };
-        Some(
-            JsListeners::install(SCRIPT)
-                .arg(selector)
-                .arg(mode.as_str())
-                .arg(ROOT_MARGIN)
-                .arg(ENTER_RATIO)
-                .on_message(move |now: bool| {
-                    if *active.peek() != now {
-                        active.set(now);
-                    }
-                    if !*known.peek() {
-                        known.set(true);
-                    }
-                }),
-        )
+        let Some(now) = now else { return };
+        if *active.peek() != now {
+            active.set(now);
+        }
+        if !*known.peek() {
+            known.set(true);
+        }
     });
 }
 
@@ -447,15 +614,5 @@ mod tests {
     #[test]
     fn the_id_selector_escapes_quotes_and_backslashes() {
         assert_eq!(id_selector("a\"b\\c"), "[id=\"a\\\"b\\\\c\"]");
-    }
-
-    /// The registry script must not leave a listener behind: every `addEventListener` has its
-    /// `removeEventListener` in `stop()`.
-    #[test]
-    fn the_registry_removes_what_it_adds() {
-        assert_eq!(
-            SCRIPT.matches("document.addEventListener").count(),
-            SCRIPT.matches("document.removeEventListener").count()
-        );
     }
 }

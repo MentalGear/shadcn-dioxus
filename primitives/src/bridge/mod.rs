@@ -370,6 +370,15 @@ pub enum Prop {
     Attr(String),
     /// Whether the element matches a selector, a bool.
     Matches(String),
+    /// The `attr` attribute of every descendant matching `selector`, in document order: an array of
+    /// strings (null for a match without the attribute). Read it on the document or an element;
+    /// `attr` is a name without spaces.
+    AttrsOf {
+        /// The attribute to read (no spaces).
+        attr: String,
+        /// The selector the descendants match.
+        selector: String,
+    },
     /// `offsetWidth`.
     OffsetWidth,
     /// `offsetHeight`.
@@ -446,6 +455,7 @@ impl Prop {
             Prop::Style(name) => format!("style:{name}"),
             Prop::Attr(name) => format!("attr:{name}"),
             Prop::Matches(selector) => format!("matches:{selector}"),
+            Prop::AttrsOf { attr, selector } => format!("attrsOf:{attr} {selector}"),
             Prop::OffsetWidth => "offsetWidth".into(),
             Prop::OffsetHeight => "offsetHeight".into(),
             Prop::OffsetTop => "offsetTop".into(),
@@ -557,6 +567,16 @@ impl Props {
     /// `prop` as a bool, if it is one.
     pub fn bool(&self, prop: &Prop) -> Option<bool> {
         self.value(prop).and_then(Value::as_bool)
+    }
+
+    /// [`Prop::AttrsOf`] as one entry per match: its attribute value, `None` for a match without it.
+    pub fn strings(&self, prop: &Prop) -> Option<Vec<Option<String>>> {
+        self.value(prop)?.as_array().map(|values| {
+            values
+                .iter()
+                .map(|v| v.as_str().map(str::to_owned))
+                .collect()
+        })
     }
 
     /// `prop` as a string, if it is one.
@@ -1069,12 +1089,35 @@ mod tests {
     }
 
     #[test]
+    fn a_descendant_attribute_read_comes_back_as_strings_in_order() {
+        let prop = Prop::AttrsOf {
+            attr: "data-x".into(),
+            selector: "[data-x]".into(),
+        };
+        let props: Props = serde_json::from_value(json!({ prop.wire(): ["a:1", null, "a:2"] }))
+            .expect("props deserialize");
+        assert_eq!(
+            props.strings(&prop),
+            Some(vec![Some("a:1".into()), None, Some("a:2".into())])
+        );
+        assert_eq!(Props::default().strings(&prop), None);
+    }
+
+    #[test]
     fn props_have_wire_names_and_props_read_back_by_them() {
         assert_eq!(
             Prop::Style("padding-top".into()).wire(),
             "style:padding-top"
         );
         assert_eq!(Prop::Attr("data-state".into()).wire(), "attr:data-state");
+        assert_eq!(
+            Prop::AttrsOf {
+                attr: "data-collection-item".into(),
+                selector: "[data-collection-item^=\"c1:\"]".into()
+            }
+            .wire(),
+            "attrsOf:data-collection-item [data-collection-item^=\"c1:\"]"
+        );
         assert_eq!(Prop::OffsetWidth.wire(), "offsetWidth");
         let props: Props = serde_json::from_value(json!({
             "offsetWidth": 100,

@@ -204,9 +204,11 @@ bridge::Flush::Task  variant Task
 bridge::Intersection  struct Intersection  #[derive(Clone, Copy, Debug, Deserialize, PartialEq)]
 bridge::Intersection  use session::Intersection
 bridge::Intersection.height  field f64
+bridge::Intersection.intersection_height  field f64
 bridge::Intersection.is_intersecting  field bool
 bridge::Intersection.left  field f64
 bridge::Intersection.ratio  field f64
+bridge::Intersection.root_height  field f64
 bridge::Intersection.top  field f64
 bridge::Intersection.width  field f64
 bridge::ListenOptions  struct ListenOptions  #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize)]
@@ -265,6 +267,7 @@ bridge::OpResult::props  fn props(&self) -> Option<Props>
 bridge::Prop  enum Prop  #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 bridge::Prop::ActiveElement  variant ActiveElement
 bridge::Prop::Attr  variant Attr(String)
+bridge::Prop::AttrsOf  variant AttrsOf { attr: String, selector: String }
 bridge::Prop::CheckVisibility  variant CheckVisibility
 bridge::Prop::Checked  variant Checked
 bridge::Prop::ClientHeight  variant ClientHeight
@@ -306,6 +309,7 @@ bridge::Props::f64  fn f64(&self, prop: &Prop) -> Option<f64>
 bridge::Props::px  fn px(&self, prop: &Prop) -> Option<f64>
 bridge::Props::rect  fn rect(&self) -> Option<Rect>
 bridge::Props::string  fn string(&self, prop: &Prop) -> Option<&str>
+bridge::Props::strings  fn strings(&self, prop: &Prop) -> Option<Vec<Option<String>>>
 bridge::Props::value  fn value(&self, prop: &Prop) -> Option<&Value>
 bridge::Publish  struct Publish  #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 bridge::Publish  use session::Publish

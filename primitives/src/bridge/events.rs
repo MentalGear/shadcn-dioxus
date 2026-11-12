@@ -126,6 +126,7 @@ events! {
     Cut => "cut", "wde", false;
     Paste => "paste", "wde", false;
     Visibilitychange => "visibilitychange", "d", false;
+    Contentvisibilityautostatechange => "contentvisibilityautostatechange", "d", false;
     Selectionchange => "selectionchange", "d", false;
     Pagehide => "pagehide", "w", false;
     Pageshow => "pageshow", "w", false;
