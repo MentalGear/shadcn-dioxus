@@ -1,7 +1,10 @@
 //! Defines the [`ScrollArea`] component for creating scrollable areas with customizable scrollbars.
 
+use crate::bridge::{
+    self, use_resize_observer, Command, ElementExt, EventKind, ListenOptions, ObserveOptions, Prop,
+    Props, Publish, Session, Size, Target,
+};
 use crate::direction::{use_direction, Direction};
-use crate::js_listener::{use_js_listeners, JsListeners};
 use crate::{merge_attributes, state_attrs, use_unique_id};
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
@@ -132,63 +135,216 @@ impl ScrollFade {
     }
 }
 
-/// The one script of a faded scroller (the single writer of the properties below), installed for every
-/// `fade` other than [`ScrollFade::None`]. It does two things, once per frame at most:
-///
-/// - It measures the scrollbar gutters (`offsetWidth - clientWidth` less the borders, and the same for
-///   the height) and writes them as `--dx-scrollbar-inline-size` / `--dx-scrollbar-block-size`.
-///   `dx-effects.css` builds the fade mask around them so a classic scrollbar stays opaque instead of
-///   dissolving with the content (a mask covers the whole border box, scrollbars included, and CSS cannot
-///   tell how wide a scrollbar is). An overlay scrollbar (macOS, iOS) measures 0 and is left as it was:
-///   it floats over the content and fades with it. A `ResizeObserver` on the scroller's content box sees
-///   a scrollbar appear or go, so nothing listens to scroll for this.
-/// - Where a browser has no scroll-driven animations (`animation-timeline: scroll()`), `dx-effects.css`
-///   can only draw every fade edge statically, which would show a fade past which there is
-///   nothing to scroll to; there the script also sets the four depth properties itself from the scroll
-///   position and the distance left (`|scrollLeft|`, so RTL reads like LTR). Where the animations exist
-///   the CSS drives them and no scroll listener is added.
-const SCROLL_FADE_JS: &str = r#"
-    const el = document.querySelector('[data-scroll-fade-key="' + (await dioxus.recv()) + '"]');
-    if (!el) return;
-    const driven = CSS.supports('animation-timeline: scroll()');
-    const depth = (past, edge) => (past > 1 ? 'var(--dx-internal-scroll-fade-size-' + edge + ')' : '0px');
-    let raf = 0, inline = '', block = '';
-    const update = () => {
-        raf = 0;
-        const cs = getComputedStyle(el);
-        const px = (v) => parseFloat(v) || 0;
-        const gutter = (box, client, a, b) => Math.max(0, box - client - px(cs[a]) - px(cs[b])) + 'px';
-        const i = gutter(el.offsetWidth, el.clientWidth, 'borderLeftWidth', 'borderRightWidth');
-        const b = gutter(el.offsetHeight, el.clientHeight, 'borderTopWidth', 'borderBottomWidth');
-        if (i !== inline) el.style.setProperty('--dx-scrollbar-inline-size', (inline = i));
-        if (b !== block) el.style.setProperty('--dx-scrollbar-block-size', (block = b));
-        if (driven) return;
-        const top = el.scrollTop, start = Math.abs(el.scrollLeft);
-        const set = (name, past, edge) => el.style.setProperty('--dx-scroll-fade-' + name, depth(past, edge));
-        set('t', top, 't');
-        set('b', el.scrollHeight - el.clientHeight - top, 'b');
-        set('s', start, 's');
-        set('e', el.scrollWidth - el.clientWidth - start, 'e');
-    };
-    const schedule = () => { if (!raf) raf = requestAnimationFrame(update); };
-    if (!driven) listen(el, 'scroll', schedule, { passive: true });
-    const resizes = new ResizeObserver(schedule);
-    resizes.observe(el);
-    if (el.firstElementChild) resizes.observe(el.firstElementChild);
-    cleanup(() => { resizes.disconnect(); if (raf) cancelAnimationFrame(raf); });
-    update();
-"#;
+/// Copied into the scroller's custom properties by the page, in the frame the scroll happens (the
+/// bridge's `publish` option), so the value never waits for a message to Rust: on a webview a scroll-linked
+/// value that crossed the IPC hop would land a frame late. Installed only where `dx-effects.css` has no
+/// scroll-driven animations; its `@supports not (animation-timeline: scroll())` block turns these two
+/// numbers and the two ranges below into the four edge depths.
+/// Its only writer: the listener seeds them at install (`initial`) and publishes every scroll after, so a
+/// late reading can never overwrite a newer position.
+const SCROLL_POSITION: &[Publish] = &[
+    Publish {
+        var: "--dx-scroll-top",
+        field: "target.scrollTop",
+        unit: "px",
+    },
+    Publish {
+        var: "--dx-scroll-left",
+        field: "target.scrollLeft",
+        unit: "px",
+    },
+];
 
-/// The attributes a scroller carries for `fade` (see [`ScrollFade::attributes`]) plus the script that
+/// The scrollbar gutter of one axis, in px: what the browser reserved for a classic scrollbar inside the
+/// border box (`offset - client - border_start - border_end`), 0 for an overlay scrollbar or none.
+fn scrollbar_gutter(offset: f64, client: f64, border_start: f64, border_end: f64) -> f64 {
+    (offset - client - border_start - border_end).max(0.0)
+}
+
+/// How far an axis scrolls, in px: the content past the visible box.
+fn scroll_range(scroll: f64, client: f64) -> f64 {
+    (scroll - client).max(0.0)
+}
+
+/// What one reading of a scroller gives, in the custom properties the stylesheet reads. The edge depths
+/// themselves are CSS (`dx-effects.css`): they need only these numbers.
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct ScrollerVars {
+    /// `--dx-scrollbar-inline-size`: the vertical scrollbar's gutter.
+    inline_gutter: f64,
+    /// `--dx-scrollbar-block-size`: the horizontal scrollbar's gutter.
+    block_gutter: f64,
+    /// `--dx-scroll-range-y`, `--dx-scroll-range-x`: how far each axis scrolls; only where the depths are
+    /// CSS-computed from them.
+    ranges: (f64, f64),
+}
+
+fn scroller_vars(props: &Props) -> ScrollerVars {
+    let num = |prop: Prop| props.f64(&prop).unwrap_or(0.0);
+    let border = |name: &str| props.px(&Prop::Style(name.into())).unwrap_or(0.0);
+    ScrollerVars {
+        inline_gutter: scrollbar_gutter(
+            num(Prop::OffsetWidth),
+            num(Prop::ClientWidth),
+            border("border-left-width"),
+            border("border-right-width"),
+        ),
+        block_gutter: scrollbar_gutter(
+            num(Prop::OffsetHeight),
+            num(Prop::ClientHeight),
+            border("border-top-width"),
+            border("border-bottom-width"),
+        ),
+        ranges: (
+            scroll_range(num(Prop::ScrollHeight), num(Prop::ClientHeight)),
+            scroll_range(num(Prop::ScrollWidth), num(Prop::ClientWidth)),
+        ),
+    }
+}
+
+/// The custom properties a reading writes where the CSS computes the depths: the ranges only. The scroll
+/// position is written by [`SCROLL_POSITION`]'s publisher alone.
+fn range_vars(vars: ScrollerVars) -> [(&'static str, f64); 2] {
+    [
+        ("--dx-scroll-range-y", vars.ranges.0),
+        ("--dx-scroll-range-x", vars.ranges.1),
+    ]
+}
+
+/// The props one reading asks for.
+fn scroller_reads() -> Vec<Prop> {
+    let mut reads = vec![
+        Prop::OffsetWidth,
+        Prop::OffsetHeight,
+        Prop::ClientWidth,
+        Prop::ClientHeight,
+        Prop::ScrollWidth,
+        Prop::ScrollHeight,
+        Prop::ScrollTop,
+        Prop::ScrollLeft,
+    ];
+    for name in [
+        "border-left-width",
+        "border-right-width",
+        "border-top-width",
+        "border-bottom-width",
+    ] {
+        reads.push(Prop::Style(name.into()));
+    }
+    reads
+}
+
+/// The one runtime of a faded scroller, installed for every `fade` other than [`ScrollFade::None`]. It
+/// measures the scrollbar gutters (`offsetWidth - clientWidth` less the borders, and the same for the
+/// height) and writes them as `--dx-scrollbar-inline-size` / `--dx-scrollbar-block-size`. `dx-effects.css`
+/// builds the fade mask around them so a classic scrollbar stays opaque instead of dissolving with the
+/// content (a mask covers the whole border box, scrollbars included, and CSS cannot tell how wide a
+/// scrollbar is). An overlay scrollbar (macOS, iOS) measures 0 and is left as it was: it floats over the
+/// content and fades with it. A resize observer on the scroller and on its first child sees a scrollbar
+/// appear or go, so nothing listens to scroll for this; the reading and the arithmetic are Rust
+/// ([`scrollbar_gutter`]), at most one reading per frame, written only when a gutter changed.
+///
+/// Where a browser has no scroll-driven animations (`CSS.supports('animation-timeline: scroll()')` is
+/// false), `dx-effects.css` can only draw every fade edge statically, which would show a fade past which
+/// there is nothing to scroll to. There the scroller also carries the numbers its fallback rules compute the
+/// four depths from: how far each axis scrolls (written from the same reading) and the scroll position
+/// (copied by the page itself, per frame, through the bridge's `publish` option). Where the animations
+/// exist the CSS drives them and no scroll listener is added.
+fn use_scroll_fade_runtime(fade: ScrollFade, key: Signal<String>) {
+    let active = fade != ScrollFade::None;
+    let scroller =
+        move || active.then(|| Target::selector(format!("[data-scroll-fade-key=\"{}\"]", key())));
+    let content = move || {
+        active.then(|| {
+            Target::selector(format!(
+                "[data-scroll-fade-key=\"{}\"] > :first-child",
+                key()
+            ))
+        })
+    };
+
+    // Whether the CSS drives the depths: one read, after mount.
+    let mut driven = use_signal(|| None::<bool>);
+    use_effect(move || {
+        if !active {
+            return;
+        }
+        spawn(async move {
+            let read = bridge::get(Target::Window, [Prop::ScrollTimelineSupported]).await;
+            driven.set(
+                read.ok()
+                    .and_then(|props| props.bool(&Prop::ScrollTimelineSupported)),
+            );
+        });
+    });
+
+    let mut last = use_hook(|| CopyValue::new(None::<(f64, f64)>));
+    let measure = use_callback(move |_: ()| {
+        let Some(target) = scroller() else { return };
+        spawn(async move {
+            let Ok(props) = bridge::get(target.clone(), scroller_reads()).await else {
+                return;
+            };
+            let vars = scroller_vars(&props);
+            let gutters = (vars.inline_gutter, vars.block_gutter);
+            if *last.peek() != Some(gutters) {
+                last.set(Some(gutters));
+                target.set_var(
+                    "--dx-scrollbar-inline-size",
+                    Some(&format!("{}px", gutters.0)),
+                );
+                target.set_var(
+                    "--dx-scrollbar-block-size",
+                    Some(&format!("{}px", gutters.1)),
+                );
+            }
+            if *driven.peek() == Some(false) {
+                for (name, value) in range_vars(vars) {
+                    target.set_var(name, Some(&format!("{value}px")));
+                }
+            }
+        });
+    });
+    use_resize_observer(scroller, ObserveOptions::default(), move |_: Size| {
+        measure.call(());
+    });
+    use_resize_observer(content, ObserveOptions::default(), move |_: Size| {
+        measure.call(());
+    });
+    // The ranges and the position are written once `driven` is known, and again by every reading.
+    use_effect(move || {
+        if driven() == Some(false) {
+            measure.call(());
+        }
+    });
+    crate::use_effect_with_cleanup(move || {
+        let target = (active && driven() == Some(false)).then(scroller).flatten();
+        let subscription = target.map(|target| {
+            Session::new()
+                .command(Command::Listen {
+                    target,
+                    event: EventKind::Scroll,
+                    options: ListenOptions {
+                        publish: SCROLL_POSITION,
+                        ..ListenOptions::default()
+                    },
+                    fields: Vec::new(),
+                    initial: true,
+                })
+                .open(|_: serde_json::Value| {})
+        });
+        move || drop(subscription)
+    });
+}
+
+/// The attributes a scroller carries for `fade` (see [`ScrollFade::attributes`]) plus the runtime that
 /// measures its scrollbar gutters (so the mask leaves them opaque) and, in a browser without
 /// scroll-driven animations, makes an edge show only while there is more content past it. Every
 /// component with a `fade` prop calls this instead of `fade.attributes()`, so it is one mechanism for
 /// all of them. Nothing is installed for [`ScrollFade::None`].
 pub(crate) fn use_scroll_fade(fade: ScrollFade) -> Vec<Attribute> {
     let key = use_unique_id();
-    use_js_listeners(move || {
-        (fade != ScrollFade::None).then(|| JsListeners::install(SCROLL_FADE_JS).arg(key.cloned()))
-    });
+    use_scroll_fade_runtime(fade, key);
     let mut attributes = fade.attributes();
     if fade != ScrollFade::None {
         attributes.extend(attributes!(div { "data-scroll-fade-key": key }));
@@ -363,6 +519,59 @@ mod tests {
         assert_ne!(ScrollFade::Both.class(), ScrollFade::Y.class());
         assert_ne!(ScrollFade::Both.class(), ScrollFade::X.class());
         assert_eq!(ScrollFade::Both.attributes().len(), 2);
+    }
+
+    /// A classic scrollbar is what the browser reserved inside the borders; an overlay scrollbar or none
+    /// reserves nothing, and a border wider than the difference never makes a negative gutter.
+    #[test]
+    fn the_gutter_is_what_the_borders_leave_of_the_difference() {
+        assert_eq!(scrollbar_gutter(215.0, 200.0, 0.0, 0.0), 15.0);
+        assert_eq!(scrollbar_gutter(217.0, 200.0, 1.0, 1.0), 15.0);
+        assert_eq!(scrollbar_gutter(202.0, 200.0, 1.0, 1.0), 0.0);
+        assert_eq!(scrollbar_gutter(200.0, 200.0, 0.0, 0.0), 0.0);
+        assert_eq!(scrollbar_gutter(201.0, 200.0, 2.0, 2.0), 0.0);
+    }
+
+    /// A reading writes the ranges and never the scroll position: the publisher is that position's only writer.
+    #[test]
+    fn a_reading_never_writes_the_scroll_position() {
+        let vars = ScrollerVars {
+            inline_gutter: 0.0,
+            block_gutter: 0.0,
+            ranges: (10.0, 20.0),
+        };
+        let written: Vec<&str> = range_vars(vars).iter().map(|(name, _)| *name).collect();
+        assert_eq!(written, ["--dx-scroll-range-y", "--dx-scroll-range-x"]);
+        let published: Vec<&str> = SCROLL_POSITION.iter().map(|row| row.var).collect();
+        assert_eq!(published, ["--dx-scroll-top", "--dx-scroll-left"]);
+    }
+
+    #[test]
+    fn the_range_is_the_content_past_the_box() {
+        assert_eq!(scroll_range(1200.0, 200.0), 1000.0);
+        assert_eq!(scroll_range(200.0, 200.0), 0.0);
+        assert_eq!(scroll_range(100.0, 200.0), 0.0);
+    }
+
+    /// One reading gives both gutters (each against its own two borders) and both ranges.
+    #[test]
+    fn a_reading_gives_the_gutters_and_the_ranges() {
+        let props: Props = serde_json::from_value(serde_json::json!({
+            "offsetWidth": 217, "clientWidth": 201, "offsetHeight": 120, "clientHeight": 119,
+            "scrollWidth": 900, "scrollHeight": 119,
+            "style:border-left-width": "1px", "style:border-right-width": "1px",
+            "style:border-top-width": "0px", "style:border-bottom-width": "1px",
+        }))
+        .expect("props");
+        assert_eq!(
+            scroller_vars(&props),
+            ScrollerVars {
+                inline_gutter: 14.0,
+                block_gutter: 0.0,
+                ranges: (0.0, 699.0),
+            }
+        );
+        assert_eq!(scroller_reads().len(), 12);
     }
 
     #[component]

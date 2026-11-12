@@ -76,6 +76,7 @@ use super::series::{
     AreaOptions, BarOptions, LineOptions, PieOptions, RadarOptions, RadialOptions,
 };
 use super::{layout, series};
+use crate::bridge::{Prop, Rect, Target, Transaction};
 use crate::chart::context::{is_touch, use_chart, ChartLayout, Follow};
 use crate::chart::engine::scale::fmt_num;
 use crate::chart::engine::table::{table_rows, table_rows_pie, table_rows_single_series};
@@ -690,10 +691,7 @@ pub fn Chart(props: ChartProps) -> Element {
                 mounted.set(Some(evt.data()));
                 if animate_prop && hydrated {
                     spawn(async move {
-                        #[expect(clippy::disallowed_methods, reason = "row 434: the bridge ports this page script")]
-                        let mut eval = dioxus::document::eval(PAINTED_IN_VIEW_JS);
-                        let _ = eval.send(paint_key.cloned());
-                        if let Ok(seen) = eval.recv::<bool>().await {
+                        if let Some(seen) = read_painted_in_view(&paint_key.cloned()).await {
                             painted_in_view.set(Some(seen));
                         }
                     });
@@ -1101,22 +1099,61 @@ const WRAPPER_STYLE: &str = "container-type: inline-size";
 /// `use_unique_id` starts with it was created in the browser, not hydrated from server HTML.
 const CLIENT_ID_PREFIX: &str = "dxc-c";
 
-/// Whether the chart whose `data-chart-key` is received was on screen when it mounted: the tab is
-/// visible, its box is laid out (not inside a skipped `content-visibility` subtree) and overlaps
-/// the viewport. One synchronous read; it registers nothing.
-const PAINTED_IN_VIEW_JS: &str = r#"
-const key = await dioxus.recv();
-const el = document.querySelector('[data-chart-key="' + key + '"]');
-let seen = false;
-if (el && document.visibilityState === 'visible') {
-    const r = el.getBoundingClientRect();
-    const laid = r.width > 0 && r.height > 0
-        && (typeof el.checkVisibility !== 'function'
-            || el.checkVisibility({ contentVisibilityAuto: true }));
-    seen = laid && r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth;
+/// What the page tells about a chart at mount: the inputs of [`painted_in_view`].
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct PaintFacts {
+    /// `document.visibilityState === 'visible'`.
+    tab_visible: bool,
+    /// The chart's bounding rect, `None` when the element is not in the page.
+    rect: Option<Rect>,
+    /// `checkVisibility({ contentVisibilityAuto: true })`, `None` where the browser has no such method.
+    visible_in_tree: Option<bool>,
+    /// The window's inner size, `(width, height)`.
+    window: (f64, f64),
 }
-dioxus.send(seen);
-"#;
+
+/// Whether the chart was on screen when it mounted: the tab is visible, its box is laid out (not inside a
+/// skipped `content-visibility` subtree) and overlaps the viewport. Pure: the same answer on every renderer
+/// for the same facts.
+fn painted_in_view(facts: PaintFacts) -> bool {
+    let (Some(rect), true) = (facts.rect, facts.tab_visible) else {
+        return false;
+    };
+    let laid_out = rect.width > 0.0 && rect.height > 0.0 && facts.visible_in_tree != Some(false);
+    laid_out
+        && rect.bottom > 0.0
+        && rect.top < facts.window.1
+        && rect.right > 0.0
+        && rect.left < facts.window.0
+}
+
+/// One read, in one page turn, of the facts [`painted_in_view`] decides from; `None` when the page cannot
+/// answer (a renderer with no page, or a failed read), which leaves the chart's `painted_in_view` unknown.
+async fn read_painted_in_view(chart_key: &str) -> Option<bool> {
+    let results = Transaction::new()
+        .get(Target::Document, [Prop::VisibilityState])
+        .get(
+            Target::selector(format!("[data-chart-key=\"{chart_key}\"]")),
+            [Prop::Rect, Prop::CheckVisibility],
+        )
+        .get(Target::Window, [Prop::InnerWidth, Prop::InnerHeight])
+        .run()
+        .await
+        .ok()?;
+    let [document, chart, window] = results.as_slice() else {
+        return None;
+    };
+    let (document, chart, window) = (document.props()?, chart.props()?, window.props()?);
+    Some(painted_in_view(PaintFacts {
+        tab_visible: document.string(&Prop::VisibilityState) == Some("visible"),
+        rect: chart.rect(),
+        visible_in_tree: chart.bool(&Prop::CheckVisibility),
+        window: (
+            window.f64(&Prop::InnerWidth)?,
+            window.f64(&Prop::InnerHeight)?,
+        ),
+    }))
+}
 
 /// The svg's `data-animate`, decided during render so no frame shows a pose the entrance then
 /// undoes (backlog row 344). `"true"` plays the entrance (see [`plays_entrance`]). A chart the
@@ -1168,6 +1205,82 @@ mod tests {
     use super::*;
     use crate::chart::{ChartConfig, ChartContainer, ChartDatum, ChartTooltip};
     use dioxus_core::NoOpMutations;
+
+    fn rect(left: f64, top: f64, width: f64, height: f64) -> Rect {
+        Rect {
+            x: left,
+            y: top,
+            width,
+            height,
+            top,
+            left,
+            right: left + width,
+            bottom: top + height,
+        }
+    }
+
+    fn facts(rect: Option<Rect>) -> PaintFacts {
+        PaintFacts {
+            tab_visible: true,
+            rect,
+            visible_in_tree: Some(true),
+            window: (390.0, 844.0),
+        }
+    }
+
+    /// A chart that overlaps the viewport in a visible tab was painted in view.
+    #[test]
+    fn a_chart_overlapping_the_viewport_was_painted() {
+        assert!(painted_in_view(facts(Some(rect(
+            10.0, 100.0, 300.0, 200.0
+        )))));
+        // overlapping only by an edge counts
+        assert!(painted_in_view(facts(Some(rect(
+            10.0, 843.0, 300.0, 200.0
+        )))));
+        assert!(painted_in_view(facts(Some(rect(
+            -299.0, 0.0, 300.0, 200.0
+        )))));
+    }
+
+    /// Below, above, left of or right of the viewport, edge to edge, is not on screen.
+    #[test]
+    fn a_chart_outside_the_viewport_was_not_painted() {
+        assert!(!painted_in_view(facts(Some(rect(
+            10.0, 844.0, 300.0, 200.0
+        )))));
+        assert!(!painted_in_view(facts(Some(rect(
+            10.0, -200.0, 300.0, 200.0
+        )))));
+        assert!(!painted_in_view(facts(Some(rect(
+            390.0, 0.0, 300.0, 200.0
+        )))));
+        assert!(!painted_in_view(facts(Some(rect(
+            -300.0, 0.0, 300.0, 200.0
+        )))));
+    }
+
+    /// A hidden tab, a missing element, an empty box and a skipped `content-visibility` subtree are not
+    /// painted; a browser without `checkVisibility` (`None`) does not hold a laid-out chart back.
+    #[test]
+    fn a_hidden_tab_a_missing_or_empty_or_skipped_chart_was_not_painted() {
+        let on_screen = Some(rect(10.0, 100.0, 300.0, 200.0));
+        assert!(!painted_in_view(PaintFacts {
+            tab_visible: false,
+            ..facts(on_screen)
+        }));
+        assert!(!painted_in_view(facts(None)));
+        assert!(!painted_in_view(facts(Some(rect(10.0, 100.0, 0.0, 200.0)))));
+        assert!(!painted_in_view(facts(Some(rect(10.0, 100.0, 300.0, 0.0)))));
+        assert!(!painted_in_view(PaintFacts {
+            visible_in_tree: Some(false),
+            ..facts(on_screen)
+        }));
+        assert!(painted_in_view(PaintFacts {
+            visible_in_tree: None,
+            ..facts(on_screen)
+        }));
+    }
 
     fn sample_config() -> ChartConfig {
         ChartConfig::new()
