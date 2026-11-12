@@ -16,7 +16,11 @@
 #   4. the title shapes of the matrix specs against the real spec files (a spec whose titles stop naming pages fails
 #      here instead of silently keeping every test);
 #   5. the `--grep-invert` pattern drops exactly the dropped tests;
-#   6. `--no-css-narrow` selects the whole BROAD set for any CSS edit.
+#   6. `--no-css-narrow` selects the whole BROAD set for any CSS edit;
+#   7. the component use graph (component-graph.mjs, row 510): on a synthetic tree a change to a component selects the
+#      specs of its direct, transitive, demo and css consumers (a variants-only change selects none of them, a component
+#      added later is picked up with no edit), and on the real tree every dependency a manifest declares is seen, no use of
+#      a component is unreadable to the scan, and a Button change names its consumers and hits the shared-plumbing cut-off.
 #
 # Then its own mutation proof: the same test is run against copies of the tools with one promise broken each time, and
 # every copy must come out RED (a test that cannot fail guards nothing).
@@ -111,6 +115,14 @@ mutate selector-blind css-rules.mjs 's|^const IDENT = .*|const IDENT = String.ra
 mutate token-blind css-impact.mjs 's/const reads = r.decls.some\(/const reads = false \&\& r.decls.some(/' 1
 # every title that names no page is dropped -> an unknown title shape would lose tests
 mutate drop-unscoped select.mjs 's/return !ks \|\| ks.length === 0 \|\| ks.some/return ks \&\& ks.some/'
+# the component graph (row 510): no code edge -> a consumer's specs would stay out of a component change
+mutate code-edge-blind component-graph.mjs 's/for \(const d of code\.get\(c\)\) codeUsers/for (const d of []) codeUsers/' 1
+# a demo's use is not an edge -> a page that embeds the changed component in a demo would stay out
+mutate demo-edge-blind component-graph.mjs 's/for \(const d of demo\.get\(c\)\) pageUsers/for (const d of []) pageUsers/' 1
+# variants/ fan out like component code -> a demo edit would select every consumer
+mutate variants-fan-out component-graph.mjs 's/\^\(variants\\\/\|docs/^(docs/' 1
+# the shared-plumbing cut-off is gone -> Button would select its consumers' specs but not the BROAD set
+mutate cutoff-blind select.mjs 's/if \(users\.size > BROAD_AT\) \{ addBroad/if (users.size > 1e9) { addBroad/'
 run_mutations
 bad=0
 for i in "${!names[@]}"; do
