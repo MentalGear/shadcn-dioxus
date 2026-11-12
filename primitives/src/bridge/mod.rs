@@ -965,6 +965,8 @@ impl ElementExt for String {
 mod tests {
     use super::*;
 
+    const BRIDGE_TS: &str = include_str!("../ts/bridge.ts");
+
     fn to_json(value: &impl Serialize) -> String {
         serde_json::to_string(value).expect("serialises")
     }
@@ -1011,7 +1013,7 @@ mod tests {
         .map(|m| m.wire().0)
         .collect();
         // Every name is a key of `METHODS` in `ts/bridge.ts`.
-        let js = include_str!("../ts/bridge.ts");
+        let js = BRIDGE_TS;
         for name in names {
             assert!(
                 js.contains(&format!("{name}(")) || js.contains(&format!("{name}:")),
@@ -1173,7 +1175,7 @@ mod tests {
             Prop::VisibilityState,
             Prop::CheckVisibility,
         ];
-        let js = include_str!("../ts/bridge.ts");
+        let js = BRIDGE_TS;
         let start = js.find("const PROPS").expect("PROPS table");
         let end = start + js[start..].find("\n};").expect("end of PROPS");
         let table = &js[start..end];
@@ -1196,7 +1198,7 @@ mod tests {
     /// Every `Slot` is one row of the page's `WRITES` table, and the table has no other.
     #[test]
     fn the_writes_table_is_this_enum() {
-        let js = include_str!("../ts/bridge.ts");
+        let js = BRIDGE_TS;
         let start = js.find("const WRITES").expect("WRITES table");
         let end = start + js[start..].find("\n};").expect("end of WRITES");
         let table = &js[start..end];
