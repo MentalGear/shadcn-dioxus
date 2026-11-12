@@ -37,6 +37,7 @@ unclaimed round. Owner decision 2026-10-18 ("Split, plus queue").
 | 310-319 | session_019CSAknzLi1PvcaAvfgpych (Round 4; replaces its void 290-299 block). 310 and 311 were minted by session_01QoX93TwsKJ9GtMXWUXXfKw's batch B by mistake (questionnaire height, combobox multiple order; merged in #121); Round 4 keeps 312-319 |
 | 320-339 | session_01PJCSoqAo9bCWeVLpz61Wdy (owner 2026-10-21: test/build speed items and the test-architecture audit constructions) |
 | 340-359 | session_01QoX93TwsKJ9GtMXWUXXfKw (backlog thread: 340-342 DataTable model rows, owner 2026-10-21; held owner-note rows from 2026-10-20) |
+| 508-509 | session_01MsL6RCa7c4QWmqNtUYQ8RE (owner 2026-11-12: 508 the decision-kernel proof, 509 the Rust decision contract; rows 360-507 were minted without a block here) |
 
 ## Merge QUEUE (owner 2026-10-21: one merge owner for main; append fast-gated branches here)
 
