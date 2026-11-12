@@ -4,7 +4,7 @@ title: "Phase 0.3: proof port A (the not(web) focus trap's 3 eval sites, focus-t
 status: "APPROVED 2026-10-26 (owner: \"okay for the plan\"; scope 2, the recommended default, since no scope…"
 size: "L"
 area: overlays
-js-grant: js_file=200 (inferred ceiling: otp_filter.ts about 30 relocated, the adapter extension in bridge.ts about 150, focus-trap.ts is deleted; the main loop's grant row at the merge base is the number the gate reads)
+js-grant: js_file_bytes=3660 (200 lines at 18.3 bundle bytes per source line, inferred ceiling: otp_filter.ts about 30 relocated, the adapter extension in bridge.ts about 150, focus-trap.ts is deleted; the main loop's grant row at the merge base is the number the gate reads)
 adds: [otpFilter]
 updated: 2026-11-12
 ---

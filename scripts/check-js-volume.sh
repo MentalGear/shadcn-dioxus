@@ -127,7 +127,7 @@ import tempfile
 HERE = os.getcwd()
 sys.path.insert(0, os.path.join(HERE, "scripts", "lib"))
 from ratchet import Ratchet, selftest_env  # noqa: E402
-from rows import front_matter, git_text, row_at  # noqa: E402
+from rows import CLOSED_STATUS, GRANT_COLUMNS, front_matter, git_text, row_at, row_problems  # noqa: E402
 
 _spec = importlib.util.spec_from_file_location("comment_scan", os.path.join(HERE, "scripts", "comment-scan.py"))
 cs = importlib.util.module_from_spec(_spec)
@@ -845,8 +845,26 @@ def update_freeze(root, R, frozen, reason=None):
 
 
 # ---------------------------------------------------------------------------------------------------- commands
+def row_grant_problems(root):
+    """One error per malformed grant line (`scripts/lib/rows.py`: `row_problems`) of every OPEN row file of the tree, so
+    a `js-grant` key that is no column (the legacy `js_file`, a typo) is red where it is written, not at the lane
+    that would have spent it. A closed row (under `done/` or a finished status) grants nothing and is not read."""
+    errors = []
+    folder = os.path.join(root, "dev-docs", "backlog")
+    for name in sorted(os.listdir(folder)) if os.path.isdir(folder) else []:
+        if not name.endswith(".md"):
+            continue
+        with open(os.path.join(folder, name), encoding="utf-8") as f:
+            fm = front_matter(f.read())
+        if CLOSED_STATUS.match(fm.get("status", "")):
+            continue
+        errors += [f"{GATE}: row {name.split('-')[0].lstrip('0')} (dev-docs/backlog/{name}): {p}" for p in row_problems(fm)]
+    return errors
+
+
 def run_check(root, freeze=True):
     measured, _, problems, frozen = measure_all(root)
+    problems = problems + row_grant_problems(root)
     R = ratchet(root)
     rep = R.check(measured)
     rep.errors[:0] = problems
@@ -1415,6 +1433,36 @@ def self_test():
                  hand_freeze("# fixed: row 437 bug fix")), freeze=True, why="but not add one")
     scenario("the freeze data deleted", "red", fz, lambda r: os.remove(os.path.join(r, FREEZE)), freeze=True, why="is missing")
     scenario("a malformed freeze row", "red", fz, append(FREEZE, "site\tx.rs\teval\tnothex\t1\t1\tp\n"), freeze=True, why="malformed row")
+    # ---- a grant whose key is no column cannot exist silently (scripts/lib/rows.py `row_problems`)
+    def grant_row(n, grant, adds="[]", fix=None, status="APPROVED"):
+        text = GRANT_ROW.format(n=n, grant=grant, status=status).replace("adds: []", f"adds: {adds}")
+        return text.replace("adds:", f"js-fix: {fix}\nadds:", 1) if fix else text
+
+    def add_row(n, **kw):
+        return lambda root: write(root, f"dev-docs/backlog/{n}-new.md", grant_row(n, **kw))
+
+    cols = ", ".join(GRANT_COLUMNS)
+    if not set(COLUMNS) <= set(GRANT_COLUMNS):
+        fails.append(f"COLUMNS of the gate are not all in rows.GRANT_COLUMNS: {sorted(set(COLUMNS) - set(GRANT_COLUMNS))}")
+    else:
+        ok_count += 1
+    scenario("a grant key that is no column is red, naming the row, the key and the columns", "red", base,
+             add_row(470, grant="js_fil=10"), why=f"row 470 (dev-docs/backlog/470-new.md): `js-grant:` key `js_fil` is not a column; the columns are {cols}")
+    scenario("the legacy grant key `js_file` is red and says bytes and `js_file_bytes`", "red", base,
+             add_row(471, grant="js_file=150 (inferred ceiling: about 150 lines)"), why="the unit is bytes and the column is `js_file_bytes`")
+    for column in COLUMNS:
+        scenario(f"a grant of the column `{column}` is green", "green", base, add_row(472, grant=f"{column}=5"))
+    scenario("a grant of the bridge budget column `bytes` and a js column together is green", "green", base,
+             add_row(473, grant="bytes=56 js_file_bytes=56 (two columns)"))
+    scenario("`js-grant: none` and a remark after `none` are green", "green", base, add_row(474, grant="none (no volume)"))
+    scenario("a grant of words is red", "red", base, add_row(475, grant="about 150 lines"), why="is not `column=number`")
+    scenario("a `js-fix` of column pairs is red", "red", base, add_row(476, grant="none", fix="js_file=20"), why="`js-fix:` is a path list")
+    scenario("a `js-fix` path list is green", "green", base, add_row(477, grant="none", fix="primitives/src/a.rs, b.js (why)"))
+    scenario("an `adds` that is no bracketed list is red", "red", base, add_row(478, grant="none", adds="otpFilter"), why="`adds:` is 'otpFilter'")
+    scenario("a closed row keeps its old grant key unread", "green", base, add_row(479, grant="js_file=0", status="LANDED"))
+    scenario("a row under done/ keeps its old grant key unread", "green", base,
+             lambda root: write(root, "dev-docs/backlog/done/480-old.md", grant_row(480, grant="js_file=0")))
+
     with tempfile.TemporaryDirectory(prefix="check-js-volume-st.") as root:
         write(root, ALLOW, ALLOW_MIN)
         write(root, "primitives/src/bridge/x.rs", fz_rs)

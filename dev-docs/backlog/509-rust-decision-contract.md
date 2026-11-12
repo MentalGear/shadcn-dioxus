@@ -4,7 +4,7 @@ title: "The Rust decision contract: one decide per behaviour, the decision kerne
 status: "APPROVED 2026-11-11 (owner). Opens when row 508's verdict is KERNEL. On MIRROR, items 2 to 4 are…"
 size: "M"
 area: primitives
-js-grant: js_file=0 (the kernel loader's lines are paid for by the fixture's deleted TypeScript decide; row 508's note gives the measured number, and the main loop's grant row at the merge base is the number the gate reads)
+js-grant: js_file_bytes=0 (the kernel loader's lines are paid for by the fixture's deleted TypeScript decide; row 508's note gives the measured number, and the main loop's grant row at the merge base is the number the gate reads)
 adds: []
 updated: 2026-11-12
 ---

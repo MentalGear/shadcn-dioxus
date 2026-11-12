@@ -4,7 +4,7 @@ title: "Phase 0.6: the witness harness and the first witnesses"
 status: "APPROVED 2026-10-26 (owner: \"okay for the plan\"; scope 2, the recommended default, since no scope…"
 size: "L"
 area: tests
-js-grant: js_file=360 (inferred ceiling: witness.ts about 300 that never ships, the apply table about 60; the main loop's grant row at the merge base is the number the gate reads)
+js-grant: js_file_bytes=6590 (360 lines at 18.3 bundle bytes per source line, inferred ceiling: witness.ts about 300 that never ships, the apply table about 60; the main loop's grant row at the merge base is the number the gate reads)
 adds: []
 updated: 2026-10-26
 ---
