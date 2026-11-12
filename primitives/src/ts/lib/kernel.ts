@@ -92,20 +92,38 @@ function put(value: unknown, depth: number): void {
 
 // ---------------------------------------------------------------- decoding
 
-function read(dv: DataView, at: { n: number }, depth: number): Wire {
+// The answer is read straight out of the module's memory: a cursor and two views that are rebuilt only when the
+// memory has grown (a call then allocates no closure and no view of its own).
+let rbuf: ArrayBufferLike | null = null;
+let rdv = new DataView(new ArrayBuffer(0));
+let rbytes = new Uint8Array(0);
+let rat = 0;
+
+/** Views of the module's memory as it is now (the memory object changes whenever it grows). */
+function memoryViews(memory: WebAssembly.Memory): void {
+  const now = memory.buffer;
+  if (now === rbuf) return;
+  rbuf = now;
+  rdv = new DataView(now);
+  rbytes = new Uint8Array(now);
+}
+
+function rLen(): number {
+  const n = rdv.getUint32(rat, true);
+  rat += 4;
+  return n;
+}
+
+function rStr(): string {
+  const n = rLen();
+  const s = decoder.decode(rbytes.subarray(rat, rat + n));
+  rat += n;
+  return s;
+}
+
+function read(depth: number): Wire {
   if (depth > MAX_DEPTH) throw new Error("kernel: answer nested too deep");
-  const tag = dv.getUint8(at.n++);
-  const len = (): number => {
-    const n = dv.getUint32(at.n, true);
-    at.n += 4;
-    return n;
-  };
-  const str = (): string => {
-    const n = len();
-    const s = decoder.decode(new Uint8Array(dv.buffer, dv.byteOffset + at.n, n));
-    at.n += n;
-    return s;
-  };
+  const tag = rdv.getUint8(rat++);
   switch (tag) {
     case 0:
       return null;
@@ -114,22 +132,22 @@ function read(dv: DataView, at: { n: number }, depth: number): Wire {
     case 2:
       return true;
     case 3: {
-      const n = dv.getFloat64(at.n, true);
-      at.n += 8;
+      const n = rdv.getFloat64(rat, true);
+      rat += 8;
       return n;
     }
     case 4:
-      return str();
+      return rStr();
     case 5: {
       const items: Wire[] = [];
-      for (let i = len(); i > 0; i--) items.push(read(dv, at, depth + 1));
+      for (let i = rLen(); i > 0; i--) items.push(read(depth + 1));
       return items;
     }
     case 6: {
       const pairs: [string, Wire][] = [];
-      for (let i = len(); i > 0; i--) {
-        const key = str();
-        pairs.push([key, read(dv, at, depth + 1)]);
+      for (let i = rLen(); i > 0; i--) {
+        const key = rStr();
+        pairs.push([key, read(depth + 1)]);
       }
       // fromEntries defines each key as data: a key named `__proto__` is never the prototype setter
       return Object.fromEntries(pairs);
@@ -243,13 +261,16 @@ function decide(kind: string, behaviour: unknown, event: unknown, snapshot: unkn
   used = 0;
   put([behaviour, memory, snapshot, event], 0);
   try {
-    // the buffer is read after each call that can grow the memory, never before
+    // the memory is viewed after each call that can grow it, never before
     const at = k.dx_input(used);
-    new Uint8Array(k.memory.buffer, at, used).set(buf.subarray(0, used));
+    memoryViews(k.memory);
+    rbytes.set(buf.subarray(0, used), at);
     const n = call(used);
     if (n < 0) return {};
     const out = k.dx_output();
-    return read(new DataView(k.memory.buffer, out, n), { n: 0 }, 0) as DxDecision;
+    memoryViews(k.memory);
+    rat = out;
+    return read(0) as DxDecision;
   } catch (error) {
     // a trap leaves the module's state unknown: it takes no more decisions
     state = "failed";

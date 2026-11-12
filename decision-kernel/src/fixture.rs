@@ -66,7 +66,10 @@ impl Config {
             event: value.get("event")?.as_str()?.to_owned(),
             attr: value.get("attr")?.as_str()?.to_owned(),
             value: value.get("value")?.as_str()?.to_owned(),
-            cancel: value.get("cancel").and_then(Value::as_bool).unwrap_or(false),
+            cancel: value
+                .get("cancel")
+                .and_then(Value::as_bool)
+                .unwrap_or(false),
         })
     }
 }

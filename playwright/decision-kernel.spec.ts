@@ -2,7 +2,9 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { test, expect } from "./fixtures";
 import type { Page } from "@playwright/test";
-import { baseUrlOr } from "./base-url";
+import { BASE_URL } from "./base-url";
+import { gotoHydrated } from "./hydration";
+import { gotoReference } from "./page-kinds";
 
 // The decision kernel (row 508, branch-only proof): the pure Rust `decide` of the fixture behaviour, compiled to
 // wasm, called synchronously by the bridge's capture-phase, non-passive listener inside a REAL event's dispatch
@@ -106,7 +108,7 @@ test.describe("what the kernel costs per event", () => {
     await page.route("https://probe.test/**", (route) =>
       route.fulfill({ body: HTML, contentType: "text/html", headers: { "cross-origin-opener-policy": "same-origin", "cross-origin-embedder-policy": "require-corp" } }),
     );
-    await page.goto("https://probe.test/");
+    await gotoReference(page, "https://probe.test/");
     await page.addScriptTag({ content: BRIDGE });
     await page.addScriptTag({ content: FIXTURE });
     expect(await page.evaluate(() => crossOriginIsolated)).toBe(true);
@@ -148,11 +150,59 @@ test.describe("what the kernel costs per event", () => {
         dispatch.push(performance.now() - t);
         sink += e.defaultPrevented ? 1 : 0;
       }
-      // the same events once the module is warm: the first 500 dropped
-      return { loadMs, mode: b.kernel.stats.mode, timerResolutionMs: 0.005, call: stats(call), callWarm: stats(call.slice(500)), dispatch: stats(dispatch), sink, bytes: b.kernel.stats };
+      // the noise floor of this harness: a plain JavaScript function building the same decision
+      const js = (x: any, st: any) => (st["data-dx-fixture-block"] !== null ? {} : { prevent: x.cancel, attrs: { [x.attr]: x.value }, send: { behaviour: "fixture", event: x.event } });
+      const floor: number[] = [];
+      for (let i = 0; i < 10000; i++) {
+        const t = performance.now();
+        const d: any = js(behaviour, snapshot);
+        floor.push(performance.now() - t);
+        sink += d.prevent ? 1 : 0;
+      }
+      // the machine's own jitter over a run as long as the kernel loop: the same count of iterations, each a
+      // fixed amount of arithmetic of about the kernel call's duration
+      const spin: number[] = [];
+      let acc = 0;
+      for (let i = 0; i < 10000; i++) {
+        const t = performance.now();
+        for (let j = 0; j < 4000; j++) acc += j * 1.0001;
+        spin.push(performance.now() - t);
+      }
+      sink += acc > 0 ? 0 : 1;
+      return { spin: stats(spin), jsFloor: stats(floor), loadMs, mode: b.kernel.stats.mode, timerResolutionMs: 0.005, call: stats(call), callWarm: stats(call.slice(500)), dispatch: stats(dispatch), sink, bytes: b.kernel.stats };
     }, KERNEL_B64);
     console.log("KERNEL-COST " + JSON.stringify(r));
-    expect(r.sink).toBe(20000);
+    expect(r.sink).toBe(30000);
     expect(r.call.p99).toBeLessThan(0.5);
+  });
+});
+
+test.describe("on the served site (run against a release SSG build)", () => {
+  // The page's own transport loads the bridge and, in the same eval, the kernel; the fixture module is the one
+  // shipped file no component evaluates, so the spec adds it and installs the behaviour on an input it adds.
+  test("the kernel the transport loaded decides inside a real keydown, capture phase, non-passive", async ({ page }) => {
+    await gotoHydrated(page, `${BASE_URL}/component/popover/`);
+    await page.getByRole("button", { name: "Show Popover" }).focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await expect.poll(() => page.evaluate(() => (window as any).__dxBridge?.kernel.state)).toBe("ready");
+    const info = await page.evaluate(() => {
+      const k = (window as any).__dxBridge.kernel;
+      return { mode: k.stats.mode, readyAfterStartMs: k.stats.readyMs - k.stats.startMs };
+    });
+    console.log("SITE-KERNEL " + JSON.stringify(info));
+    expect(info.mode).toBe("sync");
+    await page.keyboard.press("Escape");
+    await page.evaluate(() => {
+      const input = document.createElement("input");
+      input.id = "inp";
+      document.body.prepend(input);
+    });
+    await page.addScriptTag({ content: FIXTURE });
+    await page.evaluate(INSTALL);
+    await page.focus("#inp");
+    await page.keyboard.type("abc");
+    expect(await page.inputValue("#inp")).toBe("");
+    expect(await page.evaluate(() => (window as any).ch.sent.length)).toBe(3);
   });
 });

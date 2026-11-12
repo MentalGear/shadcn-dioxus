@@ -21,7 +21,11 @@ impl Json<'_> {
     }
     fn eat(&mut self, c: u8) {
         self.ws();
-        assert_eq!(self.s[self.at], c, "expected {:?} at {}", c as char, self.at);
+        assert_eq!(
+            self.s[self.at], c,
+            "expected {:?} at {}",
+            c as char, self.at
+        );
         self.at += 1;
     }
     fn peek(&mut self) -> u8 {
@@ -35,7 +39,9 @@ impl Json<'_> {
             assert_ne!(self.s[self.at], b'\\', "the vectors use no escapes");
             self.at += 1;
         }
-        let out = std::str::from_utf8(&self.s[start..self.at]).unwrap().to_owned();
+        let out = std::str::from_utf8(&self.s[start..self.at])
+            .unwrap()
+            .to_owned();
         self.at += 1;
         out
     }
@@ -70,13 +76,20 @@ impl Json<'_> {
             }
             _ => {
                 let rest = &self.s[self.at..];
-                for (word, value) in [("true", Value::Bool(true)), ("false", Value::Bool(false)), ("null", Value::Null)] {
+                for (word, value) in [
+                    ("true", Value::Bool(true)),
+                    ("false", Value::Bool(false)),
+                    ("null", Value::Null),
+                ] {
                     if rest.starts_with(word.as_bytes()) {
                         self.at += word.len();
                         return value;
                     }
                 }
-                let end = rest.iter().position(|b| !b"-+.0123456789eE".contains(b)).unwrap();
+                let end = rest
+                    .iter()
+                    .position(|b| !b"-+.0123456789eE".contains(b))
+                    .unwrap();
                 let n = std::str::from_utf8(&rest[..end]).unwrap().parse().unwrap();
                 self.at += end;
                 Value::Num(n)
@@ -87,7 +100,11 @@ impl Json<'_> {
 
 /// Every fixture vector as (name, behaviour, event, state, memory, expect).
 fn fixture_vectors() -> Vec<(String, Value, Value, Value, Value, Value)> {
-    let all = Json { s: VECTORS.as_bytes(), at: 0 }.value();
+    let all = Json {
+        s: VECTORS.as_bytes(),
+        at: 0,
+    }
+    .value();
     let Some(Value::Arr(vectors)) = all.get("fixture") else {
         panic!("no fixture vectors");
     };
@@ -112,7 +129,9 @@ fn same(a: &Value, b: &Value) -> bool {
         (Value::Obj(x), Value::Obj(y)) => {
             x.len() == y.len() && x.iter().all(|(k, v)| b.get(k).is_some_and(|w| same(v, w)))
         }
-        (Value::Arr(x), Value::Arr(y)) => x.len() == y.len() && x.iter().zip(y).all(|(p, q)| same(p, q)),
+        (Value::Arr(x), Value::Arr(y)) => {
+            x.len() == y.len() && x.iter().zip(y).all(|(p, q)| same(p, q))
+        }
         _ => a == b,
     }
 }
@@ -128,7 +147,11 @@ fn the_rust_decide_meets_every_vector() {
             &Snapshot::from_value(&state).unwrap(),
             &Event::from_value(&event).unwrap(),
         );
-        assert!(same(&decision.to_value(), &expect), "{name}: {:?} != {expect:?}", decision.to_value());
+        assert!(
+            same(&decision.to_value(), &expect),
+            "{name}: {:?} != {expect:?}",
+            decision.to_value()
+        );
     }
 }
 
@@ -165,7 +188,15 @@ fn malformed_requests_have_no_answer_and_never_panic() {
 #[test]
 fn values_round_trip() {
     let value = Value::Obj(vec![
-        ("a".into(), Value::Arr(vec![Value::Null, Value::Bool(true), Value::Bool(false), Value::Num(-1.5)])),
+        (
+            "a".into(),
+            Value::Arr(vec![
+                Value::Null,
+                Value::Bool(true),
+                Value::Bool(false),
+                Value::Num(-1.5),
+            ]),
+        ),
         ("ключ".into(), Value::Str("значение \u{1F600}".into())),
     ]);
     let mut bytes = Vec::new();
@@ -181,7 +212,13 @@ fn the_native_call_is_cheap() {
     let snapshot = Snapshot::from_value(&state).unwrap();
     let event = Event::from_value(&event).unwrap();
     let mut request = Vec::new();
-    Value::Arr(vec![behaviour, memory.clone(), state, Value::Obj(vec![("type".into(), Value::Str("keydown".into()))])]).encode(&mut request);
+    Value::Arr(vec![
+        behaviour,
+        memory.clone(),
+        state,
+        Value::Obj(vec![("type".into(), Value::Str("keydown".into()))]),
+    ])
+    .encode(&mut request);
     let mut direct = Vec::with_capacity(10_000);
     let mut bytes = Vec::with_capacity(10_000);
     for _ in 0..10_000 {
@@ -194,7 +231,16 @@ fn the_native_call_is_cheap() {
     }
     for (label, samples) in [("direct", &mut direct), ("bytes", &mut bytes)] {
         samples.sort_unstable();
-        println!("native {label}: p50 {} ns, p99 {} ns, max {} ns over {}", samples[samples.len() / 2], samples[samples.len() * 99 / 100], samples[samples.len() - 1], samples.len());
+        println!(
+            "native {label}: p50 {} ns, p99 {} ns, max {} ns over {}",
+            samples[samples.len() / 2],
+            samples[samples.len() * 99 / 100],
+            samples[samples.len() - 1],
+            samples.len()
+        );
     }
-    assert!(bytes[bytes.len() * 99 / 100] < 500_000, "p99 is under 0.5 ms natively as well");
+    assert!(
+        bytes[bytes.len() * 99 / 100] < 500_000,
+        "p99 is under 0.5 ms natively as well"
+    );
 }

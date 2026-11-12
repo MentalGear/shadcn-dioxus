@@ -11,7 +11,7 @@ target: wasm32-unknown-unknown
 profile: release (opt-level z, fat LTO, strip), no RUSTFLAGS
 src 8a069158cf34158db6f09cc9c602140f54bfbceee674db06a0af89569ae2d8d7  decision-kernel/Cargo.toml
 src 82d3a66096d6d18ff39a6c29278ac0a6ff06a9f0b24e5146992bdfc91d91b7ca  decision-kernel/src/ffi.rs
-src 7387563aaf576d203641a27b9531dd241c81be62ce832ece06bc74e0fdcc2be4  decision-kernel/src/fixture.rs
+src 83b3c19198c87f38199ad85927eb349338089b6ca97c0c73cdd54343537bf2e6  decision-kernel/src/fixture.rs
 src f888d9009367ed6d86e216fdd5d352bc769c5b4e3812fce570f28b222f711e36  decision-kernel/src/lib.rs
 src 3b955cb57a6eace423c6ac1a258bc56f4d22d1b3bf23113b9b27bd7b97e4c8e2  decision-kernel/src/value.rs
 src 33c33c5b39c40477a5c934e0b28434214155e476926bfa8df7662e0710bddba0  decision-kernel/src/wire.rs
