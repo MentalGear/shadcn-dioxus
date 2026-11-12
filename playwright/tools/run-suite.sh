@@ -62,8 +62,11 @@ total=0
 for i in $(seq 1 "$chunks"); do
   [ -n "$only" ] && [ "$only" != "$i" ] && continue
   start=$(date +%s)
-  limit=$(awk -v i="$i" -v n="$chunks" -v w="$workers" -v f="$factor" '$1 == "shard" && $2 == i "/" n ":" { l = f * $5 / w; if (l < 900) l = 900; printf "%d", l + 0.999 }' "$out/loads.txt")
+  limit=$(awk -v i="$i" -v n="$chunks" -v w="$workers" -v f="$factor" '$1 == "shard" && $2 == i "/" n ":" { l = f * $5 / w; if (l < 900) l = 900; printf "%d", l + 0.999; exit }' "$out/loads.txt")
   [ -n "$limit" ] || limit=3600
+  # A limit that is not a plain number of seconds within a day never reaches Playwright.
+  case "$limit" in ''|*[!0-9]*) echo "run-suite: chunk $i has no usable wall limit ('$limit')" >&2; exit 2 ;; esac
+  [ "$limit" -le 86400 ] || { echo "run-suite: chunk $i wall limit ${limit}s is over a day" >&2; exit 2; }
   flock "$lock" bash -c '
     s=$(date +%s)
     PW_SPECS_FILE="$1" PLAYWRIGHT_JSON_OUTPUT_FILE="$2" pnpm exec playwright test --config="$3" --workers="$4" --grep-invert @timing --pass-with-no-tests --global-timeout=$(( $7 * 1000 )) --reporter=json,line >"$5" 2>&1
