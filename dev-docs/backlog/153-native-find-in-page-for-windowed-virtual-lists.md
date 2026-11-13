@@ -17,7 +17,7 @@ Native find-in-page for WINDOWED virtual lists: keep per-item text in the DOM as
 
 **Left: a Firefox 139+ and Safari 26.2 run of the find bar, and a release-build mount timing for 100k rows** (Chromium Ctrl+F verified 2026-10-23, 3.5 s debug). The opt-in `text_value` prop works in `VirtualList` and, since row 309 (7d08f034), in `VirtualGrid` and `VirtualWrapGrid` through the shared layer `primitives/src/virtual/find.rs`; it stays "experimental" until those two runs are in.
 
-**Also for that Firefox and Safari run (2026-11-13, from [row 451](./done/451-port-3-sc-shared-collection-and-activity.md)).** The
+**Also for that Firefox and Safari run (2026-11-13, from [row 451](./451-port-3-sc-shared-collection-and-activity.md)).** The
 activity registry reads a second signal, `content-visibility` skipping (`checkVisibility` and a document
 `contentvisibilityautostatechange` listener). Measured on Chromium it never changes an outcome: the registry's observer
 drops an element at the same step the browser skips it. Probe the same on Firefox and Safari; if no engine shows an

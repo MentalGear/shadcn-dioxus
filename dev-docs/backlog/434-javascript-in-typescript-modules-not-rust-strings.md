@@ -115,7 +115,7 @@ Every row below is **APPROVED 2026-10-26 (owner: "okay for the plan"; scope 2)**
 
 | row | what | hours (I) | depends on |
 |---|---|---|---|
-| [451](./done/451-port-3-sc-shared-collection-and-activity.md) | Port 3.SC: shared collection and activity scripts (S7, S15) | 4 | 444, 445 |
+| [451](./451-port-3-sc-shared-collection-and-activity.md) | Port 3.SC: shared collection and activity scripts (S7, S15) | 4 | 444, 445 |
 | [452](./452-port-3-pl-placement-anchor-fallback-and-the-paint-safe-gate.md) | Port 3.PL: placement (T1, T2, T8-T12, S1), the paint-safe gate and the boot probe | 28 | 444, 445, 449 |
 | [453](./453-port-3-pv-preview-glue-and-platform-rule-rows.md) | Port 3.PV: preview glue (V3-V23) with the V14 allowlist row and the Ctrl/Cmd+B platform rule row | 11 | 444, 452, 455 or 456 (`hotkey`), 457 (V6 last) |
 | [454](./done/454-port-3-ob-observers-and-publish-option.md) | Port 3.OB: observers and the publish option (L27, S16, S14) | 7 | 444, 445 |

@@ -28,7 +28,7 @@ M
 ## Detail
 
 - **Files owned:** Those files only, at the lines named; `preview/src/components/**` for the preview ones. Must not touch `collection.rs` (3.SC) or the settle and gesture code of the same files.
-- **Depends on:** [row 444](./444-gate-half-of-lane-3-0b-grants-bans-and-witness-presence.md) (`check-hot-events`), [row 451](./done/451-port-3-sc-shared-collection-and-activity.md) (`collection.rs`), [row 457](./457-port-3-vs-virtual-settle-and-the-scrollowner-behaviour.md) (`virtual_list.rs`), [row 458](./458-port-3-fc-form-and-input-primitives-and-the-native-slot-kinds.md) (`reorder/mod.rs` `dragSource` lines in the same file).
+- **Depends on:** [row 444](./444-gate-half-of-lane-3-0b-grants-bans-and-witness-presence.md) (`check-hot-events`), [row 451](./451-port-3-sc-shared-collection-and-activity.md) (`collection.rs`), [row 457](./457-port-3-vs-virtual-settle-and-the-scrollowner-behaviour.md) (`virtual_list.rs`), [row 458](./458-port-3-fc-form-and-input-primitives-and-the-native-slot-kinds.md) (`reorder/mod.rs` `dragSource` lines in the same file).
 - **Proof:** `main-thread` specs on a release build; the hot-events baseline shrinks.
 - **Hours (inferred):** 11, conditional and deferred (10 before; +1 for the reorder `ondragover`); not in the firm total of 340-370 h; removes 0 lines (it removes blocking requests).
 - **Blitz arm:** this row does not remove the rsx route from an existing `#[cfg(not(feature = "web"))]` arm, and the gates allow it there ([row 509](./509-rust-decision-contract.md), item 5). It need not create such an arm.

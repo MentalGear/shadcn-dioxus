@@ -40,7 +40,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (69)
+## Open rows (70)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -77,6 +77,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [448](backlog/448-phase-0-3-proof-port-a-focus-trap-and-otpfilter.md) | Phase 0.3: proof port A (the native-arm focus trap's 3 eval sites, focus-trap.ts, and the otpFilter behaviour for S11) | The 3.DJ half is built (the native-arm focus trap is deleted) and the otpFilter half is open… | L | overlays |
 | [449](backlog/449-phase-0-4-proof-port-b-the-executor-and-popover-spreads.md) | Phase 0.4: proof port B (the reconciled-kinds executor, the popover hooks that return the attribute to spread, the owners' onbeforetoggle handlers) | APPROVED 2026-10-26 (owner: "okay for the plan"; scope 2, the recommended default, since no scope… | L | overlays |
 | [450](backlog/450-phase-0-5-dxbridgestats-and-the-latency-session.md) | Phase 0.5: __dxBridgeStats, a desktop smoke launch and the one latency session | APPROVED 2026-10-26 (owner: "okay for the plan"; scope 2, the recommended default, since no scope… | M | tooling |
+| [451](backlog/451-port-3-sc-shared-collection-and-activity.md) | Port 3.SC: shared collection and activity scripts (S7, S15) | LANDED in PR #180 (2026-11-13) plus the follow-up that adds the js-interop rows: S7 and S15 run on… | M | primitives |
 | [452](backlog/452-port-3-pl-placement-anchor-fallback-and-the-paint-safe-gate.md) | Port 3.PL: placement (T1, T2, T8-T12, S1), the paint-safe gate and the boot probe | APPROVED 2026-10-26 (scope 2): after phase 0, taken as an ordinary row in order of JavaScript… | L | overlays |
 | [453](backlog/453-port-3-pv-preview-glue-and-platform-rule-rows.md) | Port 3.PV: preview glue (V3-V23) with the V14 allowlist row and the Ctrl/Cmd+B platform rule row | APPROVED 2026-10-26 (scope 2): after phase 0, taken as an ordinary row in order of JavaScript… | M | preview |
 | [455](backlog/455-port-3-gs-gestures-slider-resizable-drawer-toast-pan.md) | Port 3.GS: gestures and toast (L21, L28-L30, O1, O3, O5 with the pan behaviour, V17) | APPROVED 2026-10-26 (scope 2): after phase 0, taken as an ordinary row in order of JavaScript… | L | primitives |
