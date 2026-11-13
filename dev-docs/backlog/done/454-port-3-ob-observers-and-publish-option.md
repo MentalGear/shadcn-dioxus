@@ -15,11 +15,11 @@ updated: 2026-11-13
 
 Port L27 (`keyboard_inset.rs`), S16 (`chart/components/chart.rs`) and S14 (`scroll_area.rs`, as an `observe(..., publish: var)` option of the bridge; the depth stays CSS where scroll-driven animations exist) to bridge observers.
 
-Part of the [row 434](./434-javascript-in-typescript-modules-not-rust-strings.md) step 3 plan; source: [`sync-js-root-2026-10-26.md`](../research/sync-js-root-2026-10-26.md) section 5.4 (candidate rows) and the ledger of section 3.3.
+Part of the [row 434](../434-javascript-in-typescript-modules-not-rust-strings.md) step 3 plan; source: [`sync-js-root-2026-10-26.md`](../../research/sync-js-root-2026-10-26.md) section 5.4 (candidate rows) and the ledger of section 3.3.
 
 ## Status / trigger
 
-DONE in PR #180 (2026-11-13) plus the follow-up that adds the js-interop rows: L27, S16, S14 are Rust over the bridge. The `main-thread` proof (0 long tasks) is a `@timing` case, deactivated by the owner's decision of 2026-11-02, so it did not run in the batch's release suite; [row 494](./494-re-enable-the-timing-cases-after-the-rust-port.md) re-measures it with the other timing cases. Approved 2026-10-26 (scope 2).
+DONE in PR #180 (2026-11-13) plus the follow-up that adds the js-interop rows: L27, S16, S14 are Rust over the bridge. The `main-thread` proof (0 long tasks) is a `@timing` case, deactivated by the owner's decision of 2026-11-02, so it did not run in the batch's release suite; [row 494](../494-re-enable-the-timing-cases-after-the-rust-port.md) re-measures it with the other timing cases. Approved 2026-10-26 (scope 2).
 
 ## Size
 
@@ -28,10 +28,10 @@ S
 ## Detail
 
 - **Files owned:** `keyboard_inset.rs`, `chart/components/chart.rs`, `scroll_area.rs`. Must not touch `activity.rs`; `motion` gate semantics.
-- **Depends on:** [row 444](./444-gate-half-of-lane-3-0b-grants-bans-and-witness-presence.md) (grant rule) and [row 445](./done/445-phase-0-2-the-legacy-freeze.md) (legacy freeze); a candidate row also needs its own grant row, and an `adds:` row where it adds a behaviour.
+- **Depends on:** [row 444](../444-gate-half-of-lane-3-0b-grants-bans-and-witness-presence.md) (grant rule) and [row 445](./445-phase-0-2-the-legacy-freeze.md) (legacy freeze); a candidate row also needs its own grant row, and an `adds:` row where it adds a behaviour.
 - **Proof:** Chart, scroll-area and keyboard-inset specs on a release build; `main-thread` stays at 0 long tasks.
 - **Hours (inferred):** 7 (inferred); removes about 144 lines (21 per hour).
-- **Decision in Rust:** the logic this row moves is a pure Rust function over typed inputs; only reading and writing the page goes through the bridge ([`decisions.md`](../decisions.md), "Behaviour is decided in Rust").
+- **Decision in Rust:** the logic this row moves is a pure Rust function over typed inputs; only reading and writing the page goes through the bridge ([`decisions.md`](../../decisions.md), "Behaviour is decided in Rust").
 
 ## Built (lane/port-ob-454, 2026-11-12)
 
@@ -56,4 +56,4 @@ S
 
 **Findings (behaviour differences).** (1) The field test is a selector (`TEXT_FIELD`), not `isContentEditable`: a contenteditable inherited through `contenteditable=inherit` or an invalid value is not matched; a `contenteditable=false` island inside an editable host is excluded. (2) The reveal reads one frame or more later (messages, then three transactions) where the script ran in the next animation frame. (3) `focusin` sends one message for every focus move in the document while a panel is open (a mount-time cost of one message per move, filtered in Rust). The edge depths and the gutters settle after one resize message, one `get` round trip and the writes (about three hops) where the old script wrote in the same frame: on the web that is a microtask each, so a user sees nothing; on a webview the mask edge of a resize drag may trail by a frame (inferred, not measured). (4) The slack marker `data-dx-keyboard-slack` is on the scroller while room is held. (5) The fallback depth ramps over `1px .. 1px + depth/1000` instead of a step at 1px.
 
-**Documented.** `dev-docs/js-interop.md` lists `publish` (listener only), `Target::VisualViewport`/`Scroller`, the added `Prop` reads, `write`/`Slot` and the viewport field rows. **Settled.** The keyboard variables are declared once in `dx-components-theme.css` (`@property`, universal syntax; all four panel components list it as a global asset) and the scroll variables in `dx-effects.css`, so `check-css-vars-defined` is green. The `main-thread` proof (0 long tasks) is [row 494](./494-re-enable-the-timing-cases-after-the-rust-port.md)'s: its cases are `@timing` and deactivated.
+**Documented.** `dev-docs/js-interop.md` lists `publish` (listener only), `Target::VisualViewport`/`Scroller`, the added `Prop` reads, `write`/`Slot` and the viewport field rows. **Settled.** The keyboard variables are declared once in `dx-components-theme.css` (`@property`, universal syntax; all four panel components list it as a global asset) and the scroll variables in `dx-effects.css`, so `check-css-vars-defined` is green. The `main-thread` proof (0 long tasks) is [row 494](../494-re-enable-the-timing-cases-after-the-rust-port.md)'s: its cases are `@timing` and deactivated.

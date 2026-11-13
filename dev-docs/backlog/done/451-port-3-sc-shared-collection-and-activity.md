@@ -15,7 +15,7 @@ updated: 2026-11-13
 
 Port S7 (`collection.rs`, with the per-row `onmounted` of `collection.rs:738`) and S15 (`activity.rs`) off bespoke eval. Highest yield of the candidates: about 30 JavaScript lines removed per agent-hour.
 
-Part of the [row 434](./434-javascript-in-typescript-modules-not-rust-strings.md) step 3 plan; source: [`sync-js-root-2026-10-26.md`](../research/sync-js-root-2026-10-26.md) section 5.4 (candidate rows) and the ledger of section 3.3.
+Part of the [row 434](../434-javascript-in-typescript-modules-not-rust-strings.md) step 3 plan; source: [`sync-js-root-2026-10-26.md`](../../research/sync-js-root-2026-10-26.md) section 5.4 (candidate rows) and the ledger of section 3.3.
 
 ## Status / trigger
 
@@ -29,11 +29,11 @@ M
 
 ## Detail
 
-- **Files owned:** `collection.rs`, `activity.rs`, and the bridge files for the additions below: `primitives/src/ts/bridge.ts`, its bundle `primitives/src/js/bridge.js` (with `bundle.manifest`), `primitives/src/ts/types/bridge.d.ts` where a message type changes, and `primitives/src/bridge/{mod,events,session}.rs`. Must not touch the rest. `collection.rs:520` is the roving hub that the conditional roving-focus row ([row 462](./462-port-roving-focus-78-set-focus-sites.md)) would route through the focus owner, so that row waits for this one.
-- **Depends on:** [row 444](./444-gate-half-of-lane-3-0b-grants-bans-and-witness-presence.md) (grant rule), [row 445](./done/445-phase-0-2-the-legacy-freeze.md) (legacy freeze), and row 454's observer changes in `bridge.ts` and `bridge/**`, which land first because both rows edit those files (the intersection fields sit in the same region); a grant for `js_file_bytes` (see Status).
+- **Files owned:** `collection.rs`, `activity.rs`, and the bridge files for the additions below: `primitives/src/ts/bridge.ts`, its bundle `primitives/src/js/bridge.js` (with `bundle.manifest`), `primitives/src/ts/types/bridge.d.ts` where a message type changes, and `primitives/src/bridge/{mod,events,session}.rs`. Must not touch the rest. `collection.rs:520` is the roving hub that the conditional roving-focus row ([row 462](../462-port-roving-focus-78-set-focus-sites.md)) would route through the focus owner, so that row waits for this one.
+- **Depends on:** [row 444](../444-gate-half-of-lane-3-0b-grants-bans-and-witness-presence.md) (grant rule), [row 445](./445-phase-0-2-the-legacy-freeze.md) (legacy freeze), and row 454's observer changes in `bridge.ts` and `bridge/**`, which land first because both rows edit those files (the intersection fields sit in the same region); a grant for `js_file_bytes` (see Status).
 - **Proof:** The components that use them (specs of `collection`/`activity` consumers on a release build); `check-js-volume` baseline rows lowered.
 - **Hours (inferred):** 6 (inferred: 2 for the bridge additions, 2.5 for wiring and deleting both scripts, 1.5 for proof); removes about 118 lines of JavaScript (about 20 per hour).
-- **Decision in Rust:** the logic this row moves is a pure Rust function over typed inputs; only reading and writing the page goes through the bridge ([`decisions.md`](../decisions.md), "Behaviour is decided in Rust").
+- **Decision in Rust:** the logic this row moves is a pure Rust function over typed inputs; only reading and writing the page goes through the bridge ([`decisions.md`](../../decisions.md), "Behaviour is decided in Rust").
 
 ### The per-row `onmounted` (`collection.rs:738`)
 

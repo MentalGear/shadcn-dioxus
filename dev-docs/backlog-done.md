@@ -6,7 +6,7 @@ resolves here by id.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Done rows (415)
+## Done rows (417)
 
 | # | Item | Updated |
 |---|---|---|
@@ -400,6 +400,8 @@ resolves here by id.
 | [440](backlog/done/440-run-gates-per-run-log-dir.md) | run-gates.sh writes logs to a shared directory: two concurrent runs on one target overwrite each other's logs | 2026-11-12 |
 | [441](backlog/done/441-reduced-motion-scrim.md) | The modal scrim fade ignores prefers-reduced-motion: the per-sheet rule never won on specificity | 2026-10-26 |
 | [445](backlog/done/445-phase-0-2-the-legacy-freeze.md) | Phase 0.2: freeze the legacy scripts and sinks (script hashes, per-site sink freeze, js-fix grant) | 2026-11-12 |
+| [451](backlog/done/451-port-3-sc-shared-collection-and-activity.md) | Port 3.SC: shared collection and activity scripts (S7, S15) | 2026-11-13 |
+| [454](backlog/done/454-port-3-ob-observers-and-publish-option.md) | Port 3.OB: observers and the publish option (L27, S16, S14) | 2026-11-13 |
 | [468](backlog/done/468-bug-form-reset-leaves-controlled-input-out-of-sync.md) | Bug: form reset leaves a controlled text input showing empty while Rust keeps the old value | 2026-10-26 |
 | [470](backlog/done/470-bug-carousel-autoplay-tick-fights-a-user-swipe.md) | Bug: the carousel autoplay tick fights a user swipe (the scroller is pulled forward and bounces back) | 2026-10-26 |
 | [472](backlog/done/472-chart-tooltip-fade.md) | Chart tooltips fade in and out with the theme's floating motion tokens | 2026-10-26 |
