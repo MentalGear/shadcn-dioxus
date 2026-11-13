@@ -1,12 +1,12 @@
 ---
 id: 454
 title: "Port 3.OB: observers and the publish option (L27, S16, S14)"
-status: "LANDED in PR #180 (2026-11-13): L27, S16, S14 are Rust over the bridge. The main-thread proof (0…"
+status: "DONE in PR #180 (2026-11-13) plus the follow-up that adds the js-interop rows: L27, S16, S14 are…"
 size: "S"
 area: primitives
 js-grant: js_file_bytes=2400, bytes=4900 (measured on lane/port-ob-454: js/bridge.js +2,358 bytes; ts/bridge.ts +4,340 and types/bridge.d.ts +518 bytes, for the publish option and the rows L27, S16 and S14 first need; the JavaScript total falls by about 13,000; the row that first needs a verb adds it, root doc section 5.2)
 adds: []
-updated: 2026-11-12
+updated: 2026-11-13
 ---
 
 # Row 454: Port 3.OB: observers and the publish option (L27, S16, S14)
@@ -19,7 +19,7 @@ Part of the [row 434](./434-javascript-in-typescript-modules-not-rust-strings.md
 
 ## Status / trigger
 
-LANDED in PR #180 (2026-11-13): L27, S16, S14 are Rust over the bridge. The `main-thread` proof (0 long tasks) is a `@timing` case, deactivated by the owner's decision of 2026-11-02, so it did not run in the batch's release suite; [row 494](./494-re-enable-the-timing-cases-after-the-rust-port.md) re-measures it with the other timing cases. Open here: the `dev-docs/js-interop.md` rows listed under "Open". Approved 2026-10-26 (scope 2).
+DONE in PR #180 (2026-11-13) plus the follow-up that adds the js-interop rows: L27, S16, S14 are Rust over the bridge. The `main-thread` proof (0 long tasks) is a `@timing` case, deactivated by the owner's decision of 2026-11-02, so it did not run in the batch's release suite; [row 494](./494-re-enable-the-timing-cases-after-the-rust-port.md) re-measures it with the other timing cases. Approved 2026-10-26 (scope 2).
 
 ## Size
 
@@ -56,4 +56,4 @@ S
 
 **Findings (behaviour differences).** (1) The field test is a selector (`TEXT_FIELD`), not `isContentEditable`: a contenteditable inherited through `contenteditable=inherit` or an invalid value is not matched; a `contenteditable=false` island inside an editable host is excluded. (2) The reveal reads one frame or more later (messages, then three transactions) where the script ran in the next animation frame. (3) `focusin` sends one message for every focus move in the document while a panel is open (a mount-time cost of one message per move, filtered in Rust). The edge depths and the gutters settle after one resize message, one `get` round trip and the writes (about three hops) where the old script wrote in the same frame: on the web that is a microtask each, so a user sees nothing; on a webview the mask edge of a resize drag may trail by a frame (inferred, not measured). (4) The slack marker `data-dx-keyboard-slack` is on the scroller while room is held. (5) The fallback depth ramps over `1px .. 1px + depth/1000` instead of a step at 1px.
 
-**Open.** `dev-docs/js-interop.md` needs rows for `publish` (listener only), `Target::VisualViewport`/`Scroller`, `Prop::{VisibilityState, CheckVisibility, InlinePaddingBottom, InlineOverflowAnchor, ScrollTimelineSupported}`, `write`/`Slot`, and the viewport field rows. **Settled.** The keyboard variables are declared once in `dx-components-theme.css` (`@property`, universal syntax; all four panel components list it as a global asset) and the scroll variables in `dx-effects.css`, so `check-css-vars-defined` is green. The `main-thread` proof (0 long tasks) is [row 494](./494-re-enable-the-timing-cases-after-the-rust-port.md)'s: its cases are `@timing` and deactivated.
+**Documented.** `dev-docs/js-interop.md` lists `publish` (listener only), `Target::VisualViewport`/`Scroller`, the added `Prop` reads, `write`/`Slot` and the viewport field rows. **Settled.** The keyboard variables are declared once in `dx-components-theme.css` (`@property`, universal syntax; all four panel components list it as a global asset) and the scroll variables in `dx-effects.css`, so `check-css-vars-defined` is green. The `main-thread` proof (0 long tasks) is [row 494](./494-re-enable-the-timing-cases-after-the-rust-port.md)'s: its cases are `@timing` and deactivated.
