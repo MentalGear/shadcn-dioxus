@@ -17,6 +17,7 @@ import type { Locator, Page } from "@playwright/test";
 import { BASE_URL } from "./base-url";
 import { demoFrame } from "./demo-frame";
 import { gotoHydrated } from "./hydration";
+import { gotoWithoutScrollTimeline } from "./scroll-fade-fallback-stand-in";
 
 const GOTO_OPTS = { timeout: 20 * 60 * 1000 };
 const GRID_URL = `${BASE_URL}/component/virtual_grid/`;
@@ -243,18 +244,13 @@ test.describe("VirtualGrid fade (shared with VirtualList and ScrollArea)", () =>
   });
 });
 
-// Where a browser has no scroll-driven animations, an edge must still show only while there is more content
-// past it: the one fallback script (`use_scroll_fade`) sets the depth properties from the scroll position.
-// Forced here on Chromium: `CSS.supports` says no for that query, and the CSS animations are switched off so
-// the script's inline values are what is read (the `@supports not` stylesheet branch is only the static default).
-test.describe("scroll fade without scroll-driven animations (the fallback script)", () => {
+// Where a browser has no scroll-driven animations, an edge still shows only while there is more content past
+// it: the scroller's runtime (`use_scroll_fade`) publishes the scroll position and ranges, and the
+// `@supports not (animation-timeline: scroll())` block of `dx-effects.css` computes the four depths from them.
+// Chromium stands in through `scroll-fade-fallback-stand-in.ts`, so the stylesheet path is what is read.
+test.describe("scroll fade without scroll-driven animations (the stylesheet fallback)", () => {
   test("every edge of a two-axis grid and of a wrapping gallery tracks the scroll position", async ({ page }) => {
-    await page.addInitScript(() => {
-      const supports = CSS.supports.bind(CSS);
-      CSS.supports = ((...args: string[]) => (String(args[0]).includes("animation-timeline") ? false : (supports as (...a: string[]) => boolean)(...args))) as typeof CSS.supports;
-    });
-    await gotoHydrated(page, GRID_URL, GOTO_OPTS);
-    await page.addStyleTag({ content: '[class*="dx-scroll-fade"] { animation: none !important; }' });
+    await gotoWithoutScrollTimeline(page, GRID_URL, GOTO_OPTS);
     await demoFrame(page, "fade").scrollIntoViewIfNeeded();
 
     const grid = gridIn(page, "fade-grid");
