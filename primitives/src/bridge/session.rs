@@ -18,6 +18,7 @@ use dioxus::prelude::*;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
+use super::behaviours::{Inbound, StandDown};
 use super::events::{EventField, EventKind};
 use super::transport;
 use super::{Behaviour, Epoch, Target};
@@ -444,10 +445,14 @@ impl Session {
                 })
             });
         let mut task_eval = eval;
-        spawn(async move {
+        let receiver = spawn(async move {
             receive(&mut task_eval, handler).await;
         });
-        Subscription { eval, renewal }
+        Subscription {
+            eval,
+            renewal,
+            receiver,
+        }
     }
 }
 
@@ -458,6 +463,9 @@ pub struct Subscription {
     eval: Eval,
     /// The lease-renewal task of a session that installed a behaviour with a lease.
     renewal: Option<crate::dioxus_core::Task>,
+    /// The task that hands the session's messages to the handler: a message already on its way when the
+    /// subscription ends is not handled.
+    receiver: crate::dioxus_core::Task,
 }
 
 impl Drop for Subscription {
@@ -465,6 +473,7 @@ impl Drop for Subscription {
         if let Some(renewal) = self.renewal.take() {
             renewal.cancel();
         }
+        self.receiver.cancel();
         // On the channel the session already has: a new eval inside a drop handler is unsafe (#4064).
         transport::send(&self.eval, TEARDOWN);
     }
@@ -681,24 +690,49 @@ pub fn use_window_size() -> ReadSignal<WindowSize> {
 pub fn use_behaviour<T: DeserializeOwned + 'static>(
     mut target: impl FnMut() -> Option<Target> + 'static,
     mut behaviour: impl FnMut() -> Behaviour + 'static,
-    handler: impl FnMut(T) + 'static,
+    mut handler: impl FnMut(T) + 'static,
 ) {
+    // A kind that cannot decide reports once ([`StandDown`]); the install is then torn down and not
+    // installed again while this component lives: a resync would meet the same kernel, and a torn-down
+    // install clears its memory (a gesture half done) and decides nothing more, so no later decision
+    // can add to what earlier ones set.
+    let mut stood_down = use_signal(|| false);
     use_subscription(
         move || {
+            if stood_down() {
+                return None;
+            }
             target().map(|target| {
                 let behaviour = behaviour();
                 let epoch = Epoch::next(format!("behaviour:{}", behaviour.kind()));
                 Session::new().behaviour(target, behaviour, epoch)
             })
         },
-        handler,
+        move |message: Inbound<T>| {
+            route(message, &mut handler, |_report| stood_down.set(true));
+        },
     );
+}
+
+/// Sends a decision's message to `on_message` and a stand-down report to `on_report`.
+fn route<T>(
+    message: Inbound<T>,
+    on_message: &mut impl FnMut(T),
+    mut on_report: impl FnMut(StandDown),
+) {
+    match message {
+        Inbound::Message(m) => on_message(m),
+        Inbound::Report(r) => on_report(r.report),
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use serde_json::json;
+    use std::cell::{Cell, RefCell};
+    use std::collections::VecDeque;
+    use std::rc::Rc;
 
     fn fixture() -> Behaviour {
         Behaviour::Fixture {
@@ -708,6 +742,307 @@ mod tests {
             capture: false,
             cancel: true,
             lease_ms: Some(400),
+        }
+    }
+
+    #[test]
+    fn a_stand_down_report_reaches_the_owner_and_a_decision_does_not() {
+        #[derive(Debug, PartialEq, Deserialize)]
+        struct Mine {
+            behaviour: String,
+        }
+        let parse = |v: serde_json::Value| serde_json::from_value::<Inbound<Mine>>(v);
+        let mut got = Vec::new();
+        let mut reports = Vec::new();
+        for v in [
+            json!({"behaviour": "fixture"}),
+            json!({"kernel": "stand-down", "kind": "fixture", "reason": "trap"}),
+            json!({"behaviour": "fixture"}),
+        ] {
+            route(
+                parse(v).expect("parses"),
+                &mut |m: Mine| got.push(m.behaviour),
+                |r| reports.push(r),
+            );
+        }
+        assert_eq!(got, ["fixture", "fixture"]);
+        assert_eq!(reports.len(), 1);
+        assert_eq!(reports[0].kind, "fixture");
+        assert_eq!(
+            reports[0].reason,
+            super::super::behaviours::StandDownReason::Trap
+        );
+        // neither a decision nor a report: skipped by `receive`
+        assert!(parse(json!({"other": 1})).is_err());
+        assert!(parse(json!("x")).is_err());
+    }
+
+    /// The page, as far as the hook can see it: every eval the hook opens is recorded (its script and
+    /// what Rust sent on it) and answers `recv` from a queue the test fills.
+    #[derive(Default)]
+    struct Page {
+        evals: Vec<Rc<RefCell<Channel>>>,
+        owners: Vec<dioxus::signals::Owner>,
+    }
+
+    #[derive(Default)]
+    struct Channel {
+        script: String,
+        sent: Vec<serde_json::Value>,
+        inbox: VecDeque<serde_json::Value>,
+        waker: Option<std::task::Waker>,
+    }
+
+    impl Channel {
+        fn is_session(&self) -> bool {
+            self.script.contains("__dxB.serve(")
+        }
+    }
+
+    struct ScriptedEval(Rc<RefCell<Channel>>);
+
+    impl dioxus::document::Evaluator for ScriptedEval {
+        fn send(&self, data: serde_json::Value) -> Result<(), dioxus::document::EvalError> {
+            self.0.borrow_mut().sent.push(data);
+            Ok(())
+        }
+        fn poll_recv(
+            &mut self,
+            cx: &mut std::task::Context<'_>,
+        ) -> std::task::Poll<Result<serde_json::Value, dioxus::document::EvalError>> {
+            let mut channel = self.0.borrow_mut();
+            match channel.inbox.pop_front() {
+                Some(message) => std::task::Poll::Ready(Ok(message)),
+                None => {
+                    channel.waker = Some(cx.waker().clone());
+                    std::task::Poll::Pending
+                }
+            }
+        }
+        fn poll_join(
+            &mut self,
+            _: &mut std::task::Context<'_>,
+        ) -> std::task::Poll<Result<serde_json::Value, dioxus::document::EvalError>> {
+            std::task::Poll::Pending
+        }
+    }
+
+    #[derive(Clone, Default)]
+    struct ScriptedDocument(Rc<RefCell<Page>>);
+
+    impl dioxus::document::Document for ScriptedDocument {
+        fn eval(&self, js: String) -> Eval {
+            let channel = Rc::new(RefCell::new(Channel {
+                script: js,
+                ..Channel::default()
+            }));
+            let owner = dioxus::signals::Owner::default();
+            let eval = Eval::new(owner.insert(Box::new(ScriptedEval(channel.clone()))));
+            let mut page = self.0.borrow_mut();
+            page.evals.push(channel);
+            page.owners.push(owner);
+            eval
+        }
+        fn set_title(&self, _: String) {}
+        fn create_meta(&self, _: dioxus::document::MetaProps) {}
+        fn create_script(&self, _: dioxus::document::ScriptProps) {}
+        fn create_style(&self, _: dioxus::document::StyleProps) {}
+        fn create_link(&self, _: dioxus::document::LinkProps) {}
+    }
+
+    impl ScriptedDocument {
+        /// The sessions the hook opened, in order.
+        fn sessions(&self) -> Vec<Rc<RefCell<Channel>>> {
+            let page = self.0.borrow();
+            page.evals
+                .iter()
+                .filter(|c| c.borrow().is_session())
+                .cloned()
+                .collect()
+        }
+    }
+
+    #[derive(Clone, Default)]
+    struct Probe {
+        got: Rc<RefCell<Vec<String>>>,
+        generation: Rc<Cell<u32>>,
+        unmounted: Rc<Cell<bool>>,
+    }
+
+    #[derive(Deserialize)]
+    struct Decided {
+        behaviour: String,
+    }
+
+    #[component]
+    fn Host() -> Element {
+        let probe: Probe = consume_context();
+        rsx! { if !probe.unmounted.get() { Installer {} } }
+    }
+
+    #[component]
+    fn Installer() -> Element {
+        let probe: Probe = consume_context();
+        let _ = probe.generation.get();
+        use_behaviour(
+            || Some(Target::Window),
+            fixture,
+            move |m: Decided| probe.got.borrow_mut().push(m.behaviour),
+        );
+        rsx! { "installed" }
+    }
+
+    /// Lets the effect, the receive task and a signal write it causes all settle (the effect needs
+    /// a render pass to run, a write to a signal a render pass to re-run it).
+    async fn settle(dom: &mut VirtualDom) {
+        for _ in 0..3 {
+            tokio::task::yield_now().await;
+            dom.process_events();
+            dom.render_immediate_to_vec();
+        }
+    }
+
+    fn deliver(session: &Rc<RefCell<Channel>>, message: serde_json::Value) {
+        let mut channel = session.borrow_mut();
+        channel.inbox.push_back(message);
+        if let Some(waker) = channel.waker.take() {
+            waker.wake();
+        }
+    }
+
+    /// Whether `session` was told to end (the teardown string rides the session's own channel).
+    fn torn_down(session: &Rc<RefCell<Channel>>) -> bool {
+        session.borrow().sent.iter().any(|m| m == &json!(TEARDOWN))
+    }
+
+    #[tokio::test(flavor = "current_thread", start_paused = true)]
+    async fn use_behaviour_tears_the_install_down_on_a_stand_down_and_does_not_reinstall() {
+        let document = ScriptedDocument::default();
+        let probe = Probe::default();
+        let mut dom = VirtualDom::new(Host)
+            .with_root_context(Rc::new(document.clone()) as Rc<dyn dioxus::document::Document>)
+            .with_root_context(probe.clone());
+        dom.rebuild_in_place();
+        settle(&mut dom).await;
+
+        // installed once, on its own session, and live
+        let sessions = document.sessions();
+        assert_eq!(sessions.len(), 1, "one install");
+        let first = sessions[0].clone();
+        assert!(!torn_down(&first));
+
+        // control: a decision's message reaches the handler and neither tears down nor reinstalls
+        deliver(&first, json!({"behaviour": "fixture"}));
+        settle(&mut dom).await;
+        assert_eq!(*probe.got.borrow(), ["fixture"]);
+        assert!(
+            !torn_down(&first),
+            "a decision does not tear the install down"
+        );
+        assert_eq!(
+            document.sessions().len(),
+            1,
+            "a decision does not reinstall"
+        );
+
+        // the lease renews while the install lives
+        let renewals =
+            |c: &Rc<RefCell<Channel>>| c.borrow().sent.iter().filter(|m| m.is_array()).count();
+        let before = renewals(&first);
+        tokio::time::advance(std::time::Duration::from_millis(250)).await;
+        settle(&mut dom).await;
+        assert!(
+            renewals(&first) > before,
+            "the lease is renewed while installed"
+        );
+
+        // the stand-down report: the install is torn down, once, and nothing is installed in its place
+        deliver(
+            &first,
+            json!({"kernel": "stand-down", "kind": "fixture", "reason": "missing-kind"}),
+        );
+        settle(&mut dom).await;
+        assert!(torn_down(&first), "the session is told to end");
+        assert_eq!(
+            first
+                .borrow()
+                .sent
+                .iter()
+                .filter(|m| *m == &json!(TEARDOWN))
+                .count(),
+            1
+        );
+        assert_eq!(document.sessions().len(), 1, "no install replaces it");
+        assert_eq!(
+            *probe.got.borrow(),
+            ["fixture"],
+            "a report is not a decision"
+        );
+
+        // the lease heartbeat stopped with the install
+        let after = renewals(&first);
+        tokio::time::advance(std::time::Duration::from_millis(2000)).await;
+        settle(&mut dom).await;
+        assert_eq!(renewals(&first), after, "no renewal after the teardown");
+
+        // later re-renders (the component re-runs, its closures re-read) do not install again
+        for _ in 0..3 {
+            probe.generation.set(probe.generation.get() + 1);
+            dom.mark_dirty(ScopeId::APP);
+            settle(&mut dom).await;
+        }
+        assert_eq!(
+            document.sessions().len(),
+            1,
+            "a re-render does not reinstall"
+        );
+        assert_eq!(
+            first
+                .borrow()
+                .sent
+                .iter()
+                .filter(|m| *m == &json!(TEARDOWN))
+                .count(),
+            1,
+            "and the teardown is not repeated"
+        );
+    }
+
+    /// A message the page had already sent when the subscription ended must not reach the handler.
+    #[tokio::test(flavor = "current_thread", start_paused = true)]
+    async fn a_message_after_the_subscription_ended_does_not_reach_the_handler() {
+        for by_stand_down in [true, false] {
+            let document = ScriptedDocument::default();
+            let probe = Probe::default();
+            let mut dom = VirtualDom::new(Host)
+                .with_root_context(Rc::new(document.clone()) as Rc<dyn dioxus::document::Document>)
+                .with_root_context(probe.clone());
+            dom.rebuild_in_place();
+            settle(&mut dom).await;
+            let session = document.sessions()[0].clone();
+            deliver(&session, json!({"behaviour": "fixture"}));
+            settle(&mut dom).await;
+            assert_eq!(*probe.got.borrow(), ["fixture"]);
+
+            if by_stand_down {
+                deliver(
+                    &session,
+                    json!({"kernel": "stand-down", "kind": "fixture", "reason": "trap"}),
+                );
+            } else {
+                probe.unmounted.set(true);
+                dom.mark_dirty(ScopeId::APP);
+            }
+            settle(&mut dom).await;
+            assert!(torn_down(&session), "ended (stand-down: {by_stand_down})");
+
+            deliver(&session, json!({"behaviour": "fixture"}));
+            settle(&mut dom).await;
+            assert_eq!(
+                *probe.got.borrow(),
+                ["fixture"],
+                "a late decision is not handled (stand-down: {by_stand_down})"
+            );
         }
     }
 
