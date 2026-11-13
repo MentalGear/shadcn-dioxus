@@ -5,6 +5,7 @@ use crate::state_attrs;
 use core::panic;
 use std::time::Duration;
 
+use crate::delayed_action::use_delayed_action;
 use crate::{
     direction::{use_direction, use_direction_signal, Direction},
     merge_attributes,
@@ -16,7 +17,6 @@ use crate::{
 };
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
-use dioxus_core::Task;
 
 use super::super::context::{SelectContext, SelectPosition};
 
@@ -233,16 +233,14 @@ fn use_select_root(
     );
     let mut typeahead_buffer = use_signal(String::new);
     let adaptive_keyboard = use_signal(super::super::text_search::AdaptiveKeyboard::new);
-    let mut typeahead_clear_task: Signal<Option<Task>> = use_signal(|| None);
+    let mut typeahead_clear = use_delayed_action();
     let mut keep_trigger_focus = use_signal(|| false);
     let open = selectable.open;
 
     // Clear the typeahead buffer when the select is closed
     use_effect(move || {
         if !open() {
-            if let Some(task) = typeahead_clear_task.write().take() {
-                task.cancel();
-            }
+            typeahead_clear.cancel();
             typeahead_buffer.take();
             // See `SelectContext::keep_trigger_focus`'s doc: a fresh open
             // shouldn't inherit the flag from a previous Alt+ArrowDown open.
@@ -255,7 +253,7 @@ fn use_select_root(
         label,
         adaptive_keyboard,
         typeahead_buffer,
-        typeahead_clear_task,
+        typeahead_clear,
         typeahead_timeout,
         keep_trigger_focus,
         required,

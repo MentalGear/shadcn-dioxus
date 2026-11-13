@@ -55,8 +55,8 @@ use std::time::Duration;
 
 use dioxus::prelude::*;
 
+use crate::delayed_action::{use_delayed_action, DelayedAction};
 use crate::js_listener::{use_js_listeners, JsListeners};
-use crate::menu_sub::{use_delayed_action, DelayedAction};
 use crate::safe_triangle::{use_safe_close, Point, SafeClose};
 
 /// Hover-intent delay before a pointer resting on a trigger opens its panel (nothing

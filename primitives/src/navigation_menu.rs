@@ -87,7 +87,7 @@
 //! `crate::hover_intent::HoverIntent`, shared with `crate::navbar` so the
 //! opening half can never be wired without the closing half. This
 //! module only reports `mouseenter`/`mouseleave` of its trigger and panel to
-//! it. The timers are `crate::menu_sub::DelayedAction`s, the same primitive
+//! it. The timers are `crate::delayed_action::DelayedAction`s, the same primitive
 //! `DropdownMenuSub`/`ContextMenuSub` use.
 //!
 //! Hover is an *option*, not a given: [`NavigationMenuProps::open_on_hover`]
@@ -160,9 +160,9 @@ use crate::collection::{
     CollectionPlacement, CollectionState, ItemIndex,
 };
 use crate::constant_signal::use_constant_signal;
+use crate::delayed_action::{use_delayed_action, DelayedAction};
 use crate::direction::{use_direction, use_direction_signal, Direction};
 use crate::hover_intent::{use_hover_intent, HoverIntent};
-use crate::menu_sub::{use_delayed_action, DelayedAction};
 use crate::{
     has_own_accessible_name, merge_attributes, use_animated_open, use_id_or, use_unique_id,
 };

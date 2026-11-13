@@ -69,15 +69,18 @@ pub(crate) struct MenuHost {
 /// A host renders `id: <generated>` first and the caller's attributes after, and a caller's `id` wins
 /// (`merge_attributes`), so a menu root given its own `id` carries that one and the generated id names nothing: the
 /// layer would find no root and never dismiss on a press or focus outside. The caller's id is written into the signal
-/// the way `use_id_or` does for a trigger. A hook: call it before any hook that reads the returned signal.
+/// the way `use_id_or` does for a trigger, and follows the caller's `id` when it changes (back to the generated id
+/// when the caller drops it). A hook: call it before any hook that reads the returned signal.
 pub(crate) fn use_root_id(attributes: &[Attribute]) -> Signal<String> {
     let mut root_id = crate::use_unique_id();
+    let generated = use_hook(|| root_id.peek().clone());
     let caller = crate::caller_id::caller_id(attributes);
-    use_effect(move || {
-        if let Some(id) = caller.clone() {
+    use_effect(use_reactive!(|caller| {
+        let id = caller.unwrap_or_else(|| generated.clone());
+        if *root_id.peek() != id {
             root_id.set(id);
         }
-    });
+    }));
     root_id
 }
 
@@ -328,4 +331,81 @@ pub(crate) fn use_menu_panel(config: PanelConfig, attributes: Vec<Attribute>) ->
     }
     let _ = id;
     attributes
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use dioxus_core::{NoOpMutations, ScopeId};
+    use std::cell::RefCell;
+    use std::rc::Rc;
+
+    /// What the host renders the probe with, and what the probe reports back.
+    #[derive(Clone, Default)]
+    struct Harness {
+        caller_id: Rc<RefCell<Option<&'static str>>>,
+        root_id: Rc<RefCell<String>>,
+    }
+
+    #[component]
+    fn Host() -> Element {
+        let harness: Harness = consume_context();
+        let caller_id = *harness.caller_id.borrow();
+        rsx! { Probe { caller_id } }
+    }
+
+    #[component]
+    fn Probe(caller_id: Option<&'static str>) -> Element {
+        let harness: Harness = consume_context();
+        let attributes: Vec<Attribute> = caller_id
+            .map(|id| Attribute::new("id", id.to_string(), None, false))
+            .into_iter()
+            .collect();
+        let root_id = use_root_id(&attributes);
+        *harness.root_id.borrow_mut() = root_id();
+        rsx! { div {} }
+    }
+
+    /// Renders the host, then again until the effect's write has been rendered.
+    fn render(dom: &mut VirtualDom) {
+        dom.mark_dirty(ScopeId::APP);
+        for _ in 0..3 {
+            dom.render_immediate(&mut NoOpMutations);
+        }
+    }
+
+    #[test]
+    fn a_changed_caller_id_reaches_the_root_id() {
+        let harness = Harness::default();
+        *harness.caller_id.borrow_mut() = Some("first");
+        let mut dom = VirtualDom::new(Host).with_root_context(harness.clone());
+        dom.rebuild_in_place();
+        render(&mut dom);
+        assert_eq!(*harness.root_id.borrow(), "first");
+
+        *harness.caller_id.borrow_mut() = Some("second");
+        render(&mut dom);
+        assert_eq!(
+            *harness.root_id.borrow(),
+            "second",
+            "the dismiss layer looks the root up by the id the DOM carries now"
+        );
+    }
+
+    #[test]
+    fn dropping_the_caller_id_returns_to_the_generated_one() {
+        let harness = Harness::default();
+        let mut dom = VirtualDom::new(Host).with_root_context(harness.clone());
+        dom.rebuild_in_place();
+        render(&mut dom);
+        let generated = harness.root_id.borrow().clone();
+
+        *harness.caller_id.borrow_mut() = Some("mine");
+        render(&mut dom);
+        assert_eq!(*harness.root_id.borrow(), "mine");
+
+        *harness.caller_id.borrow_mut() = None;
+        render(&mut dom);
+        assert_eq!(*harness.root_id.borrow(), generated);
+    }
 }

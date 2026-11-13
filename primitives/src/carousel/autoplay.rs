@@ -136,7 +136,7 @@ pub fn CarouselAutoplay(props: CarouselAutoplayProps) -> Element {
     // The ticking loop. Restarts fresh (no partial-elapsed carry-over
     // across a pause/resume -- a deliberate simplification) every time
     // `rotating` flips, cancelling whatever was previously running first
-    // -- mirrors `menu_sub.rs`'s own `DelayedAction::schedule` cancel-
+    // -- mirrors `delayed_action.rs`'s own `DelayedAction::schedule` cancel-
     // before-reschedule idiom, this crate's established precedent for a
     // cancellable spawned timer. Always torn down: both on every flip to
     // `false` (this effect's own re-run, via the `take()` below) and on
