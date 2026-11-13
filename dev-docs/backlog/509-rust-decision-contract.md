@@ -129,7 +129,7 @@ one behaviour that exists (the test fixture); `otpFilter` (row 448) is written t
   `check-merge-drivers` holds the kernel driver.
 
 Proof, in order: 1 passed (a renamed `Snapshot` key fails `the_generated_ts_is_current`; a kind commented out of
-`kinds.rs` fails `check-decision-kernel`); 2 and 3 passed (`kernel.test.ts`); 4 passed (102 `bun test`, vectors red under
+`kinds.rs` fails `check-decision-kernel`); 2 and 3 passed (`kernel.test.ts`); 4 passed (103 `bun test`, vectors red under
 `cargo test` and under `bun test` against a stale kernel, the `decide(` mutation, the stale-source and profile mutations,
 a native `decide` call in `vectors.rs`); 5 passed on a real merge of two lanes with the real builder (identical bytes to
 a rebuild of the merged sources); 6 passed (fixture call p99 10 to 33 us, best of three runs, on a loaded box; the spy
