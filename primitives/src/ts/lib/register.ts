@@ -19,9 +19,6 @@ export function kernelBehaviour<K extends Kind>(
   kind: K,
   lists: { readonly fields: readonly string[]; readonly reads: readonly string[] },
 ): DxBehaviourImpl<Extract<Behaviour, { kind: K }>> {
-  return {
-    fields: lists.fields,
-    reads: lists.reads,
-    decide: (behaviour, event, snapshot, memory) => window.__dxBridge!.kernel.decide(kind, behaviour, event, snapshot, memory),
-  };
+  // the arguments are the behaviour's parameters, the event's fields, the attribute reads and the install's memory
+  return { ...lists, decide: (b, e, s, m) => window.__dxBridge!.kernel.decide(kind, b, e, s, m) };
 }

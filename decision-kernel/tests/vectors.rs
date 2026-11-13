@@ -237,10 +237,24 @@ fn the_vectors_carry_exactly_the_declared_keys() {
             keys
         };
         for (name, behaviour, event, state, ..) in vectors_of(spec.name) {
-            assert_eq!(keys(&event), sorted(spec.fields), "{}: {name}: event", spec.name);
-            assert_eq!(keys(&state), sorted(spec.reads), "{}: {name}: state", spec.name);
+            assert_eq!(
+                keys(&event),
+                sorted(spec.fields),
+                "{}: {name}: event",
+                spec.name
+            );
+            assert_eq!(
+                keys(&state),
+                sorted(spec.reads),
+                "{}: {name}: state",
+                spec.name
+            );
             for key in spec.config {
-                assert!(behaviour.get(key).is_some(), "{}: {name}: config key {key}", spec.name);
+                assert!(
+                    behaviour.get(key).is_some(),
+                    "{}: {name}: config key {key}",
+                    spec.name
+                );
             }
         }
     }
@@ -252,7 +266,10 @@ fn malformed_requests_have_no_answer_and_never_panic() {
     let good = request(&behaviour, &memory, &state, &event);
     assert!(decide_named("fixture", &good).is_some());
     for cut in 0..good.len() {
-        assert!(decide_named("fixture", &good[..cut]).is_none(), "prefix {cut}");
+        assert!(
+            decide_named("fixture", &good[..cut]).is_none(),
+            "prefix {cut}"
+        );
     }
     let mut trailing = good.clone();
     trailing.push(0);
@@ -276,7 +293,12 @@ fn a_missing_key_is_a_stand_down_not_a_decision() {
         let bytes = request(&without(&behaviour, key), &memory, &state, &event);
         assert!(decide_named("fixture", &bytes).is_none(), "config `{key}`");
     }
-    let bytes = request(&behaviour, &memory, &without(&state, "data-dx-fixture-block"), &event);
+    let bytes = request(
+        &behaviour,
+        &memory,
+        &without(&state, "data-dx-fixture-block"),
+        &event,
+    );
     assert!(decide_named("fixture", &bytes).is_none(), "snapshot key");
     let bytes = request(&behaviour, &memory, &state, &without(&event, "type"));
     assert!(decide_named("fixture", &bytes).is_none(), "event field");

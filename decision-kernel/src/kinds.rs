@@ -141,9 +141,9 @@ mod tests {
     fn the_hash_follows_the_table() {
         assert_eq!(table_text().lines().count(), KINDS.len());
         // the compile-time hash is FNV-1a of the text
-        let runtime = table_text()
-            .bytes()
-            .fold(0x811c_9dc5_u32, |h, b| (h ^ u32::from(b)).wrapping_mul(0x0100_0193));
+        let runtime = table_text().bytes().fold(0x811c_9dc5_u32, |h, b| {
+            (h ^ u32::from(b)).wrapping_mul(0x0100_0193)
+        });
         assert_eq!(table_hash(), runtime);
         assert_ne!(table_hash(), 0x811c_9dc5);
     }

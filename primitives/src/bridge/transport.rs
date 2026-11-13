@@ -173,7 +173,7 @@ fn in_runtime() -> bool {
 
 /// How the decision kernel reaches the page: the ONE function of the seam that delivers it. Today the module rides as
 /// base64 in the bridge's own eval and the bridge compiles it synchronously, so it is ready before the eval returns,
-/// before any component installs a behaviour and before any event. A non-eval backend (Dioxus PR #5194) replaces this
+/// before any component installs a behaviour and before any event. A non-eval backend replaces this
 /// function and nothing else: the kernel never ties the web build to more than the `'wasm-unsafe-eval'` the app's own
 /// wasm needs.
 fn kernel_load() -> String {

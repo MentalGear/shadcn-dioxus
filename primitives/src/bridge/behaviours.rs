@@ -333,34 +333,52 @@ pub fn render_gen() -> String {
         let quoted: Vec<String> = keys.iter().map(|k| format!("\"{k}\"")).collect();
         format!("[{}]", quoted.join(", "))
     };
-    out.push_str(&format!(
-        "/** The hash of the kernel's kind table: the page refuses a kernel module whose `dx_kinds` differs. */\nexport const KERNEL_HASH = {};\n\n",
-        table_hash()
+    out.push_str(&ts_const(
+        "The hash of the kernel's kind table: the page refuses a kernel module whose `dx_kinds` differs.",
+        "KERNEL_HASH",
+        &table_hash().to_string(),
     ));
-    out.push_str("/** The kernel's kind table in wire-index order: the keys of each kind's `Config`, `Snapshot` (the attribute reads) and `Event` (the event fields), from the kernel's input types. */\n");
-    out.push_str("export const KERNEL_KINDS = [\n");
-    for k in KERNEL_KINDS {
-        out.push_str(&format!(
-            "  {{ kind: \"{}\", config: {}, reads: {}, fields: {} }},\n",
-            k.name,
-            list(k.config),
-            list(k.reads),
-            list(k.fields)
-        ));
-    }
-    out.push_str("] as const;\n\n");
-    out.push_str("/** What a behaviour module registers: the event fields and attribute reads of its kernel kind. */\n");
-    out.push_str("export const ADAPTER = {\n");
-    for k in KERNEL_KINDS {
-        out.push_str(&format!(
-            "  \"{}\": {{ fields: {}, reads: {} }},\n",
-            k.name,
-            list(k.fields),
-            list(k.reads)
-        ));
-    }
-    out.push_str("} as const;\n");
+    let rows: String = KERNEL_KINDS
+        .iter()
+        .map(|k| {
+            format!(
+                "  {{ kind: \"{}\", config: {}, reads: {}, fields: {} }},\n",
+                k.name,
+                list(k.config),
+                list(k.reads),
+                list(k.fields)
+            )
+        })
+        .collect();
+    out.push_str(&ts_const(
+        "The kernel's kind table in wire-index order: the keys of each kind's `Config`, `Snapshot` (the attribute reads) and `Event` (the event fields), from the kernel's input types.",
+        "KERNEL_KINDS",
+        &format!("[\n{rows}] as const"),
+    ));
+    let adapters: String = KERNEL_KINDS
+        .iter()
+        .map(|k| {
+            format!(
+                "  \"{}\": {{ fields: {}, reads: {} }},\n",
+                k.name,
+                list(k.fields),
+                list(k.reads)
+            )
+        })
+        .collect();
+    out.push_str(&ts_const(
+        "What a behaviour module registers: the event fields and attribute reads of its kernel kind.",
+        "ADAPTER",
+        &format!("{{\n{adapters}}} as const"),
+    ));
+    out.truncate(out.trim_end().len());
+    out.push('\n');
     out
+}
+
+/// One generated TypeScript constant after its doc comment.
+fn ts_const(doc: &str, name: &str, value: &str) -> String {
+    format!("/** {doc} */\nexport const {name} = {value};\n\n")
 }
 
 #[cfg(test)]
@@ -544,11 +562,17 @@ mod tests {
     /// Every event field a kernel kind collects is a field of the bridge's closed `EventField` table.
     #[test]
     fn the_kernel_collects_only_event_fields_the_bridge_has() {
-        let table: std::collections::HashSet<&str> =
-            super::super::events::EventField::ALL.iter().map(|f| f.wire()).collect();
+        let table: std::collections::HashSet<&str> = super::super::events::EventField::ALL
+            .iter()
+            .map(|f| f.wire())
+            .collect();
         for spec in KERNEL_KINDS {
             for field in spec.fields {
-                assert!(table.contains(field), "{}: `{field}` is not an EventField", spec.name);
+                assert!(
+                    table.contains(field),
+                    "{}: `{field}` is not an EventField",
+                    spec.name
+                );
             }
         }
     }
@@ -596,17 +620,22 @@ mod tests {
         );
         let message: Inbound<Mine> =
             serde_json::from_value(json!({"behaviour": "fixture"})).expect("a message");
-        assert_eq!(message, Inbound::Message(Mine { behaviour: "fixture".into() }));
+        assert_eq!(
+            message,
+            Inbound::Message(Mine {
+                behaviour: "fixture".into()
+            })
+        );
         assert!(serde_json::from_value::<Inbound<Mine>>(
             json!({"kernel": "other", "kind": "fixture", "reason": "trap"})
         )
         .is_err());
     }
 
-    /// Every reason a report can carry is a string the page's kernel throws (`ts/lib/kernel.ts`), and the other way.
+    /// Every reason a report can carry parses from its kebab-case wire name (`ts/lib/kernel.ts` throws the same six; the
+    /// page's test `kernel.test.ts` holds the two lists equal).
     #[test]
-    fn the_reasons_are_the_pages_reasons() {
-        const PAGE: &str = include_str!("../ts/lib/kernel.ts");
+    fn the_reasons_parse_from_their_wire_names() {
         for (reason, name) in [
             (StandDownReason::MissingKind, "missing-kind"),
             (StandDownReason::UnreadableRequest, "unreadable-request"),
@@ -615,20 +644,12 @@ mod tests {
             (StandDownReason::KernelFailed, "kernel-failed"),
             (StandDownReason::KernelAbsent, "kernel-absent"),
         ] {
-            assert!(
-                PAGE.contains(&format!("\"{name}\"")),
-                "the page's kernel never reports `{name}`"
-            );
             assert_eq!(
                 serde_json::from_value::<StandDownReason>(json!(name)).expect("parses"),
                 reason
             );
         }
-        let in_page = PAGE
-            .lines()
-            .find(|l| l.contains("export type StandDownReason"))
-            .expect("the page declares its reasons");
-        assert_eq!(in_page.matches('"').count() / 2, 6, "six reasons on the page");
+        assert!(serde_json::from_value::<StandDownReason>(json!("other")).is_err());
     }
 
     #[test]

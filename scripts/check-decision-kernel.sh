@@ -9,7 +9,7 @@
 # gzip-size ratchet bounds the module; and the crate's `clippy.toml` bans the transcendental float methods.
 #
 # Committing a generated binary makes one class possible, the sources and the module drifting apart, and the page then
-# silently never decides (a stale module answers the old function; a table that differs answers nothing). The checks:
+# silently never decides (a stale module answers a function the sources no longer hold; a table that differs answers nothing). The checks:
 #   1. THE MANIFEST. `kernel.manifest` hashes every input of the module: the crate's `Cargo.toml` and sources, the
 #      `[profile.kernel]` table of the root `Cargo.toml` (the table, not the file: an unrelated crate added to the
 #      workspace stales nothing) and `rust-toolchain.toml`, and records `rustc -Vv` without its `host:` line. An edited

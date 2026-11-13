@@ -13,7 +13,7 @@
 
 #![allow(
     unsafe_code,
-    reason = "`#[no_mangle]` is how a `wasm32-unknown-unknown` module exports a plain function; no unsafe block exists"
+    reason = "`#[no_mangle]` is how a `wasm32-unknown-unknown` module exports an `extern \"C\"` item, and no unsafe block exists"
 )]
 
 use std::cell::RefCell;

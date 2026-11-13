@@ -70,7 +70,12 @@ mod tests {
     #[test]
     fn a_missing_or_mistyped_key_is_unreadable() {
         let obj = |pairs: &[(&str, Value)]| {
-            Value::Obj(pairs.iter().map(|(k, v)| ((*k).into(), v.clone())).collect())
+            Value::Obj(
+                pairs
+                    .iter()
+                    .map(|(k, v)| ((*k).into(), v.clone()))
+                    .collect(),
+            )
         };
         assert!(Snapshot::from_value(&obj(&[])).is_none());
         assert!(Snapshot::from_value(&obj(&[(BLOCK_ATTR, Value::Bool(true))])).is_none());

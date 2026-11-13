@@ -11,6 +11,7 @@ import { KERNEL_WASM, loadBridge, loadModule, makeChannel, makeEvent, makeWindow
 
 const gen = readFileSync(join(import.meta.dir, "../src/ts/behaviours/behaviours.gen.ts"), "utf8");
 const HASH = Number(/export const KERNEL_HASH = (\d+);/.exec(gen)?.[1]);
+const rust = readFileSync(join(import.meta.dir, "../src/bridge/behaviours.rs"), "utf8");
 const vectors = JSON.parse(readFileSync(join(import.meta.dir, "../conformance/behaviours.json"), "utf8"));
 
 const fixture = (over: Record<string, unknown> = {}) => ({
@@ -96,6 +97,16 @@ const make = (rows = ROWS, hash = HASH) => {
   const kernel = createKernel({ own, warnOnce: (key, message) => void (warnings.includes(key) || warnings.push(key)), rows, hash });
   return { kernel, warnings };
 };
+
+describe("the reasons of a stand-down report", () => {
+  test("the page's reasons are the Rust `StandDownReason` variants, in their kebab-case wire names", () => {
+    const variants = [...(/pub enum StandDownReason \{([^}]*)\}/.exec(rust)?.[1] ?? "").matchAll(/^\s{4}([A-Z]\w*),/gm)].map((m) => m[1].replace(/\B([A-Z])/g, "-$1").toLowerCase());
+    const page = readFileSync(join(import.meta.dir, "../src/ts/lib/kernel.ts"), "utf8");
+    const declared = [...(/export type StandDownReason = ([^;]*);/.exec(page)?.[1] ?? "").matchAll(/"([^"]+)"/g)].map((m) => m[1]);
+    expect(variants.length).toBe(6);
+    expect(declared.sort()).toEqual(variants.sort());
+  });
+});
 
 describe("the kernel is loaded", () => {
   test("a module compiles synchronously: it is ready when load returns, and says how and when", () => {
