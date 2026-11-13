@@ -470,23 +470,24 @@ const ROUTE_BASELINE: &[(&str, &str)] = &[
     ("/component/virtual_list/", FIND_LAYER),
 ];
 
-/// Pages that differ only when primitives' `web` arm is compiled (preview's `web`, `desktop` and `server`
-/// features turn it on; a bare `cargo test --workspace` does not). The `web` arm is the one that ships:
-/// the dropdown menu page's account-switcher avatar (`dropdown_menu/account_switcher`) reaches its load
-/// effect only in the web arm's markup. The plain arm does not, so the page matches there.
+/// Pages that differ only when primitives' browser-engine arm is compiled (every build but the one with
+/// primitives' `native` feature, so a bare `cargo test --workspace` compiles it). The browser arm is the one
+/// that ships: the dropdown menu page's account-switcher avatar (`dropdown_menu/account_switcher`) reaches
+/// its load effect only in the browser arm's markup. The native arm does not, so the page matches there.
 /// The outcome is a function of the compiled feature set, never of timing: 10 runs per arm agree.
-const ROUTE_BASELINE_WEB: &[(&str, &str)] = &[("/component/dropdown_menu/", AVATAR)];
+const ROUTE_BASELINE_BROWSER: &[(&str, &str)] = &[("/component/dropdown_menu/", AVATAR)];
 
-/// The pages [`ROUTE_BASELINE`] and, when the `web` arm is compiled, [`ROUTE_BASELINE_WEB`] list.
+/// The pages [`ROUTE_BASELINE`] and, when the browser arm is compiled, [`ROUTE_BASELINE_BROWSER`] list.
 fn route_baseline() -> Vec<(&'static str, &'static str)> {
-    let web = cfg!(any(
-        feature = "web",
-        feature = "desktop",
-        feature = "server"
-    ));
+    let browser = !cfg!(feature = "native");
     ROUTE_BASELINE
         .iter()
-        .chain(web.then_some(ROUTE_BASELINE_WEB).into_iter().flatten())
+        .chain(
+            browser
+                .then_some(ROUTE_BASELINE_BROWSER)
+                .into_iter()
+                .flatten(),
+        )
         .copied()
         .collect()
 }

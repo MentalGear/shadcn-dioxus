@@ -4,7 +4,7 @@
 the page as stale and check `git log` and the flag files named here.** What each batch contained is in `git log` and the
 backlog row files, not here: this page says only what is deployed, what runs, what is next and what waits for the owner.
 
-Last updated: **2026-11-12**. Several sessions work in parallel; who holds what is on the `claims` branch (`CLAIMS.md`).
+Last updated: **2026-11-13**. Several sessions work in parallel; who holds what is on the `claims` branch (`CLAIMS.md`).
 Preview site: https://mentalgear.github.io/shadcn-dioxus/ serves main `edb71de0` (PRs #170-#176, deploy commit
 `c34eda92`; release suite 4106 passed, 0 failed, 0 flaky, 14 skipped on that exact tree, the `@timing` cases
 deactivated per row 494). Main is ahead of the site only by PRs #177 and #178, which change no source the site is
@@ -44,8 +44,9 @@ row says otherwise, so a step runs as parallel lanes (one verifier per batch, `l
 **Before the plan continues (port-independent)**
 
 1. Row 506 is closed (2026-11-12): both failures were test-side, the release suite is green on `edb71de0` and the
-   site is deployed. **First now: row 511** (the primitives' renderer switch is inverted so the browser arm needs no feature; one construction,
-   measured, awaiting the owner's approval): it is port-independent and row 448's deletion waits for it.
+   site is deployed. Row **511** is built (owner approved 2026-11-12): the primitives render the browser arm with no
+   feature, Blitz is the `native` opt-in, and a compile-time assert holds it equal to dioxus's own renderer. Row 448's
+   deletion of the native-arm focus trap is open for it.
 2. Done, merged in PR #170 (2026-11-11): the deploy blockers of PR #168 (rows 468, 501); row **436**'s overlay and
    class groups (F1, F2, F4, F5, F6, F8, F9, F10, F11, F12), each reproduced red first (CHANGELOG.md has the
    user-visible ones: F1, F10, F11); **499** (safe triangle; CHANGELOG.md too); **152** slices 4-5; **371**'s
@@ -88,12 +89,14 @@ ports), its working form is [`js-interop.md`](./js-interop.md), and every item h
    (legacy freeze, landed 2026-11-12), **446** (witness harness),
    **447** (order runtime), **448** (proof port A), **449** (proof port B), **450** (bridge stats and the desktop latency
    session); about 111 h, nearly all one chain through `ts/bridge.ts`, so it runs mostly serially.
-   Row 448's first half (deleting the `not(web)` focus trap) waits for row 511; its site list is corrected in the row.
+   Row 448's first half (deleting the native-arm focus trap) is open now that row 511 is built; its site list is
+   corrected in the row.
 8. The ports, as ordinary rows by yield (lines of JavaScript removed per hour, highest first; a row whose dependencies
-   have not landed waits, and each row names them): **451** (3.SC, 27-30/h), **452** (3.PL, 27/h), **453** (3.PV, 22/h),
-   **454** (3.OB, 21/h), **455** (3.GS, 15/h), **456** (3.OV, 9/h), **457** (3.VS, 6/h), **458** (3.FC, 5/h), **461**
-   (3.PW) and **459** (3.SL, which closes a blocking-listener class rather than removing lines); **460** (3.HV) and
-   **462** (roving focus) only if phase 0's witnesses call for them.
+   have not landed waits, and each row names them): **451** (3.SC, built 2026-11-12) and **454** (3.OB, built
+   2026-11-12; five legacy scripts left the baseline, with 451 the volume gate's total fell from 508,767 to 482,329),
+   then **452** (3.PL, 27/h), **453** (3.PV, 22/h), **455** (3.GS, 15/h), **456** (3.OV, 9/h), **457** (3.VS, 6/h),
+   **458** (3.FC, 5/h), **461** (3.PW) and **459** (3.SL, which closes a blocking-listener class rather than removing
+   lines); **460** (3.HV) and **462** (roving focus) only if phase 0's witnesses call for them.
 9. The measured group, one port at a time with the old version switchable, the owner measuring on real devices after
    each: **442** (desktop proof harness) and **443** (measurement kit), **463** (freeze), **464** (carousel), **465**
    (message scroller), **466** (wheel band), then **467** (remove the old scripts per the owner's verdict).
@@ -123,8 +126,10 @@ ports), its working form is [`js-interop.md`](./js-interop.md), and every item h
   branches; the 30 unmerged ones are kept).
 - CI back on (rows 4, 33): every workflow except `mutants.yml` is deleted, so reactivation means a new workflow that
   runs `scripts/run-gates.sh`.
-- Row 511: approve or reject the one construction in the row (browser arm by default, Blitz as the `native` opt-in,
-  a compile-time assert against dioxus's own renderer).
+- Row 513: approve or reject reusing release-suite results across a change that touches only Playwright files (the
+  results are keyed by the site's build inputs and each spec's own imports).
+- Row 509 lands only with one `allow` row in `scripts/check-js-volume.allow.tsv` for the decision kernel's five fixed
+  wasm exports (`decision-kernel/src/ffi.rs`); the table is the owner's.
 - Row 508's verdict is `KERNEL`, so row 509 opens without a further decision. Loading the
   kernel inside the desktop webview stays unproven until a desktop build exists (row 23).
 

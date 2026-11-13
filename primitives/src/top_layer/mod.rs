@@ -22,19 +22,19 @@
 //!   <https://html.spec.whatwg.org/multipage/popover.html#dom-showpopover>,
 //!   <https://html.spec.whatwg.org/multipage/popover.html#dom-hidepopover>
 
-#[cfg(feature = "web")]
+#[cfg(not(feature = "native"))]
 use dioxus::document;
 // Unconditional, unlike the rest of this block: `anchored_trigger_attributes`
 // (below) is called by every anchored trigger on BOTH arms -- mirroring
 // `anchor_name_style`, see its own doc for why -- and needs `Attribute` in
 // scope, plus whatever `dioxus_attributes::attributes!`'s expansion resolves
 // against (`dioxus_core`/`dioxus_elements`, brought in by this same glob),
-// regardless of `web`. A plain glob import is never itself an error when
+// regardless of the arm. A plain glob import is never itself an error when
 // some of what it would bring in is `#[cfg]`'d away, so this costs the
-// `web` arm nothing.
+// browser arm nothing.
 use dioxus::prelude::*;
 
-#[cfg(feature = "web")]
+#[cfg(not(feature = "native"))]
 use std::cell::Cell;
 
 mod anchor_fallback;
@@ -44,40 +44,39 @@ mod scroll_clamp;
 mod styles;
 
 #[cfg_attr(
-    not(feature = "web"),
-    expect(unused_imports, reason = "only the web build uses it")
+    feature = "native",
+    expect(unused_imports, reason = "only the browser build uses it")
 )]
 pub(crate) use anchor_fallback::*;
 pub(crate) use attributes::*;
 #[cfg_attr(
-    not(feature = "web"),
-    expect(unused_imports, reason = "only the web build uses it")
+    feature = "native",
+    expect(unused_imports, reason = "only the browser build uses it")
 )]
 pub(crate) use popover_sync::*;
 #[cfg_attr(
-    all(not(feature = "web"), not(test)),
-    expect(unused_imports, reason = "only the web build and the tests use it")
+    all(feature = "native", not(test)),
+    expect(unused_imports, reason = "only the browser build and the tests use it")
 )]
 pub(crate) use scroll_clamp::*;
 pub(crate) use styles::*;
 
-#[cfg(all(test, feature = "web"))]
+#[cfg(all(test, not(feature = "native")))]
 mod tests;
 
-/// `anchored_trigger_attributes` is NOT `feature = "web"`-gated (see its own
+/// `anchored_trigger_attributes` is NOT `not(feature = "native")`-gated (see its own
 /// doc for why: every trigger calls it unconditionally, on both arms), so
 /// unlike every other test in this module it is meaningful -- and needed --
-/// on the native (non-`web`) arm too, which is what `cargo test --workspace`
-/// exercises by default (`primitives/Cargo.toml`'s `default = ["router"]`
-/// does not include `web`). This covers the `anchor.is_empty()` arms of its
-/// `match` that `feature = "web"` can never reach (`anchor_name_style`
-/// always returns a real, non-empty string there) -- the web-arm folding
+/// on the native arm too (`cargo test --features native` runs it; the default
+/// browser arm does not). This covers the `anchor.is_empty()` arms of its
+/// `match` that `not(feature = "native")` can never reach (`anchor_name_style`
+/// always returns a real, non-empty string there) -- the browser-arm folding
 /// behavior itself is covered by `tests::trigger_*` above.
 ///
-/// `not(feature = "web")`, not just `test`: under `--features web`,
+/// `feature = "native"`, not just `test`: on the browser arm,
 /// `anchor_name_style` stops being empty and these exact assertions would
 /// fail -- this module is only meaningful on the arm its own name says.
-#[cfg(all(test, not(feature = "web")))]
+#[cfg(all(test, feature = "native"))]
 mod trigger_attributes_native_tests;
 
 #[cfg(test)]

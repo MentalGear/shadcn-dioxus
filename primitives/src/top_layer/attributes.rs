@@ -32,19 +32,19 @@ use super::*;
 /// unique id (already threaded through every one of these components for
 /// ARIA), so unrelated instances on the same page never collide. Only
 /// meaningful alongside `popover`, so it degrades to an inert empty `style`
-/// value off the web arm rather than being `#[cfg]`-gated at every call
+/// value on the native arm rather than being `#[cfg]`-gated at every call
 /// site.
-#[cfg(feature = "web")]
+#[cfg(not(feature = "native"))]
 pub(crate) fn anchor_name_style(id: &str) -> String {
     format!("anchor-name: --dxa-{};", crate::escape::css_ident(id))
 }
 
 /// See [`anchor_name_style`]. Set on the content element, referencing the
 /// same id the trigger's `anchor_name_style` was built from. Only called
-/// from the web-arm leaf render functions (the native arm never promotes
+/// from the browser-arm leaf render functions (the native arm never promotes
 /// content to the top layer, so it has no containing-block problem to
 /// solve), so -- like [`PopoverKind`] -- this has no native counterpart.
-#[cfg(feature = "web")]
+#[cfg(not(feature = "native"))]
 pub(crate) fn position_anchor_style(id: &str) -> String {
     format!("position-anchor: --dxa-{};", crate::escape::css_ident(id))
 }
@@ -57,7 +57,7 @@ pub(crate) fn position_anchor_style(id: &str) -> String {
 /// calling [`anchored_content_attributes`], which it must already call for its `position-anchor`; there is
 /// no list in the engine to add it to and no marker class to remember. `scripts/check-anchor-marker.sh`
 /// keeps it that way.
-#[cfg(feature = "web")]
+#[cfg(not(feature = "native"))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum AnchorKind {
     Tooltip,
@@ -76,7 +76,7 @@ pub(crate) enum AnchorKind {
     Combobox,
 }
 
-#[cfg(feature = "web")]
+#[cfg(not(feature = "native"))]
 impl AnchorKind {
     /// The `data-dx-anchored` value, or `None` for a panel the engine must leave to its own script.
     pub(crate) fn as_str(self) -> Option<&'static str> {
@@ -142,7 +142,7 @@ impl AnchorKind {
 /// This is also the ONE writer of `data-dx-anchored` (`kind`, see [`AnchorKind`]): the engine's stylesheet
 /// scopes every anchoring rule to that attribute, so an anchored panel is anchored by calling this, and a
 /// caller's own `data-dx-anchored` cannot unscope it (it is merged last, after `attributes`).
-#[cfg(feature = "web")]
+#[cfg(not(feature = "native"))]
 pub(crate) fn anchored_content_attributes(
     kind: AnchorKind,
     id: &str,
@@ -160,12 +160,12 @@ pub(crate) fn anchored_content_attributes(
     ])
 }
 
-/// No-op whenever this crate's `web` feature is off -- see
+/// No-op whenever this crate's `native` feature is on -- see
 /// [`anchor_name_style`]'s doc. Unlike `position_anchor_style`, this one
 /// *is* called unconditionally (every trigger sets it, regardless of
 /// build), so it needs a real native stub rather than being `#[cfg]`-gated
 /// away entirely.
-#[cfg(not(feature = "web"))]
+#[cfg(feature = "native")]
 pub(crate) fn anchor_name_style(_id: &str) -> String {
     String::new()
 }
@@ -202,12 +202,12 @@ pub(crate) fn anchor_name_style(_id: &str) -> String {
 /// merge the single resulting `style` back in with everything else
 /// `fold_style_attributes` left untouched.
 ///
-/// Unlike `anchored_content_attributes`, this carries no `#[cfg(feature =
-/// "web")]` guard: every trigger above calls this unconditionally on both
+/// Unlike `anchored_content_attributes`, this carries no `#[cfg(not(feature =
+/// "native"))]` guard: every trigger above calls this unconditionally on both
 /// arms (see [`anchor_name_style`]'s own doc for why a trigger, unlike a
-/// content leaf, is never itself split into separate web/native component
+/// content leaf, is never itself split into separate browser/native component
 /// fns), so this absorbs the resulting empty anchor-name string itself
-/// (contributing nothing to the folded `style` off the web arm) rather than
+/// (contributing nothing to the folded `style` on the native arm) rather than
 /// pushing that concern onto every call site.
 ///
 /// Call this as the last step before an anchored trigger's `rsx!` block, on

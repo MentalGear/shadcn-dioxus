@@ -155,6 +155,12 @@ export class FakeDocument extends FakeTarget {
   getElementById(id: string) {
     return this.byId.get(id) ?? null;
   }
+  /** Only the prefix-attribute selector `[name^="value"]`, in insertion order. */
+  querySelectorAll(selector: string) {
+    const match = /^\[([\w-]+)\^="(.*)"\]$/.exec(selector);
+    if (!match) return [];
+    return [...this.byId.values()].filter((el) => (el.getAttribute(match[1]) ?? "").startsWith(match[2]));
+  }
   querySelector(selector: string) {
     return selector.startsWith("#") ? this.getElementById(selector.slice(1)) : null;
   }

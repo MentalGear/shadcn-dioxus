@@ -128,7 +128,7 @@ pub fn CarouselItem(props: CarouselItemProps) -> Element {
     // "boolean" (present/absent) via its own hardcoded `isBoolAttr`
     // allowlist -- `disabled`/`hidden`/`checked`/etc. are on it, `inert` is
     // not (a raw `inert: bool` here renders
-    // `inert="false"` as a PRESENT attribute on the web target, which HTML
+    // `inert="false"` as a PRESENT attribute in the browser arm, which HTML
     // boolean-attribute semantics read as inert regardless of the string
     // value -- every slide comes back inert, including the selected one).
     // A `bool`-typed dynamic attribute always carries a value (true or

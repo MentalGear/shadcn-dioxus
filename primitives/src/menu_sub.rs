@@ -6,7 +6,7 @@
 //!
 //! - The shared parts a host's `*Sub`, `*SubTrigger` and `*SubContent` components call: `render_sub` (the context
 //!   boundary), `render_sub_trigger` (a parent `menuitem` that opens the submenu) and `render_sub_content` (the
-//!   submenu panel, one component for the web and native renderers). They read the host's
+//!   submenu panel, one component for the browser and native arms). They read the host's
 //!   `crate::menu_root::MenuHost` for what is host-specific: the collection the sub-trigger registers in, the
 //!   text direction, the disabled state and the count of open submenus. A submenu's *items* are the ordinary menu
 //!   items (`crate::menu_item`), which register in the submenu they are rendered in.
@@ -545,7 +545,7 @@ pub(crate) fn render_sub_content(props: MenuSubContentProps) -> Element {
     }
 }
 
-/// The submenu panel. On the web it is a `popover="auto"` top-layer element anchored to its sub-trigger on the
+/// The submenu panel. In the browser arm it is a `popover="auto"` top-layer element anchored to its sub-trigger on the
 /// inline axis (`Right` in LTR, `Left` in RTL, flipped by the shared engine when it would overflow), with no gap:
 /// trigger and submenu sit in the same logical menu, and abutting shrinks the dead zone the close grace delay
 /// covers for a diagonal pointer move (the safe triangle, [`crate::safe_triangle`]). `auto` lets an outside press

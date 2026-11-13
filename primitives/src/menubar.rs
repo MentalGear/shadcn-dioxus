@@ -641,7 +641,7 @@ pub fn MenubarTrigger(props: MenubarTriggerProps) -> Element {
         }),
         props.attributes,
     ]);
-    // Ties this trigger to the web-arm content's `position-anchor`
+    // Ties this trigger to the browser-arm content's `position-anchor`
     // (`MenubarContentRendered`) so its anchor-positioned placement
     // resolves relative to *this* trigger once promoted to the top layer --
     // keyed on `menu_ctx.content_id`, not this menu's own index, for the
@@ -823,7 +823,7 @@ pub fn MenubarContent(props: MenubarContentProps) -> Element {
     }
 }
 
-/// The menu panel. On the web it is promoted to the top layer via `popover="auto"`, anchored to its own trigger --
+/// The menu panel. In the browser arm it is promoted to the top layer via `popover="auto"`, anchored to its own trigger --
 /// the same mechanism `DropdownMenuContentRendered` uses (`dropdown_menu.rs`), which see for the general
 /// `popover`/CSS-anchor wiring. Without the popover API it is a plain, always-in-flow `div`.
 ///

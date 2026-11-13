@@ -260,9 +260,12 @@ def closure_from_tree():
     lock = parse_lock(os.path.join(ROOT, "Cargo.lock"))
     prim = tomllib.loads(read(os.path.join(ROOT, "primitives/Cargo.toml")))
     direct = set(prim.get("dependencies", {}))
+    # What `dx components add` can install: every primitives feature a component.json may name. `native` (the Blitz
+    # arm, which turns on `dioxus/native`) is the app's own opt-in and `web` is inert, so neither is in the closure.
+    installable = ",".join(f for f in prim.get("features", {}) if f not in ("default", "native", "web"))
     roots = []
     for target in ("wasm32-unknown-unknown", None):
-        a = ["tree", "--offline", "--locked", "-p", "dioxus-primitives", "--all-features", "-e", "normal,build",
+        a = ["tree", "--offline", "--locked", "-p", "dioxus-primitives", "--features", installable, "-e", "normal,build",
              "--prefix", "none"]
         roots.append(a + (["--target", target] if target else []))
     for name in component_crates(direct):
@@ -323,7 +326,7 @@ def compare_closure(found, baseline):
 
 
 def closure_text(found):
-    lines = ["# Crates with a build script or a proc-macro in the closure a user installs (dioxus-primitives with all features on",
+    lines = ["# Crates with a build script or a proc-macro in the closure a user installs (dioxus-primitives with every installable feature on, all but `native` and `web`,",
              "# wasm32 and the host, plus every registry crate a component.json names). A shrink-only ratchet read by",
              "# scripts/check-dependency-register.sh: a crate or kind that is not listed is red, a listed one that is gone is red.",
              "# Regenerate with scripts/dependency-register.py --closure-update.",

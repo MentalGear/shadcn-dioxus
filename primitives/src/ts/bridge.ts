@@ -139,6 +139,7 @@ const EVENTS: Record<string, { recv: Recv; hot?: 1 }> = {
   "cut": { recv: "wde" },
   "paste": { recv: "wde" },
   "visibilitychange": { recv: "d" },
+  "contentvisibilityautostatechange": { recv: "d" },
   "selectionchange": { recv: "d" },
   "pagehide": { recv: "w" },
   "pageshow": { recv: "w" },
@@ -189,9 +190,14 @@ const FIELD_GETTERS: Record<string, (event: any) => unknown> = {
   "target.innerWidth": (e) => prim(e.target?.innerWidth),
   "target.innerHeight": (e) => prim(e.target?.innerHeight),
   "currentTarget.id": (e) => prim(e.currentTarget?.id),
+  "viewport.height": (e) => prim(W.visualViewport?.height),
+  "viewport.offsetTop": (e) => prim(W.visualViewport?.offsetTop),
+  "viewport.scale": (e) => prim(W.visualViewport?.scale),
+  "viewport.innerHeight": (e) => prim(W.innerHeight),
 };
 
-const isWin = (el: any): boolean => el === W;
+/** The window, and its visual viewport: both receive the events a row marks `w`. */
+const isWin = (el: any): boolean => el === W || (!!el && el === W.visualViewport);
 const isDoc = (el: any): boolean => !!el && el === W.document;
 const isEl = (el: any): boolean => !!el && el.nodeType === 1;
 
@@ -266,7 +272,7 @@ const describe = (el: any): { id: string; tagName: string } | null =>
 /** A read of one property of the element itself or the window. */
 const on = (recv: Recv, get: (typeof PROPS)[string]["get"]) => ({ recv, get });
 
-/** The reads Rust may ask for. Mirrors `Prop` in `bridge/mod.rs`; `style:`, `attr:` and `matches:` take an argument. */
+/** The reads Rust may ask for. Mirrors `Prop` in `bridge/mod.rs`; `style:`, `attr:`, `matches:` and `attrsOf:` take an argument. */
 const PROPS: Record<string, { recv: Recv | "any"; get: (el: any) => unknown }> = {
   "offsetWidth": on("e", (el) => el.offsetWidth),
   "offsetHeight": on("e", (el) => el.offsetHeight),
@@ -292,6 +298,11 @@ const PROPS: Record<string, { recv: Recv | "any"; get: (el: any) => unknown }> =
   "defaultValue": on("e", (el) => el.defaultValue),
   "open": { recv: "e", get: (el) => !!el.open },
   "popoverOpen": { recv: "e", get: (el) => !!el.matches && el.matches(":popover-open") },
+  "visibilityState": on("d", (el) => el.visibilityState),
+  "scrollTimelineSupported": on("w", (el) => el.CSS.supports("animation-timeline: scroll()")),
+  "inlinePaddingBottom": on("e", (el) => el.style.paddingBottom),
+  "inlineOverflowAnchor": on("e", (el) => el.style.overflowAnchor),
+  "checkVisibility": on("e", (el) => (typeof el.checkVisibility === "function" ? el.checkVisibility({ contentVisibilityAuto: true }) : null)),
   "rect": {
     recv: "e",
     get(el) {
@@ -381,8 +392,26 @@ function resolve(target: DxTargetish): any {
       return W.document.querySelector(spec.selector);
     case "active":
       return W.document.activeElement;
+    case "visualViewport":
+      return W.visualViewport;
+    case "scroller":
+      return scrollerOf(W.document.getElementById(spec.within));
   }
   return null;
+}
+
+/**
+ * The nearest vertical scroller between the active element and `root` (exclusive), else `root`. A resolver, like
+ * `resolve`'s other targets: which element scrolls is a fact about the rendered page that the adapter reads (the
+ * computed `overflow-y` of the ancestors); it decides nothing about a component. Rust takes the element it
+ * returns and decides everything else.
+ */
+function scrollerOf(root: HTMLElement | null): HTMLElement | null {
+  for (let el = W.document.activeElement?.parentElement; root && el && el !== root; el = el.parentElement) {
+    const overflow = W.getComputedStyle(el).getPropertyValue("overflow-y");
+    if (overflow === "auto" || overflow === "scroll" || overflow === "overlay") return el;
+  }
+  return root;
 }
 
 function pickAll(source: any, fields: readonly string[]): Fields {
@@ -441,6 +470,7 @@ function read(el: any, prop: string): unknown {
   if (prop.startsWith("style:")) return isEl(el) ? W.getComputedStyle(el).getPropertyValue(prop.slice(6)) : null;
   if (prop.startsWith("attr:")) return isEl(el) ? el.getAttribute(prop.slice(5)) : null;
   if (prop.startsWith("matches:")) return isEl(el) && !!el.matches && el.matches(prop.slice(8));
+  if (prop.startsWith("attrsOf:") && el.querySelectorAll) return Array.from(el.querySelectorAll(prop.slice(prop.indexOf(" ") + 1)), (n: Element) => n.getAttribute(prop.slice(8, prop.indexOf(" "))));
   const row = own(PROPS, prop);
   if (!row || !receives(row.recv, el)) return null;
   return norm(row.get(el));
@@ -461,6 +491,28 @@ function set(target: DxTargetish, name: string, value: string | null, epoch?: Dx
   if (stale(el, epoch)) return STALE;
   if (value === null) el.style.removeProperty(name);
   else el.style.setProperty(name, value);
+  return null;
+}
+
+/**
+ * The page-written slots Rust may write on an element whose attributes and inline style it does not own:
+ * `data-dx-*` attributes and two inline styles. A name outside the table is an error. `null` removes.
+ * Mirrors `Slot` in `bridge/mod.rs`.
+ */
+const WRITES: Record<string, { run: (el: HTMLElement, value: string | null) => void }> = {
+  "data-dx-keyboard": { run: (el, value) => (value === null ? el.removeAttribute("data-dx-keyboard") : el.setAttribute("data-dx-keyboard", value)) },
+  "data-dx-keyboard-slack": { run: (el, value) => (value === null ? el.removeAttribute("data-dx-keyboard-slack") : el.setAttribute("data-dx-keyboard-slack", value)) },
+  "padding-bottom": { run: (el, value) => el.style.setProperty("padding-bottom", value ?? "") },
+  "overflow-anchor": { run: (el, value) => el.style.setProperty("overflow-anchor", value ?? "") },
+};
+
+function write(target: DxTargetish, slot: string, value: string | null, epoch?: DxEpoch | null): unknown {
+  const row = own(WRITES, slot);
+  if (!row) throw new Error("bridge.write: no such slot: " + slot);
+  const el = resolve(target);
+  if (!isEl(el)) return null;
+  if (stale(el, epoch)) return STALE;
+  row.run(el, value);
   return null;
 }
 
@@ -485,6 +537,11 @@ function transaction(ops: DxOp[]): DxOpResult[] {
         }
         case "set": {
           const value = set(op.target, op.name, op.value, op.epoch);
+          result = value === STALE ? { ok: null, dropped: true } : { ok: null };
+          break;
+        }
+        case "write": {
+          const value = write(op.target, op.slot, op.value, op.epoch);
           result = value === STALE ? { ok: null, dropped: true } : { ok: null };
           break;
         }
@@ -740,6 +797,20 @@ function installBehaviour(sc: Scope, spec: Omit<BehaviourSpec, "cmd">): () => vo
   return entry.off;
 }
 
+// ---------------------------------------------------------------- publish
+
+/**
+ * The `publish` option of `listen`: each row copies one event field into a `--dx-` custom
+ * property of the observed element, in the page, at the moment it is observed. It is transport: a measured value
+ * and a unit go to a variable, with no branch on any component state, and nothing crosses to Rust for it.
+ */
+function publish(el: HTMLElement, rows: DxPublish[] | undefined, read: (field: string) => unknown): void {
+  for (const row of rows ?? []) {
+    const value = read(row.field);
+    if (typeof value === "number") set(el, row.var, value + (oneOf(row.unit, ["px"] as const) ?? ""));
+  }
+}
+
 // ---------------------------------------------------------------- scope
 
 function scope(raw?: DioxusChannel): Scope {
@@ -778,13 +849,18 @@ function scope(raw?: DioxusChannel): Scope {
       if (!el || done) return () => {};
       const row = checkEvent(spec.event, el);
       const fields = checkFields(spec.fields);
-      let pending: Fields | null = null;
+      const rows = spec.options?.publish;
+      // a listener that publishes and names no field has nothing to say to Rust
+      const emit = (message: Fields) => (rows?.length && !fields.length ? undefined : send(message));
+      let pending: { message: Fields; event: unknown } | null = null;
       let frame = 0;
       const flushPending = () => {
         frame = 0;
-        const message = pending;
+        const held = pending;
         pending = null;
-        if (message) send(message);
+        if (!held) return;
+        publish(el, rows, (field) => own(FIELD_GETTERS, field)?.(held.event));
+        emit(held.message);
       };
       // a streaming listener cannot cancel an event: always passive
       const off = on(
@@ -792,14 +868,21 @@ function scope(raw?: DioxusChannel): Scope {
         spec.event,
         (event) => {
           const message = pickAll(event, fields);
-          if (!row.hot) return send(message);
-          pending = message;
+          if (!row.hot) {
+            publish(el, rows, (field) => own(FIELD_GETTERS, field)?.(event));
+            return emit(message);
+          }
+          pending = { message, event };
           if (!frame) frame = W.requestAnimationFrame(flushPending);
         },
         { capture: !!spec.options?.capture, passive: true, once: !!spec.options?.once },
       );
       if (row.hot) offs.push(() => frame && W.cancelAnimationFrame(frame));
-      if (spec.initial) send(pickAll({ type: "initial", target: el, currentTarget: el }, fields));
+      if (spec.initial) {
+        const first = { type: "initial", target: el, currentTarget: el };
+        publish(el, rows, (field) => own(FIELD_GETTERS, field)?.(first));
+        emit(pickAll(first, fields));
+      }
       return off;
     },
     observe(spec) {
@@ -836,6 +919,8 @@ function scope(raw?: DioxusChannel): Scope {
                 left: r.left,
                 width: r.width,
                 height: r.height,
+                intersectionHeight: e.intersectionRect.height,
+                rootHeight: e.rootBounds ? e.rootBounds.height : W.innerHeight,
               });
             },
             { root: o.root == null ? null : resolve(o.root), rootMargin: o.rootMargin, threshold: o.threshold },

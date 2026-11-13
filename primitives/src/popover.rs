@@ -6,12 +6,12 @@
 //! `PopoverModalContent` is cfg-split the same way `dialog.rs`'s
 //! `DialogContentModal`/`alert_dialog.rs`'s `AlertDialogContent` are
 //! (`dev-docs/archive/research/phase4-spike-findings.md` Construction B):
-//! - `#[cfg(not(feature = "web"))]`: the plain
+//! - `#[cfg(feature = "native")]`: the plain
 //!   `div` + vendored `FocusTrap` path.
-//! - `#[cfg(feature = "web")]`: a real `<dialog>` opened with
+//! - `#[cfg(not(feature = "native"))]`: a real `<dialog>` opened with
 //!   `showModal()`, driven by the exact same
 //!   `crate::use_dialog_open_driver`/`crate::use_dialog_close_sync`/
-//!   `crate::dismiss::Policy::NATIVE_BACKDROP` layer `dialog.rs`'s web modal arm
+//!   `crate::dismiss::Policy::NATIVE_BACKDROP` layer `dialog.rs`'s browser modal arm
 //!   uses -- no focus-trap eval and no closing Escape layer on this arm (it joins the dismiss core's
 //!   Escape order as a native layer, with a backdrop press); the browser's own
 //!   `showModal()` supplies the focus trap, focus restore, background inertness, and top
@@ -28,7 +28,7 @@
 //! `dev-docs/plan.md` Phase 4.4 describes for `popover="auto"` content -- see
 //! `top_layer.rs`'s module doc), and the UA stylesheet's `dialog:modal {
 //! position: fixed; inset: 0; margin: auto; }` actively re-centers it. So
-//! the web modal arm below carries the exact same `data-dx-anchored="popover"`
+//! the browser modal arm below carries the exact same `data-dx-anchored="popover"`
 //! attribute and `position-anchor` style the non-modal arm already uses
 //! (`PopoverTrigger`'s `anchor-name` is keyed off `ctx.content_id`
 //! regardless of `is_modal`, so it is correct for this arm too) --
@@ -39,16 +39,16 @@
 //! dialog too, which keeps the modal arm trigger-anchored rather than
 //! falling back to the UA's viewport-centered default.
 
-// Only the native (Blitz) modal arm evaluates script itself (its focus trap); the web arm's
+// Only the native (Blitz) modal arm evaluates script itself (its focus trap); the browser arm's
 // open driver is the shared `crate::use_dialog_open_driver`.
 use crate::state_attrs;
-#[cfg(not(feature = "web"))]
+#[cfg(feature = "native")]
 use dioxus::document;
 use dioxus::prelude::*;
 
 // Only the native (Blitz) arms dismiss through the dismiss core (`crate::dismiss`, Escape and
 // outside press): `PopoverModalContent`'s and `PopoverNonModalContent`'s native arms (Blitz has no
-// Popover API, `dev-docs/reference/platform-rationale.md` Caveat 2). Both web arms get dismissal
+// Popover API, `dev-docs/reference/platform-rationale.md` Caveat 2). Both browser arms get dismissal
 // from the browser (`showModal()`'s `cancel`/`close` events for modal, `popover="auto"` light
 // dismiss for non-modal) and are native layers of the core's Escape order.
 use crate::{
@@ -59,22 +59,22 @@ use dioxus_attributes::attributes;
 
 #[derive(Clone, Copy)]
 struct PopoverCtx {
-    #[allow(unused, reason = "read only in some `web`/native arms")]
+    #[allow(unused, reason = "read only in some browser/native arms")]
     open: Memo<bool>,
-    #[allow(unused, reason = "read only in some `web`/native arms")]
+    #[allow(unused, reason = "read only in some browser/native arms")]
     set_open: Callback<bool>,
 
     // Whether the popover is a modal (default false). Only the modal arms trap focus, make the
     // page inert and take the scroll lock.
-    #[allow(unused, reason = "read only in some `web`/native arms")]
+    #[allow(unused, reason = "read only in some browser/native arms")]
     is_modal: ReadSignal<bool>,
     // Whether a modal popover keeps its page-dimming scrim. Only the modal arms read it.
     overlay: ReadSignal<bool>,
     labelledby: Signal<String>,
     // Only read by the dismiss core's call, which lives solely in
     // native (Blitz) arms (`PopoverModalContent`/`PopoverNonModalContent`'s
-    // `#[cfg(not(feature = "web"))]` variants) -- both web arms get
-    // dismissal from the browser instead. `#[allow]` so the web
+    // `#[cfg(feature = "native")]` variants) -- both browser arms get
+    // dismissal from the browser instead. `#[allow]` so the browser
     // build doesn't warn on a field genuinely unread there.
     #[allow(unused, reason = "read only by the native arms' dismiss layer")]
     root_id: Memo<String>,
@@ -98,7 +98,7 @@ struct PopoverCtx {
     // popover would render at the fallback `top:0; left:0` corner instead
     // of next to its trigger, on *any* browser, anchor-positioning-capable
     // or not.
-    #[allow(unused, reason = "read only in some `web`/native arms")]
+    #[allow(unused, reason = "read only in some browser/native arms")]
     content_id: Signal<String>,
 }
 
@@ -235,7 +235,7 @@ pub fn PopoverRoot(props: PopoverRootProps) -> Element {
     // `PopoverNonModalContent` first mounts). Covers every consumer built on
     // `PopoverRoot` too (`ColorPicker`, `DatePicker`), not just this
     // workspace's own "Popover" page.
-    #[cfg(feature = "web")]
+    #[cfg(not(feature = "native"))]
     use_effect(crate::top_layer::ensure_anchor_positioning_styles);
 
     let labelledby = use_unique_id();
@@ -390,11 +390,11 @@ pub fn PopoverContent(props: PopoverContentProps) -> Element {
         props.final_focus,
     ));
 
-    // No vendored focus-trap eval here: the web modal arm is a real
+    // No vendored focus-trap eval here: the browser modal arm is a real
     // `<dialog>` + `showModal()` (see this module's doc comment), and
     // installing the trap there would fight the browser's own focus
     // management. Trap installation lives in `PopoverModalContent`'s
-    // `#[cfg(not(feature = "web"))]` arm, the only one that needs it --
+    // `#[cfg(feature = "native")]` arm, the only one that needs it --
     // mirroring `dialog.rs`'s `DialogContentModal` native arm exactly.
 
     rsx! {
@@ -457,7 +457,7 @@ pub fn PopoverContentRendered(
     //    could vary.
     // 2. Correctness, not just safety: a layer that takes the Escape key (`EscapeKey::Close`)
     //    cancels the key's default action, which would suppress the browser's own
-    //    `popover="auto"` Escape dismissal and a modal `<dialog>`'s `cancel`. The web arms
+    //    `popover="auto"` Escape dismissal and a modal `<dialog>`'s `cancel`. The browser arms
     //    therefore join the dismiss core's Escape order as native layers
     //    (`crate::dismiss::Policy::NATIVE`), which keep their place in the order and leave the
     //    key alone.
@@ -475,7 +475,7 @@ pub fn PopoverContentRendered(
 /// Native (Blitz) arm: a plain `div` + vendored `FocusTrap` path -- see this
 /// module's doc comment. The focus-trap eval lives here (not in
 /// `PopoverContent`), since this is the only arm that needs it.
-#[cfg(not(feature = "web"))]
+#[cfg(feature = "native")]
 #[component]
 fn PopoverModalContent(
     /// The DOM id of the popover content element.
@@ -569,9 +569,9 @@ fn PopoverModalContent(
     }
 }
 
-/// Web arm (native-dialog engine, two-engine overlay architecture):
+/// Browser arm (native-dialog engine, two-engine overlay architecture):
 /// a real `<dialog>` opened with `showModal()`, driven exactly like
-/// `dialog.rs`'s web modal arm by the shared [`crate::use_dialog_open_driver`],
+/// `dialog.rs`'s browser modal arm by the shared [`crate::use_dialog_open_driver`],
 /// [`crate::use_dialog_close_sync`] and the dismiss core's backdrop press. There is
 /// one implementation of the deferred close: the dialog stays modal -- in the top
 /// layer, with its `::backdrop` and its anchored position -- until the content fade
@@ -589,7 +589,7 @@ fn PopoverModalContent(
 /// comment ("trigger-anchored, not centered") for why a modal `Popover`
 /// needs this and modal `Dialog` (which *wants* the UA's viewport-centering)
 /// never does.
-#[cfg(feature = "web")]
+#[cfg(not(feature = "native"))]
 #[component]
 fn PopoverModalContent(
     /// The DOM id of the popover content element.
@@ -691,7 +691,7 @@ fn PopoverModalContent(
     }
 }
 
-/// Web arm (Phase 4.4, dev-docs/plan.md): render the non-modal content as a
+/// Browser arm (Phase 4.4, dev-docs/plan.md): render the non-modal content as a
 /// `<dialog popover="auto">`, per MDN's own guidance that `<dialog>` and the
 /// Popover API "overlap" and are meant to compose -- a `<dialog>` supplies
 /// dialog semantics (an implicit ARIA role of `"dialog"`, non-modal here
@@ -732,7 +732,7 @@ fn PopoverModalContent(
 /// algorithm applies `display: none` synchronously, before Rust learns
 /// about it) -- an accepted limit of the plain Popover API, matching
 /// `oracle/tier2-html/top-layer.spec.ts` Rules 2/3.
-#[cfg(feature = "web")]
+#[cfg(not(feature = "native"))]
 #[component]
 fn PopoverNonModalContent(
     /// The DOM id of the popover content element.
@@ -816,7 +816,7 @@ fn PopoverNonModalContent(
 /// Native (Blitz) arm: Blitz has no popover-API support at all
 /// (`dev-docs/reference/platform-rationale.md` Caveat 2), so light dismiss /
 /// Escape need this crate's own JS-driven listeners.
-#[cfg(not(feature = "web"))]
+#[cfg(feature = "native")]
 #[component]
 fn PopoverNonModalContent(
     /// The DOM id of the popover content element.
@@ -844,7 +844,7 @@ fn PopoverNonModalContent(
         move |_| set_open.call(false),
     );
 
-    // Owned by this component -- see the web arm's identical construction
+    // Owned by this component -- see the browser arm's identical construction
     // above (`dev-docs/backlog.md` row 93).
     let attributes = merge_attributes(vec![
         attributes,
@@ -974,7 +974,7 @@ pub fn PopoverTrigger(props: PopoverTriggerProps) -> Element {
     // doc comment, native-dialog engine). Inert (empty string) on
     // the native (Blitz) arm, which never promotes anything to a top layer
     // and has no containing-block problem to solve; a real anchor name on
-    // the web arm, set unconditionally here regardless of `is_modal` since
+    // the browser arm, set unconditionally here regardless of `is_modal` since
     // both web content arms need it now.
     //
     // Keyed on `ctx.content_id` -- *not* `id`/`ctx.labelledby` above, which

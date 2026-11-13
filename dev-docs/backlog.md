@@ -40,7 +40,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (74)
+## Open rows (75)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -75,13 +75,13 @@ proposing one is closed as out of scope (row 337 is the first).
 | [445](backlog/445-phase-0-2-the-legacy-freeze.md) | Phase 0.2: freeze the legacy scripts and sinks (script hashes, per-site sink freeze, js-fix grant) | BUILT on lane/legacy-freeze-445 (2026-11-12), awaiting merge: check-js-volume freezes every legacy… | S | tooling |
 | [446](backlog/446-phase-0-6-witness-harness-and-the-first-witnesses.md) | Phase 0.6: the witness harness and the first witnesses | APPROVED 2026-10-26 (owner: "okay for the plan"; scope 2, the recommended default, since no scope… | L | tests |
 | [447](backlog/447-phase-0-7-the-order-runtime.md) | Phase 0.7: the order runtime (inbound pump, per-slot epochs, vdom carrier, slot table, focus owner, one-shot scroll classifier) | APPROVED 2026-10-26 (owner: "okay for the plan"; scope 2, the recommended default, since no scope… | M | primitives |
-| [448](backlog/448-phase-0-3-proof-port-a-focus-trap-and-otpfilter.md) | Phase 0.3: proof port A (the not(web) focus trap's 3 eval sites, focus-trap.ts, and the otpFilter behaviour for S11) | APPROVED 2026-10-26 (owner: "okay for the plan"; scope 2, the recommended default, since no scope… | L | overlays |
+| [448](backlog/448-phase-0-3-proof-port-a-focus-trap-and-otpfilter.md) | Phase 0.3: proof port A (the native-arm focus trap's 3 eval sites, focus-trap.ts, and the otpFilter behaviour for S11) | APPROVED 2026-10-26 (owner: "okay for the plan"; scope 2, the recommended default, since no scope… | L | overlays |
 | [449](backlog/449-phase-0-4-proof-port-b-the-executor-and-popover-spreads.md) | Phase 0.4: proof port B (the reconciled-kinds executor, the popover hooks that return the attribute to spread, the owners' onbeforetoggle handlers) | APPROVED 2026-10-26 (owner: "okay for the plan"; scope 2, the recommended default, since no scope… | L | overlays |
 | [450](backlog/450-phase-0-5-dxbridgestats-and-the-latency-session.md) | Phase 0.5: __dxBridgeStats, a desktop smoke launch and the one latency session | APPROVED 2026-10-26 (owner: "okay for the plan"; scope 2, the recommended default, since no scope… | M | tooling |
-| [451](backlog/451-port-3-sc-shared-collection-and-activity.md) | Port 3.SC: shared collection and activity scripts (S7, S15) | APPROVED 2026-10-26 (scope 2): after phase 0, taken as an ordinary row in order of JavaScript… | S | primitives |
+| [451](backlog/451-port-3-sc-shared-collection-and-activity.md) | Port 3.SC: shared collection and activity scripts (S7, S15) | Built on lane/port-sc-451, awaiting merge: S7 and S15 run on the bridge; three closed rows added… | M | primitives |
 | [452](backlog/452-port-3-pl-placement-anchor-fallback-and-the-paint-safe-gate.md) | Port 3.PL: placement (T1, T2, T8-T12, S1), the paint-safe gate and the boot probe | APPROVED 2026-10-26 (scope 2): after phase 0, taken as an ordinary row in order of JavaScript… | L | overlays |
 | [453](backlog/453-port-3-pv-preview-glue-and-platform-rule-rows.md) | Port 3.PV: preview glue (V3-V23) with the V14 allowlist row and the Ctrl/Cmd+B platform rule row | APPROVED 2026-10-26 (scope 2): after phase 0, taken as an ordinary row in order of JavaScript… | M | preview |
-| [454](backlog/454-port-3-ob-observers-and-publish-option.md) | Port 3.OB: observers and the publish option (L27, S16, S14) | APPROVED 2026-10-26 (scope 2): after phase 0, taken as an ordinary row in order of JavaScript… | S | primitives |
+| [454](backlog/454-port-3-ob-observers-and-publish-option.md) | Port 3.OB: observers and the publish option (L27, S16, S14) | BUILT on lane/port-ob-454, awaiting merge (2026-11-12): L27, S16, S14 are Rust over the bridge… | S | primitives |
 | [455](backlog/455-port-3-gs-gestures-slider-resizable-drawer-toast-pan.md) | Port 3.GS: gestures and toast (L21, L28-L30, O1, O3, O5 with the pan behaviour, V17) | APPROVED 2026-10-26 (scope 2): after phase 0, taken as an ordinary row in order of JavaScript… | L | primitives |
 | [456](backlog/456-port-3-ov-overlay-core-escape-dismiss-open-focus.md) | Port 3.OV: overlay core (L1-L3, L5-L9, L16-L17, L22, L26) with openFocus | APPROVED 2026-10-26 (scope 2): after phase 0, taken as an ordinary row in order of JavaScript… | L | overlays |
 | [457](backlog/457-port-3-vs-virtual-settle-and-the-scrollowner-behaviour.md) | Port 3.VS: virtual settle (W1-W7) and the scrollOwner one-shot kind | APPROVED 2026-10-26 (scope 2): after phase 0, taken as an ordinary row in order of JavaScript… | M | virtual |
@@ -116,7 +116,8 @@ proposing one is closed as out of scope (row 337 is the first).
 | [508](backlog/508-decision-kernel-proof.md) | Proof: a behaviour's Rust decide runs in the page as a wasm kernel, inside an event's dispatch | KERNEL (2026-11-12, lane decision-kernel-proof). All five pass lines hold: the fixture's Rust… | S | primitives |
 | [509](backlog/509-rust-decision-contract.md) | The Rust decision contract: one decide per behaviour, the decision kernel as a committed artefact, and the gates | APPROVED 2026-11-11 (owner); opens on row 508's KERNEL verdict (2026-11-12), which stands after the… | L (inferred: was M; the review adds… | primitives |
 | [510](backlog/510-spec-selector-component-edges.md) | The spec selector has no component-to-component edge: a Button change selects none of its consumers' specs | BUILT on lane/select-edges-510, awaiting merge. The selector reads the component use graph from the… | S (one helper module of about 170… | tests |
-| [511](backlog/511-primitives-web-feature-contract.md) | The browser-engine arm is the primitives' default; Blitz is the `native` opt-in, held to dioxus's own renderer by a compile-time assert | OPEN, found 2026-11-12. The construction below is worked out and awaits the owner's approval. It is… | M (inferred) | primitives |
+| [511](backlog/511-primitives-web-feature-contract.md) | The browser-engine arm is the primitives' default; Blitz is the `native` opt-in, held to dioxus's own renderer by a compile-time assert | LANDED on lane/web-contract-511, 2026-11-13, awaiting the merge into the batch. The construction… | M (inferred) | primitives |
 | [512](backlog/512-specs-locate-variants-by-slug.md) | A spec that located a demo variant by its displayed title broke on a retitle; variants are addressed by slug, enforced by a gate | BUILT on lane/variant-locators-512, awaiting merge. A variant is found by its slug (the demo frame… | S: one spec moved, one gate rule with… | tests |
+| [513](backlog/513-release-suite-reuse-across-spec-only-changes.md) | A spec-only fix after a red release suite re-runs the whole suite: reuse the results the changed files cannot affect | BACKLOG. It serves the owner's standing goal "evaluate how the testing could be made quicker… | M (inferred): the key derivation, the… | tests |
 
 <!-- END GENERATED -->

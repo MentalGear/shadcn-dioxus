@@ -2,7 +2,7 @@
 // `DX_BLESS=1 cargo test -p dioxus-primitives behaviours` rewrites it, and the test fails when it drifts.
 // The kinds, parameters and declarations of the Rust `Behaviour` enum, for the TS behaviour modules.
 
-export type EventName = "keydown" | "keyup" | "beforeinput" | "input" | "change" | "compositionstart" | "compositionend" | "click" | "dblclick" | "contextmenu" | "pointerdown" | "pointerup" | "pointermove" | "pointercancel" | "mousedown" | "mouseup" | "mousemove" | "touchstart" | "touchmove" | "touchend" | "touchcancel" | "wheel" | "scroll" | "resize" | "focusin" | "focusout" | "focus" | "blur" | "dragenter" | "dragover" | "dragleave" | "drop" | "copy" | "cut" | "paste" | "visibilitychange" | "selectionchange" | "pagehide" | "pageshow" | "online" | "offline" | "hashchange" | "popstate" | "beforetoggle" | "toggle" | "close" | "cancel" | "transitionend" | "animationend";
+export type EventName = "keydown" | "keyup" | "beforeinput" | "input" | "change" | "compositionstart" | "compositionend" | "click" | "dblclick" | "contextmenu" | "pointerdown" | "pointerup" | "pointermove" | "pointercancel" | "mousedown" | "mouseup" | "mousemove" | "touchstart" | "touchmove" | "touchend" | "touchcancel" | "wheel" | "scroll" | "resize" | "focusin" | "focusout" | "focus" | "blur" | "dragenter" | "dragover" | "dragleave" | "drop" | "copy" | "cut" | "paste" | "visibilitychange" | "contentvisibilityautostatechange" | "selectionchange" | "pagehide" | "pageshow" | "online" | "offline" | "hashchange" | "popstate" | "beforetoggle" | "toggle" | "close" | "cancel" | "transitionend" | "animationend";
 
 export const KINDS = ["fixture"] as const;
 export type Kind = (typeof KINDS)[number];

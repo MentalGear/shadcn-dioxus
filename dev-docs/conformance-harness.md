@@ -184,11 +184,11 @@ root is the site directory ([`lane-rules.md`](./lane-rules.md), [`dev-loop.md`](
 - **Do not confirm a background build by tailing a shared log path**; poll the build's own output directory.
 
 `playwright/ssg.local.config.ts` has no `webServer` entry (start the static server first); `oracle/hydration-parity.spec.ts`
-hardcodes port 8090. The quickest manual check that a build landed on the web arm, not the native arm:
+hardcodes port 8090. The quickest manual check that a build landed on the browser arm, not the native arm:
 
 ```bash
 grep -o 'dx-toast[^>]*' <public>/index.html
-# web arm (correct):    ...dx-toast-container-XXXXXXXX" ... popover="manual" ...
+# browser arm (correct): ...dx-toast-container-XXXXXXXX" ... popover="manual" ...
 # native arm (the bug): ...dx-toast-container-XXXXXXXX" data-node-hydration="..." (no popover)
 ```
 

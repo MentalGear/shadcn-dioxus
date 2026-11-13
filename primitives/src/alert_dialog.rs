@@ -6,9 +6,9 @@
 //! `dialog.rs` there is no `is_modal` branch here -- [`AlertDialogContent`]
 //! is cfg-split directly, the same two arms as `dialog.rs`'s
 //! `DialogContentModal` (`dev-docs/archive/research/phase4-spike-findings.md` Construction B):
-//! - `#[cfg(not(feature = "web"))]`: the plain
+//! - `#[cfg(feature = "native")]`: the plain
 //!   `div` + vendored `FocusTrap` path.
-//! - `#[cfg(feature = "web")]`: a real `<dialog role="alertdialog">`
+//! - `#[cfg(not(feature = "native"))]`: a real `<dialog role="alertdialog">`
 //!   (the explicit `role` stays -- unlike a plain modal `Dialog`, this is a
 //!   genuine ARIA-subclass refinement of `<dialog>`'s implicit role,
 //!   <https://www.w3.org/TR/html-aria/#el-dialog>), driven by the same
@@ -17,12 +17,12 @@
 //!   defers `close()`; see `dialog.rs`), so the `<dialog>` carries its own
 //!   `data-open` / `data-closed`. No backdrop-click dismiss: unlike `Dialog`,
 //!   `AlertDialogContent` has no outside-press arm (APG
-//!   discourages light-dismissing an alert dialog), and the web arm has no
+//!   discourages light-dismissing an alert dialog), and the browser arm has no
 //!   equivalent either.
 
 use crate::state_attrs;
 use crate::{merge_attributes, use_animated_open, use_controlled, use_id_or, use_unique_id};
-#[cfg(not(feature = "web"))]
+#[cfg(feature = "native")]
 use dioxus::document;
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
@@ -229,8 +229,8 @@ pub struct AlertDialogContentProps {
 /// }
 /// ```
 /// Native (Blitz) target: a plain `div` with the vendored `FocusTrap`
-/// (no native `<dialog>`; dev-docs/plan.md Phase 4.2 scopes that to the web).
-#[cfg(not(feature = "web"))]
+/// (no native `<dialog>`; dev-docs/plan.md Phase 4.2 scopes that to the browser arm).
+#[cfg(feature = "native")]
 #[component]
 pub fn AlertDialogContent(props: AlertDialogContentProps) -> Element {
     let ctx: AlertDialogCtx = use_context();
@@ -312,7 +312,7 @@ pub fn AlertDialogContent(props: AlertDialogContentProps) -> Element {
 /// supplies the focus trap, focus restore, background inertness, and
 /// top-layer rendering. `role="alertdialog"` stays explicit -- see this
 /// module's doc comment.
-#[cfg(feature = "web")]
+#[cfg(not(feature = "native"))]
 #[component]
 pub fn AlertDialogContent(props: AlertDialogContentProps) -> Element {
     let ctx: AlertDialogCtx = use_context();
@@ -328,7 +328,7 @@ pub fn AlertDialogContent(props: AlertDialogContentProps) -> Element {
     crate::scroll_lock::use_scroll_lock(open);
 
     // The same close-sync + `.open`-guarded open-driver pair (legacy eval,
-    // ported by row 434) as `dialog.rs`'s web modal arm -- see `crate::use_dialog_close_sync`/
+    // ported by row 434) as `dialog.rs`'s browser modal arm -- see `crate::use_dialog_close_sync`/
     // `crate::use_dialog_open_driver` (lib.rs), which keep a native close
     // from stranding the `open` signal at `true`
     // (dev-docs/reference/platform-rationale.md Caveat 1). Deliberately no

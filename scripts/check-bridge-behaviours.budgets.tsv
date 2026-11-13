@@ -2,6 +2,6 @@
 #! columns: bytes
 # path	bytes
 primitives/src/ts/behaviours/fixture.ts	891
-primitives/src/ts/bridge.ts	42732	# raised: row 505 revert the bridge.ts name-shortening (pageObserver/reg/batch restored) (bytes 42676->42732)
+primitives/src/ts/bridge.ts	47504	# raised: row 454 the publish option and the closed bridge rows L27, S16 and S14 first need (bytes 42732->47097); row 451 three closed bridge rows for the collection order read and the activity registry (bytes 47097->47504)
 primitives/src/ts/lib/register.ts	777
-primitives/src/ts/types/bridge.d.ts	6111
+primitives/src/ts/types/bridge.d.ts	6626	# raised: row 454 the publish option and the closed bridge rows L27, S16 and S14 first need (bytes 6111->6626)

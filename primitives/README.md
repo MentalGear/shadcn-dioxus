@@ -35,10 +35,15 @@ An app compiles only the crates its components use. `default` is `router`; `dx c
 
 | Feature | Enables | Extra crates |
 |---|---|---|
-| `web` | the browser arm of the overlay and listener code (also `time/wasm-bindgen` when `calendar` is on) | none |
+| `native` | the Blitz arm (no JavaScript) of the overlay and listener code instead of the browser-engine one; also turns on `dioxus/native` | the Blitz renderer |
 | `router` | `navbar` (needs `dioxus-router`) | about 40 |
 | `calendar` | `calendar` and `date_picker` (their public types are `time::Date` and friends) | `time` and 5 more |
 | `color-picker` | `color_picker` (its props use `palette::Hsv` / `Srgb<u8>`) | `palette` and 11 more |
+
+Browser engines need no feature: a browser, a desktop or mobile webview and an SSG or fullstack server render the
+browser-engine arm by default, and the `time` crate's `wasm-bindgen` feature (calendar) comes with the wasm target. A Blitz
+app enables `dioxus-primitives/native` in the same feature that enables `dioxus/native`; a build where the two disagree
+fails to compile, with a message that names the fix. `web` is an inert feature kept so older manifests still build.
 
 ## License
 

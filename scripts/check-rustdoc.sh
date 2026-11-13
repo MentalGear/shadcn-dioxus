@@ -2,11 +2,11 @@
 #
 # check-rustdoc.sh
 #
-# Rustdoc builds without a warning: `cargo doc --no-deps --document-private-items` on the default arm of the whole
-# workspace and on the `web` arm of primitives and preview, so a broken intra-doc link, an unclosed HTML tag, a bare URL
+# Rustdoc builds without a warning: `cargo doc --no-deps --document-private-items` on the default (browser-engine) arm of the whole
+# workspace and on the `native` (Blitz) arm of primitives, so a broken intra-doc link, an unclosed HTML tag, a bare URL
 # or a public doc comment that links a private item is red before docs.rs shows it. Strict, with no baseline: any rustdoc warning
 # or error fails the gate (dev-docs/backlog.md row 382). Fix a site by rewriting the doc comment: link
-# only items that are public, use a plain code span for a private one (or one that exists only on the `web` arm),
+# only items that are public, use a plain code span for a private one (or one that exists only on the `native` arm),
 # put a literal `<tag>` in a code span, write a URL as `<url>`, disambiguate a name that is both
 # a function and a module with `derive()` / `mod@window`. A raw identifier (`r#loop`) cannot be an intra-doc link.
 #
@@ -39,7 +39,7 @@ doc() { # label, then the cargo doc arguments
   echo $? > "$out_dir/$label.rc"
 }
 doc default --workspace
-doc web -p dioxus-primitives -p preview --features dioxus-primitives/web,preview/web
+doc native -p dioxus-primitives --features native
 
 python3 -I - "$out_dir" "$inventory" <<'PY'
 import collections, os, re, sys
@@ -49,7 +49,7 @@ summary_re = re.compile(r"generated \d+ warnings?|could not document|^warning: b
 per_arm = {}
 errors = []
 sites = collections.defaultdict(list)
-for arm in ("default", "web"):
+for arm in ("default", "native"):
     counts = collections.Counter()
     for raw in open(os.path.join(out_dir, arm + ".log"), encoding="utf-8", errors="replace"):
         raw = raw.rstrip("\n")

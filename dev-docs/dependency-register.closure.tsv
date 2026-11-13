@@ -1,4 +1,4 @@
-# Crates with a build script or a proc-macro in the closure a user installs (dioxus-primitives with all features on
+# Crates with a build script or a proc-macro in the closure a user installs (dioxus-primitives with every installable feature on, all but `native` and `web`,
 # wasm32 and the host, plus every registry crate a component.json names). A shrink-only ratchet read by
 # scripts/check-dependency-register.sh: a crate or kind that is not listed is red, a listed one that is gone is red.
 # Regenerate with scripts/dependency-register.py --closure-update.
