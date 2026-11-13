@@ -6,8 +6,8 @@
 //! `dialog.rs` there is no `is_modal` branch here -- [`AlertDialogContent`]
 //! is cfg-split directly, the same two arms as `dialog.rs`'s
 //! `DialogContentModal` (`dev-docs/archive/research/phase4-spike-findings.md` Construction B):
-//! - `#[cfg(feature = "native")]`: the plain
-//!   `div` + vendored `FocusTrap` path.
+//! - `#[cfg(feature = "native")]`: a plain `div` with `role="alertdialog"` and `aria-modal`, and no
+//!   focus trap (Blitz runs no script; a real trap there is row 438's).
 //! - `#[cfg(not(feature = "native"))]`: a real `<dialog role="alertdialog">`
 //!   (the explicit `role` stays -- unlike a plain modal `Dialog`, this is a
 //!   genuine ARIA-subclass refinement of `<dialog>`'s implicit role,
@@ -22,8 +22,6 @@
 
 use crate::state_attrs;
 use crate::{merge_attributes, use_animated_open, use_controlled, use_id_or, use_unique_id};
-#[cfg(feature = "native")]
-use dioxus::document;
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
 
@@ -146,7 +144,6 @@ pub fn AlertDialogRoot(props: AlertDialogRootProps) -> Element {
     ]);
 
     rsx! {
-        {crate::focus_trap_script()}
         if render_element() {
             div {
                 id,
@@ -228,7 +225,7 @@ pub struct AlertDialogContentProps {
 ///     }
 /// }
 /// ```
-/// Native (Blitz) target: a plain `div` with the vendored `FocusTrap`
+/// Native (Blitz) target: a plain `div` with `aria-modal` and no focus trap
 /// (no native `<dialog>`; dev-docs/plan.md Phase 4.2 scopes that to the browser arm).
 #[cfg(feature = "native")]
 #[component]
@@ -255,28 +252,6 @@ pub fn AlertDialogContent(props: AlertDialogContentProps) -> Element {
     // An alert dialog is always modal, so lock page scroll for as long as
     // it's open. See dev-docs/plan.md Phase 3.2.
     crate::scroll_lock::use_scroll_lock(open);
-
-    use_effect(move || {
-        #[expect(
-            clippy::disallowed_methods,
-            reason = "row 456: this page script is ported by row 456"
-        )]
-        let eval = document::eval(
-            r#"let id = await dioxus.recv();
-            let is_open = await dioxus.recv();
-            let dialog = document.getElementById(id);
-
-            if (is_open) {
-                dialog.trap = window.createFocusTrap(dialog);
-            }
-            if (!is_open && dialog.trap) {
-                dialog.trap.remove();
-                dialog.trap = null;
-            }"#,
-        );
-        let _ = eval.send(id.to_string());
-        let _ = eval.send(open.cloned());
-    });
 
     // Owned by this component -- dialog role/aria wiring must win over a
     // caller's own attributes (`dev-docs/backlog.md` row 93's
@@ -332,7 +307,7 @@ pub fn AlertDialogContent(props: AlertDialogContentProps) -> Element {
     // `crate::use_dialog_open_driver` (lib.rs), which keep a native close
     // from stranding the `open` signal at `true`
     // (dev-docs/reference/platform-rationale.md Caveat 1). Deliberately no
-    // closing layer and no focus-trap eval: the browser's own
+    // closing layer and no focus trap of its own: the browser's own
     // `showModal()`/`cancel`/`close` events already cover Escape, focus
     // trap, and focus restore.
     crate::use_dialog_close_sync(id, set_open);

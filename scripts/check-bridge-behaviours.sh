@@ -722,6 +722,14 @@ def replace_in(path, old, new, section="files"):
     return f
 
 
+def allow_residue(reason, row):
+    """A stray ts file holding `preventDefault` plus its allowlist row (the shipped allowlist can be empty)."""
+    def f(t):
+        t["ts"]["primitives/src/ts/stray.ts"] = "export function f(e: Event) { e.preventDefault(); }\n"
+        t["files"][ALLOW_TSV] = t["files"][ALLOW_TSV] + f"primitives/src/ts/stray.ts\t{reason}\t{row}\n"
+    return f
+
+
 def self_test(tree):
     # a deterministic merge base: the tree's own generated file and no rows, whatever clone this runs in
     tree["base"] = {"sha": "self-test", "gen": tree["files"][GEN_TS], "rows": []}
@@ -761,12 +769,10 @@ def self_test(tree):
         ("a budget row for a file that is gone", lambda t: t["files"].__setitem__(
             BUDGETS_TSV, t["files"][BUDGETS_TSV] + "primitives/src/ts/behaviours/ghost.ts\t10\n")),
         ("the budgets file missing", lambda t: t["files"].__setitem__(BUDGETS_TSV, None)),
-        ("an unknown allowlist row", replace_in(ALLOW_TSV, "\t434", "\t99999")),
-        ("an allowlist reason with no lane", replace_in(ALLOW_TSV, "3.DJ (dead-JS deletion)", "later (dead-JS deletion)")),
+        ("an unknown allowlist row", allow_residue("x 3.B1", "99999")),
+        ("an allowlist reason with no lane", allow_residue("x later", "434")),
         ("an allowlist entry for a clean file", lambda t: t["files"].__setitem__(
             ALLOW_TSV, t["files"][ALLOW_TSV] + "primitives/src/ts/lib/register.ts\tx 3.B1\t434\n")),
-        ("an allowlist entry that is stale", lambda t: t["ts"].__setitem__(
-            "primitives/src/ts/focus-trap.ts", t["ts"]["primitives/src/ts/focus-trap.ts"].replace("preventDefault", "cancel"))),
         ("an allowlist line without a reason", lambda t: t["files"].__setitem__(
             ALLOW_TSV, t["files"][ALLOW_TSV] + "primitives/src/ts/x.ts\t\t434\n")),
         ("a computed member access in bridge.ts", lambda t: t["ts"].__setitem__(
