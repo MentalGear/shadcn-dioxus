@@ -445,10 +445,14 @@ impl Session {
                 })
             });
         let mut task_eval = eval;
-        spawn(async move {
+        let receiver = spawn(async move {
             receive(&mut task_eval, handler).await;
         });
-        Subscription { eval, renewal }
+        Subscription {
+            eval,
+            renewal,
+            receiver,
+        }
     }
 }
 
@@ -459,6 +463,9 @@ pub struct Subscription {
     eval: Eval,
     /// The lease-renewal task of a session that installed a behaviour with a lease.
     renewal: Option<crate::dioxus_core::Task>,
+    /// The task that hands the session's messages to the handler: a message already on its way when the
+    /// subscription ends is not handled.
+    receiver: crate::dioxus_core::Task,
 }
 
 impl Drop for Subscription {
@@ -466,6 +473,7 @@ impl Drop for Subscription {
         if let Some(renewal) = self.renewal.take() {
             renewal.cancel();
         }
+        self.receiver.cancel();
         // On the channel the session already has: a new eval inside a drop handler is unsafe (#4064).
         transport::send(&self.eval, TEARDOWN);
     }
@@ -858,11 +866,18 @@ mod tests {
     struct Probe {
         got: Rc<RefCell<Vec<String>>>,
         generation: Rc<Cell<u32>>,
+        unmounted: Rc<Cell<bool>>,
     }
 
     #[derive(Deserialize)]
     struct Decided {
         behaviour: String,
+    }
+
+    #[component]
+    fn Host() -> Element {
+        let probe: Probe = consume_context();
+        rsx! { if !probe.unmounted.get() { Installer {} } }
     }
 
     #[component]
@@ -904,7 +919,7 @@ mod tests {
     async fn use_behaviour_tears_the_install_down_on_a_stand_down_and_does_not_reinstall() {
         let document = ScriptedDocument::default();
         let probe = Probe::default();
-        let mut dom = VirtualDom::new(Installer)
+        let mut dom = VirtualDom::new(Host)
             .with_root_context(Rc::new(document.clone()) as Rc<dyn dioxus::document::Document>)
             .with_root_context(probe.clone());
         dom.rebuild_in_place();
@@ -991,6 +1006,44 @@ mod tests {
             1,
             "and the teardown is not repeated"
         );
+    }
+
+    /// A message the page had already sent when the subscription ended must not reach the handler.
+    #[tokio::test(flavor = "current_thread", start_paused = true)]
+    async fn a_message_after_the_subscription_ended_does_not_reach_the_handler() {
+        for by_stand_down in [true, false] {
+            let document = ScriptedDocument::default();
+            let probe = Probe::default();
+            let mut dom = VirtualDom::new(Host)
+                .with_root_context(Rc::new(document.clone()) as Rc<dyn dioxus::document::Document>)
+                .with_root_context(probe.clone());
+            dom.rebuild_in_place();
+            settle(&mut dom).await;
+            let session = document.sessions()[0].clone();
+            deliver(&session, json!({"behaviour": "fixture"}));
+            settle(&mut dom).await;
+            assert_eq!(*probe.got.borrow(), ["fixture"]);
+
+            if by_stand_down {
+                deliver(
+                    &session,
+                    json!({"kernel": "stand-down", "kind": "fixture", "reason": "trap"}),
+                );
+            } else {
+                probe.unmounted.set(true);
+                dom.mark_dirty(ScopeId::APP);
+            }
+            settle(&mut dom).await;
+            assert!(torn_down(&session), "ended (stand-down: {by_stand_down})");
+
+            deliver(&session, json!({"behaviour": "fixture"}));
+            settle(&mut dom).await;
+            assert_eq!(
+                *probe.got.borrow(),
+                ["fixture"],
+                "a late decision is not handled (stand-down: {by_stand_down})"
+            );
+        }
     }
 
     #[test]

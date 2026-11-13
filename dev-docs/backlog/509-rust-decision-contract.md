@@ -111,6 +111,8 @@ one behaviour that exists (the test fixture); `otpFilter` (row 448) is written t
   (`use_behaviour_tears_the_install_down_on_a_stand_down_and_does_not_reinstall`) drives the hook: a decision
   reaches the handler and changes nothing, a report sends the teardown once, stops the lease renewal and installs
   nothing, and re-renders do not reinstall.
+  A dropped `Subscription` also cancels its receive task, so a message already in flight after a stand-down (or
+  a re-install) is not handled (`a_message_after_the_subscription_ended_does_not_reach_the_handler`).
 - **The kernel loads synchronously or not at all.** The module is compiled in the bridge's first eval (`kernel_load`, the
   one seam function); an engine that refuses a synchronous compile leaves the kernel `failed` (one warning, every
   decision reports `kernel-failed`). There is no asynchronous fallback, so no window exists in which a cancelling
