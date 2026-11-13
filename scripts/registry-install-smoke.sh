@@ -245,7 +245,7 @@ if ! grep -q 'dioxus-primitives feature "router"\|dioxus-primitives v' "$tree_lo
 fi
 if grep -q 'dioxus-primitives feature "native"' "$tree_log"; then
   echo "registry-install-smoke: RED -- the installed app has dioxus-primitives/native on (the Blitz arm) without any wiring:" >&2
-  grep -B1 -A6 'dioxus-primitives feature "native"' "$tree_log" | head -30 >&2
+  grep -B1 -A6 'dioxus-primitives feature "native"' "$tree_log" | sed -n '1,30p' >&2
   exit 1
 fi
 lap "feature tree checked"
