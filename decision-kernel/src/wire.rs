@@ -1,6 +1,6 @@
 //! The wire form of a kind's inputs, defined once, and the byte route both the wasm export and `cargo test` call.
 //!
-//! [`wire_input!`] declares an input type (`Config`, `Snapshot` or `Event`) together with the wire key each field is
+//! `wire_input!` declares an input type (`Config`, `Snapshot` or `Event`) together with the wire key each field is
 //! read from. The type, its reader and its key list ([`FromValue::KEYS`]) come from that one declaration, so the key
 //! list the page's adapter is generated from can never differ from the keys the Rust side reads. Every key is
 //! required: a request that lacks one is malformed ([`run`] answers `None`, the page stands down and tells Rust),

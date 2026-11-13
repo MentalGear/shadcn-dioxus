@@ -10,8 +10,8 @@
 //! * `cargo test` runs both against the shared vectors.
 //!
 //! The `Config`, `Snapshot` and `Event` input types of a kind are the one definition of its wire keys
-//! ([`wire_input!`]): the keys the Rust side reads, the event fields and attribute reads the page's adapter
-//! collects and the kind table of the generated `behaviours.gen.ts` are all the same list. [`kinds!`] is the one
+//! (`wire_input!`): the keys the Rust side reads, the event fields and attribute reads the page's adapter
+//! collects and the kind table of the generated `behaviours.gen.ts` are all the same list. `kinds!` is the one
 //! registration of a kind: it builds the kind table ([`KINDS`]), its hash ([`table_hash`], which the module exports as
 //! `dx_kinds`) and the dispatch by kind index ([`decide`]).
 
