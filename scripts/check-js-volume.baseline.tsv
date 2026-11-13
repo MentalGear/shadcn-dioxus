@@ -39,7 +39,6 @@ preview/src/site/gallery.rs	1	1	0	0	0	0	0
 preview/src/site/variant_page.rs	1	0	0	0	0	0	0
 preview/src/theme.rs	1	19	0	0	0	0	3
 preview/src/utilities_docs.rs	0	12	0	0	0	0	0
-primitives/src/activity.rs	0	108	0	1	0	0	0
 primitives/src/alert_dialog.rs	1	10	0	0	0	0	1
 primitives/src/avatar.rs	1	13	0	0	0	0	1
 primitives/src/bridge/behaviours.rs	2	3	0	0	0	0	0
@@ -57,7 +56,6 @@ primitives/src/carousel/virtual_content.rs	2	0	0	0	0	0	2
 primitives/src/carousel/wheel.rs	0	461	0	1	0	0	0
 primitives/src/checkbox.rs	2	4	0	0	0	0	1
 primitives/src/collapsible.rs	0	5	0	1	0	0	0
-primitives/src/collection.rs	1	6	0	0	0	0	1
 primitives/src/combobox/components/option.rs	1	22	0	0	0	0	1
 primitives/src/date_picker/context.rs	1	5	0	0	0	0	1
 primitives/src/default_checked.rs	2	4	0	0	0	0	1
@@ -67,7 +65,7 @@ primitives/src/drawer.rs	0	136	0	3	0	0	0
 primitives/src/hover_intent.rs	0	10	0	1	0	0	0
 primitives/src/input_otp.rs	1	59	0	2	0	0	1
 primitives/src/js/behaviours/fixture.js	0	0	553	0	0	0	0
-primitives/src/js/bridge.js	0	0	22234	0	0	0	0	# raised: row 454 the publish option and the closed bridge rows L27, S16 and S14 first need (js_file_bytes 19956->22234)
+primitives/src/js/bridge.js	0	0	22558	0	0	0	0	# raised: row 454 the publish option and the closed bridge rows L27, S16 and S14 first need (js_file_bytes 19956->22234); row 451 three closed bridge rows for the collection order read and the activity registry (js_file_bytes 22234->22558)
 primitives/src/js/focus-trap.js	0	0	1505	0	0	0	0
 primitives/src/js_listener.rs	1	7	0	0	0	0	0
 primitives/src/label.rs	0	8	0	1	0	0	0
