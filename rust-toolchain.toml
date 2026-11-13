@@ -1,0 +1,7 @@
+# The toolchain of the committed decision kernel (`primitives/src/kernel/decision-kernel.wasm`, row 509): std's panic and
+# allocator paths are in the module, so its bytes depend on the compiler. `scripts/check-decision-kernel.sh` rebuilds the
+# module and requires identical bytes on this toolchain and reports the rebuild half as skipped on any other.
+[toolchain]
+channel = "1.97.0"
+targets = ["wasm32-unknown-unknown"]
+components = ["clippy", "rustfmt"]

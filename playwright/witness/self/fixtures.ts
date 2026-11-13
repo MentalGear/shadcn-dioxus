@@ -8,6 +8,9 @@ import { join } from "node:path";
 const JS = join(__dirname, "..", "..", "..", "primitives", "src", "js");
 const BRIDGE = readFileSync(join(JS, "bridge.js"), "utf8");
 const FIXTURE = readFileSync(join(JS, "behaviours", "fixture.js"), "utf8");
+const KERNEL_B64 = readFileSync(join(__dirname, "..", "..", "..", "primitives", "src", "kernel", "decision-kernel.b64"), "utf8").trim();
+// the decision kernel, loaded as the transport loads it: base64, compiled synchronously; without it the fixture stands down and decides nothing
+const LOAD_KERNEL = `window.__dxBridge.kernel.load(${JSON.stringify(KERNEL_B64)});`;
 
 /** Installs the fixture behaviour on `#<target>` the way Rust does, with a channel stub that notes every fact. */
 const install = (site: string, target: string, event: string, cancel: boolean, capture = cancel): string => `
@@ -55,6 +58,6 @@ export const PAGES: Record<string, Page> = {
 export function fixtureHtml(name: string): string {
   const page = PAGES[name];
   if (page === undefined) throw new Error(`witness fixture: no page "${name}" (${Object.keys(PAGES).join(", ")})`);
-  const scripts = [BRIDGE, FIXTURE, page.script].map((js) => `<script>${js}</script>`).join("");
+  const scripts = [BRIDGE, FIXTURE, LOAD_KERNEL, page.script].map((js) => `<script>${js}</script>`).join("");
   return `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width"><body style="margin:0">${page.markup}${scripts}`;
 }

@@ -33,12 +33,14 @@
 // pointermove, wheel) is `listen` / `observe` / `sample`: never a vdom handler, because on desktop every
 // vdom event is a blocking synchronous request and a frame-rate stream would queue behind itself.
 //
-// BEHAVIOURS. A behaviour is a PURE `decide(behaviour, event, state)` plus this file's thin adapter. Rust
+// BEHAVIOURS. A behaviour's decision is a pure Rust `decide` in the `decision-kernel` crate, called synchronously
+// through the kernel (`lib/kernel.ts`) plus this file's thin adapter. Rust
 // declares target, event, phase and passivity (`DxDeclared`); the module declares only the closed event
-// fields and attribute reads it needs. The adapter owns the listener: the hub below registers ONE DOM
+// fields and attribute reads it needs (generated from the Rust input types). The adapter owns the listener: the hub below registers ONE DOM
 // listener per (target, type, capture, passive) with a reference count, so a non-passive listener exists
 // only while some behaviour needs it. A decision's `prevent` / `stop` are applied only when Rust declared
-// the behaviour non-passive; `attrs` are limited to `data-*` / `aria-*`. Every install carries an epoch
+// the behaviour non-passive; `attrs` are limited to `data-*` / `aria-*`. A kind that cannot decide answers no
+// decision and reports `{kernel: "stand-down", kind, reason}` to Rust once per install. Every install carries an epoch
 // (a stale install is dropped, an equal one renews) and may carry a lease (the listener removes itself
 // when Rust stops renewing: the fail-open path, WCAG 2.1.2). An op that carries an epoch is dropped the
 // same way, and its reply echoes it.
@@ -60,6 +62,9 @@
 
 /// <reference path="./types/dioxus.d.ts" />
 /// <reference path="./types/bridge.d.ts" />
+
+import { KERNEL_HASH, KERNEL_KINDS } from "./behaviours/behaviours.gen";
+import { createKernel } from "./lib/kernel";
 
 type Recv = "w" | "d" | "e" | "we" | "wd" | "de" | "wde";
 type Fields = Record<string, unknown>;
@@ -769,6 +774,9 @@ const warnOnce = (key: string, message: string) => {
   console.warn("dx bridge:", message);
 };
 
+/** The wasm module holding each behaviour's Rust `decide`, loaded by the transport's first eval. */
+const kernel = createKernel({ own, warnOnce, rows: KERNEL_KINDS, hash: KERNEL_HASH });
+
 /** What a decision may set: `data-*` and `aria-*` only. */
 const ATTR_OK = /^(data|aria)-[a-z0-9-]+$/;
 
@@ -833,6 +841,8 @@ function installBehaviour(sc: Scope, spec: Omit<BehaviourSpec, "cmd">): () => vo
   // per-install state a behaviour carries between events (a gesture's origin, a counter): it lives and
   // dies with the install, so a re-install, a lease expiry and an element disconnect all start clean
   let memory: Record<string, unknown> = {};
+  // a stand-down is reported to Rust once per install (it tears the install down or resyncs it)
+  let reported = false;
   const handler = (event: any) => {
     const fields = pickAll(event, impl.fields);
     const state: Record<string, string | null> = {};
@@ -842,6 +852,11 @@ function installBehaviour(sc: Scope, spec: Omit<BehaviourSpec, "cmd">): () => vo
       decision = impl.decide(b, fields, state, memory) ?? {};
     } catch (error) {
       // a behaviour that throws does nothing: the event goes on as if it were not installed
+      if ((error as DxKernelStandDown)?.kernel === "stand-down") {
+        if (!reported) sc.send(error);
+        reported = true;
+        return;
+      }
       warnOnce("throw:" + b.kind, b.kind + " threw: " + String(error));
       return;
     }
@@ -1232,6 +1247,7 @@ if (!W.__dxBridge) {
     transaction,
     behaviours,
     register,
+    kernel,
   };
   Object.defineProperty(W, "__dxApplying", { get: () => applying, enumerable: false, configurable: false });
   Object.defineProperty(W, "__dxBridge", { value: Object.freeze(bridge), writable: false, configurable: false, enumerable: true });

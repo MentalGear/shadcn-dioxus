@@ -2,13 +2,14 @@
 # Verified by scripts/check-js-bundle.sh (run-gates.sh): the sha256 of every src/ts/*.ts and src/js/*.js,
 # and, when the installed bun has the version below, a byte-identical rebuild.
 bun 1.4.4
-ts aa777ebc1057384d9e062531c4187667809b571479d975fe5f42d097e30592fe  behaviours/behaviours.gen.ts
-ts f1ca028046ec61d38cacb364aea64c06db12b06b76da787afa58c24738430183  behaviours/fixture.ts
-ts 8624a7e1ac9df69294965a3c561131886b1763f57dfb3bd254f6ed73784e66c2  bridge.ts
+ts a70ed094aee5d322a29e8eb65d43c74f53c58b2db1fca315250d9c82e732c467  behaviours/behaviours.gen.ts
+ts c35891d5bb83148aa2865f0c8bf34ec9c645825859fa4a4b58281b1380f7c45b  behaviours/fixture.ts
+ts f4bd736cf02a8b38f0c04e97e1f525165c5979dac33dbf13aa89343623bee362  bridge.ts
 ts 3e97e2ea12e7fb372db078a6d28910847c524f1a55f12668279bdf6c5ac4a8a4  focus-trap.ts
-ts 5c7fbc6b8a200efebd4ca1a0dc8b2a2b3f5b3f849b58ee1ce2169313f8731a2a  lib/register.ts
-ts 88e9d911fdb6ac64da748e96e1ac91acee0911f2b6eb36335d5b10c7a98b675b  types/bridge.d.ts
+ts 35bb7ec399c1c980d25895f96ea0ceadfbbe4807a54d122bc23247f29c28f846  lib/kernel.ts
+ts 7420b32307a50d68a2d77e4f0c1ab360034c685ce6ef2f2b45010f4a86efb329  lib/register.ts
+ts 95a14d08d84a526413986f859ab5fcc79116ccae39f78f39c5354e098d0d7819  types/bridge.d.ts
 ts dc5f229cb0122ca45859093d4e4b6f7db63cd3a0a34d11844b14218e36025aab  types/dioxus.d.ts
-js 672e69c55be4e5a72d7b51d7f9d5e163dc521ccab23fa41a1e5e68b51ebf6f9f  behaviours/fixture.js
-js 1be1672dd12e5dfd6c11b1c2462c29bb91de5bb463a3ea5be5e14b1de8f224f9  bridge.js
+js 703a26cfec15b12cb06f408dabb7f0cc59f0dd58ab7cdb9507de4aec16fd2f51  behaviours/fixture.js
+js 56e1b66badff84a425f3f9a0d44ee3e453c62c52c429f30d372b3497ca4d4c75  bridge.js
 js 02fdaec426c92ce7353753d9001da53c625d3901373773102375533dc0b2239b  focus-trap.js

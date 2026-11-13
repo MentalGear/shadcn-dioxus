@@ -1,0 +1,4 @@
+# check-decision-kernel baseline (scripts/lib/ratchet.py): shrink-only per-file counts, regenerate with --update-baseline.
+#! columns: gzip_bytes
+# path	gzip_bytes
+primitives/src/kernel/decision-kernel.wasm	10815

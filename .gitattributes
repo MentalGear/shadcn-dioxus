@@ -3,8 +3,11 @@
 # scripts/setup-merge-drivers.sh (the SessionStart hook runs it; worktrees share the repo config):
 #   dev-docs/backlog.md, dev-docs/backlog-done.md   the indexes scripts/backlog-index.sh generates: a 3-way merge by row id
 #   playwright/durations.json                       the per-spec seconds table: a 3-way merge by entry, totals recomputed
+#   primitives/src/kernel/*                         the decision kernel's committed wasm, its base64 and manifest (row 509): the
+#                                                   merged sources are rebuilt (scripts/merge-driver-kernel.py), never merged as bytes
 # A clone without the registration falls back to git's text merge (and the old conflicts); scripts/check-merge-drivers.sh
 # keeps this file, the driver scripts and the registration command in step.
 dev-docs/backlog.md merge=backlog-index
 dev-docs/backlog-done.md merge=backlog-index
 playwright/durations.json merge=durations
+primitives/src/kernel/* merge=kernel-artefact

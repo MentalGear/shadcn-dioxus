@@ -154,6 +154,14 @@ test.describe("known-red and known-green counterfactuals on the fixture pages", 
     expect(otherEffect.hits).toBe(0);
   });
 
+  test("the real arm sees real decisions: the fixture has not stood down, so a red is not silence", async ({ browser }) => {
+    const paint = await observe(browser, binding("fixture.paint"), null);
+    expect(paint.trajectory.elements[""].some((state) => state.includes("data-dx-fixture=on"))).toBe(true);
+    const cancel = await observe(browser, binding("fixture.cancel"), null);
+    expect(cancel.snapshot.activation).toEqual([["0", false]]);
+    expect(cancel.trajectory.elements["0"].some((state) => state.includes("data-dx-fixture=on"))).toBe(true);
+  });
+
   test("the control arm is real against real: two independent runs agree and nothing is intercepted", async ({ browser }) => {
     for (const site of ["fixture.paint", "fixture.cancel", "fixture.order", "fixture.focus"]) {
       const b = binding(site);
