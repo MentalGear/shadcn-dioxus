@@ -127,7 +127,7 @@ export function createKernel(deps: KernelDeps): DxKernel {
       raw = unescape(encodeURIComponent(text));
     } catch {
       // a lone surrogate is U+FFFD on the wire, the way TextEncoder writes it
-      raw = unescape(encodeURIComponent(text.toWellFormed()));
+      raw = unescape(encodeURIComponent((text as string & { toWellFormed(): string }).toWellFormed()));
     }
     need(4 + raw.length);
     putLen(raw.length);
