@@ -161,20 +161,9 @@ use dioxus::prelude::*;
 
 use crate::js_listener::JsListeners;
 
-thread_local! {
-    /// Whether [`ensure_scrollbar_gutter_baseline`] has already inserted its
-    /// `<style>` once in this WASM instance. `use_scroll_lock`
-    /// is called afresh every time a modal/menu opens (this crate's
-    /// `*Content` components mount lazily -- see the component doc below),
-    /// so without this guard the baseline install would re-run, harmlessly
-    /// but wastefully, on every single open for the rest of the session.
-    /// A hot-reload that resets Rust statics but leaves the already-inserted
-    /// tag in the live DOM inserts an identical second one, which is harmless.
-    static SCROLLBAR_GUTTER_BASELINE_INSTALLED: Cell<bool> = const { Cell::new(false) };
-
-    /// The one page-wide lock (backlog row 375). See [`ScrollLockInner`].
-    static PAGE_SCROLL_LOCK: ScrollLockState = ScrollLockState::default();
-}
+/// Marks that this window has its scrollbar-gutter baseline. It is per window, not per thread: a
+/// second desktop window is a second document on the same thread (`crate::window_once`).
+struct GutterBaseline;
 
 /// Installs the permanent `scrollbar-gutter: stable` baseline described in
 /// the module docs, at most once per WASM instance. Deliberately not gated
@@ -196,7 +185,7 @@ thread_local! {
 /// without going through one of those root components; both call sites are
 /// idempotent and race-free (WASM is single-threaded).
 pub(crate) fn ensure_scrollbar_gutter_baseline() {
-    if SCROLLBAR_GUTTER_BASELINE_INSTALLED.with(|installed| installed.replace(true)) {
+    if !crate::window_once::first_in_window::<GutterBaseline>() {
         return;
     }
     crate::top_layer::insert_head_style(
@@ -291,9 +280,18 @@ struct ScrollLockInner {
 #[derive(Clone, Default)]
 struct ScrollLockState(Rc<RefCell<ScrollLockInner>>);
 
-/// The page-wide [`ScrollLockState`].
+/// The page-wide [`ScrollLockState`] of this window.
+///
+/// Kept in the VirtualDom's root context: the page is one window's document, and a second desktop
+/// window has its own scroll position and its own lock.
 fn use_scroll_lock_state() -> ScrollLockState {
-    use_hook(|| PAGE_SCROLL_LOCK.with(Clone::clone))
+    use_hook(|| {
+        try_consume_context::<ScrollLockState>().unwrap_or_else(|| {
+            let state = ScrollLockState::default();
+            crate::dioxus_core::provide_root_context(state.clone());
+            state
+        })
+    })
 }
 
 /// Captures the page's scroll position *before* a modal surface has any
@@ -576,4 +574,26 @@ async fn finish_release(state: &ScrollLockState, epoch: u64) {
 pub(crate) fn ScrollLockGuard(active: Memo<bool>) -> Element {
     use_scroll_lock(active);
     rsx! {}
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_support::with_runtime;
+
+    /// A second window is a second VirtualDom on the same thread with its own document and its own
+    /// scroll position: a lock held in the first must not count as held in the second.
+    #[test]
+    fn a_second_runtime_has_its_own_scroll_lock() {
+        with_runtime(|| {
+            use_scroll_lock_state().0.borrow_mut().count = 1;
+        });
+        with_runtime(|| {
+            assert_eq!(
+                use_scroll_lock_state().0.borrow().count,
+                0,
+                "the second window has locked nothing"
+            );
+        });
+    }
 }

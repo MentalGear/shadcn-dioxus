@@ -2,21 +2,13 @@
 
 use super::*;
 
+/// Marks that this window has its anchor-positioning stylesheet (per window, `crate::window_once`).
 #[cfg(not(feature = "native"))]
-thread_local! {
-    /// Whether [`ensure_anchor_positioning_styles`]'s `document::eval` has
-    /// already been scheduled once in this WASM instance -- same idempotency
-    /// guard shape as `scroll_lock.rs`'s
-    /// `SCROLLBAR_GUTTER_BASELINE_INSTALLED`.
-    static ANCHOR_POSITIONING_STYLES_INSTALLED: Cell<bool> = const { Cell::new(false) };
+struct AnchorPositioningStyles;
 
-    /// Whether [`ensure_top_layer_ink_styles`]'s `document::eval` has
-    /// already been scheduled once in this WASM instance -- same
-    /// idempotency guard shape as `ANCHOR_POSITIONING_STYLES_INSTALLED`
-    /// above (itself modeled on `scroll_lock.rs`'s
-    /// `SCROLLBAR_GUTTER_BASELINE_INSTALLED`).
-    static TOP_LAYER_INK_STYLES_INSTALLED: Cell<bool> = const { Cell::new(false) };
-}
+/// Marks that this window has its top-layer ink baseline (per window, `crate::window_once`).
+#[cfg(not(feature = "native"))]
+struct TopLayerInkStyles;
 
 /// Appends `<style id="{id}">{css}</style>` to the document head through the platform's
 /// [`Document`](dioxus::document::Document): `Document::create_style`, the call `document::Style` ends
@@ -48,7 +40,7 @@ pub(crate) fn insert_head_style(id: &'static str, css: &'static str) {
 /// Installs the shared, engine-level anchor-positioning stylesheet described
 /// below, at most once per WASM instance -- mirrors
 /// `scroll_lock::ensure_scrollbar_gutter_baseline`'s idempotent
-/// style-tag-injection shape exactly (a Rust-side `Cell` guard, plus a
+/// style-tag-injection shape exactly (a per-window Rust-side guard, plus a
 /// JS-side `getElementById` check as a second guard that survives a
 /// hot-reload resetting Rust statics but leaving the already-injected tag in
 /// the live DOM).
@@ -124,7 +116,7 @@ pub(crate) fn insert_head_style(id: &'static str, css: &'static str) {
 /// `border`/`overflow` reset it individually needs.
 #[cfg(not(feature = "native"))]
 pub(crate) fn ensure_anchor_positioning_styles() {
-    if ANCHOR_POSITIONING_STYLES_INSTALLED.with(|installed| installed.replace(true)) {
+    if !crate::window_once::first_in_window::<AnchorPositioningStyles>() {
         return;
     }
     #[expect(
@@ -203,7 +195,7 @@ const ANCHOR_POSITIONING_CSS_JS_LITERAL: &str = concat!("`", include_str!("ancho
 
 /// Installs the shared top-layer ink-color baseline described below, at
 /// most once per WASM instance -- same idempotent style-tag-injection shape
-/// as [`ensure_anchor_positioning_styles`] (a Rust-side `Cell` guard, plus a
+/// as [`ensure_anchor_positioning_styles`] (a per-window Rust-side guard, plus a
 /// JS-side `getElementById` check as a second guard that survives a
 /// hot-reload resetting Rust statics but leaving the already-injected tag in
 /// the live DOM).
@@ -309,7 +301,7 @@ const ANCHOR_POSITIONING_CSS_JS_LITERAL: &str = concat!("`", include_str!("ancho
 /// from Rust.
 #[cfg(not(feature = "native"))]
 pub(crate) fn ensure_top_layer_ink_styles() {
-    if TOP_LAYER_INK_STYLES_INSTALLED.with(|installed| installed.replace(true)) {
+    if !crate::window_once::first_in_window::<TopLayerInkStyles>() {
         return;
     }
     // The modality writer (`modality.rs`) rides along: this runs when the first overlay MOUNTS, long

@@ -34,9 +34,6 @@ use dioxus::document;
 // browser arm nothing.
 use dioxus::prelude::*;
 
-#[cfg(not(feature = "native"))]
-use std::cell::Cell;
-
 mod anchor_fallback;
 mod attributes;
 mod popover_sync;

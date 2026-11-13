@@ -135,6 +135,7 @@ mod typeahead;
 pub(crate) mod r#virtual;
 pub mod virtual_grid;
 pub mod virtual_list;
+mod window_once;
 
 /// The vendored `focus-trap` JS bundle (`primitives/src/ts/focus-trap.ts`,
 /// generated and committed by `scripts/build-js-bundle.sh`, checked by
