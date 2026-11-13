@@ -185,6 +185,9 @@ function observerClass(name: string) {
     observe(el: unknown, options?: unknown) {
       this.observed.push([el, options]);
     }
+    unobserve(el: unknown) {
+      this.observed = this.observed.filter((row) => (row as unknown[])[0] !== el);
+    }
     disconnect() {
       this.disconnected = true;
     }
@@ -257,10 +260,16 @@ export function makeWindow() {
 }
 
 const BRIDGE_JS = readFileSync(join(import.meta.dir, "../src/js/bridge.js"), "utf8");
+/** The shipped decision kernel (`scripts/build-kernel.sh`), the module the transport loads into a page. */
+export const KERNEL_WASM = readFileSync(join(import.meta.dir, "../src/kernel/decision-kernel.wasm"));
 
-/** Runs the shipped bridge against `win` the way `bridge::ensure_installed` does in a page. */
-export function loadBridge(win: any = makeWindow()) {
+/**
+ * Runs the shipped bridge against `win` the way `bridge::ensure_installed` does in a page, and loads the shipped
+ * decision kernel (ready on return: the module compiles synchronously). `kernel: false` leaves it absent.
+ */
+export function loadBridge(win: any = makeWindow(), { kernel = true } = {}) {
   new Function("window", BRIDGE_JS)(win);
+  if (kernel) void win.__dxBridge.kernel.load(KERNEL_WASM);
   return { win, bridge: win.__dxBridge };
 }
 
