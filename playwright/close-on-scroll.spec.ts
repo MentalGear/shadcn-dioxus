@@ -6,9 +6,14 @@
  *
  *   - ANY scroll closes it: Tooltip.
  *   - Scrolling never closes it, not even with the anchor scrolled out of view: Menubar, Popover and the
- *     DatePicker / ColorPicker popovers built on it, Combobox, HoverCard and NavigationMenu (opened by
- *     focus and click: a hover-opened panel closes when the page scrolls the pointer off its trigger).
+ *     DatePicker / ColorPicker popovers built on it, Combobox, HoverCard and NavigationMenu.
  *     A Combobox list holds a typed query and a phone keyboard scrolls and resizes the page while it is used.
+ *
+ * A host with a pointer-leave close (HoverCard, NavigationMenu) closes whatever opened it once the pointer
+ * enters and leaves it (`hover-intent.spec.ts`), and a click leaves the pointer resting on the trigger, so a scroll
+ * that moves the trigger from under it is a leave. Those hosts are opened with the keyboard (focus, and the key for
+ * NavigationMenu) and the page's pointer never moves, so no leave can occur and the spec measures the scroll policy
+ * alone. The click-opened hosts have no hover handlers.
  *
  * Per surface: open, scroll a little, scroll the anchor out, and the keyboard-open simulation (visual-viewport
  * resize / focus-caused scroll).
@@ -63,7 +68,7 @@ const fixtureSurface = (
   name: string,
   triggerId: string,
   contentId: string,
-  how: "hover" | "click" | "focus",
+  how: "hover" | "click" | "focus" | "key",
 ): Surface => ({
   name,
   anchor: (page) => page.locator(`#${triggerId}`),
@@ -74,6 +79,10 @@ const fixtureSurface = (
     await centre(trigger);
     if (how === "hover") await trigger.hover();
     else if (how === "focus") await trigger.focus();
+    else if (how === "key") {
+      await trigger.focus();
+      await page.keyboard.press("ArrowDown");
+    }
     else await trigger.click();
     const content = page.locator(`#${contentId}`);
     await expect(content).toBeVisible();
@@ -111,7 +120,7 @@ const STAYS: Surface[] = [
   fixtureSurface("Popover (non-modal)", "clip-popover-trigger", "clip-popover-content", "click"),
   fixtureSurface("Combobox", "clip-combobox-trigger", "clip-combobox-content", "click"),
   fixtureSurface("HoverCard", "clip-hovercard-trigger", "clip-hovercard-content", "focus"),
-  fixtureSurface("NavigationMenu", "clip-navigation-menu-trigger", "clip-navigation-menu-content", "click"),
+  fixtureSurface("NavigationMenu", "clip-navigation-menu-trigger", "clip-navigation-menu-content", "key"),
   demoSurface(
     "ColorPicker popover",
     `${BASE_URL}/component/color_picker/`,
