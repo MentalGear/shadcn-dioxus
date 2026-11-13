@@ -126,6 +126,10 @@ ports), its working form is [`js-interop.md`](./js-interop.md), and every item h
   branches; the 30 unmerged ones are kept).
 - CI back on (rows 4, 33): every workflow except `mutants.yml` is deleted, so reactivation means a new workflow that
   runs `scripts/run-gates.sh`.
+- Row 513: approve or reject reusing release-suite results across a change that touches only Playwright files (the
+  results are keyed by the site's build inputs and each spec's own imports).
+- Row 509 lands only with one `allow` row in `scripts/check-js-volume.allow.tsv` for the decision kernel's five fixed
+  wasm exports (`decision-kernel/src/ffi.rs`); the table is the owner's.
 - Row 508's verdict is `KERNEL`, so row 509 opens without a further decision. Loading the
   kernel inside the desktop webview stays unproven until a desktop build exists (row 23).
 

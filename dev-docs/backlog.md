@@ -40,7 +40,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (74)
+## Open rows (75)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -118,5 +118,6 @@ proposing one is closed as out of scope (row 337 is the first).
 | [510](backlog/510-spec-selector-component-edges.md) | The spec selector has no component-to-component edge: a Button change selects none of its consumers' specs | BUILT on lane/select-edges-510, awaiting merge. The selector reads the component use graph from the… | S (one helper module of about 170… | tests |
 | [511](backlog/511-primitives-web-feature-contract.md) | The browser-engine arm is the primitives' default; Blitz is the `native` opt-in, held to dioxus's own renderer by a compile-time assert | LANDED on lane/web-contract-511, 2026-11-13, awaiting the merge into the batch. The construction… | M (inferred) | primitives |
 | [512](backlog/512-specs-locate-variants-by-slug.md) | A spec that located a demo variant by its displayed title broke on a retitle; variants are addressed by slug, enforced by a gate | BUILT on lane/variant-locators-512, awaiting merge. A variant is found by its slug (the demo frame… | S: one spec moved, one gate rule with… | tests |
+| [513](backlog/513-release-suite-reuse-across-spec-only-changes.md) | A spec-only fix after a red release suite re-runs the whole suite: reuse the results the changed files cannot affect | BACKLOG. It serves the owner's standing goal "evaluate how the testing could be made quicker… | M (inferred): the key derivation, the… | tests |
 
 <!-- END GENERATED -->
