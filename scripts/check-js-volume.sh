@@ -69,7 +69,12 @@
 # ask the owner for a grant row. `--allow-raise "row N reason"` only writes the note (and the `#! total-raised:
 # row N total=<n>` line) and refuses unless the grant at the base already covers it. Own and inherited raises print
 # separately under `RATCHET RAISES` at each run. There is no inline marker. An exception is a baseline row with a row
-# number.
+# number. Two granted rows that raise one file are a CHAIN in its note (`# raised: row 454 <why> (js_file_bytes
+# 19956->22234); row 451 <why> (js_file_bytes 22234->22558)`; the total has one `#! total-raised:` line per row,
+# each ending `(total A->B)`): the steps run from the base's number to the tree's without a gap and each is charged
+# to its own row's grant only. Run `--update-baseline --allow-raise "row N reason"` once per row, in merge order: a
+# second run appends its step to a note made in this diff and refuses a step its row does not grant (the file stays
+# as it was).
 #
 # THE LEGACY FREEZE (`scripts/check-js-volume.freeze.tsv`, backlog row 445): the legacy JS stays in the tree until its
 # port row deletes it, and until then nothing legacy changes except by deletion or by a granted bug fix. Legacy is

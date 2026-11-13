@@ -27,10 +27,18 @@ checked in four steps:
      not carry (a note already merged cannot be spent twice) AND row N must be a grant at the base; the rises that
      cite one row add up per column and must stay within its `js-grant`. Own raises (this diff's) and inherited ones
      (notes the base already carries) are listed separately under `RATCHET RAISES`. A row carries across a rename
-     (`git diff -M`), notes included;
+     (`git diff -M`), notes included. When two granted rows raise the same file, the note is a CHAIN of steps, each
+     with its own row and its own from -> to, joined by `; `:
+         # raised: row 454 <reason> (js_file_bytes 19956->22234); row 451 <reason> (js_file_bytes 22234->22558)
+     The chain must run without a gap from the base's number to the tree's, per column, and each step is charged to
+     ITS row only (that row's grant must cover that step, summed over every file it cites): one row's grant never
+     pays for another row's step, and two grants never add up to cover one oversized step. A note of one step needs
+     no from -> to; the file's whole raise is charged to its row;
   3. the optional total (sum of `total(row)` over all rows) against the base's: a rise needs a new
      `#! total-raised: row N total=<the tree's total> <reason>` line; the number is compared with the tree's total, and
-     the rise must stay within the sum of the row's `js-grant` numbers;
+     the rise must stay within the sum of the row's `js-grant` numbers. Several granted rows chain the same way, one
+     line per row, each ending `(total A->B)`: the first A is the base's total, each A is the previous B, the last B
+     is the tree's total, and each step stays within the grant sum of its own row;
   4. a column the base's `#! columns:` header lacks (a baseline without the header has the gate's columns) is
      compared with the tree only and printed as "introduced".
 With no base available (no `origin/main` or `origin/queue/*`, a shallow clone, the file is not in the base yet because
@@ -40,8 +48,10 @@ in the tree fails (deleting it is not a pass).
 
 The base is the nearest of `origin/main` and `origin/queue/*`: the merge base with HEAD that has the fewest commits
 between it and HEAD. `--update-baseline` is shrink-only; `--allow-raise "row N reason"` is only a writer of the note
-and refuses unless the grant at the base already covers the raise, so it cannot pass on its own. A note is dropped
-again once its row is back at or under the base.
+and refuses unless the grant at the base already covers the raise, so it cannot pass on its own. When a file's note
+(or the total line) is already a step made in this diff, a second `--allow-raise` APPENDS its step from the number
+the chain reaches to the tree's number; a note the base already carries is replaced, as is one whose row is back at or
+under the base (dropped). A refused write leaves the file untouched. A chain is trimmed when a count falls again.
 
 Environment: `RATCHET_BASE_REF=<commit>` pins the base (the self-test, or a CI that knows it); `RATCHET_NO_BASE=1`
 skips the base compare; `RATCHET_REQUIRE_BASE=1` makes an unavailable base red. `--self-test` proves the rules.
@@ -58,16 +68,62 @@ from typing import Callable, Dict, List, Optional, Sequence, Tuple
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from rows import row_at, parse_columns, row_problems, GRANT_COLUMNS  # noqa: E402
 
-__all__ = ["Ratchet", "Report", "RAISE_NOTE", "TOTAL_NOTE"]
+__all__ = ["Ratchet", "Report", "Step", "note_steps", "RAISE_NOTE", "TOTAL_NOTE"]
 
 RAISE_NOTE = re.compile(r"^#\s*raised:\s*row\s+(\d+)\b.*\S")
 TOTAL_NOTE = re.compile(r"^#!\s*total-raised:\s*row\s+(\d+)\s+total=(\d+)\b.*\S")
+_STEP_SPLIT = re.compile(r";\s*(?=row\s+\d+\b)")
+_STEP_HEAD = re.compile(r"row\s+(\d+)\b\s*(.*)$", re.S)
+_DELTA_TAIL = re.compile(r"\(\s*((?:[A-Za-z_]\w*\s+\d+->\d+\s*,?\s*)+)\)\s*$")
+_DELTA_PART = re.compile(r"([A-Za-z_]\w*)\s+(\d+)->(\d+)")
+_TOTAL_TAIL = re.compile(r"\(\s*total\s+(\d+)->(\d+)\s*\)\s*$")
 _DIRECTIVE = "#! total-raised:"
 _COLUMNS = "#! columns:"
 ASK = ("A raise is the owner's decision: ask the owner for a grant row (an open backlog row at the merge base whose "
        "front matter says `js-grant: <column>=<n>`, n at least the raise); a grant written in this diff does not count")
 
+CHAIN_HELP = ("Each step of a chain is one row's own raise: run `--update-baseline --allow-raise \"row N reason\"` once "
+              "per row, in merge order, on a tree where the earlier rows' raises are already written")
+
 Counts = Dict[str, int]
+
+
+class Step:
+    """One step of a raise note: the row that grants it, its reason and, per column, `(from, to)` (empty when the
+    note names none). `raw` is the step's own text, kept so that an untouched note is written back unchanged."""
+
+    def __init__(self, row: int, reason: str, deltas: Dict[str, Tuple[int, int]], raw: Optional[str] = None):
+        self.row, self.reason, self.deltas, self.raw = row, reason, deltas, raw
+
+    @property
+    def text(self) -> str:
+        if self.raw is not None:
+            return self.raw
+        d = ", ".join(f"{c} {a}->{b}" for c, (a, b) in self.deltas.items())
+        return f"row {self.row} {self.reason}" + (f" ({d})" if d else "")
+
+    def delta_text(self) -> str:
+        return ", ".join(f"{c} {a}->{b}" for c, (a, b) in self.deltas.items())
+
+
+def note_steps(note: str) -> Optional[List[Step]]:
+    """The steps of a `# raised:` note (`row N <reason> (col A->B)`, further steps after `; `), None when the note
+    is not one."""
+    if not RAISE_NOTE.match(note):
+        return None
+    body = re.sub(r"^#\s*raised:\s*", "", note).strip()
+    steps: List[Step] = []
+    for seg in _STEP_SPLIT.split(body):
+        m = _STEP_HEAD.match(seg.strip())
+        if not m:
+            return None
+        rest, deltas = m.group(2).strip(), {}
+        tail = _DELTA_TAIL.search(rest)
+        if tail:
+            deltas = {c: (int(a), int(b)) for c, a, b in _DELTA_PART.findall(tail.group(1))}
+            rest = rest[:tail.start()].strip()
+        steps.append(Step(int(m.group(1)), rest, deltas, seg.strip()))
+    return steps
 
 
 class Report:
@@ -236,6 +292,72 @@ class Ratchet:
             return f"row {n} grants {sum(row.grant.values())} in all at the base, the total raise is {total_need}"
         return None
 
+    def _chain_problem(self, steps: List[Step], b: Counts, t: Counts) -> Optional[str]:
+        """Why the steps of a note of several steps do not run, per column, from the base's number `b` to the tree's
+        `t` without a gap, None when they do."""
+        for s in steps:
+            if not s.deltas:
+                return (f"step `row {s.row}` names no `(column A->B)`: a note of several steps gives each step its "
+                        f"own from -> to")
+        listed = {c for s in steps for c in s.deltas}
+        for c in sorted(listed):
+            if c not in self.columns:
+                return f"names `{c}`, which is not a column ({', '.join(self.columns)})"
+            cur = b[c]
+            for s in steps:
+                if c not in s.deltas:
+                    continue
+                a, to = s.deltas[c]
+                if a != cur:
+                    return (f"has a gap in {c}: step `row {s.row}` starts at {a} but the chain before it is at {cur} "
+                            f"(the base's number is the first start)")
+                cur = to
+            if cur != t[c]:
+                return f"ends at {c}={cur} but the tree has {c}={t[c]}"
+        for c in self.columns:
+            if t[c] > b[c] and c not in listed:
+                return f"has no step for {c} ({b[c]}->{t[c]})"
+        return None
+
+    @staticmethod
+    def _step_need(steps: List[Step], rose_total: Optional[Counts] = None) -> Dict[int, Counts]:
+        """Per row, per column, what its steps raise (a step that falls costs nothing). A note of one step without
+        its own from -> to is charged with `rose_total`, the file's whole raise."""
+        need: Dict[int, Counts] = {}
+        if len(steps) == 1:
+            for c, d in (rose_total or {}).items():
+                need.setdefault(steps[0].row, {})[c] = need.get(steps[0].row, {}).get(c, 0) + d
+            return need
+        for s in steps:
+            for c, (a, b) in s.deltas.items():
+                if b > a:
+                    need.setdefault(s.row, {})[c] = need.get(s.row, {}).get(c, 0) + b - a
+        return need
+
+    def _total_chain(self, new: List[str], tb: int, tt: int) -> Tuple[Dict[int, int], Optional[str]]:
+        """`(per row, what its steps raise the total, problem)` of the new `#! total-raised:` lines. One line is
+        charged the whole rise (its `(total A->B)` is optional); several chain from the base's total to the tree's."""
+        rows = [int(TOTAL_NOTE.match(d).group(1)) for d in new]
+        if len(new) == 1:
+            return {rows[0]: tt - tb}, None
+        need: Dict[int, int] = {}
+        cur = tb
+        for d, n in zip(new, rows):
+            tail = _TOTAL_TAIL.search(d)
+            if not tail:
+                return need, f"the total step `row {n}` names no `(total A->B)`: several steps each give their own"
+            a, to = int(tail.group(1)), int(tail.group(2))
+            if int(TOTAL_NOTE.match(d).group(2)) != to:
+                return need, f"the total step `row {n}` says total={TOTAL_NOTE.match(d).group(2)} but ends at {to}"
+            if a != cur:
+                return need, f"the total chain has a gap: step `row {n}` starts at {a} but the chain is at {cur}"
+            if to > a:
+                need[n] = need.get(n, 0) + to - a
+            cur = to
+        if cur != tt:
+            return need, f"the total chain ends at {cur} but the tree's total is {tt}"
+        return need, None
+
     # ------------------------------------------------------------------------------------------ check
     def check(self, measured: Dict[str, Counts], *, stale: bool = True) -> Report:
         rep = Report()
@@ -309,11 +431,22 @@ class Ratchet:
                         rep.inherited.append(f"{path}{tag}: {note}")
                     continue
                 if RAISE_NOTE.match(note) and note != bnotes[path]:
-                    n = int(RAISE_NOTE.match(note).group(1))
-                    for c in rose:
-                        need.setdefault(n, {}).setdefault(c, 0)
-                        need[n][c] += t[c] - b[c]
-                    lines.setdefault(n, []).append(f"{path}{tag}: {self._delta(b, t)}   {note}")
+                    steps = note_steps(note) or []
+                    if len(steps) > 1:
+                        bad = self._chain_problem(steps, b, t)
+                        if bad:
+                            rep.errors.append(f"{gate}: {path}: the `# raised:` chain {bad}. {CHAIN_HELP}. "
+                                              f"{self.advice}".rstrip())
+                            continue
+                    for n, cols in self._step_need(steps, {c: t[c] - b[c] for c in rose}).items():
+                        for c, d in cols.items():
+                            need.setdefault(n, {}).setdefault(c, 0)
+                            need[n][c] += d
+                    if len(steps) > 1:
+                        for s in steps:
+                            lines.setdefault(s.row, []).append(f"{path}{tag}: {s.delta_text()}   # raised: {s.text}")
+                    else:
+                        lines.setdefault(steps[0].row, []).append(f"{path}{tag}: {self._delta(b, t)}   {note}")
                 else:
                     why = ("it has no `# raised: row N <reason>` note" if not note else
                            "its `# raised:` note is malformed" if not RAISE_NOTE.match(note) else
@@ -332,7 +465,7 @@ class Ratchet:
                 tt = self._total(T)
                 tb = self._base_total(brows, T, renames, introduced)
                 new = [d for d in directives if TOTAL_NOTE.match(d) and d not in bdirs]
-                for d in new:
+                for d in (new if len(new) == 1 else []):
                     m = TOTAL_NOTE.match(d)
                     if int(m.group(2)) != tt:
                         rep.errors.append(f"{gate}: `{d[:70]}` carries total={m.group(2)} but the tree's total is {tt}: "
@@ -344,13 +477,18 @@ class Ratchet:
                                           f"from one file to another must still lower the total. {ASK}. "
                                           f"{self.advice}".rstrip())
                     else:
-                        n = int(TOTAL_NOTE.match(new[0]).group(1))
-                        why = self._grant_problem(sha, n, {}, tt - tb)
-                        if why:
-                            rep.errors.append(f"{gate}: the total raise {tb} -> {tt} cited as row {n} is not granted: "
-                                              f"{why}. {ASK}. {self.advice}".rstrip())
-                        else:
-                            rep.raises.append(f"TOTAL: {tb} -> {tt}   {new[0]}")
+                        tneed, bad = self._total_chain(new, tb, tt)
+                        if bad:
+                            rep.errors.append(f"{gate}: {bad}. {CHAIN_HELP}. {self.advice}".rstrip())
+                        bad_rows = []
+                        for n in sorted(tneed):
+                            why = self._grant_problem(sha, n, {}, tneed[n])
+                            if why:
+                                bad_rows.append(n)
+                                rep.errors.append(f"{gate}: the total raise {tb} -> {tt} cited as row {n} is not "
+                                                  f"granted: {why}. {ASK}. {self.advice}".rstrip())
+                        if not bad and not bad_rows and new:
+                            rep.raises += [f"TOTAL: {tb} -> {tt}   {d}" for d in new]
                 else:
                     for d in directives:
                         if TOTAL_NOTE.match(d) and d in bdirs:
@@ -386,10 +524,41 @@ class Ratchet:
         return "\n".join(lines)
 
     # ------------------------------------------------------------------------------------------ update
+    @staticmethod
+    def _trim(steps: List[Step], m: Counts) -> List[Step]:
+        """The steps with every column capped at the new number `m` (a count fell again): a step that no longer
+        raises anything in a column loses it, a step with no column left goes."""
+        out: List[Step] = []
+        for s in steps:
+            d = {c: (a, min(b, m[c])) for c, (a, b) in s.deltas.items() if a < m.get(c, 0)}
+            if d == s.deltas:
+                out.append(s)
+            elif d:
+                out.append(Step(s.row, s.reason, d))
+        return out
+
+    def _trim_total(self, own: List[str], tn: int) -> List[str]:
+        out: List[str] = []
+        for d in own:
+            m, tail = TOTAL_NOTE.match(d), _TOTAL_TAIL.search(d)
+            if len(own) == 1 or not tail or not m:
+                out.append(re.sub(r"total=\d+", f"total={tn}", d, count=1))
+                continue
+            a, b = int(tail.group(1)), int(tail.group(2))
+            if a >= tn:
+                continue
+            if b > tn:
+                head = d[:tail.start()]
+                d = re.sub(r"total=\d+", f"total={tn}", head, count=1) + f"(total {a}->{tn})"
+            out.append(d)
+        return out
+
     def update(self, measured: Dict[str, Counts], raise_reason: Optional[str] = None) -> Tuple[List[str], bool]:
         """Rewrite the baseline from `measured`. Returns `(errors, wrote)`. Shrink-only: a rise is refused unless
-        `raise_reason` (`row N ...`) is given AND the grant at the base already covers it; then the reason is written
-        into the note. The writer never grants: `check` reads the grant at the base again."""
+        `raise_reason` (`row N ...`) is given AND the grant at the base already covers it; then a step with the
+        reason is written into the file's note: a new note, or appended to the chain when the note is already a step
+        made in this diff (a note the base carries is replaced). The writer never grants: `check` reads the grant at
+        the base again. A refusal writes nothing."""
         M = self._clean(measured)
         text = self._tree_text()
         old_rows, old_dirs = ({}, [])
@@ -401,39 +570,55 @@ class Ratchet:
         rm = re.match(r"row\s+(\d+)\b.*\S", raise_reason) if raise_reason is not None else None
         if raise_reason is not None and not rm:
             return [f"{self.gate}: --allow-raise needs a reason that names a backlog row: \"row 434 <why>\""], False
+        if raise_reason is not None and _STEP_SPLIT.search(raise_reason):
+            return [f"{self.gate}: --allow-raise reason must not contain `; row N` (it separates the steps of a note)"], False
         row_n = int(rm.group(1)) if rm else 0
         base_text, sha, _ = self.base()
         bcols = (self.header_columns(base_text) or self.columns) if base_text else self.columns
         B: Dict[str, Counts] = {}
+        bnote: Dict[str, str] = {}
         brows: Dict[str, Tuple[Counts, str]] = {}
+        bdirs: List[str] = []
         renames: Dict[str, str] = {}
         introduced = [c for c in self.columns if c not in bcols]
         if base_text:
             renames = self._renames(sha)
-            brows = self.parse(base_text, columns=bcols)[0]
+            brows, bdirs, _ = self.parse(base_text, columns=bcols)
             for path in set(M) | set(T):
-                counts, _ = brows.get(path, brows.get(renames.get(path, ""), ({}, "")))
+                src = path if path in brows else renames.get(path, "")
+                counts, bnote[path] = brows.get(src, ({}, ""))
                 B[path] = {c: (T[path][c] if c in T.get(path, {}) and c in introduced else counts.get(c, 0))
                            for c in self.columns}
         errors: List[str] = []
         new_rows: Dict[str, Tuple[Counts, str]] = {}
-        need: Counts = {}
+        need: Dict[int, Counts] = {}
         for path, m in M.items():
             t = T.get(path, self._zero())
+            bt = B.get(path, t) if base_text is not None else t
             note = old_rows[path][1] if path in old_rows else ""
+            own = bool(note) and RAISE_NOTE.match(note) is not None and (base_text is None or note != bnote.get(path))
             rose = [c for c in self.columns if m[c] > t[c]]
             if rose and text is not None:
                 if raise_reason is None:
                     errors.append(f"{self.gate}: {path}: {self._delta(t, m)} rises above the baseline; --update-baseline "
                                   f"is shrink-only. Remove the JS. {ASK}. {self.advice}".rstrip())
                     continue
-                note = f"# raised: {raise_reason} ({self._delta(t, m)})"
+                note, err = self._next_note(path, note if own else "", bt, m, raise_reason, row_n)
+                if err:
+                    errors.append(err)
+                    continue
             elif base_text is not None and note and not any(m[c] > B[path][c] for c in self.columns):
                 note = ""  # back at or under the base: the note has done its job
-            if note and raise_reason is not None and RAISE_NOTE.match(note) and note.startswith("# raised: " + raise_reason):
-                for c in self.columns:
-                    if m[c] > B.get(path, self._zero())[c]:
-                        need[c] = need.get(c, 0) + m[c] - B.get(path, self._zero())[c]
+            elif own and any(m[c] < t[c] for c in self.columns):
+                steps = note_steps(note) or []
+                if len(steps) > 1:
+                    note = "# raised: " + "; ".join(s.text for s in self._trim(steps, m)) if steps else note
+            own = bool(note) and RAISE_NOTE.match(note) is not None and (base_text is None or note != bnote.get(path))
+            if own and raise_reason is not None:
+                steps = note_steps(note) or []
+                for n, cols in self._step_need(steps, {c: m[c] - bt[c] for c in self.columns if m[c] > bt[c]}).items():
+                    for c, d in cols.items():
+                        need.setdefault(n, {})[c] = need.get(n, {}).get(c, 0) + d
             new_rows[path] = (m, note)
         if errors:
             return errors, False
@@ -443,29 +628,61 @@ class Ratchet:
         if self.total and text is not None:
             to = self._total(T)
             tb = self._base_total(brows, T, renames, introduced) if base_text else None
+            own_dirs = [d for d in dirs if TOTAL_NOTE.match(d) and d not in bdirs]
+            rest = [d for d in dirs if not d.startswith(_DIRECTIVE)]
             if tn > to and raise_reason is None:
                 return [f"{self.gate}: the total rises ({to} -> {tn}); --update-baseline is shrink-only. {ASK}"], False
             if tn > to:
                 reason = raise_reason[rm.end(1):].strip() or "raise"
-                dirs = [d for d in dirs if not d.startswith(_DIRECTIVE)] + [
-                    f"{_DIRECTIVE} row {row_n} total={tn} {reason} (total {to}->{tn})"]
+                start = tb if tb is not None else to
+                if own_dirs:
+                    tail = _TOTAL_TAIL.search(own_dirs[-1])
+                    start = int(tail.group(2)) if tail else to
+                dirs = rest + own_dirs + [f"{_DIRECTIVE} row {row_n} total={tn} {reason} (total {start}->{tn})"]
                 total_need = tn - (tb if tb is not None else to)
+                if base_text is not None:
+                    tneed, bad = self._total_chain(dirs[len(rest):], tb, tn)
+                    if bad:
+                        return [f"{self.gate}: --allow-raise \"{raise_reason}\" refused: {bad}. {CHAIN_HELP}"], False
+                    total_need = tneed.get(row_n, 0)
             elif base_text is not None:
                 if tn <= tb:
-                    dirs = [d for d in dirs if not d.startswith(_DIRECTIVE)]
+                    dirs = rest
                 else:  # a standing directive keeps naming the tree's current total
-                    dirs = [re.sub(r"total=\d+", f"total={tn}", d, count=1) if TOTAL_NOTE.match(d) else d for d in dirs]
-        if raise_reason is not None and (need or total_need > 0):
+                    dirs = rest + self._trim_total(own_dirs, tn) + [d for d in dirs if d.startswith(_DIRECTIVE)
+                                                                  and d not in own_dirs]
+        if raise_reason is not None and (need.get(row_n) or total_need > 0):
             if not sha or base_text is None:
                 return [f"{self.gate}: --allow-raise needs a base to read the grant from (origin/main or "
                         f"origin/queue/*); none is available. {ASK}"], False
-            why = self._grant_problem(sha, row_n, need, max(total_need, 0))
+            why = self._grant_problem(sha, row_n, need.get(row_n, {}), max(total_need, 0))
             if why:
                 return [f"{self.gate}: --allow-raise \"{raise_reason}\" refused: {why}. {ASK}"], False
         os.makedirs(os.path.dirname(os.path.join(self.root, self.baseline)), exist_ok=True)
         with open(os.path.join(self.root, self.baseline), "w", encoding="utf-8") as f:
             f.write(self.render(new_rows, dirs))
         return [], True
+
+    def _next_note(self, path: str, own_note: str, bt: Counts, m: Counts, reason: str, row_n: int
+                   ) -> Tuple[str, Optional[str]]:
+        """`(note, error)` of a path whose count rose over the baseline: `own_note` (a step made in this diff, or "")
+        trimmed to the new counts, plus a step for `row_n` from the number its chain reaches (the base's, in a column
+        the chain does not name) to `m`. Only columns above the base's number are raised; none: no note."""
+        steps = self._trim(note_steps(own_note) or [], m) if own_note else []
+        rising: Dict[str, Tuple[int, int]] = {}
+        for c in self.columns:
+            ends = [s.deltas[c][1] for s in steps if c in s.deltas]
+            end = ends[-1] if ends else bt[c]
+            if m[c] > end:
+                rising[c] = (end, m[c])
+        if rising:
+            steps.append(Step(row_n, reason[re.match(r"row\s+\d+", reason).end():].strip(), rising))
+            if len(steps) > 1:
+                bad = self._chain_problem(steps, bt, m)
+                if bad:
+                    return "", (f"{self.gate}: --allow-raise \"{reason}\" refused: the note of {path} {bad}. "
+                                f"Rewrite it by hand as steps `row N reason (column A->B)` joined by `; `")
+        return ("# raised: " + "; ".join(s.text for s in steps)) if steps else "", None
 
 
 # ---------------------------------------------------------------------------------------------------- self-test
@@ -534,6 +751,8 @@ def _self_test() -> int:
         "dev-docs/backlog/52-small.md": _row(52, "a=1"),
         "dev-docs/backlog/53-none.md": _row(53, "none"),
         "dev-docs/backlog/54-landed.md": _row(54, "a=10", status="LANDED 2026-11-01"),
+        "dev-docs/backlog/55-first.md": _row(55, "a=3"),
+        "dev-docs/backlog/56-second.md": _row(56, "a=2"),
         "dev-docs/backlog/done/51-closed.md": _row(51, "a=10"),
     }
     measured = {"x.rs": {"a": 2, "b": 0}, "y.rs": {"a": 1, "b": 1}}
@@ -648,6 +867,68 @@ def _self_test() -> int:
     scenario("a tree header that differs from the gate's columns", "red",
              tree([("x.rs", 2, 0, ""), ("y.rs", 1, 1, "")], header="a c"), why="declares")
 
+    # a note of several steps: two granted rows raise one file, each step is charged to its own row
+    def x_to(a: int) -> Dict[str, Counts]:
+        return {"x.rs": {"a": a, "b": 0}, "y.rs": {"a": 1, "b": 1}}
+
+    def chain(a: int, steps: Sequence[str], dirs: Sequence[str] = ()):
+        note = "# raised: " + "; ".join(steps) if steps else ""
+        return tree([("x.rs", a, 0, note), ("y.rs", 1, 1, "")], list(dirs))
+
+    def tot(*steps: Tuple[int, str, int, int]) -> List[str]:   # (row, reason, from, to) of the total
+        return [f"#! total-raised: row {n} total={e} {w} (total {s0}->{e})" for n, w, s0, e in steps]
+
+    scenario("a chain of two rows, each step inside its own grant", "green",
+             chain(5, ["row 55 first (a 2->4)", "row 56 second (a 4->5)"],
+                   tot((55, "first", 4, 6), (56, "second", 6, 7))), meas=x_to(5),
+             show=("row 55 first (a 2->4)", "row 56 second (a 4->5)", "x.rs: a 2->4", "x.rs: a 4->5", "TOTAL: 4 -> 7"))
+    scenario("a chain of three rows, each step inside its own grant", "green",
+             chain(6, ["row 55 first (a 2->4)", "row 56 second (a 4->5)", "row 50 third (a 5->6)"],
+                   tot((55, "first", 4, 6), (56, "second", 6, 7), (50, "third", 7, 8))), meas=x_to(6))
+    scenario("a chain: step 2 over its row's grant is red and names that row", "red",
+             chain(6, ["row 50 first (a 2->4)", "row 52 second (a 4->6)"], tot((50, "first", 4, 6), (52, "second", 6, 8))),
+             meas=x_to(6), why="the raise cited as row 52 (a +2) is not granted: row 52 grants a=1 at the base, the raise is 2")
+    scenario("a chain: step 1 over its row's grant, row 2 with room to spare, is red (no borrowing)", "red",
+             chain(5, ["row 52 first (a 2->4)", "row 50 second (a 4->5)"], tot((52, "first", 4, 6), (50, "second", 6, 7))),
+             meas=x_to(5), why="the raise cited as row 52 (a +2) is not granted")
+    scenario("a chain with a gap (step 2 does not start where step 1 ends)", "red",
+             chain(6, ["row 55 first (a 2->4)", "row 56 second (a 5->6)"], tot((55, "first", 4, 6), (56, "second", 6, 8))),
+             meas=x_to(6), why="has a gap in a: step `row 56` starts at 5 but the chain before it is at 4")
+    scenario("a chain that starts above the base's number", "red",
+             chain(6, ["row 55 first (a 3->4)", "row 56 second (a 4->6)"], tot((55, "first", 4, 5), (56, "second", 5, 8))),
+             meas=x_to(6), why="step `row 55` starts at 3 but the chain before it is at 2")
+    scenario("a chain that ends below the tree's number", "red",
+             chain(6, ["row 55 first (a 2->4)", "row 56 second (a 4->5)"], tot((55, "first", 4, 6), (56, "second", 6, 8))),
+             meas=x_to(6), why="ends at a=5 but the tree has a=6")
+    scenario("a chain whose first step has no from -> to", "red",
+             chain(5, ["row 55 first", "row 56 second (a 4->5)"], tot((55, "first", 4, 6), (56, "second", 6, 7))),
+             meas=x_to(5), why="names no `(column A->B)`")
+    scenario("a chain citing a row that is closed at the base", "red",
+             chain(5, ["row 55 first (a 2->4)", "row 51 second (a 4->5)"], tot((55, "first", 4, 6), (51, "second", 6, 7))),
+             meas=x_to(5), why="row 51 is closed at the base")
+    scenario("a chain citing a row that does not exist", "red",
+             chain(5, ["row 55 first (a 2->4)", "row 99 second (a 4->5)"], tot((55, "first", 4, 6), (99, "second", 6, 7))),
+             meas=x_to(5), why="row 99 does not exist at the base")
+
+    def own_grant_chain(root):
+        _write(root, "dev-docs/backlog/60-mine.md", _row(60, "a=100"))
+        _git_run(root, "add", "-A")
+        _git_run(root, "commit", "-q", "-m", "a grant in the lane's own diff")
+        chain(5, ["row 55 first (a 2->4)", "row 60 second (a 4->5)"], tot((55, "first", 4, 6), (60, "second", 6, 7)))(root)
+    scenario("a chain citing a grant written in the lane's own diff", "red", own_grant_chain, meas=x_to(5),
+             why="row 60 does not exist at the base")
+    scenario("a chain whose total steps leave a gap", "red",
+             chain(5, ["row 55 first (a 2->4)", "row 56 second (a 4->5)"], tot((55, "first", 4, 6), (56, "second", 5, 7))),
+             meas=x_to(5), why="the total chain has a gap")
+    scenario("a chain whose total step is over its row's grant sum", "red",
+             chain(6, ["row 55 first (a 2->4)", "row 56 second (a 4->6)"], tot((55, "first", 4, 5), (56, "second", 5, 8))),
+             meas=x_to(6), why="the total raise 4 -> 8 cited as row 56 is not granted: row 56 grants 2 in all at the base, the total raise is 3")
+    scenario("a chain whose total steps end at another number than the tree's", "red",
+             chain(5, ["row 55 first (a 2->4)", "row 56 second (a 4->5)"], tot((55, "first", 4, 6), (56, "second", 6, 9))),
+             meas=x_to(5), why="the total chain ends at 9 but the tree's total is 7")
+    scenario("control: a note of one step keeps the old reading (no from -> to needed)", "green",
+             chain(5, ["row 50 witness lines"], tot((50, "witness lines", 4, 7))), meas=x_to(5))
+
     # the writer: `--allow-raise` writes a note only where the grant at the base already covers it
     def writer(label: str, reason: str, want_written: bool, why: str = "") -> None:
         nonlocal ok
@@ -667,6 +948,78 @@ def _self_test() -> int:
     writer("--allow-raise against a grant at the base writes a note the check accepts", "row 50 witness lines", True)
     writer("--allow-raise against a row that does not exist is refused", "row 99 self-service", False, "row 99 does not exist")
     writer("--allow-raise against a grant that is too small is refused", "row 52 small", False, "grants a=1")
+
+    # the writer on a chain: each run adds the step of its own row, a refusal leaves the file as it was
+    def writer_chain(label: str, runs: Sequence[Tuple[int, Optional[str], bool, str]], base_overrides=None,
+                     want: Sequence[str] = (), absent: Sequence[str] = (), green: bool = True) -> None:
+        nonlocal ok
+        files = {**base_files, **(base_overrides or {})}
+        problems: List[str] = []
+        with selftest_env(), tempfile.TemporaryDirectory(prefix="ratchet-st.") as root:
+            _git_run(root, "init", "-q")
+            for p, t in files.items():
+                _write(root, p, t)
+            _git_run(root, "add", "-A")
+            _git_run(root, "commit", "-q", "-m", "base")
+            R = Ratchet("selftest", tsv, cols, root=root, total=total, base_ref=_git_run(root, "rev-parse", "HEAD"))
+            last = x_to(2)
+            for a, reason, want_written, why in runs:
+                before = open(os.path.join(root, tsv), encoding="utf-8").read()
+                errors, wrote = R.update(x_to(a), reason)
+                after = open(os.path.join(root, tsv), encoding="utf-8").read()
+                if wrote != want_written or (why and not any(why in e for e in errors)):
+                    problems.append(f"run a={a} {reason!r}: wrote={wrote}, errors={errors}")
+                if not wrote and after != before:
+                    problems.append(f"run a={a} {reason!r}: refused but the file changed")
+                if wrote:
+                    last = x_to(a)
+            body = open(os.path.join(root, tsv), encoding="utf-8").read()
+            rep = R.check(last)
+        problems += [f"missing {w!r} in:\n{body}" for w in want if w not in body]
+        problems += [f"unexpected {w!r} in:\n{body}" for w in absent if w in body]
+        if green and rep.errors:
+            problems.append(f"check is red: {rep.errors}")
+        if problems:
+            fails.append(f"{label}: " + "; ".join(problems))
+        else:
+            ok += 1
+    writer_chain("the writer appends the second row's step to the first's", [
+        (4, "row 55 first", True, ""), (5, "row 56 second", True, "")],
+        want=("# raised: row 55 first (a 2->4); row 56 second (a 4->5)",
+              "total-raised: row 55 total=6 first (total 4->6)", "total-raised: row 56 total=7 second (total 6->7)"))
+    writer_chain("the writer appends a third step", [
+        (4, "row 55 first", True, ""), (5, "row 56 second", True, ""), (6, "row 50 third", True, "")],
+        want=("; row 50 third (a 5->6)", "total=8 third (total 7->8)"))
+    writer_chain("the writer refuses a step its row's grant does not cover, and leaves the file untouched", [
+        (4, "row 55 first", True, ""), (7, "row 52 second", False, "row 52 grants a=1 at the base, the raise is 3")],
+        want=("# raised: row 55 first (a 2->4)",), absent=("row 52",))
+    writer_chain("the writer refuses a step over the row's grant even when another row has room (no borrowing)", [
+        (4, "row 52 first", False, "row 52 grants a=1 at the base, the raise is 2")], absent=("row 52",), green=False)
+    writer_chain("the writer refuses a step of a row that does not exist", [
+        (4, "row 55 first", True, ""), (5, "row 99 second", False, "row 99 does not exist")], absent=("row 99",))
+    writer_chain("the writer refuses a reason that holds a step separator", [
+        (4, "row 55 first; row 56 sneaky", False, "must not contain")], green=False)
+    writer_chain("a count that falls again trims the chain", [
+        (4, "row 55 first", True, ""), (5, "row 56 second", True, ""), (4, None, True, "")],
+        want=("# raised: row 55 first (a 2->4)",), absent=("row 56", "(a 4->5)", "total=7"))
+    writer_chain("a count back at the base drops the note and the total line", [
+        (4, "row 55 first", True, ""), (5, "row 56 second", True, ""), (2, None, True, "")], absent=("raised", "row 5"))
+    inherited_chain = {tsv: baseline([("x.rs", 5, 0, "# raised: row 50 earlier (a 2->5)"), ("y.rs", 1, 1, "")],
+                                     ["#! total-raised: row 50 total=7 earlier"])}
+    with selftest_env(), tempfile.TemporaryDirectory(prefix="ratchet-st.") as root:
+        _git_run(root, "init", "-q")
+        for p, t in {**base_files, **inherited_chain}.items():
+            _write(root, p, t)
+        _git_run(root, "add", "-A")
+        _git_run(root, "commit", "-q", "-m", "base")
+        R = Ratchet("selftest", tsv, cols, root=root, total=total, base_ref=_git_run(root, "rev-parse", "HEAD"))
+        errors, wrote = R.update(x_to(6), "row 56 later")
+        body = open(os.path.join(root, tsv), encoding="utf-8").read()
+        rep = R.check(x_to(6))
+    if not wrote or "row 50" in body or "# raised: row 56 later (a 5->6)" not in body or rep.errors:
+        fails.append(f"a note the base carries is replaced, not extended: wrote={wrote} {errors} {rep.errors}\n{body}")
+    else:
+        ok += 1
 
     # the grant reader, on the real forms
     from rows import parse_columns as pc, parse_list as pl

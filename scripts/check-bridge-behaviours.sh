@@ -17,7 +17,8 @@
 #  * SMALL FILES, AS A RATCHET. The byte size of `bridge.ts`, `lib/register.ts`, the ambient types and every behaviour
 #    module is held in `scripts/check-bridge-behaviours.budgets.tsv` through the `Ratchet` class (scripts/lib/ratchet.py):
 #    a rise, a new file without a row and a stale row fail, a fall must be written back with `--update-baseline`, and a
-#    raise passes only against a `js-grant: bytes=<n>` row at the merge base (the owner's decision, never a lane's).
+#    raise passes only against a `js-grant: bytes=<n>` row at the merge base (the owner's decision, never a lane's); two
+#    granted rows that raise one file are a chain of steps in its note, one per row (scripts/lib/ratchet.py).
 #  * ONE PLACE FOR CANCELLING AND FRAMES. `preventDefault`, `stopPropagation`, `requestAnimationFrame` and the three
 #    observers appear in no `primitives/src/ts` file outside `ts/bridge.ts`, `ts/behaviours/` (generated files and
 #    `.d.ts` excluded) and a shrink-only residue allowlist (`scripts/check-bridge-behaviours.allow.tsv`,
