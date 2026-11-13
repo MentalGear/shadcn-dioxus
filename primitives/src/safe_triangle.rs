@@ -203,12 +203,6 @@ pub(crate) fn use_safe_close() -> SafeClose {
 }
 
 impl SafeClose {
-    /// Whether a close is scheduled and has not run.
-    #[cfg(test)]
-    pub(crate) fn is_pending_untracked(&self) -> bool {
-        self.timer.is_pending_untracked()
-    }
-
     /// Drop a pending close: the pointer is back on the trigger or the panel, or a deliberate action
     /// superseded it.
     pub(crate) fn cancel(&mut self) {

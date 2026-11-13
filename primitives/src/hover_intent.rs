@@ -192,10 +192,7 @@ impl HoverIntent {
     }
 
     /// The pointer left the region (trigger or panel) of item `index`. If `index` is the
-    /// open item and the pointer opened it (and no click has claimed it), it closes after
-    /// [`HOVER_CLOSE_GRACE_DELAY`] unless the pointer re-enters. A panel opened by a click, a key or a
-    /// link has no pointer-leave close: a page scroll that moves the pointer off the trigger must not
-    /// close it.
+    /// open item, it closes after [`HOVER_CLOSE_GRACE_DELAY`] unless the pointer re-enters.
     ///
     /// `at` is where the pointer left and `panel_id` the open item's panel element id when the pointer left its
     /// *trigger*: the close then waits while the pointer travels inside the safe triangle toward the
@@ -205,7 +202,7 @@ impl HoverIntent {
             return;
         }
         self.open_timer.cancel();
-        if *self.open.peek() != Some(index) || !*self.opened_by_hover.peek() {
+        if *self.open.peek() != Some(index) {
             return;
         }
         let open = self.open;
@@ -229,46 +226,5 @@ impl HoverIntent {
     fn open_by_hover(&mut self, index: usize) {
         self.set_open.call(Some(index));
         self.opened_by_hover.set(true);
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::test_support::with_runtime;
-
-    fn intent() -> HoverIntent {
-        let open = use_signal(|| None);
-        use_hover_intent(open, ReadSignal::new(Signal::new(true)))
-    }
-
-    /// A pointer leaving closes the panel the pointer opened; a panel a click, a key or a link opened
-    /// has no pointer-leave close at all (a page scroll that moves the pointer off the trigger must
-    /// not close it, `close-on-scroll.spec.ts`).
-    #[test]
-    fn leaving_closes_a_hover_opened_panel_only() {
-        with_runtime(|| {
-            let mut hover = intent();
-
-            hover.open_by_hover(0);
-            hover.leave(0, None, None);
-            assert!(hover.close_timer.is_pending_untracked(), "hover-opened");
-            hover.cancel();
-
-            hover.set_open().call(Some(0));
-            hover.leave(0, None, None);
-            assert!(
-                !hover.close_timer.is_pending_untracked(),
-                "opened by anything but the pointer"
-            );
-
-            hover.open_by_hover(0);
-            hover.claim();
-            hover.leave(0, None, None);
-            assert!(
-                !hover.close_timer.is_pending_untracked(),
-                "a click claimed the hover-opened panel"
-            );
-        });
     }
 }
