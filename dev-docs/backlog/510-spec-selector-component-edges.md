@@ -1,7 +1,7 @@
 ---
 id: 510
 title: "The spec selector has no component-to-component edge: a Button change selects none of its consumers' specs"
-status: "BUILT on lane/select-edges-510, awaiting merge. The selector reads the component use graph from the…"
+status: "LANDED in PR #175 (2026-11-12): the selector reads the component use graph from the sources. The…"
 size: "S (one helper module of about 170…"
 area: tests
 updated: 2026-11-12
@@ -27,8 +27,8 @@ lane that followed the one-command rule under-tested silently. Before-evidence o
 
 ## Status / trigger
 
-BUILT on `lane/select-edges-510`, awaiting merge. The selector reads the component use graph from the sources; the main
-loop closes this row at the merge.
+LANDED in PR #175 (2026-11-12): the selector reads the component use graph from the sources. The items under "Open"
+below keep the row open; [row 513](./513-release-suite-reuse-across-spec-only-changes.md) records a miss they explain.
 
 ## Size
 
