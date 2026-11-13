@@ -5,10 +5,9 @@ the page as stale and check `git log` and the flag files named here.** What each
 backlog row files, not here: this page says only what is deployed, what runs, what is next and what waits for the owner.
 
 Last updated: **2026-11-13**. Several sessions work in parallel; who holds what is on the `claims` branch (`CLAIMS.md`).
-Preview site: https://mentalgear.github.io/shadcn-dioxus/ serves main `edb71de0` (PRs #170-#176, deploy commit
-`c34eda92`; release suite 4106 passed, 0 failed, 0 flaky, 14 skipped on that exact tree, the `@timing` cases
-deactivated per row 494). Main is ahead of the site only by PRs #177 and #178, which change no source the site is
-built from. Check `git log origin/main -1` for the exact tip rather than trusting a SHA frozen here.
+Preview site: https://mentalgear.github.io/shadcn-dioxus/ serves main `3caa4f2c` (PRs #177-#180; release suite 4108
+passed, 0 failed, 0 flaky, 14 skipped on that exact tree, the `@timing` cases deactivated per row 494). Check
+`git log origin/main -1` for the exact tip rather than trusting a SHA frozen here.
 
 Session `session_01MsL6RCeq7QSe81nNBiuKP1` owned merges and deploys through PR #173 and is archived; session
 `session_01MsL6RCa7c4QWmqNtUYQ8RE` merges and deploys the 2026-11-12 batches. A new
@@ -31,7 +30,7 @@ the next deploy first rebuilds it with `scripts/lane-target.sh warm-release` (a 
 ## Merged and deployed
 
 Merge queue batches 1-29 are on main (PRs #121-#155); PRs #156-#165 followed from session
-`session_01MsL6RCeq7QSe81nNBiuKP1` and are deployed (main `d040554a`, release suite 4159 passed, 0 failed). PRs #166-#168 are deployed (main `f38662dc`, deploy `85c05466`, release suite 4192 passed, 0 failed). PRs #170-#176 are deployed (main `edb71de0`, deploy `c34eda92`, release suite 4106 passed, 0 failed). What each batch carried is in `git log` and the row files under
+`session_01MsL6RCeq7QSe81nNBiuKP1` and are deployed (main `d040554a`, release suite 4159 passed, 0 failed). PRs #166-#168 are deployed (main `f38662dc`, deploy `85c05466`, release suite 4192 passed, 0 failed). PRs #170-#176 are deployed (main `edb71de0`, deploy `c34eda92`, release suite 4106 passed, 0 failed). PRs #177-#180 are deployed (main `3caa4f2c`, release suite 4108 passed, 0 failed). What each batch carried is in `git log` and the row files under
 [`backlog/done/`](./backlog/done/).
 
 ## Next
@@ -43,10 +42,10 @@ row says otherwise, so a step runs as parallel lanes (one verifier per batch, `l
 
 **Before the plan continues (port-independent)**
 
-1. Row 506 is closed (2026-11-12): both failures were test-side, the release suite is green on `edb71de0` and the
-   site is deployed. Row **511** is built (owner approved 2026-11-12): the primitives render the browser arm with no
-   feature, Blitz is the `native` opt-in, and a compile-time assert holds it equal to dioxus's own renderer. Row 448's
-   deletion of the native-arm focus trap is open for it.
+1. Rows 506 and 511 are done. **In flight (2026-11-13, one batch of lanes):** row **509** (the Rust decision
+   contract), row **446** (the witness harness; it lands after 509), the first half of row **448** (deleting the
+   native-arm focus trap), the rest of row **436** (F3, F7, `menu_root::use_root_id`), and a follow-up closing the
+   open items of rows 451 and 454.
 2. Done, merged in PR #170 (2026-11-11): the deploy blockers of PR #168 (rows 468, 501); row **436**'s overlay and
    class groups (F1, F2, F4, F5, F6, F8, F9, F10, F11, F12), each reproduced red first (CHANGELOG.md has the
    user-visible ones: F1, F10, F11); **499** (safe triangle; CHANGELOG.md too); **152** slices 4-5; **371**'s
