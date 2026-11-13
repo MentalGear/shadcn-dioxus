@@ -722,10 +722,11 @@ def replace_in(path, old, new, section="files"):
     return f
 
 
-def allow_residue(reason, row):
-    """A stray ts file holding `preventDefault` plus its allowlist row (the shipped allowlist can be empty)."""
+def allow_residue(reason, row, banned=True):
+    """A stray ts file (holding `preventDefault` unless banned=False) plus its allowlist row (the shipped allowlist can be empty)."""
     def f(t):
-        t["ts"]["primitives/src/ts/stray.ts"] = "export function f(e: Event) { e.preventDefault(); }\n"
+        t["ts"]["primitives/src/ts/stray.ts"] = (
+            "export function f(e: Event) { e.preventDefault(); }\n" if banned else "export function f(e: Event) { return e; }\n")
         t["files"][ALLOW_TSV] = t["files"][ALLOW_TSV] + f"primitives/src/ts/stray.ts\t{reason}\t{row}\n"
     return f
 
@@ -769,10 +770,12 @@ def self_test(tree):
         ("a budget row for a file that is gone", lambda t: t["files"].__setitem__(
             BUDGETS_TSV, t["files"][BUDGETS_TSV] + "primitives/src/ts/behaviours/ghost.ts\t10\n")),
         ("the budgets file missing", lambda t: t["files"].__setitem__(BUDGETS_TSV, None)),
-        ("an unknown allowlist row", allow_residue("x 3.B1", "99999")),
-        ("an allowlist reason with no lane", allow_residue("x later", "434")),
-        ("an allowlist entry for a clean file", lambda t: t["files"].__setitem__(
-            ALLOW_TSV, t["files"][ALLOW_TSV] + "primitives/src/ts/lib/register.ts\tx 3.B1\t434\n")),
+        ("an unknown allowlist row", allow_residue("x 3.B1", "99999"), "not under dev-docs/backlog"),
+        ("an allowlist reason with no lane", allow_residue("x later", "434"), "no step 3 lane"),
+        # a row whose file is clean, whether it never needed the row or was fixed since: one check (the gate prints the same
+        # `stale allowlist entry` line for both), so one scenario names both
+        ("an allowlist row for a file that holds no banned call (clean, or fixed since)", allow_residue("x 3.B1", "434", banned=False),
+         "stale allowlist entry"),
         ("an allowlist line without a reason", lambda t: t["files"].__setitem__(
             ALLOW_TSV, t["files"][ALLOW_TSV] + "primitives/src/ts/x.ts\t\t434\n")),
         ("a computed member access in bridge.ts", lambda t: t["ts"].__setitem__(
@@ -936,6 +939,7 @@ def self_test(tree):
             "playwright/witness/probes/p.ts", "throw new WitnessViolation('x');\nclass WitnessViolation extends Error {}\n")),
         ("a new kind with an open row at the base", base_edit(lambda b: (b.update(gen=b["gen"].replace('["fixture"]', '[]')),
             b["rows"].append(fixture_row)))),
+        ("a valid allowlist row is honoured", allow_residue("x 3.B1", "434")),
         ("a table lookup with own()", lambda t: t["ts"].__setitem__(
             BRIDGE_TS, t["ts"][BRIDGE_TS] + "\nconst x = (table: Record<string, number>, key: string) => table[key];\n")),
     ]
