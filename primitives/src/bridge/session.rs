@@ -18,6 +18,7 @@ use dioxus::prelude::*;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
+use super::behaviours::{Inbound, StandDown};
 use super::events::{EventField, EventKind};
 use super::transport;
 use super::{Behaviour, Epoch, Target};
@@ -681,18 +682,40 @@ pub fn use_window_size() -> ReadSignal<WindowSize> {
 pub fn use_behaviour<T: DeserializeOwned + 'static>(
     mut target: impl FnMut() -> Option<Target> + 'static,
     mut behaviour: impl FnMut() -> Behaviour + 'static,
-    handler: impl FnMut(T) + 'static,
+    mut handler: impl FnMut(T) + 'static,
 ) {
+    // A kind that cannot decide reports once ([`StandDown`]); the install is then torn down and not
+    // installed again while this component lives: a resync would meet the same kernel, and a torn-down
+    // install clears its memory (a gesture half done) and decides nothing more, so no later decision
+    // can add to what earlier ones set.
+    let mut stood_down = use_signal(|| false);
     use_subscription(
         move || {
+            if stood_down() {
+                return None;
+            }
             target().map(|target| {
                 let behaviour = behaviour();
                 let epoch = Epoch::next(format!("behaviour:{}", behaviour.kind()));
                 Session::new().behaviour(target, behaviour, epoch)
             })
         },
-        handler,
+        move |message: Inbound<T>| {
+            route(message, &mut handler, |_report| stood_down.set(true));
+        },
     );
+}
+
+/// Sends a decision's message to `on_message` and a stand-down report to `on_report`.
+fn route<T>(
+    message: Inbound<T>,
+    on_message: &mut impl FnMut(T),
+    mut on_report: impl FnMut(StandDown),
+) {
+    match message {
+        Inbound::Message(m) => on_message(m),
+        Inbound::Report(r) => on_report(r.report),
+    }
 }
 
 #[cfg(test)]
@@ -709,6 +732,38 @@ mod tests {
             cancel: true,
             lease_ms: Some(400),
         }
+    }
+
+    #[test]
+    fn a_stand_down_report_reaches_the_owner_and_a_decision_does_not() {
+        #[derive(Debug, PartialEq, Deserialize)]
+        struct Mine {
+            behaviour: String,
+        }
+        let parse = |v: serde_json::Value| serde_json::from_value::<Inbound<Mine>>(v);
+        let mut got = Vec::new();
+        let mut reports = Vec::new();
+        for v in [
+            json!({"behaviour": "fixture"}),
+            json!({"kernel": "stand-down", "kind": "fixture", "reason": "trap"}),
+            json!({"behaviour": "fixture"}),
+        ] {
+            route(
+                parse(v).expect("parses"),
+                &mut |m: Mine| got.push(m.behaviour),
+                |r| reports.push(r),
+            );
+        }
+        assert_eq!(got, ["fixture", "fixture"]);
+        assert_eq!(reports.len(), 1);
+        assert_eq!(reports[0].kind, "fixture");
+        assert_eq!(
+            reports[0].reason,
+            super::super::behaviours::StandDownReason::Trap
+        );
+        // neither a decision nor a report: skipped by `receive`
+        assert!(parse(json!({"other": 1})).is_err());
+        assert!(parse(json!("x")).is_err());
     }
 
     #[test]

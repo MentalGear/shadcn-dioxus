@@ -102,10 +102,12 @@ one behaviour that exists (the test fixture); `otpFilter` (row 448) is written t
   a module whose `dx_kinds` differs from its generated hash.
 - **A kind that cannot decide throws a stand-down report** (`missing-kind`, `unreadable-request`, `trap`,
   `kind-stood-down`, `kernel-failed`, `kernel-absent`): one warning, no decision (the browser keeps its action), one
-  `{kernel: "stand-down", kind, reason}` message per install. A trap re-instantiates the cached module and counts against
-  its kind; the third stands that kind down alone. The Rust types of the report (`StandDown`, `Inbound<T>`) are in
-  `bridge/behaviours.rs`; `use_behaviour` (`bridge/session.rs`) does not read `Inbound<T>` yet, so Rust drops the
-  report until it does (open: that file belongs to the order-runtime rows).
+  `{kernel: "stand-down", kind, reason}` message per install. `use_behaviour` (`bridge/session.rs`) reads
+  `Inbound<T>`: a decision's message goes to the handler, a report tears the install down. **Tear down, not resync**:
+  a resync would meet the same kernel and report again, and a torn-down install clears its memory (a gesture half
+  done) and decides nothing more, so no later decision can add attributes to what earlier ones set. Attributes
+  already set stay on the element (the page does not remove them); the owner holds the state they mirror. The
+  install is not made again while the component lives.
 - **The kernel loads synchronously or not at all.** The module is compiled in the bridge's first eval (`kernel_load`, the
   one seam function); an engine that refuses a synchronous compile leaves the kernel `failed` (one warning, every
   decision reports `kernel-failed`). There is no asynchronous fallback, so no window exists in which a cancelling
@@ -133,7 +135,7 @@ Proof, in order: 1 passed (a renamed `Snapshot` key fails `the_generated_ts_is_c
 `cargo test` and under `bun test` against a stale kernel, the `decide(` mutation, the stale-source and profile mutations,
 a native `decide` call in `vectors.rs`); 5 passed on a real merge of two lanes with the real builder (identical bytes to
 a rebuild of the merged sources); 6 passed (fixture call p99 10 to 33 us, best of three runs, on a loaded box; the spy
-test); 7 passed (p99 21 to 52 us at the largest vector, 61 to 98 us for 1,000 booleans); 8 **open**: the reference (a
+test); 7 passed (p99 21 to 52 us at the largest vector, 61 to 98 us for 1,000 booleans); 8 **open** (a warm call inside `load` would cut the first call and costs about 40 bytes of `bridge.js`, which has 9 spare under the grant: the owner's question): the reference (a
 release SSG build, a quiet box) was not run, and on a loaded debug build the numbers are over both bounds (compile
 16 to 32 ms and first call 7 to 14 ms at 4x, 5 to 14 ms and 1.2 to 1.6 ms unthrottled); 9 passed (34 and 32 self-test
 scenarios); 10 passed (`scripts/registry-install-smoke.sh --target wasm32-unknown-unknown`: 83 of 83 components installed and the app compiles; the path dependency on `decision-kernel` resolves in a git install); 11, 12 and 13 stay open as written.
@@ -223,3 +225,10 @@ pinned toolchain and merge driver, the in-place codec and the budget gates)
 - **Hours (inferred):** about 14 to 22 for one Opus lane: generation of the adapter inputs and the fixed export set 4
   to 6, trap containment and the report to Rust 2 to 3, the pinned toolchain, profile and merge driver 2 to 3, the
   in-place codec and its timing tests 2 to 4, the gate half 4 to 6.
+
+## Open after landing
+
+- `decision-kernel` is `publish = false` and a path dependency of `dioxus-primitives`, so publishing primitives to
+  crates.io fails until the kernel is published too or its module is the only thing primitives ships (untested).
+- `rust-toolchain.toml` pins 1.97.0: a fresh container downloads that toolchain on the first cargo call unless it is
+  already installed under that name.
