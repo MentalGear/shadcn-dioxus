@@ -1,0 +1,11 @@
+{
+  "site": "fixture.lag",
+  "files": ["primitives/ts-test/witness.ts"],
+  "effects": ["attrs"],
+  "page": { "fixture": "lag" },
+  "host": "#host",
+  "setup": [],
+  "event": { "kind": "click", "selector": "#go" },
+  "eventType": "click",
+  "frames": 6
+}
