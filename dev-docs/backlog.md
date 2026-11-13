@@ -40,7 +40,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (75)
+## Open rows (73)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -111,13 +111,11 @@ proposing one is closed as out of scope (row 337 is the first).
 | [496](backlog/496-incremental-gate-target.md) | Measure incremental compilation for the main loop's gate target | APPROVED (owner 2026-11-05: item 2 of the build and test-suite review), measure first. Runs when no… | S | tooling |
 | [504](backlog/504-server-rendered-textarea-shows-no-value.md) | A server-rendered Textarea shows no value: the JS-off page and the hydrated first frame hold an empty field | BACKLOG. Found by the first-paint fix lane (row 468's section "First paint of a controlled… | S | textarea |
 | [505](backlog/505-js-lit-counts-lines-not-bytes.md) | The JS volume ratchets measure text, so a reformat or a shorter name passes for less JavaScript | PARTLY ADDRESSED, the construction itself still BACKLOG. Of the two instances found 2026-11-07, one… | S | tooling |
-| [506](backlog/506-release-suite-two-failures-block-deploy.md) | The release suite failed twice on main b78c231e: one stale locator that waited 20 minutes, one racy geometry read | DONE 2026-11-12: fixed in PR #175 (merge b69c006d), and the full release suite on main edb71de0 (PR… | S, done in the lane; the full release… | tooling |
 | [507](backlog/507-codegraph-comment-analysis-findings.md) | Code analyzer -&gt; comment analysis: a standing backlog for what the tool's metrics turn up | OPEN, STANDING. Owner-requested 2026-11-11: run the comment analysis and record what can be learned… | S per pass (a read of the Comments tab… | tooling |
 | [508](backlog/508-decision-kernel-proof.md) | Proof: a behaviour's Rust decide runs in the page as a wasm kernel, inside an event's dispatch | KERNEL (2026-11-12, lane decision-kernel-proof). All five pass lines hold: the fixture's Rust… | S | primitives |
 | [509](backlog/509-rust-decision-contract.md) | The Rust decision contract: one decide per behaviour, the decision kernel as a committed artefact, and the gates | APPROVED 2026-11-11 (owner); opens on row 508's KERNEL verdict (2026-11-12), which stands after the… | L (inferred: was M; the review adds… | primitives |
 | [510](backlog/510-spec-selector-component-edges.md) | The spec selector has no component-to-component edge: a Button change selects none of its consumers' specs | BUILT on lane/select-edges-510, awaiting merge. The selector reads the component use graph from the… | S (one helper module of about 170… | tests |
 | [511](backlog/511-primitives-web-feature-contract.md) | The browser-engine arm is the primitives' default; Blitz is the `native` opt-in, held to dioxus's own renderer by a compile-time assert | LANDED on lane/web-contract-511, 2026-11-13, awaiting the merge into the batch. The construction… | M (inferred) | primitives |
-| [512](backlog/512-specs-locate-variants-by-slug.md) | A spec that located a demo variant by its displayed title broke on a retitle; variants are addressed by slug, enforced by a gate | BUILT on lane/variant-locators-512, awaiting merge. A variant is found by its slug (the demo frame… | S: one spec moved, one gate rule with… | tests |
 | [513](backlog/513-release-suite-reuse-across-spec-only-changes.md) | A spec-only fix after a red release suite re-runs the whole suite: reuse the results the changed files cannot affect | BACKLOG. It serves the owner's standing goal "evaluate how the testing could be made quicker… | M (inferred): the key derivation, the… | tests |
 
 <!-- END GENERATED -->

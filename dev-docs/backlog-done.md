@@ -6,7 +6,7 @@ resolves here by id.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Done rows (411)
+## Done rows (413)
 
 | # | Item | Updated |
 |---|---|---|
@@ -421,5 +421,7 @@ resolves here by id.
 | [501](backlog/done/501-select-escape-race-flake.md) | select-escape-race.spec.ts:32 is flaky under load (also on the deployed base) | 2026-11-07 |
 | [502](backlog/done/502-installed-components-carry-repo-lint-expects.md) | Installed components carry #[expect(clippy::disallowed_methods)] that a user's project cannot fulfil | 2026-11-07 |
 | [503](backlog/done/503-lane-ssg-builds-in-place-on-one-slot.md) | lane-ssg builds in the warm template under the lock instead of copying it | 2026-11-12 |
+| [506](backlog/done/506-release-suite-two-failures-block-deploy.md) | The release suite failed twice on main b78c231e: one stale locator that waited 20 minutes, one racy geometry read | 2026-11-12 |
+| [512](backlog/done/512-specs-locate-variants-by-slug.md) | A spec that located a demo variant by its displayed title broke on a retitle; variants are addressed by slug, enforced by a gate | 2026-11-12 |
 
 <!-- END GENERATED -->
