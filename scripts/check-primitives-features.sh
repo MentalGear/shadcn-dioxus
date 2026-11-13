@@ -9,8 +9,8 @@
 # crate -- or a non-gated module that grew a `use time::` -- compiles here and breaks in a user's tree that enabled
 # only the feature its component.json asks for. This gate builds the crate ON ITS OWN, outside that unification:
 #   - no default features and no optional feature at all (the Button-only app), including tests and benches;
-#   - each optional feature alone (+ `web`, the browser arm, which must not drag `time` in on its own);
-#   - every optional feature together with `web`.
+#   - each optional feature alone (`native`, the Blitz arm, included: it must not drag `time` in on its own);
+#   - every optional feature together.
 # Which features a COMPONENT must ask for is `scripts/check-cargo-dep-versions.sh`; the whole install is
 # `scripts/registry-install-smoke.sh`.
 #
@@ -28,7 +28,7 @@ case "${CARGO_TARGET_DIR:-}" in
 esac
 
 # Every optional feature is read from the manifest, so a new one is covered the day it appears: all features
-# except `default`, `web` and the umbrella ones that only forward to another primitives feature.
+# except `default` and `web` (inert: nothing reads it), so `native` is built alone and with every other feature.
 optional="$(python3 -I - <<'PY'
 import tomllib
 f = tomllib.load(open("primitives/Cargo.toml", "rb"))["features"]
@@ -51,8 +51,7 @@ run() {
 
 run "(no features) --all-targets" --all-targets
 for f in $optional; do run "$f" --lib --features "$f"; done
-run "web" --lib --features web
-run "web + $(echo $optional | tr ' ' '+')" --lib --features "web,$(echo $optional | tr ' ' ',')"
+run "all of [$(echo $optional | tr ' ' '+')]" --lib --features "$(echo $optional | tr ' ' ',')"
 
 [ "$fail" -ne 0 ] && exit 1
-echo "check-primitives-features: OK -- dioxus-primitives builds with no features, with each of [$optional] alone, with web, and with all of them."
+echo "check-primitives-features: OK -- dioxus-primitives builds with no features, with each of [$optional] alone, and with all of them."

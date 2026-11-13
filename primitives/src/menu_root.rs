@@ -13,7 +13,7 @@
 //!   (`crate::menu_item::SelectOn`), what closes the whole tree, and what a blurred item does. The items
 //!   (`crate::menu_item`), the submenu (`crate::menu_sub`) and the panel below are written once against it.
 //! - [`use_menu_panel`] -- the content panel: role, state, accessible name, popover promotion and placement (the
-//!   last two web-only), as one attribute list a host spreads on its panel element.
+//!   last two browser-only), as one attribute list a host spreads on its panel element.
 //! - [`nav_key`] -- the arrow, Home, End and typeahead keys of an open menu: one rule for the root panel and every
 //!   submenu.
 //! - [`use_open_focus_sync`] -- keeps a host's `open` boolean in step with whether its roving-focus collection holds
@@ -176,13 +176,13 @@ pub(crate) fn nav_key(
     true
 }
 
-/// Which popover mode a panel is promoted with on the web.
+/// Which popover mode a panel is promoted with in the browser arm.
 #[derive(Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(
-    not(feature = "web"),
+    feature = "native",
     allow(
         dead_code,
-        reason = "only the web build promotes a panel to the top layer"
+        reason = "only the browser build promotes a panel to the top layer"
     )
 )]
 pub(crate) enum PanelPopover {
@@ -192,11 +192,11 @@ pub(crate) enum PanelPopover {
     Manual,
 }
 
-/// Which stylesheet family anchors a panel to its trigger on the web.
+/// Which stylesheet family anchors a panel to its trigger in the browser arm.
 #[derive(Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(
-    not(feature = "web"),
-    allow(dead_code, reason = "only the web build anchors a panel")
+    feature = "native",
+    allow(dead_code, reason = "only the browser build anchors a panel")
 )]
 pub(crate) enum PanelKind {
     /// A dropdown menu, and every submenu of a dropdown or context menu.
@@ -205,10 +205,10 @@ pub(crate) enum PanelKind {
     Menubar,
 }
 
-/// Where a panel sits on the web (a native panel is always in flow, or fixed by the host).
+/// Where a panel sits in the browser arm (a native panel is always in flow, or fixed by the host).
 #[cfg_attr(
-    not(feature = "web"),
-    allow(dead_code, reason = "only the web build places a panel")
+    feature = "native",
+    allow(dead_code, reason = "only the browser build places a panel")
 )]
 pub(crate) enum PanelPlacement {
     /// Anchored to the trigger, `offset` px away on `side`.
@@ -224,8 +224,8 @@ pub(crate) enum PanelPlacement {
 
 /// Everything a host says about its panel to [`use_menu_panel`].
 #[cfg_attr(
-    not(feature = "web"),
-    allow(dead_code, reason = "only the web build reads the popover wiring")
+    feature = "native",
+    allow(dead_code, reason = "only the browser build reads the popover wiring")
 )]
 pub(crate) struct PanelConfig {
     /// The panel element's id.
@@ -248,12 +248,12 @@ pub(crate) struct PanelConfig {
 
 /// The wiring and attributes of a menu panel, shared by the root panel of every host and by every submenu.
 ///
-/// On the web it promotes the panel to the top layer (`use_popover_sync` drives `showPopover()` / `hidePopover()`
+/// In the browser arm it promotes the panel to the top layer (`use_popover_sync` drives `showPopover()` / `hidePopover()`
 /// from `open` and echoes the browser's own `toggle` to `on_native_toggle`, so the Rust state can never strand) and
 /// places it (anchored to the trigger, or at a point). On a renderer without the popover API the panel stays in
 /// flow. Either way the returned list carries the primitive-owned attributes -- `role="menu"`, the open state, the
 /// accessible name from the trigger -- merged over the caller's, so a caller cannot override them
-/// (`dev-docs/backlog.md` row 93's duplicate-attribute hazard), and on the web the single folded `style` of an
+/// (`dev-docs/backlog.md` row 93's duplicate-attribute hazard), and in the browser arm the single folded `style` of an
 /// anchored panel (`top_layer::anchored_content_attributes`).
 ///
 /// A hook: call it unconditionally, once per render, from the host's panel component, and spread the result on the
@@ -269,7 +269,7 @@ pub(crate) fn use_menu_panel(config: PanelConfig, attributes: Vec<Attribute>) ->
         owned,
     } = config;
 
-    #[cfg(feature = "web")]
+    #[cfg(not(feature = "native"))]
     {
         crate::top_layer::use_popover_sync(id.clone(), open, on_native_toggle);
         match &placement {
@@ -291,7 +291,7 @@ pub(crate) fn use_menu_panel(config: PanelConfig, attributes: Vec<Attribute>) ->
             }
         }
     }
-    #[cfg(not(feature = "web"))]
+    #[cfg(feature = "native")]
     let _ = (on_native_toggle, popover, &placement);
 
     let labelledby = content_labelledby_attributes(&attributes, &trigger_id);
@@ -300,22 +300,22 @@ pub(crate) fn use_menu_panel(config: PanelConfig, attributes: Vec<Attribute>) ->
         role: crate::menu_semantics::MENU_ROLE,
         ..state_attrs::open(open()),
     });
-    #[cfg(feature = "web")]
+    #[cfg(not(feature = "native"))]
     let popover_value = match popover {
         PanelPopover::Auto => crate::top_layer::PopoverKind::Auto,
         PanelPopover::Manual => crate::top_layer::PopoverKind::Manual,
     }
     .as_str();
-    #[cfg(feature = "web")]
+    #[cfg(not(feature = "native"))]
     let promoted = attributes!(div {
         popover: popover_value
     });
-    #[cfg(not(feature = "web"))]
+    #[cfg(feature = "native")]
     let promoted: Vec<Attribute> = Vec::new();
     let attributes = crate::merge_attributes(vec![attributes, labelledby, panel, promoted, owned]);
 
     // Folds the caller's own `style` together with the anchor binding into one `style` attribute.
-    #[cfg(feature = "web")]
+    #[cfg(not(feature = "native"))]
     if let PanelPlacement::Anchored { kind, .. } = placement {
         return crate::top_layer::anchored_content_attributes(
             match kind {

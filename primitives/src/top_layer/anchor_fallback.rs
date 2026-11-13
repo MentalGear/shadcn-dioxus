@@ -2,13 +2,13 @@
 //! backlog row 477.
 
 #[cfg_attr(
-    not(feature = "web"),
-    expect(unused_imports, reason = "only the web build uses it")
+    feature = "native",
+    expect(unused_imports, reason = "only the browser build uses it")
 )]
 use super::*;
 
 /// What a panel is placed against.
-#[cfg(feature = "web")]
+#[cfg(not(feature = "native"))]
 pub(super) enum Anchor {
     /// The trigger whose `anchor-name` carries this id (`anchor_name_style`).
     Element(String),
@@ -35,7 +35,7 @@ pub(super) enum Anchor {
 ///
 /// Published for stylesheets: `--dx-anchor-width`, `--dx-available-height/-width`,
 /// `data-placed-side` and `--dx-anchor-offset-x/-y` (the anchor's centre in the panel's own space).
-#[cfg(feature = "web")]
+#[cfg(not(feature = "native"))]
 const PLACE_JS: &str = r#"
 const [id, anchorSelector, point, SIDE, ALIGN, GAP] = await dioxus.recv();
 const content = document.getElementById(id);
@@ -171,7 +171,7 @@ if (typeof ResizeObserver === 'function') {
 "#;
 
 /// Places the panel `id` against `anchor` for as long as `open` is true (see [`PLACE_JS`]).
-#[cfg(feature = "web")]
+#[cfg(not(feature = "native"))]
 pub(super) fn use_placement(
     id: String,
     anchor: Anchor,
@@ -224,7 +224,7 @@ pub(super) fn use_placement(
 /// the same formula on the opposite side that `position-try-fallbacks: flip-block, flip-inline`
 /// can paint), lies outside the visible region (a keyboard shrinks it while the CSS engine still
 /// judges against the layout viewport) or covers the anchor.
-#[cfg(feature = "web")]
+#[cfg(not(feature = "native"))]
 pub(crate) fn use_anchor_position_fallback(
     id: String,
     anchor_id: String,
@@ -237,5 +237,5 @@ pub(crate) fn use_anchor_position_fallback(
     use_placement(id, Anchor::Element(anchor_id), open, side, align, gap_px);
 }
 
-// No native (Blitz) counterpart: every call site is inside a `#[cfg(feature = "web")]`-only
+// No native (Blitz) counterpart: every call site is inside a `#[cfg(not(feature = "native"))]`-only
 // component, so a same-named no-op stub would be dead code.

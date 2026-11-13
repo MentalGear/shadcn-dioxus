@@ -172,7 +172,7 @@ fn shorthand_and_plain_caller_style_both_fold_into_the_one_attribute() {
 // arm always yields a non-empty `anchor_name_style`, so these only
 // exercise the `(false, ..)` arms of its `match`; the empty-anchor
 // (native) arms are covered by `trigger_attributes_native_tests`
-// below, which is not `feature = "web"`-gated.
+// below, which is not `not(feature = "native")`-gated.
 // -----------------------------------------------------------------
 
 #[test]
@@ -263,7 +263,7 @@ fn trigger_non_style_attributes_pass_through_untouched() {
     assert!(result.iter().any(|a| a.name == "role"));
 }
 
-#[cfg(feature = "web")]
+#[cfg(not(feature = "native"))]
 #[test]
 fn a_caller_id_with_css_punctuation_names_one_anchor_on_both_sides() {
     // `a.b` as a bare ident would end at the dot, so the trigger and the content would name

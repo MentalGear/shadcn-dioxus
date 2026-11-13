@@ -158,7 +158,7 @@ pub fn Tooltip(props: TooltipProps) -> Element {
     // `ensure_scrollbar_gutter_baseline` being called from every
     // scroll-lock-capable primitive's *root* component for the identical
     // "must exist before first open" reason.
-    #[cfg(feature = "web")]
+    #[cfg(not(feature = "native"))]
     use_effect(crate::top_layer::ensure_anchor_positioning_styles);
 
     let (open, set_open) = use_controlled(props.open, props.default_open, props.on_open_change);
@@ -411,7 +411,7 @@ pub fn TooltipContent(props: TooltipContentProps) -> Element {
     // Create the tooltip content. `TooltipContentRendered` is a real
     // component (not a plain fn) precisely so it can be mounted/unmounted
     // by `render()` here -- it, and the hooks it calls internally (this
-    // slice's `use_popover_shown_while_mounted` on the web arm), get a
+    // slice's `use_popover_shown_while_mounted` on the browser arm), get a
     // fresh scope each time, matching this element's actual DOM lifetime.
     // A plain fn called
     // conditionally from inside this `rsx!` would instead attribute those
@@ -437,7 +437,7 @@ pub fn TooltipContent(props: TooltipContentProps) -> Element {
     }
 }
 
-/// Web arm (Phase 4.4, dev-docs/plan.md): promote the tooltip to the top layer
+/// Browser arm (Phase 4.4, dev-docs/plan.md): promote the tooltip to the top layer
 /// via `popover="manual"` so it escapes clipping/transformed ancestors
 /// (dev-docs/archive/research/phase4-spike-findings.md experiment 7). `manual`, not `auto`: a
 /// Tooltip already owns its entire open/close lifecycle through
@@ -469,14 +469,14 @@ pub fn TooltipContent(props: TooltipContentProps) -> Element {
 /// into the signal in case anything ever closes this natively -- it never
 /// does for `manual` (see `PopoverKind::Manual`'s doc), but the callback
 /// shape stays symmetric with every other call site.
-#[cfg(feature = "web")]
+#[cfg(not(feature = "native"))]
 #[component]
 fn TooltipContentRendered(
     /// The DOM id of the tooltip content element.
     id: String,
-    /// Whether the tooltip is open. Sets the content's `data-open` / `data-closed`, and on the web keeps its popover shown.
+    /// Whether the tooltip is open. Sets the content's `data-open` / `data-closed`, and in the browser arm keeps its popover shown.
     open: Memo<bool>,
-    /// Sets the open state. On the web, it is called when the browser closes the tooltip's popover.
+    /// Sets the open state. In the browser arm, it is called when the browser closes the tooltip's popover.
     set_open: Callback<bool>,
     /// Side of the trigger to place the tooltip.
     side: ContentSide,
@@ -556,17 +556,17 @@ fn TooltipContentRendered(
 /// (`dev-docs/reference/platform-rationale.md` Caveat 2), so this is the
 /// functional floor — a plain, always-in-flow div, visible exactly when
 /// `render()` (above) mounts it.
-#[cfg(not(feature = "web"))]
+#[cfg(feature = "native")]
 #[component]
 fn TooltipContentRendered(
     /// The DOM id of the tooltip content element.
     id: String,
-    /// Whether the tooltip is open. Sets the content's `data-open` / `data-closed`, and on the web keeps its popover shown.
+    /// Whether the tooltip is open. Sets the content's `data-open` / `data-closed`, and in the browser arm keeps its popover shown.
     open: Memo<bool>,
     // Unused on this arm -- kept as a same-named field so the shared,
     // cfg-independent call site in `TooltipContent` compiles on
     // both arms.
-    /// Sets the open state. On the web, it is called when the browser closes the tooltip's popover.
+    /// Sets the open state. In the browser arm, it is called when the browser closes the tooltip's popover.
     set_open: Callback<bool>,
     /// Side of the trigger to place the tooltip.
     side: ContentSide,
@@ -578,7 +578,7 @@ fn TooltipContentRendered(
     children: Element,
 ) -> Element {
     let _ = set_open;
-    // Owned by this component -- see the web arm's identical construction
+    // Owned by this component -- see the browser arm's identical construction
     // above (`dev-docs/backlog.md` row 93).
     let attributes = merge_attributes(vec![
         attributes,
@@ -616,7 +616,7 @@ fn TooltipContentRendered(
 // reproduces this: the SSR'd
 // HTML gets two `style="..."` attributes on the content element instead of
 // one folded string, and the assertion below goes red.
-#[cfg(all(test, feature = "web"))]
+#[cfg(all(test, not(feature = "native")))]
 mod anchor_style_hydration_parity {
     use super::*;
     use crate::test_support::find_element;

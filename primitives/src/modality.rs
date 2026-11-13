@@ -199,7 +199,7 @@ function dxCloseFocus(panel, insideOnly) {
 /// by state): when `open` goes `false`, `dxCloseFocus` runs on the still-mounted panel, which
 /// returns focus to the opener (or the author's `final_focus`) if focus is still inside it. The
 /// modal `<dialog>` does the same from `use_dialog_open_driver` right after its native `close()`.
-#[cfg(feature = "web")]
+#[cfg(not(feature = "native"))]
 pub(crate) fn use_close_focus(id: String, open: impl Readable<Target = bool> + Copy + 'static) {
     let mut was_open = use_signal(|| false);
     use_effect(move || {

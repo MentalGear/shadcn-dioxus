@@ -203,15 +203,15 @@ gates=(
   # Every Rust file is rustfmt-formatted (`cargo fmt --all -- --check`). Never reused from the store: it takes under a second.
   "fmt|cargo fmt --all -- --check"
   "check-primitives-features|scripts/check-primitives-features.sh"
-  # Clippy, default arm: `cargo clippy --workspace --all-targets -- -D warnings --cfg dx_repo_lints` (the cfg reaches only the workspace crates, so no dependency rebuilds, and fulfils the installed files' `cfg_attr(dx_repo_lints, expect(..))`) lints the `not(feature = "web")` arm of primitives and every workspace member. A plain `cargo clippy --workspace` never enables primitives' `web` feature or preview's `server` feature, and those two are what ships (`dx build --ssg` compiles the browser client with `web` and the prerender server with `server`), so each arm is its own gate; `--all-features` cannot replace them (preview's `desktop` needs gtk and webkit2gtk, the renderers are alternatives, and it would stop linting the `not(web)` arm). Every clippy gate is also red when its log holds a `generated N warning(s)` line although cargo exited 0.
+  # Clippy, default arm: `cargo clippy --workspace --all-targets -- -D warnings --cfg dx_repo_lints` (the cfg reaches only the workspace crates, so no dependency rebuilds, and fulfils the installed files' `cfg_attr(dx_repo_lints, expect(..))`) lints the browser-engine arm of primitives (the default one, the arm every browser, webview and SSG build ships) and every workspace member. A plain `cargo clippy --workspace` never enables preview's `server` feature or primitives' `native` feature, so each is its own gate; `--all-features` cannot replace them (preview's `desktop` needs gtk and webkit2gtk, the renderers are alternatives, and it would stop linting the browser arm). Every clippy gate is also red when its log holds a `generated N warning(s)` line although cargo exited 0.
   "clippy-default|cargo clippy --workspace $CLIPPY_FLAGS"
-  # Clippy, `web` arm: primitives and preview with their `web` features, the code the wasm client compiles (over 100 `feature = "web"` cfg sites in primitives alone).
-  "clippy-web|cargo clippy -p dioxus-primitives -p preview --features dioxus-primitives/web,preview/web $CLIPPY_FLAGS"
-  # Clippy, `server` arm: preview with `server` (the SSG prerender server; implies fullstack and the primitives `web` feature).
+  # Clippy, `native` arm: primitives with their `native` feature (which turns on `dioxus/native`), the Blitz arm, compiled against the real dioxus-native renderer.
+  "clippy-native|cargo clippy -p dioxus-primitives --features native $CLIPPY_FLAGS"
+  # Clippy, `server` arm: preview with `server` (the SSG prerender server; it renders the same browser-engine arm the client hydrates).
   "clippy-server|cargo clippy -p preview --features server $CLIPPY_FLAGS"
-  # `cargo test --workspace`: every unit and integration test of the workspace on the plain arm (no `web` or `server` feature); the server arm is `test-server`.
+  # `cargo test --workspace`: every unit and integration test of the workspace on the plain arm (the browser-engine arm, no `server` feature); the server arm is `test-server`.
   "test|cargo test --workspace"
-  # `cargo test -p preview --features server`: the arm `dx build --ssg` ships, where `ssr_parity` and the web-only effects differ from the plain arm.
+  # `cargo test -p preview --features server`: the arm `dx build --ssg` ships, where `ssr_parity` and the server-only code differ from the plain arm.
   "test-server|cargo test -p preview --features server"
   "check-rustdoc|scripts/check-rustdoc.sh"
   # Stylelint over every stylesheet under `preview/src`, `preview/assets` and `primitives/src` (the engine sheets the primitives insert: `top_layer/*.css`, `toast_base.css`, `scrollbar_gutter.css`, row 434; run with `pnpm exec`, which never downloads: a worktree without `node_modules` fails loudly). The primitives sheets use preview's config explicitly, since stylelint finds a config from the file's own directory.

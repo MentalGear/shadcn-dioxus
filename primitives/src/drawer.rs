@@ -5,7 +5,7 @@
 //!
 //! `Drawer` is the modal [`crate::dialog::DialogRoot`]/
 //! [`crate::dialog::DialogContent`] primitive (see `dialog.rs`'s own module
-//! doc for the web-arm native `<dialog>`/`showModal()` engine and the
+//! doc for the browser-arm native `<dialog>`/`showModal()` engine and the
 //! native-arm vendored focus trap) plus a drag gesture layered on top --
 //! exactly the composition `preview/src/components/sheet/component.rs`'s
 //! themed `Sheet` already does for the *same* primitive, one layer higher.

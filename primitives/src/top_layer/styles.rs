@@ -2,7 +2,7 @@
 
 use super::*;
 
-#[cfg(feature = "web")]
+#[cfg(not(feature = "native"))]
 thread_local! {
     /// Whether [`ensure_anchor_positioning_styles`]'s `document::eval` has
     /// already been scheduled once in this WASM instance -- same idempotency
@@ -122,7 +122,7 @@ pub(crate) fn insert_head_style(id: &'static str, css: &'static str) {
 /// a single correct answer every anchored overlay shares the way the
 /// centering-trap fix is. Each component's own stylesheet keeps whatever
 /// `border`/`overflow` reset it individually needs.
-#[cfg(feature = "web")]
+#[cfg(not(feature = "native"))]
 pub(crate) fn ensure_anchor_positioning_styles() {
     if ANCHOR_POSITIONING_STYLES_INSTALLED.with(|installed| installed.replace(true)) {
         return;
@@ -164,7 +164,7 @@ pub(crate) fn ensure_anchor_positioning_styles() {
 /// forces a synchronous style/layout recalc that is guaranteed to already
 /// see it -- no ordering assumption about *separate* `document::eval()`
 /// dispatches required at all.
-#[cfg(feature = "web")]
+#[cfg(not(feature = "native"))]
 pub(super) fn anchor_positioning_inject_js() -> String {
     format!(
         r#"
@@ -187,7 +187,7 @@ pub(super) fn anchor_positioning_inject_js() -> String {
 /// resets are deliberately not part of it.
 ///
 /// Every `[data-dx-anchored][popover]` selector in `anchor.css` also matches `:modal`
-/// (`:is([popover], :modal)`): a modal `Popover`'s web arm
+/// (`:is([popover], :modal)`): a modal `Popover`'s browser arm
 /// is a real `<dialog>` opened with `showModal()`, so it carries
 /// `data-dx-anchored="popover"` the same way the non-modal arm's
 /// `<dialog popover="auto">` does, but never the `popover` attribute itself
@@ -198,7 +198,7 @@ pub(super) fn anchor_positioning_inject_js() -> String {
 /// `anchor()` treatment off for that arm, mirroring `[popover]`'s role for
 /// the Popover-API arms without needing a second attribute. (The RTL rules are
 /// `[popover]` only: a modal dialog never matched them.)
-#[cfg(feature = "web")]
+#[cfg(not(feature = "native"))]
 const ANCHOR_POSITIONING_CSS_JS_LITERAL: &str = concat!("`", include_str!("anchor.css"), "`");
 
 /// Installs the shared top-layer ink-color baseline described below, at
@@ -307,7 +307,7 @@ const ANCHOR_POSITIONING_CSS_JS_LITERAL: &str = concat!("`", include_str!("ancho
 /// surface), every later prepend is a same-tick, JS-side
 /// `getElementById` no-op, cheaper than re-deriving whether it is needed
 /// from Rust.
-#[cfg(feature = "web")]
+#[cfg(not(feature = "native"))]
 pub(crate) fn ensure_top_layer_ink_styles() {
     if TOP_LAYER_INK_STYLES_INSTALLED.with(|installed| installed.replace(true)) {
         return;
@@ -340,7 +340,7 @@ pub(crate) fn ensure_top_layer_ink_styles() {
 /// full account). `pub(crate)`, not private to this module, so `lib.rs`'s
 /// `use_dialog_open_driver` -- the third of the three exhaustive
 /// call sites, and the only one outside this file -- can prepend it too.
-#[cfg(feature = "web")]
+#[cfg(not(feature = "native"))]
 pub(crate) const TOP_LAYER_INK_STYLES_INJECT_JS: &str = concat!(
     r#"
 if (!document.getElementById('dx-top-layer-ink-styles')) {

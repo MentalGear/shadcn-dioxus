@@ -8,7 +8,7 @@ use dioxus::prelude::*;
 use dioxus_attributes::attributes;
 
 use super::super::context::SelectContext;
-#[cfg(feature = "web")]
+#[cfg(not(feature = "native"))]
 use super::super::context::SelectPosition;
 use super::scroll_button::ListScroll;
 
@@ -110,7 +110,7 @@ pub fn SelectList(props: SelectListProps) -> Element {
 /// by moving it and, past that, scrolling the option away from the trigger line. With no selected
 /// option there is nothing to align, so the whole list sits below the trigger and flips above it on
 /// collision, the popper's rule (`data-side` names the side for the CSS).
-#[cfg(feature = "web")]
+#[cfg(not(feature = "native"))]
 const ITEM_ALIGNED_JS: &str = r#"
 const [id, triggerSelector] = await dioxus.recv();
 const list = document.getElementById(id);
@@ -179,7 +179,7 @@ listen(window.visualViewport, 'resize', place, { passive: true });
 "#;
 
 /// Places the listbox for `position="item-aligned"`; does nothing for the popper placement.
-#[cfg(feature = "web")]
+#[cfg(not(feature = "native"))]
 fn use_item_aligned(id: String, ctx: SelectContext) {
     use crate::js_listener::{use_js_listeners, JsListeners};
     let open = ctx.selectable.open;
@@ -202,7 +202,7 @@ fn use_item_aligned(id: String, ctx: SelectContext) {
 }
 
 /// Shared listbox keydown handling for both render arms below -- factored
-/// out so it isn't duplicated across the web/native split.
+/// out so it isn't duplicated across the browser/native split.
 fn select_list_onkeydown(mut ctx: SelectContext) -> impl FnMut(KeyboardEvent) {
     move |event: KeyboardEvent| {
         let key = event.key();
@@ -254,9 +254,9 @@ fn select_list_onkeydown(mut ctx: SelectContext) -> impl FnMut(KeyboardEvent) {
                 event.prevent_default();
                 event.stop_propagation();
             }
-            // The web arm's Escape is the dismiss core's (`SelectListRendered`); the arm without
+            // The browser arm's Escape is the dismiss core's (`SelectListRendered`); the arm without
             // script keeps this one as its functional floor.
-            #[cfg(not(feature = "web"))]
+            #[cfg(feature = "native")]
             Key::Escape => {
                 ctx.set_open(false);
                 event.prevent_default();
@@ -295,7 +295,7 @@ fn use_listbox_container_focus(
     focused
 }
 
-/// Web arm: promote the listbox to the top layer via `popover="manual"` so it escapes
+/// Browser arm: promote the listbox to the top layer via `popover="manual"` so it escapes
 /// clipping/transformed ancestors, the same construction as `Tooltip`/`HoverCard`/`Combobox`
 /// (dev-docs/plan.md Phase 4.4). The placement is the engine's anchored popper, or the item-aligned
 /// script (`use_item_aligned`), per [`SelectContext::placement`].
@@ -325,7 +325,7 @@ fn use_listbox_container_focus(
 ///
 /// Page scroll is not locked while the list is open and the panel stays attached to the trigger as
 /// the page scrolls (row 477's placement); the list scrolls inside its own `overflow` (row 478).
-#[cfg(feature = "web")]
+#[cfg(not(feature = "native"))]
 #[component]
 fn SelectListRendered(
     /// The DOM id of the list element.
@@ -490,7 +490,7 @@ fn SelectListRendered(
 /// Native (Blitz) arm: Blitz has no popover-API support at all
 /// (`dev-docs/reference/platform-rationale.md` Caveat 2), so this stays the
 /// functional floor, a plain, always-in-flow `div`.
-#[cfg(not(feature = "web"))]
+#[cfg(feature = "native")]
 #[component]
 fn SelectListRendered(
     /// The DOM id of the list element.
@@ -509,7 +509,7 @@ fn SelectListRendered(
     let focused = use_listbox_container_focus(ctx, listbox_ref);
 
     let onkeydown = select_list_onkeydown(ctx);
-    // See the web arm's identical construction (dev-docs/backlog.md row 34) for
+    // See the browser arm's identical construction (dev-docs/backlog.md row 34) for
     // why this is conditional and routed through `merge_attributes` rather
     // than a bare literal alongside `..attributes`.
     let labelledby: Vec<Attribute> = if has_own_accessible_name(&attributes) {
@@ -519,7 +519,7 @@ fn SelectListRendered(
             aria_labelledby: "{ctx.selectable.trigger_id}"
         })
     };
-    // Same reasoning as the web arm above.
+    // Same reasoning as the browser arm above.
     let owned = attributes!(div {
         role: "listbox",
         tabindex: if focused() { "0" } else { "-1" },

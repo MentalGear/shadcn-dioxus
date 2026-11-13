@@ -24,10 +24,10 @@ done
 echo; echo "## unique crates in the wasm32 normal tree of dioxus-primitives (deduped name+version)"
 cnt(){ scripts/lane-cargo.sh -- cargo tree --offline -e normal --target wasm32-unknown-unknown --prefix none -p dioxus-primitives "$@" 2>/dev/null \
   | grep -v '^lane-' | sed -E 's/ \(\*\)//; s/ \(\/.*\)//' | sort -u | wc -l; }
-echo "no features (router off):     $(cnt --no-default-features --features web)"
-echo "+ calendar:                   $(cnt --no-default-features --features web,calendar)"
-echo "+ color-picker:               $(cnt --no-default-features --features web,color-picker)"
-echo "default (router on):          $(cnt --features web)"
+echo "no features (router off):     $(cnt --no-default-features)"
+echo "+ calendar:                   $(cnt --no-default-features --features calendar)"
+echo "+ color-picker:               $(cnt --no-default-features --features color-picker)"
+echo "default (router on):          $(cnt)"
 echo; echo "## blast radius: components whose component.json asks for a crate or primitives feature"
 for k in '"time"' '"palette"' '"dioxus-icons"' '"pulldown-cmark"' '"calendar"' '"color-picker"' '"router"'; do
   printf '%-16s %s\n' "$k" "$(grep -l "$k" preview/src/components/*/component.json | wc -l)"; done

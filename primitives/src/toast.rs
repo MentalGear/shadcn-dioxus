@@ -10,13 +10,13 @@ use dioxus_attributes::attributes;
 use std::collections::VecDeque;
 use std::time::Duration;
 
-// `document`/`Cell` are only needed for the web-arm's engine-injected
+// `document`/`Cell` are only needed for the browser-arm's engine-injected
 // baseline stylesheet (`ensure_toast_base_styles`, dev-docs/backlog.md row 44)
 // -- same shape as `top_layer.rs`'s `ensure_anchor_positioning_styles`,
 // which this mirrors.
-#[cfg(feature = "web")]
+#[cfg(not(feature = "native"))]
 use dioxus::document;
-#[cfg(feature = "web")]
+#[cfg(not(feature = "native"))]
 use std::cell::Cell;
 
 /// Toast types for different visual styles
@@ -688,7 +688,7 @@ cleanup(() => { changes.disconnect(); sizes.disconnect(); list.style.removePrope
 sync();
 "#;
 
-#[cfg(feature = "web")]
+#[cfg(not(feature = "native"))]
 thread_local! {
     /// Whether [`ensure_toast_base_styles`] has already inserted its `<style>`
     /// once in this WASM instance -- same idempotency guard
@@ -751,7 +751,7 @@ thread_local! {
 /// calling it more than once is harmless) -- mirrors
 /// `use_anchor_position_fallback`'s own `use_effect(ensure_anchor_
 /// positioning_styles)` call for the identical reason.
-#[cfg(feature = "web")]
+#[cfg(not(feature = "native"))]
 fn ensure_toast_base_styles() {
     if TOAST_BASE_STYLES_INSTALLED.with(|installed| installed.replace(true)) {
         return;
@@ -759,7 +759,7 @@ fn ensure_toast_base_styles() {
     crate::top_layer::insert_head_style("dx-toast-base-styles", include_str!("toast_base.css"));
 }
 
-/// Web arm: promote the toast region to the
+/// Browser arm: promote the toast region to the
 /// top layer via `popover="manual"` so toasts are never clipped by an
 /// `overflow: hidden` ancestor and always paint above everything else on
 /// the page (WHATWG HTML's top layer), the same construction as
@@ -844,7 +844,7 @@ fn ensure_toast_base_styles() {
 /// `attributes` may carry is dropped explicitly before merging -- non-
 /// overridable by construction on both lanes, not just by accident of
 /// spread order.
-#[cfg(feature = "web")]
+#[cfg(not(feature = "native"))]
 #[component]
 fn ToastRegionRendered(
     /// The DOM id of the region element.
@@ -951,11 +951,11 @@ fn ToastRegionRendered(
 /// Native (Blitz) arm: Blitz has no popover-API support at all, so this is
 /// the functional floor, a plain, always-in-flow `div`. Blitz has no
 /// SSR/hydration lane for the
-/// "duplicate attribute" divergence in the web arm's doc above to ever
+/// "duplicate attribute" divergence in the browser arm's doc above to ever
 /// bite, but the caller-wins-except-`id` merge is applied here too for the
 /// same reason: keep both arms' semantics identical rather than have one
 /// depend on spread order and the other not.
-#[cfg(not(feature = "web"))]
+#[cfg(feature = "native")]
 #[component]
 fn ToastRegionRendered(
     /// The DOM id of the region element.
@@ -969,7 +969,7 @@ fn ToastRegionRendered(
     /// The toast list rendered inside the region.
     children: Element,
 ) -> Element {
-    // Same `style` fold as the web arm above (dev-docs/backlog.md row
+    // Same `style` fold as the browser arm above (dev-docs/backlog.md row
     // 44) -- kept in both arms for the reason this file's own "Native
     // (Blitz) arm" doc gives for the identical id/attribute-dedup choice:
     // both arms' semantics should agree by construction, not by accident of
@@ -1252,7 +1252,7 @@ pub fn Toast(props: ToastProps) -> Element {
     };
 
     // `dx-toast-base-item` -- see `ensure_toast_base_styles`'s doc: the
-    // plain marker class the web arm's engine-injected fallback stylesheet
+    // plain marker class the browser arm's engine-injected fallback stylesheet
     // selects on, giving a raw (unstyled-wrapper) toast a real, nonzero box
     // cross-engine (dev-docs/backlog.md row 44). Routed through
     // `merge_attributes` rather than a bare literal alongside `..props.

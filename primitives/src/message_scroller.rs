@@ -116,7 +116,7 @@
 //!
 //! # Renderer arms
 //!
-//! Markup and attribute choice split on the `web` Cargo feature (never
+//! Markup and attribute choice split on the `native` Cargo feature (never
 //! `target_family`): with it, a real document runs the controller; without it
 //! (Blitz / `dioxus-native`, where `document::eval` is a no-op) the shell
 //! renders as plain overflow with no `data-pending-scroll`, no auto-follow,
@@ -134,7 +134,7 @@
 
 use crate::r#virtual::{cv_chunks, ChunkSkip};
 pub use crate::scroll_area::ScrollFade;
-#[cfg(feature = "web")]
+#[cfg(not(feature = "native"))]
 use crate::use_effect_with_cleanup;
 use crate::{merge_attributes, use_unique_id, AsChild};
 use dioxus::document::Eval;
@@ -144,7 +144,7 @@ use serde::{Deserialize, Serialize};
 
 /// The controller, run as one `document::eval` per provider. See the module
 /// doc for the message protocol.
-#[cfg(feature = "web")]
+#[cfg(not(feature = "native"))]
 const MESSAGE_SCROLLER_JS: &str = include_str!("message_scroller.js");
 
 /// Where a saved transcript opens on its first non-empty render.
@@ -296,8 +296,8 @@ pub struct Visibility {
 /// differ.
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 #[cfg_attr(
-    not(feature = "web"),
-    expect(dead_code, reason = "only the web build uses it")
+    feature = "native",
+    expect(dead_code, reason = "only the browser build uses it")
 )]
 #[serde(untagged)]
 enum Out {
@@ -308,12 +308,12 @@ enum Out {
 }
 
 /// Rust -> controller messages. `t` is the discriminant the controller
-/// switches on. `Init`, `Config` and `Teardown` are only built by the `web`
+/// switches on. `Init`, `Config` and `Teardown` are only built by the browser
 /// arm's controller wiring.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[cfg_attr(
-    not(feature = "web"),
-    expect(dead_code, reason = "only the web build uses it")
+    feature = "native",
+    expect(dead_code, reason = "only the browser build uses it")
 )]
 #[serde(tag = "t", rename_all = "camelCase")]
 enum Msg {
@@ -385,8 +385,8 @@ struct MessageScrollerCtx {
     /// How many [`use_message_scroller_visibility`] subscribers are mounted;
     /// the controller observes rows only while this is above zero.
     #[cfg_attr(
-        not(feature = "web"),
-        expect(dead_code, reason = "only the web build uses it")
+        feature = "native",
+        expect(dead_code, reason = "only the browser build uses it")
     )]
     observers: CopyValue<usize>,
     /// Whether the root and viewport render `data-pending-scroll`.
@@ -398,9 +398,9 @@ struct MessageScrollerCtx {
 
 impl MessageScrollerCtx {
     /// Deliver `msg` to the controller, or hold it until the controller
-    /// starts. A no-op without the `web` feature (no controller exists).
+    /// starts. A no-op on the native arm (no controller exists).
     fn send(mut self, msg: Msg) {
-        if !cfg!(feature = "web") {
+        if cfg!(feature = "native") {
             return;
         }
         let eval = *self.eval.peek();
@@ -414,7 +414,7 @@ impl MessageScrollerCtx {
 
     /// [`send`](Self::send) for a cleanup that may run after the provider's
     /// own scope dropped: does nothing if the provider's state is gone.
-    #[cfg(feature = "web")]
+    #[cfg(not(feature = "native"))]
     fn send_if_alive(mut self, msg: Msg) {
         let Ok(eval) = self.eval.try_peek().map(|eval| *eval) else {
             return;
@@ -520,7 +520,7 @@ pub fn MessageScrollerProvider(props: MessageScrollerProviderProps) -> Element {
     let visibility = use_signal(Visibility::default);
     let observers = use_hook(|| CopyValue::new(0usize));
     let position = props.default_scroll_position;
-    let pending_scroll = use_hook(|| cfg!(feature = "web") && position.peek().holds_pending());
+    let pending_scroll = use_hook(|| !cfg!(feature = "native") && position.peek().holds_pending());
 
     let virtualize = props.virtualize;
 
@@ -551,12 +551,12 @@ pub fn MessageScrollerProvider(props: MessageScrollerProviderProps) -> Element {
     }
 }
 
-/// Installs the controller and keeps its config in sync -- the `web` arm.
+/// Installs the controller and keeps its config in sync -- the browser arm.
 ///
 /// The install effect reads every prop with `.peek()` so it runs exactly
 /// once; the second effect tracks them and forwards changes as `config`
 /// messages (queued if the controller has not started yet).
-#[cfg(feature = "web")]
+#[cfg(not(feature = "native"))]
 fn use_message_scroller_controller(
     ctx: MessageScrollerCtx,
     position: ReadSignal<DefaultScrollPosition>,
@@ -618,7 +618,7 @@ fn use_message_scroller_controller(
 
 /// The native (Blitz) arm: `document::eval` is a no-op there, so there is no
 /// controller. The shell renders as plain overflow.
-#[cfg(not(feature = "web"))]
+#[cfg(feature = "native")]
 fn use_message_scroller_controller(
     _ctx: MessageScrollerCtx,
     _position: ReadSignal<DefaultScrollPosition>,
@@ -1014,7 +1014,7 @@ pub struct MessageScrollerApi {
 
 impl MessageScrollerApi {
     /// Scroll to the newest message. With `auto_scroll` this also
-    /// re-engages following. A no-op without the `web` feature.
+    /// re-engages following. A no-op on the native arm.
     pub fn scroll_to_end(&self, behavior: ScrollBehavior) {
         self.ctx.send(Msg::End {
             behavior,
@@ -1022,8 +1022,8 @@ impl MessageScrollerApi {
         });
     }
 
-    /// Scroll to the oldest message. Releases following. A no-op without the
-    /// `web` feature.
+    /// Scroll to the oldest message. Releases following. A no-op on the
+    /// native arm.
     pub fn scroll_to_start(&self, behavior: ScrollBehavior) {
         self.ctx.send(Msg::Start {
             behavior,
@@ -1036,7 +1036,7 @@ impl MessageScrollerApi {
     /// empty the jump is queued until rows mount (and replaces the opening
     /// position); a missing id in a populated transcript is ignored. An
     /// explicit jump releases following. Fire-and-forget (see the module doc).
-    /// A no-op without the `web` feature.
+    /// A no-op on the native arm.
     pub fn scroll_to_message(&self, id: impl Into<String>, options: ScrollToMessageOptions) {
         self.ctx.send(Msg::Message {
             id: id.into(),
@@ -1083,7 +1083,7 @@ pub fn use_message_scroller_scrollable() -> ReadSignal<Scrollable> {
 /// Panics outside a [`MessageScrollerProvider`].
 pub fn use_message_scroller_visibility() -> ReadSignal<Visibility> {
     let ctx = use_context::<MessageScrollerCtx>();
-    #[cfg(feature = "web")]
+    #[cfg(not(feature = "native"))]
     {
         let mut observers = ctx.observers;
         use_effect_with_cleanup(move || {
@@ -1292,7 +1292,7 @@ mod tests {
     /// The flash guard is part of the SSR/hydration contract: present in the
     /// server HTML for `End`/`LastAnchor` (and identical on the hydrating
     /// client), absent for `Start`.
-    #[cfg(feature = "web")]
+    #[cfg(not(feature = "native"))]
     #[test]
     fn pending_scroll_guard_renders_for_end_and_last_anchor_only() {
         for (position, expected) in [
@@ -1317,7 +1317,7 @@ mod tests {
 
     /// The native (Blitz) arm has no controller to remove the guard, so it
     /// must never render it.
-    #[cfg(not(feature = "web"))]
+    #[cfg(feature = "native")]
     #[test]
     fn native_arm_never_renders_the_pending_scroll_guard() {
         for position in [

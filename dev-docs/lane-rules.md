@@ -157,7 +157,7 @@ Use the cheapest tool that answers the question, in this order:
    `check-rustdoc`, `check-primitives-features`, `check-attr-spread-collision`, `check-public-api`), so that is every static `check-*.sh`, fmt and
    stylelint, in seconds. Do NOT run the full `run-gates.sh`: the main loop runs it once on the merged tree. If you
    changed Rust, also lint the crate you touched through the lock (`scripts/lane-cargo.sh -- cargo clippy -p <crate>
-   --all-targets --features web -- -D warnings --cfg dx_repo_lints`; the cfg after `--`
+   --all-targets -- -D warnings --cfg dx_repo_lints`; the cfg after `--`
    reaches only the workspace crates, and the installed components' `cfg_attr(dx_repo_lints, expect(..))` need it).
 3. Run your own specs plus the existing specs of everything you touched on a `lane-ssg` build that you verified
    contains your change, with ONE command: `cd playwright && PLAYWRIGHT_BASE_URL=http://127.0.0.1:<port> flock

@@ -46,11 +46,11 @@
 //! differently-scoped: `Command` needs *less* of what `Combobox` does, not
 //! more, and these are the pieces that drop out --
 //!
-//! - No `input_id`: that field exists solely so `ComboboxList`'s web arm can
+//! - No `input_id`: that field exists solely so `ComboboxList`'s browser arm can
 //!   anchor-position itself against `ComboboxInput` once promoted to the top
 //!   layer (`top_layer::anchor_name_style`). `CommandList` is never promoted
 //!   anywhere -- it is always an in-flow child of `Command`, the same shape
-//!   `ComboboxListRendered`'s `#[cfg(not(feature = "web"))]` arm already
+//!   `ComboboxListRendered`'s `#[cfg(feature = "native")]` arm already
 //!   renders unconditionally -- so there is no anchor to bind.
 //! - No `set_open`: a command palette's list has no open/closed state of its own to toggle --
 //!   the surrounding `CommandDialog` (or whatever the caller composes
@@ -384,7 +384,7 @@ pub struct CommandInputProps {
 ///
 /// ## Focus on open (backlog rows 206 and 226)
 ///
-/// Inside a [`CommandDialog`] on the web arm the input carries `data-dx-autofocus` (not the
+/// Inside a [`CommandDialog`] on the browser arm the input carries `data-dx-autofocus` (not the
 /// `autofocus` attribute), the marker the shared open-focus policy
 /// ([`crate::modality::OPEN_FOCUS_JS`]) reads when the dialog opens: opened by keyboard or mouse
 /// the search box takes focus (a palette's search box is its point); opened by touch or pen the
@@ -393,7 +393,7 @@ pub struct CommandInputProps {
 /// `showModal()`'s own focusing step.
 ///
 /// Without a `<dialog>` to open (an inline `Command` with an explicit `autofocus: Some(true)`, or
-/// the non-web arms) the input renders the plain `autofocus` attribute and focuses itself once
+/// the native arms) the input renders the plain `autofocus` attribute and focuses itself once
 /// mounted. An inline `Command` that grabbed focus on mount would pull the page's focus
 /// (and scroll) to itself on every load, so `None` is `false` there.
 #[component]
@@ -417,9 +417,9 @@ pub fn CommandInput(props: CommandInputProps) -> Element {
     // Dialog-aware default: only a `CommandDialog` ancestor needs the input to claim focus.
     let in_dialog = try_use_context::<CommandDialogContext>().is_some();
     let autofocus = props.autofocus.unwrap_or(in_dialog);
-    // On the web arm a dialog's open driver chooses the initial focus from the opening modality
+    // On the browser arm a dialog's open driver chooses the initial focus from the opening modality
     // (`data-dx-autofocus`); everywhere else the input focuses itself.
-    let driver_autofocus = autofocus && in_dialog && cfg!(feature = "web");
+    let driver_autofocus = autofocus && in_dialog && !cfg!(feature = "native");
     let self_autofocus = autofocus && !driver_autofocus;
 
     let active_descendant = use_memo(move || ctx.focused_option_id());
@@ -492,7 +492,7 @@ pub fn CommandInput(props: CommandInputProps) -> Element {
                 let data = evt.data();
                 if self_autofocus {
                     spawn(async move {
-                        // focus-ok: explicit `autofocus` on an inline Command or a non-web arm
+                        // focus-ok: explicit `autofocus` on an inline Command or a native arm
                         let _ = data.set_focus(true).await;
                     });
                 }
@@ -533,7 +533,7 @@ pub struct CommandListProps {
 /// `combobox::ComboboxList`, this never promotes itself to the top layer or
 /// gates on an open/closed animation -- it is a plain, always in-flow
 /// `div[role="listbox"]`, the same shape `ComboboxListRendered`'s
-/// `#[cfg(not(feature = "web"))]` arm already renders unconditionally. See
+/// `#[cfg(feature = "native")]` arm already renders unconditionally. See
 /// the module doc's "Why a sibling context" section.
 #[component]
 pub fn CommandList(props: CommandListProps) -> Element {

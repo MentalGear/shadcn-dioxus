@@ -1,26 +1,26 @@
 //! `PopoverKind` and the popover attribute <-> signal sync hooks.
 
 #[cfg_attr(
-    not(feature = "web"),
-    expect(unused_imports, reason = "only the web build uses it")
+    feature = "native",
+    expect(unused_imports, reason = "only the browser build uses it")
 )]
 use super::*;
 
 /// Which `popover` dismissal behaviour an element declares.
 /// WHATWG HTML §the-popover-attribute (see module docs for the link).
 ///
-/// Only referenced from the `#[cfg(feature = "web")]` leaf render
+/// Only referenced from the `#[cfg(not(feature = "native"))]` leaf render
 /// functions in `tooltip.rs`/`hover_card.rs`/`popover.rs` -- the native
 /// (Blitz) arm never renders the `popover` attribute at all (see
 /// `use_popover_sync`'s doc) -- so this whole type is `#[cfg]`-gated too,
 /// rather than degrading to a dead stub on that target.
-#[cfg(feature = "web")]
+#[cfg(not(feature = "native"))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum PopoverKind {
     /// `popover="auto"` — light-dismisses on Escape and on a pointerdown
     /// outside the popover (and any popovers it is nested in); showing one
     /// auto popover also closes unrelated open ones. Used by the non-modal
-    /// [`crate::popover`] arm, which needs no dismiss-core layer that closes it on the web arm
+    /// [`crate::popover`] arm, which needs no dismiss-core layer that closes it on the browser arm
     /// (`use_dismiss`, `dismiss.rs`): the browser's light dismiss does that, and the arm's `NATIVE`
     /// layer only keeps its place in the Escape order;
     /// also `dropdown_menu.rs`, `menubar.rs`, and `select/components/
@@ -52,7 +52,7 @@ pub(crate) enum PopoverKind {
     Manual,
 }
 
-#[cfg(feature = "web")]
+#[cfg(not(feature = "native"))]
 impl PopoverKind {
     pub(crate) fn as_str(self) -> &'static str {
         match self {
@@ -93,10 +93,10 @@ impl PopoverKind {
 /// permanently hidden. See each call site (`tooltip.rs`, `hover_card.rs`,
 /// `popover.rs`) for the matching `#[cfg]` split on the attribute itself.
 ///
-/// It is gated on `feature = "web"` (a renderer Cargo feature this crate
+/// It is gated on `not(feature = "native")` (a renderer Cargo feature this crate
 /// already defines), not `target_family = "wasm"` — `dioxus-desktop` is a
 /// non-wasm binary with a real, working webview `eval`, and belongs on this
-/// same web-style arm, not on the native/no-op one `target_family = "wasm"`
+/// same browser-style arm, not on the native/no-op one `target_family = "wasm"`
 /// would wrongly exclude it from. A `target_family = "wasm"` gate would
 /// also have the fullstack SSG prerender — a host (non-wasm) binary built with
 /// this feature on — render the native-arm markup instead
@@ -106,7 +106,7 @@ impl PopoverKind {
 /// this hook's body — `document::eval` itself compiles and runs inertly on
 /// any renderer with no document context) would still key off
 /// `target_family`.
-#[cfg(feature = "web")]
+#[cfg(not(feature = "native"))]
 pub(crate) fn use_popover_sync(
     id: String,
     open: impl Readable<Target = bool> + Copy + 'static,
@@ -241,7 +241,7 @@ pub(crate) fn use_popover_sync(
 /// requires animated; the test Bug 1 targets only exercises a
 /// script-driven (Enter-key) close, exactly the path this hook keeps
 /// animatable.
-#[cfg(feature = "web")]
+#[cfg(not(feature = "native"))]
 pub(crate) fn use_popover_shown_while_mounted(
     id: String,
     open: impl Readable<Target = bool> + Copy + 'static,

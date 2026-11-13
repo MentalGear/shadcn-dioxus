@@ -313,7 +313,7 @@ pub fn HoverCard(props: HoverCardProps) -> Element {
     // installed well before the first open, rather than only from
     // `use_anchor_position_fallback` (which only runs once `HoverCardContent`
     // first mounts).
-    #[cfg(feature = "web")]
+    #[cfg(not(feature = "native"))]
     use_effect(crate::top_layer::ensure_anchor_positioning_styles);
 
     let (open, set_open) = use_controlled(props.open, props.default_open, props.on_open_change);
@@ -559,7 +559,7 @@ pub fn HoverCardContent(props: HoverCardContentProps) -> Element {
 
     // `HoverCardContentRendered` is a real component (not a plain fn) so it
     // -- and the hooks it calls internally (`use_popover_shown_while_mounted`
-    // on the web arm) -- get a fresh
+    // on the browser arm) -- get a fresh
     // scope each time `render()` mounts/unmounts it, matching this
     // element's actual DOM lifetime. See
     // `tooltip.rs`'s identical `TooltipContentRendered` comment for why a
@@ -588,7 +588,7 @@ pub fn HoverCardContent(props: HoverCardContentProps) -> Element {
     }
 }
 
-/// Web arm (Phase 4.4, dev-docs/plan.md): promote to the top layer via
+/// Browser arm (Phase 4.4, dev-docs/plan.md): promote to the top layer via
 /// `popover="manual"` (see `crate::top_layer::PopoverKind::Manual`'s doc for
 /// why `manual` and not `auto` — a `HoverCard`'s own mouseenter/mouseleave
 /// pair already owns its lifecycle, and MDN's own naming for this pattern
@@ -623,16 +623,16 @@ pub(crate) fn use_hover_dismiss(id: Signal<String>, timers: HoverTimers) {
     );
 }
 
-#[cfg(feature = "web")]
+#[cfg(not(feature = "native"))]
 #[component]
 fn HoverCardContentRendered(
     /// Whether the card is only mounted because of `force_mount`: closed, and not in its exit animation. It is hidden.
     dormant: bool,
     /// The DOM id of the card element.
     id: String,
-    /// Whether the card is open. On the web, its popover is kept shown while this is true.
+    /// Whether the card is open. In the browser arm, its popover is kept shown while this is true.
     open: Memo<bool>,
-    /// Sets the open state. On the web, it is called when the browser closes the card.
+    /// Sets the open state. In the browser arm, it is called when the browser closes the card.
     set_open: Callback<bool>,
     /// Whether the card is open. Sets its `data-open` / `data-closed`.
     is_open: bool,
@@ -702,7 +702,7 @@ fn HoverCardContentRendered(
 
 /// Native (Blitz) arm -- see
 /// `dev-docs/reference/platform-rationale.md` Caveat 2.
-#[cfg(not(feature = "web"))]
+#[cfg(feature = "native")]
 #[component]
 fn HoverCardContentRendered(
     /// Whether the card is only mounted because of `force_mount`: closed, and not in its exit animation. It is hidden.
@@ -712,9 +712,9 @@ fn HoverCardContentRendered(
     // Unused on this arm -- kept as a same-named field so the shared,
     // cfg-independent call site in `HoverCardContent` compiles unchanged on
     // both arms.
-    /// Whether the card is open. On the web, its popover is kept shown while this is true.
+    /// Whether the card is open. In the browser arm, its popover is kept shown while this is true.
     open: Memo<bool>,
-    /// Sets the open state. On the web, it is called when the browser closes the card.
+    /// Sets the open state. In the browser arm, it is called when the browser closes the card.
     set_open: Callback<bool>,
     /// Whether the card is open. Sets its `data-open` / `data-closed`.
     is_open: bool,
@@ -736,7 +736,7 @@ fn HoverCardContentRendered(
     let handle_mouse_enter = move |_: Event<MouseData>| timers.hold();
     let handle_mouse_leave = move |_: Event<MouseData>| timers.pointer_leave();
 
-    // Owned by this component -- see the web arm's identical construction
+    // Owned by this component -- see the browser arm's identical construction
     // above (`dev-docs/backlog.md` row 93).
     let attributes = merge_attributes(vec![
         attributes,

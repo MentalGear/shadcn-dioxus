@@ -17,6 +17,7 @@ ContentSide::Right  variant Right
 ContentSide::Top  variant Top
 MIRROR_AUTOCOMPLETE  const MIRROR_AUTOCOMPLETE: &str = "off"
 MIRROR_AUTOCOMPLETE  use form_reset::MIRROR_AUTOCOMPLETE
+NATIVE_ARM  const NATIVE_ARM: bool = cfg!(feature = "native")
 accordion  mod
 accordion::Accordion  fn Accordion(props: AccordionProps) -> Element  #[component]
 accordion::AccordionChevron  enum AccordionChevron  #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
@@ -86,8 +87,8 @@ alert_dialog::AlertDialogCancelProps  struct AlertDialogCancelProps  #[derive(Pr
 alert_dialog::AlertDialogCancelProps.attributes  field Vec<Attribute>  #[props(extends = GlobalAttributes)]
 alert_dialog::AlertDialogCancelProps.children  field Element
 alert_dialog::AlertDialogCancelProps.on_click  field Option<EventHandler<MouseEvent>>  #[props(default)]
-alert_dialog::AlertDialogContent  fn AlertDialogContent(props: AlertDialogContentProps) -> Element  #[component]  [cfg(feature = "web")]
-alert_dialog::AlertDialogContent  fn AlertDialogContent(props: AlertDialogContentProps) -> Element  #[component]  [cfg(not(feature = "web"))]
+alert_dialog::AlertDialogContent  fn AlertDialogContent(props: AlertDialogContentProps) -> Element  #[component]  [cfg(feature = "native")]
+alert_dialog::AlertDialogContent  fn AlertDialogContent(props: AlertDialogContentProps) -> Element  #[component]  [cfg(not(feature = "native"))]
 alert_dialog::AlertDialogContentProps  struct AlertDialogContentProps  #[derive(Props, Clone, PartialEq)]
 alert_dialog::AlertDialogContentProps.attributes  field Vec<Attribute>  #[props(extends = GlobalAttributes)]
 alert_dialog::AlertDialogContentProps.children  field Element

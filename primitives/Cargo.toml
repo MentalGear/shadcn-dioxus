@@ -29,6 +29,8 @@ tokio = { version = "1.52.3", features = ["time"] }
 
 [target.'cfg(target_family = "wasm")'.dependencies]
 gloo-timers = { version = "0.3.0", features = ["futures"] }
+# The wasm build of `time` reads the clock through `wasm-bindgen` (`UtcDateTime::now()` in the calendar); a host build never does.
+time = { version = "0.3.47", optional = true, features = ["wasm-bindgen"] }
 
 [dev-dependencies]
 dioxus-ssr = "0.7.0"
@@ -41,14 +43,24 @@ tokio = { version = "1.52.3", features = ["rt", "macros", "time", "test-util"] }
 # --features <the component.json features>`, so an app without a colour picker never compiles `palette` (and
 # its 11 companions) and one without a calendar never compiles `time`. `scripts/check-primitives-features.sh`
 # proves every subset below builds on its own (the workspace build unifies them all).
+#
+# The primitives render for a browser engine (a browser, or a desktop or mobile webview) by default and need no
+# feature for it. `native` selects the Blitz arm (no JavaScript); it also turns on `dioxus/native`, and a
+# compile-time assert in `src/lib.rs` holds it equal to the renderer dioxus itself is built for.
 [features]
 default = ["router"]
 router = ["dioxus/router"]
-web = ["time?/wasm-bindgen"]
+native = ["dioxus/native"]
+# Inert: nothing reads it. Manifests that still forward `dioxus-primitives/web` keep compiling.
+web = []
 # `calendar` and `date_picker` (they use each other's types).
 calendar = ["dep:time"]
 # `color_picker`.
 color-picker = ["dep:palette"]
+
+# docs.rs documents the browser arm.
+[package.metadata.docs.rs]
+features = ["router", "calendar", "color-picker"]
 
 [lints]
 workspace = true

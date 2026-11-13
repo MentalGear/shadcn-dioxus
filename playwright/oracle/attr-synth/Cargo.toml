@@ -18,12 +18,9 @@ publish = false
 dioxus = { version = "0.7.8", default-features = false, features = ["macro"] }
 dioxus-core = "0.7.8"
 # Path dependency onto the real, unmodified library this repo ships --
-# never a fork/copy. `web` mirrors what `preview`'s own `server` feature
-# turns on for `dioxus-primitives` (`preview/Cargo.toml`'s
-# `server = [..., "dioxus-primitives/web"]`), so this crate renders the
-# SAME arm the deployed SSG server binary does.
+# never a fork/copy. The primitives' default arm is the browser arm, the
+# SAME arm the deployed SSG server binary renders.
 dioxus-primitives = { path = "../../../primitives", default-features = false, features = [
-    "web",
     "router",
 ] }
 dioxus-ssr = "0.7.0"

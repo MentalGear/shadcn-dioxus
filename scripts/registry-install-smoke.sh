@@ -31,7 +31,8 @@
 #   --cli BIN        install with this `shadcn-dioxus` binary instead of `dx components`
 #   --only a,b,c     install just these components (default: all of them)
 #   --target TRIPLE  cargo check --target TRIPLE (default: the host; the template's default `web` feature
-#                    compiles there too; wasm32-unknown-unknown also works and is the shipped target)
+#                    compiles there too; wasm32-unknown-unknown also works and is the shipped target). With a
+#                    wasm target the `time` crate's `wasm-bindgen` feature (Calendar) is part of the resolved tree.
 #   --keep           keep the scratch directory (it holds the cargo target dir: several GB) and print it
 # Env: REGISTRY_SMOKE_TMP  parent of the scratch dir (default /tmp); needs ~6 GB free.
 # Exit status: 0 when every component installed and the app compiles, 1 otherwise, 2 on bad usage/environment.
@@ -148,8 +149,7 @@ if [ -n "$cli" ]; then
 else
   render_ref "$app" smoke_app
 fi
-# The template pre-declares `dioxus-primitives` (so its `web` feature can switch the browser-only code on), and a
-# smoke app that did too would let every component whose `component.json` lacks `cargoDependencies` compile
+# The template pre-declares `dioxus-primitives`, and a smoke app that did too would let every component whose `component.json` lacks `cargoDependencies` compile
 # here and fail with E0433 in an app made any other way.
 # The app under test therefore starts with NO crate but `dioxus`: the install itself must
 # add every other crate a component uses. (`dx new` / `shadcn-dioxus new` is not the only way in: `init` on an
@@ -164,7 +164,7 @@ for l in lines:
         while out and out[-1].startswith("#"):
             out.pop()
         continue
-    out.append(l.replace(', "dioxus-primitives/web"', ""))
+    out.append(l)
 text = "\n".join(out)
 if "primitives" in text:
     sys.exit("dioxus-primitives is still mentioned in " + p)
@@ -229,5 +229,25 @@ if ! (cd "$app" && cargo check --message-format short "${target_args[@]}") >"$ch
 fi
 warnings="$(grep -c 'warning' "$check_log" || true)"
 lap "cargo check finished"
+
+# 4c. The installed app has no wiring for a renderer, so it builds the browser-engine arm: `native` (the Blitz
+# arm) is off in its feature tree. `cargo tree` prints `dioxus-primitives feature "native"` for every enabled one.
+tree_log="$work/cargo-tree.log"
+if ! (cd "$app" && cargo tree --offline -e features -i dioxus-primitives "${target_args[@]}") >"$tree_log" 2>&1; then
+  echo "registry-install-smoke: RED -- cargo tree could not resolve dioxus-primitives in the installed app:" >&2
+  tail -15 "$tree_log" >&2
+  exit 1
+fi
+if ! grep -q 'dioxus-primitives feature "router"\|dioxus-primitives v' "$tree_log"; then
+  echo "registry-install-smoke: RED -- cargo tree printed no dioxus-primitives node:" >&2
+  tail -15 "$tree_log" >&2
+  exit 1
+fi
+if grep -q 'dioxus-primitives feature "native"' "$tree_log"; then
+  echo "registry-install-smoke: RED -- the installed app has dioxus-primitives/native on (the Blitz arm) without any wiring:" >&2
+  grep -B1 -A6 'dioxus-primitives feature "native"' "$tree_log" | head -30 >&2
+  exit 1
+fi
+lap "feature tree checked"
 
 echo "registry-install-smoke: OK -- $installed/$count components installed with $([ -n "$cli" ] && echo "shadcn-dioxus" || echo "dx $(dx --version | awk '{print $2}')") and the app compiles (cargo check${target:+ --target $target}, ${warnings} warning lines), $((SECONDS - start))s."

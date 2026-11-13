@@ -44,12 +44,12 @@ reading did not predict:
 
 1. **The silent no-`showModal` state.** Dioxus commits the declarative `open` attribute during render, before the effect
    that calls `showModal()` runs, so a runtime guard reads stale state. Solved by construction with a cfg-split component
-   body whose web arm never binds `open` and whose native arm never calls eval.
+   body whose browser arm never binds `open` and whose native arm never calls eval.
 2. **A scrollbar-gap layout shift** in the scroll lock (15 px under a classic scrollbar). Fixed by construction with a
    permanent `scrollbar-gutter: stable` baseline plus an `overflow-y` toggle (§5). A claimed scroll-lock bypass behind a
    native `<dialog>` was falsified: `locator.click()` had auto-scrolled the trigger into view before the lock engaged.
 
-#### The cfg axis: markup splits on the `web` feature, never on `target_family = "wasm"`
+#### The cfg axis: markup splits on the `native` feature, never on `target_family = "wasm"`
 
 A 2026-09-01 production incident: the SSG prerender runs the **server binary**, a host (non-wasm) build, and every
 overlay component split its rendered markup on `#[cfg(target_family = "wasm")]`. That is false on the SSG server, so the
@@ -58,12 +58,13 @@ against a structurally different tree; event delegation is wired by walking the 
 left unattached page-wide.
 
 **The rule** (`scripts/check-cfg-axis.sh` enforces it): rendered markup, component structure and attribute choice split on
-the **`web` Cargo feature** (`#[cfg(feature = "web")]` / `#[cfg(not(feature = "web"))]`), a *renderer* question that is
-true for the wasm browser client and for a host build with that feature on (the fullstack SSG server, `dioxus-desktop`'s
-webview). `target_family = "wasm"` is an *execution-target* question and is legitimate only for genuinely wasm-only
+the **`native` Cargo feature** (`#[cfg(feature = "native")]` is the Blitz arm, `#[cfg(not(feature = "native"))]` the
+browser-engine arm), a *renderer* question whose browser answer is true for the wasm browser client and for a host build
+without that feature (the fullstack SSG server, `dioxus-desktop`'s webview). `target_family = "wasm"` is an *execution-target* question and is legitimate only for genuinely wasm-only
 internals nested inside a feature-gated hook, never at module or component granularity. `document::eval` is a
 cross-renderer Dioxus API that compiles and runs (inertly, without a real document) on every target, so leaf hooks need no
-inner target guard. The wiring half: `preview/Cargo.toml`'s `server` feature enables `dioxus-primitives/web`.
+inner target guard. The wiring half has no wiring left to forget: the browser arm is the default, `native` also turns on `dioxus/native`, and a
+compile-time assert in `primitives/src/lib.rs` holds the feature equal to the renderer dioxus is built for.
 `playwright/oracle/hydration-parity.spec.ts` is the black-box oracle for the deployed symptom.
 
 #### Second divergence class: attribute override order
@@ -100,6 +101,10 @@ therefore not worse on Blitz than the alternative, with one design detail: Blitz
 `showModal()` where `eval` works. Never do both blindly: `showModal()` on a dialog already opened via the attribute throws
 `InvalidStateError`. Blitz's popover support is an open issue (`DioxusLabs/blitz#196`, March 2025) with no linked work: a
 native-first library is aligned with where Blitz is heading, but plan no schedule around it.
+
+The Blitz arm is the opt-in: the primitives render the browser-engine arm (a browser, or a desktop or mobile webview) with no feature, and a Blitz app
+enables `dioxus-primitives/native` next to `dioxus/native` (the primitives' `native` feature turns on `dioxus/native` itself, and a compile-time
+assert in `primitives/src/lib.rs` fails the build when the two renderers disagree).
 
 ---
 
