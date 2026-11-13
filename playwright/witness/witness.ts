@@ -76,6 +76,21 @@ export function judge(kind: ProbeName, b: Binding, real: Observation, cf: Observ
   }
 }
 
+/** The control arm: two independent real runs agree under the probe's criterion, nothing is intercepted, and a real
+ * decision was applied at the site (a kind that stood down agrees with itself in every arm, so agreement alone is vacuous). */
+export async function controlArm(browser: Browser, kind: ProbeName, b: Binding, scenario: Scenario = "event", kernel = true): Promise<void> {
+  const first = await observe(browser, b, null, scenario, kernel);
+  const second = await observe(browser, b, null, scenario, kernel);
+  const differ = disagreement(kind, b, first, second);
+  if (differ) throw new Error(`the control arm is not deterministic: two real runs disagree (${differ})`);
+  if (first.hits + second.hits) throw new Error("the real arm was intercepted: witness mode is not off");
+  for (const run of [first, second]) {
+    if (!run.applied.some((a) => a.startsWith(`${b.site}:`))) {
+      throw new Error(`the real arm applied no decision at ${b.site} (a kind that stood down, or an event that decides nothing): the pair would pass on silence`);
+    }
+  }
+}
+
 export interface WitnessOptions {
   /** The counterfactual's placement, when not the effect's next-best one. */
   mode?: "drop" | "delay" | "rehome" | "order";
@@ -102,11 +117,7 @@ export function witness(kind: ProbeName, site: string, effect: WitnessEffect, op
 
   const control: WitnessTest = { title: `control: ${title}`, run: async ({ browser }) => {
     test.fixme(!live, `site ${site} is not in the generated site list`);
-    const first = await observe(browser, b, null, scenario);
-    const second = await observe(browser, b, null, scenario);
-    const differ = disagreement(kind, b, first, second);
-    if (differ) throw new Error(`the control arm is not deterministic: two real runs disagree (${differ})`);
-    if (first.hits + second.hits) throw new Error("the real arm was intercepted: witness mode is not off");
+    await controlArm(browser, kind, b, scenario);
   } };
 
   const counter: WitnessTest = { title: `witness: ${title}`, run: async ({ browser }, testInfo) => {

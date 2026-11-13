@@ -42,9 +42,9 @@ export function counterfactual(b: Binding, effect: WitnessEffect, over: Partial<
 
 const FIXTURE_URL = "http://witness.fixture/page.html";
 
-async function open(page: Page, b: Binding): Promise<void> {
+async function open(page: Page, b: Binding, kernel: boolean): Promise<void> {
   if ("fixture" in b.page) {
-    const html = fixtureHtml(b.page.fixture);
+    const html = fixtureHtml(b.page.fixture, kernel);
     await page.route(FIXTURE_URL, (route) => route.fulfill({ contentType: "text/html", body: html }));
     await gotoReference(page, FIXTURE_URL);
   } else await gotoHydrated(page, BASE_URL + b.page.route);
@@ -81,7 +81,7 @@ async function setup(page: Page, b: Binding): Promise<void> {
 }
 
 /** Runs one arm: `arm` null is the real run (witness mode off, the patched members never intercept). */
-export async function observe(browser: Browser, b: Binding, arm: WitnessArm | null, scenario: Scenario = "event"): Promise<Observation> {
+export async function observe(browser: Browser, b: Binding, arm: WitnessArm | null, scenario: Scenario = "event", kernel = true): Promise<Observation> {
   const context = await browser.newContext();
   try {
     const page = await context.newPage();
@@ -90,7 +90,7 @@ export async function observe(browser: Browser, b: Binding, arm: WitnessArm | nu
     const early = arm !== null && (b.armAt === "load" || scenario === "mount");
     if (early) await page.addInitScript((a) => (window as any).__dxWitness.arm(a), arm);
     if (scenario === "mount") await page.addInitScript((a) => (window as any).__dxWitness.recordWhenPresent(a.host, a.props), { host: b.host, props });
-    await open(page, b);
+    await open(page, b, kernel);
     await page.evaluate(
       ({ host, sentinels }) => {
         const w = (window as any).__dxWitness;
@@ -114,9 +114,9 @@ export async function observe(browser: Browser, b: Binding, arm: WitnessArm | nu
     await paints(page, b.frames);
     const result = await page.evaluate((host) => {
       const w = (window as any).__dxWitness;
-      return { trajectory: w.stopRecording(), snapshot: w.snapshot(host), outcome: w.outcome(), hits: w.hits() };
+      return { trajectory: w.stopRecording(), snapshot: w.snapshot(host), outcome: w.outcome(), hits: w.hits(), applied: w.applied() };
     }, b.host);
-    return result as { trajectory: Trajectory; snapshot: Snapshot; outcome: string[]; hits: number };
+    return result as { trajectory: Trajectory; snapshot: Snapshot; outcome: string[]; hits: number; applied: string[] };
   } finally {
     await context.close();
   }

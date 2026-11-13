@@ -55,9 +55,9 @@ export const PAGES: Record<string, Page> = {
   },
 };
 
-export function fixtureHtml(name: string): string {
+export function fixtureHtml(name: string, kernel = true): string {
   const page = PAGES[name];
   if (page === undefined) throw new Error(`witness fixture: no page "${name}" (${Object.keys(PAGES).join(", ")})`);
-  const scripts = [BRIDGE, FIXTURE, LOAD_KERNEL, page.script].map((js) => `<script>${js}</script>`).join("");
+  const scripts = (kernel ? [BRIDGE, FIXTURE, LOAD_KERNEL, page.script] : [BRIDGE, FIXTURE, page.script]).map((js) => `<script>${js}</script>`).join("");
   return `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width"><body style="margin:0">${page.markup}${scripts}`;
 }

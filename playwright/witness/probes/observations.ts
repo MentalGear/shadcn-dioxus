@@ -31,4 +31,6 @@ export interface Observation {
   outcome: string[];
   /** How many calls the counterfactual intercepted (0 for a real arm). */
   hits: number;
+  /** `site:effect` of every decision effect the adapter applied during the run (a stood-down kind applies none). */
+  applied: string[];
 }

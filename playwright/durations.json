@@ -3,9 +3,9 @@
   "build": "debug",
   "workers": "2",
   "date": "2026-10-21",
-  "tests": 4172,
+  "tests": 4173,
   "files": 291,
-  "total_seconds": 12879,
+  "total_seconds": 12883,
   "budget_seconds": 17000,
   "max_file_seconds": 3000,
   "note": "seconds = sum of test durations (worker time) on the DEBUG SSG build, 2 workers, 4-core box shared with other lanes; main-thread.spec.ts and scroll-main-thread.spec.ts are release-only (skipped on debug) and carry their RELEASE seconds. release_total_seconds = the same run on a release build. Refresh: playwright/tools/run-suite.sh, then durations.mjs chunk-*.json --write",
@@ -2318,7 +2318,7 @@
   },
   "witness/executor-internals.spec.ts": {
    "tests": 4,
-   "seconds": 0,
+   "seconds": 0.1,
    "passed": 0,
    "failed": 0,
    "skipped": 4,
@@ -2333,9 +2333,9 @@
    "retried": 0
   },
   "witness/self/harness.spec.ts": {
-   "tests": 26,
-   "seconds": 19.1,
-   "passed": 26,
+   "tests": 27,
+   "seconds": 22.7,
+   "passed": 27,
    "failed": 0,
    "skipped": 0,
    "retried": 0

@@ -10,7 +10,7 @@ import { counterfactual, observe } from "../runner";
 import { siteList } from "../sites";
 import { propsOfSheet, sheetProps } from "../projection";
 import { admits, parseVerdict, readVerdict } from "../verdict";
-import { PROBE_FOR, judge, witness } from "../witness";
+import { PROBE_FOR, controlArm, judge, witness } from "../witness";
 import { OBSERVABLES, defaultAction, leftTrajectory } from "../probes/default-action";
 import { focusAtNextInput } from "../probes/focus-at-next-input";
 import type { Snapshot, Trajectory } from "../probes/observations";
@@ -160,6 +160,14 @@ test.describe("known-red and known-green counterfactuals on the fixture pages", 
     const cancel = await observe(browser, binding("fixture.cancel"), null);
     expect(cancel.snapshot.activation).toEqual([["0", false]]);
     expect(cancel.trajectory.elements["0"].some((state) => state.includes("data-dx-fixture=on"))).toBe(true);
+  });
+
+  test("a kind that stood down cannot pass silently: with no kernel loaded the control arm fails and nothing was applied", async ({ browser }) => {
+    const b = binding("fixture.paint");
+    const silent = await observe(browser, b, null, "event", false);
+    expect(silent.applied).toEqual([]);
+    await expect(controlArm(browser, "wrongPaint", b, "event", false)).rejects.toThrow("applied no decision at fixture.paint");
+    await expect(controlArm(browser, "wrongPaint", b)).resolves.toBeUndefined();
   });
 
   test("the control arm is real against real: two independent runs agree and nothing is intercepted", async ({ browser }) => {

@@ -43,6 +43,8 @@ export function witnessPage(): void {
 
   let arm: WitnessArm | null = null;
   let hits = 0;
+  /** `site:effect` of every marked write that reached a patched member, intercepted or not: proof a decision was applied. */
+  const applied = new Set<string>();
   let override: { site: string; effect: string } | null = null;
 
   /** `fn` after `n` completed paints: a frame callback runs BEFORE the paint it belongs to, so each paint is a frame
@@ -79,9 +81,10 @@ export function witnessPage(): void {
 
   /** What to do with this call: null runs it, otherwise the arm that intercepts it. */
   const intercept = (effect: WitnessEffect): WitnessArm | null => {
+    const marker = W.__dxApplying ?? override;
+    if (marker && marker.effect === effect) applied.add(marker.site + ":" + effect);
     const a = arm;
     if (!a || a.mode === "order" || a.effect !== effect) return null;
-    const marker = W.__dxApplying ?? override;
     return marker && marker.site === a.site && marker.effect === effect ? a : null;
   };
 
@@ -272,6 +275,7 @@ export function witnessPage(): void {
       W.__dxBridgeDelayFrames = next && next.mode === "order" ? hold : 0;
     },
     hits: () => hits,
+    applied: (): string[] => [...applied],
     /** Self-test seam: run `fn` as if the adapter were applying `effect` at `site`. */
     mark(site: string, effect: string, fn: () => void): void {
       override = { site, effect };
