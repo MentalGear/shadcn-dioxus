@@ -21,6 +21,8 @@ Part of the [row 434](./434-javascript-in-typescript-modules-not-rust-strings.md
 
 APPROVED 2026-10-26 (owner: "okay for the plan"; scope 2, the recommended default, since no scope was named). Phase 0 of the row 434 step 3 plan; it starts once the rows ordered before the plan have landed (STATUS.md, "Next", owner 2026-10-26).
 
+**Premise check, 2026-11-13.** This row was written before the decision kernel (row 509) and the witness harness (row 446) existed. [`research/premise-check-447-450-2026-11-13.md`](../research/premise-check-447-450-2026-11-13.md) lists which of its claims about the source are false or moved, where its construction changes, the grant columns it needs and its place in the lane order. A lane reads that section before its first edit.
+
 ## Size
 
 L

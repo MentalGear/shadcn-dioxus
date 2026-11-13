@@ -40,7 +40,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (70)
+## Open rows (71)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -114,5 +114,6 @@ proposing one is closed as out of scope (row 337 is the first).
 | [509](backlog/509-rust-decision-contract.md) | The Rust decision contract: one decide per behaviour, the decision kernel as a committed artefact, and the gates | LANDED on lane/decision-contract-509 (2026-11-13), awaiting the merge into the batch. Items 1 to 12… | L (inferred: was M; the review adds… | primitives |
 | [510](backlog/510-spec-selector-component-edges.md) | The spec selector has no component-to-component edge: a Button change selects none of its consumers' specs | LANDED in PR #175 (2026-11-12): the selector reads the component use graph from the sources. The… | S (one helper module of about 170… | tests |
 | [513](backlog/513-release-suite-reuse-across-spec-only-changes.md) | A spec-only fix after a red release suite re-runs the whole suite: reuse the results the changed files cannot affect | BACKLOG. It serves the owner's standing goal "evaluate how the testing could be made quicker… | M (inferred): the key derivation, the… | tests |
+| [514](backlog/514-the-per-row-mounted-handle-has-no-owner.md) | The per-row `mounted` handle has no unconditional owner: keep it with a true reason, or replace it | BACKLOG. Trigger: the focus-write witness on a real set_focus site (row 446, open item), which… | S for the decision and the allow row.… | primitives |
 
 <!-- END GENERATED -->
