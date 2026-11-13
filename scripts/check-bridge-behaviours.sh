@@ -6,14 +6,21 @@
 # `primitives/src/bridge/`) closed by construction, by the checks listed below.
 #
 #  * PARITY BY GENERATION. The Rust `Behaviour` enum (`bridge/behaviours.rs`), the `KINDS` of the generated
-#    `ts/behaviours/behaviours.gen.ts`, the modules `ts/behaviours/<kind>.ts` and their committed bundles
-#    `js/behaviours/<kind>.js` are the same set of kinds, one to one. The generated file's byte-for-byte golden is
+#    `ts/behaviours/behaviours.gen.ts`, the modules `ts/behaviours/<kind>.ts`, their committed bundles
+#    `js/behaviours/<kind>.js` and the kernel's `decide` (`decision-kernel/src/<kind>.rs`, registered in
+#    `decision-kernel/src/kinds.rs`) are the same set of kinds, one to one. The generated file's byte-for-byte golden is
 #    `cargo test -p dioxus-primitives behaviours` (it fails on drift and `DX_BLESS=1` rewrites it); this gate checks
 #    the structure around it. `bun test` (run here when installed) asserts that the registry's keys equal the
-#    generated kinds and runs the shared vectors, `primitives/conformance/behaviours.json`, through the real `decide`.
+#    generated kinds and runs the shared vectors, `primitives/conformance/behaviours.json`, through the committed kernel.
+#  * THE DECISION IS RUST (row 509). A module under `ts/behaviours/` holds no `decide(`: the decision is the kernel's
+#    (`decision-kernel`), and a `Behaviour` variant with no Rust `decide` there is red. The module's event fields and
+#    attribute reads are the generated lists (`ADAPTER`, from the kernel's input types): a hand-written `fields` or
+#    `reads` list is red. Every kind has vectors on both routes: `cargo test -p decision-kernel` (the Rust function and
+#    its byte route) and `bun test` (the committed module, through the bridge's loader), and one vector marked
+#    `largest` (its largest planned snapshot, timed under `bun test`).
 #  * A BEHAVIOUR IS PURE. A module under `ts/behaviours/` imports only `../lib/register` (and types), registers its
-#    own kind, defines `decide(`, and touches no `window`, `document`, `addEventListener`, timer, clock or `performance`:
-#    the listener, its phase and passivity, the lease and the epoch belong to the adapter in `bridge.ts`.
+#    own kind through `kernelBehaviour`, and touches no `window`, `document`, `addEventListener`, timer, clock or
+#    `performance`: the listener, its phase and passivity, the lease and the epoch belong to the adapter in `bridge.ts`.
 #  * SMALL FILES, AS A RATCHET. The byte size of `bridge.ts`, `lib/register.ts`, the ambient types and every behaviour
 #    module is held in `scripts/check-bridge-behaviours.budgets.tsv` through the `Ratchet` class (scripts/lib/ratchet.py):
 #    a rise, a new file without a row and a stale row fail, a fall must be written back with `--update-baseline`, and a
@@ -34,8 +41,8 @@
 #    caller-composed script body is `Program::Legacy`, constructed only in `bridge/legacy.rs`, and `legacy::` is used
 #    only by `js_listener.rs`: both go when the last bespoke script is ported.
 #    `Program::Frozen{module}` is the closed list of frozen modules (`FrozenModule`, which lane 3.FZ of row 434 fills with the
-#    first); every `document::eval` argument in the transport is one of three fixed shapes (the bundle, a program's
-#    script, a module behind the ready handshake); `legacy::` is named outside `bridge/` only by a row of
+#    first); every `document::eval` argument in the transport is one of three fixed shapes (the bridge script, which
+#    carries the decision kernel's one delivery function, a program's script, a module behind the ready handshake); `legacy::` is named outside `bridge/` only by a row of
 #    `scripts/check-bridge-behaviours.callers.tsv` (one row today: `js_listener.rs`).
 #  * FORBIDDEN_VERBS. The `Method` variants (each writes an open, focus, scroll or caret slot) are named by no Rust
 #    file outside `primitives/src/bridge/`, and `METHODS` is named by no TypeScript file but `ts/bridge.ts`. This item is
@@ -128,15 +135,18 @@ JS_ROOT = "primitives/src/js"
 RS_ROOT = "primitives/src/bridge"
 EVAL_OK = {"primitives/src/bridge/transport.rs"}
 VERBS = ["version", "channel", "scope", "serve", "pump", "call", "get", "set", "transaction",
-         "behaviours", "register"]
+         "behaviours", "register", "kernel"]
+KERNEL_DIR = "decision-kernel"
+KERNEL_KINDS_RS = "decision-kernel/src/kinds.rs"
+KERNEL_VECTORS_RS = "decision-kernel/tests/vectors.rs"
 TRANSPORT_RS = "primitives/src/bridge/transport.rs"
 LEGACY_RS = "primitives/src/bridge/legacy.rs"
 MOD_RS = "primitives/src/bridge/mod.rs"
 JS_LISTENER_RS = "primitives/src/js_listener.rs"
 PROGRAM_VARIANTS = ["Serve", "Pump", "Legacy", "Frozen"]
-# the three document::eval call shapes of the transport, as normalised argument text: the bridge bundle, a program's
+# the three document::eval call shapes of the transport, as normalised argument text: the bridge script, a program's
 # script, and a behaviour module behind the ready handshake. Any other argument is a script text a caller composed.
-EVAL_ARGS = ["BRIDGE_JS", "&program.script()", '&format!("{READY}{js}")']
+EVAL_ARGS = ["&bridge_script()", "&program.script()", '&format!("{READY}{js}")']
 # FORBIDDEN_VERBS (this item is its one owner; item 0.7's slot table partitions it): each `Method` variant writes an
 # open, focus, scroll or caret slot, so none is named outside bridge/. (variant, METHODS row)
 FORBIDDEN_VERBS = [("ShowPopover", "showPopover"), ("HidePopover", "hidePopover"), ("TogglePopover", "togglePopover"),
@@ -188,6 +198,11 @@ def scrub(text, strings=False):
     return "".join(out)
 
 
+def scrub_rs_comments(text):
+    """Rust with `//` comment lines dropped."""
+    return "\n".join(l for l in text.split("\n") if not l.lstrip().startswith("//"))
+
+
 def scrub_rs(text):
     """Rust with `//` comment lines dropped and string literals emptied."""
     code = "\n".join(l for l in text.split("\n") if not l.lstrip().startswith("//"))
@@ -199,8 +214,9 @@ def kebab(name):
 
 
 def load_tree():
-    tree = {"files": {}, "ts": {}, "rs": {}, "js": {}}
-    for p in [BEHAVIOURS_RS, GEN_TS, VECTORS, BEHAVIOUR_TEST, BUNDLE, ALLOW_TSV, BUDGETS_TSV, CALLERS_TSV, PLATFORM_TSV]:
+    tree = {"files": {}, "ts": {}, "rs": {}, "js": {}, "kernel": {}}
+    for p in [BEHAVIOURS_RS, GEN_TS, VECTORS, BEHAVIOUR_TEST, BUNDLE, ALLOW_TSV, BUDGETS_TSV, CALLERS_TSV, PLATFORM_TSV,
+              KERNEL_KINDS_RS, KERNEL_VECTORS_RS]:
         pp = Path(p)
         tree["files"][p] = pp.read_text(encoding="utf-8") if pp.is_file() else None
     for p in sorted(Path(TS_ROOT).rglob("*.ts")):
@@ -209,6 +225,8 @@ def load_tree():
         tree["js"][str(p)] = p.read_text(encoding="utf-8")
     for p in sorted(Path(RS_ROOT).rglob("*.rs")):
         tree["rs"][str(p)] = p.read_text(encoding="utf-8")
+    for p in sorted(Path(KERNEL_DIR, "src").glob("*.rs")):
+        tree["kernel"][str(p)] = p.read_text(encoding="utf-8")
     tree["rs"][JS_LISTENER_RS] = Path(JS_LISTENER_RS).read_text(encoding="utf-8")
     # every Rust file of the crate, for the checks of who may name the quarantined legacy path
     tree["rs_all"] = {str(p): p.read_text(encoding="utf-8") for p in sorted(Path("primitives/src").rglob("*.rs"))}
@@ -346,7 +364,7 @@ def budget_errors(tree, virtual=False):
 def check(tree, run_tools, virtual=False):
     errors = []
     F = tree["files"]
-    for p in [BEHAVIOURS_RS, GEN_TS, VECTORS, BEHAVIOUR_TEST, BUNDLE]:
+    for p in [BEHAVIOURS_RS, GEN_TS, VECTORS, BEHAVIOUR_TEST, BUNDLE, KERNEL_KINDS_RS, KERNEL_VECTORS_RS]:
         if F.get(p) is None:
             errors.append(f"{p} is missing")
     if errors:
@@ -369,6 +387,21 @@ def check(tree, run_tools, virtual=False):
     if len(set(rk)) != len(rk):
         errors.append(f"{BEHAVIOURS_RS}: duplicate kinds {sorted({k for k in rk if rk.count(k) > 1})}")
 
+    # 1b. the decision is Rust: every kind has its `decide` in decision-kernel/src/<kind>.rs, registered in kinds.rs
+    registered = dict(re.findall(r'"([a-z0-9-]+)"\s*=>\s*([a-z0-9_]+)', scrub_rs_comments(F[KERNEL_KINDS_RS])))
+    for k in rk:
+        module = k.replace("-", "_")
+        if registered.get(k) != module:
+            errors.append(f"behaviour `{k}` is a variant of the Rust `Behaviour` but {KERNEL_KINDS_RS} does not register "
+                          f'`"{k}" => {module}`: its decide lives in the decision kernel')
+        src = tree["kernel"].get(f"{KERNEL_DIR}/src/{module}.rs")
+        if src is None:
+            errors.append(f"behaviour `{k}` has no Rust `decide`: {KERNEL_DIR}/src/{module}.rs is missing")
+        elif not re.search(r"\bpub\s+fn\s+decide\s*\(", scrub_rs(src)):
+            errors.append(f"{KERNEL_DIR}/src/{module}.rs: no `pub fn decide(`")
+    for k in sorted(set(registered) - set(rk)):
+        errors.append(f"{KERNEL_KINDS_RS} registers `{k}`, which is not a variant of the Rust `Behaviour` ({BEHAVIOURS_RS})")
+
     # 2. a vector per kind, and the bun test that runs them
     try:
         vectors = json.loads(F[VECTORS])
@@ -383,6 +416,15 @@ def check(tree, run_tools, virtual=False):
             errors.append(f"{VECTORS}: vectors for the unknown behaviour `{k}`")
     if "conformance/behaviours.json" not in F[BEHAVIOUR_TEST] or "KINDS" not in F[BEHAVIOUR_TEST]:
         errors.append(f"{BEHAVIOUR_TEST}: must run the shared vectors and compare the registry with the generated KINDS")
+    if not re.search(r'include_str!\(\s*"[^"]*conformance/behaviours\.json"\s*\)', F[KERNEL_VECTORS_RS]) \
+            or "decide_named" not in F[KERNEL_VECTORS_RS] or "KINDS" not in F[KERNEL_VECTORS_RS]:
+        errors.append(f"{KERNEL_VECTORS_RS}: must run the shared vectors of every kernel kind through the Rust function "
+                      f"and its byte route (the cargo route of the one set of vectors)")
+    if isinstance(vectors, dict):
+        for k in rk:
+            if vectors.get(k) and not any(isinstance(v, dict) and v.get("largest") is True for v in vectors[k]):
+                errors.append(f"{VECTORS}: `{k}` has no vector marked `\"largest\": true` (its largest planned snapshot, "
+                              f"packed: a list is sent as arrays of scalars, never an object per item)")
 
     # 3. each module is pure, registers its own kind, imports only the register helper
     for path, text in sorted(tree["ts"].items()):
@@ -393,8 +435,14 @@ def check(tree, run_tools, virtual=False):
         kind = p.stem
         if not re.search(r'\bregister\s*\(\s*"%s"' % re.escape(kind), scrub(text)):
             errors.append(f'{path}: must call `register("{kind}", ...)` (the module name is the kind)')
-        if not re.search(r"\bdecide\s*\(", code):
-            errors.append(f"{path}: no `decide(`: a behaviour is a pure decide plus the adapter in bridge.ts")
+        if re.search(r"\bdecide\s*\(|\bdecide\s*:", code):
+            errors.append(f"{path}: has a `decide`: a behaviour's decision is Rust, in {KERNEL_DIR}/src/{kind.replace('-', '_')}.rs; "
+                          f"the module registers `kernelBehaviour(...)` and applies nothing of its own")
+        if re.search(r"\b(fields|reads)\s*:", code):
+            errors.append(f"{path}: a hand-written `fields` or `reads` list: both are generated from the Rust input types "
+                          f"(`ADAPTER` of behaviours.gen.ts), so a renamed key cannot drift")
+        if not re.search(r"\bkernelBehaviour\s*\(", code):
+            errors.append(f"{path}: does not register through `kernelBehaviour(`, the generated adapter of the decision kernel")
         for m in re.finditer(r"^\s*import\s[^;]*?from\s+([\"'][^\"']+[\"'])", scrub(text), re.M):
             if m.group(1).strip("\"'") != "../lib/register":
                 errors.append(f"{path}: imports {m.group(1)}: a behaviour module imports only ../lib/register")
@@ -742,17 +790,27 @@ def self_test(tree):
         ("a bundle with no variant", lambda t: t["js"].__setitem__("primitives/src/js/behaviours/ghost.js", "1;")),
         ("a variant with no bundle", lambda t: t["js"].pop(FIX_JS)),
         ("the generated header lost", replace_in(GEN_TS, "// GENERATED by", "// written by")),
-        ("the kebab tag removed", replace_in(BEHAVIOURS_RS, 'rename_all = "kebab-case"', 'rename_all = "snake_case"')),
+        ("the kebab tag removed", replace_in(BEHAVIOURS_RS, 'rename_all = "kebab-case",\n    rename_all_fields', 'rename_all = "snake_case",\n    rename_all_fields')),
         ("a serde rename on a variant", replace_in(BEHAVIOURS_RS, "    Fixture {", '    #[serde(rename = "other")]\n    Fixture {')),
         ("a kind with no conformance vector", lambda t: t["files"].__setitem__(VECTORS, "{}")),
         ("vectors for an unknown kind", lambda t: t["files"].__setitem__(
             VECTORS, json.dumps({**json.loads(t["files"][VECTORS]), "ghost": [{}]}))),
         ("the bun test not reading the vectors", replace_in(BEHAVIOUR_TEST, "conformance/behaviours.json", "x.json")),
         ("a module registering another kind", replace_in(FIX_TS, 'register("fixture"', 'register("other"', "ts")),
-        ("a module with no decide", replace_in(FIX_TS, "decide(", "other(", "ts")),
+        ("a module with its own decide", lambda t: t["ts"].__setitem__(FIX_TS, t["ts"][FIX_TS] + "\nexport const own = { decide() { return {}; } };\n")),
+        ("a module with a hand-written fields list", lambda t: t["ts"].__setitem__(FIX_TS, t["ts"][FIX_TS] + "\nexport const own = { fields: [\"type\"] };\n")),
+        ("a module with a hand-written reads list", lambda t: t["ts"].__setitem__(FIX_TS, t["ts"][FIX_TS] + "\nexport const own = { reads: [] };\n")),
+        ("a module not registering through kernelBehaviour", replace_in(FIX_TS, "kernelBehaviour(", "wrap(", "ts")),
         ("a module importing the bridge", replace_in(FIX_TS, 'from "../lib/register"', 'from "../bridge"', "ts")),
-        ("a module reading the document", replace_in(FIX_TS, "return {};", "return document.title ? {} : {};", "ts")),
-        ("a module reading the clock", replace_in(FIX_TS, "return {};", "return Date.now() ? {} : {};", "ts")),
+        ("a module reading the document", lambda t: t["ts"].__setitem__(FIX_TS, t["ts"][FIX_TS] + "\nexport const t = document.title;\n")),
+        ("a module reading the clock", lambda t: t["ts"].__setitem__(FIX_TS, t["ts"][FIX_TS] + "\nexport const t = Date.now();\n")),
+        ("a variant with no Rust decide in the kernel", lambda t: t["kernel"].pop("decision-kernel/src/fixture.rs")),
+        ("a variant the kernel does not register", replace_in(KERNEL_KINDS_RS, '"fixture" => fixture', '"fixtur" => fixture')),
+        ("a kernel kind with no variant", replace_in(KERNEL_KINDS_RS, '"fixture" => fixture,', '"fixture" => fixture,\n    "ghost" => ghost,')),
+        ("a kernel decide that is not public", lambda t: t["kernel"].__setitem__(
+            "decision-kernel/src/fixture.rs", t["kernel"]["decision-kernel/src/fixture.rs"].replace("pub fn decide(", "fn decide("))),
+        ("the cargo vectors test not reading the vectors", replace_in(KERNEL_VECTORS_RS, 'include_str!("../../primitives/conformance/behaviours.json")', 'include_str!("../../x.json")')),
+        ("a kind with no largest vector", lambda t: t["files"].__setitem__(VECTORS, t["files"][VECTORS].replace('"largest": true', '"x": true'))),
         ("a module with no budget row", replace_in(BUDGETS_TSV, "primitives/src/ts/behaviours/fixture.ts\t", "primitives/src/ts/behaviours/zzz.ts\t")),
         ("a module over its byte budget", lambda t: t["ts"].__setitem__(FIX_TS, t["ts"][FIX_TS] + "\n" * 200)),
         ("bridge.ts over its byte budget", lambda t: t["ts"].__setitem__(BRIDGE_TS, t["ts"][BRIDGE_TS] + "\n" * 2000)),
@@ -771,7 +829,7 @@ def self_test(tree):
             ALLOW_TSV, t["files"][ALLOW_TSV] + "primitives/src/ts/x.ts\t\t434\n")),
         ("a computed member access in bridge.ts", lambda t: t["ts"].__setitem__(
             BRIDGE_TS, t["ts"][BRIDGE_TS] + "\nfunction f(el: any, name: string) { return el[name](); }\n")),
-        ("a computed event read in a behaviour", replace_in(FIX_TS, "return {};", "return _event[behaviour.attr] ? {} : {};", "ts")),
+        ("a computed event read in a behaviour", lambda t: t["ts"].__setitem__(FIX_TS, t["ts"][FIX_TS] + "\nexport const f = (_event: any, behaviour: any) => _event[behaviour.attr];\n")),
         ("an eval in bridge.ts", lambda t: t["ts"].__setitem__(BRIDGE_TS, t["ts"][BRIDGE_TS] + "\neval('1');\n")),
         ("new Function in bridge.ts", lambda t: t["ts"].__setitem__(BRIDGE_TS, t["ts"][BRIDGE_TS] + "\nnew Function('1');\n")),
         ("JSON.parse in bridge.ts", lambda t: t["ts"].__setitem__(BRIDGE_TS, t["ts"][BRIDGE_TS] + "\nJSON.parse('1');\n")),
@@ -839,7 +897,7 @@ def self_test(tree):
         ("a document::eval of a caller's text", lambda t: t["rs"].__setitem__(
             TRANSPORT, t["rs"][TRANSPORT] + "\nfn run(s: &str) { let _ = document::eval(s); }\n"), "must be one of"),
         ("a fourth document::eval site", lambda t: t["rs"].__setitem__(
-            TRANSPORT, t["rs"][TRANSPORT] + "\nfn run() { let _ = document::eval(BRIDGE_JS); }\n"), "site(s), expected exactly"),
+            TRANSPORT, t["rs"][TRANSPORT] + "\nfn run() { let _ = document::eval(&bridge_script()); }\n"), "site(s), expected exactly"),
         ("a program script interpolating a caller's text", rs_edit(
             TRANSPORT, 'Program::Pump => format!("{READY}await __dxB.pump(__dxB.channel(dioxus));"),',
             'Program::Pump => format!("{READY}{extra}await __dxB.pump(__dxB.channel(dioxus));"),'), "constants only"),

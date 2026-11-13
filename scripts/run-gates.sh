@@ -113,6 +113,7 @@ gates=(
   "check-blocking-scroll-listeners|scripts/check-blocking-scroll-listeners.sh"
   "check-js-listeners|scripts/check-js-listeners.sh"
   "check-bridge-behaviours|scripts/check-bridge-behaviours.sh"
+  "check-decision-kernel|scripts/check-decision-kernel.sh"
   "check-ts-scan|scripts/check-ts-scan.sh"
   "check-js-volume|scripts/check-js-volume.sh"
   "check-ratchet-grant|scripts/check-ratchet-grant.sh"

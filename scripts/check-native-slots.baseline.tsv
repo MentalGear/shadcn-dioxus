@@ -1,4 +1,5 @@
 # check-native-slots baseline (scripts/lib/ratchet.py): shrink-only per-file counts, regenerate with --update-baseline.
+#! columns: value checked selected open hidden
 # path	value	checked	selected	open	hidden
 preview/src/components/button_group/variants/select/mod.rs	0	0	1	0	0
 preview/src/components/date_picker/variants/natural_language/mod.rs	1	0	0	0	0
@@ -16,7 +17,7 @@ primitives/src/combobox/components/group.rs	0	0	0	0	1
 primitives/src/combobox/components/input.rs	1	0	0	0	0
 primitives/src/combobox/multi.rs	1	0	0	0	0
 primitives/src/command.rs	1	0	0	0	0
-primitives/src/hover_card.rs	0	0	0	0	2
+primitives/src/hover_card.rs	0	0	0	0	1
 primitives/src/input_otp.rs	1	0	0	0	0
 primitives/src/questionnaire.rs	2	1	0	0	4
 primitives/src/radio_group.rs	1	1	0	0	0

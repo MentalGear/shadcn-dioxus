@@ -43,7 +43,8 @@
 //! What lives here, so that it lives once:
 //!
 //! * **Loading.** The bridge bundle ([`BRIDGE_JS`]) is evaluated through the same eval queue as the
-//!   scripts that use it, once per webview, so a verb never runs before the bridge exists. The
+//!   scripts that use it, once per webview, so a verb never runs before the bridge exists. The decision
+//!   kernel rides in that same eval (`kernel_load`, the one seam function that delivers it). The
 //!   alternative, `asset!` plus `document::Script` from a root provider (upstream's shape for its
 //!   focus trap), was not adopted: it needs every consuming app to mount a provider, the `<script>` is
 //!   inserted by a queued head effect while an eval runs immediately (DioxusLabs/dioxus#5919: eval
@@ -97,6 +98,10 @@ use super::BridgeError;
 /// The bundled bridge script, `primitives/src/js/bridge.js` (built from `src/ts/bridge.ts` by
 /// `scripts/build-js-bundle.sh`, checked by `scripts/check-js-bundle.sh`).
 pub const BRIDGE_JS: &str = include_str!("../js/bridge.js");
+
+/// The decision kernel (`decision-kernel`, built for `wasm32-unknown-unknown` by `scripts/build-kernel.sh` and
+/// committed) as one line of base64. It is not JavaScript; `scripts/check-decision-kernel.sh` holds its bytes.
+const KERNEL_B64: &str = include_str!("../kernel/decision-kernel.b64");
 
 /// The bounded wait of the handshake, then the bridge as `__dxB`.
 const READY: &str = "let __dxB = window.__dxBridge;\n\
@@ -166,6 +171,20 @@ fn in_runtime() -> bool {
     Runtime::try_current().is_some()
 }
 
+/// How the decision kernel reaches the page: the ONE function of the seam that delivers it. Today the module rides as
+/// base64 in the bridge's own eval and the bridge compiles it synchronously, so it is ready before the eval returns,
+/// before any component installs a behaviour and before any event. A non-eval backend (Dioxus PR #5194) replaces this
+/// function and nothing else: the kernel never ties the web build to more than the `'wasm-unsafe-eval'` the app's own
+/// wasm needs.
+fn kernel_load() -> String {
+    format!("window.__dxBridge.kernel.load(\"{KERNEL_B64}\");")
+}
+
+/// The first script of a webview: the bridge, then the kernel's delivery.
+fn bridge_script() -> String {
+    format!("{BRIDGE_JS}\n{}", kernel_load())
+}
+
 /// Evaluates the bridge once in this webview. Only meaningful inside the Dioxus runtime.
 fn ensure_installed() {
     if !in_runtime() || try_consume_context::<Installed>().is_some() {
@@ -173,7 +192,7 @@ fn ensure_installed() {
     }
     provide_root_context(Installed);
     #[expect(clippy::disallowed_methods, reason = "row 434: the one eval sink")]
-    let _ = document::eval(BRIDGE_JS);
+    let _ = document::eval(&bridge_script());
 }
 
 /// Evaluates the bundled module `js` of the behaviour `kind` once in this webview, after the bridge it
@@ -432,6 +451,22 @@ mod tests {
     use super::*;
     use dioxus::prelude::*;
     use std::cell::Cell;
+
+    /// The bridge's first eval carries the kernel after the bridge, as the base64 of the committed module, and the
+    /// delivery is the one `kernel_load` function.
+    #[test]
+    fn the_kernel_rides_in_the_bridge_eval() {
+        let script = bridge_script();
+        assert!(script.starts_with(BRIDGE_JS));
+        assert!(script.ends_with(&kernel_load()));
+        assert!(kernel_load().starts_with("window.__dxBridge.kernel.load(\""));
+        assert!(KERNEL_B64.len() > 1000 && !KERNEL_B64.contains(['"', '\n']));
+        assert_eq!(
+            script.matches(KERNEL_B64).count(),
+            1,
+            "the module is in the script once"
+        );
+    }
 
     fn out(id: Option<u64>, ops: &[i32]) -> Outgoing {
         Outgoing {

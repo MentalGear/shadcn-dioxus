@@ -1,15 +1,25 @@
 //! Named behaviours: the decisions that must be made on the page's thread, inside an event's
 //! dispatch, because a message to Rust would arrive after the browser committed the event's default
 //! action (backlog row 434 step 3). A behaviour is NOT an interpreter and NOT a predicate language:
-//! it is a name, typed parameters, and one pure `decide()` function in `ts/behaviours/<kind>.ts`.
+//! it is a name, typed parameters, and one pure Rust `decide(config, memory, snapshot, event) ->
+//! Decision` in the `decision-kernel` crate (`decision-kernel/src/<kind>.rs`, row 509). The crate is
+//! called three ways: as a direct call on a renderer with no page (Blitz), as a wasm module the
+//! bridge calls synchronously inside the event's dispatch on a renderer with a page, and by
+//! `cargo test`. `ts/behaviours/<kind>.ts` holds no decision: it registers the generated adapter.
 //!
 //! * [`Behaviour`] has one variant per named behaviour. Today there is one, [`Behaviour::Fixture`], a
 //!   test fixture no component uses; a real behaviour (`hotkey`, `scrollLock`, `otpFilter`, ...) is
-//!   added by a lane that ports one block, by adding a variant, its TS module and its vectors.
+//!   added by a lane that ports one block, by adding a variant, its kernel function (registered in
+//!   `decision-kernel/src/kinds.rs`), its TS module and its vectors.
 //! * **Parity by generation.** `cargo test` writes `ts/behaviours/behaviours.gen.ts` (the kinds, one
-//!   interface per variant, the declarations) from this enum and fails on drift; a TS module is
-//!   typed against the generated union, and `bun test` asserts the registry's keys equal the
-//!   generated kinds. Regenerate with `DX_BLESS=1 cargo test -p dioxus-primitives behaviours`.
+//!   interface per variant, the declarations, and from the kernel's `Config`, `Snapshot` and `Event`
+//!   input types the adapter's event-field and attribute-read lists and the kernel's kind table with
+//!   its hash) from this enum and the kernel's table and fails on drift; a TS module is typed against
+//!   the generated union, and `bun test` asserts the registry's keys equal the generated kinds.
+//!   The input types are the one definition of their wire keys, so a renamed key is red here and
+//!   never a behaviour that silently stops deciding in a page. Regenerate with
+//!   `DX_BLESS=1 cargo test -p dioxus-primitives behaviours`, then `scripts/build-kernel.sh` and
+//!   `scripts/build-js-bundle.sh`.
 //! * **Placement.** A target inside a Dioxus element and an event Dioxus supports is an rsx handler
 //!   (it decides synchronously on every renderer). A window, document or outside target, an event
 //!   Dioxus lacks, or the capture phase is a behaviour. A continuous stream (scroll, resize,
@@ -30,9 +40,68 @@
 //!   itself when Rust stops renewing, so a hung or dead Rust side leaves the page's native behaviour
 //!   (WCAG 2.1.2), and the session renews while it lives.
 
+use decision_kernel::{table_hash, KINDS as KERNEL_KINDS};
 use serde::{Deserialize, Serialize};
 
 use super::events::EventKind;
+
+/// A report from the page that a kind could not decide: the kernel lacks the kind, could not read the
+/// request, trapped, or never loaded. The page answers no decision (the browser keeps its native
+/// action) and sends this once per install over the scope's channel, so Rust can tear the install down
+/// or resync it (a gesture half done, attributes set by earlier decisions).
+#[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
+pub struct StandDown {
+    /// The behaviour kind that stood down.
+    pub kind: String,
+    /// Why.
+    pub reason: StandDownReason,
+}
+
+/// The reasons of a [`StandDown`] (the page's `KernelStandDown` reasons, kebab-case).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum StandDownReason {
+    /// The kernel module has no such kind (a stale module, or a kind the generated table lacks).
+    MissingKind,
+    /// The kernel could not read the request (it answered `u32::MAX`) or the page could not encode it.
+    UnreadableRequest,
+    /// The kernel trapped on this kind (the page re-instantiates it; three traps stand the kind down).
+    Trap,
+    /// The kind trapped three times in this page and decides no more.
+    KindStoodDown,
+    /// The kernel failed to load (blocked, not a module, the wrong ABI or kind table).
+    KernelFailed,
+    /// No kernel was ever loaded in this page.
+    KernelAbsent,
+}
+
+/// A message from a behaviour's install: what its `decide` sends (`T`), or a [`StandDown`] report. The
+/// report is an object with `kernel: "stand-down"`, which no decision's `send` carries.
+#[derive(Clone, Debug, PartialEq, Deserialize)]
+#[serde(untagged)]
+pub enum Inbound<T> {
+    /// The kernel could not decide.
+    Report(StandDownMessage),
+    /// A decision's `send`.
+    Message(T),
+}
+
+/// The wire form of a [`StandDown`]: `{"kernel": "stand-down", "kind": .., "reason": ..}`.
+#[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
+pub struct StandDownMessage {
+    /// Always `"stand-down"`: what tells a report from a decision's `send`.
+    #[serde(rename = "kernel")]
+    _kernel: StandDownTag,
+    /// The report.
+    #[serde(flatten)]
+    pub report: StandDown,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize)]
+enum StandDownTag {
+    #[serde(rename = "stand-down")]
+    StandDown,
+}
 
 /// A named behaviour and its parameters. The wire form is `{"kind": "<kebab-case name>", ...params}`
 /// (camelCase parameter names), which is what `behaviours.gen.ts` types.
@@ -213,9 +282,11 @@ pub fn render_gen() -> String {
         "export type EventName = {};\n\n",
         events.join(" | ")
     ));
-    let kinds: Vec<String> = samples
+    // KINDS is the kernel's table in wire-index order: a kind's position here is the index the page passes
+    // to `dx_decide`. A test holds this list equal to the `Behaviour` kinds.
+    let kinds: Vec<String> = KERNEL_KINDS
         .iter()
-        .map(|b| format!("\"{}\"", b.kind()))
+        .map(|k| format!("\"{}\"", k.name))
         .collect();
     out.push_str(&format!(
         "export const KINDS = [{}] as const;\nexport type Kind = (typeof KINDS)[number];\n\n",
@@ -255,6 +326,37 @@ pub fn render_gen() -> String {
             },
             d.capture,
             d.passive
+        ));
+    }
+    out.push_str("} as const;\n\n");
+    let list = |keys: &[&str]| {
+        let quoted: Vec<String> = keys.iter().map(|k| format!("\"{k}\"")).collect();
+        format!("[{}]", quoted.join(", "))
+    };
+    out.push_str(&format!(
+        "/** The hash of the kernel's kind table: the page refuses a kernel module whose `dx_kinds` differs. */\nexport const KERNEL_HASH = {};\n\n",
+        table_hash()
+    ));
+    out.push_str("/** The kernel's kind table in wire-index order: the keys of each kind's `Config`, `Snapshot` (the attribute reads) and `Event` (the event fields), from the kernel's input types. */\n");
+    out.push_str("export const KERNEL_KINDS = [\n");
+    for k in KERNEL_KINDS {
+        out.push_str(&format!(
+            "  {{ kind: \"{}\", config: {}, reads: {}, fields: {} }},\n",
+            k.name,
+            list(k.config),
+            list(k.reads),
+            list(k.fields)
+        ));
+    }
+    out.push_str("] as const;\n\n");
+    out.push_str("/** What a behaviour module registers: the event fields and attribute reads of its kernel kind. */\n");
+    out.push_str("export const ADAPTER = {\n");
+    for k in KERNEL_KINDS {
+        out.push_str(&format!(
+            "  \"{}\": {{ fields: {}, reads: {} }},\n",
+            k.name,
+            list(k.fields),
+            list(k.reads)
         ));
     }
     out.push_str("} as const;\n");
@@ -406,6 +508,127 @@ mod tests {
                 }
             }
         }
+    }
+
+    /// The kernel's kinds and the `Behaviour` kinds are one set: a variant with no `decide` in the kernel, or a kernel
+    /// kind with no variant, is red here (the gate also requires `decision-kernel/src/<kind>.rs`).
+    #[test]
+    fn the_kernel_and_the_behaviours_are_the_same_kinds() {
+        let mut kernel: Vec<&str> = KERNEL_KINDS.iter().map(|k| k.name).collect();
+        let mut variants: Vec<&str> = Behaviour::samples().iter().map(Behaviour::kind).collect();
+        kernel.sort_unstable();
+        variants.sort_unstable();
+        assert_eq!(kernel, variants);
+    }
+
+    /// Every key a kernel kind reads from its `Config` is a key the Rust `Behaviour` sends: a rename on either side
+    /// is red here instead of a behaviour that never decides in a page.
+    #[test]
+    fn the_kernel_reads_only_keys_the_wire_form_carries() {
+        for spec in KERNEL_KINDS {
+            let sample = Behaviour::samples()
+                .into_iter()
+                .find(|b| b.kind() == spec.name)
+                .expect("a sample of the kind");
+            let wire = serde_json::to_value(&sample).expect("serialises");
+            for key in spec.config {
+                assert!(
+                    wire.get(key).is_some(),
+                    "{}: the kernel reads `{key}` but the `Behaviour` does not send it",
+                    spec.name
+                );
+            }
+        }
+    }
+
+    /// Every event field a kernel kind collects is a field of the bridge's closed `EventField` table.
+    #[test]
+    fn the_kernel_collects_only_event_fields_the_bridge_has() {
+        let table: std::collections::HashSet<&str> =
+            super::super::events::EventField::ALL.iter().map(|f| f.wire()).collect();
+        for spec in KERNEL_KINDS {
+            for field in spec.fields {
+                assert!(table.contains(field), "{}: `{field}` is not an EventField", spec.name);
+            }
+        }
+    }
+
+    /// A vector's `behaviour` is what Rust would send: parsing it as a `Behaviour` and serialising it again gives the
+    /// same object, so the vectors test the page's real request and not a hand-trimmed one.
+    #[test]
+    fn the_vectors_carry_the_full_wire_form() {
+        let all: Value = serde_json::from_str(VECTORS).expect("behaviours.json is JSON");
+        for (kind, vectors) in all.as_object().expect("an object keyed by kind") {
+            for vector in vectors.as_array().expect("an array") {
+                let parsed: Behaviour = serde_json::from_value(vector["behaviour"].clone())
+                    .unwrap_or_else(|e| panic!("{kind}: {} does not parse: {e}", vector["name"]));
+                assert_eq!(
+                    serde_json::to_value(&parsed).expect("serialises"),
+                    vector["behaviour"],
+                    "{kind}: {} is not the wire form",
+                    vector["name"]
+                );
+            }
+        }
+    }
+
+    /// A stand-down report parses as a report, a decision's `send` as the caller's own type, and a report is never
+    /// mistaken for a message.
+    #[test]
+    fn a_stand_down_report_is_not_a_message() {
+        #[derive(Debug, PartialEq, Deserialize)]
+        struct Mine {
+            behaviour: String,
+        }
+        let report: Inbound<Mine> = serde_json::from_value(
+            json!({"kernel": "stand-down", "kind": "fixture", "reason": "trap"}),
+        )
+        .expect("a report");
+        let Inbound::Report(report) = report else {
+            panic!("a report, not a message")
+        };
+        assert_eq!(
+            report.report,
+            StandDown {
+                kind: "fixture".into(),
+                reason: StandDownReason::Trap
+            }
+        );
+        let message: Inbound<Mine> =
+            serde_json::from_value(json!({"behaviour": "fixture"})).expect("a message");
+        assert_eq!(message, Inbound::Message(Mine { behaviour: "fixture".into() }));
+        assert!(serde_json::from_value::<Inbound<Mine>>(
+            json!({"kernel": "other", "kind": "fixture", "reason": "trap"})
+        )
+        .is_err());
+    }
+
+    /// Every reason a report can carry is a string the page's kernel throws (`ts/lib/kernel.ts`), and the other way.
+    #[test]
+    fn the_reasons_are_the_pages_reasons() {
+        const PAGE: &str = include_str!("../ts/lib/kernel.ts");
+        for (reason, name) in [
+            (StandDownReason::MissingKind, "missing-kind"),
+            (StandDownReason::UnreadableRequest, "unreadable-request"),
+            (StandDownReason::Trap, "trap"),
+            (StandDownReason::KindStoodDown, "kind-stood-down"),
+            (StandDownReason::KernelFailed, "kernel-failed"),
+            (StandDownReason::KernelAbsent, "kernel-absent"),
+        ] {
+            assert!(
+                PAGE.contains(&format!("\"{name}\"")),
+                "the page's kernel never reports `{name}`"
+            );
+            assert_eq!(
+                serde_json::from_value::<StandDownReason>(json!(name)).expect("parses"),
+                reason
+            );
+        }
+        let in_page = PAGE
+            .lines()
+            .find(|l| l.contains("export type StandDownReason"))
+            .expect("the page declares its reasons");
+        assert_eq!(in_page.matches('"').count() / 2, 6, "six reasons on the page");
     }
 
     #[test]
