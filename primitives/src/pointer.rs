@@ -1,4 +1,5 @@
 use std::cell::{Cell, RefCell};
+use std::rc::Rc;
 
 use crate::js_listener::JsListeners;
 use dioxus::html::geometry::ClientPoint;
@@ -12,14 +13,18 @@ struct Pointer {
 
 static POINTERS: GlobalSignal<Vec<Pointer>> = Global::new(Vec::new);
 
-thread_local! {
+/// The pointer bridge of one VirtualDom (one window), kept in its root context as the transport's
+/// state is: a second desktop window is a second webview on the same thread, and a thread-wide
+/// cell would let the first window's drag stop the second from installing its listeners.
+#[derive(Clone, Default)]
+struct PointerBridge {
     /// The `window` pointer listeners that feed [`POINTERS`]. They exist exactly while at
     /// least one pointer is tracked: installed by the first [`add_pointer`], dropped (which
-    /// removes them) when the last pointer goes up. They are not installed once by the
-    /// global signal's initializer and kept for the rest of the visit: after the first
-    /// slider or resizable handle was touched, every `pointermove` anywhere on the page
-    /// would cross the JS/wasm boundary for good (backlog row 159).
-    static BRIDGE: RefCell<Option<JsListeners>> = const { RefCell::new(None) };
+    /// removes them) when the last pointer goes up. They are not installed once by the global
+    /// signal's initializer and kept for the rest of the visit: after the first slider or
+    /// resizable handle was touched, every `pointermove` anywhere on the page would cross the
+    /// JS/wasm boundary for good (backlog row 159).
+    listeners: Rc<RefCell<Option<JsListeners>>>,
 
     /// The epoch of the bridge that is allowed to write [`POINTERS`]. Every install takes a new
     /// one and every removal retires the current one, and each install's handler carries the epoch
@@ -28,31 +33,42 @@ thread_local! {
     /// a bridge message waits behind unacknowledged work (desktop, mobile) the previous drag's
     /// listener is still delivering frames, and its `up`, after the next drag's `pointerdown`.
     /// Those frames carry a retired epoch and are dropped.
-    static EPOCH: Cell<u64> = const { Cell::new(0) };
+    epoch: Rc<Cell<u64>>,
 }
 
-/// Retires the current epoch: messages of any bridge installed before this call are ignored.
-fn retire_epoch() -> u64 {
-    EPOCH.with(|epoch| {
-        let next = epoch.get() + 1;
-        epoch.set(next);
-        next
+/// This VirtualDom's pointer bridge.
+fn bridge() -> PointerBridge {
+    try_consume_context::<PointerBridge>().unwrap_or_else(|| {
+        let bridge = PointerBridge::default();
+        crate::dioxus_core::provide_root_context(bridge.clone());
+        bridge
     })
 }
 
-fn epoch_is_current(epoch: u64) -> bool {
-    EPOCH.with(|current| current.get() == epoch)
+impl PointerBridge {
+    /// Retires the current epoch: messages of any bridge installed before this call are ignored.
+    fn retire_epoch(&self) -> u64 {
+        let next = self.epoch.get() + 1;
+        self.epoch.set(next);
+        next
+    }
+}
+
+fn epoch_is_current(epoch: &Cell<u64>, installed_under: u64) -> bool {
+    epoch.get() == installed_under
 }
 
 /// Installs the bridge if it is not up. clientX/clientY (not pageX/pageY) must match element
 /// handlers that store `evt.client_coordinates()` and viewport-relative rects from
 /// getBoundingClientRect.
 fn ensure_bridge() {
-    BRIDGE.with(|bridge| {
-        if bridge.borrow().is_some() {
-            return;
-        }
-        let epoch = retire_epoch();
+    let bridge = bridge();
+    if bridge.listeners.borrow().is_some() {
+        return;
+    }
+    {
+        let epoch = bridge.retire_epoch();
+        let current = bridge.epoch.clone();
         let listeners = JsListeners::install(
             "const send = (kind) => (e) => dioxus.send([kind, [e.pointerId, e.clientX, e.clientY]]);
             listen(window, 'pointerdown', send('down'));
@@ -61,7 +77,7 @@ fn ensure_bridge() {
             listen(window, 'pointercancel', send('up'));",
         )
         .on_message_in_root(move |(event_type, (pointer_id, x, y)): (String, (i32, f64, f64))| {
-            if !epoch_is_current(epoch) {
+            if !epoch_is_current(&current, epoch) {
                 return;
             }
             let position = ClientPoint::new(x, y);
@@ -73,8 +89,8 @@ fn ensure_bridge() {
                 _ => {}
             }
         });
-        *bridge.borrow_mut() = Some(listeners);
-    });
+        *bridge.listeners.borrow_mut() = Some(listeners);
+    }
 }
 
 /// Removes the bridge's listeners once no pointer is tracked.
@@ -88,8 +104,9 @@ fn release_bridge_if_idle(idle: bool) {
 /// Drops the bridge (removing its listeners) and retires its epoch, so whatever it still has queued
 /// toward Rust is ignored.
 fn drop_bridge() {
-    let listeners = BRIDGE.with(|bridge| bridge.borrow_mut().take());
-    retire_epoch();
+    let bridge = bridge();
+    let listeners = bridge.listeners.borrow_mut().take();
+    bridge.retire_epoch();
     drop(listeners);
 }
 
@@ -105,7 +122,7 @@ pub(crate) fn track_pointer_down(pointer_id: i32, position: ClientPoint) {
 /// pointers keep the bridge up, so the previous gesture's queued frames cannot land in the new one.
 pub(crate) fn release_pointer(pointer_id: i32) {
     remove_pointer(pointer_id);
-    if BRIDGE.with(|bridge| bridge.borrow().is_some()) {
+    if bridge().listeners.borrow().is_some() {
         drop_bridge();
         ensure_bridge();
     }
@@ -162,16 +179,46 @@ mod tests {
     use super::*;
     use crate::test_support::with_runtime;
 
+    /// A second window is a second VirtualDom on the same thread: its pointer bridge is its own.
+    #[test]
+    fn a_second_runtime_has_its_own_bridge() {
+        with_runtime(|| {
+            add_pointer(111, ClientPoint::new(1.0, 1.0));
+            assert!(
+                bridge_is_up(),
+                "the first window's drag installs its bridge"
+            );
+        });
+        with_runtime(|| {
+            assert!(
+                !bridge_is_up(),
+                "the second window has installed nothing yet"
+            );
+            add_pointer(112, ClientPoint::new(1.0, 1.0));
+            assert!(
+                bridge_is_up(),
+                "the second window's drag installs its own bridge"
+            );
+        });
+    }
+
+    fn bridge_is_up() -> bool {
+        bridge().listeners.borrow().is_some()
+    }
+
     #[test]
     fn a_retired_epoch_is_not_current() {
-        let epoch = retire_epoch();
-        assert!(epoch_is_current(epoch));
-        let next = retire_epoch();
-        assert!(
-            !epoch_is_current(epoch),
-            "frames of a bridge installed under an earlier epoch are dropped"
-        );
-        assert!(epoch_is_current(next));
+        with_runtime(|| {
+            let bridge = bridge();
+            let epoch = bridge.retire_epoch();
+            assert!(epoch_is_current(&bridge.epoch, epoch));
+            let next = bridge.retire_epoch();
+            assert!(
+                !epoch_is_current(&bridge.epoch, epoch),
+                "frames of a bridge installed under an earlier epoch are dropped"
+            );
+            assert!(epoch_is_current(&bridge.epoch, next));
+        });
     }
 
     #[test]

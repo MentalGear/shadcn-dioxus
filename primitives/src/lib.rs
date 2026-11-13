@@ -63,6 +63,7 @@ pub mod data_view;
 #[cfg(feature = "calendar")]
 pub mod date_picker;
 pub mod default_checked;
+mod delayed_action;
 pub mod dialog;
 pub mod direction;
 mod dismiss;
@@ -132,6 +133,7 @@ mod typeahead;
 pub(crate) mod r#virtual;
 pub mod virtual_grid;
 pub mod virtual_list;
+mod window_once;
 
 /// Process-global counter behind [`allocate_unique_id`].
 static NEXT_UNIQUE_ID: AtomicUsize = AtomicUsize::new(0);

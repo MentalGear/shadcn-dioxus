@@ -1,6 +1,6 @@
 //! Defines the [`HoverCard`] component and its subcomponents.
 
-use crate::menu_sub::{use_delayed_action, DelayedAction};
+use crate::delayed_action::{use_delayed_action, DelayedAction};
 use crate::state_attrs;
 use crate::{
     merge_attributes, use_animated_open, use_controlled, use_id_or, use_unique_id, ContentAlign,

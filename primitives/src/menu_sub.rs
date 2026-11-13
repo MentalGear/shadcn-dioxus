@@ -13,9 +13,8 @@
 //! - [`SubMenuState`]: the open/close state, own roving-focus collection, and trigger/content id pair every `Sub`
 //!   needs.
 //! - The hover-intent timer every sub-trigger needs to open on hover, and every sub-content/sub-trigger needs to
-//!   close on leaving without entering the other. [`DelayedAction`] is the one primitive for a timed pointer-driven
-//!   open/close (`crate::sleep::sleep` + `spawn`/`Task`), shared with `HoverCard`, the hover-intent helper and
-//!   `NavigationMenu`.
+//!   close on leaving without entering the other. [`DelayedAction`] (`crate::delayed_action`) is the one primitive for a timed
+//!   pointer-driven open/close, shared with `HoverCard`, the hover-intent helper and `NavigationMenu`.
 //! - The **`open_on_hover` switch** ([`SubMenuState::open_on_hover`]) and the four pointer-hover entry points
 //!   ([`SubMenuState::hover_enter_trigger`], [`SubMenuState::hover_leave_trigger`],
 //!   [`SubMenuState::hover_enter_content`], [`SubMenuState::hover_leave_content`]) that honour it. This is the one
@@ -33,12 +32,11 @@
 
 use std::time::Duration;
 
+use crate::delayed_action::{use_delayed_action, DelayedAction};
 use crate::dismiss::Cause;
 use crate::safe_triangle::{use_safe_close, Point, SafeClose};
-use crate::sleep::sleep;
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
-use dioxus_core::Task;
 
 use crate::collection::{
     collection_item, use_collection_provider, use_deferred_collection_focus, use_item,
@@ -111,54 +109,6 @@ pub(crate) fn is_submenu_open_arrow_key(key: &Key, direction: Direction) -> bool
 /// stays a precise, direction-only predicate a caller can also use standalone.
 pub(crate) fn is_submenu_close_arrow_key(key: &Key, direction: Direction) -> bool {
     direction.resolve_horizontal(key) == Some(HorizontalNav::Prev)
-}
-
-/// A single cancellable delayed action, backed by `crate::sleep::sleep`
-/// + `spawn`/`Task` -- the same primitive `ContextMenuTrigger`'s long-press
-///   timer already uses (`context_menu.rs`'s `long_press_task`/
-///   `LONG_PRESS_DURATION`), not a new mechanism. Scheduling a new action
-///   implicitly cancels whatever this handle was already waiting on, so a
-///   trigger can call [`Self::schedule`] on every `onmouseenter` without
-///   separately tracking whether a previous timer is still pending.
-#[derive(Clone, Copy)]
-pub(crate) struct DelayedAction {
-    task: Signal<Option<Task>>,
-}
-
-/// Create a fresh, unscheduled [`DelayedAction`]. A hook (calls
-/// `use_signal`), so -- like every other hook in this crate -- call it
-/// unconditionally, once per render.
-pub(crate) fn use_delayed_action() -> DelayedAction {
-    DelayedAction {
-        task: use_signal(|| None),
-    }
-}
-
-impl DelayedAction {
-    /// Cancel a pending action, if any. A no-op if nothing is scheduled.
-    pub(crate) fn cancel(&mut self) {
-        if let Some(task) = self.task.write().take() {
-            task.cancel();
-        }
-    }
-
-    /// Whether an action is scheduled and has not yet run. Reading it subscribes the caller.
-    pub(crate) fn is_pending(&self) -> bool {
-        self.task.read().is_some()
-    }
-
-    /// Schedule `action` to run after `delay`, replacing (cancelling)
-    /// whatever this handle was already waiting on.
-    pub(crate) fn schedule(&mut self, delay: Duration, action: impl FnOnce() + 'static) {
-        self.cancel();
-        let mut task_slot = self.task;
-        let task = spawn(async move {
-            sleep(delay).await;
-            task_slot.set(None);
-            action();
-        });
-        self.task.set(Some(task));
-    }
 }
 
 /// The state a `DropdownMenuSub`/`ContextMenuSub` needs, identical for
