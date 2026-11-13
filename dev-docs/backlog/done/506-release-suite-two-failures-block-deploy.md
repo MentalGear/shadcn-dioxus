@@ -95,6 +95,6 @@ Proof (served release build of main `bdb41d2a`, new `serve-spa.py`): `tag_group.
 `--repeat-each=2` at 3 workers (the load that failed before): 598 passed, 0 failed; `all-routes`, `layout-stability`,
 `carousel` at 2 workers: 170 passed (10.0 min).
 
-Open: the full release suite on the merged tree (the deploy's run), then the deploy. Any other spec that finds a demo
+Any other spec that finds a demo
 by its title (`getByRole("heading", { name })` on a variant title) breaks the same way when a title is renamed; the
 2026-11-11 suite found only this one.

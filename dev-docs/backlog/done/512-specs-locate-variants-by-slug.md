@@ -1,7 +1,7 @@
 ---
 id: 512
 title: "A spec that located a demo variant by its displayed title broke on a retitle; variants are addressed by slug, enforced by a gate"
-status: "BUILT on lane/variant-locators-512, awaiting merge. A variant is found by its slug (the demo frame…"
+status: "DONE in PR #178: a variant is found by its slug (the demo frame id); the gate refuses a spec that…"
 size: "S: one spec moved, one gate rule with…"
 area: tests
 updated: 2026-11-12
@@ -20,8 +20,8 @@ title locator passed.
 
 ## Status / trigger
 
-BUILT on `lane/variant-locators-512`, awaiting merge. A variant is found by its slug (the demo frame id); the gate refuses a
-spec that finds one through its title.
+DONE in PR #178: a variant is found by its slug (the demo frame id); the gate refuses a spec that finds one through its
+title.
 
 ## Size
 

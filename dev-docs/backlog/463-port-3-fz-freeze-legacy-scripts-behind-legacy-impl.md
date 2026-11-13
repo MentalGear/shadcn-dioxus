@@ -28,6 +28,6 @@ M
 ## Detail
 
 - **Files owned:** `message_scroller.{rs,js}`, `carousel/{scroll,drag,wheel,js_macros,mod}.rs` (the string replaced by the legacy call), `primitives/src/ts/legacy/**`, `primitives/Cargo.toml`. Must not touch the rest of `carousel/*`, `primitives/src/bridge/*`.
-- **Depends on:** [row 444](./444-gate-half-of-lane-3-0b-grants-bans-and-witness-presence.md) (`Program::Frozen`), [row 445](./445-phase-0-2-the-legacy-freeze.md); goes before [row 464](./464-port-3-ca-carousel-rust-arms-next-to-the-frozen-legacy.md), [row 465](./465-port-3-ms-message-scroller-sticktoend-and-native-anchoring.md), [row 466](./466-port-3-wb-wheel-band-pure-rust-classifier.md).
+- **Depends on:** [row 444](./444-gate-half-of-lane-3-0b-grants-bans-and-witness-presence.md) (`Program::Frozen`), [row 445](./done/445-phase-0-2-the-legacy-freeze.md); goes before [row 464](./464-port-3-ca-carousel-rust-arms-next-to-the-frozen-legacy.md), [row 465](./465-port-3-ms-message-scroller-sticktoend-and-native-anchoring.md), [row 466](./466-port-3-wb-wheel-band-pure-rust-classifier.md).
 - **Proof:** The shipped feature-off arm's own clippy and test arm; legacy behaviour byte-identical on the carousel and message-scroller specs.
 - **Hours (inferred):** 10-12 (inferred); removes 0, moves about 2,700 lines.
