@@ -185,6 +185,9 @@ function observerClass(name: string) {
     observe(el: unknown, options?: unknown) {
       this.observed.push([el, options]);
     }
+    unobserve(el: unknown) {
+      this.observed = this.observed.filter((row) => (row as unknown[])[0] !== el);
+    }
     disconnect() {
       this.disconnected = true;
     }

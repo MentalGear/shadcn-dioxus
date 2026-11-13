@@ -342,10 +342,15 @@ const PROPS: Record<string, { recv: Recv | "any"; get: (el: any) => unknown }> =
 
 // ---------------------------------------------------------------- the bridge-latency harness
 
-/** The frames a message is deferred by: the one seam where another test mode (desktop cadence) plugs in. */
-function channelDelay(): number | "never" {
+/**
+ * How a message is deferred: N animation frames, `"never"`, or a scheduler `(deliver) => void` that calls `deliver`
+ * when it decides (the witness harness's completed-paint delay and its order hold). The one seam where another
+ * test mode (desktop cadence) plugs in.
+ */
+type ChannelMode = number | "never" | ((deliver: () => void) => void);
+function channelDelay(): ChannelMode {
   const mode = W.__dxBridgeDelayFrames;
-  if (mode === "never") return "never";
+  if (mode === "never" || typeof mode === "function") return mode;
   return typeof mode === "number" ? mode | 0 : 0;
 }
 
@@ -354,21 +359,25 @@ function afterFrames(n: number, fn: () => void): void {
   else W.requestAnimationFrame(() => afterFrames(n - 1, fn));
 }
 
+/** `deliver` after the mode's delay (`0` runs it now). */
+function deferDelivery(n: ChannelMode, deliver: () => void): void {
+  if (typeof n === "function") n(deliver);
+  else if (n === "never") return;
+  else afterFrames(n, deliver);
+}
+
 /** `raw` with the harness applied to `send` and `recv`. Wrapping a wrapped channel returns it. */
 function channel(raw: DioxusChannel): DioxusChannel {
   if ((raw as any).__dxWrapped) return raw;
   return {
     __dxWrapped: true,
     send(message) {
-      const n = channelDelay();
-      if (n === "never") return;
-      if (n) afterFrames(n, () => raw.send(message));
-      else raw.send(message);
+      deferDelivery(channelDelay(), () => raw.send(message));
     },
     recv() {
       return raw.recv().then((message) => {
         const n = channelDelay();
-        return typeof n === "number" && n ? new Promise((resolve) => afterFrames(n, () => resolve(message))) : message;
+        return n === 0 || n === "never" ? message : new Promise((resolve) => deferDelivery(n, () => resolve(message)));
       });
     },
   } as DioxusChannel;
@@ -433,6 +442,63 @@ function checkEvent(event: unknown, el: any): { recv: Recv; hot?: 1 } {
   if (!row) throw new Error("bridge: no such event: " + String(event));
   if (!receives(row.recv, el)) throw new Error("bridge: " + String(event) + " cannot be listened on this target");
   return row;
+}
+
+// ---------------------------------------------------------------- the resize dispatcher
+
+type ResizeBox = "content-box" | "border-box" | "device-pixel-content-box";
+type ResizeSub = { fn: (entry: ResizeObserverEntry) => void; seen: string };
+type ResizeGroup = { ro: ResizeObserver; subs: Map<Element, Set<ResizeSub>> };
+const resizeGroups = new Map<string, ResizeGroup>();
+
+const sizeSignature = (e: ResizeObserverEntry): string => {
+  const box = e.borderBoxSize?.[0];
+  return [e.contentRect.width, e.contentRect.height, box ? box.inlineSize : 0, box ? box.blockSize : 0].join();
+};
+
+/**
+ * The ONE ResizeObserver per box option, shared by every consumer, so the order of deliveries within a frame is
+ * the order of registration and a reader that samples after the frame (the witness harness's post-paint read)
+ * sees every consumer's write. A consumer is delivered the element's size when it registers and whenever the
+ * size changes, never twice for one size (a second consumer re-observes the element, which redelivers it).
+ */
+function observeResize(el: Element, box: ResizeBox | undefined, fn: (entry: ResizeObserverEntry) => void): () => void {
+  const key = box ?? "";
+  let group = resizeGroups.get(key);
+  if (!group) {
+    const subs = new Map<Element, Set<ResizeSub>>();
+    const ro: ResizeObserver = new W.ResizeObserver((entries: ResizeObserverEntry[]) => {
+      for (const entry of entries) {
+        const size = sizeSignature(entry);
+        for (const sub of [...(subs.get(entry.target) ?? [])]) {
+          if (sub.seen === size) continue;
+          sub.seen = size;
+          sub.fn(entry);
+        }
+      }
+    });
+    resizeGroups.set(key, (group = { ro, subs }));
+  }
+  const { ro, subs } = group;
+  const sub: ResizeSub = { fn, seen: "" };
+  const own = subs.get(el);
+  if (own) {
+    own.add(sub);
+    ro.unobserve(el);
+  } else subs.set(el, new Set([sub]));
+  ro.observe(el, box ? { box } : undefined);
+  return () => {
+    const set = subs.get(el);
+    if (!set?.delete(sub)) return;
+    if (!set.size) {
+      subs.delete(el);
+      ro.unobserve(el);
+    }
+    if (!subs.size) {
+      ro.disconnect();
+      resizeGroups.delete(key);
+    }
+  };
 }
 
 // ---------------------------------------------------------------- epochs
@@ -706,6 +772,34 @@ const warnOnce = (key: string, message: string) => {
 /** What a decision may set: `data-*` and `aria-*` only. */
 const ATTR_OK = /^(data|aria)-[a-z0-9-]+$/;
 
+// ---------------------------------------------------------------- the apply table
+
+/** `{ site, effect }` while the adapter applies a decision's effect; read through `window.__dxApplying`, set by nothing else. */
+let applying: Readonly<{ site: string; effect: string }> | null = null;
+
+/**
+ * The adapter's own writes, one row per effect a decision can carry (`send` and `remember` write no page state and
+ * are not rows). Every write goes through `applyEffect`, which names the site and the effect while it runs, so the witness
+ * harness can drop or delay exactly that call and no other.
+ */
+type Effect = "prevent" | "stop" | "attrs";
+type EffectRow = (target: Event | Element, name: string, value: string) => void;
+const APPLY: Readonly<Record<Effect, EffectRow>> = Object.freeze({
+  prevent: (event) => (event as Event).preventDefault(),
+  stop: (event) => (event as Event).stopPropagation(),
+  attrs: (host, name, value) => (host as Element).setAttribute(name, value),
+});
+
+function applyEffect(site: string, effect: Effect, target: Event | Element, name = "", value = ""): void {
+  const outer = applying;
+  applying = Object.freeze({ site, effect });
+  try {
+    own(APPLY, effect)?.(target, name, value);
+  } finally {
+    applying = outer;
+  }
+}
+
 function installBehaviour(sc: Scope, spec: Omit<BehaviourSpec, "cmd">): () => void {
   const el = resolve(spec.target);
   const b = spec.behaviour;
@@ -734,6 +828,8 @@ function installBehaviour(sc: Scope, spec: Omit<BehaviourSpec, "cmd">): () => vo
     current.off();
   }
   const host = isEl(el) ? el : null;
+  // the name an install gives its site, which its kind stands in for until it names one
+  const site = typeof b.site === "string" ? b.site : b.kind;
   // per-install state a behaviour carries between events (a gesture's origin, a counter): it lives and
   // dies with the install, so a re-install, a lease expiry and an element disconnect all start clean
   let memory: Record<string, unknown> = {};
@@ -752,11 +848,11 @@ function installBehaviour(sc: Scope, spec: Omit<BehaviourSpec, "cmd">): () => vo
     if (decision.prevent || decision.stop) {
       if (d.passive) warnOnce("passive:" + b.kind, b.kind + " asked to cancel an event Rust declared passive");
       else {
-        if (decision.prevent) event.preventDefault();
+        if (decision.prevent) applyEffect(site, "prevent", event);
         // desktop never forwards stopPropagation and a window-level stop would starve Rust's own handlers:
         // only an element-level capture behaviour may stop
         if (decision.stop) {
-          if (d.capture && d.target === "element") event.stopPropagation();
+          if (d.capture && d.target === "element") applyEffect(site, "stop", event);
           else warnOnce("stop:" + b.kind, b.kind + " may stop propagation only at an element in the capture phase");
         }
       }
@@ -764,7 +860,7 @@ function installBehaviour(sc: Scope, spec: Omit<BehaviourSpec, "cmd">): () => vo
     if (decision.remember) memory = { ...memory, ...decision.remember };
     if (decision.attrs && host) {
       for (const name of Object.keys(decision.attrs)) {
-        if (ATTR_OK.test(name)) host.setAttribute(name, decision.attrs[name]);
+        if (ATTR_OK.test(name)) applyEffect(site, "attrs", host, name, decision.attrs[name]);
         else warnOnce("attr:" + b.kind + name, b.kind + " may not set " + name);
       }
     }
@@ -891,8 +987,8 @@ function scope(raw?: DioxusChannel): Scope {
       let observer: { disconnect(): void };
       switch (spec.kind) {
         case "resize": {
-          const ro = new W.ResizeObserver((entries: ResizeObserverEntry[]) => {
-            const e = entries[entries.length - 1];
+          const boxOption = oneOf(spec.options?.box, ["content-box", "border-box", "device-pixel-content-box"] as const);
+          const stop = observeResize(el, boxOption, (e) => {
             const box = e.borderBoxSize?.[0];
             send({
               width: e.contentRect.width,
@@ -901,9 +997,7 @@ function scope(raw?: DioxusChannel): Scope {
               borderHeight: box ? box.blockSize : e.contentRect.height,
             });
           });
-          const boxOption = oneOf(spec.options?.box, ["content-box", "border-box", "device-pixel-content-box"] as const);
-          ro.observe(el, boxOption ? { box: boxOption } : undefined);
-          observer = ro;
+          observer = { disconnect: stop };
           break;
         }
         case "intersection": {
@@ -1139,6 +1233,7 @@ if (!W.__dxBridge) {
     behaviours,
     register,
   };
+  Object.defineProperty(W, "__dxApplying", { get: () => applying, enumerable: false, configurable: false });
   Object.defineProperty(W, "__dxBridge", { value: Object.freeze(bridge), writable: false, configurable: false, enumerable: true });
 }
 
