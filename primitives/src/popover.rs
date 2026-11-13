@@ -6,13 +6,13 @@
 //! `PopoverModalContent` is cfg-split the same way `dialog.rs`'s
 //! `DialogContentModal`/`alert_dialog.rs`'s `AlertDialogContent` are
 //! (`dev-docs/archive/research/phase4-spike-findings.md` Construction B):
-//! - `#[cfg(feature = "native")]`: the plain
-//!   `div` + vendored `FocusTrap` path.
+//! - `#[cfg(feature = "native")]`: a plain `div` with `role="dialog"` and `aria-modal`, and no focus
+//!   trap (Blitz runs no script; a real trap there is row 438's).
 //! - `#[cfg(not(feature = "native"))]`: a real `<dialog>` opened with
 //!   `showModal()`, driven by the exact same
 //!   `crate::use_dialog_open_driver`/`crate::use_dialog_close_sync`/
 //!   `crate::dismiss::Policy::NATIVE_BACKDROP` layer `dialog.rs`'s browser modal arm
-//!   uses -- no focus-trap eval and no closing Escape layer on this arm (it joins the dismiss core's
+//!   uses -- no focus trap of its own and no closing Escape layer on this arm (it joins the dismiss core's
 //!   Escape order as a native layer, with a backdrop press); the browser's own
 //!   `showModal()` supplies the focus trap, focus restore, background inertness, and top
 //!   layer.
@@ -39,11 +39,7 @@
 //! dialog too, which keeps the modal arm trigger-anchored rather than
 //! falling back to the UA's viewport-centered default.
 
-// Only the native (Blitz) modal arm evaluates script itself (its focus trap); the browser arm's
-// open driver is the shared `crate::use_dialog_open_driver`.
 use crate::state_attrs;
-#[cfg(feature = "native")]
-use dioxus::document;
 use dioxus::prelude::*;
 
 // Only the native (Blitz) arms dismiss through the dismiss core (`crate::dismiss`, Escape and
@@ -390,15 +386,10 @@ pub fn PopoverContent(props: PopoverContentProps) -> Element {
         props.final_focus,
     ));
 
-    // No vendored focus-trap eval here: the browser modal arm is a real
-    // `<dialog>` + `showModal()` (see this module's doc comment), and
-    // installing the trap there would fight the browser's own focus
-    // management. Trap installation lives in `PopoverModalContent`'s
-    // `#[cfg(feature = "native")]` arm, the only one that needs it --
-    // mirroring `dialog.rs`'s `DialogContentModal` native arm exactly.
+    // No focus trap here: the browser modal arm is a real `<dialog>` + `showModal()` (see this
+    // module's doc comment), which supplies its own, and the native arm has none.
 
     rsx! {
-        {crate::focus_trap_script()}
         if render() {
             PopoverContentRendered {
                 id,
@@ -472,9 +463,8 @@ pub fn PopoverContentRendered(
     }
 }
 
-/// Native (Blitz) arm: a plain `div` + vendored `FocusTrap` path -- see this
-/// module's doc comment. The focus-trap eval lives here (not in
-/// `PopoverContent`), since this is the only arm that needs it.
+/// Native (Blitz) arm: a plain `div` with `aria-modal` and no focus trap -- see this
+/// module's doc comment.
 #[cfg(feature = "native")]
 #[component]
 fn PopoverModalContent(
@@ -513,29 +503,6 @@ fn PopoverModalContent(
         None,
         move |_| set_open.call(false),
     );
-
-    let id_for_trap = id.clone();
-    use_effect(move || {
-        #[expect(
-            clippy::disallowed_methods,
-            reason = "row 452: this page script is ported by row 452"
-        )]
-        let eval = document::eval(
-            r#"let id = await dioxus.recv();
-            let is_open = await dioxus.recv();
-            let dialog = document.getElementById(id);
-
-            if (is_open) {
-                dialog.trap = window.createFocusTrap(dialog);
-            }
-            if (!is_open && dialog.trap) {
-                dialog.trap.remove();
-                dialog.trap = null;
-            }"#,
-        );
-        let _ = eval.send(id_for_trap.clone());
-        let _ = eval.send(open.cloned());
-    });
 
     // Owned by this component -- dialog role/aria wiring/state must win
     // over a caller's own attributes (`dev-docs/backlog.md` row 93's
@@ -581,7 +548,7 @@ fn PopoverModalContent(
 /// keyed on `:modal` in `top_layer.rs`, would stop matching mid-fade.) The shared
 /// `close_sync` also routes Escape's `cancel` through state, so this arm needs no
 /// second, duplicate Escape handler. No
-/// closing layer and no focus-trap eval on this
+/// closing layer and no focus trap of its own on this
 /// arm -- the browser's own `showModal()` supplies the focus trap, focus restore,
 /// background inertness, and top-layer rendering.
 ///

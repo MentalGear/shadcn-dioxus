@@ -8,8 +8,6 @@ use std::rc::Rc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 use dioxus::prelude::*;
-#[cfg(feature = "native")]
-use dioxus::prelude::{asset, manganis, Asset};
 use dioxus_core::AttributeValue::Text;
 
 use crate::js_listener::{use_js_listeners, JsListeners};
@@ -134,51 +132,6 @@ mod typeahead;
 pub(crate) mod r#virtual;
 pub mod virtual_grid;
 pub mod virtual_list;
-
-/// The vendored `focus-trap` JS bundle (`primitives/src/ts/focus-trap.ts`,
-/// generated and committed by `scripts/build-js-bundle.sh`, checked by
-/// `scripts/check-js-bundle.sh`; there is no build script). Native (Blitz)
-/// modal overlays (`dialog.rs`/`alert_dialog.rs`/`popover.rs`'s
-/// `#[cfg(feature = "native")]` arms) are its only
-/// consumers -- every browser-arm modal overlay uses the native-dialog
-/// engine (`showModal()`'s own focus trap/restore/inertness/top-layer),
-/// the two-engine overlay architecture (dev-docs/plan.md). `#[cfg]`
-/// -gated on this crate's `native` feature (not `target_family = "wasm"` --
-/// see `dev-docs/reference/platform-rationale.md` Caveat 1 for why that axis is
-/// wrong) so that neither the wasm client nor a host build with
-/// `native` off (the fullstack SSG server) ever references, and therefore never
-/// bundles, this asset at all -- see [`focus_trap_script`] (this file), the
-/// only thing that ever names this constant.
-#[cfg(feature = "native")]
-pub(crate) const FOCUS_TRAP_JS: Asset = asset!("/src/js/focus-trap.js");
-
-/// Renders the `<script>` tag that loads [`FOCUS_TRAP_JS`] -- native
-/// (Blitz) arm only. `dialog.rs`/`alert_dialog.rs`/`popover.rs`'s Root
-/// components all call this instead of rendering `document::Script`
-/// directly, so no build with this crate's `native` feature off ever mentions
-/// `FOCUS_TRAP_JS` in its rendered tree at all (a plain `#[cfg]` on the tag
-/// inside one shared `rsx!` call wouldn't get you that -- the *other*
-/// branch's body would still need to name the feature-absent constant to
-/// type-check; splitting into two whole function bodies, one per feature,
-/// is what actually keeps the reference out of that build's compilation
-/// unit). A no-op on the browser arm:
-/// every modal overlay's browser-arm focus handling comes from the browser's
-/// own `showModal()`, so there is nothing to load there.
-#[cfg(feature = "native")]
-pub(crate) fn focus_trap_script() -> Element {
-    rsx! {
-        document::Script {
-            src: FOCUS_TRAP_JS,
-            defer: true
-        }
-    }
-}
-
-/// See [`focus_trap_script`]'s doc -- the browser arm's no-op counterpart.
-#[cfg(not(feature = "native"))]
-pub(crate) fn focus_trap_script() -> Element {
-    rsx! {}
-}
 
 /// Process-global counter behind [`allocate_unique_id`].
 static NEXT_UNIQUE_ID: AtomicUsize = AtomicUsize::new(0);
