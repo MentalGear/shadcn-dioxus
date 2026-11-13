@@ -21,7 +21,7 @@ fn other(name: &'static str, value: &str) -> Attribute {
 
 #[test]
 fn native_anchor_is_empty_so_no_caller_style_yields_no_style_attribute_at_all() {
-    // Off the web arm, `anchor_name_style` is the inert `String::new()`
+    // on the native arm, `anchor_name_style` is the inert `String::new()`
     // stub -- with no caller style either, there is nothing to say, so
     // this must not manufacture a stray empty `style=""`.
     let result = anchored_trigger_attributes("x", vec![other("role", "button")]);

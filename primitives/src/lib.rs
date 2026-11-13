@@ -8,11 +8,34 @@ use std::rc::Rc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 use dioxus::prelude::*;
-#[cfg(not(feature = "web"))]
+#[cfg(feature = "native")]
 use dioxus::prelude::{asset, manganis, Asset};
 use dioxus_core::AttributeValue::Text;
 
 use crate::js_listener::{use_js_listeners, JsListeners};
+
+/// Whether dioxus is built with its native (Blitz) renderer, read from dioxus's own `native!` config macro.
+const DIOXUS_NATIVE: bool = {
+    #[allow(
+        unused_mut,
+        unused_assignments,
+        reason = "assigned only when dioxus has its native renderer"
+    )]
+    let mut on = false;
+    dioxus::prelude::native! { on = true; }
+    on
+};
+
+const _: () = assert!(
+    DIOXUS_NATIVE == cfg!(feature = "native"),
+    "dioxus is built with its native (Blitz) renderer and dioxus-primitives is not, or the other way round: \
+     enable \"dioxus-primitives/native\" in the same feature that enables \"dioxus/native\""
+);
+
+/// True when the primitives render their Blitz arm, false when they render the browser-engine arm (a browser, or a
+/// desktop or mobile webview). Styled components branch on this in expression position and never `cfg` on a feature
+/// name, which after `dx components add` would name the user's crate.
+pub const NATIVE_ARM: bool = cfg!(feature = "native");
 
 pub use as_child::AsChild;
 pub use dioxus_attributes;
@@ -116,32 +139,32 @@ pub mod virtual_list;
 /// generated and committed by `scripts/build-js-bundle.sh`, checked by
 /// `scripts/check-js-bundle.sh`; there is no build script). Native (Blitz)
 /// modal overlays (`dialog.rs`/`alert_dialog.rs`/`popover.rs`'s
-/// `#[cfg(not(feature = "web"))]` arms) are its only
-/// consumers -- every web-arm modal overlay uses the native-dialog
+/// `#[cfg(feature = "native")]` arms) are its only
+/// consumers -- every browser-arm modal overlay uses the native-dialog
 /// engine (`showModal()`'s own focus trap/restore/inertness/top-layer),
 /// the two-engine overlay architecture (dev-docs/plan.md). `#[cfg]`
-/// -gated on this crate's `web` feature (not `target_family = "wasm"` --
+/// -gated on this crate's `native` feature (not `target_family = "wasm"` --
 /// see `dev-docs/reference/platform-rationale.md` Caveat 1 for why that axis is
-/// wrong) so that neither the wasm client nor a host build with `web`
-/// on (the fullstack SSG server) ever references, and therefore never
+/// wrong) so that neither the wasm client nor a host build with
+/// `native` off (the fullstack SSG server) ever references, and therefore never
 /// bundles, this asset at all -- see [`focus_trap_script`] (this file), the
 /// only thing that ever names this constant.
-#[cfg(not(feature = "web"))]
+#[cfg(feature = "native")]
 pub(crate) const FOCUS_TRAP_JS: Asset = asset!("/src/js/focus-trap.js");
 
 /// Renders the `<script>` tag that loads [`FOCUS_TRAP_JS`] -- native
 /// (Blitz) arm only. `dialog.rs`/`alert_dialog.rs`/`popover.rs`'s Root
 /// components all call this instead of rendering `document::Script`
-/// directly, so no build with this crate's `web` feature on ever mentions
+/// directly, so no build with this crate's `native` feature off ever mentions
 /// `FOCUS_TRAP_JS` in its rendered tree at all (a plain `#[cfg]` on the tag
 /// inside one shared `rsx!` call wouldn't get you that -- the *other*
 /// branch's body would still need to name the feature-absent constant to
 /// type-check; splitting into two whole function bodies, one per feature,
 /// is what actually keeps the reference out of that build's compilation
-/// unit). A no-op on the web arm:
-/// every modal overlay's web-arm focus handling comes from the browser's
+/// unit). A no-op on the browser arm:
+/// every modal overlay's browser-arm focus handling comes from the browser's
 /// own `showModal()`, so there is nothing to load there.
-#[cfg(not(feature = "web"))]
+#[cfg(feature = "native")]
 pub(crate) fn focus_trap_script() -> Element {
     rsx! {
         document::Script {
@@ -151,8 +174,8 @@ pub(crate) fn focus_trap_script() -> Element {
     }
 }
 
-/// See [`focus_trap_script`]'s doc -- the web arm's no-op counterpart.
-#[cfg(feature = "web")]
+/// See [`focus_trap_script`]'s doc -- the browser arm's no-op counterpart.
+#[cfg(not(feature = "native"))]
 pub(crate) fn focus_trap_script() -> Element {
     rsx! {}
 }
@@ -592,18 +615,18 @@ pub(crate) fn use_form_reset_listener(
 /// commits the declarative attribute during render, before this effect
 /// runs, so the guard's own condition is already false by the time it
 /// checks). That is exactly why this hook only exists in the
-/// `#[cfg(feature = "web")]` leaf of `dialog.rs`/`alert_dialog.rs`'s
+/// `#[cfg(not(feature = "native"))]` leaf of `dialog.rs`/`alert_dialog.rs`'s
 /// component split (`dev-docs/archive/research/phase4-spike-findings.md` Construction B) -- the
-/// `not(feature = "web")` arm never binds `open` as an attribute either,
+/// `feature = "native"` arm never binds `open` as an attribute either,
 /// since that arm renders a plain `div`, not a `<dialog>`, at all.
 ///
-/// Gated on `feature = "web"`, not `target_family = "wasm"`, for the same
+/// Gated on `not(feature = "native")`, not `target_family = "wasm"`, for the same
 /// reason [`crate::top_layer::use_popover_sync`] is (see that function's
 /// doc): `dioxus-desktop` is a non-wasm binary with a real, working webview
 /// `eval` and belongs on this same arm, not on native/Blitz's no-op one --
 /// and, per `dev-docs/reference/platform-rationale.md` Caveat 1, the fullstack SSG
 /// prerender is a *host* (non-wasm) binary that also belongs on this arm
-/// whenever this crate's `web` feature is on.
+/// whenever this crate's `native` feature is off.
 ///
 /// ## Closing waits for the exit (backlog row 141)
 ///
@@ -634,7 +657,7 @@ pub(crate) fn use_form_reset_listener(
 /// generation, so a stale wait that wakes up later does nothing; Escape is routed
 /// here through state by [`use_dialog_close_sync`]'s `cancel` handler instead of
 /// being allowed to `close()` natively.
-#[cfg(feature = "web")]
+#[cfg(not(feature = "native"))]
 fn use_dialog_open_driver(
     id: impl Readable<Target = String> + Copy + 'static,
     open: impl Readable<Target = bool> + Copy + 'static,
@@ -737,7 +760,7 @@ fn use_dialog_open_driver(
 /// user was pressing it on. `__dxQuietClose` makes that early `close` event only release the
 /// scroll lock: it must not write `open = false` after the opener's click has written `true`.
 /// One listener per dialog element, on the element (it goes with the element).
-#[cfg(feature = "web")]
+#[cfg(not(feature = "native"))]
 const DIALOG_CLOSE_FORWARD_JS: &str = r#"
 function dxDialogFinish(dialog) {
     dialog.__dxDialogGen = (dialog.__dxDialogGen || 0) + 1;
@@ -782,7 +805,7 @@ function dxDialogForwardKeys(dialog) {
 /// How long [`use_dialog_open_driver`] waits for a dialog's exit animations before
 /// closing it anyway: the bound that keeps a stuck or very long animation from
 /// holding an open modal (and its inert page) hostage.
-#[cfg(feature = "web")]
+#[cfg(not(feature = "native"))]
 const DIALOG_EXIT_TIMEOUT_MS: u32 = 1500;
 
 /// Sync the `<dialog>` element's native `close` event -- fired on Escape's
@@ -805,7 +828,7 @@ const DIALOG_EXIT_TIMEOUT_MS: u32 = 1500;
 ///
 /// See [`use_dialog_open_driver`]'s doc for why this is `#[cfg]`-gated the
 /// same way.
-#[cfg(feature = "web")]
+#[cfg(not(feature = "native"))]
 fn use_dialog_close_sync(
     id: impl Readable<Target = String> + Copy + 'static,
     set_open: Callback<bool>,

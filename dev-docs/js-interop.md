@@ -243,7 +243,7 @@ Web is the tested target; every desktop claim in the plan reads "web-verified; d
   transport.
 - **Blitz has no page.** `document::eval` is unsupported there and the bridge answers "unsupported", so what must work
   on Blitz is an rsx handler, a signal, `MountedData`, or a behaviour's Rust `decide` called directly. Write a
-  `not(web)` arm with that in mind (row 438).
+  `feature = "native"` arm with that in mind (row 438).
 
 ## What is forbidden, and which gate says so
 

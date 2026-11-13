@@ -2,8 +2,8 @@
 //! tooltip's close-on-scroll.
 
 #[cfg_attr(
-    not(feature = "web"),
-    expect(unused_imports, reason = "only the web build uses it")
+    feature = "native",
+    expect(unused_imports, reason = "only the browser build uses it")
 )]
 use super::*;
 
@@ -39,8 +39,8 @@ use super::*;
 /// **`writer(el)`** returns `put(property, value)`, which sets an inline property only when it
 /// differs from the last value `put` wrote, so a frame that changes nothing writes nothing.
 #[cfg_attr(
-    all(not(feature = "web"), not(test)),
-    expect(dead_code, reason = "only the web build and the tests use it")
+    all(feature = "native", not(test)),
+    expect(dead_code, reason = "only the browser build and the tests use it")
 )]
 pub(crate) const PLACEMENT_HELPERS_JS: &str = r#"
 function visible() {
@@ -91,7 +91,7 @@ function writer(el) {
 "#;
 
 /// What makes [`use_close_on_scroll`] close a panel.
-#[cfg(feature = "web")]
+#[cfg(not(feature = "native"))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum ScrollClose {
     /// Any document or scroll-container scroll closes it. Only a Tooltip closes on scroll (as
@@ -114,7 +114,7 @@ pub(crate) enum ScrollClose {
 /// window), and a scroll within `QUIET_MS` of a focus change into the panel or the anchor, a key
 /// press in them, or a visual-viewport resize or pan is ignored. A scroll INSIDE the panel or the
 /// anchor is never a reason to close.
-#[cfg(feature = "web")]
+#[cfg(not(feature = "native"))]
 const CLOSE_ON_SCROLL_JS: &str = r#"
 const id = await dioxus.recv();
 const anchorSelector = await dioxus.recv();
@@ -141,7 +141,7 @@ listen(window, 'scroll', (e) => {
 /// Closes the panel `content_id` (anchored to `anchor_id`; `""` for a point-anchored one) by
 /// calling `set_open(false)` when the page scrolls, for as long as `active` is true. Only a Tooltip
 /// asks for it; see [`CLOSE_ON_SCROLL_JS`] for the mobile-keyboard caveat.
-#[cfg(feature = "web")]
+#[cfg(not(feature = "native"))]
 pub(crate) fn use_close_on_scroll(
     content_id: String,
     anchor_id: String,
@@ -173,7 +173,7 @@ pub(crate) fn use_close_on_scroll(
 /// Call it after [`use_popover_sync`]'s effect at the call site, so the panel is already in the top
 /// layer when the first placement reads it. The point is read when the calling component mounts;
 /// `ContextMenuContentRendered` mounts once per open.
-#[cfg(feature = "web")]
+#[cfg(not(feature = "native"))]
 pub(crate) fn use_point_anchor_placement(
     id: String,
     x: i32,

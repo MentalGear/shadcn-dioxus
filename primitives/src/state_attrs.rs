@@ -685,10 +685,15 @@ mod ssr_tests {
     #[test]
     fn dialog_renders_open_as_presence() {
         let html = render(Dialogs);
-        let roots = by_attr(&html, "data-open");
-        assert_eq!(roots.len(), 1, "{html}");
-        assert_eq!(value(&roots[0], "data-open"), Some(""), "{html}");
-        assert!(!has(&roots[0], "data-closed"), "{html}");
+        // The root carries the open state; on the browser arm the `<dialog>` carries its own too (its `[open]`
+        // stays set for the whole exit, so a stylesheet keys the exit on the `<dialog>`'s own `[data-closed]`).
+        let expected = if crate::NATIVE_ARM { 1 } else { 2 };
+        let open = by_attr(&html, "data-open");
+        assert_eq!(open.len(), expected, "{html}");
+        for tag in &open {
+            assert_eq!(value(tag, "data-open"), Some(""), "{html}");
+            assert!(!has(tag, "data-closed"), "{html}");
+        }
     }
 
     #[component]

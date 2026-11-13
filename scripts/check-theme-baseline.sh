@@ -54,7 +54,7 @@
 #     `user-select` rule with its exclusions intact.
 #
 #  6. The no-top-layer scrim and the visually-hidden recipe (row 426). The scrim of a modal that has no top layer
-#     (non-web arm, `is_modal: false`) is the wrapper `div` Dialog, AlertDialog, Sheet, Drawer and CommandDialog render
+#     (native arm, `is_modal: false`) is the wrapper `div` Dialog, AlertDialog, Sheet, Drawer and CommandDialog render
 #     around the panel: each carries `data-dx-scrim` and the theme's five zero-specificity `:where([data-dx-scrim])`
 #     rules paint it, fade it with `data-open` / `data-closed` and drop it for `overlay: false`. A component sheet may not read
 #     `--dx-overlay-scrim` (that is the scrim being painted by hand again), and each of the five sources must still

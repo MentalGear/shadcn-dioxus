@@ -35,11 +35,11 @@ tokio = { version = "1", features = ["rt", "time"] }
 serde_json = "1"
 
 [features]
-web = ["dioxus/web", "dioxus-primitives/web"]
-desktop = ["dioxus/desktop", "dioxus-primitives/web"]
+web = ["dioxus/web"]
+desktop = ["dioxus/desktop"]
 fullstack = ["dioxus/fullstack"]
-server = ["dioxus/server", "dioxus/fullstack", "dioxus-primitives/web"]
-native = ["dioxus/native"]
+server = ["dioxus/server", "dioxus/fullstack"]
+native = ["dioxus/native", "dioxus-primitives/native"]
 
 [lints]
 workspace = true

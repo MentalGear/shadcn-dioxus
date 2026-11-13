@@ -12,10 +12,10 @@ Read this when you are about to commit, report a change as finished, or add or c
   gate list in `scripts/run-gates.sh` and the header of each `scripts/check-*.sh`.
 - If you add a gate: write its header, register it in `run-gates.sh`, run `scripts/gates-doc.py --write`; no other doc
   is edited (`check-gates-doc.sh` fails a stale page).
-- Clippy runs in three arms (default, `web`, `server`), each `--all-targets -- -D warnings`, because a plain
-  `cargo clippy --workspace` never enables primitives' `web` feature or preview's `server` feature, which are what
-  `dx build --ssg` ships; `--all-features` is no substitute (preview's `desktop` needs gtk, and it would hide the
-  `not(web)` arm). `test-server`, `check-rustdoc` and `stylelint` are gates too; gates.md says what each one is.
+- Clippy runs in three arms (default, `native`, `server`), each `--all-targets -- -D warnings`, because a plain
+  `cargo clippy --workspace` never enables primitives' `native` feature (the Blitz arm) or preview's `server` feature
+  (what `dx build --ssg` ships); `--all-features` is no substitute (preview's `desktop` needs gtk, and it would hide the
+  browser arm). `test-server`, `check-rustdoc` and `stylelint` are gates too; gates.md says what each one is.
 - A cargo gate whose inputs are byte-identical to a stored PASS is reused, not rerun (row 320; `--no-reuse` forces it);
   the summary names each reused gate and the tree it really ran on.
 - Lanes run `scripts/run-gates.sh --fast`; the main loop runs the one full run per merge batch

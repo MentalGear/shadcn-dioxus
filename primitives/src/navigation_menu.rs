@@ -39,7 +39,7 @@
 //! specs that already pin it. `navbar.rs` is still the right file to read
 //! for this crate's house idioms (context struct shape, `use_id_or`,
 //! `merge_attributes`, `attributes!`, `use_animated_open`, the
-//! `#[cfg(feature = "web")]` `*ContentRendered` leaf split via
+//! `#[cfg(not(feature = "native"))]` `*ContentRendered` leaf split via
 //! `crate::top_layer`), and this module mirrors those idioms closely --
 //! just never `crate::menu_semantics`, and never a roving-tabindex
 //! collection for keyboard focus (see below).
@@ -128,7 +128,7 @@
 //!
 //! # Top layer
 //!
-//! [`NavigationMenuContent`]'s web-arm leaf promotes to the top layer
+//! [`NavigationMenuContent`]'s browser-arm leaf promotes to the top layer
 //! broadly the way `NavbarContent` does --
 //! `crate::top_layer::anchored_content_attributes` with
 //! `AnchorKind::NavigationMenu` (the `data-dx-anchored` attribute the shared
@@ -683,9 +683,9 @@ pub fn NavigationMenuTrigger(props: NavigationMenuTriggerProps) -> Element {
         attributes!(button { id: id.cloned() }),
         props.attributes,
     ]);
-    // Ties this trigger to the web-arm content's `position-anchor` once
+    // Ties this trigger to the browser-arm content's `position-anchor` once
     // promoted to the top layer -- see `crate::top_layer::anchor_name_style`
-    // (inert off the web arm). Not a bare `style: anchor_name_style(
+    // (inert on the native arm). Not a bare `style: anchor_name_style(
     // ..)` literal directly on this element, beside `..attributes` below: a
     // caller supplying their own `style` would then produce two `style`
     // attributes on this same tag (`dev-docs/conformance-harness.md`
@@ -846,7 +846,7 @@ pub struct NavigationMenuContentProps {
 /// # NavigationMenuContent
 ///
 /// The panel a [`NavigationMenuTrigger`] discloses: anchored below its
-/// trigger and, on the web arm, promoted to the top layer (see this
+/// trigger and, on the browser arm, promoted to the top layer (see this
 /// module's doc). Never carries a menu role (R4: this pattern has none).
 ///
 /// This must be used inside a [`NavigationMenuItem`] component, after its
@@ -949,7 +949,7 @@ fn NavigationMenuDismiss() -> Element {
     rsx! {}
 }
 
-/// Web arm: promote to the top layer via `popover="manual"`, anchored to
+/// Browser arm: promote to the top layer via `popover="manual"`, anchored to
 /// this item's own trigger -- see this module's doc, "Top layer", for why
 /// `manual` (not `auto`, unlike `NavbarContent`).
 ///
@@ -984,7 +984,7 @@ fn NavigationMenuDismiss() -> Element {
 /// done) ever takes this content out of the top layer, so the exit
 /// animation plays out undisturbed on an element that is still very much
 /// `:popover-open` the whole time.
-#[cfg(feature = "web")]
+#[cfg(not(feature = "native"))]
 #[component]
 fn NavigationMenuContentRendered(
     /// The DOM id of the content element.
@@ -1066,7 +1066,7 @@ fn NavigationMenuContentRendered(
 
 /// Native (Blitz) arm: a plain positioned `div` -- Blitz has no popover-API
 /// support, matching `NavbarContentRendered`'s native arm.
-#[cfg(not(feature = "web"))]
+#[cfg(feature = "native")]
 #[component]
 fn NavigationMenuContentRendered(
     /// The DOM id of the content element.
@@ -1090,7 +1090,7 @@ fn NavigationMenuContentRendered(
     let attributes = merge_attributes(vec![
         attributes,
         labelledby,
-        // Owned by this component -- see the web arm's identical
+        // Owned by this component -- see the browser arm's identical
         // construction above (`dev-docs/backlog.md` row 93).
         attributes!(div {
             ..state_attrs::open((item_ctx.is_open)()),

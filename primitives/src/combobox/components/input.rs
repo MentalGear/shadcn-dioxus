@@ -127,14 +127,14 @@ pub fn ComboboxInput(props: ComboboxInputProps) -> Element {
     });
     let owned = attributes!(input {
         // See `crate::top_layer::anchor_name_style`: ties this input to
-        // the web-arm listbox's `position-anchor`
+        // the browser-arm listbox's `position-anchor`
         // (`ComboboxListRendered`, `list.rs`) so its anchor-positioned
         // placement resolves relative to this input once promoted to
         // the top layer. Keyed on this element's own `id`, which is what
         // `ctx.input_id` (the listbox's side) is synced to above: `ctx.input_id`
         // still holds the root's placeholder in the server render and the
         // first client frame, so keying on it would name a different anchor
-        // there whenever a caller passes `id`. Inert (empty) off the web arm.
+        // there whenever a caller passes `id`. Inert (empty) on the native arm.
         // A multi-select's popup anchors to the chips field instead (`ComboboxChips`).
         style: if ctx.is_multi() { String::new() } else { crate::top_layer::anchor_name_style(&id()) },
         r#type: "text",

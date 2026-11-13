@@ -10,8 +10,8 @@
 #
 # Declared means the registry dependencies of every Cargo.toml (workspace and detached crates; path and git dependencies are
 # ours), every package.json (checked against its pnpm-lock.yaml too) and the cargo-installed dx. DEP_REGISTER_TODAY overrides
-# the date for tests. The closure baseline is a shrink-only ratchet over `cargo tree -e normal,build` of dioxus-primitives (all
-# features, wasm32 and host) and of each registry crate a component.json names; kinds come from `cargo metadata` and the tree's
+# the date for tests. The closure baseline is a shrink-only ratchet over `cargo tree -e normal,build` of dioxus-primitives (every
+# installable feature, that is all but `native` and `web`, wasm32 and host) and of each registry crate a component.json names; kinds come from `cargo metadata` and the tree's
 # proc-macro mark. A listed crate that left the closure is red too (shrink it with scripts/dependency-register.py
 # --closure-update). It sees what cargo resolves for the lock, not features a user's own app adds. The self-test mutates fixtures
 # every way and needs no cargo; the tree checks use only `cargo tree` and `cargo metadata` with --offline --locked.

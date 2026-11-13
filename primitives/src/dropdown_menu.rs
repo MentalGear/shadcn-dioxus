@@ -559,7 +559,7 @@ pub fn DropdownMenuTrigger(props: DropdownMenuTriggerProps) -> Element {
         // gives the menu that construction.
     });
     let merged = merge_attributes(vec![base, props.attributes]);
-    // Ties this trigger to the web-arm content's `position-anchor`
+    // Ties this trigger to the browser-arm content's `position-anchor`
     // (`DropdownMenuContentRendered`) so its anchor-positioned placement
     // resolves relative to this trigger once promoted to the top layer --
     // keyed on `ctx.content_id`, not `ctx.trigger_id` above (this trigger's
@@ -687,7 +687,7 @@ pub fn DropdownMenuContent(props: DropdownMenuContentProps) -> Element {
     }
 }
 
-/// The menu panel. On the web it is promoted to the top layer via `popover="auto"` so it escapes clipping and
+/// The menu panel. In the browser arm it is promoted to the top layer via `popover="auto"` so it escapes clipping and
 /// transformed ancestors, the same construction `Tooltip`/`HoverCard`/non-modal `Popover` use
 /// (dev-docs/plan.md Phase 4.4), and gets the platform's light dismiss (an outside pointerdown; Escape is the
 /// dismiss layer's) beside this crate's own DOM-truth dismissal. Without the popover API it is a plain, always-in-flow `div`, visible

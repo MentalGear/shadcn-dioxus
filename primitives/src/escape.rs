@@ -12,11 +12,11 @@
 //!   sent to the page script as data so it never concatenates an id into a selector;
 //! - [`js_string`]: a complete JavaScript string literal.
 //!
-//! The first three exist only where the page scripts do (the `web` feature and tests).
+//! The first three exist only where the page scripts do (the browser arm and tests).
 
 /// `id` as the tail of a CSS identifier (the semantics of `CSS.escape`, for a name that already
 /// starts with `--dxa-`, so no leading-digit rule applies).
-#[cfg(any(feature = "web", test))]
+#[cfg(any(not(feature = "native"), test))]
 pub(crate) fn css_ident(id: &str) -> String {
     let mut out = String::with_capacity(id.len());
     for c in id.chars() {
@@ -35,7 +35,7 @@ pub(crate) fn css_ident(id: &str) -> String {
 }
 
 /// `text` as the inside of a double-quoted CSS string.
-#[cfg(any(feature = "web", test))]
+#[cfg(any(not(feature = "native"), test))]
 pub(crate) fn css_string(text: &str) -> String {
     let mut out = String::with_capacity(text.len());
     for c in text.chars() {
@@ -54,7 +54,7 @@ pub(crate) fn css_string(text: &str) -> String {
 
 /// The selector for the element whose `style` attribute declares the anchor `anchor_name_style(id)`
 /// writes. Empty for an empty id (no anchor), which the page scripts read as "none".
-#[cfg(any(feature = "web", test))]
+#[cfg(any(not(feature = "native"), test))]
 pub(crate) fn anchor_selector(id: &str) -> String {
     if id.is_empty() {
         return String::new();

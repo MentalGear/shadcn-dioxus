@@ -21,22 +21,25 @@ The owner asked on 2026-10-25 whether the library could target Blitz, the native
   - no pointer capture;
   - no resize, toggle or animation events.
 - What works: `position: fixed`, transitions and keyframes, `:hover`/`:focus`, the hover and colour-scheme media queries, and `MountedData` rects, scroll and focus, but only on the Dioxus 0.8 line. Inline SVG is static.
-- The repo already has a native arm behind `not(feature = "web")` (46 sites in 18 primitives files) that renders overlays inert.
+- The repo already has a native arm behind `#[cfg(feature = "native")]` (the primitives' opt-in Blitz feature, which row [511](./511-primitives-web-feature-contract.md) introduced) that renders overlays inert.
 - **A named target (owner 2026-11-11).** Blitz is where native goes after the webview (decisions.md, "Renderer
   targets"). The start conditions below are unchanged: this row still waits for Dioxus 0.8, for Blitz's top layer,
   `:focus-visible` and `:has()`, and for a test strategy.
 - **What row 434 leaves ready for this row.** Every named behaviour's decision is a pure Rust function that
   `dioxus-primitives` can call directly, with no bridge (row [509](./509-rust-decision-contract.md), item 1), and
   `check-native-slots` and `check-hot-events` allow an rsx slot write and an rsx scroll or pointer handler under
-  the Blitz arm's cfg (item 5), spelled `#[cfg(feature = "native")]` once row [511](./511-primitives-web-feature-contract.md)
-  lands. This row inherits row 511's single opt-in, `dioxus-primitives/native` next to `dioxus/native`, the
-  compile-time assert that holds the two equal, and `NATIVE_ARM` for styled components.
+  the Blitz arm's cfg (item 5), spelled `#[cfg(feature = "native")]`. Row [511](./511-primitives-web-feature-contract.md)
+  has landed, so this row inherits its single opt-in, `dioxus-primitives/native` next to `dioxus/native` (the
+  primitives' feature forwards `dioxus/native`, and a preview or starter feature that enables `dioxus/native` must also
+  enable `dioxus-primitives/native`, which `check-cfg-axis` asserts), the compile-time assert in `primitives/src/lib.rs`
+  that holds the two equal, `NATIVE_ARM` for styled components to branch on in expression position, and the
+  `clippy-native` gate that lints the arm against the real dioxus-native renderer.
 - **What this row still builds, per behaviour.** A Blitz adapter: deliver the event from an rsx handler, call the
   behaviour's `decide`, apply the effects it returns through rsx and `MountedData`. Also a Rust arm for each kind the
   page executor reconciles (row [449](./449-phase-0-4-proof-port-b-the-executor-and-popover-spreads.md)), and a
   renderer-native answer for each bridge verb a component reads through (`get`, `call`, `listen`, `observe`); until
   one exists the transport answers "unsupported" and the feature degrades.
-- **The `not(web)` eval sites.** The 16 that row [448](./448-phase-0-3-proof-port-a-focus-trap-and-otpfilter.md)
+- **The `feature = "native"` eval sites.** The 16 that row [448](./448-phase-0-3-proof-port-a-focus-trap-and-otpfilter.md)
   deletes do nothing on Blitz today, where `document::eval` is unsupported; deleting them removes no Blitz behaviour.
 
 ## Status / trigger

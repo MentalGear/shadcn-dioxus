@@ -8,21 +8,21 @@
 //! reasons documented there: `is_modal` is a `ReadSignal<bool>` that can in
 //! principle change mid-mount (hook-order safety demands separate mounted
 //! instances, not an `if`/`else` inside one instance's body), and the modal
-//! web arm's dismissal semantics are not merely "the non-modal path with a
+//! browser arm's dismissal semantics are not merely "the non-modal path with a
 //! different callback" -- a closing layer of the dismiss core (`crate::dismiss`,
 //! `EscapeKey::Close`) cancels the key's default action, which would fight the
 //! native `<dialog>`'s own `cancel`/`close` handling if it were merely installed
 //! and told to do nothing (dev-docs/backlog.md row 3's warning; Popover follows
-//! the same rule). The web arm is a native layer of the core's Escape order
+//! the same rule). The browser arm is a native layer of the core's Escape order
 //! instead (`Policy::NATIVE`).
 //!
 //! `DialogContentNonModal` (`is_modal: false`) is the plain non-native arm on
 //! both targets (dev-docs/plan.md Phase 4.2 scopes native `<dialog>` to the modal path).
 //! `DialogContentModal` (`is_modal: true`) is cfg-split
 //! (`dev-docs/archive/research/phase4-spike-findings.md` Construction B):
-//! - `#[cfg(not(feature = "web"))]`: the plain
+//! - `#[cfg(feature = "native")]`: the plain
 //!   `div` + vendored `FocusTrap` path.
-//! - `#[cfg(feature = "web")]`: a real `<dialog>` element, `open`
+//! - `#[cfg(not(feature = "native"))]`: a real `<dialog>` element, `open`
 //!   never bound as an attribute (binding
 //!   it declaratively in the same build as a guarded `showModal()` call
 //!   doesn't crash, it silently skips the modal state entirely: Construction
@@ -31,7 +31,7 @@
 //!   prevents the stranded-signal defect,
 //!   `dev-docs/reference/platform-rationale.md` Caveat 1) plus the dismiss
 //!   core's backdrop press (`crate::dismiss::Policy::NATIVE_BACKDROP`, shared with
-//!   `popover.rs`'s modal web arm) for the "click far outside the dialog" behaviour
+//!   `popover.rs`'s modal browser arm) for the "click far outside the dialog" behaviour
 //!   `dialog.spec.ts` covers -- a `showModal()` backdrop press's `event.target` *is*
 //!   the `<dialog>` element (`dev-docs/archive/research/phase4-spike-findings.md`
 //!   experiment 6's `elementFromPoint` finding), so the core's `Backdrop` press mode
@@ -74,7 +74,7 @@
 //! top layer).
 
 use crate::state_attrs;
-#[cfg(not(feature = "web"))]
+#[cfg(feature = "native")]
 use dioxus::document;
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
@@ -84,20 +84,20 @@ use crate::{merge_attributes, use_animated_open, use_controlled, use_id_or, use_
 /// Context for the [`DialogRoot`] component
 #[derive(Clone, Copy)]
 pub struct DialogCtx {
-    #[allow(unused, reason = "read only in some `web`/native arms")]
+    #[allow(unused, reason = "read only in some browser/native arms")]
     open: Memo<bool>,
     /// Callback to set the open state of the dialog.
-    #[allow(unused, reason = "read only in some `web`/native arms")]
+    #[allow(unused, reason = "read only in some browser/native arms")]
     set_open: Callback<bool>,
 
     // Whether the dialog is a modal and should capture focus.
-    #[allow(unused, reason = "read only in some `web`/native arms")]
+    #[allow(unused, reason = "read only in some browser/native arms")]
     is_modal: ReadSignal<bool>,
     // Whether the dialog dims the page behind it -- see `DialogRootProps::overlay`.
-    #[allow(unused, reason = "read only in some `web`/native arms")]
+    #[allow(unused, reason = "read only in some browser/native arms")]
     overlay: ReadSignal<bool>,
     // See `DialogRootProps::disable_pointer_dismissal`.
-    #[allow(unused, reason = "read only in some `web`/native arms")]
+    #[allow(unused, reason = "read only in some browser/native arms")]
     disable_pointer_dismissal: ReadSignal<bool>,
     dialog_labelledby: Signal<String>,
     dialog_describedby: Signal<String>,
@@ -139,7 +139,7 @@ pub struct DialogRootProps {
     pub is_modal: ReadSignal<bool>,
 
     /// Whether a modal dialog dims the page behind it with the shared overlay scrim.
-    /// Defaults to `true`. When `false` the content element (the `<dialog>` on the web
+    /// Defaults to `true`. When `false` the content element (the `<dialog>` in the browser arm
     /// arm) and the root element carry `data-dx-overlay="off"`, which a stylesheet turns
     /// into a transparent `::backdrop` (the theme's `dialog[data-dx-overlay="off"]::backdrop`
     /// rule); the modality itself -- focus trap, inert page, click-outside dismissal -- is
@@ -261,7 +261,7 @@ pub fn DialogRoot(props: DialogRootProps) -> Element {
         attributes!(div {
             aria_hidden: (!open()).then_some("true"),
             ..state_attrs::open(open()),
-            // On the root too, because without a top layer (the non-web arm,
+            // On the root too, because without a top layer (the native arm,
             // `is_modal: false`) this wrapper is what a stylesheet paints the scrim on.
             "data-dx-overlay": overlay_off(props.overlay),
         }),
@@ -387,7 +387,7 @@ pub fn DialogContent(props: DialogContentProps) -> Element {
     ));
 
     // Real child-component boundary -- see this module's doc comment for
-    // why (hook-order safety, and the modal web arm's dismissal semantics
+    // why (hook-order safety, and the modal browser arm's dismissal semantics
     // not being reachable via a merely-gated callback).
     if is_modal() {
         rsx! {
@@ -477,7 +477,7 @@ fn DialogContentNonModal(
 
 /// `is_modal: true` arm, native (Blitz) target: a plain `div` with the
 /// vendored `FocusTrap` (no native `<dialog>`).
-#[cfg(not(feature = "web"))]
+#[cfg(feature = "native")]
 #[component]
 fn DialogContentModal(
     /// The DOM id of the dialog element.
@@ -559,13 +559,13 @@ fn DialogContentModal(
     }
 }
 
-/// `is_modal: true` arm, web target (Phase 4.2, dev-docs/plan.md) -- a real
+/// `is_modal: true` arm, browser arm (Phase 4.2, dev-docs/plan.md) -- a real
 /// `<dialog>` opened with `showModal()`. `open` is never bound as an
 /// attribute here (see this module's doc comment); the browser supplies the
 /// focus trap, focus restore, background inertness, and top-layer
 /// rendering, so this arm installs none of the native arm's JS
 /// counterparts.
-#[cfg(feature = "web")]
+#[cfg(not(feature = "native"))]
 #[component]
 fn DialogContentModal(
     /// The DOM id of the dialog element.
@@ -852,7 +852,7 @@ mod tests {
 
     /// `overlay: false` puts `data-dx-overlay="off"` on BOTH the root wrapper (the scrim
     /// painter where there is no top layer) and the content element (the `<dialog>` on the
-    /// web arm, which the theme's `dialog[data-dx-overlay="off"]::backdrop` rule keys on).
+    /// browser arm, which the theme's `dialog[data-dx-overlay="off"]::backdrop` rule keys on).
     #[test]
     fn overlay_false_marks_the_root_and_the_content_of_every_composer() {
         type App = fn() -> Element;

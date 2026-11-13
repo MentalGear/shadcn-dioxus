@@ -630,7 +630,7 @@ pub fn ContextMenuContent(props: ContextMenuContentProps) -> Element {
     }
 }
 
-/// The menu panel. On the web it is promoted to the top layer via `popover="manual"`, so it escapes clipping and
+/// The menu panel. In the browser arm it is promoted to the top layer via `popover="manual"`, so it escapes clipping and
 /// transformed ancestors the same way `DropdownMenuContentRendered` does (`dropdown_menu.rs`); without the popover
 /// API it is a plain `position: fixed` div.
 ///

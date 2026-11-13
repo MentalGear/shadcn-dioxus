@@ -1,6 +1,6 @@
 ---
 id: 448
-title: "Phase 0.3: proof port A (the not(web) focus trap's 3 eval sites, focus-trap.ts, and the otpFilter behaviour for S11)"
+title: "Phase 0.3: proof port A (the native-arm focus trap's 3 eval sites, focus-trap.ts, and the otpFilter behaviour for S11)"
 status: "APPROVED 2026-10-26 (owner: \"okay for the plan\"; scope 2, the recommended default, since no scope…"
 size: "L"
 area: overlays
@@ -9,7 +9,7 @@ adds: [otpFilter]
 updated: 2026-11-12
 ---
 
-# Row 448: Phase 0.3: proof port A (the not(web) focus trap's 3 eval sites, focus-trap.ts, and the otpFilter behaviour for S11)
+# Row 448: Phase 0.3: proof port A (the native-arm focus trap's 3 eval sites, focus-trap.ts, and the otpFilter behaviour for S11)
 
 ## Item
 
@@ -27,7 +27,7 @@ APPROVED 2026-10-26 (owner: "okay for the plan"; scope 2, the recommended defaul
 - **What nothing enforces.** The CLI adds the primitives dependency as `cargo add --no-default-features` plus the component's own features (`cli/src/manifest.rs:110-115`) and never names `web`; `scripts/registry-install-smoke.sh:157-167` strips `dioxus-primitives/web` and builds without it. An app that installs components with the CLI and is not made from the starter therefore gets the `not(web)` arms on every renderer, the web and the webview included, where the three focus-trap evals run and are the modal focus trap. For such an app the "dead" sites are live; deleting them removes the trap there and leaves a modal `div` with `aria-modal` and no trap.
 - **The site list.** The old count of 16 no longer matches the code. Escape and outside dismissal in these arms now go through `crate::dismiss::use_dismiss`, and `use_global_escape_listener` no longer exists. The `not(web)` arms hold today: three `document::eval` focus-trap installs, `dialog.rs:521`, `alert_dialog.rs:264` and `popover.rs:523` (arms at `dialog.rs:480`, `alert_dialog.rs:233`, `popover.rs:478`), loading `createFocusTrap` from the bundle that `focus_trap_script()` loads (calls at `dialog.rs:271`, `alert_dialog.rs:149`, `popover.rs:401`; the function and its asset at `lib.rs:129-153`). Four more installs are not eval but JS listeners through the shared dismiss core (`dismiss.rs:399`): `use_dismiss` at `dialog.rs:503`, `alert_dialog.rs:247`, `popover.rs:509` (modal) and `popover.rs:839` (non-modal). Those four are already ported (the core is Rust-decided), so 3.DJ does not delete them.
 - **The webview.** No desktop build exists or has been exercised ([row 23](./023-preview-s-desktop-feature-lacks-dioxus.md), STATUS.md owner inputs), so the `web` arm on the webview (`<dialog>` with `showModal()` through eval) is unproven, not known good.
-- **New precondition.** [Row 511](./511-primitives-web-feature-contract.md) lands first: its inversion makes the browser arm the default and compiles the focus trap only under `feature = "native"`, which a compile-time assert holds equal to dioxus's own `native` renderer, so the deletion is safe once that inversion has landed. The `otpFilter` half is unchanged.
+- **The precondition has landed.** [Row 511](./511-primitives-web-feature-contract.md) inverted the axis: the browser arm is the default, and the focus trap (`#[cfg(feature = "native")]` in `dialog.rs`, `alert_dialog.rs` and `popover.rs`, with `focus_trap_script()` and `FOCUS_TRAP_JS` in `lib.rs`) is compiled only where `dioxus-primitives/native` is on, which a compile-time assert holds equal to dioxus's own `native` renderer. Where this section says `not(web)`, read `feature = "native"`. The deletion therefore removes dead code by construction: those sites run only where dioxus launches Blitz and `document::eval` answers `Unsupported`. The `otpFilter` half is unchanged.
 
 ## Size
 

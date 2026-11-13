@@ -31,8 +31,8 @@
 //! | Navbar | close, focus back to the trigger | native `popover="auto"` light dismiss | no |
 //! | Select | close | yes | yes |
 //! | Combobox ([`Policy::ESCAPE_AND_PRESS`]) | close | a press outside the input, the list and the clear button closes it, as Base UI's Combobox does (`@base-ui/react` 1.9.0, `combobox/root/AriaCombobox.mjs`, `outsidePressEvent: { mouse: 'sloppy', touch: 'intentional' }`): a mouse press at once, a touch or pen press as a tap | no |
-//! | Popover (modal), Dialog (web, [`Policy::NATIVE_BACKDROP`]) | native (`cancel`), in the order | the backdrop press ([`Press::Backdrop`], the tap rule for touch and pen) | no |
-//! | Popover (non-modal), AlertDialog (web) | native (`cancel`), in the order | native (`popover="auto"`; AlertDialog: none) | no |
+//! | Popover (modal), Dialog (browser arm, [`Policy::NATIVE_BACKDROP`]) | native (`cancel`), in the order | the backdrop press ([`Press::Backdrop`], the tap rule for touch and pen) | no |
+//! | Popover (non-modal), AlertDialog (browser arm) | native (`cancel`), in the order | native (`popover="auto"`; AlertDialog: none) | no |
 //! | Popover, Dialog (desktop, no browser dismissal) | close | yes | yes |
 //! | AlertDialog (desktop) | close | no (an alert dialog never light-dismisses) | no |
 //! | DropdownMenu, ContextMenu, Menubar ([`Policy::MENU`]) | close, focus back to the trigger (the Menubar: to the menu's own trigger) | yes | yes |
@@ -81,7 +81,7 @@ pub(crate) enum EscapeKey {
     /// not touched.
     #[allow(
         dead_code,
-        reason = "constructed by the web arms, whose dismissal the browser owns"
+        reason = "constructed by the browser arms, whose dismissal the browser owns"
     )]
     Native,
 }
@@ -99,10 +99,10 @@ pub(crate) enum Press {
     /// the press began there too (a drag that starts inside and ends over the backdrop is not a
     /// backdrop press). The dismissal comes on release, a touch or pen press under the tap rule.
     #[cfg_attr(
-        all(not(feature = "web"), not(test)),
+        all(feature = "native", not(test)),
         expect(
             dead_code,
-            reason = "only the web arm renders a native modal <dialog>; the unit tests use it"
+            reason = "only the browser arm renders a native modal <dialog>; the unit tests use it"
         )
     )]
     Backdrop,
@@ -156,7 +156,7 @@ impl Policy {
     /// The browser owns Escape and the outside press; the layer only keeps its place in the order.
     #[allow(
         dead_code,
-        reason = "used by the web arms, whose dismissal the browser owns"
+        reason = "used by the browser arms, whose dismissal the browser owns"
     )]
     pub(crate) const NATIVE: Policy = Policy {
         escape: EscapeKey::Native,
@@ -167,10 +167,10 @@ impl Policy {
     /// A modal `<dialog>` (Dialog, Popover): the browser owns Escape, and a press on the backdrop
     /// dismisses ([`Press::Backdrop`]).
     #[cfg_attr(
-        all(not(feature = "web"), not(test)),
+        all(feature = "native", not(test)),
         expect(
             dead_code,
-            reason = "only the web arm renders a native modal <dialog>; the unit tests use it"
+            reason = "only the browser arm renders a native modal <dialog>; the unit tests use it"
         )
     )]
     pub(crate) const NATIVE_BACKDROP: Policy = Policy {

@@ -468,14 +468,14 @@ struct ModalClosedRelease(Rc<dyn Fn()>);
 /// `close()`). A no-op when no [`use_scroll_lock`] sits above the caller.
 #[derive(Clone)]
 #[cfg_attr(
-    not(feature = "web"),
-    expect(dead_code, reason = "only the web build uses it")
+    feature = "native",
+    expect(dead_code, reason = "only the browser build uses it")
 )]
 pub(crate) struct ModalClosed(Option<Rc<dyn Fn()>>);
 
 #[cfg_attr(
-    not(feature = "web"),
-    expect(dead_code, reason = "only the web build uses it")
+    feature = "native",
+    expect(dead_code, reason = "only the browser build uses it")
 )]
 impl ModalClosed {
     /// Release the lock held for this surface, if it is no longer wanted.
@@ -489,8 +489,8 @@ impl ModalClosed {
 /// Finds the [`use_scroll_lock`] above (or in) the calling component. Call it after
 /// `use_scroll_lock` in the same component, or from any descendant.
 #[cfg_attr(
-    not(feature = "web"),
-    expect(dead_code, reason = "only the web build uses it")
+    feature = "native",
+    expect(dead_code, reason = "only the browser build uses it")
 )]
 pub(crate) fn use_modal_closed() -> ModalClosed {
     use_hook(|| ModalClosed(try_consume_context::<ModalClosedRelease>().map(|r| r.0)))

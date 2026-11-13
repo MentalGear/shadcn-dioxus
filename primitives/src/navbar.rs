@@ -596,7 +596,7 @@ pub fn NavbarTrigger(props: NavbarTriggerProps) -> Element {
         }),
         props.attributes,
     ]);
-    // Ties this trigger to the web-arm content's `position-anchor`
+    // Ties this trigger to the browser-arm content's `position-anchor`
     // (`NavbarContentRendered`) so its anchor-positioned placement resolves
     // relative to *this* trigger once promoted to the top layer -- keyed on
     // `nav_ctx.content_id`, not this nav's own index, for the same reason
@@ -845,7 +845,7 @@ fn use_navbar_dismiss(id: &str) {
     );
 }
 
-/// Web arm: promote each nav's content to the top
+/// Browser arm: promote each nav's content to the top
 /// layer via `popover="auto"`, anchored to its own trigger -- the same
 /// mechanism `MenubarContentRendered`/`DropdownMenuContentRendered` use
 /// (`menubar.rs`/`dropdown_menu.rs`), which see for the general
@@ -872,7 +872,7 @@ fn use_navbar_dismiss(id: &str) {
 /// from `NavbarContent` above -- unlike `side`/`align`, it depends on
 /// `NavbarContext`/the nav's own index, not anything this component or its
 /// fallback needs to compute itself.
-#[cfg(feature = "web")]
+#[cfg(not(feature = "native"))]
 #[component]
 fn NavbarContentRendered(
     /// The DOM id of the content element.
@@ -975,7 +975,7 @@ fn NavbarContentRendered(
         // 93's duplicate-attribute hazard).
         attributes!(div {
             // Pattern-class popup role -- see `MenubarContentRendered`'s
-            // identical web-arm `crate::menu_semantics::MENU_ROLE`
+            // identical browser-arm `crate::menu_semantics::MENU_ROLE`
             // (`menubar.rs`), which this mirrors.
             role: crate::menu_semantics::MENU_ROLE,
             popover: crate::top_layer::PopoverKind::Auto.as_str(),
@@ -1010,10 +1010,10 @@ fn NavbarContentRendered(
 /// Native (Blitz) arm: a plain `div` -- Blitz has no popover-API
 /// support at all, so this is the functional floor, matching
 /// `MenubarContentRendered`'s identical native arm. It carries the
-/// row-41 `aria-labelledby` below, the one piece of the web arm that
+/// row-41 `aria-labelledby` below, the one piece of the browser arm that
 /// applies here too (unlike `popover`/anchor positioning, which are
-/// web-only).
-#[cfg(not(feature = "web"))]
+/// browser-only).
+#[cfg(feature = "native")]
 #[component]
 fn NavbarContentRendered(
     /// The DOM id of the content element.
@@ -1028,7 +1028,7 @@ fn NavbarContentRendered(
     let nav_ctx: NavbarNavContext = use_context();
     use_navbar_dismiss(&id);
 
-    // See the web arm's identical construction above (dev-docs/backlog.md row
+    // See the browser arm's identical construction above (dev-docs/backlog.md row
     // 41) for why this is conditional and routed through `merge_attributes`
     // rather than a bare literal alongside `..attributes`.
     let labelledby: Vec<Attribute> = if has_own_accessible_name(&attributes) {
@@ -1041,7 +1041,7 @@ fn NavbarContentRendered(
     let attributes = merge_attributes(vec![
         attributes,
         labelledby,
-        // Owned by this component -- see the web arm's identical
+        // Owned by this component -- see the browser arm's identical
         // construction above (`dev-docs/backlog.md` row 93).
         attributes!(div {
             // Pattern-class popup role -- see `MenubarContentRendered`'s

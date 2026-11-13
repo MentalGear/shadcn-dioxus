@@ -180,7 +180,7 @@ impl JsListeners {
     /// (`message_scroller.rs`: the controller's `end`/`start`/`message` commands). Messages sent
     /// through it are read by the body's own `await dioxus.recv()`; the body must return when
     /// told to stop, so the teardown that follows can run.
-    #[cfg(feature = "web")]
+    #[cfg(not(feature = "native"))]
     pub(crate) fn eval(&self) -> Eval {
         self.eval
     }
@@ -210,7 +210,7 @@ pub fn use_js_listeners(mut setup: impl FnMut() -> Option<JsListeners> + 'static
 /// and `setup(&deps)` installs new ones. `use_js_listeners` alone re-runs only when a signal `setup` read changes,
 /// so a plain value it captured stays at whatever the first run saw; passing the values here makes that
 /// impossible, because `setup` has nothing to capture but `deps`.
-#[cfg(feature = "web")]
+#[cfg(not(feature = "native"))]
 pub(crate) fn use_js_listeners_with<D: Clone + PartialEq + 'static>(
     deps: D,
     mut setup: impl FnMut(&D) -> Option<JsListeners> + 'static,

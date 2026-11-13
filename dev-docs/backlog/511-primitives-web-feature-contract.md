@@ -1,7 +1,7 @@
 ---
 id: 511
 title: "The browser-engine arm is the primitives' default; Blitz is the `native` opt-in, held to dioxus's own renderer by a compile-time assert"
-status: "OPEN, found 2026-11-12. The construction below is worked out and awaits the owner's approval. It is…"
+status: "LANDED on lane/web-contract-511, 2026-11-13, awaiting the merge into the batch. The construction…"
 size: "M (inferred)"
 area: primitives
 updated: 2026-11-12
@@ -23,7 +23,7 @@ What a wrongly-armed app gets (read in source, not observed in a browser): modal
 
 ## Status / trigger
 
-OPEN, found 2026-11-12. The construction below is worked out and awaits the owner's approval. It is port-independent (the defect exists whether or not the JavaScript plan proceeds), so it belongs in the step before the plan continues. [Row 448](./448-phase-0-3-proof-port-a-focus-trap-and-otpfilter.md)'s focus-trap deletion waits for it. The evidence was read on `2f404f5e` without a build; the two resolution probes are `cargo tree` only.
+LANDED on `lane/web-contract-511`, 2026-11-13, awaiting the merge into the batch. The construction below is built as written, in its first variant (`native = ["dioxus/native"]`), because a dioxus-native check fits the gates. [Row 448](./448-phase-0-3-proof-port-a-focus-trap-and-otpfilter.md)'s focus-trap deletion no longer waits for it, and [row 438](./438-blitz-native-renderer.md) inherits the opt-in, the assert and `NATIVE_ARM`. What the build found, measured on the lane's tree, is under "What landed" at the end.
 
 ## Size
 
@@ -199,3 +199,15 @@ Size: M (inferred). About 140 mechanical cfg edits, about 10 manifest and gate e
 - `scripts/run-gates.sh` is green with the renamed arms.
 - The release Playwright suite is unchanged, because the shipped arm of the preview does not change.
 - A scratch Blitz manifest with `dioxus/native` and without `dioxus-primitives/native` fails to compile with the assert's message.
+
+## What landed (2026-11-13, measured on the lane's tree)
+
+- **Premise, counted on the lane's tree before the first edit.** 140 `feature = "web"` sites in 27 `primitives/src` files, 53 of them `not(feature = "web")`, 3 `cfg!`; no renderer cfg under `preview/src/components/**`; the manifests that forwarded `dioxus-primitives/web` were preview (3 features), the starter (3), `playwright/oracle/attr-synth` and `labs/carousel-lab`; `test-harness` did not. Nothing differed from the row.
+- **The rewrite.** 140 sites flipped by script (`not(feature = "web")` to `feature = "native"` first, then `feature = "web"` to `not(feature = "native")`), then read by hand: 10 `any`/`all` expressions, the 3 `cfg!` sites (written `!cfg!(feature = "native")`; `message_scroller.rs:403`'s negated one became `cfg!(feature = "native")`) and the `cfg_attr(.., expect(..))` pairs, whose `expect` reasons hold on both arms (clippy `-D warnings` is clean on both). The doc comments name the browser and native arms.
+- **`dialog_renders_open_as_presence`.** It failed with the lib tests on the old `web` arm because it was written for the Blitz arm's markup: it expected one `data-open` (the root's), while the browser arm's `<dialog>` carries its own (its `[open]` stays set for the exit, so a stylesheet keys the exit on the `<dialog>`'s `data-closed`). The browser arm is correct; the test now counts one on the native arm and two on the browser arm and checks each. The lib tests pass on both arms (1121 default, 1109 `native`), so no other test sat in that position.
+- **The native arm's cost.** A cold `cargo clippy -p dioxus-primitives --features native --all-targets` took 3 min 0 s (about 480 crates) and grew the shared check target by 558 MB (561 MB to 1,119 MB); warm it is 26 s.
+- **The assert, through scratch crates outside the repo** (`/home/user/tgt/wc511-scratch`): dioxus `native` on with the primitives' `native` off fails with `error[E0080]: evaluation panicked: dioxus is built with its native (Blitz) renderer and dioxus-primitives is not, or the other way round: enable "dioxus-primitives/native" in the same feature that enables "dioxus/native"`. The primitives' `native` on with dioxus left default compiles, because the feature forwards `dioxus/native`. A manifest that still forwards `dioxus-primitives/web` (with `dioxus/web`) compiles; nothing reads `web`, and `check-cfg-axis` bans reading it.
+- **`time` and wasm.** `cargo tree -e features -i time` on a crate using `calendar`: `time feature "wasm-bindgen"` on `--target wasm32-unknown-unknown`, absent on the host; without `calendar` there is no `time` at all.
+- **Shipped arm unchanged.** The preview's debug SSG before and after: 102 HTML files, 90 identical once the server-allocated `dxc-N` ids are renumbered by first appearance (page text and the decoded hydration blob) and `file.rs:line:col` debug locations are normalised, and the other 12 differ only by the doc-comment prose the docs pages render ("Web arm" to "Browser arm", "On the web" to "In the browser arm"). The 326 asset file names, content-hashed, are identical. The id counter differs between two builds (a page's first popover is `dxc-1293` in one and `dxc-44` in the other): inferred, not run, to be the server's global counter taking route requests in a different order.
+- **The gates.** `check-cfg-axis` has the two bans and the manifest assertion, each with a mutation in `--self-test`. `clippy-web` is `clippy-native`; `check-primitives-features` builds `native` alone and with every feature; `check-rustdoc` builds `default` and `native`; `dep-report.sh` drops `--features web`. `dependency-register.py` computes the install closure over every feature except `native` and `web`, and the closure baseline did not change, which shows the default install closure is the one it was.
+- **Install path.** `scripts/registry-install-smoke.sh` no longer strips a feature that does not exist, and asserts with `cargo tree -e features -i dioxus-primitives` that the installed app has no `native`. `--only dialog,popover,alert_dialog,calendar,select` on the host: `OK -- 5/5 components installed`. The `--target wasm32-unknown-unknown` run was not made: the lane had under 6 GB free.

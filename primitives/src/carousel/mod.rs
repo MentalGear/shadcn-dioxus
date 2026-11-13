@@ -49,9 +49,9 @@
 //! legacy `document::eval` call sites (ported by row 434), and
 //! all three no-op harmlessly off a real document (native/Blitz, or a
 //! plain `cargo test`), as the other un-gated eval helpers in `crate::lib`
-//! do: this module's rendered markup never branches on `feature = "web"`
+//! do: this module's rendered markup never branches on `not(feature = "native")`
 //! at all, so unlike the native-`<dialog>` overlays there is nothing here
-//! for a `feature = "web"` gate to protect.
+//! for a `not(feature = "native")` gate to protect.
 //!
 //! # Accessibility
 //!

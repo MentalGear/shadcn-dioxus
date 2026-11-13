@@ -58,7 +58,7 @@ pub fn ComboboxList(props: ComboboxListProps) -> Element {
     }
 }
 
-/// Web arm: promote the listbox to the top
+/// Browser arm: promote the listbox to the top
 /// layer via `popover="manual"`, anchored to `ComboboxInput` below/
 /// start-aligned -- the same top-layer construction as
 /// `Tooltip`/`HoverCard`/`Popover`/`DropdownMenu`/`Menubar`/`Select`
@@ -112,7 +112,7 @@ pub fn ComboboxList(props: ComboboxListProps) -> Element {
 /// `showPopover()`/`hidePopover()` to the raw `open` signal breaks (see the
 /// linked doc for the exact mechanism) -- this reasoning is orthogonal to
 /// the `auto`-vs-`manual` choice above and holds either way.
-#[cfg(feature = "web")]
+#[cfg(not(feature = "native"))]
 #[component]
 fn ComboboxListRendered(
     /// The DOM id of the list element.
@@ -195,7 +195,7 @@ fn ComboboxListRendered(
 
 /// Native (Blitz) arm: Blitz has no popover-API support at all, so this is
 /// the functional floor, a plain, always-in-flow `div`.
-#[cfg(not(feature = "web"))]
+#[cfg(feature = "native")]
 #[component]
 fn ComboboxListRendered(
     /// The DOM id of the list element.

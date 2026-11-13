@@ -157,13 +157,13 @@ pub fn SelectTrigger(props: SelectTriggerProps) -> Element {
             dir: (ctx.direction)().as_str(),
             "data-direction": (ctx.direction)().as_str(),
             // See `crate::top_layer::anchor_name_style`: ties this trigger
-            // to the web-arm listbox's `position-anchor`
+            // to the browser-arm listbox's `position-anchor`
             // (`SelectListRendered`, `list.rs`) so its anchor-positioned
             // placement resolves relative to this trigger once promoted to
             // the top layer. Keyed on `ctx.selectable.trigger_id` -- kept in
             // sync with this button's own (possibly caller-overridden) `id`
             // above, so the two sides still agree once promoted to the top
-            // layer. Inert (empty) off the web arm.
+            // layer. Inert (empty) on the native arm.
             style: crate::top_layer::anchor_name_style(&ctx.selectable.trigger_id.cloned()),
             // Standard HTML attributes
             disabled: (ctx.selectable.disabled)(),

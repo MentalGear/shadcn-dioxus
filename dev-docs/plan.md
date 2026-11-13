@@ -17,7 +17,7 @@ Every item follows the same loop. An item is not done until all five hold:
 1. A conformance test exists, cites its rule source, and **fails first** — per [`conformance-harness.md`](./conformance-harness.md). A port that lands without a red test has proved nothing.
 2. The implementation follows [`reference/platform-rationale.md`](./reference/platform-rationale.md), which picks the best source per gap rather than copying one fork.
 3. Provenance and licence handled per [`guides/lifting-code.md`](./guides/lifting-code.md) — cherry-picks keep their author; lifted files get a header.
-4. The repo's own checks pass: the one entry point is `CARGO_TARGET_DIR=<absolute isolated dir> scripts/run-gates.sh` (fmt, the three clippy arms, tests, stylelint, every `scripts/check-*.sh`), plus the Playwright specs that cover the change ([`lane-rules.md`](./lane-rules.md)). The clippy command this plan first wrote (`--all-features`) is not usable: it needs gtk for preview's `desktop` and hides the `not(web)` arm.
+4. The repo's own checks pass: the one entry point is `CARGO_TARGET_DIR=<absolute isolated dir> scripts/run-gates.sh` (fmt, the three clippy arms, tests, stylelint, every `scripts/check-*.sh`), plus the Playwright specs that cover the change ([`lane-rules.md`](./lane-rules.md)). The clippy command this plan first wrote (`--all-features`) is not usable: it needs gtk for preview's `desktop` and hides the browser arm.
 5. The provenance ledger (section 8 of [`archive/fork-research/lifting-from-forks.md`](./archive/fork-research/lifting-from-forks.md)) is updated when code is lifted.
 
 ---
