@@ -93,10 +93,10 @@ ports), its working form is [`js-interop.md`](./js-interop.md), and every item h
    corrected in the row.
 8. The ports, as ordinary rows by yield (lines of JavaScript removed per hour, highest first; a row whose dependencies
    have not landed waits, and each row names them): **451** (3.SC, built 2026-11-12) and **454** (3.OB, built
-   2026-11-12; five legacy scripts left the baseline, with 451 the volume gate's total fell from 508,767 to 482,329), then
-   **452** (3.PL, 27/h), **453** (3.PV, 22/h), **455** (3.GS, 15/h), **456** (3.OV, 9/h), **457** (3.VS, 6/h), **458** (3.FC, 5/h), **461**
-   (3.PW) and **459** (3.SL, which closes a blocking-listener class rather than removing lines); **460** (3.HV) and
-   **462** (roving focus) only if phase 0's witnesses call for them.
+   2026-11-12; five legacy scripts left the baseline, with 451 the volume gate's total fell from 508,767 to 482,329),
+   then **452** (3.PL, 27/h), **453** (3.PV, 22/h), **455** (3.GS, 15/h), **456** (3.OV, 9/h), **457** (3.VS, 6/h),
+   **458** (3.FC, 5/h), **461** (3.PW) and **459** (3.SL, which closes a blocking-listener class rather than removing
+   lines); **460** (3.HV) and **462** (roving focus) only if phase 0's witnesses call for them.
 9. The measured group, one port at a time with the old version switchable, the owner measuring on real devices after
    each: **442** (desktop proof harness) and **443** (measurement kit), **463** (freeze), **464** (carousel), **465**
    (message scroller), **466** (wheel band), then **467** (remove the old scripts per the owner's verdict).
