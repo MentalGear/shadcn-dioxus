@@ -11,7 +11,7 @@
 //!
 //! **The construction.** While a panel is mounted, one bridge session streams the visual viewport's size,
 //! offset and scale (`resize` and `scroll` of `window.visualViewport`, `resize` of the window, and `focusin`
-//! of the document), every message carrying the same four numbers. A pure Rust function ([`keyboard_of`])
+//! of the document), every message carrying the same four numbers. A pure Rust function (`keyboard_of`)
 //! decides from them whether a keyboard is open and what the stylesheet needs, and the writes go back
 //! through the bridge ON THE PANEL (only when the answer changes):
 //!
@@ -31,7 +31,7 @@
 //! it the keyboard covers (`padding-bottom += overlap`, over a floor of 16px under the content; none
 //! when the scroller already ends above the keyboard, which the stylesheet contract above arranges
 //! for a panel), and the field is scrolled to the centre of the visible band unless it is already
-//! comfortably inside it ([`slack_step`], [`scroll_delta`]: pure functions over the rects the page
+//! comfortably inside it (`slack_step`, `scroll_delta`: pure functions over the rects the page
 //! reports). Everything is undone when the keyboard closes or the panel unmounts.
 //!
 //! **What counts as a keyboard.** Lifted from Base UI 1.9.0 (MIT),
