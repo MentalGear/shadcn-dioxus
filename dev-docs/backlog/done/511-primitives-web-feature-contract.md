@@ -1,7 +1,7 @@
 ---
 id: 511
 title: "The browser-engine arm is the primitives' default; Blitz is the `native` opt-in, held to dioxus's own renderer by a compile-time assert"
-status: "LANDED on lane/web-contract-511, 2026-11-13, awaiting the merge into the batch. The construction…"
+status: "DONE in PR #180 (2026-11-13). The full install smoke for wasm32-unknown-unknown ran on the merged…"
 size: "M (inferred)"
 area: primitives
 updated: 2026-11-12
@@ -17,13 +17,13 @@ The primitives' `web` Cargo feature is the browser-engine switch. Every `#[cfg(f
 - `scripts/registry-install-smoke.sh:157-167` deletes the pre-declared primitives dependency (to prove the install adds every crate) and with it the `"dioxus-primitives/web"` forward, so it builds the Blitz arm;
 - `test-harness/Cargo.toml:14-17` has `default = ["web"]` and `web = ["dioxus/web"]` with no `dioxus-primitives/web`.
 
-The same wiring was missed twice before: in the 2026-09-01 server incident the SSG server built without `web` and hydration broke page-wide (`dev-docs/archive/research/recommended-implementations.md:52`), and [row 23](./023-preview-s-desktop-feature-lacks-dioxus.md) is the same miss for desktop. It is a repeated problem, so it is fixed by construction.
+The same wiring was missed twice before: in the 2026-09-01 server incident the SSG server built without `web` and hydration broke page-wide (`dev-docs/archive/research/recommended-implementations.md:52`), and [row 23](../023-preview-s-desktop-feature-lacks-dioxus.md) is the same miss for desktop. It is a repeated problem, so it is fixed by construction.
 
 What a wrongly-armed app gets (read in source, not observed in a browser): modal dialogs without top layer or background inertness (`dialog.rs:481`, `alert_dialog.rs:234`); in-flow popovers, menus and select lists (`popover.rs:479`, `:820`, `select/components/list.rs:494`, `menu_root.rs:294-318`); and the bundled `focus-trap.js` asset (`lib.rs:129-130`). Inferred, not run: on `wasm32-unknown-unknown` without `web`, `time` lacks `wasm-bindgen` (`primitives/Cargo.toml:47`), so a Calendar's `UtcDateTime::now()` (`calendar/context.rs:216-218`) panics after mount.
 
 ## Status / trigger
 
-LANDED on `lane/web-contract-511`, 2026-11-13, awaiting the merge into the batch. The construction below is built as written, in its first variant (`native = ["dioxus/native"]`), because a dioxus-native check fits the gates. [Row 448](./448-phase-0-3-proof-port-a-focus-trap-and-otpfilter.md)'s focus-trap deletion no longer waits for it, and [row 438](./438-blitz-native-renderer.md) inherits the opt-in, the assert and `NATIVE_ARM`. What the build found, measured on the lane's tree, is under "What landed" at the end.
+DONE in PR #180 (2026-11-13). The full install smoke for `wasm32-unknown-unknown` ran on the merged batch tree `8cbb1a04`: 83 of 83 components installed, the app compiles and the feature-tree assertion passed. The construction below is built as written, in its first variant (`native = ["dioxus/native"]`), because a dioxus-native check fits the gates. [Row 448](../448-phase-0-3-proof-port-a-focus-trap-and-otpfilter.md)'s focus-trap deletion no longer waits for it, and [row 438](../438-blitz-native-renderer.md) inherits the opt-in, the assert and `NATIVE_ARM`. What the build found, measured on the lane's tree, is under "What landed" at the end.
 
 ## Size
 
@@ -126,7 +126,7 @@ The residue, and what covers each part:
 - **The arm derived from `native!{}` with no primitives feature.** A proc macro expands only in expression position, so it yields a const, not an item cfg. Both arms would then compile everywhere, and about 140 sites would need a non-mechanical rewrite into `if CONST`. Host-graph unification of proc-macro features would pick the wrong arm silently.
 - **The arm chosen at run time from the renderer's capability.** The server and Blitz both answer `Unsupported` to eval, so the server cannot tell which arm the client will hydrate, and the web bundle would carry the Blitz arm.
 - **`compile_error!` requiring exactly one renderer marker.** Every browser app would have to declare a marker it does not need, and the common case would stay one forgotten line from wrong. The assert above keeps the useful half: the check against dioxus.
-- **Shrinking the axis.** The one-armed eval effects can lose their cfg, since eval is inert on Blitz; that is [row 438](./438-blitz-native-renderer.md)'s business. The ~14 markup leaves still need a selector, so shrinking does not replace this row.
+- **Shrinking the axis.** The one-armed eval effects can lose their cfg, since eval is inert on Blitz; that is [row 438](../438-blitz-native-renderer.md)'s business. The ~14 markup leaves still need a selector, so shrinking does not replace this row.
 
 ### The strongest argument against
 
@@ -188,8 +188,8 @@ Chosen: the forward when experiment 2 fits; otherwise `native = []` with the ass
    - the 58 doc-comment mentions of the web arm;
    - the gates above.
 2. The manifests (preview, starter, attr-synth, carousel-lab), `ssr_parity.rs`, the install smoke, the primitives README feature table and the install docs. The docs need one sentence: browser engines need nothing, and a Blitz app enables `dioxus-primitives/native` alongside `dioxus/native`.
-3. [Row 448](./448-phase-0-3-proof-port-a-focus-trap-and-otpfilter.md)'s focus-trap deletion. The `not(web)` trap is then compiled only where dioxus launches Blitz and eval is `Unsupported`, so the deletion removes dead code by construction.
-4. [Row 438](./438-blitz-native-renderer.md) inherits the single `native` opt-in named after dioxus's own feature, the assert, `NATIVE_ARM`, and `#[cfg(feature = "native")]` as the spelling of the Blitz arm.
+3. [Row 448](../448-phase-0-3-proof-port-a-focus-trap-and-otpfilter.md)'s focus-trap deletion. The `not(web)` trap is then compiled only where dioxus launches Blitz and eval is `Unsupported`, so the deletion removes dead code by construction.
+4. [Row 438](../438-blitz-native-renderer.md) inherits the single `native` opt-in named after dioxus's own feature, the assert, `NATIVE_ARM`, and `#[cfg(feature = "native")]` as the spelling of the Blitz arm.
 
 Size: M (inferred). About 140 mechanical cfg edits, about 10 manifest and gate edits, one assert, and prose.
 

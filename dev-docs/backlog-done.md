@@ -6,7 +6,7 @@ resolves here by id.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Done rows (413)
+## Done rows (415)
 
 | # | Item | Updated |
 |---|---|---|
@@ -399,6 +399,7 @@ resolves here by id.
 | [439](backlog/done/439-chart-prehydration-geometry-flake.md) | chart-prehydration geometry flake: the two loads race font-display: optional | 2026-10-25 |
 | [440](backlog/done/440-run-gates-per-run-log-dir.md) | run-gates.sh writes logs to a shared directory: two concurrent runs on one target overwrite each other's logs | 2026-11-12 |
 | [441](backlog/done/441-reduced-motion-scrim.md) | The modal scrim fade ignores prefers-reduced-motion: the per-sheet rule never won on specificity | 2026-10-26 |
+| [445](backlog/done/445-phase-0-2-the-legacy-freeze.md) | Phase 0.2: freeze the legacy scripts and sinks (script hashes, per-site sink freeze, js-fix grant) | 2026-11-12 |
 | [468](backlog/done/468-bug-form-reset-leaves-controlled-input-out-of-sync.md) | Bug: form reset leaves a controlled text input showing empty while Rust keeps the old value | 2026-10-26 |
 | [470](backlog/done/470-bug-carousel-autoplay-tick-fights-a-user-swipe.md) | Bug: the carousel autoplay tick fights a user swipe (the scroller is pulled forward and bounces back) | 2026-10-26 |
 | [472](backlog/done/472-chart-tooltip-fade.md) | Chart tooltips fade in and out with the theme's floating motion tokens | 2026-10-26 |
@@ -422,6 +423,7 @@ resolves here by id.
 | [502](backlog/done/502-installed-components-carry-repo-lint-expects.md) | Installed components carry #[expect(clippy::disallowed_methods)] that a user's project cannot fulfil | 2026-11-07 |
 | [503](backlog/done/503-lane-ssg-builds-in-place-on-one-slot.md) | lane-ssg builds in the warm template under the lock instead of copying it | 2026-11-12 |
 | [506](backlog/done/506-release-suite-two-failures-block-deploy.md) | The release suite failed twice on main b78c231e: one stale locator that waited 20 minutes, one racy geometry read | 2026-11-12 |
+| [511](backlog/done/511-primitives-web-feature-contract.md) | The browser-engine arm is the primitives' default; Blitz is the `native` opt-in, held to dioxus's own renderer by a compile-time assert | 2026-11-12 |
 | [512](backlog/done/512-specs-locate-variants-by-slug.md) | A spec that located a demo variant by its displayed title broke on a retitle; variants are addressed by slug, enforced by a gate | 2026-11-12 |
 
 <!-- END GENERATED -->

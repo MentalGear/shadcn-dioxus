@@ -28,7 +28,7 @@ L
 ## Detail
 
 - **Files owned:** `primitives/src/ts/witness.ts` (new), `primitives/src/ts/bridge.ts` (the apply table and marker, the channel wrapper, the resize-observer dispatcher), `primitives/tsconfig.json`, `playwright/witness/**` (new: `probes/**`, `bindings/**`, the init script), `playwright/tools/select.mjs` (the witness rule), `playwright/durations.json` entries. Must not touch the behaviour modules.
-- **Depends on:** [row 444](./444-gate-half-of-lane-3-0b-grants-bans-and-witness-presence.md) (the `WitnessViolation` ban; the witness-test presence check is item 0.3's). Runs beside [row 445](./445-phase-0-2-the-legacy-freeze.md) (disjoint files).
+- **Depends on:** [row 444](./444-gate-half-of-lane-3-0b-grants-bans-and-witness-presence.md) (the `WitnessViolation` ban; the witness-test presence check is item 0.3's). Runs beside [row 445](./done/445-phase-0-2-the-legacy-freeze.md) (disjoint files).
 - **Proof:** The harness's own control-arm and probe self-tests; the pre-authored `otpFilter` and executor-internal witnesses exist as `test.fixme` keyed to the site list (they are item 0.3's and 0.4's to flip).
 - **Hours (inferred):** about 14 (unchanged by round 7: -1 for the `dispatchPort` witness and the coverage cross-check, +1 for the debug-build animation pause; 15 after round 5, 7 before it). Witness authoring inside the consuming rows is kept at 12 h and is the largest known understatement (18-28 h at the same unit cost) until the first witnesses give a measured cost per pair.
 - **Not provable in the lane container:** timing specs run on release builds only; Firefox and WebKit witness runs need the deploy wiring (Chromium is the only engine here).
