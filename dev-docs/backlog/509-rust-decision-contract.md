@@ -136,7 +136,7 @@ a rebuild of the merged sources); 6 passed (fixture call p99 10 to 33 us, best o
 test); 7 passed (p99 21 to 52 us at the largest vector, 61 to 98 us for 1,000 booleans); 8 **open**: the reference (a
 release SSG build, a quiet box) was not run, and on a loaded debug build the numbers are over both bounds (compile
 16 to 32 ms and first call 7 to 14 ms at 4x, 5 to 14 ms and 1.2 to 1.6 ms unthrottled); 9 passed (34 and 32 self-test
-scenarios); 10 see the report of the lane; 11, 12 and 13 stay open as written.
+scenarios); 10 passed (`scripts/registry-install-smoke.sh --target wasm32-unknown-unknown`: 83 of 83 components installed and the app compiles; the path dependency on `decision-kernel` resolves in a git install); 11, 12 and 13 stay open as written.
 
 ## Size
 
