@@ -22,6 +22,9 @@ below are collected under "Unreleased" and move under a version heading at the f
 
 ### Fixed
 
+- A NavigationMenu or Navbar panel opened by a click, a key or a link no longer closes when the pointer leaves it
+  (for example after a page scroll moves the pointer off the trigger); only a panel the pointer itself opened closes
+  on leave, as the `open_on_hover: false` contract already said.
 - A menu root (DropdownMenu, ContextMenu, Menubar) given an `id` that changes later keeps its outside-press and
   outside-focus dismissal: the dismiss layer follows the current `id` instead of the first one, and returns to the
   generated id when the `id` is dropped.
