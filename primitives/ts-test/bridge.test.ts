@@ -465,6 +465,80 @@ describe("set", () => {
   });
 });
 
+describe("the channel counters (window.__dxBridgeStats)", () => {
+  test("count the messages each way per channel and sample the page turn", async () => {
+    const { win, bridge } = setup();
+    let t = 0;
+    win.performance.now = () => (t += 2);
+    const raw = makeChannel();
+    const ch = bridge.channel(raw);
+    raw.push({ id: 1, ops: [] });
+    await ch.recv();
+    ch.send({ id: 1, results: [] });
+    ch.send("b");
+    const [only] = win.__dxBridgeStats.channels;
+    expect(win.__dxBridgeStats.channels.length).toBe(1);
+    expect(only.sent).toBe(2);
+    expect(only.recv).toBe(1);
+    expect(only.turn).toEqual([2]);
+  });
+
+  test("a message flagged stats is answered with the whole object, once", async () => {
+    const { win, bridge } = setup();
+    const raw = makeChannel();
+    const ch = bridge.channel(raw);
+    raw.push({ id: 7, ops: [], stats: true });
+    await ch.recv();
+    ch.send({ id: 7, results: [] });
+    ch.send({ id: 7, results: [] });
+    expect((raw.sent[0] as any).stats).toBe(win.__dxBridgeStats);
+    expect((raw.sent[1] as any).stats).toBeUndefined();
+  });
+
+  test("a message that did not ask for stats is answered without them", async () => {
+    const { bridge } = setup();
+    const raw = makeChannel();
+    const ch = bridge.channel(raw);
+    raw.push({ id: 3, ops: [] });
+    await ch.recv();
+    ch.send({ id: 3, results: [] });
+    expect((raw.sent[0] as any).stats).toBeUndefined();
+  });
+
+  test("the channels past the 32nd share the last record", () => {
+    const { win, bridge } = setup();
+    for (let i = 0; i < 40; i++) bridge.channel(makeChannel()).send(i);
+    expect(win.__dxBridgeStats.channels.length).toBe(32);
+    expect(win.__dxBridgeStats.channels[31].sent).toBe(9);
+  });
+
+  test("a wrapped channel is counted once", () => {
+    const { win, bridge } = setup();
+    const ch = bridge.channel(makeChannel());
+    bridge.channel(ch).send("a");
+    expect(win.__dxBridgeStats.channels.length).toBe(1);
+    expect(win.__dxBridgeStats.channels[0].sent).toBe(1);
+  });
+});
+
+describe("the busy-case spin hook", () => {
+  test("burns the set milliseconds on every message each way and is off by default", async () => {
+    const { win, bridge } = setup();
+    let t = 0;
+    win.performance.now = () => (t += 1);
+    const quiet = makeChannel();
+    bridge.channel(quiet).send("a");
+    expect(t).toBe(0);
+    win.__dxBridgeSpin = 3;
+    const raw = makeChannel();
+    const ch = bridge.channel(raw);
+    const before = t;
+    ch.send("b");
+    expect(t - before).toBeGreaterThanOrEqual(3);
+    expect(raw.sent).toEqual(["b"]);
+  });
+});
+
 describe("the slow-channel mode", () => {
   test("is off by default: send is immediate", () => {
     const { bridge } = setup();

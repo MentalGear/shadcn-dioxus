@@ -3,8 +3,8 @@
   "build": "debug",
   "workers": "2",
   "date": "2026-10-21",
-  "tests": 4173,
-  "files": 291,
+  "tests": 4176,
+  "files": 292,
   "total_seconds": 12883,
   "budget_seconds": 17000,
   "max_file_seconds": 3000,
@@ -184,6 +184,14 @@
    "tests": 13,
    "seconds": 4,
    "passed": 13,
+   "failed": 0,
+   "skipped": 0,
+   "retried": 0
+  },
+  "bridge-stats.spec.ts": {
+   "tests": 3,
+   "seconds": 0.9,
+   "passed": 3,
    "failed": 0,
    "skipped": 0,
    "retried": 0
