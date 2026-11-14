@@ -4,16 +4,16 @@ title: "The per-row `mounted` handle has no unconditional owner: keep it with a 
 status: "BACKLOG. Trigger: the focus-write witness on a real set_focus site (row 446, open item), which…"
 size: "S for the decision and the allow row.…"
 area: primitives
-updated: 2026-11-13
+updated: 2026-11-14
 ---
 
 # Row 514: the per-row `mounted` handle has no unconditional owner
 
 ## Item
 
-`scripts/check-hot-events.allow.tsv` excuses `mounted` handlers in the name of
-[row 451](./451-port-3-sc-shared-collection-and-activity.md), with the reason that "a container handle and a batched
-observe replace the per-row ones". Row 451 moved the observe to the bridge and kept the per-row `onmounted` of
+`scripts/check-hot-events.allow.tsv` excuses `mounted` handlers in this row's name (owner 2026-11-14; the entry named
+[row 451](./done/451-port-3-sc-shared-collection-and-activity.md) before), with the reason that "a container handle and a
+batched observe replace the per-row ones". Row 451 moved the observe to the bridge and kept the per-row `onmounted` of
 `collection.rs`: it stores the `MountedData` handle that the roving hub's focus writes use and reads nothing from the
 page. The removal is claimed only by [row 462](./462-port-roving-focus-78-set-focus-sites.md), which is conditional (it
 is built only if the focus-write witness is red) and counts focus writes, not this handle. If the witness is green,

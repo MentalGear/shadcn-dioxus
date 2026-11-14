@@ -6,7 +6,7 @@ resize	per-row and per-container onresize (virtual list, table rows, virtual gri
 pointermove	chart hover and the context-menu submenu pointer tracking; bridge listen/sample replaces them	460
 wheel	the input primitive forwards an optional owner onwheel handler through events::onwheel; the owner decides, the wheel band behaviour replaces the forward	460
 dragover	row reorder and drag-and-drop list drop-target tracking, which cancel dragover to accept the drop; a named behaviour replaces them	460
-mounted	the element handle (MountedData) that focus, scroll and measurement calls need, one per mounted element and one per collection row; a container handle and a batched observe replace the per-row ones	451
+mounted	the element handle (MountedData) that focus, scroll and measurement calls need, one per mounted element and one per collection row; a container handle and a batched observe replace the per-row ones	514
 pd_drop	an rsx prevent_default on drop (date segment, drag-and-drop list, reorder previews): not a mobile cancel candidate; the dropAnywhere behaviour or a declarative cancel replaces it	458
 pd_paste	the date segment cancels paste inside an rsx handler: on Android a payload event can lose the cancel; the otpFilter-style page-side behaviour replaces it	458
 pd_submit	DemoForm and the questionnaire cancel submit inside an rsx handler (DemoForm is immune by construction per the root doc, its form carries method=dialog); a declarative cancel replaces them	458

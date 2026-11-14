@@ -1,7 +1,7 @@
 ---
 id: 509
 title: "The Rust decision contract: one decide per behaviour, the decision kernel as a committed artefact, and the gates"
-status: "LANDED on lane/decision-contract-509 (2026-11-13), awaiting the merge into the batch. Items 1 to 12…"
+status: "LANDED 2026-11-14 in one batch with row 446, under the owner's grant of the same day. Items 1 to 12…"
 size: "L (inferred: was M; the review adds…"
 area: primitives
 js-grant: js_file_bytes=4500, bytes=2400, js_lit=1, sink=3 (measured basis: row 508's loader and codec cost 4,270 bytes of `bridge.js`, 19,956 to 24,226, and the deleted TypeScript `decide` was 15 bytes; the in-place codec of item 7 should come in under the proof's 4,270, and the grant is the ceiling, not a target) (owner 2026-11-14, on the measured growth: `bridge.js` +4,491; `ts/bridge.ts` +844, `ts/lib/register.ts` +658 and `types/bridge.d.ts` +879 source bytes; one JS literal in `transport.rs`; three sink sites in the scripted document of a `session.rs` unit test)
@@ -88,7 +88,7 @@ Part of [row 434](./434-javascript-in-typescript-modules-not-rust-strings.md).
 
 ## Status / trigger
 
-LANDED on `lane/decision-contract-509` (2026-11-13), awaiting the merge into the batch. Items 1 to 12 are built on the
+LANDED 2026-11-14 in one batch with row 446, under the owner's grant of the same day. Items 1 to 12 are built on the
 one behaviour that exists (the test fixture); `otpFilter` (row 448) is written to them.
 
 - **One Rust `decide` per kind, its inputs defined once.** `decision-kernel/` (no dependencies) holds `decide(config,
