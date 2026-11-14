@@ -519,8 +519,8 @@ fn values<T: Serialize>(ops: &[T]) -> Vec<Value> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use serde_json::json;
     use dioxus::prelude::*;
+    use serde_json::json;
     use std::cell::Cell;
 
     /// The bridge's first eval carries the kernel after the bridge, as the base64 of the committed module, and the
