@@ -277,6 +277,29 @@ test.describe("Axe automated scan", () => {
     });
   }
 
+  test("the scan inspects the content of a closed docs accordion item", async ({ page }) => {
+    // Inside a closed item (`hidden="until-found"`) axe reports `color-contrast` as inapplicable, so the helper opens
+    // the items first. A low-contrast paragraph seeded into a closed item is the self-check of that opening.
+    await openComponent(page, "toolbar");
+    const item = page.locator(".dx-docs-accordion > .dx-accordion-item").first();
+    await expect(item).not.toHaveAttribute("data-open");
+    await item.locator("> .dx-accordion-content").evaluate((el) => {
+      const p = document.createElement("p");
+      p.id = "seeded-low-contrast";
+      p.textContent = "Seeded low-contrast text";
+      p.style.cssText = "color:#bbbbbb;background:#ffffff";
+      el.appendChild(p);
+    });
+    let failure = "";
+    try {
+      await expectNoAxeViolations(page, "component-catalog: seeded contrast in a closed docs item");
+    } catch (e) {
+      failure = String(e);
+    }
+    expect(failure, "the scan reports the seeded violation").toContain("[color-contrast]");
+    expect(failure).toContain("seeded-low-contrast");
+  });
+
   test("the homepage card titles with the badge have no automatically detectable a11y issues", async ({ page }) => {
     await openHome(page);
     await expect(page.locator(".dx-component-card-title-row .dx-extra-badge").first()).toBeVisible();

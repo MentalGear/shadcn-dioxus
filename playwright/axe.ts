@@ -92,6 +92,7 @@
 
 import { expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+import { awaitAnimationsSettled } from "./animations";
 
 /** The WCAG/best-practice tag set every scan in this repo runs against. */
 const TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "best-practice"];
@@ -232,6 +233,34 @@ async function waitForAppReady(page: Page): Promise<void> {
     .waitFor({ state: "attached", timeout: APP_READY_TIMEOUT_MS });
 }
 
+/** The docs accordion items of a component page (`preview/src/site/component_page.rs`). */
+const DOCS_ACCORDION_ITEM = ".dx-docs-accordion > .dx-accordion-item";
+
+/**
+ * Open every closed docs accordion item through its trigger and wait until each one is open and its animation has
+ * finished, so that axe inspects the content of "Usage notes", "Component structure" and "Props reference".
+ *
+ * WHY: a closed item holds its content in `hidden="until-found"` (`content-visibility: hidden`), where axe reports
+ * `color-contrast` as inapplicable; scanning without opening the items leaves that content uninspected on every
+ * component page. The opening lives in the shared helper so every caller, and an item added later, is covered.
+ * Items stay open afterwards. Pages without a docs accordion are left alone.
+ */
+export async function openDocsAccordionItems(page: Page): Promise<void> {
+  const closed = page.locator(`${DOCS_ACCORDION_ITEM}:not([data-open])`);
+  const count = await closed.count();
+  if (count === 0) return;
+  await closed.evaluateAll((items) => {
+    for (const item of items) item.querySelector<HTMLElement>(":scope > h3 > button")?.click();
+  });
+  const all = page.locator(DOCS_ACCORDION_ITEM);
+  const total = await all.count();
+  for (let i = 0; i < total; i++) {
+    const item = all.nth(i);
+    await expect(item).toHaveAttribute("data-open", "");
+    await awaitAnimationsSettled(item.locator("> .dx-accordion-content"));
+  }
+}
+
 /**
  * Run axe-core's full WCAG 2.0/2.1 A+AA + best-practice rule set against
  * `page` (or a subset of it, via `opts.include`) and fail with a readable
@@ -241,7 +270,7 @@ async function waitForAppReady(page: Page): Promise<void> {
  *
  * Waits for the app's first paint first (`waitForAppReady`, above) -- see
  * that function's doc comment and this file's header doc ("Readiness")
- * for why.
+ * for why -- and then, for a whole-page scan, opens the docs accordion items (`openDocsAccordionItems`).
  */
 export async function expectNoAxeViolations(
   page: Page,
@@ -249,6 +278,8 @@ export async function expectNoAxeViolations(
   opts: AxeScanOptions = {},
 ): Promise<void> {
   await waitForAppReady(page);
+  // A scoped scan (`include`) inspects a region the caller prepared; the accordion is opened only for whole-page scans.
+  if (!opts.include) await openDocsAccordionItems(page);
 
   // `resultTypes: ["violations"]`: every rule still runs on every node and `violations` is complete, but axe stops building
   // the selector, source and check data of the passing and incomplete nodes this function never reads (14,700 nodes on the
