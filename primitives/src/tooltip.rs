@@ -1,6 +1,6 @@
 //! Defines the [`Tooltip`] component and its sub-components, which provide contextual information when hovering or focusing on elements.
 
-use crate::hover_card::{use_hover_timers, HoverTimers};
+use crate::hover_timers::{use_hover_dismiss, use_hover_timers, HoverTimers};
 use crate::state_attrs;
 use crate::{
     merge_attributes, use_animated_open, use_controlled, use_id_or, use_unique_id, AsChild,
@@ -175,7 +175,7 @@ pub fn Tooltip(props: TooltipProps) -> Element {
     // Escape closes an open tooltip wherever focus is, and cancels a pointer's open delay (the
     // dismiss core, [`crate::dismiss::Policy::ESCAPE`]): a hover surface has no press or focus arm,
     // because the pointer leaving or the trigger blurring already closes it.
-    crate::hover_card::use_hover_dismiss(tooltip_id, timers);
+    use_hover_dismiss(tooltip_id, timers);
 
     let _ctx = use_context_provider(|| TooltipCtx {
         open,
