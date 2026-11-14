@@ -23,6 +23,8 @@ APPROVED 2026-10-26 (owner: "okay for the plan"; scope 2, the recommended defaul
 
 **Premise check, 2026-11-13.** This row was written before the decision kernel (row 509) and the witness harness (row 446) existed. [`research/premise-check-447-450-2026-11-13.md`](../research/premise-check-447-450-2026-11-13.md) lists which of its claims about the source are false or moved, where its construction changes, the grant columns it needs and its place in the lane order. A lane reads that section before its first edit.
 
+**Built on `lane/order-runtime-447`, 2026-11-14 (commit 58d81886).** The page-minted sequence number on every inbound frame (`{seq, m | t}`), the slot fence (`based_on` on a `Slot` write against the last page transition of that slot, a Rust-caused write mints nothing), the Rust pump's contiguous `page_seen` prefix, and install epochs counted per webview in place of `Epoch::next`. Open: dispatch through a registry entry and one root task (needs one shared inbound eval, `transport.rs`); `based_on` for every slot a `call` can touch and for gesture streams (needs the slot table); the `(scope, nonce)` key and SSR-stable ids; Rust-caused transitions reported with `cause`; the gesture epoch, null-focus mint, composition hold and kept levels; the vdom carrier; the slot table and its gate check with the `FORBIDDEN_VERBS` and `APPLY` partition; the focus owner; the bridge boot, `data-dx-bridge` and the `data-hydrated` order; the classifier spike (under `primitives/ts-test/` or `playwright/`); the order specs on the witness harness; the release-build run of the hydration specs (the container had 2 to 3 GB free).
+
 ## Size
 
 M
