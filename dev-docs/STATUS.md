@@ -125,15 +125,9 @@ ports), its working form is [`js-interop.md`](./js-interop.md), and every item h
   branches; the 30 unmerged ones are kept).
 - CI back on (rows 4, 33): every workflow except `mutants.yml` is deleted, so reactivation means a new workflow that
   runs `scripts/run-gates.sh`.
-- Row 513: approve or reject reusing release-suite results across a change that touches only Playwright files (the
-  results are keyed by the site's build inputs and each spec's own imports).
-- Rows 509 and 446 land only with the owner's grant columns at the merge base and the owner's ok to record the
-  raises: row 509 `bytes=2400, js_lit=1, sink=3` beside its `js_file_bytes=4500`, row 446 `bytes=4100` beside its
-  `js_file_bytes=6590` (measured growth: `bridge.js` 22,558 to 28,438, `ts/bridge.ts` 47,504 to 52,382,
-  `ts/lib/register.ts` 777 to 1,435, `types/bridge.d.ts` 6,626 to 7,505). The batch fixes the volume gate's `ffi`
-  pattern, so the kernel's five wasm exports need no `allow` row.
-- The hot-events allow table excuses `mounted` under row 451; the batch above files a row for the per-row handle,
-  and the main loop recommends re-pointing the entry to it so row 451 can close. The table is the owner's.
+- Decided 2026-11-14 (owner: "ok"): the grant columns of rows 509 and 446 (in the rows' front matter) and recording
+  their raises; re-pointing the hot-events `mounted` entry from row 451 to the row for the per-row handle, which the
+  batch with rows 509 and 446 carries; row 513 (reuse of release-suite results across spec-only changes) is approved.
 - Row 508's verdict is `KERNEL`, so row 509 opens without a further decision. Loading the
   kernel inside the desktop webview stays unproven until a desktop build exists (row 23).
 
