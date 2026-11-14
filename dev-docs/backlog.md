@@ -40,7 +40,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (71)
+## Open rows (70)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -67,7 +67,6 @@ proposing one is closed as out of scope (row 337 is the first).
 | [414](backlog/414-formal-proof-spike.md) | Spike: formal proofs of one headless model (Kani, optionally Aeneas to Lean) | OPTIONAL: needs owner approval before it is adopted or scheduled (owner 2026-10-24). Not part of… | M | research |
 | [415](backlog/415-pin-actions-to-shas.md) | Pin GitHub Actions to commit SHAs | OPTIONAL: needs owner approval before it is adopted or scheduled (owner 2026-10-24). Not part of… | XS | build |
 | [434](backlog/434-javascript-in-typescript-modules-not-rust-strings.md) | Cut JavaScript to what Rust cannot do: audit every eval block, move the rest into Rust, TypeScript only for the remainder | BACKLOG. Umbrella for rows 444-467 (the step 3 plan; the paper review is closed after seven rounds… | L | primitives |
-| [436](backlog/436-code-quality-skill-review.md) | Code-quality skill review: code-review and simplify skills over the whole codebase, after the row 426-435 refactors | FIXED (2026-11-13): the 10 findings of PR #170 (F1, F2, F4-F6, F8-F12, each reproduced red first)… | M for the review. Each accepted finding… | process |
 | [438](backlog/438-blitz-native-renderer.md) | dioxus-native (Blitz) as a supported renderer: parked, research-gated, after row 434 | PARKED. Start when all of these hold: 1. Dioxus 0.8 is stable and the primitives build on it. 2.… | Estimates from the research: tier 0 M… | primitives |
 | [442](backlog/442-desktop-cadence-harness-and-desktop-pass.md) | Desktop proof for the JS plan: a desktop-cadence web build, Playwright WebKit and Firefox, and a recorded desktop-pass stamp | BACKLOG. Filed 2026-10-26 from the row 434 step 3 adversarial board. The bridge-latency hook… | M | tooling |
 | [443](backlog/443-owner-measurement-kit-perf-recorder-and-impl-switch.md) | The owner's measurement kit for the row 434 ports: __dxPerf, bridge delay and spin, and the ?dx-impl legacy switch | BACKLOG. Filed 2026-10-26 from the row 434 step 3 adversarial board. The bridge-delay hook is… | M | tooling |

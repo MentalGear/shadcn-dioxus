@@ -6,7 +6,7 @@ resolves here by id.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Done rows (416)
+## Done rows (417)
 
 | # | Item | Updated |
 |---|---|---|
@@ -395,6 +395,7 @@ resolves here by id.
 | [432](backlog/done/432-anchor-engine-one-attribute-not-marker-classes.md) | Anchor engine selects on one data attribute, not nine hand-kept marker classes | 2026-10-26 |
 | [433](backlog/done/433-slot-variables-derived-from-sheet.md) | Slot variables derived from the sheet, not documented by hand | 2026-10-26 |
 | [435](backlog/done/435-one-menu-family-behind-three-hosts.md) | One menu-family implementation behind three hosts (DropdownMenu, ContextMenu, Menubar) | 2026-10-31 |
+| [436](backlog/done/436-code-quality-skill-review.md) | Code-quality skill review: code-review and simplify skills over the whole codebase, after the row 426-435 refactors | 2026-11-13 |
 | [437](backlog/done/437-pipefail-early-exit-reader.md) | No early-exit reader on the right of a pipe in a pipefail script (grep -q, head, sed q, awk exit) | 2026-10-25 |
 | [439](backlog/done/439-chart-prehydration-geometry-flake.md) | chart-prehydration geometry flake: the two loads race font-display: optional | 2026-10-25 |
 | [440](backlog/done/440-run-gates-per-run-log-dir.md) | run-gates.sh writes logs to a shared directory: two concurrent runs on one target overwrite each other's logs | 2026-11-12 |

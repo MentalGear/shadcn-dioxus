@@ -4,8 +4,8 @@
 the page as stale and check `git log` and the flag files named here.** What each batch contained is in `git log` and the
 backlog row files, not here: this page says only what is deployed, what runs, what is next and what waits for the owner.
 
-Last updated: **2026-11-13**. Several sessions work in parallel; who holds what is on the `claims` branch (`CLAIMS.md`).
-Preview site: https://mentalgear.github.io/shadcn-dioxus/ serves main `3caa4f2c` (PRs #177-#180; release suite 4108
+Last updated: **2026-11-14**. Several sessions work in parallel; who holds what is on the `claims` branch (`CLAIMS.md`).
+Preview site: https://mentalgear.github.io/shadcn-dioxus/ serves main `ce2cf865` (PRs #177-#182; release suite 4108
 passed, 0 failed, 0 flaky, 14 skipped on that exact tree, the `@timing` cases deactivated per row 494). Check
 `git log origin/main -1` for the exact tip rather than trusting a SHA frozen here.
 
@@ -30,7 +30,7 @@ the next deploy first rebuilds it with `scripts/lane-target.sh warm-release` (a 
 ## Merged and deployed
 
 Merge queue batches 1-29 are on main (PRs #121-#155); PRs #156-#165 followed from session
-`session_01MsL6RCeq7QSe81nNBiuKP1` and are deployed (main `d040554a`, release suite 4159 passed, 0 failed). PRs #166-#168 are deployed (main `f38662dc`, deploy `85c05466`, release suite 4192 passed, 0 failed). PRs #170-#176 are deployed (main `edb71de0`, deploy `c34eda92`, release suite 4106 passed, 0 failed). PRs #177-#180 are deployed (main `3caa4f2c`, release suite 4108 passed, 0 failed). What each batch carried is in `git log` and the row files under
+`session_01MsL6RCeq7QSe81nNBiuKP1` and are deployed (main `d040554a`, release suite 4159 passed, 0 failed). PRs #166-#168 are deployed (main `f38662dc`, deploy `85c05466`, release suite 4192 passed, 0 failed). PRs #170-#176 are deployed (main `edb71de0`, deploy `c34eda92`, release suite 4106 passed, 0 failed). PRs #177-#180 are deployed (main `3caa4f2c`, release suite 4108 passed, 0 failed). PR #182 is deployed (main `ce2cf865`, release suite 4108 passed, 0 failed). What each batch carried is in `git log` and the row files under
 [`backlog/done/`](./backlog/done/).
 
 ## Next
@@ -42,10 +42,11 @@ row says otherwise, so a step runs as parallel lanes (one verifier per batch, `l
 
 **Before the plan continues (port-independent)**
 
-1. Rows 506 and 511 are done. **In flight (2026-11-13, one batch of lanes):** row **509** (the Rust decision
-   contract), row **446** (the witness harness; it lands after 509), the first half of row **448** (deleting the
-   native-arm focus trap), the rest of row **436** (F3, F7, `menu_root::use_root_id`), and a follow-up closing the
-   open items of rows 451 and 454.
+1. Rows 436, 454, 506 and 511 are done, and the first half of row **448** (the native-arm focus trap is deleted) is
+   on main (PR #182). **Built, not merged (2026-11-14):** row **509** (the Rust decision contract) and row **446**
+   (the witness harness, on top of 509), with a fix to the volume gate's `ffi` pattern; they are one local batch
+   (`queue/batch-4`) that waits for the owner's grant columns, below. Row **451** stays open for the per-row
+   `mounted` handle only.
 2. Done, merged in PR #170 (2026-11-11): the deploy blockers of PR #168 (rows 468, 501); row **436**'s overlay and
    class groups (F1, F2, F4, F5, F6, F8, F9, F10, F11, F12), each reproduced red first (CHANGELOG.md has the
    user-visible ones: F1, F10, F11); **499** (safe triangle; CHANGELOG.md too); **152** slices 4-5; **371**'s
@@ -65,8 +66,7 @@ row says otherwise, so a step runs as parallel lanes (one verifier per batch, `l
    Done 2026-11-12 (the batch after PR #174): rows 440, 491, 499 and 503 moved to done; **510** (the spec selector
    follows component-to-component edges); **445** (the legacy freeze, taken early because it only guards); the
    grant-key refusal (16 open rows named a JavaScript-volume column the gate no longer has; all converted to bytes).
-3. Open from row 436: one cancellable delayed-task helper and per-window state (F7, F3), and `menu_root::use_root_id`,
-   which still writes a caller's `id` once (needs `use_reactive!`).
+3. Row 436 is finished (PR #182): the delayed-task helper, per-window state and `menu_root::use_root_id`.
 4. Open elsewhere: **504** (the hydrated Textarea shows no value; a fix is built on `lane/textarea-ssr-504`, local
    only, and needs the owner's call on a native-slot grant, see the row), **505**'s token-counting construction
    itself (the grant only covered the one readable-name revert), **371**'s remaining owner call (a D6 exception for
@@ -88,8 +88,8 @@ ports), its working form is [`js-interop.md`](./js-interop.md), and every item h
    (legacy freeze, landed 2026-11-12), **446** (witness harness),
    **447** (order runtime), **448** (proof port A), **449** (proof port B), **450** (bridge stats and the desktop latency
    session); about 111 h, nearly all one chain through `ts/bridge.ts`, so it runs mostly serially.
-   Row 448's first half (deleting the native-arm focus trap) is open now that row 511 is built; its site list is
-   corrected in the row.
+   Row 448's first half (deleting the native-arm focus trap) is on main (PR #182); its second half is the `otpFilter`
+   behaviour.
 8. The ports, as ordinary rows by yield (lines of JavaScript removed per hour, highest first; a row whose dependencies
    have not landed waits, and each row names them): **451** (3.SC, built 2026-11-12) and **454** (3.OB, built
    2026-11-12; five legacy scripts left the baseline, with 451 the volume gate's total fell from 508,767 to 482,329),
@@ -127,8 +127,13 @@ ports), its working form is [`js-interop.md`](./js-interop.md), and every item h
   runs `scripts/run-gates.sh`.
 - Row 513: approve or reject reusing release-suite results across a change that touches only Playwright files (the
   results are keyed by the site's build inputs and each spec's own imports).
-- Row 509 lands only with one `allow` row in `scripts/check-js-volume.allow.tsv` for the decision kernel's five fixed
-  wasm exports (`decision-kernel/src/ffi.rs`); the table is the owner's.
+- Rows 509 and 446 land only with the owner's grant columns at the merge base and the owner's ok to record the
+  raises: row 509 `bytes=2400, js_lit=1, sink=3` beside its `js_file_bytes=4500`, row 446 `bytes=4100` beside its
+  `js_file_bytes=6590` (measured growth: `bridge.js` 22,558 to 28,438, `ts/bridge.ts` 47,504 to 52,382,
+  `ts/lib/register.ts` 777 to 1,435, `types/bridge.d.ts` 6,626 to 7,505). The batch fixes the volume gate's `ffi`
+  pattern, so the kernel's five wasm exports need no `allow` row.
+- The hot-events allow table excuses `mounted` under row 451; the batch above files a row for the per-row handle,
+  and the main loop recommends re-pointing the entry to it so row 451 can close. The table is the owner's.
 - Row 508's verdict is `KERNEL`, so row 509 opens without a further decision. Loading the
   kernel inside the desktop webview stays unproven until a desktop build exists (row 23).
 
