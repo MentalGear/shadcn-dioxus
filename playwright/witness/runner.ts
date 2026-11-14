@@ -105,9 +105,11 @@ export async function observe(browser: Browser, b: Binding, arm: WitnessArm | nu
     if (scenario !== "mount") {
       await page.evaluate(({ host, props }) => (window as any).__dxWitness.record(host, props), { host: b.host, props });
       await paints(page, 2); // frames of the state before the event, in both arms
+      // an input that follows the event by k paints: the write clock stands still until the page has counted them
+      if (b.keyAfterPaints !== undefined) await page.evaluate(() => (window as any).__dxWitness.freeze());
       await replay(page, scenario === "toggle" && b.toggle ? b.toggle : b.event);
       if (b.keyAfterPaints !== undefined) {
-        await paints(page, b.keyAfterPaints);
+        await page.evaluate((n) => new Promise<void>((done) => (window as any).__dxWitness.clockFor(n, done)), b.keyAfterPaints);
         await page.keyboard.press("x");
       }
     }

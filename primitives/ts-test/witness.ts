@@ -58,6 +58,18 @@ export function witnessPage(): void {
     });
   };
 
+  /** The write clock: `paints` that stands still while the runner has an input in flight (`freeze`), so a delayed write
+   * is due a number of paints after the trigger however long the harness takes to deliver the next input. */
+  let frozen = false;
+  const clocked = (n: number, fn: () => void): void => {
+    if (n <= 0) return fn();
+    requestAnimationFrame(() => {
+      const channel = new MessageChannel();
+      channel.port1.onmessage = () => clocked(frozen ? n : n - 1, fn);
+      channel.port2.postMessage(0);
+    });
+  };
+
   // ---------------------------------------------------------------- the patched members
   type Member = { owner: any; name: string; kind: "method" | "set" };
   const method = (owner: any, name: string): Member => ({ owner, name, kind: "method" });
@@ -112,7 +124,7 @@ export function witnessPage(): void {
           if (!a) return original.apply(this, args);
           hits++;
           const run = () => original.apply(this, args);
-          if (a.mode === "delay") paints(a.frames, run);
+          if (a.mode === "delay") clocked(a.frames, run);
           else if (a.mode === "rehome" && this instanceof Event) rehome(a, this, run);
           return undefined;
         };
@@ -124,7 +136,7 @@ export function witnessPage(): void {
             const a = intercept(effect);
             if (!a) return original.call(this, value);
             hits++;
-            if (a.mode === "delay") paints(a.frames, () => original.call(this, value));
+            if (a.mode === "delay") clocked(a.frames, () => original.call(this, value));
           },
         });
       }
@@ -147,6 +159,8 @@ export function witnessPage(): void {
     // a task posted from a window capture listener runs after the whole dispatch, which a microtask would not
     W.addEventListener(type, (event: Event) => event.isTrusted && posts.port2.postMessage(++events), true);
   }
+  // the input the runner froze the write clock for is complete once its key has been released
+  W.addEventListener("keyup", (event: Event) => void (event.isTrusted && (frozen = false)), true);
   const hold = (deliver: () => void): void => {
     hits++;
     let done = false;
@@ -286,6 +300,19 @@ export function witnessPage(): void {
       }
     },
     paints,
+    /** Stops the write clock; the next trusted keyup restarts it. Called before the trigger is replayed. */
+    freeze(): void {
+      frozen = true;
+    },
+    /** Runs the write clock `n` paints, stops it in the same callback and calls `done`: the next input then lands
+     * exactly `n` write-clock paints after the trigger, whatever the harness latency between this call and the input. */
+    clockFor(n: number, done: () => void): void {
+      frozen = false;
+      clocked(n, () => {
+        frozen = true;
+        done();
+      });
+    },
     pause,
     record(hostSelector: string, props: string[]): void {
       const host = document.querySelector(hostSelector) ?? document.documentElement;
