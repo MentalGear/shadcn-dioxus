@@ -963,9 +963,9 @@ html[data-theme="light"] [class~="dxc-system"] {
 
 :where(dialog[class^="dx-"][open][data-open]:not([popover]))::backdrop,
 :where(dialog[class*=" dx-"][open][data-open]:not([popover]))::backdrop {
+  animation: dx-scrim-in var(--dx-overlay-duration) var(--dx-overlay-ease);
   backdrop-filter: blur(var(--dx-overlay-blur));
   background: var(--dx-overlay-scrim);
-  animation: dx-scrim-in var(--dx-overlay-duration) var(--dx-overlay-ease);
 }
 
 @keyframes dx-scrim-in {

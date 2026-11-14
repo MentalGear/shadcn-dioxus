@@ -446,8 +446,12 @@ fn a_drag_release_announces_its_destination_before_the_scroll_and_the_settle_ded
         .find("listen(container, 'dx-carousel-target'")
         .expect("the tracking bridge listens for it");
     let after = &tracking[listener..];
-    let record = after.find("lastNearest = d.index;").expect("records the report");
-    let send = after.find("dioxus.send(['target'").expect("reports it at once");
+    let record = after
+        .find("lastNearest = d.index;")
+        .expect("records the report");
+    let send = after
+        .find("dioxus.send(['target'")
+        .expect("reports it at once");
     assert!(record < send);
 }
 

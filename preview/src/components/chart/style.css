@@ -472,9 +472,11 @@
    * tooltip is visible from its first frame and a closing one stays visible for the whole fade and
    * is `hidden` only after it. No `display` change and no `@starting-style` is involved, so the
    * entry fades in every engine: it interpolates from the element's own current opacity, never from
-   * a "was not rendered" state. The reduced-motion block below changes only `--dx-chart-tooltip-fade` and `--dx-chart-tooltip-move` (the position move's duration). */
+   * a "was not rendered" state. The reduced-motion block below changes only `--dx-chart-tooltip-fade`
+   * and `--dx-chart-tooltip-move` (the position move's duration). */
   --dx-chart-tooltip-fade: var(--dx-floating-duration);
   --dx-chart-tooltip-move: var(--dx-motion-duration-slow);
+
   transition: opacity var(--dx-chart-tooltip-fade) var(--dx-floating-ease-enter),
     visibility var(--dx-chart-tooltip-fade) var(--dx-floating-ease-enter);
   white-space: nowrap;
@@ -493,8 +495,8 @@
  * `aria-hidden="true"` and `pointer-events: none`). The exit curve applies to the fade out. */
 .dx-chart-tooltip[data-state="closed"] {
   opacity: 0;
-  visibility: hidden;
   transition-timing-function: var(--dx-floating-ease-exit);
+  visibility: hidden;
 }
 
 /* Open, shown: the opacity target is 1 (the base value), reached by the transition above. */
