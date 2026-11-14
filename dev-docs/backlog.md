@@ -40,7 +40,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (70)
+## Open rows (71)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -72,7 +72,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [443](backlog/443-owner-measurement-kit-perf-recorder-and-impl-switch.md) | The owner's measurement kit for the row 434 ports: __dxPerf, bridge delay and spin, and the ?dx-impl legacy switch | BACKLOG. Filed 2026-10-26 from the row 434 step 3 adversarial board. The bridge-delay hook is… | M | tooling |
 | [444](backlog/444-gate-half-of-lane-3-0b-grants-bans-and-witness-presence.md) | Phase 0.1: the gate half of lane 3.0 (grant rows, sink and setter bans, FORBIDDEN_VERBS, gates over existing artefacts only) | LANDED in PR #167 (2026-11-07), phase 0.1's gates over the artefacts that exist: the grant rule and… | L | tooling |
 | [446](backlog/446-phase-0-6-witness-harness-and-the-first-witnesses.md) | Phase 0.6: the witness harness and the first witnesses | BUILT on lane/witness-446 (2026-11-13), not merged: it waits for row 509 to land first, because… | L | tests |
-| [447](backlog/447-phase-0-7-the-order-runtime.md) | Phase 0.7: the order runtime (inbound pump, per-slot epochs, vdom carrier, slot table, focus owner, one-shot scroll classifier) | APPROVED 2026-10-26 (owner: "okay for the plan"; scope 2, the recommended default, since no scope… | M | primitives |
+| [447](backlog/447-phase-0-7-the-order-runtime.md) | Phase 0.7: the order runtime (inbound pump, slot fence, slot table, focus owner, boot, scroll classifier spike) | The runtime is on lane/order-runtime-447 and lands as it is: - The pump. Every frame the page sends… | M | primitives |
 | [448](backlog/448-phase-0-3-proof-port-a-focus-trap-and-otpfilter.md) | Phase 0.3: proof port A (the native-arm focus trap's 3 eval sites, focus-trap.ts, and the otpFilter behaviour for S11) | The 3.DJ half is built (the native-arm focus trap is deleted) and the otpFilter half is open… | L | overlays |
 | [449](backlog/449-phase-0-4-proof-port-b-the-executor-and-popover-spreads.md) | Phase 0.4: proof port B (the reconciled-kinds executor, the popover hooks that return the attribute to spread, the owners' onbeforetoggle handlers) | APPROVED 2026-10-26 (owner: "okay for the plan"; scope 2, the recommended default, since no scope… | L | overlays |
 | [450](backlog/450-phase-0-5-dxbridgestats-and-the-latency-session.md) | Phase 0.5: __dxBridgeStats, a desktop smoke launch and the one latency session | APPROVED 2026-10-26 (owner: "okay for the plan"; scope 2, the recommended default, since no scope… | M | tooling |
@@ -114,5 +114,6 @@ proposing one is closed as out of scope (row 337 is the first).
 | [510](backlog/510-spec-selector-component-edges.md) | The spec selector has no component-to-component edge: a Button change selects none of its consumers' specs | LANDED in PR #175 (2026-11-12): the selector reads the component use graph from the sources. The… | S (one helper module of about 170… | tests |
 | [513](backlog/513-release-suite-reuse-across-spec-only-changes.md) | A spec-only fix after a red release suite re-runs the whole suite: reuse the results the changed files cannot affect | BACKLOG. It serves the owner's standing goal "evaluate how the testing could be made quicker… | M (inferred): the key derivation, the… | tests |
 | [514](backlog/514-the-per-row-mounted-handle-has-no-owner.md) | The per-row `mounted` handle has no unconditional owner: keep it with a true reason, or replace it | BACKLOG. Trigger: the focus-write witness on a real set_focus site (row 446, open item), which… | S for the decision and the allow row.… | primitives |
+| [515](backlog/515-order-contract-consumers-the-find-in-page-port-and-the-gesture-epoch.md) | Order contract consumers: the find-in-page (beforematch) port, the gesture epoch and the contract details row 447 leaves unbuilt | Depends on row 447. Not started. | M (inferred) | primitives |
 
 <!-- END GENERATED -->
