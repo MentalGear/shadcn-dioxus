@@ -22,6 +22,8 @@ below are collected under "Unreleased" and move under a version heading at the f
 
 ### Fixed
 
+- A closed Combobox with groups no longer leaves its group headings in the page: `ComboboxGroupLabel` renders only
+  while the list renders, like the group and the options around it.
 - A menu root (DropdownMenu, ContextMenu, Menubar) given an `id` that changes later keeps its outside-press and
   outside-focus dismissal: the dismiss layer follows the current `id` instead of the first one, and returns to the
   generated id when the `id` is dropped.

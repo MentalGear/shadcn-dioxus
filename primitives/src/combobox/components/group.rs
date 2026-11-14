@@ -75,15 +75,19 @@ pub struct ComboboxGroupLabelProps {
 }
 
 /// The heading of a [`ComboboxGroup`], which names the group. It is not an option: the keyboard
-/// skips it and it cannot be picked.
+/// skips it and it cannot be picked. It renders only while the list renders, like the group around
+/// it and the options in it; a closed list leaves no heading in the page flow.
 #[component]
 pub fn ComboboxGroupLabel(props: ComboboxGroupLabelProps) -> Element {
     let mut group = use_context::<ComboboxGroupContext>();
     let generated_id = use_unique_id();
     let id = use_id_or(generated_id, props.id);
     use_effect(move || group.labeled_by.set(Some(id())));
+    let render = use_context::<ListboxContext>().render;
 
     rsx! {
-        div { id, ..props.attributes, {props.children} }
+        if render() {
+            div { id, ..props.attributes, {props.children} }
+        }
     }
 }
