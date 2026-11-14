@@ -521,6 +521,22 @@ function stale(el: object | null, epoch: DxEpoch | null | undefined): boolean {
   return false;
 }
 
+// ---------------------------------------------------------------- the inbound sequence and the slot fence
+
+/**
+ * The page-minted sequence number: every frame a scope sends to Rust takes the next one, so Rust learns the page's
+ * order across the evals of one webview. A page-caused transition of a slot takes one too (`transitioned`), and the
+ * slot's fence is that number: a Rust write that carries `basedOn` below it was decided before Rust saw the
+ * transition and is dropped. A Rust-caused write mints nothing.
+ */
+let pageSeq = 0;
+const fences = new WeakMap<object, Map<string, number>>();
+
+/** True when `basedOn` is older than the last page transition of `slot` on `el`. */
+function fenced(el: object, slot: string, basedOn: number | undefined): boolean {
+  return basedOn !== undefined && basedOn < (fences.get(el)?.get(slot) ?? 0);
+}
+
 // ---------------------------------------------------------------- call, get, set
 
 function call(target: DxTargetish, method: string, args: unknown[] = [], epoch?: DxEpoch | null): unknown {
@@ -577,12 +593,12 @@ const WRITES: Record<string, { run: (el: HTMLElement, value: string | null) => v
   "overflow-anchor": { run: (el, value) => el.style.setProperty("overflow-anchor", value ?? "") },
 };
 
-function write(target: DxTargetish, slot: string, value: string | null, epoch?: DxEpoch | null): unknown {
+function write(target: DxTargetish, slot: string, value: string | null, epoch?: DxEpoch | null, basedOn?: number): unknown {
   const row = own(WRITES, slot);
   if (!row) throw new Error("bridge.write: no such slot: " + slot);
   const el = resolve(target);
   if (!isEl(el)) return null;
-  if (stale(el, epoch)) return STALE;
+  if (stale(el, epoch) || fenced(el, slot, basedOn)) return STALE;
   row.run(el, value);
   return null;
 }
@@ -612,7 +628,7 @@ function transaction(ops: DxOp[]): DxOpResult[] {
           break;
         }
         case "write": {
-          const value = write(op.target, op.slot, op.value, op.epoch);
+          const value = write(op.target, op.slot, op.value, op.epoch, op.basedOn);
           result = value === STALE ? { ok: null, dropped: true } : { ok: null };
           break;
         }
@@ -875,7 +891,10 @@ function installBehaviour(sc: Scope, spec: Omit<BehaviourSpec, "cmd">): () => vo
     if (decision.remember) memory = { ...memory, ...decision.remember };
     if (decision.attrs && host) {
       for (const name of Object.keys(decision.attrs)) {
-        if (ATTR_OK.test(name)) applyEffect(site, "attrs", host, name, decision.attrs[name]);
+        if (ATTR_OK.test(name)) {
+          applyEffect(site, "attrs", host, name, decision.attrs[name]);
+          if (own(WRITES, name)) sc.transitioned(host, name);
+        }
         else warnOnce("attr:" + b.kind + name, b.kind + " may not set " + name);
       }
     }
@@ -929,7 +948,15 @@ function scope(raw?: DioxusChannel): Scope {
   let done = false;
   const ch = raw ? channel(raw) : null;
   const send = (message: unknown) => {
-    if (ch && !done) ch.send(message);
+    if (ch && !done) ch.send({ seq: ++pageSeq, m: message });
+  };
+  const transitioned = (el: object, slot: string) => {
+    if (!ch || done) return;
+    const seq = ++pageSeq;
+    let slots = fences.get(el);
+    if (!slots) fences.set(el, (slots = new Map()));
+    slots.set(slot, seq);
+    ch.send({ seq, t: slot });
   };
   const cleanup = (fn: () => void) => {
     if (done) fn();
@@ -944,6 +971,7 @@ function scope(raw?: DioxusChannel): Scope {
     on,
     cleanup,
     send,
+    transitioned,
     dispose() {
       done = true;
       for (let i = offs.length - 1; i >= 0; i--) {

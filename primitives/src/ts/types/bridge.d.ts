@@ -96,7 +96,7 @@ type DxOp =
   | { op: "call"; target: DxTargetish; method: string; args?: unknown[]; epoch?: DxEpoch | null }
   | { op: "get"; target: DxTargetish; props: string[]; epoch?: DxEpoch | null }
   | { op: "set"; target: DxTargetish; name: string; value: string | null; epoch?: DxEpoch | null }
-  | { op: "write"; target: DxTargetish; slot: string; value: string | null; epoch?: DxEpoch | null };
+  | { op: "write"; target: DxTargetish; slot: string; value: string | null; epoch?: DxEpoch | null; basedOn?: number };
 /** `dropped`: an op of a newer epoch had already run on the target, so this one did nothing. A reply echoes the epoch it answers. */
 type DxOpResult = { ok: unknown; dropped?: true; epoch?: DxEpoch } | { err: string };
 
@@ -115,6 +115,8 @@ interface DxScope {
   ): () => void;
   cleanup(fn: () => void): void;
   send(message: unknown): void;
+  /** Reports a page-caused transition of `slot` on `el` to Rust and fences the slot at its sequence number. */
+  transitioned(el: object, slot: string): void;
   /** Ends the scope: every registration it made is undone, in reverse order. Idempotent. */
   dispose(): void;
   run(command: DxCommand): void;

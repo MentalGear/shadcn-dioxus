@@ -276,12 +276,18 @@ export function loadBridge(win: any = makeWindow(), { kernel = true } = {}) {
 /** A stand-in for the `dioxus` object of one eval. */
 export function makeChannel() {
   const sent: unknown[] = [];
+  /** Every frame `{ seq, m | t }` a scope sent; `sent` holds the payload `m` of each. */
+  const frames: any[] = [];
   const inbox: unknown[] = [];
   let waiting: ((message: unknown) => void) | null = null;
   return {
     sent,
-    send(message: unknown) {
-      sent.push(message);
+    frames,
+    send(message: any) {
+      if (message && typeof message === "object" && typeof message.seq === "number") {
+        frames.push(message);
+        if ("m" in message) sent.push(message.m);
+      } else sent.push(message);
     },
     recv(): Promise<unknown> {
       if (inbox.length) return Promise.resolve(inbox.shift());

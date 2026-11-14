@@ -121,8 +121,6 @@ pub(crate) mod legacy;
 mod session;
 pub(crate) mod transport;
 
-use std::sync::atomic::{AtomicU64, Ordering};
-
 use dioxus::document::EvalError;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -130,7 +128,7 @@ use serde_json::{json, Value};
 pub use behaviours::{Behaviour, Declared, DeclaredTarget};
 pub use events::{EventField, EventKind};
 pub use session::{
-    use_behaviour, use_document_listener, use_element_listener, use_event_listener,
+    page_seen, use_behaviour, use_document_listener, use_element_listener, use_event_listener,
     use_intersection_observer, use_media_query, use_mutation_observer, use_observer,
     use_resize_observer, use_sample, use_window_listener, use_window_size, Command, Flush,
     Intersection, ListenOptions, MediaChange, Mutation, ObserveOptions, ObserverKind, Publish,
@@ -139,24 +137,15 @@ pub use session::{
 pub use transport::{is_unsupported, BRIDGE_JS};
 
 /// A generation for an install, a write or a read: the page drops one older than the newest it has
-/// seen on the same target for the same `key`, an equal one renews, and a reply echoes it.
+/// seen on the same target for the same `key`, an equal one renews, and a reply echoes it. An install's
+/// generation is the webview's own count (one pump per webview), so it is stable across a render and
+/// never compares with another webview's.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Epoch {
     /// What the generation counts (a behaviour kind, a request name).
     pub key: String,
     /// The generation; later is larger.
     pub n: u64,
-}
-
-impl Epoch {
-    /// The next generation of `key`: monotonic across the process, so a later call is always newer.
-    pub fn next(key: impl Into<String>) -> Self {
-        static NEXT: AtomicU64 = AtomicU64::new(1);
-        Epoch {
-            key: key.into(),
-            n: NEXT.fetch_add(1, Ordering::Relaxed),
-        }
-    }
 }
 
 /// What a bridge verb acts on.
@@ -675,6 +664,10 @@ pub enum Op {
         /// Dropped when a newer epoch for its key already ran on the target.
         #[serde(skip_serializing_if = "Option::is_none")]
         epoch: Option<Epoch>,
+        /// The page sequence number Rust had taken when it decided this write ([`page_seen`]): the page drops
+        /// the write when the slot's last page transition is newer.
+        #[serde(rename = "basedOn", skip_serializing_if = "Option::is_none")]
+        based_on: Option<u64>,
     },
 }
 
@@ -787,7 +780,19 @@ impl Transaction {
             slot: slot.wire(),
             value,
             epoch: None,
+            based_on: None,
         });
+        self
+    }
+
+    /// Puts the page sequence number `seen` (from [`page_seen`], read when the decision was made) on the LAST
+    /// op when it is a [`Slot`] write: the page drops it when the slot had a page-caused transition after
+    /// `seen`.
+    #[must_use]
+    pub fn based_on(mut self, seen: u64) -> Self {
+        if let Some(Op::Write { based_on, .. }) = self.ops.last_mut() {
+            *based_on = Some(seen);
+        }
         self
     }
 
@@ -1168,6 +1173,25 @@ mod tests {
     }
 
     #[test]
+    fn a_slot_write_carries_the_sequence_number_it_was_decided_on() {
+        let tx = Transaction::new()
+            .write("p", Slot::KeyboardOpen, Some("1".into()))
+            .based_on(7)
+            .call("p", Method::Blur)
+            .based_on(9);
+        let json = serde_json::to_value(tx.ops()).expect("serialises");
+        assert_eq!(json[0]["basedOn"], json!(7));
+        assert!(
+            json[1].get("basedOn").is_none(),
+            "only a slot write is fenced"
+        );
+        let plain = Transaction::new().write("p", Slot::PaddingBottom, None);
+        assert!(serde_json::to_value(plain.ops()).expect("serialises")[0]
+            .get("basedOn")
+            .is_none());
+    }
+
+    #[test]
     fn an_epoch_goes_on_the_last_op_and_a_reply_echoes_it() {
         let tx = Transaction::new()
             .call("p", Method::ShowPopover)
@@ -1194,7 +1218,6 @@ mod tests {
                 })
             }
         );
-        assert!(Epoch::next("k").n < Epoch::next("k").n);
     }
 
     /// Every non-parameterised `Prop` is one row of the page's `PROPS` table, and the table has no other.

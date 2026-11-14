@@ -13,16 +13,104 @@
 //! event to one message per animation frame, and a [`use_sample`] field flushes per frame or per event
 //! task ([`Flush`]).
 
+use std::cell::RefCell;
+use std::collections::BTreeSet;
+use std::rc::Rc;
+
 use dioxus::document::Eval;
 use dioxus::prelude::*;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 use super::behaviours::{Inbound, StandDown};
 use super::events::{EventField, EventKind};
 use super::transport;
 use super::{Behaviour, Epoch, Target};
+use crate::dioxus_core::{provide_root_context, try_consume_context, Runtime};
 use crate::js_listener::{receive, TEARDOWN};
+
+/// What the page sends for one inbound fact: its page-minted sequence number, and either the message (`m`) or the
+/// slot whose page-caused transition it reports (`t`). A frame is the only shape a session's page-to-Rust message
+/// takes, so every fact is ordered against every other one the webview sent.
+#[derive(Deserialize)]
+struct Frame {
+    seq: u64,
+    #[serde(default)]
+    m: Option<Value>,
+}
+
+/// The inbound pump's per-webview state, kept in the root context: which page sequence numbers Rust has taken,
+/// and the install epochs it has handed out.
+#[derive(Clone, Default)]
+struct Pump(Rc<RefCell<PumpState>>);
+
+struct PumpState {
+    /// The next page sequence number the contiguous prefix is waiting for.
+    next: u64,
+    /// Numbers taken ahead of `next` (a frame of another eval arrived first).
+    ahead: BTreeSet<u64>,
+    /// The install epochs handed out in this webview.
+    epochs: u64,
+}
+
+impl Default for PumpState {
+    fn default() -> Self {
+        PumpState {
+            next: 1,
+            ahead: BTreeSet::new(),
+            epochs: 0,
+        }
+    }
+}
+
+impl Pump {
+    /// This webview's pump, created on first use. Only inside the Dioxus runtime.
+    fn current() -> Pump {
+        try_consume_context::<Pump>().unwrap_or_else(|| {
+            let pump = Pump::default();
+            provide_root_context(pump.clone());
+            pump
+        })
+    }
+
+    /// Takes the page's sequence number `seq`.
+    fn take(&self, seq: u64) {
+        let mut guard = self.0.borrow_mut();
+        let state = &mut *guard;
+        if seq < state.next {
+            return;
+        }
+        state.ahead.insert(seq);
+        while state.ahead.remove(&state.next) {
+            state.next += 1;
+        }
+    }
+
+    fn seen(&self) -> u64 {
+        self.0.borrow().next - 1
+    }
+
+    fn epoch(&self, key: impl Into<String>) -> Epoch {
+        let mut state = self.0.borrow_mut();
+        state.epochs += 1;
+        Epoch {
+            key: key.into(),
+            n: state.epochs,
+        }
+    }
+}
+
+/// The highest page sequence number such that Rust has taken every frame up to it: the `based_on` of a write
+/// Rust decides now ([`Transaction::based_on`](super::Transaction::based_on)). A number the page minted whose
+/// frame has not arrived holds it back, so a write decided before Rust saw a page transition carries a number
+/// below that transition and the page drops it. `0` outside the Dioxus runtime.
+pub fn page_seen() -> u64 {
+    if Runtime::try_current().is_none() {
+        return 0;
+    }
+    Pump::current().seen()
+}
 
 /// One row of the `publish` option of [`ListenOptions`]: the page copies one event field (a number) into the custom property `var` (`--dx-` only) of the observed element, as it observes it, so a
 /// scroll-linked value is written in the frame it is measured and never crosses to Rust. This is transport:
@@ -445,8 +533,16 @@ impl Session {
                 })
             });
         let mut task_eval = eval;
+        let pump = Pump::current();
+        let mut handler = handler;
         let receiver = spawn(async move {
-            receive(&mut task_eval, handler).await;
+            receive(&mut task_eval, move |frame: Frame| {
+                pump.take(frame.seq);
+                if let Some(message) = frame.m.and_then(|m| serde_json::from_value::<T>(m).ok()) {
+                    handler(message);
+                }
+            })
+            .await;
         });
         Subscription {
             eval,
@@ -704,7 +800,7 @@ pub fn use_behaviour<T: DeserializeOwned + 'static>(
             }
             target().map(|target| {
                 let behaviour = behaviour();
-                let epoch = Epoch::next(format!("behaviour:{}", behaviour.kind()));
+                let epoch = Pump::current().epoch(format!("behaviour:{}", behaviour.kind()));
                 Session::new().behaviour(target, behaviour, epoch)
             })
         },
@@ -791,6 +887,8 @@ mod tests {
         sent: Vec<serde_json::Value>,
         inbox: VecDeque<serde_json::Value>,
         waker: Option<std::task::Waker>,
+        /// The page-minted sequence number of the last frame `deliver` sent.
+        seq: u64,
     }
 
     impl Channel {
@@ -902,9 +1000,20 @@ mod tests {
         }
     }
 
+    /// The page sends `message` as the next frame of its sequence.
     fn deliver(session: &Rc<RefCell<Channel>>, message: serde_json::Value) {
+        let seq = {
+            let mut channel = session.borrow_mut();
+            channel.seq += 1;
+            channel.seq
+        };
+        deliver_raw(session, json!({"seq": seq, "m": message}));
+    }
+
+    /// The page sends exactly `frame`.
+    fn deliver_raw(session: &Rc<RefCell<Channel>>, frame: serde_json::Value) {
         let mut channel = session.borrow_mut();
-        channel.inbox.push_back(message);
+        channel.inbox.push_back(frame);
         if let Some(waker) = channel.waker.take() {
             waker.wake();
         }
@@ -1206,5 +1315,72 @@ mod tests {
             assert!(js.contains(&format!("case \"{name}\":")), "{name}");
         }
         assert!(!js.contains("case \"rule\":"), "the rule layer is gone");
+    }
+    /// `page_seen` from inside the dom's root scope.
+    fn seen(dom: &mut VirtualDom) -> u64 {
+        dom.in_scope(ScopeId::ROOT, page_seen)
+    }
+
+    #[tokio::test(flavor = "current_thread", start_paused = true)]
+    async fn the_pump_takes_the_page_sequence_as_a_contiguous_prefix() {
+        let document = ScriptedDocument::default();
+        let probe = Probe::default();
+        let mut dom = VirtualDom::new(Host)
+            .with_root_context(Rc::new(document.clone()) as Rc<dyn dioxus::document::Document>)
+            .with_root_context(probe.clone());
+        dom.rebuild_in_place();
+        settle(&mut dom).await;
+        let session = document.sessions()[0].clone();
+        assert_eq!(seen(&mut dom), 0, "nothing taken yet");
+
+        deliver_raw(&session, json!({"seq": 1, "m": {"behaviour": "fixture"}}));
+        settle(&mut dom).await;
+        assert_eq!(seen(&mut dom), 1);
+
+        // a frame ahead of a gap is dispatched at once but does not move the prefix
+        deliver_raw(&session, json!({"seq": 3, "m": {"behaviour": "fixture"}}));
+        settle(&mut dom).await;
+        assert_eq!(seen(&mut dom), 1, "number 2 has not arrived");
+        assert_eq!(
+            *probe.got.borrow(),
+            ["fixture", "fixture"],
+            "dispatch does not wait for the gap"
+        );
+
+        // a transition frame carries no message and closes the gap
+        deliver_raw(&session, json!({"seq": 2, "t": "data-dx-keyboard"}));
+        settle(&mut dom).await;
+        assert_eq!(seen(&mut dom), 3);
+        assert_eq!(
+            probe.got.borrow().len(),
+            2,
+            "a transition reaches no handler"
+        );
+
+        // a repeated number moves nothing
+        deliver_raw(&session, json!({"seq": 2, "t": "data-dx-keyboard"}));
+        settle(&mut dom).await;
+        assert_eq!(seen(&mut dom), 3);
+    }
+
+    #[tokio::test(flavor = "current_thread", start_paused = true)]
+    async fn an_install_epoch_counts_in_its_own_webview() {
+        let epoch_of = |session: &Rc<RefCell<Channel>>| {
+            session.borrow().sent[0][0]["epoch"]["n"]
+                .as_u64()
+                .expect("an install carries an epoch")
+        };
+        // two webviews in one process: neither count depends on the other
+        let mut firsts = Vec::new();
+        for _ in 0..2 {
+            let document = ScriptedDocument::default();
+            let mut dom = VirtualDom::new(Host)
+                .with_root_context(Rc::new(document.clone()) as Rc<dyn dioxus::document::Document>)
+                .with_root_context(Probe::default());
+            dom.rebuild_in_place();
+            settle(&mut dom).await;
+            firsts.push(epoch_of(&document.sessions()[0]));
+        }
+        assert_eq!(firsts, [1, 1]);
     }
 }
