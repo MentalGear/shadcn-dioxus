@@ -6,7 +6,7 @@ resolves here by id.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Done rows (418)
+## Done rows (420)
 
 | # | Item | Updated |
 |---|---|---|
@@ -428,5 +428,7 @@ resolves here by id.
 | [506](backlog/done/506-release-suite-two-failures-block-deploy.md) | The release suite failed twice on main b78c231e: one stale locator that waited 20 minutes, one racy geometry read | 2026-11-12 |
 | [511](backlog/done/511-primitives-web-feature-contract.md) | The browser-engine arm is the primitives' default; Blitz is the `native` opt-in, held to dioxus's own renderer by a compile-time assert | 2026-11-12 |
 | [512](backlog/done/512-specs-locate-variants-by-slug.md) | A spec that located a demo variant by its displayed title broke on a retitle; variants are addressed by slug, enforced by a gate | 2026-11-12 |
+| [516](backlog/done/516-overlay-entry-motion-without-starting-style.md) | Overlay entry motion depends on @starting-style from display: none: dialogs, the scrim and every popover-based overlay snap in where an engine does not animate from it | 2026-11-14 |
+| [520](backlog/done/520-carousel-drag-release-registers-at-release.md) | A carousel drag release makes its destination current when the scroll settles, so the arrows and the indicators lag behind the pointer | 2026-11-14 |
 
 <!-- END GENERATED -->

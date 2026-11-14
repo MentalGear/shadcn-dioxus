@@ -1,7 +1,7 @@
 ---
 id: 447
 title: "Phase 0.7: the order runtime (inbound pump, slot fence, slot table, focus owner, boot, scroll classifier spike)"
-status: "The runtime is on lane/order-runtime-447 and lands as it is: - The pump. Every frame the page sends…"
+status: "LANDED 2026-11-14 with the batch of that date, as far as the row's file list allows; row 515 holds…"
 size: "M"
 area: primitives
 js-grant: js_file_bytes=5490, bytes=6400, gzip_bytes=120 (bytes and gzip_bytes granted by the owner 2026-11-14 on the measured growth: ts/bridge.ts +5,900, types/bridge.d.ts +440, kernel +116; 300 lines at 18.3 bundle bytes per source line, inferred ceiling: pump, epochs and the focus owner in bridge.ts about 150, the one-shot classifier about 100, the fallback port about 50; the main loop's grant row at the merge base is the number the gate reads)
@@ -19,7 +19,7 @@ Part of the [row 434](./434-javascript-in-typescript-modules-not-rust-strings.md
 
 ## Status / trigger
 
-The runtime is on `lane/order-runtime-447` and lands as it is:
+LANDED 2026-11-14 with the batch of that date, as far as the row's file list allows; [row 515](./515-order-contract-consumers-the-find-in-page-port-and-the-gesture-epoch.md) holds every item that needs a consumer. On the tree:
 
 - **The pump.** Every frame the page sends is `{seq, sub, m | t}` with a page-minted sequence number. One inbound eval per webview (`Program::Inbound`) carries every scope's frames, held in order until it runs; one root task dispatches through a registry entry that `Subscription::drop` removes, so a frame of an ended scope is still taken and reaches no handler. `bridge::page_seen()` is the contiguous prefix of taken numbers; the numbers held ahead of a gap are bounded (1024; past it the missing number is declared lost).
 - **The epoch rule.** Install epochs count per webview (`behaviour:<kind>` per target, newest replaces). A slot `write` and a `call` carry `basedOn` and are dropped when a slot they can touch had a page-caused transition after it (focus is one document-wide slot). A transition inside a Rust write is reported with its cause (`c`) and fences nothing.
@@ -30,7 +30,7 @@ The runtime is on `lane/order-runtime-447` and lands as it is:
 - **Boot.** `bridge::boot()` opens the inbound eval and waits (bounded, about two seconds) for `html[data-dx-bridge="ready"]`, which the page sets once the inbound eval runs and its held frames are flushed, whatever the number of owners. The preview's root effect awaits it before `data-hydrated`, and `gotoHydrated` waits for both attributes. `bridge::boot` is a row of the non-markup allowlist of `scripts/check-preview-composition.sh`.
 - **The order specs** (`playwright/witness/order.spec.ts`, six cases on fixture pages over the shipped bridge and kernel) and `primitives/ts-test/order.test.ts`.
 
-Grants this row needs from the owner: the source-byte columns (`ts/bridge.ts`, `types/bridge.d.ts`), `js_file_bytes` for `bridge.js` and the kernel's `gzip_bytes`; the numbers are in the lane report.
+Grants: given by the owner on 2026-11-14 (the `js-grant` line above) and spent by the batch's raises. Proof on the merged tree: the boot and hydration specs and every witness on a debug build of the real site (219 passed, 0 failed), then the release suite.
 
 ## Size
 

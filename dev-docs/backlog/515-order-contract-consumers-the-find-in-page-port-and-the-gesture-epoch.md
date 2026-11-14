@@ -1,7 +1,7 @@
 ---
 id: 515
 title: "Order contract consumers: the find-in-page (beforematch) port, the gesture epoch and the contract details row 447 leaves unbuilt"
-status: "Depends on row 447. Not started."
+status: "Depends on row 447 (landed 2026-11-14). Not started."
 size: "M (inferred)"
 area: primitives
 updated: 2026-11-14
@@ -15,7 +15,7 @@ updated: 2026-11-14
 
 ## Status / trigger
 
-Depends on [row 447](./447-phase-0-7-the-order-runtime.md). Not started.
+Depends on [row 447](./447-phase-0-7-the-order-runtime.md) (landed 2026-11-14). Not started.
 
 ## Size
 

@@ -1,7 +1,7 @@
 ---
 id: 516
 title: "Overlay entry motion depends on @starting-style from display: none: dialogs, the scrim and every popover-based overlay snap in where an engine does not animate from it"
-status: "APPROVED 2026-11-14. In progress on lane/overlay-entry-fade."
+status: "LANDED 2026-11-14 with the batch of that date (approved by the owner the same day; built on…"
 size: "M (inferred): one shared recipe, the…"
 area: components
 updated: 2026-11-14
@@ -19,7 +19,7 @@ chart tooltips ("fade out but not fade in"); the chart tooltip is always mounted
 
 ## Status / trigger
 
-APPROVED 2026-11-14. In progress on `lane/overlay-entry-fade`.
+LANDED 2026-11-14 with the batch of that date (approved by the owner the same day; built on `lane/overlay-entry-fade`).
 
 ## Size
 

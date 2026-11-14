@@ -45,11 +45,16 @@ row says otherwise, so a step runs as parallel lanes (one verifier per batch, `l
 1. Rows 436, 451, 454, 506 and 511 are done, and the first half of row **448** (the native-arm focus trap is deleted) is
    on main (PR #182). Rows **509** (the Rust decision contract) and **446** (the witness harness, on top of 509) are on
    main with the batch of 2026-11-14, with a fix to the volume gate's `ffi` pattern; each row lists what stays open.
-   **Built, landing as the next batch:** rows **450** (`lane/bridge-stats-450`) and **447** (the order runtime as
-   far as its file list allows, on `lane/order-runtime-447`, which contains row 450; 499 passed on a debug build of the
-   real site), with the owner's fixes of 2026-11-14 (docs group headings, Combobox group labels, the chart tooltip fade,
-   the pie padding). Row **515** holds what row 447 leaves to the rows that own the consumers. Row **513** (the release
-   suite reuses a spec file's green result) is on main.
+   Rows **450** (the bridge counters; its desktop half waits for a machine with `webkit2gtk`) and **447** (the order
+   runtime as far as its file list allows) are on main with the second batch of 2026-11-14, with the owner's fixes of
+   that day: docs group headings, Combobox group labels, the chart tooltip fade and the pie padding, row **516**
+   (overlay entry motion without `@starting-style`) and row **520** (a carousel drag release registers its slide at
+   release). Row **515** holds what row 447 leaves to the rows that own the consumers. Row **513** (the release suite
+   reuses a spec file's green result) is on main.
+   **Next lanes, in this order:** row **519** (one anchored-panel hook and the hover timers module; approved
+   2026-11-14, before row 449), then the HoverSurface follow-on it names, then rows **448** (`otpFilter`) and **449** in
+   parallel, then row **517** (the chart tooltip on the real `Tooltip`). Row **521** (the accessibility scan opens the
+   docs accordion items) is small and independent.
 2. Done, merged in PR #170 (2026-11-11): the deploy blockers of PR #168 (rows 468, 501); row **436**'s overlay and
    class groups (F1, F2, F4, F5, F6, F8, F9, F10, F11, F12), each reproduced red first (CHANGELOG.md has the
    user-visible ones: F1, F10, F11); **499** (safe triangle; CHANGELOG.md too); **152** slices 4-5; **371**'s
