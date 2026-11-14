@@ -22,6 +22,9 @@ below are collected under "Unreleased" and move under a version heading at the f
 
 ### Fixed
 
+- The chart tooltip fades in as well as out in every browser. A closed tooltip is now transparent and `visibility: hidden`
+  instead of `display: none` with an `@starting-style` entry, so the entry no longer depends on the engine animating from
+  `display: none`; it starts when the tooltip is placed, and reduced motion shows neither fade.
 - A menu root (DropdownMenu, ContextMenu, Menubar) given an `id` that changes later keeps its outside-press and
   outside-focus dismissal: the dismiss layer follows the current `id` instead of the first one, and returns to the
   generated id when the `id` is dropped.
