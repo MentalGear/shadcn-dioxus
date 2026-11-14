@@ -55,6 +55,7 @@ test.describe("the order contract in a browser", () => {
     expect(await page.evaluate(() => (document.getElementById("d") as HTMLDialogElement).open)).toBe(true);
     // a decision made after Rust saw every page transition (the dismissal moves focus too) applies
     await write(page, "close");
+    await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
     const latest = Math.max(...(await frames(page)).filter((f) => f.t && !f.c).map((f) => f.seq));
     expect(await write(page, "showModal", latest)).toEqual({ ok: null });
   });
