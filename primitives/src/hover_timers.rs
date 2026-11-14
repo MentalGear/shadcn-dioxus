@@ -187,4 +187,3 @@ pub(crate) fn use_hover_dismiss(id: Signal<String>, timers: HoverTimers) {
         move |_| timers.dismiss(),
     );
 }
-
