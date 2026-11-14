@@ -25,6 +25,8 @@
 # run, on the kept build of that site (`$LANE_TGT/release-suite/site/<site key>/public`, ~55 MB, the two newest are kept) or on a
 # fresh one. The totals it prints are for the whole suite (reused plus run) and say how many files were reused. Any doubt (an
 # untracked file, a key that cannot be derived, a build that hashes differently) runs the whole suite.
+# A record is green by proof (the tests of the report equal an independent `--list`, each expected or flaky; a file with a skipped,
+# interrupted or unrun test gets none and runs every time), and the worktree must still be the planned tree when the run ends.
 # `DEPLOY_SUITE_REUSE=off` turns the records off.
 #   DEPLOY_SUITE_WORKERS (default 3: the main loop's full-run setting), DEPLOY_SUITE_CHUNKS (default 6),
 #   DEPLOY_SUITE_PORT (default 4830).
@@ -54,10 +56,11 @@ suite_dir="$lane_tgt/release-suite"
 # files wrote its JSON report with no run error, and no test failed (`unexpected`). The failing titles go to stderr; flaky
 # (passed on retry) is allowed and listed. With a timing pass (playwright/tools/timing-switch.sh) a missing or erroring
 # chunk-timing.json counts as a missing chunk; while it is off the line says so.
-# $3 and $4 (the record store and the tree) are given when records are in use.
+# $3 (the tree) is always given: the verdict is red when HEAD's tree is not it or a tracked file changed during the run.
+# $4 (the record store) is given when records are in use.
 suite_verdict() {
-  local args=(verdict --out "$1" --chunks "$2")
-  [ -z "${3:-}" ] || args+=(--store "$3" --tree "$4")
+  local args=(verdict --out "$1" --chunks "$2" --tree "$3")
+  [ -z "${4:-}" ] || args+=(--store "$4")
   ( cd "$repo_root/playwright" && node tools/suite-key.mjs "${args[@]}" )
 }
 
@@ -141,12 +144,22 @@ release_suite() {
       cp -a "$pub" "$kept/public.tmp" && suite_key hash-dir "$kept/public.tmp" > "$kept/public.sha" && mv "$kept/public.tmp" "$kept/public" \
         || { echo "deploy-preview: could not keep the built site; the next run builds again" >&2; rm -rf "$kept"; }
       # shellcheck disable=SC2012
-      ls -1dt "$suite_dir"/site/*/ 2>/dev/null | tail -n +3 | xargs -r rm -rf
+      ls -1dt "$suite_dir"/site/*/ 2>/dev/null | tail -n +3 | xargs -r -d '\n' rm -rf
     fi
+  fi
+  # The port must be free before the server starts, and what answers afterwards must be OUR server on THIS site: a stale server
+  # on the port would answer the readiness probe and the suite would test another site.
+  if curl -s -o /dev/null --max-time 2 "http://127.0.0.1:$port/"; then
+    echo "deploy-preview: port $port already answers (a stale server?); refusing to test whatever it serves. Stop it or set DEPLOY_SUITE_PORT." >&2
+    exit 1
   fi
   python3 "$repo_root/scripts/serve-spa.py" "$pub" "$port" >/dev/null 2>&1 9>&- 3>&- </dev/null &
   server_pid=$!
-  for _ in $(seq 1 50); do curl -fsS -o /dev/null "http://127.0.0.1:$port/" && break; sleep 0.2; done
+  for _ in $(seq 1 50); do curl -fsS -o /dev/null "http://127.0.0.1:$port/" && break; kill -0 "$server_pid" 2>/dev/null || break; sleep 0.2; done
+  if ! kill -0 "$server_pid" 2>/dev/null || ! curl -fsS "http://127.0.0.1:$port/" | cmp -s - "$pub/index.html"; then
+    echo "deploy-preview: the server on port $port is not this run's server for $pub (it died, or answers with other bytes than $pub/index.html); not running the suite" >&2
+    exit 1
+  fi
   local reuse_args=()
   if [ "$use_records" = 1 ]; then reuse_args=(--reuse "$store" --tree "$tree"); fi
   ( cd "$repo_root/playwright" && PLAYWRIGHT_BASE_URL="http://127.0.0.1:$port" PW_BUILD_PROFILE=release SSG_SITE_DIR="$pub" \
@@ -155,7 +168,7 @@ release_suite() {
   kill "$server_pid" 2>/dev/null || true; server_pid=""
   [ -z "$tgt" ] || rm -rf "$tgt"; trap - EXIT
   local verdict
-  if verdict="$(suite_verdict "$out" "$chunks" "${reuse_args[1]:-}" "${reuse_args[3]:-}")"; then
+  if verdict="$(suite_verdict "$out" "$chunks" "$tree" "${reuse_args[1]:-}")"; then
     printf '%s %s workers=%s %s\n' "$(date -u +%FT%TZ)" "$head" "$workers" "$verdict" > "$stamp"
     echo "==> Release suite GREEN: $verdict (stamp $stamp; reports in $out)"
   else

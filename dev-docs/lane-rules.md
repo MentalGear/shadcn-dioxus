@@ -304,7 +304,10 @@ cores, so a batch's verification runs once for the batch, not once per lane:
   browser; `playwright/tools/suite-key.mjs`). The deploy accepts a tree when every spec file of it has a green record for
   its site, and otherwise runs the files without one on the kept build of that site (about 55 MB, the two newest are kept).
   A change to the site, the Playwright config, `fixtures.ts`, a lock file or the toolchain gives every file a new key and
-  runs the whole suite. The totals the deploy prints are the whole suite's, with the reused files stated separately;
+  runs the whole suite; so does a file under `playwright/` that no spec imports (it is in every key). A record is green by
+  proof: the tests of the file's report equal an independent `playwright test --list` of the same files, and each ended
+  expected or flaky. A file with a test that skipped (by any means), was interrupted or did not run gets no record and runs
+  every time. The totals the deploy prints are the whole suite's, with the reused files stated separately;
   `DEPLOY_SUITE_REUSE=off` runs the whole suite.
 - **The verifier** (one agent per batch) builds the shared base once, merges the batch's edit lanes, builds once, runs
   `test:changed` over the union, and bisects any red to its lane, which gets it back to fix.

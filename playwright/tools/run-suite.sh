@@ -47,8 +47,15 @@ while [ $# -gt 0 ]; do
 done
 [ -n "$out" ] || { echo "run-suite: --out DIR is required" >&2; exit 2; }
 mkdir -p "$out"
+# The reports and lists of this directory belong to THIS run: nothing an earlier run left is read (suite-key.mjs refuses a
+# report that began before `started-at`).
+rm -f "$out"/chunk-* "$out"/specs-* "$out"/list.json "$out"/tlist.json "$out"/all-specs.txt "$out"/plan.json "$out"/run-files.txt "$out"/timing-specs.txt "$out"/loads.txt
+date -u +%Y-%m-%dT%H:%M:%S.%3NZ > "$out/started-at"
 # Only the timing pass was asked for and it is deactivated: say so before building or serving anything.
 if [ "$only" = timing ] && [ "$TIMING_PASS" != on ]; then tools/timing-pass.sh --config "$config"; exit $?; fi
+# The server first: it may write the site's 404.html, and the hash of the built site below must be the bytes the suite sees.
+source tools/site-server.sh
+site_server_ready run-suite || exit 2
 # Row 513: which spec files still need a run. Any doubt (no store or tree, a dirty worktree, another tree, no built site,
 # a key that cannot be derived) leaves the whole suite to run.
 only_args=()
@@ -73,11 +80,9 @@ if [ "${#only_args[@]}" -gt 0 ] && ! grep -qx 'oracle/hydration-parity.spec.ts' 
 # hydration-parity.spec.ts only runs the attr-synth binary; build it here, through the build lock, before any
 # `--list` or chunk loads the spec (row 338). Not needed when that file is reused.
 if [ "$run_hydration" = 1 ]; then tools/ensure-attr-synth.sh || exit 2; fi
-source tools/site-server.sh
-site_server_ready run-suite || exit 2
 if [ -z "$table" ]; then
   if [ -f durations.json ]; then table=durations.json
-  else table="$out/list.json"; PLAYWRIGHT_JSON_OUTPUT_FILE="$table" pnpm exec playwright test --config="$config" --list --reporter=json >/dev/null || exit 2; fi
+  else table="$out/table-list.json"; PLAYWRIGHT_JSON_OUTPUT_FILE="$table" pnpm exec playwright test --config="$config" --list --reporter=json >/dev/null || exit 2; fi
 fi
 # Snapshot the table and cut ALL the chunks up front: every chunk is a slice of ONE partition. (Cutting chunk i just
 # before it runs re-reads durations.json each time, so editing the table mid-run could put a file in two chunks
@@ -88,6 +93,16 @@ for i in $(seq 1 "$chunks"); do
   node tools/shard.mjs "$i/$chunks" --table "$table" --out "$out/specs-$i.txt" --print-loads ${only_args[@]+"${only_args[@]}"} 2>>"$out/loads.txt"
 done
 [ "$(cat "$out"/specs-*.txt | grep . | sort -u | wc -l)" = "$(cat "$out"/specs-*.txt | grep . | wc -l)" ] || { echo "run-suite: a spec file is in two chunks" >&2; exit 2; }
+# The independent expectation of every test a file holds (backlog row 513): `playwright test --list` over the files of this run,
+# with the config and the environment of the chunks, once for the chunk cases and once for the @timing cases. A file's record is
+# green only when its report names exactly these tests and each ended as expected. A list that fails is a red run.
+cat "$out"/specs-*.txt | grep . > "$out/all-specs.txt"
+if [ -s "$out/all-specs.txt" ]; then
+  PW_SPECS_FILE="$out/all-specs.txt" PLAYWRIGHT_JSON_OUTPUT_FILE="$out/list.json" pnpm exec playwright test --config="$config" --list --forbid-only --grep-invert @timing --pass-with-no-tests --reporter=json >/dev/null 2>"$out/list.err" \
+    || { tail -20 "$out/list.err" >&2; echo "run-suite: listing the tests failed (a test.only, or a spec that does not load)" >&2; exit 2; }
+  PW_SPECS_FILE="$out/all-specs.txt" PLAYWRIGHT_JSON_OUTPUT_FILE="$out/tlist.json" pnpm exec playwright test --config="$config" --list --forbid-only --grep @timing --pass-with-no-tests --reporter=json >/dev/null 2>"$out/tlist.err" \
+    || { tail -20 "$out/tlist.err" >&2; echo "run-suite: listing the @timing tests failed" >&2; exit 2; }
+fi
 total=0
 for i in $(seq 1 "$chunks"); do
   [ -n "$only" ] && [ "$only" != "$i" ] && continue
@@ -100,7 +115,7 @@ for i in $(seq 1 "$chunks"); do
   [ "$limit" -le 86400 ] || { echo "run-suite: chunk $i wall limit ${limit}s is over a day" >&2; exit 2; }
   flock "$lock" bash -c '
     s=$(date +%s)
-    PW_SPECS_FILE="$1" PLAYWRIGHT_JSON_OUTPUT_FILE="$2" pnpm exec playwright test --config="$3" --workers="$4" --grep-invert @timing --pass-with-no-tests --global-timeout=$(( $7 * 1000 )) --reporter=json,line >"$5" 2>&1
+    PW_SPECS_FILE="$1" PLAYWRIGHT_JSON_OUTPUT_FILE="$2" pnpm exec playwright test --config="$3" --workers="$4" --forbid-only --grep-invert @timing --pass-with-no-tests --global-timeout=$(( $7 * 1000 )) --reporter=json,line >"$5" 2>&1
     echo $(( $(date +%s) - s )) > "$6"' _ "$out/specs-$i.txt" "$out/chunk-$i.json" "$config" "$workers" "$out/chunk-$i.log" "$out/chunk-$i.wall" "$limit"
   w=$(cat "$out/chunk-$i.wall" 2>/dev/null || echo 0); total=$((total + w))
   echo "chunk $i/$chunks: $(grep -c . "$out/specs-$i.txt") files, wall_in_lock=${w}s of limit ${limit}s (queued+run $(( $(date +%s) - start ))s), running total ${total}s"
