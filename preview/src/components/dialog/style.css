@@ -16,8 +16,9 @@
 
 /* The panel fades and zooms with the same tokens (Nova's `fade-in-0 zoom-in-95`
  * / `fade-out-0 zoom-out-95`) and is visible only while `[open][data-open]`;
- * the exit is the move back to the base rule, played while the dialog is still a
- * modal in the top layer. Until `showModal()` runs (a mounted dialog's first frames)
+ * the entry is the `dx-modal-in` keyframe animation the theme binds through `--dx-modal-enter`
+ * ("The modal panel's entry, once"); the exit is the `transition` back to the base rule, played while
+ * the dialog is still a modal in the top layer. Until `showModal()` runs (a mounted dialog's first frames)
  * and after the final `close()`, `display: none` -- the UA rule this stylesheet's own
  * `display: flex` overrides -- keeps it from being rendered outside the top layer,
  * where its `position: fixed` box is resolved against, and clipped to, the nearest
@@ -25,12 +26,14 @@
  * `dialog.` is deliberate: the non-web arm is a plain `div` that is never `[open]`
  * and must stay visible. */
 dialog.dx-dialog {
+  --dx-modal-enter: dx-modal-in;
+
   opacity: 0;
   pointer-events: none;
-  transform: translate(-50%, -50%) scale(0.95); /* rtl-physical: the viewport-centering below */
+  scale: 0.95;
   transition:
     opacity var(--dx-overlay-duration) var(--dx-overlay-ease),
-    transform var(--dx-overlay-duration) var(--dx-overlay-ease);
+    scale var(--dx-overlay-duration) var(--dx-overlay-ease);
 }
 
 dialog.dx-dialog:not([open]) {
@@ -40,14 +43,7 @@ dialog.dx-dialog:not([open]) {
 dialog.dx-dialog[open][data-open] {
   opacity: 1;
   pointer-events: auto;
-  transform: translate(-50%, -50%) scale(1); /* rtl-physical: the viewport-centering below */
-}
-
-@starting-style {
-  dialog.dx-dialog[open][data-open] {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0.95); /* rtl-physical: the viewport-centering below */
-  }
+  scale: 1;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -62,8 +58,8 @@ dialog.dx-dialog[open][data-open] {
   z-index: var(--dx-z-overlay-raised);
   top: 50%;
 
-  /* rtl-physical: viewport-centering, paired with `transform: translate(-50%,
-     -50%)` below -- see alert_dialog/style.css's identical note. */
+  /* rtl-physical: viewport-centering, paired with `translate: -50% -50%`
+     below -- see alert_dialog/style.css's identical note. */
   left: 50%;
   display: flex;
   width: 100%;
@@ -79,7 +75,7 @@ dialog.dx-dialog[open][data-open] {
   font-size: var(--dx-text-sm);
   gap: var(--dx-space-4);
   text-align: start;
-  transform: translate(-50%, -50%); /* rtl-physical: see comment above */
+  translate: -50% -50%; /* rtl-physical: see comment above */
 }
 
 .dx-dialog-title {
