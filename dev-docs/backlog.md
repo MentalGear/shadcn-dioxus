@@ -40,7 +40,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (72)
+## Open rows (73)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -116,5 +116,6 @@ proposing one is closed as out of scope (row 337 is the first).
 | [516](backlog/516-overlay-entry-motion-without-starting-style.md) | Overlay entry motion depends on @starting-style from display: none: dialogs, the scrim and every popover-based overlay snap in where an engine does not animate from it | APPROVED 2026-11-14. In progress on lane/overlay-entry-fade. | M (inferred): one shared recipe, the… | components |
 | [517](backlog/517-chart-tooltip-on-the-tooltip-layer.md) | Chart tooltips are confined to the chart box and get pushed around in small charts: build them on the Tooltip's content layer with a point anchor | PROPOSED 2026-11-14. It follows row 449, which ports the popover machinery this sits on. | M (inferred). | primitives |
 | [518](backlog/518-suite-site-key-from-the-build-inputs.md) | An edit to a gate script, a rule file or CLAUDE.md re-runs the whole release suite: the site key covers the tree minus four prefixes, not the build's inputs | BACKLOG. Take it when a batch pays a full run for a change no build reads. | M (inferred). | tests |
+| [519](backlog/519-anchored-panel-recipe-one-hook.md) | Every non-menu overlay re-assembles the anchored panel recipe: one `top_layer::use_anchored_panel`, and the hover timers in their own module | PROPOSED 2026-11-14 from the overlay layering audit; before row 449 or as its first step. | M (inferred, 8 to 10 h), one lane… | primitives |
 
 <!-- END GENERATED -->

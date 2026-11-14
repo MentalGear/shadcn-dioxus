@@ -36,5 +36,9 @@ M (inferred).
 - **Open before the build.** Whether an anchor-positioned box can keep the slide between points (`data-motion`); the
   default (escaping the chart box deviates from Recharts' `allowEscapeViewBox: false`; the opt-out prop carries that
   name).
+- **From the audit** ([overlay layering audit](../research/overlay-layering-audit-2026-11-14.md)). Three small props on
+  `Tooltip` (an inert anchor, no ARIA linkage, no trigger handlers); the Escape-scope decision (the Tooltip's dismiss
+  layer is document-wide); the fallback's anchor that moves while open (placement re-runs only on dependency change
+  and does not track a moving anchor); and the open question of the slide.
 - **Proof.** A spec with the chart inside a clipping ancestor and inside a scrolling one: the tooltip is fully
   visible, stays in the viewport, and hides or follows on scroll.

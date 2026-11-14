@@ -64,6 +64,7 @@ or phase number, so those headings and ids stay where they are.
 | `collection-model-2026-10-22.md` | The shared collection model (rows 360-364). |
 | `shadcn-demo-parity-audit-2026-10-11.md` | Row 188, the owner's demo-parity audit. |
 | `code-graph-explorer-2026-10-31.md` | Row 486: the code graph explorer research (tools compared, measured SCIP and cargo-modules runs); the tool itself is `scripts/codegraph/`. |
+| `overlay-layering-audit-2026-11-14.md` | The overlay layering audit: shared layers, the component-by-mechanic matrix, duplications, and the one restructuring proposed (row 519; chart tooltip, row 517). |
 | `radix-vs-base-ui-2026-10-28.md` | The Radix-versus-Base-UI scan of every component, the iPhone overlay root cause and the placement rule (rows 477-482, 296). |
 | `dependency-audit-2026-10-14.md`, `dependency-evaluation.md`, `dependency-scanners.md` | Rows 217 and 371 (what users compile and trust), behind the [supply-chain playbook](./supply-chain/README.md). |
 
