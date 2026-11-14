@@ -4,7 +4,8 @@
 // spec files by the measured seconds in playwright/durations.json and deals them greedily (longest first) onto the
 // currently lightest shard (LPT), so the shards finish within a few percent of each other.
 //
-//   node playwright/tools/shard.mjs <index>/<count> [--out FILE] [--print-loads] [--table FILE]
+//   node playwright/tools/shard.mjs <index>/<count> [--out FILE] [--print-loads] [--table FILE] [--only FILE]
+//   --only FILE deals just the spec files listed in FILE (one per line): the files a reuse run still has to execute (suite-key.mjs).
 //   PW_SPECS_FILE=FILE pnpm exec playwright test --config=suite.local.config.ts     (the config reads the list)
 //
 // A spec file missing from durations.json is dealt with the median measured duration (the budget gate,
@@ -12,24 +13,20 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { specFilesOnDisk } from "./spec-files.mjs";
 
 const PW = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const [spec, ...rest] = process.argv.slice(2);
 const m = /^(\d+)\/(\d+)$/.exec(spec ?? "");
-if (!m) { console.error("usage: shard.mjs <index>/<count> [--out FILE] [--print-loads]"); process.exit(2); }
+if (!m) { console.error("usage: shard.mjs <index>/<count> [--out FILE] [--print-loads] [--table FILE] [--only FILE]"); process.exit(2); }
 const index = Number(m[1]), count = Number(m[2]);
 if (index < 1 || index > count) { console.error("shard index out of range"); process.exit(2); }
 const out = rest.includes("--out") ? rest[rest.indexOf("--out") + 1] : null;
 
-const walk = (dir, acc = []) => {
-  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
-    if (["node_modules", "fixtures", "reference", "tools", "test-results", "playwright-report"].includes(e.name)) continue;
-    const p = path.join(dir, e.name);
-    if (e.isDirectory()) walk(p, acc); else if (e.name.endsWith(".spec.ts")) acc.push(path.relative(PW, p).replace(/\\/g, "/"));
-  }
-  return acc;
-};
-const specs = walk(PW);
+const only = rest.includes("--only") ? fs.readFileSync(rest[rest.indexOf("--only") + 1], "utf8").split("\n").map((l) => l.trim()).filter(Boolean) : null;
+const onDisk = specFilesOnDisk(PW);
+if (only && only.some((f) => !onDisk.includes(f))) { console.error(`shard: --only names a file that is not a spec file: ${only.filter((f) => !onDisk.includes(f)).join(" ")}`); process.exit(2); }
+const specs = only ?? onDisk;
 // --table FILE: a durations.json (default) or a `playwright test --list --reporter=json` file (weight = test count x 2.5 s,
 // the bootstrap before any durations exist).
 const tablePath = rest.includes("--table") ? rest[rest.indexOf("--table") + 1] : path.join(PW, "durations.json");

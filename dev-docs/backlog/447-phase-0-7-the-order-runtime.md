@@ -4,9 +4,9 @@ title: "Phase 0.7: the order runtime (inbound pump, per-slot epochs, vdom carrie
 status: "APPROVED 2026-10-26 (owner: \"okay for the plan\"; scope 2, the recommended default, since no scope…"
 size: "M"
 area: primitives
-js-grant: js_file_bytes=5490 (300 lines at 18.3 bundle bytes per source line, inferred ceiling: pump, epochs and the focus owner in bridge.ts about 150, the one-shot classifier about 100, the fallback port about 50; the main loop's grant row at the merge base is the number the gate reads)
+js-grant: js_file_bytes=5490, bytes=6400, gzip_bytes=120 (bytes and gzip_bytes granted by the owner 2026-11-14 on the measured growth: ts/bridge.ts +5,900, types/bridge.d.ts +440, kernel +116; 300 lines at 18.3 bundle bytes per source line, inferred ceiling: pump, epochs and the focus owner in bridge.ts about 150, the one-shot classifier about 100, the fallback port about 50; the main loop's grant row at the merge base is the number the gate reads)
 adds: []
-updated: 2026-10-26
+updated: 2026-11-14
 ---
 
 # Row 447: Phase 0.7: the order runtime (inbound pump, per-slot epochs, vdom carrier, slot table, focus owner, one-shot scroll classifier)

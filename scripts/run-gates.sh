@@ -185,6 +185,8 @@ gates=(
   "check-demo-text-locators|scripts/check-demo-text-locators.sh"
   "check-slow-spec-budget|scripts/check-slow-spec-budget.sh"
   "check-chromium-path|scripts/check-chromium-path.sh"
+  "check-suite-reuse|scripts/check-suite-reuse.sh"
+  "check-suite-reuse-e2e|scripts/check-suite-reuse-e2e.sh"
   # group: Repo docs and tooling
   "check-backlog-index|scripts/check-backlog-index.sh"
   "check-history-comments|scripts/check-history-comments.sh"

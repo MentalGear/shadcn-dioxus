@@ -394,11 +394,14 @@ describe("the in-place codec", () => {
     })).toEqual({ subarray: 0, entries: 0, keys: 0, values: 0, encodeInto: 0, decode: 0, views: 0 });
   });
 
-  /** The smallest p99 of three runs of `n` timed calls: a loaded box makes a run slower, never faster. */
+  /**
+   * The smallest p99 of twelve runs of `n` timed calls: a loaded box makes a run slower, never faster, and beside a
+   * parallel gate run three runs can all land in a busy stretch.
+   */
   function p99(call: () => unknown, n = 5000): number {
     for (let i = 0; i < 500; i++) call();
     let best = Infinity;
-    for (let round = 0; round < 3; round++) {
+    for (let round = 0; round < 12; round++) {
       const times: number[] = [];
       for (let i = 0; i < n; i++) {
         const t = performance.now();

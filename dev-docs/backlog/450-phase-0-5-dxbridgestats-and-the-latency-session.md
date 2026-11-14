@@ -4,9 +4,9 @@ title: "Phase 0.5: __dxBridgeStats, a desktop smoke launch and the one latency s
 status: "APPROVED 2026-10-26 (owner: \"okay for the plan\"; scope 2, the recommended default, since no scope…"
 size: "M"
 area: tooling
-js-grant: js_file_bytes=1470 (80 lines at 18.3 bundle bytes per source line, inferred ceiling: the stats half of ts/perf, which never ships; the main loop's grant row at the merge base is the number the gate reads)
+js-grant: js_file_bytes=1470, bytes=1400 (bytes granted by the owner 2026-11-14 on the measured growth: ts/bridge.ts +1,336; 80 lines at 18.3 bundle bytes per source line, inferred ceiling: the stats half of ts/perf, which never ships; the main loop's grant row at the merge base is the number the gate reads)
 adds: []
-updated: 2026-10-26
+updated: 2026-11-14
 ---
 
 # Row 450: Phase 0.5: __dxBridgeStats, a desktop smoke launch and the one latency session

@@ -16,6 +16,19 @@
 # stamp only when every chunk reported and no test failed (flaky = passed on retry is allowed and listed). A red suite
 # stops the deploy with the failing titles. `DEPLOY_SUITE=skip:<reason>` deploys without it and says so; it is for an
 # emergency fix only, and the reason is printed.
+# REUSE ACROSS SPEC-ONLY CHANGES (backlog row 513). A red run followed by a fix that touches only Playwright files leaves the
+# site byte-identical, so the suite does not run again in full. Every spec file that ran writes a record, green only when every
+# test of the file passed, under (site key, spec key) in `$LANE_TGT/release-suite/records` (playwright/tools/suite-key.mjs:
+# the site key hashes every input of the release build, the spec key the spec file, the files it imports, the shared test files
+# and the environment it reads; the record also names the hash of the built site). A tree is accepted, without a build, when every spec
+# file of it has a green record for its site and all the records name one built site; otherwise the files without a record
+# run, on the kept build of that site (`$LANE_TGT/release-suite/site/<site key>/public`, ~55 MB, the two newest are kept) or on a
+# fresh one. The totals it prints are for the whole suite (reused plus run) and say how many files were reused. The suite builds
+# and runs in a private detached worktree of the planned tree (see suite_cleanup), so nothing done in this checkout meanwhile
+# reaches it. Any doubt (a key that cannot be derived, a build that hashes differently) runs the whole suite.
+# A record is green by proof (the tests of the report equal an independent `--list`, each expected or flaky; a file with a skipped,
+# interrupted or unrun test gets none and runs every time).
+# `DEPLOY_SUITE_REUSE=off` turns the records off.
 #   DEPLOY_SUITE_WORKERS (default 3: the main loop's full-run setting), DEPLOY_SUITE_CHUNKS (default 6),
 #   DEPLOY_SUITE_PORT (default 4830).
 # The `@timing` cases (playwright/timing.ts) are not in the six chunks: a seventh pass runs them alone, one worker,
@@ -29,6 +42,7 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$repo_root/playwright/tools/timing-switch.sh"
+source "$repo_root/scripts/lib/pinned-worktree.sh"
 suite_only=0
 case "${1:-}" in
   "") ;;
@@ -39,42 +53,40 @@ esac
 lane_tgt="${LANE_TGT:-/home/user/tgt}"
 suite_dir="$lane_tgt/release-suite"
 
-# Prints the summary of a run-suite.sh output directory and exits non-zero unless every chunk wrote its JSON report
-# and no test failed (`unexpected`). The list of failing titles goes to stderr.
+# Prints the whole-suite summary of a run-suite.sh output directory (the files that ran, from their chunk reports, plus the reused
+# files, from their records, checked again) and exits non-zero unless every spec file of the tree is green, every chunk that had
+# files wrote its JSON report with no run error, and no test failed (`unexpected`). The failing titles go to stderr; flaky
+# (passed on retry) is allowed and listed. With a timing pass (playwright/tools/timing-switch.sh) a missing or erroring
+# chunk-timing.json counts as a missing chunk; while it is off the line says so.
+# $3 (the tree) is always given: the verdict is red when HEAD's tree is not it or a tracked file changed during the run.
+# $4 (the record store) is given when records are in use.
 suite_verdict() {
-  node - "$1" "$2" <<'NODE'
-const fs = require("fs");
-const [dir, chunks] = process.argv.slice(2);
-let expected = 0, unexpected = 0, flaky = 0, skipped = 0;
-const missing = [], failed = [], flakyTitles = [];
-const walk = (suite, file) => {
-  for (const s of suite.suites ?? []) walk(s, s.file ?? file);
-  for (const spec of suite.specs ?? []) for (const t of spec.tests ?? []) {
-    const title = `${spec.file ?? file}: ${spec.title}`;
-    if (t.status === "unexpected") failed.push(title);
-    if (t.status === "flaky") flakyTitles.push(title);
-  }
-};
-// The chunks, then the timing pass (playwright/tools/timing-pass.sh): a pass that never got a quiet machine wrote no
-// report and counts as missing, like a chunk that did not finish.
-// While the switch is off (playwright/tools/timing-switch.sh) the pass is not expected and the verdict says so.
-const timingOn = process.env.TIMING_PASS === "on";
-const names = [...Array.from({ length: Number(chunks) }, (_, k) => String(k + 1)), ...(timingOn ? ["timing"] : [])];
-for (const i of names) {
-  const f = `${dir}/chunk-${i}.json`;
-  if (!fs.existsSync(f)) { missing.push(i); continue; }
-  let j;
-  try { j = JSON.parse(fs.readFileSync(f, "utf8")); } catch { missing.push(i); continue; }
-  expected += j.stats.expected; unexpected += j.stats.unexpected; flaky += j.stats.flaky; skipped += j.stats.skipped;
-  for (const s of j.suites ?? []) walk(s, s.file);
-  if ((j.errors ?? []).length) missing.push(`${i} (${j.errors.length} run errors)`);
+  local args=(verdict --out "$1" --chunks "$2" --tree "$3")
+  [ -z "${4:-}" ] || args+=(--store "$4")
+  ( cd "${suite_root:-$repo_root}/playwright" && node tools/suite-key.mjs "${args[@]}" )
 }
-console.log(`passed=${expected} failed=${unexpected} flaky=${flaky} skipped=${skipped} chunks_missing=${missing.length ? missing.join(",") : 0}` +
-  (timingOn ? "" : ` timing cases deactivated (row ${process.env.TIMING_REENABLE_ROW})`));
-if (flakyTitles.length) console.error(`flaky (passed on retry):\n  ${flakyTitles.join("\n  ")}`);
-if (failed.length) console.error(`failed:\n  ${failed.join("\n  ")}`);
-process.exit(unexpected === 0 && missing.length === 0 && expected > 0 ? 0 : 1);
-NODE
+
+# The build environment string both keys of playwright/tools/suite-key.mjs hash: the tool versions the release build runs
+# with and the variables that steer cargo. A tool that does not answer makes the string unique, so nothing is reused.
+suite_build_env() {
+  local v
+  v="$( cd "${suite_root:-$repo_root}" && { dx --version && rustc -Vv && cargo -V; } 2>&1 )" || v="unavailable-$$-$(date +%s%N)"
+  printf '%s\n%s\n' "$v" "$(env | grep -E '^(RUSTFLAGS|RUSTDOCFLAGS|CARGO_ENCODED_RUSTFLAGS|CARGO_BUILD_TARGET|CARGO_PROFILE_)' | sort)"
+}
+
+# playwright/tools/suite-key.mjs with the environment the deploy's suite runs under (the variables the specs read).
+suite_key() {
+  ( cd "${suite_root:-$repo_root}/playwright" && PW_BUILD_PROFILE=release FIRST_PAINT_ROUTES=all LS_STEP=32 node tools/suite-key.mjs "$@" )
+}
+
+# The suite builds and runs in a PRIVATE detached worktree of the planned tree (scripts/lib/pinned-worktree.sh, the mechanism of
+# scripts/gate-at.sh), never in the shared checkout: a branch switch and back, a stash and pop or an edit there while the ~70
+# minute run is in progress cannot reach what is built or tested, and an untracked or ignored file of the shared checkout cannot
+# either. It is removed after the run; a red run keeps it, with the reports.
+suite_cleanup() {
+  [ -z "${suite_server_pid:-}" ] || kill "$suite_server_pid" 2>/dev/null || true
+  [ -z "${suite_tgt:-}" ] || rm -rf "$suite_tgt"
+  if [ -n "${suite_wt:-}" ] && [ "${suite_keep_wt:-0}" != 1 ]; then pinned_worktree_remove "$repo_root" "$suite_wt"; fi
 }
 
 release_suite() {
@@ -95,36 +107,92 @@ release_suite() {
   fi
   if [ -f "$stamp" ]; then
     echo "==> Release suite: green for tree $tree already ($(head -1 "$stamp")); not run again."
+    suite_tested_tree="$tree"
     return 0
   fi
   local name="deploy-suite-$$" out="$suite_dir/run-$tree" port="${DEPLOY_SUITE_PORT:-4830}"
   local chunks="${DEPLOY_SUITE_CHUNKS:-6}" workers="${DEPLOY_SUITE_WORKERS:-3}"
-  local tgt pub server_pid=""
-  echo "==> Release suite (row 322): no green run recorded for tree $tree ($head); building and running it."
-  mkdir -p "$suite_dir"; rm -rf "$out"; mkdir -p "$out"
-  tgt="$(cd "$repo_root" && scripts/lane-target.sh create "$name" --release | sed -n 's/^export CARGO_TARGET_DIR=//p')"
-  [ -n "$tgt" ] || { echo "deploy-preview: could not copy the warm release-template tree (scripts/lane-target.sh create $name --release)" >&2; exit 1; }
-  # shellcheck disable=SC2064  # expand now: the trap must remove THIS copy and stop THIS server
-  trap "[ -n \"\${server_pid:-}\" ] && kill \"\${server_pid}\" 2>/dev/null; rm -rf '$tgt'" EXIT
-  ( cd "$repo_root" && CARGO_TARGET_DIR="$tgt" CARGO_INCREMENTAL=0 scripts/lane-lock.sh gate --label "deploy-suite:build" -- \
-      scripts/build-ssg.sh release ) > "$out/build.log" 2>&1 \
-    || { tail -30 "$out/build.log" >&2; echo "deploy-preview: the release-suite build failed (log $out/build.log)" >&2; exit 1; }
-  pub="$tgt/dx/preview/release/web/public"
-  "$repo_root/scripts/emit-404.sh" "$pub" >/dev/null
-  python3 "$repo_root/scripts/serve-spa.py" "$pub" "$port" >/dev/null 2>&1 9>&- 3>&- </dev/null &
-  server_pid=$!
-  for _ in $(seq 1 50); do curl -fsS -o /dev/null "http://127.0.0.1:$port/" && break; sleep 0.2; done
-  ( cd "$repo_root/playwright" && PLAYWRIGHT_BASE_URL="http://127.0.0.1:$port" PW_BUILD_PROFILE=release SSG_SITE_DIR="$pub" \
+  local pub
+  suite_server_pid="" suite_tgt="" suite_keep_wt=0 suite_tested_tree=""
+  mkdir -p "$suite_dir"
+  suite_wt="${LANE_WT:-/home/user/wt}/suite-${tree:0:12}"
+  # One deploy per tree at a time: a second would replace the first's worktree under it. The lock lives with this shell.
+  mkdir -p "$(dirname "$suite_wt")"
+  exec 7>"$suite_wt.lock"
+  flock -n 7 || { echo "deploy-preview: another deploy holds $suite_wt (lock $suite_wt.lock); not starting a second one on the same tree" >&2; exit 1; }
+  suite_tested_tree="$tree"
+  trap suite_cleanup EXIT
+  pinned_worktree_add "$repo_root" "$head" "$suite_wt" || { echo "deploy-preview: could not create the private worktree $suite_wt" >&2; exit 1; }
+  suite_root="$suite_wt"
+  # Row 513: per-file records. Off on any doubt; the stamp above stays the whole-tree fast path.
+  local store="$suite_dir/records" use_records=0 skey="" kept=""
+  if [ "${DEPLOY_SUITE_REUSE:-on}" = on ]; then
+    SUITE_BUILD_ENV="$(suite_build_env)"; export SUITE_BUILD_ENV
+    if skey="$(suite_key site-key --tree "$tree" --build-env "$SUITE_BUILD_ENV" | node -e 'process.stdout.write(JSON.parse(require("fs").readFileSync(0, "utf8")).key)')" && [ -n "$skey" ]; then
+      use_records=1; mkdir -p "$store"
+      if suite_key accept --store "$store" --tree "$tree" --build-env "$SUITE_BUILD_ENV" | tee "$suite_dir/accept-$tree.log" >&2; then
+        local totals; totals="$(tail -1 "$suite_dir/accept-$tree.log")"
+        printf '%s %s workers=%s %s (every spec file has a green record for site %s)\n' "$(date -u +%FT%TZ)" "$head" "$workers" "$totals" "${skey:0:12}" > "$stamp"
+        echo "==> Release suite GREEN from per-file records, no build and no run: $totals (stamp $stamp)"
+        suite_cleanup; trap - EXIT; suite_root=""
+        return 0
+      fi
+    else
+      echo "deploy-preview: no site key or spec keys for tree $tree; per-file reuse is off, the whole suite runs" >&2
+    fi
+  fi
+  echo "==> Release suite (row 322): no green run recorded for tree $tree ($head); building and running it in $suite_wt."
+  rm -rf "$out"; mkdir -p "$out"
+  if [ "$use_records" = 1 ]; then kept="$suite_dir/site/$skey"; fi
+  if [ -n "$kept" ] && [ -d "$kept/public" ] && [ "$(suite_key hash-dir "$kept/public")" = "$(cat "$kept/public.sha" 2>/dev/null)" ]; then
+    pub="$kept/public"
+    echo "==> Release suite: serving the kept build of site ${skey:0:12} ($kept); no build."
+  else
+    suite_tgt="$(cd "$repo_root" && scripts/lane-target.sh create "$name" --release | sed -n 's/^export CARGO_TARGET_DIR=//p')"
+    [ -n "$suite_tgt" ] || { echo "deploy-preview: could not copy the warm release-template tree (scripts/lane-target.sh create $name --release)" >&2; exit 1; }
+    ( cd "$suite_wt" && CARGO_TARGET_DIR="$suite_tgt" CARGO_INCREMENTAL=0 "$repo_root/scripts/lane-lock.sh" gate --label "deploy-suite:build" -- \
+        scripts/build-ssg.sh release ) > "$out/build.log" 2>&1 \
+      || { tail -30 "$out/build.log" >&2; echo "deploy-preview: the release-suite build failed (log $out/build.log)" >&2; exit 1; }
+    pub="$suite_tgt/dx/preview/release/web/public"
+    "$suite_wt/scripts/emit-404.sh" "$pub" >/dev/null
+    if [ -n "$kept" ]; then
+      # Keep the built site (the part of the build a second run needs; the 3.6 GB target is removed after the run): ~55 MB per site,
+      # the two newest are kept.
+      rm -rf "$kept"; mkdir -p "$kept"
+      cp -a "$pub" "$kept/public.tmp" && suite_key hash-dir "$kept/public.tmp" > "$kept/public.sha" && mv "$kept/public.tmp" "$kept/public" \
+        || { echo "deploy-preview: could not keep the built site; the next run builds again" >&2; rm -rf "$kept"; }
+      # shellcheck disable=SC2012
+      ls -1dt "$suite_dir"/site/*/ 2>/dev/null | tail -n +3 | xargs -r -d '\n' rm -rf
+    fi
+  fi
+  # The port must be free before the server starts, and what answers afterwards must be OUR server on THIS site: a stale server
+  # on the port would answer the readiness probe and the suite would test another site.
+  if curl -s -o /dev/null --max-time 2 "http://127.0.0.1:$port/"; then
+    echo "deploy-preview: port $port already answers (a stale server?); refusing to test whatever it serves. Stop it or set DEPLOY_SUITE_PORT." >&2
+    exit 1
+  fi
+  python3 "$suite_wt/scripts/serve-spa.py" "$pub" "$port" >/dev/null 2>&1 9>&- 3>&- 7>&- </dev/null &
+  suite_server_pid=$!
+  for _ in $(seq 1 50); do curl -fsS -o /dev/null "http://127.0.0.1:$port/" && break; kill -0 "$suite_server_pid" 2>/dev/null || break; sleep 0.2; done
+  if ! kill -0 "$suite_server_pid" 2>/dev/null || ! curl -fsS "http://127.0.0.1:$port/" | cmp -s - "$pub/index.html"; then
+    echo "deploy-preview: the server on port $port is not this run's server for $pub (it died, or answers with other bytes than $pub/index.html); not running the suite" >&2
+    exit 1
+  fi
+  local reuse_args=()
+  if [ "$use_records" = 1 ]; then reuse_args=(--reuse "$store" --tree "$tree"); fi
+  ( cd "$suite_wt/playwright" && PLAYWRIGHT_BASE_URL="http://127.0.0.1:$port" PW_BUILD_PROFILE=release SSG_SITE_DIR="$pub" \
       FIRST_PAINT_ROUTES=all LS_STEP=32 \
-      tools/run-suite.sh --out "$out" --chunks "$chunks" --workers "$workers" ) | tee "$out/run-suite.log" || true  # the verdict below decides
-  kill "$server_pid" 2>/dev/null || true; server_pid=""
-  rm -rf "$tgt"; trap - EXIT
+      tools/run-suite.sh --out "$out" --chunks "$chunks" --workers "$workers" ${reuse_args[@]+"${reuse_args[@]}"} ) | tee "$out/run-suite.log" || true  # the verdict below decides
+  kill "$suite_server_pid" 2>/dev/null || true; suite_server_pid=""
+  [ -z "$suite_tgt" ] || { rm -rf "$suite_tgt"; suite_tgt=""; }
   local verdict
-  if verdict="$(suite_verdict "$out" "$chunks")"; then
+  if verdict="$(suite_verdict "$out" "$chunks" "$tree" "${reuse_args[1]:-}")"; then
     printf '%s %s workers=%s %s\n' "$(date -u +%FT%TZ)" "$head" "$workers" "$verdict" > "$stamp"
     echo "==> Release suite GREEN: $verdict (stamp $stamp; reports in $out)"
+    suite_cleanup; trap - EXIT; suite_root=""
   else
-    echo "deploy-preview: release suite RED for $head: $verdict -- not deploying (reports in $out; refresh nothing, fix and re-run)" >&2
+    suite_keep_wt=1
+    echo "deploy-preview: release suite RED for $head: $verdict -- not deploying (reports in $out; the worktree $suite_wt is kept; refresh nothing, fix and re-run)" >&2
     exit 1
   fi
 }
@@ -153,8 +221,14 @@ mkdir -p "$target_dir"
 
 # Row 322: the release suite gates the build (header). After the target checks above, so a wrong tree is refused
 # before anything runs.
+suite_tested_tree=""
 release_suite
 if [ "$suite_only" = 1 ]; then exit 0; fi
+# The deploy build below reads THIS checkout, and the suite tested a pinned tree: publish nothing the suite did not test.
+if [ -n "$suite_tested_tree" ]; then
+  ( cd "$repo_root/playwright" && node tools/suite-key.mjs worktree --tree "$suite_tested_tree" ) \
+    || { echo "deploy-preview: this checkout is not the tree the release suite tested ($suite_tested_tree), or a tracked file changed since; refusing to build docs/ from it" >&2; exit 2; }
+fi
 
 # Same path build-ssg.sh derives for `release` (it also prints it as PUBLIC_DIR=).
 public_dir="$target_dir/dx/preview/release/web/public"
