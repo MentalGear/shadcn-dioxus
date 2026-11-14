@@ -2,6 +2,6 @@
 #! columns: bytes
 # path	bytes
 primitives/src/ts/behaviours/fixture.ts	667
-primitives/src/ts/bridge.ts	52382	# raised: row 509 the kernel loader, the codec and the stand-down report of the Rust decision contract (bytes 47504->48348); row 446 the apply table and the witness hooks of the witness harness (bytes 48348->52382)
-primitives/src/ts/lib/register.ts	1435	# raised: row 509 the kernel loader, the codec and the stand-down report of the Rust decision contract (bytes 777->1435)
-primitives/src/ts/types/bridge.d.ts	7505	# raised: row 509 the kernel loader, the codec and the stand-down report of the Rust decision contract (bytes 6626->7505)
+primitives/src/ts/bridge.ts	53718	# raised: row 450 the bridge counters in channel() and their read-out (bytes 52382->53718)
+primitives/src/ts/lib/register.ts	1435
+primitives/src/ts/types/bridge.d.ts	7505
