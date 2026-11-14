@@ -2,6 +2,7 @@
 #! columns: sink js_lit js_file_bytes install inline_script comment_eval expect_disallowed
 # path	sink	js_lit	js_file_bytes	install	inline_script	comment_eval	expect_disallowed
 #! total-raised: row 450 total=483761 the bridge counters in channel() and their read-out (total 483191->483761)
+#! total-raised: row 447 total=486037 the order runtime: the pump, the one inbound eval, the epoch rule and the focus owner (total 483761->486037)
 labs/carousel-lab/src/main.rs	2	0	0	0	0	0	0
 preview/build.rs	0	12	0	0	0	0	0
 preview/index.html	0	0	0	0	7453	0	0
@@ -64,7 +65,7 @@ primitives/src/drawer.rs	0	136	0	3	0	0	0
 primitives/src/hover_intent.rs	0	10	0	1	0	0	0
 primitives/src/input_otp.rs	1	59	0	2	0	0	1
 primitives/src/js/behaviours/fixture.js	0	0	520	0	0	0	0
-primitives/src/js/bridge.js	0	0	29008	0	0	0	0	# raised: row 450 the bridge counters in channel() and their read-out (js_file_bytes 28438->29008)
+primitives/src/js/bridge.js	0	0	31284	0	0	0	0	# raised: row 450 the bridge counters in channel() and their read-out (js_file_bytes 28438->29008); row 447 the order runtime: the pump, the one inbound eval, the epoch rule and the focus owner (js_file_bytes 29008->31284)
 primitives/src/js_listener.rs	1	7	0	0	0	0	0
 primitives/src/label.rs	0	8	0	1	0	0	0
 primitives/src/lib.rs	3	182	0	3	0	0	3
