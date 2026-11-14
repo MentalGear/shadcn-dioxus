@@ -1,7 +1,7 @@
 ---
 id: 519
 title: "Every non-menu overlay re-assembles the anchored panel recipe: one `top_layer::use_anchored_panel`, and the hover timers in their own module"
-status: "PROPOSED 2026-11-14 from the overlay layering audit; before row 449 or as its first step."
+status: "APPROVED 2026-11-14 (owner: \"I approve your recommendation for generalizing the components and…"
 size: "M (inferred, 8 to 10 h), one lane…"
 area: primitives
 updated: 2026-11-14
@@ -23,8 +23,7 @@ Dropdown, Context, Menubar and submenus. The hover timers (`use_hover_timers`, `
 
 ## Status / trigger
 
-PROPOSED 2026-11-14 from [the overlay layering audit](../research/overlay-layering-audit-2026-11-14.md); before
-[row 449](./449-phase-0-4-proof-port-b-the-executor-and-popover-spreads.md) or as its first step.
+APPROVED 2026-11-14 (owner: "I approve your recommendation for generalizing the components and tooltip as well"). It lands before row 449; Tooltip and HoverCard as one surface follows it.
 
 ## Size
 

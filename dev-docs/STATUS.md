@@ -134,8 +134,12 @@ ports), its working form is [`js-interop.md`](./js-interop.md), and every item h
   and the grants of rows 450 and 447 (in the rows' front matter); JavaScript size raises are the main loop's from here
   ([`decisions.md`](./decisions.md)). Rows 516 (overlay entry motion) and 517 (the chart tooltip on the Tooltip's
   layer, hide on scroll) come from the owner's reports of the same day.
+- Decided 2026-11-14 (owner): rows 519 (one anchored panel hook for the non-menu overlays, the hover timers in their
+  own module; before row 449), 517 (the chart tooltip on the `Tooltip`) and 520 (a carousel drag release registers its
+  destination at the release) are approved. The audit behind 519:
+  [`research/overlay-layering-audit-2026-11-14.md`](./research/overlay-layering-audit-2026-11-14.md).
 - Waits for the owner: which browser showed the chart tooltip without a fade-in (row 516 rests on documentation, not
-  on a reproduction); whether the chart tooltip escapes its box by default (row 517).
+  on a reproduction).
 - Row 508's verdict is `KERNEL`, so row 509 opens without a further decision. Loading the
   kernel inside the desktop webview stays unproven until a desktop build exists (row 23).
 

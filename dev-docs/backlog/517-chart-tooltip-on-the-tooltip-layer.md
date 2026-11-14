@@ -1,7 +1,7 @@
 ---
 id: 517
 title: "Chart tooltips are confined to the chart box and get pushed around in small charts: build them on the Tooltip's content layer with a point anchor"
-status: "PROPOSED 2026-11-14. It follows row 449, which ports the popover machinery this sits on."
+status: "APPROVED 2026-11-14. The tooltip escapes the chart box by default, hides on scroll where it cannot…"
 size: "M (inferred)."
 area: primitives
 updated: 2026-11-14
@@ -18,7 +18,7 @@ its container and whether the library's `Tooltip` can be used directly.
 
 ## Status / trigger
 
-PROPOSED 2026-11-14. It follows row 449, which ports the popover machinery this sits on.
+APPROVED 2026-11-14. The tooltip escapes the chart box by default, hides on scroll where it cannot follow, and takes the `Tooltip`'s Escape scope. It follows rows 519 and 449, which shape the layer it sits on.
 
 ## Size
 
