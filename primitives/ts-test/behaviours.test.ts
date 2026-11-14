@@ -78,26 +78,6 @@ describe("install", () => {
     expect(ch.sent.length).toBe(1);
   });
 
-  test("every write of a decision runs under the `{ site, effect }` marker and the marker is read-only", () => {
-    const { win, bridge, el } = setup();
-    const s = bridge.scope(makeChannel());
-    install(s, fixture({ cancel: true }), 1);
-    const seen: unknown[] = [];
-    const set = el.setAttribute.bind(el);
-    el.setAttribute = (name: string, value: string) => (seen.push(["attrs", win.__dxApplying]), set(name, value));
-    const ev = makeEvent();
-    const prevent = ev.preventDefault;
-    ev.preventDefault = () => (seen.push(["prevent", win.__dxApplying]), prevent.call(ev));
-    expect(win.__dxApplying).toBeNull();
-    el.dispatch("click", ev);
-    expect(seen).toEqual([
-      ["prevent", { site: "fixture", effect: "prevent" }],
-      ["attrs", { site: "fixture", effect: "attrs" }],
-    ]);
-    expect(win.__dxApplying).toBeNull();
-    expect(() => Object.defineProperty(win, "__dxApplying", { value: 1 })).toThrow();
-  });
-
   test("passive is declared, never chosen by the page: only a non-passive behaviour can cancel", () => {
     const { bridge, el } = setup();
     const s = bridge.scope(makeChannel());

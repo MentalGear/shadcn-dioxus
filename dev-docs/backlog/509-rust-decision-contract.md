@@ -1,12 +1,12 @@
 ---
 id: 509
 title: "The Rust decision contract: one decide per behaviour, the decision kernel as a committed artefact, and the gates"
-status: "LANDED on lane/decision-contract-509 (2026-11-13), awaiting the merge into the batch. Items 1 to 12…"
+status: "APPROVED 2026-11-11 (owner); opens on row 508's KERNEL verdict (2026-11-12), which stands after the…"
 size: "L (inferred: was M; the review adds…"
 area: primitives
-js-grant: js_file_bytes=4500 (measured basis: row 508's loader and codec cost 4,270 bytes of `bridge.js`, 19,956 to 24,226, and the deleted TypeScript `decide` was 15 bytes; the in-place codec of item 7 should come in under the proof's 4,270, and the grant is the ceiling, not a target)
+js-grant: js_file_bytes=4500, bytes=2400, js_lit=1, sink=3 (measured basis: row 508's loader and codec cost 4,270 bytes of `bridge.js`, 19,956 to 24,226, and the deleted TypeScript `decide` was 15 bytes; the in-place codec of item 7 should come in under the proof's 4,270, and the grant is the ceiling, not a target) (owner 2026-11-14, on the measured growth: `bridge.js` +4,491; `ts/bridge.ts` +844, `ts/lib/register.ts` +658 and `types/bridge.d.ts` +879 source bytes; one JS literal in `transport.rs`; three sink sites in the scripted document of a `session.rs` unit test)
 adds: []
-updated: 2026-11-13
+updated: 2026-11-14
 ---
 
 # Row 509: The Rust decision contract: one decide per behaviour, the decision kernel as a committed artefact, and the gates
@@ -88,62 +88,13 @@ Part of [row 434](./434-javascript-in-typescript-modules-not-rust-strings.md).
 
 ## Status / trigger
 
-LANDED on `lane/decision-contract-509` (2026-11-13), awaiting the merge into the batch. Items 1 to 12 are built on the
-one behaviour that exists (the test fixture); `otpFilter` (row 448) is written to them.
-
-- **One Rust `decide` per kind, its inputs defined once.** `decision-kernel/` (no dependencies) holds `decide(config,
-  memory, snapshot, event) -> Decision`; `Config`, `Snapshot` and `Event` are declared by `wire_input!` with the wire key
-  of each field, every key required (a request that lacks one is unreadable, never a decision on an absent value).
-  `kinds!` (`decision-kernel/src/kinds.rs`) is the one registration of a kind: the kind table, its hash (a compile-time
-  FNV-1a of the table text) and the dispatch by index come from it. `cargo test -p dioxus-primitives behaviours` writes
-  `behaviours.gen.ts` with `KINDS`, `KERNEL_HASH`, `KERNEL_KINDS` (config, reads and fields of each kind) and `ADAPTER`;
-  a behaviour module registers `kernelBehaviour(kind, ADAPTER.<kind>)` and holds no list and no `decide`.
-- **Five fixed exports** (`dx_abi`, `dx_kinds`, `dx_input`, `dx_decide(kind_index, len)`, `dx_output`); the page refuses
-  a module whose `dx_kinds` differs from its generated hash.
-- **A kind that cannot decide throws a stand-down report** (`missing-kind`, `unreadable-request`, `trap`,
-  `kind-stood-down`, `kernel-failed`, `kernel-absent`): one warning, no decision (the browser keeps its action), one
-  `{kernel: "stand-down", kind, reason}` message per install. `use_behaviour` (`bridge/session.rs`) reads
-  `Inbound<T>`: a decision's message goes to the handler, a report tears the install down. **Tear down, not resync**:
-  a resync would meet the same kernel and report again, and a torn-down install clears its memory (a gesture half
-  done) and decides nothing more, so no later decision can add attributes to what earlier ones set. Attributes
-  already set stay on the element (the page does not remove them); the owner holds the state they mirror. The
-  install is not made again while the component lives. A VirtualDom test with a scripted `Document`
-  (`use_behaviour_tears_the_install_down_on_a_stand_down_and_does_not_reinstall`) drives the hook: a decision
-  reaches the handler and changes nothing, a report sends the teardown once, stops the lease renewal and installs
-  nothing, and re-renders do not reinstall.
-  A dropped `Subscription` also cancels its receive task, so a message already in flight after a stand-down (or
-  a re-install) is not handled (`a_message_after_the_subscription_ended_does_not_reach_the_handler`).
-- **The kernel loads synchronously or not at all.** The module is compiled in the bridge's first eval (`kernel_load`, the
-  one seam function); an engine that refuses a synchronous compile leaves the kernel `failed` (one warning, every
-  decision reports `kernel-failed`). There is no asynchronous fallback, so no window exists in which a cancelling
-  behaviour is silently off.
-- **The in-place codec** (`ts/lib/kernel.ts`): the request is written into the buffer `dx_input` returns and the answer is
-  read out of `dx_output` through one `DataView`; a call allocates no staging buffer, no `subarray`, no entries array,
-  no pairs array and no view (`kernel.test.ts` counts them through spies). `bridge.js` grows by 4,491 bytes
-  (22,558 to 27,049) and `behaviours/fixture.js` shrinks by 33 (553 to 520): +4,458 against the grant of 4,500.
-- **The committed artefact**: `scripts/build-kernel.sh` (`[profile.kernel]`, `rust-toolchain.toml` pinning 1.97.0 with
-  the wasm32 target) writes the module (26,222 bytes, 10,815 gzip), its base64 and `kernel.manifest`;
-  `scripts/check-decision-kernel.sh` holds them (manifest, exports, kind table, rebuild on the pinned toolchain, a gzip
-  ratchet starting at 10,815 (`gzip -9` on stdin; the proof's 10,637 was `gzip -9c <file>`, which also writes the
-  21-byte file name, so its comparable figure is 10,616: the contract's fixed exports, the shared `Decision` and the
-  generic wire layer cost 199 bytes), and the float ban list of
-  `decision-kernel/clippy.toml`); `scripts/merge-driver-kernel.py` merges two lanes' artefacts by rebuilding the merged
-  sources (it reads the three versions of every input out of the manifests' git blob ids and takes the other side from
-  `GITHEAD_<commit>`, because git 2.43 has no `%X`/`%Y`).
-- **The gates**: `check-bridge-behaviours` (a `decide(` or a hand-written list in a module is red, a variant with no
-  kernel `decide` is red, vectors on both routes with one `largest` vector per kind, 104 self-test mutations),
-  `check-native-slots` and `check-hot-events` exempt `#[cfg(feature = "native")]` items (`scripts/lib/cfg_arms.py`),
-  `check-merge-drivers` holds the kernel driver.
-
-Proof, in order: 1 passed (a renamed `Snapshot` key fails `the_generated_ts_is_current`; a kind commented out of
-`kinds.rs` fails `check-decision-kernel`); 2 and 3 passed (`kernel.test.ts`); 4 passed (103 `bun test`, vectors red under
-`cargo test` and under `bun test` against a stale kernel, the `decide(` mutation, the stale-source and profile mutations,
-a native `decide` call in `vectors.rs`); 5 passed on a real merge of two lanes with the real builder (identical bytes to
-a rebuild of the merged sources); 6 passed (fixture call p99 10 to 33 us, best of three runs, on a loaded box; the spy
-test); 7 passed (p99 21 to 52 us at the largest vector, 61 to 98 us for 1,000 booleans); 8 **open** (a warm call inside `load` would cut the first call and costs about 40 bytes of `bridge.js`, which has 9 spare under the grant: the owner's question): the reference (a
-release SSG build, a quiet box) was not run, and on a loaded debug build the numbers are over both bounds (compile
-16 to 32 ms and first call 7 to 14 ms at 4x, 5 to 14 ms and 1.2 to 1.6 ms unthrottled); 9 passed (34 and 32 self-test
-scenarios); 10 passed (`scripts/registry-install-smoke.sh --target wasm32-unknown-unknown`: 83 of 83 components installed and the app compiles; the path dependency on `decision-kernel` resolves in a git install); 11, 12 and 13 stay open as written.
+APPROVED 2026-11-11 (owner); opens on row [508](./508-decision-kernel-proof.md)'s `KERNEL` verdict (2026-11-12),
+which stands after the adversarial review with one blocking condition that lands inside this row before any behaviour
+row builds on the kernel: the adapter's field lists and wire keys are generated from the Rust input types (item 1), a
+gate holds the generated kinds equal to the kernel's exports (item 2), and a kind that cannot decide warns once and
+reports to Rust (item 3), so a mismatch is red at build time instead of a behaviour that silently never decides on web
+and webview while Blitz works. The review's other conditions (items 4 to 9, the gates and proof lines below) change how
+the approved contract is built, not what it is.
 
 ## Size
 
@@ -230,10 +181,3 @@ pinned toolchain and merge driver, the in-place codec and the budget gates)
 - **Hours (inferred):** about 14 to 22 for one Opus lane: generation of the adapter inputs and the fixed export set 4
   to 6, trap containment and the report to Rust 2 to 3, the pinned toolchain, profile and merge driver 2 to 3, the
   in-place codec and its timing tests 2 to 4, the gate half 4 to 6.
-
-## Open after landing
-
-- `decision-kernel` is `publish = false` and a path dependency of `dioxus-primitives`, so publishing primitives to
-  crates.io fails until the kernel is published too or its module is the only thing primitives ships (untested).
-- `rust-toolchain.toml` pins 1.97.0: a fresh container downloads that toolchain on the first cargo call unless it is
-  already installed under that name.

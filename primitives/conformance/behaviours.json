@@ -1,8 +1,25 @@
 {
   "fixture": [
-    {"name": "sets the attribute and tells Rust", "behaviour": {"kind": "fixture", "event": "click", "attr": "data-dx-fixture", "value": "on", "capture": false, "cancel": false, "leaseMs": null}, "event": {"type": "click"}, "state": {"data-dx-fixture-block": null}, "expect": {"attrs": {"data-dx-fixture": "on"}, "send": {"behaviour": "fixture", "event": "click"}}},
-    {"name": "stands down while the host carries the block attribute", "behaviour": {"kind": "fixture", "event": "click", "attr": "data-dx-fixture", "value": "on", "capture": false, "cancel": false, "leaseMs": null}, "event": {"type": "click"}, "state": {"data-dx-fixture-block": ""}, "expect": {}},
-    {"name": "a cancelling fixture asks to prevent (honoured only because it is declared non-passive)", "behaviour": {"kind": "fixture", "event": "keydown", "attr": "aria-busy", "value": "true", "capture": true, "cancel": true, "leaseMs": null}, "event": {"type": "keydown"}, "state": {"data-dx-fixture-block": null}, "expect": {"prevent": true, "attrs": {"aria-busy": "true"}, "send": {"behaviour": "fixture", "event": "keydown"}}},
-    {"name": "the largest planned snapshot: the fixture reads one attribute, so its largest request carries a packed one-string memory of 1,000 entries", "largest": true, "behaviour": {"kind": "fixture", "event": "keydown", "attr": "aria-busy", "value": "true", "capture": true, "cancel": true, "leaseMs": null}, "event": {"type": "keydown"}, "state": {"data-dx-fixture-block": null}, "memory": {"disabled": "0101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101"}, "expect": {"prevent": true, "attrs": {"aria-busy": "true"}, "send": {"behaviour": "fixture", "event": "keydown"}}}
+    {
+      "name": "sets the attribute and tells Rust",
+      "behaviour": { "kind": "fixture", "event": "click", "attr": "data-dx-fixture", "value": "on" },
+      "event": { "type": "click" },
+      "state": { "data-dx-fixture-block": null },
+      "expect": { "attrs": { "data-dx-fixture": "on" }, "send": { "behaviour": "fixture", "event": "click" } }
+    },
+    {
+      "name": "stands down while the host carries the block attribute",
+      "behaviour": { "kind": "fixture", "event": "click", "attr": "data-dx-fixture", "value": "on" },
+      "event": { "type": "click" },
+      "state": { "data-dx-fixture-block": "" },
+      "expect": {}
+    },
+    {
+      "name": "a cancelling fixture asks to prevent (honoured only because it is declared non-passive)",
+      "behaviour": { "kind": "fixture", "event": "keydown", "attr": "aria-busy", "value": "true", "cancel": true, "capture": true },
+      "event": { "type": "keydown" },
+      "state": { "data-dx-fixture-block": null },
+      "expect": { "prevent": true, "attrs": { "aria-busy": "true" }, "send": { "behaviour": "fixture", "event": "keydown" } }
+    }
   ]
 }

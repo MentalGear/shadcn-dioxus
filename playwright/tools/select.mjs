@@ -26,12 +26,8 @@
 //   theme / main.css / main.rs / site/ / eager_head / index.html / components/mod.rs / scripts that build the site
 //                                            -> the BROAD set (below); a changed preview/assets/*.css is read rule by rule
 //                                               first and often needs only part of it (see "CSS finer", below)
-//   playwright/<spec>.spec.ts                -> itself; playwright/<helper>.ts -> the specs that
-//                                               import it (transitively);
+//   playwright/<spec>.spec.ts                -> itself; playwright/<helper>.ts -> the specs that import it (transitively);
 //                                               fixtures.ts / base-url.ts / *.config.ts -> every spec
-//   playwright/witness/** (a witness spec)  -> a behaviour's files select the witnesses of its sites (their binding's
-//                                               `files`), the witness harness (ts-test/witness.ts, the adapter, the probes) selects
-//                                               every witness spec and not the broad set (witness-rule.mjs, row 446)
 //   docs, dev-docs, scripts/check-*, cli, templates, component.json -> no spec (their own gates cover them)
 // "About component C" = the file is named for C (longest component-name prefix of the stem: carousel-drag-free ->
 // carousel, chart_tooltip_follow -> chart_tooltip) OR its source names C as a page (`name=C`, `component/C`) or as a
@@ -69,7 +65,6 @@ import { buildContext, impactOfChanges } from "./css-impact.mjs";
 import { makeTitleScopes } from "./select-titles.mjs";
 import { pickBase } from "./select-base.mjs";
 import { buildComponentGraph } from "./component-graph.mjs";
-import { witnessRule } from "./witness-rule.mjs";
 
 const PW = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const ROOT = path.resolve(PW, "..");
@@ -314,9 +309,6 @@ for (const f of changed) {
     const c = comps.find((x) => m[1] === x || m[1].startsWith(x)) ?? "chart";
     for (const s of specsOf(c)) add(s, f);
     for (const s of specs.filter((s) => /^(chart|charts)/.test(path.basename(s)))) add(s, f);
-  } else if (/^primitives\/(?:ts-test\/witness\.ts|src\/ts\/behaviours\/|src\/bridge\/behaviours|conformance\/behaviours)/.test(f)) {
-    // the behaviour registry, its vectors and the page side of the witness harness: only the witness specs read them
-    // (the witness rule below), they are not shared plumbing
   } else if ((m = f.match(/^primitives\/src\/(?:ts\/|js\/)?([^/.]+)(?:\.[a-z]+|\/)/)) && primMods.includes(m[1])) {
     const sub = f.match(/^primitives\/src\/[^/.]+\/([^/.]+)(?:\.rs$|\/)/);
     const users = (sub && compsUsingSubmodule(m[1], sub[1])) ?? compsUsingPrim(m[1]);
@@ -328,14 +320,10 @@ for (const f of changed) {
     const rel = f.slice("playwright/".length);
     if (rel.endsWith(".spec.ts")) { if (specs.includes(rel)) add(rel, f); }
     else if (/(^|\/)(fixtures\.ts|base-url\.ts|[\w.]*config\.ts)$/.test(rel)) addAll(f);
-    else if (rel.startsWith("witness/bindings/")) { /* the witness rule below */ }
     else if (rel.endsWith(".ts") && !rel.startsWith("tools/")) { for (const s of importersOf(rel)) add(s, f); }
     else noSpec.push(f);
   } else noSpec.push(f);
 }
-
-// ---- the witness rule (row 446): a behaviour's files select its witnesses, the harness selects all of them --------
-for (const f of changed) for (const { spec, why } of witnessRule(PW, f, specs, src)) add(spec, why);
 
 // ---- CSS: rule-level impact (row 323) ------------------------------------------------------------------------
 const TITLE_SCOPED = makeTitleScopes(comps);

@@ -36,6 +36,7 @@ primitives/src/ts/bridge.ts	computed-access	pickAll	a0afd3c903	1
 primitives/src/ts/bridge.ts	computed-access	register	42e07ddf3e	1
 primitives/src/ts/bridge.ts	computed-access	scope.s.dispose	b9cbb5c873	1
 primitives/src/ts/bridge.ts	computed-access	scope.s.observe.io.e	68ea2e14c4	1
+primitives/src/ts/bridge.ts	computed-access	scope.s.observe.ro.e	68ea2e14c4	1
 primitives/src/ts/bridge.ts	computed-access	scope.s.sample	901240719e	1
 primitives/src/ts/bridge.ts	computed-access	scope.s.sample.tick	40db5d23b3	1
 primitives/src/ts/bridge.ts	computed-access	scope.s.sample.tick	d0200d8099	1

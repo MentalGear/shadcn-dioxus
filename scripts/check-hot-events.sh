@@ -8,9 +8,7 @@
 #
 # THE COMPANION TABLE. On Android a payload event travels in a request header of about 12-16 KB and a failed request silently loses the cancel (`native.ts` `handleVirtualdomEventSync`), so an rsx `prevent_default` on `submit`, `input`, `change`, `paste` or `drop` is not a candidate on mobile (js-interop.md, "platform rules"). Every rsx handler for one of those events whose body calls `prevent_default` (a closure, a block, or a named `let`/`fn` handler in the same file) is counted in the column `pd_<event>`.
 #
-# WHAT COUNTS. Rust files of `git ls-files` outside docs/, playwright/, scripts/, dev-docs/, vendored trees, `#[cfg(test)]` modules and items under `#[cfg(feature = "native")]` (the Blitz arm, below), in the code view of scripts/comment-scan.py (`code_of`: comments removed, string contents blanked), so an event named in a comment or a string is not a site. A site is an `onX: value` or shorthand `onX,` attribute in the block of a lowercase element (a control-flow block inside it still belongs to the element) and a call `events::onX(..)`. A component's props (a block opened by a PascalCase name), struct fields, fn parameters and `let onX = ..` bindings are not sites: the listener exists where an element receives the handler.
-#
-# THE BLITZ ARM IS NOT FORBIDDEN (row 509): an item under `#[cfg(feature = "native")]` is the arm of a renderer with no page, where an rsx scroll, resize or pointer handler is the only route to the event (`listen`/`sample` need a page). The exemption is the exact spelling `cfg(feature = "native")` (scripts/lib/cfg_arms.py, shared with check-native-slots); the browser-engine arm (`not(feature = "native")`, or no cfg) is counted in full, so the same handler under it is still a site.
+# WHAT COUNTS. Rust files of `git ls-files` outside docs/, playwright/, scripts/, dev-docs/, vendored trees and `#[cfg(test)]` modules, in the code view of scripts/comment-scan.py (`code_of`: comments removed, string contents blanked), so an event named in a comment or a string is not a site. A site is an `onX: value` or shorthand `onX,` attribute in the block of a lowercase element (a control-flow block inside it still belongs to the element) and a call `events::onX(..)`. A component's props (a block opened by a PascalCase name), struct fields, fn parameters and `let onX = ..` bindings are not sites: the listener exists where an element receives the handler.
 #
 # THE RATCHET AND THE ALLOWLIST. `scripts/check-hot-events.baseline.tsv` is `path<TAB>count per column` (a `#! columns:` header; files with a non-zero count only; scripts/lib/ratchet.py): a count that rises, a new file with a site, a count that fell without being written back and a stale row all fail, and the tree's baseline is compared with the merge base's, so editing the baseline in the commit is not a way through. The allowlist is per EVENT NAME, not per site (the cost class is the name): `scripts/check-hot-events.allow.tsv` is `event<TAB>reason<TAB>row`, where `event` is a column (`resize`, `mounted`, `pd_submit`, ...), the reason says why the name is still on the vdom, and the row is the open backlog row that drains it. A column with a measured site and no row is red (a new event name is the owner's decision); a row whose column has no site, has no reason, names a missing backlog row or names no column is red too.
 #
@@ -42,7 +40,6 @@ import tempfile
 HERE = os.getcwd()
 sys.path.insert(0, "scripts/lib")
 from allow import Allowlist  # noqa: E402
-from cfg_arms import native_ranges  # noqa: E402
 from ratchet import Ratchet, selftest_env  # noqa: E402
 
 _spec = importlib.util.spec_from_file_location("comment_scan", os.path.join(HERE, "scripts", "comment-scan.py"))
@@ -231,7 +228,7 @@ def resolve_named(code, text):
 def measure_rust(text, path, columns):
     """`(counts, sites)`; a site is `(line, column)`."""
     code = cs.code_of(text)
-    tests = test_ranges(code, path) + native_ranges(code, cs.code_of(text, keep_strings=True))
+    tests = test_ranges(code, path)
     names = [c for c in columns if not c.startswith("pd_")]
     ev = {("on" + c): c for c in names}
     found = []
@@ -413,17 +410,6 @@ def self_test():
     case("control: a binding", "fn f() { let onresize = move |i| i; }", [])
     case("control: a non-hot handler", "rsx! { div { onclick: h, onkeydown: k, onscrollend: s } }", [])
     case("control: a test module", "#[cfg(test)]\nmod tests { fn t() { rsx! { div { onwheel: h } } } }\n", [])
-    # the Blitz arm (row 509): exempt under `#[cfg(feature = "native")]`, and the same item under the browser arm is a site
-    native = '#[cfg(feature = "native")]\n'
-    web = '#[cfg(not(feature = "native"))]\n'
-    item = "fn v() -> Element { rsx! { div { onwheel: move |e| f(e), onresize: r } } }\n"
-    case("native arm: an fn", native + item, [])
-    case("native arm: the same fn under the browser arm", web + item, ["wheel", "resize"])
-    case("native arm: the same fn with no cfg", item, ["wheel", "resize"])
-    case("native arm: an impl block", native + "impl V { fn v(&self) -> Element { rsx! { div { onscroll: s } } } }\n", [])
-    case("native arm: a payload handler with prevent_default", native + "fn v() -> Element { rsx! { form { onsubmit: move |e| e.prevent_default() } } }\n", [])
-    case("native arm: only the item after the cfg is exempt", native + "fn a() {}\n" + item, ["wheel", "resize"])
-    case("native arm: a cfg(all(..)) with native is not the exact spelling", '#[cfg(all(feature = "native", test))]\n' + item, ["wheel", "resize"])
 
     git_env = {**os.environ, "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@example.invalid", "GIT_COMMITTER_NAME": "t",
                "GIT_COMMITTER_EMAIL": "t@example.invalid", "GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_SYSTEM": os.devnull}

@@ -14,8 +14,6 @@
 // 7. the component use graph (component-graph.mjs, row 510): a synthetic tree (direct, transitive, demo-only and css-only
 //    consumers, a variants-only change that must not fan out) and the real tree (the class, not today's numbers: every
 //    dependency the manifests declare is seen, no use is unreadable, a change to Button reaches its consumers).
-// 8. the witness rule (witness-rule.mjs, row 446): a synthetic tree (a behaviour file selects its own witnesses, a binding
-//    its spec, the harness every witness spec) and the real tree (the harness and the registry are not shared plumbing).
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -27,7 +25,6 @@ import { buildContext, impactOfChanges, routeKey } from "./css-impact.mjs";
 import { makeTitleScopes } from "./select-titles.mjs";
 import { pickBase } from "./select-base.mjs";
 import { buildComponentGraph, rustRefs } from "./component-graph.mjs";
-import { sitesOf, witnessRule } from "./witness-rule.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PW = path.resolve(HERE, "..");
@@ -445,40 +442,6 @@ if (!QUICK) {
     const named = cons.filter((k) => specsAbout(k.replace(/_/g, "-")).concat(specsAbout(k)).some((f) => r.specs.includes(f)));
     check(`select: ${c} selects the specs of its consumers (${named.length} of ${cons.length} have a spec file named for them)`, named.length > 0 || unreached.length > 0);
   }
-}
-
-// ---- 8. the witness rule ------------------------------------------------------------------------------------------
-{
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "select-witness-"));
-  try {
-    const write = (rel, text) => { fs.mkdirSync(path.dirname(path.join(dir, rel)), { recursive: true }); fs.writeFileSync(path.join(dir, rel), text); };
-    write("witness/bindings/a.site.json", JSON.stringify({ files: ["primitives/src/ts/behaviours/a.ts", "primitives/src/a.rs"] }));
-    write("witness/bindings/_self/b.site.json", JSON.stringify({ files: ["primitives/ts-test/witness.ts"] }));
-    const src = {
-      "witness/a.spec.ts": 'witness("defaultAction", "a.site", "prevent"); witness("wrongPaint", "a.site", "setValue");',
-      "witness/b.spec.ts": 'const b = binding("b.site");',
-      "other.spec.ts": 'witness("wrongPaint", "a.site", "attrs");',
-    };
-    const specs = Object.keys(src);
-    const rule = (f) => [...new Set(witnessRule(dir, f, specs, src).map((x) => x.spec))].sort();
-    eq("witness: the sites a spec names, from witness() and binding()", [sitesOf(src["witness/a.spec.ts"]), sitesOf(src["witness/b.spec.ts"])], [["a.site", "a.site"], ["b.site"]]);
-    eq("witness: a behaviour file selects the witnesses of its site", rule("primitives/src/ts/behaviours/a.ts"), ["witness/a.spec.ts"]);
-    eq("witness: a component file the binding lists selects them too", rule("primitives/src/a.rs"), ["witness/a.spec.ts"]);
-    eq("witness: a binding selects the spec that names its site", rule("playwright/witness/bindings/_self/b.site.json"), ["witness/b.spec.ts"]);
-    eq("witness: a file no binding lists selects nothing", rule("primitives/src/unrelated.rs"), []);
-    eq("witness: the harness selects every witness spec and no other", rule("primitives/ts-test/witness.ts"), ["witness/a.spec.ts", "witness/b.spec.ts"]);
-    eq("witness: so do the adapter, the registry and a probe", [rule("primitives/src/ts/bridge.ts"), rule("primitives/src/bridge/behaviours.rs"), rule("playwright/witness/probes/wrong-paint.ts")].map((r) => r.length), [2, 2, 2]);
-  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
-  const node = process.execPath;
-  const env = { ...process.env };
-  for (const k of ["PLAYWRIGHT_BASE_URL", "SELECT_SSG_DIR", "SSG_SITE_DIR"]) delete env[k];
-  const run = (...a) => JSON.parse(execFileSync(node, [path.join(HERE, "select.mjs"), "--format", "json", ...a], { cwd: ROOT, env, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], maxBuffer: 1 << 28 }));
-  const harness = run("--files", "primitives/ts-test/witness.ts");
-  check("select: the witness page side selects the witness specs and not the broad set", harness.specs.length > 0 && harness.specs.every((f) => f.startsWith("witness/")), harness.specs.join(" ").slice(0, 200));
-  const registry = run("--files", "primitives/conformance/behaviours.json", "primitives/src/bridge/behaviours.rs");
-  check("select: the behaviour registry and its vectors select the witness specs and not the broad set", registry.specs.length > 0 && registry.specs.every((f) => f.startsWith("witness/")), registry.specs.join(" ").slice(0, 200));
-  const bindingOnly = run("--files", "playwright/witness/bindings/executor.watchdog.json");
-  eq("select: a binding selects its spec", bindingOnly.specs, ["witness/executor-internals.spec.ts"]);
 }
 
 console.log(failed ? `select-selftest: FAIL -- ${failed} of ${passed + failed} checks` : `select-selftest: OK -- ${passed} checks`);

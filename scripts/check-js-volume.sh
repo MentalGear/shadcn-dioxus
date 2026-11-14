@@ -25,12 +25,7 @@
 #                 `.eval(` / `eval(` call or definition (`eval-call`), the glob `document::*`, `document::Script`/
 #                 `Script {`/`script {`/`create_script`/`create_head_element`/`create_link`, `dangerous_inner_html`,
 #                 `web_sys`/`js_sys`/`wasm_bindgen`/`gloo_utils`/`gloo_events`/`gloo_file`/`evaluate_script`/
-#                 `inline_js`/`srcdoc`, an `extern` item that
-#                 can reach script: an `extern "<abi>" { .. }` or `unsafe extern "<abi>" { .. }` import block (with or
-#                 without `#[wasm_bindgen]`), a bare `extern { .. }`, an `extern "<abi>" fn` TYPE (a function pointer can
-#                 hold an imported function) and any `extern` shape that is not plainly a definition. A function
-#                 DEFINITION with a body, `[pub] [unsafe] extern "<abi>" fn name(..) { .. }`, is not a sink: it is Rust
-#                 the host may call (a wasm export, `#[no_mangle]`) and imports nothing; in a string: an `include_str!`/`include_bytes!`/`asset!` of a
+#                 `inline_js`/`srcdoc`, `extern "..."`; in a string: an `include_str!`/`include_bytes!`/`asset!` of a
 #                 `.js`/`.ts`/`.html` file, an rsx `"onclick":` attribute key, `Attribute::new("on...")`, a
 #                 `javascript:` href and a tag with an `on...=` handler; in an HTML, SVG or Markdown file: an external
 #                 `<script src>`, an `on...=` attribute, a `javascript:` href (a Markdown fenced block and code span are
@@ -321,61 +316,8 @@ SINK_RX = [
     ("document-glob", re.compile(r"\bdocument\s*::\s*\*")),
     ("script", re.compile(r"\bdocument\s*::\s*Script\b|\bScript\s*\{|\bscript\s*\{|\bcreate_script\b|\bcreate_head_element\b|\bcreate_link\b")),
     ("dangerous_inner_html", re.compile(r"\bdangerous_inner_html\b")),
-    ("ffi", re.compile(r"\b(?:web_sys|js_sys|wasm_bindgen|gloo_utils|gloo_events|gloo_file|evaluate_script|inline_js|srcdoc)\b|\bextern(?:\s*\"|(?=\s*(?:\{|fn\b)))")),
+    ("ffi", re.compile(r"\b(?:web_sys|js_sys|wasm_bindgen|gloo_utils|gloo_events|gloo_file|evaluate_script|inline_js|srcdoc)\b|\bextern\s+\"")),
 ]
-EXTERN_DEF = re.compile(r"fn\s+(?:r#)?[A-Za-z_]\w*\s*")
-
-
-def extern_defines(code, m):
-    """True when the `extern` match `m` (a `ffi` hit that starts with `extern`) heads a function DEFINITION, `extern
-    "<abi>" fn name(..) .. { body }`: Rust code the host may call, which runs no script. Everything else is False, so it
-    stays a sink: a block (`extern "C" { .. }`, `unsafe extern "C" { .. }`, bare `extern { .. }`), a function pointer
-    TYPE (`extern "C" fn(u32)`, which can hold an imported function), a declaration without a body, and any shape this
-    cannot read (unbalanced brackets, no body before the end of the text). The ABI string is blanked in the code view,
-    so every ABI is treated alike."""
-    i = m.end()
-    if code[m.start():i].endswith('"'):
-        i = code.find('"', i)
-        if i < 0:
-            return False
-        i += 1
-    while i < len(code) and code[i].isspace():
-        i += 1
-    d = EXTERN_DEF.match(code, i)
-    if not d:
-        return False
-    i = d.end()
-    if code.startswith("<", i):
-        depth = 0
-        while i < len(code):
-            if code[i] == "<":
-                depth += 1
-            elif code[i] == ">" and code[i - 1] != "-":
-                depth -= 1
-                if depth == 0:
-                    break
-            i += 1
-        else:
-            return False
-        i += 1
-        while i < len(code) and code[i].isspace():
-            i += 1
-    if not code.startswith("(", i):
-        return False
-    i = match_close(code, i) + 1
-    depth = 0
-    while i < len(code):
-        c = code[i]
-        if c in "([":
-            depth += 1
-        elif c in ")]":
-            depth -= 1
-        elif depth == 0 and c == "{":
-            return True
-        elif depth == 0 and c == ";":
-            return False
-        i += 1
-    return False
 EXPECT_RX = re.compile(r"#\s*!?\s*\[\s*(?:cfg_attr\s*\(\s*dx_repo_lints\s*,\s*)?expect\s*\(([^\]]*)\)\s*\]", re.S)
 # `#[allow(clippy::disallowed_methods)]` (and the sibling lints, inner attributes, `cfg_attr`) silences the sink ban
 ALLOW_LINT_RX = re.compile(r"\ballow\s*\([^\]]*?clippy\s*::\s*disallowed_", re.S)
@@ -494,8 +436,6 @@ def measure_rust(text, path="", idents=None):
     code = cs.code_of(text)
     for kind, rx in SINK_RX:
         for m in rx.finditer(code):
-            if kind == "ffi" and m.group(0).startswith("extern") and extern_defines(code, m):
-                continue
             c["sink"] += 1
             name = "sink:" + (m.lastgroup.replace("_", "-") if m.lastgroup else kind)
             sites.append((line_at(text, m.start()), name))
@@ -1302,32 +1242,6 @@ def self_test():
              why='new file with a non-zero count')
     scenario("gloo_events named in code", "red", base, append("primitives/src/clean.rs", 'use gloo_events::EventListener;\n'))
     scenario("gloo_file named in code", "red", base, append("primitives/src/clean.rs", 'use gloo_file::Blob;\n'))
-    # ---- `extern`: an import block is a sink, a function definition with a body is not
-    ext_def = '#[no_mangle]\npub extern "C" fn dx_abi() -> u32 {\n    1\n}\n'
-    ext_blk = 'extern "C" {\n    fn host_call(x: u32);\n}\n'
-    scenario("an `extern \"C\" fn` export alone is not a sink", "green", base, append("primitives/src/clean.rs", ext_def))
-    scenario("an `extern \"C\" { }` import block is a sink", "red", base, append("primitives/src/clean.rs", ext_blk), why="sink 0->1")
-    scenario("an `unsafe extern \"C\" { }` block is a sink", "red", base,
-             append("primitives/src/clean.rs", 'unsafe extern "C" {\n    pub safe fn host_call(x: u32);\n}\n'), why="sink 0->1")
-    scenario("a `#[wasm_bindgen] extern \"C\" { }` block is a sink", "red", base,
-             append("primitives/src/clean.rs", '#[wasm_bindgen]\nextern "C" {\n    fn host_call(x: u32);\n}\n'), why="sink 0->2")
-    scenario("a file with an export and an import counts only the import", "red", base,
-             append("primitives/src/clean.rs", ext_def + ext_blk), why="sink 0->1")
-    scenario("an `extern \"C\" fn(u32)` function pointer type is a sink (fail closed)", "red", base,
-             append("primitives/src/clean.rs", 'struct Cb {\n    f: extern "C" fn(u32),\n}\n'), why="sink 0->1")
-    scenario("a bare `extern { }` block is a sink", "red", base,
-             append("primitives/src/clean.rs", 'extern {\n    fn host_call(x: u32);\n}\n'), why="sink 0->1")
-    scenario("an `extern \"C\" fn` declaration without a body is a sink (fail closed)", "red", base,
-             append("primitives/src/clean.rs", 'extern "C" fn host_call(x: u32);\n'), why="sink 0->1")
-    for label, src, want in [
-            ("a generic, `where` and array-return export", 'pub unsafe extern "C" fn f<T: Copy>(x: T) -> [u8; 4]\nwhere\n    T: Sized,\n{\n    [0; 4]\n}\n', 0),
-            ("an export with a multi-line signature", 'pub(crate) extern "C" fn f(\n    a: u32,\n    b: u32,\n) -> u32 {\n    a + b\n}\n', 0),
-            ("an `extern fn` export with no ABI string", 'pub extern fn f() {}\n', 0),
-            ("an export and a pointer type", 'extern "C" fn f() {}\nstatic G: Option<extern "C" fn()> = None;\n', 1),
-            ("a definition that never reaches its body", 'extern "C" fn f(', 1)]:
-        got = len(measure_rust(src)[1])
-        if got != want:
-            fails.append(f"{label}: expected {want} sink site(s), got {got}")
     sites = measure_rust('fn t() { let g = dioxus::document::eval; let f = dd::eval; }\n')[1]
     if [k for _, k in sites] != ["sink:eval", "sink:eval-path"]:
         fails.append(f"sink:eval must be the document-rooted path and sink:eval-path the other path, got {sites}")
@@ -1484,10 +1398,6 @@ def self_test():
              why="a sink site (eval")
     scenario("(c) a new kind of sink site is red", "red", fz, seq(append("primitives/src/clean.rs", "use web_sys::window;\n"), rows_agree),
              freeze=True, why="a sink site (ffi")
-    scenario("an `extern \"C\" fn` export alone leaves the freeze nothing", "green", fz,
-             seq(append("primitives/src/clean.rs", ext_def), rows_agree), freeze=True)
-    scenario("an `extern \"C\" { }` import block is a frozen sink site", "red", fz,
-             seq(append("primitives/src/clean.rs", ext_blk), rows_agree), freeze=True, why="a sink site (ffi")
     scenario("(c) a new legacy file is red", "red", fz, seq(lambda r: write(r, "templates/starter/x.js", "var a = 1;\nrun(a);\n"), rows_agree),
              freeze=True, why="a legacy script (file")
     scenario("(d) the freeze data hand-edited to match an edited script, no note", "red", fz, seq(swap, hand_freeze()), freeze=True,

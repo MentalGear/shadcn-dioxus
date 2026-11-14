@@ -2,7 +2,7 @@
 #
 # setup-merge-drivers.sh   (backlog row 400)
 #
-# Registers the git merge drivers that `.gitattributes` names (`merge=backlog-index`, `merge=durations`, `merge=kernel-artefact`) in a clone's
+# Registers the git merge drivers that `.gitattributes` names (`merge=backlog-index`, `merge=durations`) in a clone's
 # repo config. Git never reads a driver from the tree, only from config, so every clone needs this once: the
 # SessionStart hook (scripts/session-setup.sh) runs it, and this script is the manual run for any other clone.
 # Worktrees share the repo's config, so one registration covers the main checkout and every `git worktree` of it.
@@ -30,7 +30,6 @@ done
 drivers=(
   "backlog-index|generated backlog index (3-way merge by row id)|scripts/merge-driver-backlog-index.py|python3 -I"
   "durations|playwright durations table (3-way merge by entry)|playwright/tools/durations-merge.mjs|node"
-  "kernel-artefact|decision kernel artefact (rebuilt from the merged sources)|scripts/merge-driver-kernel.py|python3 -I"
 )
 
 # $1=%O (base) $2=%A (ours, the output) $3=%B (theirs) $4=%P (path)

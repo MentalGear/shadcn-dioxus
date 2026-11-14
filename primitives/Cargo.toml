@@ -14,9 +14,6 @@ repository = "https://github.com/DioxusLabs/components"
 [dependencies]
 dioxus = { workspace = true, features = ["lib", "launch"] }
 dioxus-attributes = { path = "../dioxus-attributes" }
-# The pure `decide` of each named behaviour (row 509): called directly on a renderer with no page, and built for
-# `wasm32-unknown-unknown` into the committed module the bridge loads into a page. No dependencies of its own.
-decision-kernel = { path = "../decision-kernel" }
 # Optional, switched on by the `calendar` feature (Calendar, DatePicker): see `[features]`.
 time = { version = "0.3.47", optional = true, features = ["std", "local-offset"] }
 tracing.workspace = true

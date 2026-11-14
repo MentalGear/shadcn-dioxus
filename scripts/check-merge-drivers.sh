@@ -2,7 +2,7 @@
 #
 # check-merge-drivers.sh   (backlog row 400)
 #
-# The generated backlog indexes, the durations table and the decision kernel's committed artefact never conflict textually on a merge of lane branches: `.gitattributes` maps `dev-docs/backlog.md`, `dev-docs/backlog-done.md`, `playwright/durations.json` and `primitives/src/kernel/*` to merge drivers (scripts/merge-driver-backlog-index.py, playwright/tools/durations-merge.mjs, scripts/merge-driver-kernel.py) that merge by row id, by spec entry and by rebuilding the merged kernel sources, registered per clone by scripts/setup-merge-drivers.sh from the SessionStart hook. This gate checks the attributes, the driver scripts, the registration command and the hook wiring exist, runs the three drivers' self-tests (the kernel driver's does a real two-branch merge with a stub builder), and does a real merge in a throwaway git repo (two branches each adding a backlog row file and a durations entry, registered through setup-merge-drivers.sh itself) that must finish with no conflict and a valid index and table.
+# The generated backlog indexes and the durations table never conflict textually on a merge of lane branches: `.gitattributes` maps `dev-docs/backlog.md`, `dev-docs/backlog-done.md` and `playwright/durations.json` to merge drivers (scripts/merge-driver-backlog-index.py, playwright/tools/durations-merge.mjs) that merge by row id and by spec entry, registered per clone by scripts/setup-merge-drivers.sh from the SessionStart hook. This gate checks the attributes, the driver scripts, the registration command and the hook wiring exist, runs both drivers' self-tests, and does a real merge in a throwaway git repo (two branches each adding a backlog row file and a durations entry, registered through setup-merge-drivers.sh itself) that must finish with no conflict and a valid index and table.
 #
 # This clone's own registration is reported, not required: a clone that never ran scripts/setup-merge-drivers.sh merges with git's text merge (and its conflicts on the generated files), and that script fixes it.
 #
@@ -17,10 +17,10 @@ command -v python3 >/dev/null || fail "python3 is required"
 command -v git >/dev/null || fail "git is required"
 
 # 1. the attributes and the files they name
-for want in "dev-docs/backlog.md merge=backlog-index" "dev-docs/backlog-done.md merge=backlog-index" "playwright/durations.json merge=durations" "primitives/src/kernel/* merge=kernel-artefact"; do
+for want in "dev-docs/backlog.md merge=backlog-index" "dev-docs/backlog-done.md merge=backlog-index" "playwright/durations.json merge=durations"; do
   grep -qxF "$want" .gitattributes 2>/dev/null || fail ".gitattributes has no line '$want'"
 done
-for f in scripts/merge-driver-backlog-index.py playwright/tools/durations-merge.mjs scripts/merge-driver-kernel.py scripts/build-kernel.sh scripts/setup-merge-drivers.sh; do
+for f in scripts/merge-driver-backlog-index.py playwright/tools/durations-merge.mjs scripts/setup-merge-drivers.sh; do
   [ -f "$f" ] || fail "$f is missing"
 done
 grep -q 'setup-merge-drivers.sh' scripts/session-setup.sh || fail "scripts/session-setup.sh does not run scripts/setup-merge-drivers.sh (a clone would never register the drivers)"
@@ -28,8 +28,6 @@ grep -q 'setup-merge-drivers.sh' scripts/session-setup.sh || fail "scripts/sessi
 # 2. the drivers' own self-tests
 python3 -I scripts/merge-driver-backlog-index.py --self-test >/dev/null 2>&1 || { python3 -I scripts/merge-driver-backlog-index.py --self-test; fail "the backlog-index driver's self-test is red"; }
 node playwright/tools/durations-merge.mjs --self-test >/dev/null 2>&1 || { node playwright/tools/durations-merge.mjs --self-test; fail "the durations driver's self-test is red"; }
-python3 -I scripts/merge-driver-kernel.py --self-test >/dev/null 2>&1 || { python3 -I scripts/merge-driver-kernel.py --self-test; fail "the kernel artefact driver's self-test is red"; }
-grep -q 'kernel-artefact|' scripts/setup-merge-drivers.sh || fail "scripts/setup-merge-drivers.sh does not register the kernel-artefact driver"
 
 # 3. a real merge in a scratch repo, registered the way a clone is
 tmp="$(mktemp -d)"
@@ -39,7 +37,7 @@ git init -q "$r" || fail "git init failed"
 git -C "$r" config user.email gate@example.invalid
 git -C "$r" config user.name gate
 mkdir -p "$r/scripts" "$r/playwright/tools" "$r/dev-docs"
-cp scripts/backlog-index.py scripts/merge-driver-backlog-index.py scripts/merge-driver-kernel.py "$r/scripts/"
+cp scripts/backlog-index.py scripts/merge-driver-backlog-index.py "$r/scripts/"
 cp playwright/tools/durations-merge.mjs "$r/playwright/tools/"
 cp .gitattributes "$r/"
 cp -r dev-docs/backlog "$r/dev-docs/backlog"
@@ -134,4 +132,4 @@ if "$repo_root/scripts/setup-merge-drivers.sh" --check 2>/dev/null; then
 else
   reg="NOT registered in this clone (run scripts/setup-merge-drivers.sh); merges here use git's text merge"
 fi
-echo "check-merge-drivers: OK -- attributes, scripts and hook wiring present, the three self-tests green, a two-branch merge was clean with a valid index and table; $reg"
+echo "check-merge-drivers: OK -- attributes, scripts and hook wiring present, both self-tests green, a two-branch merge was clean with a valid index and table; $reg"

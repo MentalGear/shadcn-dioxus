@@ -10,7 +10,6 @@ import type { Page } from "@playwright/test";
 
 const BRIDGE = readFileSync(join(__dirname, "../primitives/src/js/bridge.js"), "utf8");
 const FIXTURE = readFileSync(join(__dirname, "../primitives/src/js/behaviours/fixture.js"), "utf8");
-const KERNEL_B64 = readFileSync(join(__dirname, "../primitives/src/kernel/decision-kernel.b64"), "utf8");
 
 const HTML = `<!doctype html><meta name="viewport" content="width=device-width">
 <style>#t{width:100px;height:40px;transition:opacity 1s linear;opacity:1;color:rgb(1,2,3)}
@@ -25,8 +24,6 @@ async function load(page: Page) {
   await page.setContent(HTML);
   await page.addScriptTag({ content: BRIDGE });
   await page.addScriptTag({ content: FIXTURE });
-  // the decision kernel, as the transport loads it into a page: base64, compiled synchronously
-  await page.evaluate((b64) => void (window as any).__dxBridge.kernel.load(b64), KERNEL_B64);
   await page.evaluate(() => {
     // a stand-in for the `dioxus` object of one eval
     (window as any).makeCh = () => {

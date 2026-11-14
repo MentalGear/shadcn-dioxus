@@ -240,7 +240,7 @@ describe("observe", () => {
     const [mo] = win.MutationObserver.all;
     expect(ro.observed).toEqual([[el, { box: "border-box" }]]);
     expect(io.init).toEqual({ root: null, rootMargin: "10px", threshold: [0, 1] });
-    ro.callback([{ target: el, contentRect: { width: 10, height: 20 }, borderBoxSize: [{ inlineSize: 12, blockSize: 22 }] }]);
+    ro.callback([{ contentRect: { width: 10, height: 20 }, borderBoxSize: [{ inlineSize: 12, blockSize: 22 }] }]);
     io.callback([{ isIntersecting: true, intersectionRatio: 0.5, boundingClientRect: { top: 1, left: 2, width: 3, height: 4 }, intersectionRect: { height: 2 }, rootBounds: { height: 800 } }]);
     mo.callback([
       { attributeName: "class", addedNodes: [1, 2], removedNodes: [] },
@@ -253,58 +253,6 @@ describe("observe", () => {
     ]);
     s.dispose();
     expect([ro, io, mo].map((o) => o.disconnected)).toEqual([true, true, true]);
-  });
-});
-
-describe("the resize dispatcher", () => {
-  const entry = (target: unknown, width: number, height: number) => ({ target, contentRect: { width, height }, borderBoxSize: [{ inlineSize: width, blockSize: height }] });
-
-  test("one observer serves every consumer of a box option, and a second consumer is delivered the size once", () => {
-    const { win, bridge, doc } = setup();
-    const a = doc.add("a");
-    const b = doc.add("b");
-    const ch1 = makeChannel();
-    const ch2 = makeChannel();
-    const s1 = bridge.scope(ch1);
-    const s2 = bridge.scope(ch2);
-    s1.observe({ target: "a", kind: "resize" });
-    s1.observe({ target: "b", kind: "resize" });
-    s2.observe({ target: "a", kind: "resize" });
-    s2.observe({ target: "a", kind: "resize", options: { box: "border-box" } });
-    expect(win.ResizeObserver.all.length).toBe(2);
-    const [plain, bordered] = win.ResizeObserver.all;
-    expect(plain.observed.map((row: unknown[]) => row[0])).toEqual([b, a]);
-    plain.callback([entry(a, 5, 6), entry(b, 7, 8)]);
-    expect(ch1.sent.map((m: any) => m.width)).toEqual([5, 7]);
-    expect(ch2.sent.map((m: any) => m.width)).toEqual([5]);
-    // the browser redelivers a re-observed element: a consumer that has the size does not hear it twice
-    plain.callback([entry(a, 5, 6)]);
-    plain.callback([entry(a, 9, 6)]);
-    expect(ch1.sent.map((m: any) => m.width)).toEqual([5, 7, 9]);
-    expect(ch2.sent.map((m: any) => m.width)).toEqual([5, 9]);
-    bordered.callback([entry(a, 1, 1)]);
-    expect(ch2.sent.map((m: any) => m.width)).toEqual([5, 9, 1]);
-  });
-
-  test("the observer disconnects with its last consumer, and an element leaves with its own", () => {
-    const { win, bridge, doc } = setup();
-    const a = doc.add("a");
-    doc.add("b");
-    const s1 = bridge.scope(makeChannel());
-    const s2 = bridge.scope(makeChannel());
-    s1.observe({ target: "a", kind: "resize" });
-    s2.observe({ target: "b", kind: "resize" });
-    const [ro] = win.ResizeObserver.all;
-    s1.dispose();
-    expect(ro.observed.map((row: unknown[]) => row[0])).not.toContain(a);
-    expect(ro.disconnected).toBe(false);
-    s2.dispose();
-    expect(ro.disconnected).toBe(true);
-    s1.observe({ target: "a", kind: "resize" });
-    expect(win.ResizeObserver.all.length).toBe(1);
-    const s3 = bridge.scope(makeChannel());
-    s3.observe({ target: "a", kind: "resize" });
-    expect(win.ResizeObserver.all.length).toBe(2);
   });
 });
 
@@ -505,27 +453,6 @@ describe("the slow-channel mode", () => {
     win.step();
     await ticks();
     expect(got).toBe("hello");
-  });
-
-  test("a scheduler function decides when every message is delivered, in both directions", async () => {
-    const { win, bridge } = setup();
-    const held: (() => void)[] = [];
-    win.__dxBridgeDelayFrames = (deliver: () => void) => held.push(deliver);
-    const raw = makeChannel();
-    const ch = bridge.channel(raw);
-    ch.send("a");
-    ch.send("b");
-    expect(raw.sent).toEqual([]);
-    held.splice(0).forEach((deliver) => deliver());
-    expect(raw.sent).toEqual(["a", "b"]);
-    let got: unknown = "none";
-    ch.recv().then((m: unknown) => (got = m));
-    raw.push("command");
-    await ticks();
-    expect(got).toBe("none");
-    held.splice(0).forEach((deliver) => deliver());
-    await ticks();
-    expect(got).toBe("command");
   });
 
   test('"never" drops every message to Rust but still delivers commands from Rust', async () => {

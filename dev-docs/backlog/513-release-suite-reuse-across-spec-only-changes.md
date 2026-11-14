@@ -1,10 +1,10 @@
 ---
 id: 513
 title: "A spec-only fix after a red release suite re-runs the whole suite: reuse the results the changed files cannot affect"
-status: "BACKLOG. It serves the owner's standing goal \"evaluate how the testing could be made quicker…"
+status: "APPROVED 2026-11-14 (owner: \"ok\"). It serves the owner's standing goal \"evaluate how the testing…"
 size: "M (inferred): the key derivation, the…"
 area: tests
-updated: 2026-11-13
+updated: 2026-11-14
 ---
 
 # Row 513: the release suite reuses results across a spec-only change
@@ -20,8 +20,8 @@ change cannot affect.
 
 ## Status / trigger
 
-BACKLOG. It serves the owner's standing goal "evaluate how the testing could be made quicker without losing quality".
-It changes what the deploy accepts as proof, so it needs the owner's approval before it is built.
+APPROVED 2026-11-14 (owner: "ok"). It serves the owner's standing goal "evaluate how the testing could be made quicker
+without losing quality". It changes what the deploy accepts as proof, which is why the owner approved it before it is built.
 
 ## Size
 
