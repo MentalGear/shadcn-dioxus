@@ -921,32 +921,11 @@ fn NavbarContentRendered(
     // `Auto` + `use_popover_shown_while_mounted` combination (see that
     // hook's own doc, "Bug 2 (reopen-while-still-mounted, auto only)",
     // which is reasoned against exactly this pairing).
-    crate::top_layer::use_popover_shown_while_mounted(
-        id.clone(),
-        open,
-        Callback::new(move |is_open: bool| {
-            if !is_open && (ctx.open_nav)() == Some(index.cloned()) {
-                ctx.set_open_nav.call(None);
-            }
-        }),
-    );
-    // JS-measured static positioning fallback for engines without CSS
-    // Anchor Positioning -- see `top_layer::use_anchor_position_fallback`'s
-    // doc. `side`/`align`/gap match this component's themed CSS
-    // (`../../preview/src/components/navbar/style.css`'s `top: 100%; left:
-    // 0; margin-top: 0.5rem` -- 0.5rem == 8px at the default root font
-    // size): anchored below the trigger, left-aligned with it, the same
-    // bottom/start convention `MenubarContentRendered`/
+    // JS-measured positioning for engines without CSS Anchor Positioning: `side`/`align`/gap match this
+    // component's themed CSS (`../../preview/src/components/navbar/style.css`'s `top: 100%; left: 0;
+    // margin-top: 0.5rem` -- 0.5rem == 8px at the default root font size): anchored below the trigger,
+    // left-aligned with it, the same bottom/start convention `MenubarContentRendered`/
     // `DropdownMenuContentRendered` use for the identical visual shape.
-    crate::top_layer::use_anchor_position_fallback(
-        id.clone(),
-        id.clone(),
-        open,
-        crate::ContentSide::Bottom,
-        crate::ContentAlign::Start,
-        8,
-    );
-
     // dev-docs/backlog.md row 41: an APG menu requires an accessible name from
     // either aria-labelledby or aria-label -- labelled by this nav's own
     // trigger, mirroring `MenubarContent`'s identical row-25 pattern
@@ -967,34 +946,33 @@ fn NavbarContentRendered(
             aria_labelledby: "{nav_ctx.trigger_id}"
         })
     };
-    let attributes = merge_attributes(vec![
-        attributes,
-        labelledby,
-        // Owned by this component -- menu semantics + top-layer wiring
-        // must win over a caller's own attributes (`dev-docs/backlog.md` row
-        // 93's duplicate-attribute hazard).
-        attributes!(div {
-            // Pattern-class popup role -- see `MenubarContentRendered`'s
-            // identical browser-arm `crate::menu_semantics::MENU_ROLE`
-            // (`menubar.rs`), which this mirrors.
-            role: crate::menu_semantics::MENU_ROLE,
-            popover: crate::top_layer::PopoverKind::Auto.as_str(),
-            ..state_attrs::open(open()),
-            "data-open-menu-direction": "{open_direction}",
-        }),
-    ]);
-    // Folds the caller's own `style` together with the anchor binding into
-    // one `style` attribute -- see `top_layer::anchored_content_attributes`'s
-    // doc for why a bare `style: position_anchor_style(&id)` literal
-    // alongside `..attributes` is the duplicate-`style` hazard
-    // (`dev-docs/conformance-harness.md` hydration-parity Rule 4). The
-    // `top_layer` fixture's `NavbarContent { style: "min-height: 100px;" }`
-    // is the exerciser: a bare literal beside the spread would emit two
-    // `style` attributes (SSR keeps the anchor binding, the client the
-    // caller's).
-    let attributes = crate::top_layer::anchored_content_attributes(
-        crate::top_layer::AnchorKind::Navbar,
-        &id,
+    let attributes = merge_attributes(vec![attributes, labelledby]);
+    let attributes = crate::top_layer::use_anchored_panel(
+        crate::top_layer::AnchoredPanel {
+            id: id.clone(),
+            open: open.into(),
+            set_open: Callback::new(move |is_open: bool| {
+                if !is_open && (ctx.open_nav)() == Some(index.cloned()) {
+                    ctx.set_open_nav.call(None);
+                }
+            }),
+            popover: crate::top_layer::PopoverKind::Auto,
+            sync: crate::top_layer::PanelSync::WhileMounted,
+            placement: crate::top_layer::AnchoredPlacement::Anchored {
+                anchor_id: id.clone(),
+                side: crate::ContentSide::Bottom,
+                align: crate::ContentAlign::Start,
+                gap: 8,
+                kind: crate::top_layer::AnchorKind::Navbar,
+            },
+            // Pattern-class popup role -- see `MenubarContentRendered`'s identical browser-arm
+            // `crate::menu_semantics::MENU_ROLE` (`menubar.rs`), which this mirrors.
+            owned: attributes!(div {
+                role: crate::menu_semantics::MENU_ROLE,
+                ..state_attrs::open(open()),
+                "data-open-menu-direction": "{open_direction}",
+            }),
+        },
         attributes,
     );
 
