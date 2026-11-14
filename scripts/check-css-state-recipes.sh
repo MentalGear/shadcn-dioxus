@@ -121,8 +121,6 @@ ALLOW = Allowlist("check-css-state-recipes", [
      "the destructive Button's focus border is destructive/40 (Nova `focus-visible:border-destructive/40`)"),
     ("focus-border", "alert_dialog/style.css", "--dx-destructive",
      "the alert dialog's action is a destructive Button; it takes the destructive Button's focus border"),
-    ("starting-style", "chart/style.css", "",
-     "the chart tooltip's open fade is still a `@starting-style` transition here; its keyframe replacement is on lane/chart-tooltip-fade, and this entry goes when that lands"),
 ], fields=("check", "suffix", "needle"))
 
 def strip_not(sel):
