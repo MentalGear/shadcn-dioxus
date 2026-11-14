@@ -13,7 +13,7 @@ it moved and then break a gate later (row 451 was named by scripts/check-hot-eve
   js-grant       an open row with a non-empty `js-grant:` is read by the ratchet (scripts/lib/rows.py); a closed row is not, so
                  closing it withdraws the grant of a lane whose raise is not merged yet. Only the closing command checks this
                  (a grant already spent cannot be told from one still waiting, so a gate cannot); `--grant-spent` says the
-                 grant is spent or no longer needed.
+                 grant is spent or not needed.
 
 Modes (run with `python3 -I`; scripts/backlog-close.sh wraps the first):
   <id>... [--status TEXT] [--grant-spent]
