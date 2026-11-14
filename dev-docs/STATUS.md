@@ -42,11 +42,11 @@ row says otherwise, so a step runs as parallel lanes (one verifier per batch, `l
 
 **Before the plan continues (port-independent)**
 
-1. Rows 436, 454, 506 and 511 are done, and the first half of row **448** (the native-arm focus trap is deleted) is
-   on main (PR #182). **Built, not merged (2026-11-14):** row **509** (the Rust decision contract) and row **446**
-   (the witness harness, on top of 509), with a fix to the volume gate's `ffi` pattern; they are one local batch
-   (`queue/batch-4`) that waits for the owner's grant columns, below. Row **451** stays open for the per-row
-   `mounted` handle only.
+1. Rows 436, 451, 454, 506 and 511 are done, and the first half of row **448** (the native-arm focus trap is deleted) is
+   on main (PR #182). Rows **509** (the Rust decision contract) and **446** (the witness harness, on top of 509) are on
+   main with the batch of 2026-11-14, with a fix to the volume gate's `ffi` pattern; each row lists what stays open.
+   **In flight:** row **447** (the order runtime; its first piece is built on `lane/order-runtime-447`) and the code
+   half of row **450** (`lane/bridge-stats-450`).
 2. Done, merged in PR #170 (2026-11-11): the deploy blockers of PR #168 (rows 468, 501); row **436**'s overlay and
    class groups (F1, F2, F4, F5, F6, F8, F9, F10, F11, F12), each reproduced red first (CHANGELOG.md has the
    user-visible ones: F1, F10, F11); **499** (safe triangle; CHANGELOG.md too); **152** slices 4-5; **371**'s
@@ -126,8 +126,7 @@ ports), its working form is [`js-interop.md`](./js-interop.md), and every item h
 - CI back on (rows 4, 33): every workflow except `mutants.yml` is deleted, so reactivation means a new workflow that
   runs `scripts/run-gates.sh`.
 - Decided 2026-11-14 (owner: "ok"): the grant columns of rows 509 and 446 (in the rows' front matter) and recording
-  their raises; re-pointing the hot-events `mounted` entry from row 451 to the row for the per-row handle, which the
-  batch with rows 509 and 446 carries; row 513 (reuse of release-suite results across spec-only changes) is approved.
+  their raises; the hot-events `mounted` entry names row 514 (the per-row handle) and row 451 is closed; row 513 (reuse of release-suite results across spec-only changes) is approved.
 - Row 508's verdict is `KERNEL`, so row 509 opens without a further decision. Loading the
   kernel inside the desktop webview stays unproven until a desktop build exists (row 23).
 

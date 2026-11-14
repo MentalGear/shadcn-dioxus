@@ -11,6 +11,7 @@ members = [
     "preview",
     "test-harness",
     "dioxus-attributes",
+    "decision-kernel",
     "scripts/attr-spread-collision-checker",
 ]
 
@@ -71,6 +72,23 @@ codegen-units = 16
 debug = 0
 strip = false
 incremental = true
+
+# The decision kernel (`decision-kernel/`, row 509): the committed wasm module `scripts/build-kernel.sh` builds with
+# `--profile kernel`. A custom profile must name a parent, so it names `dev` and restates every setting that decides
+# the module's bytes: it inherits nothing from `[profile.release]`, so a change to the shipped build's profile never
+# moves the kernel, and `kernel.manifest` hashes this table so that a change here without a rebuild is red.
+[profile.kernel]
+inherits = "dev"
+opt-level = "z"
+debug = false
+debug-assertions = false
+overflow-checks = false
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"
+incremental = false
+rpath = false
 
 [profile.dev]
 debug = 0

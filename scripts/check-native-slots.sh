@@ -8,7 +8,9 @@
 #
 # THE CLOSED TABLE (the root doc names these elements and no other; the slots are the ones it ties to each): `input` value and checked, `textarea` and `select` value, `option` selected (a static `option { value: "a" }` is a label, not a slot: only `selected` is volatile on option), `dialog` and `details` open, and `hidden` on any of them. `hidden` is also counted in its upper-case spelling `HIDDEN` on any element (the repo's `until-found` attribute, written by `beforematch` on any panel), and a write through `Attribute::new("<slot>", ..)` or a bare `attributes!(..)` is counted whatever the element, because the element is not visible there. A `Attribute::new` whose name is not a literal is not seen.
 #
-# WHAT IS READ: Rust files of `git ls-files` outside docs/, playwright/, scripts/, dev-docs/, vendored trees and `#[cfg(test)]` modules, in the code view of scripts/comment-scan.py (`code_of`: comments removed, string contents blanked), so a slot named in a comment or a string is not a site. Only attributes of the element's own block count: a child element's block is skipped (its own opener is found on its own), a conditional (`if c { value: x }`) is not.
+# WHAT IS READ: Rust files of `git ls-files` outside docs/, playwright/, scripts/, dev-docs/, vendored trees, `#[cfg(test)]` modules and items under `#[cfg(feature = "native")]` (below), in the code view of scripts/comment-scan.py (`code_of`: comments removed, string contents blanked), so a slot named in a comment or a string is not a site. Only attributes of the element's own block count: a child element's block is skipped (its own opener is found on its own), a conditional (`if c { value: x }`) is not.
+#
+# THE BLITZ ARM IS NOT FORBIDDEN (row 509): an item under `#[cfg(feature = "native")]` (an `fn`, `impl`, `mod`, block or statement) is the arm of a renderer with no page, where an rsx slot write is the only route to the slot: no owner write over the bridge exists there, and the page's own writers (autofill, `form.reset()`) do not either. The exemption is the exact spelling `cfg(feature = "native")`; the browser-engine arm (`not(feature = "native")`, or no cfg) is read in full, so the same item under it is still a site.
 #
 # THE RATCHET (scripts/lib/ratchet.py): `scripts/check-native-slots.baseline.tsv` is `path<TAB>value<TAB>checked<TAB>selected<TAB>open<TAB>hidden`, files with a non-zero count only. A count that rises, a new file with a site and a count that fell without being written back all fail; the tree's baseline is also compared with the merge base's, so editing the baseline in the commit is not a way through. A deliberate raise is `--update-baseline --allow-raise "row N reason"`.
 #
@@ -38,6 +40,7 @@ import tempfile
 
 HERE = os.getcwd()
 sys.path.insert(0, os.path.join(HERE, "scripts", "lib"))
+from cfg_arms import native_ranges  # noqa: E402
 from ratchet import Ratchet, selftest_env  # noqa: E402
 
 _spec = importlib.util.spec_from_file_location("comment_scan", os.path.join(HERE, "scripts", "comment-scan.py"))
@@ -156,7 +159,7 @@ def measure_rust(text, path=""):
     """`(counts, sites)`; a site is `(line, element, attribute)`."""
     code = cs.code_of(text)
     keep = cs.code_of(text, keep_strings=True)
-    tests = test_ranges(code, path)
+    tests = test_ranges(code, path) + native_ranges(code, keep)
     found = []
     for m in OPENER_RX.finditer(code):
         if HEAD_RX.match(statement_head(code, m.start(1))):
@@ -281,6 +284,19 @@ def self_test():
     case("control: a binding named like the element", "fn f(input: u8) { if input { let value: u8 = 1; } }", [])
     case("control: a test module", "#[cfg(test)]\nmod tests { fn t() { rsx! { input { value: x } } } }\n", [])
     case("control: `if input {`", "fn f() { if input { value: 1 } }", [])
+    # the Blitz arm (row 509): exempt under `#[cfg(feature = "native")]`, and the same item under the browser arm is a site
+    native = '#[cfg(feature = "native")]\n'
+    web = '#[cfg(not(feature = "native"))]\n'
+    item = "fn v() -> Element { rsx! { input { value: x } } }\n"
+    case("native arm: an fn", native + item, [])
+    case("native arm: the same fn under the browser arm", web + item, [("input", "value")])
+    case("native arm: the same fn with no cfg", item, [("input", "value")])
+    case("native arm: an impl block", native + "impl V { fn v(&self) -> Element { rsx! { dialog { open: o } } } }\n", [])
+    case("native arm: a block statement", "fn f() {\n" + native + "    { let a = attributes!(input { checked: c }); }\n}\n", [])
+    case("native arm: another attribute between the cfg and the item", native + "#[inline]\n" + item, [])
+    case("native arm: a let statement", "fn f() {\n" + native + "    let a = Attribute::new(\"open\", v, None, false);\n}\n", [])
+    case("native arm: only the item after the cfg is exempt", native + "fn a() {}\n" + item, [("input", "value")])
+    case("native arm: a cfg(all(..)) with native is not the exact spelling", '#[cfg(all(feature = "native", test))]\n' + item, [("input", "value")])
 
     # the ratchet half: a new site in a clean tree fails, an unchanged tree passes
     git_env = {**os.environ, "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@example.invalid", "GIT_COMMITTER_NAME": "t",

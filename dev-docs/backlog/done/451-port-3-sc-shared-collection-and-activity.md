@@ -6,7 +6,7 @@ size: "M"
 area: primitives
 js-grant: js_file_bytes=1200, bytes=450 (measured on lane/port-sc-451 on top of row 454: js/bridge.js +324 and ts/bridge.ts +407 bytes for three closed rows; inferred ceiling: five closed bridge rows for S7 and S15, about 450 bytes of TypeScript plus about 350 in the bundle, with margin; the row that first needs a verb adds it, root doc section 5.2)
 adds: []
-updated: 2026-11-13
+updated: 2026-11-14
 ---
 
 # Row 451: Port 3.SC: shared collection and activity scripts (S7, S15)
@@ -15,11 +15,11 @@ updated: 2026-11-13
 
 Port S7 (`collection.rs`, with the per-row `onmounted` of `collection.rs:738`) and S15 (`activity.rs`) off bespoke eval. Highest yield of the candidates: about 30 JavaScript lines removed per agent-hour.
 
-Part of the [row 434](./434-javascript-in-typescript-modules-not-rust-strings.md) step 3 plan; source: [`sync-js-root-2026-10-26.md`](../research/sync-js-root-2026-10-26.md) section 5.4 (candidate rows) and the ledger of section 3.3.
+Part of the [row 434](../434-javascript-in-typescript-modules-not-rust-strings.md) step 3 plan; source: [`sync-js-root-2026-10-26.md`](../../research/sync-js-root-2026-10-26.md) section 5.4 (candidate rows) and the ledger of section 3.3.
 
 ## Status / trigger
 
-LANDED in PR #180 (2026-11-13) plus the follow-up that adds the js-interop rows: S7 and S15 run on the bridge; three closed rows added; the legacy scripts are gone. **Open:** the per-row `onmounted` handle stays (see "The per-row `onmounted`"), and `scripts/check-hot-events.allow.tsv` excuses `mounted` in this row's name with the reason that a container handle replaces the per-row ones. That replacement belongs with the roving hub's focus writes ([row 462](./462-port-roving-focus-78-set-focus-sites.md)); the allow row is the owner's, so this row stays open until the owner re-points it or row 462 removes the handle. The skipped-subtree paths could not be pinned by a spec (see "Not provable on Chromium"); that is a finding, not an open item. (APPROVED 2026-10-26, scope 2.)
+LANDED in PR #180 (2026-11-13) plus the follow-up that adds the js-interop rows: S7 and S15 run on the bridge; three closed rows added; the legacy scripts are gone. The per-row `onmounted` handle stays (see "The per-row `onmounted`"); [row 514](../514-the-per-row-mounted-handle-has-no-owner.md) owns it, and `scripts/check-hot-events.allow.tsv` excuses `mounted` in that row's name (owner 2026-11-14). The skipped-subtree paths could not be pinned by a spec (see "Not provable on Chromium"); that is a finding, not an open item. (APPROVED 2026-10-26, scope 2.)
 
 **Grant (set on main by the main loop):** `js_file_bytes=1200`. Measured on top of row 454's own raise: `primitives/src/js/bridge.js` 22234 -> 22558 (+324 bytes) is the only `js_file_bytes` file this row raises; `bridge.d.ts` is unchanged. The TypeScript source `bridge.ts` grew 47097 -> 47504 bytes (+407), which the `check-bridge-behaviours` budget counts in canonical tokens, not `js_file_bytes`. The grant covers the raise (324 of 1200). Neither `check-js-volume` nor `check-bridge-behaviours` is re-baselined here.
 
@@ -29,11 +29,11 @@ M
 
 ## Detail
 
-- **Files owned:** `collection.rs`, `activity.rs`, and the bridge files for the additions below: `primitives/src/ts/bridge.ts`, its bundle `primitives/src/js/bridge.js` (with `bundle.manifest`), `primitives/src/ts/types/bridge.d.ts` where a message type changes, and `primitives/src/bridge/{mod,events,session}.rs`. Must not touch the rest. `collection.rs:520` is the roving hub that the conditional roving-focus row ([row 462](./462-port-roving-focus-78-set-focus-sites.md)) would route through the focus owner, so that row waits for this one.
-- **Depends on:** [row 444](./444-gate-half-of-lane-3-0b-grants-bans-and-witness-presence.md) (grant rule), [row 445](./done/445-phase-0-2-the-legacy-freeze.md) (legacy freeze), and row 454's observer changes in `bridge.ts` and `bridge/**`, which land first because both rows edit those files (the intersection fields sit in the same region); a grant for `js_file_bytes` (see Status).
+- **Files owned:** `collection.rs`, `activity.rs`, and the bridge files for the additions below: `primitives/src/ts/bridge.ts`, its bundle `primitives/src/js/bridge.js` (with `bundle.manifest`), `primitives/src/ts/types/bridge.d.ts` where a message type changes, and `primitives/src/bridge/{mod,events,session}.rs`. Must not touch the rest. `collection.rs:520` is the roving hub that the conditional roving-focus row ([row 462](../462-port-roving-focus-78-set-focus-sites.md)) would route through the focus owner, so that row waits for this one.
+- **Depends on:** [row 444](../444-gate-half-of-lane-3-0b-grants-bans-and-witness-presence.md) (grant rule), [row 445](./445-phase-0-2-the-legacy-freeze.md) (legacy freeze), and row 454's observer changes in `bridge.ts` and `bridge/**`, which land first because both rows edit those files (the intersection fields sit in the same region); a grant for `js_file_bytes` (see Status).
 - **Proof:** The components that use them (specs of `collection`/`activity` consumers on a release build); `check-js-volume` baseline rows lowered.
 - **Hours (inferred):** 6 (inferred: 2 for the bridge additions, 2.5 for wiring and deleting both scripts, 1.5 for proof); removes about 118 lines of JavaScript (about 20 per hour).
-- **Decision in Rust:** the logic this row moves is a pure Rust function over typed inputs; only reading and writing the page goes through the bridge ([`decisions.md`](../decisions.md), "Behaviour is decided in Rust").
+- **Decision in Rust:** the logic this row moves is a pure Rust function over typed inputs; only reading and writing the page goes through the bridge ([`decisions.md`](../../decisions.md), "Behaviour is decided in Rust").
 
 ### The per-row `onmounted` (`collection.rs:738`)
 

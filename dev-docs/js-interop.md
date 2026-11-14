@@ -19,10 +19,11 @@ when the rule you need depends on something that is not.
 | `check-installed-paths` (sink arm) | an installed component contains no sink: `scripts/check-installed-paths.sinks.tsv` names the banned shapes | |
 | `check-ratchet-grant` | the self-tests of the grant rule of `scripts/lib/ratchet.py` and of the platform-rule TSV reader `scripts/lib/platform_rules.py` (`primitives/conformance/platform-rules.tsv`) | the platform rules' consumers |
 | older gates | `check-js-bundle`, `check-js-listeners`, `check-uncleared-intervals`, `check-blocking-scroll-listeners`, `check-theme-mode-writer`, `check-open-focus` | their JS halves retire with the last legacy script |
-| `check-bridge-behaviours` | kind parity with the generated file, behaviour modules pure, budgets (a ratchet over `scripts/check-bridge-behaviours.budgets.tsv`, bytes), `FORBIDDEN_VERBS` (the slot-writing `Method` variants are named only inside `bridge/`), `Program::Frozen`, a frozen `window.__dxBridge` whose `register` takes only the generated kinds, one place for cancel and frames, closed surface, eval only inside `bridge/`, `Program` closed and sealed, no gesture verbs | `Decision<E>` effect typing and a DOM-less compile for `ts/behaviours/`, a witness test per effect at each `site!` (item 0.3 builds the checks over those artefacts), the lease check on the generated file, the `FORBIDDEN_VERBS` list derived from the slot table (item 0.7), `REDUCERS` |
+| `check-bridge-behaviours` | kind parity with the generated file and the kernel's registered kinds, no `decide(` and no hand-written `fields` or `reads` in a behaviour module (the decision is Rust, the lists are generated), vectors on both routes, behaviour modules pure, budgets (a ratchet over `scripts/check-bridge-behaviours.budgets.tsv`, bytes), `FORBIDDEN_VERBS` (the slot-writing `Method` variants are named only inside `bridge/`), `Program::Frozen`, a frozen `window.__dxBridge` whose `register` takes only the generated kinds, one place for cancel and frames, closed surface, eval only inside `bridge/`, `Program` closed and sealed, no gesture verbs | `Decision<E>` effect typing and a DOM-less compile for `ts/behaviours/`, a witness test per effect at each `site!` (item 0.3 builds the checks over those artefacts), the lease check on the generated file, the `FORBIDDEN_VERBS` list derived from the slot table (item 0.7), `REDUCERS` |
 | the bridge | closed verbs over closed tables; `Program { Serve, Pump, Legacy(&str) }`, sealed to `bridge/`; one FIFO pump for element operations; latest-wins streams; an epoch on every install and a default lease on every non-passive behaviour; one test fixture; the `__dxBridgeDelayFrames` harness with the stuck setting `"never"` | `Program::Frozen`, the rest of the verb rows (each added by the first row that needs it), the closed `REDUCERS` table |
+| `check-decision-kernel` | the manifest of the committed module against the crate's sources, the `[profile.kernel]` table and `rust-toolchain.toml`; the five exports and `dx_kinds` equal to the generated `KERNEL_HASH`; the generated `KINDS` equal to the kernel's registered kinds; a rebuild with identical bytes on the pinned toolchain (a full gate run or `--rebuild`); a gzip-size ratchet; the float ban list of `decision-kernel/clippy.toml` | |
 | named behaviours | `Behaviour::Fixture`, a test fixture, only | `otpFilter` (proof port A), `scrollLock`, `dropAnywhere`, `pan`, `settle`, `openFocus`, `stickToEnd`, `scrollOwner` (the one-shot kind first), `labelClick`, and `hotkey` (built by the first of 3.OV and 3.GS that opens, only if its witness is red or a UA-reserved shortcut needs it); `roving` only if the phase-0 focus-write witness is red; `scrollStep`, `wheelBand`, `pan`'s page-side output variants and the `release` effect are on the plan's exits list. The executor is a bridge internal, not an entry |
-| the decision kernel | none: the fixture's `decide` is TypeScript | a behaviour's Rust `decide` as a wasm module the bridge loads, committed and checked by `check-decision-kernel`; one set of vectors on both routes; a `#[cfg(not(feature = "web"))]` exemption in `check-native-slots` and `check-hot-events` (row 508 proves the mechanism, row 509 builds it) |
+| the decision kernel | the `decision-kernel` crate (no dependencies): one Rust `decide(config, memory, snapshot, event) -> Decision` per kind, whose `Config`, `Snapshot` and `Event` types define their wire keys (`wire_input!`) and generate the adapter's field and read lists, the kind table and its hash into `behaviours.gen.ts`; the committed module `primitives/src/kernel/` (`scripts/build-kernel.sh`, `[profile.kernel]`, `rust-toolchain.toml`, held by `check-decision-kernel`, merged by a rebuild driver) that the transport loads in the bridge's first eval and the bridge calls synchronously through the in-place codec of `ts/lib/kernel.ts`; five fixed exports; a kind that cannot decide reports `{kernel: "stand-down", kind, reason}` once per install; a trap is contained to its kind; one set of vectors on both routes; the `#[cfg(feature = "native")]` exemption of `check-native-slots` and `check-hot-events` | each behaviour's Rust `decide` (row 448 and the rows that add a kind); Rust's side of the stand-down report in `use_behaviour` (tear down or resync); the kernel in a desktop webview (row 23) |
 | the executor (the reconciled kinds: popover and modal open, `indeterminate`, `defaultChecked`, then `value`, `checked`, `selected`, `hidden=until-found`) | a comment seam (`pageObserver`) | item 0.4 builds the one page executor for every reconciled kind, the native slot kinds included (round 6: no per-kind choice and no Rust `transaction` branch), and owns the hook spreads; item 0.6 builds the witness harness |
 | the order runtime (epoch rule, each owner's own rsx handler as the vdom carrier and a fallback port only for `beforematch`, one inbound pump, slot table keyed `(scope, nonce)` and stable across hydration, focus owner, `scrollOwner`) | none (the as-built `Epoch::next` is one process-global Rust counter and cannot lose to the page) | item 0.7 (pump, slot table, per-slot epochs, gesture epoch, focus owner, the one-shot scroll classifier), then the first row that consumes an owner builds it (`scrollOwner` in 3.VS) |
 | the paint-safe gate, the boot probe | none | lane 3.PL |
@@ -47,8 +48,9 @@ script. Call its hook; do not copy its string.**
    `concat!` pieces, not an `include_str!` of a `.js`, not a new `.js`/`.ts` file, not an inline `<script>`, not
    `web_sys`/`js_sys`.
 4. **The only new JS is a new verb row or a named behaviour's adapter** (the event fields it reads, the attributes it
-   reads, applying its effects); a behaviour's `decide` is never TypeScript (planned rule, row 509), and a behaviour
-   needs a backlog row that exists before your lane starts (planned rule). If what you need is missing, say so in your
+   reads, applying its effects: its lists are generated from the Rust input types); a behaviour's `decide` is never
+   TypeScript (`check-bridge-behaviours`, row 509), and a behaviour needs a backlog row that exists before your lane
+   starts (planned rule). If what you need is missing, say so in your
    report; do not route around it.
 
 ## I want to ... use this
@@ -146,10 +148,12 @@ Two kinds of decision, placed by that table:
 ## Named behaviours
 
 A behaviour is a closed registry entry, not a script and not a predicate language: a Rust `Behaviour` variant with typed
-parameters, one pure Rust `decide(config, memory, snapshot, event) -> Decision<E>`, and a thin TypeScript adapter in
-`primitives/src/ts/behaviours/<kind>.ts` that names the event fields and attribute reads and applies the effects. On web
-and the webview the bridge runs `decide` in the page through the decision kernel; on a renderer with no page it is a
-direct call (planned, rows 508 and 509; today the one fixture's `decide` is TypeScript). **Admission is derived per effect from the deadline table, with two grounds, never a declaration** (planned): the
+parameters, one pure Rust `decide(config, memory, snapshot, event) -> Decision` in `decision-kernel/src/<kind>.rs`
+(registered in `decision-kernel/src/kinds.rs`), and a thin TypeScript adapter in
+`primitives/src/ts/behaviours/<kind>.ts` that registers the generated event fields and attribute reads and applies the
+effects. On web and the webview the bridge runs `decide` in the page through the decision kernel (the committed wasm
+module, called synchronously inside the event's dispatch); on a renderer with no page it is a direct call of the same
+function (the crate has no dependency on dioxus). **Admission is derived per effect from the deadline table, with two grounds, never a declaration** (planned): the
 **counterfactual witness**, or a **platform rule row** from a closed, cited category table: (a) `prevent` of a UA-reserved
 shortcut (F6, Ctrl/Cmd+B), (b) an activation-gated API effect (`clipboardWrite`: on WKWebView the call arrives by
 `evaluate_script`, outside the gesture, so no delay counterfactual can witness it; **not in use** while no library code uses
@@ -247,7 +251,9 @@ Web is the tested target; every desktop claim in the plan reads "web-verified; d
   (`dropAnywhere`, the native drag list), Android handles events on an IO thread under a global mutex with a header size
   limit, and release desktop builds install a document `contextmenu` listener that prevents default.
 - **Web `eval` is `new Function`**, so an app under a strict Content-Security-Policy needs `unsafe-eval` for the bridge's
-  transport.
+  transport. The decision kernel adds no source: its module is compiled by the page (`'wasm-unsafe-eval'`, which the app's
+  own wasm already needs), and its delivery is one function of the transport seam (`kernel_load`), so a later non-eval
+  backend replaces that function and nothing else.
 - **Blitz has no page.** `document::eval` is unsupported there and the bridge answers "unsupported", so what must work
   on Blitz is an rsx handler, a signal, `MountedData`, or a behaviour's Rust `decide` called directly. Write a
   `feature = "native"` arm with that in mind (row 438).
@@ -272,8 +278,9 @@ Web is the tested target; every desktop claim in the plan reads "web-verified; d
 | a vdom write of a native slot (`value`, `checked`, `selected`, `indeterminate`) through an rsx attribute, `Attribute::new`, `attributes!` or a caller spread; more than one owner for `checked` or `indeterminate` on an element | `check-native-slots` (landed; shrink-only baseline) | the owner write over the bridge, with the mount-frozen helper for the first render |
 | a `MountedData` write (`set_focus`, `scroll_to`) | **only if** item 0.6's focus-write witness is red: then clippy `disallowed_methods` with per-site `#[expect]`; otherwise not banned (**planned**) | the focus owner and the slot's `scrollOwner`; `MountedData` for reads |
 | `preventDefault`, `stopPropagation`, `requestAnimationFrame` or an observer in a `ts/` file outside `bridge.ts` and `ts/behaviours/`; a computed member access or string-form `setTimeout`/`Function` in `ts/` | `check-bridge-behaviours` (identifier part; landed) and `check-ts-scan` (compiler-API scan; landed) | a named behaviour or the bridge |
-| a behaviour module that reads the DOM, a timer or the clock; a verb row with more than one member call and guard; an effect with no witness; a `prevent`/`stop` variant with no lease; a Rust variant without its module, bundle, generated kind or vector | `check-bridge-behaviours` (purity, parity and vectors; landed; the rest **planned**) | keep `decide` pure; go through the closed tables |
-| a hand-edited `js/*.js` or `behaviours.gen.ts`, or a `.ts` edit without `scripts/build-js-bundle.sh` | `check-js-bundle`; `cargo test` (`the_generated_ts_is_current`) | rebuild; `DX_BLESS=1 cargo test -p dioxus-primitives behaviours` |
+| a behaviour module that reads the DOM, a timer or the clock, holds a `decide(` or a hand-written `fields` or `reads` list; a verb row with more than one member call and guard; an effect with no witness; a `prevent`/`stop` variant with no lease; a Rust variant without its module, bundle, generated kind, kernel `decide` or vector | `check-bridge-behaviours` (purity, parity and vectors; landed; the rest **planned**) | the decision is Rust (`decision-kernel`); go through the closed tables |
+| an edited `decision-kernel/` source, `[profile.kernel]` or `rust-toolchain.toml` without `scripts/build-kernel.sh`; a hand-edited `primitives/src/kernel/*`; an export added to the module; a transcendental float method (`exp`, `ln`, `powf`, `powi`, `sin`, `cos`, `tan`, `atan2`, `hypot`, `cbrt`) in the kernel | `check-decision-kernel`; clippy `disallowed_methods` (`decision-kernel/clippy.toml`) | rebuild; a kind is an index into the kind table, never an export; `sqrt`, `abs`, `floor`, `round` and comparisons are IEEE-exact on every renderer |
+| a hand-edited `js/*.js` or `behaviours.gen.ts`, or a `.ts` edit without `scripts/build-js-bundle.sh` | `check-js-bundle`; `cargo test` (`the_generated_ts_is_current`) | rebuild; `DX_BLESS=1 cargo test -p dioxus-primitives behaviours`, then `scripts/build-kernel.sh` and `scripts/build-js-bundle.sh` |
 | a raw `addEventListener`, an uncleared interval, a blocking wheel listener in a script | `check-js-listeners`, `check-uncleared-intervals`, `check-blocking-scroll-listeners` (landed; retire when the last legacy script goes) | `listen`; Rust timers |
 | a comment that calls `document::eval` the crate's pattern | `check-js-volume` (`comment_eval`; landed) | link this page |
 
@@ -313,9 +320,14 @@ identical until they are generated from one `.ts`.
   first needs the verb adds it, with its grant row**: a new row raises `bridge.ts`'s count. `cargo test -p dioxus-primitives
   bridge` compares every Rust name with its row; `bun test primitives/ts-test` covers the page side.
 - **A named behaviour needs a backlog row first** (open, at the merge base, `adds:` naming the kind; planned rule), and: the
-  variant in `bridge/behaviours.rs` (`info()`, `declared()`, `module()` and `samples()` have no wildcard arm),
-  `ts/behaviours/<kind>.ts` (pure `decide`), vectors in `primitives/conformance/behaviours/<kind>.json` (one Rust file and one vectors file per behaviour), `DX_BLESS=1 cargo test -p
-  dioxus-primitives behaviours` to regenerate the TS types, `scripts/build-js-bundle.sh` (one bundle per behaviour), one
+  variant in `bridge/behaviours.rs` (`info()`, `declared()`, `module()` and `samples()` have no wildcard arm), its Rust
+  `decide` in `decision-kernel/src/<kind>.rs` with `Config`, `Snapshot` and `Event` declared by `wire_input!` (the wire
+  keys, one definition) and one line in `kinds!` (`decision-kernel/src/kinds.rs`), a packed snapshot for any list (arrays of
+  scalars or one string, never an object per item) and vectors in `primitives/conformance/behaviours.json` that include
+  one marked `"largest": true`, `DX_BLESS=1 cargo test -p dioxus-primitives behaviours` to regenerate the TS lists and the
+  kind table, `scripts/build-kernel.sh` (the committed module; `check-decision-kernel` is red without it),
+  `ts/behaviours/<kind>.ts` (`register(kind, kernelBehaviour(kind, ADAPTER.<kind>))`, no `decide`, no list),
+  `scripts/build-js-bundle.sh` (one bundle per behaviour), one
   witness per effect at its `site!` (authored by item 0.6 or a lane other than the behaviour's own; an unbuilt variant's
   witness is a `test.fixme` keyed to the site list), a Playwright spec tag, and a budget row. Behaviour lanes never edit a gate script.
 - **The gates, by name.** Landed: `check-js-bundle`, `check-js-volume` (with the grant rule), the three legacy script gates,

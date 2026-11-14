@@ -34,14 +34,14 @@ primitives/src/navigation_menu.rs	0	0	0	0	0	0	0	4	0	0	0	0	0
 primitives/src/questionnaire.rs	0	0	0	0	0	0	0	0	1	0	0	0	0
 primitives/src/radio_group.rs	0	0	0	0	0	0	0	1	0	0	0	0	0
 primitives/src/resizable.rs	0	0	0	0	0	1	0	1	0	0	0	0	0
-primitives/src/select/components/list.rs	0	0	0	0	2	2	0	2	0	0	0	0	0
+primitives/src/select/components/list.rs	0	0	0	0	1	1	0	1	0	0	0	0	0
 primitives/src/select/components/option.rs	0	0	0	0	0	0	0	1	0	0	0	0	0
 primitives/src/slider.rs	0	0	0	0	0	1	0	2	0	0	0	0	0
 primitives/src/switch.rs	0	0	0	0	0	0	0	1	0	0	0	0	0
 primitives/src/table_rows.rs	0	0	0	0	0	1	0	0	0	0	0	0	0
 primitives/src/tabs.rs	0	0	0	0	0	0	0	1	0	0	0	0	0
 primitives/src/tag_group.rs	0	0	0	0	0	0	0	1	0	0	0	0	0
-primitives/src/toast.rs	0	0	0	0	0	0	0	2	0	0	0	0	0
+primitives/src/toast.rs	0	0	0	0	0	0	0	1	0	0	0	0	0
 primitives/src/toggle.rs	0	0	0	0	0	0	0	1	0	0	0	0	0
 primitives/src/toolbar.rs	0	0	0	0	0	0	0	1	0	0	0	0	0
 primitives/src/virtual_grid.rs	0	0	0	0	0	3	0	0	0	0	0	0	0

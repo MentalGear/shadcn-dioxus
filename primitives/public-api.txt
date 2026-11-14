@@ -433,9 +433,24 @@ bridge::behaviours::DeclaredTarget  enum DeclaredTarget  #[derive(Clone, Copy, D
 bridge::behaviours::DeclaredTarget::Document  variant Document
 bridge::behaviours::DeclaredTarget::Element  variant Element
 bridge::behaviours::DeclaredTarget::Window  variant Window
+bridge::behaviours::Inbound  enum Inbound<T>  #[derive(Clone, Debug, PartialEq, Deserialize)]
+bridge::behaviours::Inbound::Message  variant Message(T)
+bridge::behaviours::Inbound::Report  variant Report(StandDownMessage)
 bridge::behaviours::Info  struct Info  #[derive(Clone, Copy, Debug)]
 bridge::behaviours::Info.kind  field &'static str
 bridge::behaviours::Info.params  field &'static[(&'static str, &'static str)]
+bridge::behaviours::StandDown  struct StandDown  #[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
+bridge::behaviours::StandDown.kind  field String
+bridge::behaviours::StandDown.reason  field StandDownReason
+bridge::behaviours::StandDownMessage  struct StandDownMessage  [private fields]  #[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
+bridge::behaviours::StandDownMessage.report  field StandDown
+bridge::behaviours::StandDownReason  enum StandDownReason  #[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize)]
+bridge::behaviours::StandDownReason::KernelAbsent  variant KernelAbsent
+bridge::behaviours::StandDownReason::KernelFailed  variant KernelFailed
+bridge::behaviours::StandDownReason::KindStoodDown  variant KindStoodDown
+bridge::behaviours::StandDownReason::MissingKind  variant MissingKind
+bridge::behaviours::StandDownReason::Trap  variant Trap
+bridge::behaviours::StandDownReason::UnreadableRequest  variant UnreadableRequest
 bridge::behaviours::render_gen  fn render_gen() -> String
 bridge::events  mod
 bridge::events::Receivers  struct Receivers  #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -448,7 +463,7 @@ bridge::is_unsupported  fn is_unsupported() -> bool
 bridge::is_unsupported  use transport::is_unsupported
 bridge::show_modal_measured  async fn show_modal_measured(target: impl Into<Target>, props: impl IntoIterator<Item = Prop>) -> Result<Props, BridgeError>
 bridge::show_popover_measured  async fn show_popover_measured(target: impl Into<Target>, props: impl IntoIterator<Item = Prop>) -> Result<Props, BridgeError>
-bridge::use_behaviour  fn use_behaviour<T: DeserializeOwned + 'static>(mut target: impl FnMut() -> Option<Target> + 'static, mut behaviour: impl FnMut() -> Behaviour + 'static, handler: impl FnMut(T) + 'static)
+bridge::use_behaviour  fn use_behaviour<T: DeserializeOwned + 'static>(mut target: impl FnMut() -> Option<Target> + 'static, mut behaviour: impl FnMut() -> Behaviour + 'static, mut handler: impl FnMut(T) + 'static)
 bridge::use_behaviour  use session::use_behaviour
 bridge::use_document_listener  fn use_document_listener<T: DeserializeOwned + 'static>(event: EventKind, options: ListenOptions, fields: &'static[EventField], handler: impl FnMut(T) + 'static)
 bridge::use_document_listener  use session::use_document_listener

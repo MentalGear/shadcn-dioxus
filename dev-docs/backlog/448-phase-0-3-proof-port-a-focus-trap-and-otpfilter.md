@@ -35,6 +35,8 @@ The rest of this section is the 2026-11-12 correction that located the sites.
 - **The webview.** No desktop build exists or has been exercised ([row 23](./023-preview-s-desktop-feature-lacks-dioxus.md), STATUS.md owner inputs), so the `web` arm on the webview (`<dialog>` with `showModal()` through eval) is unproven, not known good.
 - **The precondition has landed.** [Row 511](./done/511-primitives-web-feature-contract.md) inverted the axis: the browser arm is the default, and the focus trap (`#[cfg(feature = "native")]` in `dialog.rs`, `alert_dialog.rs` and `popover.rs`, with `focus_trap_script()` and `FOCUS_TRAP_JS` in `lib.rs`) is compiled only where `dioxus-primitives/native` is on, which a compile-time assert holds equal to dioxus's own `native` renderer. Where this section says `not(web)`, read `feature = "native"`. The deletion therefore removes dead code by construction: those sites run only where dioxus launches Blitz and `document::eval` answers `Unsupported`. The `otpFilter` half is unchanged.
 
+**Premise check, 2026-11-13.** This row was written before the decision kernel (row 509) and the witness harness (row 446) existed. [`research/premise-check-447-450-2026-11-13.md`](../research/premise-check-447-450-2026-11-13.md) lists which of its claims about the source are false or moved, where its construction changes, the grant columns it needs and its place in the lane order. A lane reads that section before its first edit.
+
 ## Size
 
 L

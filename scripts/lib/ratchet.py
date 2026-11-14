@@ -66,7 +66,7 @@ import tempfile
 from typing import Callable, Dict, List, Optional, Sequence, Tuple
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from rows import row_at, parse_columns, row_problems, GRANT_COLUMNS  # noqa: E402
+from rows import row_at, git_text, parse_columns, row_problems, GRANT_COLUMNS  # noqa: E402
 
 __all__ = ["Ratchet", "Report", "Step", "note_steps", "RAISE_NOTE", "TOTAL_NOTE"]
 
@@ -1031,13 +1031,18 @@ def _self_test() -> int:
             fails.append(f"rows.py {label}: {got!r} != {want!r}")
         else:
             ok += 1
-    row = row_at(".", "HEAD", 446)
-    if row is not None:
-        # The live row is read for its shape, never for today's number: an open row with a grant in a real column.
-        if row.open and row.grant and not row.problems:
-            ok += 1
+    # A live row is read for its shape, never for today's number or for one row's state: of the open rows at HEAD
+    # that carry a grant, every one reads as a grant in real columns. A tree with no such row has nothing to read.
+    listing = git_text(".", "ls-tree", "--name-only", "HEAD", "dev-docs/backlog/") or ""
+    for name in listing.splitlines():
+        m = re.match(r"dev-docs/backlog/(\d+)-[^/]*\.md$", name)
+        row = row_at(".", "HEAD", int(m.group(1))) if m else None
+        if row is None or not row.open or not row.grant:
+            continue
+        if row.problems:
+            fails.append(f"rows.py: row {m.group(1)} at HEAD reads as grant {row.grant}, problems {row.problems}")
         else:
-            fails.append(f"rows.py: row 446 at HEAD reads as grant {row.grant}, open {row.open}, problems {row.problems}")
+            ok += 1
 
     for f in fails:
         print("ratchet --self-test FAIL: " + f, file=sys.stderr)

@@ -1,7 +1,7 @@
 # check-bridge-behaviours baseline (scripts/lib/ratchet.py): shrink-only per-file counts, regenerate with --update-baseline.
 #! columns: bytes
 # path	bytes
-primitives/src/ts/behaviours/fixture.ts	891
-primitives/src/ts/bridge.ts	47504	# raised: row 454 the publish option and the closed bridge rows L27, S16 and S14 first need (bytes 42732->47097); row 451 three closed bridge rows for the collection order read and the activity registry (bytes 47097->47504)
-primitives/src/ts/lib/register.ts	777
-primitives/src/ts/types/bridge.d.ts	6626	# raised: row 454 the publish option and the closed bridge rows L27, S16 and S14 first need (bytes 6111->6626)
+primitives/src/ts/behaviours/fixture.ts	667
+primitives/src/ts/bridge.ts	52382	# raised: row 509 the kernel loader, the codec and the stand-down report of the Rust decision contract (bytes 47504->48348); row 446 the apply table and the witness hooks of the witness harness (bytes 48348->52382)
+primitives/src/ts/lib/register.ts	1435	# raised: row 509 the kernel loader, the codec and the stand-down report of the Rust decision contract (bytes 777->1435)
+primitives/src/ts/types/bridge.d.ts	7505	# raised: row 509 the kernel loader, the codec and the stand-down report of the Rust decision contract (bytes 6626->7505)
