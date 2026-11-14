@@ -169,7 +169,7 @@ pub(crate) fn ComponentHighlight(demo: ComponentDemoData) -> Element {
                 // The docs are two groups, each a heading and an `Accordion` of the library's own (dev-docs/
                 // decisions.md: the docs are built from its components, so they look and move like them):
                 // Basic (the sections every page has, in one order) and Component-Specific (this page's own
-                // sections). `docs_groups` decides the grouping and the order, once; a docs.md names no group. Several items may be open, every item but "Usage notes" starts closed, and closed
+                // sections). `docs_groups` decides the grouping and the order, once; a docs.md names no group. Several items may be open, every item starts closed, and closed
                 // content stays in the server markup as `hidden="until-found"`, so find-in-page and
                 // `#fragment` links still reach it and hydration changes nothing the reader sees. Each item
                 // heading (`h3`, under its group's `h2`) wraps its trigger (shadcn's heading-around-trigger
@@ -181,7 +181,6 @@ pub(crate) fn ComponentHighlight(demo: ComponentDemoData) -> Element {
                 DocsGroup {
                     id: "basic",
                     heading: docs_groups::BASIC_HEADING,
-                    blurb: "The same sections, in the same order, on every component page.",
                     for basic in docs_groups::BASIC_ORDER {
                         match basic {
                             docs_groups::Basic::Installation => rsx! {
@@ -196,7 +195,6 @@ pub(crate) fn ComponentHighlight(demo: ComponentDemoData) -> Element {
                                     DocsSectionItem {
                                         key: "{section.id}",
                                         section: *section,
-                                        default_open: basic.open_by_default(),
                                     }
                                 }
                             },
@@ -207,9 +205,8 @@ pub(crate) fn ComponentHighlight(demo: ComponentDemoData) -> Element {
                     DocsGroup {
                         id: "component-specific",
                         heading: docs_groups::SPECIFIC_HEADING,
-                        blurb: "What is particular to this component.",
                         for section in docs.iter().filter(|section| docs_groups::basic_of_id(section.id).is_none()) {
-                            DocsSectionItem { key: "{section.id}", section: *section, default_open: false }
+                            DocsSectionItem { key: "{section.id}", section: *section }
                         }
                     }
                 }
@@ -276,19 +273,13 @@ pub(crate) fn DirectionToggle() -> Element {
 /// `AccordionItem`s). Both groups wear `.dx-docs-accordion`, so the page's disclosure styles and the specs
 /// address them alike.
 #[component]
-fn DocsGroup(
-    id: &'static str,
-    heading: &'static str,
-    blurb: &'static str,
-    children: Element,
-) -> Element {
+fn DocsGroup(id: &'static str, heading: &'static str, children: Element) -> Element {
     use components::accordion::{Accordion, AccordionChevron};
     rsx! {
         section { class: "dx-component-section dx-component-accordion dx-docs-prose",
             "data-docs-group": id,
             div { class: "dx-component-section-heading",
                 h2 { id, "{heading}" }
-                p { "{blurb}" }
             }
             Accordion {
                 class: "dx-docs-accordion",
@@ -306,10 +297,10 @@ fn DocsGroup(
 /// A `build.rs`-generated docs section as one accordion item: an `h3` (the item heading, under its group's
 /// `h2`) wrapping the trigger, and the section's HTML as the content.
 #[component]
-fn DocsSectionItem(section: DocsSection, default_open: bool) -> Element {
+fn DocsSectionItem(section: DocsSection) -> Element {
     use components::accordion::{AccordionContent, AccordionItem, AccordionTrigger};
     rsx! {
-        AccordionItem { default_open,
+        AccordionItem {
             h3 { id: section.id, class: "dx-docs-accordion-heading",
                 AccordionTrigger { class: "dx-docs-accordion-trigger",
                     span { dangerous_inner_html: section.title_html }

@@ -7,7 +7,7 @@
  * (`.dx-docs-accordion`), then "Examples" (row 422): Basic (Usage notes, Installation, Component structure,
  * Props reference, the same order on every page) and Component-Specific (the docs.md `##` sections in
  * authored order, then Keyboard, Accessibility, Motion, Direction / RTL, Styling). Every item is closed on
- * load except Usage notes. Installation is written in `ComponentHighlight`, the rest is `build.rs` data
+ * load. Installation is written in `ComponentHighlight`, the rest is `build.rs` data
  * (`render_docs_sections`, ordered by `preview/docs_groups.rs`), so a new section is collapsed by
  * construction, and a demo's own notes are a `Collapsible` under the demo (`variants/<variant>/notes.md`).
  * This spec reads the REAL pages for every CATALOG row, so a component added tomorrow is covered the day it
@@ -15,7 +15,7 @@
  *
  *  1. exactly ONE Installation section per page, holding exactly one install command (`shadcn-dioxus add
  *     <name>`), and no `dx components add` outside the Code tab (the dx alternative lives once, on /docs);
- *  2. every item is closed on load except Usage notes, "Manual installation files" included (it stays
+ *  2. every item is closed on load, "Manual installation files" included (it stays
  *     closed even after its parent Installation is opened, row 236), and every section's `h3` wraps its
  *     trigger so the heading outline and axe `heading-order` keep working;
  *  3. the Basic group renders its four sections in the one order, the Component-Specific group keeps the
@@ -93,7 +93,7 @@ test("every component page has one closed Installation section with one CLI comm
   expect(problems, problems.join("\n")).toEqual([]);
 });
 
-test("every docs section is an accordion item, closed except Usage notes, with its h3 wrapping the trigger", async ({ page }) => {
+test("every docs section is an accordion item, closed on load, with its h3 wrapping the trigger", async ({ page }) => {
   test.setTimeout(10 * 60 * 1000);
   const problems: string[] = [];
   let sections = 0;
@@ -135,7 +135,7 @@ test("every docs section is an accordion item, closed except Usage notes, with i
       };
     });
     sections += facts.sections;
-    if (facts.openIds.join() !== "docs-usage-notes") problems.push(`${name}: open on load: [${facts.openIds}], wanted only docs-usage-notes`);
+    if (facts.openIds.length) problems.push(`${name}: open on load: [${facts.openIds}], wanted none`);
     if (facts.notUntilFound) problems.push(`${name}: ${facts.notUntilFound} closed item(s) not hidden="until-found"`);
     if (facts.looseHeading) problems.push(`${name}: ${facts.looseHeading} docs heading(s) outside an item heading`);
     if (facts.badHeadings) problems.push(`${name}: ${facts.badHeadings} item(s) without one docs- h3 around the trigger`);
@@ -160,6 +160,10 @@ test("every component page renders the Basic group in one order and the recurrin
         group
           ? {
               heading: group.querySelector(":scope > .dx-component-section-heading > h2")?.textContent?.trim() ?? null,
+              // The heading block's children: the h2 alone, no paragraph under it.
+              headingChildren: [...(group.querySelector(":scope > .dx-component-section-heading")?.children ?? [])].map(
+                (c) => c.tagName,
+              ),
               items: [...group.querySelectorAll<HTMLElement>(":scope > .dx-docs-accordion > .dx-accordion-item > h3")].map(
                 (h) => ({ id: h.id, title: h.textContent?.trim() ?? "" }),
               ),
@@ -181,6 +185,8 @@ test("every component page renders the Basic group in one order and the recurrin
     const order = facts.order.join();
     if (order !== "basic" && order !== "basic,component-specific") problems.push(`${name}: groups are [${order}]`);
     if (facts.basic?.heading !== "Basic") problems.push(`${name}: Basic group heading is ${facts.basic?.heading}`);
+    if (facts.basic && facts.basic.headingChildren.join() !== "H2")
+      problems.push(`${name}: Basic heading block holds [${facts.basic.headingChildren}], wanted only the h2`);
     if (facts.basic?.items.map((i) => i.id).join() !== BASIC_IDS.join())
       problems.push(`${name}: Basic items are [${facts.basic?.items.map((i) => i.id)}], wanted [${BASIC_IDS}]`);
     if (facts.basic?.items.map((i) => i.title).join() !== BASIC_TITLES.join())
@@ -188,6 +194,8 @@ test("every component page renders the Basic group in one order and the recurrin
     if (facts.specific) {
       specificPages++;
       if (facts.specific.heading !== "Component-Specific") problems.push(`${name}: specific heading is ${facts.specific.heading}`);
+      if (facts.specific.headingChildren.join() !== "H2")
+        problems.push(`${name}: Component-Specific heading block holds [${facts.specific.headingChildren}], wanted only the h2`);
       const ranks = facts.specific.items.map((i) => tailRank(i.title));
       const firstTail = ranks.findIndex((r) => r >= 0);
       const tail = firstTail < 0 ? [] : ranks.slice(firstTail);
@@ -224,8 +232,8 @@ test("a fragment into a closed item opens it, on load and on hashchange", async 
   await gotoHydrated(page, `${page_url("button")}#docs-component-structure`);
   const structure = itemOf(page, "docs-component-structure");
   await expect(structure).toHaveAttribute("data-open", "");
-  // Usage notes is the one item open without a fragment.
-  await expect(itemOf(page, "docs-usage-notes")).toHaveAttribute("data-open", "");
+  // Usage notes is closed without a fragment, like every other item.
+  await expect(itemOf(page, "docs-usage-notes")).not.toHaveAttribute("data-open");
   const installation = itemOf(page, "installation");
   await expect(installation).not.toHaveAttribute("data-open");
 

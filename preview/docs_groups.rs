@@ -23,7 +23,7 @@ pub const SPECIFIC_HEADING: &str = "Component-Specific";
 /// A section every component page has, in [`BASIC_ORDER`].
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Basic {
-    /// The text before a `docs.md`'s first `##`. Open on load.
+    /// The text before a `docs.md`'s first `##`.
     UsageNotes,
     /// The install commands and the manual files, written by `ComponentHighlight`.
     Installation,
@@ -61,11 +61,6 @@ impl Basic {
             Basic::ComponentStructure => "docs-component-structure",
             Basic::PropsReference => "docs-props-reference",
         }
-    }
-
-    /// Whether the section is open when the page loads.
-    pub const fn open_by_default(self) -> bool {
-        matches!(self, Basic::UsageNotes)
     }
 }
 
