@@ -559,6 +559,9 @@ function stale(el: object | null, epoch: DxEpoch | null | undefined): boolean {
  * transition and is dropped. A Rust-caused write mints nothing.
  */
 let pageSeq = 0;
+/** The webview's one inbound channel, once its eval runs; frames minted before that wait here, in order. */
+let inboundChannel: DioxusChannel | null = null;
+const heldFrames: unknown[] = [];
 const fences = new WeakMap<object, Map<string, number>>();
 
 /** True when `basedOn` is older than the last page transition of `slot` on `el`. */
@@ -976,8 +979,15 @@ function scope(raw?: DioxusChannel): Scope {
   const offs: (() => void)[] = [];
   let done = false;
   const ch = raw ? channel(raw) : null;
+  let sub: number | undefined;
+  /** A scope that took its `sub` id sends on the webview's inbound channel, so a frame outlives the scope's eval. */
+  const emit = (frame: { seq: number }) => {
+    if (sub === undefined) ch!.send(frame);
+    else if (inboundChannel) inboundChannel.send({ ...frame, sub });
+    else heldFrames.push({ ...frame, sub });
+  };
   const send = (message: unknown) => {
-    if (ch && !done) ch.send({ seq: ++pageSeq, m: message });
+    if (ch && !done) emit({ seq: ++pageSeq, m: message } as { seq: number });
   };
   const transitioned = (el: object, slot: string) => {
     if (!ch || done) return;
@@ -985,7 +995,7 @@ function scope(raw?: DioxusChannel): Scope {
     let slots = fences.get(el);
     if (!slots) fences.set(el, (slots = new Map()));
     slots.set(slot, seq);
-    ch.send({ seq, t: slot });
+    emit({ seq, t: slot } as { seq: number });
   };
   const cleanup = (fn: () => void) => {
     if (done) fn();
@@ -1240,6 +1250,9 @@ function scope(raw?: DioxusChannel): Scope {
           case "behaviour":
             s.behaviour(command);
             break;
+          case "sub":
+            sub = command.id;
+            break;
         }
       } catch (error) {
         // a bad command is Rust's bug: say so in the console, keep serving the rest
@@ -1285,6 +1298,16 @@ async function pump(raw: DioxusChannel): Promise<void> {
   }
 }
 
+/**
+ * The webview's one inbound eval: every scope that took a `sub` id sends its frames here, so Rust takes every number
+ * the page minted whether or not the scope's own eval is still listened to. It never receives.
+ */
+async function inbound(raw: DioxusChannel): Promise<void> {
+  inboundChannel = channel(raw);
+  for (const frame of heldFrames.splice(0)) inboundChannel.send(frame);
+  for (;;) await inboundChannel.recv();
+}
+
 /** `call` for a bespoke script: a dropped (stale) call answers null. */
 const callPublic: DxBridge["call"] = (target, method, args) => {
   const value = call(target, method, args);
@@ -1297,6 +1320,7 @@ if (!W.__dxBridge) {
     channel,
     scope,
     serve,
+    inbound,
     pump,
     call: callPublic,
     get,

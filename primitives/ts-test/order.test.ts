@@ -103,3 +103,45 @@ describe("a slot's fence", () => {
     expect(write(bridge, "data-dx-keyboard", "x")).toEqual({ ok: null });
   });
 });
+
+describe("the inbound eval", () => {
+  test("a scope that took its sub id sends every frame on the inbound channel, tagged with it", () => {
+    const { bridge, host } = setup();
+    const inbound = makeChannel();
+    void bridge.inbound(inbound);
+    const own = makeChannel();
+    const s = bridge.scope(own);
+    s.run({ cmd: "sub", id: 7 });
+    install(s, "data-dx-keyboard");
+    host.dispatch("click");
+    s.send({ x: 1 });
+    expect(own.frames).toEqual([]);
+    expect(inbound.frames).toEqual([
+      { seq: 1, sub: 7, t: "data-dx-keyboard" },
+      { seq: 2, sub: 7, m: { behaviour: "fixture", event: "click" } },
+      { seq: 3, sub: 7, m: { x: 1 } },
+    ]);
+  });
+
+  test("frames minted before the inbound eval exists are held and flushed in order, even after the scope ended", () => {
+    const { bridge } = setup();
+    const s = bridge.scope(makeChannel());
+    s.run({ cmd: "sub", id: 3 });
+    s.send("a");
+    s.send("b");
+    s.dispose();
+    const inbound = makeChannel();
+    void bridge.inbound(inbound);
+    expect(inbound.frames).toEqual([
+      { seq: 1, sub: 3, m: "a" },
+      { seq: 2, sub: 3, m: "b" },
+    ]);
+  });
+
+  test("a scope with no sub id keeps sending on its own channel", () => {
+    const { bridge } = setup();
+    const own = makeChannel();
+    bridge.scope(own).send("z");
+    expect(own.frames).toEqual([{ seq: 1, m: "z" }]);
+  });
+});

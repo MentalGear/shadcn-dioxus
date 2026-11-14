@@ -61,6 +61,7 @@ type DxCommand =
   | { cmd: "listen"; target: DxTargetish; event: string; options?: { capture?: boolean; once?: boolean; publish?: DxPublish[] }; fields?: string[]; initial?: boolean }
   | { cmd: "observe"; target: DxTargetish; kind: "resize" | "intersection" | "mutation"; options?: DxFields }
   | { cmd: "media"; query: string }
+  | { cmd: "sub"; id: number }
   | { cmd: "sample"; target: DxTargetish; fields: DxSampleField[]; until: DxSampleUntil; onlyChanged?: boolean }
   | {
       cmd: "behaviour";
@@ -144,6 +145,7 @@ interface DxBridge {
   channel(raw: DioxusChannel): DioxusChannel;
   scope(raw?: DioxusChannel): DxScope;
   serve(raw: DioxusChannel): Promise<void>;
+  inbound(raw: DioxusChannel): Promise<void>;
   pump(raw: DioxusChannel): Promise<void>;
   call(target: DxTargetish, method: string, args?: unknown[]): unknown;
   get(target: DxTargetish, props: string[]): Record<string, unknown>;

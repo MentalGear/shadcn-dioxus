@@ -134,6 +134,9 @@ pub(in crate::bridge) enum Program<'a> {
     Serve,
     /// The webview's ordered channel (see [`fire`] and [`ask`]).
     Pump,
+    /// The webview's one inbound channel: every frame any session's scope sends reaches Rust here, so a
+    /// frame outlives the session that minted it.
+    Inbound,
     /// The body of a `js_listener` script, quarantined in [`legacy`](super::legacy) and gone with that
     /// module.
     Legacy(&'a str),
@@ -154,6 +157,7 @@ impl Program<'_> {
         match self {
             Program::Serve => format!("{READY}await __dxB.serve(__dxB.channel(dioxus));"),
             Program::Pump => format!("{READY}await __dxB.pump(__dxB.channel(dioxus));"),
+            Program::Inbound => format!("{READY}await __dxB.inbound(__dxB.channel(dioxus));"),
             Program::Legacy(body) => {
                 format!("{READY}await (async (dioxus) => {{\n{body}\n}})(__dxB.channel(dioxus));")
             }
