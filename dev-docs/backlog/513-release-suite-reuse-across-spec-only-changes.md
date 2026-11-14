@@ -1,7 +1,7 @@
 ---
 id: 513
 title: "A spec-only fix after a red release suite re-runs the whole suite: reuse the results the changed files cannot affect"
-status: "BUILT 2026-11-14 (approved by the owner the same day). It serves the owner's standing goal…"
+status: "LANDED 2026-11-14 (approved by the owner the same day). It serves the owner's standing goal…"
 size: "M (inferred): the key derivation, the…"
 area: tests
 updated: 2026-11-14
@@ -20,10 +20,11 @@ change cannot affect.
 
 ## Status / trigger
 
-BUILT 2026-11-14 (approved by the owner the same day). It serves the owner's standing goal "evaluate how the testing
-could be made quicker without losing quality". It changes what the deploy accepts as proof: three independent review
-passes attacked it, and the construction below is what held. Open: one real batch where a second run executes only
-the changed files.
+LANDED 2026-11-14 (approved by the owner the same day). It serves the owner's standing goal "evaluate how the testing
+could be made quicker without losing quality". Three independent review passes attacked it, and the construction below
+is what held. Proven on its own first run: the suite on `21081fa9` was red by one real-time test under load (4,141
+passed, 1 failed, 4,430 s); the re-run on the same tree served the kept build, ran the failed file and the eight files
+that hold skipped tests, reused 282 files (3,851 tests) and was green in 225 s.
 
 ## Size
 

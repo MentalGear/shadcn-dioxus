@@ -40,7 +40,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (69)
+## Open rows (72)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -111,7 +111,10 @@ proposing one is closed as out of scope (row 337 is the first).
 | [508](backlog/508-decision-kernel-proof.md) | Proof: a behaviour's Rust decide runs in the page as a wasm kernel, inside an event's dispatch | KERNEL (2026-11-12, lane decision-kernel-proof). All five pass lines hold: the fixture's Rust… | S | primitives |
 | [509](backlog/509-rust-decision-contract.md) | The Rust decision contract: one decide per behaviour, the decision kernel as a committed artefact, and the gates | LANDED 2026-11-14 in one batch with row 446, under the owner's grant of the same day. Items 1 to 12… | L (inferred: was M; the review adds… | primitives |
 | [510](backlog/510-spec-selector-component-edges.md) | The spec selector has no component-to-component edge: a Button change selects none of its consumers' specs | LANDED in PR #175 (2026-11-12): the selector reads the component use graph from the sources. The… | S (one helper module of about 170… | tests |
-| [513](backlog/513-release-suite-reuse-across-spec-only-changes.md) | A spec-only fix after a red release suite re-runs the whole suite: reuse the results the changed files cannot affect | BUILT 2026-11-14 (approved by the owner the same day). It serves the owner's standing goal… | M (inferred): the key derivation, the… | tests |
+| [513](backlog/513-release-suite-reuse-across-spec-only-changes.md) | A spec-only fix after a red release suite re-runs the whole suite: reuse the results the changed files cannot affect | LANDED 2026-11-14 (approved by the owner the same day). It serves the owner's standing goal… | M (inferred): the key derivation, the… | tests |
 | [514](backlog/514-the-per-row-mounted-handle-has-no-owner.md) | The per-row `mounted` handle has no unconditional owner: keep it with a true reason, or replace it | BACKLOG. Trigger: the focus-write witness on a real set_focus site (row 446, open item), which… | S for the decision and the allow row.… | primitives |
+| [516](backlog/516-overlay-entry-motion-without-starting-style.md) | Overlay entry motion depends on @starting-style from display: none: dialogs, the scrim and every popover-based overlay snap in where an engine does not animate from it | APPROVED 2026-11-14. In progress on lane/overlay-entry-fade. | M (inferred): one shared recipe, the… | components |
+| [517](backlog/517-chart-tooltip-on-the-tooltip-layer.md) | Chart tooltips are confined to the chart box and get pushed around in small charts: build them on the Tooltip's content layer with a point anchor | PROPOSED 2026-11-14. It follows row 449, which ports the popover machinery this sits on. | M (inferred). | primitives |
+| [518](backlog/518-suite-site-key-from-the-build-inputs.md) | An edit to a gate script, a rule file or CLAUDE.md re-runs the whole release suite: the site key covers the tree minus four prefixes, not the build's inputs | BACKLOG. Take it when a batch pays a full run for a change no build reads. | M (inferred). | tests |
 
 <!-- END GENERATED -->

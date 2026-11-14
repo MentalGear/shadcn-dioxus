@@ -117,3 +117,12 @@ the line here is the pointer, so when a row's text and this line disagree, the r
 - A release-suite failure found while deploying is never forced through with `DEPLOY_SUITE=skip`: that switch is for
   an emergency fix only. Two unconfirmed failures on `b78c231e` park the deploy as backlog row 506 instead, for the
   next session with a clean machine and the time to let a rerun finish. 2026-11-11.
+- JavaScript size raises are the main loop's to record (owner 2026-11-14: "you can handle js raises from now on
+  yourself"): the `js-grant` columns of a row and the raise notes of the volume, behaviour and kernel budgets are set
+  from the measured growth at merge and reported after the fact with the numbers. Allow-table rows (a new qualified
+  call in the preview, a hot event, a legacy script) stay the owner's.
+- Chart tooltips hide on scroll where their position cannot follow the page (owner 2026-11-14: "hide on scroll"), row
+  [517](./backlog/517-chart-tooltip-on-the-tooltip-layer.md).
+- An entry animation does not depend on `@starting-style` or on animating from `display: none`, anywhere in the
+  library (owner 2026-11-14: "good to fix the same pattern everywhere"), row
+  [516](./backlog/516-overlay-entry-motion-without-starting-style.md).
