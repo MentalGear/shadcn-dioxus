@@ -274,11 +274,17 @@ pub fn App() -> Element {
     // This effect reads no signal, so it runs exactly once, right after
     // that first commit, and never again.
     use_effect(|| {
-        #[expect(
-            clippy::disallowed_methods,
-            reason = "row 434: the bridge ports this page script"
-        )]
-        document::eval("document.documentElement.dataset.hydrated = 'true'");
+        spawn(async {
+            // the bridge is ready (`html[data-dx-bridge]`) before the page reports hydrated, so a spec that
+            // waits for `data-hydrated` finds the bridge installed; the call answers within about two seconds
+            // even on a page that installs nothing, and on a renderer without JavaScript it answers at once
+            dioxus_primitives::bridge::boot().await;
+            #[expect(
+                clippy::disallowed_methods,
+                reason = "row 434: the bridge ports this page script"
+            )]
+            document::eval("document.documentElement.dataset.hydrated = 'true'");
+        });
     });
 
     rsx! {

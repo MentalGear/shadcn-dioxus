@@ -165,6 +165,9 @@ declare -A allowed_qualified=(
                                    # theme class to skip -- only preview/src/nav_link.rs, the
                                    # `Route`-typed wrapper every in-app link goes through
     ["nav_link::is_current"]=1    # pure path comparison, not markup -- preview/src/nav_link.rs tests
+    ["bridge::boot"]=1          # the app's one start-up call, not markup (renders nothing; the same
+                                   # call every consuming app makes before it reports itself ready)
+                                   # -- main.rs, owner row 447
     ["direction::Direction"]=1    # plain enum, not markup -- every RTL fixture
                                    # (preview/src/components/*/variants/rtl/mod.rs)
     ["direction::DirectionProvider"]=1 # context-provider component with no DOM
