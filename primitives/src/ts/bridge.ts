@@ -977,8 +977,8 @@ function installBehaviour(sc: Scope, spec: Omit<BehaviourSpec, "cmd">): () => vo
       }
     }
     if (decision.slots && host) {
-      for (const name of Object.keys(decision.slots)) {
-        if (own(SLOT_OWNERS, name)) applyEffect(site, "slot", host, name, decision.slots[name]);
+      for (const [name, arg] of Object.entries(decision.slots)) {
+        if (own(SLOT_OWNERS, name)) applyEffect(site, "slot", host, name, arg);
         else warnOnce("slot:" + b.kind + name, b.kind + " may not write the slot " + name);
       }
     }

@@ -17,7 +17,7 @@ const install = (site: string, target: string, event: string, cancel: boolean, c
 const stub = { send() { window.__dxWitness.note("fact"); }, recv: () => new Promise(() => {}) };
 window.__dxBridge.scope(stub).run({
   cmd: "behaviour", target: ${JSON.stringify(target)},
-  behaviour: { kind: "fixture", site: ${JSON.stringify(site)}, event: ${JSON.stringify(event)}, attr: "data-dx-fixture", value: "on", capture: ${capture}, cancel: ${cancel}, leaseMs: null },
+  behaviour: { kind: "fixture", site: ${JSON.stringify(site)}, event: ${JSON.stringify(event)}, attr: "data-dx-fixture", value: "on", capture: ${capture}, cancel: ${cancel}, focus: false, leaseMs: null },
   declared: { target: "element", event: ${JSON.stringify(event)}, capture: ${capture}, passive: ${!cancel}, leaseMs: null },
   epoch: { key: "behaviour:fixture", n: 1 },
 });`;
