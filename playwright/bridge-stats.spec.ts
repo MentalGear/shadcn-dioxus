@@ -3,6 +3,8 @@ import { join } from "node:path";
 import { test, expect } from "./fixtures";
 import type { Page } from "@playwright/test";
 import { gotoReference } from "./page-kinds";
+import { gotoHydrated } from "./hydration";
+import { BASE_URL } from "./base-url";
 
 // The bridge's channel counters (`window.__dxBridgeStats`) and the busy-case spin hook in REAL Chromium: the shipped
 // bundle `primitives/src/js/bridge.js` on a blank page, one wrapped channel standing in for the `dioxus` object of an
@@ -80,4 +82,16 @@ test.describe("the bridge's channel counters", () => {
     });
     expect(ms).toBeGreaterThanOrEqual(10);
   });
+});
+
+test("on the served site the pump and the sessions report counters", async ({ page }) => {
+  await gotoHydrated(page, `${BASE_URL}/component/dialog/`);
+  await expect
+    .poll(() => page.evaluate(() => (window as any).__dxBridgeStats?.channels?.[0]?.recv ?? 0))
+    .toBeGreaterThan(0);
+  const [pump, ...sessions] = await page.evaluate(() => JSON.parse(JSON.stringify((window as any).__dxBridgeStats.channels)));
+  expect(pump.sent).toBeGreaterThan(0);
+  expect(pump.turn.length).toBeGreaterThan(0);
+  expect(pump.turn.length).toBeLessThanOrEqual(256);
+  expect(sessions.length).toBeGreaterThan(0);
 });
