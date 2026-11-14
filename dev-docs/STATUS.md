@@ -5,8 +5,8 @@ the page as stale and check `git log` and the flag files named here.** What each
 backlog row files, not here: this page says only what is deployed, what runs, what is next and what waits for the owner.
 
 Last updated: **2026-11-14**. Several sessions work in parallel; who holds what is on the `claims` branch (`CLAIMS.md`).
-Preview site: https://mentalgear.github.io/shadcn-dioxus/ serves main `ce2cf865` (PRs #177-#182; release suite 4108
-passed, 0 failed, 0 flaky, 14 skipped on that exact tree, the `@timing` cases deactivated per row 494). Check
+Preview site: https://mentalgear.github.io/shadcn-dioxus/ serves main `8b4326ad` (PRs #177-#185; release suite 4142
+passed, 0 failed, 0 flaky, 22 skipped on that exact tree, the `@timing` cases deactivated per row 494). Check
 `git log origin/main -1` for the exact tip rather than trusting a SHA frozen here.
 
 Session `session_01MsL6RCeq7QSe81nNBiuKP1` owned merges and deploys through PR #173 and is archived; session
@@ -30,7 +30,7 @@ the next deploy first rebuilds it with `scripts/lane-target.sh warm-release` (a 
 ## Merged and deployed
 
 Merge queue batches 1-29 are on main (PRs #121-#155); PRs #156-#165 followed from session
-`session_01MsL6RCeq7QSe81nNBiuKP1` and are deployed (main `d040554a`, release suite 4159 passed, 0 failed). PRs #166-#168 are deployed (main `f38662dc`, deploy `85c05466`, release suite 4192 passed, 0 failed). PRs #170-#176 are deployed (main `edb71de0`, deploy `c34eda92`, release suite 4106 passed, 0 failed). PRs #177-#180 are deployed (main `3caa4f2c`, release suite 4108 passed, 0 failed). PR #182 is deployed (main `ce2cf865`, release suite 4108 passed, 0 failed). What each batch carried is in `git log` and the row files under
+`session_01MsL6RCeq7QSe81nNBiuKP1` and are deployed (main `d040554a`, release suite 4159 passed, 0 failed). PRs #166-#168 are deployed (main `f38662dc`, deploy `85c05466`, release suite 4192 passed, 0 failed). PRs #170-#176 are deployed (main `edb71de0`, deploy `c34eda92`, release suite 4106 passed, 0 failed). PRs #177-#180 are deployed (main `3caa4f2c`, release suite 4108 passed, 0 failed). PR #182 is deployed (main `ce2cf865`, release suite 4108 passed, 0 failed). PR #185 is deployed (main `8b4326ad`, release suite 4142 passed, 0 failed). What each batch carried is in `git log` and the row files under
 [`backlog/done/`](./backlog/done/).
 
 ## Next
@@ -46,7 +46,8 @@ row says otherwise, so a step runs as parallel lanes (one verifier per batch, `l
    on main (PR #182). Rows **509** (the Rust decision contract) and **446** (the witness harness, on top of 509) are on
    main with the batch of 2026-11-14, with a fix to the volume gate's `ffi` pattern; each row lists what stays open.
    **In flight:** row **447** (the order runtime; its first piece is built on `lane/order-runtime-447`) and the code
-   half of row **450** (`lane/bridge-stats-450`).
+   half of row **450** (`lane/bridge-stats-450`, built, waits for its `bytes` grant); row **513** (the release suite
+   reuses results across a spec-only change, `lane/suite-reuse-513`).
 2. Done, merged in PR #170 (2026-11-11): the deploy blockers of PR #168 (rows 468, 501); row **436**'s overlay and
    class groups (F1, F2, F4, F5, F6, F8, F9, F10, F11, F12), each reproduced red first (CHANGELOG.md has the
    user-visible ones: F1, F10, F11); **499** (safe triangle; CHANGELOG.md too); **152** slices 4-5; **371**'s
@@ -127,6 +128,10 @@ ports), its working form is [`js-interop.md`](./js-interop.md), and every item h
   runs `scripts/run-gates.sh`.
 - Decided 2026-11-14 (owner: "ok"): the grant columns of rows 509 and 446 (in the rows' front matter) and recording
   their raises; the hot-events `mounted` entry names row 514 (the per-row handle) and row 451 is closed; row 513 (reuse of release-suite results across spec-only changes) is approved.
+- Waits for the owner (2026-11-14): one row `bridge::boot` in the non-markup allowlist of `check-preview-composition`
+  (row 447: the app calls `boot()` once at start, so the page marks the bridge ready before it marks itself hydrated);
+  the `bytes` grant of row 450 (`bytes=1400`, measured +1,336 on `ts/bridge.ts`); the `bytes` grant of row 447, whose
+  number follows when its page side is complete.
 - Row 508's verdict is `KERNEL`, so row 509 opens without a further decision. Loading the
   kernel inside the desktop webview stays unproven until a desktop build exists (row 23).
 
