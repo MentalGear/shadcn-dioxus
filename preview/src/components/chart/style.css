@@ -472,8 +472,9 @@
    * tooltip is visible from its first frame and a closing one stays visible for the whole fade and
    * is `hidden` only after it. No `display` change and no `@starting-style` is involved, so the
    * entry fades in every engine: it interpolates from the element's own current opacity, never from
-   * a "was not rendered" state. The reduced-motion block below changes only `--dx-chart-tooltip-fade`. */
+   * a "was not rendered" state. The reduced-motion block below changes only `--dx-chart-tooltip-fade` and `--dx-chart-tooltip-move` (the position move's duration). */
   --dx-chart-tooltip-fade: var(--dx-floating-duration);
+  --dx-chart-tooltip-move: var(--dx-motion-duration-slow);
   transition: opacity var(--dx-chart-tooltip-fade) var(--dx-floating-ease-enter),
     visibility var(--dx-chart-tooltip-fade) var(--dx-floating-ease-enter);
   white-space: nowrap;
@@ -482,7 +483,7 @@
 /* An open tooltip whose `transform` is animating (`data-motion`) also transitions the position, on
  * the slow token. Its list repeats the fade so that a position move never drops the fade. */
 .dx-chart-tooltip[data-motion="true"] {
-  transition: transform var(--dx-motion-duration-slow) var(--dx-motion-ease-out),
+  transition: transform var(--dx-chart-tooltip-move) var(--dx-motion-ease-out),
     opacity var(--dx-chart-tooltip-fade) var(--dx-floating-ease-enter),
     visibility var(--dx-chart-tooltip-fade) var(--dx-floating-ease-enter);
 }
@@ -518,6 +519,7 @@
 @media (prefers-reduced-motion: reduce) {
   .dx-chart-tooltip {
     --dx-chart-tooltip-fade: var(--dx-motion-duration-reduced);
+    --dx-chart-tooltip-move: var(--dx-motion-duration-reduced);
   }
 }
 
