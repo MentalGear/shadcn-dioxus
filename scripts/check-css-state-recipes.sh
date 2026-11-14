@@ -43,6 +43,13 @@
 #   legacy-ring        `var(--dx-ring)` (the 2px solid ring) anywhere: use `--dx-ring-focus`, or
 #                      `--dx-ring-focus-inset`. (The token stays defined for `[data-dx-interactive]`.)
 #   literal-ring       `color-mix(... var(--dx-ring-color) 50% ...)` written out: that is `--dx-ring-focus`.
+#   starting-style     an `@starting-style` rule in a component sheet or the theme. An entry written as a `transition`
+#                      from `@starting-style` has to be animated out of `display: none` (a `<dialog>`, a popover,
+#                      a `::backdrop`, a `display` toggle), which not every engine does: the exit plays and the
+#                      entry snaps. An entry is a `@keyframes` animation bound to the open state, which starts when the
+#                      element starts being rendered in every engine (the theme's `--dx-modal-enter`,
+#                      `--dx-floating-enter`, `--dx-edge-enter` and `dx-scrim-in` recipes). Reviewed exceptions are in
+#                      ALLOW below. Also scans preview/assets/dx-components-theme.css.
 #   invalid-shadow     a rule selecting `[aria-invalid]` / `[data-invalid]` declares a `box-shadow` that does
 #                      not reference `--dx-ring-invalid*` (or the `--dx-input-invalid-shadow` slot), or a
 #                      `border-color` that is not `--dx-ring-invalid-color`: the destructive edge and halo
@@ -55,8 +62,9 @@
 # cannot be identified from CSS; `playwright/focus-ring.spec.ts` holds the field controls to the token),
 # or whether a control has an invalid style (the control decides whether it can be invalid).
 #
-# Usage: scripts/check-css-state-recipes.sh [FILE ...]   (default: preview/src/components/*/style.css;
-# explicit files are for self-tests, and skip the allowlist stale-entry report)
+# Usage: scripts/check-css-state-recipes.sh [--self-test] [FILE ...]   (default: preview/src/components/*/style.css
+# plus the theme for `starting-style`; explicit files are for self-tests, and skip the allowlist stale-entry report;
+# `--self-test` runs the `starting-style` reader over fixtures and exits)
 # Exit status: 0 when clean.
 
 set -euo pipefail
@@ -73,8 +81,32 @@ sys.path.insert(0, "scripts/lib")
 from allow import Allowlist  # noqa: E402
 from css import blank_comments, rules as css_rules  # noqa: E402
 
+STARTING_STYLE = re.compile(r"@starting-style\b")
+
+def starting_style_lines(raw):
+    """The line of every `@starting-style` at-rule in `raw` (comments and strings do not count)."""
+    text = blank_comments(raw)
+    return [text.count("\n", 0, m.start()) + 1 for m in STARTING_STYLE.finditer(text)]
+
+if "--self-test" in sys.argv:
+    cases = [
+        ("a rule", "a { opacity: 1; }\n@starting-style {\n  a { opacity: 0; }\n}\n", [2]),
+        ("nested in a media block", "@media (width > 1px) {\n  @starting-style { a { opacity: 0 } }\n}\n", [2]),
+        ("only named in a comment", "/* the old @starting-style rule */\na { opacity: 1; }\n", []),
+        ("none", "a { opacity: 1; }\n", []),
+    ]
+    for name, css, want in cases:
+        got = starting_style_lines(css)
+        if got != want:
+            print(f"check-css-state-recipes: self-test FAIL -- {name}: expected {want}, got {got}", file=sys.stderr)
+            sys.exit(1)
+    print(f"check-css-state-recipes: self-test OK -- {len(cases)} cases")
+    sys.exit(0)
+
 explicit = sys.argv[1:]
 files = explicit or sorted(glob.glob("preview/src/components/*/style.css"))
+THEME = "preview/assets/dx-components-theme.css"
+starting_files = files + ([THEME] if not explicit else [])
 if not files:
     print("check-css-state-recipes: no stylesheets found (run from a checkout)", file=sys.stderr)
     sys.exit(2)
@@ -89,6 +121,8 @@ ALLOW = Allowlist("check-css-state-recipes", [
      "the destructive Button's focus border is destructive/40 (Nova `focus-visible:border-destructive/40`)"),
     ("focus-border", "alert_dialog/style.css", "--dx-destructive",
      "the alert dialog's action is a destructive Button; it takes the destructive Button's focus border"),
+    ("starting-style", "chart/style.css", "",
+     "the chart tooltip's open fade is still a `@starting-style` transition here; its keyframe replacement is on lane/chart-tooltip-fade, and this entry goes when that lands"),
 ], fields=("check", "suffix", "needle"))
 
 def strip_not(sel):
@@ -134,6 +168,14 @@ def fail(check, path, line, selector, value, msg):
     if allowed(check, path, selector, value):
         return
     errors.append(f"{path}:{line}: [{check}] `{' '.join(selector.split())[:80]}`: {msg}")
+
+for path in starting_files:
+    with open(path, encoding="utf-8") as fh:
+        for line in starting_style_lines(fh.read()):
+            fail("starting-style", path, line, "@starting-style", "",
+                 "an entry that starts from `@starting-style` has to animate out of `display: none`, which not every "
+                 "engine does (the exit plays, the entry snaps); bind a `@keyframes` entry to the open state instead "
+                 "(`--dx-modal-enter`, `--dx-floating-enter`, `--dx-edge-enter`)")
 
 for path in files:
     with open(path, encoding="utf-8") as fh:
@@ -207,6 +249,6 @@ if problems:
         print(f"check-css-state-recipes: {p}")
     sys.exit(1)
 n_used = sum(1 for e in ALLOW if ALLOW.used(e))
-print(f"check-css-state-recipes: OK ({len(files)} stylesheet(s): focus, invalid and disabled use the recipe tokens; "
+print(f"check-css-state-recipes: OK ({len(starting_files)} stylesheet(s): focus, invalid and disabled use the recipe tokens, no new `@starting-style`; "
       f"{n_used} allowlist entr{'y' if n_used == 1 else 'ies'} in use)")
 PYEOF
