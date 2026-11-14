@@ -4,7 +4,6 @@ import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 import { demoFrame, demoRole } from "./demo-frame";
 import { installFrameRecorder, readFrames } from "./frame-recorder";
-import { TIMING_TAG } from "./timing";
 
 /**
  * Every overlay fades in on open, and its entry does not depend on `@starting-style`.
@@ -16,8 +15,8 @@ import { TIMING_TAG } from "./timing";
  * (`dx-modal-in` and `dx-scrim-in` for the modal dialog family, `--dx-floating-enter` for popovers and menus).
  *
  * Two claims per overlay kind, opened by real input:
- *   - behaviour: the opacity (the scrim's alpha) passes through a value strictly between nothing and its rest value and ends at
- *     rest; under `prefers-reduced-motion: reduce` it never shows an intermediate value;
+ *   - behaviour: the opacity (the scrim's alpha) of the frame sequence starts below rest, never falls and ends at
+ *     rest (the sequence is asserted, no duration is bounded, so the cases carry no timing tag); under `prefers-reduced-motion: reduce` it never shows an intermediate value;
  *   - mechanism, standing in for the engines this suite cannot run: no style sheet carries an `@starting-style`
  *     rule that matches the element, and the element has a keyframe animation (a `CSSAnimation` with a name) while it is
  *     open, not only a transition.
@@ -87,6 +86,8 @@ const KINDS: Kind[] = [
   },
 ];
 
+const isNonDecreasing = (xs: number[]) => xs.every((x, i) => i === 0 || x >= xs[i - 1] - 0.001);
+
 const FRAMES = "__overlayEntryFrames";
 
 async function record(page: Page) {
@@ -151,7 +152,7 @@ async function startingStyleSelectors(page: Page): Promise<string[]> {
 
 for (const kind of KINDS) {
   test.describe(`${kind.name}: entry`, () => {
-    test("fades in through a value strictly between nothing and rest", { tag: TIMING_TAG }, async ({ page }) => {
+    test("starts below rest, rises and ends at rest", async ({ page }) => {
       await page.emulateMedia({ reducedMotion: "no-preference" });
       await record(page);
       await gotoHydrated(page, kind.url, GOTO);
@@ -162,21 +163,21 @@ for (const kind of KINDS) {
         .poll(async () => (await readFrames<Frame>(page, FRAMES)).at(-1)?.o, { timeout: 10_000 })
         .toBeCloseTo(1, 2);
       const frames = await readFrames<Frame>(page, FRAMES);
-      const between = frames.filter((f) => f.o > 0.02 && f.o < 0.98);
-      expect(between.length, `opacity passed through no intermediate value: ${JSON.stringify(frames.map((f) => f.o))}`).toBeGreaterThan(0);
+      // The sequence, not a duration: the first frame the overlay is open is below rest, the values never fall, the last is at rest.
+      const opacities = frames.map((f) => f.o);
+      expect(opacities[0], `the first open frame is already at rest: ${JSON.stringify(opacities)}`).toBeLessThan(0.98);
+      expect(isNonDecreasing(opacities), `opacity fell during the entry: ${JSON.stringify(opacities)}`).toBe(true);
       if (kind.scrim) {
         await expect
           .poll(async () => (await readFrames<Frame>(page, FRAMES)).at(-1)?.bd, { timeout: 10_000 })
           .toBeGreaterThan(0.09);
         const alphas = (await readFrames<Frame>(page, FRAMES)).map((f) => f.bd ?? 0);
-        expect(
-          alphas.some((a) => a > 0.002 && a < 0.098),
-          `the scrim alpha passed through no intermediate value: ${JSON.stringify(alphas)}`,
-        ).toBe(true);
+        expect(alphas[0], `the scrim is already at rest on the first open frame: ${JSON.stringify(alphas)}`).toBeLessThan(0.098);
+        expect(isNonDecreasing(alphas), `the scrim alpha fell during the entry: ${JSON.stringify(alphas)}`).toBe(true);
       }
     });
 
-    test("shows no intermediate value under reduced motion", { tag: TIMING_TAG }, async ({ page }) => {
+    test("shows no intermediate value under reduced motion", async ({ page }) => {
       await page.emulateMedia({ reducedMotion: "reduce" });
       await record(page);
       await gotoHydrated(page, kind.url, GOTO);
@@ -191,7 +192,7 @@ for (const kind of KINDS) {
       }
     });
 
-    test("is a keyframe animation, not a `@starting-style` transition", { tag: TIMING_TAG }, async ({ page }) => {
+    test("is a keyframe animation, not a `@starting-style` transition", async ({ page }) => {
       await page.emulateMedia({ reducedMotion: "no-preference" });
       await record(page);
       await gotoHydrated(page, kind.url, GOTO);

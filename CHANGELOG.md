@@ -7,6 +7,10 @@ below are collected under "Unreleased" and move under a version heading at the f
 
 ### Changed
 
+- **Dialog, AlertDialog and CommandDialog panels centre with `translate` and zoom with `scale`.** The panel's
+  `transform` is now unset (it was `translate(-50%, -50%)`), so a stylesheet of yours that sets `transform` on
+  `.dx-dialog`, `.dx-alert-dialog` or `.dx-command-dialog` now composes with the centring instead of replacing it; move
+  such an offset to `translate` or `scale` only if you meant to replace the centring.
 - **State attributes are presence attributes; `data-state` is gone.** Every component states its state with a Base UI
   presence attribute (`data-open` / `data-closed`, `data-checked` / `data-unchecked` / `data-indeterminate`, `data-active`,
   `data-hidden`, `data-selected`, `data-pressed`, `data-loading`, ...): present (and empty) while the state holds, absent otherwise.
@@ -25,9 +29,7 @@ below are collected under "Unreleased" and move under a version heading at the f
 - Dialog, AlertDialog and CommandDialog, and the scrim behind every modal, fade in on engines that do not animate a
   transition out of `display: none`: the entry is a keyframe animation bound to the open state (`dx-modal-in` through
   `--dx-modal-enter`, `dx-scrim-in`) instead of an `@starting-style` transition, so it plays wherever the exit does. The
-  dialog panel now centres with `translate: -50% -50%` and zooms with `scale`, not one `transform`; a style that overrode the
-  panel's `transform` moves to those properties. The theme's check refuses a new `@starting-style` rule.
-
+  theme's check refuses a new `@starting-style` rule.
 - A menu root (DropdownMenu, ContextMenu, Menubar) given an `id` that changes later keeps its outside-press and
   outside-focus dismissal: the dismiss layer follows the current `id` instead of the first one, and returns to the
   generated id when the `id` is dropped.
