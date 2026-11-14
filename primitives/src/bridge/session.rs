@@ -306,7 +306,7 @@ pub enum Flush {
 #[derive(Clone, Debug, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum SampleField {
-    /// Coalesced: the property `get` reads (a [`Prop`](super::Prop) wire name), its value at the end of
+    /// Coalesced: the property `get` reads (a [`Prop`] wire name), its value at the end of
     /// the frame, sent only when it changed.
     Read(String),
     /// Batched: every `event` the target gets, each as `{ timeStamp, ...pick }`, in order, as the array
