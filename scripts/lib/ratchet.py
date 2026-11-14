@@ -1044,6 +1044,28 @@ def _self_test() -> int:
         else:
             ok += 1
 
+    # Every ratchet table's columns are grant columns: a table whose column is missing from GRANT_COLUMNS makes
+    # every other gate refuse the row that grants it.
+    table_columns = set()
+    tables = (git_text(".", "ls-files", "scripts") or "").splitlines()
+    for name in tables:
+        if not name.endswith(".tsv") or not os.path.isfile(name):
+            continue
+        with open(name, encoding="utf-8") as fh:
+            head = fh.read(4096).splitlines()
+        if not head or "(scripts/lib/ratchet.py)" not in head[0]:
+            continue
+        for line in head:
+            if line.startswith("#! columns:"):
+                table_columns.update(line[len("#! columns:"):].split())
+    missing = sorted(table_columns - set(GRANT_COLUMNS))
+    extra = sorted(set(GRANT_COLUMNS) - table_columns)
+    if missing or extra:
+        fails.append(f"rows.py GRANT_COLUMNS is not the union of the ratchet tables' columns: missing {missing}, "
+                     f"in no table {extra}")
+    else:
+        ok += 1
+
     for f in fails:
         print("ratchet --self-test FAIL: " + f, file=sys.stderr)
     if fails:

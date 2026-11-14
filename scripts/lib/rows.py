@@ -29,10 +29,15 @@ __all__ = ["Row", "front_matter", "parse_columns", "parse_list", "row_problems",
 
 _FRONT = re.compile(r"\A---\r?\n(.*?)\r?\n---\r?\n", re.S)
 _PAIR = re.compile(r"([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(\d+)")
-# The columns a `js-grant` may name: those of `check-js-volume` (its COLUMNS, held equal by its self-test), the
-# `bytes` of the bridge budgets and those of `check-native-slots`. A ratchet also accepts its own columns.
+# The columns a `js-grant` may name: the columns of every ratchet table (a TSV whose first line names
+# `scripts/lib/ratchet.py`), so that one gate reads a row that grants another gate's column without refusing it:
+# those of `check-js-volume` (its COLUMNS, held equal by its self-test), the `bytes` of the bridge budgets, those of
+# `check-native-slots`, the `gzip_bytes` of the decision kernel and those of `check-hot-events`. The ratchet's
+# self-test holds this tuple equal to the union of the tables' `#! columns:` lines.
 GRANT_COLUMNS = ("sink", "js_lit", "js_file_bytes", "install", "inline_script", "comment_eval", "expect_disallowed",
-                 "bytes", "value", "checked", "selected", "open", "hidden")
+                 "bytes", "value", "checked", "selected", "open", "hidden", "gzip_bytes",
+                 "pointermove", "mousemove", "touchmove", "wheel", "scroll", "resize", "dragover", "mounted",
+                 "pd_submit", "pd_input", "pd_change", "pd_paste", "pd_drop")
 LEGACY_SPELLING = {"js_file": "js_file_bytes"}
 _PARENS = re.compile(r"\([^)]*\)")
 # A row whose status says it is finished is closed even when nobody moved it under done/ yet.
