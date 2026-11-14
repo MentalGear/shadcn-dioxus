@@ -29,7 +29,13 @@ proposing one is closed as out of scope (row 337 is the first).
 - **To add a row:** pick the next free id (the highest id in the two indexes, plus one), copy any row file, rename it
   `<NNN>-<slug>.md`, fill the front matter and the four sections.
 - **To update a row:** edit its sections (append dated notes to Detail, change Status / trigger when it lands). When it
-  lands, `git mv` it into `dev-docs/backlog/done/`.
+  lands, close it with `scripts/backlog-close.sh <id>... [--status "LANDED in <ref>"]`, never by `git mv`: it refuses,
+  naming file and line, while something still names the row (an owner-`row` column of a `scripts/*.tsv` allow or callers
+  table, derived from the table's header comment; an open row's `Depends on:` bullet that does not say the row is
+  settled, by a link into `done/` or `(landed)` after it; a `js-grant:` the ratchet still reads, unless
+  `--grant-spent`); otherwise it moves the row, repairs the links to and from it, writes a CLOSED status when the
+  row's own does not start with a closing word, and runs `scripts/backlog-index.sh`. `scripts/check-backlog-index.sh`
+  runs the same reference check, so a row moved by hand is caught too.
 - **Then run `scripts/backlog-index.sh`** (syncs `status`/`size`, rewrites both indexes) and commit the row file and
   the index files together. `scripts/check-backlog-index.sh` (a `run-gates.sh` gate) fails on a stale index, a missing
   front matter field, a duplicate id, a row in both sets, and a broken relative link under `dev-docs/`.

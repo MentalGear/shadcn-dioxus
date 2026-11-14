@@ -6,7 +6,8 @@ Read this in a fresh container where `dx` is missing, or before you edit a backl
   next round and owner inputs pending; the main loop keeps it current. [`dev-docs/README.md`](../dev-docs/README.md) is
   the map of the docs.
 - The backlog (`dev-docs/backlog.md` row N) is one file per row under `dev-docs/backlog/`; the index is generated: edit
-  the row file, run `scripts/backlog-index.sh`, commit both.
+  the row file, run `scripts/backlog-index.sh`, commit both. To close a row use `scripts/backlog-close.sh <id>...`
+  (never a bare `git mv`); [`dev-docs/backlog.md`](../dev-docs/backlog.md) "How it works" owns the procedure.
 - A fresh remote container is bootstrapped by the SessionStart hook (`scripts/session-setup.sh`: dx 0.7.9, wasm32, dx
   tools, `pnpm install --frozen-lockfile`, `cargo fetch`; ~8 s). If `dx` is missing, run the script by hand; never
   `cargo install dioxus-cli` (~21 min) or hand-seed the dx tools.

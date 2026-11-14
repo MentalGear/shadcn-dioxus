@@ -27,16 +27,16 @@ cp "$repo_root/scripts/lane-worktree.sh" "$r/scripts/"
 cp "$repo_root/scripts/lib/pinned-worktree.sh" "$r/scripts/lib/"
 cp "$repo_root/.gitignore" "$r/"
 echo x > "$r/preview/p.txt"
-git -C "$r" add -A && git -C "$r" commit -qm old || fail "old commit failed"
-old="$(git -C "$r" rev-parse HEAD)"
-# the newer commit adds playwright/ and scripts/ts-tools/; the old one has no playwright/ and no ts-tools/
+git -C "$r" add -A && git -C "$r" commit -qm first || fail "first commit failed"
+first="$(git -C "$r" rev-parse HEAD)"
+# the second commit adds playwright/ and scripts/ts-tools/; the first has neither
 mkdir -p "$r/playwright" "$r/scripts/ts-tools"
 echo x > "$r/playwright/s.txt"; echo x > "$r/scripts/ts-tools/t.txt"
 git -C "$r" add -A && git -C "$r" commit -qm new || fail "new commit failed"
 # the shared (untracked, ignored) node_modules of the main checkout: preview and playwright have one, ts-tools does not
 mkdir -p "$r/preview/node_modules/pkg" "$r/playwright/node_modules/pkg"
 echo marker > "$r/preview/node_modules/pkg/m"
-git -C "$r" status --porcelain | grep -q . && fail "the scratch main checkout is not clean before the test"
+[ -z "$(git -C "$r" status --porcelain)" ] || fail "the scratch main checkout is not clean before the test"
 lw="$r/scripts/lane-worktree.sh"
 wts="$tmp/wts"; mkdir -p "$wts"
 
@@ -56,18 +56,18 @@ mkdir -p "$wts/taken"; echo keep > "$wts/taken/f"
 git -C "$r" show-ref --verify --quiet refs/heads/lane/two && fail "a refused add left a branch behind"
 "$lw" add lane/two "$wts/one" >/dev/null 2>&1 && fail "add overwrote an existing worktree"
 
-# 3. a start point without a directory: no link, no error (the old commit has no playwright/); a new branch starts there
-out="$("$lw" add lane/old "$wts/old" "$old" 2>&1)" || { echo "$out"; fail "add at an older start point failed"; }
-[ "$(git -C "$wts/old" rev-parse HEAD)" = "$old" ] || fail "the worktree is not at the start point"
-[ ! -e "$wts/old/playwright" ] || fail "the old start point has a playwright directory"
-[ -L "$wts/old/preview/node_modules" ] || fail "preview/node_modules is not linked at the old start point"
-[ -z "$(git -C "$wts/old" status --porcelain)" ] || fail "git status at the old start point is not clean"
+# 3. a start point whose tree lacks a directory (no playwright/ there): no link, no error; a new branch starts at that commit
+out="$("$lw" add lane/first "$wts/first" "$first" 2>&1)" || { echo "$out"; fail "add at a start point without playwright/ failed"; }
+[ "$(git -C "$wts/first" rev-parse HEAD)" = "$first" ] || fail "the worktree is not at the start point"
+[ ! -e "$wts/first/playwright" ] || fail "the first commit has a playwright directory"
+[ -L "$wts/first/preview/node_modules" ] || fail "preview/node_modules is not linked at that start point"
+[ -z "$(git -C "$wts/first" status --porcelain)" ] || fail "git status at that start point is not clean"
 
 # 4. an existing branch is checked out as it is, and refuses a start point; a branch checked out elsewhere is refused
-git -C "$r" branch lane/pre "$old"
+git -C "$r" branch lane/pre "$first"
 "$lw" add lane/pre "$wts/pre" HEAD >/dev/null 2>&1 && fail "add accepted a start point for an existing branch"
 "$lw" add lane/pre "$wts/pre" >/dev/null 2>&1 || fail "add of an existing branch failed"
-[ "$(git -C "$wts/pre" rev-parse HEAD)" = "$old" ] || fail "the existing branch was moved"
+[ "$(git -C "$wts/pre" rev-parse HEAD)" = "$first" ] || fail "the existing branch was moved"
 "$lw" add lane/pre "$wts/pre2" >/dev/null 2>&1 && fail "add checked out a branch that is already checked out"
 
 # 5. from inside a lane worktree the links still come from the main checkout, and a relative path is resolved against the cwd
@@ -88,4 +88,4 @@ git -C "$r" show-ref --verify --quiet refs/heads/lane/three || fail "remove dele
 "$lw" remove "$wts/nowhere" >/dev/null 2>&1 && fail "remove accepted a path that is no worktree"
 "$lw" bogus >/dev/null 2>&1 && fail "an unknown command exited 0"
 
-echo "check-lane-worktree: OK -- add links node_modules (none where absent), is clean to git, refuses an existing path, handles old start points, existing branches and calls from a lane worktree; remove refuses dirt and keeps the branch"
+echo "check-lane-worktree: OK -- add links node_modules (none where absent), is clean to git, refuses an existing path, handles a start point that lacks a directory, existing branches and calls from a lane worktree; remove refuses dirt and keeps the branch"
