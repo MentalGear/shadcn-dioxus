@@ -14,12 +14,9 @@ c="$(git rev-parse --verify "$c^{commit}")" || exit 2
 # run still queued for the lock, so that run would test (and its log, named for its commit, vouch
 # for) another commit (row 221).
 wt="${LANE_WT:-/home/user/wt}/gates-${c:0:12}"
-git worktree remove --force "$wt" >/dev/null 2>&1 || true
-git worktree add -q --detach "$wt" "$c" || exit 2
-trap 'cd "$repo" && git worktree remove --force "$wt" >/dev/null 2>&1' EXIT
-ln -sfn "$repo/preview/node_modules" "$wt/preview/node_modules"
-ln -sfn "$repo/playwright/node_modules" "$wt/playwright/node_modules"
-ln -sfn "$repo/scripts/ts-tools/node_modules" "$wt/scripts/ts-tools/node_modules"
+. "$repo/scripts/lib/pinned-worktree.sh"
+pinned_worktree_add "$repo" "$c" "$wt" || exit 2
+trap 'pinned_worktree_remove "$repo" "$wt"' EXIT
 cd "$wt"
 # Class `gate` in the lane-lock queue (row 221): a merge gate goes before every waiting lane build, and the
 # wrapper script paths are the MAIN checkout's, because an older commit under test may not have them.

@@ -5,31 +5,30 @@
 //   node playwright/tools/suite-key-selftest.mjs          (scripts/check-suite-reuse.sh runs exactly this)
 //   SUITE_KEY_SELFTEST_FIXTURES_ONLY=1 skips part 5 (the real tree).
 //
-// 1. What a change re-runs: a spec-only change runs that file; a shared helper runs its importers; a site change, a config,
-//    fixture, lockfile or imported-by-config change runs everything; a file outside the build (dev-docs, docs, row files,
-//    tools) runs nothing; an include of dev-docs/motion.md is a site input.
-// 2. Run-time reads: a registered reader's data re-runs the specs that load the reader, and only them; an environment variable
-//    a spec reads re-runs it; the timing pass switch re-runs everything.
+// 1. What a change re-runs: a spec-only change runs that file; a change to anything else under playwright/ (a helper, the config,
+//    fixtures, data, a vendored script, the lock file, a tool) or primitives/ts-test/, to the site, the build environment, the
+//    browser or the environment a test reads runs everything; durations.json, dev-docs, docs and row files run nothing, except
+//    the dev-docs file the build includes (a site input).
+// 2. What the key cannot see fails closed: a test that reads a helper by path, a `process` used in a form that could read the
+//    environment unseen, a test that names or enumerates spec files, a computed import, an import of a tool, a missing parser.
 // 3. What is accepted: a record is green by positive proof only. A file absent from a complete report (a `test.only`), a test that
 //    was interrupted, did not run or skipped, a missing list, a report of an earlier run, a worktree that moved during the run
 //    and a hand-edited, red or other-build record are never accepted; a chunk with run errors writes no record; a spec file
 //    added without a record blocks the tree; an unkeyable spec always runs.
 // 4. The verdict: whole-suite totals (reused plus run) with the reused count stated; red when a file failed, a chunk is missing,
 //    a reused record is gone or nothing passed; accept and verdict print and judge the same way.
-// 5. What a spec key sees: files no spec imports (vendored scripts) are in every key; a mention in a string that looks like a
-//    comment start does not hide an import or an environment read; the path of the base URL is in the key.
-// 6. The real tree: every spec has a key, the registered readers are the only files naming their data, and the build inputs name
-//    no excluded path except the reviewed ones.
+// 5. The key and the store: the path of the base URL is in the key, a directory hash sees symlink targets.
+// 6. The real tree: every spec has a key, the reviewed sites are exactly today's, only the chunk cutter reads durations.json, no
+//    test code imports a tool, and the build inputs name no excluded path except the reviewed ones.
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { execFileSync, spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { openTree, siteKey, specKeys, plan, record, verdict, hashDir, lookup, rustIncludes, specFilesOf, DATA_READERS, KeyError } from "./suite-key.mjs";
-import * as importGraph from "./import-graph.mjs";
 import * as suiteKey from "./suite-key.mjs";
-const parserName = importGraph.parserName ?? (() => "regex");
-const stripComments = (t) => t.replace(/^\s*\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, ""); // for the reviewed-list guard of part 6 only
+import * as importGraph from "./import-graph.mjs";
+const { openTree, siteKey, specKeys, plan, record, verdict, hashDir, lookup, rustIncludes, specFilesOf, REVIEWED, KeyError } = suiteKey;
+const { analyze } = importGraph;
 import { specFilesOnDisk } from "./spec-files.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -60,7 +59,7 @@ const base = {
   "playwright/fixtures.ts": "export const test = 1;\n",
   "playwright/helper.ts": "export const h = 1;\n",
   "playwright/deep.ts": "import { h } from \"./helper\";\nexport const d = h;\n",
-  "playwright/a.spec.ts": "import { test } from \"./fixtures\";\nimport { h } from \"./helper\";\nimport { BASE_URL } from \"./base-url\";\n",
+  "playwright/a.spec.ts": "import { test } from \"./fixtures\";\nimport { h } from \"./helper\";\nimport { BASE_URL } from \"./base-url\";\nimport { p } from \"./probe\";\n",
   "playwright/b.spec.ts": "import { test } from \"./fixtures\";\nimport { d } from \"./deep\";\n",
   "playwright/c.spec.ts": "import { test } from \"./fixtures\";\nconst r = process.env.FIRST_PAINT_ROUTES;\n",
   "playwright/d.spec.ts": "import { test } from \"./fixtures\";\nimport { w } from \"../primitives/ts-test/witness\";\n",
@@ -76,8 +75,11 @@ const base = {
   // a vendored script a page loads: no spec imports it
   "playwright/oracle/reference/v1/js/menu.js": "export const m = 1;\n",
   "playwright/orphan.mjs": "export const o = 1;\n",
+  // imported by a.spec.ts and read by path (not imported) by reads.spec.ts
+  "playwright/probe.ts": "export const p = 1;\n",
+  "playwright/reads.spec.ts": "import fs from \"node:fs\";\nimport path from \"node:path\";\nconst t = fs.readFileSync(path.join(__dirname, \"probe.ts\"), \"utf8\");\n",
 };
-const SPECS = ["a.spec.ts", "b.spec.ts", "c.spec.ts", "d.spec.ts", "oracle/hydration-parity.spec.ts", "swallow.spec.ts", "witness/w.spec.ts"];
+const SPECS = ["a.spec.ts", "b.spec.ts", "c.spec.ts", "d.spec.ts", "oracle/hydration-parity.spec.ts", "reads.spec.ts", "swallow.spec.ts", "witness/w.spec.ts"];
 const put = (cwd, files) => { for (const [f, c] of Object.entries(files)) { const p = path.join(cwd, f); if (c === null) fs.rmSync(p, { force: true }); else { fs.mkdirSync(path.dirname(p), { recursive: true }); fs.writeFileSync(p, c); } } };
 fs.mkdirSync(repo, { recursive: true });
 git(repo, "init", "-q", ".");
@@ -104,7 +106,7 @@ const treeOf = (c) => openTree(repo, c);
 const RESULTS = { expected: ["passed"], unexpected: ["failed"], skipped: ["skipped"], flaky: ["failed", "passed"] };
 const t3 = (n, status = "expected", results = RESULTS[status]) => Array.from({ length: n }, (_, i) => ({ title: `t${i}`, status, results: results.map((r) => ({ status: r })) }));
 const T = (n, status, results) => t3(n, status, results);
-const spec = (f, tests) => ({ title: f, file: f, specs: tests.map((t, i) => ({ title: `${t.title}-${i}`, file: f, tests: [{ projectName: "chromium", status: t.status, results: t.results }] })) });
+const spec = (f, tests) => ({ title: f, file: f, specs: tests.map((t, i) => ({ title: `${t.title}-${i}`, file: f, tests: [{ projectName: "chromium", status: t.status, expectedStatus: t.expectedStatus ?? (t.status === "skipped" && t.results.length > 0 && t.results.every((r) => r.status === "skipped") ? "skipped" : "passed"), results: t.results }] })) });
 const iso = (ms) => new Date(ms).toISOString();
 function fakeRun(out, pl, over = {}, { chunks = 2, errors = {}, drop = [], want = {}, omit = [], noList = false, startedAt = Date.now() - 5000, reportAt = Date.now(), skipStarted = false } = {}) {
   fs.mkdirSync(out, { recursive: true });
@@ -145,44 +147,73 @@ const runOf = (commit, store, opts) => plan(treeOf(commit), store, popts(opts)).
   const store = newStore();
   const first = runAndRecord(store, BASE);
   eq("a first run executes every spec file", first.pl.run, SPECS);
-  eq("a first run writes a green record for every file", [first.rec.green, first.rec.red, first.rec.unrecorded.length], [7, 0, 0]);
+  eq("a first run writes a green record for every file", [first.rec.green, first.rec.red, first.rec.unrecorded.length], [8, 0, 0]);
   eq("the same tree needs no run", runOf(BASE, store), []);
   check("the same tree is accepted whole", plan(treeOf(BASE), store, popts()).allGreen);
 
   eq("a spec-only change re-runs that file", runOf(variant({ "playwright/c.spec.ts": base["playwright/c.spec.ts"] + "// edit\nconst x = 1;\n" }), store), ["c.spec.ts"]);
-  eq("a shared helper re-runs every importer, direct and through another helper", runOf(variant({ "playwright/helper.ts": "export const h = 2;\n" }), store), ["a.spec.ts", "b.spec.ts"]);
-  eq("a helper no spec imports is in every spec key (nothing proves it unread)", runOf(variant({ "playwright/unused.ts": "export const u = 1;\n" }), store), SPECS);
-  eq("a file outside playwright/ that a spec imports re-runs that spec and nothing else of the key", runOf(variant({ "primitives/ts-test/witness.ts": "export const w = 2;\n" }), store), ["d.spec.ts"]);
+  eq("a spec file renamed is a new file with no record", runOf(variant({ "playwright/c.spec.ts": null, "playwright/c2.spec.ts": base["playwright/c.spec.ts"] }), store), ["c2.spec.ts"]);
+  eq("a spec file added needs a run and takes nothing from the others", runOf(variant({ "playwright/e.spec.ts": "import { test } from \"./fixtures\";\n" }), store), ["e.spec.ts"]);
   for (const [name, edits] of [
+    ["a helper only some specs import", { "playwright/helper.ts": "export const h = 2;\n" }],
+    ["a helper no spec imports", { "playwright/unused.ts": "export const u = 1;\n" }],
+    ["a helper read by path, not imported, by a spec", { "playwright/probe.ts": "export const p = 2;\n" }],
     ["fixtures.ts", { "playwright/fixtures.ts": "export const test = 2;\n" }],
     ["the config", { "playwright/suite.local.config.ts": base["playwright/suite.local.config.ts"] + "// c\nconst x = 1;\n" }],
     ["a file the config imports", { "playwright/base-url.ts": base["playwright/base-url.ts"] + "export const Q = 1;\n" }],
     ["the browser launcher the config requires", { "playwright/sandbox-chromium.cjs": base["playwright/sandbox-chromium.cjs"] + "// c\n" }],
     ["pnpm-lock.yaml", { "playwright/pnpm-lock.yaml": "lock: 2\n" }],
     ["package.json", { "playwright/package.json": "{\"a\":1}\n" }],
+    ["a witness binding", { "playwright/witness/bindings/x.json": "{\"files\": [\"a\"]}\n" }],
+    ["data of a spec's own", { "playwright/oracle/attr-synth/src/main.rs": "fn main() { 1; }\n" }],
+    ["a vendored script no spec imports", { "playwright/oracle/reference/v1/js/menu.js": "export const m = 1;\nthrow new Error('x');\n" }],
+    ["a .mjs no spec imports", { "playwright/orphan.mjs": "export const o = 2;\n" }],
+    ["a page the vendored script belongs to", { "playwright/oracle/reference/v1/x.html": "<script src=js/menu.js></script>" }],
+    ["a runner tool (it can drop --forbid-only, add --retries, skip a build)", { "playwright/tools/run-suite.sh": "#!/bin/sh\n# x\n" }],
+    ["a tool of any other kind", { "playwright/tools/ensure-attr-synth.sh": "#!/bin/sh\nexit 0\n" }],
+    ["the page-side test harness under primitives/ts-test/", { "primitives/ts-test/witness.ts": "export const w = 2;\n" }],
+    ["the site", { "preview/src/main.rs": "pub const A: &str = \"b\";\n" }],
+    ["Cargo.lock", { "Cargo.lock": "# lock v2\n" }],
+    ["a build script", { "scripts/build-ssg.sh": "#!/bin/sh\necho other\n" }],
+    ["a file the build includes from dev-docs/", { "dev-docs/motion.md": "# motion v2\n" }],
   ]) eq(`a change to ${name} re-runs every spec file`, runOf(variant(edits), store), SPECS);
-  eq("a site change re-runs every spec file", runOf(variant({ "preview/src/main.rs": "pub const A: &str = \"b\";\n" }), store), SPECS);
-  eq("a lock file change re-runs every spec file", runOf(variant({ "Cargo.lock": "# lock v2\n" }), store), SPECS);
-  eq("a build script change re-runs every spec file", runOf(variant({ "scripts/build-ssg.sh": "#!/bin/sh\necho other\n" }), store), SPECS);
-  eq("a file the build includes from dev-docs/ re-runs every spec file", runOf(variant({ "dev-docs/motion.md": "# motion v2\n" }), store), SPECS);
   eq("dev-docs/ prose the build does not include re-runs nothing", runOf(variant({ "dev-docs/STATUS.md": "# status 2\n" }), store), []);
   eq("a backlog row re-runs nothing", runOf(variant({ "dev-docs/backlog/002-b.md": "# row 2\n", "dev-docs/backlog/001-a.md": "# changed\n" }), store), []);
   eq("the deploy's own output in docs/ re-runs nothing", runOf(variant({ "docs/index.html": "<html>2</html>\n", "docs/new.js": "x" }), store), []);
-  eq("the suite tooling (tools/, durations.json) re-runs nothing", runOf(variant({ "playwright/tools/run-suite.sh": "#!/bin/sh\n# x\n", "playwright/durations.json": "{\"a\":1}\n" }), store), []);
+  eq("durations.json, which only cuts chunks, re-runs nothing", runOf(variant({ "playwright/durations.json": "{\"a\":1}\n" }), store), []);
   eq("a build environment change re-runs every spec file", runOf(variant({}), store, { buildEnv: "dx 0.7.10" }), SPECS);
   eq("a different browser or runtime re-runs every spec file", runOf(variant({}), store, { runtime: "rt-2" }), SPECS);
-  eq("a spec file renamed is a new file with no record", runOf(variant({ "playwright/c.spec.ts": null, "playwright/c2.spec.ts": base["playwright/c.spec.ts"] }), store), ["c2.spec.ts"]);
 
-  // ---- 2. run-time reads ---------------------------------------------------------------------------------------
-  eq("a binding read through the registered reader re-runs the specs that load the reader", runOf(variant({ "playwright/witness/bindings/x.json": "{\"files\": [\"a\"]}\n" }), store), ["witness/w.spec.ts"]);
-  eq("a new binding re-runs the specs that load the reader", runOf(variant({ "playwright/witness/bindings/y.json": "{}\n" }), store), ["witness/w.spec.ts"]);
-  eq("the data of a registered spec reader re-runs that spec", runOf(variant({ "playwright/oracle/attr-synth/src/main.rs": "fn main() { 1; }\n" }), store), ["oracle/hydration-parity.spec.ts"]);
-  eq("data no reader is registered for re-runs every spec file", runOf(variant({ "playwright/fixtures/unknown.json": "{}\n" }), store), SPECS);
-  eq("an environment variable a spec reads re-runs the specs that read it", runOf(variant({}), store, { env: { ...ENV, FIRST_PAINT_ROUTES: "some" } }), ["c.spec.ts"]);
-  eq("an environment variable no spec reads re-runs nothing", runOf(variant({}), store, { env: { ...ENV, SOME_OTHER: "1" } }), []);
+  // the environment: the names any file reads, with their values
+  eq("an environment variable a test file reads re-runs every spec file", runOf(variant({}), store, { env: { ...ENV, FIRST_PAINT_ROUTES: "some" } }), SPECS);
+  eq("one read after a string that looks like a comment start counts too", runOf(variant({}), store, { env: { ...ENV, LS_STEP: "32" } }), SPECS);
+  eq("an environment variable no file reads re-runs nothing", runOf(variant({}), store, { env: { ...ENV, SOME_OTHER: "1" } }), []);
   eq("the port and the site path are not part of the key", runOf(variant({}), store, { env: { ...ENV, PLAYWRIGHT_BASE_URL: "http://127.0.0.1:1", SSG_SITE_DIR: "/x" } }), []);
+  eq("the path of the base URL is in the key", runOf(variant({}), store, { env: { ...ENV, PLAYWRIGHT_BASE_URL: "http://127.0.0.1:4830/shadcn-dioxus" } }), SPECS);
+  eq("a base URL that differs by host and port only is not", runOf(variant({}), store, { env: { ...ENV, PLAYWRIGHT_BASE_URL: "http://127.0.0.1:4831" } }), []);
   eq("a record written with the timing pass off is not used when it is on", runOf(variant({}), store, { env: { ...ENV, TIMING_PASS: "on" } }), SPECS);
   eq("the build profile is part of the key", runOf(variant({}), store, { env: { ...ENV, PW_BUILD_PROFILE: "debug" } }), SPECS);
+
+  // ---- 2. what the key cannot see fails closed -----------------------------------------------------------------
+  const keysOf = (edits) => specKeys(treeOf(variant(edits)), { runtime: RT, env: ENV });
+  const noKey = (name, edits, files) => { const k = keysOf(edits); eq(name, [...k].filter(([, v]) => !v.key).map(([f]) => f).sort(), files); };
+  const noKeys = (name, edits) => check(name, (() => { try { keysOf(edits); return false; } catch (e) { return e instanceof KeyError; } })());
+  noKeys("globalThis.process.env makes every key unavailable", { "playwright/g.spec.ts": "const v = globalThis.process.env.X;\n" });
+  noKeys("an import of process makes every key unavailable", { "playwright/g.spec.ts": "import { env as e } from \"node:process\";\nconst v = e.X;\n" });
+  noKeys("an alias of process makes every key unavailable", { "playwright/helper.ts": "const p = process;\nexport const h = p.env.X;\n" });
+  noKeys("a bare process.env makes every key unavailable", { "playwright/g.spec.ts": "const e = { ...process.env };\n" });
+  noKeys("a computed process.env[...] makes every key unavailable", { "playwright/g.spec.ts": "const v = process.env[name];\n" });
+  noKeys("process[\"env\"] makes every key unavailable", { "playwright/g.spec.ts": "const v = globalThis[\"process\"].env.X;\n" });
+  check("process.argv, process.exit and process.env.NAME are plain", (() => { try { keysOf({ "playwright/g.spec.ts": "const a = process.argv; process.exit(0); const v = process.env.NAME;\n" }); return true; } catch { return false; } })());
+  noKey("a spec that imports another spec has no key", { "playwright/g.spec.ts": "import { x } from \"./a.spec\";\n" }, ["g.spec.ts"]);
+  noKey("a spec that names a spec file has no key", { "playwright/g.spec.ts": "const f = \"b.spec.ts\";\n" }, ["g.spec.ts"]);
+  noKey("a spec that enumerates a directory has no key", { "playwright/g.spec.ts": "import fs from \"node:fs\";\nconst l = fs.readdirSync(__dirname);\n" }, ["g.spec.ts"]);
+  noKey("a spec with a computed import has no key", { "playwright/g.spec.ts": "const m = await import(`./${name}`);\n" }, ["g.spec.ts"]);
+  noKey("a spec that imports a tool has no key", { "playwright/g.spec.ts": "import { x } from \"./tools/shard.mjs\";\n" }, ["g.spec.ts"]);
+  noKey("a helper that enumerates takes every key", { "playwright/helper.ts": "import fs from \"node:fs\";\nexport const h = fs.readdirSync(\".\");\n" }, SPECS);
+  noKey("a helper that names a spec file takes every key", { "playwright/helper.ts": "export const h = \"a.spec.ts\";\n" }, SPECS);
+  check("a mention in a comment is not a site", (() => { try { const k = keysOf({ "playwright/g.spec.ts": "// globalThis.process.env and b.spec.ts and readdirSync(x)\n/* import(`./${n}`) */\nconst a = 1;\n" }); return k.get("g.spec.ts").key !== null; } catch { return false; } })());
+  check("tools are not checked for what they do with spec files or the environment", (() => { try { keysOf({ "playwright/tools/x.mjs": "import fs from \"node:fs\";\nconst e = { ...process.env }; fs.readdirSync(\".\"); const f = \"a.spec.ts\";\n" }); return true; } catch { return false; } })());
 
   // ---- the built site ------------------------------------------------------------------------------------------
   const pub2 = path.join(tmp, "public2"); fs.mkdirSync(pub2); fs.writeFileSync(path.join(pub2, "index.html"), "site v2");
@@ -195,7 +226,7 @@ const runOf = (commit, store, opts) => plan(treeOf(commit), store, popts(opts)).
   // a red file: its record is red, the file runs again, the tree is not accepted
   const store = newStore();
   const r1 = runAndRecord(store, BASE, { "b.spec.ts": [...t3(2), ...t3(1, "unexpected")] });
-  eq("a red file gets a red record, the others green", [r1.rec.green, r1.rec.red], [6, 1]);
+  eq("a red file gets a red record, the others green", [r1.rec.green, r1.rec.red], [7, 1]);
   eq("a red record is not accepted: the red file runs again", runOf(BASE, store), ["b.spec.ts"]);
   check("a tree with a red file is not accepted", !plan(treeOf(BASE), store, popts()).allGreen);
   const fixed = variant({ "playwright/b.spec.ts": base["playwright/b.spec.ts"] + "// fix\n" });
@@ -235,13 +266,13 @@ const runOf = (commit, store, opts) => plan(treeOf(commit), store, popts(opts)).
   const out2 = path.join(tmp, "run-err");
   fakeRun(out2, pl2, {}, { errors: { 2: ["Timed out waiting 900s for the test suite to run"] } });
   const rec2 = record(s2, out2, 2, { worktree: OK });
-  eq("a chunk that timed out records none of its files", [rec2.green, rec2.unrecorded.length], [4, 3]);
-  eq("the files of the chunk that timed out run again", runOf(BASE, s2).length, 3);
+  eq("a chunk that timed out records none of its files", [rec2.green, rec2.unrecorded.length], [4, 4]);
+  eq("the files of the chunk that timed out run again", runOf(BASE, s2).length, 4);
   const s3 = newStore();
   const out3 = path.join(tmp, "run-missing");
   fakeRun(out3, plan(treeOf(BASE), s3, popts()), {}, { drop: [1] });
   const rec3 = record(s3, out3, 2, { worktree: OK });
-  eq("a chunk with no report records none of its files", [rec3.green, rec3.unrecorded.length], [3, 4]);
+  eq("a chunk with no report records none of its files", [rec3.green, rec3.unrecorded.length], [4, 4]);
   eq("the files of a chunk that never reported run again", runOf(BASE, s3).length, 4);
 
   // ---- a record is green by positive proof, not by the absence of a failure --------------------------------------
@@ -256,11 +287,11 @@ const runOf = (commit, store, opts) => plan(treeOf(commit), store, popts(opts)).
     return { st, out, pl, r };
   };
   // a file absent from a complete report (a `test.only` in another file hides it): listed, never reported
-  const only = proof("a file missing from a complete report", { "b.spec.ts": t3(3, "unexpected") }, { omit: ["b.spec.ts"] }, ["b.spec.ts"], 6);
+  const only = proof("a file missing from a complete report", { "b.spec.ts": t3(3, "unexpected") }, { omit: ["b.spec.ts"] }, ["b.spec.ts"], 7);
   check("the missing file is named as not matching its list", only.r.unrecorded.some((u) => u.startsWith("b.spec.ts") && /does not match the list/.test(u)), JSON.stringify(only.r.unrecorded));
   check("the verdict of that run is red", !verdict(only.out, 2, { repo, store: only.st, tree: BASE, env: ENV, worktree: OK }).ok);
-  proof("a test missing from a file's report", {}, { want: { "c.spec.ts": t3(4) } }, ["c.spec.ts"], 6);
-  proof("a test in the report that the list never named", { "c.spec.ts": t3(4) }, { want: { "c.spec.ts": t3(3) } }, ["c.spec.ts"], 6);
+  proof("a test missing from a file's report", {}, { want: { "c.spec.ts": t3(4) } }, ["c.spec.ts"], 7);
+  proof("a test in the report that the list never named", { "c.spec.ts": t3(4) }, { want: { "c.spec.ts": t3(3) } }, ["c.spec.ts"], 7);
   // no list, or a list that does not parse: nothing is proved
   const nl = proof("a run with no list", {}, { noList: true }, SPECS, 0);
   check("a run with no list is red", !verdict(nl.out, 2, { repo, store: nl.st, tree: BASE, env: ENV, worktree: OK }).ok);
@@ -268,18 +299,20 @@ const runOf = (commit, store, opts) => plan(treeOf(commit), store, popts(opts)).
   fakeRun(outB, plB); fs.writeFileSync(path.join(outB, "list.json"), "{not json");
   eq("a list that does not parse records nothing", record(badList, outB, 2, { worktree: OK }).green, 0);
   // interrupted and did-not-run tests are reported `skipped` with no run error
-  const intr = proof("a test that was interrupted", { "c.spec.ts": [...t3(2), ...t3(1, "skipped", ["interrupted"])] }, {}, ["c.spec.ts"], 6);
+  const intr = proof("a test that was interrupted", { "c.spec.ts": [...t3(2), ...t3(1, "skipped", ["interrupted"])] }, {}, ["c.spec.ts"], 7);
   check("an interrupted test makes the verdict red", !verdict(intr.out, 2, { repo, store: intr.st, tree: BASE, env: ENV, worktree: OK }).ok);
-  const dnr = proof("a test that did not run", { "c.spec.ts": [...t3(2), ...t3(1, "skipped", [])] }, {}, ["c.spec.ts"], 6);
+  const dnr = proof("a test that did not run", { "c.spec.ts": [...t3(2), ...t3(1, "skipped", [])] }, {}, ["c.spec.ts"], 7);
   check("a test that did not run makes the verdict red", !verdict(dnr.out, 2, { repo, store: dnr.st, tree: BASE, env: ENV, worktree: OK }).ok);
-  const unk = proof("a test with an unknown status", { "c.spec.ts": [...t3(2), { title: "q", status: "timedOut", results: [{ status: "timedOut" }] }] }, {}, ["c.spec.ts"], 6);
+  const unk = proof("a test with an unknown status", { "c.spec.ts": [...t3(2), { title: "q", status: "timedOut", results: [{ status: "timedOut" }] }] }, {}, ["c.spec.ts"], 7);
   check("an unknown status makes the verdict red", !verdict(unk.out, 2, { repo, store: unk.st, tree: BASE, env: ENV, worktree: OK }).ok);
+  const nse = proof("a skipped test that was not expected to skip", { "c.spec.ts": [...t3(2), { title: "q", status: "skipped", expectedStatus: "passed", results: [{ status: "skipped" }] }] }, {}, ["c.spec.ts"], 7);
+  check("a skip that was not declared is not a skip by choice: the verdict is red", !verdict(nse.out, 2, { repo, store: nse.st, tree: BASE, env: ENV, worktree: OK }).ok);
   // a skip decided at run time is allowed in the verdict, counted, and never recorded
-  const sk = proof("a test that decided to skip", { "c.spec.ts": [...t3(2), ...t3(1, "skipped")] }, {}, ["c.spec.ts"], 6);
+  const sk = proof("a test that decided to skip", { "c.spec.ts": [...t3(2), ...t3(1, "skipped")] }, {}, ["c.spec.ts"], 7);
   const vsk = verdict(sk.out, 2, { repo, store: sk.st, tree: BASE, env: ENV, worktree: OK });
   check("a deliberate skip keeps the verdict green and is counted", vsk.ok && /skipped=1 /.test(vsk.line), vsk.line);
   check("the skipped file is named as run every time", sk.r.unrecorded.some((u) => u.startsWith("c.spec.ts") && /skipped/.test(u)));
-  eq("a flaky pass is recorded", proof("a flaky test", { "c.spec.ts": [...t3(2), ...t3(1, "flaky")] }, {}, [], 7).r.green, 7);
+  eq("a flaky pass is recorded", proof("a flaky test", { "c.spec.ts": [...t3(2), ...t3(1, "flaky")] }, {}, [], 8).r.green, 8);
 
   // a run's reports belong to that run
   const stale = proof("a report that began before the run", {}, { reportAt: Date.now() - 60000 }, SPECS, 0);
@@ -302,7 +335,7 @@ const runOf = (commit, store, opts) => plan(treeOf(commit), store, popts(opts)).
   fs.appendFileSync(path.join(repo, "playwright/c.spec.ts"), "// an edit during the run\n");
   check("a tracked edit during the run stops the records", record(stW, outW, 2, { repo }).green === 0);
   git(repo, "checkout", "-q", "--", ".");
-  eq("control: the planned tree untouched is recorded", record(stW, outW, 2, { repo }).green, 7);
+  eq("control: the planned tree untouched is recorded", record(stW, outW, 2, { repo }).green, 8);
   void moved;
 
   // an added spec file with no record blocks the tree, through the CLI the deploy uses
@@ -316,16 +349,14 @@ const runOf = (commit, store, opts) => plan(treeOf(commit), store, popts(opts)).
   check("the blocked tree runs exactly the new file", /1 to run/.test(blocked.stdout), blocked.stdout);
 
   // an unkeyable spec always runs and never accepts
-  const unkv = variant({ "playwright/f.spec.ts": "import { x } from \"./nowhere\";\n" });
-  const keysU = specKeys(treeOf(unkv), { runtime: RT, env: ENV });
-  check("a spec importing a missing file has no key", keysU.get("f.spec.ts").key === null && /nowhere/.test(keysU.get("f.spec.ts").why));
-  const dyn = variant({ "playwright/g.spec.ts": "const m = await import(`./${name}`);\n" });
-  check("a spec with a computed import has no key", specKeys(treeOf(dyn), { runtime: RT, env: ENV }).get("g.spec.ts").key === null);
-  const bare = variant({ "playwright/h.spec.ts": "const e = { ...process.env };\n" });
-  check("a spec using process.env as a whole has no key", specKeys(treeOf(bare), { runtime: RT, env: ENV }).get("h.spec.ts").key === null);
+  const unkv = variant({ "playwright/f.spec.ts": "const m = await import(`./${name}`);\n" });
+  check("a spec with a computed import has no key", specKeys(treeOf(unkv), { runtime: RT, env: ENV }).get("f.spec.ts").key === null);
   const r5 = runAndRecord(store4, unkv);
   check("an unkeyable file runs on every plan and is never recorded", r5.pl.run.includes("f.spec.ts") && r5.rec.unrecorded.some((u) => u.startsWith("f.spec.ts")) && runOf(unkv, store4).includes("f.spec.ts"));
   check("a tree with an unkeyable file is not accepted by records", !plan(treeOf(unkv), store4, popts()).allGreen);
+  const noKeysTree = variant({ "playwright/g.spec.ts": "const e = { ...process.env };\n" });
+  check("a tree whose keys are unavailable has no plan (the caller runs the whole suite)", (() => { try { plan(treeOf(noKeysTree), store4, popts()); return false; } catch (e) { return e instanceof KeyError; } })());
+  eq("and the CLI says so with exit 3", cli(noKeysTree, store4).status, 3);
 }
 
 // ---- site key: includes ----------------------------------------------------------------------------------------
@@ -359,8 +390,8 @@ const runOf = (commit, store, opts) => plan(treeOf(commit), store, popts(opts)).
   const VE = { TIMING_PASS: "off", TIMING_REENABLE_ROW: "494" };
   const v = verdict(out, 2, { repo, store, tree: next, env: VE, worktree: OK });
   check("a reuse run is green when the file that ran and the reused records are", v.ok, JSON.stringify(v));
-  check("the totals are the whole suite: reused (18) plus run (4)", /^passed=22 failed=0 flaky=1 skipped=0 /.test(v.line), v.line);
-  check("the reused files are stated separately", /reused_files=6 reused_passed=18 run_files=1/.test(v.line), v.line);
+  check("the totals are the whole suite: reused (21) plus run (4)", /^passed=25 failed=0 flaky=1 skipped=0 /.test(v.line), v.line);
+  check("the reused files are stated separately", /reused_files=7 reused_passed=21 run_files=1/.test(v.line), v.line);
   check("the flaky pass is listed", v.flaky.some((t) => t.startsWith("c.spec.ts")));
   record(store, out, 2, { worktree: OK });
   check("the fixed tree is accepted after the record step", plan(treeOf(next), store, popts()).allGreen);
@@ -419,50 +450,47 @@ const runOf = (commit, store, opts) => plan(treeOf(commit), store, popts(opts)).
   check("a run that executed nothing does not claim the timing pass is deactivated when it is on", !/deactivated/.test(vOn.line), vOn.line);
 }
 
-// ---- 5. what a spec key sees ----------------------------------------------------------------------------------------
+// ---- 5. the key and the store -----------------------------------------------------------------------------------
 {
-  const store = newStore();
-  runAndRecord(store, BASE);
-  eq("a script no spec imports (a vendored page script) is in every spec key", runOf(variant({ "playwright/oracle/reference/v1/js/menu.js": "export const m = 1;\nthrow new Error('x');\n" }), store), SPECS);
-  eq("a .mjs no spec imports is in every spec key", runOf(variant({ "playwright/orphan.mjs": "export const o = 2;\n" }), store), SPECS);
-  eq("a file no spec imports of any extension is in every spec key", runOf(variant({ "playwright/oracle/reference/v1/x.html": "<script src=js/menu.js></script>" }), store), SPECS);
-  eq("a string that looks like a comment start does not hide an import after it", runOf(variant({ "playwright/late.ts": "export const l = 2;\n" }), store), ["swallow.spec.ts"]);
-  eq("nor an environment read after it", runOf(variant({}), store, { env: { ...ENV, LS_STEP: "32" } }), ["swallow.spec.ts"]);
-  eq("the path of the base URL is in the key", runOf(variant({}), store, { env: { ...ENV, PLAYWRIGHT_BASE_URL: "http://127.0.0.1:4830/shadcn-dioxus" } }), SPECS);
-  eq("a base URL that differs by host and port only is not", runOf(variant({}), store, { env: { ...ENV, PLAYWRIGHT_BASE_URL: "http://127.0.0.1:4831" } }), []);
   const lnk = path.join(tmp, "linkdir"); fs.mkdirSync(lnk); fs.symlinkSync("target-a", path.join(lnk, "l"));
   const h1 = hashDir(lnk); fs.rmSync(path.join(lnk, "l")); fs.symlinkSync("target-b", path.join(lnk, "l"));
   check("a symlink's target is part of the directory hash", h1 !== hashDir(lnk));
-  if (/^typescript/.test(parserName())) {
-    const cm = variant({ "playwright/cm.spec.ts": "// import { x } from \"./gone\";\n/* process.env.NOPE */\nimport { test } from \"./fixtures\";\n" });
-    const k = specKeys(treeOf(cm), { runtime: RT, env: ENV }).get("cm.spec.ts");
-    check("with a real parser a mention in a comment is not a dependency", k.key !== null, k.why);
-  }
 }
 
-// ---- 5. the real tree --------------------------------------------------------------------------------------------
+// ---- 6. the real tree --------------------------------------------------------------------------------------------
 if (!process.env.SUITE_KEY_SELFTEST_FIXTURES_ONLY) { // the mutation runs of scripts/check-suite-reuse.sh copy the tools only
   const files = execFileSync("git", ["-C", ROOT, "ls-files", "-z", "--cached", "--others", "--exclude-standard"], { encoding: "utf8" }).split("\0").filter((f) => f && fs.existsSync(path.join(ROOT, f)));
   const text = (f) => fs.readFileSync(path.join(ROOT, f), "utf8");
   const head = openTree(ROOT, "HEAD");
-  const keys = specKeys(head, { runtime: RT, env: ENV });
-  eq("every spec file of the real tree has a key", [...keys].filter(([, k]) => !k.key).map(([f, k]) => `${f}: ${k.why}`), []);
+  eq("every spec file of the real tree has a key", [...specKeys(head, { runtime: RT, env: ENV })].filter(([, k]) => !k.key).map(([f, k]) => `${f}: ${k.why}`), []);
   check("the spec set is the set shard.mjs deals", JSON.stringify(specFilesOf(head)) === JSON.stringify(specFilesOnDisk(path.join(ROOT, "playwright")).filter((f) => files.includes(`playwright/${f}`) && head.entries.has(`playwright/${f}`)).sort()));
-  check("the selector uses the same import walker", /from "\.\/import-graph\.mjs"/.test(text("playwright/tools/select.mjs")) && /from "\.\/import-graph\.mjs"/.test(text("playwright/tools/suite-key.mjs")));
+  check("the selector and the key read source through the same parser module", /from "\.\/import-graph\.mjs"/.test(text("playwright/tools/select.mjs")) && /from "\.\/import-graph\.mjs"/.test(text("playwright/tools/suite-key.mjs")));
   check("the site key of the real tree derives (every include is readable)", (() => { try { return !!siteKey(head, {}).key; } catch (e) { console.error(e.message); return false; } })());
   eq("the real build reads dev-docs/motion.md and nothing else of the excluded paths", rustIncludes(head).targets.size > 0 && [...rustIncludes(head).targets].filter((p) => /^(playwright|dev-docs|docs|primitives\/ts-test)\//.test(p)), ["dev-docs/motion.md"]);
 
-  // each registered reader exists, and only the reader (and the data itself) names its data
-  const pwModules = files.filter((f) => f.startsWith("playwright/") && /\.(?:ts|cjs|mjs|js)$/.test(f) && !f.startsWith("playwright/tools/") && !f.startsWith("playwright/node_modules/"));
-  for (const r of DATA_READERS) {
-    check(`registered readers exist: ${r.readers.join(", ")}`, r.readers.every((p) => files.includes(p)));
-    const naming = pwModules.filter((f) => r.mentions.test(stripComments(text(f))));
-    eq(`only the registered reader names ${r.mentions}`, naming.filter((f) => !r.readers.includes(f) && !r.data.test(f)), []);
-    check(`the registered data of ${r.readers[0]} exists`, files.some((f) => r.data.test(f)));
+  // The parser check, on the working tree: the sites found are exactly the reviewed ones (a stale entry is as wrong as a new site).
+  const tested = files.filter((f) => (f.startsWith("playwright/") || f.startsWith("primitives/ts-test/")) && /\.(?:ts|cjs|mjs|js)$/.test(f) && !f.startsWith("playwright/oracle/reference/"));
+  const found = {};
+  const toolFiles = [];
+  for (const f of tested) {
+    const a = analyze(text(f), f);
+    if (f.startsWith("playwright/tools/")) { toolFiles.push(f); continue; }
+    for (const c of ["processSites", "specNaming", "enumerates", "computed", "toolsImports"]) if (a[c]) (found[c] ??= {})[f] = a[c];
   }
+  for (const c of ["processSites", "specNaming", "enumerates", "computed", "toolsImports"]) { const sorted = (o) => Object.fromEntries(Object.entries(o).sort(([a], [b]) => (a < b ? -1 : 1))); eq(`the reviewed ${c} sites are exactly the ones found`, sorted(found[c] ?? {}), sorted(REVIEWED[c])); }
+  check(`no test code imports a tool (${toolFiles.length} tool modules are not checked, their bytes are in every key)`, !found.toolsImports);
+  const toolProcess = toolFiles.reduce((n, f) => n + analyze(text(f), f).processSites, 0);
+  console.log(`suite-key self-test: real tree: ${Object.values(found.processSites ?? {}).reduce((a, b) => a + b, 0)} process site(s) outside plain process.env.NAME in test code, ${toolProcess} in tools/; ` +
+    `${Object.values(found.specNaming ?? {}).reduce((a, b) => a + b, 0)} spec-naming, ${Object.values(found.enumerates ?? {}).reduce((a, b) => a + b, 0)} enumerating site(s), all reviewed`);
+
+  // durations.json only cuts chunks: nothing but the chunk cutter and its table tools names it
+  const namesDurations = files.filter((f) => f !== "playwright/durations.json" && f.startsWith("playwright/") && /durations\.json/.test(text(f)));
+  const CUTTERS = ["playwright/tools/shard.mjs", "playwright/tools/run-suite.sh", "playwright/tools/durations.mjs", "playwright/tools/durations-merge.mjs", "playwright/tools/suite-key.mjs", "playwright/tools/suite-key-selftest.mjs", "playwright/tools/suite-reuse-e2e.sh"];
+  eq("only the chunk cutter and the table tools name durations.json", namesDurations.filter((f) => !CUTTERS.includes(f)), []);
+  check("no test code reads durations.json", !namesDurations.some((f) => !f.startsWith("playwright/tools/")));
 
   // The release build's inputs name no excluded path, except where reviewed (display text, a comment, a gate-only crate).
-  const REVIEWED = {
+  const REVIEWED_BUILD = {
     "preview/index.html": "a comment",
     "preview/src/components/form/component.rs": "rendered text",
     "preview/src/components/top_layer/component.rs": "rendered text",
@@ -472,10 +500,11 @@ if (!process.env.SUITE_KEY_SELFTEST_FIXTURES_ONLY) { // the mutation runs of scr
     "scripts/attr-spread-collision-checker/src/main.rs": "a gate: its crate is not a dependency of the site",
     "scripts/build-ssg.sh": "message strings",
   };
+  const stripComments = (t) => t.replace(/^\s*\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, "");
   const BUILD_INPUT = /^(?:(?:primitives|preview|dioxus-attributes|decision-kernel|cli|test-harness|labs)\/.*(?:\.rs|Cargo\.toml|Dioxus\.toml|index\.html)|Cargo\.toml|scripts\/(?:build-ssg|ssg-verify|emit-404|lane-target|lane-ssg|lane-netns|lane-touch|lane-lock)\.sh|scripts\/ssg-css-bundle\.mjs|scripts\/attr-spread-collision-checker\/.*)$/;
   const namesExcluded = files.filter((f) => BUILD_INPUT.test(f) && stripComments(text(f)).split("\n").some((l) => !/^\s*(?:\/\/|#|\*)/.test(l) && /(?:dev-docs|playwright|primitives\/ts-test)\//.test(l)));
-  eq("no build input names an excluded path unless it is reviewed here", namesExcluded.filter((f) => !(f in REVIEWED)), []);
-  check("every reviewed entry still names one (a stale entry is removed)", Object.keys(REVIEWED).every((f) => namesExcluded.includes(f)), Object.keys(REVIEWED).filter((f) => !namesExcluded.includes(f)).join(" "));
+  eq("no build input names an excluded path unless it is reviewed here", namesExcluded.filter((f) => !(f in REVIEWED_BUILD)), []);
+  check("every reviewed entry still names one (a stale entry is removed)", Object.keys(REVIEWED_BUILD).every((f) => namesExcluded.includes(f)), Object.keys(REVIEWED_BUILD).filter((f) => !namesExcluded.includes(f)).join(" "));
 }
 
 console.log(`suite-key self-test: ${passed} passed, ${failed} failed`);

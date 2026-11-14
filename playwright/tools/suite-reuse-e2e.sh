@@ -3,13 +3,18 @@
 # `--reuse`, the real Playwright runner and suite.local.config.ts, on a scratch git repo with planted specs and a tiny planted
 # site (no build, no browser: the planted tests use no page). It drives a pass, a failing test, a `test.only`, a test that
 # interrupts its own runner, a skip decided at run time and a script no spec imports through record, plan, verdict and a second
-# run, and checks that only what should run runs and that nothing wrong is accepted. Runs through the repo's Playwright lock
-# (tools/run-suite.sh takes it per chunk), two workers.
+# run, and checks that only what should run runs and that nothing wrong is accepted: a spec-only fix reuses the rest, an edit of
+# a tool or of a helper a spec reads by path runs everything, an environment read through `globalThis.process` is refused, and
+# an edit made and reverted in the shared checkout during a run changes nothing because the run reads a private worktree
+# (scripts/lib/pinned-worktree.sh, what deploy-preview.sh uses). Runs through the repo's Playwright lock (tools/run-suite.sh takes
+# it per chunk), two workers; SUITE_E2E_PRIVATE_LOCK=1 (scripts/check-suite-reuse-e2e.sh, which holds the shared lock itself) uses
+# a private one.
 #
 #   playwright/tools/suite-reuse-e2e.sh        Exit status: 0 = every expectation held.
 set -uo pipefail
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 real="$(cd "$here/../.." && pwd)"
+. "$real/scripts/lib/pinned-worktree.sh"
 [ -d "$real/playwright/node_modules" ] || { echo "suite-reuse-e2e: playwright/node_modules is missing"; exit 1; }
 tmp="$(mktemp -d)"; [ -n "${SUITE_E2E_KEEP:-}" ] || trap 'rm -rf "$tmp"' EXIT
 [ -z "${SUITE_E2E_KEEP:-}" ] || echo "suite-reuse-e2e: keeping $tmp"
@@ -57,9 +62,10 @@ test.only("focused", () => { expect(1).toBe(1); });'
 commit() { git -C "$sc" add -A && git -C "$sc" commit -q --allow-empty -m "$1"; }
 tree() { git -C "$sc" rev-parse 'HEAD^{tree}'; }
 sk() { ( cd "$sc/playwright" && TIMING_PASS=off TIMING_REENABLE_ROW=494 PW_BUILD_PROFILE=release FIRST_PAINT_ROUTES=all LS_STEP=32 node tools/suite-key.mjs "$@" ); }
-run_suite() { # out; the real command line of the deploy, minus the build
-  ( cd "$sc/playwright" && PW_BUILD_PROFILE=release SSG_SITE_DIR="$site" FIRST_PAINT_ROUTES=all LS_STEP=32 SUITE_BUILD_ENV=e2e \
-      tools/run-suite.sh --out "$1" --chunks 2 --workers 2 --reuse "$store" --tree "$(tree)" ) > "$1.log" 2>&1
+lockargs=(); [ -z "${SUITE_E2E_PRIVATE_LOCK:-}" ] || lockargs=(--lock "$tmp/pw.lock")
+run_suite() { # out [root]; the real command line of the deploy, minus the build, in ROOT (default: the scratch repo)
+  ( cd "${2:-$sc}/playwright" && PW_BUILD_PROFILE=release SSG_SITE_DIR="$site" FIRST_PAINT_ROUTES=all LS_STEP=32 SUITE_BUILD_ENV=e2e \
+      tools/run-suite.sh --out "$1" --chunks 2 --workers 2 --reuse "$store" --tree "$(tree)" ${lockargs[@]+"${lockargs[@]}"} ) > "$1.log" 2>&1
 }
 run_list() { node -e 'console.log(JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")).run.join(" "))' "$1/plan.json"; }
 records() { find "$store" -name '*.json' 2>/dev/null | sed -E 's|.*/||; s|%2F|/|g; s|@.*||' | sort | tr '\n' ' ' | sed 's/ $//'; }
@@ -130,7 +136,7 @@ verdict "$tmp/r5" >/dev/null; expect "and the verdict is green" "$?" 0
 echo "7. a tracked file changes while the run is in progress"
 echo 'export const m = 3;' > "$sc/playwright/oracle/reference/v1/js/loader.js"; commit c6
 ( cd "$sc/playwright" && PW_BUILD_PROFILE=release SSG_SITE_DIR="$site" FIRST_PAINT_ROUTES=all LS_STEP=32 SUITE_BUILD_ENV=e2e \
-    tools/run-suite.sh --out "$tmp/r6" --chunks 2 --workers 2 --reuse "$store" --tree "$(tree)" > "$tmp/r6.log" 2>&1 ) &
+    tools/run-suite.sh --out "$tmp/r6" --chunks 2 --workers 2 --reuse "$store" --tree "$(tree)" ${lockargs[@]+"${lockargs[@]}"} > "$tmp/r6.log" 2>&1 ) &
 pid=$!
 while [ ! -s "$tmp/r6/plan.json" ] && kill -0 "$pid" 2>/dev/null; do sleep 0.2; done
 echo '// edited during the run' >> "$sc/playwright/pass.spec.ts"
@@ -138,5 +144,58 @@ wait "$pid"
 grep -q "nothing is recorded" "$tmp/r6.log" && ok "the records of the run an edit landed in are refused" || bad "records were written although a tracked file changed during the run"
 verdict "$tmp/r6" >/dev/null; expect "and its verdict is red" "$?" 1
 git -C "$sc" checkout -q -- .
+
+# ---- 8. a tool changes: every file runs again ---------------------------------------------------------------------------------
+echo "8. the same tree runs again so every file has a record, then a tool is edited (it could drop --forbid-only or add --retries)"
+run_suite "$tmp/r7"
+expect "after an undisturbed run every file has a green record" "$(status_of pass.spec.ts) $(status_of fail.spec.ts)" "green green"
+sk accept --store "$store" --tree "$(tree)" --build-env e2e >/dev/null 2>&1; expect "the tree is accepted from records" "$?" 0
+echo '# --retries=5' >> "$sc/playwright/tools/run-suite.sh"; commit c7
+sk accept --store "$store" --tree "$(tree)" --build-env e2e >/dev/null 2>&1; expect "an edit of a tool takes the records away (exit 1)" "$?" 1
+run_suite "$tmp/r8"
+expect "every spec file runs again" "$(run_list "$tmp/r8")" "fail.spec.ts pass.spec.ts"
+
+# ---- 9. a helper read by path, not imported --------------------------------------------------------------------------------------
+echo "9. a spec reads a helper by path without importing it; the helper changes"
+spec helper.ts 'export const h = 1;'
+spec reads.spec.ts 'import { test, expect } from "@playwright/test";
+import fs from "node:fs";
+import path from "node:path";
+test("reads the helper", () => { expect(fs.readFileSync(path.join(__dirname, "helper.ts"), "utf8")).toContain("export"); });'
+commit c8; run_suite "$tmp/r9" >/dev/null
+echo 'export const h = 2;' > "$sc/playwright/helper.ts"; commit c9
+run_suite "$tmp/r9b"
+expect "every spec file runs again, including the one that reads the helper by path" "$(run_list "$tmp/r9b")" "fail.spec.ts pass.spec.ts reads.spec.ts"
+
+# ---- 10. an environment read through globalThis.process --------------------------------------------------------------------------
+echo "10. a spec reads the environment through globalThis.process"
+before="$(records)"
+spec env.spec.ts 'import { test } from "@playwright/test";
+test("reads", () => { const v = globalThis.process.env.SOME_FLAG; void v; });'
+commit c10
+sk accept --store "$store" --tree "$(tree)" --build-env e2e >/dev/null 2>&1; expect "no key can be derived (exit 3), nothing is accepted" "$?" 3
+run_suite "$tmp/r10"
+grep -q "no key for tree" "$tmp/r10.log" && ok "run-suite says it runs the whole suite" || bad "run-suite did not say that it runs the whole suite"
+expect "all four spec files ran" "$(cat "$tmp"/r10/specs-*.txt | grep . | sort | tr '\n' ' ' | sed 's/ $//')" "env.spec.ts fail.spec.ts pass.spec.ts reads.spec.ts"
+expect "and no record was written" "$(records)" "$before"
+rm "$sc/playwright/env.spec.ts"
+
+# ---- 11. an edit made and reverted in the shared checkout during the run -----------------------------------------------------------
+echo "11. the run reads a private worktree; the shared checkout is edited (a failing test) and restored while it runs"
+echo 'export const m = 4;' > "$sc/playwright/oracle/reference/v1/js/loader.js"; commit c11
+wt="$tmp/private-wt"
+pinned_worktree_add "$sc" "$(git -C "$sc" rev-parse HEAD)" "$wt" || bad "could not create the private worktree"
+( cd "$wt/playwright" && PW_BUILD_PROFILE=release SSG_SITE_DIR="$site" FIRST_PAINT_ROUTES=all LS_STEP=32 SUITE_BUILD_ENV=e2e \
+    tools/run-suite.sh --out "$tmp/r11" --chunks 2 --workers 2 --reuse "$store" --tree "$(tree)" ${lockargs[@]+"${lockargs[@]}"} > "$tmp/r11.log" 2>&1 ) &
+pid=$!
+while [ ! -s "$tmp/r11/plan.json" ] && kill -0 "$pid" 2>/dev/null; do sleep 0.2; done
+cp "$sc/playwright/pass.spec.ts" "$tmp/pass.orig"
+printf 'import { test, expect } from "@playwright/test";\ntest("edited", () => { expect(1).toBe(2); });\n' > "$sc/playwright/pass.spec.ts"
+wait "$pid"
+cp "$tmp/pass.orig" "$sc/playwright/pass.spec.ts"      # the revert
+expect "the shared checkout is clean again" "$(git -C "$sc" status --porcelain --untracked-files=no)" ""
+( cd "$wt/playwright" && TIMING_PASS=off TIMING_REENABLE_ROW=494 node tools/suite-key.mjs verdict --out "$tmp/r11" --chunks 2 --tree "$(tree)" --store "$store" > "$tmp/r11.verdict" 2>&1 ); expect "the verdict of the run in the private worktree is green" "$?" 0
+expect "the passing spec passed: the run read the planned tree, not the edit" "$(status_of pass.spec.ts)" green
+pinned_worktree_remove "$sc" "$wt"
 
 [ "$fail" = 0 ] && echo "suite-reuse-e2e: OK" || { echo "suite-reuse-e2e: FAIL"; exit 1; }

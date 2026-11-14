@@ -6,12 +6,13 @@
 # wrong reuse would make a green deploy a lie, so this pins the rule on planted fixture repos and fake run reports, with no
 # build, browser or suite run, then breaks each rule in a copy of the tools and requires the self-test to go red.
 #
-# What it pins: a spec-only change re-runs that file; a shared helper re-runs its importers; a site change, the config,
-# fixtures.ts, the lock files or the environment re-run everything; dev-docs, docs and the tools re-run nothing, except the
-# dev-docs file the build includes; a registered reader's data and an environment variable re-run the specs that read them; a
-# record that is red, partial, hand-edited or for another build is never accepted; a chunk with run errors writes no record; a
-# spec file with no record blocks the deploy; the verdict is the whole suite's (reused plus run). On the real tree every spec has
-# a key, only the registered readers name their data, and no build input names an excluded path unreviewed.
+# What it pins: a spec-only change re-runs that file; a change to anything else under playwright/ or primitives/ts-test/ (a
+# helper, a tool, the config, data, a vendored script), to the site, the build environment, the browser or an environment
+# variable a test reads re-runs everything; durations.json, dev-docs, docs and row files re-run nothing, except the dev-docs file
+# the build includes; a `process` that could read the environment unseen, a test that names or enumerates spec files, a computed
+# import and a missing TypeScript parser take the keys away; a record that is red, skipped, interrupted, unproved, stale,
+# hand-edited, for another build or written after the worktree moved is never accepted; the verdict is the whole suite's. On the
+# real tree every spec has a key and the reviewed sites are exactly today's.
 #
 # Usage: scripts/check-suite-reuse.sh        Exit status: 0 = OK; 1 = a promise broke (or a mutation stayed green).
 set -euo pipefail
@@ -41,31 +42,33 @@ mutation() { # name file sed-expr -- breaks one rule in a copy of the tools; the
     echo "ok -- mutation '$name' is red, as it must be"
   fi
 }
-names=(dev-docs-in-key include-not-pulled-back red-accepted proof-not-checked skipped-counts-as-green list-ignored skipped-recorded interrupted-recorded chunk-errors-ignored stale-report-read worktree-unchecked accept-guard-dropped import-walker-blind comments-stripped-again ambient-by-extension ambient-data-ignored env-ignored base-path-ignored unkeyable-ignored public-sha-ignored symlink-target-ignored)
+names=(dev-docs-in-key include-not-pulled-back red-accepted proof-not-checked skipped-counts-as-green list-ignored skipped-recorded interrupted-recorded undeclared-skip-accepted chunk-errors-ignored stale-report-read worktree-unchecked accept-guard-dropped shared-part-dropped tools-not-shared ts-test-not-shared durations-in-key process-sites-ignored spec-naming-ignored shared-site-ignored env-ignored base-path-ignored public-sha-ignored symlink-target-ignored)
 mutation dev-docs-in-key suite-key.mjs 's|^export const EXCLUDED = \[.*|export const EXCLUDED = ["playwright/", "docs/", "primitives/ts-test/"];|' > "$tmp/dev-docs-in-key.v" &
 mutation include-not-pulled-back suite-key.mjs 's|const pulledBack = \[\.\.\.inc\.targets\]\.filter\(\(p\) => isExcluded\(p\)\)|const pulledBack = [...inc.targets].filter(() => false)|' > "$tmp/include-not-pulled-back.v" &
 mutation red-accepted suite-key.mjs 's/if \(r\.status !== "green"\) return/if (false) return/' > "$tmp/red-accepted.v" &
 mutation proof-not-checked suite-key.mjs 's/if \(!r\.proof \|\| /if (false \&\& /' > "$tmp/proof-not-checked.v" &
 mutation skipped-counts-as-green suite-key.mjs 's/c\.unexpected !== 0 \|\| c\.skipped !== 0\)/c.unexpected !== 0)/' > "$tmp/skipped-counts-as-green.v" &
-wait
 mutation list-ignored suite-key.mjs 's/if \(!proof\.equal\) \{ st\.equal = false;/if (false) { st.equal = false;/' > "$tmp/list-ignored.v" &
+wait
 mutation skipped-recorded suite-key.mjs 's/if \(st\.skipped > 0\) \{ res/if (false) { res/' > "$tmp/skipped-recorded.v" &
 mutation interrupted-recorded suite-key.mjs 's/if \(st\.irregular > 0\) \{ res/if (false) { res/' > "$tmp/interrupted-recorded.v" &
+mutation undeclared-skip-accepted suite-key.mjs 's/t\.status === "skipped" \&\& t\.expectedStatus === "skipped" \&\& /t.status === "skipped" \&\& /' > "$tmp/undeclared-skip-accepted.v" &
 mutation chunk-errors-ignored suite-key.mjs 's/ \&\& !\(j\.errors \?\? \[\]\)\.length;/;/' > "$tmp/chunk-errors-ignored.v" &
 mutation stale-report-read suite-key.mjs 's/Date\.parse\(j\.stats\.startTime\) >= startedAt/true/' > "$tmp/stale-report-read.v" &
-wait
 mutation worktree-unchecked suite-key.mjs 's/const problem = worktree\(pl\.tree\);/const problem = null;/' > "$tmp/worktree-unchecked.v" &
+wait
 mutation accept-guard-dropped suite-key.mjs 's/if \(!\(passed > 0\)\) reasons\.push/if (false) reasons.push/' > "$tmp/accept-guard-dropped.v" &
-mutation import-walker-blind import-graph.mjs 's/\(ts\.isImportDeclaration\(n\) \|\| ts\.isExportDeclaration\(n\)\)/(ts.isExportDeclaration(n))/' > "$tmp/import-walker-blind.v" &
-mutation comments-stripped-again import-graph.mjs 's|^export function analyze\(text, file = "x\.ts"\) \{ |&text = text.replace(/\\/\\*[\\s\\S]*?\\*\\//g, ""); |' > "$tmp/comments-stripped-again.v" &
-mutation ambient-by-extension suite-key.mjs 's/candidates\.filter\(\(p\) => !inSomeClosure\.has\(p\)/candidates.filter((p) => !MODULE_RE.test(p) \&\& !inSomeClosure.has(p)/' > "$tmp/ambient-by-extension.v" &
+mutation shared-part-dropped suite-key.mjs 's/, `shared \$\{sharedHash\}`\]/]/' > "$tmp/shared-part-dropped.v" &
+mutation tools-not-shared suite-key.mjs 's/!specPaths\.has\(p\) \&\& p !== "playwright\/durations\.json"/!specPaths.has(p) \&\& !p.startsWith("playwright\/tools\/") \&\& p !== "playwright\/durations.json"/' > "$tmp/tools-not-shared.v" &
+mutation ts-test-not-shared suite-key.mjs 's/^const SHARED_ROOTS = \[.*/const SHARED_ROOTS = ["playwright\/"];/' > "$tmp/ts-test-not-shared.v" &
+mutation durations-in-key suite-key.mjs 's/ \&\& p !== "playwright\/durations\.json"\)\.sort/).sort/' > "$tmp/durations-in-key.v" &
+mutation process-sites-ignored suite-key.mjs 's/if \(blocking\) throw/if (false) throw/' > "$tmp/process-sites-ignored.v" &
 wait
-mutation ambient-data-ignored suite-key.mjs 's/`ambient \$\{ambient\}`, //' > "$tmp/ambient-data-ignored.v" &
-mutation env-ignored suite-key.mjs 's/for \(const n of \[\.\.\.names\]\.sort\(\)\) rows\.push/for (const n of []) rows.push/' > "$tmp/env-ignored.v" &
+mutation spec-naming-ignored suite-key.mjs 's/const bad = sharedWhy \?\? own;/const bad = null;/' > "$tmp/spec-naming-ignored.v" &
+mutation shared-site-ignored suite-key.mjs 's/const bad = sharedWhy \?\? own;/const bad = own;/' > "$tmp/shared-site-ignored.v" &
+mutation env-ignored suite-key.mjs 's/for \(const n of \[\.\.\.names\]\.sort\(\)\) base\.push/for (const n of []) base.push/' > "$tmp/env-ignored.v" &
 mutation base-path-ignored suite-key.mjs 's/path=\$\{basePathOf\(env\[n\]\)\}/path=/' > "$tmp/base-path-ignored.v" &
-mutation unkeyable-ignored suite-key.mjs 's/if \(why\.length\) \{ out\.set/if (false) { out.set/' > "$tmp/unkeyable-ignored.v" &
 mutation public-sha-ignored suite-key.mjs 's/if \(publicSha \&\& r\.publicSha !== publicSha\)/if (false)/' > "$tmp/public-sha-ignored.v" &
-wait
 mutation symlink-target-ignored suite-key.mjs 's/link \$\{fs\.readlinkSync\(p\)\} /link /' > "$tmp/symlink-target-ignored.v" &
 wait
 for n in "${names[@]}"; do

@@ -19,14 +19,15 @@
 # REUSE ACROSS SPEC-ONLY CHANGES (backlog row 513). A red run followed by a fix that touches only Playwright files leaves the
 # site byte-identical, so the suite does not run again in full. Every spec file that ran writes a record, green only when every
 # test of the file passed, under (site key, spec key) in `$LANE_TGT/release-suite/records` (playwright/tools/suite-key.mjs:
-# the site key hashes every input of the release build, the spec key the file, what it imports, the config, the data and the
-# environment it reads; the record also names the hash of the built site). A tree is accepted, without a build, when every spec
+# the site key hashes every input of the release build, the spec key the spec file, every other file under playwright/ except
+# durations.json, and the environment it reads; the record also names the hash of the built site). A tree is accepted, without a build, when every spec
 # file of it has a green record for its site and all the records name one built site; otherwise the files without a record
 # run, on the kept build of that site (`$LANE_TGT/release-suite/site/<site key>/public`, ~55 MB, the two newest are kept) or on a
-# fresh one. The totals it prints are for the whole suite (reused plus run) and say how many files were reused. Any doubt (an
-# untracked file, a key that cannot be derived, a build that hashes differently) runs the whole suite.
+# fresh one. The totals it prints are for the whole suite (reused plus run) and say how many files were reused. The suite builds
+# and runs in a private detached worktree of the planned tree (see suite_cleanup), so nothing done in this checkout meanwhile
+# reaches it. Any doubt (a key that cannot be derived, a build that hashes differently) runs the whole suite.
 # A record is green by proof (the tests of the report equal an independent `--list`, each expected or flaky; a file with a skipped,
-# interrupted or unrun test gets none and runs every time), and the worktree must still be the planned tree when the run ends.
+# interrupted or unrun test gets none and runs every time).
 # `DEPLOY_SUITE_REUSE=off` turns the records off.
 #   DEPLOY_SUITE_WORKERS (default 3: the main loop's full-run setting), DEPLOY_SUITE_CHUNKS (default 6),
 #   DEPLOY_SUITE_PORT (default 4830).
@@ -41,6 +42,7 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$repo_root/playwright/tools/timing-switch.sh"
+source "$repo_root/scripts/lib/pinned-worktree.sh"
 suite_only=0
 case "${1:-}" in
   "") ;;
@@ -61,20 +63,30 @@ suite_dir="$lane_tgt/release-suite"
 suite_verdict() {
   local args=(verdict --out "$1" --chunks "$2" --tree "$3")
   [ -z "${4:-}" ] || args+=(--store "$4")
-  ( cd "$repo_root/playwright" && node tools/suite-key.mjs "${args[@]}" )
+  ( cd "${suite_root:-$repo_root}/playwright" && node tools/suite-key.mjs "${args[@]}" )
 }
 
 # The build environment string both keys of playwright/tools/suite-key.mjs hash: the tool versions the release build runs
 # with and the variables that steer cargo. A tool that does not answer makes the string unique, so nothing is reused.
 suite_build_env() {
   local v
-  v="$( cd "$repo_root" && { dx --version && rustc -Vv && cargo -V; } 2>&1 )" || v="unavailable-$$-$(date +%s%N)"
+  v="$( cd "${suite_root:-$repo_root}" && { dx --version && rustc -Vv && cargo -V; } 2>&1 )" || v="unavailable-$$-$(date +%s%N)"
   printf '%s\n%s\n' "$v" "$(env | grep -E '^(RUSTFLAGS|RUSTDOCFLAGS|CARGO_ENCODED_RUSTFLAGS|CARGO_BUILD_TARGET|CARGO_PROFILE_)' | sort)"
 }
 
 # playwright/tools/suite-key.mjs with the environment the deploy's suite runs under (the variables the specs read).
 suite_key() {
-  ( cd "$repo_root/playwright" && PW_BUILD_PROFILE=release FIRST_PAINT_ROUTES=all LS_STEP=32 node tools/suite-key.mjs "$@" )
+  ( cd "${suite_root:-$repo_root}/playwright" && PW_BUILD_PROFILE=release FIRST_PAINT_ROUTES=all LS_STEP=32 node tools/suite-key.mjs "$@" )
+}
+
+# The suite builds and runs in a PRIVATE detached worktree of the planned tree (scripts/lib/pinned-worktree.sh, the mechanism of
+# scripts/gate-at.sh), never in the shared checkout: a branch switch and back, a stash and pop or an edit there while the ~70
+# minute run is in progress cannot reach what is built or tested, and an untracked or ignored file of the shared checkout cannot
+# either. It is removed after the run; a red run keeps it, with the reports.
+suite_cleanup() {
+  [ -z "${suite_server_pid:-}" ] || kill "$suite_server_pid" 2>/dev/null || true
+  [ -z "${suite_tgt:-}" ] || rm -rf "$suite_tgt"
+  if [ -n "${suite_wt:-}" ] && [ "${suite_keep_wt:-0}" != 1 ]; then pinned_worktree_remove "$repo_root" "$suite_wt"; fi
 }
 
 release_suite() {
@@ -99,44 +111,44 @@ release_suite() {
   fi
   local name="deploy-suite-$$" out="$suite_dir/run-$tree" port="${DEPLOY_SUITE_PORT:-4830}"
   local chunks="${DEPLOY_SUITE_CHUNKS:-6}" workers="${DEPLOY_SUITE_WORKERS:-3}"
-  local tgt="" pub server_pid=""
+  local pub
+  suite_server_pid="" suite_tgt="" suite_keep_wt=0
+  mkdir -p "$suite_dir"
+  suite_wt="${LANE_WT:-/home/user/wt}/suite-${tree:0:12}"
+  trap suite_cleanup EXIT
+  pinned_worktree_add "$repo_root" "$head" "$suite_wt" || { echo "deploy-preview: could not create the private worktree $suite_wt" >&2; exit 1; }
+  suite_root="$suite_wt"
   # Row 513: per-file records. Off on any doubt; the stamp above stays the whole-tree fast path.
   local store="$suite_dir/records" use_records=0 skey="" kept=""
   if [ "${DEPLOY_SUITE_REUSE:-on}" = on ]; then
-    if [ -n "$(git -C "$repo_root" ls-files --others --exclude-standard -- . ':(exclude)playwright' ':(exclude)dev-docs' ':(exclude)docs' ':(exclude)primitives/ts-test')" ]; then
-      echo "deploy-preview: untracked files outside the excluded paths: per-file reuse is off, the whole suite runs" >&2
-    else
-      SUITE_BUILD_ENV="$(suite_build_env)"; export SUITE_BUILD_ENV
-      if skey="$(suite_key site-key --tree "$tree" --build-env "$SUITE_BUILD_ENV" | node -e 'process.stdout.write(JSON.parse(require("fs").readFileSync(0, "utf8")).key)')" && [ -n "$skey" ]; then
-        use_records=1; mkdir -p "$suite_dir" "$store"
-        if suite_key accept --store "$store" --tree "$tree" --build-env "$SUITE_BUILD_ENV" | tee "$suite_dir/accept-$tree.log" >&2; then
-          local totals; totals="$(tail -1 "$suite_dir/accept-$tree.log")"
-          printf '%s %s workers=%s %s (every spec file has a green record for site %s)\n' "$(date -u +%FT%TZ)" "$head" "$workers" "$totals" "${skey:0:12}" > "$stamp"
-          echo "==> Release suite GREEN from per-file records, no build and no run: $totals (stamp $stamp)"
-          return 0
-        fi
-      else
-        echo "deploy-preview: no site key for tree $tree; per-file reuse is off, the whole suite runs" >&2
+    SUITE_BUILD_ENV="$(suite_build_env)"; export SUITE_BUILD_ENV
+    if skey="$(suite_key site-key --tree "$tree" --build-env "$SUITE_BUILD_ENV" | node -e 'process.stdout.write(JSON.parse(require("fs").readFileSync(0, "utf8")).key)')" && [ -n "$skey" ]; then
+      use_records=1; mkdir -p "$store"
+      if suite_key accept --store "$store" --tree "$tree" --build-env "$SUITE_BUILD_ENV" | tee "$suite_dir/accept-$tree.log" >&2; then
+        local totals; totals="$(tail -1 "$suite_dir/accept-$tree.log")"
+        printf '%s %s workers=%s %s (every spec file has a green record for site %s)\n' "$(date -u +%FT%TZ)" "$head" "$workers" "$totals" "${skey:0:12}" > "$stamp"
+        echo "==> Release suite GREEN from per-file records, no build and no run: $totals (stamp $stamp)"
+        suite_cleanup; trap - EXIT; suite_root=""
+        return 0
       fi
+    else
+      echo "deploy-preview: no site key or spec keys for tree $tree; per-file reuse is off, the whole suite runs" >&2
     fi
   fi
-  echo "==> Release suite (row 322): no green run recorded for tree $tree ($head); building and running it."
-  mkdir -p "$suite_dir"; rm -rf "$out"; mkdir -p "$out"
-  trap '[ -n "${server_pid:-}" ] && kill "${server_pid}" 2>/dev/null' EXIT
+  echo "==> Release suite (row 322): no green run recorded for tree $tree ($head); building and running it in $suite_wt."
+  rm -rf "$out"; mkdir -p "$out"
   if [ "$use_records" = 1 ]; then kept="$suite_dir/site/$skey"; fi
   if [ -n "$kept" ] && [ -d "$kept/public" ] && [ "$(suite_key hash-dir "$kept/public")" = "$(cat "$kept/public.sha" 2>/dev/null)" ]; then
     pub="$kept/public"
     echo "==> Release suite: serving the kept build of site ${skey:0:12} ($kept); no build."
   else
-    tgt="$(cd "$repo_root" && scripts/lane-target.sh create "$name" --release | sed -n 's/^export CARGO_TARGET_DIR=//p')"
-    [ -n "$tgt" ] || { echo "deploy-preview: could not copy the warm release-template tree (scripts/lane-target.sh create $name --release)" >&2; exit 1; }
-    # shellcheck disable=SC2064
-    trap "[ -n \"\${server_pid:-}\" ] && kill \"\${server_pid}\" 2>/dev/null; rm -rf '$tgt'" EXIT
-    ( cd "$repo_root" && CARGO_TARGET_DIR="$tgt" CARGO_INCREMENTAL=0 scripts/lane-lock.sh gate --label "deploy-suite:build" -- \
+    suite_tgt="$(cd "$repo_root" && scripts/lane-target.sh create "$name" --release | sed -n 's/^export CARGO_TARGET_DIR=//p')"
+    [ -n "$suite_tgt" ] || { echo "deploy-preview: could not copy the warm release-template tree (scripts/lane-target.sh create $name --release)" >&2; exit 1; }
+    ( cd "$suite_wt" && CARGO_TARGET_DIR="$suite_tgt" CARGO_INCREMENTAL=0 "$repo_root/scripts/lane-lock.sh" gate --label "deploy-suite:build" -- \
         scripts/build-ssg.sh release ) > "$out/build.log" 2>&1 \
       || { tail -30 "$out/build.log" >&2; echo "deploy-preview: the release-suite build failed (log $out/build.log)" >&2; exit 1; }
-    pub="$tgt/dx/preview/release/web/public"
-    "$repo_root/scripts/emit-404.sh" "$pub" >/dev/null
+    pub="$suite_tgt/dx/preview/release/web/public"
+    "$suite_wt/scripts/emit-404.sh" "$pub" >/dev/null
     if [ -n "$kept" ]; then
       # Keep the built site (the part of the build a second run needs; the 3.6 GB target is removed after the run): ~55 MB per site,
       # the two newest are kept.
@@ -153,26 +165,28 @@ release_suite() {
     echo "deploy-preview: port $port already answers (a stale server?); refusing to test whatever it serves. Stop it or set DEPLOY_SUITE_PORT." >&2
     exit 1
   fi
-  python3 "$repo_root/scripts/serve-spa.py" "$pub" "$port" >/dev/null 2>&1 9>&- 3>&- </dev/null &
-  server_pid=$!
-  for _ in $(seq 1 50); do curl -fsS -o /dev/null "http://127.0.0.1:$port/" && break; kill -0 "$server_pid" 2>/dev/null || break; sleep 0.2; done
-  if ! kill -0 "$server_pid" 2>/dev/null || ! curl -fsS "http://127.0.0.1:$port/" | cmp -s - "$pub/index.html"; then
+  python3 "$suite_wt/scripts/serve-spa.py" "$pub" "$port" >/dev/null 2>&1 9>&- 3>&- </dev/null &
+  suite_server_pid=$!
+  for _ in $(seq 1 50); do curl -fsS -o /dev/null "http://127.0.0.1:$port/" && break; kill -0 "$suite_server_pid" 2>/dev/null || break; sleep 0.2; done
+  if ! kill -0 "$suite_server_pid" 2>/dev/null || ! curl -fsS "http://127.0.0.1:$port/" | cmp -s - "$pub/index.html"; then
     echo "deploy-preview: the server on port $port is not this run's server for $pub (it died, or answers with other bytes than $pub/index.html); not running the suite" >&2
     exit 1
   fi
   local reuse_args=()
   if [ "$use_records" = 1 ]; then reuse_args=(--reuse "$store" --tree "$tree"); fi
-  ( cd "$repo_root/playwright" && PLAYWRIGHT_BASE_URL="http://127.0.0.1:$port" PW_BUILD_PROFILE=release SSG_SITE_DIR="$pub" \
+  ( cd "$suite_wt/playwright" && PLAYWRIGHT_BASE_URL="http://127.0.0.1:$port" PW_BUILD_PROFILE=release SSG_SITE_DIR="$pub" \
       FIRST_PAINT_ROUTES=all LS_STEP=32 \
       tools/run-suite.sh --out "$out" --chunks "$chunks" --workers "$workers" ${reuse_args[@]+"${reuse_args[@]}"} ) | tee "$out/run-suite.log" || true  # the verdict below decides
-  kill "$server_pid" 2>/dev/null || true; server_pid=""
-  [ -z "$tgt" ] || rm -rf "$tgt"; trap - EXIT
+  kill "$suite_server_pid" 2>/dev/null || true; suite_server_pid=""
+  [ -z "$suite_tgt" ] || { rm -rf "$suite_tgt"; suite_tgt=""; }
   local verdict
   if verdict="$(suite_verdict "$out" "$chunks" "$tree" "${reuse_args[1]:-}")"; then
     printf '%s %s workers=%s %s\n' "$(date -u +%FT%TZ)" "$head" "$workers" "$verdict" > "$stamp"
     echo "==> Release suite GREEN: $verdict (stamp $stamp; reports in $out)"
+    suite_cleanup; trap - EXIT; suite_root=""
   else
-    echo "deploy-preview: release suite RED for $head: $verdict -- not deploying (reports in $out; refresh nothing, fix and re-run)" >&2
+    suite_keep_wt=1
+    echo "deploy-preview: release suite RED for $head: $verdict -- not deploying (reports in $out; the worktree $suite_wt is kept; refresh nothing, fix and re-run)" >&2
     exit 1
   fi
 }

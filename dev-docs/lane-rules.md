@@ -297,18 +297,20 @@ cores, so a batch's verification runs once for the batch, not once per lane:
   the suite, the batch is verified by `scripts/deploy-preview.sh --suite-only` on the merged branch before it merges.
   The run is recorded against the exact tree (`$LANE_TGT/release-suite/<tree>.pass`), a merge commit on an unmoved main
   has the same tree, and the deploy reuses the stamp instead of running the suite again.
-- **A spec-only fix after a red suite re-runs only what it can affect.** Every spec file that runs writes a record, green
-  only when every test in it passed, under a site key (the hash of every input of the release build: the tree without
-  `playwright/`, `dev-docs/`, `docs/` and `primitives/ts-test/`, plus the `dev-docs` file the build includes) and a spec key
-  (the file, every module it imports, the config, the lock files, the data and the environment variables it reads, the
-  browser; `playwright/tools/suite-key.mjs`). The deploy accepts a tree when every spec file of it has a green record for
-  its site, and otherwise runs the files without one on the kept build of that site (about 55 MB, the two newest are kept).
-  A change to the site, the Playwright config, `fixtures.ts`, a lock file or the toolchain gives every file a new key and
-  runs the whole suite; so does a file under `playwright/` that no spec imports (it is in every key). A record is green by
-  proof: the tests of the file's report equal an independent `playwright test --list` of the same files, and each ended
-  expected or flaky. A file with a test that skipped (by any means), was interrupted or did not run gets no record and runs
-  every time. The totals the deploy prints are the whole suite's, with the reused files stated separately;
-  `DEPLOY_SUITE_REUSE=off` runs the whole suite.
+- **A spec-only fix after a red suite re-runs only the spec files it changed.** Every spec file that runs writes a record, green
+  only by proof: the tests of the file's report equal an independent `playwright test --list` of the same files, and each ended
+  expected or flaky; a file with a skipped, interrupted or unrun test gets no record and runs every time. A record sits under a
+  site key (the hash of every input of the release build: the tree without `playwright/`, `dev-docs/`, `docs/` and
+  `primitives/ts-test/`, plus the `dev-docs` file the build includes) and a spec key (the spec file, one hash of every other
+  tracked file under `playwright/` except `durations.json` and under `primitives/ts-test/`, the environment variables the code
+  reads, the browser; `playwright/tools/suite-key.mjs`). A change to a helper, a tool, the config or the site therefore runs the
+  whole suite, as before; the gain is the fix that touches spec files only. What the key cannot see fails closed: a `process`
+  that could read the environment unseen, a test that names or enumerates spec files, or a missing TypeScript parser leaves the
+  file or the whole suite without a key. The deploy accepts a tree when every spec file of it has a green record for its site,
+  and otherwise runs the files without one on the kept build of that site (about 55 MB, the two newest are kept). It builds and
+  runs in a private worktree of the planned tree (`scripts/lib/pinned-worktree.sh`, as `scripts/gate-at.sh` does), kept on a red
+  run. The totals the deploy prints are the whole suite's, with the reused files stated separately; `DEPLOY_SUITE_REUSE=off`
+  runs the whole suite.
 - **The verifier** (one agent per batch) builds the shared base once, merges the batch's edit lanes, builds once, runs
   `test:changed` over the union, and bisects any red to its lane, which gets it back to fix.
 
