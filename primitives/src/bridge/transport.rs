@@ -91,9 +91,12 @@ use crate::dioxus_core::{
 use dioxus::document::{self, Eval, EvalError};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
+use serde_json::Value;
 
 use super::BridgeError;
+
+mod stats;
+use stats::{micros, now, Stamp, Stats};
 
 /// The bundled bridge script, `primitives/src/js/bridge.js` (built from `src/ts/bridge.ts` by
 /// `scripts/build-js-bundle.sh`, checked by `scripts/check-js-bundle.sh`).
@@ -236,6 +239,8 @@ struct Outgoing {
     /// Set when the caller waits for the results.
     id: Option<u64>,
     ops: Vec<Value>,
+    /// Asks the page's channel to attach its counters (`window.__dxBridgeStats`) to the answer.
+    stats: bool,
 }
 
 /// The answer to an asking message.
@@ -243,6 +248,21 @@ struct Outgoing {
 struct Answer {
     id: u64,
     results: Value,
+    /// The page's counters, present only on the answer to a stats request.
+    #[serde(default)]
+    stats: Value,
+}
+
+impl Answer {
+    /// What the waiting future gets: the results, or, for the answer to a stats request (which has no ops),
+    /// the page's counters in their place.
+    fn into_waiter_value(self) -> Value {
+        if self.stats.is_null() {
+            self.results
+        } else {
+            self.stats
+        }
+    }
 }
 
 /// A future for one answer, filled by the pump's reader.
@@ -288,6 +308,10 @@ struct Channel {
     waiting: HashMap<u64, Rc<RefCell<Slot>>>,
     /// The pump ended (the platform has no JavaScript, or the page is gone): later asks fail at once.
     closed: Option<bool>,
+    /// This webview's counters (row 450).
+    stats: Stats,
+    /// An asking message's stamps by id: when it was queued and when it was sent.
+    stamps: HashMap<u64, (Stamp, Stamp)>,
 }
 
 /// This webview's channel, in the root context.
@@ -312,7 +336,7 @@ fn after_render(f: impl FnOnce() + 'static) {
     });
 }
 
-fn enqueue(ops: Vec<Value>, asks: bool) -> Option<Pending> {
+fn enqueue(ops: Vec<Value>, asks: bool, stats: bool) -> Option<Pending> {
     let hub = hub();
     let mut channel = hub.0.borrow_mut();
     let mut pending = None;
@@ -328,11 +352,13 @@ fn enqueue(ops: Vec<Value>, asks: bool) -> Option<Pending> {
         id = Some(next);
         let slot = Rc::new(RefCell::new(Slot::default()));
         channel.waiting.insert(next, slot.clone());
+        let stamp = now(channel.stats.readout.is_some());
+        channel.stamps.insert(next, (stamp, None));
         pending = Some(Pending(slot));
     } else if channel.closed.is_some() {
         return None;
     }
-    channel.outbox.push(Outgoing { id, ops });
+    channel.outbox.push(Outgoing { id, ops, stats });
     if !channel.scheduled {
         channel.scheduled = true;
         let again = hub.clone();
@@ -377,10 +403,27 @@ fn flush(hub: &Hub) {
         let eval = open(Program::Pump);
         hub.0.borrow_mut().eval = Some(eval);
         read_answers(hub.clone(), eval);
+        stats::start(hub.clone());
         eval
     });
     for message in merge(batch) {
-        send(&eval, json!({ "id": message.id, "ops": message.ops }));
+        let (ops, id) = (message.ops.len(), message.id);
+        let spin = hub.0.borrow().stats.spin;
+        let wire = stats::wire(id, message.ops, message.stats, spin);
+        {
+            let mut channel = hub.0.borrow_mut();
+            let bytes = if channel.stats.readout.is_some() {
+                wire.to_string().len()
+            } else {
+                0
+            };
+            channel.stats.out(id.is_some(), ops, bytes);
+            let active = channel.stats.readout.is_some();
+            if let Some(stamps) = id.and_then(|id| channel.stamps.get_mut(&id)) {
+                stamps.1 = now(active);
+            }
+        }
+        send(&eval, wire);
     }
 }
 
@@ -392,9 +435,23 @@ fn read_answers(hub: Hub, mut eval: Eval) {
         loop {
             match eval.recv::<Answer>().await {
                 Ok(answer) => {
-                    let slot = hub.0.borrow_mut().waiting.remove(&answer.id);
+                    let (id, results) = (answer.id, answer.into_waiter_value());
+                    let slot = {
+                        let mut channel = hub.0.borrow_mut();
+                        let bytes = if channel.stats.readout.is_some() {
+                            results.to_string().len()
+                        } else {
+                            0
+                        };
+                        if let Some((queued, sent)) = channel.stamps.remove(&id) {
+                            let arrived = now(channel.stats.readout.is_some());
+                            let (queue, trip) = (micros(queued, sent), micros(sent, arrived));
+                            channel.stats.record_answer(queue, trip, bytes);
+                        }
+                        channel.waiting.remove(&id)
+                    };
                     if let Some(slot) = slot {
-                        settle(&slot, Ok(answer.results));
+                        settle(&slot, Ok(results));
                     }
                 }
                 Err(EvalError::Serialization(_)) => {}
@@ -404,6 +461,7 @@ fn read_answers(hub: Hub, mut eval: Eval) {
                     let waiting: Vec<_> = {
                         let mut channel = hub.0.borrow_mut();
                         channel.closed = Some(unsupported);
+                        channel.stamps.clear();
                         channel.waiting.drain().map(|(_, slot)| slot).collect()
                     };
                     for slot in waiting {
@@ -421,7 +479,7 @@ fn read_answers(hub: Hub, mut eval: Eval) {
 /// Nothing is queued outside the Dioxus runtime.
 pub(in crate::bridge) fn fire<T: Serialize>(ops: &[T]) {
     if in_runtime() {
-        enqueue(values(ops), false);
+        enqueue(values(ops), false, false);
     }
 }
 
@@ -433,11 +491,23 @@ pub(in crate::bridge) async fn ask<T: Serialize, R: DeserializeOwned>(
     if !in_runtime() {
         return Err(BridgeError::Unsupported);
     }
-    let Some(pending) = enqueue(values(ops), true) else {
+    let Some(pending) = enqueue(values(ops), true, false) else {
         return Err(BridgeError::Unsupported);
     };
     let results = pending.await?;
     serde_json::from_value(results).map_err(|error| BridgeError::Js(error.to_string()))
+}
+
+/// The page's counters: an asking message with no ops that the page's channel answers with its stats in
+/// place of the (empty) results. `null` when the page cannot answer.
+async fn page_stats() -> Value {
+    if !in_runtime() {
+        return Value::Null;
+    }
+    match enqueue(Vec::new(), true, true) {
+        Some(pending) => pending.await.unwrap_or(Value::Null),
+        None => Value::Null,
+    }
 }
 
 fn values<T: Serialize>(ops: &[T]) -> Vec<Value> {
@@ -450,6 +520,7 @@ fn values<T: Serialize>(ops: &[T]) -> Vec<Value> {
 mod tests {
     use super::*;
     use dioxus::prelude::*;
+    use serde_json::json;
     use std::cell::Cell;
 
     /// The bridge's first eval carries the kernel after the bridge, as the base64 of the committed module, and the
@@ -468,10 +539,25 @@ mod tests {
         );
     }
 
+    #[test]
+    fn a_stats_answer_hands_the_page_counters_to_the_waiter() {
+        let plain: Answer = serde_json::from_value(json!({ "id": 1, "results": [1] })).unwrap();
+        assert_eq!(plain.into_waiter_value(), json!([1]));
+        let stats: Answer = serde_json::from_value(
+            json!({ "id": 2, "results": [], "stats": { "channels": [{ "sent": 3 }] } }),
+        )
+        .unwrap();
+        assert_eq!(
+            stats.into_waiter_value(),
+            json!({ "channels": [{ "sent": 3 }] })
+        );
+    }
+
     fn out(id: Option<u64>, ops: &[i32]) -> Outgoing {
         Outgoing {
             id,
             ops: ops.iter().map(|n| json!(n)).collect(),
+            stats: false,
         }
     }
 
