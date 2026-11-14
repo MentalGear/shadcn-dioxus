@@ -19,6 +19,11 @@ below are collected under "Unreleased" and move under a version heading at the f
   A pointer moving from the trigger toward the open panel is tracked against the panel's measured position and keeps
   it open while it stays inside that path ("a safe triangle"), so a diagonal move to the panel still reaches it
   before the shorter delay would close it.
+- **A drag released toward a slide selects it at the release.** The dots, the arrows' disabled state and `on_value_change`
+  now follow the destination of a mouse or pen drag release as soon as it is known, instead of after the release scroll
+  has ended. Arrow clicks, keys, dot picks, `scroll_to` and autoplay already did so; each fires once, at the intent, and the
+  settle at the end of the scroll confirms the same slide without a second callback. A free wheel or touch scroll still
+  selects once it has come to rest, and `drag_free` has no destination to announce.
 
 ### Fixed
 

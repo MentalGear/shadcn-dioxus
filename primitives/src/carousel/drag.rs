@@ -577,6 +577,15 @@ pub(super) const CAROUSEL_DRAG_JS: &str = concat!(carousel_true_end_js!(), carou
                     announceRest();
                 } else {
                     dxTrace(el, 'scroll-write', { by: 'drag-release-settle', delta: settleDelta, behavior: settleBehavior, snapBefore: el.style.scrollSnapType });
+                    // The destination is known now, so announce it before the scroll runs:
+                    // the tracking bridge selects it at once instead of after the scroll's end.
+                    const targetIndex = parseInt(nearest.dataset.index, 10);
+                    if (!Number.isNaN(targetIndex)) {
+                        const targetPosition = nearest.dataset.position !== undefined
+                            ? parseInt(nearest.dataset.position, 10)
+                            : targetIndex;
+                        el.dispatchEvent(new CustomEvent('dx-carousel-target', { detail: { index: targetIndex, position: targetPosition } }));
+                    }
                     // Deferred, not synchronous: setting scroll-snap-type
                     // back to mandatory on an already-stationary position is
                     // what makes release never animate in the first place

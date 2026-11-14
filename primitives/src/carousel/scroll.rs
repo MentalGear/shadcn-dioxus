@@ -574,6 +574,19 @@ pub(super) const CAROUSEL_SCROLL_TRACKING_JS: &str = concat!(carousel_true_end_j
     // leave a stale sub-pixel transform, so the signal
     // comes from the one party that knows. Routed through the same idle gate.
     listen(container, 'dx-carousel-rest', scrollEnded);
+    // A destination announced before its scroll runs (a drag's release settle): report it at
+    // once, and record it as the last report so the settle at the end of that scroll finds
+    // the same slide and sends nothing. Until the scroll ends, no settle runs (the idle gate),
+    // so nothing reports a slide the track merely passes; a user input takes over through the
+    // ordinary settle, which compares against this report like any other.
+    listen(container, 'dx-carousel-target', (e) => {
+        const d = e.detail;
+        if (!d || Number.isNaN(d.index)) return;
+        lastNearest = d.index;
+        lastNearestPos = d.position;
+        dioxus.send(['target', d.index, d.position]);
+        dxTrace(container, 'target', { selected: d.index, position: d.position });
+    });
     listen(container, 'pointerdown', clearIntent, { passive: true });
     listen(container, 'keydown', clearIntent, { passive: true });
     listen(container, 'scroll', onScroll, { passive: true });
@@ -654,7 +667,7 @@ pub(super) const CAROUSEL_SCROLL_TRACKING_JS: &str = concat!(carousel_true_end_j
 ///
 /// [`use_js_listeners`]: crate::js_listener::use_js_listeners
 ///
-/// `on_position`, when `Some`, is called with the nearest slide's own
+/// `positions`, when `Some`, is `(on_position, on_target)`. `on_position` is called with the nearest slide's own
 /// logical POSITION (`data-position`, may differ from its data index) --
 /// used only by [`CarouselVirtualContent`] to keep its own anchor
 /// bookkeeping in sync with a native drag/wheel/trackpad settle (or with
@@ -667,7 +680,7 @@ pub(super) fn use_carousel_scroll_tracking(
     set_selected: Callback<usize>,
     count: Memo<usize>,
     mut visible_range: Signal<(usize, usize)>,
-    on_position: Option<Callback<isize>>,
+    positions: Option<(Callback<isize>, Callback<isize>)>,
 ) {
     crate::js_listener::use_js_listeners(move || {
         let id = id.cloned();
@@ -680,13 +693,18 @@ pub(super) fn use_carousel_scroll_tracking(
                     orientation_str,
                     align_str,
                     CAROUSEL_INPUT_QUIET_MS,
-                    on_position.is_some(),
+                    positions.is_some(),
                 ))
                 .on_message(move |(kind, a, b): (String, i64, i64)| {
                     if kind == "selected" {
                         set_selected.call(a.max(0) as usize);
-                        if let Some(on_position) = on_position {
+                        if let Some((on_position, _)) = positions {
                             on_position.call(b as isize);
+                        }
+                    } else if kind == "target" {
+                        set_selected.call(a.max(0) as usize);
+                        if let Some((_, on_target)) = positions {
+                            on_target.call(b as isize);
                         }
                     } else {
                         let count_now = *count.peek();
