@@ -42,7 +42,7 @@ mutation() { # name file sed-expr -- breaks one rule in a copy of the tools; the
     echo "ok -- mutation '$name' is red, as it must be"
   fi
 }
-names=(dev-docs-in-key include-not-pulled-back red-accepted proof-not-checked skipped-counts-as-green list-ignored skipped-recorded interrupted-recorded undeclared-skip-accepted chunk-errors-ignored stale-report-read worktree-unchecked accept-guard-dropped shared-part-dropped tools-not-shared ts-test-not-shared durations-in-key process-sites-ignored spec-naming-ignored shared-site-ignored env-ignored base-path-ignored public-sha-ignored symlink-target-ignored)
+names=(dev-docs-in-key include-not-pulled-back red-accepted proof-not-checked skipped-counts-as-green list-ignored skipped-recorded interrupted-recorded undeclared-skip-accepted chunk-errors-ignored stale-report-read worktree-unchecked deploy-tree-check-dropped accept-guard-dropped shared-part-dropped closure-dropped ambient-by-subtraction-dropped config-closure-not-shared ts-test-not-in-scope durations-in-key process-sites-ignored unreviewed-sites-ignored pin-ignores-text unclassifiable-forms-ignored child-process-ignored install-not-checked shell-variables-ignored env-ignored base-path-ignored public-sha-ignored symlink-target-ignored)
 mutation dev-docs-in-key suite-key.mjs 's|^export const EXCLUDED = \[.*|export const EXCLUDED = ["playwright/", "docs/", "primitives/ts-test/"];|' > "$tmp/dev-docs-in-key.v" &
 mutation include-not-pulled-back suite-key.mjs 's|const pulledBack = \[\.\.\.inc\.targets\]\.filter\(\(p\) => isExcluded\(p\)\)|const pulledBack = [...inc.targets].filter(() => false)|' > "$tmp/include-not-pulled-back.v" &
 mutation red-accepted suite-key.mjs 's/if \(r\.status !== "green"\) return/if (false) return/' > "$tmp/red-accepted.v" &
@@ -57,18 +57,27 @@ mutation chunk-errors-ignored suite-key.mjs 's/ \&\& !\(j\.errors \?\? \[\]\)\.l
 mutation stale-report-read suite-key.mjs 's/Date\.parse\(j\.stats\.startTime\) >= startedAt/true/' > "$tmp/stale-report-read.v" &
 mutation worktree-unchecked suite-key.mjs 's/const problem = worktree\(pl\.tree\);/const problem = null;/' > "$tmp/worktree-unchecked.v" &
 wait
+mutation deploy-tree-check-dropped suite-key.mjs 's/if \(problem\) \{ console\.error\(`suite-key: \$\{problem\}`\); return 1; \}/if (false) { return 1; }/' > "$tmp/deploy-tree-check-dropped.v" &
 mutation accept-guard-dropped suite-key.mjs 's/if \(!\(passed > 0\)\) reasons\.push/if (false) reasons.push/' > "$tmp/accept-guard-dropped.v" &
 mutation shared-part-dropped suite-key.mjs 's/, `shared \$\{sharedHash\}`\]/]/' > "$tmp/shared-part-dropped.v" &
-mutation tools-not-shared suite-key.mjs 's/!specPaths\.has\(p\) \&\& p !== "playwright\/durations\.json"/!specPaths.has(p) \&\& !p.startsWith("playwright\/tools\/") \&\& p !== "playwright\/durations.json"/' > "$tmp/tools-not-shared.v" &
-mutation ts-test-not-shared suite-key.mjs 's/^const SHARED_ROOTS = \[.*/const SHARED_ROOTS = ["playwright\/"];/' > "$tmp/ts-test-not-shared.v" &
-mutation durations-in-key suite-key.mjs 's/ \&\& p !== "playwright\/durations\.json"\)\.sort/).sort/' > "$tmp/durations-in-key.v" &
-mutation process-sites-ignored suite-key.mjs 's/if \(blocking\) throw/if (false) throw/' > "$tmp/process-sites-ignored.v" &
+mutation closure-dropped suite-key.mjs 's/, \.\.\.\[\.\.\.c\.files\]\.filter\(\(f\) => f !== `playwright\/\$\{file\}` \&\& !sharedFiles\.has\(f\)\)\.sort\(\)\.map\(row\)\]/]/' > "$tmp/closure-dropped.v" &
+mutation ambient-by-subtraction-dropped suite-key.mjs 's/ \|\| !inSomeClosure\.has\(p\)\)\);/));/' > "$tmp/ambient-by-subtraction-dropped.v" &
+mutation config-closure-not-shared suite-key.mjs 's/ \|\| cfgFiles\.has\(p\) \|\|/ ||/' > "$tmp/config-closure-not-shared.v" &
 wait
-mutation spec-naming-ignored suite-key.mjs 's/const bad = sharedWhy \?\? own;/const bad = null;/' > "$tmp/spec-naming-ignored.v" &
-mutation shared-site-ignored suite-key.mjs 's/const bad = sharedWhy \?\? own;/const bad = own;/' > "$tmp/shared-site-ignored.v" &
+mutation ts-test-not-in-scope suite-key.mjs 's/^const SHARED_ROOTS = \[.*/const SHARED_ROOTS = ["playwright\/"];/' > "$tmp/ts-test-not-in-scope.v" &
+mutation durations-in-key suite-key.mjs 's/ \&\& p !== "playwright\/durations\.json"\);/);/' > "$tmp/durations-in-key.v" &
+mutation process-sites-ignored suite-key.mjs 's/if \(blocking\) throw/if (false) throw/' > "$tmp/process-sites-ignored.v" &
+mutation unreviewed-sites-ignored suite-key.mjs 's/\(\(u\) => u \&\& `\$\{u\.file\} has an unreviewed/((u) => false \&\& `${u.file} has an unreviewed/' > "$tmp/unreviewed-sites-ignored.v" &
+mutation pin-ignores-text suite-key.mjs 's/const k = `\$\{s\.category\}\\0\$\{p\}\\0\$\{s\.text\}`;/const k = `${s.category}\\0${p}\\0${(REVIEWED[s.category].find(([f]) => f === p) ?? [0, s.text])[1]}`;/' > "$tmp/pin-ignores-text.v" &
+mutation unclassifiable-forms-ignored import-graph.mjs 's/if \(!callee \&\& !plainImport \&\& !aliasName\) site/if (false) site/' > "$tmp/unclassifiable-forms-ignored.v" &
+wait
+mutation child-process-ignored import-graph.mjs 's/if \(\/\^\(\?:node:\)\?child_process\$\/\.test\(s\)\) site/if (false) site/' > "$tmp/child-process-ignored.v" &
+mutation install-not-checked suite-key.mjs 's/if \(!want\.has\(installed\[name\]\)\) return/if (false) return/' > "$tmp/install-not-checked.v" &
+mutation shell-variables-ignored suite-key.mjs 's/for \(const n of shellNames\(t\.read\(p\)\)\) if/for (const n of []) if/' > "$tmp/shell-variables-ignored.v" &
 mutation env-ignored suite-key.mjs 's/for \(const n of \[\.\.\.names\]\.sort\(\)\) base\.push/for (const n of []) base.push/' > "$tmp/env-ignored.v" &
 mutation base-path-ignored suite-key.mjs 's/path=\$\{basePathOf\(env\[n\]\)\}/path=/' > "$tmp/base-path-ignored.v" &
 mutation public-sha-ignored suite-key.mjs 's/if \(publicSha \&\& r\.publicSha !== publicSha\)/if (false)/' > "$tmp/public-sha-ignored.v" &
+wait
 mutation symlink-target-ignored suite-key.mjs 's/link \$\{fs\.readlinkSync\(p\)\} /link /' > "$tmp/symlink-target-ignored.v" &
 wait
 for n in "${names[@]}"; do

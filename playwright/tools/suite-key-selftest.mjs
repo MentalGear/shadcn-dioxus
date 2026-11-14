@@ -43,6 +43,7 @@ const git = (cwd, ...a) => execFileSync("git", ["-C", cwd, ...a], { encoding: "u
 
 // ---- a fixture repo with the shapes that matter -----------------------------------------------------------------
 const repo = path.join(tmp, "repo");
+const LOCK = "packages:\n\n  '@playwright/test@1.60.0':\n    resolution: {}\n\n  playwright-core@1.60.0:\n    resolution: {}\n\n  playwright@1.60.0:\n    resolution: {}\n";
 const base = {
   "Cargo.toml": "[workspace]\n", "Cargo.lock": "# lock v1\n",
   "preview/src/main.rs": "pub const A: &str = \"a\";\n",
@@ -52,8 +53,8 @@ const base = {
   "dev-docs/motion.md": "# motion\n", "dev-docs/STATUS.md": "# status\n", "dev-docs/backlog/001-a.md": "# row\n",
   "docs/index.html": "<html></html>\n",
   "primitives/ts-test/witness.ts": "export const w = 1;\n",
-  "playwright/package.json": "{}\n", "playwright/pnpm-lock.yaml": "lock: 1\n", "playwright/durations.json": "{}\n",
-  "playwright/sandbox-chromium.cjs": "function sandboxChromium(env = process.env) { return undefined; }\nexports.sandboxChromium = sandboxChromium;\n",
+  "playwright/package.json": "{}\n", "playwright/pnpm-lock.yaml": LOCK, "playwright/durations.json": "{}\n",
+  "playwright/sandbox-chromium.cjs": "function sandboxChromium(env = process.env) {\n  return undefined;\n}\nfunction sandboxLaunchOptions(env = process.env) {\n  return {};\n}\nexports.sandboxChromium = sandboxChromium;\n",
   "playwright/base-url.ts": "export const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? \"x\";\nexport const P = process.env.PW_BUILD_PROFILE;\n",
   "playwright/suite.local.config.ts": "import { P } from \"./base-url\";\nimport { sandboxChromium } from \"./sandbox-chromium.cjs\";\nexport default { P, sandboxChromium };\n",
   "playwright/fixtures.ts": "export const test = 1;\n",
@@ -69,6 +70,7 @@ const base = {
   "playwright/oracle/hydration-parity.spec.ts": "import { test } from \"../fixtures\";\n// runs the attr-synth binary\nconst bin = \"attr-synth\";\n",
   "playwright/oracle/attr-synth/src/main.rs": "fn main() {}\n",
   "playwright/tools/run-suite.sh": "#!/bin/sh\n",
+  "playwright/tools/wait-quiet.sh": "#!/bin/sh\nneed=\"${TIMING_QUIET_NEED:-3}\"\n",
   // a spec with a string that looks like the start of a block comment: the import and the variable after it are real
   "playwright/late.ts": "export const l = 1;\n",
   "playwright/swallow.spec.ts": "const glob = \"preview/src/components/*.rs\";\nconst r = process.env.LS_STEP;\nconst m = await import(\"./late\");\n/* a block comment that ends here */\n",
@@ -154,24 +156,29 @@ const runOf = (commit, store, opts) => plan(treeOf(commit), store, popts(opts)).
   eq("a spec-only change re-runs that file", runOf(variant({ "playwright/c.spec.ts": base["playwright/c.spec.ts"] + "// edit\nconst x = 1;\n" }), store), ["c.spec.ts"]);
   eq("a spec file renamed is a new file with no record", runOf(variant({ "playwright/c.spec.ts": null, "playwright/c2.spec.ts": base["playwright/c.spec.ts"] }), store), ["c2.spec.ts"]);
   eq("a spec file added needs a run and takes nothing from the others", runOf(variant({ "playwright/e.spec.ts": "import { test } from \"./fixtures\";\n" }), store), ["e.spec.ts"]);
+  eq("a helper re-runs the specs that import it, directly and through another helper", runOf(variant({ "playwright/helper.ts": "export const h = 2;\n" }), store), ["a.spec.ts", "b.spec.ts"]);
+  eq("a helper only one spec imports re-runs that spec", runOf(variant({ "playwright/late.ts": "export const l = 2;\n" }), store), ["swallow.spec.ts"]);
+  eq("a file outside playwright/ that a spec imports re-runs that spec only", runOf(variant({ "primitives/ts-test/witness.ts": "export const w = 2;\n" }), store), ["d.spec.ts"]);
+  // the accepted residue: reads.spec.ts reads probe.ts by path, a.spec.ts imports it
+  const residue = runOf(variant({ "playwright/probe.ts": "export const p = 2;\n" }), store);
+  eq("ACCEPTED RESIDUE: a spec that reads by path a helper another spec imports is reused when the helper changes (only the importer re-runs)", residue, ["a.spec.ts"]);
+  if (JSON.stringify(residue) === JSON.stringify(["a.spec.ts"])) console.log("suite-key self-test: the pinned residue case holds (reads.spec.ts is reused although it reads probe.ts by path); if it fails after a change, rewrite the case and the header, do not delete it");
   for (const [name, edits] of [
-    ["a helper only some specs import", { "playwright/helper.ts": "export const h = 2;\n" }],
     ["a helper no spec imports", { "playwright/unused.ts": "export const u = 1;\n" }],
-    ["a helper read by path, not imported, by a spec", { "playwright/probe.ts": "export const p = 2;\n" }],
     ["fixtures.ts", { "playwright/fixtures.ts": "export const test = 2;\n" }],
     ["the config", { "playwright/suite.local.config.ts": base["playwright/suite.local.config.ts"] + "// c\nconst x = 1;\n" }],
     ["a file the config imports", { "playwright/base-url.ts": base["playwright/base-url.ts"] + "export const Q = 1;\n" }],
     ["the browser launcher the config requires", { "playwright/sandbox-chromium.cjs": base["playwright/sandbox-chromium.cjs"] + "// c\n" }],
-    ["pnpm-lock.yaml", { "playwright/pnpm-lock.yaml": "lock: 2\n" }],
+    ["pnpm-lock.yaml", { "playwright/pnpm-lock.yaml": LOCK + "# 2\n" }],
     ["package.json", { "playwright/package.json": "{\"a\":1}\n" }],
-    ["a witness binding", { "playwright/witness/bindings/x.json": "{\"files\": [\"a\"]}\n" }],
+    ["a witness binding (data)", { "playwright/witness/bindings/x.json": "{\"files\": [\"a\"]}\n" }],
     ["data of a spec's own", { "playwright/oracle/attr-synth/src/main.rs": "fn main() { 1; }\n" }],
     ["a vendored script no spec imports", { "playwright/oracle/reference/v1/js/menu.js": "export const m = 1;\nthrow new Error('x');\n" }],
     ["a .mjs no spec imports", { "playwright/orphan.mjs": "export const o = 2;\n" }],
+    ["a test harness file under primitives/ts-test/ that no spec imports", { "primitives/ts-test/orphan.ts": "export const o = 1;\n" }],
     ["a page the vendored script belongs to", { "playwright/oracle/reference/v1/x.html": "<script src=js/menu.js></script>" }],
     ["a runner tool (it can drop --forbid-only, add --retries, skip a build)", { "playwright/tools/run-suite.sh": "#!/bin/sh\n# x\n" }],
     ["a tool of any other kind", { "playwright/tools/ensure-attr-synth.sh": "#!/bin/sh\nexit 0\n" }],
-    ["the page-side test harness under primitives/ts-test/", { "primitives/ts-test/witness.ts": "export const w = 2;\n" }],
     ["the site", { "preview/src/main.rs": "pub const A: &str = \"b\";\n" }],
     ["Cargo.lock", { "Cargo.lock": "# lock v2\n" }],
     ["a build script", { "scripts/build-ssg.sh": "#!/bin/sh\necho other\n" }],
@@ -186,6 +193,7 @@ const runOf = (commit, store, opts) => plan(treeOf(commit), store, popts(opts)).
 
   // the environment: the names any file reads, with their values
   eq("an environment variable a test file reads re-runs every spec file", runOf(variant({}), store, { env: { ...ENV, FIRST_PAINT_ROUTES: "some" } }), SPECS);
+  eq("an environment variable a tool script reads (generic scan of tools/*.sh) re-runs every spec file", runOf(variant({}), store, { env: { ...ENV, TIMING_QUIET_NEED: "9" } }), SPECS);
   eq("one read after a string that looks like a comment start counts too", runOf(variant({}), store, { env: { ...ENV, LS_STEP: "32" } }), SPECS);
   eq("an environment variable no file reads re-runs nothing", runOf(variant({}), store, { env: { ...ENV, SOME_OTHER: "1" } }), []);
   eq("the port and the site path are not part of the key", runOf(variant({}), store, { env: { ...ENV, PLAYWRIGHT_BASE_URL: "http://127.0.0.1:1", SSG_SITE_DIR: "/x" } }), []);
@@ -210,8 +218,24 @@ const runOf = (commit, store, opts) => plan(treeOf(commit), store, popts(opts)).
   noKey("a spec that enumerates a directory has no key", { "playwright/g.spec.ts": "import fs from \"node:fs\";\nconst l = fs.readdirSync(__dirname);\n" }, ["g.spec.ts"]);
   noKey("a spec with a computed import has no key", { "playwright/g.spec.ts": "const m = await import(`./${name}`);\n" }, ["g.spec.ts"]);
   noKey("a spec that imports a tool has no key", { "playwright/g.spec.ts": "import { x } from \"./tools/shard.mjs\";\n" }, ["g.spec.ts"]);
-  noKey("a helper that enumerates takes every key", { "playwright/helper.ts": "import fs from \"node:fs\";\nexport const h = fs.readdirSync(\".\");\n" }, SPECS);
-  noKey("a helper that names a spec file takes every key", { "playwright/helper.ts": "export const h = \"a.spec.ts\";\n" }, SPECS);
+  noKey("a helper that enumerates takes the specs that import it", { "playwright/helper.ts": "import fs from \"node:fs\";\nexport const h = fs.readdirSync(\".\");\n" }, ["a.spec.ts", "b.spec.ts"]);
+  noKey("a helper that names a spec file takes the specs that import it", { "playwright/helper.ts": "export const h = \"a.spec.ts\";\n" }, ["a.spec.ts", "b.spec.ts"]);
+  noKey("a site in the config's closure takes every key", { "playwright/base-url.ts": base["playwright/base-url.ts"] + "const h = \"a.spec.ts\";\n" }, SPECS);
+  noKey("a site in a module no spec imports takes every key", { "playwright/orphan.mjs": "export const o = \"a.spec.ts\";\n" }, SPECS);
+  noKey("a relative import that names no file leaves that spec without a key", { "playwright/g.spec.ts": "import { x } from \"./nowhere\";\n" }, ["g.spec.ts"]);
+  // forms the check cannot classify
+  noKey("an enumerator aliased on import has no key", { "playwright/g.spec.ts": "import { readdirSync as rd } from \"node:fs\";\nrd(\".\");\n" }, ["g.spec.ts"]);
+  noKey("an enumerator destructured from fs has no key", { "playwright/g.spec.ts": "import fs from \"node:fs\";\nconst { readdirSync } = fs;\n" }, ["g.spec.ts"]);
+  noKey("an enumerator reached by a computed member has no key", { "playwright/g.spec.ts": "import fs from \"node:fs\";\nfs[\"readdirSync\"](\".\");\n" }, ["g.spec.ts"]);
+  noKey("an enumerator assigned and passed around has no key", { "playwright/g.spec.ts": "import fs from \"node:fs\";\nconst f = fs.readdirSync;\n" }, ["g.spec.ts"]);
+  noKey("an import of child_process has no key", { "playwright/g.spec.ts": "import { execSync } from \"node:child_process\";\n" }, ["g.spec.ts"]);
+  noKey("a helper that imports child_process takes the specs that import it", { "playwright/helper.ts": "import { execSync } from \"node:child_process\";\nexport const h = 1;\n" }, ["a.spec.ts", "b.spec.ts"]);
+  // a reviewed site is pinned by its file and its text: editing the call is a new site
+  const catalog = "import fs from \"node:fs\";\nexport const c = fs.readdirSync(componentsDir, { withFileTypes: true });\n";
+  noKey("control: a reviewed call (catalog.ts, exact text) keeps its spec keyed", { "playwright/catalog.ts": catalog, "playwright/g.spec.ts": "import { c } from \"./catalog\";\n" }, []);
+  noKey("the same call pointed somewhere else is a new site", { "playwright/catalog.ts": catalog.replace("componentsDir", "__dirname"), "playwright/g.spec.ts": "import { c } from \"./catalog\";\n" }, ["g.spec.ts"]);
+  noKey("a reviewed call in another file is a new site", { "playwright/other.ts": catalog, "playwright/g.spec.ts": "import { c } from \"./other\";\n" }, ["g.spec.ts"]);
+  noKey("a second copy of a reviewed call is a new site", { "playwright/catalog.ts": catalog + "export const d = fs.readdirSync(componentsDir, { withFileTypes: true });\n", "playwright/g.spec.ts": "import { c } from \"./catalog\";\n" }, ["g.spec.ts"]);
   check("a mention in a comment is not a site", (() => { try { const k = keysOf({ "playwright/g.spec.ts": "// globalThis.process.env and b.spec.ts and readdirSync(x)\n/* import(`./${n}`) */\nconst a = 1;\n" }); return k.get("g.spec.ts").key !== null; } catch { return false; } })());
   check("tools are not checked for what they do with spec files or the environment", (() => { try { keysOf({ "playwright/tools/x.mjs": "import fs from \"node:fs\";\nconst e = { ...process.env }; fs.readdirSync(\".\"); const f = \"a.spec.ts\";\n" }); return true; } catch { return false; } })());
 
@@ -450,6 +474,48 @@ const runOf = (commit, store, opts) => plan(treeOf(commit), store, popts(opts)).
   check("a run that executed nothing does not claim the timing pass is deactivated when it is on", !/deactivated/.test(vOn.line), vOn.line);
 }
 
+// ---- 4b. the checkout, the worktree and the installed Playwright ---------------------------------------------------
+{
+  // the deploy refuses to build docs/ from a checkout that is not the tested tree (suite-key.mjs worktree)
+  git(repo, "checkout", "-q", BASE);
+  const baseTree = git(repo, "rev-parse", "HEAD^{tree}");
+  const wt = (tree) => spawnSync("node", [path.join(HERE, "suite-key.mjs"), "worktree", "--repo", repo, "--tree", tree], { encoding: "utf8" }).status;
+  eq("control: the checkout is the tested tree (exit 0)", wt(baseTree), 0);
+  fs.appendFileSync(path.join(repo, "playwright/c.spec.ts"), "// edit\n");
+  eq("an edited tracked file refuses (exit 1)", wt(baseTree), 1);
+  git(repo, "checkout", "-q", "--", ".");
+  eq("an edit that was reverted does not refuse", wt(baseTree), 0);
+  const other = variant({ "playwright/c.spec.ts": base["playwright/c.spec.ts"] + "// other\n" });
+  eq("a checkout moved to another commit refuses (exit 1)", wt(baseTree), 1);
+  void other;
+  git(repo, "checkout", "-q", BASE);
+
+  // the private worktree of a commit that lacks scripts/ts-tools: the add succeeds and links only what exists
+  const lib = path.join(ROOT, "scripts", "lib", "pinned-worktree.sh");
+  if (fs.existsSync(lib)) {
+    fs.mkdirSync(path.join(repo, "playwright/node_modules"), { recursive: true });
+    fs.mkdirSync(path.join(repo, "scripts/ts-tools/node_modules"), { recursive: true }); // present in the checkout, absent from the commit
+    const pw = path.join(tmp, "pw-wt");
+    const r = spawnSync("bash", ["-c", `. "${lib}"; pinned_worktree_add "${repo}" "${BASE}" "${pw}"; echo "rc=$?"`], { encoding: "utf8" });
+    check("pinned_worktree_add returns 0 for a commit without scripts/ts-tools", /rc=0/.test(r.stdout), r.stdout + r.stderr);
+    check("it links node_modules where the commit has the directory", fs.existsSync(path.join(pw, "playwright", "node_modules")));
+    check("and creates nothing where the commit has no directory", !fs.existsSync(path.join(pw, "scripts", "ts-tools")));
+    spawnSync("bash", ["-c", `. "${lib}"; pinned_worktree_remove "${repo}" "${pw}"`]);
+    for (const f of ["scripts/gate-at.sh", "scripts/deploy-preview.sh"]) {
+      const txt = fs.readFileSync(path.join(ROOT, f), "utf8");
+      check(`${f} sets its cleanup trap before the add`, txt.indexOf("trap ") !== -1 && txt.indexOf("trap ") < txt.indexOf("pinned_worktree_add \""));
+    }
+  }
+
+  // the installed Playwright must be what the tree's lock names
+  const t = treeOf(BASE), ip = suiteKey.installProblem ?? (() => "absent");
+  const inst = { "@playwright/test": "1.60.0", playwright: "1.60.0", "playwright-core": "1.60.0" };
+  eq("control: the installed versions are the lock's", ip(t, inst), null);
+  check("another installed version is refused", /1\.59\.0 is not in the tree's pnpm-lock/.test(ip(t, { ...inst, "playwright-core": "1.59.0" })));
+  check("a missing package is refused", /not installed/.test(ip(t, { ...inst, playwright: undefined })));
+  check("the installed versions are part of the runtime fingerprint", /@playwright\/test@\d/.test(suiteKey.runtimeFingerprint(ROOT, ENV)));
+}
+
 // ---- 5. the key and the store -----------------------------------------------------------------------------------
 {
   const lnk = path.join(tmp, "linkdir"); fs.mkdirSync(lnk); fs.symlinkSync("target-a", path.join(lnk, "l"));
@@ -475,13 +541,19 @@ if (!process.env.SUITE_KEY_SELFTEST_FIXTURES_ONLY) { // the mutation runs of scr
   for (const f of tested) {
     const a = analyze(text(f), f);
     if (f.startsWith("playwright/tools/")) { toolFiles.push(f); continue; }
-    for (const c of ["processSites", "specNaming", "enumerates", "computed", "toolsImports"]) if (a[c]) (found[c] ??= {})[f] = a[c];
+    for (const x of a.sites) (found[x.category] ??= []).push([f, x.text]);
   }
-  for (const c of ["processSites", "specNaming", "enumerates", "computed", "toolsImports"]) { const sorted = (o) => Object.fromEntries(Object.entries(o).sort(([a], [b]) => (a < b ? -1 : 1))); eq(`the reviewed ${c} sites are exactly the ones found`, sorted(found[c] ?? {}), sorted(REVIEWED[c])); }
+  const sortedPairs = (l) => (l ?? []).map(([f, t]) => `${f}\u0000${t}`).sort();
+  for (const c of ["processSites", "specNaming", "enumerates", "childProcess", "unclassifiable", "computed", "toolsImports"]) eq(`the reviewed ${c} sites are exactly the ones found (file and source text)`, sortedPairs(found[c]), sortedPairs(REVIEWED[c]));
   check(`no test code imports a tool (${toolFiles.length} tool modules are not checked, their bytes are in every key)`, !found.toolsImports);
-  const toolProcess = toolFiles.reduce((n, f) => n + analyze(text(f), f).processSites, 0);
-  console.log(`suite-key self-test: real tree: ${Object.values(found.processSites ?? {}).reduce((a, b) => a + b, 0)} process site(s) outside plain process.env.NAME in test code, ${toolProcess} in tools/; ` +
-    `${Object.values(found.specNaming ?? {}).reduce((a, b) => a + b, 0)} spec-naming, ${Object.values(found.enumerates ?? {}).reduce((a, b) => a + b, 0)} enumerating site(s), all reviewed`);
+  const toolSites = toolFiles.reduce((n, f) => n + analyze(text(f), f).sites.filter((x) => x.category === "processSites").length, 0);
+  console.log(`suite-key self-test: real tree: ${(found.processSites ?? []).length} process site(s) outside plain process.env.NAME in test code (${toolSites} in tools/, unchecked), ${(found.specNaming ?? []).length} spec-naming, ` +
+    `${(found.enumerates ?? []).length} enumerating, ${(found.childProcess ?? []).length} child_process, ${(found.unclassifiable ?? []).length} unclassifiable, ${(found.computed ?? []).length} computed import site(s), all reviewed`);
+  const dep = text("scripts/deploy-preview.sh");
+  check("deploy-preview.sh holds a lock on the worktree path before it adds the worktree", dep.indexOf("flock -n 7") !== -1 && dep.indexOf("flock -n 7") < dep.indexOf("pinned_worktree_add \""));
+  check("deploy-preview.sh checks the checkout is the tested tree after the suite and before the deploy build", dep.indexOf("worktree --tree") > dep.indexOf("\nrelease_suite") && dep.indexOf("worktree --tree") < dep.indexOf("build-ssg.sh\" release --base-path"));
+  const installed = suiteKey.installedPlaywright(ROOT);
+  eq("the installed Playwright is the lock's", suiteKey.installProblem(head, installed), null);
 
   // durations.json only cuts chunks: nothing but the chunk cutter and its table tools names it
   const namesDurations = files.filter((f) => f !== "playwright/durations.json" && f.startsWith("playwright/") && /durations\.json/.test(text(f)));

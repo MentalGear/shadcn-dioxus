@@ -4,12 +4,14 @@
 #
 # Drives the real playwright/tools/run-suite.sh --reuse with the real Playwright runner on a scratch git repo with planted specs
 # and a planted site (no build, no browser) and checks that only what should run runs and that nothing wrong is accepted: a
-# spec-only fix reuses the rest; a failing test, a test.only, a test that interrupts its runner, a runtime skip, an edit of a tool,
-# a helper read by path, an environment read through globalThis.process and an edit made and reverted in the shared checkout
-# during a run (the run reads a private worktree) are each handled as the suite key's rules say.
+# spec-only fix reuses the rest; a helper change re-runs only its importers (a spec that reads it by path is the pinned, accepted
+# residue); a failing test, a test.only, a test that interrupts its runner, a runtime skip, a tool edit and an environment read
+# through globalThis.process are each handled as the suite key's rules say; an edit made and reverted in the shared checkout
+# during a run does not reach it (the run reads a private worktree) and the deploy's tested-tree check refuses that checkout.
 #
 # The result is reused for identical inputs through the gate kit's store (scripts/gate-reuse.sh): the key is the hash of
-# playwright/tools/, the Playwright config files, the scripts the run uses and the Node version, so the run (about 40 s) happens
+# playwright/tools/, the Playwright config files, the scripts the run uses (including scripts/ts-tools's manifest and lock, the
+# parser of the keys, and scripts/gate-reuse.sh, the store) and the Node version, so the run (about 40 s) happens
 # only when one of those changed. The script holds the shared Playwright lock (pw.lock) for the run and gives up after
 # E2E_LOCK_WAIT seconds (default 900) with a failure that says the lock was busy, which is not a verdict on the code.
 #
@@ -23,7 +25,7 @@ command -v node >/dev/null || { echo "check-suite-reuse-e2e: node is required"; 
 [ -d playwright/node_modules ] || { echo "check-suite-reuse-e2e: playwright/node_modules is missing (pnpm install --frozen-lockfile in playwright/)"; exit 1; }
 
 inputs() {
-  git ls-files -co --exclude-standard playwright/tools scripts/lib/pinned-worktree.sh scripts/emit-404.sh scripts/serve-spa.py scripts/check-suite-reuse-e2e.sh
+  git ls-files -co --exclude-standard playwright/tools scripts/lib/pinned-worktree.sh scripts/emit-404.sh scripts/serve-spa.py scripts/gate-reuse.sh scripts/check-suite-reuse-e2e.sh scripts/ts-tools/package.json scripts/ts-tools/pnpm-lock.yaml
   printf '%s\n' playwright/base-url.ts playwright/sandbox-chromium.cjs playwright/suite.local.config.ts playwright/package.json playwright/pnpm-lock.yaml playwright/pnpm-workspace.yaml playwright/.npmrc
 }
 key="$( { echo "format 1"; node --version; inputs | sort -u | while IFS= read -r f; do [ -f "$f" ] && printf '%s %s\n' "$f" "$(git hash-object "$f")"; done; } | sha1sum | cut -c1-40)"

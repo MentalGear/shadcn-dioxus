@@ -15,8 +15,8 @@ c="$(git rev-parse --verify "$c^{commit}")" || exit 2
 # for) another commit (row 221).
 wt="${LANE_WT:-/home/user/wt}/gates-${c:0:12}"
 . "$repo/scripts/lib/pinned-worktree.sh"
-pinned_worktree_add "$repo" "$c" "$wt" || exit 2
 trap 'pinned_worktree_remove "$repo" "$wt"' EXIT
+pinned_worktree_add "$repo" "$c" "$wt" || exit 2
 cd "$wt"
 # Class `gate` in the lane-lock queue (row 221): a merge gate goes before every waiting lane build, and the
 # wrapper script paths are the MAIN checkout's, because an older commit under test may not have them.

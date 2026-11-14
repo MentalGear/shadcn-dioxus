@@ -3,8 +3,10 @@
 # `--reuse`, the real Playwright runner and suite.local.config.ts, on a scratch git repo with planted specs and a tiny planted
 # site (no build, no browser: the planted tests use no page). It drives a pass, a failing test, a `test.only`, a test that
 # interrupts its own runner, a skip decided at run time and a script no spec imports through record, plan, verdict and a second
-# run, and checks that only what should run runs and that nothing wrong is accepted: a spec-only fix reuses the rest, an edit of
-# a tool or of a helper a spec reads by path runs everything, an environment read through `globalThis.process` is refused, and
+# run, and checks that only what should run runs and that nothing wrong is accepted: a spec-only fix reuses the rest, a helper
+# change re-runs only its importers (a spec that reads it by path is the accepted residue, pinned in step 9), an edit of a tool
+# runs everything, an environment read through `globalThis.process` is refused, the deploy's tested-tree check refuses a checkout
+# with a tracked edit, a worktree of a commit without scripts/ts-tools is made, and
 # an edit made and reverted in the shared checkout during a run changes nothing because the run reads a private worktree
 # (scripts/lib/pinned-worktree.sh, what deploy-preview.sh uses). Runs through the repo's Playwright lock (tools/run-suite.sh takes
 # it per chunk), two workers; SUITE_E2E_PRIVATE_LOCK=1 (scripts/check-suite-reuse-e2e.sh, which holds the shared lock itself) uses
@@ -155,9 +157,12 @@ sk accept --store "$store" --tree "$(tree)" --build-env e2e >/dev/null 2>&1; exp
 run_suite "$tmp/r8"
 expect "every spec file runs again" "$(run_list "$tmp/r8")" "fail.spec.ts pass.spec.ts"
 
-# ---- 9. a helper read by path, not imported --------------------------------------------------------------------------------------
-echo "9. a spec reads a helper by path without importing it; the helper changes"
+# ---- 9. a helper change re-runs its importers; the pinned residue ---------------------------------------------------------------
+echo "9. a helper is imported by one spec and read by path (not imported) by another; the helper changes"
 spec helper.ts 'export const h = 1;'
+spec uses.spec.ts 'import { test, expect } from "@playwright/test";
+import { h } from "./helper";
+test("uses the helper", () => { expect(h).toBeGreaterThan(0); });'
 spec reads.spec.ts 'import { test, expect } from "@playwright/test";
 import fs from "node:fs";
 import path from "node:path";
@@ -165,7 +170,12 @@ test("reads the helper", () => { expect(fs.readFileSync(path.join(__dirname, "he
 commit c8; run_suite "$tmp/r9" >/dev/null
 echo 'export const h = 2;' > "$sc/playwright/helper.ts"; commit c9
 run_suite "$tmp/r9b"
-expect "every spec file runs again, including the one that reads the helper by path" "$(run_list "$tmp/r9b")" "fail.spec.ts pass.spec.ts reads.spec.ts"
+expect "a helper change re-runs the spec that imports it and no other" "$(run_list "$tmp/r9b")" "uses.spec.ts"
+echo "       ACCEPTED RESIDUE: reads.spec.ts reads helper.ts by path, so it is reused although the helper changed (the site is byte-identical;"
+echo "       the next run that executes it is the next change to the site, a helper in its closure, a tool or the config). If this step starts"
+echo "       failing because the residue was closed, rewrite it and the header of suite-key.mjs."
+echo 'export const h = 3;' > "$sc/playwright/helper.ts"; echo '# tool' >> "$sc/playwright/tools/run-suite.sh"; commit c9b
+run_suite "$tmp/r9c" >/dev/null
 
 # ---- 10. an environment read through globalThis.process --------------------------------------------------------------------------
 echo "10. a spec reads the environment through globalThis.process"
@@ -176,7 +186,7 @@ commit c10
 sk accept --store "$store" --tree "$(tree)" --build-env e2e >/dev/null 2>&1; expect "no key can be derived (exit 3), nothing is accepted" "$?" 3
 run_suite "$tmp/r10"
 grep -q "no key for tree" "$tmp/r10.log" && ok "run-suite says it runs the whole suite" || bad "run-suite did not say that it runs the whole suite"
-expect "all four spec files ran" "$(cat "$tmp"/r10/specs-*.txt | grep . | sort | tr '\n' ' ' | sed 's/ $//')" "env.spec.ts fail.spec.ts pass.spec.ts reads.spec.ts"
+expect "every spec file ran" "$(cat "$tmp"/r10/specs-*.txt | grep . | sort | tr '\n' ' ' | sed 's/ $//')" "env.spec.ts fail.spec.ts pass.spec.ts reads.spec.ts uses.spec.ts"
 expect "and no record was written" "$(records)" "$before"
 rm "$sc/playwright/env.spec.ts"
 
@@ -192,10 +202,21 @@ while [ ! -s "$tmp/r11/plan.json" ] && kill -0 "$pid" 2>/dev/null; do sleep 0.2;
 cp "$sc/playwright/pass.spec.ts" "$tmp/pass.orig"
 printf 'import { test, expect } from "@playwright/test";\ntest("edited", () => { expect(1).toBe(2); });\n' > "$sc/playwright/pass.spec.ts"
 wait "$pid"
+( cd "$sc/playwright" && node tools/suite-key.mjs worktree --tree "$(tree)" >/dev/null 2>&1 ); expect "the deploy's check refuses a checkout with a tracked edit (exit 1)" "$?" 1
 cp "$tmp/pass.orig" "$sc/playwright/pass.spec.ts"      # the revert
+( cd "$sc/playwright" && node tools/suite-key.mjs worktree --tree "$(tree)" >/dev/null 2>&1 ); expect "and accepts it again once reverted" "$?" 0
 expect "the shared checkout is clean again" "$(git -C "$sc" status --porcelain --untracked-files=no)" ""
 ( cd "$wt/playwright" && TIMING_PASS=off TIMING_REENABLE_ROW=494 node tools/suite-key.mjs verdict --out "$tmp/r11" --chunks 2 --tree "$(tree)" --store "$store" > "$tmp/r11.verdict" 2>&1 ); expect "the verdict of the run in the private worktree is green" "$?" 0
 expect "the passing spec passed: the run read the planned tree, not the edit" "$(status_of pass.spec.ts)" green
 pinned_worktree_remove "$sc" "$wt"
+
+# ---- 12. a commit without scripts/ts-tools -------------------------------------------------------------------------------------
+echo "12. a private worktree of a commit that has no scripts/ts-tools"
+git -C "$sc" rm -q -f scripts/ts-tools && commit c12
+wt2="$tmp/private-wt2"
+pinned_worktree_add "$sc" "$(git -C "$sc" rev-parse HEAD)" "$wt2"; expect "the add succeeds (exit 0)" "$?" 0
+[ -e "$wt2/playwright/node_modules" ] && ok "node_modules is linked where the commit has the directory" || bad "playwright/node_modules is not linked"
+[ ! -e "$wt2/scripts/ts-tools" ] && ok "nothing is linked where the commit has no directory" || bad "scripts/ts-tools exists in the worktree"
+pinned_worktree_remove "$sc" "$wt2"
 
 [ "$fail" = 0 ] && echo "suite-reuse-e2e: OK" || { echo "suite-reuse-e2e: FAIL"; exit 1; }

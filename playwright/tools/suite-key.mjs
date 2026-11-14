@@ -19,23 +19,41 @@
 //                  by no Cargo manifest, include or build script. The tests load it, so the SPEC KEY covers it.
 //   An unreadable include, or an excluded path named by a read this scan cannot see, is the residue; see the self-test.
 //
-// SPEC KEY: what one spec file's result depends on besides the site. Nothing is derived from what a spec imports: everything the
-// analysis could miss would default to "independent", so the default is inverted.
-//   = the spec file's own blob, ONE hash of every other tracked file under playwright/ (helpers, config, fixtures, data, vendored
-//     scripts, the lock file, package.json, all of tools/) and under primitives/ts-test/ that is not itself a spec file, the values
-//     of the environment variables any of those files reads (a real parser finds every `process.env.NAME`), the path of
-//     PLAYWRIGHT_BASE_URL, the browser the config launches, the Node version and platform, the build profile, `TIMING_PASS` and
-//     the parser in use. A change to a helper, the config or a tool therefore gives every file a new key: the gain is the spec-only
-//     fix, not the helper-level one.
-//   The one file left out is playwright/durations.json: only tools/shard.mjs (the chunk cutter) reads it, to decide which spec files
-//   share a chunk, and a test's result does not depend on its chunk mates (every test owns its page; no spec shares state with
-//   another: the self-test pins that nothing else names durations.json).
-//   The assumption that remains: no test's result depends on ANOTHER spec file's content. It fails closed: a parser check over
-//   every module under playwright/ outside tools/ and under primitives/ts-test/ finds what names or enumerates spec files (an
-//   import of a `.spec` module, a string containing ".spec.", readdir / glob calls, a computed import()); a spec with such a site that is not on the reviewed list (REVIEWED) has NO key, and
-//   the same site in a non-spec module takes every key away; a `process` used in any form that could read the environment other
-//   than `process.env.NAME` (a bare `process.env`, `globalThis.process`, an import of `process`) takes every key away; so does a
-//   missing TypeScript parser (scripts/ts-tools). No key means the file, or the whole suite, runs.
+// SPEC KEY: what one spec file's result depends on besides the site.
+//   = the spec file's blob,
+//   + the blobs of its import closure (import-graph.mjs, on the TypeScript parser; files outside playwright/ such as
+//     primitives/ts-test/ included) that are not in the shared part,
+//   + ONE shared hash of every tracked file under playwright/ and primitives/ts-test/ that is not a spec file and is (a) under
+//     playwright/tools/, (b) in the closure of the config or of fixtures.ts, or (c) in no spec's closure at all (a data file, a
+//     vendored script, the lock file, a module nothing imports: ambient by subtraction, whatever its extension); durations.json
+//     is the one exclusion (only the chunk cutter reads it, to decide which files share a chunk; a test's result does not depend
+//     on its chunk mates: the self-test pins that nothing else names it),
+//   + the values of the environment variables any of that code reads (the parser finds every `process.env.NAME`; the shell
+//     variables of tools/*.sh are scanned the same way), the path of PLAYWRIGHT_BASE_URL, the browser, the installed Playwright
+//     versions, the Node version and platform, the build profile, `TIMING_PASS` and the parser in use.
+//   A change to a helper re-runs the specs whose closure holds it; a change to the config, a tool, a data file or the site re-runs
+//   every spec.
+//
+// WHY A CLOSURE, AND WHAT IT CAN GET WRONG. Hashing everything under playwright/ into every key is sounder and gives up most of the
+// gain: two of the last three red-suite fixes changed a helper. The closure is a static analysis, so it can miss a dependency: a
+// spec that reads, by path, a helper another spec imports is reused when that helper changes (the accepted residue, pinned by a
+// self-test case and an e2e step). What a miss can cost is bounded by the SITE KEY: a reused record was earned on byte-identical
+// site bytes, so a miss can hide only a TEST-side regression (an unchanged spec that would now fail because of a changed helper
+// it reaches without importing), never an untested site, and it surfaces at the next run that executes the file: the next change
+// to the site, to a helper in its closure, to the tools or to the config.
+//
+// THREAT MODEL: honest mistakes by people and agents writing specs. A form someone writes by accident fails closed: a `process`
+// that could read the environment unseen (a bare `process.env`, `globalThis.process`, an alias, an import of `process`), an
+// import of child_process, a test that names a spec file (an import of a `.spec` module, a string containing ".spec."), a
+// readdir / glob call and any other use of those names (aliased on import, destructured, a computed member), a computed import()
+// or require(), a relative import that resolves to no file, an import of a tool by test code, a missing TypeScript parser
+// (scripts/ts-tools), and an installed Playwright that does not satisfy the tree's lock. Each site is pinned by its file and
+// source text (REVIEWED): editing a reviewed call to point somewhere else is a new site. A spec with an unreviewed site, or one
+// that imports a module with one, has NO key and always runs; the same site in the config's or fixtures' closure, or in a module
+// no spec imports, takes every key away; a `process` site, a missing parser or a mismatched install takes every key away.
+// OUT OF SCOPE, listed so nobody reads this as a proof: forms nobody writes by accident (`Reflect.get(globalThis, "proc" +
+// "ess")`, `new Function`, `eval`, a split file name, `execSync("printenv")`), a test that reads another spec file by a path it
+// computes, and a spec that reads dev-docs/ or docs/ at run time.
 //
 // A RECORD is green by positive proof only. The test ids of a file in the run's report must equal the ids of an independent
 // `playwright test --list` of the same files, config and environment (run-suite.sh writes list.json / tlist.json before the
@@ -54,6 +72,7 @@
 //   node playwright/tools/suite-key.mjs accept   --store DIR [--tree T] ...    exit 0 only when every spec file has a green record
 //   node playwright/tools/suite-key.mjs record   --store DIR --out RUNDIR --chunks N [--repo R]
 //   node playwright/tools/suite-key.mjs verdict  --out RUNDIR --chunks N [--store DIR --tree T]
+//   node playwright/tools/suite-key.mjs worktree --tree T [--repo R]   exit 1 unless HEAD^{tree} is T and no tracked file changed
 //   node playwright/tools/suite-key.mjs hash-dir DIR
 // Exit: 0 ok, 1 not accepted / red, 2 usage, 3 a key could not be derived (the caller runs the whole suite).
 import crypto from "node:crypto";
@@ -62,7 +81,7 @@ import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { createRequire } from "node:module";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { analyze, parserName, SOURCE_RE } from "./import-graph.mjs";
+import { analyze, importClosure, parserName, SOURCE_RE } from "./import-graph.mjs";
 import { isSpecPath } from "./spec-files.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -73,30 +92,62 @@ export const isExcluded = (p) => EXCLUDED.some((e) => p.startsWith(e));
 const TOOL_FILES = ["suite-key.mjs", "import-graph.mjs", "spec-files.mjs"];
 const MODULE_RE = SOURCE_RE;
 
-// Files whose bytes every spec key carries (one hash), except the spec files themselves and durations.json.
+// Files under these roots are the tests' own (everything that is not a spec file joins the shared hash or a closure).
 const SHARED_ROOTS = ["playwright/", "primitives/ts-test/"];
-// Code that runs in a browser (vendored pages' scripts) or is not test code: not parsed.
+// Code that runs in a browser (vendored pages' scripts): not parsed.
 const NOT_PARSED = (p) => p.startsWith("playwright/oracle/reference/");
-// Environment variables that never enter a spec key (PLAYWRIGHT_BASE_URL enters by its path only).
-export const ENV_NEUTRAL = new Set(["SSG_SITE_DIR", "PW_WORKERS", "PW_SPECS_FILE", "PW_TIMING_SKIP_WARNED", "PW_CHROMIUM", "PLAYWRIGHT_BROWSERS_PATH"]);
-// Sites the parser check found and a person decided are harmless; a count above the reviewed one is a new site. Files under
-// playwright/tools/ are not checked: no test code imports them (a `toolsImports` site anywhere else has no reviewed count), and
-// their own bytes are in every key.
+// Environment variables that never enter a spec key (PLAYWRIGHT_BASE_URL enters by its path only): the run's own plumbing (the build
+// environment string is in the site key) and the shell's own.
+export const ENV_NEUTRAL = new Set(["SSG_SITE_DIR", "PW_WORKERS", "PW_SPECS_FILE", "PW_TIMING_SKIP_WARNED", "PW_CHROMIUM", "PLAYWRIGHT_BROWSERS_PATH",
+  "SUITE_BUILD_ENV", "SUITE_E2E_KEEP", "SUITE_E2E_PRIVATE_LOCK", "SITE_SERVER_PID",
+  "PWD", "OLDPWD", "PATH", "HOME", "USER", "SHLVL", "TMPDIR", "TERM", "LANG", "LC_ALL", "BASH_SOURCE", "PPID", "RANDOM", "LINENO", "UID", "EUID", "HOSTNAME", "IFS"]);
+// Sites the parser check found and a person decided are harmless, pinned by file and source text (a call edited to point
+// somewhere else is a new site). Files under playwright/tools/ are not checked: no test code imports them (a `toolsImports` site
+// anywhere else has no reviewed entry) and their bytes are in every key.
 export const REVIEWED = {
-  // `process` forms other than process.env.NAME: sandbox-chromium.cjs takes `env = process.env` as a parameter default and reads
-  // PW_CHROMIUM and PLAYWRIGHT_BROWSERS_PATH from it; the browser it picks is hashed (runtimeFingerprint).
-  processSites: { "playwright/sandbox-chromium.cjs": 2 },
-  // ".spec." inside a message or comment-like string, not a read of a spec file
-  specNaming: { "playwright/base-url.ts": 1, "playwright/modal-consumers.ts": 1, "playwright/oracle/tier1-apg/menu-submenu.spec.ts": 1, "playwright/oracle/tier3-radix/rtl.spec.ts": 1 },
-  // readdir over the site's source tree (preview/), the built site, or the browsers directory: never the playwright tree
-  enumerates: {
-    "playwright/catalog.ts": 2, "playwright/modal-consumers.ts": 2, "playwright/sandbox-chromium.cjs": 1, "playwright/computed-style-snapshot.spec.ts": 1,
-    "playwright/oracle/hydration-parity.spec.ts": 1, "playwright/oracle/tier2-html/demo-placeholder-links.spec.ts": 2,
-    "playwright/oracle/tier2-html/first-paint-styles.spec.ts": 2, "playwright/oracle/tier2-html/first-paint-text.spec.ts": 1,
-    "playwright/oracle/tier2-html/stylesheets-present.spec.ts": 1, "playwright/variant-nesting.spec.ts": 1,
-  },
-  computed: {},
-  toolsImports: {},
+  // `env = process.env` parameter defaults; the browser it selects is hashed (runtimeFingerprint)
+  processSites: [
+    ["playwright/sandbox-chromium.cjs", "function sandboxChromium(env = process.env) {"],
+    ["playwright/sandbox-chromium.cjs", "function sandboxLaunchOptions(env = process.env) {"],
+  ],
+  // a spec file named inside a message string, not read
+  specNaming: [
+    ["playwright/base-url.ts", "\"[playwright] debug build detected: skipping oracle/tier2-html/main-thread.spec.ts \" +"],
+    ["playwright/modal-consumers.ts", "top_layer: \"oracle fixture: unstyled DialogRoot/AlertDialogRoot demos for oracle/tier2-html/top-layer*.spec.ts, no exit animation\","],
+    ["playwright/oracle/tier1-apg/menu-submenu.spec.ts", "'general APG menu rule (menu-roles.spec.ts\\'s own citation): \"An ' +"],
+    ["playwright/oracle/tier3-radix/rtl.spec.ts", "expect(id, \"sub-trigger should own its submenu via aria-controls (see oracle/tier1-apg/menu-submenu.spec.ts)\").toBeTruthy();"],
+  ],
+  // readdir over the site source tree (preview/), the built site or the browsers directory, never the playwright tree
+  enumerates: [
+    ["playwright/catalog.ts", "fs.readdirSync(componentsDir, { withFileTypes: true })"],
+    ["playwright/catalog.ts", "fs .readdirSync(variantsDir, { withFileTypes: true })"],
+    ["playwright/computed-style-snapshot.spec.ts", "fs .readdirSync(base)"],
+    ["playwright/modal-consumers.ts", "fs.readdirSync(PRIMITIVES)"],
+    ["playwright/modal-consumers.ts", "fs.readdirSync(COMPONENTS)"],
+    ["playwright/oracle/hydration-parity.spec.ts", "fs .readdirSync(componentDir, { withFileTypes: true })"],
+    ["playwright/oracle/tier2-html/demo-placeholder-links.spec.ts", "fs.readdirSync(dir, { withFileTypes: true })"],
+    ["playwright/oracle/tier2-html/demo-placeholder-links.spec.ts", "fs .readdirSync(COMPONENTS_DIR, { withFileTypes: true })"],
+    ["playwright/oracle/tier2-html/first-paint-styles.spec.ts", "fs .readdirSync(path.join(PREVIEW, \"src\", \"components\"), { withFileTypes: true })"],
+    ["playwright/oracle/tier2-html/first-paint-styles.spec.ts", "fs.readdirSync(dir, { withFileTypes: true })"],
+    ["playwright/oracle/tier2-html/first-paint-text.spec.ts", "fs .readdirSync(path.join(PREVIEW, \"src\", \"components\"), { withFileTypes: true })"],
+    ["playwright/oracle/tier2-html/stylesheets-present.spec.ts", "fs.readdirSync(path.join(PREVIEW, dir), { recursive: true })"],
+    ["playwright/sandbox-chromium.cjs", "fs.readdirSync(root)"],
+    ["playwright/variant-nesting.spec.ts", "fs .readdirSync(COMPONENTS_DIR)"],
+  ],
+  // runs git (profile marker) / the attr-synth binary: nothing that reads a spec file
+  childProcess: [
+    ["playwright/base-url.ts", "import { execFileSync } from \"node:child_process\";"],
+    ["playwright/oracle/hydration-parity.spec.ts", "import { spawnSync } from \"node:child_process\";"],
+  ],
+  // none today
+  unclassifiable: [
+  ],
+  // none today
+  computed: [
+  ],
+  // none today
+  toolsImports: [
+  ],
 };
 
 const sha = (rows) => crypto.createHash("sha256").update(rows.join("\n")).digest("hex");
@@ -224,11 +275,34 @@ export function specFilesOf(t) {
   return [...t.entries.keys()].filter((p) => p.startsWith("playwright/") && isSpecPath(p.slice("playwright/".length))).map((p) => p.slice("playwright/".length)).sort();
 }
 
+const PW_PACKAGES = ["@playwright/test", "playwright", "playwright-core"];
+/** The versions of Playwright installed under repo/playwright/node_modules (the run executes what is installed, not the lock). */
+export function installedPlaywright(repo) {
+  const out = {}, base = path.join(repo, "playwright");
+  for (const name of PW_PACKAGES) {
+    for (const from of [base, (() => { try { return fs.realpathSync(path.join(base, "node_modules", "@playwright", "test")); } catch { return base; } })()]) {
+      try { out[name] = JSON.parse(fs.readFileSync(createRequire(path.join(from, "x.js")).resolve(`${name}/package.json`), "utf8")).version; break; } catch { /* the next place */ }
+    }
+  }
+  return out;
+}
+/** The reason the installed Playwright is not what the tree's lock names, or null. */
+export function installProblem(t, installed) {
+  const lock = t.exists("playwright/pnpm-lock.yaml") ? t.read("playwright/pnpm-lock.yaml") : "";
+  for (const name of PW_PACKAGES) {
+    const want = new Set([...lock.matchAll(new RegExp(`^  '?${name.replace(/[/@]/g, (c) => `\\${c}`)}@([0-9][^(':\\s]*)`, "gm"))].map((m) => m[1]));
+    if (!installed[name]) return `${name} is not installed under playwright/node_modules`;
+    if (!want.has(installed[name])) return `installed ${name} ${installed[name]} is not in the tree's pnpm-lock.yaml (${[...want].join(", ") || "no entry"})`;
+  }
+  return null;
+}
+
 /** The browser the config launches (sandbox-chromium.cjs resolves it from the environment), the runtime that runs the specs. */
 export function runtimeFingerprint(repo = REPO, env = process.env) {
   let chromium = "default";
   try { chromium = createRequire(import.meta.url)(path.join(repo, "playwright", "sandbox-chromium.cjs")).sandboxChromium(env) ?? "default"; } catch (e) { chromium = `unresolvable ${e.message}`; }
-  return `node ${process.versions.node} ${process.platform} ${process.arch} chromium ${chromium}`;
+  const pw = installedPlaywright(repo);
+  return `node ${process.versions.node} ${process.platform} ${process.arch} chromium ${chromium} playwright ${PW_PACKAGES.map((n) => `${n}@${pw[n] ?? "?"}`).join(" ")}`;
 }
 
 // The build profile the specs see (base-url.ts buildProfile(): the explicit variable wins, else the shape of the site dir).
@@ -241,41 +315,67 @@ const profileOf = (env) => {
 // A spec decides on the path of the base URL (a prefixed build is served under a prefix); host and port are per run.
 const basePathOf = (v) => { if (!v) return ""; try { return new URL(v).pathname.replace(/\/+$/, ""); } catch { return `raw:${v}`; } };
 
+// Uppercase variables the shell scripts under playwright/tools/ read: `$NAME` and `${NAME...}`.
+const shellNames = (text) => new Set([...text.matchAll(/\$\{?([A-Z][A-Z0-9_]*)/g)].map((m) => m[1]));
+
 /**
  * { file -> { key, why } } for every spec file of the tree; `key` is null and `why` says why when the file cannot be keyed.
- * Throws a KeyError (no key for any file) when there is no TypeScript parser or a `process` is used in a way that could read the
- * environment unseen.
+ * Throws a KeyError (no key for any file) when there is no TypeScript parser, the installed Playwright is not the lock's, or a
+ * `process` is used in a way that could read the environment unseen.
  */
-export function specKeys(t, { config = "suite.local.config.ts", runtime = runtimeFingerprint(t.repo), env = process.env } = {}) {
+export function specKeys(t, { config = "suite.local.config.ts", runtime, env = process.env } = {}) {
   if (!parserName()) throw new KeyError("no TypeScript parser: run `pnpm install --frozen-lockfile` in scripts/ts-tools");
+  if (runtime === undefined) {
+    const bad = installProblem(t, installedPlaywright(t.repo));
+    if (bad) throw new KeyError(bad);
+    runtime = runtimeFingerprint(t.repo);
+  }
   const specs = specFilesOf(t);
   const specPaths = new Set(specs.map((f) => `playwright/${f}`));
-  const shared = [...t.entries.keys()].filter((p) => SHARED_ROOTS.some((r) => p.startsWith(r)) && !specPaths.has(p) && p !== "playwright/durations.json").sort();
+  const scope = [...t.entries.keys()].filter((p) => SHARED_ROOTS.some((r) => p.startsWith(r)) && !specPaths.has(p) && p !== "playwright/durations.json");
   const row = (p) => `${t.entries.get(p).oid} ${p}`;
-  // the parser check: every module of the shared part and every spec
-  const parsed = [...shared, ...specPaths].filter((p) => MODULE_RE.test(p) && !NOT_PARSED(p));
-  t.prefetch(parsed);
-  const names = new Set(), sites = new Map(); // file -> { category -> count }
-  for (const p of parsed) {
+  t.prefetch([...scope, ...specPaths].filter((p) => MODULE_RE.test(p) || /^playwright\/tools\/[^/]+\.sh$/.test(p)));
+
+  // closures: each spec's, and the config's and fixtures' (shared)
+  const closureOf = (root) => (t.exists(root) ? importClosure(root, { exists: t.exists, read: t.read }) : { files: new Set(), unresolved: [{ from: root, spec: "(missing)" }] });
+  const cfg = [closureOf(`playwright/${config}`), closureOf("playwright/fixtures.ts")];
+  const cfgFiles = new Set(cfg.flatMap((c) => [...c.files]));
+  const cfgWhy = cfg.flatMap((c) => c.unresolved).map((u) => `${u.from} imports "${u.spec}", which names no file`)[0];
+  const closures = new Map(specs.map((f) => [f, closureOf(`playwright/${f}`)]));
+  const inSomeClosure = new Set(cfgFiles);
+  for (const c of closures.values()) for (const f of c.files) inSomeClosure.add(f);
+  const sharedFiles = new Set(scope.filter((p) => p.startsWith("playwright/tools/") || cfgFiles.has(p) || !inSomeClosure.has(p)));
+  const sharedHash = sha([...sharedFiles].sort().map(row));
+
+  // the parser check over the tests' own modules, and the environment names
+  const names = new Set();
+  for (const p of scope) if (/^playwright\/tools\/[^/]+\.sh$/.test(p)) for (const n of shellNames(t.read(p))) if (!ENV_NEUTRAL.has(n)) names.add(n);
+  const pins = new Map(); // "category\0file\0text" -> unused reviewed count
+  for (const [c, list] of Object.entries(REVIEWED)) for (const [f, text] of list) { const k = `${c}\0${f}\0${text}`; pins.set(k, (pins.get(k) ?? 0) + 1); }
+  const unreviewed = []; // { file, category, text }
+  for (const p of [...scope, ...specPaths]) {
+    if (!MODULE_RE.test(p) || NOT_PARSED(p)) continue;
     const a = analyze(t.read(p), p);
     for (const n of a.env) if (!ENV_NEUTRAL.has(n)) names.add(n);
     if (p.startsWith("playwright/tools/")) continue; // not test code: nothing under tests imports it (toolsImports), its bytes are in every key
-    for (const c of ["processSites", "specNaming", "enumerates", "computed", "toolsImports"]) if (a[c]) { sites.set(p, { ...sites.get(p), [c]: a[c] }); }
+    for (const s of a.sites) {
+      const k = `${s.category}\0${p}\0${s.text}`;
+      if ((pins.get(k) ?? 0) > 0) pins.set(k, pins.get(k) - 1); else unreviewed.push({ file: p, category: s.category, text: s.text });
+    }
   }
-  const unreviewed = []; // { file, category, count }
-  for (const [file, cs] of sites) for (const [c, n] of Object.entries(cs)) if (n > (REVIEWED[c][file] ?? 0)) unreviewed.push({ file, category: c, count: n });
   const blocking = unreviewed.find((u) => u.category === "processSites");
-  if (blocking) throw new KeyError(`${blocking.file} uses \`process\` in a form that could read the environment unseen (${blocking.count} site(s)); no spec file can be keyed`);
-  const sharedWhy = unreviewed.find((u) => !specPaths.has(u.file));
-  const sharedHash = sha(shared.map(row));
+  if (blocking) throw new KeyError(`${blocking.file} uses \`process\` in a form that could read the environment unseen (${blocking.text}); no spec file can be keyed`);
+
   const base = [`spec-key ${FORMAT}`, `parser ${parserName()}`, `runtime ${runtime}`, `config ${config}`, `timing-pass ${env.TIMING_PASS ?? "<unset>"}`, `profile ${profileOf(env)}`, `shared ${sharedHash}`];
   for (const n of [...names].sort()) base.push(n === "PLAYWRIGHT_BASE_URL" ? `env PLAYWRIGHT_BASE_URL path=${basePathOf(env[n])}` : `env ${n}=${env[n] ?? "<unset>"}`);
   const out = new Map();
   for (const file of specs) {
-    const own = unreviewed.find((u) => u.file === `playwright/${file}`);
-    const bad = sharedWhy ?? own;
-    if (bad) { out.set(file, { key: null, why: `${bad.file} has ${bad.count} ${bad.category} site(s) that are not reviewed` }); continue; }
-    out.set(file, { key: sha([...base, row(`playwright/${file}`)]) });
+    const c = closures.get(file);
+    const why = cfgWhy ?? (c.unresolved[0] && `${c.unresolved[0].from} imports "${c.unresolved[0].spec}", which names no file`)
+      ?? ((u) => u && `${u.file} has an unreviewed ${u.category} site: ${u.text.slice(0, 80)}`)(unreviewed.find((u) =>
+        u.file === `playwright/${file}` || (c.files.has(u.file) && !sharedFiles.has(u.file)) || sharedFiles.has(u.file) || (!inSomeClosure.has(u.file))));
+    if (why) { out.set(file, { key: null, why }); continue; }
+    out.set(file, { key: sha([...base, row(`playwright/${file}`), ...[...c.files].filter((f) => f !== `playwright/${file}` && !sharedFiles.has(f)).sort().map(row)]) });
   }
   return out;
 }
@@ -569,6 +669,12 @@ function main(argv) {
       if (v.failed.length) console.error(`failed:\n  ${v.failed.join("\n  ")}`);
       if (v.reasons.length) console.error(`not accepted:\n  ${v.reasons.join("\n  ")}`);
       return v.ok ? 0 : 1;
+    }
+    if (cmd === "worktree") {
+      if (!opt.tree) usage("worktree needs --tree");
+      const problem = worktreeProblem(repo, openTree(repo, opt.tree).tree);
+      if (problem) { console.error(`suite-key: ${problem}`); return 1; }
+      return 0;
     }
     if (cmd === "record") {
       if (!opt.store || !opt.out || !opt.chunks) usage("record needs --store, --out and --chunks");

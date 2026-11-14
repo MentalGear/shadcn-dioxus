@@ -19,8 +19,8 @@
 # REUSE ACROSS SPEC-ONLY CHANGES (backlog row 513). A red run followed by a fix that touches only Playwright files leaves the
 # site byte-identical, so the suite does not run again in full. Every spec file that ran writes a record, green only when every
 # test of the file passed, under (site key, spec key) in `$LANE_TGT/release-suite/records` (playwright/tools/suite-key.mjs:
-# the site key hashes every input of the release build, the spec key the spec file, every other file under playwright/ except
-# durations.json, and the environment it reads; the record also names the hash of the built site). A tree is accepted, without a build, when every spec
+# the site key hashes every input of the release build, the spec key the spec file, the files it imports, the shared test files
+# and the environment it reads; the record also names the hash of the built site). A tree is accepted, without a build, when every spec
 # file of it has a green record for its site and all the records name one built site; otherwise the files without a record
 # run, on the kept build of that site (`$LANE_TGT/release-suite/site/<site key>/public`, ~55 MB, the two newest are kept) or on a
 # fresh one. The totals it prints are for the whole suite (reused plus run) and say how many files were reused. The suite builds
@@ -107,14 +107,20 @@ release_suite() {
   fi
   if [ -f "$stamp" ]; then
     echo "==> Release suite: green for tree $tree already ($(head -1 "$stamp")); not run again."
+    suite_tested_tree="$tree"
     return 0
   fi
   local name="deploy-suite-$$" out="$suite_dir/run-$tree" port="${DEPLOY_SUITE_PORT:-4830}"
   local chunks="${DEPLOY_SUITE_CHUNKS:-6}" workers="${DEPLOY_SUITE_WORKERS:-3}"
   local pub
-  suite_server_pid="" suite_tgt="" suite_keep_wt=0
+  suite_server_pid="" suite_tgt="" suite_keep_wt=0 suite_tested_tree=""
   mkdir -p "$suite_dir"
   suite_wt="${LANE_WT:-/home/user/wt}/suite-${tree:0:12}"
+  # One deploy per tree at a time: a second would replace the first's worktree under it. The lock lives with this shell.
+  mkdir -p "$(dirname "$suite_wt")"
+  exec 7>"$suite_wt.lock"
+  flock -n 7 || { echo "deploy-preview: another deploy holds $suite_wt (lock $suite_wt.lock); not starting a second one on the same tree" >&2; exit 1; }
+  suite_tested_tree="$tree"
   trap suite_cleanup EXIT
   pinned_worktree_add "$repo_root" "$head" "$suite_wt" || { echo "deploy-preview: could not create the private worktree $suite_wt" >&2; exit 1; }
   suite_root="$suite_wt"
@@ -165,7 +171,7 @@ release_suite() {
     echo "deploy-preview: port $port already answers (a stale server?); refusing to test whatever it serves. Stop it or set DEPLOY_SUITE_PORT." >&2
     exit 1
   fi
-  python3 "$suite_wt/scripts/serve-spa.py" "$pub" "$port" >/dev/null 2>&1 9>&- 3>&- </dev/null &
+  python3 "$suite_wt/scripts/serve-spa.py" "$pub" "$port" >/dev/null 2>&1 9>&- 3>&- 7>&- </dev/null &
   suite_server_pid=$!
   for _ in $(seq 1 50); do curl -fsS -o /dev/null "http://127.0.0.1:$port/" && break; kill -0 "$suite_server_pid" 2>/dev/null || break; sleep 0.2; done
   if ! kill -0 "$suite_server_pid" 2>/dev/null || ! curl -fsS "http://127.0.0.1:$port/" | cmp -s - "$pub/index.html"; then
@@ -215,8 +221,14 @@ mkdir -p "$target_dir"
 
 # Row 322: the release suite gates the build (header). After the target checks above, so a wrong tree is refused
 # before anything runs.
+suite_tested_tree=""
 release_suite
 if [ "$suite_only" = 1 ]; then exit 0; fi
+# The deploy build below reads THIS checkout, and the suite tested a pinned tree: publish nothing the suite did not test.
+if [ -n "$suite_tested_tree" ]; then
+  ( cd "$repo_root/playwright" && node tools/suite-key.mjs worktree --tree "$suite_tested_tree" ) \
+    || { echo "deploy-preview: this checkout is not the tree the release suite tested ($suite_tested_tree), or a tracked file changed since; refusing to build docs/ from it" >&2; exit 2; }
+fi
 
 # Same path build-ssg.sh derives for `release` (it also prints it as PUBLIC_DIR=).
 public_dir="$target_dir/dx/preview/release/web/public"
