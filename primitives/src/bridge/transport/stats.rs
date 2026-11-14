@@ -22,6 +22,9 @@ use serde_json::{json, Value};
 pub(in crate::bridge) const READOUT_VAR: &str = "DX_BRIDGE_STATS";
 /// The environment variable that adds a ping per frame (any non-empty value).
 pub(in crate::bridge) const PING_VAR: &str = "DX_BRIDGE_PING";
+/// The environment variable that sets the milliseconds the page burns on every message each way (the busy-case
+/// emulation). It rides on the messages the transport already sends.
+pub(in crate::bridge) const SPIN_VAR: &str = "DX_BRIDGE_SPIN";
 /// Samples kept per duration; older ones are overwritten.
 const RING: usize = 4096;
 
@@ -43,6 +46,26 @@ pub(in crate::bridge) fn readout_path() -> Option<PathBuf> {
     std::env::var_os(READOUT_VAR)
         .filter(|path| !path.is_empty())
         .map(PathBuf::from)
+}
+
+/// The spin the environment names, 0 when unset or not a number.
+pub(in crate::bridge) fn spin_from(value: Option<std::ffi::OsString>) -> u32 {
+    value
+        .and_then(|v| v.to_str()?.trim().parse().ok())
+        .unwrap_or(0)
+}
+
+/// One message of the ordered channel as it goes on the wire: `stats` asks for the page's counters and `spin`, when
+/// not 0, sets the page's busy-case milliseconds.
+pub(in crate::bridge) fn wire(id: Option<u64>, ops: Vec<Value>, stats: bool, spin: u32) -> Value {
+    let mut wire = json!({ "id": id, "ops": ops });
+    if stats {
+        wire["stats"] = Value::Bool(true);
+    }
+    if spin > 0 {
+        wire["spin"] = spin.into();
+    }
+    wire
 }
 
 pub(in crate::bridge) fn ping_enabled() -> bool {
@@ -89,6 +112,8 @@ impl Ring {
 pub(in crate::bridge) struct Stats {
     /// The read-out file, read from the environment once; bytes are counted only when it is set.
     pub(in crate::bridge) readout: Option<PathBuf>,
+    /// The page's busy-case milliseconds, from [`SPIN_VAR`].
+    pub(in crate::bridge) spin: u32,
     fired: u64,
     asked: u64,
     ops: u64,
@@ -103,6 +128,7 @@ impl Default for Stats {
     fn default() -> Self {
         Stats {
             readout: readout_path(),
+            spin: spin_from(std::env::var_os(SPIN_VAR)),
             fired: 0,
             asked: 0,
             ops: 0,
@@ -215,6 +241,19 @@ pub(in crate::bridge) fn start(hub: super::Hub) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_spin_variable_rides_on_every_wire_message() {
+        assert_eq!(spin_from(None), 0);
+        assert_eq!(spin_from(Some("x".into())), 0);
+        assert_eq!(spin_from(Some("3".into())), 3);
+        let on = wire(Some(2), vec![], false, 3);
+        assert_eq!(on["spin"], 3);
+        assert_eq!(on["id"], 2);
+        let off = wire(None, vec![], true, 0);
+        assert!(off.get("spin").is_none());
+        assert_eq!(off["stats"], true);
+    }
 
     #[test]
     fn the_environment_variable_names_the_readout_file() {

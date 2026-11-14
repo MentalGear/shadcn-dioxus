@@ -374,15 +374,15 @@ function deferDelivery(n: ChannelMode, deliver: () => void): void {
 /**
  * `raw` with the harness applied to `send` and `recv`, and counted in `window.__dxBridgeStats` (the first 32 channels
  * keep `sent`, `recv` and `turn`, the last 256 page turns in ms; later ones share the last). A message flagged `stats`
- * is answered with the whole object. `?dx-bridge-spin=ms` burns that long per message each way. A wrapped channel
- * is returned as it is.
+ * is answered with the whole object. A `spin` ms on a message from Rust (or `window.__dxBridgeSpin`) burns that long
+ * per message each way. A wrapped channel is returned as it is.
  */
 function channel(raw: DioxusChannel): DioxusChannel {
   if ((raw as any).__dxWrapped) return raw;
   const all = (W.__dxBridgeStats ||= { channels: [] });
   const rec = { sent: 0, recv: 0, turn: [] as number[] };
   const st = all.channels.length < 32 ? (all.channels.push(rec), rec) : all.channels[31];
-  const spin = +(W.__dxBridgeSpin ?? new URLSearchParams(W.location?.search).get("dx-bridge-spin")) || 0;
+  let spin = +W.__dxBridgeSpin || 0;
   let at = -1;
   let asked: unknown;
   const burn = () => {
@@ -404,7 +404,8 @@ function channel(raw: DioxusChannel): DioxusChannel {
     },
     recv() {
       return raw.recv().then((message) => {
-        const got = message as { id?: unknown; stats?: unknown } | null;
+        const got = message as { id?: unknown; stats?: unknown; spin?: unknown } | null;
+        if (got?.spin !== undefined) spin = +(got.spin as number) || 0;
         st.recv++;
         at = W.performance.now();
         asked = got?.stats ? got.id : undefined;

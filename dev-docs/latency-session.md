@@ -28,7 +28,8 @@ set -a; . preview/desktop-latency.env; set +a
 ```
 
 1. In the window open the Dialog demo and press its trigger once. The stats start with the first message on the
-   bridge, so a page that never talks to it writes no file.
+   bridge, so a page that never talks to it writes no file. Run once as above, then once more with
+   `DX_BRIDGE_SPIN=3` added to the environment for the busy case.
 2. Stay on the Demos page and use it for about 3 minutes: scroll, hover rows, open and close a popover or a menu,
    type in an input. The environment's ping adds one trivial message per frame (about 60 a second) under whatever
    the page renders, so the distribution fills even while you are idle.
@@ -49,11 +50,10 @@ closing the window never leaves half a file.
   milliseconds. A round trip minus its turn is the transport's share.
 - `arm`: `webview` (this session) or `native` (no JavaScript, `page` is `null`).
 
-## On the web, without a desktop build
+## Busy case and the web
 
 Open any page in Chrome or Safari: `window.__dxBridgeStats` is the same object as `page` above.
-`?dx-bridge-spin=3` burns 3 ms on every bridge message each way, an emulation of the desktop's per-message cost for
-a feel test on a trackpad. It is not a desktop model. Rust's own timing (`rust.*`) is read on native targets only.
+`DX_BRIDGE_SPIN=3` in the environment of a desktop run burns 3 ms in the page on every bridge message each way: the busy main thread case. On the web a spec or console sets `window.__dxBridgeSpin = 3` before the bridge loads. It is a bridge-latency emulation, not a desktop model. Rust's own timing (`rust.*`) is read on native targets only.
 
 ## What the first run must confirm
 

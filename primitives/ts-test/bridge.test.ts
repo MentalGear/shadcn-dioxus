@@ -522,20 +522,34 @@ describe("the channel counters (window.__dxBridgeStats)", () => {
 });
 
 describe("the busy-case spin hook", () => {
-  test("burns the set milliseconds on every message each way and is off by default", async () => {
+  test("a message from Rust sets the milliseconds burned on every message each way; off by default", async () => {
     const { win, bridge } = setup();
     let t = 0;
     win.performance.now = () => (t += 1);
     const quiet = makeChannel();
     bridge.channel(quiet).send("a");
     expect(t).toBe(0);
-    win.__dxBridgeSpin = 3;
     const raw = makeChannel();
     const ch = bridge.channel(raw);
+    raw.push({ id: 1, ops: [], spin: 4 });
     const before = t;
-    ch.send("b");
-    expect(t - before).toBeGreaterThanOrEqual(3);
-    expect(raw.sent).toEqual(["b"]);
+    await ch.recv();
+    expect(t - before).toBeGreaterThanOrEqual(4);
+    const mid = t;
+    ch.send({ id: 1, results: [] });
+    expect(t - mid).toBeGreaterThanOrEqual(4);
+  });
+
+  test("the page global sets it before load and no query string does", () => {
+    const { win, bridge } = setup();
+    win.location = { search: "?dx-bridge-spin=9" };
+    let t = 0;
+    win.performance.now = () => (t += 1);
+    bridge.channel(makeChannel()).send("a");
+    expect(t).toBe(0);
+    win.__dxBridgeSpin = 3;
+    bridge.channel(makeChannel()).send("b");
+    expect(t).toBeGreaterThanOrEqual(3);
   });
 });
 

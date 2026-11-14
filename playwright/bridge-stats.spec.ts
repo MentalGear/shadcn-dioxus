@@ -70,17 +70,25 @@ test.describe("the bridge's channel counters", () => {
     expect(answer.stats.channels[0].recv).toBe(1);
   });
 
-  test("?dx-bridge-spin burns that long per message each way", async ({ page }) => {
-    await load(page, "http://dx.test/?dx-bridge-spin=5");
-    const ms = await page.evaluate(async () => {
-      const w = window as any;
-      const spun = w.__dxBridge.channel({ send() {}, recv: () => Promise.resolve("m") });
+  test("a spin set before load, and one sent by Rust, burn that long per message each way", async ({ page }) => {
+    await page.addInitScript(() => ((window as any).__dxBridgeSpin = 5));
+    await load(page);
+    const set = await page.evaluate(async () => {
+      const spun = (window as any).__dxBridge.channel({ send() {}, recv: () => Promise.resolve("m") });
       const t0 = performance.now();
       spun.send("a");
       await spun.recv();
       return performance.now() - t0;
     });
-    expect(ms).toBeGreaterThanOrEqual(10);
+    expect(set).toBeGreaterThanOrEqual(10);
+    const sent = await page.evaluate(async () => {
+      const w = window as any;
+      w.raw.push({ id: 9, ops: [], spin: 6 });
+      const t0 = performance.now();
+      await w.ch.recv();
+      return performance.now() - t0;
+    });
+    expect(sent).toBeGreaterThanOrEqual(6);
   });
 });
 

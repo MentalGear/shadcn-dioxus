@@ -91,7 +91,7 @@ use crate::dioxus_core::{
 use dioxus::document::{self, Eval, EvalError};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
+use serde_json::Value;
 
 use super::BridgeError;
 
@@ -408,10 +408,8 @@ fn flush(hub: &Hub) {
     });
     for message in merge(batch) {
         let (ops, id) = (message.ops.len(), message.id);
-        let mut wire = json!({ "id": id, "ops": message.ops });
-        if message.stats {
-            wire["stats"] = Value::Bool(true);
-        }
+        let spin = hub.0.borrow().stats.spin;
+        let wire = stats::wire(id, message.ops, message.stats, spin);
         {
             let mut channel = hub.0.borrow_mut();
             let bytes = if channel.stats.readout.is_some() {
@@ -521,6 +519,7 @@ fn values<T: Serialize>(ops: &[T]) -> Vec<Value> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serde_json::json;
     use dioxus::prelude::*;
     use std::cell::Cell;
 
