@@ -125,4 +125,6 @@ the line here is the pointer, so when a row's text and this line disagree, the r
   [517](./backlog/517-chart-tooltip-on-the-tooltip-layer.md).
 - An entry animation does not depend on `@starting-style` or on animating from `display: none`, anywhere in the
   library (owner 2026-11-14: "good to fix the same pattern everywhere"), row
-  [516](./backlog/done/516-overlay-entry-motion-without-starting-style.md).
+  [516](./backlog/done/516-overlay-entry-motion-without-starting-style.md). The engine that showed the missing
+  chart-tooltip fade-in was Firefox (owner 2026-11-14); the construction removes the dependency, so the report is
+  closed without a Firefox run (owner: "we can mark this as done").
