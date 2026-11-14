@@ -1,6 +1,8 @@
 # check-js-volume baseline (scripts/lib/ratchet.py): shrink-only per-file counts, regenerate with --update-baseline.
 #! columns: sink js_lit js_file_bytes install inline_script comment_eval expect_disallowed
 # path	sink	js_lit	js_file_bytes	install	inline_script	comment_eval	expect_disallowed
+#! total-raised: row 509 total=481802 the kernel loader, the codec and the stand-down report of the Rust decision contract (total 477224->481802)
+#! total-raised: row 446 total=483191 the apply table and the witness hooks of the witness harness (total 481802->483191)
 labs/carousel-lab/src/main.rs	2	0	0	0	0	0	0
 preview/build.rs	0	12	0	0	0	0	0
 preview/index.html	0	0	0	0	7453	0	0
@@ -43,8 +45,8 @@ primitives/src/avatar.rs	1	13	0	0	0	0	1
 primitives/src/bridge/behaviours.rs	2	3	0	0	0	0	0
 primitives/src/bridge/events.rs	1	0	0	0	0	0	0
 primitives/src/bridge/mod.rs	1	0	0	0	0	0	0
-primitives/src/bridge/session.rs	1	0	0	0	0	0	0
-primitives/src/bridge/transport.rs	4	6	0	0	0	0	3
+primitives/src/bridge/session.rs	4	0	0	0	0	0	0	# raised: row 509 the kernel loader, the codec and the stand-down report of the Rust decision contract (sink 1->4)
+primitives/src/bridge/transport.rs	4	7	0	0	0	0	3	# raised: row 509 the kernel loader, the codec and the stand-down report of the Rust decision contract (js_lit 6->7)
 primitives/src/carousel/autoplay.rs	1	1	0	0	0	0	1
 primitives/src/carousel/context.rs	1	1	0	0	0	0	1
 primitives/src/carousel/drag.rs	0	537	0	1	0	0	0
@@ -62,8 +64,8 @@ primitives/src/drag_and_drop_list.rs	0	11	0	1	0	0	5
 primitives/src/drawer.rs	0	136	0	3	0	0	0
 primitives/src/hover_intent.rs	0	10	0	1	0	0	0
 primitives/src/input_otp.rs	1	59	0	2	0	0	1
-primitives/src/js/behaviours/fixture.js	0	0	553	0	0	0	0
-primitives/src/js/bridge.js	0	0	22558	0	0	0	0	# raised: row 454 the publish option and the closed bridge rows L27, S16 and S14 first need (js_file_bytes 19956->22234); row 451 three closed bridge rows for the collection order read and the activity registry (js_file_bytes 22234->22558)
+primitives/src/js/behaviours/fixture.js	0	0	520	0	0	0	0
+primitives/src/js/bridge.js	0	0	28438	0	0	0	0	# raised: row 509 the kernel loader, the codec and the stand-down report of the Rust decision contract (js_file_bytes 22558->27049); row 446 the apply table and the witness hooks of the witness harness (js_file_bytes 27049->28438)
 primitives/src/js_listener.rs	1	7	0	0	0	0	0
 primitives/src/label.rs	0	8	0	1	0	0	0
 primitives/src/lib.rs	3	182	0	3	0	0	3
