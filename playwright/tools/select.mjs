@@ -70,6 +70,7 @@ import { makeTitleScopes } from "./select-titles.mjs";
 import { pickBase } from "./select-base.mjs";
 import { buildComponentGraph } from "./component-graph.mjs";
 import { witnessRule } from "./witness-rule.mjs";
+import { importersOf as importersOfFile } from "./import-graph.mjs";
 
 const PW = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const ROOT = path.resolve(PW, "..");
@@ -241,19 +242,9 @@ function compsUsingSubmodule(dir, sub) {
   return out;
 }
 
-// helper -> importing specs (transitive)
-function importersOf(helper) {
-  const hit = new Set(), queue = [helper];
-  const base = (f) => path.basename(f).replace(/\.ts$/, "");
-  while (queue.length) {
-    const h = queue.pop();
-    for (const f of Object.keys(src)) {
-      if (f === h || hit.has(f)) continue;
-      if (new RegExp(`from\\s+["'][./]*(?:[\\w./-]*/)?${base(h)}["']`).test(src[f])) { hit.add(f); if (!f.endsWith(".spec.ts")) queue.push(f); }
-    }
-  }
-  return [...hit].filter((f) => f.endsWith(".spec.ts"));
-}
+// helper -> importing specs (transitive): the walker is import-graph.mjs, the one suite-key.mjs reads a spec's files with
+const srcMap = new Map(Object.entries(src));
+const importersOf = (helper) => [...importersOfFile(helper, srcMap)].filter((f) => f.endsWith(".spec.ts"));
 
 // ---- map the diff --------------------------------------------------------------------------------------------
 const sel = new Map(); // spec -> reasons

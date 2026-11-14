@@ -297,6 +297,15 @@ cores, so a batch's verification runs once for the batch, not once per lane:
   the suite, the batch is verified by `scripts/deploy-preview.sh --suite-only` on the merged branch before it merges.
   The run is recorded against the exact tree (`$LANE_TGT/release-suite/<tree>.pass`), a merge commit on an unmoved main
   has the same tree, and the deploy reuses the stamp instead of running the suite again.
+- **A spec-only fix after a red suite re-runs only what it can affect.** Every spec file that runs writes a record, green
+  only when every test in it passed, under a site key (the hash of every input of the release build: the tree without
+  `playwright/`, `dev-docs/`, `docs/` and `primitives/ts-test/`, plus the `dev-docs` file the build includes) and a spec key
+  (the file, every module it imports, the config, the lock files, the data and the environment variables it reads, the
+  browser; `playwright/tools/suite-key.mjs`). The deploy accepts a tree when every spec file of it has a green record for
+  its site, and otherwise runs the files without one on the kept build of that site (about 55 MB, the two newest are kept).
+  A change to the site, the Playwright config, `fixtures.ts`, a lock file or the toolchain gives every file a new key and
+  runs the whole suite. The totals the deploy prints are the whole suite's, with the reused files stated separately;
+  `DEPLOY_SUITE_REUSE=off` runs the whole suite.
 - **The verifier** (one agent per batch) builds the shared base once, merges the batch's edit lanes, builds once, runs
   `test:changed` over the union, and bisects any red to its lane, which gets it back to fix.
 
