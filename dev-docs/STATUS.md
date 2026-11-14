@@ -45,9 +45,10 @@ row says otherwise, so a step runs as parallel lanes (one verifier per batch, `l
 1. Rows 436, 451, 454, 506 and 511 are done, and the first half of row **448** (the native-arm focus trap is deleted) is
    on main (PR #182). Rows **509** (the Rust decision contract) and **446** (the witness harness, on top of 509) are on
    main with the batch of 2026-11-14, with a fix to the volume gate's `ffi` pattern; each row lists what stays open.
-   **In flight:** row **447** (the order runtime; its first piece is built on `lane/order-runtime-447`) and the code
-   half of row **450** (`lane/bridge-stats-450`, built, waits for its `bytes` grant); row **513** (the release suite
-   reuses results across a spec-only change, `lane/suite-reuse-513`).
+   **Built, waiting for the owner's grants:** rows **450** (`lane/bridge-stats-450`) and **447** (the order runtime as
+   far as its file list allows, on `lane/order-runtime-447`, which contains row 450; 499 passed on a debug build of the
+   real site). Row **515** holds what row 447 leaves to the rows that own the consumers. Row **513** (the release suite
+   reuses a spec file's green result) is built.
 2. Done, merged in PR #170 (2026-11-11): the deploy blockers of PR #168 (rows 468, 501); row **436**'s overlay and
    class groups (F1, F2, F4, F5, F6, F8, F9, F10, F11, F12), each reproduced red first (CHANGELOG.md has the
    user-visible ones: F1, F10, F11); **499** (safe triangle; CHANGELOG.md too); **152** slices 4-5; **371**'s
@@ -130,8 +131,8 @@ ports), its working form is [`js-interop.md`](./js-interop.md), and every item h
   their raises; the hot-events `mounted` entry names row 514 (the per-row handle) and row 451 is closed; row 513 (reuse of release-suite results across spec-only changes) is approved.
 - Waits for the owner (2026-11-14): one row `bridge::boot` in the non-markup allowlist of `check-preview-composition`
   (row 447: the app calls `boot()` once at start, so the page marks the bridge ready before it marks itself hydrated);
-  the `bytes` grant of row 450 (`bytes=1400`, measured +1,336 on `ts/bridge.ts`); the `bytes` grant of row 447, whose
-  number follows when its page side is complete.
+  the grants `bytes=1400` for row 450 (measured +1,336 on `ts/bridge.ts`) and `bytes=6400, gzip_bytes=120` for row 447
+  (measured +5,900 on `ts/bridge.ts`, +440 on `types/bridge.d.ts`, +116 on the kernel).
 - Row 508's verdict is `KERNEL`, so row 509 opens without a further decision. Loading the
   kernel inside the desktop webview stays unproven until a desktop build exists (row 23).
 
