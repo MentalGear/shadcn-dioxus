@@ -118,7 +118,7 @@ Every row below is **APPROVED 2026-10-26 (owner: "okay for the plan"; scope 2)**
 | [451](./451-port-3-sc-shared-collection-and-activity.md) | Port 3.SC: shared collection and activity scripts (S7, S15) | 4 | 444, 445 |
 | [452](./452-port-3-pl-placement-anchor-fallback-and-the-paint-safe-gate.md) | Port 3.PL: placement (T1, T2, T8-T12, S1), the paint-safe gate and the boot probe | 28 | 444, 445, 449 |
 | [453](./453-port-3-pv-preview-glue-and-platform-rule-rows.md) | Port 3.PV: preview glue (V3-V23) with the V14 allowlist row and the Ctrl/Cmd+B platform rule row | 11 | 444, 452, 455 or 456 (`hotkey`), 457 (V6 last) |
-| [454](./454-port-3-ob-observers-and-publish-option.md) | Port 3.OB: observers and the publish option (L27, S16, S14) | 7 | 444, 445 |
+| [454](./done/454-port-3-ob-observers-and-publish-option.md) | Port 3.OB: observers and the publish option (L27, S16, S14) | 7 | 444, 445 |
 | [455](./455-port-3-gs-gestures-slider-resizable-drawer-toast-pan.md) | Port 3.GS: gestures and toast (L21, L28-L30, O1, O3, O5 with the pan behaviour, V17) | 17 | 444, 447, 448, 452 |
 | [456](./456-port-3-ov-overlay-core-escape-dismiss-open-focus.md) | Port 3.OV: overlay core (L1-L3, L5-L9, L16-L17, L22, L26) with openFocus | 29 | 444, 447, 448, 449 |
 | [457](./457-port-3-vs-virtual-settle-and-the-scrollowner-behaviour.md) | Port 3.VS: virtual settle (W1-W7) and the scrollOwner one-shot kind | 10 | 444, 447, 448 |

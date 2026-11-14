@@ -1,12 +1,12 @@
 ---
 id: 451
 title: "Port 3.SC: shared collection and activity scripts (S7, S15)"
-status: "LANDED in PR #180 (2026-11-13): S7 and S15 run on the bridge; three closed rows added, the legacy…"
+status: "LANDED in PR #180 (2026-11-13) plus the follow-up that adds the js-interop rows: S7 and S15 run on…"
 size: "M"
 area: primitives
 js-grant: js_file_bytes=1200, bytes=450 (measured on lane/port-sc-451 on top of row 454: js/bridge.js +324 and ts/bridge.ts +407 bytes for three closed rows; inferred ceiling: five closed bridge rows for S7 and S15, about 450 bytes of TypeScript plus about 350 in the bundle, with margin; the row that first needs a verb adds it, root doc section 5.2)
 adds: []
-updated: 2026-11-12
+updated: 2026-11-13
 ---
 
 # Row 451: Port 3.SC: shared collection and activity scripts (S7, S15)
@@ -19,7 +19,7 @@ Part of the [row 434](./434-javascript-in-typescript-modules-not-rust-strings.md
 
 ## Status / trigger
 
-LANDED in PR #180 (2026-11-13): S7 and S15 run on the bridge; three closed rows added, the legacy scripts are gone. The item under "Open" keeps the row open. (APPROVED 2026-10-26, scope 2.)
+LANDED in PR #180 (2026-11-13) plus the follow-up that adds the js-interop rows: S7 and S15 run on the bridge; three closed rows added; the legacy scripts are gone. **Open:** the per-row `onmounted` handle stays (see "The per-row `onmounted`"), and `scripts/check-hot-events.allow.tsv` excuses `mounted` in this row's name with the reason that a container handle replaces the per-row ones. That replacement belongs with the roving hub's focus writes ([row 462](./462-port-roving-focus-78-set-focus-sites.md)); the allow row is the owner's, so this row stays open until the owner re-points it or row 462 removes the handle. The skipped-subtree paths could not be pinned by a spec (see "Not provable on Chromium"); that is a finding, not an open item. (APPROVED 2026-10-26, scope 2.)
 
 **Grant (set on main by the main loop):** `js_file_bytes=1200`. Measured on top of row 454's own raise: `primitives/src/js/bridge.js` 22234 -> 22558 (+324 bytes) is the only `js_file_bytes` file this row raises; `bridge.d.ts` is unchanged. The TypeScript source `bridge.ts` grew 47097 -> 47504 bytes (+407), which the `check-bridge-behaviours` budget counts in canonical tokens, not `js_file_bytes`. The grant covers the raise (324 of 1200). Neither `check-js-volume` nor `check-bridge-behaviours` is re-baselined here.
 
@@ -82,8 +82,8 @@ Built with `lane-ssg.sh` (the wasm contains `attrsOf`), Chromium only (the WebKi
 
 ### What `dev-docs/js-interop.md` needs
 
-The "hooks that call scripts" row no longer lists `use_js_listeners` users `activity.rs`; the `use_motion` family and `collection.rs` are bridge consumers, and the closed reads gain `AttrsOf`, the closed events gain `contentvisibilityautostatechange`.
+Done: the bridge tables list `AttrsOf`, `Contentvisibilityautostatechange` and the intersection height fields next to row 454's additions (`write`/`Slot`, `publish`, the viewport targets and fields).
 
-### Open
+### Not provable on Chromium (finding)
 
-- No spec pins an element that is already skipped at subscribe, or a skipped-subtree change while in view; the `contentvisibilityautostatechange` path is exercised only by the listener inventory.
+The two paths "an element already skipped at subscribe" and "a skipped-subtree change while in view" need an element for which the observer says "seen" while `checkVisibility({ contentVisibilityAuto: true })` says "skipped". Measured on the debug build (Chromium, a `content-visibility: auto` wrapper moved by a transform, viewport 10 px high, an `IntersectionObserver` with the registry's 200 px `rootMargin` beside the `checkVisibility` read): at wrapper offsets 140 to 160 px both say "in view" (`io` true, `cv` true); from 165 px on `cv` says skipped and the observer says not intersecting, though 200 px of margin would still cover the element up to 210 px. With a 50 px high viewport the observer turns false (at 260 px) before `cv` turns skipped (by 300 px), and with a 100 px wide by 50 px high viewport both flip between 220 and 240 px; no offset had the observer true and `cv` skipped. A skipped subtree has no box, so the observer drops the element in the same step. So `seen && skipped` never holds there; every outcome the registry produces (paused, then running again) comes from the observer alone, and a spec for either path would pass with the skipped logic removed. No such spec was written. The `contentvisibilityautostatechange` listener stays exercised by the listener-inventory case; whether the second signal earns its page-wide listener is a product question for the owner, not a test.

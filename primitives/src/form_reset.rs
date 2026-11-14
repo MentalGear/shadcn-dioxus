@@ -42,6 +42,7 @@
 //! renders once.
 
 use std::cell::RefCell;
+use std::rc::Rc;
 
 use dioxus::html::{FileData, FormData, FormValue, HasFileData, HasFormData};
 use dioxus::prelude::*;
@@ -106,37 +107,47 @@ struct Read {
 /// A control that heard a reset or mounted: its id and what to do with what is read.
 type Waiting = (String, Box<dyn FnMut(Read)>);
 
-thread_local! {
-    /// The controls waiting for the one read; `None` while no read is scheduled.
-    static QUEUE: RefCell<Option<Vec<Waiting>>> = const { RefCell::new(None) };
+/// The controls of one VirtualDom (one window) waiting for the one read, in its root context as the
+/// transport's state is: a second desktop window is a second webview on the same thread, and a
+/// thread-wide queue would send its fields' reads through the first window's batch. `None` while no
+/// read is scheduled.
+#[derive(Clone, Default)]
+struct ReadQueue(Rc<RefCell<Option<Vec<Waiting>>>>);
+
+/// This VirtualDom's queue.
+fn read_queue() -> ReadQueue {
+    try_consume_context::<ReadQueue>().unwrap_or_else(|| {
+        let queue = ReadQueue::default();
+        crate::dioxus_core::provide_root_context(queue.clone());
+        queue
+    })
 }
 
 /// Adds a control to the next read, scheduling it when it is the first.
 fn queue_read(id: String, on_value: Box<dyn FnMut(Read)>) {
-    let first = QUEUE.with(|queue| {
-        let mut queue = queue.borrow_mut();
-        match queue.as_mut() {
+    let queue = read_queue();
+    let first = {
+        let mut slot = queue.0.borrow_mut();
+        match slot.as_mut() {
             Some(waiting) => {
                 waiting.push((id, on_value));
                 false
             }
             None => {
-                *queue = Some(vec![(id, on_value)]);
+                *slot = Some(vec![(id, on_value)]);
                 true
             }
         }
-    });
+    };
     if first {
         // interval-ok: one task per read batch, ends after it has reported; it must outlive the first field's component
-        crate::dioxus_core::spawn_forever(async {
+        crate::dioxus_core::spawn_forever(async move {
             // The `reset` event is dispatched before the browser restores the values, and the
             // microtasks that carried every field's message run in between: the next task is after
             // the restore.
             // motion-ok: a task boundary, not a duration; it orders this read after the browser's restore
             crate::sleep::sleep(std::time::Duration::from_millis(0)).await;
-            let waiting = QUEUE
-                .with(|queue| queue.borrow_mut().take())
-                .unwrap_or_default();
+            let waiting = queue.0.borrow_mut().take().unwrap_or_default();
             let mut transaction = bridge::Transaction::new();
             for (id, _) in &waiting {
                 transaction =
@@ -279,6 +290,28 @@ mod tests {
     /// The attributes `use_form_value_report` hands back for a control given `attributes`.
     fn owned_by_report(attributes: Vec<Attribute>) -> Vec<Attribute> {
         with_runtime(move || use_form_value_report(&attributes, None, None, Some("")))
+    }
+
+    /// A second window is a second VirtualDom on the same thread: its reads are its own batch.
+    #[test]
+    fn a_second_runtime_queues_its_own_reads() {
+        with_runtime(|| {
+            queue_read("a".to_owned(), Box::new(|_| {}));
+            assert_eq!(queued_reads(), 1);
+        });
+        with_runtime(|| {
+            assert_eq!(
+                queued_reads(),
+                0,
+                "the second window has queued nothing yet"
+            );
+            queue_read("b".to_owned(), Box::new(|_| {}));
+            assert_eq!(queued_reads(), 1);
+        });
+    }
+
+    fn queued_reads() -> usize {
+        read_queue().0.borrow().as_ref().map_or(0, Vec::len)
     }
 
     #[test]

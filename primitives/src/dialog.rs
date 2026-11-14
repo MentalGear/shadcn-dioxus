@@ -20,8 +20,8 @@
 //! both targets (dev-docs/plan.md Phase 4.2 scopes native `<dialog>` to the modal path).
 //! `DialogContentModal` (`is_modal: true`) is cfg-split
 //! (`dev-docs/archive/research/phase4-spike-findings.md` Construction B):
-//! - `#[cfg(feature = "native")]`: the plain
-//!   `div` + vendored `FocusTrap` path.
+//! - `#[cfg(feature = "native")]`: a plain `div` with `role="dialog"` and `aria-modal`, and no focus
+//!   trap (Blitz runs no script; a real trap there is row 438's).
 //! - `#[cfg(not(feature = "native"))]`: a real `<dialog>` element, `open`
 //!   never bound as an attribute (binding
 //!   it declaratively in the same build as a guarded `showModal()` call
@@ -37,7 +37,7 @@
 //!   experiment 6's `elementFromPoint` finding), so the core's `Backdrop` press mode
 //!   tests the pointer against the dialog's rect instead of `!root.contains(target)`.
 //!   No closing Escape layer and no
-//!   focus-trap eval on this arm: the browser's own `showModal()` supplies
+//!   focus trap of its own on this arm: the browser's own `showModal()` supplies
 //!   the focus trap, focus restore, inertness, and top layer, and its
 //!   `cancel`/`close` events (synced above) already handle Escape.
 //!
@@ -74,8 +74,6 @@
 //! top layer).
 
 use crate::state_attrs;
-#[cfg(feature = "native")]
-use dioxus::document;
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
 
@@ -268,7 +266,6 @@ pub fn DialogRoot(props: DialogRootProps) -> Element {
     ]);
 
     rsx! {
-        {crate::focus_trap_script()}
         if render() {
             div {
                 id,
@@ -475,8 +472,8 @@ fn DialogContentNonModal(
     }
 }
 
-/// `is_modal: true` arm, native (Blitz) target: a plain `div` with the
-/// vendored `FocusTrap` (no native `<dialog>`).
+/// `is_modal: true` arm, native (Blitz) target: a plain `div` (no native `<dialog>`) with
+/// `aria-modal` and no focus trap.
 #[cfg(feature = "native")]
 #[component]
 fn DialogContentModal(
@@ -494,7 +491,6 @@ fn DialogContentModal(
     children: Element,
 ) -> Element {
     let ctx: DialogCtx = use_context();
-    let open = ctx.open;
     let set_open = ctx.set_open;
 
     // Add a escape key listener to the document when the dialog is open. We can't
@@ -512,28 +508,6 @@ fn DialogContentModal(
             }
         },
     );
-
-    use_effect(move || {
-        #[expect(
-            clippy::disallowed_methods,
-            reason = "row 456: this page script is ported by row 456"
-        )]
-        let eval = document::eval(
-            r#"let id = await dioxus.recv();
-            let is_open = await dioxus.recv();
-            let dialog = document.getElementById(id);
-
-            if (is_open) {
-                dialog.trap = window.createFocusTrap(dialog);
-            }
-            if (!is_open && dialog.trap) {
-                dialog.trap.remove();
-                dialog.trap = null;
-            }"#,
-        );
-        let _ = eval.send(id.to_string());
-        let _ = eval.send(open.cloned());
-    });
 
     // Owned by this component -- see `DialogContentNonModal`'s identical
     // construction above (`dev-docs/backlog.md` row 93).

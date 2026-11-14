@@ -67,6 +67,7 @@ use std::cell::Cell;
 use dioxus::prelude::*;
 use serde::Serialize;
 
+use crate::delayed_action::{use_delayed_action, DelayedAction};
 use crate::{dismiss_listeners, js_listener::use_js_listeners};
 
 /// What Escape does to a layer.
@@ -304,7 +305,7 @@ pub(crate) fn escape_in_gap(event: &KeyboardEvent, requested: bool, close: impl 
 /// does not run, so a late timer cannot reopen what the user has already closed.
 #[derive(Clone, Copy)]
 pub(crate) struct OpenGap {
-    task: Signal<Option<dioxus::core::Task>>,
+    task: DelayedAction,
     /// The value of `writes` when the wait began.
     since: Signal<u64>,
     writes: ReadSignal<u64>,
@@ -314,7 +315,7 @@ pub(crate) struct OpenGap {
 /// it unconditionally, once per render.
 pub(crate) fn use_open_gap(writes: ReadSignal<u64>) -> OpenGap {
     OpenGap {
-        task: use_signal(|| None),
+        task: use_delayed_action(),
         since: use_signal(|| 0),
         writes,
     }
@@ -324,18 +325,13 @@ impl OpenGap {
     /// Run `open` one task from now, replacing a wait already pending, unless the open state is
     /// written by something else first.
     pub(crate) fn defer(mut self, open: impl FnOnce() + 'static) {
-        self.cancel();
         self.since.set(*self.writes.peek());
-        let mut slot = self.task;
         let this = self;
-        let task = spawn(async move {
-            crate::sleep::sleep(std::time::Duration::ZERO).await;
-            slot.set(None);
+        self.task.schedule(std::time::Duration::ZERO, move || {
             if this.current() {
                 open();
             }
         });
-        self.task.set(Some(task));
     }
 
     /// Whether no other write to the open state has happened since the wait began.
@@ -345,14 +341,12 @@ impl OpenGap {
 
     /// Whether an open is waiting for its task.
     pub(crate) fn pending(self) -> bool {
-        self.task.peek().is_some() && self.current()
+        self.task.is_pending_untracked() && self.current()
     }
 
     /// Drop the wait, if any.
     pub(crate) fn cancel(mut self) {
-        if let Some(task) = self.task.write().take() {
-            task.cancel();
-        }
+        self.task.cancel();
     }
 
     /// The trigger's Escape arm: [`escape_in_gap`] for an overlay that is `open` or waiting on this

@@ -22,6 +22,14 @@ below are collected under "Unreleased" and move under a version heading at the f
 
 ### Fixed
 
+- A menu root (DropdownMenu, ContextMenu, Menubar) given an `id` that changes later keeps its outside-press and
+  outside-focus dismissal: the dismiss layer follows the current `id` instead of the first one, and returns to the
+  generated id when the `id` is dropped.
+- On desktop with two windows, a Slider, Resizable handle or ColorPicker drag in the second window now tracks the
+  pointer while the first window has a drag in progress, and a form reset in one window no longer queues behind the
+  other window's read: the pointer bridge and the reset read are per window. The scroll lock and the
+  once-per-page stylesheets (scrollbar gutter, anchored positioning, top-layer ink, toast base) are per window too,
+  so a second window's dialog locks its own page and gets its own styles.
 - Pressing Escape just after a submenu starts closing (during its close animation) no longer swallows the key: the
   enclosing menu now receives it and closes too, instead of being left open.
 - A non-primary pointer button (middle-click, a stylus's barrel button) on a Slider, Resizable handle or

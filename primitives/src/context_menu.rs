@@ -14,7 +14,7 @@
 //! (`SelectOn::PressRelease`), so the long press that opened the menu and
 //! lifts over an item selects nothing.
 
-use crate::sleep::sleep;
+use crate::delayed_action::{use_delayed_action, DelayedAction};
 use crate::state_attrs;
 use crate::{
     collection::{use_collection_provider, CollectionState},
@@ -31,7 +31,6 @@ use crate::{
 };
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
-use dioxus_core::Task;
 use std::time::Duration;
 
 /// How long a touch must be held before the context menu opens.
@@ -391,15 +390,15 @@ pub fn ContextMenuTrigger(props: ContextMenuTriggerProps) -> Element {
     // iOS Safari does not deliver `contextmenu` from a long-press on touch, so
     // we run a manual timer keyed on the initial touch position and fire it
     // ourselves once the finger has held still long enough.
-    let mut long_press_task: Signal<Option<Task>> = use_signal(|| None);
+    let long_press = use_delayed_action();
+    // How long the compat `contextmenu` that Android re-dispatches after a long press stays suppressed.
+    let disarm = use_delayed_action();
     let mut long_press_start: Signal<Option<(f64, f64)>> = use_signal(|| None);
     let mut long_press_just_fired = ctx.long_press_just_fired;
 
     let cancel_long_press =
-        move |mut task: Signal<Option<Task>>, mut start: Signal<Option<(f64, f64)>>| {
-            if let Some(t) = task.write().take() {
-                t.cancel();
-            }
+        move |mut press: DelayedAction, mut start: Signal<Option<(f64, f64)>>| {
+            press.cancel();
             start.set(None);
         };
 
@@ -408,7 +407,7 @@ pub fn ContextMenuTrigger(props: ContextMenuTriggerProps) -> Element {
             // Android Chrome dispatches `contextmenu` ~500ms after a touch long
             // press, which can race our own timer. Defuse the race so only one
             // open lands.
-            cancel_long_press(long_press_task, long_press_start);
+            cancel_long_press(long_press, long_press_start);
             if long_press_just_fired.cloned() {
                 // Timer already opened the menu; suppress the browser context
                 // menu but don't open a second time. Leave the flag set —
@@ -443,26 +442,26 @@ pub fn ContextMenuTrigger(props: ContextMenuTriggerProps) -> Element {
         if event.pointer_type() == "mouse" || (ctx.disabled)() {
             return;
         }
-        cancel_long_press(long_press_task, long_press_start);
+        cancel_long_press(long_press, long_press_start);
         let p = event.client_coordinates();
         let page = event.page_coordinates();
         long_press_start.set(Some((p.x, p.y)));
         let set_open = ctx.set_open;
         let mut position = ctx.position;
         let mut client_position = ctx.client_position;
-        let task = spawn(async move {
-            sleep(LONG_PRESS_DURATION).await;
-            long_press_task.set(None);
+        let mut press = long_press;
+        let mut disarm = disarm;
+        press.schedule(LONG_PRESS_DURATION, move || {
             position.set((page.x as i32, page.y as i32));
             client_position.set((p.x as i32, p.y as i32));
             set_open.call(true);
             // Stay armed long enough to catch Android's compat `contextmenu`,
             // then disarm so future mouse right-clicks aren't suppressed.
             long_press_just_fired.set(true);
-            sleep(Duration::from_millis(700)).await;
-            long_press_just_fired.set(false);
+            disarm.schedule(Duration::from_millis(700), move || {
+                long_press_just_fired.set(false);
+            });
         });
-        long_press_task.set(Some(task));
     };
 
     let handle_pointer_move = move |event: Event<PointerData>| {
@@ -473,12 +472,12 @@ pub fn ContextMenuTrigger(props: ContextMenuTriggerProps) -> Element {
         let dx = p.x - sx;
         let dy = p.y - sy;
         if dx * dx + dy * dy > LONG_PRESS_MOVE_TOLERANCE_SQ {
-            cancel_long_press(long_press_task, long_press_start);
+            cancel_long_press(long_press, long_press_start);
         }
     };
 
     let handle_pointer_end = move |_event: Event<PointerData>| {
-        cancel_long_press(long_press_task, long_press_start);
+        cancel_long_press(long_press, long_press_start);
     };
 
     // Merged (caller-wins, deduped) for the same reason as `ContextMenuRoot`

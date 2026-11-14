@@ -10,14 +10,12 @@ use dioxus_attributes::attributes;
 use std::collections::VecDeque;
 use std::time::Duration;
 
-// `document`/`Cell` are only needed for the browser-arm's engine-injected
+// `document` is only needed for the browser-arm's engine-injected
 // baseline stylesheet (`ensure_toast_base_styles`, dev-docs/backlog.md row 44)
 // -- same shape as `top_layer.rs`'s `ensure_anchor_positioning_styles`,
 // which this mirrors.
 #[cfg(not(feature = "native"))]
 use dioxus::document;
-#[cfg(not(feature = "native"))]
-use std::cell::Cell;
 
 /// Toast types for different visual styles
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -688,15 +686,9 @@ cleanup(() => { changes.disconnect(); sizes.disconnect(); list.style.removePrope
 sync();
 "#;
 
+/// Marks that this window has its toast base stylesheet (per window, `crate::window_once`).
 #[cfg(not(feature = "native"))]
-thread_local! {
-    /// Whether [`ensure_toast_base_styles`] has already inserted its `<style>`
-    /// once in this WASM instance -- same idempotency guard
-    /// shape as `top_layer.rs`'s `ANCHOR_POSITIONING_STYLES_INSTALLED`
-    /// (itself modeled on `scroll_lock.rs`'s
-    /// `SCROLLBAR_GUTTER_BASELINE_INSTALLED`).
-    static TOAST_BASE_STYLES_INSTALLED: Cell<bool> = const { Cell::new(false) };
-}
+struct ToastBaseStyles;
 
 /// Installs a minimal, always-applied fallback stylesheet for the raw
 /// primitive's own markup, at most once per WASM instance -- dev-docs/backlog.md
@@ -753,7 +745,7 @@ thread_local! {
 /// positioning_styles)` call for the identical reason.
 #[cfg(not(feature = "native"))]
 fn ensure_toast_base_styles() {
-    if TOAST_BASE_STYLES_INSTALLED.with(|installed| installed.replace(true)) {
+    if !crate::window_once::first_in_window::<ToastBaseStyles>() {
         return;
     }
     crate::top_layer::insert_head_style("dx-toast-base-styles", include_str!("toast_base.css"));

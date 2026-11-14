@@ -1,4 +1,5 @@
 use super::*;
+use crate::delayed_action::{use_owned_delayed_action, DelayedAction};
 
 /// The context provided by the [`DatePicker`] component to its children.
 #[derive(Copy, Clone)]
@@ -95,8 +96,7 @@ pub(super) fn selection_close(close_on_select: bool, close_delay: Duration) -> S
 /// time between the click and the start of the exit animation.
 #[derive(Clone, Copy)]
 pub(super) struct CloseDwell {
-    pub(super) scope: ScopeId,
-    pub(super) task: Signal<Option<Task>>,
+    task: DelayedAction,
 }
 
 /// Create the picker's [`CloseDwell`] and wire it to the popover's `open` signal: the pending
@@ -106,8 +106,7 @@ pub(super) struct CloseDwell {
 /// from the picker root.
 pub(super) fn use_close_dwell(open: Signal<bool>) -> CloseDwell {
     let dwell = CloseDwell {
-        scope: current_scope_id(),
-        task: use_signal(|| None),
+        task: use_owned_delayed_action(),
     };
     use_effect(move || {
         let _ = open();
@@ -119,27 +118,17 @@ pub(super) fn use_close_dwell(open: Signal<bool>) -> CloseDwell {
 impl CloseDwell {
     /// Drop the pending close, if any.
     pub(super) fn cancel(mut self) {
-        let task = self.task.write().take();
-        if let Some(task) = task {
-            task.cancel();
-        }
+        self.task.cancel();
     }
 
     /// Whether a close is currently waiting out its dwell.
     pub(super) fn is_pending(self) -> bool {
-        self.task.peek().is_some()
+        self.task.is_pending_untracked()
     }
 
     /// Run `close` after `delay`, replacing whatever was already pending.
     pub(super) fn schedule(mut self, delay: Duration, close: impl FnOnce() + 'static) {
-        self.cancel();
-        let mut slot = self.task;
-        let task = Runtime::current().spawn(self.scope, async move {
-            sleep(delay).await;
-            slot.set(None);
-            close();
-        });
-        self.task.set(Some(task));
+        self.task.schedule(delay, close);
     }
 }
 

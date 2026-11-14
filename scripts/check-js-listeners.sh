@@ -40,7 +40,7 @@
 # NOT covered, said plainly: a listener added through another API (`web_sys`, an `on*` property, a
 # vendored script), `MutationObserver` / `ResizeObserver` / `IntersectionObserver` (the same class,
 # a different spelling; a grep cannot tell a bounded one from a perpetual one), and the generated
-# bundle `primitives/src/js/focus-trap.js` (its source `primitives/src/ts/focus-trap.ts` is scanned).
+# bundles under `primitives/src/js/` (their sources under `primitives/src/ts/` are scanned).
 # `playwright/oracle/tier2-html/listener-inventory.spec.ts` is the runtime backstop: it asks Chromium
 # (`DOMDebugger.getEventListeners`) which listeners `window` and `document` hold after every overlay
 # and route has been opened and closed again.
@@ -74,7 +74,7 @@ from pathlib import Path
 
 HELPER = "primitives/src/js_listener.rs"
 
-# Generated, not source: scripts/build-js-bundle.sh bundles primitives/src/ts/focus-trap.ts into it.
+# Generated, not source: scripts/build-js-bundle.sh bundles primitives/src/ts/ into it.
 GENERATED = ("primitives/src/js/",)
 
 # Registrations that are NOT hand-paired but still legitimate, in files whose owner has not

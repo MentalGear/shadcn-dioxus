@@ -31,7 +31,7 @@ use dioxus::prelude::*;
 use serde::Deserialize;
 
 use crate::bridge::{self, EventField, EventKind, ListenOptions, Prop, Target};
-use crate::menu_sub::{use_delayed_action, DelayedAction};
+use crate::delayed_action::{use_delayed_action, DelayedAction};
 
 /// How long the pointer may rest inside the triangle before the panel closes: a pointer that stops
 /// in the gap is not on its way to the panel.

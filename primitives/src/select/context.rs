@@ -1,12 +1,11 @@
 //! Context types and implementations for the select component.
 
-use crate::sleep::sleep;
 use dioxus::prelude::*;
-use dioxus_core::Task;
 
 use std::time::Duration;
 
 use super::text_search::AdaptiveKeyboard;
+use crate::delayed_action::DelayedAction;
 use crate::direction::Direction;
 use crate::selectable::{ListboxFocus, RcPartialEqValue, SelectableContext};
 
@@ -50,8 +49,8 @@ pub(super) struct SelectContext {
     pub adaptive_keyboard: Signal<AdaptiveKeyboard>,
     /// The typeahead buffer for searching options
     pub typeahead_buffer: Signal<String>,
-    /// The ID of the list for ARIA attributes
-    pub typeahead_clear_task: Signal<Option<Task>>,
+    /// The pending reset of the typeahead buffer
+    pub typeahead_clear: DelayedAction,
     /// Timeout before clearing typeahead buffer
     pub typeahead_timeout: ReadSignal<Duration>,
 
@@ -172,11 +171,6 @@ impl SelectContext {
 
     /// Add text to the typeahead buffer for searching
     pub fn add_to_typeahead_buffer(&mut self, text: &str) {
-        // Cancel any existing clear task to prevent race conditions
-        if let Some(existing_task) = self.typeahead_clear_task.write().take() {
-            existing_task.cancel();
-        }
-
         // Update the buffer and get the current content
         let typeahead = {
             let mut typeahead_buffer = self.typeahead_buffer.write();
@@ -184,24 +178,13 @@ impl SelectContext {
             typeahead_buffer.clone()
         };
 
-        // Create references for the async closure
+        // Clear the buffer after the configured timeout; rescheduling cancels the earlier clear so a
+        // stale one cannot wipe what this keystroke just extended
         let mut typeahead_buffer_signal = self.typeahead_buffer;
-        let mut typeahead_clear_task_signal = self.typeahead_clear_task;
-
-        // Spawn a new task to clear the buffer after the configured timeout
         let timeout = self.typeahead_timeout.cloned();
-        let new_task = spawn(async move {
-            sleep(timeout).await;
-
-            // Clear the buffer
+        self.typeahead_clear.schedule(timeout, move || {
             typeahead_buffer_signal.write().clear();
-
-            // Remove our own task handle to indicate no task is active
-            typeahead_clear_task_signal.write().take();
         });
-
-        // Store the new task handle
-        self.typeahead_clear_task.write().replace(new_task);
 
         // Focus the best match using adaptive keyboard
         let options = self.selectable.options.read();

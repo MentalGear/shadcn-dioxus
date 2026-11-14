@@ -149,9 +149,9 @@ done
 ok "every cargo-running gate is classified (reusable or reviewed never-reused)"
 
 # Rust sources that read files at RUN time through CARGO_MANIFEST_DIR. Each reads only inside the hashed set
-# (cli/new.rs: templates/; default_checked: primitives/src; the preview ones: preview/tests/shadcn, preview/src/components
+# (cli/new.rs: templates/; default_checked, delayed_action, window_once: primitives/src; the preview ones: preview/tests/shadcn, preview/src/components
 # docs.md, dev-docs/motion.md via include_str). A new reader must be added here AFTER checking its input is hashed.
-REVIEWED_READERS='cli/src/new.rs primitives/src/default_checked.rs preview/src/chart_tooltip_parity.rs preview/src/chart_parity.rs preview/src/polar_parity.rs preview/src/main.rs preview/src/motion_docs.rs'
+REVIEWED_READERS='cli/src/new.rs primitives/src/default_checked.rs primitives/src/delayed_action.rs primitives/src/window_once.rs preview/src/chart_tooltip_parity.rs preview/src/chart_parity.rs preview/src/polar_parity.rs preview/src/main.rs preview/src/motion_docs.rs'
 readers="$(git ls-files -z '*.rs' | xargs -0 grep -lE 'CARGO_MANIFEST_DIR' 2>/dev/null | grep -E '^(primitives|cli|preview|test-harness|dioxus-attributes|scripts/attr-spread-collision-checker)/' | sort | tr '\n' ' ')"
 for r in $readers; do
   [[ " $REVIEWED_READERS " == *" $r "* ]] || bad "$r reads files via CARGO_MANIFEST_DIR but is not in REVIEWED_READERS (scripts/check-gate-reuse.sh): is its input inside cargo-inputs-hash.sh's set?"

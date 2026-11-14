@@ -63,11 +63,10 @@
 
 use std::time::Duration;
 
-use crate::sleep::sleep;
 use dioxus::prelude::*;
-use dioxus_core::Task;
 
 use crate::collection::CollectionState;
+use crate::delayed_action::{use_delayed_action, DelayedAction};
 
 /// Buffer reset window: a printable character extends the current search if
 /// it arrives within this long of the previous one, else starts a fresh
@@ -159,7 +158,7 @@ pub(crate) fn find_next_match(
 #[derive(Clone, Copy)]
 pub(crate) struct TypeaheadState {
     buffer: Signal<String>,
-    clear_task: Signal<Option<Task>>,
+    clear: DelayedAction,
 }
 
 /// Create a fresh, empty [`TypeaheadState`]. Call unconditionally, once per
@@ -167,7 +166,7 @@ pub(crate) struct TypeaheadState {
 pub(crate) fn use_typeahead_state() -> TypeaheadState {
     TypeaheadState {
         buffer: use_signal(String::new),
-        clear_task: use_signal(|| None),
+        clear: use_delayed_action(),
     }
 }
 
@@ -205,27 +204,18 @@ impl TypeaheadState {
             return false;
         }
 
-        // Same cancel-then-reschedule shape as
-        // `SelectContext::add_to_typeahead_buffer` -- see that function's
-        // doc for why the old task is explicitly cancelled rather than left
-        // to resolve on its own (a stale clear firing after a fresher
-        // keystroke would wipe the buffer that keystroke just extended).
-        if let Some(existing_task) = self.clear_task.write().take() {
-            existing_task.cancel();
-        }
+        // Rescheduling cancels the earlier clear: a stale clear firing after a fresher keystroke would
+        // wipe the buffer that keystroke just extended.
         let buffer = {
             let mut buffer = self.buffer.write();
             buffer.push_str(&c);
             buffer.clone()
         };
         let mut buffer_signal = self.buffer;
-        let mut clear_task_signal = self.clear_task;
-        let task = spawn(async move {
-            sleep(Duration::from_millis(TYPEAHEAD_RESET_MS)).await;
-            buffer_signal.write().clear();
-            clear_task_signal.write().take();
-        });
-        self.clear_task.write().replace(task);
+        self.clear
+            .schedule(Duration::from_millis(TYPEAHEAD_RESET_MS), move || {
+                buffer_signal.write().clear();
+            });
 
         if let Some(index) = find_next_match(items, collection.focused_index(), &buffer) {
             collection.set_focus(Some(index));
