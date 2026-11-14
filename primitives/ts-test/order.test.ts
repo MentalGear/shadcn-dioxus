@@ -17,6 +17,7 @@ const fixture = (attr: string, value = "on") => ({
   value,
   capture: false,
   cancel: false,
+  focus: false,
   leaseMs: null,
 });
 const declared = { target: "element", event: "click", capture: false, passive: true, leaseMs: null };
@@ -249,5 +250,34 @@ describe("a focusout that leaves the document", () => {
     expect(inbound.frames).toEqual([]);
     win.document.dispatch("focusout", { target: host, relatedTarget: null });
     expect(inbound.frames).toEqual([{ seq: 1, sub: 0, t: "focus" }]);
+  });
+});
+
+describe("a decision's focus slot write", () => {
+  test("focuses the host without scrolling, and the focus it causes is Rust's own", () => {
+    const { bridge, win, host } = setup();
+    const inbound = makeChannel();
+    void bridge.inbound(inbound);
+    const seen: unknown[][] = [];
+    host.focus = (...args: unknown[]) => {
+      seen.push(args);
+      win.document.dispatch("focusin", { target: host });
+    };
+    const s = bridge.scope(makeChannel());
+    s.run({ cmd: "sub", id: 2 });
+    s.run({ cmd: "behaviour", target: "host", behaviour: { ...fixture("data-dx-fixture"), focus: true }, declared, epoch: { key: "behaviour:fixture", n: 1 } });
+    host.dispatch("click");
+    expect(seen).toEqual([[{ preventScroll: true }]]);
+    expect(inbound.frames.filter((f: any) => f.t)).toEqual([{ seq: 1, sub: 0, t: "focus", c: 1 }]);
+  });
+
+  test("a decision with no focus write does not focus", () => {
+    const { bridge, host } = setup();
+    let focused = 0;
+    host.focus = () => focused++;
+    const s = bridge.scope(makeChannel());
+    install(s, "data-dx-fixture");
+    host.dispatch("click");
+    expect(focused).toBe(0);
   });
 });

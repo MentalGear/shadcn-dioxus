@@ -874,15 +874,25 @@ let applying: Readonly<{ site: string; effect: string }> | null = null;
  * are not rows). Every write goes through `applyEffect`, which names the site and the effect while it runs, so the witness
  * harness can drop or delay exactly that call and no other.
  */
-type Effect = "prevent" | "stop" | "attrs";
-type EffectRow = (target: Event | Element, name: string, value: string) => void;
+type Effect = "prevent" | "stop" | "attrs" | "slot";
+type EffectRow = (target: Event | Element, name: string, value: unknown) => void;
+/**
+ * The owners of the native slots a decision may write (its `slots` list), one row per slot. Focus is one document-wide
+ * slot: the owner always passes `preventScroll`, so one focus write lands on the focus slot and never on a scroller.
+ * The write is Rust's own, so the focus it causes is reported with its cause and fences nothing.
+ */
+const SLOT_OWNERS: Record<string, (host: HTMLElement) => void> = {
+  focus: (host) => asRust(() => host.focus({ preventScroll: true })),
+};
+
 const APPLY: Readonly<Record<Effect, EffectRow>> = Object.freeze({
   prevent: (event) => (event as Event).preventDefault(),
   stop: (event) => (event as Event).stopPropagation(),
-  attrs: (host, name, value) => (host as Element).setAttribute(name, value),
+  attrs: (host, name, value) => (host as Element).setAttribute(name, value as string),
+  slot: (host, name) => own(SLOT_OWNERS, name)?.(host as HTMLElement),
 });
 
-function applyEffect(site: string, effect: Effect, target: Event | Element, name = "", value = ""): void {
+function applyEffect(site: string, effect: Effect, target: Event | Element, name = "", value: unknown = ""): void {
   const outer = applying;
   applying = Object.freeze({ site, effect });
   try {
@@ -964,6 +974,12 @@ function installBehaviour(sc: Scope, spec: Omit<BehaviourSpec, "cmd">): () => vo
           if (own(WRITES, name)) sc.transitioned(host, name);
         }
         else warnOnce("attr:" + b.kind + name, b.kind + " may not set " + name);
+      }
+    }
+    if (decision.slots && host) {
+      for (const name of Object.keys(decision.slots)) {
+        if (own(SLOT_OWNERS, name)) applyEffect(site, "slot", host, name, decision.slots[name]);
+        else warnOnce("slot:" + b.kind + name, b.kind + " may not write the slot " + name);
       }
     }
     if (decision.send !== undefined) sc.send(decision.send);

@@ -19,6 +19,8 @@ wire_input! {
         pub value: String = "value",
         /// Whether the decision asks to cancel the event.
         pub cancel: bool = "cancel",
+        /// Whether the decision also focuses the host (the `focus` slot write).
+        pub focus: bool = "focus",
     }
 }
 
@@ -46,6 +48,11 @@ pub fn decide(config: &Config, _memory: &Value, snapshot: &Snapshot, _event: &Ev
     Decision {
         prevent: config.cancel,
         attrs: vec![(config.attr.clone(), config.value.clone())],
+        slots: if config.focus {
+            vec![("focus".into(), Value::Null)]
+        } else {
+            Vec::new()
+        },
         send: Some(Value::Obj(vec![
             ("behaviour".into(), Value::Str("fixture".into())),
             ("event".into(), Value::Str(config.event.clone())),
@@ -62,7 +69,7 @@ mod tests {
     /// The wire keys are the attribute and field names the page reads, in declaration order.
     #[test]
     fn the_keys_are_the_declared_wire_names() {
-        assert_eq!(Config::KEYS, ["event", "attr", "value", "cancel"]);
+        assert_eq!(Config::KEYS, ["event", "attr", "value", "cancel", "focus"]);
         assert_eq!(Snapshot::KEYS, [BLOCK_ATTR]);
         assert_eq!(Event::KEYS, ["type"]);
     }

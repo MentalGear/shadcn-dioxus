@@ -148,7 +148,7 @@ bridge::BRIDGE_JS  const BRIDGE_JS: &str = include_str!("../js/bridge.js")
 bridge::BRIDGE_JS  use transport::BRIDGE_JS
 bridge::Behaviour  enum Behaviour  #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 bridge::Behaviour  use behaviours::Behaviour
-bridge::Behaviour::Fixture  variant Fixture { event: EventKind, attr: String, value: String, capture: bool, cancel: bool, lease_ms: Option<u32> }
+bridge::Behaviour::Fixture  variant Fixture { event: EventKind, attr: String, value: String, capture: bool, cancel: bool, focus: bool, lease_ms: Option<u32> }
 bridge::Behaviour::declared  fn declared(&self) -> Declared
 bridge::Behaviour::info  fn info(&self) -> Info
 bridge::Behaviour::kind  fn kind(&self) -> &'static str
@@ -417,7 +417,7 @@ bridge::WindowSize.height  field f64
 bridge::WindowSize.width  field f64
 bridge::behaviours  mod
 bridge::behaviours::Behaviour  enum Behaviour  #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-bridge::behaviours::Behaviour::Fixture  variant Fixture { event: EventKind, attr: String, value: String, capture: bool, cancel: bool, lease_ms: Option<u32> }
+bridge::behaviours::Behaviour::Fixture  variant Fixture { event: EventKind, attr: String, value: String, capture: bool, cancel: bool, focus: bool, lease_ms: Option<u32> }
 bridge::behaviours::Behaviour::declared  fn declared(&self) -> Declared
 bridge::behaviours::Behaviour::info  fn info(&self) -> Info
 bridge::behaviours::Behaviour::kind  fn kind(&self) -> &'static str

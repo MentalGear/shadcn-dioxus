@@ -37,6 +37,8 @@ interface DxDecision {
   stop?: boolean;
   /** Attributes to set on the host element. */
   attrs?: Record<string, string>;
+  /** Writes to native slots, by slot name; the page hands each to the slot's owner (`focus`: focus the host without scrolling). */
+  slots?: Record<string, unknown>;
   /** A message for Rust, sent after the event. */
   send?: unknown;
   /** Per-install state: merged into the `memory` the next `decide` of this install receives. */

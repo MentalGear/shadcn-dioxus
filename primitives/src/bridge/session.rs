@@ -921,6 +921,7 @@ mod tests {
             value: "y".into(),
             capture: false,
             cancel: true,
+            focus: false,
             lease_ms: Some(400),
         }
     }
@@ -1308,7 +1309,7 @@ mod tests {
                 {"cmd": "media", "query": "(hover: hover)"},
                 {"cmd": "behaviour", "target": {"kind": "id", "id": "a"},
                  "behaviour": {"kind": "fixture", "event": "click", "attr": "data-x", "value": "y",
-                               "capture": false, "cancel": true, "leaseMs": 400},
+                               "capture": false, "cancel": true, "focus": false, "leaseMs": 400},
                  "declared": {"target": "element", "event": "click", "capture": false,
                               "passive": false, "leaseMs": 400},
                  "epoch": {"key": "behaviour:fixture", "n": 3}},
