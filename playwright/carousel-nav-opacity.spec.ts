@@ -36,6 +36,8 @@ import { BASE_URL } from "./base-url";
 import { expectNoAxeViolations } from "./axe";
 import { gotoHydrated } from "./hydration";
 import { awaitAnimationsSettled } from "./animations";
+import { installFrameRecorder, readFrames } from "./frame-recorder";
+import { dragBy } from "./carousel-helpers";
 
 const GOTO_OPTS = { timeout: 20 * 60 * 1000 };
 
@@ -565,5 +567,115 @@ test.describe("Carousel: axe on the hidden-arrow demo", () => {
     await expectNoAxeViolations(page, "carousel: hidden_arrows, last slide", {
       include: "#component-preview-frame-hidden_arrows",
     });
+  });
+});
+
+/**
+ * The current slide registers when its destination is known, not when the scroll that gets there has settled: the
+ * arrows' `disabled` and the dots' current slide change in a frame where the track is still on its way.
+ * Sampled on every animation frame (`installFrameRecorder`); every assertion is a sequence or a position, never a
+ * duration, so it holds on a debug build.
+ */
+type EarlyFrame = {
+  main: { scroll: number; max: number; nextDisabled: boolean };
+  rtl: { scroll: number; max: number; nextDisabled: boolean };
+  dots: { scroll: number; max: number; current: number };
+};
+
+async function recordEarlyFrames(page: Page) {
+  await installFrameRecorder<EarlyFrame>(page, "__earlyFrames", () => {
+    const track = (id: string) => document.querySelector(`#${id} .dx-carousel-content`) as HTMLElement | null;
+    const nextOf = (id: string) => document.querySelector(`#${id} .dx-carousel-next`) as HTMLButtonElement | null;
+    const main = track("component-preview-frame");
+    const rtl = track("component-preview-frame-rtl");
+    const dots = track("component-preview-frame-indicators");
+    const mainNext = nextOf("component-preview-frame");
+    const rtlNext = nextOf("component-preview-frame-rtl");
+    const tabs = Array.from(document.querySelectorAll("#component-preview-frame-indicators [role=tab]"));
+    if (!main || !rtl || !dots || !mainNext || !rtlNext || tabs.length === 0) return null;
+    const read = (el: HTMLElement) => ({ scroll: Math.abs(el.scrollLeft), max: el.scrollWidth - el.clientWidth });
+    return {
+      main: { ...read(main), nextDisabled: mainNext.disabled },
+      rtl: { ...read(rtl), nextDisabled: rtlNext.disabled },
+      dots: { ...read(dots), current: tabs.findIndex((t) => t.getAttribute("aria-selected") === "true") },
+    };
+  });
+}
+
+const scrollOf = (track: Locator) => track.evaluate((el) => Math.abs(el.scrollLeft));
+const maxScrollOf = (track: Locator) => track.evaluate((el) => el.scrollWidth - el.clientWidth);
+
+/** Page a carousel to slide `index` with Next, each step at rest before the next. */
+async function pageNextTo(root: Locator, index: number) {
+  const track = root.locator(".dx-carousel-content");
+  const pitch = (await maxScrollOf(track)) / ((await root.locator(".dx-carousel-item").count()) - 1);
+  for (let i = 1; i <= index; i++) {
+    await nextOf(root).click();
+    await expect.poll(() => scrollOf(track)).toBeCloseTo(pitch * i, 0);
+  }
+  return pitch;
+}
+
+test.describe("Carousel: the current slide registers when the target is known", () => {
+  for (const variant of ["main", "rtl"] as const) {
+    test(`${variant}: Next from the second-to-last slide disables Next while the track is still moving`, async ({ page }) => {
+      await recordEarlyFrames(page);
+      await goto(page, variant);
+      const root = frame(page, variant).locator(".dx-carousel");
+      const track = root.locator(".dx-carousel-content");
+      await pageNextTo(root, (await root.locator(".dx-carousel-item").count()) - 2);
+      const mark = (await readFrames<EarlyFrame>(page, "__earlyFrames")).length;
+      await nextOf(root).click();
+      await expect(nextOf(root)).toBeDisabled();
+      const max = await maxScrollOf(track);
+      await expect.poll(() => scrollOf(track)).toBeCloseTo(max, 0);
+      const frames = (await readFrames<EarlyFrame>(page, "__earlyFrames")).slice(mark).map((f) => f[variant]);
+      const first = frames.findIndex((f) => f.nextDisabled);
+      expect(first, "a frame showed Next disabled").toBeGreaterThanOrEqual(0);
+      expect(frames[first].scroll, "the track had not reached the last slide when Next became disabled").toBeLessThan(max - 1);
+      expect(frames.slice(first).every((f) => f.nextDisabled), "Next stays disabled to the end of the scroll").toBe(true);
+    });
+  }
+
+  test("two quick Next clicks end two slides on", async ({ page }) => {
+    await goto(page, "main");
+    const root = frame(page, "main").locator(".dx-carousel");
+    const track = root.locator(".dx-carousel-content");
+    const pitch = (await maxScrollOf(track)) / 4;
+    await nextOf(root).click();
+    await nextOf(root).click();
+    await expect.poll(() => scrollOf(track)).toBeCloseTo(pitch * 2, 0);
+    await expect(prevOf(root)).toBeEnabled();
+    await expect(nextOf(root)).toBeEnabled();
+  });
+
+  test("a dot picked from far away is current at once and the dots never show a slide the track merely passes", async ({ page }) => {
+    await recordEarlyFrames(page);
+    await goto(page, "main");
+    const dots = page.locator("#component-preview-frame-indicators");
+    const track = dots.locator(".dx-carousel-content");
+    const mark = (await readFrames<EarlyFrame>(page, "__earlyFrames")).length;
+    await dots.getByRole("tab").nth(4).click();
+    const max = await maxScrollOf(track);
+    await expect.poll(() => scrollOf(track)).toBeCloseTo(max, 0);
+    const frames = (await readFrames<EarlyFrame>(page, "__earlyFrames")).slice(mark).map((f) => f.dots);
+    expect([...new Set(frames.map((f) => f.current))].sort(), "the current dot takes the start and the target, nothing between").toEqual([0, 4]);
+    const first = frames.findIndex((f) => f.current === 4);
+    expect(frames[first].scroll, "the target dot was current before the track arrived").toBeLessThan(max - 1);
+  });
+
+  test("a drag released toward the next slide makes it current before the release scroll ends", async ({ page }) => {
+    await recordEarlyFrames(page);
+    await goto(page, "main");
+    const dots = page.locator("#component-preview-frame-indicators");
+    const track = dots.locator(".dx-carousel-content");
+    const pitch = (await maxScrollOf(track)) / 4;
+    const mark = (await readFrames<EarlyFrame>(page, "__earlyFrames")).length;
+    await dragBy(page, track, -pitch * 0.7, 0);
+    await expect.poll(() => scrollOf(track)).toBeCloseTo(pitch, 0);
+    const frames = (await readFrames<EarlyFrame>(page, "__earlyFrames")).slice(mark).map((f) => f.dots);
+    expect([...new Set(frames.map((f) => f.current))].sort()).toEqual([0, 1]);
+    const first = frames.findIndex((f) => f.current === 1);
+    expect(frames[first].scroll, "the dragged-to dot was current before the release scroll arrived").toBeLessThan(pitch - 1);
   });
 });
