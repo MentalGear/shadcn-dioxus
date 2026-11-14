@@ -22,6 +22,10 @@ below are collected under "Unreleased" and move under a version heading at the f
 
 ### Fixed
 
+- A pie's `padding_angle` leaves a gap of the same width along its whole length. A full pie's slices used to meet in a
+  point at the centre, so the gap closed to nothing toward the middle; the facing edges are now parallel and each slice
+  ends in a tip short of the centre. A slice thinner than the gap is not drawn. The option, its unit and a donut's gap are
+  unchanged.
 - The chart tooltip fades in as well as out in every browser. A closed tooltip is now transparent and `visibility: hidden`
   instead of `display: none` with an `@starting-style` entry, so the entry no longer depends on the engine animating from
   `display: none`; it starts when the tooltip is placed, and reduced motion shows neither fade.
