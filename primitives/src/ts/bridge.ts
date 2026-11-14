@@ -371,16 +371,45 @@ function deferDelivery(n: ChannelMode, deliver: () => void): void {
   else afterFrames(n, deliver);
 }
 
-/** `raw` with the harness applied to `send` and `recv`. Wrapping a wrapped channel returns it. */
+/**
+ * `raw` with the harness applied to `send` and `recv`, and counted in `window.__dxBridgeStats` (the first 32 channels
+ * keep `sent`, `recv` and `turn`, the last 256 page turns in ms; later ones share the last). A message flagged `stats`
+ * is answered with the whole object. A `spin` ms on a message from Rust (or `window.__dxBridgeSpin`) burns that long
+ * per message each way. A wrapped channel is returned as it is.
+ */
 function channel(raw: DioxusChannel): DioxusChannel {
   if ((raw as any).__dxWrapped) return raw;
+  const all = (W.__dxBridgeStats ||= { channels: [] });
+  const rec = { sent: 0, recv: 0, turn: [] as number[] };
+  const st = all.channels.length < 32 ? (all.channels.push(rec), rec) : all.channels[31];
+  let spin = +W.__dxBridgeSpin || 0;
+  let at = -1;
+  let asked: unknown;
+  const burn = () => {
+    for (const end = W.performance.now() + spin; W.performance.now() < end; );
+  };
   return {
     __dxWrapped: true,
     send(message) {
+      const out = message as { id?: unknown; stats?: unknown } | null;
+      st.sent++;
+      if (at >= 0 && st.turn.push(W.performance.now() - at) > 256) st.turn.shift();
+      at = -1;
+      if (out && asked !== undefined && out.id === asked) {
+        out.stats = all;
+        asked = undefined;
+      }
+      if (spin) burn();
       deferDelivery(channelDelay(), () => raw.send(message));
     },
     recv() {
       return raw.recv().then((message) => {
+        const got = message as { id?: unknown; stats?: unknown; spin?: unknown } | null;
+        if (got?.spin !== undefined) spin = +(got.spin as number) || 0;
+        st.recv++;
+        at = W.performance.now();
+        asked = got?.stats ? got.id : undefined;
+        if (spin) burn();
         const n = channelDelay();
         return n === 0 || n === "never" ? message : new Promise((resolve) => deferDelivery(n, () => resolve(message)));
       });
