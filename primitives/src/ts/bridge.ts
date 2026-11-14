@@ -1338,13 +1338,13 @@ function watchTransitions(): void {
   if (watching) return;
   watching = true;
   const on = (type: string, slot: string) =>
-    W.document.addEventListener(type, (event: Event) => {
+    W.document.addEventListener(type, (event: Event) => { // listener-ok: page-lifetime transition listener of the inbound eval
       const el = event.target;
       if (el && typeof el === "object") transition(el, slot, (frame) => toRust({ ...frame, sub: 0 }));
     }, true);
   on("focusin", "focus");
   // focus leaving the document (a removed element, a closed window) has no focusin after it: the focusout mints
-  W.document.addEventListener("focusout", (event: FocusEvent) => {
+  W.document.addEventListener("focusout", (event: FocusEvent) => { // listener-ok: page-lifetime transition listener of the inbound eval
     if (event.relatedTarget == null) transition(W.document, "focus", (frame) => toRust({ ...frame, sub: 0 }));
   }, true);
   on("beforetoggle", "open");

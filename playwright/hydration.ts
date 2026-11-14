@@ -50,8 +50,6 @@ export async function gotoHydrated(
   try {
     await page.goto(url, { waitUntil: "networkidle", ...gotoOpts });
     await page.waitForSelector('html[data-hydrated="true"]', { state: "attached", timeout: hydratedTimeout });
-    // the bridge boots before the page reports hydrated, so the ready attribute is set by now
-    await page.waitForSelector('html[data-dx-bridge="ready"]', { state: "attached", timeout: hydratedTimeout });
     if (/[?&]name=/.test(url)) {
       const timeout = gotoOpts.timeout;
       await page.waitForURL((u) => !/\/component\/(block\/?)?$/.test(u.pathname), { timeout });

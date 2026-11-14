@@ -154,8 +154,8 @@ impl Pump {
 /// Boots this webview's bridge: opens its one inbound eval and waits (bounded, about two seconds) until the page
 /// reports `html[data-dx-bridge="ready"]`, which it sets once the inbound eval runs and the frames held for it are
 /// flushed. Answers whether the page got there; `false` when the platform runs no JavaScript or the page did not
-/// answer in time. Call it from the app's root effect, before anything that needs the bridge to be ready
-/// (the preview sets `data-hydrated` after it).
+/// answer in time. An app calls it from its root effect, before it reports itself ready; any session opened
+/// earlier has already created the inbound eval.
 pub async fn boot() -> bool {
     if Runtime::try_current().is_none() {
         return false;
@@ -982,7 +982,7 @@ mod tests {
             self.script.contains("__dxB.serve(")
         }
 
-        /// The subscription id Rust gave this session (its `sub` command).
+        /// The subscription id of the serve loop this eval runs, read from its `sub` command.
         fn sub(&self) -> Option<u64> {
             self.sent
                 .iter()
