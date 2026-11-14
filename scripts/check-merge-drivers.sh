@@ -4,6 +4,8 @@
 #
 # The generated backlog indexes, the durations table and the decision kernel's committed artefact never conflict textually on a merge of lane branches: `.gitattributes` maps `dev-docs/backlog.md`, `dev-docs/backlog-done.md`, `playwright/durations.json` and `primitives/src/kernel/*` to merge drivers (scripts/merge-driver-backlog-index.py, playwright/tools/durations-merge.mjs, scripts/merge-driver-kernel.py) that merge by row id, by spec entry and by rebuilding the merged kernel sources, registered per clone by scripts/setup-merge-drivers.sh from the SessionStart hook. This gate checks the attributes, the driver scripts, the registration command and the hook wiring exist, runs the three drivers' self-tests (the kernel driver's does a real two-branch merge with a stub builder), and does a real merge in a throwaway git repo (two branches each adding a backlog row file and a durations entry, registered through setup-merge-drivers.sh itself) that must finish with no conflict and a valid index and table.
 #
+# The append-only fit log `dev-docs/agent-model-fit.md` uses git's built-in `merge=union` (no driver, no registration): the same scratch-repo approach merges two branches that each append rows (both kept, base rows once and in order) and a third that edits a row (kept as edited), with no conflict and in a clone that registered nothing.
+#
 # This clone's own registration is reported, not required: a clone that never ran scripts/setup-merge-drivers.sh merges with git's text merge (and its conflicts on the generated files), and that script fixes it.
 #
 # Usage: scripts/check-merge-drivers.sh      Exit status: 0 = OK; 1 = a promise broke.
@@ -17,7 +19,7 @@ command -v python3 >/dev/null || fail "python3 is required"
 command -v git >/dev/null || fail "git is required"
 
 # 1. the attributes and the files they name
-for want in "dev-docs/backlog.md merge=backlog-index" "dev-docs/backlog-done.md merge=backlog-index" "playwright/durations.json merge=durations" "primitives/src/kernel/* merge=kernel-artefact"; do
+for want in "dev-docs/backlog.md merge=backlog-index" "dev-docs/backlog-done.md merge=backlog-index" "playwright/durations.json merge=durations" "primitives/src/kernel/* merge=kernel-artefact" "dev-docs/agent-model-fit.md merge=union"; do
   grep -qxF "$want" .gitattributes 2>/dev/null || fail ".gitattributes has no line '$want'"
 done
 for f in scripts/merge-driver-backlog-index.py playwright/tools/durations-merge.mjs scripts/merge-driver-kernel.py scripts/build-kernel.sh scripts/setup-merge-drivers.sh; do
@@ -128,10 +130,31 @@ g config --remove-section merge.backlog-index && g config --remove-section merge
 if g merge --no-edit right >/dev/null 2>&1; then fail "the scratch merge is clean even without the drivers: the scenario does not exercise them"; fi
 g merge --abort >/dev/null 2>&1
 
+# 3b. the fit log merges by union with no registration: two appends and an edit of an earlier row, no conflict
+u="$tmp/union"
+git init -q "$u" || fail "git init failed"
+git -C "$u" config user.email gate@example.invalid
+git -C "$u" config user.name gate
+cp .gitattributes "$u/"
+printf '| date | lane |\n|---|---|\n| d1 | one |\n| d2 | two |\n| d3 | three |\n| d4 | four |\n' > "$u/agent-model-fit-base.txt"
+mkdir -p "$u/dev-docs"
+mv "$u/agent-model-fit-base.txt" "$u/dev-docs/agent-model-fit.md"
+gu() { git -C "$u" "$@"; }
+gu add -A && gu commit -qm base || fail "union base commit failed"
+ubase="$(gu rev-parse --abbrev-ref HEAD)"
+gu checkout -q -b app-a "$ubase" && echo '| a1 | from a |' >> "$u/dev-docs/agent-model-fit.md" && echo '| a2 | from a |' >> "$u/dev-docs/agent-model-fit.md" && gu commit -qam a || fail "union branch a failed"
+gu checkout -q -b app-b "$ubase" && echo '| b1 | from b |' >> "$u/dev-docs/agent-model-fit.md" && gu commit -qam b || fail "union branch b failed"
+gu checkout -q -b edit "$ubase" && sed -i 's/^| d2 | two |$/| d2 | two EDITED |/' "$u/dev-docs/agent-model-fit.md" && gu commit -qam edit || fail "union branch edit failed"
+gu checkout -q app-a
+uout="$(gu merge --no-edit app-b 2>&1)" || { echo "$uout"; fail "two branches that each appended fit-log rows conflicted: merge=union is not in effect"; }
+uout="$(gu merge --no-edit edit 2>&1)" || { echo "$uout"; fail "a branch that edited a fit-log row conflicted with the appended rows"; }
+want_log="$(printf '| date | lane |\n|---|---|\n| d1 | one |\n| d2 | two EDITED |\n| d3 | three |\n| d4 | four |\n| a1 | from a |\n| a2 | from a |\n| b1 | from b |')"
+[ "$(cat "$u/dev-docs/agent-model-fit.md")" = "$want_log" ] || { cat "$u/dev-docs/agent-model-fit.md"; fail "the merged fit log is not the base rows once and in order, the edit, then every appended row"; }
+
 # 4. this clone's registration (information only)
 if "$repo_root/scripts/setup-merge-drivers.sh" --check 2>/dev/null; then
   reg="registered in this clone"
 else
   reg="NOT registered in this clone (run scripts/setup-merge-drivers.sh); merges here use git's text merge"
 fi
-echo "check-merge-drivers: OK -- attributes, scripts and hook wiring present, the three self-tests green, a two-branch merge was clean with a valid index and table; $reg"
+echo "check-merge-drivers: OK -- attributes, scripts and hook wiring present, the three self-tests green, a two-branch merge was clean with a valid index and table, the fit log merged by union; $reg"

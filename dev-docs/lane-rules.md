@@ -42,9 +42,12 @@ Session tooling (paths below default to `LANE_TGT=/home/user/tgt`):
 
 ## Worktree and files
 - Work ONLY in your own git worktree, on its own branch (`lane/<name>`). Never touch the main checkout or another
-  lane's worktree. Push your branch after every commit ("Nothing lives only in the container"). Symlink `playwright/node_modules` and `preview/node_modules` from the main checkout
-  (installed there with `pnpm install --frozen-lockfile`; pnpm's layout is relative symlinks into `.pnpm`, so the
-  symlink resolves), or run `pnpm install --frozen-lockfile` inside the worktree (hard links from the shared store,
+  lane's worktree. Push your branch after every commit ("Nothing lives only in the container"). The main loop creates the worktree with
+  `scripts/lane-worktree.sh add lane/<name> /home/user/wt/<name> [<start-point>]` (and `remove <path>` at the end; it
+  refuses an existing path or a dirty worktree): it links `playwright/`, `preview/` and `scripts/ts-tools/`
+  `node_modules` from the main checkout (installed there with `pnpm install --frozen-lockfile`; pnpm's layout is
+  relative symlinks into `.pnpm`, so the symlink resolves), skips a directory the start point lacks, and the links are
+  ignored by git. A worktree made by plain `git worktree add` runs `pnpm install --frozen-lockfile` inside it instead (hard links from the shared store,
   seconds). Never `pnpm add`/`update` or any install that rewrites the lock: the lockfile pins the Playwright that
   matches `/opt/pw-browsers` (backlog rows 72, 359). Both folders pin every direct dependency exactly, refuse versions
   younger than 30 days (`minimumReleaseAge` in `pnpm-workspace.yaml`) and run no dependency install script; never
