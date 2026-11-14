@@ -21,8 +21,8 @@ const HTML = `<!doctype html><meta charset="utf-8"><input id="inp" value=""><div
 /** The fixture behaviour on `#inp`: keydown, capture phase, non-passive, cancelling. */
 const INSTALL = () => {
   const b = (window as any).__dxBridge;
-  const x = { kind: "fixture", event: "keydown", attr: "data-dx-fixture", value: "on", capture: true, cancel: true, leaseMs: null };
-  const ch = { sent: [] as unknown[], send(m: unknown) { ch.sent.push(m); }, recv: () => new Promise(() => {}) };
+  const x = { kind: "fixture", event: "keydown", attr: "data-dx-fixture", value: "on", capture: true, cancel: true, focus: false, leaseMs: null };
+  const ch = { sent: [] as unknown[], send(m: unknown) { (m && typeof (m as any).seq === "number" ? ("m" in (m as any) && ch.sent.push((m as any).m)) : ch.sent.push(m)); }, recv: () => new Promise(() => {}) };
   (window as any).ch = ch;
   b.scope(ch).run({
     cmd: "behaviour",
@@ -124,7 +124,7 @@ test.describe("what the kernel costs per event", () => {
       const t0 = performance.now();
       await b.kernel.load(b64);
       const loadMs = performance.now() - t0;
-      const behaviour = { kind: "fixture", event: "keydown", attr: "data-dx-fixture", value: "on", capture: true, cancel: true, leaseMs: null };
+      const behaviour = { kind: "fixture", event: "keydown", attr: "data-dx-fixture", value: "on", capture: true, cancel: true, focus: false, leaseMs: null };
       const snapshot = { "data-dx-fixture-block": null };
       const stats = (a: number[]) => {
         const s = [...a].sort((x, y) => x - y);
@@ -200,7 +200,7 @@ test.describe("the first call and the compile on a throttled CPU (release only)"
       runs.push(
         await page.evaluate(() => {
           const k = (window as any).__dxBridge.kernel;
-          const behaviour = { kind: "fixture", event: "keydown", attr: "data-dx-fixture", value: "on", capture: true, cancel: true, leaseMs: null };
+          const behaviour = { kind: "fixture", event: "keydown", attr: "data-dx-fixture", value: "on", capture: true, cancel: true, focus: false, leaseMs: null };
           const t = performance.now();
           k.decide("fixture", behaviour, { type: "keydown" }, { "data-dx-fixture-block": null }, {});
           return { compileMs: k.stats.readyMs - k.stats.startMs, firstCallMs: performance.now() - t };

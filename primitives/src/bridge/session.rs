@@ -13,16 +13,184 @@
 //! event to one message per animation frame, and a [`use_sample`] field flushes per frame or per event
 //! task ([`Flush`]).
 
+use std::cell::RefCell;
+use std::collections::{BTreeSet, HashMap};
+use std::rc::Rc;
+
 use dioxus::document::Eval;
 use dioxus::prelude::*;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 use super::behaviours::{Inbound, StandDown};
 use super::events::{EventField, EventKind};
 use super::transport;
-use super::{Behaviour, Epoch, Target};
+use super::{Behaviour, Epoch, Prop, Target};
+use crate::dioxus_core::{provide_root_context, try_consume_context, Runtime, ScopeId};
 use crate::js_listener::{receive, TEARDOWN};
+
+/// How many page sequence numbers the pump holds ahead of a gap. A number still missing when more than this many
+/// later ones wait is declared lost and the prefix moves past it: a page transition that was lost that way could
+/// let a stale Rust write through the fence, which is the price of bounded memory.
+const AHEAD_MAX: usize = 1024;
+
+/// What the page sends for one inbound fact: its page-minted sequence number, and either the message (`m`) or the
+/// slot whose page-caused transition it reports (`t`). A frame is the only shape a session's page-to-Rust message
+/// takes, so every fact is ordered against every other one the webview sent.
+#[derive(Deserialize)]
+struct Frame {
+    seq: u64,
+    /// The subscription the frame belongs to.
+    sub: u64,
+    #[serde(default)]
+    m: Option<Value>,
+}
+
+/// The inbound pump's per-webview state, kept in the root context: which page sequence numbers Rust has taken,
+/// and the install epochs it has handed out.
+#[derive(Clone, Default)]
+struct Pump(Rc<RefCell<PumpState>>);
+
+struct PumpState {
+    /// The next page sequence number the contiguous prefix is waiting for.
+    next: u64,
+    /// Numbers taken ahead of `next` (a frame of another eval arrived first).
+    ahead: BTreeSet<u64>,
+    /// The install epochs handed out in this webview.
+    epochs: u64,
+    /// The subscription ids handed out in this webview.
+    subs: u64,
+    /// Where a subscription's messages go; an entry leaves when its [`Subscription`] drops.
+    entries: HashMap<u64, Entry>,
+}
+
+type Entry = Rc<RefCell<Box<dyn FnMut(Value)>>>;
+
+impl Default for PumpState {
+    fn default() -> Self {
+        PumpState {
+            next: 1,
+            ahead: BTreeSet::new(),
+            epochs: 0,
+            subs: 0,
+            entries: HashMap::new(),
+        }
+    }
+}
+
+impl Pump {
+    /// This webview's pump, created on first use together with its one inbound eval and the root task that
+    /// reads it. Only inside the Dioxus runtime.
+    fn current() -> Pump {
+        try_consume_context::<Pump>().unwrap_or_else(|| {
+            let pump = Pump::default();
+            provide_root_context(pump.clone());
+            let mut eval = transport::open(transport::Program::Inbound);
+            let root = pump.clone();
+            Runtime::current().spawn(ScopeId::ROOT, async move {
+                receive(&mut eval, move |frame: Frame| root.dispatch(frame)).await;
+            });
+            pump
+        })
+    }
+
+    /// Takes the frame's number, then hands its message to the entry of its subscription, if it still has one.
+    fn dispatch(&self, frame: Frame) {
+        self.take(frame.seq);
+        let entry = self.0.borrow().entries.get(&frame.sub).cloned();
+        if let (Some(entry), Some(message)) = (entry, frame.m) {
+            (entry.borrow_mut())(message);
+        }
+    }
+
+    /// Registers a subscription's handler and returns its id.
+    fn register(&self, handler: Entry) -> u64 {
+        let mut state = self.0.borrow_mut();
+        state.subs += 1;
+        let id = state.subs;
+        state.entries.insert(id, handler);
+        id
+    }
+
+    fn unregister(&self, id: u64) {
+        self.0.borrow_mut().entries.remove(&id);
+    }
+
+    /// Takes the page's sequence number `seq`.
+    fn take(&self, seq: u64) {
+        let mut guard = self.0.borrow_mut();
+        let state = &mut *guard;
+        if seq < state.next {
+            return;
+        }
+        state.ahead.insert(seq);
+        // past the bound the oldest gap is declared lost: its number never arrived and holding every later one
+        // for it would grow without limit
+        if state.ahead.len() > AHEAD_MAX {
+            if let Some(&first) = state.ahead.first() {
+                state.next = first;
+            }
+        }
+        while state.ahead.remove(&state.next) {
+            state.next += 1;
+        }
+    }
+
+    fn seen(&self) -> u64 {
+        self.0.borrow().next - 1
+    }
+
+    fn epoch(&self, key: impl Into<String>) -> Epoch {
+        let mut state = self.0.borrow_mut();
+        state.epochs += 1;
+        Epoch {
+            key: key.into(),
+            n: state.epochs,
+        }
+    }
+}
+
+/// Boots this webview's bridge: opens its one inbound eval and waits (bounded, about two seconds) until the page
+/// reports `html[data-dx-bridge="ready"]`, which it sets once the inbound eval runs and the frames held for it are
+/// flushed. Answers whether the page got there; `false` when the platform runs no JavaScript or the page did not
+/// answer in time. An app calls it from its root effect, before it reports itself ready; any session opened
+/// earlier has already created the inbound eval.
+pub async fn boot() -> bool {
+    if Runtime::try_current().is_none() {
+        return false;
+    }
+    Pump::current();
+    let ready = Prop::Attr("data-dx-bridge".into());
+    for _ in 0..125 {
+        match super::get(
+            Target::Selector {
+                selector: "html".into(),
+            },
+            [ready.clone()],
+        )
+        .await
+        {
+            Ok(props) if props.value(&ready).and_then(Value::as_str) == Some("ready") => {
+                return true
+            }
+            Ok(_) => crate::sleep::sleep(std::time::Duration::from_millis(16)).await,
+            Err(_) => return false,
+        }
+    }
+    false
+}
+
+/// The highest page sequence number such that Rust has taken every frame up to it: the `based_on` of a write
+/// Rust decides now ([`Transaction::based_on`](super::Transaction::based_on)). A number the page minted whose
+/// frame has not arrived holds it back, so a write decided before Rust saw a page transition carries a number
+/// below that transition and the page drops it. `0` outside the Dioxus runtime.
+pub fn page_seen() -> u64 {
+    if Runtime::try_current().is_none() {
+        return 0;
+    }
+    Pump::current().seen()
+}
 
 /// One row of the `publish` option of [`ListenOptions`]: the page copies one event field (a number) into the custom property `var` (`--dx-` only) of the observed element, as it observes it, so a
 /// scroll-linked value is written in the frame it is measured and never crosses to Rust. This is transport:
@@ -138,7 +306,7 @@ pub enum Flush {
 #[derive(Clone, Debug, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum SampleField {
-    /// Coalesced: the property `get` reads (a [`Prop`](super::Prop) wire name), its value at the end of
+    /// Coalesced: the property `get` reads (a [`Prop`] wire name), its value at the end of
     /// the frame, sent only when it changed.
     Read(String),
     /// Batched: every `event` the target gets, each as `{ timeStamp, ...pick }`, in order, as the array
@@ -223,6 +391,11 @@ pub enum Until {
 #[derive(Clone, Debug, PartialEq, Serialize)]
 #[serde(tag = "cmd", rename_all = "kebab-case")]
 pub enum Command {
+    /// Tells the page which subscription its frames belong to; `open` sends it first, before any other command.
+    Sub {
+        /// The subscription's id.
+        id: u64,
+    },
     /// `listen(target, event, options, fields)`: streams the named event fields (a value that is not a
     /// string, number or bool is null). Always passive; a [`hot`](EventKind::hot) event arrives at most
     /// once per animation frame (the latest event's fields).
@@ -413,8 +586,17 @@ impl Session {
                 transport::ensure_module(behaviour.kind(), behaviour.module());
             }
         }
+        let pump = Pump::current();
+        let mut handler = handler;
+        let id = pump.register(Rc::new(RefCell::new(Box::new(move |message: Value| {
+            if let Ok(message) = serde_json::from_value::<T>(message) {
+                handler(message);
+            }
+        }))));
         let eval = transport::open(transport::Program::Serve);
-        transport::send(&eval, &self.commands);
+        let mut commands = vec![Command::Sub { id }];
+        commands.extend(self.commands.iter().cloned());
+        transport::send(&eval, &commands);
         // a lease is the page's fail-open: the session renews each behaviour that carries one
         let renew: Vec<Command> = self
             .commands
@@ -444,14 +626,11 @@ impl Session {
                     }
                 })
             });
-        let mut task_eval = eval;
-        let receiver = spawn(async move {
-            receive(&mut task_eval, handler).await;
-        });
         Subscription {
             eval,
             renewal,
-            receiver,
+            pump,
+            id,
         }
     }
 }
@@ -463,9 +642,10 @@ pub struct Subscription {
     eval: Eval,
     /// The lease-renewal task of a session that installed a behaviour with a lease.
     renewal: Option<crate::dioxus_core::Task>,
-    /// The task that hands the session's messages to the handler: a message already on its way when the
-    /// subscription ends is not handled.
-    receiver: crate::dioxus_core::Task,
+    /// The webview's pump, whose entry for this subscription leaves on drop: a message already on its way when the
+    /// subscription ends is taken (its number counts) and not handled.
+    pump: Pump,
+    id: u64,
 }
 
 impl Drop for Subscription {
@@ -473,7 +653,7 @@ impl Drop for Subscription {
         if let Some(renewal) = self.renewal.take() {
             renewal.cancel();
         }
-        self.receiver.cancel();
+        self.pump.unregister(self.id);
         // On the channel the session already has: a new eval inside a drop handler is unsafe (#4064).
         transport::send(&self.eval, TEARDOWN);
     }
@@ -704,7 +884,7 @@ pub fn use_behaviour<T: DeserializeOwned + 'static>(
             }
             target().map(|target| {
                 let behaviour = behaviour();
-                let epoch = Epoch::next(format!("behaviour:{}", behaviour.kind()));
+                let epoch = Pump::current().epoch(format!("behaviour:{}", behaviour.kind()));
                 Session::new().behaviour(target, behaviour, epoch)
             })
         },
@@ -741,6 +921,7 @@ mod tests {
             value: "y".into(),
             capture: false,
             cancel: true,
+            focus: false,
             lease_ms: Some(400),
         }
     }
@@ -791,11 +972,24 @@ mod tests {
         sent: Vec<serde_json::Value>,
         inbox: VecDeque<serde_json::Value>,
         waker: Option<std::task::Waker>,
+        /// The page-minted sequence number of the last frame `deliver` sent.
+        seq: u64,
+        /// The webview's inbound eval, which carries every frame a session's scope sends.
+        inbound: Option<Rc<RefCell<Channel>>>,
     }
 
     impl Channel {
         fn is_session(&self) -> bool {
             self.script.contains("__dxB.serve(")
+        }
+
+        /// The subscription id of the serve loop this eval runs, read from its `sub` command.
+        fn sub(&self) -> Option<u64> {
+            self.sent
+                .iter()
+                .filter_map(|m| m.as_array())
+                .flatten()
+                .find_map(|c| (c["cmd"] == "sub").then(|| c["id"].as_u64()).flatten())
         }
     }
 
@@ -839,6 +1033,13 @@ mod tests {
             let owner = dioxus::signals::Owner::default();
             let eval = Eval::new(owner.insert(Box::new(ScriptedEval(channel.clone()))));
             let mut page = self.0.borrow_mut();
+            if channel.borrow().is_session() {
+                channel.borrow_mut().inbound = page
+                    .evals
+                    .iter()
+                    .find(|c| c.borrow().script.contains("__dxB.inbound("))
+                    .cloned();
+            }
             page.evals.push(channel);
             page.owners.push(owner);
             eval
@@ -851,6 +1052,20 @@ mod tests {
     }
 
     impl ScriptedDocument {
+        /// The first eval whose script contains `needle`.
+        fn eval_with(&self, needle: &str) -> Option<Rc<RefCell<Channel>>> {
+            self.0
+                .borrow()
+                .evals
+                .iter()
+                .find(|c| c.borrow().script.contains(needle))
+                .cloned()
+        }
+
+        fn has_eval(&self, needle: &str) -> bool {
+            self.eval_with(needle).is_some()
+        }
+
         /// The sessions the hook opened, in order.
         fn sessions(&self) -> Vec<Rc<RefCell<Channel>>> {
             let page = self.0.borrow();
@@ -902,9 +1117,29 @@ mod tests {
         }
     }
 
+    /// The page sends `message` as the next frame of its sequence.
     fn deliver(session: &Rc<RefCell<Channel>>, message: serde_json::Value) {
-        let mut channel = session.borrow_mut();
-        channel.inbox.push_back(message);
+        let seq = {
+            let mut channel = session.borrow_mut();
+            channel.seq += 1;
+            channel.seq
+        };
+        deliver_raw(session, json!({"seq": seq, "m": message}));
+    }
+
+    /// The page sends exactly `frame` (plus the session's `sub`) on the webview's inbound eval.
+    fn deliver_raw(session: &Rc<RefCell<Channel>>, mut frame: serde_json::Value) {
+        frame["sub"] = json!(session
+            .borrow()
+            .sub()
+            .expect("the session registered a sub"));
+        let inbound = session
+            .borrow()
+            .inbound
+            .clone()
+            .expect("the webview has an inbound eval");
+        let mut channel = inbound.borrow_mut();
+        channel.inbox.push_back(frame);
         if let Some(waker) = channel.waker.take() {
             waker.wake();
         }
@@ -1074,7 +1309,7 @@ mod tests {
                 {"cmd": "media", "query": "(hover: hover)"},
                 {"cmd": "behaviour", "target": {"kind": "id", "id": "a"},
                  "behaviour": {"kind": "fixture", "event": "click", "attr": "data-x", "value": "y",
-                               "capture": false, "cancel": true, "leaseMs": 400},
+                               "capture": false, "cancel": true, "focus": false, "leaseMs": 400},
                  "declared": {"target": "element", "event": "click", "capture": false,
                               "passive": false, "leaseMs": 400},
                  "epoch": {"key": "behaviour:fixture", "n": 3}},
@@ -1206,5 +1441,185 @@ mod tests {
             assert!(js.contains(&format!("case \"{name}\":")), "{name}");
         }
         assert!(!js.contains("case \"rule\":"), "the rule layer is gone");
+    }
+    /// `page_seen` from inside the dom's root scope.
+    fn seen(dom: &mut VirtualDom) -> u64 {
+        dom.in_scope(ScopeId::ROOT, page_seen)
+    }
+
+    #[tokio::test(flavor = "current_thread", start_paused = true)]
+    async fn the_pump_takes_the_page_sequence_as_a_contiguous_prefix() {
+        let document = ScriptedDocument::default();
+        let probe = Probe::default();
+        let mut dom = VirtualDom::new(Host)
+            .with_root_context(Rc::new(document.clone()) as Rc<dyn dioxus::document::Document>)
+            .with_root_context(probe.clone());
+        dom.rebuild_in_place();
+        settle(&mut dom).await;
+        let session = document.sessions()[0].clone();
+        assert_eq!(seen(&mut dom), 0, "nothing taken yet");
+
+        deliver_raw(&session, json!({"seq": 1, "m": {"behaviour": "fixture"}}));
+        settle(&mut dom).await;
+        assert_eq!(seen(&mut dom), 1);
+
+        // a frame ahead of a gap is dispatched at once but does not move the prefix
+        deliver_raw(&session, json!({"seq": 3, "m": {"behaviour": "fixture"}}));
+        settle(&mut dom).await;
+        assert_eq!(seen(&mut dom), 1, "number 2 has not arrived");
+        assert_eq!(
+            *probe.got.borrow(),
+            ["fixture", "fixture"],
+            "dispatch does not wait for the gap"
+        );
+
+        // a transition frame carries no message and closes the gap
+        deliver_raw(&session, json!({"seq": 2, "t": "data-dx-keyboard"}));
+        settle(&mut dom).await;
+        assert_eq!(seen(&mut dom), 3);
+        assert_eq!(
+            probe.got.borrow().len(),
+            2,
+            "a transition reaches no handler"
+        );
+
+        // a repeated number moves nothing
+        deliver_raw(&session, json!({"seq": 2, "t": "data-dx-keyboard"}));
+        settle(&mut dom).await;
+        assert_eq!(seen(&mut dom), 3);
+    }
+
+    #[tokio::test(flavor = "current_thread", start_paused = true)]
+    async fn an_install_epoch_counts_in_its_own_webview() {
+        let epoch_of = |session: &Rc<RefCell<Channel>>| {
+            session.borrow().sent[0][1]["epoch"]["n"]
+                .as_u64()
+                .expect("an install carries an epoch")
+        };
+        // two webviews in one process: neither count depends on the other
+        let mut firsts = Vec::new();
+        for _ in 0..2 {
+            let document = ScriptedDocument::default();
+            let mut dom = VirtualDom::new(Host)
+                .with_root_context(Rc::new(document.clone()) as Rc<dyn dioxus::document::Document>)
+                .with_root_context(Probe::default());
+            dom.rebuild_in_place();
+            settle(&mut dom).await;
+            firsts.push(epoch_of(&document.sessions()[0]));
+        }
+        assert_eq!(firsts, [1, 1]);
+    }
+    /// A frame the page minted for a scope that has since ended still advances the prefix, and reaches no handler.
+    #[tokio::test(flavor = "current_thread", start_paused = true)]
+    async fn a_frame_of_an_ended_scope_advances_the_prefix_and_reaches_no_handler() {
+        let document = ScriptedDocument::default();
+        let probe = Probe::default();
+        let mut dom = VirtualDom::new(Host)
+            .with_root_context(Rc::new(document.clone()) as Rc<dyn dioxus::document::Document>)
+            .with_root_context(probe.clone());
+        dom.rebuild_in_place();
+        settle(&mut dom).await;
+        let session = document.sessions()[0].clone();
+        probe.unmounted.set(true);
+        dom.mark_dirty(ScopeId::APP);
+        settle(&mut dom).await;
+        assert!(
+            torn_down(&session),
+            "the component's unmount ends the session"
+        );
+
+        deliver_raw(&session, json!({"seq": 1, "m": {"behaviour": "fixture"}}));
+        deliver_raw(&session, json!({"seq": 2, "t": "data-dx-keyboard"}));
+        settle(&mut dom).await;
+        assert_eq!(
+            seen(&mut dom),
+            2,
+            "the numbers were taken although nobody listens"
+        );
+        assert!(probe.got.borrow().is_empty(), "and no dropped handler ran");
+    }
+
+    /// The numbers held ahead of a gap are bounded: past the bound the gap is declared lost.
+    #[tokio::test(flavor = "current_thread", start_paused = true)]
+    async fn the_numbers_held_ahead_of_a_gap_are_bounded() {
+        let document = ScriptedDocument::default();
+        let mut dom = VirtualDom::new(Host)
+            .with_root_context(Rc::new(document.clone()) as Rc<dyn dioxus::document::Document>)
+            .with_root_context(Probe::default());
+        dom.rebuild_in_place();
+        settle(&mut dom).await;
+        let session = document.sessions()[0].clone();
+        // number 1 never arrives
+        for seq in 2..=(AHEAD_MAX as u64 + 1) {
+            deliver_raw(&session, json!({"seq": seq, "t": "x"}));
+        }
+        settle(&mut dom).await;
+        assert_eq!(seen(&mut dom), 0, "at the bound the gap still holds");
+        deliver_raw(&session, json!({"seq": AHEAD_MAX as u64 + 2, "t": "x"}));
+        settle(&mut dom).await;
+        assert_eq!(
+            seen(&mut dom),
+            AHEAD_MAX as u64 + 2,
+            "past it the lost number is given up"
+        );
+    }
+    #[tokio::test(flavor = "current_thread", start_paused = true)]
+    async fn boot_opens_the_inbound_eval_and_waits_for_the_ready_attribute() {
+        #[derive(Clone, Default)]
+        struct Booted(Rc<Cell<Option<bool>>>);
+        #[component]
+        fn Booter() -> Element {
+            let booted: Booted = consume_context();
+            use_effect(move || {
+                let booted = booted.clone();
+                spawn(async move { booted.0.set(Some(boot().await)) });
+            });
+            rsx! { "boot" }
+        }
+        let document = ScriptedDocument::default();
+        let booted = Booted::default();
+        let mut dom = VirtualDom::new(Booter)
+            .with_root_context(Rc::new(document.clone()) as Rc<dyn dioxus::document::Document>)
+            .with_root_context(booted.clone());
+        dom.rebuild_in_place();
+        settle(&mut dom).await;
+        assert!(
+            document.has_eval("__dxB.inbound("),
+            "boot opens the inbound eval"
+        );
+        assert_eq!(booted.0.get(), None, "not ready until the page says so");
+
+        // the page answers the ask on the ordered channel: not ready, then ready
+        for (round, attr) in [json!(null), json!("ready")].into_iter().enumerate() {
+            let pump = document
+                .eval_with("__dxB.pump(")
+                .expect("the ordered channel");
+            let id = pump
+                .borrow()
+                .sent
+                .iter()
+                .filter_map(|m| m["id"].as_u64())
+                .nth(round)
+                .unwrap_or_else(|| {
+                    panic!(
+                        "round {round}: an ask is on the channel: {:?}",
+                        pump.borrow().sent
+                    )
+                });
+            {
+                let mut channel = pump.borrow_mut();
+                channel.inbox.push_back(
+                    json!({"id": id, "results": [{"ok": {"attr:data-dx-bridge": attr}}]}),
+                );
+                if let Some(waker) = channel.waker.take() {
+                    waker.wake();
+                }
+            }
+            for _ in 0..3 {
+                tokio::time::advance(std::time::Duration::from_millis(20)).await;
+                settle(&mut dom).await;
+            }
+        }
+        assert_eq!(booted.0.get(), Some(true));
     }
 }

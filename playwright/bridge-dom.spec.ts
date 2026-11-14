@@ -30,7 +30,7 @@ async function load(page: Page) {
   await page.evaluate(() => {
     // a stand-in for the `dioxus` object of one eval
     (window as any).makeCh = () => {
-      const ch: any = { sent: [] as unknown[], send(m: unknown) { ch.sent.push(m); }, recv: () => new Promise(() => {}) };
+      const ch: any = { sent: [] as unknown[], send(m: unknown) { (m && typeof (m as any).seq === "number" ? ("m" in (m as any) && ch.sent.push((m as any).m)) : ch.sent.push(m)); }, recv: () => new Promise(() => {}) };
       return ch;
     };
     (window as any).frames = (n: number) => new Promise<void>((r) => { const t = () => (n-- > 0 ? requestAnimationFrame(t) : r()); t(); });
@@ -137,7 +137,7 @@ test.describe("the ordered channel on a real page", () => {
       let wake: (() => void) | null = null;
       const sent: any[] = [];
       const raw = {
-        send: (m: unknown) => sent.push(m),
+        send: (m: any) => (m && typeof m.seq === "number" ? "m" in m && sent.push(m.m) : sent.push(m)),
         recv: () => new Promise((resolve) => { const take = () => (queue.length ? resolve(queue.shift()) : (wake = take)); take(); }),
       };
       const push = (m: unknown) => { queue.push(m); wake?.(); wake = null; };
@@ -275,7 +275,7 @@ test.describe("subscriptions on a real page", () => {
       const ch = (window as any).makeCh();
       const s = b.scope(ch);
       const t = document.getElementById("t")!;
-      const fixture = (over: object) => ({ kind: "fixture", event: "wheel", attr: "data-hit", value: "a", capture: false, cancel: false, leaseMs: null, ...over });
+      const fixture = (over: object) => ({ kind: "fixture", event: "wheel", attr: "data-hit", value: "a", capture: false, cancel: false, focus: false, leaseMs: null, ...over });
       const declare = (x: any) => ({ target: "element", event: x.event, capture: x.capture, passive: !x.cancel, leaseMs: x.leaseMs });
       const install = (x: any, key: string, n: number) =>
         s.run({ cmd: "behaviour", target: "t", behaviour: x, declared: declare(x), epoch: { key, n } });
@@ -303,7 +303,7 @@ test.describe("subscriptions on a real page", () => {
       const b = (window as any).__dxBridge;
       const s = b.scope((window as any).makeCh());
       const t = document.getElementById("t")!;
-      const x = { kind: "fixture", event: "click", attr: "data-hit", value: "a", capture: false, cancel: false, leaseMs: 60000 };
+      const x = { kind: "fixture", event: "click", attr: "data-hit", value: "a", capture: false, cancel: false, focus: false, leaseMs: 60000 };
       const declared = { target: "element", event: "click", capture: false, passive: true, leaseMs: 60000 };
       s.run({ cmd: "behaviour", target: "t", behaviour: x, declared, epoch: { key: "k", n: 1 } });
       const live = (window as any).__dxJsListeners.live.size;

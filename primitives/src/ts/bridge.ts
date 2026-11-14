@@ -234,41 +234,46 @@ function scrollOptions(raw: any): any {
 }
 
 /** The methods Rust may call, each tolerant of the state it is called in. Mirrors `Method` in `bridge/mod.rs`. */
-const METHODS: Record<string, { recv: Recv; run: (el: any, args: any[]) => unknown }> = {
+const METHODS: Record<string, { recv: Recv; slots: readonly string[]; run: (el: any, args: any[]) => unknown }> = {
   showPopover: {
+    slots: ["open"],
     recv: "e",
     run(el) {
       if (typeof el.showPopover === "function" && !el.matches(":popover-open")) el.showPopover();
     },
   },
   hidePopover: {
+    slots: ["open"],
     recv: "e",
     run(el) {
       if (typeof el.hidePopover === "function" && el.matches(":popover-open")) el.hidePopover();
     },
   },
-  togglePopover: { recv: "e", run: (el) => el.togglePopover() },
+  togglePopover: { slots: ["open"], recv: "e", run: (el) => el.togglePopover() },
   showModal: {
+    slots: ["open", "focus"],
     recv: "e",
     run(el) {
       if (!el.open) el.showModal();
     },
   },
   close: {
+    slots: ["open", "focus"],
     recv: "e",
     run(el, args) {
       if (el.open) typeof args[0] === "string" ? el.close(args[0]) : el.close();
     },
   },
-  blur: { recv: "e", run: (el) => el.blur() },
-  scrollIntoView: { recv: "e", run: (el, args) => el.scrollIntoView(scrollOptions(args[0])) },
-  scrollTo: { recv: "we", run: (el, args) => el.scrollTo(scrollOptions(args[0])) },
-  scrollBy: { recv: "we", run: (el, args) => el.scrollBy(scrollOptions(args[0])) },
+  blur: { slots: ["focus"], recv: "e", run: (el) => el.blur() },
+  scrollIntoView: { slots: ["scroll"], recv: "e", run: (el, args) => el.scrollIntoView(scrollOptions(args[0])) },
+  scrollTo: { slots: ["scroll"], recv: "we", run: (el, args) => el.scrollTo(scrollOptions(args[0])) },
+  scrollBy: { slots: ["scroll"], recv: "we", run: (el, args) => el.scrollBy(scrollOptions(args[0])) },
   setSelectionRange: {
+    slots: ["caret"],
     recv: "e",
     run: (el, args) => el.setSelectionRange(Number(args[0]) | 0, Number(args[1]) | 0),
   },
-  select: { recv: "e", run: (el) => el.select() },
+  select: { slots: ["caret"], recv: "e", run: (el) => el.select() },
 };
 
 const describe = (el: any): { id: string; tagName: string } | null =>
@@ -550,16 +555,66 @@ function stale(el: object | null, epoch: DxEpoch | null | undefined): boolean {
   return false;
 }
 
+// ---------------------------------------------------------------- the inbound sequence and the slot fence
+
+/**
+ * The page-minted sequence number: every frame a scope sends to Rust takes the next one, so Rust learns the page's
+ * order across the evals of one webview. A page-caused transition of a slot takes one too (`transitioned`), and the
+ * slot's fence is that number: a Rust write that carries `basedOn` below it was decided before Rust saw the
+ * transition and is dropped. A Rust-caused write mints nothing.
+ */
+let pageSeq = 0;
+/** The webview's one inbound channel, once its eval runs; frames minted before that wait here, in order. */
+let inboundChannel: DioxusChannel | null = null;
+const heldFrames: unknown[] = [];
+const fences = new WeakMap<object, Map<string, number>>();
+
+/** The slot's holder: focus is one document-wide slot, every other slot belongs to its element. */
+const holder = (el: object, slot: string): object => (slot === "focus" ? W.document : el);
+
+/** True when `basedOn` is older than the last page transition of `slot` on `el`. */
+function fenced(el: object, slot: string, basedOn: number | undefined): boolean {
+  return basedOn !== undefined && basedOn < (fences.get(holder(el, slot))?.get(slot) ?? 0);
+}
+
+/** Above zero while a Rust-caused write runs: a transition the platform reports inside it is Rust's own. */
+let rustCaused = 0;
+function asRust<T>(run: () => T): T {
+  rustCaused++;
+  try {
+    return run();
+  } finally {
+    rustCaused--;
+  }
+}
+
+/** Mints the number of a transition of `slot` on `el`. A page-caused one fences the slot; a Rust-caused one is reported (`c`) and fences nothing. */
+function transition(el: object, slot: string, send: (frame: { seq: number }) => void): void {
+  const seq = ++pageSeq;
+  if (rustCaused) return send({ seq, t: slot, c: 1 } as { seq: number });
+  const h = holder(el, slot);
+  let slots = fences.get(h);
+  if (!slots) fences.set(h, (slots = new Map()));
+  slots.set(slot, seq);
+  send({ seq, t: slot } as { seq: number });
+}
+
+/** Sends a frame on the webview's inbound channel, held (at most 256) until its eval runs. */
+function toRust(frame: unknown): void {
+  if (inboundChannel) inboundChannel.send(frame);
+  else if (heldFrames.length < 256) heldFrames.push(frame);
+}
+
 // ---------------------------------------------------------------- call, get, set
 
-function call(target: DxTargetish, method: string, args: unknown[] = [], epoch?: DxEpoch | null): unknown {
+function call(target: DxTargetish, method: string, args: unknown[] = [], epoch?: DxEpoch | null, basedOn?: number): unknown {
   const row = own(METHODS, method);
   if (!row) throw new Error("bridge.call: no such method: " + method);
   const el = resolve(target);
   if (!el) return null;
   if (!receives(row.recv, el)) throw new Error("bridge.call: " + method + " needs an element");
-  if (stale(el, epoch)) return STALE;
-  return norm(row.run(el, args));
+  if (stale(el, epoch) || row.slots.some((slot) => fenced(el, slot, basedOn))) return STALE;
+  return norm(asRust(() => row.run(el, args)));
 }
 
 /** The sentinel a dropped (stale) op returns. */
@@ -606,13 +661,13 @@ const WRITES: Record<string, { run: (el: HTMLElement, value: string | null) => v
   "overflow-anchor": { run: (el, value) => el.style.setProperty("overflow-anchor", value ?? "") },
 };
 
-function write(target: DxTargetish, slot: string, value: string | null, epoch?: DxEpoch | null): unknown {
+function write(target: DxTargetish, slot: string, value: string | null, epoch?: DxEpoch | null, basedOn?: number): unknown {
   const row = own(WRITES, slot);
   if (!row) throw new Error("bridge.write: no such slot: " + slot);
   const el = resolve(target);
   if (!isEl(el)) return null;
-  if (stale(el, epoch)) return STALE;
-  row.run(el, value);
+  if (stale(el, epoch) || fenced(el, slot, basedOn)) return STALE;
+  asRust(() => row.run(el, value));
   return null;
 }
 
@@ -626,7 +681,7 @@ function transaction(ops: DxOp[]): DxOpResult[] {
       let result: DxOpResult;
       switch (op.op) {
         case "call": {
-          const value = call(op.target, op.method, op.args, op.epoch);
+          const value = call(op.target, op.method, op.args, op.epoch, op.basedOn);
           result = value === STALE ? { ok: null, dropped: true } : { ok: value };
           break;
         }
@@ -641,7 +696,7 @@ function transaction(ops: DxOp[]): DxOpResult[] {
           break;
         }
         case "write": {
-          const value = write(op.target, op.slot, op.value, op.epoch);
+          const value = write(op.target, op.slot, op.value, op.epoch, op.basedOn);
           result = value === STALE ? { ok: null, dropped: true } : { ok: null };
           break;
         }
@@ -819,15 +874,25 @@ let applying: Readonly<{ site: string; effect: string }> | null = null;
  * are not rows). Every write goes through `applyEffect`, which names the site and the effect while it runs, so the witness
  * harness can drop or delay exactly that call and no other.
  */
-type Effect = "prevent" | "stop" | "attrs";
-type EffectRow = (target: Event | Element, name: string, value: string) => void;
+type Effect = "prevent" | "stop" | "attrs" | "slot";
+type EffectRow = (target: Event | Element, name: string, value: unknown) => void;
+/**
+ * The owners of the native slots a decision may write (its `slots` list), one row per slot. Focus is one document-wide
+ * slot: the owner always passes `preventScroll`, so one focus write lands on the focus slot and never on a scroller.
+ * The write is Rust's own, so the focus it causes is reported with its cause and fences nothing.
+ */
+const SLOT_OWNERS: Record<string, (host: HTMLElement) => void> = {
+  focus: (host) => asRust(() => host.focus({ preventScroll: true })),
+};
+
 const APPLY: Readonly<Record<Effect, EffectRow>> = Object.freeze({
   prevent: (event) => (event as Event).preventDefault(),
   stop: (event) => (event as Event).stopPropagation(),
-  attrs: (host, name, value) => (host as Element).setAttribute(name, value),
+  attrs: (host, name, value) => (host as Element).setAttribute(name, value as string),
+  slot: (host, name) => own(SLOT_OWNERS, name)?.(host as HTMLElement),
 });
 
-function applyEffect(site: string, effect: Effect, target: Event | Element, name = "", value = ""): void {
+function applyEffect(site: string, effect: Effect, target: Event | Element, name = "", value: unknown = ""): void {
   const outer = applying;
   applying = Object.freeze({ site, effect });
   try {
@@ -904,8 +969,17 @@ function installBehaviour(sc: Scope, spec: Omit<BehaviourSpec, "cmd">): () => vo
     if (decision.remember) memory = { ...memory, ...decision.remember };
     if (decision.attrs && host) {
       for (const name of Object.keys(decision.attrs)) {
-        if (ATTR_OK.test(name)) applyEffect(site, "attrs", host, name, decision.attrs[name]);
+        if (ATTR_OK.test(name)) {
+          applyEffect(site, "attrs", host, name, decision.attrs[name]);
+          if (own(WRITES, name)) sc.transitioned(host, name);
+        }
         else warnOnce("attr:" + b.kind + name, b.kind + " may not set " + name);
+      }
+    }
+    if (decision.slots && host) {
+      for (const [name, arg] of Object.entries(decision.slots)) {
+        if (own(SLOT_OWNERS, name)) applyEffect(site, "slot", host, name, arg);
+        else warnOnce("slot:" + b.kind + name, b.kind + " may not write the slot " + name);
       }
     }
     if (decision.send !== undefined) sc.send(decision.send);
@@ -957,8 +1031,17 @@ function scope(raw?: DioxusChannel): Scope {
   const offs: (() => void)[] = [];
   let done = false;
   const ch = raw ? channel(raw) : null;
+  let sub: number | undefined;
+  /** A scope that took its `sub` id sends on the webview's inbound channel, so a frame outlives the scope's eval. */
+  const emit = (frame: { seq: number }) => {
+    if (sub === undefined) ch!.send(frame);
+    else toRust({ ...frame, sub });
+  };
   const send = (message: unknown) => {
-    if (ch && !done) ch.send(message);
+    if (ch && !done) emit({ seq: ++pageSeq, m: message } as { seq: number });
+  };
+  const transitioned = (el: object, slot: string) => {
+    if (ch && !done) transition(el, slot, emit);
   };
   const cleanup = (fn: () => void) => {
     if (done) fn();
@@ -973,6 +1056,7 @@ function scope(raw?: DioxusChannel): Scope {
     on,
     cleanup,
     send,
+    transitioned,
     dispose() {
       done = true;
       for (let i = offs.length - 1; i >= 0; i--) {
@@ -1212,6 +1296,9 @@ function scope(raw?: DioxusChannel): Scope {
           case "behaviour":
             s.behaviour(command);
             break;
+          case "sub":
+            sub = command.id;
+            break;
         }
       } catch (error) {
         // a bad command is Rust's bug: say so in the console, keep serving the rest
@@ -1257,6 +1344,41 @@ async function pump(raw: DioxusChannel): Promise<void> {
   }
 }
 
+let watching = false;
+/**
+ * The page-lifetime listeners of the discrete transitions of the slots the page writes: focus (one document-wide
+ * slot), and the open state of a popover or dialog. Each takes a number and reports it on the inbound channel, so a
+ * Rust write decided before Rust saw the transition is dropped by its fence.
+ */
+function watchTransitions(): void {
+  if (watching) return;
+  watching = true;
+  const on = (type: string, slot: string) =>
+    W.document.addEventListener(type, (event: Event) => { // listener-ok: page-lifetime transition listener of the inbound eval
+      const el = event.target;
+      if (el && typeof el === "object") transition(el, slot, (frame) => toRust({ ...frame, sub: 0 }));
+    }, true);
+  on("focusin", "focus");
+  // focus leaving the document (a removed element, a closed window) has no focusin after it: the focusout mints
+  W.document.addEventListener("focusout", (event: FocusEvent) => { // listener-ok: page-lifetime transition listener of the inbound eval
+    if (event.relatedTarget == null) transition(W.document, "focus", (frame) => toRust({ ...frame, sub: 0 }));
+  }, true);
+  on("beforetoggle", "open");
+  on("cancel", "open");
+}
+
+/**
+ * The webview's one inbound eval: every scope that took a `sub` id sends its frames here, so Rust takes every number
+ * the page minted whether or not the scope's own eval is still listened to. It never receives.
+ */
+async function inbound(raw: DioxusChannel): Promise<void> {
+  inboundChannel = channel(raw);
+  watchTransitions();
+  for (const frame of heldFrames.splice(0)) inboundChannel.send(frame);
+  W.document.documentElement.setAttribute("data-dx-bridge", "ready");
+  for (;;) await inboundChannel.recv();
+}
+
 /** `call` for a bespoke script: a dropped (stale) call answers null. */
 const callPublic: DxBridge["call"] = (target, method, args) => {
   const value = call(target, method, args);
@@ -1269,6 +1391,7 @@ if (!W.__dxBridge) {
     channel,
     scope,
     serve,
+    inbound,
     pump,
     call: callPublic,
     get,

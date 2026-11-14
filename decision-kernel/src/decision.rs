@@ -11,6 +11,10 @@ pub struct Decision {
     pub stop: bool,
     /// Attributes to set on the host (`data-*` and `aria-*` only: the page refuses any other).
     pub attrs: Vec<(String, String)>,
+    /// Writes to native slots the page owns, one `(slot, argument)` per write: the page hands each to the slot's owner
+    /// (`focus`: focus the host without scrolling; the argument is `null`). A slot the page has no owner for is
+    /// refused there. Every native-slot write is one entry of this list, so a new slot adds no new field.
+    pub slots: Vec<(String, Value)>,
     /// A message for Rust.
     pub send: Option<Value>,
     /// Per-install state merged into the `memory` the next decision of this install receives.
@@ -34,6 +38,9 @@ impl Decision {
                 .map(|(k, v)| (k.clone(), Value::Str(v.clone())))
                 .collect();
             pairs.push(("attrs".to_owned(), Value::Obj(attrs)));
+        }
+        if !self.slots.is_empty() {
+            pairs.push(("slots".to_owned(), Value::Obj(self.slots.clone())));
         }
         if let Some(send) = &self.send {
             pairs.push(("send".to_owned(), send.clone()));
@@ -60,6 +67,7 @@ mod tests {
             prevent: true,
             stop: true,
             attrs: vec![("data-x".into(), "y".into())],
+            slots: vec![("focus".into(), Value::Null)],
             send: Some(Value::Null),
             remember: Some(Value::Obj(vec![("n".into(), Value::Num(1.0))])),
         };
@@ -68,10 +76,17 @@ mod tests {
             panic!("an object")
         };
         let keys: Vec<&str> = pairs.iter().map(|(k, _)| k.as_str()).collect();
-        assert_eq!(keys, ["prevent", "stop", "attrs", "send", "remember"]);
+        assert_eq!(
+            keys,
+            ["prevent", "stop", "attrs", "slots", "send", "remember"]
+        );
         assert_eq!(
             value.get("attrs").and_then(|a| a.get("data-x")),
             Some(&Value::Str("y".into()))
+        );
+        assert_eq!(
+            value.get("slots").and_then(|a| a.get("focus")),
+            Some(&Value::Null)
         );
     }
 }
