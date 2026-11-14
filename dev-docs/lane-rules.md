@@ -297,6 +297,22 @@ cores, so a batch's verification runs once for the batch, not once per lane:
   the suite, the batch is verified by `scripts/deploy-preview.sh --suite-only` on the merged branch before it merges.
   The run is recorded against the exact tree (`$LANE_TGT/release-suite/<tree>.pass`), a merge commit on an unmoved main
   has the same tree, and the deploy reuses the stamp instead of running the suite again.
+- **A fix after a red suite re-runs only the spec files it can affect.** Every spec file that runs writes a record, green only by
+  proof: the tests of the file's report equal an independent `playwright test --list` of the same files, and each ended expected
+  or flaky; a file with a skipped, interrupted or unrun test gets no record and runs every time. A record sits under a site key
+  (the hash of every input of the release build: the tree without `playwright/`, `dev-docs/`, `docs/` and `primitives/ts-test/`,
+  plus the `dev-docs` file the build includes) and a spec key (the spec file, the files it imports, one hash of the config's and
+  fixtures' imports, the tools and every file nothing imports, the environment variables the code reads, the browser and the
+  installed Playwright; `playwright/tools/suite-key.mjs`). A change to a helper re-runs the specs that import it; a change to the
+  config, a tool, a data file or the site re-runs the whole suite. The import analysis can miss a file a spec reads by path: the
+  site key bounds what that costs (the reused result was earned on byte-identical site bytes, so it can hide only a test-side
+  regression, which the next run that executes the file shows). What the key cannot classify fails closed: a `process` that could
+  read the environment unseen, a test that names or enumerates spec files or runs a program, or a missing TypeScript parser leaves
+  the file or the whole suite without a key. The deploy accepts a tree when every spec file of it has a green record for its site,
+  and otherwise runs the files without one on the kept build of that site (about 55 MB, the two newest are kept). It builds and
+  runs in a private worktree of the planned tree (`scripts/lib/pinned-worktree.sh`, as `scripts/gate-at.sh` does), kept on a red
+  run, and refuses to build `docs/` from a checkout that is no longer the tested tree. The totals the deploy prints are the whole
+  suite's, with the reused files stated separately; `DEPLOY_SUITE_REUSE=off` runs the whole suite.
 - **The verifier** (one agent per batch) builds the shared base once, merges the batch's edit lanes, builds once, runs
   `test:changed` over the union, and bisects any red to its lane, which gets it back to fix.
 
