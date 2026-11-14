@@ -460,14 +460,6 @@ fn HoverCardContentRendered(
     /// The card's content.
     children: Element,
 ) -> Element {
-    crate::top_layer::use_popover_shown_while_mounted(id.clone(), open, set_open);
-    // JS-measured static positioning fallback for Firefox/WebKit (no CSS
-    // Anchor Positioning) -- see `top_layer::use_anchor_position_fallback`'s
-    // doc. `anchor_id` is this content's own `id`: `HoverCardTrigger`'s
-    // `anchor-name` is keyed off `ctx.content_id`, which this component
-    // (below) keeps synced to this same id.
-    crate::top_layer::use_anchor_position_fallback(id.clone(), id.clone(), open, side, align, 10);
-
     // Entering the card holds it open (cancels a pending close); leaving it
     // starts the same `close_delay` as leaving the trigger. Both share the
     // root's timers, so a pointer crossing trigger -> card or card -> trigger
@@ -476,31 +468,30 @@ fn HoverCardContentRendered(
     let handle_mouse_enter = move |_: Event<MouseData>| timers.hold();
     let handle_mouse_leave = move |_: Event<MouseData>| timers.pointer_leave();
 
-    // `anchored_content_attributes` below writes `data-dx-anchored="hover-card"`, the attribute the
-    // engine's anchor stylesheet selects on (see `tooltip.rs`'s `TooltipContentRendered` for why an
-    // attribute and not a class).
-    let attributes = merge_attributes(vec![
-        attributes,
-        // Owned by this component -- role/top-layer wiring/positioning
-        // state must win over a caller's own attributes
-        // (`dev-docs/backlog.md` row 93's duplicate-attribute hazard).
-        attributes!(div {
-            role: "tooltip",
-            popover: crate::top_layer::PopoverKind::Manual.as_str(),
-            ..state_attrs::open(is_open),
-            "data-side": side.as_str(),
-            "data-align": align.as_str(),
-            hidden: dormant,
-        }),
-    ]);
-    // Folds the caller's own `style` together with the anchor binding into
-    // one `style` attribute -- see `top_layer::anchored_content_attributes`'s
-    // doc for why a bare `style: position_anchor_style(&id)` literal
-    // alongside `..attributes` is the duplicate-`style` hazard
-    // (`dev-docs/conformance-harness.md` hydration-parity Rule 4).
-    let attributes = crate::top_layer::anchored_content_attributes(
-        crate::top_layer::AnchorKind::HoverCard,
-        &id,
+    // The anchor is this content's own `id`: `HoverCardTrigger`'s `anchor-name` is keyed off
+    // `ctx.content_id`, which this component keeps synced to the same id.
+    let attributes = crate::top_layer::use_anchored_panel(
+        crate::top_layer::AnchoredPanel {
+            id: id.clone(),
+            open: open.into(),
+            set_open,
+            popover: crate::top_layer::PopoverKind::Manual,
+            sync: crate::top_layer::PanelSync::WhileMounted,
+            placement: crate::top_layer::AnchoredPlacement::Anchored {
+                anchor_id: id.clone(),
+                side,
+                align,
+                gap: 10,
+                kind: crate::top_layer::AnchorKind::HoverCard,
+            },
+            owned: attributes!(div {
+                role: "tooltip",
+                ..state_attrs::open(is_open),
+                "data-side": side.as_str(),
+                "data-align": align.as_str(),
+                hidden: dormant,
+            }),
+        },
         attributes,
     );
 

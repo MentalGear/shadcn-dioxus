@@ -487,15 +487,38 @@ fn TooltipContentRendered(
     /// The tooltip's content.
     children: Element,
 ) -> Element {
-    crate::top_layer::use_popover_shown_while_mounted(id.clone(), open, set_open);
-    // JS-measured static positioning fallback for Firefox/WebKit (no CSS
-    // Anchor Positioning) -- see `top_layer::use_anchor_position_fallback`'s
-    // doc. `anchor_id` is this content's own `id`: `TooltipTrigger`'s
-    // `anchor-name` is keyed off `ctx.tooltip_id`, which `TooltipContent`
-    // (below) keeps synced to this same id.
-    crate::top_layer::use_anchor_position_fallback(id.clone(), id.clone(), open, side, align, 4);
-    // The arrow reads the engine's placement contract (`data-placed-side`, `--dx-anchor-offset-x/-y`,
-    // published by `use_anchor_position_fallback` at every reposition): no measurement of its own.
+    // The panel is mounted by `render()` (`use_animated_open`) for the whole CSS close animation, so its
+    // popover is kept shown while mounted (`PanelSync::WhileMounted`). `anchor_id` is this content's own
+    // `id`: `TooltipTrigger`'s `anchor-name` is keyed off `ctx.tooltip_id`, which `TooltipContent` keeps
+    // synced to this same id. The arrow reads the engine's placement contract (`data-placed-side`,
+    // `--dx-anchor-offset-x/-y`, published by the engine at every reposition): no measurement of its own.
+    // `top_layer::anchored_content_attributes` (inside the hook) writes `data-dx-anchored="tooltip"`, the
+    // attribute the engine's anchor stylesheet selects on (`top_layer/styles.rs`). It is an attribute, never
+    // a `Styles::`-routed class: `manganis-core`'s `css_module_parser` does not scope class selectors inside
+    // `@supports` bodies (`dev-docs/issues/css-module-supports-scoping.md`).
+    let attributes = crate::top_layer::use_anchored_panel(
+        crate::top_layer::AnchoredPanel {
+            id: id.clone(),
+            open: open.into(),
+            set_open,
+            popover: crate::top_layer::PopoverKind::Manual,
+            sync: crate::top_layer::PanelSync::WhileMounted,
+            placement: crate::top_layer::AnchoredPlacement::Anchored {
+                anchor_id: id.clone(),
+                side,
+                align,
+                gap: 4,
+                kind: crate::top_layer::AnchorKind::Tooltip,
+            },
+            owned: attributes!(div {
+                role: "tooltip",
+                ..state_attrs::open(open.cloned()),
+                "data-side": side.as_str(),
+                "data-align": align.as_str(),
+            }),
+        },
+        attributes,
+    );
     // Any scroll closes a tooltip (`top_layer::use_close_on_scroll`'s doc).
     crate::top_layer::use_close_on_scroll(
         id.clone(),
@@ -503,36 +526,6 @@ fn TooltipContentRendered(
         open,
         crate::top_layer::ScrollClose::AnyScroll,
         set_open,
-    );
-
-    // `top_layer::anchored_content_attributes` below writes the `data-dx-anchored="tooltip"` attribute
-    // the engine's anchor stylesheet selects on (`top_layer/styles.rs`). It is an attribute, never a
-    // `Styles::`-routed class: `manganis-core`'s `css_module_parser` does not scope class selectors
-    // inside `@supports` bodies (`dev-docs/issues/css-module-supports-scoping.md`), so a hashed class
-    // could never match the engine's `@supports (anchor-name: --a)` rules, while an attribute selector
-    // has nothing to hash.
-    let attributes = merge_attributes(vec![
-        attributes,
-        // Owned by this component -- role/top-layer wiring/positioning
-        // state must win over a caller's own attributes
-        // (`dev-docs/backlog.md` row 93's duplicate-attribute hazard).
-        attributes!(div {
-            role: "tooltip",
-            popover: crate::top_layer::PopoverKind::Manual.as_str(),
-            ..state_attrs::open(open.cloned()),
-            "data-side": side.as_str(),
-            "data-align": align.as_str(),
-        }),
-    ]);
-    // Folds the caller's own `style` together with the anchor binding into
-    // one `style` attribute -- see `top_layer::anchored_content_attributes`'s
-    // doc for why a bare `style: position_anchor_style(&id)` literal
-    // alongside `..attributes` is the duplicate-`style` hazard
-    // (`dev-docs/conformance-harness.md` hydration-parity Rule 4).
-    let attributes = crate::top_layer::anchored_content_attributes(
-        crate::top_layer::AnchorKind::Tooltip,
-        &id,
-        attributes,
     );
 
     // Hoverable content (WCAG 1.4.13): with a `close_delay` above 0 the
