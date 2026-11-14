@@ -4,9 +4,9 @@ title: "The Rust decision contract: one decide per behaviour, the decision kerne
 status: "APPROVED 2026-11-11 (owner); opens on row 508's KERNEL verdict (2026-11-12), which stands after the…"
 size: "L (inferred: was M; the review adds…"
 area: primitives
-js-grant: js_file_bytes=4500 (measured basis: row 508's loader and codec cost 4,270 bytes of `bridge.js`, 19,956 to 24,226, and the deleted TypeScript `decide` was 15 bytes; the in-place codec of item 7 should come in under the proof's 4,270, and the grant is the ceiling, not a target)
+js-grant: js_file_bytes=4500, bytes=2400, js_lit=1, sink=3 (measured basis: row 508's loader and codec cost 4,270 bytes of `bridge.js`, 19,956 to 24,226, and the deleted TypeScript `decide` was 15 bytes; the in-place codec of item 7 should come in under the proof's 4,270, and the grant is the ceiling, not a target) (owner 2026-11-14, on the measured growth: `bridge.js` +4,491; `ts/bridge.ts` +844, `ts/lib/register.ts` +658 and `types/bridge.d.ts` +879 source bytes; one JS literal in `transport.rs`; three sink sites in the scripted document of a `session.rs` unit test)
 adds: []
-updated: 2026-11-12
+updated: 2026-11-14
 ---
 
 # Row 509: The Rust decision contract: one decide per behaviour, the decision kernel as a committed artefact, and the gates
