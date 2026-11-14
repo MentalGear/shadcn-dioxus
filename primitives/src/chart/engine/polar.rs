@@ -195,6 +195,12 @@ impl PathBuilder {
 /// full-circle/annulus special case) versus simplified
 /// (`corner_radius`).
 ///
+/// `pad_angle` is the gap between neighbouring slices, as the angle it subtends at the reference radius
+/// `sqrt(inner^2 + outer^2)` (d3's default `padRadius`); the gap is `2 * reference * sin(pad_angle / 2)` wide
+/// along its whole length, because each straight edge is moved parallel to its radial line, not rotated. With
+/// no inner radius the two moved edges meet in a tip short of the centre; a slice thinner than the gap (the
+/// edges cross inside the rim) draws nothing. `pad_angle == 0` is the plain sector.
+///
 /// `inner_radius`/`outer_radius` are swapped if given in the wrong order
 /// (matching `d3-shape`: "Ensure that the outer radius is always larger
 /// than the inner radius"); negative radii and a negative `corner_radius`
@@ -278,6 +284,28 @@ pub fn arc_path(
     // `da0` (unlike `da1`) is read again below, past this block, to
     // decide whether the inner ring degenerated to a point.
     let mut da0 = da;
+    // A padded full pie (no inner radius): where the two offset edges of this slice meet. Each edge is the
+    // radial line moved `half_gap` toward the slice, so the facing edges of two neighbours stay `2 * half_gap`
+    // apart all the way in and the slice ends in a tip short of the centre instead of at it.
+    let mut tip = None;
+
+    if pad_active && r0 <= EPSILON {
+        let half_gap = rp * ap.sin();
+        let half_slice = da / 2.0;
+        // The offset edges cross at `half_gap / sin(half_slice)` from the centre; at or beyond the rim the slice
+        // is thinner than the gap, and nothing is drawn.
+        if half_slice.sin() * r1 <= half_gap + EPSILON {
+            path.move_to(0.0, 0.0);
+            path.close();
+            return path.build();
+        }
+        tip = Some(polar_point(
+            0.0,
+            0.0,
+            half_gap / half_slice.sin(),
+            (a0 + a1) / 2.0,
+        ));
+    }
 
     if pad_active {
         let p0 = asin_clamped(rp / r0 * ap.sin());
@@ -376,14 +404,14 @@ pub fn arc_path(
             path.arc(0.0, 0.0, r0, ic1_angle, ic0_angle);
             path.arc(ic0.0, ic0.1, rc, it0, it0 + short_delta(it0, ipsi0));
         } else {
-            let (ix, iy) = polar_point(0.0, 0.0, r0, a10);
+            let (ix, iy) = tip.unwrap_or_else(|| polar_point(0.0, 0.0, r0, a10));
             path.line_to(ix, iy);
         }
     } else {
         let (sx, sy) = polar_point(0.0, 0.0, r1, a01);
         path.move_to(sx, sy);
         path.arc(0.0, 0.0, r1, a01, a11);
-        let (ix, iy) = polar_point(0.0, 0.0, r0, a10);
+        let (ix, iy) = tip.unwrap_or_else(|| polar_point(0.0, 0.0, r0, a10));
         path.line_to(ix, iy);
         if r0 > EPSILON && da0 > EPSILON {
             path.arc(0.0, 0.0, r0, a10, a00);
@@ -1128,6 +1156,161 @@ L-29.04,79.785A4,4,0,0,0,-31.255,74.727A81,81,0,1,1,80.91,-3.812A4,4,0,0,0,84.90
         let d = arc_path(50.0, 100.0, HALF_PI, 0.0, 0.05, 0.0);
         assert!(d.starts_with("M99.961,-2.795"), "{d}");
         assert!(d.contains(",0,0,0,"), "ccw sweep flag: {d}");
+    }
+
+    /// The numbers of a path string, in order (the commands' letters dropped).
+    fn path_numbers(d: &str) -> Vec<f64> {
+        d.split(|c: char| c.is_ascii_alphabetic() || c == ',' || c == ' ')
+            .filter(|t| !t.is_empty())
+            .map(|t| t.parse().expect("a number"))
+            .collect()
+    }
+
+    /// `(outer start corner, outer end corner, inner end point, inner start corner)` of an unrounded slice's path
+    /// `M start A ... end L inner-end [A ... inner-start] Z`; a full pie has no inner arc.
+    type Corners = ((f64, f64), (f64, f64), (f64, f64), Option<(f64, f64)>);
+
+    fn corners(d: &str) -> Corners {
+        let n = path_numbers(d);
+        let start = (n[0], n[1]);
+        let end = (n[7], n[8]);
+        let inner_end = (n[9], n[10]);
+        let inner_start = (n.len() >= 18).then(|| (n[16], n[17]));
+        (start, end, inner_end, inner_start)
+    }
+
+    /// Perpendicular distance from `p` to the line through `a` and `b`.
+    fn dist_to_line(p: (f64, f64), a: (f64, f64), b: (f64, f64)) -> f64 {
+        let (dx, dy) = (b.0 - a.0, b.1 - a.1);
+        ((p.0 - a.0) * dy - (p.1 - a.1) * dx).abs() / dx.hypot(dy)
+    }
+
+    /// Three equal slices of a padded pie: slice 0's end edge and slice 1's start edge face each other.
+    fn facing_edges(r0: f64, r1: f64, pad: f64) -> [(f64, f64); 4] {
+        let arcs = pie_layout(&[1.0, 1.0, 1.0], pad, 0.0, TAU, PieSort::None);
+        let a = corners(&arc_path(
+            r0,
+            r1,
+            arcs[0].start_angle,
+            arcs[0].end_angle,
+            arcs[0].pad_angle,
+            0.0,
+        ));
+        let b = corners(&arc_path(
+            r0,
+            r1,
+            arcs[1].start_angle,
+            arcs[1].end_angle,
+            arcs[1].pad_angle,
+            0.0,
+        ));
+        // Slice 0's end edge runs from its outer end corner to its inner end; slice 1's start edge from its outer
+        // start corner to its inner start (the donut's inner arc runs from the end side back to the start side).
+        [a.1, a.2, b.0, b.3.expect("a donut slice has an inner arc")]
+    }
+
+    #[test]
+    fn a_padded_pie_gap_has_the_same_width_from_the_rim_to_the_tips() {
+        let (r1, pad): (f64, f64) = (100.0, 0.1);
+        let gap = 2.0 * r1 * (pad / 2.0).sin();
+        let arcs = pie_layout(&[1.0, 1.0, 1.0], pad, 0.0, TAU, PieSort::None);
+        let a = corners(&arc_path(
+            0.0,
+            r1,
+            arcs[0].start_angle,
+            arcs[0].end_angle,
+            arcs[0].pad_angle,
+            0.0,
+        ));
+        let b = corners(&arc_path(
+            0.0,
+            r1,
+            arcs[1].start_angle,
+            arcs[1].end_angle,
+            arcs[1].pad_angle,
+            0.0,
+        ));
+        // Slice 0's end edge: outer corner `a.1` to tip `a.2`. Slice 1's start edge: outer corner `b.0` to tip `b.2`.
+        let (e_out, e_tip) = (a.1, a.2);
+        let (f_out, f_tip) = (b.0, b.2);
+        // The tips stop short of the centre.
+        assert!(
+            e_tip.0.hypot(e_tip.1) > 1.0 && f_tip.0.hypot(f_tip.1) > 1.0,
+            "{e_tip:?} {f_tip:?}"
+        );
+        // Parallel edges.
+        let cross =
+            (e_tip.0 - e_out.0) * (f_tip.1 - f_out.1) - (e_tip.1 - e_out.1) * (f_tip.0 - f_out.0);
+        let len = (e_tip.0 - e_out.0).hypot(e_tip.1 - e_out.1)
+            * (f_tip.0 - f_out.0).hypot(f_tip.1 - f_out.1);
+        assert!(
+            cross.abs() / len < 1e-3,
+            "edges are not parallel: {}",
+            cross / len
+        );
+        // The distance between them: at the rim, half way, at the inner end.
+        let mid = ((e_out.0 + e_tip.0) / 2.0, (e_out.1 + e_tip.1) / 2.0);
+        for (name, p) in [("rim", e_out), ("mid", mid), ("inner end", e_tip)] {
+            let d = dist_to_line(p, f_out, f_tip);
+            assert!((d - gap).abs() < 0.02, "{name}: gap {d}, want {gap}");
+        }
+    }
+
+    #[test]
+    fn a_padded_pie_slice_keeps_its_centre_and_its_tip_sits_on_the_bisector() {
+        let (r1, pad): (f64, f64) = (100.0, 0.1);
+        let arcs = pie_layout(&[1.0, 1.0, 1.0], pad, 0.0, TAU, PieSort::None);
+        for arc in &arcs {
+            let (s, e, tip, _) = corners(&arc_path(
+                0.0,
+                r1,
+                arc.start_angle,
+                arc.end_angle,
+                arc.pad_angle,
+                0.0,
+            ));
+            let mid = (arc.start_angle + arc.end_angle) / 2.0;
+            let (ux, uy) = (mid.sin(), -mid.cos()); // this module's angle: 0 = twelve o'clock, clockwise
+                                                    // The outer corners are symmetric about the bisector, and the tip lies on it.
+            let off = |p: (f64, f64)| p.0 * uy - p.1 * ux;
+            assert!(
+                (off(s) + off(e)).abs() < 0.01,
+                "outer corners not symmetric about the centre"
+            );
+            assert!(off(tip).abs() < 0.01, "tip off the bisector: {tip:?}");
+            let along = tip.0 * ux + tip.1 * uy;
+            let half_gap = r1 * (pad / 2.0).sin();
+            let want = half_gap / ((arc.end_angle - arc.start_angle) / 2.0).sin();
+            assert!(
+                (along - want).abs() < 0.01,
+                "tip distance {along}, want {want}"
+            );
+        }
+    }
+
+    #[test]
+    fn a_pie_slice_too_thin_for_its_gap_draws_nothing() {
+        // The gap (0.1 rad at the rim) is wider than the slice (0.05 rad): the offset edges cross inside the rim.
+        assert_eq!(arc_path(0.0, 100.0, 0.0, 0.05, 0.1, 0.0), "M0,0Z");
+    }
+
+    #[test]
+    fn an_unpadded_pie_slice_is_unchanged() {
+        assert_eq!(
+            arc_path(0.0, 100.0, 0.0, PI / 2.0, 0.0, 0.0),
+            "M0,-100A100,100,0,0,1,100,0L0,0Z"
+        );
+    }
+
+    #[test]
+    fn a_padded_donut_gap_has_the_same_width_at_the_inner_and_outer_ring() {
+        let (r0, r1, pad): (f64, f64, f64) = (50.0, 100.0, 0.1);
+        let gap = 2.0 * (r0 * r0 + r1 * r1).sqrt() * (pad / 2.0).sin();
+        let [e_out, e_in, f_out, f_in] = facing_edges(r0, r1, pad);
+        for (name, p) in [("outer", e_out), ("inner", e_in)] {
+            let d = dist_to_line(p, f_out, f_in);
+            assert!((d - gap).abs() < 0.02, "{name}: gap {d}, want {gap}");
+        }
     }
 
     #[test]

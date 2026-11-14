@@ -122,7 +122,9 @@ pub struct PieOptions {
     /// `endAngle`, Recharts degrees. Default `360`: a full turn,
     /// counter-clockwise.
     pub end_angle: f64,
-    /// `paddingAngle`, degrees: the gap between adjacent slices.
+    /// `paddingAngle`, degrees: the gap between adjacent slices. The gap has a constant width, the chord of
+    /// this angle at the ring's reference radius (`engine::polar::arc_path`): the facing edges of two slices
+    /// are parallel, and a full pie's slices end in tips short of the centre.
     pub padding_angle: f64,
     /// `cornerRadius`, px -- see `engine::polar::arc_path` for this crate's
     /// simplified (documented) corner construction.

@@ -15,3 +15,6 @@ dev-docs/backlog-done.md merge=backlog-index
 playwright/durations.json merge=durations
 primitives/src/kernel/* merge=kernel-artefact
 dev-docs/agent-model-fit.md merge=union
+# CHANGELOG.md takes one line per lane under the same heading of "Unreleased": `union` keeps both sides' lines there.
+# An entry edited on one side while the other adds beside it keeps both versions; read the section after a merge.
+CHANGELOG.md merge=union
