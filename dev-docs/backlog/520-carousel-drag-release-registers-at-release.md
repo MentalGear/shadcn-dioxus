@@ -4,7 +4,7 @@ title: "A carousel drag release makes its destination current when the scroll se
 status: "APPROVED 2026-11-14 (owner: \"do the cheap one\", of the two ways to register the slide earlier).…"
 size: "S."
 area: primitives
-js-grant: js_lit=22 (the owner asked for the change on 2026-11-14; measured: carousel/drag.rs js_lit 537 to 546, carousel/scroll.rs 530 to 543)
+js-grant: js_lit=22, js_file_bytes=2640 (the owner asked for the change on 2026-11-14; js_file_bytes stands for the total, which counts a js_lit unit as 120 bytes; measured: carousel/drag.rs js_lit 537 to 546, carousel/scroll.rs 530 to 543)
 js-fix: primitives/src/carousel/drag.rs, primitives/src/carousel/scroll.rs
 updated: 2026-11-14
 ---
