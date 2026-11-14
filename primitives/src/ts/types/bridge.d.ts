@@ -94,7 +94,7 @@ type DxSampleUntil =
 
 /** An op of a transaction (or of the pump). `epoch` makes a call or set droppable when stale. */
 type DxOp =
-  | { op: "call"; target: DxTargetish; method: string; args?: unknown[]; epoch?: DxEpoch | null }
+  | { op: "call"; target: DxTargetish; method: string; args?: unknown[]; epoch?: DxEpoch | null; basedOn?: number }
   | { op: "get"; target: DxTargetish; props: string[]; epoch?: DxEpoch | null }
   | { op: "set"; target: DxTargetish; name: string; value: string | null; epoch?: DxEpoch | null }
   | { op: "write"; target: DxTargetish; slot: string; value: string | null; epoch?: DxEpoch | null; basedOn?: number };

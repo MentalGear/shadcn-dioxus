@@ -1,0 +1,23 @@
+# kind<TAB>name<TAB>slots<TAB>verdict. The slot table of the order contract: every operation that writes page state, the slots it can touch, and who may write them.
+# kind method: a row of METHODS in ts/bridge.ts (slots must equal its `slots` list); verdict forbidden: no Rust outside primitives/src/bridge/ names its Method variant (the slot has an owner).
+# kind write: a row of WRITES (a slot Rust may write, fenced by based_on); verdict rust.
+# kind effect: a row of APPLY (what a decision's effect writes on the page); verdict page: only the adapter writes it.
+# Slots: open, focus, scroll, caret, attr, style. A row is added with the operation that needs it; scripts/check-bridge-behaviours.sh holds the table equal to the three sources.
+method	showPopover	open	forbidden
+method	hidePopover	open	forbidden
+method	togglePopover	open	forbidden
+method	showModal	open,focus	forbidden
+method	close	open,focus	forbidden
+method	blur	focus	forbidden
+method	scrollIntoView	scroll	forbidden
+method	scrollTo	scroll	forbidden
+method	scrollBy	scroll	forbidden
+method	setSelectionRange	caret	forbidden
+method	select	caret	forbidden
+write	data-dx-keyboard	attr	rust
+write	data-dx-keyboard-slack	attr	rust
+write	padding-bottom	style	rust
+write	overflow-anchor	style	rust
+effect	prevent	-	page
+effect	stop	-	page
+effect	attrs	attr	page

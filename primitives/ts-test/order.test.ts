@@ -145,3 +145,109 @@ describe("the inbound eval", () => {
     expect(own.frames).toEqual([{ seq: 1, m: "z" }]);
   });
 });
+
+describe("a call's fence covers every slot the verb can touch", () => {
+  const call = (bridge: any, method: string, basedOn?: number) =>
+    bridge.transaction([{ op: "call", target: "host", method, args: [], ...(basedOn === undefined ? {} : { basedOn }) }])[0];
+
+  test("showModal touches the open and focus slots: a transition of either drops a call decided before it", () => {
+    for (const slot of ["open", "focus"]) {
+      const { bridge, host } = setup();
+      const ch = makeChannel();
+      const s = bridge.scope(ch);
+      s.transitioned(host, slot);
+      const seq = ch.frames[0].seq;
+      expect(call(bridge, "showModal", seq - 1)).toEqual({ ok: null, dropped: true });
+      expect(host.calls).toEqual([]);
+      expect(call(bridge, "showModal", seq)).toEqual({ ok: null });
+      expect(host.calls.map((c: any) => c[0])).toEqual(["showModal"]);
+    }
+  });
+
+  test("a verb that does not touch the slot is not held back by its transition", () => {
+    const { bridge, host } = setup();
+    const ch = makeChannel();
+    bridge.scope(ch).transitioned(host, "open");
+    expect(call(bridge, "scrollTo", 0)).toEqual({ ok: null });
+  });
+
+  test("a call with no basedOn is not fenced", () => {
+    const { bridge, host } = setup();
+    bridge.scope(makeChannel()).transitioned(host, "open");
+    expect(call(bridge, "showModal")).toEqual({ ok: null });
+  });
+});
+
+describe("the page-lifetime transition listeners", () => {
+  const call = (bridge: any, method: string, basedOn?: number) =>
+    bridge.transaction([{ op: "call", target: "host", method, args: [], ...(basedOn === undefined ? {} : { basedOn }) }])[0];
+  const started = () => {
+    const ctx = setup();
+    const inbound = makeChannel();
+    void ctx.bridge.inbound(inbound);
+    return { ...ctx, inbound };
+  };
+
+  test("a user focus change is a transition of the one document-wide focus slot", () => {
+    const { bridge, win, host, inbound } = started();
+    win.document.dispatch("focusin", { target: host });
+    expect(inbound.frames).toEqual([{ seq: 1, sub: 0, t: "focus" }]);
+    // the fence covers every element: a call that touches focus and was decided before it is dropped
+    expect(call(bridge, "blur", 0)).toEqual({ ok: null, dropped: true });
+    expect(call(bridge, "blur", 1)).toEqual({ ok: null });
+  });
+
+  test("a popover or dialog transition fences the open slot of its own element only", () => {
+    const { bridge, win, host, doc, inbound } = started();
+    const other = doc.add("other");
+    win.document.dispatch("beforetoggle", { target: other });
+    win.document.dispatch("cancel", { target: host });
+    expect(inbound.frames.map((f: any) => f.t)).toEqual(["open", "open"]);
+    expect(call(bridge, "showPopover", 1)).toEqual({ ok: null, dropped: true });
+    expect(call(bridge, "showPopover", 2)).toEqual({ ok: null });
+  });
+
+  test("a transition a Rust call causes is reported with its cause and does not advance the fence", () => {
+    const { bridge, win, host, inbound } = started();
+    host.showModal = () => win.document.dispatch("beforetoggle", { target: host });
+    expect(call(bridge, "showModal", 0)).toEqual({ ok: null });
+    expect(inbound.frames).toEqual([{ seq: 1, sub: 0, t: "open", c: 1 }]);
+    expect(call(bridge, "showPopover", 0)).toEqual({ ok: null });
+  });
+});
+
+describe("the ready attribute", () => {
+  test("html[data-dx-bridge] is `ready` once the inbound eval runs, and not before", () => {
+    const { win, bridge } = setup();
+    const html = win.document.documentElement;
+    expect(html.getAttribute("data-dx-bridge")).toBeNull();
+    void bridge.inbound(makeChannel());
+    expect(html.getAttribute("data-dx-bridge")).toBe("ready");
+  });
+
+  test("held frames are flushed before the attribute is set", () => {
+    const { win, bridge } = setup();
+    const s = bridge.scope(makeChannel());
+    s.run({ cmd: "sub", id: 1 });
+    s.send("early");
+    const inbound = makeChannel();
+    const html = win.document.documentElement;
+    const at: unknown[] = [];
+    const send = inbound.send.bind(inbound);
+    inbound.send = (m: unknown) => (at.push(html.getAttribute("data-dx-bridge")), send(m));
+    void bridge.inbound(inbound);
+    expect(at).toEqual([null]);
+  });
+});
+
+describe("a focusout that leaves the document", () => {
+  test("a focusout with no relatedTarget mints a focus transition, one with a relatedTarget does not", () => {
+    const { win, host, bridge } = setup();
+    const inbound = makeChannel();
+    void bridge.inbound(inbound);
+    win.document.dispatch("focusout", { target: host, relatedTarget: host });
+    expect(inbound.frames).toEqual([]);
+    win.document.dispatch("focusout", { target: host, relatedTarget: null });
+    expect(inbound.frames).toEqual([{ seq: 1, sub: 0, t: "focus" }]);
+  });
+});

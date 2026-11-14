@@ -26,7 +26,7 @@ use serde_json::Value;
 use super::behaviours::{Inbound, StandDown};
 use super::events::{EventField, EventKind};
 use super::transport;
-use super::{Behaviour, Epoch, Target};
+use super::{Behaviour, Epoch, Prop, Target};
 use crate::dioxus_core::{provide_root_context, try_consume_context, Runtime, ScopeId};
 use crate::js_listener::{receive, TEARDOWN};
 
@@ -149,6 +149,36 @@ impl Pump {
             n: state.epochs,
         }
     }
+}
+
+/// Boots this webview's bridge: opens its one inbound eval and waits (bounded, about two seconds) until the page
+/// reports `html[data-dx-bridge="ready"]`, which it sets once the inbound eval runs and the frames held for it are
+/// flushed. Answers whether the page got there; `false` when the platform runs no JavaScript or the page did not
+/// answer in time. Call it from the app's root effect, before anything that needs the bridge to be ready
+/// (the preview sets `data-hydrated` after it).
+pub async fn boot() -> bool {
+    if Runtime::try_current().is_none() {
+        return false;
+    }
+    Pump::current();
+    let ready = Prop::Attr("data-dx-bridge".into());
+    for _ in 0..125 {
+        match super::get(
+            Target::Selector {
+                selector: "html".into(),
+            },
+            [ready.clone()],
+        )
+        .await
+        {
+            Ok(props) if props.value(&ready).and_then(Value::as_str) == Some("ready") => {
+                return true
+            }
+            Ok(_) => crate::sleep::sleep(std::time::Duration::from_millis(16)).await,
+            Err(_) => return false,
+        }
+    }
+    false
 }
 
 /// The highest page sequence number such that Rust has taken every frame up to it: the `based_on` of a write
@@ -1021,6 +1051,20 @@ mod tests {
     }
 
     impl ScriptedDocument {
+        /// The first eval whose script contains `needle`.
+        fn eval_with(&self, needle: &str) -> Option<Rc<RefCell<Channel>>> {
+            self.0
+                .borrow()
+                .evals
+                .iter()
+                .find(|c| c.borrow().script.contains(needle))
+                .cloned()
+        }
+
+        fn has_eval(&self, needle: &str) -> bool {
+            self.eval_with(needle).is_some()
+        }
+
         /// The sessions the hook opened, in order.
         fn sessions(&self) -> Vec<Rc<RefCell<Channel>>> {
             let page = self.0.borrow();
@@ -1517,5 +1561,64 @@ mod tests {
             AHEAD_MAX as u64 + 2,
             "past it the lost number is given up"
         );
+    }
+    #[tokio::test(flavor = "current_thread", start_paused = true)]
+    async fn boot_opens_the_inbound_eval_and_waits_for_the_ready_attribute() {
+        #[derive(Clone, Default)]
+        struct Booted(Rc<Cell<Option<bool>>>);
+        #[component]
+        fn Booter() -> Element {
+            let booted: Booted = consume_context();
+            use_effect(move || {
+                let booted = booted.clone();
+                spawn(async move { booted.0.set(Some(boot().await)) });
+            });
+            rsx! { "boot" }
+        }
+        let document = ScriptedDocument::default();
+        let booted = Booted::default();
+        let mut dom = VirtualDom::new(Booter)
+            .with_root_context(Rc::new(document.clone()) as Rc<dyn dioxus::document::Document>)
+            .with_root_context(booted.clone());
+        dom.rebuild_in_place();
+        settle(&mut dom).await;
+        assert!(
+            document.has_eval("__dxB.inbound("),
+            "boot opens the inbound eval"
+        );
+        assert_eq!(booted.0.get(), None, "not ready until the page says so");
+
+        // the page answers the ask on the ordered channel: not ready, then ready
+        for (round, attr) in [json!(null), json!("ready")].into_iter().enumerate() {
+            let pump = document
+                .eval_with("__dxB.pump(")
+                .expect("the ordered channel");
+            let id = pump
+                .borrow()
+                .sent
+                .iter()
+                .filter_map(|m| m["id"].as_u64())
+                .nth(round)
+                .unwrap_or_else(|| {
+                    panic!(
+                        "round {round}: an ask is on the channel: {:?}",
+                        pump.borrow().sent
+                    )
+                });
+            {
+                let mut channel = pump.borrow_mut();
+                channel.inbox.push_back(
+                    json!({"id": id, "results": [{"ok": {"attr:data-dx-bridge": attr}}]}),
+                );
+                if let Some(waker) = channel.waker.take() {
+                    waker.wake();
+                }
+            }
+            for _ in 0..3 {
+                tokio::time::advance(std::time::Duration::from_millis(20)).await;
+                settle(&mut dom).await;
+            }
+        }
+        assert_eq!(booted.0.get(), Some(true));
     }
 }

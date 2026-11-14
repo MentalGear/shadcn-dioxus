@@ -128,11 +128,11 @@ use serde_json::{json, Value};
 pub use behaviours::{Behaviour, Declared, DeclaredTarget};
 pub use events::{EventField, EventKind};
 pub use session::{
-    page_seen, use_behaviour, use_document_listener, use_element_listener, use_event_listener,
-    use_intersection_observer, use_media_query, use_mutation_observer, use_observer,
-    use_resize_observer, use_sample, use_window_listener, use_window_size, Command, Flush,
-    Intersection, ListenOptions, MediaChange, Mutation, ObserveOptions, ObserverKind, Publish,
-    ResizeBox, SampleField, Sampled, Session, Size, Subscription, Until, WindowSize,
+    boot, page_seen, use_behaviour, use_document_listener, use_element_listener,
+    use_event_listener, use_intersection_observer, use_media_query, use_mutation_observer,
+    use_observer, use_resize_observer, use_sample, use_window_listener, use_window_size, Command,
+    Flush, Intersection, ListenOptions, MediaChange, Mutation, ObserveOptions, ObserverKind,
+    Publish, ResizeBox, SampleField, Sampled, Session, Size, Subscription, Until, WindowSize,
 };
 pub use transport::{is_unsupported, BRIDGE_JS};
 
@@ -630,6 +630,10 @@ pub enum Op {
         /// Dropped when a newer epoch for its key already ran on the target.
         #[serde(skip_serializing_if = "Option::is_none")]
         epoch: Option<Epoch>,
+        /// The page sequence number Rust had taken when it decided this call ([`page_seen`]): the page drops
+        /// the call when any slot the method can touch had a page-caused transition after it.
+        #[serde(rename = "basedOn", skip_serializing_if = "Option::is_none")]
+        based_on: Option<u64>,
     },
     /// A [`get`].
     Get {
@@ -740,6 +744,7 @@ impl Transaction {
             method: name,
             args,
             epoch: None,
+            based_on: None,
         });
         self
     }
@@ -786,11 +791,11 @@ impl Transaction {
     }
 
     /// Puts the page sequence number `seen` (from [`page_seen`], read when the decision was made) on the LAST
-    /// op when it is a [`Slot`] write: the page drops it when the slot had a page-caused transition after
-    /// `seen`.
+    /// op when it is a [`Slot`] write or a call: the page drops it when a slot it can touch had a page-caused
+    /// transition after `seen`.
     #[must_use]
     pub fn based_on(mut self, seen: u64) -> Self {
-        if let Some(Op::Write { based_on, .. }) = self.ops.last_mut() {
+        if let Some(Op::Write { based_on, .. } | Op::Call { based_on, .. }) = self.ops.last_mut() {
             *based_on = Some(seen);
         }
         self
@@ -907,6 +912,7 @@ pub trait ElementExt {
             method: name,
             args,
             epoch: None,
+            based_on: None,
         })
         .fire();
     }
@@ -1173,7 +1179,7 @@ mod tests {
     }
 
     #[test]
-    fn a_slot_write_carries_the_sequence_number_it_was_decided_on() {
+    fn a_slot_write_and_a_call_carry_the_sequence_number_they_were_decided_on() {
         let tx = Transaction::new()
             .write("p", Slot::KeyboardOpen, Some("1".into()))
             .based_on(7)
@@ -1181,10 +1187,7 @@ mod tests {
             .based_on(9);
         let json = serde_json::to_value(tx.ops()).expect("serialises");
         assert_eq!(json[0]["basedOn"], json!(7));
-        assert!(
-            json[1].get("basedOn").is_none(),
-            "only a slot write is fenced"
-        );
+        assert_eq!(json[1]["basedOn"], json!(9), "a call is fenced too");
         let plain = Transaction::new().write("p", Slot::PaddingBottom, None);
         assert!(serde_json::to_value(plain.ops()).expect("serialises")[0]
             .get("basedOn")

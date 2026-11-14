@@ -167,6 +167,7 @@ bridge::Command::Listen  variant Listen { target: Target, event: EventKind, opti
 bridge::Command::Media  variant Media { query: String }
 bridge::Command::Observe  variant Observe { target: Target, kind: ObserverKind, options: ObserveOptions }
 bridge::Command::Sample  variant Sample { target: Target, fields: Vec<SampleField>, until: Until, only_changed: bool }
+bridge::Command::Sub  variant Sub { id: u64 }
 bridge::Declared  struct Declared  #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 bridge::Declared  use behaviours::Declared
 bridge::Declared.capture  field bool
@@ -195,7 +196,6 @@ bridge::ElementExt::target  fn target(&self) -> Target
 bridge::Epoch  struct Epoch  #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 bridge::Epoch.key  field String
 bridge::Epoch.n  field u64
-bridge::Epoch::next  fn next(key: impl Into<String>) -> Self
 bridge::EventField  use events::EventField
 bridge::EventKind  use events::EventKind
 bridge::Flush  enum Flush  #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
@@ -257,10 +257,10 @@ bridge::ObserverKind::Intersection  variant Intersection
 bridge::ObserverKind::Mutation  variant Mutation
 bridge::ObserverKind::Resize  variant Resize
 bridge::Op  enum Op  #[derive(Clone, Debug, PartialEq, Serialize)]
-bridge::Op::Call  variant Call { target: Target, method: &'static str, args: Vec<Value>, epoch: Option<Epoch> }
+bridge::Op::Call  variant Call { target: Target, method: &'static str, args: Vec<Value>, epoch: Option<Epoch>, based_on: Option<u64> }
 bridge::Op::Get  variant Get { target: Target, props: Vec<String>, epoch: Option<Epoch> }
 bridge::Op::Set  variant Set { target: Target, name: String, value: Option<String>, epoch: Option<Epoch> }
-bridge::Op::Write  variant Write { target: Target, slot: &'static str, value: Option<String>, epoch: Option<Epoch> }
+bridge::Op::Write  variant Write { target: Target, slot: &'static str, value: Option<String>, epoch: Option<Epoch>, based_on: Option<u64> }
 bridge::OpResult  enum OpResult  #[derive(Clone, Debug, PartialEq, Deserialize)]
 bridge::OpResult::Err  variant Err { err: String }
 bridge::OpResult::Ok  variant Ok { ok: Value, dropped: bool, epoch: Option<Epoch> }
@@ -395,6 +395,7 @@ bridge::Target::id  fn id(id: impl Into<String>) -> Self
 bridge::Target::scroller  fn scroller(within: impl Into<String>) -> Self
 bridge::Target::selector  fn selector(selector: impl Into<String>) -> Self
 bridge::Transaction  struct Transaction  [private fields]  #[derive(Clone, Debug, Default, PartialEq)]
+bridge::Transaction::based_on  fn based_on(mut self, seen: u64) -> Self  #[must_use]
 bridge::Transaction::call  fn call(mut self, target: impl Into<Target>, method: Method) -> Self  #[must_use]
 bridge::Transaction::epoch  fn epoch(mut self, epoch: Epoch) -> Self  #[must_use]
 bridge::Transaction::fire  fn fire(self)
@@ -433,10 +434,27 @@ bridge::behaviours::DeclaredTarget  enum DeclaredTarget  #[derive(Clone, Copy, D
 bridge::behaviours::DeclaredTarget::Document  variant Document
 bridge::behaviours::DeclaredTarget::Element  variant Element
 bridge::behaviours::DeclaredTarget::Window  variant Window
+bridge::behaviours::Inbound  enum Inbound<T>  #[derive(Clone, Debug, PartialEq, Deserialize)]
+bridge::behaviours::Inbound::Message  variant Message(T)
+bridge::behaviours::Inbound::Report  variant Report(StandDownMessage)
 bridge::behaviours::Info  struct Info  #[derive(Clone, Copy, Debug)]
 bridge::behaviours::Info.kind  field &'static str
 bridge::behaviours::Info.params  field &'static[(&'static str, &'static str)]
+bridge::behaviours::StandDown  struct StandDown  #[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
+bridge::behaviours::StandDown.kind  field String
+bridge::behaviours::StandDown.reason  field StandDownReason
+bridge::behaviours::StandDownMessage  struct StandDownMessage  [private fields]  #[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
+bridge::behaviours::StandDownMessage.report  field StandDown
+bridge::behaviours::StandDownReason  enum StandDownReason  #[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize)]
+bridge::behaviours::StandDownReason::KernelAbsent  variant KernelAbsent
+bridge::behaviours::StandDownReason::KernelFailed  variant KernelFailed
+bridge::behaviours::StandDownReason::KindStoodDown  variant KindStoodDown
+bridge::behaviours::StandDownReason::MissingKind  variant MissingKind
+bridge::behaviours::StandDownReason::Trap  variant Trap
+bridge::behaviours::StandDownReason::UnreadableRequest  variant UnreadableRequest
 bridge::behaviours::render_gen  fn render_gen() -> String
+bridge::boot  async fn boot() -> bool
+bridge::boot  use session::boot
 bridge::events  mod
 bridge::events::Receivers  struct Receivers  #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 bridge::events::Receivers.document  field bool
@@ -446,9 +464,11 @@ bridge::events::Receivers::letters  fn letters(self) -> String
 bridge::get  async fn get(target: impl Into<Target>, props: impl IntoIterator<Item = Prop>) -> Result<Props, BridgeError>
 bridge::is_unsupported  fn is_unsupported() -> bool
 bridge::is_unsupported  use transport::is_unsupported
+bridge::page_seen  fn page_seen() -> u64
+bridge::page_seen  use session::page_seen
 bridge::show_modal_measured  async fn show_modal_measured(target: impl Into<Target>, props: impl IntoIterator<Item = Prop>) -> Result<Props, BridgeError>
 bridge::show_popover_measured  async fn show_popover_measured(target: impl Into<Target>, props: impl IntoIterator<Item = Prop>) -> Result<Props, BridgeError>
-bridge::use_behaviour  fn use_behaviour<T: DeserializeOwned + 'static>(mut target: impl FnMut() -> Option<Target> + 'static, mut behaviour: impl FnMut() -> Behaviour + 'static, handler: impl FnMut(T) + 'static)
+bridge::use_behaviour  fn use_behaviour<T: DeserializeOwned + 'static>(mut target: impl FnMut() -> Option<Target> + 'static, mut behaviour: impl FnMut() -> Behaviour + 'static, mut handler: impl FnMut(T) + 'static)
 bridge::use_behaviour  use session::use_behaviour
 bridge::use_document_listener  fn use_document_listener<T: DeserializeOwned + 'static>(event: EventKind, options: ListenOptions, fields: &'static[EventField], handler: impl FnMut(T) + 'static)
 bridge::use_document_listener  use session::use_document_listener
