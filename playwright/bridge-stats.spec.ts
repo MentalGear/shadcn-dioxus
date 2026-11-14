@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { test, expect } from "./fixtures";
 import type { Page } from "@playwright/test";
+import { gotoReference } from "./page-kinds";
 
 // The bridge's channel counters (`window.__dxBridgeStats`) and the busy-case spin hook in REAL Chromium: the shipped
 // bundle `primitives/src/js/bridge.js` on a blank page, one wrapped channel standing in for the `dioxus` object of an
@@ -12,7 +13,7 @@ const BRIDGE = readFileSync(join(__dirname, "../primitives/src/js/bridge.js"), "
 
 async function load(page: Page, url = "http://dx.test/") {
   await page.route("http://dx.test/**", (route) => route.fulfill({ contentType: "text/html", body: "<!doctype html><title>t</title>" }));
-  await page.goto(url);
+  await gotoReference(page, url);
   await page.addScriptTag({ content: BRIDGE });
   await page.evaluate(() => {
     const queue: unknown[] = [];

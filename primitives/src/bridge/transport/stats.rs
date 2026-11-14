@@ -9,8 +9,9 @@
 //! The read-out is the file named by the environment variable [`READOUT_VAR`]: a release webview has its
 //! inspector off, so the numbers leave through the file system. [`PING_VAR`] adds one trivial asking
 //! message per frame, the workload that fills the round-trip distribution under whatever the page renders.
-//! Neither variable is read on `wasm32`; the web arm's spec reads `window.__dxBridgeStats` itself.
-//! Timing uses `Instant`, which `wasm32-unknown-unknown` cannot read: [`now`] is `None` there.
+//! [`PING_VAR`] works only with [`READOUT_VAR`]. Timing and byte counts run only while the read-out is on, so a
+//! normal run pays for integer counters alone, and `wasm32-unknown-unknown`, which has no clock and no
+//! environment, never reads either variable; the web arm's spec reads `window.__dxBridgeStats` itself.
 
 use std::path::{Path, PathBuf};
 use std::time::Instant;
@@ -24,14 +25,12 @@ pub(in crate::bridge) const PING_VAR: &str = "DX_BRIDGE_PING";
 /// Samples kept per duration; older ones are overwritten.
 const RING: usize = 4096;
 
-/// A point in time, `None` where the platform has no clock.
+/// A point in time, `None` when timing is off.
 pub(in crate::bridge) type Stamp = Option<Instant>;
 
-pub(in crate::bridge) fn now() -> Stamp {
-    #[cfg(not(target_family = "wasm"))]
-    return Some(Instant::now());
-    #[cfg(target_family = "wasm")]
-    None
+/// The clock, read only while the read-out is on: `wasm32-unknown-unknown` has none and never sets the variable.
+pub(in crate::bridge) fn now(active: bool) -> Stamp {
+    active.then(Instant::now)
 }
 
 /// Microseconds from `from` to `to`, when both are known.
@@ -39,20 +38,15 @@ pub(in crate::bridge) fn micros(from: Stamp, to: Stamp) -> Option<u64> {
     Some(to?.saturating_duration_since(from?).as_micros() as u64)
 }
 
+/// The read-out file the environment names, if any.
 pub(in crate::bridge) fn readout_path() -> Option<PathBuf> {
-    #[cfg(not(target_family = "wasm"))]
-    return std::env::var_os(READOUT_VAR)
+    std::env::var_os(READOUT_VAR)
         .filter(|path| !path.is_empty())
-        .map(PathBuf::from);
-    #[cfg(target_family = "wasm")]
-    None
+        .map(PathBuf::from)
 }
 
 pub(in crate::bridge) fn ping_enabled() -> bool {
-    #[cfg(not(target_family = "wasm"))]
-    return std::env::var_os(PING_VAR).is_some_and(|value| !value.is_empty());
-    #[cfg(target_family = "wasm")]
-    false
+    std::env::var_os(PING_VAR).is_some_and(|value| !value.is_empty())
 }
 
 /// The last [`RING`] samples of one duration, in microseconds.
@@ -180,17 +174,17 @@ pub(in crate::bridge) fn write_readout(path: &Path, document: &Value) -> std::io
     std::fs::rename(&temp, path)
 }
 
-/// Starts the task behind the two environment variables, when either is set: a ping per frame under
-/// [`PING_VAR`], the read-out file under [`READOUT_VAR`]. Called once, when the pump is created.
+/// Starts the read-out task when [`READOUT_VAR`] is set: the stats file about once a second, and a ping per frame
+/// under [`PING_VAR`]. Called once, when the pump is created.
 pub(in crate::bridge) fn start(hub: super::Hub) {
-    let path = readout_path();
-    let ping = ping_enabled();
-    if path.is_none() && !ping {
+    let Some(path) = readout_path() else {
         return;
-    }
+    };
+    let ping = ping_enabled();
     // interval-ok: the read-out task lives as long as the webview's pump and ends when its channel closes
     crate::dioxus_core::spawn_forever(async move {
         let mut written: Stamp = None;
+        // motion-ok: a measurement tick, not motion; it runs whether or not the page is visible
         loop {
             let frame = std::time::Duration::from_millis(if ping { 16 } else { 1000 });
             crate::sleep::sleep(frame).await;
@@ -204,14 +198,15 @@ pub(in crate::bridge) fn start(hub: super::Hub) {
             if hub.0.borrow().closed.is_some() {
                 break;
             }
-            let due = written.is_none() || micros(written, now()).is_some_and(|us| us >= 1_000_000);
-            if let (true, Some(path)) = (due, &path) {
+            let due =
+                written.is_none() || micros(written, now(true)).is_some_and(|us| us >= 1_000_000);
+            if due {
                 let page = super::page_stats().await;
                 let document = hub.0.borrow().stats.document(page);
-                if let Err(error) = write_readout(path, &document) {
+                if let Err(error) = write_readout(&path, &document) {
                     tracing::warn!("dx bridge stats: {error}");
                 }
-                written = now();
+                written = now(true);
             }
         }
     });

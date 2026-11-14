@@ -352,7 +352,8 @@ fn enqueue(ops: Vec<Value>, asks: bool, stats: bool) -> Option<Pending> {
         id = Some(next);
         let slot = Rc::new(RefCell::new(Slot::default()));
         channel.waiting.insert(next, slot.clone());
-        channel.stamps.insert(next, (now(), None));
+        let stamp = now(channel.stats.readout.is_some());
+        channel.stamps.insert(next, (stamp, None));
         pending = Some(Pending(slot));
     } else if channel.closed.is_some() {
         return None;
@@ -419,8 +420,9 @@ fn flush(hub: &Hub) {
                 0
             };
             channel.stats.out(id.is_some(), ops, bytes);
+            let active = channel.stats.readout.is_some();
             if let Some(stamps) = id.and_then(|id| channel.stamps.get_mut(&id)) {
-                stamps.1 = now();
+                stamps.1 = now(active);
             }
         }
         send(&eval, wire);
@@ -444,7 +446,7 @@ fn read_answers(hub: Hub, mut eval: Eval) {
                             0
                         };
                         if let Some((queued, sent)) = channel.stamps.remove(&id) {
-                            let arrived = now();
+                            let arrived = now(channel.stats.readout.is_some());
                             let (queue, trip) = (micros(queued, sent), micros(sent, arrived));
                             channel.stats.record_answer(queue, trip, bytes);
                         }

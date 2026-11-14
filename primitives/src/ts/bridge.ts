@@ -380,7 +380,8 @@ function deferDelivery(n: ChannelMode, deliver: () => void): void {
 function channel(raw: DioxusChannel): DioxusChannel {
   if ((raw as any).__dxWrapped) return raw;
   const all = (W.__dxBridgeStats ||= { channels: [] });
-  const st = all.channels.length < 32 ? all.channels[all.channels.push({ sent: 0, recv: 0, turn: [] }) - 1] : all.channels[31];
+  const rec = { sent: 0, recv: 0, turn: [] as number[] };
+  const st = all.channels.length < 32 ? (all.channels.push(rec), rec) : all.channels[31];
   const spin = +(W.__dxBridgeSpin ?? new URLSearchParams(W.location?.search).get("dx-bridge-spin")) || 0;
   let at = -1;
   let asked: unknown;
@@ -389,22 +390,24 @@ function channel(raw: DioxusChannel): DioxusChannel {
   };
   return {
     __dxWrapped: true,
-    send(message: any) {
+    send(message) {
+      const out = message as { id?: unknown; stats?: unknown } | null;
       st.sent++;
-      if (at >= 0) st.turn[(st.recv - 1) % 256] = W.performance.now() - at;
+      if (at >= 0 && st.turn.push(W.performance.now() - at) > 256) st.turn.shift();
       at = -1;
-      if (asked !== undefined && message?.id === asked) {
-        message.stats = all;
+      if (out && asked !== undefined && out.id === asked) {
+        out.stats = all;
         asked = undefined;
       }
       if (spin) burn();
       deferDelivery(channelDelay(), () => raw.send(message));
     },
     recv() {
-      return raw.recv().then((message: any) => {
+      return raw.recv().then((message) => {
+        const got = message as { id?: unknown; stats?: unknown } | null;
         st.recv++;
         at = W.performance.now();
-        asked = message?.stats ? message.id : undefined;
+        asked = got?.stats ? got.id : undefined;
         if (spin) burn();
         const n = channelDelay();
         return n === 0 || n === "never" ? message : new Promise((resolve) => deferDelivery(n, () => resolve(message)));
