@@ -614,20 +614,22 @@ pub(crate) fn use_form_reset_listener(
 /// here through state by [`use_dialog_close_sync`]'s `cancel` handler instead of
 /// being allowed to `close()` natively.
 ///
-/// Returns the state the dialog's own `data-open` / `data-closed` pair follows (feed it to
-/// `state_attrs::open`, never the bare `open`): `open` that turned true at least a frame ago.
-/// The entry is an ordinary CSS transition from the dialog's base rule, and a `<dialog>` that
-/// `showModal()` has just rendered is rendered AT that base rule on its first frame, so the
-/// `data-open` that starts the transition has to land on a later frame. That needs no
-/// `@starting-style` and no animation out of `display: none` (neither runs in every engine), and
-/// a close in the middle of the entry reverses the transition instead of cancelling an animation
-/// (a cancelled animation starts no transition, so the exit list below would be empty and the
-/// panel would snap shut). The pair turns `data-closed` at once when `open` turns false.
+/// Returns the dialog's own [`state_attrs::OpenState`] (feed it to `state_attrs::open_state`, never the
+/// bare `open`): `Closed` while `open` is false, `Entering` from the render that sees `open` true until
+/// a frame later, `Open` after. The entry is an ordinary CSS transition from the dialog's base rule, and
+/// a `<dialog>` that `showModal()` has just rendered is rendered AT that base rule on its first frame, so
+/// the `data-open` that starts the transition has to land on a later frame. That needs no
+/// `@starting-style` and no animation out of `display: none` (neither runs in every engine), and a close
+/// in the middle of the entry reverses the transition instead of cancelling an animation (a cancelled
+/// animation starts no transition, so the exit list below would be empty and the panel would snap shut).
+/// `Entering` is not `Closed` because `data-closed` is the inert exit state (no pointer events, so a
+/// second click cannot reach the fading panel) and the scrim reads `data-entering` to hold its start
+/// opacity; a press on the first frame must land. `Closed` lands at once when `open` turns false.
 #[cfg(not(feature = "native"))]
 fn use_dialog_open_driver(
     id: impl Readable<Target = String> + Copy + 'static,
     open: impl Readable<Target = bool> + Copy + 'static,
-) -> impl Fn() -> bool + Copy {
+) -> impl Fn() -> state_attrs::OpenState + Copy {
     let entered = use_entered_a_frame_after_open(open);
     // Installs `top_layer::ensure_top_layer_ink_styles`'s engine-injected
     // ink baseline -- see that function's own doc for the bug this closes
@@ -716,7 +718,11 @@ fn use_dialog_open_driver(
         ));
     });
 
-    move || open.cloned() && entered()
+    move || match (open.cloned(), entered()) {
+        (false, _) => state_attrs::OpenState::Closed,
+        (true, false) => state_attrs::OpenState::Entering,
+        (true, true) => state_attrs::OpenState::Open,
+    }
 }
 
 /// How long after `open` turns true the dialog's `data-open` follows: two frames at 60 Hz. The

@@ -129,4 +129,5 @@ the line here is the pointer, so when a row's text and this line disagree, the r
   chart-tooltip fade-in was Firefox (owner 2026-11-14); the construction removes the dependency, so the report is
   closed without a Firefox run (owner: "we can mark this as done"). The modal dialog family does it with a delayed open
   state plus a transition (the `<dialog>` is rendered a frame before `data-open`), not a keyframe: a close in the middle
-  of a keyframe entry cancels it and snaps the panel shut, a transition reverses.
+  of a keyframe entry cancels it and snaps the panel shut, a transition reverses. The entering frame is its own state (`data-entering`), so a press on the first frame is not
+  lost and the exit alone is inert (`data-closed` carries `pointer-events: none`).

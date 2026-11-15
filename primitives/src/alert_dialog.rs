@@ -338,7 +338,7 @@ pub fn AlertDialogContent(props: AlertDialogContentProps) -> Element {
             aria_describedby: ctx.describedby.clone(),
             // The dialog's own state: closing keeps it open (modal) while it animates out, so a
             // stylesheet keys the exit on `[data-closed]`. See `crate::use_dialog_open_driver`.
-            ..state_attrs::open(open_state()),
+            ..state_attrs::open_state(open_state()),
             "data-dx-overlay": crate::dialog::overlay_off(ctx.overlay),
         }),
     ]);

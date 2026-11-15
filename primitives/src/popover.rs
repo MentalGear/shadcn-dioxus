@@ -641,7 +641,11 @@ fn PopoverModalContent(
             aria_modal: "true",
             aria_labelledby: ctx.labelledby,
             aria_hidden: (!is_open).then_some("true"),
-            ..state_attrs::open(is_open && open_state()),
+            ..state_attrs::open_state(if is_open {
+                open_state()
+            } else {
+                state_attrs::OpenState::Closed
+            }),
             "data-side": side.as_str(),
             "data-align": align.as_str(),
             "data-dx-overlay": overlay_off.then_some("off"),

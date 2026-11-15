@@ -930,12 +930,13 @@ html[data-theme="light"] [class~="dxc-system"] {
  *
  *   - `:not([popover])` leaves the non-modal Popover arm (`<dialog popover="auto">`) alone: it
  *     paints no scrim, as shadcn's popover has none.
- *   - The scrim is visible only while `[open][data-open]` and not `[data-closed]` (never `[open]` alone: `[open]`
- *     outlives `data-open` through the exit; the `:not([data-closed])` is for a panel whose component writes its
- *     own `data-open`, as Sheet and Drawer do, which would otherwise carry `data-open` on the first frame while the
- *     primitive still says `data-closed`). It fades in and out through the one `transition`
+ *   - The scrim is visible only while `[open][data-open]` and neither `[data-entering]` nor `[data-closed]` (never
+ *     `[open]` alone: `[open]` outlives `data-open` through the exit; the `:not([data-entering], [data-closed])` is
+ *     for a panel whose component writes its own `data-open`, as Sheet and Drawer do, which would otherwise carry
+ *     `data-open` on the first frame while the primitive still says `data-entering`, and during the exit while it
+ *     says `data-closed`). It fades in and out through the one `transition`
  *     above: the dialog is rendered at its base rule (a transparent scrim) for the frame `showModal()` runs in,
- *     and `data-open` lands a frame later (`primitives/src/lib.rs`, `use_modal_entry_open`), so the scrim
+ *     and `data-open` lands a frame later (`primitives/src/lib.rs`, `use_dialog_open_driver`), so the scrim
  *     transitions from a value the engine has already rendered, with no `@starting-style` and no animation out
  *     of `display: none`. It fades out because its `background`/`backdrop-filter` fall back to transparent/none the moment
  *     `data-closed` replaces `data-open` while the dialog is STILL open and modal:
@@ -959,8 +960,8 @@ html[data-theme="light"] [class~="dxc-system"] {
     background-color var(--dx-overlay-duration) var(--dx-overlay-ease);
 }
 
-:where(dialog[class^="dx-"][open][data-open]:not([popover], [data-closed]))::backdrop,
-:where(dialog[class*=" dx-"][open][data-open]:not([popover], [data-closed]))::backdrop {
+:where(dialog[class^="dx-"][open][data-open]:not([popover], [data-entering], [data-closed]))::backdrop,
+:where(dialog[class*=" dx-"][open][data-open]:not([popover], [data-entering], [data-closed]))::backdrop {
   backdrop-filter: blur(var(--dx-overlay-blur));
   background: var(--dx-overlay-scrim);
 }
@@ -1809,6 +1810,12 @@ html:not([data-dx-press-feedback="off"]) [role="radio"][class*=" dx-"]:not([disa
   animation: var(--dx-floating-exit, dx-pop-out) var(--dx-floating-duration) var(--dx-floating-ease-exit) forwards;
   opacity: 0;
   pointer-events: none;
+}
+
+/* The modal Popover's entering frame renders at the panel's rest, so it is invisible until `data-open` starts
+ * `--dx-floating-enter`. It takes pointer events: only `data-closed` is inert. */
+:where([data-dx-surface="floating"][data-entering]) {
+  opacity: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {

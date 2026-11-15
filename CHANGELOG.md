@@ -39,12 +39,18 @@ below are collected under "Unreleased" and move under a version heading at the f
   point at the centre, so the gap closed to nothing toward the middle; the facing edges are now parallel and each slice
   ends in a tip short of the centre. A slice thinner than the gap is not drawn. The option, its unit and a donut's gap are
   unchanged.
+- Calendar: an unavailable or disabled day that is today keeps the muted ink and the line-through; only today's fill
+  marks it as today. Today's foreground ink applied over the unavailable ink before, so on the days the date picker
+  demo's unavailable ranges covered today, that day read as pickable.
 - The chart tooltip fades in as well as out in every browser. A closed tooltip is now transparent and `visibility: hidden`
   instead of `display: none` with an `@starting-style` entry, so the entry no longer depends on the engine animating from
   `display: none`; it starts when the tooltip is placed, and reduced motion shows neither fade.
 - Dialog, AlertDialog and CommandDialog, and the scrim behind every modal dialog, fade in on engines that do not animate a
   transition out of `display: none`: the `<dialog>` is rendered a frame before it gets `data-open`, so the entry is the same
-  `transition` as the exit, with no `@starting-style`, and a close in the middle of the entry reverses it. The dialog
+  `transition` as the exit, with no `@starting-style`, and a close in the middle of the entry reverses it. That first
+  frame is `data-entering`, not `data-closed`: it takes pointer events (a press on it is not lost), and `data-closed`
+  alone carries `pointer-events: none` (a consumer stylesheet that keyed pointer events on the dialog's base rule
+  moves them to `[data-closed]`). The dialog
   panel now centres with `translate: -50% -50%` and zooms with `scale`, not one `transform`; a style that overrode the
   panel's `transform` moves to those properties. The theme's check refuses a new `@starting-style` rule.
 - A menu root (DropdownMenu, ContextMenu, Menubar) given an `id` that changes later keeps its outside-press and
