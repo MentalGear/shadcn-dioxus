@@ -46,7 +46,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (75)
+## Open rows (76)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -125,5 +125,6 @@ proposing one is closed as out of scope (row 337 is the first).
 | [519](backlog/519-anchored-panel-recipe-one-hook.md) | Every non-menu overlay re-assembles the anchored panel recipe: one `top_layer::use_anchored_panel`, and the hover timers in their own module | APPROVED 2026-11-14 (owner: "I approve your recommendation for generalizing the components and… | M (inferred, 8 to 10 h), one lane… | primitives |
 | [521](backlog/521-axe-scan-opens-the-docs-accordion-items.md) | The accessibility scan skips the closed docs accordion items: Usage notes, Component structure and Props reference are never inspected | BACKLOG. Small and independent; take it beside any lane. | S. | tests |
 | [522](backlog/522-padded-pie-inner-radius-follows-the-padding.md) | A padded pie with no inner radius ends its slices in tips at the centre: the inner circle has to grow with the padding to read as even gaps | BACKLOG (owner 2026-11-14: "for padding pie the inner circle must increase relative to segment… | S. | components |
+| [523](backlog/523-edge-and-floating-close-mid-entry-under-a-keyframe.md) | Sheet, Drawer and the modal Popover still enter with a keyframe: a close in the middle of that entry cancels it and the exit keyframe starts from the fully open pose | BACKLOG (found 2026-11-15). Not started. Small; it belongs with the HoverSurface / anchored-panel… | S. | overlays |
 
 <!-- END GENERATED -->

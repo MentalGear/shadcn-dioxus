@@ -45,7 +45,6 @@ below are collected under "Unreleased" and move under a version heading at the f
   `transition` as the exit, with no `@starting-style`, and a close in the middle of the entry reverses it. The dialog
   panel now centres with `translate: -50% -50%` and zooms with `scale`, not one `transform`; a style that overrode the
   panel's `transform` moves to those properties. The theme's check refuses a new `@starting-style` rule.
-
 - A menu root (DropdownMenu, ContextMenu, Menubar) given an `id` that changes later keeps its outside-press and
   outside-focus dismissal: the dismiss layer follows the current `id` instead of the first one, and returns to the
   generated id when the `id` is dropped.
