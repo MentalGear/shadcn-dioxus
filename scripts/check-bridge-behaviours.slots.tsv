@@ -22,3 +22,5 @@ effect	prevent	-	page
 effect	stop	-	page
 effect	attrs	attr	page
 effect	slot	focus	page
+effect	show	open	page
+effect	hide	open	page

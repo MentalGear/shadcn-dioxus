@@ -743,7 +743,7 @@ fn PopoverNonModalContent(
             open: ctx.open.into(),
             set_open: ctx.set_open,
             popover: crate::top_layer::PopoverKind::Auto,
-            sync: crate::top_layer::PanelSync::WhileMounted,
+            sync: crate::top_layer::PanelSync::DialogPanel,
             placement: crate::top_layer::AnchoredPlacement::Anchored {
                 anchor_id: id.clone(),
                 side,
