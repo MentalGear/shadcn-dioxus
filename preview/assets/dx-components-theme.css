@@ -936,7 +936,7 @@ html[data-theme="light"] [class~="dxc-system"] {
  *     `data-open` on the first frame while the primitive still says `data-entering`, and during the exit while it
  *     says `data-closed`). It fades in and out through the one `transition`
  *     above: the dialog is rendered at its base rule (a transparent scrim) for the frame `showModal()` runs in,
- *     and `data-open` lands a frame later (`primitives/src/lib.rs`, `use_modal_entry_open`), so the scrim
+ *     and `data-open` lands a frame later (`primitives/src/lib.rs`, `use_dialog_open_driver`), so the scrim
  *     transitions from a value the engine has already rendered, with no `@starting-style` and no animation out
  *     of `display: none`. It fades out because its `background`/`backdrop-filter` fall back to transparent/none the moment
  *     `data-closed` replaces `data-open` while the dialog is STILL open and modal:
