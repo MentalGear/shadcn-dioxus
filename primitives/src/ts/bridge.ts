@@ -25,8 +25,9 @@
 //                    event task
 //   transaction      several ops in one JS turn (a show and the read of its rects see one DOM state)
 //   behaviour        a NAMED behaviour from the registry (`ts/behaviours/<kind>.ts`), see below
-//   executor         the open level Rust decided for a top-layer element, applied by the one page executor
-//                    (`lib/executor.ts`) and reported back stamped with the owner's nonce
+//   execute          applies the open levels Rust rendered (`data-dx-level`) in the calling turn, through the one
+//                    page executor (`lib/executor.ts`); a session's `executor` command reports the page's own
+//                    transitions back, stamped with the owner's nonce
 //   serve / pump     the loop a Rust `bridge::Session` runs, and the ordered write channel of a webview
 //
 // WHERE WORK GOES. An rsx handler decides synchronously on every renderer, so a target inside a Dioxus
@@ -1324,7 +1325,7 @@ function scope(raw?: DioxusChannel): Scope {
             sub = command.id;
             break;
           case "executor":
-            executor?.command(s, command);
+            executor?.watch(s, command);
             break;
         }
       } catch (error) {
@@ -1416,15 +1417,7 @@ const callPublic: DxBridge["call"] = (target, method, args) => {
 let executor: ReturnType<typeof createExecutor> | null = null;
 
 if (!W.__dxBridge) {
-  executor = createExecutor(W, {
-    apply: (site, effect, el) => applyEffect(site, effect, el),
-    asRust,
-    childList(fn) {
-      const mo = new W.MutationObserver(fn);
-      mo.observe(W.document.documentElement, { childList: true, subtree: true });
-      return () => mo.disconnect();
-    },
-  });
+  executor = createExecutor(W, { apply: (site, effect, el) => applyEffect(site, effect, el), asRust });
   const bridge: DxBridge = {
     version: 3,
     channel,
@@ -1436,6 +1429,7 @@ if (!W.__dxBridge) {
     get,
     set: (target, name, value) => void set(target, name, value),
     transaction,
+    execute: () => executor?.execute(),
     behaviours,
     register,
     kernel,

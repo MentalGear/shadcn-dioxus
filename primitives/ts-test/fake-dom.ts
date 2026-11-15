@@ -155,8 +155,10 @@ export class FakeDocument extends FakeTarget {
   getElementById(id: string) {
     return this.byId.get(id) ?? null;
   }
-  /** Only the prefix-attribute selector `[name^="value"]`, in insertion order. */
+  /** Only the presence selector `[name]` and the prefix-attribute selector `[name^="value"]`, in insertion order. */
   querySelectorAll(selector: string) {
+    const present = /^\[([\w-]+)\]$/.exec(selector);
+    if (present) return [...this.byId.values()].filter((el) => el.hasAttribute(present[1]));
     const match = /^\[([\w-]+)\^="(.*)"\]$/.exec(selector);
     if (!match) return [];
     return [...this.byId.values()].filter((el) => (el.getAttribute(match[1]) ?? "").startsWith(match[2]));

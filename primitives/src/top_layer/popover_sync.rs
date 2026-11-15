@@ -70,6 +70,7 @@ impl PopoverKind {
 /// menu that was just closed.
 ///
 /// For a panel that is always mounted (the menu family, through `use_anchored_panel`'s `PanelSync::Immediate`).
+/// Returns the level attribute (`data-dx-level`) to spread on the element.
 ///
 /// # Renderer-support note
 ///
@@ -85,9 +86,9 @@ pub(crate) fn use_popover_sync(
     id: String,
     open: impl Readable<Target = bool> + Copy + 'static,
     set_open: Callback<bool>,
-) {
-    // The ink baseline (`ensure_top_layer_ink_styles`) is evaluated before the executor's session is opened: both
-    // are evals created in this order, and the page runs evals in the order they are created.
+) -> Vec<Attribute> {
+    // The ink baseline (`ensure_top_layer_ink_styles`) is evaluated before the executor applies a level: both are
+    // evals created in this order, and the page runs evals in the order they are created.
     use_effect(ensure_top_layer_ink_styles);
     crate::bridge::executor::use_popover_level(
         id,
@@ -95,7 +96,7 @@ pub(crate) fn use_popover_sync(
         crate::bridge::executor::ShowMode::Immediate,
         set_open,
         crate::site!("executor.popover"),
-    );
+    )
 }
 
 /// [`use_popover_sync`] for content whose own `data-open` / `data-closed` animates through a "closed but still
@@ -121,7 +122,7 @@ pub(crate) fn use_popover_shown_while_mounted(
     id: String,
     open: impl Readable<Target = bool> + Copy + 'static,
     on_native_close: Callback<bool>,
-) {
+) -> Vec<Attribute> {
     use_effect(ensure_top_layer_ink_styles);
     let on_page = use_callback(move |is_open: bool| {
         if !is_open {
@@ -134,7 +135,7 @@ pub(crate) fn use_popover_shown_while_mounted(
         crate::bridge::executor::ShowMode::Mounted,
         on_page,
         crate::site!("executor.popover"),
-    );
+    )
 }
 
 /// [`use_popover_shown_while_mounted`] for a `<dialog popover>` panel (the non-modal Popover, so DatePicker and

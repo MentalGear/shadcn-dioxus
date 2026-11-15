@@ -1,7 +1,7 @@
 # check-js-volume baseline (scripts/lib/ratchet.py): shrink-only per-file counts, regenerate with --update-baseline.
 #! columns: sink js_lit js_file_bytes install inline_script comment_eval expect_disallowed
 # path	sink	js_lit	js_file_bytes	install	inline_script	comment_eval	expect_disallowed
-#! total-raised: row 449 total=488240 the page executor's popover kind in the bridge bundle; popover_sync.rs loses its eval show script and toggle listener (total 488677->488240)
+#! total-raised: row 449 total=487787 the page executor's popover kind in the bridge bundle; popover_sync.rs loses its eval show script and toggle listener (total 487304->487787)
 labs/carousel-lab/src/main.rs	2	0	0	0	0	0	0
 preview/build.rs	0	12	0	0	0	0	0
 preview/index.html	0	0	0	0	7453	0	0
@@ -41,7 +41,7 @@ preview/src/site/variant_page.rs	1	0	0	0	0	0	0
 preview/src/theme.rs	1	19	0	0	0	0	3
 preview/src/utilities_docs.rs	0	12	0	0	0	0	0
 primitives/src/avatar.rs	1	13	0	0	0	0	1
-primitives/src/bridge/behaviours.rs	3	3	0	0	0	0	0	# raised: row 448 the otp-filter kind: its bundle, the bridge value owner and the one include_str! sink; input_otp.rs loses its inline script (sink 2->3)
+primitives/src/bridge/behaviours.rs	3	3	0	0	0	0	0
 primitives/src/bridge/events.rs	1	0	0	0	0	0	0
 primitives/src/bridge/mod.rs	1	0	0	0	0	0	0
 primitives/src/bridge/session.rs	4	0	0	0	0	0	0
@@ -63,9 +63,9 @@ primitives/src/drag_and_drop_list.rs	0	11	0	1	0	0	5
 primitives/src/drawer.rs	0	136	0	3	0	0	0
 primitives/src/hover_intent.rs	0	10	0	1	0	0	0
 primitives/src/input_otp.rs	1	36	0	1	0	0	1
-primitives/src/js/behaviours/fixture.js	0	0	646	0	0	0	0	# raised: row 448 the otp-filter kind: its bundle, the bridge value owner and the one include_str! sink; input_otp.rs loses its inline script (js_file_bytes 520->646)
-primitives/src/js/behaviours/otp-filter.js	0	0	658	0	0	0	0	# raised: row 448 the otp-filter kind: its bundle, the bridge value owner and the one include_str! sink; input_otp.rs loses its inline script (js_file_bytes 0->658)
-primitives/src/js/bridge.js	0	0	33783	0	0	0	0	# raised: row 448 the otp-filter kind: its bundle, the bridge value owner and the one include_str! sink; input_otp.rs loses its inline script (js_file_bytes 31284->31887); row 449 the page executor's popover kind in the bridge bundle; popover_sync.rs loses its eval show script and toggle listener (js_file_bytes 31887->33783)
+primitives/src/js/behaviours/fixture.js	0	0	646	0	0	0	0
+primitives/src/js/behaviours/otp-filter.js	0	0	658	0	0	0	0
+primitives/src/js/bridge.js	0	0	33330	0	0	0	0	# raised: row 449 the page executor's popover kind in the bridge bundle; popover_sync.rs loses its eval show script and toggle listener (js_file_bytes 31887->33330)
 primitives/src/js_listener.rs	1	7	0	0	0	0	0
 primitives/src/label.rs	0	8	0	1	0	0	0
 primitives/src/lib.rs	3	182	0	3	0	0	3

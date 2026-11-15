@@ -117,7 +117,8 @@
 
 pub mod behaviours;
 pub mod events;
-pub mod executor;
+#[cfg(any(not(feature = "native"), test))]
+pub(crate) mod executor;
 pub(crate) mod legacy;
 mod session;
 pub(crate) mod transport;

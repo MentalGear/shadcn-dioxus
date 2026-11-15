@@ -1,5 +1,5 @@
 // The page executor (`src/ts/lib/executor.ts`, row 449) run in the SHIPPED bundle against the fake browser: the one
-// writer of a registered element's open level, the nonce rule, the page-caused report and the discovery.
+// writer of an element's rendered open level, the nonce rule, and the page-caused report.
 
 import { describe, expect, test } from "bun:test";
 import { loadBridge, makeChannel } from "./fake-dom";
@@ -18,9 +18,13 @@ const setup = () => {
   };
   const ch = makeChannel();
   const s = bridge.scope(ch);
-  const level = (target: string, level: boolean, nonce: number, mode = "immediate") =>
-    s.run({ cmd: "executor", target, kind: "popover", mode, level, nonce, site: "executor.popover" });
-  return { win, doc, popover, ch, s, level };
+  s.run({ cmd: "executor", target: "panel" });
+  /** Renders the level, then runs the eval Rust issues after the render. */
+  const level = (el: any, nonce: number, open: boolean, mode = "immediate") => {
+    el.setAttribute("data-dx-level", `${nonce} ${open ? "open" : "closed"} ${mode} executor.popover`);
+    bridge.execute();
+  };
+  return { win, doc, bridge, popover, ch, s, level };
 };
 const calls = (el: any) => el.calls.map((c: any) => c[0]);
 
@@ -28,9 +32,9 @@ describe("the page executor", () => {
   test("applies the level and never reports the transition its own write causes", () => {
     const { popover, ch, level } = setup();
     const el = popover("panel");
-    level("panel", true, 1);
+    level(el, 1, true);
     expect(el.popoverOpen).toBe(true);
-    level("panel", false, 2);
+    level(el, 2, false);
     expect(calls(el)).toEqual(["showPopover", "hidePopover"]);
     expect(ch.sent).toEqual([]);
   });
@@ -38,29 +42,33 @@ describe("the page executor", () => {
   test("reports a page-caused transition stamped with the nonce it had applied", () => {
     const { doc, popover, ch, level } = setup();
     const el = popover("panel");
-    level("panel", true, 4);
+    level(el, 4, true);
     el.popoverOpen = false;
     doc.dispatch("beforetoggle", { target: el, newState: "closed" });
     expect(ch.sent).toEqual([{ n: 4, open: false }]);
   });
 
-  test("drops a command older than the newest it applied", () => {
-    const { popover, level } = setup();
+  test("applies a level once: a page-caused close stands until the owner renders a newer one", () => {
+    const { bridge, popover, level } = setup();
     const el = popover("panel");
-    level("panel", true, 3);
-    level("panel", false, 2);
-    expect(el.popoverOpen).toBe(true);
-    expect(calls(el)).toEqual(["showPopover"]);
+    level(el, 3, true);
+    el.popoverOpen = false;
+    bridge.execute();
+    expect(el.popoverOpen).toBe(false);
+    level(el, 2, true);
+    expect(el.popoverOpen).toBe(false);
+    level(el, 4, true);
+    expect(calls(el)).toEqual(["showPopover", "showPopover"]);
   });
 
-  test("a mounted element is shown on every open level and never hidden by a command", () => {
+  test("a mounted element is shown on every open level and never hidden by one", () => {
     const { popover, level } = setup();
     const el = popover("list");
-    level("list", true, 1, "mounted");
-    level("list", false, 2, "mounted");
+    level(el, 1, true, "mounted");
+    level(el, 2, false, "mounted");
     expect(el.popoverOpen).toBe(true);
     el.popoverOpen = false;
-    level("list", true, 3, "mounted");
+    level(el, 3, true, "mounted");
     expect(calls(el)).toEqual(["showPopover", "showPopover"]);
   });
 
@@ -69,26 +77,28 @@ describe("the page executor", () => {
     const el = popover("panel");
     const seen: unknown[] = [];
     el.showPopover = () => void seen.push(win.__dxApplying);
-    level("panel", true, 1);
+    level(el, 1, true);
     expect(seen).toEqual([{ site: "executor.popover", effect: "show" }]);
   });
 
-  test("a command for an element not rendered yet runs when a childList batch brings it", () => {
-    const { win, popover, level } = setup();
-    level("late", true, 1);
-    const el = popover("late");
-    const observer = win.MutationObserver.all.at(-1);
-    observer.callback([]);
-    expect(el.popoverOpen).toBe(true);
-    expect(observer.disconnected).toBe(true);
+  test("an element without a watching session is applied and reports nothing", () => {
+    const { doc, popover, level } = setup();
+    const el = popover("other");
+    const ch = makeChannel();
+    level(el, 1, true);
+    el.popoverOpen = false;
+    doc.dispatch("beforetoggle", { target: el, newState: "closed" });
+    expect(el.calls.length).toBe(1);
+    expect(ch.sent).toEqual([]);
   });
 
-  test("an ended session reports nothing", () => {
+  test("an ended session reports nothing, and its listener goes with the last session", () => {
     const { doc, popover, ch, s, level } = setup();
     const el = popover("panel");
-    level("panel", true, 1);
+    level(el, 1, true);
     s.dispose();
     doc.dispatch("beforetoggle", { target: el, newState: "closed" });
     expect(ch.sent).toEqual([]);
+    expect(doc.count("beforetoggle")).toBe(0);
   });
 });

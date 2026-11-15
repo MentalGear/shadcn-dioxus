@@ -1,92 +1,77 @@
-// The page executor (row 449): the one writer of the open state of every element a Rust owner registers with an
-// `executor` command. Plumbing only: Rust decides the level, this module applies it through the apply table and
-// reports what the page did on its own. No decision is made here.
+// The page executor (row 449): the one writer of the open state of every element whose Rust owner renders a level.
+// Plumbing only: Rust decides the level and renders it, this module applies it through the apply table and reports
+// what the page did on its own. No decision is made here.
 //
-//   identity   an entry is keyed by the element's `id` (rendered by the server, so the same before and after
-//              hydration) and carries the nonce of the newest command applied to it: the owner's command count
-//   epoch      a command older than the entry's nonce is dropped, so a late command never undoes a newer one
-//   one writer the entry's show and hide go through `apply` (the `show` / `hide` rows of APPLY) and nothing else
-//              shows or hides a registered element; the transition the write itself causes is not reported
-//   reports    a transition the page caused (light dismiss, Escape) is reported as `{ n, open }`: the level, stamped
-//              with the nonce the entry had applied, so Rust drops a report older than its newest command; one
-//              document capture listener carries them while any element is registered
-//   discovery  a command for an element that is not in the document yet waits for it on one `childList` observer
-//              and runs when it appears (the owner's effect can run before a keyed re-render lands)
+//   level      an owner renders `data-dx-level="<nonce> <open|closed> <immediate|mounted> <site>"` on its element:
+//              the nonce is the owner's command count, so the server's HTML and the first client render agree
+//   identity   the applied nonce is kept per element node: a re-created element starts fresh, and a level is
+//              applied once, when its nonce is newer than the one applied, so a page-caused close stands until the
+//              owner decides again
+//   in order   `execute` runs in the eval Rust issues after the render that changed a level, so a show lands before
+//              a write the owner makes after it in the same effect pass (a focus moved into the shown panel)
+//   one writer the show and hide go through `apply` (the `show` / `hide` rows of APPLY) and nothing else shows or
+//              hides an element with a level; the transition the write itself causes is not reported
+//   reports    a transition the page caused (light dismiss, Escape) is reported as `{ n, open }` on the owner's
+//              session (`watch`, by the element's id), stamped with the nonce applied, so Rust drops a report older
+//              than its newest level; one document capture listener carries them while any session watches
 
 /** What the bridge gives the executor at boot: its apply table and the Rust-caused marker. */
 export interface ExecutorPorts {
   apply(site: string, effect: "show" | "hide", el: Element): void;
   asRust<T>(run: () => T): T;
-  /** Calls `fn` after every `childList` batch of the document until the returned stop is called. */
-  childList(fn: () => void): () => void;
 }
 
-type ExecutorCommand = Extract<DxCommand, { cmd: "executor" }>;
-
-type Entry = { sc: DxScope; n: number; level: boolean; mode: ExecutorCommand["mode"]; site: string; own: number };
+type Watch = Extract<DxCommand, { cmd: "executor" }>;
+type Applied = { n: number; own: number };
 
 export function createExecutor(W: Window, ports: ExecutorPorts) {
-  const entries = new Map<string, Entry>();
-  const waiting = new Map<string, Entry>();
-  let stop: (() => void) | null = null;
+  const applied = new WeakMap<Element, Applied>();
+  const sessions = new Map<string, DxScope>();
 
-  const write = (entry: Entry, el: Element, effect: "show" | "hide"): void => {
-    entry.own++;
+  const write = (state: Applied, el: Element, site: string, effect: "show" | "hide"): void => {
+    state.own++;
     try {
-      ports.asRust(() => ports.apply(entry.site, effect, el));
+      ports.asRust(() => ports.apply(site, effect, el));
     } catch (error) {
       console.warn("dx executor:", String(error));
     } finally {
-      entry.own--;
+      state.own--;
     }
   };
 
-  const place = (id: string, entry: Entry): void => {
-    const el = W.document.getElementById(id);
-    if (!el) {
-      waiting.set(id, entry);
-      stop ||= ports.childList(() => {
-        for (const [wid, wentry] of [...waiting]) if (W.document.getElementById(wid)) waiting.delete(wid), place(wid, wentry);
-        if (!waiting.size && stop) stop(), (stop = null);
-      });
-      return;
-    }
-    waiting.delete(id);
-    const shown = !!el.matches && el.matches(":popover-open");
-    if (entry.level && !shown) write(entry, el, "show");
-    else if (!entry.level && shown && entry.mode === "immediate") write(entry, el, "hide");
-  };
-
-  /** The page-caused transitions of the registered elements: one document capture listener while any is registered. */
   const onToggle = (event: Event): void => {
-    const id = (event.target as Element | null)?.id;
-    const entry = id ? entries.get(id) : undefined;
-    if (entry && !entry.own) entry.sc.send({ n: entry.n, open: (event as ToggleEvent).newState === "open" });
+    const el = event.target as Element | null;
+    const state = el ? applied.get(el) : undefined;
+    const sc = el ? sessions.get(el.id) : undefined;
+    if (state && sc && !state.own) sc.send({ n: state.n, open: (event as ToggleEvent).newState === "open" });
   };
   const listening = (on: boolean): void =>
-    // listener-ok: added with the first registered element and removed with the last
+    // listener-ok: added with the first watching session and removed with the last
     on ? W.document.addEventListener("beforetoggle", onToggle, true) : W.document.removeEventListener("beforetoggle", onToggle, true);
 
   return {
-    command(sc: DxScope, spec: ExecutorCommand): void {
-      let entry = entries.get(spec.target);
-      if (!entry || entry.sc !== sc) {
-        const made: Entry = { sc, n: 0, level: false, mode: spec.mode, site: spec.site, own: 0 };
-        if (!entries.size) listening(true);
-        entries.set(spec.target, made);
-        sc.cleanup(() => {
-          if (entries.get(spec.target) === made) entries.delete(spec.target);
-          if (waiting.get(spec.target) === made) waiting.delete(spec.target);
-          if (!entries.size) listening(false);
-        });
-        entry = made;
+    /** Applies every rendered level newer than the one applied to its element, in the calling turn. */
+    execute(): void {
+      for (const el of W.document.querySelectorAll("[data-dx-level]")) {
+        const [nonce, level, mode, site] = (el.getAttribute("data-dx-level") ?? "").split(" ");
+        const n = Number(nonce);
+        let state = applied.get(el);
+        if (!state) applied.set(el, (state = { n: 0, own: 0 }));
+        if (!(n > state.n)) continue;
+        state.n = n;
+        const shown = el.matches(":popover-open");
+        if (level === "open" && !shown) write(state, el, site, "show");
+        else if (level === "closed" && shown && mode === "immediate") write(state, el, site, "hide");
       }
-      if (spec.nonce < entry.n) return;
-      entry.n = spec.nonce;
-      entry.level = !!spec.level;
-      entry.mode = spec.mode;
-      entry.site = spec.site;
-      place(spec.target, entry);
+    },
+    /** The owner's session reports the page-caused transitions of the element `target` until it ends. */
+    watch(sc: DxScope, spec: Watch): void {
+      if (!sessions.size) listening(true);
+      sessions.set(spec.target, sc);
+      sc.cleanup(() => {
+        if (sessions.get(spec.target) === sc) sessions.delete(spec.target);
+        if (!sessions.size) listening(false);
+      });
     },
   };
 }

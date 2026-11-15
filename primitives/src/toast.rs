@@ -879,7 +879,7 @@ fn ToastRegionRendered(
     use_effect(ensure_toast_base_styles);
 
     let always_open = use_signal(|| true);
-    crate::top_layer::use_popover_shown_while_mounted(
+    let level = crate::top_layer::use_popover_shown_while_mounted(
         id.clone(),
         always_open,
         Callback::new(|_: bool| {}),
@@ -928,6 +928,7 @@ fn ToastRegionRendered(
             class: "dx-toast-base-region",
         }),
         attributes,
+        level,
     ]);
 
     rsx! {

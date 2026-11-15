@@ -82,11 +82,15 @@ pub(crate) fn use_anchored_panel(
         owned,
     } = config;
 
-    match sync {
+    // the level attribute the executor applies (`bridge::executor`); the dialog panel's legacy show renders none
+    let level = match sync {
         PanelSync::WhileMounted => use_popover_shown_while_mounted(id.clone(), open, set_open),
         PanelSync::Immediate => use_popover_sync(id.clone(), open, set_open),
-        PanelSync::DialogPanel => use_dialog_panel_shown_while_mounted(id.clone(), open, set_open),
-    }
+        PanelSync::DialogPanel => {
+            use_dialog_panel_shown_while_mounted(id.clone(), open, set_open);
+            Vec::new()
+        }
+    };
     // An engine-less kind places itself, so the measured placement sits out.
     let engine_placed =
         matches!(&placement, AnchoredPlacement::Anchored { kind, .. } if kind.as_str().is_some());
@@ -107,7 +111,7 @@ pub(crate) fn use_anchored_panel(
     let promoted = dioxus_attributes::attributes!(div {
         popover: popover.as_str()
     });
-    let attributes = merge_attributes(vec![attributes, owned, promoted]);
+    let attributes = merge_attributes(vec![attributes, owned, promoted, level]);
     match placement {
         AnchoredPlacement::Anchored {
             anchor_id, kind, ..
