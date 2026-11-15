@@ -117,6 +117,7 @@
 
 pub mod behaviours;
 pub mod events;
+pub mod executor;
 pub(crate) mod legacy;
 mod session;
 pub(crate) mod transport;

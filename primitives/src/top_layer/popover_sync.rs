@@ -62,196 +62,92 @@ impl PopoverKind {
     }
 }
 
-/// Drive `showPopover()`/`hidePopover()` on the element with the given `id`
-/// from `open`, and sync the browser's own `toggle` event — fired on
-/// light-dismiss (`auto`), Escape (`auto`), or any other script/UA-driven
-/// close — back into `set_open`, so the Rust signal never strands. This is
-/// the same defect class `dev-docs/reference/platform-rationale.md` Caveat 1
-/// documents for `<dialog>`'s one-way `showModal()`/`close()` binding;
-/// the fix here is a legacy eval listener (ported by row 434), as in
-/// `use_form_reset_listener` (`lib.rs`).
+/// Drives the open level of the `[popover]` element `id` from `open` through the page executor
+/// (`bridge::executor`, row 449): `showPopover()` when `open` turns true, `hidePopover()` when it turns false, and
+/// a level the page reaches on its own (light dismiss, Escape) back into `set_open`, so the Rust signal never
+/// strands. The executor is the element's one writer: its own show and hide are never echoed back, and a report
+/// the owner has decided over since is dropped (`bridge::executor`'s module docs), so a late `toggle` cannot reopen a
+/// menu that was just closed.
 ///
-/// The show/hide effect checks `:popover-open` before calling either
-/// method, mirroring the native-`<dialog>` spike's `dialog.open` guard
-/// (`dev-docs/archive/research/phase4-spike-findings.md`, "An `.open` guard") — without it, a
-/// redundant call (the signal already agrees with the browser's state)
-/// throws `InvalidStateError`.
+/// For a panel that is always mounted (the menu family, through `use_anchored_panel`'s `PanelSync::Immediate`).
 ///
 /// # Renderer-support note
 ///
-/// Only a real browser or webview implements the Popover API. Blitz
-/// (`dioxus-native`) implements neither the `popover` attribute nor
-/// `document::eval` (the latter is a no-op there) —
-/// `dev-docs/reference/platform-rationale.md` Caveat 2's capability table shows
-/// both at zero. This hook must never run on that target: calling it there
-/// would be a silent no-op at best (`eval` swallowed) and, worse, its
-/// *caller* rendering the `popover` attribute unconditionally would be
-/// actively harmful — Blitz's UA stylesheet borrows Firefox's
-/// `[popover]:not(:popover-open) { display: none }` rule without
-/// implementing `:popover-open` itself, so any element carrying the
-/// attribute there would always match `:not(:popover-open)` and render
-/// permanently hidden. See each call site (`tooltip.rs`, `hover_card.rs`,
-/// `popover.rs`) for the matching `#[cfg]` split on the attribute itself.
-///
-/// It is gated on `not(feature = "native")` (a renderer Cargo feature this crate
-/// already defines), not `target_family = "wasm"` — `dioxus-desktop` is a
-/// non-wasm binary with a real, working webview `eval`, and belongs on this
-/// same browser-style arm, not on the native/no-op one `target_family = "wasm"`
-/// would wrongly exclude it from. A `target_family = "wasm"` gate would
-/// also have the fullstack SSG prerender — a host (non-wasm) binary built with
-/// this feature on — render the native-arm markup instead
-/// (`dev-docs/reference/platform-rationale.md` Caveat 1). See that caveat
-/// for the rule: markup/attribute choice keys off this renderer
-/// feature; only genuinely wasm-only *execution* internals (none exist in
-/// this hook's body — `document::eval` itself compiles and runs inertly on
-/// any renderer with no document context) would still key off
-/// `target_family`.
+/// Only a real browser or webview implements the Popover API. Blitz (`dioxus-native`) implements neither the
+/// `popover` attribute nor `document::eval` (`dev-docs/reference/platform-rationale.md` Caveat 2), so this hook and
+/// the `popover` attribute its callers render exist only on the `not(feature = "native")` arm: Blitz's UA sheet
+/// hides `[popover]:not(:popover-open)` without implementing `:popover-open`, so the attribute would hide the
+/// element for good there. The gate is the renderer feature, not `target_family = "wasm"`: `dioxus-desktop` is a
+/// non-wasm binary with a working webview, and the fullstack SSG prerender is a host binary that renders the
+/// browser arm's markup (Caveat 1).
 #[cfg(not(feature = "native"))]
 pub(crate) fn use_popover_sync(
     id: String,
     open: impl Readable<Target = bool> + Copy + 'static,
     set_open: Callback<bool>,
 ) {
-    // Installs `ensure_top_layer_ink_styles`'s engine-injected ink baseline
-    // -- see that function's own doc for what it fixes and why every
-    // `use_popover_sync` call site (every plain-lifecycle `[popover]`
-    // consumer) is one of the three provably-exhaustive call sites it lists.
+    // The ink baseline (`ensure_top_layer_ink_styles`) is evaluated before the executor's session is opened: both
+    // are evals created in this order, and the page runs evals in the order they are created.
     use_effect(ensure_top_layer_ink_styles);
-
-    // Browser -> signal.
-    let id_for_listener = id.clone();
-    crate::js_listener::use_js_listeners(move || {
-        Some(
-            crate::js_listener::JsListeners::install(
-                "const id = await dioxus.recv();
-                listen(document.getElementById(id), 'toggle', (e) => dioxus.send(e.newState === 'open'));",
-            )
-            .arg(id_for_listener.clone())
-            .on_message(move |is_open: bool| set_open.call(is_open)),
-        )
-    });
-
-    // Signal -> browser.
-    use_effect(move || {
-        let want_open = open.cloned();
-        let id = id.clone();
-        // `inject` is prepended into this exact script, not left to the
-        // separate `use_effect(ensure_top_layer_ink_styles)` above --
-        // see `ensure_top_layer_ink_styles`'s doc, "First-paint window,"
-        // for why relying on that other effect's `document::eval()` having
-        // already run by the time *this* one calls `showPopover()` is not
-        // safe to assume, and why prepending (one synchronous script, not
-        // two separately-ordered ones) is what actually closes the gap.
-        let inject = TOP_LAYER_INK_STYLES_INJECT_JS;
-        let id = crate::escape::js_string(&id);
-        #[expect(
-            clippy::disallowed_methods,
-            reason = "row 452: this page script is ported by row 452"
-        )]
-        document::eval(&format!(
-            "{inject}
-            const el = document.getElementById({id});
-            if (!el) return;
-            const isOpen = el.matches(':popover-open');
-            if ({want_open} && !isOpen) el.showPopover();
-            if (!{want_open} && isOpen) el.hidePopover();"
-        ));
-    });
+    crate::bridge::executor::use_popover_level(
+        id,
+        open,
+        crate::bridge::executor::ShowMode::Immediate,
+        set_open,
+        crate::site!("executor.popover"),
+    );
 }
 
-/// Variant of [`use_popover_sync`] for content whose *own* `data-open` / `data-closed`
-/// (Radix-style) animates through a "closed but still mounted" phase --
-/// `use_animated_open`-driven content, unlike every other
-/// `use_popover_sync` call site. Forwards native/browser closes to
-/// `on_native_close` exactly like [`use_popover_sync`]; the difference is
-/// entirely on the "signal -> browser" side: `showPopover()` still runs
-/// reactively, every time `open` becomes `true` (not once, at mount -- see
-/// "Why this exists" below for why once is not enough), but
-/// **`hidePopover()` is never called on our own closing path at all** --
-/// only a real DOM removal (this component's caller unmounting it once its
-/// own exit animation settles) ever takes this content out of the top
-/// layer.
+/// [`use_popover_sync`] for content whose own `data-open` / `data-closed` animates through a "closed but still
+/// mounted" phase (`use_animated_open`): `showPopover()` runs every time `open` turns true, and a closed level hides
+/// nothing (`ShowMode::Mounted`), so only the owner's unmount takes the content out of the top layer.
 ///
-/// ## Why this exists: two bugs the plain sync hook cannot avoid
+/// **The exit animation.** `hidePopover()` on the closing path would set `display: none` (the UA's
+/// `[popover]:not(:popover-open)`) on the tick `open` turns false, before `use_animated_open`'s rAF-deferred
+/// `getAnimations()` read, so the exit would be skipped (`combobox.spec.ts`, "keeps filtered options during
+/// keyboard close animation").
 ///
-/// [`use_popover_sync`]'s own "signal -> browser" effect calls
-/// `hidePopover()` the instant `open` goes `false`. That is exactly right
-/// for content with no exit animation (`Tooltip`/`HoverCard`/`Popover`/
-/// `DropdownMenu`/`ContextMenu`/`Menubar`, none of which keep their content
-/// mounted through a CSS animate-out -- Radix-style `data-closed`
-/// animations on those are cosmetic fades that finish well after the
-/// element would already be gone). `SelectList`/`ComboboxList` are
-/// different: both render through `use_animated_open`, which
-/// deliberately keeps the content mounted with `data-closed` for
-/// its whole exit animation (plus a settle hold) before actually
-/// unmounting it -- `combobox.spec.ts`'s "keeps filtered options during
-/// keyboard close animation" test asserts exactly this, that the
-/// `data-closed` element is still visible mid-animation.
+/// **A reopen while still mounted.** An `auto` popover's light dismiss treats the trigger's own `pointerdown` as
+/// outside (`SelectTrigger` and `ComboboxInput` are not its invoker), so a click on the trigger of a closing,
+/// still-shown list hides it for real and the trigger's `onclick` reopens it in the same gesture. The show is
+/// applied on every open level, whatever ended the previous one (`combobox.spec.ts`, "filters and selects with the
+/// keyboard").
 ///
-/// **Bug 1 (animation race).** Calling [`use_popover_sync`] directly with the
-/// raw `open` signal fails that test: `hidePopover()` fires on the same
-/// tick `open` goes `false`, which (per the UA popover stylesheet's
-/// `[popover]:not(:popover-open) { display: none }`) sets `display: none`
-/// on the content *before* `use_animated_open`'s own rAF-deferred
-/// `getAnimations()` check ever runs, so it observes zero running
-/// animations and finishes the close cycle immediately -- the exit
-/// animation is skipped outright, and Playwright's `toBeVisible()` on the
-/// still-should-be-animating `data-closed` element fails. Never
-/// calling `hidePopover()` from the closing path at all -- only from a real
-/// unmount, once `use_animated_open` itself has already decided the
-/// animation (and its settle hold) is done -- sidesteps this entirely: the
-/// exit animation plays out undisturbed on an element that is still very
-/// much `:popover-open` the whole time.
-///
-/// **Bug 2 (reopen-while-still-mounted, `auto` only).** Covered by
-/// `combobox.spec.ts`'s "filters and selects with the keyboard" test
-/// (it would go red intermittently were this not handled):
-/// `auto`'s native light dismiss has no notion of "this input is the
-/// trigger that owns me" (`ComboboxInput`/`SelectTrigger` are never
-/// declared as this popover's invoker, and neither a `popovertarget`
-/// attribute nor `preventDefault()` on the
-/// trigger's own `pointerdown`/`click` stops it; WHATWG light dismiss
-/// treats *any* pointerdown outside the popover's own DOM subtree as
-/// "outside," full stop). So: select an option (closes, `open` -> `false`,
-/// content stays mounted mid-exit-animation per Bug 1 above), then
-/// -- while that same instance is *still* mounted, `:popover-open` still
-/// `true` -- click the trigger again to reopen. The trigger's own
-/// `pointerdown` is classified as "outside" by native light dismiss, which
-/// closes the *still-showing* popover for real (a genuine
-/// `showPopover`/`hidePopover` pair, not merely a `data-open` / `data-closed` flip) --
-/// forwarded correctly back into `on_native_close`, setting `open` to
-/// `false` -- **immediately followed**, same gesture, by the trigger's own
-/// `onclick` reading `open` and calling `set_open(true)` to reopen it. A
-/// one-time, mount-only `showPopover()` call never re-fires for this
-/// already-mounted instance, so `open` becomes `true` again in
-/// Rust/`data-open` while the actual DOM element stays hidden
-/// (`:not(:popover-open)`) -- a user-visible "second click does nothing"
-/// defect. Reacting to `open` on every transition (not just the first)
-/// avoids it the same way [`use_popover_sync`]'s own show effect does:
-/// whenever `open` is `true` and the element is not yet `:popover-open`,
-/// `showPopover()` runs again, regardless of *why* it had stopped being
-/// shown.
-///
-/// A *native* close (Escape / outside pointerdown, `auto` only) still
-/// bypasses the exit animation on its own path -- the browser's own hide
-/// algorithm sets `display: none` synchronously, before Rust ever learns
-/// about it -- but that is an accepted, well-known limit of the plain
-/// Popover API without `@starting-style`/`transition-behavior:
-/// allow-discrete` (out of scope here), not something the oracle
-/// requires animated; the test Bug 1 targets only exercises a
-/// script-driven (Enter-key) close, exactly the path this hook keeps
-/// animatable.
+/// Only closes reach `on_native_close`: the executor shows the element only on the owner's command, so the page
+/// has no open of its own to report. A native close (Escape, a press outside, `auto` only) skips the exit
+/// animation, the accepted limit of the Popover API without `@starting-style`.
 #[cfg(not(feature = "native"))]
 pub(crate) fn use_popover_shown_while_mounted(
     id: String,
     open: impl Readable<Target = bool> + Copy + 'static,
     on_native_close: Callback<bool>,
 ) {
-    // Installs `ensure_top_layer_ink_styles`'s engine-injected ink baseline
-    // -- see that function's own doc for what it fixes and why every
-    // `use_popover_shown_while_mounted` call site (every animated-exit
-    // `[popover]` consumer) is one of the three provably-exhaustive call
-    // sites it lists.
+    use_effect(ensure_top_layer_ink_styles);
+    let on_page = use_callback(move |is_open: bool| {
+        if !is_open {
+            on_native_close.call(false);
+        }
+    });
+    crate::bridge::executor::use_popover_level(
+        id,
+        open,
+        crate::bridge::executor::ShowMode::Mounted,
+        on_page,
+        crate::site!("executor.popover"),
+    );
+}
+
+/// [`use_popover_shown_while_mounted`] for a `<dialog popover>` panel (the non-modal Popover, so DatePicker and
+/// ColorPicker), whose show runs the open-focus policy (`dxOpenFocus`, `modality.rs`): where focus lands follows
+/// the opening modality like a modal's does. The policy is a legacy page script until its decisions are Rust's
+/// (row 456), so this panel keeps the legacy show script and close listener (both ported with it).
+#[cfg(not(feature = "native"))]
+pub(crate) fn use_dialog_panel_shown_while_mounted(
+    id: String,
+    open: impl Readable<Target = bool> + Copy + 'static,
+    on_native_close: Callback<bool>,
+) {
+    // Installs `ensure_top_layer_ink_styles`'s engine-injected ink baseline: see that function's doc.
     use_effect(ensure_top_layer_ink_styles);
 
     // Browser -> signal: forwards every native *close* `toggle` for this
@@ -281,21 +177,16 @@ pub(crate) fn use_popover_shown_while_mounted(
         )
     });
 
-    // Signal -> browser, show-only: reacts to the real `open` signal (not a
-    // one-shot mount effect -- see "Bug 2" above for why a reopen needs
-    // this to run again) so `showPopover()` fires every time `open` is
-    // `true` and the browser doesn't already agree; `hidePopover()` is
-    // deliberately never called here at all -- see "Bug 1" above -- only a
-    // real unmount ever closes this content.
+    // Signal -> browser, show-only: `showPopover()` runs every time `open` is true and the browser does not
+    // already agree (the reopen while still mounted, `use_popover_shown_while_mounted`'s docs); `hidePopover()` is
+    // never called here (the exit animation, same docs), so only a real unmount closes this content.
     use_effect(move || {
         if !open.cloned() {
             return;
         }
         let id = id.clone();
-        // See `use_popover_sync`'s matching comment / `ensure_top_layer_
-        // ink_styles`'s doc, "First-paint window": prepended into this
-        // exact script rather than left to the separate `use_effect(
-        // ensure_top_layer_ink_styles)` above, for the same reason.
+        // Prepended into this exact script rather than left to the separate `use_effect(
+        // ensure_top_layer_ink_styles)` above: `ensure_top_layer_ink_styles`'s doc, "First-paint window".
         let inject = TOP_LAYER_INK_STYLES_INJECT_JS;
         let modality = crate::modality::MODALITY_JS;
         let open_focus = crate::modality::OPEN_FOCUS_JS;

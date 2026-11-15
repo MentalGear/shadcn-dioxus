@@ -451,6 +451,23 @@ pub enum Command {
         /// Install generation: older than one the target saw is dropped, equal renews.
         epoch: Epoch,
     },
+    /// The open level Rust decided for the top-layer element `target`, applied by the page executor
+    /// (`ts/lib/executor.ts`, row 449). `nonce` is the owner's command count: the page drops a command older than
+    /// the newest it applied to the element, and stamps its reports with the nonce it had applied.
+    Executor {
+        /// The element's `id`.
+        target: String,
+        /// What the level opens.
+        kind: super::executor::ExecutorKind,
+        /// Whether a false level hides the element.
+        mode: super::executor::ShowMode,
+        /// Open (`true`) or closed.
+        level: bool,
+        /// The owner's command count.
+        nonce: u64,
+        /// The construction site the page's apply marker names.
+        site: super::behaviours::Site,
+    },
 }
 
 /// A `matchMedia` answer.
@@ -646,6 +663,13 @@ pub struct Subscription {
     /// subscription ends is taken (its number counts) and not handled.
     pump: Pump,
     id: u64,
+}
+
+impl Subscription {
+    /// Sends more commands to the running session, on its own channel (the page executor's next level).
+    pub(crate) fn send(&self, commands: &[Command]) {
+        transport::send(&self.eval, commands);
+    }
 }
 
 impl Drop for Subscription {

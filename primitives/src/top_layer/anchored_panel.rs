@@ -14,6 +14,9 @@ pub(crate) enum PanelSync {
     /// `use_popover_sync`: `showPopover()` / `hidePopover()` follow `open` at once. For a panel that is
     /// always mounted.
     Immediate,
+    /// `use_dialog_panel_shown_while_mounted`: [`PanelSync::WhileMounted`] for a `<dialog popover>`, whose show
+    /// runs the open-focus policy (the non-modal Popover).
+    DialogPanel,
 }
 
 /// Where the panel sits.
@@ -82,6 +85,9 @@ pub(crate) fn use_anchored_panel(
     match sync {
         PanelSync::WhileMounted => use_popover_shown_while_mounted(id.clone(), open, set_open),
         PanelSync::Immediate => use_popover_sync(id.clone(), open, set_open),
+        PanelSync::DialogPanel => {
+            use_dialog_panel_shown_while_mounted(id.clone(), open, set_open)
+        }
     }
     // An engine-less kind places itself, so the measured placement sits out.
     let engine_placed =

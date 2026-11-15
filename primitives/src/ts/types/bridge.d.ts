@@ -71,6 +71,17 @@ type DxCommand =
       behaviour: { kind: string; [param: string]: unknown };
       declared: DxDeclared;
       epoch?: DxEpoch | null;
+    }
+  | {
+      /** The level Rust decided for the element `target` (`lib/executor.ts`), stamped with the owner's nonce. */
+      cmd: "executor";
+      target: string;
+      kind: "popover";
+      /** `immediate`: a false level hides at once. `mounted`: no command hides it (its owner unmounts it). */
+      mode: "immediate" | "mounted";
+      level: boolean;
+      nonce: number;
+      site: string;
     };
 
 /** What Rust declares about a behaviour's listener; the page never chooses any of it. */
