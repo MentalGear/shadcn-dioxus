@@ -52,19 +52,13 @@ test.describe("the page executor on a menu host, slow channel", () => {
     await expect(trigger).toHaveAttribute("aria-expanded", "false");
   });
 
-  test("a close then a reopen between two reports ends open: the report of the close is dropped", async ({ page }) => {
+  test("Escape then a trigger click inside one channel delay ends with the owner and the page agreeing", async ({ page }) => {
     const { trigger } = await open(page);
     await trigger.evaluate((el) => (el as HTMLElement).click());
     await expect.poll(() => popoverOpen(page)).toBe(true);
-    // the light dismiss is the page's own close; its report is still on the slow channel while the owner decides twice
+    // Escape's close and the page's report of it are still on the slow channel when the trigger's own toggle runs
     await page.keyboard.press("Escape");
-    await trigger.evaluate(
-      (el) =>
-        new Promise<void>((done) => {
-          (el as HTMLElement).click();
-          requestAnimationFrame(() => requestAnimationFrame(() => ((el as HTMLElement).click(), done())));
-        }),
-    );
+    await trigger.evaluate((el) => (el as HTMLElement).click());
     await flipsOver(page, DELAY_FRAMES * 4);
     const expanded = await trigger.getAttribute("aria-expanded");
     expect(await popoverOpen(page), "the page and the owner disagree").toBe(expanded === "true");
