@@ -213,6 +213,8 @@ fields! {
     TargetId => "target.id";
     TargetTagName => "target.tagName";
     TargetValue => "target.value";
+    TargetSelectionStart => "target.selectionStart";
+    TargetSelectionEnd => "target.selectionEnd";
     TargetScrollTop => "target.scrollTop";
     TargetScrollLeft => "target.scrollLeft";
     TargetInnerWidth => "target.innerWidth";

@@ -2,6 +2,7 @@
 //! directly and once through the byte route the page uses.
 
 use decision_kernel::fixture::{self, Config, Event, Snapshot};
+use decision_kernel::otp_filter;
 use decision_kernel::value::Value;
 use decision_kernel::wire::FromValue;
 use decision_kernel::{decide_named, KINDS};
@@ -193,6 +194,26 @@ fn the_rust_decide_meets_every_fixture_vector() {
             &memory,
             &Snapshot::from_value(&state).unwrap(),
             &Event::from_value(&event).unwrap(),
+        );
+        assert!(
+            same(&decision.to_value(), &expect),
+            "{name}: {:?} != {expect:?}",
+            decision.to_value()
+        );
+    }
+}
+
+/// The Rust `decide` of the OTP filter called directly.
+#[test]
+fn the_rust_decide_meets_every_otp_filter_vector() {
+    let vectors = vectors_of("otp-filter");
+    assert!(vectors.len() >= 10);
+    for (name, behaviour, event, state, memory, expect, _) in vectors {
+        let decision = otp_filter::decide(
+            &otp_filter::Config::from_value(&behaviour).unwrap(),
+            &memory,
+            &otp_filter::Snapshot::from_value(&state).unwrap(),
+            &otp_filter::Event::from_value(&event).unwrap(),
         );
         assert!(
             same(&decision.to_value(), &expect),

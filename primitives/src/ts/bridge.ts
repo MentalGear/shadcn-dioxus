@@ -190,6 +190,8 @@ const FIELD_GETTERS: Record<string, (event: any) => unknown> = {
   "target.id": (e) => prim(e.target?.id),
   "target.tagName": (e) => prim(e.target?.tagName),
   "target.value": (e) => prim(e.target?.value),
+  "target.selectionStart": (e) => prim(e.target?.selectionStart),
+  "target.selectionEnd": (e) => prim(e.target?.selectionEnd),
   "target.scrollTop": (e) => prim(e.target?.scrollTop),
   "target.scrollLeft": (e) => prim(e.target?.scrollLeft),
   "target.innerWidth": (e) => prim(e.target?.innerWidth),
@@ -877,24 +879,38 @@ let applying: Readonly<{ site: string; effect: string }> | null = null;
 type Effect = "prevent" | "stop" | "attrs" | "slot";
 type EffectRow = (target: Event | Element, name: string, value: unknown) => void;
 /**
- * The owners of the native slots a decision may write (its `slots` list), one row per slot. Focus is one document-wide
- * slot: the owner always passes `preventScroll`, so one focus write lands on the focus slot and never on a scroller.
- * The write is Rust's own, so the focus it causes is reported with its cause and fences nothing.
+ * The owners of the native slots a decision may write (its `slots` list), one row per slot; `effect` is the name the
+ * apply marker gives the write (the witness harness's effect names). Focus is one document-wide slot: the owner always
+ * passes `preventScroll`, so one focus write lands on the focus slot and never on a scroller. The write is Rust's own,
+ * so the focus it causes is reported with its cause and fences nothing. The value owner replaces a range of a text
+ * control's value through the `value` setter, puts the caret where the decision says and, when it asks, dispatches the
+ * `input` event the browser would have: a decision is made and applied inside one dispatch, so no later page transition
+ * can make it stale, and a decision made during composition is not written (the kernel drops it).
  */
-const SLOT_OWNERS: Record<string, (host: HTMLElement) => void> = {
-  focus: (host) => asRust(() => host.focus({ preventScroll: true })),
+const SLOT_OWNERS: Record<string, { effect: string; run: (host: HTMLElement, arg: any) => void }> = {
+  focus: { effect: "focus", run: (host) => asRust(() => host.focus({ preventScroll: true })) },
+  value: {
+    effect: "setValue",
+    run: (host, w) =>
+      asRust(() => {
+        const el = host as HTMLInputElement;
+        el.value = el.value.slice(0, w.from) + w.text + el.value.slice(w.to);
+        el.setSelectionRange(w.caret, w.caret);
+        if (w.input) el.dispatchEvent(new Event("input", { bubbles: true }));
+      }),
+  },
 };
 
 const APPLY: Readonly<Record<Effect, EffectRow>> = Object.freeze({
   prevent: (event) => (event as Event).preventDefault(),
   stop: (event) => (event as Event).stopPropagation(),
   attrs: (host, name, value) => (host as Element).setAttribute(name, value as string),
-  slot: (host, name) => own(SLOT_OWNERS, name)?.(host as HTMLElement),
+  slot: (host, name, arg) => own(SLOT_OWNERS, name)?.run(host as HTMLElement, arg),
 });
 
 function applyEffect(site: string, effect: Effect, target: Event | Element, name = "", value: unknown = ""): void {
   const outer = applying;
-  applying = Object.freeze({ site, effect });
+  applying = Object.freeze({ site, effect: (effect === "slot" && own(SLOT_OWNERS, name)?.effect) || effect });
   try {
     own(APPLY, effect)?.(target, name, value);
   } finally {

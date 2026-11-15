@@ -1,6 +1,7 @@
-// `otpFilter`'s witnesses (`prevent`, `setValue`), pre-authored as `test.fixme` keyed to the generated site list: they
-// go live, with no edit here, when the library builds the site `input_otp.filter` (row 448). The vector in the binding
-// is provisional: the first live run of the pair is the behaviour author's to confirm red.
+// `otpFilter`'s witnesses (`prevent`, `setValue`) at the site `input_otp.filter`, which the OTP field builds with
+// `site!("input_otp.filter")`: they are live because the generated site list names it. The binding's vector replays
+// a trusted text insertion on the real page; each pair is a control (two real runs agree) and an expected-failure
+// witness (the effect moved to its next-best placement must leave the real arm's observables).
 
 import { test } from "../fixtures";
 import { witness } from "./witness";
