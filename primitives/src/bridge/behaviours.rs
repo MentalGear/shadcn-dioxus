@@ -321,7 +321,7 @@ impl Behaviour {
     pub fn module(&self) -> &'static str {
         match self {
             Behaviour::Fixture { .. } => include_str!("../js/behaviours/fixture.js"),
-            Behaviour::OtpFilter { .. } => include_str!("../js/behaviours/otp_filter.js"),
+            Behaviour::OtpFilter { .. } => include_str!("../js/behaviours/otp-filter.js"),
         }
     }
 

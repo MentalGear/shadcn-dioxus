@@ -58,40 +58,49 @@ wire_input! {
     }
 }
 
-/// The accepted characters of a `ranges` string.
-struct Accepted(Vec<(char, char)>);
+/// The accepted characters: a `ranges` string of `(low, high)` pairs.
+struct Accepted<'a>(&'a str);
 
-impl Accepted {
-    fn parse(ranges: &str) -> Self {
-        let chars: Vec<char> = ranges.chars().collect();
-        Accepted(chars.chunks_exact(2).map(|p| (p[0], p[1])).collect())
-    }
-
+impl Accepted<'_> {
     fn accepts(&self, c: char) -> bool {
-        self.0.iter().any(|&(low, high)| low <= c && c <= high)
+        let mut pairs = self.0.chars();
+        while let (Some(low), Some(high)) = (pairs.next(), pairs.next()) {
+            if low <= c && c <= high {
+                return true;
+            }
+        }
+        false
     }
 
     /// The accepted characters of `text`, at most `room` of them.
-    fn keep(&self, text: impl Iterator<Item = char>, room: usize) -> String {
-        text.filter(|&c| self.accepts(c)).take(room).collect()
+    fn keep(&self, text: &str, room: usize) -> String {
+        let mut out = String::new();
+        let mut n = 0;
+        for c in text.chars() {
+            if n < room && self.accepts(c) {
+                out.push(c);
+                n += 1;
+            }
+        }
+        out
     }
 }
 
-/// The length of `chars` in UTF-16 units.
-fn utf16(chars: &[char]) -> usize {
-    chars.iter().map(|c| c.len_utf16()).sum()
+/// The length of `text` in UTF-16 units.
+fn utf16(text: &str) -> usize {
+    text.chars().map(char::len_utf16).sum()
 }
 
-/// The index in `chars` of the UTF-16 offset `offset` (the end when it is past the text).
-fn char_index(chars: &[char], offset: f64) -> usize {
+/// The byte index in `text` of the UTF-16 offset `offset` (the end when it is past the text).
+fn byte_index(text: &str, offset: f64) -> usize {
     let mut units = 0.0;
-    for (i, c) in chars.iter().enumerate() {
+    for (i, c) in text.char_indices() {
         if units >= offset {
             return i;
         }
         units += c.len_utf16() as f64;
     }
-    chars.len()
+    text.len()
 }
 
 /// The decision. Pure: the same inputs give the same answer.
@@ -99,7 +108,7 @@ pub fn decide(config: &Config, _memory: &Value, _snapshot: &Snapshot, event: &Ev
     if event.composing == Some(true) {
         return Decision::default();
     }
-    let accepted = Accepted::parse(&config.ranges);
+    let accepted = Accepted(&config.ranges);
     let max = config.max.max(0.0) as usize;
     match event.kind.as_str() {
         "beforeinput" => edit(&accepted, max, event),
@@ -114,15 +123,13 @@ fn edit(accepted: &Accepted, max: usize, event: &Event) -> Decision {
     let Some(data) = event.data.as_deref().filter(|d| !d.is_empty()) else {
         return Decision::default();
     };
-    if event.input_type.as_deref() == Some("insertCompositionText") {
-        return Decision::default();
-    }
-    let chars: Vec<char> = event.value.chars().collect();
-    let (a, b) = (char_index(&chars, event.start), char_index(&chars, event.end));
+    let value = event.value.as_str();
+    let (a, b) = (byte_index(value, event.start), byte_index(value, event.end));
     let (from, to) = (a.min(b), a.max(b));
-    let room = max.saturating_sub(chars.len() - (to - from));
-    let text = accepted.keep(data.chars(), room);
-    if text == data {
+    let room = max.saturating_sub(value.chars().count().saturating_sub(value.get(from..to).unwrap_or_default().chars().count()));
+    let text = accepted.keep(data, room);
+    // the kept text is a subsequence of the data, so it is the data exactly when no byte was dropped
+    if text.len() == data.len() {
         return Decision::default();
     }
     let decision = Decision {
@@ -132,30 +139,29 @@ fn edit(accepted: &Accepted, max: usize, event: &Event) -> Decision {
     if text.is_empty() {
         return decision;
     }
-    let caret = utf16(&chars[..from]) + text.encode_utf16().count();
+    let start = utf16(value.get(..from).unwrap_or_default());
     decision.write_value(&ValueWrite {
-        from: utf16(&chars[..from]),
-        to: utf16(&chars[..to]),
+        from: start,
+        to: utf16(value.get(..to).unwrap_or_default()),
+        caret: start + utf16(&text),
         text,
-        caret,
         input: true,
     })
 }
 
 /// The value as it stands: filtered and bounded as a whole, the caret kept after the accepted characters before it.
 fn settle(accepted: &Accepted, max: usize, event: &Event, input: bool) -> Decision {
-    let chars: Vec<char> = event.value.chars().collect();
-    let filtered = accepted.keep(chars.iter().copied(), max);
-    if filtered.chars().eq(chars.iter().copied()) {
+    let value = event.value.as_str();
+    let filtered = accepted.keep(value, max);
+    if filtered.len() == value.len() {
         return Decision::default();
     }
-    let before = &chars[..char_index(&chars, event.start)];
-    let kept = accepted.keep(before.iter().copied(), max);
+    let kept = accepted.keep(value.get(..byte_index(value, event.start)).unwrap_or_default(), max);
     Decision::default().write_value(&ValueWrite {
         from: 0,
-        to: utf16(&chars),
+        to: utf16(value),
         text: filtered,
-        caret: kept.encode_utf16().count(),
+        caret: utf16(&kept),
         input,
     })
 }
@@ -184,18 +190,18 @@ mod tests {
     }
 
     #[test]
-    fn utf16_offsets_map_to_characters() {
-        let chars: Vec<char> = "a\u{1F600}b".chars().collect();
-        assert_eq!(char_index(&chars, 0.0), 0);
-        assert_eq!(char_index(&chars, 1.0), 1);
-        assert_eq!(char_index(&chars, 3.0), 2);
-        assert_eq!(char_index(&chars, 99.0), 3);
-        assert_eq!(utf16(&chars), 4);
+    fn utf16_offsets_map_to_byte_indices() {
+        let text = "a\u{1F600}b";
+        assert_eq!(byte_index(text, 0.0), 0);
+        assert_eq!(byte_index(text, 1.0), 1);
+        assert_eq!(byte_index(text, 3.0), 5);
+        assert_eq!(byte_index(text, 99.0), text.len());
+        assert_eq!(utf16(text), 4);
     }
 
     #[test]
     fn an_odd_trailing_range_character_is_ignored() {
-        assert!(Accepted::parse("09a").accepts('5'));
-        assert!(!Accepted::parse("09a").accepts('a'));
+        assert!(Accepted("09a").accepts('5'));
+        assert!(!Accepted("09a").accepts('a'));
     }
 }

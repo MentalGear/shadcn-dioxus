@@ -4,7 +4,7 @@
 
 export type EventName = "keydown" | "keyup" | "beforeinput" | "input" | "change" | "compositionstart" | "compositionend" | "click" | "dblclick" | "contextmenu" | "pointerdown" | "pointerup" | "pointermove" | "pointercancel" | "mousedown" | "mouseup" | "mousemove" | "touchstart" | "touchmove" | "touchend" | "touchcancel" | "wheel" | "scroll" | "resize" | "focusin" | "focusout" | "focus" | "blur" | "dragenter" | "dragover" | "dragleave" | "drop" | "copy" | "cut" | "paste" | "visibilitychange" | "contentvisibilityautostatechange" | "selectionchange" | "pagehide" | "pageshow" | "online" | "offline" | "hashchange" | "popstate" | "beforetoggle" | "toggle" | "close" | "cancel" | "transitionend" | "animationend";
 
-export const KINDS = ["fixture"] as const;
+export const KINDS = ["fixture", "otp-filter"] as const;
 export type Kind = (typeof KINDS)[number];
 
 export interface FixtureBehaviour {
@@ -17,23 +17,33 @@ export interface FixtureBehaviour {
   focus: boolean;
   leaseMs: number | null;
 }
+export interface OtpFilterBehaviour {
+  kind: "otp-filter";
+  site: string;
+  event: EventName;
+  ranges: string;
+  max: number;
+}
 
-export type Behaviour = FixtureBehaviour;
+export type Behaviour = FixtureBehaviour | OtpFilterBehaviour;
 
 /** What each kind declares at its sample parameters (the real declaration depends on them). */
 export const DECLARED = {
   "fixture": { target: "element", capture: false, passive: true },
+  "otp-filter": { target: "element", capture: true, passive: false },
 } as const;
 
 /** The hash of the kernel's kind table: the page refuses a kernel module whose `dx_kinds` differs. */
-export const KERNEL_HASH = 2649402274;
+export const KERNEL_HASH = 3068806846;
 
 /** The kernel's kind table in wire-index order: the keys of each kind's `Config`, `Snapshot` (the attribute reads) and `Event` (the event fields), from the kernel's input types. */
 export const KERNEL_KINDS = [
   { kind: "fixture", config: ["event", "attr", "value", "cancel", "focus"], reads: ["data-dx-fixture-block"], fields: ["type"] },
+  { kind: "otp-filter", config: ["event", "ranges", "max"], reads: [], fields: ["type", "inputType", "data", "isComposing", "value", "selectionStart", "selectionEnd"] },
 ] as const;
 
 /** What a behaviour module registers: the event fields and attribute reads of its kernel kind. */
 export const ADAPTER = {
   "fixture": { fields: ["type"], reads: ["data-dx-fixture-block"] },
+  "otp-filter": { fields: ["type", "inputType", "data", "isComposing", "value", "selectionStart", "selectionEnd"], reads: [] },
 } as const;

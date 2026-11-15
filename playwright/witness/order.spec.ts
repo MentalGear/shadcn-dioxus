@@ -11,7 +11,7 @@ import { witnessPage } from "../../primitives/ts-test/witness";
 const JS = join(__dirname, "..", "..", "primitives", "src");
 const BRIDGE = readFileSync(join(JS, "js", "bridge.js"), "utf8");
 const FIXTURE = readFileSync(join(JS, "js", "behaviours", "fixture.js"), "utf8");
-const OTP = readFileSync(join(JS, "js", "behaviours", "otp_filter.js"), "utf8");
+const OTP = readFileSync(join(JS, "js", "behaviours", "otp-filter.js"), "utf8");
 const KERNEL_B64 = readFileSync(join(JS, "kernel", "decision-kernel.b64"), "utf8").trim();
 const URL = "http://order.fixture/page.html";
 

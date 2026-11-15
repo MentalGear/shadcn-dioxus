@@ -2,6 +2,7 @@
 #! columns: bytes
 # path	bytes
 primitives/src/ts/behaviours/fixture.ts	667
-primitives/src/ts/bridge.ts	59618	# raised: row 450 the bridge counters in channel() and their read-out (bytes 52382->53718); row 447 the order runtime: the pump, the one inbound eval, the epoch rule and the focus owner (bytes 53718->59618)
+primitives/src/ts/behaviours/otp-filter.ts	704	# raised: row 448 the otp-filter adapter, the value owner and the apply marker (bytes 0->704)
+primitives/src/ts/bridge.ts	60732	# raised: row 448 the otp-filter adapter, the value owner and the apply marker (bytes 59618->60732)
 primitives/src/ts/lib/register.ts	1435
-primitives/src/ts/types/bridge.d.ts	7945	# raised: row 447 the order runtime: the pump, the one inbound eval, the epoch rule and the focus owner (bytes 7505->7945)
+primitives/src/ts/types/bridge.d.ts	8026	# raised: row 448 the otp-filter adapter, the value owner and the apply marker (bytes 7945->8026)
