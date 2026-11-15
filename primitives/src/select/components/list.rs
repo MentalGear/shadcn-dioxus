@@ -353,19 +353,6 @@ fn SelectListRendered(
 
     let onkeydown = select_list_onkeydown(ctx);
 
-    crate::top_layer::use_popover_shown_while_mounted(
-        id.clone(),
-        open,
-        Callback::new(move |is_open: bool| {
-            if !is_open {
-                // The popover hid by other means than `open` going false (the browser's own
-                // hide, e.g. a removed anchor): clear the roving focus like a blur-close does.
-                ctx.selectable.interacted_outside.set(true);
-                ctx.selectable.collection.clear_focus();
-            }
-            ctx.set_open(is_open);
-        }),
-    );
     // The popover is `manual`: an outside press or focus dismisses through this hook, a touch
     // press as a tap (see the component doc).
     let list_id = use_memo(use_reactive!(|id| id));
@@ -383,24 +370,6 @@ fn SelectListRendered(
             ctx.set_open(false);
         },
     );
-    // JS-measured static positioning fallback for engines without CSS
-    // Anchor Positioning -- see `top_layer::use_anchor_position_fallback`'s
-    // doc. `side`/`align`/gap match this component's themed CSS
-    // (`top: 100%; left: 0; margin-top: 0.25rem` == 4px at the default root
-    // font size): anchored below the trigger, left-aligned with it, the
-    // same bottom/start convention `DropdownMenu`/`Menubar` already use.
-    // Item-aligned places the list itself (`use_item_aligned`), so the popper engine sits out.
-    let popper_open = use_memo(move || open() && ctx.placement() == SelectPosition::Popper);
-    crate::top_layer::use_anchor_position_fallback(
-        id.clone(),
-        ctx.selectable.trigger_id.cloned(),
-        popper_open,
-        crate::ContentSide::Bottom,
-        crate::ContentAlign::Start,
-        4,
-    );
-    // `position="item-aligned"`: the selected option over the trigger, inside the viewport.
-    use_item_aligned(id.clone(), ctx);
     // axe `aria-input-field-name` (dev-docs/backlog.md row 34): an
     // ARIA `listbox` is an input field and needs an accessible name.
     // Default it from the trigger (whose own visible text is the
@@ -433,38 +402,56 @@ fn SelectListRendered(
     // (`use_item_aligned`) in document px and writes `data-side` for its own CSS; the engine's
     // `[data-dx-anchored][popover][data-side=...]` rules (`bottom: anchor(top)`, `margin`,
     // `transform: translateX(-50%)`, `position-try-fallbacks`) would apply on top of that
-    // placement, so the list carries no engine attribute.
+    // placement, so the list carries no engine attribute (`AnchorKind::SelectItemAligned`) and the
+    // engine's measured placement sits out.
     let anchor_kind = if ctx.placement() == SelectPosition::Popper {
         crate::top_layer::AnchorKind::Select
     } else {
         crate::top_layer::AnchorKind::SelectItemAligned
     };
     let attributes = merge_attributes(vec![attributes, labelledby]);
-    // Folds the caller's own `style` together with the anchor binding into
-    // one `style` attribute -- see `top_layer::anchored_content_attributes`'s
-    // doc for why a bare `style: position_anchor_style(&id)` literal
-    // alongside `..attributes` is the duplicate-`style` hazard
-    // (`dev-docs/conformance-harness.md` hydration-parity Rule 4).
-    let attributes = crate::top_layer::anchored_content_attributes(
-        anchor_kind,
-        &ctx.selectable.trigger_id.cloned(),
+    // `side`/`align`/gap match the themed CSS (`top: 100%; left: 0; margin-top: 0.25rem` == 4px at the
+    // default root font size): anchored below the trigger, left-aligned with it, the same bottom/start
+    // convention `DropdownMenu`/`Menubar` use.
+    let attributes = crate::top_layer::use_anchored_panel(
+        crate::top_layer::AnchoredPanel {
+            id: id.clone(),
+            open: open.into(),
+            set_open: Callback::new(move |is_open: bool| {
+                if !is_open {
+                    // The popover hid by other means than `open` going false (the browser's own
+                    // hide, e.g. a removed anchor): clear the roving focus like a blur-close does.
+                    ctx.selectable.interacted_outside.set(true);
+                    ctx.selectable.collection.clear_focus();
+                }
+                ctx.set_open(is_open);
+            }),
+            popover: crate::top_layer::PopoverKind::Manual,
+            sync: crate::top_layer::PanelSync::WhileMounted,
+            placement: crate::top_layer::AnchoredPlacement::Anchored {
+                anchor_id: ctx.selectable.trigger_id.cloned(),
+                side: crate::ContentSide::Bottom,
+                align: crate::ContentAlign::Start,
+                gap: 4,
+                kind: anchor_kind,
+            },
+            // All owned: role/dir define this listbox's widget semantics,
+            // `tabindex`/`aria_multiselectable` are managed focus/selection-mode
+            // state, and the `data-*` pair mirrors its open/direction state.
+            owned: attributes!(div {
+                role: "listbox",
+                tabindex: if focused() { "0" } else { "-1" },
+                aria_multiselectable: ctx.multi(),
+                dir: (ctx.direction)().as_str(),
+                ..state_attrs::open(open()),
+                "data-direction": (ctx.direction)().as_str(),
+                "data-position": ctx.placement().as_str(),
+            }),
+        },
         attributes,
     );
-
-    // All owned: role/popover/dir define this listbox's widget semantics,
-    // `tabindex`/`aria_multiselectable` are managed focus/selection-mode
-    // state, and the `data-*` pair mirrors its open/direction state.
-    let owned = attributes!(div {
-        role: "listbox",
-        tabindex: if focused() { "0" } else { "-1" },
-        aria_multiselectable: ctx.multi(),
-        popover: crate::top_layer::PopoverKind::Manual.as_str(),
-        dir: (ctx.direction)().as_str(),
-        ..state_attrs::open(open()),
-        "data-direction": (ctx.direction)().as_str(),
-        "data-position": ctx.placement().as_str(),
-    });
-    let attributes = merge_attributes(vec![attributes, owned]);
+    // `position="item-aligned"`: the selected option over the trigger, inside the viewport.
+    use_item_aligned(id.clone(), ctx);
 
     rsx! {
         div {

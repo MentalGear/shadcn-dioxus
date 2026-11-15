@@ -46,7 +46,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (76)
+## Open rows (75)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -122,9 +122,8 @@ proposing one is closed as out of scope (row 337 is the first).
 | [515](backlog/515-order-contract-consumers-the-find-in-page-port-and-the-gesture-epoch.md) | Order contract consumers: the find-in-page (beforematch) port, the gesture epoch and the contract details row 447 leaves unbuilt | Depends on row 447 (landed 2026-11-14). Not started. | M (inferred) | primitives |
 | [517](backlog/517-chart-tooltip-on-the-tooltip-layer.md) | Chart tooltips are confined to the chart box and get pushed around in small charts: build them on the Tooltip's content layer with a point anchor | APPROVED 2026-11-14. The tooltip escapes the chart box by default, hides on scroll where it cannot… | M (inferred). | primitives |
 | [518](backlog/518-suite-site-key-from-the-build-inputs.md) | An edit to a gate script, a rule file or CLAUDE.md re-runs the whole release suite: the site key covers the tree minus four prefixes, not the build's inputs | BACKLOG. Take it when a batch pays a full run for a change no build reads. | M (inferred). | tests |
-| [519](backlog/519-anchored-panel-recipe-one-hook.md) | Every non-menu overlay re-assembles the anchored panel recipe: one `top_layer::use_anchored_panel`, and the hover timers in their own module | APPROVED 2026-11-14 (owner: "I approve your recommendation for generalizing the components and… | M (inferred, 8 to 10 h), one lane… | primitives |
-| [521](backlog/521-axe-scan-opens-the-docs-accordion-items.md) | The accessibility scan skips the closed docs accordion items: Usage notes, Component structure and Props reference are never inspected | BACKLOG. Small and independent; take it beside any lane. | S. | tests |
-| [522](backlog/522-padded-pie-inner-radius-follows-the-padding.md) | A padded pie with no inner radius ends its slices in tips at the centre: the inner circle has to grow with the padding to read as even gaps | BACKLOG (owner 2026-11-14: "for padding pie the inner circle must increase relative to segment… | S. | components |
 | [523](backlog/523-edge-and-floating-close-mid-entry-under-a-keyframe.md) | Sheet, Drawer and the modal Popover still enter with a keyframe: a close in the middle of that entry cancels it and the exit keyframe starts from the fully open pose | BACKLOG (found 2026-11-15). Not started. Small; it belongs with the HoverSurface / anchored-panel… | S. | overlays |
+| [524](backlog/524-whole-page-axe-scan-never-checks-color-contrast.md) | A whole-page axe scan never checks color-contrast: axe 4.10.2 cannot parse an oklch colour with a `none` channel, so the rule comes back incomplete with no passes and no violations | BACKLOG (found 2026-11-15). Not started. Small; a test-side row. | S. | tests |
+| [525](backlog/525-dioxus-0-8-readiness-ledger.md) | Dioxus 0.8 readiness: the ledger of what the 0.8 alphas change for this repository, with the row or construction each item lands in | BACKLOG (checked 2026-11-15). Research-gated: nothing is taken until 0.8 is stable. 0.7.10 is not… | S (the ledger); the migration is sized… | build |
 
 <!-- END GENERATED -->

@@ -1,10 +1,10 @@
 ---
 id: 519
 title: "Every non-menu overlay re-assembles the anchored panel recipe: one `top_layer::use_anchored_panel`, and the hover timers in their own module"
-status: "APPROVED 2026-11-14 (owner: \"I approve your recommendation for generalizing the components and…"
+status: "LANDED 2026-11-15 in queue/batch-6 (the batch after 5ebf4803); row 519 without Toast (no placement…"
 size: "M (inferred, 8 to 10 h), one lane…"
 area: primitives
-updated: 2026-11-14
+updated: 2026-11-15
 ---
 
 # Row 519: one `top_layer::use_anchored_panel`, and the hover timers in their own module
@@ -23,7 +23,16 @@ Dropdown, Context, Menubar and submenus. The hover timers (`use_hover_timers`, `
 
 ## Status / trigger
 
-APPROVED 2026-11-14 (owner: "I approve your recommendation for generalizing the components and tooltip as well"). It lands before row 449; Tooltip and HoverCard as one surface follows it.
+LANDED 2026-11-15 in queue/batch-6 (the batch after 5ebf4803); row 519 without Toast (no placement, caller-wins attributes), row 521 with the whole-page color-contrast gap as row 524 APPROVED 2026-11-14 (owner: "I approve your recommendation for generalizing the components and tooltip as well"). It lands before row 449; Tooltip and HoverCard as one surface follows it.
+
+**Landed on lane `lane/anchored-panel-519` (2026-11-15).** `top_layer/anchored_panel.rs` holds `use_anchored_panel` with
+`AnchoredPanel` (id, open, set_open, popover mode, `PanelSync`, `AnchoredPlacement`, owned attributes); `use_menu_panel`
+builds the config and calls it. On it: Tooltip, HoverCard, Popover non-modal, Navbar, NavigationMenu, Select list,
+Combobox list and the three menu hosts with their submenus. The hover timers live in `hover_timers.rs`. Toast stays on
+the old recipe: it has no placement, and its attributes are caller-wins (the hook's owned attributes win), so moving it
+would need a no-placement case and a second merge order that no other site has. `check-anchor-marker` rule 4 pins it:
+the four recipe hooks are called only inside `use_anchored_panel`, Toast and the anchored modal popover are its two
+allowlisted exceptions.
 
 ## Size
 
@@ -53,7 +62,7 @@ M (inferred, 8 to 10 h), one lane, medium risk.
   - `HoverSurface`: Tooltip and HoverCard as one root, trigger and content with a config struct; about 250 lines
     (inferred), about 5 h, low risk, right after this row.
   - One hover-intent engine under `HoverTimers`, `HoverIntent` and `SubMenuState` (one touch rule, one set of delay
-    constants); medium risk, after [row 456](./456-port-3-ov-overlay-core-escape-dismiss-open-focus.md).
+    constants); medium risk, after [row 456](../456-port-3-ov-overlay-core-escape-dismiss-open-focus.md).
   - `use_modal_dialog` for the dialog quartet repeated in `dialog.rs:544-600`, `alert_dialog.rs:292-340` and
     `popover.rs:561-620`; about 60 lines, low risk.
 - **Proof.** The specs and unit tests above stay green on a release build; a gate or test that the 8 sites no longer

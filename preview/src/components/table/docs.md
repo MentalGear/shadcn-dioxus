@@ -76,7 +76,7 @@ Table {
 
 One mode type, `VirtualizeMode`, lives in the shared engine and is the `virtualize` prop of every component that chooses between keeping rows in the DOM and windowing them: `VirtualList`, `VirtualGrid`, `VirtualWrapGrid` and `TableRows` (the data body of a `Table`). `auto_threshold` (default 1,000) is the one switch point of `Auto`, counted in items: a list's rows, a grid's cells (`row_count x column_count`, or a wrapping grid's `count`). `VirtualJustifiedGrid` is always windowed.
 
-| | `ContentVisibility` | `Windowed` | `Auto` (the default) |
+| Aspect | `ContentVisibility` | `Windowed` | `Auto` (the default) |
 |---|---|---|---|
 | In the DOM | every row | the rows in view plus an overscan | `ContentVisibility` while `count <= auto_threshold`, `Windowed` above |
 | Server-rendered HTML | every row | none | follows the mode |

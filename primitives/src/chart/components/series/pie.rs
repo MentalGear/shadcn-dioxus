@@ -64,8 +64,8 @@ use super::super::pointer::Sector;
 
 use crate::chart::context::use_chart;
 use crate::chart::engine::polar::{
-    arc_centerline_path, arc_path, centroid, pie_layout, recharts_angle, to_recharts_angle, PieArc,
-    PieSort, PolarFrame, Radius,
+    arc_centerline_path, arc_path, centroid, padded_inner_radius, pie_layout, recharts_angle,
+    to_recharts_angle, PieArc, PieSort, PolarFrame, Radius,
 };
 use crate::chart::engine::scale::{fmt_decimal, fmt_num};
 use crate::chart::{BandScale, ChartDatum};
@@ -124,7 +124,8 @@ pub struct PieOptions {
     pub end_angle: f64,
     /// `paddingAngle`, degrees: the gap between adjacent slices. The gap has a constant width, the chord of
     /// this angle at the ring's reference radius (`engine::polar::arc_path`): the facing edges of two slices
-    /// are parallel, and a full pie's slices end in tips short of the centre.
+    /// are parallel. A pie with no `inner_radius` and a padding gets the inner radius
+    /// `engine::polar::padded_inner_radius` derives from it, so every slice's inner edge sits on one circle.
     pub padding_angle: f64,
     /// `cornerRadius`, px -- see `engine::polar::arc_path` for this crate's
     /// simplified (documented) corner construction.
@@ -186,14 +187,32 @@ fn rings(ctx: &SeriesRenderContext, opts: &PieOptions, frame: &PolarFrame) -> Ve
     let inner = opts.inner_radius.resolve(max).clamp(0.0, outer);
     let n_series = ctx.config.series.len();
     if n_series <= 1 {
+        let values: Vec<f64> = ctx
+            .data
+            .iter()
+            .map(|d| d.values.first().copied().flatten().unwrap_or(0.0))
+            .collect();
+        // A padded pie without an inner radius gets one derived from the padding, so no slice ends in a tip at
+        // the centre; an explicit inner radius wins.
+        let inner = if inner > 0.0 {
+            inner
+        } else {
+            let thinnest = layout(opts, &values)
+                .iter()
+                .map(|a| (a.end_angle - a.start_angle).abs())
+                .filter(|span| *span > 0.0)
+                .fold(f64::INFINITY, f64::min);
+            let pad = opts.padding_angle.max(0.0).to_radians();
+            padded_inner_radius(
+                outer,
+                pad,
+                if thinnest.is_finite() { thinnest } else { 0.0 },
+            )
+        };
         return vec![Ring {
             inner,
             outer,
-            values: ctx
-                .data
-                .iter()
-                .map(|d| d.values.first().copied().flatten().unwrap_or(0.0))
-                .collect(),
+            values,
             series: None,
         }];
     }
@@ -666,6 +685,27 @@ mod tests {
         let html = render(one(), browsers(), opts);
         assert_eq!(html.matches(r#"data-position="inside""#).count(), 1);
         assert!(html.contains(">Chrome<"));
+    }
+
+    #[test]
+    fn a_padded_pie_gets_one_inner_radius_and_an_explicit_one_wins() {
+        let padded = |inner: Radius, padding: f64| {
+            let opts = PieOptions {
+                inner_radius: inner,
+                padding_angle: padding,
+                ..Default::default()
+            };
+            attrs(
+                &render(one(), browsers(), opts),
+                "chart-arc",
+                "data-inner-radius",
+            )
+        };
+        let implied = padded(Radius::Px(0.0), 4.0);
+        assert!(implied[0] > 0.0, "{implied:?}");
+        assert!(implied.iter().all(|r| *r == implied[0]), "{implied:?}");
+        assert!(padded(Radius::Px(0.0), 0.0).iter().all(|r| *r == 0.0));
+        assert!(padded(Radius::Px(60.0), 4.0).iter().all(|r| *r == 60.0));
     }
 
     #[test]

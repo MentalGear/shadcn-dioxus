@@ -35,6 +35,8 @@ use dioxus::document;
 use dioxus::prelude::*;
 
 mod anchor_fallback;
+#[cfg(not(feature = "native"))]
+mod anchored_panel;
 mod attributes;
 mod popover_sync;
 mod scroll_clamp;
@@ -45,6 +47,8 @@ mod styles;
     expect(unused_imports, reason = "only the browser build uses it")
 )]
 pub(crate) use anchor_fallback::*;
+#[cfg(not(feature = "native"))]
+pub(crate) use anchored_panel::*;
 pub(crate) use attributes::*;
 #[cfg_attr(
     feature = "native",

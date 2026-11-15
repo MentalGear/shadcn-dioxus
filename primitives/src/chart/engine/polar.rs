@@ -422,6 +422,41 @@ pub fn arc_path(
     path.build()
 }
 
+/// The inner radius a padded pie with no inner radius of its own gets, so that every slice's inner edge sits on
+/// one circle and no slice ends in a tip at the centre.
+///
+/// With padding, each slice's two straight edges are the radial lines moved `h` toward the slice, where
+/// `h = sqrt(inner^2 + outer^2) * sin(pad_angle / 2)` ([`arc_path`]). A slice of angle `theta` meets a circle of
+/// radius `r` at two corners `2 * asin(h / r)` apart, so its inner arc has positive length only for
+/// `r > h / sin(theta / 2)`; at that radius the two corners coincide (the slice's tip). One circle for every
+/// slice therefore has to clear the tip radius of the thinnest slice. This returns `r = 2 * h / sin(theta / 2)`
+/// for `theta = min_slice_angle`, i.e. a radius at which the thinnest slice's inner arc spans about half its angle
+/// and thicker slices more, solved in closed form for the `inner` that `h` itself depends on:
+/// `r = sin(p) * outer / sqrt(sin(theta / 2)^2 / 4 - sin(p)^2)` with `p = pad_angle / 2`. The result is capped at
+/// half of `outer_radius` (a slice thinner than that cap allows keeps a tip, or draws nothing, as in
+/// [`arc_path`]). `0.0` when there is no padding or no slice to size by (`min_slice_angle <= 0`).
+///
+/// ```
+/// use dioxus_primitives::chart::engine::polar::padded_inner_radius;
+///
+/// assert_eq!(padded_inner_radius(100.0, 0.0, 1.0), 0.0);
+/// assert!(padded_inner_radius(100.0, 0.07, 1.0) > 0.0);
+/// ```
+pub fn padded_inner_radius(outer_radius: f64, pad_angle: f64, min_slice_angle: f64) -> f64 {
+    let outer = outer_radius.max(0.0);
+    let p = pad_angle.max(0.0) / 2.0;
+    if p <= EPSILON || min_slice_angle <= EPSILON || outer <= EPSILON {
+        return 0.0;
+    }
+    let (s, big_s) = (p.sin(), (min_slice_angle / 2.0).sin());
+    let cap = outer / 2.0;
+    let denom = big_s * big_s / 4.0 - s * s;
+    if denom <= EPSILON {
+        return cap;
+    }
+    (s * outer / denom.sqrt()).min(cap)
+}
+
 /// The label anchor for one arc: midway between `inner_radius` and
 /// `outer_radius`, at the arc's own midpoint angle. A clean-room port of
 /// `d3-shape`'s `arc.centroid()` (same file/citation as [`arc_path`]).
@@ -852,6 +887,48 @@ mod tests {
             arc_path(50.0, 100.0, 0.0, PI / 2.0, 0.05, 0.0),
             "M2.795,-99.961A100,100,0,0,1,99.961,-2.795L49.922,-2.795A50,50,0,0,0,2.795,-49.922Z"
         );
+    }
+
+    // --- padded_inner_radius: one inner circle for a padded pie.
+
+    /// Where the thinnest slice's two inner corners sit, as the angle between them at the centre.
+    fn inner_arc_span(r0: f64, r1: f64, pad: f64, theta: f64) -> f64 {
+        let h = (r0 * r0 + r1 * r1).sqrt() * (pad / 2.0).sin();
+        theta - 2.0 * (h / r0).asin()
+    }
+
+    #[test]
+    fn padded_inner_radius_clears_the_tip_of_the_thinnest_slice() {
+        let (outer, pad) = (100.0, 4.0_f64.to_radians());
+        for theta in [60.0_f64.to_radians(), 30.0_f64.to_radians()] {
+            let r0 = padded_inner_radius(outer, pad, theta);
+            assert!(r0 > 0.0 && r0 < outer / 2.0, "{r0}");
+            // the thinnest slice keeps a real inner arc, about half its angle
+            let span = inner_arc_span(r0, outer, pad, theta);
+            assert!(span > 0.0, "{span}");
+            assert!((0.4..0.6).contains(&(span / theta)), "{}", span / theta);
+            // and the formula is 2 * h / sin(theta / 2)
+            let h = (r0 * r0 + outer * outer).sqrt() * (pad / 2.0).sin();
+            approx(r0, 2.0 * h / (theta / 2.0).sin());
+        }
+    }
+
+    #[test]
+    fn padded_inner_radius_grows_with_padding_and_shrinks_with_thicker_slices() {
+        let theta = 60.0_f64.to_radians();
+        let narrow = padded_inner_radius(100.0, 2.0_f64.to_radians(), theta);
+        let wide = padded_inner_radius(100.0, 6.0_f64.to_radians(), theta);
+        assert!(wide > narrow);
+        let thick = padded_inner_radius(100.0, 4.0_f64.to_radians(), 120.0_f64.to_radians());
+        let thin = padded_inner_radius(100.0, 4.0_f64.to_radians(), 30.0_f64.to_radians());
+        assert!(thin > thick);
+    }
+
+    #[test]
+    fn padded_inner_radius_is_zero_without_padding_and_capped_for_a_sliver() {
+        approx(padded_inner_radius(100.0, 0.0, 1.0), 0.0);
+        approx(padded_inner_radius(100.0, 0.07, 0.0), 0.0);
+        approx(padded_inner_radius(100.0, 0.5, 0.05), 50.0);
     }
 
     #[test]

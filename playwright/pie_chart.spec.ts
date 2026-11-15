@@ -22,6 +22,7 @@ import { gotoHydrated } from "./hydration";
 // `#component-preview-frame-<variant>`.
 const VARIANTS = [
   "main", // chart-pie-simple.tsx
+  "padding",
   "separator_none",
   "label",
   "label_list",
@@ -119,6 +120,31 @@ test.describe("Pie chart: slice geometry", () => {
     // A donut slice's path draws two arcs (outer ring forward, inner ring
     // backward) -- a plain pie slice's path draws exactly one.
     expect((d!.match(/A/g) ?? []).length).toBeGreaterThanOrEqual(2);
+  });
+
+  test("padding: every slice's inner edge sits on one circle of positive radius, and the plain pie has none", async ({
+    page,
+  }) => {
+    await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
+    const radii = async (variant: (typeof VARIANTS)[number]) =>
+      frame(page, variant)
+        .locator('[data-slot="chart-arc"]')
+        .evaluateAll((els) => els.map((e) => Number(e.getAttribute("data-inner-radius"))));
+    const padded = await radii("padding");
+    expect(padded.length).toBeGreaterThan(1);
+    expect(padded[0]).toBeGreaterThan(0);
+    for (const r of padded) expect(r).toBeCloseTo(padded[0], 3);
+    // the drawn path agrees with the attribute: its inner arc ("A r r ...") has that radius
+    const ds = await frame(page, "padding")
+      .locator('[data-slot="chart-arc"]')
+      .evaluateAll((els) => els.map((e) => e.getAttribute("d") ?? ""));
+    for (const d of ds) {
+      const arcs = [...d.matchAll(/A(-?[\d.]+),/g)].map((m) => Number(m[1]));
+      expect(arcs.length).toBe(2);
+      expect(arcs[1]).toBeCloseTo(padded[0], 1);
+    }
+    // no padding: no inner radius
+    for (const r of await radii("main")) expect(r).toBe(0);
   });
 
   test("stacked: two concentric pies, a disc of radius 60 and a ring from 70 to 90", async ({ page }) => {

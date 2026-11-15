@@ -999,27 +999,6 @@ fn NavigationMenuContentRendered(
     let open = item_ctx.is_open;
     let index = item_ctx.index;
 
-    crate::top_layer::use_popover_shown_while_mounted(
-        id.clone(),
-        open,
-        Callback::new(move |is_open: bool| {
-            if !is_open && (ctx.open)() == Some(index.cloned()) {
-                ctx.set_open.call(None);
-            }
-        }),
-    );
-    // JS-measured static positioning fallback for engines without CSS
-    // Anchor Positioning -- anchored below the trigger, left-aligned,
-    // matching `NavbarContentRendered`'s identical bottom/start convention.
-    crate::top_layer::use_anchor_position_fallback(
-        id.clone(),
-        id.clone(),
-        open,
-        crate::ContentSide::Bottom,
-        crate::ContentAlign::Start,
-        8,
-    );
-
     // An APG-adjacent panel still needs an accessible name; labelled by its
     // own trigger unless the caller already named it some other way --
     // mirrors `MenubarContent`/`NavbarContent`'s identical construction.
@@ -1030,20 +1009,29 @@ fn NavigationMenuContentRendered(
             aria_labelledby: "{item_ctx.trigger_id}"
         })
     };
-    let attributes = merge_attributes(vec![
-        attributes,
-        labelledby,
-        // Owned by this component -- top-layer wiring + state must win
-        // over a caller's own attributes (`dev-docs/backlog.md` row 93's
-        // duplicate-attribute hazard).
-        attributes!(div {
-            popover: crate::top_layer::PopoverKind::Manual.as_str(),
-            ..state_attrs::open(open()),
-        }),
-    ]);
-    let attributes = crate::top_layer::anchored_content_attributes(
-        crate::top_layer::AnchorKind::NavigationMenu,
-        &id,
+    let attributes = merge_attributes(vec![attributes, labelledby]);
+    // Anchored below the trigger, left-aligned, matching `NavbarContentRendered`'s identical
+    // bottom/start convention.
+    let attributes = crate::top_layer::use_anchored_panel(
+        crate::top_layer::AnchoredPanel {
+            id: id.clone(),
+            open: open.into(),
+            set_open: Callback::new(move |is_open: bool| {
+                if !is_open && (ctx.open)() == Some(index.cloned()) {
+                    ctx.set_open.call(None);
+                }
+            }),
+            popover: crate::top_layer::PopoverKind::Manual,
+            sync: crate::top_layer::PanelSync::WhileMounted,
+            placement: crate::top_layer::AnchoredPlacement::Anchored {
+                anchor_id: id.clone(),
+                side: crate::ContentSide::Bottom,
+                align: crate::ContentAlign::Start,
+                gap: 8,
+                kind: crate::top_layer::AnchorKind::NavigationMenu,
+            },
+            owned: state_attrs::open(open()),
+        },
         attributes,
     );
 

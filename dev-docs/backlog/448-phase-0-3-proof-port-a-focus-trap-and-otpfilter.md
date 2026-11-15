@@ -4,7 +4,7 @@ title: "Phase 0.3: proof port A (the native-arm focus trap's 3 eval sites, focus
 status: "The 3.DJ half is built (the native-arm focus trap is deleted) and the otpFilter half is open…"
 size: "L"
 area: overlays
-js-grant: js_file_bytes=3660 (200 lines at 18.3 bundle bytes per source line, inferred ceiling: otp_filter.ts about 30 relocated, the adapter extension in bridge.ts about 150, focus-trap.ts is deleted; the main loop's grant row at the merge base is the number the gate reads)
+js-grant: js_file_bytes=3660, bytes=7000, gzip_bytes=2000 (inferred ceilings: js_file_bytes 200 lines at 18.3 bundle bytes per source line, otp_filter.ts about 30 relocated, the adapter extension in bridge.ts about 150; bytes the TypeScript source the bridge budget counts for the same lines; gzip_bytes the kernel's otpFilter kind with its ranges config; the main loop tightens each to the measured number when the lane lands)
 adds: [otpFilter]
 updated: 2026-11-12
 ---

@@ -20,6 +20,10 @@
 #      `[data-dx-anchored`, names no `.dx-anchor-` class, and the only kind it names is `hover-card` (the one real
 #      per-kind difference, a wider gap); every `AnchorKind` value other than that one is therefore reached by the
 #      generic rules.
+#   4. one recipe: a Rust file outside `top_layer/` calls none of `use_popover_shown_while_mounted`,
+#      `use_popover_sync`, `use_anchor_position_fallback` and `anchored_content_attributes` (backlog row 519): an anchored
+#      panel is assembled by `top_layer::use_anchored_panel`, so a change to the recipe is one edit. A panel that is not an
+#      anchored panel (the toast region, the anchored modal popover) goes on RECIPE_ALLOW below with its reason.
 # A legitimate exception to 1 goes on ALLOW below with its reason; an entry that matches nothing fails as stale
 # (scripts/lib/allow.py). The engine's stylesheet is read by scripts/lib/css.py, the one CSS reader of the gates.
 # Browser half: `playwright/oracle/tier2-html/top-layer.spec.ts` and the per-component placement specs.
@@ -49,6 +53,16 @@ PER_KIND = {"hover-card"}
 # anchored_content_attributes. Empty today: every JS-fallback consumer is anchored by the engine's stylesheet.
 ALLOW = Allowlist("check-anchor-marker", [], fields=("path",))
 
+# (path, hook, reason): a file outside top_layer/ that calls a recipe hook directly.
+RECIPE_ALLOW = Allowlist("check-anchor-marker", [
+    ("primitives/src/toast.rs", "use_popover_shown_while_mounted",
+     "the toast region is a fixed, unanchored `manual` popover with no placement and caller-wins attributes"),
+    ("primitives/src/popover.rs", "anchored_content_attributes",
+     "the modal popover's dialog is anchored but its top layer is the native `showModal()`, not the popover recipe"),
+], fields=("path", "hook"), source="scripts/check-anchor-marker.sh")
+RECIPE_HOOKS = ("use_popover_shown_while_mounted", "use_popover_sync", "use_anchor_position_fallback",
+                "anchored_content_attributes")
+
 MARKER_CLASS = re.compile(r"(?<![\w-])\.?dx-anchor-(?!width\b|offset-[xy]\b|positioning-styles\b)[a-z]")
 WRITER = re.compile(r'"data-dx-anchored"\s*:')
 
@@ -70,6 +84,15 @@ def check_pairing(path, text, allow=ALLOW):
         return [f"{path}: {fb} use_anchor_position_fallback call(s) but {attr} anchored_content_attributes call(s): an "
                 f"anchored panel must write the data-dx-anchored attribute the engine selects on"]
     return []
+
+
+def check_recipe(path, text, allow=RECIPE_ALLOW):
+    code = "\n".join(code_lines(text))
+    out = []
+    for hook in RECIPE_HOOKS:
+        if re.search(r"\b" + hook + r"\s*\(", code) and not allow.find(lambda e: e.path == path and e.hook == hook):
+            out.append(f"{path}: calls {hook} directly (an anchored panel is assembled by top_layer::use_anchored_panel)")
+    return out
 
 
 def check_marker_class(path, text):
@@ -120,6 +143,7 @@ def scan():
             continue
         text = open(p, encoding="utf-8").read()
         errors += check_pairing(p, text)
+        errors += check_recipe(p, text)
         errors += check_marker_class(p, text)
     for p in other:
         if os.path.exists(p) and outside_top_layer(p):
@@ -136,6 +160,10 @@ def self_test():
         ("pairing: a paired file", check_pairing("p/x.rs", good_rs), False),
         ("pairing: a comment is not a call", check_pairing("p/x.rs", "// use_anchor_position_fallback(a)\nfn a() {}"), False),
         ("pairing: an allowlisted file", check_pairing("p/x.rs", "fn a() { use_anchor_position_fallback(a); }", Allowlist("t", [("p/x.rs", "reason")], fields=("path",))), False),
+        ("recipe: a direct hook call", check_recipe("p/x.rs", "fn a() { crate::top_layer::use_popover_shown_while_mounted(id, open, cb); }", Allowlist("t", [], fields=("path", "hook"))), True),
+        ("recipe: use_anchored_panel", check_recipe("p/x.rs", "fn a() { crate::top_layer::use_anchored_panel(cfg, attrs); }", Allowlist("t", [], fields=("path", "hook"))), False),
+        ("recipe: a comment is not a call", check_recipe("p/x.rs", "// use_anchor_position_fallback(a)\nfn a() {}", Allowlist("t", [], fields=("path", "hook"))), False),
+        ("recipe: an allowlisted hook", check_recipe("p/x.rs", "fn a() { anchored_content_attributes(k, &id, a); }", Allowlist("t", [("p/x.rs", "anchored_content_attributes", "reason")], fields=("path", "hook"))), False),
         ("marker class in rust code", check_marker_class("p/x.rs", 'let c = "dx-anchor-newthing";'), True),
         ("marker class in a rust comment", check_marker_class("p/x.rs", '// the old "dx-anchor-tooltip" class'), False),
         ("marker class in css code", check_marker_class("p/x.css", ".dx-anchor-foo[popover] { top: 0 }"), True),
@@ -165,11 +193,13 @@ if "--self-test" in sys.argv:
     sys.exit(0)
 if "--list" in sys.argv:
     print(ALLOW.listing())
+    print(RECIPE_ALLOW.listing())
     sys.exit(0)
 
 self_test()
 errors = scan()
 errors += ALLOW.problems()
+errors += RECIPE_ALLOW.problems()
 if errors:
     print("check-anchor-marker: FAIL", file=sys.stderr)
     for e in errors:
