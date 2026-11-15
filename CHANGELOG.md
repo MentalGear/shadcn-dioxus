@@ -7,6 +7,8 @@ below are collected under "Unreleased" and move under a version heading at the f
 
 ### Changed
 
+- **A padded pie with no `inner_radius` gets a small hole sized by its padding.** The slices' inner edges sit on one circle
+  instead of ending in tips at the centre; an explicit `inner_radius` is used as given, and `padding_angle: 0` draws as before.
 - **Dialog, AlertDialog and CommandDialog panels centre with `translate` and zoom with `scale`.** The panel's
   `transform` is now unset (it was `translate(-50%, -50%)`), so a stylesheet of yours that sets `transform` on
   `.dx-dialog`, `.dx-alert-dialog` or `.dx-command-dialog` now composes with the centring instead of replacing it; move
