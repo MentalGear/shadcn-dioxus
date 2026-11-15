@@ -50,11 +50,11 @@ wire_input! {
         /// Whether an input method is composing (`null` for an event that has no such member).
         pub composing: Option<bool> = "isComposing",
         /// The field's value now.
-        pub value: String = "target.value",
+        pub value: String = "value",
         /// The start of the selection, in UTF-16 units.
-        pub start: f64 = "target.selectionStart",
+        pub start: f64 = "selectionStart",
         /// The end of the selection, in UTF-16 units.
-        pub end: f64 = "target.selectionEnd",
+        pub end: f64 = "selectionEnd",
     }
 }
 
@@ -176,9 +176,9 @@ mod tests {
                 "inputType",
                 "data",
                 "isComposing",
-                "target.value",
-                "target.selectionStart",
-                "target.selectionEnd"
+                "value",
+                "selectionStart",
+                "selectionEnd"
             ]
         );
     }
