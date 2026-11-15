@@ -85,9 +85,7 @@ pub(crate) fn use_anchored_panel(
     match sync {
         PanelSync::WhileMounted => use_popover_shown_while_mounted(id.clone(), open, set_open),
         PanelSync::Immediate => use_popover_sync(id.clone(), open, set_open),
-        PanelSync::DialogPanel => {
-            use_dialog_panel_shown_while_mounted(id.clone(), open, set_open)
-        }
+        PanelSync::DialogPanel => use_dialog_panel_shown_while_mounted(id.clone(), open, set_open),
     }
     // An engine-less kind places itself, so the measured placement sits out.
     let engine_placed =

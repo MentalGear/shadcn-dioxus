@@ -667,6 +667,7 @@ pub struct Subscription {
 
 impl Subscription {
     /// Sends more commands to the running session, on its own channel (the page executor's next level).
+    #[cfg(not(feature = "native"))]
     pub(crate) fn send(&self, commands: &[Command]) {
         transport::send(&self.eval, commands);
     }

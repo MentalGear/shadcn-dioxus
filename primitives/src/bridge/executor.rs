@@ -1,8 +1,8 @@
 //! The Rust half of the page executor (row 449): an owner decides the open level of its top-layer element and the
 //! page's one executor (`ts/lib/executor.ts`) applies it.
 //!
-//! Each level is a [`Command::Executor`] stamped with a nonce, the owner's command count. The page keeps the newest
-//! nonce it applied per element and drops an older command; when the page changes the level on its own (a light
+//! Each level is a [`Command::Executor`](super::Command::Executor) stamped with a nonce, the owner's command count.
+//! The page keeps the newest nonce it applied per element and drops an older command; when the page changes the level on its own (a light
 //! dismiss, Escape) it reports `{ n, open }` with the nonce it had applied, and the owner drops a report older than
 //! its newest command. That one rule removes the races between a report and a command:
 //!

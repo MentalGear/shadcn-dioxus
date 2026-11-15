@@ -8,7 +8,8 @@
 //   one writer the entry's show and hide go through `apply` (the `show` / `hide` rows of APPLY) and nothing else
 //              shows or hides a registered element; the transition the write itself causes is not reported
 //   reports    a transition the page caused (light dismiss, Escape) is reported as `{ n, open }`: the level, stamped
-//              with the nonce the entry had applied, so Rust drops a report older than its newest command
+//              with the nonce the entry had applied, so Rust drops a report older than its newest command; one
+//              document capture listener carries them while any element is registered
 //   discovery  a command for an element that is not in the document yet waits for it on one `childList` observer
 //              and runs when it appears (the owner's effect can run before a keyed re-render lands)
 
@@ -24,7 +25,7 @@ type ExecutorCommand = Extract<DxCommand, { cmd: "executor" }>;
 
 type Entry = { sc: DxScope; n: number; level: boolean; mode: ExecutorCommand["mode"]; site: string; own: number };
 
-export function createExecutor(W: any, ports: ExecutorPorts) {
+export function createExecutor(W: Window, ports: ExecutorPorts) {
   const entries = new Map<string, Entry>();
   const waiting = new Map<string, Entry>();
   let stop: (() => void) | null = null;
@@ -56,26 +57,27 @@ export function createExecutor(W: any, ports: ExecutorPorts) {
     else if (!entry.level && shown && entry.mode === "immediate") write(entry, el, "hide");
   };
 
-  // listener-ok: page-lifetime capture listener of the executor, installed once at boot
-  W.document.addEventListener(
-    "beforetoggle",
-    (event: any) => {
-      const id = event.target && event.target.id;
-      const entry = id ? entries.get(id) : undefined;
-      if (entry && !entry.own) entry.sc.send({ n: entry.n, open: event.newState === "open" });
-    },
-    true,
-  );
+  /** The page-caused transitions of the registered elements: one document capture listener while any is registered. */
+  const onToggle = (event: Event): void => {
+    const id = (event.target as Element | null)?.id;
+    const entry = id ? entries.get(id) : undefined;
+    if (entry && !entry.own) entry.sc.send({ n: entry.n, open: (event as ToggleEvent).newState === "open" });
+  };
+  const listening = (on: boolean): void =>
+    // listener-ok: added with the first registered element and removed with the last
+    on ? W.document.addEventListener("beforetoggle", onToggle, true) : W.document.removeEventListener("beforetoggle", onToggle, true);
 
   return {
     command(sc: DxScope, spec: ExecutorCommand): void {
       let entry = entries.get(spec.target);
       if (!entry || entry.sc !== sc) {
         const made: Entry = { sc, n: 0, level: false, mode: spec.mode, site: spec.site, own: 0 };
+        if (!entries.size) listening(true);
         entries.set(spec.target, made);
         sc.cleanup(() => {
           if (entries.get(spec.target) === made) entries.delete(spec.target);
           if (waiting.get(spec.target) === made) waiting.delete(spec.target);
+          if (!entries.size) listening(false);
         });
         entry = made;
       }

@@ -164,6 +164,7 @@ bridge::BridgeError::Unsupported  variant Unsupported
 bridge::Command  enum Command  #[derive(Clone, Debug, PartialEq, Serialize)]
 bridge::Command  use session::Command
 bridge::Command::Behaviour  variant Behaviour { target: Target, behaviour: Behaviour, declared: super::behaviours::Declared, epoch: Epoch }
+bridge::Command::Executor  variant Executor { target: String, kind: super::executor::ExecutorKind, mode: super::executor::ShowMode, level: bool, nonce: u64, site: super::behaviours::Site }
 bridge::Command::Listen  variant Listen { target: Target, event: EventKind, options: ListenOptions, fields: Vec<EventField>, initial: bool }
 bridge::Command::Media  variant Media { query: String }
 bridge::Command::Observe  variant Observe { target: Target, kind: ObserverKind, options: ObserveOptions }
@@ -466,6 +467,12 @@ bridge::events::Receivers.document  field bool
 bridge::events::Receivers.element  field bool
 bridge::events::Receivers.window  field bool
 bridge::events::Receivers::letters  fn letters(self) -> String
+bridge::executor  mod
+bridge::executor::ExecutorKind  enum ExecutorKind  #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+bridge::executor::ExecutorKind::Popover  variant Popover
+bridge::executor::ShowMode  enum ShowMode  #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+bridge::executor::ShowMode::Immediate  variant Immediate
+bridge::executor::ShowMode::Mounted  variant Mounted
 bridge::get  async fn get(target: impl Into<Target>, props: impl IntoIterator<Item = Prop>) -> Result<Props, BridgeError>
 bridge::is_unsupported  fn is_unsupported() -> bool
 bridge::is_unsupported  use transport::is_unsupported

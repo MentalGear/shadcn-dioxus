@@ -41,7 +41,7 @@ async function open(page: Page) {
 const popoverOpen = (page: Page) => page.evaluate(() => !!document.querySelector('[role="menu"]')?.matches(":popover-open"));
 
 test.describe("the page executor on a menu host, slow channel", () => {
-  test("a show followed by the owner's close stays closed: the show is not echoed back", async ({ page }) => {
+  test("a show followed by a close the owner decides stays closed: the show is not echoed back", async ({ page }) => {
     const { trigger } = await open(page);
     await trigger.evaluate((el) => (el as HTMLElement).click());
     await expect.poll(() => popoverOpen(page)).toBe(true);
