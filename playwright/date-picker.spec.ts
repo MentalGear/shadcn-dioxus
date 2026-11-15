@@ -1057,7 +1057,7 @@ test.describe("Unavailable dates variant (variant=unavailable_dates)", () => {
   }
 
   // The demo anchors its unavailable ranges on today (`variants/unavailable_dates/mod.rs`), so on some days today
-  // is itself unavailable; the clock is pinned to one of them (31 days in March 2031: anchor day 14, first range
+  // is itself unavailable; the fixed clock below lands on one of them (a 31-day month: anchor day 14, first range
   // 16..18). The today fill stays, the unavailable ink and line-through win over today's foreground ink.
   test("an unavailable day that is today keeps the muted ink and the line-through", async ({ page }) => {
     await page.clock.setFixedTime(new Date("2031-03-16T12:00:00Z"));

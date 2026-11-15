@@ -214,8 +214,11 @@ fn present(name: &'static str) -> Attribute {
 /// `Entering` as "about to enter" (takes pointer events, renders at the base rule).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum OpenState {
+    /// Not shown, or leaving: `data-closed`, inert to pointer events.
     Closed,
+    /// Shown at the rendered base rule on its first frame: `data-entering`, takes pointer events.
     Entering,
+    /// Shown and settled, or transitioning in: `data-open`.
     Open,
 }
 
