@@ -3638,9 +3638,14 @@ state_attrs::Flag::Uploading  variant Uploading
 state_attrs::Flag::name  const fn name(self) -> &'static str
 state_attrs::IntoFlag  trait IntoFlag
 state_attrs::IntoFlag::flag  fn flag(&self) -> bool
+state_attrs::OpenState  enum OpenState  #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+state_attrs::OpenState::Closed  variant Closed
+state_attrs::OpenState::Entering  variant Entering
+state_attrs::OpenState::Open  variant Open
 state_attrs::active  fn active(is_active: impl IntoFlag) -> Vec<Attribute>
 state_attrs::checked  fn checked(state: impl Into<Checked>) -> Vec<Attribute>
 state_attrs::open  fn open(is_open: impl IntoFlag) -> Vec<Attribute>
+state_attrs::open_state  fn open_state(state: OpenState) -> Vec<Attribute>
 state_attrs::panel_hidden  fn panel_hidden(is_active: impl IntoFlag) -> Vec<Attribute>  #[doc = " A tab panel: `data-hidden` while it is not the active one."]
 state_attrs::panel_open  fn panel_open(is_open: impl IntoFlag) -> Vec<Attribute>
 state_attrs::popup_open  fn popup_open(is_open: impl IntoFlag) -> Vec<Attribute>
