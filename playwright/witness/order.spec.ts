@@ -113,10 +113,10 @@ test.describe("the order contract in a browser", () => {
 const OTP_PAGE = `<form id="f"><input id="otp" value=""><button type="reset" id="r">reset</button></form>`;
 const OTP_INSTALL = `window.inputs = [];
 document.getElementById("otp").addEventListener("input", (e) => window.inputs.push(e.target.value));
-const scope = window.__dxBridge.scope({ send() {}, recv: () => new Promise(() => {}) });
+const otp = window.__dxBridge.scope({ send() {}, recv: () => new Promise(() => {}) });
 for (const event of ["beforeinput", "input", "compositionend"]) {
   const behaviour = { kind: "otp-filter", site: "input_otp.filter", event, ranges: "09", max: 6 };
-  scope.run({ cmd: "behaviour", target: "otp", behaviour,
+  otp.run({ cmd: "behaviour", target: "otp", behaviour,
     declared: { target: "element", event, capture: true, passive: event !== "beforeinput", leaseMs: event === "beforeinput" ? 600000 : null },
     epoch: { key: "behaviour:otp-filter:" + event, n: 1 } });
 }`;
