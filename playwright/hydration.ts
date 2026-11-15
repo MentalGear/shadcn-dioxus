@@ -107,3 +107,19 @@ function withOpenRequests(error: unknown, report: string): unknown {
   }
   return new Error(`${String(error)}\n\n${report}`);
 }
+
+/**
+ * Render every gallery card of `/` at its real height before a spec measures or clicks there. A `.dx-component-card`
+ * is `content-visibility: auto` (preview/assets/main.css, `--dx-cv`): a card that has not been near the viewport yet is
+ * laid out at its size estimate and takes its real height on the frame after it becomes relevant, so a click that
+ * follows a scroll by less than that frame can land on a target that is about to move (the drawer card above the
+ * dropdown menu's is 119 px shorter than its estimate). `html[data-cv-settle]` is the page's own forced-render switch
+ * (the anchor handler in preview/index.html sets it around fragment scrolls); setting it here and waiting two frames
+ * leaves every card laid out for real, and `contain-intrinsic-size: auto` keeps that height once the switch is off.
+ */
+export async function settleGalleryCards(page: Page): Promise<void> {
+  await page.evaluate(async () => {
+    document.documentElement.setAttribute("data-cv-settle", "");
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+  });
+}

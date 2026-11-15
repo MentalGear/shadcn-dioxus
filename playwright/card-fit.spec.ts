@@ -20,14 +20,14 @@
  * count toward its card's `scrollWidth`; a popup in the top layer does not either.
  *
  * Widths: 320 (WCAG reflow) to 1920 in steps of 16, plus every breakpoint of the home page and its +-1 px
- * neighbours. `html[data-cv-settle]` forces every `content-visibility: auto` card to render, because a skipped
+ * neighbours. `settleGalleryCards` forces every `content-visibility: auto` card to render, because a skipped
  * card has no layout and would pass by measuring nothing.
  *
  *   PLAYWRIGHT_BASE_URL=http://127.0.0.1:8090 npx playwright test --config=ssg.local.config.ts card-fit.spec.ts
  */
 import { test, expect } from "./fixtures";
 import { baseUrlOr } from "./base-url";
-import { gotoHydrated } from "./hydration";
+import { gotoHydrated, settleGalleryCards } from "./hydration";
 
 const BASE = baseUrlOr("http://127.0.0.1:8080");
 const BREAKPOINTS = [640, 768, 1024, 1100, 1180, 1280];
@@ -47,9 +47,8 @@ test("every home-page card is as wide as its content at every width", async ({ p
   const failures: string[] = [];
   for (const width of widths()) {
     await page.setViewportSize({ width, height: 900 });
-    const overflows = await page.evaluate(async () => {
-      document.documentElement.setAttribute("data-cv-settle", "");
-      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    await settleGalleryCards(page);
+    const overflows = await page.evaluate(() => {
       const out: string[] = [];
       const cards = document.querySelectorAll<HTMLElement>(".dx-widget-card, .dx-component-card-preview");
       for (const card of cards) {
