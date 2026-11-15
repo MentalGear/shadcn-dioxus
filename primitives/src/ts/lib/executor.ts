@@ -64,7 +64,7 @@ export function createExecutor(W: Window, ports: ExecutorPorts) {
         else if (level === "closed" && shown && mode === "immediate") write(state, el, site, "hide");
       }
     },
-    /** The owner's session reports the page-caused transitions of the element `target` until it ends. */
+    /** Sends the page-caused transitions of the element `target` to the owner's session until it ends. */
     watch(sc: DxScope, spec: Watch): void {
       if (!sessions.size) listening(true);
       sessions.set(spec.target, sc);
