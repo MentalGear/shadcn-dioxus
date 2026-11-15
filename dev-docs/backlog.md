@@ -46,7 +46,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (74)
+## Open rows (75)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -124,5 +124,6 @@ proposing one is closed as out of scope (row 337 is the first).
 | [518](backlog/518-suite-site-key-from-the-build-inputs.md) | An edit to a gate script, a rule file or CLAUDE.md re-runs the whole release suite: the site key covers the tree minus four prefixes, not the build's inputs | BACKLOG. Take it when a batch pays a full run for a change no build reads. | M (inferred). | tests |
 | [523](backlog/523-edge-and-floating-close-mid-entry-under-a-keyframe.md) | Sheet, Drawer and the modal Popover still enter with a keyframe: a close in the middle of that entry cancels it and the exit keyframe starts from the fully open pose | BACKLOG (found 2026-11-15). Not started. Small; it belongs with the HoverSurface / anchored-panel… | S. | overlays |
 | [524](backlog/524-whole-page-axe-scan-never-checks-color-contrast.md) | A whole-page axe scan never checks color-contrast: axe 4.10.2 cannot parse an oklch colour with a `none` channel, so the rule comes back incomplete with no passes and no violations | BACKLOG (found 2026-11-15). Not started. Small; a test-side row. | S. | tests |
+| [525](backlog/525-dioxus-0-8-readiness-ledger.md) | Dioxus 0.8 readiness: the ledger of what the 0.8 alphas change for this repository, with the row or construction each item lands in | BACKLOG (checked 2026-11-15). Research-gated: nothing is taken until 0.8 is stable. 0.7.10 is not… | S (the ledger); the migration is sized… | build |
 
 <!-- END GENERATED -->
