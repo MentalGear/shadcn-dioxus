@@ -126,7 +126,12 @@ fn edit(accepted: &Accepted, max: usize, event: &Event) -> Decision {
     let value = event.value.as_str();
     let (a, b) = (byte_index(value, event.start), byte_index(value, event.end));
     let (from, to) = (a.min(b), a.max(b));
-    let room = max.saturating_sub(value.chars().count().saturating_sub(value.get(from..to).unwrap_or_default().chars().count()));
+    let room = max.saturating_sub(
+        value
+            .chars()
+            .count()
+            .saturating_sub(value.get(from..to).unwrap_or_default().chars().count()),
+    );
     let text = accepted.keep(data, room);
     // the kept text is a subsequence of the data, so it is the data exactly when no byte was dropped
     if text.len() == data.len() {
@@ -156,7 +161,12 @@ fn settle(accepted: &Accepted, max: usize, event: &Event, input: bool) -> Decisi
     if filtered.len() == value.len() {
         return Decision::default();
     }
-    let kept = accepted.keep(value.get(..byte_index(value, event.start)).unwrap_or_default(), max);
+    let kept = accepted.keep(
+        value
+            .get(..byte_index(value, event.start))
+            .unwrap_or_default(),
+        max,
+    );
     Decision::default().write_value(&ValueWrite {
         from: 0,
         to: utf16(value),

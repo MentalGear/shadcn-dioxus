@@ -146,9 +146,10 @@ avatar::AvatarState::Loading  variant Loading
 bridge  mod
 bridge::BRIDGE_JS  const BRIDGE_JS: &str = include_str!("../js/bridge.js")
 bridge::BRIDGE_JS  use transport::BRIDGE_JS
-bridge::Behaviour  enum Behaviour  #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+bridge::Behaviour  enum Behaviour  #[derive(Clone, Debug, PartialEq, Serialize)]
 bridge::Behaviour  use behaviours::Behaviour
 bridge::Behaviour::Fixture  variant Fixture { event: EventKind, attr: String, value: String, capture: bool, cancel: bool, focus: bool, lease_ms: Option<u32> }
+bridge::Behaviour::OtpFilter  variant OtpFilter { site: Site, event: EventKind, ranges: String, max: u32 }
 bridge::Behaviour::declared  fn declared(&self) -> Declared
 bridge::Behaviour::info  fn info(&self) -> Info
 bridge::Behaviour::kind  fn kind(&self) -> &'static str
@@ -416,8 +417,9 @@ bridge::WindowSize  use session::WindowSize
 bridge::WindowSize.height  field f64
 bridge::WindowSize.width  field f64
 bridge::behaviours  mod
-bridge::behaviours::Behaviour  enum Behaviour  #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+bridge::behaviours::Behaviour  enum Behaviour  #[derive(Clone, Debug, PartialEq, Serialize)]
 bridge::behaviours::Behaviour::Fixture  variant Fixture { event: EventKind, attr: String, value: String, capture: bool, cancel: bool, focus: bool, lease_ms: Option<u32> }
+bridge::behaviours::Behaviour::OtpFilter  variant OtpFilter { site: Site, event: EventKind, ranges: String, max: u32 }
 bridge::behaviours::Behaviour::declared  fn declared(&self) -> Declared
 bridge::behaviours::Behaviour::info  fn info(&self) -> Info
 bridge::behaviours::Behaviour::kind  fn kind(&self) -> &'static str
@@ -440,6 +442,9 @@ bridge::behaviours::Inbound::Report  variant Report(StandDownMessage)
 bridge::behaviours::Info  struct Info  #[derive(Clone, Copy, Debug)]
 bridge::behaviours::Info.kind  field &'static str
 bridge::behaviours::Info.params  field &'static[(&'static str, &'static str)]
+bridge::behaviours::Site  struct Site  [private fields]  #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+bridge::behaviours::Site::from_macro  const fn from_macro(name: &'static str) -> Self  #[doc(hidden)]
+bridge::behaviours::Site::name  const fn name(self) -> &'static str
 bridge::behaviours::StandDown  struct StandDown  #[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
 bridge::behaviours::StandDown.kind  field String
 bridge::behaviours::StandDown.reason  field StandDownReason
@@ -3543,6 +3548,7 @@ separator::SeparatorProps.attributes  field Vec<Attribute>  #[props(extends = Gl
 separator::SeparatorProps.children  field Element
 separator::SeparatorProps.decorative  field bool  #[props(default = false)]
 separator::SeparatorProps.horizontal  field bool  #[props(default = true)]
+site  macro site!
 sleep  mod
 sleep::sleep  async fn sleep(duration: Duration)
 slider  mod

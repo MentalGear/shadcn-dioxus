@@ -888,12 +888,13 @@ type EffectRow = (target: Event | Element, name: string, value: unknown) => void
  * `input` event the browser would have: a decision is made and applied inside one dispatch, so no later page transition
  * can make it stale, and a decision made during composition is not written (the kernel drops it).
  */
-const SLOT_OWNERS: Record<string, { effect: string; run: (host: HTMLElement, arg: any) => void }> = {
+const SLOT_OWNERS: Record<string, { effect: string; run: (host: HTMLElement, arg: unknown) => void }> = {
   focus: { effect: "focus", run: (host) => asRust(() => host.focus({ preventScroll: true })) },
   value: {
     effect: "setValue",
-    run: (host, w) =>
+    run: (host, arg) =>
       asRust(() => {
+        const w = arg as { from: number; to: number; text: string; caret: number; input: boolean };
         const el = host as HTMLInputElement;
         el.value = el.value.slice(0, w.from) + w.text + el.value.slice(w.to);
         el.setSelectionRange(w.caret, w.caret);
