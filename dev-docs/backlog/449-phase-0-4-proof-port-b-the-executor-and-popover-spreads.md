@@ -4,9 +4,9 @@ title: "Phase 0.4: proof port B (the reconciled-kinds executor, the popover hook
 status: "APPROVED 2026-10-26 (owner: \"okay for the plan\"; scope 2, the recommended default, since no scope…"
 size: "L"
 area: overlays
-js-grant: js_file_bytes=4580, bytes=10000 (inferred ceilings: js_file_bytes 250 lines at 18.3 bundle bytes per source line for executor.ts, an internal and not a registry entry; bytes the TypeScript source the bridge budget counts for executor.ts and the registration in bridge.ts; the main loop tightens each to the measured number when the lane lands)
+js-grant: js_file_bytes=1588, bytes=1255 (the measured raise as landed: js_file_bytes bridge.js 31887 to 33475 with the executor module; bytes bridge.ts 954 and bridge.d.ts 301)
 adds: []
-updated: 2026-10-26
+updated: 2026-11-15
 ---
 
 # Row 449: Phase 0.4: proof port B (the reconciled-kinds executor, the popover hooks that return the attribute to spread, the owners' onbeforetoggle handlers)
