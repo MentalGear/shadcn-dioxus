@@ -28,7 +28,6 @@
  * and must stay visible. */
 dialog.dx-dialog {
   opacity: 0;
-  pointer-events: none;
   scale: 0.95;
   transition:
     opacity var(--dx-overlay-duration) var(--dx-overlay-ease),
@@ -41,8 +40,13 @@ dialog.dx-dialog:not([open]) {
 
 dialog.dx-dialog[open][data-open] {
   opacity: 1;
-  pointer-events: auto;
   scale: 1;
+}
+
+/* The exit is inert: a second click must not reach the fading panel. The entering frame (`data-entering`)
+ * takes pointer events, so a press on the first frame is not lost. */
+dialog.dx-dialog[data-closed] {
+  pointer-events: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

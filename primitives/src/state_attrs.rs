@@ -207,13 +207,34 @@ fn present(name: &'static str) -> Attribute {
     text(name, "")
 }
 
+/// The three states of a panel that enters through a transition from its rendered base rule.
+///
+/// `Entering` is the frame the panel is shown on, before the `data-open` that starts the transition:
+/// it is not `Closed`, because a stylesheet reads `Closed` as "leaving" (inert, no pointer events) and
+/// `Entering` as "about to enter" (takes pointer events, renders at the base rule).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum OpenState {
+    Closed,
+    Entering,
+    Open,
+}
+
+/// A panel's three-valued open state: `data-closed`, `data-entering` or `data-open`.
+pub fn open_state(state: OpenState) -> Vec<Attribute> {
+    vec![present(match state {
+        OpenState::Closed => "data-closed",
+        OpenState::Entering => "data-entering",
+        OpenState::Open => "data-open",
+    })]
+}
+
 /// A popup or panel: `data-open` while it is open, `data-closed` while it is closed.
 pub fn open(is_open: impl IntoFlag) -> Vec<Attribute> {
-    vec![present(if is_open.flag() {
-        "data-open"
+    open_state(if is_open.flag() {
+        OpenState::Open
     } else {
-        "data-closed"
-    })]
+        OpenState::Closed
+    })
 }
 
 /// The trigger of a popup: [`open`] plus `data-popup-open` while it is open.
@@ -686,9 +707,10 @@ mod ssr_tests {
     fn dialog_renders_open_as_presence() {
         let html = render(Dialogs);
         // The root carries the open state. On the browser arm the `<dialog>` carries its own, and its first
-        // frame is `data-closed` even for an open dialog: `data-open` lands a frame after `showModal()`
-        // (`use_dialog_open_driver`), so the entry is a transition from a rendered base rule. A `<dialog>` is
-        // never shown without script anyway, so the server frame changes nothing for a script-off page.
+        // frame is `data-entering` for an open dialog: `showModal()` has not run on the server frame, and the
+        // first client frame continues it; `data-open` lands a frame later (`use_dialog_open_driver`), so the
+        // entry is a transition from a rendered base rule. A `<dialog>` is never shown without script anyway,
+        // so the server frame changes nothing for a script-off page.
         let open = by_attr(&html, "data-open");
         assert_eq!(open.len(), 1, "{html}");
         for tag in &open {
@@ -696,10 +718,16 @@ mod ssr_tests {
             assert!(!has(tag, "data-closed"), "{html}");
         }
         if !crate::NATIVE_ARM {
-            let dialog = by_attr(&html, "data-closed");
+            let dialog = by_attr(&html, "data-entering");
             assert!(
                 dialog.iter().any(|tag| tag.tag.starts_with("<dialog")),
-                "the server frame of an open <dialog> is data-closed: {html}"
+                "the server frame of an open <dialog> is data-entering: {html}"
+            );
+            assert!(
+                by_attr(&html, "data-closed")
+                    .iter()
+                    .all(|tag| !tag.tag.starts_with("<dialog")),
+                "an open <dialog> is not data-closed: {html}"
             );
         }
     }

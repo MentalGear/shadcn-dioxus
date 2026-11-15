@@ -37,7 +37,7 @@ M (inferred): one shared recipe, the component sheets that name it, one spec, on
   "the lock holds through the exit" failed). The recipe is now a delayed open state plus a transition: the `<dialog>`
   carries `data-closed` while `showModal()` renders it at its base rule, `data-open` lands about two frames later
   (`use_dialog_open_driver` returns the state the pair follows), and the panel's and the scrim's own `transition`
-  runs from that rendered value. A close mid-entry reverses the transition. `dx-modal-in`, `dx-scrim-in` and
+  runs from that rendered value. A close mid-entry reverses the transition. The open state has three values, `data-closed`, `data-entering` (the rendered first frame, which takes pointer events) and `data-open`; only `data-closed` is inert. `dx-modal-in`, `dx-scrim-in` and
   `--dx-modal-enter` are gone; floating and edge overlays keep their keyframe recipes.
 - **Proof.** A spec that samples opacity per frame on open for one overlay of each kind and pins the mechanism (no
   `@starting-style` rule for the element, a CSS animation of the recipe's name on open); the mechanism check stands in

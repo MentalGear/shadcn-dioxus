@@ -596,8 +596,8 @@ fn DialogContentModal(
             // The dialog's own state, not just the root wrapper's: closing keeps the
             // `<dialog>` open (and modal) while it animates out
             // (`crate::use_dialog_open_driver`), so `[open]` does not say "closing" and a
-            // stylesheet keys the exit on `[data-closed]` instead.
-            ..state_attrs::open(open_state()),
+            // stylesheet keys the exit on `[data-closed]` and the first frame on `[data-entering]` instead.
+            ..state_attrs::open_state(open_state()),
             "data-dx-overlay": overlay_off(ctx.overlay),
         }),
     ]);
