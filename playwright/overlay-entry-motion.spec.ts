@@ -266,3 +266,59 @@ test.describe("modal dialog: a close in the middle of the entry", () => {
     await expect(page.locator("dialog[open]")).toHaveCount(0, { timeout: 10_000 });
   });
 });
+
+test.describe("modal dialog: the entering frame", () => {
+  // The long token keeps the entry (`data-entering` then `data-open`) measurable; the first frames are the window.
+  const openSlowly = async (page: Page) => {
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await gotoHydrated(page, `${BASE_URL}/component/dialog/`, GOTO);
+    await page.addStyleTag({ content: ":root { --dx-overlay-duration: 1200ms !important; }" });
+  };
+
+  /** Clicks the trigger and runs `probe` in the page on the first animation frame where the `<dialog>` is modal. */
+  const onEnteringFrame = async <T>(page: Page, probe: string): Promise<T> => {
+    const result = page.evaluate(
+      (body) =>
+        new Promise<unknown>((resolve) => {
+          const probeFn = new Function("dialog", `return (${body})(dialog);`) as (d: HTMLDialogElement) => unknown;
+          const tick = () => {
+            const dialog = document.querySelector<HTMLDialogElement>("dialog:modal");
+            if (dialog) resolve(probeFn(dialog));
+            else requestAnimationFrame(tick);
+          };
+          tick();
+        }),
+      probe,
+    );
+    await demoRole(page, "button", 0).click();
+    return (await result) as T;
+  };
+
+  test("a backdrop press on the first frame after open dismisses it", async ({ page }) => {
+    await openSlowly(page);
+    const pressed = await onEnteringFrame<{ entering: boolean; hit: boolean }>(
+      page,
+      `(dialog) => {
+        const entering = dialog.hasAttribute("data-entering");
+        const hit = document.elementFromPoint(2, 2) === dialog;
+        for (const type of ["pointerdown", "pointerup"]) {
+          dialog.dispatchEvent(new PointerEvent(type, { bubbles: true, composed: true, clientX: 2, clientY: 2, pointerType: "mouse", button: 0, isPrimary: true }));
+        }
+        return { entering, hit };
+      }`,
+    );
+    expect(pressed.entering, "the press missed the entering frame").toBe(true);
+    expect(pressed.hit, "the backdrop press did not land on the <dialog> on the entering frame").toBe(true);
+    await expect(page.locator("dialog[open]")).toHaveCount(0, { timeout: 10_000 });
+  });
+
+  test("the entering frame takes pointer events", async ({ page }) => {
+    await openSlowly(page);
+    const frame = await onEnteringFrame<{ entering: boolean; pointerEvents: string }>(
+      page,
+      `(dialog) => ({ entering: dialog.hasAttribute("data-entering"), pointerEvents: getComputedStyle(dialog).pointerEvents })`,
+    );
+    expect(frame.entering, "the probe missed the entering frame").toBe(true);
+    expect(frame.pointerEvents).toBe("auto");
+  });
+});
