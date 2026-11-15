@@ -1,7 +1,7 @@
 # check-js-volume baseline (scripts/lib/ratchet.py): shrink-only per-file counts, regenerate with --update-baseline.
 #! columns: sink js_lit js_file_bytes install inline_script comment_eval expect_disallowed
 # path	sink	js_lit	js_file_bytes	install	inline_script	comment_eval	expect_disallowed
-#! total-raised: row 449 total=487787 the page executor's popover kind in the bridge bundle; popover_sync.rs loses its eval show script and toggle listener (total 487304->487787)
+#! total-raised: row 449 total=487932 the page executor's popover kind in the bridge bundle; popover_sync.rs loses its eval show script and toggle listener (total 487304->487932)
 labs/carousel-lab/src/main.rs	2	0	0	0	0	0	0
 preview/build.rs	0	12	0	0	0	0	0
 preview/index.html	0	0	0	0	7453	0	0
@@ -65,7 +65,7 @@ primitives/src/hover_intent.rs	0	10	0	1	0	0	0
 primitives/src/input_otp.rs	1	36	0	1	0	0	1
 primitives/src/js/behaviours/fixture.js	0	0	646	0	0	0	0
 primitives/src/js/behaviours/otp-filter.js	0	0	658	0	0	0	0
-primitives/src/js/bridge.js	0	0	33330	0	0	0	0	# raised: row 449 the page executor's popover kind in the bridge bundle; popover_sync.rs loses its eval show script and toggle listener (js_file_bytes 31887->33330)
+primitives/src/js/bridge.js	0	0	33475	0	0	0	0	# raised: row 449 the page executor's popover kind in the bridge bundle; popover_sync.rs loses its eval show script and toggle listener (js_file_bytes 31887->33475)
 primitives/src/js_listener.rs	1	7	0	0	0	0	0
 primitives/src/label.rs	0	8	0	1	0	0	0
 primitives/src/lib.rs	3	182	0	3	0	0	3

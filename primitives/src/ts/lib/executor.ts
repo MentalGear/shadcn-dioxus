@@ -12,8 +12,9 @@
 //   one writer the show and hide go through `apply` (the `show` / `hide` rows of APPLY) and nothing else shows or
 //              hides an element with a level; the transition the write itself causes is not reported
 //   reports    a transition the page caused (light dismiss, Escape) is reported as `{ n, open }` on the owner's
-//              session (`watch`, by the element's id), stamped with the nonce applied, so Rust drops a report older
-//              than its newest level; one document capture listener carries them while any session watches
+//              session (`watch`, by the element's id) from its `toggle` task, stamped with the nonce applied, so Rust
+//              drops a report older than its newest level; two document capture listeners carry them while any
+//              session watches
 
 /** What the bridge gives the executor at boot: its apply table and the Rust-caused marker. */
 export interface ExecutorPorts {
@@ -22,7 +23,7 @@ export interface ExecutorPorts {
 }
 
 type Watch = Extract<DxCommand, { cmd: "executor" }>;
-type Applied = { n: number; own: number };
+type Applied = { n: number; own: number; page: boolean };
 
 export function createExecutor(W: Window, ports: ExecutorPorts) {
   const applied = new WeakMap<Element, Applied>();
@@ -39,15 +40,26 @@ export function createExecutor(W: Window, ports: ExecutorPorts) {
     }
   };
 
-  const onToggle = (event: Event): void => {
-    const el = event.target as Element | null;
-    const state = el ? applied.get(el) : undefined;
-    const sc = el ? sessions.get(el.id) : undefined;
-    if (state && sc && !state.own) sc.send({ n: state.n, open: (event as ToggleEvent).newState === "open" });
+  // Who caused a transition is read in the synchronous `beforetoggle` (inside the executor's own write or not); the
+  // report goes out from the `toggle` task the browser queues after it, as the platform reports the change, so a
+  // trigger's own click in the same gesture reaches Rust first and the report is then older than its level.
+  const onBefore = (event: Event): void => {
+    const state = applied.get(event.target as Element);
+    if (state && !state.own) state.page = true;
   };
-  const listening = (on: boolean): void =>
+  const onToggle = (event: Event): void => {
+    const el = event.target as Element;
+    const state = applied.get(el);
+    const sc = sessions.get(el.id);
+    if (!state || !state.page) return;
+    state.page = false;
+    if (sc) sc.send({ n: state.n, open: (event as ToggleEvent).newState === "open" });
+  };
+  const listening = (on: boolean): void => {
+    const doc = W.document;
     // listener-ok: added with the first watching session and removed with the last
-    on ? W.document.addEventListener("beforetoggle", onToggle, true) : W.document.removeEventListener("beforetoggle", onToggle, true);
+    for (const [type, fn] of [["beforetoggle", onBefore], ["toggle", onToggle]] as const) on ? doc.addEventListener(type, fn, true) : doc.removeEventListener(type, fn, true);
+  };
 
   return {
     /** Applies every rendered level newer than the one applied to its element, in the calling turn. */
@@ -56,7 +68,7 @@ export function createExecutor(W: Window, ports: ExecutorPorts) {
         const [nonce, level, mode, site] = (el.getAttribute("data-dx-level") ?? "").split(" ");
         const n = Number(nonce);
         let state = applied.get(el);
-        if (!state) applied.set(el, (state = { n: 0, own: 0 }));
+        if (!state) applied.set(el, (state = { n: 0, own: 0, page: false }));
         if (!(n > state.n)) continue;
         state.n = n;
         const shown = el.matches(":popover-open");

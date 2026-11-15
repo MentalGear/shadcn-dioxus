@@ -12,7 +12,8 @@
 //! level. That one rule removes the races between a report and a command:
 //!
 //! * the echo of the executor's own show or hide never reaches Rust (the executor reports only what the page
-//!   caused, read inside the write's own synchronous `beforetoggle`), so a show followed at once by a close cannot
+//!   caused, read inside the write's own synchronous `beforetoggle`, and sends it from the `toggle` task that
+//!   follows, as the platform reports the change), so a show followed at once by a close cannot
 //!   be turned back into an open by a late echo (backlog row 115's class, on every panel);
 //! * a close then a reopen that both happen between two reports: the report of the first close carries the nonce
 //!   before the reopen and is dropped;

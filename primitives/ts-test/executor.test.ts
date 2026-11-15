@@ -30,11 +30,13 @@ const calls = (el: any) => el.calls.map((c: any) => c[0]);
 
 describe("the page executor", () => {
   test("applies the level and never reports the transition its own write causes", () => {
-    const { popover, ch, level } = setup();
+    const { doc, popover, ch, level } = setup();
     const el = popover("panel");
     level(el, 1, true);
     expect(el.popoverOpen).toBe(true);
+    doc.dispatch("toggle", { target: el, newState: "open" });
     level(el, 2, false);
+    doc.dispatch("toggle", { target: el, newState: "closed" });
     expect(calls(el)).toEqual(["showPopover", "hidePopover"]);
     expect(ch.sent).toEqual([]);
   });
@@ -45,7 +47,11 @@ describe("the page executor", () => {
     level(el, 4, true);
     el.popoverOpen = false;
     doc.dispatch("beforetoggle", { target: el, newState: "closed" });
+    expect(ch.sent, "the report waits for the toggle task").toEqual([]);
+    doc.dispatch("toggle", { target: el, newState: "closed" });
     expect(ch.sent).toEqual([{ n: 4, open: false }]);
+    doc.dispatch("toggle", { target: el, newState: "closed" });
+    expect(ch.sent, "one report per page-caused transition").toEqual([{ n: 4, open: false }]);
   });
 
   test("applies a level once: a page-caused close stands until the owner renders a newer one", () => {
@@ -88,6 +94,7 @@ describe("the page executor", () => {
     level(el, 1, true);
     el.popoverOpen = false;
     doc.dispatch("beforetoggle", { target: el, newState: "closed" });
+    doc.dispatch("toggle", { target: el, newState: "closed" });
     expect(el.calls.length).toBe(1);
     expect(ch.sent).toEqual([]);
   });
@@ -98,7 +105,8 @@ describe("the page executor", () => {
     level(el, 1, true);
     s.dispose();
     doc.dispatch("beforetoggle", { target: el, newState: "closed" });
+    doc.dispatch("toggle", { target: el, newState: "closed" });
     expect(ch.sent).toEqual([]);
-    expect(doc.count("beforetoggle")).toBe(0);
+    expect(doc.count("beforetoggle") + doc.count("toggle")).toBe(0);
   });
 });
