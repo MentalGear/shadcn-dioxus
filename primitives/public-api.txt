@@ -1250,6 +1250,7 @@ chart::engine::polar::angle_scale  fn angle_scale(domain: (f64, f64), start_angl
 chart::engine::polar::arc_centerline_path  fn arc_centerline_path(radius: f64, a0: f64, a1: f64) -> String
 chart::engine::polar::arc_path  fn arc_path(inner_radius: f64, outer_radius: f64, start_angle: f64, end_angle: f64, pad_angle: f64, corner_radius: f64) -> String
 chart::engine::polar::centroid  fn centroid(inner_radius: f64, outer_radius: f64, start_angle: f64, end_angle: f64) -> (f64, f64)
+chart::engine::polar::padded_inner_radius  fn padded_inner_radius(outer_radius: f64, pad_angle: f64, min_slice_angle: f64) -> f64
 chart::engine::polar::pie_layout  fn pie_layout(values: &[f64], pad_angle: f64, start_angle: f64, end_angle: f64, sort: PieSort) -> Vec<PieArc>
 chart::engine::polar::radial_band_center  fn radial_band_center(inner_radius: f64, outer_radius: f64, count: usize, index: usize) -> f64
 chart::engine::polar::radial_bar_radii  fn radial_bar_radii(inner_radius: f64, outer_radius: f64, count: usize, index: usize) -> (f64, f64)
