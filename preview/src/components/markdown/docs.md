@@ -17,7 +17,7 @@ Bubble { variant: BubbleVariant::Ghost,
 }
 ```
 
-| Prop | Default | |
+| Prop | Default | Description |
 | --- | --- | --- |
 | `source` | required | The Markdown text. |
 | `streaming` | `false` | The text is still being generated: heal an unfinished tail before parsing. |
