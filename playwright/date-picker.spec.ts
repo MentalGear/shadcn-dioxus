@@ -1055,6 +1055,27 @@ test.describe("Unavailable dates variant (variant=unavailable_dates)", () => {
       expect(u.opacity, "not faded a second time by the picker's own [data-disabled] rule").toBe("1");
     });
   }
+
+  // The demo anchors its unavailable ranges on today (`variants/unavailable_dates/mod.rs`), so on some days today
+  // is itself unavailable; the clock is pinned to one of them (31 days in March 2031: anchor day 14, first range
+  // 16..18). The today fill stays, the unavailable ink and line-through win over today's foreground ink.
+  test("an unavailable day that is today keeps the muted ink and the line-through", async ({ page }) => {
+    await page.clock.setFixedTime(new Date("2031-03-16T12:00:00Z"));
+    await gotoDatePicker(page);
+    await pickerTrigger(page, "unavailable_dates").click();
+    const dialog = pickerContent(page, "unavailable_dates");
+    await expect(dialog).toBeVisible();
+    const cell = dialog.locator('.dx-calendar-grid-cell[data-month="current"][data-today="true"][data-unavailable="true"]');
+    await expect(cell, "16 March 2031 is today and inside the demo's first unavailable range").toHaveCount(1);
+    const muted = await tokenColor(page, "--dx-muted-foreground");
+    const read = await cell.evaluate((el) => {
+      const cs = getComputedStyle(el);
+      return { color: cs.color, line: cs.textDecorationLine, background: cs.backgroundColor };
+    });
+    expect(read.color, "the unavailable ink wins over today's").toBe(muted);
+    expect(read.line).toContain("line-through");
+    expect(read.background, "today keeps its fill").not.toBe("rgba(0, 0, 0, 0)");
+  });
 });
 
 // dev-docs/backlog.md row 380: the page is prerendered on the build day, so the month and the "today"

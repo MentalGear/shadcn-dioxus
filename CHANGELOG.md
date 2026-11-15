@@ -37,6 +37,9 @@ below are collected under "Unreleased" and move under a version heading at the f
   point at the centre, so the gap closed to nothing toward the middle; the facing edges are now parallel and each slice
   ends in a tip short of the centre. A slice thinner than the gap is not drawn. The option, its unit and a donut's gap are
   unchanged.
+- Calendar: an unavailable or disabled day that is today keeps the muted ink and the line-through; only today's fill
+  marks it as today. Today's foreground ink applied over the unavailable ink before, so on the days the date picker
+  demo's unavailable ranges covered today, that day read as pickable.
 - The chart tooltip fades in as well as out in every browser. A closed tooltip is now transparent and `visibility: hidden`
   instead of `display: none` with an `@starting-style` entry, so the entry no longer depends on the engine animating from
   `display: none`; it starts when the tooltip is placed, and reduced motion shows neither fade.
