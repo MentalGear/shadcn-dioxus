@@ -20,6 +20,7 @@
 
 use serde::Serialize;
 
+#[cfg(not(feature = "native"))]
 use super::behaviours::Site;
 
 /// What an executor level opens.

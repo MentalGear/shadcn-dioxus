@@ -1,6 +1,7 @@
 # check-js-volume baseline (scripts/lib/ratchet.py): shrink-only per-file counts, regenerate with --update-baseline.
 #! columns: sink js_lit js_file_bytes install inline_script comment_eval expect_disallowed
 # path	sink	js_lit	js_file_bytes	install	inline_script	comment_eval	expect_disallowed
+#! total-raised: row 449 total=488096 the page executor's popover kind in the bridge bundle; popover_sync.rs loses its eval show script and toggle listener (total 488080->488096)
 labs/carousel-lab/src/main.rs	2	0	0	0	0	0	0
 preview/build.rs	0	12	0	0	0	0	0
 preview/index.html	0	0	0	0	7453	0	0
@@ -64,7 +65,7 @@ primitives/src/hover_intent.rs	0	10	0	1	0	0	0
 primitives/src/input_otp.rs	1	36	0	1	0	0	1
 primitives/src/js/behaviours/fixture.js	0	0	646	0	0	0	0	# raised: row 448 the otp-filter kind: its bundle, the bridge value owner and the one include_str! sink; input_otp.rs loses its inline script (js_file_bytes 520->646)
 primitives/src/js/behaviours/otp-filter.js	0	0	658	0	0	0	0	# raised: row 448 the otp-filter kind: its bundle, the bridge value owner and the one include_str! sink; input_otp.rs loses its inline script (js_file_bytes 0->658)
-primitives/src/js/bridge.js	0	0	31887	0	0	0	0	# raised: row 448 the otp-filter kind: its bundle, the bridge value owner and the one include_str! sink; input_otp.rs loses its inline script (js_file_bytes 31284->31887)
+primitives/src/js/bridge.js	0	0	33639	0	0	0	0	# raised: row 448 the otp-filter kind: its bundle, the bridge value owner and the one include_str! sink; input_otp.rs loses its inline script (js_file_bytes 31284->31887); row 449 the page executor's popover kind in the bridge bundle; popover_sync.rs loses its eval show script and toggle listener (js_file_bytes 31887->33639)
 primitives/src/js_listener.rs	1	7	0	0	0	0	0
 primitives/src/label.rs	0	8	0	1	0	0	0
 primitives/src/lib.rs	3	182	0	3	0	0	3
@@ -77,7 +78,7 @@ primitives/src/scroll_lock.rs	2	55	0	1	0	0	2
 primitives/src/select/components/list.rs	0	65	0	1	0	0	0
 primitives/src/toast.rs	1	166	0	3	0	0	1
 primitives/src/top_layer/anchor_fallback.rs	0	127	0	1	0	0	0
-primitives/src/top_layer/popover_sync.rs	2	21	0	2	0	0	2
+primitives/src/top_layer/popover_sync.rs	1	13	0	1	0	0	1
 primitives/src/top_layer/scroll_clamp.rs	0	67	0	1	0	0	0
 primitives/src/top_layer/styles.rs	2	12	0	0	0	0	2
 primitives/src/virtual/bridge.rs	2	50	0	1	0	0	2

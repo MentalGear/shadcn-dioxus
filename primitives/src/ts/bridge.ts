@@ -1416,7 +1416,15 @@ const callPublic: DxBridge["call"] = (target, method, args) => {
 let executor: ReturnType<typeof createExecutor> | null = null;
 
 if (!W.__dxBridge) {
-  executor = createExecutor(W, { apply: (site, effect, el) => applyEffect(site, effect, el), asRust });
+  executor = createExecutor(W, {
+    apply: (site, effect, el) => applyEffect(site, effect, el),
+    asRust,
+    childList(fn) {
+      const mo = new W.MutationObserver(fn);
+      mo.observe(W.document.documentElement, { childList: true, subtree: true });
+      return () => mo.disconnect();
+    },
+  });
   const bridge: DxBridge = {
     version: 3,
     channel,

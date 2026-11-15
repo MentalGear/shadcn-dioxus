@@ -16,6 +16,8 @@
 export interface ExecutorPorts {
   apply(site: string, effect: "show" | "hide", el: Element): void;
   asRust<T>(run: () => T): T;
+  /** Calls `fn` after every `childList` batch of the document until the returned stop is called. */
+  childList(fn: () => void): () => void;
 }
 
 type ExecutorCommand = Extract<DxCommand, { cmd: "executor" }>;
@@ -25,7 +27,7 @@ type Entry = { sc: DxScope; n: number; level: boolean; mode: ExecutorCommand["mo
 export function createExecutor(W: any, ports: ExecutorPorts) {
   const entries = new Map<string, Entry>();
   const waiting = new Map<string, Entry>();
-  let observer: { disconnect(): void } | null = null;
+  let stop: (() => void) | null = null;
 
   const write = (entry: Entry, el: Element, effect: "show" | "hide"): void => {
     entry.own++;
@@ -42,14 +44,10 @@ export function createExecutor(W: any, ports: ExecutorPorts) {
     const el = W.document.getElementById(id);
     if (!el) {
       waiting.set(id, entry);
-      if (!observer) {
-        const mo = new W.MutationObserver(() => {
-          for (const [wid, wentry] of [...waiting]) if (W.document.getElementById(wid)) waiting.delete(wid), place(wid, wentry);
-          if (!waiting.size && observer) observer.disconnect(), (observer = null);
-        });
-        mo.observe(W.document.documentElement, { childList: true, subtree: true });
-        observer = mo;
-      }
+      stop ||= ports.childList(() => {
+        for (const [wid, wentry] of [...waiting]) if (W.document.getElementById(wid)) waiting.delete(wid), place(wid, wentry);
+        if (!waiting.size && stop) stop(), (stop = null);
+      });
       return;
     }
     waiting.delete(id);
