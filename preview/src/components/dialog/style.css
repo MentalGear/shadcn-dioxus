@@ -16,9 +16,10 @@
 
 /* The panel fades and zooms with the same tokens (Nova's `fade-in-0 zoom-in-95`
  * / `fade-out-0 zoom-out-95`) and is visible only while `[open][data-open]`;
- * the entry is the `dx-modal-in` keyframe animation the theme binds through `--dx-modal-enter`
- * ("The modal panel's entry, once"); the exit is the `transition` back to the base rule, played while
- * the dialog is still a modal in the top layer. Until `showModal()` runs (a mounted dialog's first frames)
+ * the entry and the exit are this one `transition` between the base rule and the open rule. The entry
+ * starts when `data-open` lands, a frame after `showModal()` rendered the dialog at the base rule
+ * (`use_dialog_open_driver`, `primitives/src/lib.rs`), so it needs no `@starting-style`, and the exit
+ * is played while the dialog is still a modal in the top layer. Until `showModal()` runs (a mounted dialog's first frames)
  * and after the final `close()`, `display: none` -- the UA rule this stylesheet's own
  * `display: flex` overrides -- keeps it from being rendered outside the top layer,
  * where its `position: fixed` box is resolved against, and clipped to, the nearest
@@ -26,8 +27,6 @@
  * `dialog.` is deliberate: the non-web arm is a plain `div` that is never `[open]`
  * and must stay visible. */
 dialog.dx-dialog {
-  --dx-modal-enter: dx-modal-in;
-
   opacity: 0;
   pointer-events: none;
   scale: 0.95;

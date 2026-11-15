@@ -599,7 +599,7 @@ fn PopoverModalContent(
     let id_signal = use_signal(|| id.clone());
 
     crate::use_dialog_close_sync(id_signal, set_open);
-    crate::use_dialog_open_driver(id_signal, open);
+    let open_state = crate::use_dialog_open_driver(id_signal, open);
     // Escape is the dialog's own `cancel`, routed through state by `use_dialog_close_sync`; the
     // layer keeps the dialog's place in the dismiss core's Escape order, and its backdrop press
     // (the tap rule for touch and pen) is the light dismiss a `showModal()` dialog lacks.
@@ -641,7 +641,7 @@ fn PopoverModalContent(
             aria_modal: "true",
             aria_labelledby: ctx.labelledby,
             aria_hidden: (!is_open).then_some("true"),
-            ..state_attrs::open(is_open),
+            ..state_attrs::open(is_open && open_state()),
             "data-side": side.as_str(),
             "data-align": align.as_str(),
             "data-dx-overlay": overlay_off.then_some("off"),

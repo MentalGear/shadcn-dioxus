@@ -10,7 +10,7 @@ import { DEFAULT_OVERLAY_MS } from "./assert-backdrop-fade";
  *
  * The scrim has two painters on the web arm: the wrapper `div` that carries `data-dx-scrim` (it
  * animates `dx-fade-in`/`dx-fade-out`, its own background is transparent) and the `<dialog>`'s
- * top-layer `::backdrop` (the scrim itself: a `dx-scrim-in` animation in, a `transition` out). Both must come up and go away without
+ * top-layer `::backdrop` (a `transition`, the scrim itself). Both must come up and go away without
  * their fade under reduced motion, and both must fade without the emulation (so the claim is not
  * vacuous: the same probe reads the full 200 ms without it).
  *
@@ -23,7 +23,6 @@ type ScrimStyle = {
   wrapperAnimationDuration: string;
   wrapperOpacity: string;
   backdropTransitionDuration: string;
-  backdropAnimationDuration: string;
 };
 
 /** A CSS time (`0.2s`, `200ms`, `1e-05s`, `0.2s, 0.2s`) as milliseconds, one number per comma-separated entry. */
@@ -52,7 +51,6 @@ async function readScrim(page: Page): Promise<ScrimStyle> {
       wrapperAnimationDuration: w.animationDuration,
       wrapperOpacity: w.opacity,
       backdropTransitionDuration: b.transitionDuration,
-      backdropAnimationDuration: b.animationDuration,
     };
   });
 }
@@ -91,15 +89,12 @@ test.describe("modal scrim motion", () => {
 
     await openDemoDialog(page);
 
-    // The open scrim: no fade (the duration is the reduced token), the backdrop has no fade (transition or animation),
+    // The open scrim: no fade (the duration is the reduced token), the backdrop has no transition,
     // and the scrim is fully visible at rest (an `animation: none` alone would leave the base
     // `opacity: 0` in place, which is why the rule shortens the duration instead).
     const open = await readScrim(page);
     expect(timesMs(open.wrapperAnimationDuration)[0]).toBeLessThanOrEqual(NO_FADE_MS);
     for (const ms of timesMs(open.backdropTransitionDuration)) {
-      expect(ms).toBeLessThanOrEqual(NO_FADE_MS);
-    }
-    for (const ms of timesMs(open.backdropAnimationDuration)) {
       expect(ms).toBeLessThanOrEqual(NO_FADE_MS);
     }
     await expect
@@ -125,9 +120,6 @@ test.describe("modal scrim motion", () => {
     expect(open.wrapperAnimationName).toContain("dx-fade-in");
     expect(timesMs(open.wrapperAnimationDuration)[0]).toBeCloseTo(DEFAULT_OVERLAY_MS, 3);
     for (const ms of timesMs(open.backdropTransitionDuration)) {
-      expect(ms).toBeCloseTo(DEFAULT_OVERLAY_MS, 3);
-    }
-    for (const ms of timesMs(open.backdropAnimationDuration)) {
       expect(ms).toBeCloseTo(DEFAULT_OVERLAY_MS, 3);
     }
   });

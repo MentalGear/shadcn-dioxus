@@ -16,9 +16,9 @@
  *
  * THE CONSTRUCTION these assertions pin down (see the six `style.css` files): the
  * dialog's own `::backdrop` is the ONLY painter (the wrapper is transparent), it
- * fades in with the theme's `dx-scrim-in` keyframe animation (no `@starting-style`, so no dependence on an
- * engine animating out of `display: none`) and out with a `transition`, both on the same duration and curve
- * tokens so they cannot differ. What lets the exit play is the same for every
+ * fades in and out through the one `transition`
+ * declaration (the in-fade starts when `data-open` lands a frame after `showModal()`, so there is no `@starting-style`),
+ * so the directions cannot differ. What lets the exit play is the same for every
  * overlay on every engine: the dialog is kept open -- a modal, in the top layer, with
  * its `::backdrop` -- until its exit animations have settled, and only then
  * `close()`d. Dialog, AlertDialog, Sheet, Drawer and CommandDialog get that from the
@@ -51,7 +51,7 @@ export const DEFAULT_OVERLAY_MS = 200;
 const NO_TRANSITION_GRACE_MS = 600;
 
 export interface BackdropTransition {
-  /** The open fade is the `dx-scrim-in` animation (recorded from `animationstart`, with `property: "background-color"`); the close fade is a `transition`. `"close"` once the dialog was closing as the transition started (`[open]` gone, or its `data-closed` already present), else `"open"`. */
+  /** `"close"` once the dialog was closing as the transition started (`[open]` gone, or its `data-closed` already present), else `"open"`. */
   phase: "open" | "close";
   property: string;
   /** The transition's own resolved duration in ms (`getComputedTiming().duration`). */
@@ -136,24 +136,6 @@ export async function captureBackdrop(
       true,
     );
 
-    // The open fade is a keyframe animation on the `::backdrop`; its resolved duration is read from the
-    // `::backdrop`'s computed `animation-*` lists, for the same starved-main-thread reason as above.
-    document.addEventListener(
-      "animationstart",
-      (e) => {
-        const ev = e as AnimationEvent;
-        if (ev.pseudoElement !== "::backdrop" || ev.animationName !== "dx-scrim-in") return;
-        const cs = getComputedStyle(ev.target as HTMLDialogElement, "::backdrop");
-        const names = cs.animationName.split(",").map((p) => p.trim());
-        const durs = cs.animationDuration.split(",").map((p) => p.trim());
-        const at = names.indexOf(ev.animationName);
-        const raw = at < 0 ? "0s" : durs[at % durs.length];
-        const d = raw.endsWith("ms") ? parseFloat(raw) : parseFloat(raw) * 1000;
-        st.transitions.push({ phase: "open", property: "background-color", durationMs: Number.isFinite(d) ? d : 0 });
-      },
-      true,
-    );
-
     const tick = () => {
       if (!st.dlg) {
         st.dlg = [...document.querySelectorAll("dialog")].find((d) => d.matches(":modal")) ?? null;
@@ -180,12 +162,12 @@ export async function captureBackdrop(
 
   await open();
   // Fully open: the dialog is `[open]`, the open fade has STARTED, and every `::backdrop`
-  // animation has finished. "Has started" is an `animationstart` (open) we recorded, not merely the
+  // animation has finished. "Has started" is a `transitionrun` we recorded, not merely the
   // absence of a running animation: the poll runs in a `requestAnimationFrame` callback, which
   // fires BEFORE the style recalc that creates the transition for the frame `[open]` landed in,
   // so on a loaded machine "open and nothing animating" is true for one frame before the fade
   // begins, and `settled` would be read at its first, near-transparent step (alpha 0.008, blur
-  // 0.28px). If the fade never runs at all (the snap this file exists to catch), give it
+  // 0.28px). If the transition never runs at all (the snap this file exists to catch), give it
   // `NO_TRANSITION_GRACE_MS` and carry on, so the "no transition ran" assertion still reports it.
   await page.waitForFunction(
     (graceMs) => {
@@ -281,8 +263,8 @@ export function assertSharedBackdrop(capture: BackdropCapture, overlayMs: number
   const blur = /blur\(([\d.]+)px\)/.exec(settled.backdropFilter);
   if (!blur || Math.abs(Number(blur[1]) - SCRIM_BLUR_PX) > 0.01) fail(`::backdrop blur was "${settled.backdropFilter}", expected blur(${SCRIM_BLUR_PX}px)`);
 
-  // It fades rather than snaps, in AND out, for the same length. The `animationstart` (open) and
-  // `transitionrun` (close) events are the proof: the UA's default ::backdrop never runs either.
+  // It fades rather than snaps, in AND out, for the same length. `transitionrun`
+  // events are the proof: the UA's default ::backdrop never runs one.
   const bg = (phase: "open" | "close") => transitions.filter((t) => t.phase === phase && t.property === "background-color");
   for (const phase of ["open", "close"] as const) {
     const run = bg(phase);

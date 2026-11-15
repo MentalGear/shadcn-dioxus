@@ -52,6 +52,8 @@ test('test', async ({ page }) => {
   // Reopen the dialog
   await page.getByRole('button', { name: 'Show Dialog' }).click();
   await expect(dialog).toBeVisible();
+  // The panel takes pointer events once `data-open` lands, a frame after it is rendered.
+  await expect(dialog).toHaveAttribute('data-open', '');
   // Clicking far outside the dialog content should dismiss it.
   await page.mouse.click(2, 2);
   await expect(dialog).toHaveCount(0);

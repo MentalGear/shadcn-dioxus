@@ -552,6 +552,8 @@ test.describe("Rule 7c — a real pointer click on the backdrop dismisses", () =
     await trigger.focus();
     await page.keyboard.press("Enter");
     await expect(page.getByRole("dialog")).toBeVisible();
+    // The panel takes pointer events once `data-open` lands, a frame after it is rendered.
+    await expect(page.getByRole("dialog")).toHaveAttribute("data-open", "");
 
     // A real pointer click (has a genuine clientX/clientY and detail === 1)
     // at the viewport corner, far outside the dialog's content rect.

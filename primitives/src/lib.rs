@@ -612,11 +612,22 @@ pub(crate) fn use_form_reset_listener(
 /// generation, so a stale wait that wakes up later does nothing; Escape is routed
 /// here through state by [`use_dialog_close_sync`]'s `cancel` handler instead of
 /// being allowed to `close()` natively.
+///
+/// Returns the state the dialog's own `data-open` / `data-closed` pair follows (feed it to
+/// `state_attrs::open`, never the bare `open`): `open` that turned true at least a frame ago.
+/// The entry is an ordinary CSS transition from the dialog's base rule, and a `<dialog>` that
+/// `showModal()` has just rendered is rendered AT that base rule on its first frame, so the
+/// `data-open` that starts the transition has to land on a later frame. That needs no
+/// `@starting-style` and no animation out of `display: none` (neither runs in every engine), and
+/// a close in the middle of the entry reverses the transition instead of cancelling an animation
+/// (a cancelled animation starts no transition, so the exit list below would be empty and the
+/// panel would snap shut). The pair turns `data-closed` at once when `open` turns false.
 #[cfg(not(feature = "native"))]
 fn use_dialog_open_driver(
     id: impl Readable<Target = String> + Copy + 'static,
     open: impl Readable<Target = bool> + Copy + 'static,
-) {
+) -> impl Fn() -> bool + Copy {
+    let entered = use_entered_a_frame_after_open(open);
     // Installs `top_layer::ensure_top_layer_ink_styles`'s engine-injected
     // ink baseline -- see that function's own doc for the bug this closes
     // and why this hook (every native-`<dialog>`/`showModal()` consumer:
@@ -703,6 +714,36 @@ fn use_dialog_open_driver(
             }});"
         ));
     });
+
+    move || open.cloned() && entered()
+}
+
+/// How long after `open` turns true the dialog's `data-open` follows: two frames at 60 Hz. The
+/// driver's `showModal()` runs in the effect after the render that saw `open`, so the dialog is
+/// rendered at its base rule (opacity 0, scale 0.95, a transparent scrim) in the frame after
+/// that, and the delay puts `data-open` on a later one.
+#[cfg(not(feature = "native"))]
+const DIALOG_ENTRY_FRAME_DELAY: std::time::Duration = std::time::Duration::from_millis(32);
+
+/// `true` once `open` has been true for [`DIALOG_ENTRY_FRAME_DELAY`]; `false` from the render
+/// after `open` turns false. A hook: call it unconditionally, once per render.
+#[cfg(not(feature = "native"))]
+fn use_entered_a_frame_after_open(
+    open: impl Readable<Target = bool> + Copy + 'static,
+) -> impl Fn() -> bool + Copy {
+    let mut entered = use_signal(|| false);
+    let mut delay = crate::delayed_action::use_delayed_action();
+    use_effect(move || {
+        if open.cloned() {
+            delay.schedule(DIALOG_ENTRY_FRAME_DELAY, move || entered.set(true));
+        } else {
+            delay.cancel();
+            if *entered.peek() {
+                entered.set(false);
+            }
+        }
+    });
+    move || entered()
 }
 
 /// Row 223: a modal that is animating out is still a real modal, so the page behind it (the

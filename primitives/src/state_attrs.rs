@@ -685,14 +685,22 @@ mod ssr_tests {
     #[test]
     fn dialog_renders_open_as_presence() {
         let html = render(Dialogs);
-        // The root carries the open state; on the browser arm the `<dialog>` carries its own too (its `[open]`
-        // stays set for the whole exit, so a stylesheet keys the exit on the `<dialog>`'s own `[data-closed]`).
-        let expected = if crate::NATIVE_ARM { 1 } else { 2 };
+        // The root carries the open state. On the browser arm the `<dialog>` carries its own, and its first
+        // frame is `data-closed` even for an open dialog: `data-open` lands a frame after `showModal()`
+        // (`use_dialog_open_driver`), so the entry is a transition from a rendered base rule. A `<dialog>` is
+        // never shown without script anyway, so the server frame changes nothing for a script-off page.
         let open = by_attr(&html, "data-open");
-        assert_eq!(open.len(), expected, "{html}");
+        assert_eq!(open.len(), 1, "{html}");
         for tag in &open {
             assert_eq!(value(tag, "data-open"), Some(""), "{html}");
             assert!(!has(tag, "data-closed"), "{html}");
+        }
+        if !crate::NATIVE_ARM {
+            let dialog = by_attr(&html, "data-closed");
+            assert!(
+                dialog.iter().any(|tag| tag.tag.starts_with("<dialog")),
+                "the server frame of an open <dialog> is data-closed: {html}"
+            );
         }
     }
 

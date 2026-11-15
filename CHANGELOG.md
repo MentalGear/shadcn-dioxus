@@ -40,10 +40,12 @@ below are collected under "Unreleased" and move under a version heading at the f
 - The chart tooltip fades in as well as out in every browser. A closed tooltip is now transparent and `visibility: hidden`
   instead of `display: none` with an `@starting-style` entry, so the entry no longer depends on the engine animating from
   `display: none`; it starts when the tooltip is placed, and reduced motion shows neither fade.
-- Dialog, AlertDialog and CommandDialog, and the scrim behind every modal, fade in on engines that do not animate a
-  transition out of `display: none`: the entry is a keyframe animation bound to the open state (`dx-modal-in` through
-  `--dx-modal-enter`, `dx-scrim-in`) instead of an `@starting-style` transition, so it plays wherever the exit does. The
-  theme's check refuses a new `@starting-style` rule.
+- Dialog, AlertDialog and CommandDialog, and the scrim behind every modal dialog, fade in on engines that do not animate a
+  transition out of `display: none`: the `<dialog>` is rendered a frame before it gets `data-open`, so the entry is the same
+  `transition` as the exit, with no `@starting-style`, and a close in the middle of the entry reverses it. The dialog
+  panel now centres with `translate: -50% -50%` and zooms with `scale`, not one `transform`; a style that overrode the
+  panel's `transform` moves to those properties. The theme's check refuses a new `@starting-style` rule.
+
 - A menu root (DropdownMenu, ContextMenu, Menubar) given an `id` that changes later keeps its outside-press and
   outside-focus dismissal: the dismiss layer follows the current `id` instead of the first one, and returns to the
   generated id when the `id` is dropped.

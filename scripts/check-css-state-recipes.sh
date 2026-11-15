@@ -47,8 +47,9 @@
 #                      from `@starting-style` has to be animated out of `display: none` (a `<dialog>`, a popover,
 #                      a `::backdrop`, a `display` toggle), which not every engine does: the exit plays and the
 #                      entry snaps. An entry is a `@keyframes` animation bound to the open state, which starts when the
-#                      element starts being rendered in every engine (the theme's `--dx-modal-enter`,
-#                      `--dx-floating-enter`, `--dx-edge-enter` and `dx-scrim-in` recipes). Reviewed exceptions are in
+#                      element starts being rendered in every engine (the theme's `--dx-floating-enter` and
+#                      `--dx-edge-enter` recipes), or, for a modal `<dialog>` and its scrim, a plain `transition`
+#                      that starts when `data-open` lands a frame after `showModal()` (`use_dialog_open_driver`). Reviewed exceptions are in
 #                      ALLOW below. Also scans preview/assets/dx-components-theme.css.
 #   invalid-shadow     a rule selecting `[aria-invalid]` / `[data-invalid]` declares a `box-shadow` that does
 #                      not reference `--dx-ring-invalid*` (or the `--dx-input-invalid-shadow` slot), or a
@@ -173,7 +174,7 @@ for path in starting_files:
             fail("starting-style", path, line, "@starting-style", "",
                  "an entry that starts from `@starting-style` has to animate out of `display: none`, which not every "
                  "engine does (the exit plays, the entry snaps); bind a `@keyframes` entry to the open state instead "
-                 "(`--dx-modal-enter`, `--dx-floating-enter`, `--dx-edge-enter`)")
+                 "(`--dx-floating-enter`, `--dx-edge-enter`), or, for a modal `<dialog>`, render it a frame before `data-open`")
 
 for path in files:
     with open(path, encoding="utf-8") as fh:
