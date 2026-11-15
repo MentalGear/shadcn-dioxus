@@ -279,8 +279,10 @@ test.describe("Axe automated scan", () => {
 
   test("the scan inspects the content of a closed docs accordion item", async ({ page }) => {
     // Inside a closed item (`hidden="until-found"`) axe reports `color-contrast` as inapplicable, so the helper opens
-    // the items first. A low-contrast paragraph seeded into a closed item is the self-check of that opening.
-    await openComponent(page, "toolbar");
+    // the items first. A low-contrast paragraph seeded into a closed item is the self-check of that opening. The scan is
+    // scoped to the accordion: a whole-page `color-contrast` run is incomplete wherever axe cannot parse a computed
+    // colour elsewhere on the page (backlog row 521).
+    await openComponent(page, "button");
     const item = page.locator(".dx-docs-accordion > .dx-accordion-item").first();
     await expect(item).not.toHaveAttribute("data-open");
     await item.locator("> .dx-accordion-content").evaluate((el) => {
@@ -292,7 +294,7 @@ test.describe("Axe automated scan", () => {
     });
     let failure = "";
     try {
-      await expectNoAxeViolations(page, "component-catalog: seeded contrast in a closed docs item");
+      await expectNoAxeViolations(page, "component-catalog: seeded contrast in a closed docs item", { include: ".dx-docs-accordion" });
     } catch (e) {
       failure = String(e);
     }
