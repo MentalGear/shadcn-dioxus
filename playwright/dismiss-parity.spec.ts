@@ -209,6 +209,8 @@ async function prepare(page: Page, surface: Surface) {
   }
   await surface.open(page);
   await expect(surface.content(page).first()).toBeVisible();
+  // A modal dialog takes pointer events once its `data-open` lands, a frame after it is rendered (`data-closed` is its first frame).
+  await expect(surface.content(page).first()).not.toHaveAttribute("data-closed", "");
 }
 
 /** A point in the viewport that is on nothing interactive and outside the surface and its trigger. */

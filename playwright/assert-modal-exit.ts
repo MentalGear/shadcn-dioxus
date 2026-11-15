@@ -168,7 +168,8 @@ export async function captureModalExit(
       () => {
         const st = (window as unknown as { __mx: any }).__mx;
         const d: HTMLDialogElement | null = st.dlg;
-        if (!d || !d.matches(":modal")) return false;
+        // `data-open` lands a frame after `showModal()`; before it the dialog is rendered at its base rule.
+        if (!d || !d.matches(":modal") || !d.hasAttribute("data-open") || d.hasAttribute("data-closed")) return false;
         return !document.getAnimations().some((a) => (a.effect as KeyframeEffect | null)?.target === d && a.playState !== "finished");
       },
       undefined,
