@@ -35,6 +35,26 @@ impl Field for bool {
     }
 }
 
+impl Field for f64 {
+    fn read(member: Option<&Value>) -> Option<Self> {
+        match member? {
+            Value::Num(n) => Some(*n),
+            _ => None,
+        }
+    }
+}
+
+impl Field for Option<bool> {
+    /// A boolean or `null` (an event that has no such member); the key itself must be present.
+    fn read(member: Option<&Value>) -> Option<Self> {
+        match member? {
+            Value::Bool(b) => Some(Some(*b)),
+            Value::Null => Some(None),
+            _ => None,
+        }
+    }
+}
+
 impl Field for Option<String> {
     /// A string or `null` (an attribute that is absent); the key itself must be present.
     fn read(member: Option<&Value>) -> Option<Self> {
@@ -61,21 +81,22 @@ macro_rules! wire_input {
     (
         $(#[$meta:meta])*
         $vis:vis struct $name:ident {
-            $( $(#[$fmeta:meta])* $fvis:vis $field:ident : $ty:ty = $key:literal ),+ $(,)?
+            $( $(#[$fmeta:meta])* $fvis:vis $field:ident : $ty:ty = $key:literal ),* $(,)?
         }
     ) => {
         $(#[$meta])*
         #[derive(Clone, Debug, PartialEq)]
         $vis struct $name {
-            $( $(#[$fmeta])* $fvis $field: $ty ),+
+            $( $(#[$fmeta])* $fvis $field: $ty ),*
         }
 
         impl $crate::wire::FromValue for $name {
-            const KEYS: &'static [&'static str] = &[$($key),+];
+            const KEYS: &'static [&'static str] = &[$($key),*];
 
             fn from_value(value: &$crate::value::Value) -> Option<Self> {
+                let _ = value;
                 Some(Self {
-                    $( $field: <$ty as $crate::wire::Field>::read(value.get($key))?, )+
+                    $( $field: <$ty as $crate::wire::Field>::read(value.get($key))?, )*
                 })
             }
         }
