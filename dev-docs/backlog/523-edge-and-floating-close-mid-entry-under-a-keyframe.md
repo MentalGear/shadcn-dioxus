@@ -35,7 +35,7 @@ S.
   rendered (`use_dialog_open_driver` already returns that state for every `showModal()` consumer; the non-modal
   floating panels need the same delayed state from `use_animated_open`), and the entry becomes a `transition` from
   the rendered base pose that a close reverses. The keyframe pairs go, the side tokens stay as the transition's start
-  values. No `@starting-style`.
+  values. No `@starting-style`. `data-entering` (`state_attrs::OpenState`) is the state its transition start keys on.
 - **Proof.** `overlay-entry-motion.spec.ts`'s "a close in the middle of the entry" case runs for one Sheet side, the
   Drawer and the modal Popover; the per-frame opacity recordings keep the entry itself pinned.
 - **Files.** `preview/assets/dx-components-theme.css`, `primitives/src/lib.rs` (`use_animated_open`),

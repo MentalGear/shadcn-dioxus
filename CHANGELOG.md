@@ -42,7 +42,10 @@ below are collected under "Unreleased" and move under a version heading at the f
   `display: none`; it starts when the tooltip is placed, and reduced motion shows neither fade.
 - Dialog, AlertDialog and CommandDialog, and the scrim behind every modal dialog, fade in on engines that do not animate a
   transition out of `display: none`: the `<dialog>` is rendered a frame before it gets `data-open`, so the entry is the same
-  `transition` as the exit, with no `@starting-style`, and a close in the middle of the entry reverses it. The dialog
+  `transition` as the exit, with no `@starting-style`, and a close in the middle of the entry reverses it. That first
+  frame is `data-entering`, not `data-closed`: it takes pointer events (a press on it is not lost), and `data-closed`
+  alone carries `pointer-events: none` (a consumer stylesheet that keyed pointer events on the dialog's base rule
+  moves them to `[data-closed]`). The dialog
   panel now centres with `translate: -50% -50%` and zooms with `scale`, not one `transform`; a style that overrode the
   panel's `transform` moves to those properties. The theme's check refuses a new `@starting-style` rule.
 - A menu root (DropdownMenu, ContextMenu, Menubar) given an `id` that changes later keeps its outside-press and
