@@ -17,7 +17,6 @@ primitives/src/combobox/components/group.rs	0	0	0	0	1
 primitives/src/combobox/components/input.rs	1	0	0	0	0
 primitives/src/combobox/multi.rs	1	0	0	0	0
 primitives/src/command.rs	1	0	0	0	0
-primitives/src/hover_card.rs	0	0	0	0	1
 primitives/src/input_otp.rs	1	0	0	0	0
 primitives/src/questionnaire.rs	2	1	0	0	4
 primitives/src/radio_group.rs	1	1	0	0	0

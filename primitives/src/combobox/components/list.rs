@@ -6,7 +6,6 @@ use dioxus_attributes::attributes;
 
 use super::super::context::ComboboxContext;
 use crate::listbox::use_listbox_container;
-use crate::merge_attributes;
 
 /// Props for [`ComboboxList`].
 #[derive(Props, Clone, PartialEq)]
@@ -142,44 +141,33 @@ fn ComboboxListRendered(
         move |_| selectable.set_open(false),
     );
 
-    crate::top_layer::use_popover_shown_while_mounted(
-        id.clone(),
-        open,
-        Callback::new(move |is_open: bool| {
-            selectable.set_open(is_open);
-        }),
-    );
-    // JS-measured static positioning fallback for engines without CSS
-    // Anchor Positioning -- see `top_layer::use_anchor_position_fallback`'s
-    // doc. `side`/`align`/gap match this component's themed CSS
-    // (`top: calc(100% + 0.25rem); left: 0` == a 4px gap past the input's
-    // own bottom edge): anchored below the input, left-aligned with it,
-    // the same bottom/start convention every other listbox here uses.
-    crate::top_layer::use_anchor_position_fallback(
-        id.clone(),
-        ctx.input_id.cloned(),
-        open,
-        crate::ContentSide::Bottom,
-        crate::ContentAlign::Start,
-        4,
-    );
-    // Folds the caller's own `style` together with the anchor binding into
-    // one `style` attribute -- see `top_layer::anchored_content_attributes`'s
-    // doc for why a bare `style: position_anchor_style(&id)` literal
-    // alongside `..attributes` is the duplicate-`style` hazard
-    // (`dev-docs/conformance-harness.md` hydration-parity Rule 4).
-    let attributes = crate::top_layer::anchored_content_attributes(
-        crate::top_layer::AnchorKind::Combobox,
-        &ctx.input_id.cloned(),
+    // Anchored below the input, left-aligned with it (`top: calc(100% + 0.25rem); left: 0` in the themed
+    // CSS == a 4px gap past the input's own bottom edge), the same bottom/start convention every other
+    // listbox here uses.
+    let attributes = crate::top_layer::use_anchored_panel(
+        crate::top_layer::AnchoredPanel {
+            id: id.clone(),
+            open: open.into(),
+            set_open: Callback::new(move |is_open: bool| {
+                selectable.set_open(is_open);
+            }),
+            popover: crate::top_layer::PopoverKind::Manual,
+            sync: crate::top_layer::PanelSync::WhileMounted,
+            placement: crate::top_layer::AnchoredPlacement::Anchored {
+                anchor_id: ctx.input_id.cloned(),
+                side: crate::ContentSide::Bottom,
+                align: crate::ContentAlign::Start,
+                gap: 4,
+                kind: crate::top_layer::AnchorKind::Combobox,
+            },
+            owned: attributes!(div {
+                role: "listbox",
+                aria_multiselectable: ctx.is_multi().then_some("true"),
+                ..state_attrs::open(open()),
+            }),
+        },
         attributes,
     );
-    let owned = attributes!(div {
-        role: "listbox",
-        popover: crate::top_layer::PopoverKind::Manual.as_str(),
-        aria_multiselectable: ctx.is_multi().then_some("true"),
-        ..state_attrs::open(open()),
-    });
-    let attributes = merge_attributes(vec![attributes, owned]);
 
     rsx! {
         div {
@@ -213,7 +201,7 @@ fn ComboboxListRendered(
         aria_multiselectable: ctx.is_multi().then_some("true"),
         ..state_attrs::open(open()),
     });
-    let attributes = merge_attributes(vec![attributes, owned]);
+    let attributes = crate::merge_attributes(vec![attributes, owned]);
 
     rsx! {
         div {

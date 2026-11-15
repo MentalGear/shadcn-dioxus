@@ -272,65 +272,58 @@ pub(crate) fn use_menu_panel(config: PanelConfig, attributes: Vec<Attribute>) ->
         owned,
     } = config;
 
-    #[cfg(not(feature = "native"))]
-    {
-        crate::top_layer::use_popover_sync(id.clone(), open, on_native_toggle);
-        match &placement {
-            PanelPlacement::Anchored {
-                side,
-                align,
-                offset,
-                ..
-            } => crate::top_layer::use_anchor_position_fallback(
-                id.clone(),
-                id.clone(),
-                open,
-                *side,
-                *align,
-                *offset,
-            ),
-            PanelPlacement::Point { x, y } => {
-                crate::top_layer::use_point_anchor_placement(id.clone(), *x, *y, open);
-            }
-        }
-    }
-    #[cfg(feature = "native")]
-    let _ = (on_native_toggle, popover, &placement);
-
     let labelledby = content_labelledby_attributes(&attributes, &trigger_id);
     // Owned by the panel, so they win over a caller's own attributes.
     let panel = attributes!(div {
         role: crate::menu_semantics::MENU_ROLE,
         ..state_attrs::open(open()),
     });
-    #[cfg(not(feature = "native"))]
-    let popover_value = match popover {
-        PanelPopover::Auto => crate::top_layer::PopoverKind::Auto,
-        PanelPopover::Manual => crate::top_layer::PopoverKind::Manual,
-    }
-    .as_str();
-    #[cfg(not(feature = "native"))]
-    let promoted = attributes!(div {
-        popover: popover_value
-    });
-    #[cfg(feature = "native")]
-    let promoted: Vec<Attribute> = Vec::new();
-    let attributes = crate::merge_attributes(vec![attributes, labelledby, panel, promoted, owned]);
+    let attributes = crate::merge_attributes(vec![attributes, labelledby]);
+    let owned = crate::merge_attributes(vec![panel, owned]);
 
-    // Folds the caller's own `style` together with the anchor binding into one `style` attribute.
     #[cfg(not(feature = "native"))]
-    if let PanelPlacement::Anchored { kind, .. } = placement {
-        return crate::top_layer::anchored_content_attributes(
-            match kind {
-                PanelKind::Dropdown => crate::top_layer::AnchorKind::DropdownMenu,
-                PanelKind::Menubar => crate::top_layer::AnchorKind::Menubar,
+    {
+        use crate::top_layer::{
+            AnchorKind, AnchoredPanel, AnchoredPlacement, PanelSync, PopoverKind,
+        };
+        crate::top_layer::use_anchored_panel(
+            AnchoredPanel {
+                id: id.clone(),
+                open: open.into(),
+                set_open: on_native_toggle,
+                popover: match popover {
+                    PanelPopover::Auto => PopoverKind::Auto,
+                    PanelPopover::Manual => PopoverKind::Manual,
+                },
+                sync: PanelSync::Immediate,
+                placement: match placement {
+                    PanelPlacement::Anchored {
+                        kind,
+                        side,
+                        align,
+                        offset,
+                    } => AnchoredPlacement::Anchored {
+                        anchor_id: id,
+                        side,
+                        align,
+                        gap: offset,
+                        kind: match kind {
+                            PanelKind::Dropdown => AnchorKind::DropdownMenu,
+                            PanelKind::Menubar => AnchorKind::Menubar,
+                        },
+                    },
+                    PanelPlacement::Point { x, y } => AnchoredPlacement::Point { x, y },
+                },
+                owned,
             },
-            &id,
             attributes,
-        );
+        )
     }
-    let _ = id;
-    attributes
+    #[cfg(feature = "native")]
+    {
+        let _ = (id, on_native_toggle, popover, placement);
+        crate::merge_attributes(vec![attributes, owned])
+    }
 }
 
 #[cfg(test)]

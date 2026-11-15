@@ -729,47 +729,37 @@ fn PopoverNonModalContent(
         Some(ctx.open.into()),
         |_| {},
     );
-    crate::top_layer::use_popover_shown_while_mounted(id.clone(), ctx.open, ctx.set_open);
-    crate::modality::use_close_focus(id.clone(), ctx.open);
-    // JS-measured static positioning fallback for Firefox/WebKit (no CSS
-    // Anchor Positioning) -- see `top_layer::use_anchor_position_fallback`'s
-    // doc. `anchor_id` is this content's own `id`: `PopoverTrigger`'s
-    // `anchor-name` is keyed off `ctx.content_id`, which `PopoverContent`
-    // keeps synced to this same id (see `PopoverCtx::content_id`'s doc).
-    crate::top_layer::use_anchor_position_fallback(
-        id.clone(),
-        id.clone(),
-        ctx.open,
-        side,
-        align,
-        8,
-    );
-    let class = class.unwrap_or_else(|| "dx-popover-content".to_string());
-    // Folds the caller's own `style` together with the anchor binding into
-    // one `style` attribute -- see `top_layer::anchored_content_attributes`'s
-    // doc for why a bare `style: position_anchor_style(&id)` literal
-    // alongside `..attributes` is the duplicate-`style` hazard
-    // (`dev-docs/conformance-harness.md` hydration-parity Rule 4).
-    let attributes = crate::top_layer::anchored_content_attributes(
-        crate::top_layer::AnchorKind::Popover,
-        &id,
+    // The anchor is this content's own `id`: `PopoverTrigger`'s `anchor-name` is keyed off
+    // `ctx.content_id`, which `PopoverContent` keeps synced to this same id (see `PopoverCtx::content_id`'s
+    // doc). The popover is `auto`: the browser's light dismiss is synced into state through
+    // `ctx.set_open`.
+    let attributes = crate::top_layer::use_anchored_panel(
+        crate::top_layer::AnchoredPanel {
+            id: id.clone(),
+            open: ctx.open.into(),
+            set_open: ctx.set_open,
+            popover: crate::top_layer::PopoverKind::Auto,
+            sync: crate::top_layer::PanelSync::WhileMounted,
+            placement: crate::top_layer::AnchoredPlacement::Anchored {
+                anchor_id: id.clone(),
+                side,
+                align,
+                gap: 8,
+                kind: crate::top_layer::AnchorKind::Popover,
+            },
+            owned: attributes!(dialog {
+                aria_labelledby: ctx.labelledby,
+                aria_hidden: (!is_open).then_some("true"),
+                ..state_attrs::open(is_open),
+                "data-side": side.as_str(),
+                "data-align": align.as_str(),
+            }),
+        },
         attributes,
     );
-    // Owned by this component -- top-layer wiring/aria/state must win
-    // over a caller's own attributes (`dev-docs/backlog.md` row 93's
-    // duplicate-attribute hazard).
-    let attributes = merge_attributes(vec![
-        attributes,
-        attributes!(dialog {
-            popover: crate::top_layer::PopoverKind::Auto.as_str(),
-            aria_labelledby: ctx.labelledby,
-            aria_hidden: (!is_open).then_some("true"),
-            ..state_attrs::open(is_open),
-            "data-side": side.as_str(),
-            "data-align": align.as_str(),
-        }),
-    ]);
 
+    crate::modality::use_close_focus(id.clone(), ctx.open);
+    let class = class.unwrap_or_else(|| "dx-popover-content".to_string());
     rsx! {
         dialog {
             id: id.clone(),

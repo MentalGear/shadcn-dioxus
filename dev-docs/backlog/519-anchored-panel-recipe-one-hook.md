@@ -25,6 +25,15 @@ Dropdown, Context, Menubar and submenus. The hover timers (`use_hover_timers`, `
 
 APPROVED 2026-11-14 (owner: "I approve your recommendation for generalizing the components and tooltip as well"). It lands before row 449; Tooltip and HoverCard as one surface follows it.
 
+**Landed on lane `lane/anchored-panel-519` (2026-11-15).** `top_layer/anchored_panel.rs` holds `use_anchored_panel` with
+`AnchoredPanel` (id, open, set_open, popover mode, `PanelSync`, `AnchoredPlacement`, owned attributes); `use_menu_panel`
+builds the config and calls it. On it: Tooltip, HoverCard, Popover non-modal, Navbar, NavigationMenu, Select list,
+Combobox list and the three menu hosts with their submenus. The hover timers live in `hover_timers.rs`. Toast stays on
+the old recipe: it has no placement, and its attributes are caller-wins (the hook's owned attributes win), so moving it
+would need a no-placement case and a second merge order that no other site has. `check-anchor-marker` rule 4 pins it:
+the four recipe hooks are called only inside `use_anchored_panel`, Toast and the anchored modal popover are its two
+allowlisted exceptions.
+
 ## Size
 
 M (inferred, 8 to 10 h), one lane, medium risk.

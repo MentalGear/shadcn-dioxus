@@ -77,6 +77,7 @@ pub use form_reset::{
 };
 pub mod hover_card;
 mod hover_intent;
+mod hover_timers;
 pub mod input_otp;
 pub mod interval;
 pub mod js_listener;
