@@ -884,7 +884,13 @@ pub fn use_behaviour<T: DeserializeOwned + 'static>(
             }
             target().map(|target| {
                 let behaviour = behaviour();
-                let epoch = Pump::current().epoch(format!("behaviour:{}", behaviour.kind()));
+                // one install per kind, target and event: a kind that decides for several events of one target is
+                // installed once per event, and its installs do not replace each other
+                let epoch = Pump::current().epoch(format!(
+                    "behaviour:{}:{}",
+                    behaviour.kind(),
+                    behaviour.declared().event.wire()
+                ));
                 Session::new().behaviour(target, behaviour, epoch)
             })
         },

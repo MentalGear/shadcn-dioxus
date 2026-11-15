@@ -52,6 +52,7 @@ macro_rules! kinds {
 
 kinds! {
     "fixture" => fixture,
+    "otp-filter" => otp_filter,
 }
 
 /// The table as text: one line per kind, `name`, then its config keys, reads and fields, tab-separated, each list

@@ -7,6 +7,11 @@ below are collected under "Unreleased" and move under a version heading at the f
 
 ### Changed
 
+- **Input OTP's character filter is one decision in Rust.** The pattern (`OtpPattern`) and the length bound are decided
+  by the library's `otp-filter` behaviour for a keystroke, a paste, a replacement text, an autofill and a committed
+  composition on web and desktop alike, instead of a script written into the page. An input method's composition is left
+  alone until it ends and its committed text is then filtered; the behaviour is the first to write a control's value (the
+  `value` slot) and re-dispatches the `input` event for the text it wrote.
 - **A padded pie with no `inner_radius` gets a small hole sized by its padding.** The slices' inner edges sit on one circle
   instead of ending in tips at the centre; an explicit `inner_radius` is used as given, and `padding_angle: 0` draws as before.
 - **Dialog, AlertDialog and CommandDialog panels centre with `translate` and zoom with `scale`.** The panel's
@@ -33,6 +38,9 @@ below are collected under "Unreleased" and move under a version heading at the f
 
 ### Fixed
 
+- A paste into Input OTP keeps every accepted character of the code (one with separators, one longer than the field, one
+  over a selected slot) and no longer depends on the browser's `maxlength` trim; the paste is decided by the same Rust
+  rule as a keystroke.
 - A closed Combobox with groups no longer leaves its group headings in the page: `ComboboxGroupLabel` renders only
   while the list renders, like the group and the options around it.
 - A pie's `padding_angle` leaves a gap of the same width along its whole length. A full pie's slices used to meet in a

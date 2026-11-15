@@ -46,7 +46,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (74)
+## Open rows (75)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -79,7 +79,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [444](backlog/444-gate-half-of-lane-3-0b-grants-bans-and-witness-presence.md) | Phase 0.1: the gate half of lane 3.0 (grant rows, sink and setter bans, FORBIDDEN_VERBS, gates over existing artefacts only) | LANDED in PR #167 (2026-11-07), phase 0.1's gates over the artefacts that exist: the grant rule and… | L | tooling |
 | [446](backlog/446-phase-0-6-witness-harness-and-the-first-witnesses.md) | Phase 0.6: the witness harness and the first witnesses | LANDED 2026-11-14 in one batch with row 509, on top of it, under the owner's grant of the same day.… | L | tests |
 | [447](backlog/447-phase-0-7-the-order-runtime.md) | Phase 0.7: the order runtime (inbound pump, slot fence, slot table, focus owner, boot, scroll classifier spike) | LANDED 2026-11-14 with the batch of that date, as far as the row's file list allows; row 515 holds… | M | primitives |
-| [448](backlog/448-phase-0-3-proof-port-a-focus-trap-and-otpfilter.md) | Phase 0.3: proof port A (the native-arm focus trap's 3 eval sites, focus-trap.ts, and the otpFilter behaviour for S11) | The 3.DJ half is built (the native-arm focus trap is deleted) and the otpFilter half is open… | L | overlays |
+| [448](backlog/448-phase-0-3-proof-port-a-focus-trap-and-otpfilter.md) | Phase 0.3: proof port A (the native-arm focus trap's 3 eval sites, focus-trap.ts, and the otpFilter behaviour for S11) | The 3.DJ half is built (the native-arm focus trap is deleted) and the otpFilter half is built… | L | overlays |
 | [449](backlog/449-phase-0-4-proof-port-b-the-executor-and-popover-spreads.md) | Phase 0.4: proof port B (the reconciled-kinds executor, the popover hooks that return the attribute to spread, the owners' onbeforetoggle handlers) | APPROVED 2026-10-26 (owner: "okay for the plan"; scope 2, the recommended default, since no scope… | L | overlays |
 | [450](backlog/450-phase-0-5-dxbridgestats-and-the-latency-session.md) | Phase 0.5: __dxBridgeStats, a desktop smoke launch and the one latency session | APPROVED 2026-10-26 (owner: "okay for the plan"; scope 2, the recommended default, since no scope… | M | tooling |
 | [452](backlog/452-port-3-pl-placement-anchor-fallback-and-the-paint-safe-gate.md) | Port 3.PL: placement (T1, T2, T8-T12, S1), the paint-safe gate and the boot probe | APPROVED 2026-10-26 (scope 2): after phase 0, taken as an ordinary row in order of JavaScript… | L | overlays |
@@ -124,5 +124,6 @@ proposing one is closed as out of scope (row 337 is the first).
 | [518](backlog/518-suite-site-key-from-the-build-inputs.md) | An edit to a gate script, a rule file or CLAUDE.md re-runs the whole release suite: the site key covers the tree minus four prefixes, not the build's inputs | BACKLOG. Take it when a batch pays a full run for a change no build reads. | M (inferred). | tests |
 | [523](backlog/523-edge-and-floating-close-mid-entry-under-a-keyframe.md) | Sheet, Drawer and the modal Popover still enter with a keyframe: a close in the middle of that entry cancels it and the exit keyframe starts from the fully open pose | BACKLOG (found 2026-11-15). Not started. Small; it belongs with the HoverSurface / anchored-panel… | S. | overlays |
 | [524](backlog/524-whole-page-axe-scan-never-checks-color-contrast.md) | A whole-page axe scan never checks color-contrast: axe 4.10.2 cannot parse an oklch colour with a `none` channel, so the rule comes back incomplete with no passes and no violations | BACKLOG (found 2026-11-15). Not started. Small; a test-side row. | S. | tests |
+| [525](backlog/525-dioxus-0-8-readiness-ledger.md) | Dioxus 0.8 readiness: the ledger of what the 0.8 alphas change for this repository, with the row or construction each item lands in | BACKLOG (checked 2026-11-15). Research-gated: nothing is taken until 0.8 is stable. 0.7.10 is not… | S (the ledger); the migration is sized… | build |
 
 <!-- END GENERATED -->

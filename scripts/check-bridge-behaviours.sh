@@ -56,6 +56,10 @@
 #  * LEASES, RUST HALF. A behaviour that can cancel an event gets a lease by construction: every `Declared` built in
 #    `bridge/behaviours.rs` takes `lease_ms` from `lease_for`, which gives a non-passive behaviour `CANCEL_LEASE_MS`.
 #  * WITNESSES, CONSTRUCTOR. `WitnessViolation` is constructed only by the witness probes (the `probes` directory of the witness harness).
+#  * THE SITES. A construction site is named by a `site!("name")` literal (`bridge/behaviours.rs`: a `Site` only the macro
+#    builds). The names the Rust sources carry are the generated `primitives/src/ts/behaviours/sites.gen.json` (written by
+#    `--update-baseline`, read by the witness harness's `sites.ts`), and each has a scenario binding
+#    (`playwright/witness/bindings/<site>.json`) and a `witness(kind, "<site>", effect)` test in a `playwright/witness/*.spec.ts`.
 #  * NEW KINDS NEED A ROW. A kind in `behaviours.gen.ts` that the merge base lacks needs an open backlog row at the base
 #    whose front matter says `adds: [<kind>]` (scripts/lib/rows.py); citing the umbrella row 434 is refused.
 #  * PLATFORM RULES. `primitives/conformance/platform-rules.tsv` is read by scripts/lib/platform_rules.py and every defect
@@ -78,7 +82,7 @@
 # `--list` prints the allowlist.
 #
 # Usage: scripts/check-bridge-behaviours.sh [--self-test|--list|--static|--update-baseline [--allow-raise "row N why"]]
-#   (--static skips bun and tsc; --update-baseline rewrites the budgets TSV, shrink-only)
+#   (--static skips bun and tsc; --update-baseline rewrites the budgets TSV, shrink-only, and the generated site list)
 # Exit status: 0 when clean.
 set -uo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
@@ -130,6 +134,9 @@ BUDGETS_TSV = "scripts/check-bridge-behaviours.budgets.tsv"
 CALLERS_TSV = "scripts/check-bridge-behaviours.callers.tsv"
 SLOTS_TSV = "scripts/check-bridge-behaviours.slots.tsv"
 PLATFORM_TSV = platform_rules.TSV
+SITES_JSON = "primitives/src/ts/behaviours/sites.gen.json"
+BINDINGS_DIR = "playwright/witness/bindings"
+WITNESS_DIR = "playwright/witness"
 TYPES_D_TS = "primitives/src/ts/types/bridge.d.ts"
 TS_MODULE_TXT = "scripts/lib/typescript-module.txt"
 TS_MODULE_IMAGE = "/opt/node-tools/node_modules/typescript"
@@ -215,7 +222,7 @@ def kebab(name):
 def load_tree():
     tree = {"files": {}, "ts": {}, "rs": {}, "js": {}, "kernel": {}}
     for p in [BEHAVIOURS_RS, GEN_TS, VECTORS, BEHAVIOUR_TEST, BUNDLE, ALLOW_TSV, BUDGETS_TSV, CALLERS_TSV, SLOTS_TSV, PLATFORM_TSV,
-              KERNEL_KINDS_RS, KERNEL_VECTORS_RS]:
+              KERNEL_KINDS_RS, KERNEL_VECTORS_RS, SITES_JSON]:
         pp = Path(p)
         tree["files"][p] = pp.read_text(encoding="utf-8") if pp.is_file() else None
     for p in sorted(Path(TS_ROOT).rglob("*.ts")):
@@ -242,6 +249,9 @@ def load_tree():
                     ":!*.md") or ""
     tree["witness"] = {p: Path(p).read_text(encoding="utf-8") for p in hits.split("\n")
                        if p.endswith((".ts", ".tsx", ".js", ".mjs", ".cjs", ".rs")) and Path(p).is_file()}
+    # the witness side of the sites: the scenario bindings by site name, and the witness specs' text
+    tree["bindings"] = sorted(p.stem for p in Path(BINDINGS_DIR).glob("*.json"))
+    tree["specs"] = {str(p): p.read_text(encoding="utf-8") for p in sorted(Path(WITNESS_DIR).glob("*.spec.ts"))}
     tree["base"] = load_base()
     return tree
 
@@ -302,6 +312,22 @@ def rust_kinds(text, errors):
                 kinds.append(kebab(mm.group(1)))
         depth += line.count("{") - line.count("}")
     return kinds
+
+
+SITE_LITERAL = re.compile(r"\bsite!\s*\(\s*\"([^\"]+)\"\s*\)")
+
+
+def site_names(tree):
+    """Every name a `site!("...")` literal gives in the repository's Rust sources (comments excluded)."""
+    names = set()
+    for text in tree["rs_repo"].values():
+        names.update(SITE_LITERAL.findall(scrub_rs_comments(text)))
+    return sorted(names)
+
+
+def sites_text(names):
+    """The text of `sites.gen.json`: the names, one JSON array."""
+    return json.dumps(names, indent=2) + "\n"
 
 
 def gen_kinds(text):
@@ -725,6 +751,18 @@ def check(tree, run_tools, virtual=False):
     table = platform_rules.parse(F[PLATFORM_TSV] or "", platform_rules.projects(), PLATFORM_TSV)
     errors += platform_rules.problems(table)
 
+    # 13. the construction sites: `site!("name")` literals are the list the witnesses read (`sites.gen.json`), and each
+    # site has a scenario binding and a witness test, so a site no witness judges cannot be built
+    names = site_names(tree)
+    if (F.get(SITES_JSON) or "") != sites_text(names):
+        errors.append(f"{SITES_JSON}: differs from the `site!` literals {names}: run scripts/{GATE}.sh --update-baseline")
+    for name in names:
+        if name not in tree["bindings"]:
+            errors.append(f"{BINDINGS_DIR}/{name}.json: the site `{name}` has no scenario binding")
+        witnessed = re.compile(r"\bwitness\(\s*\"[A-Za-z]+\"\s*,\s*\"" + re.escape(name) + r"\"")
+        if not any(witnessed.search(text) for text in tree["specs"].values()):
+            errors.append(f"{WITNESS_DIR}: the site `{name}` has no `witness(kind, \"{name}\", effect)` test in a *.spec.ts")
+
     if run_tools:
         if shutil.which("bun"):
             r = subprocess.run(["bun", "test", "primitives/ts-test"], capture_output=True, text=True)
@@ -828,7 +866,7 @@ def self_test(tree):
     RS_SESSION = "primitives/src/bridge/session.rs"
     muts = [
         ("a Rust variant with no module", replace_in(BEHAVIOURS_RS, "pub enum Behaviour {", "pub enum Behaviour {\n    Zzz { x: u8 },")),
-        ("a generated kind with no variant", replace_in(GEN_TS, '["fixture"]', '["fixture", "ghost"]')),
+        ("a generated kind with no variant", replace_in(GEN_TS, '["fixture", "otp-filter"]', '["fixture", "otp-filter", "ghost"]')),
         ("a module with no variant", lambda t: (t["ts"].__setitem__("primitives/src/ts/behaviours/ghost.ts",
             'import { register } from "../lib/register";\nregister("ghost", { fields: [], decide() { return {}; } });\n'))),
         ("a bundle with no variant", lambda t: t["js"].__setitem__("primitives/src/js/behaviours/ghost.js", "1;")),
@@ -980,6 +1018,12 @@ def self_test(tree):
             SLOTS_TSV, t["files"][SLOTS_TSV].replace("write\tpadding-bottom\tstyle\trust\n", "")), "WRITES"),
         ("an APPLY row with no slot table row", lambda t: t["files"].__setitem__(
             SLOTS_TSV, t["files"][SLOTS_TSV].replace("effect\tstop\t-\tpage\n", "")), "APPLY"),
+        # the construction sites
+        ("a site! literal missing from the generated list", lambda t: t["rs_repo"].__setitem__(
+            "primitives/src/hook.rs", 'fn f() { let _ = site!("ghost.site"); }\n')),
+        ("a generated site that no literal names", lambda t: t["files"].__setitem__(SITES_JSON, '[\n  "input_otp.filter",\n  "stale.site"\n]\n')),
+        ("a site with no scenario binding", lambda t: t["bindings"].remove("input_otp.filter")),
+        ("a site with no witness test", lambda t: t["specs"].clear()),
         # the closed global and the registration helper
         ("bridge.ts not freezing the bridge", replace_in(BRIDGE_TS, "Object.freeze(bridge)", "bridge", "ts"), "freeze"),
         ("bridge.ts with a writable global", replace_in(BRIDGE_TS, "writable: false", "writable: true", "ts"), "defineProperty"),
@@ -1005,10 +1049,10 @@ def self_test(tree):
         ("WitnessViolation built by prototype", lambda t: t["witness"].__setitem__(
             "playwright/witness/lib.ts", "Object.create(WitnessViolation.prototype);\n"), "WitnessViolation"),
         # new kinds need a row
-        ("a new kind with no row at the base", base_edit(lambda b: b.update(gen=b["gen"].replace('["fixture"]', '[]'))), "adds:"),
-        ("a new kind whose row is closed", base_edit(lambda b: (b.update(gen=b["gen"].replace('["fixture"]', '[]')),
+        ("a new kind with no row at the base", base_edit(lambda b: b.update(gen=b["gen"].replace('["fixture", "otp-filter"]', '["otp-filter"]'))), "adds:"),
+        ("a new kind whose row is closed", base_edit(lambda b: (b.update(gen=b["gen"].replace('["fixture", "otp-filter"]', '["otp-filter"]')),
             b["rows"].append(Row(999, "dev-docs/backlog/done/999-x.md", True, {"adds": "[fixture]"})))), "closed"),
-        ("a new kind whose row is the umbrella", base_edit(lambda b: (b.update(gen=b["gen"].replace('["fixture"]', '[]')),
+        ("a new kind whose row is the umbrella", base_edit(lambda b: (b.update(gen=b["gen"].replace('["fixture", "otp-filter"]', '["otp-filter"]')),
             b["rows"].append(Row(434, "dev-docs/backlog/434-x.md", False, {"adds": "[]"})))), "adds:"),
         # the platform rules
         ("a platform rule with an unknown category", lambda t: t["files"].__setitem__(
@@ -1041,7 +1085,7 @@ def self_test(tree):
             "primitives/src/bridge/x.rs", "fn f() { let _ = Method::HidePopover; }\n")),
         ("WitnessViolation constructed by a probe", lambda t: t["witness"].__setitem__(
             "playwright/witness/probes/p.ts", "throw new WitnessViolation('x');\nclass WitnessViolation extends Error {}\n")),
-        ("a new kind with an open row at the base", base_edit(lambda b: (b.update(gen=b["gen"].replace('["fixture"]', '[]')),
+        ("a new kind with an open row at the base", base_edit(lambda b: (b.update(gen=b["gen"].replace('["fixture", "otp-filter"]', '["otp-filter"]')),
             b["rows"].append(fixture_row)))),
         ("a valid allowlist row is honoured", allow_residue("x 3.B1", "434")),
         ("a table lookup with own()", lambda t: t["ts"].__setitem__(
@@ -1068,6 +1112,7 @@ if MODE == "update":
     errs, wrote = R.update(budget_measure(tree), RAISE_REASON)
     for e in errs:
         print(e, file=sys.stderr)
+    Path(SITES_JSON).write_text(sites_text(site_names(tree)), encoding="utf-8")
     print(f"{GATE}: {'wrote ' + BUDGETS_TSV if wrote else 'baseline unchanged'}")
     sys.exit(1 if errs else 0)
 if MODE == "list":

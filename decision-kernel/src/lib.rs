@@ -18,6 +18,7 @@
 pub mod decision;
 pub mod fixture;
 pub mod kinds;
+pub mod otp_filter;
 pub mod value;
 pub mod wire;
 

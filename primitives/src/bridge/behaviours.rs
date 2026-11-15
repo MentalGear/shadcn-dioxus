@@ -7,10 +7,11 @@
 //! bridge calls synchronously inside the event's dispatch on a renderer with a page, and by
 //! `cargo test`. `ts/behaviours/<kind>.ts` holds no decision: it registers the generated adapter.
 //!
-//! * [`Behaviour`] has one variant per named behaviour. Today there is one, [`Behaviour::Fixture`], a
-//!   test fixture no component uses; a real behaviour (`hotkey`, `scrollLock`, `otpFilter`, ...) is
-//!   added by a lane that ports one block, by adding a variant, its kernel function (registered in
-//!   `decision-kernel/src/kinds.rs`), its TS module and its vectors.
+//! * [`Behaviour`] has one variant per named behaviour: [`Behaviour::Fixture`], a test fixture no
+//!   component uses, and [`Behaviour::OtpFilter`], the one-time-passcode field's filter. A further
+//!   behaviour (`hotkey`, `scrollLock`, ...) is added by a lane that ports one block, by adding a
+//!   variant, its kernel function (registered in `decision-kernel/src/kinds.rs`), its TS module and
+//!   its vectors.
 //! * **Parity by generation.** `cargo test` writes `ts/behaviours/behaviours.gen.ts` (the kinds, one
 //!   interface per variant, the declarations, and from the kernel's `Config`, `Snapshot` and `Event`
 //!   input types the adapter's event-field and attribute-read lists and the kernel's kind table with
@@ -31,8 +32,14 @@
 //! * **Owned by the Rust scope, ref-counted.** [`use_behaviour`](super::use_behaviour) installs on
 //!   mount and the session's teardown removes it; the page keeps one DOM listener per (target, type,
 //!   capture, passive) with a reference count, so a blocking listener exists only while something
-//!   needs it. One behaviour of a kind per target: a second install of the same kind on the same
-//!   target replaces the first.
+//!   needs it. One behaviour of a kind per target and event: a second install of the same kind and
+//!   event on the same target replaces the first (a kind that decides for several events of one
+//!   target, like [`Behaviour::OtpFilter`], is installed once per event).
+//! * **Named construction sites.** A behaviour that a witness judges carries a [`Site`], made only by
+//!   the [`site!`](crate::site) macro from a string literal. The page names its effect writes with it
+//!   (`window.__dxApplying`), and `scripts/check-bridge-behaviours.sh` generates the list of sites
+//!   (`ts/behaviours/sites.gen.json`) from the literals and requires a scenario binding and a witness
+//!   test for each.
 //! * **Epoch and fail-open.** Every install carries an [`Epoch`](super::Epoch): an install older than
 //!   one the target already saw is dropped (a restarted session's late command cannot undo its
 //!   successor), an equal one renews. A variant may declare a lease, and a non-passive one always has one
@@ -103,9 +110,48 @@ enum StandDownTag {
     StandDown,
 }
 
+/// The name of a construction site: where a library block builds a behaviour whose effects a witness judges
+/// (`input_otp.filter`). Made only by [`site!`](crate::site), so every name is a literal the gate scans for.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+#[serde(transparent)]
+pub struct Site(&'static str);
+
+impl Site {
+    /// The macro's constructor; call [`site!`](crate::site) instead.
+    #[doc(hidden)]
+    pub const fn from_macro(name: &'static str) -> Self {
+        Site(name)
+    }
+
+    /// The name.
+    pub const fn name(self) -> &'static str {
+        self.0
+    }
+}
+
+/// A `Site` read back from its wire name, for the tests that parse the shared vectors: the name is leaked, which a
+/// test process may do.
+#[cfg(test)]
+impl<'de> Deserialize<'de> for Site {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let name = String::deserialize(deserializer)?;
+        Ok(Site(Box::leak(name.into_boxed_str())))
+    }
+}
+
+/// Names a construction site: `site!("input_otp.filter")`. The argument is a string literal (the gate scans the
+/// sources for them), and it is the name the witness binding, the witness test and the page's apply marker use.
+#[macro_export]
+macro_rules! site {
+    ($name:literal) => {
+        $crate::bridge::behaviours::Site::from_macro($name)
+    };
+}
+
 /// A named behaviour and its parameters. The wire form is `{"kind": "<kebab-case name>", ...params}`
 /// (camelCase parameter names), which is what `behaviours.gen.ts` types.
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize)]
+#[cfg_attr(test, derive(Deserialize))]
 #[serde(
     tag = "kind",
     rename_all = "kebab-case",
@@ -135,6 +181,21 @@ pub enum Behaviour {
         /// Fail-open lease in milliseconds, renewed while the session lives.
         #[serde(default)]
         lease_ms: Option<u32>,
+    },
+    /// The one-time-passcode field's filter: an edit of the text control may leave only the characters in `ranges`,
+    /// at most `max` of them. It is installed once per `event` on the same control: `beforeinput` (cancels the edit
+    /// and writes the accepted part over the selection; non-passive), `input` (filters the value of an edit that
+    /// carried no `beforeinput` text) and `compositionend` (decides again from the committed text of an input
+    /// method). Its effects are the `prevent` of the edit and a `value` slot write.
+    OtpFilter {
+        /// The construction site the witness binding and the page's apply marker name.
+        site: Site,
+        /// The event this install listens to: `beforeinput`, `input` or `compositionend`.
+        event: EventKind,
+        /// The accepted characters as `(low, high)` pairs, concatenated (`"09"`: the digits).
+        ranges: String,
+        /// The most characters the field holds.
+        max: u32,
     },
 }
 
@@ -212,6 +273,15 @@ impl Behaviour {
                     ("leaseMs", "number | null"),
                 ],
             },
+            Behaviour::OtpFilter { .. } => Info {
+                kind: "otp-filter",
+                params: &[
+                    ("site", "string"),
+                    ("event", "EventName"),
+                    ("ranges", "string"),
+                    ("max", "number"),
+                ],
+            },
         }
     }
 
@@ -231,6 +301,18 @@ impl Behaviour {
                 passive: !*cancel,
                 lease_ms: lease_for(!*cancel, *lease_ms),
             },
+            // the edit is cancelled in the capture phase, before any listener of the page has seen it; the other
+            // two events only write the value afterwards
+            Behaviour::OtpFilter { event, .. } => {
+                let cancels = *event == EventKind::Beforeinput;
+                Declared {
+                    target: DeclaredTarget::Element,
+                    event: *event,
+                    capture: true,
+                    passive: !cancels,
+                    lease_ms: lease_for(!cancels, None),
+                }
+            }
         }
     }
 
@@ -239,21 +321,30 @@ impl Behaviour {
     pub fn module(&self) -> &'static str {
         match self {
             Behaviour::Fixture { .. } => include_str!("../js/behaviours/fixture.js"),
+            Behaviour::OtpFilter { .. } => include_str!("../js/behaviours/otp-filter.js"),
         }
     }
 
     /// One value per variant, for the generator and the vectors' coverage. A test fails when this
     /// list and the enum disagree.
     pub fn samples() -> Vec<Behaviour> {
-        vec![Behaviour::Fixture {
-            event: EventKind::Click,
-            attr: "data-dx-fixture".into(),
-            value: "on".into(),
-            capture: false,
-            cancel: false,
-            focus: false,
-            lease_ms: None,
-        }]
+        vec![
+            Behaviour::Fixture {
+                event: EventKind::Click,
+                attr: "data-dx-fixture".into(),
+                value: "on".into(),
+                capture: false,
+                cancel: false,
+                focus: false,
+                lease_ms: None,
+            },
+            Behaviour::OtpFilter {
+                site: crate::site!("input_otp.filter"),
+                event: EventKind::Beforeinput,
+                ranges: "09".into(),
+                max: 6,
+            },
+        ]
     }
 }
 
@@ -481,6 +572,25 @@ mod tests {
         assert!(fixture(true).declared().capture);
     }
 
+    /// The OTP filter cancels only on `beforeinput`: that install is the one non-passive, leased listener, and all three
+    /// listen in the capture phase.
+    #[test]
+    fn the_otp_filter_cancels_only_on_beforeinput() {
+        let filter = |event| Behaviour::OtpFilter {
+            site: crate::site!("input_otp.filter"),
+            event,
+            ranges: "09".into(),
+            max: 6,
+        };
+        let before = filter(EventKind::Beforeinput).declared();
+        assert!(!before.passive && before.capture);
+        assert_eq!(before.lease_ms, Some(CANCEL_LEASE_MS));
+        for event in [EventKind::Input, EventKind::Compositionend] {
+            let declared = filter(event).declared();
+            assert!(declared.passive && declared.capture && declared.lease_ms.is_none());
+        }
+    }
+
     /// A behaviour that cancels always carries a lease, a passive one only when it asks for one.
     #[test]
     fn a_cancelling_behaviour_always_has_a_lease() {
@@ -657,6 +767,15 @@ mod tests {
             );
         }
         assert!(serde_json::from_value::<StandDownReason>(json!("other")).is_err());
+    }
+
+    #[test]
+    fn the_otp_filter_wire_form_names_its_site() {
+        assert_eq!(
+            serde_json::to_value(Behaviour::samples().remove(1)).expect("serialises"),
+            json!({"kind": "otp-filter", "site": "input_otp.filter", "event": "beforeinput",
+                   "ranges": "09", "max": 6})
+        );
     }
 
     #[test]
