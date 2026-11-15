@@ -563,7 +563,7 @@ fn DialogContentModal(
     // dev-docs/reference/platform-rationale.md Caveat 1) and signal -> browser
     // (guarded against `InvalidStateError`), both from `lib.rs`.
     crate::use_dialog_close_sync(id, set_open);
-    crate::use_dialog_open_driver(id, open);
+    let open_state = crate::use_dialog_open_driver(id, open);
     // Escape is the dialog's own `cancel`, routed through state by `use_dialog_close_sync`; the
     // layer only keeps the dialog's place in the dismiss core's Escape order, so a layer opened
     // inside it (a Select, a Popover) takes the first Escape and the dialog the second.
@@ -596,8 +596,8 @@ fn DialogContentModal(
             // The dialog's own state, not just the root wrapper's: closing keeps the
             // `<dialog>` open (and modal) while it animates out
             // (`crate::use_dialog_open_driver`), so `[open]` does not say "closing" and a
-            // stylesheet keys the exit on `[data-closed]` instead.
-            ..state_attrs::open(open()),
+            // stylesheet keys the exit on `[data-closed]` and the first frame on `[data-entering]` instead.
+            ..state_attrs::open_state(open_state()),
             "data-dx-overlay": overlay_off(ctx.overlay),
         }),
     ]);

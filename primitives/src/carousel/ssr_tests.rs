@@ -428,6 +428,34 @@ fn both_band_bridges_carry_the_one_shared_true_end_predicate() {
 }
 
 #[test]
+fn a_drag_release_announces_its_destination_before_the_scroll_and_the_settle_dedupes_against_it() {
+    // The release announces the slide it will land on, ahead of its `scrollBy`; the tracking
+    // bridge reports it at once and records it as the last report, so the settle at the end of
+    // that scroll finds the same slide and sends nothing.
+    let drag = CAROUSEL_DRAG_JS;
+    let announce = drag
+        .find("new CustomEvent('dx-carousel-target'")
+        .expect("the release announces its target");
+    let scroll = drag
+        .find("el.scrollBy({ left: settleDelta")
+        .expect("the release settle scrolls");
+    assert!(announce < scroll, "announced before the scroll starts");
+
+    let tracking = CAROUSEL_SCROLL_TRACKING_JS;
+    let listener = tracking
+        .find("listen(container, 'dx-carousel-target'")
+        .expect("the tracking bridge listens for it");
+    let after = &tracking[listener..];
+    let record = after
+        .find("lastNearest = d.index;")
+        .expect("records the report");
+    let send = after
+        .find("dioxus.send(['target'")
+        .expect("reports it at once");
+    assert!(record < send);
+}
+
+#[test]
 fn every_component_write_declares_an_intent_the_settle_verifies() {
     // The write declares its target before scrolling; the tracking
     // bridge's settle checks it before reporting any position, and every

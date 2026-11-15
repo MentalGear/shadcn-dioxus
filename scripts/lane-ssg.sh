@@ -22,6 +22,8 @@ if [ "${1:-}" = "--locked-build" ]; then
   publish() { rm -rf "$pub.tmp.$$"; cp -a "$1" "$pub.tmp.$$" && rm -rf "$pub" && mv "$pub.tmp.$$" "$pub"; }
   export LANE_RESERVE_PID=$$
   trap '"$here/lane-slot-target.sh" release' EXIT
+  # Both slots start from the warm template: slot 0 builds in it, a later slot copies it.
+  [ -d "$T/template" ] || { echo "lane-ssg: no warm template at $T/template (CARGO_TARGET_DIR=$T/template scripts/build-ssg.sh debug, once)" >&2; exit 1; }
   if [ "${LANE_SLOT:-0}" = 0 ] && [ "${LANE_SSG_COPY:-0}" != 1 ]; then
     # Slot 0 builds IN the warm template (row 503): the slot lock already serialises lane builds, so a 3 GB copy
     # per build buys nothing. Correctness is the mtime rule (row 216): lane-touch touches this worktree's sources
@@ -30,7 +32,6 @@ if [ "${1:-}" = "--locked-build" ]; then
     # out until the build is over. The guard needs only the new pub dir plus the margin: the target is rewritten
     # in place. A failed build leaves a normal cargo target, usable by the next build.
     tpl="$T/template"
-    [ -d "$tpl" ] || { echo "lane-ssg: no warm template at $tpl (CARGO_TARGET_DIR=$tpl scripts/build-ssg.sh debug, once)" >&2; exit 1; }
     mkdir -p "$T/lockq"; exec 204>>"$("$here/lane-slot-target.sh" template-lock)"; flock 204
     "$here/lane-slot-target.sh" reserve "$tpl/dx/preview/debug/web/public"
     "$here/lane-slot-target.sh" release

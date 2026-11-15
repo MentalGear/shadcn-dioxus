@@ -7,7 +7,14 @@
 #                                                   merged sources are rebuilt (scripts/merge-driver-kernel.py), never merged as bytes
 # A clone without the registration falls back to git's text merge (and the old conflicts); scripts/check-merge-drivers.sh
 # keeps this file, the driver scripts and the registration command in step.
+# dev-docs/agent-model-fit.md is an append-only table that every lane adds rows to at the end: git's built-in `union` merge
+# keeps both sides' added rows, so it needs no registration and a clone without the setup merges it too. A row edited on one
+# side merges cleanly; a row edited on one side next to rows appended on the other (the table's last row) keeps both versions.
 dev-docs/backlog.md merge=backlog-index
 dev-docs/backlog-done.md merge=backlog-index
 playwright/durations.json merge=durations
 primitives/src/kernel/* merge=kernel-artefact
+dev-docs/agent-model-fit.md merge=union
+# CHANGELOG.md takes one line per lane under the same heading of "Unreleased": `union` keeps both sides' lines there.
+# An entry edited on one side while the other adds beside it keeps both versions; read the section after a merge.
+CHANGELOG.md merge=union

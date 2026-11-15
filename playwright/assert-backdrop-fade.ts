@@ -16,8 +16,9 @@
  *
  * THE CONSTRUCTION these assertions pin down (see the six `style.css` files): the
  * dialog's own `::backdrop` is the ONLY painter (the wrapper is transparent), it
- * fades in via `@starting-style`, and both directions are the one `transition`
- * declaration so they cannot differ. What lets the exit play is the same for every
+ * fades in and out through the one `transition`
+ * declaration (the in-fade starts when `data-open` lands a frame after `showModal()`, so there is no `@starting-style`),
+ * so the directions cannot differ. What lets the exit play is the same for every
  * overlay on every engine: the dialog is kept open -- a modal, in the top layer, with
  * its `::backdrop` -- until its exit animations have settled, and only then
  * `close()`d. Dialog, AlertDialog, Sheet, Drawer and CommandDialog get that from the

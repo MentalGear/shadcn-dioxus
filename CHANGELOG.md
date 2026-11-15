@@ -7,6 +7,10 @@ below are collected under "Unreleased" and move under a version heading at the f
 
 ### Changed
 
+- **Dialog, AlertDialog and CommandDialog panels centre with `translate` and zoom with `scale`.** The panel's
+  `transform` is now unset (it was `translate(-50%, -50%)`), so a stylesheet of yours that sets `transform` on
+  `.dx-dialog`, `.dx-alert-dialog` or `.dx-command-dialog` now composes with the centring instead of replacing it; move
+  such an offset to `translate` or `scale` only if you meant to replace the centring.
 - **State attributes are presence attributes; `data-state` is gone.** Every component states its state with a Base UI
   presence attribute (`data-open` / `data-closed`, `data-checked` / `data-unchecked` / `data-indeterminate`, `data-active`,
   `data-hidden`, `data-selected`, `data-pressed`, `data-loading`, ...): present (and empty) while the state holds, absent otherwise.
@@ -19,9 +23,34 @@ below are collected under "Unreleased" and move under a version heading at the f
   A pointer moving from the trigger toward the open panel is tracked against the panel's measured position and keeps
   it open while it stays inside that path ("a safe triangle"), so a diagonal move to the panel still reaches it
   before the shorter delay would close it.
+- **A drag released toward a slide selects it at the release.** The dots, the arrows' disabled state and `on_value_change`
+  now follow the destination of a mouse or pen drag release as soon as it is known, instead of after the release scroll
+  has ended. Arrow clicks, keys, dot picks, `scroll_to` and autoplay already did so; each fires once, at the intent, and the
+  settle at the end of the scroll confirms the same slide without a second callback. A free wheel or touch scroll still
+  selects once it has come to rest, and `drag_free` has no destination to announce.
 
 ### Fixed
 
+- A closed Combobox with groups no longer leaves its group headings in the page: `ComboboxGroupLabel` renders only
+  while the list renders, like the group and the options around it.
+- A pie's `padding_angle` leaves a gap of the same width along its whole length. A full pie's slices used to meet in a
+  point at the centre, so the gap closed to nothing toward the middle; the facing edges are now parallel and each slice
+  ends in a tip short of the centre. A slice thinner than the gap is not drawn. The option, its unit and a donut's gap are
+  unchanged.
+- Calendar: an unavailable or disabled day that is today keeps the muted ink and the line-through; only today's fill
+  marks it as today. Today's foreground ink applied over the unavailable ink before, so on the days the date picker
+  demo's unavailable ranges covered today, that day read as pickable.
+- The chart tooltip fades in as well as out in every browser. A closed tooltip is now transparent and `visibility: hidden`
+  instead of `display: none` with an `@starting-style` entry, so the entry no longer depends on the engine animating from
+  `display: none`; it starts when the tooltip is placed, and reduced motion shows neither fade.
+- Dialog, AlertDialog and CommandDialog, and the scrim behind every modal dialog, fade in on engines that do not animate a
+  transition out of `display: none`: the `<dialog>` is rendered a frame before it gets `data-open`, so the entry is the same
+  `transition` as the exit, with no `@starting-style`, and a close in the middle of the entry reverses it. That first
+  frame is `data-entering`, not `data-closed`: it takes pointer events (a press on it is not lost), and `data-closed`
+  alone carries `pointer-events: none` (a consumer stylesheet that keyed pointer events on the dialog's base rule
+  moves them to `[data-closed]`). The dialog
+  panel now centres with `translate: -50% -50%` and zooms with `scale`, not one `transform`; a style that overrode the
+  panel's `transform` moves to those properties. The theme's check refuses a new `@starting-style` rule.
 - A menu root (DropdownMenu, ContextMenu, Menubar) given an `id` that changes later keeps its outside-press and
   outside-focus dismissal: the dismiss layer follows the current `id` instead of the first one, and returns to the
   generated id when the `id` is dropped.

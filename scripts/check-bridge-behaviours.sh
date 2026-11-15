@@ -44,6 +44,9 @@
 #    first); every `document::eval` argument in the transport is one of three fixed shapes (the bridge script, which
 #    carries the decision kernel's one delivery function, a program's script, a module behind the ready handshake); `legacy::` is named outside `bridge/` only by a row of
 #    `scripts/check-bridge-behaviours.callers.tsv` (one row today: `js_listener.rs`).
+#  * THE SLOT TABLE (scripts/check-bridge-behaviours.slots.tsv). One row per operation that writes page state (a METHODS row,
+#    a WRITES row, an APPLY row) with the slots it can touch; the gate holds the table equal to the three sources, and
+#    FORBIDDEN_VERBS below is derived from it (the `method` rows whose verdict is `forbidden`).
 #  * FORBIDDEN_VERBS. The `Method` variants (each writes an open, focus, scroll or caret slot) are named by no Rust
 #    file outside `primitives/src/bridge/`, and `METHODS` is named by no TypeScript file but `ts/bridge.ts`. This item is
 #    the list's one owner: a row that needs a verb adds a table row inside `bridge/`, never a list entry.
@@ -125,6 +128,7 @@ BUNDLE = "primitives/src/js/bridge.js"
 ALLOW_TSV = "scripts/check-bridge-behaviours.allow.tsv"
 BUDGETS_TSV = "scripts/check-bridge-behaviours.budgets.tsv"
 CALLERS_TSV = "scripts/check-bridge-behaviours.callers.tsv"
+SLOTS_TSV = "scripts/check-bridge-behaviours.slots.tsv"
 PLATFORM_TSV = platform_rules.TSV
 TYPES_D_TS = "primitives/src/ts/types/bridge.d.ts"
 TS_MODULE_TXT = "scripts/lib/typescript-module.txt"
@@ -134,7 +138,7 @@ TS_ROOT = "primitives/src/ts"
 JS_ROOT = "primitives/src/js"
 RS_ROOT = "primitives/src/bridge"
 EVAL_OK = {"primitives/src/bridge/transport.rs"}
-VERBS = ["version", "channel", "scope", "serve", "pump", "call", "get", "set", "transaction",
+VERBS = ["version", "channel", "scope", "serve", "inbound", "pump", "call", "get", "set", "transaction",
          "behaviours", "register", "kernel"]
 KERNEL_DIR = "decision-kernel"
 KERNEL_KINDS_RS = "decision-kernel/src/kinds.rs"
@@ -143,16 +147,11 @@ TRANSPORT_RS = "primitives/src/bridge/transport.rs"
 LEGACY_RS = "primitives/src/bridge/legacy.rs"
 MOD_RS = "primitives/src/bridge/mod.rs"
 JS_LISTENER_RS = "primitives/src/js_listener.rs"
-PROGRAM_VARIANTS = ["Serve", "Pump", "Legacy", "Frozen"]
+PROGRAM_VARIANTS = ["Serve", "Pump", "Inbound", "Legacy", "Frozen"]
 # the three document::eval call shapes of the transport, as normalised argument text: the bridge script, a program's
 # script, and a behaviour module behind the ready handshake. Any other argument is a script text a caller composed.
 EVAL_ARGS = ["&bridge_script()", "&program.script()", '&format!("{READY}{js}")']
-# FORBIDDEN_VERBS (this item is its one owner; item 0.7's slot table partitions it): each `Method` variant writes an
-# open, focus, scroll or caret slot, so none is named outside bridge/. (variant, METHODS row)
-FORBIDDEN_VERBS = [("ShowPopover", "showPopover"), ("HidePopover", "hidePopover"), ("TogglePopover", "togglePopover"),
-                   ("ShowModal", "showModal"), ("Close", "close"), ("Blur", "blur"),
-                   ("ScrollIntoView", "scrollIntoView"), ("ScrollTo", "scrollTo"), ("ScrollBy", "scrollBy"),
-                   ("SetSelectionRange", "setSelectionRange"), ("Select", "select")]
+# FORBIDDEN_VERBS is derived from the slot table (SLOTS_TSV): the `method` rows with verdict `forbidden`, as (variant, METHODS row).
 GESTURE_METHODS = ["focus", "setPointerCapture", "releasePointerCapture"]
 FORBIDDEN = ["preventDefault", "stopPropagation", "requestAnimationFrame", "ResizeObserver", "MutationObserver",
              "IntersectionObserver"]
@@ -215,7 +214,7 @@ def kebab(name):
 
 def load_tree():
     tree = {"files": {}, "ts": {}, "rs": {}, "js": {}, "kernel": {}}
-    for p in [BEHAVIOURS_RS, GEN_TS, VECTORS, BEHAVIOUR_TEST, BUNDLE, ALLOW_TSV, BUDGETS_TSV, CALLERS_TSV, PLATFORM_TSV,
+    for p in [BEHAVIOURS_RS, GEN_TS, VECTORS, BEHAVIOUR_TEST, BUNDLE, ALLOW_TSV, BUDGETS_TSV, CALLERS_TSV, SLOTS_TSV, PLATFORM_TSV,
               KERNEL_KINDS_RS, KERNEL_VECTORS_RS]:
         pp = Path(p)
         tree["files"][p] = pp.read_text(encoding="utf-8") if pp.is_file() else None
@@ -598,13 +597,49 @@ def check(tree, run_tools, virtual=False):
     # to bridge.ts. The list must stay true to the enum and the table (a stale entry is an error).
     variant_names = set(re.findall(r"^\s{4}([A-Z][A-Za-z]*)\b", method.group(1), re.M)) if method else set()
     rows_present = set(re.findall(r"\n\s{2}\"?(\w+)\"?\s*:", methods.group(0))) if methods else set()
-    for variant, row in FORBIDDEN_VERBS:
+    # the slot table: the three sources (METHODS, WRITES, APPLY) and the table say the same thing
+    slot_rows = []
+    for ln in (tree["files"].get(SLOTS_TSV) or "").splitlines():
+        if ln.strip() and not ln.lstrip().startswith("#"):
+            cols = ln.split("\t")
+            if len(cols) != 4 or cols[0] not in ("method", "write", "effect"):
+                errors.append(f"{SLOTS_TSV}: `{ln}` is not `method|write|effect<TAB>name<TAB>slots<TAB>verdict`")
+            else:
+                slot_rows.append(cols)
+    in_table = {k: {r[1]: r for r in slot_rows if r[0] == k} for k in ("method", "write", "effect")}
+    if methods:
+        body = methods.group(0)
+        marks = list(re.finditer(r"\n  \"?(\w+)\"?\s*:\s*\{", body))
+        ts_slots = {}
+        for i, mk in enumerate(marks):
+            end = marks[i + 1].start() if i + 1 < len(marks) else len(body)
+            sl = re.search(r"slots:\s*\[([^\]]*)\]", scrub(body[mk.end():end], strings=False))
+            ts_slots[mk.group(1)] = sorted(re.findall(r'"([^"]+)"', sl.group(1))) if sl else None
+        for name, got in ts_slots.items():
+            row = in_table["method"].get(name)
+            if not row:
+                errors.append(f"{BRIDGE_TS}: the METHODS row `{name}` has no `method` row in {SLOTS_TSV}: a verb that writes page state names its slots there")
+            elif got != sorted(row[2].split(",")):
+                errors.append(f"{BRIDGE_TS}: the METHODS row `{name}` has slots {got}, {SLOTS_TSV} says {sorted(row[2].split(','))}")
+        for name in in_table["method"]:
+            if name not in ts_slots:
+                errors.append(f"{SLOTS_TSV}: the `method` row `{name}` is not a row of METHODS: the table is stale")
+    writes_tbl = re.search(r"const WRITES\b.*?\n\};", bridge_code, re.S)
+    ts_writes = set(re.findall(r'\n  "([\w-]+)"\s*:', writes_tbl.group(0))) if writes_tbl else set()
+    if ts_writes != set(in_table["write"]):
+        errors.append(f"{SLOTS_TSV}: the `write` rows {sorted(in_table['write'])} differ from the WRITES table of {BRIDGE_TS} {sorted(ts_writes)}")
+    apply_tbl = re.search(r"const APPLY\b.*?Object\.freeze\(\{(.*?)\n\}\);", bridge_code, re.S)
+    ts_apply = set(re.findall(r"\n  (\w+)\s*:", apply_tbl.group(1))) if apply_tbl else set()
+    if ts_apply != set(in_table["effect"]):
+        errors.append(f"{SLOTS_TSV}: the `effect` rows {sorted(in_table['effect'])} differ from the APPLY table of {BRIDGE_TS} {sorted(ts_apply)}")
+    forbidden_verbs = [(n[0].upper() + n[1:], n) for n, r in in_table["method"].items() if r[3] == "forbidden"]
+    for variant, row in forbidden_verbs:
         if variant not in variant_names:
             errors.append(f"{MOD_RS}: FORBIDDEN_VERBS lists `Method::{variant}`, which is not a variant: the list of "
                           f"scripts/{GATE}.sh is stale")
         if row not in rows_present:
             errors.append(f"{BRIDGE_TS}: FORBIDDEN_VERBS lists the METHODS row `{row}`, which does not exist: the list is stale")
-    names = "|".join(v for v, _ in FORBIDDEN_VERBS)
+    names = "|".join(v for v, _ in forbidden_verbs)
     used = re.compile(r"\bMethod\s*::\s*(\*|\{[^}]*\b(?:%s|\*)\b[^}]*\}|(?:%s)\b)" % (names, names))
     for path, text in sorted(tree["rs_repo"].items()):
         if path.startswith(RS_ROOT + "/"):
@@ -934,6 +969,17 @@ def self_test(tree):
         ("a FORBIDDEN_VERBS entry that is not a variant", rs_edit(MOD_RS, "    HidePopover,", "    HidePopoverX,"), "stale"),
         ("a FORBIDDEN_VERBS row that is not in METHODS", lambda t: t["ts"].__setitem__(
             BRIDGE_TS, t["ts"][BRIDGE_TS].replace("  hidePopover: {", "  hidePopoverX: {", 1)), "stale"),
+        # the slot table
+        ("a METHODS row with no slot table row", lambda t: t["files"].__setitem__(
+            SLOTS_TSV, t["files"][SLOTS_TSV].replace("method\tselect\tcaret\tforbidden\n", "")), "has no `method` row"),
+        ("a slot table row of another slot than the METHODS row", lambda t: t["files"].__setitem__(
+            SLOTS_TSV, t["files"][SLOTS_TSV].replace("method\tblur\tfocus", "method\tblur\tcaret")), "has slots"),
+        ("a slot table method row that is not in METHODS", lambda t: t["files"].__setitem__(
+            SLOTS_TSV, t["files"][SLOTS_TSV] + "method\tghost\topen\tforbidden\n"), "table is stale"),
+        ("a WRITES row with no slot table row", lambda t: t["files"].__setitem__(
+            SLOTS_TSV, t["files"][SLOTS_TSV].replace("write\tpadding-bottom\tstyle\trust\n", "")), "WRITES"),
+        ("an APPLY row with no slot table row", lambda t: t["files"].__setitem__(
+            SLOTS_TSV, t["files"][SLOTS_TSV].replace("effect\tstop\t-\tpage\n", "")), "APPLY"),
         # the closed global and the registration helper
         ("bridge.ts not freezing the bridge", replace_in(BRIDGE_TS, "Object.freeze(bridge)", "bridge", "ts"), "freeze"),
         ("bridge.ts with a writable global", replace_in(BRIDGE_TS, "writable: false", "writable: true", "ts"), "defineProperty"),

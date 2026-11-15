@@ -254,9 +254,9 @@ test.describe("Scrim", () => {
             };
         });
         const ms = await resolveOverlayMs(page);
-        // opacity and transform run for the shared duration. (No `overlay` keep-alive: the
+        // opacity and scale run for the shared duration. (No `overlay` keep-alive: the
         // shared open driver holds the dialog open through the exit instead, on every engine.)
-        expect(panel.properties).toEqual(["opacity", "transform"]);
+        expect(panel.properties).toEqual(["opacity", "scale"]);
         for (const d of panel.durations) expect(parseFloat(d) * (d.endsWith("ms") ? 1 : 1000)).toBe(ms);
         expect(panel.overlayToken, "the theme defines the token the panel reads").not.toBe("");
     });

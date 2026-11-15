@@ -199,6 +199,7 @@ gates=(
   "check-gate-logs|scripts/check-gate-logs.sh"
   "check-gate-kit|scripts/check-gate-kit.sh"
   "check-lane-target|scripts/check-lane-target.sh"
+  "check-lane-worktree|scripts/check-lane-worktree.sh"
   "check-merge-drivers|scripts/check-merge-drivers.sh"
   "check-conflict-markers|scripts/check-conflict-markers.sh"
 

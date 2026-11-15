@@ -148,7 +148,7 @@ bridge::BRIDGE_JS  const BRIDGE_JS: &str = include_str!("../js/bridge.js")
 bridge::BRIDGE_JS  use transport::BRIDGE_JS
 bridge::Behaviour  enum Behaviour  #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 bridge::Behaviour  use behaviours::Behaviour
-bridge::Behaviour::Fixture  variant Fixture { event: EventKind, attr: String, value: String, capture: bool, cancel: bool, lease_ms: Option<u32> }
+bridge::Behaviour::Fixture  variant Fixture { event: EventKind, attr: String, value: String, capture: bool, cancel: bool, focus: bool, lease_ms: Option<u32> }
 bridge::Behaviour::declared  fn declared(&self) -> Declared
 bridge::Behaviour::info  fn info(&self) -> Info
 bridge::Behaviour::kind  fn kind(&self) -> &'static str
@@ -167,6 +167,7 @@ bridge::Command::Listen  variant Listen { target: Target, event: EventKind, opti
 bridge::Command::Media  variant Media { query: String }
 bridge::Command::Observe  variant Observe { target: Target, kind: ObserverKind, options: ObserveOptions }
 bridge::Command::Sample  variant Sample { target: Target, fields: Vec<SampleField>, until: Until, only_changed: bool }
+bridge::Command::Sub  variant Sub { id: u64 }
 bridge::Declared  struct Declared  #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 bridge::Declared  use behaviours::Declared
 bridge::Declared.capture  field bool
@@ -195,7 +196,6 @@ bridge::ElementExt::target  fn target(&self) -> Target
 bridge::Epoch  struct Epoch  #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 bridge::Epoch.key  field String
 bridge::Epoch.n  field u64
-bridge::Epoch::next  fn next(key: impl Into<String>) -> Self
 bridge::EventField  use events::EventField
 bridge::EventKind  use events::EventKind
 bridge::Flush  enum Flush  #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
@@ -257,10 +257,10 @@ bridge::ObserverKind::Intersection  variant Intersection
 bridge::ObserverKind::Mutation  variant Mutation
 bridge::ObserverKind::Resize  variant Resize
 bridge::Op  enum Op  #[derive(Clone, Debug, PartialEq, Serialize)]
-bridge::Op::Call  variant Call { target: Target, method: &'static str, args: Vec<Value>, epoch: Option<Epoch> }
+bridge::Op::Call  variant Call { target: Target, method: &'static str, args: Vec<Value>, epoch: Option<Epoch>, based_on: Option<u64> }
 bridge::Op::Get  variant Get { target: Target, props: Vec<String>, epoch: Option<Epoch> }
 bridge::Op::Set  variant Set { target: Target, name: String, value: Option<String>, epoch: Option<Epoch> }
-bridge::Op::Write  variant Write { target: Target, slot: &'static str, value: Option<String>, epoch: Option<Epoch> }
+bridge::Op::Write  variant Write { target: Target, slot: &'static str, value: Option<String>, epoch: Option<Epoch>, based_on: Option<u64> }
 bridge::OpResult  enum OpResult  #[derive(Clone, Debug, PartialEq, Deserialize)]
 bridge::OpResult::Err  variant Err { err: String }
 bridge::OpResult::Ok  variant Ok { ok: Value, dropped: bool, epoch: Option<Epoch> }
@@ -395,6 +395,7 @@ bridge::Target::id  fn id(id: impl Into<String>) -> Self
 bridge::Target::scroller  fn scroller(within: impl Into<String>) -> Self
 bridge::Target::selector  fn selector(selector: impl Into<String>) -> Self
 bridge::Transaction  struct Transaction  [private fields]  #[derive(Clone, Debug, Default, PartialEq)]
+bridge::Transaction::based_on  fn based_on(mut self, seen: u64) -> Self  #[must_use]
 bridge::Transaction::call  fn call(mut self, target: impl Into<Target>, method: Method) -> Self  #[must_use]
 bridge::Transaction::epoch  fn epoch(mut self, epoch: Epoch) -> Self  #[must_use]
 bridge::Transaction::fire  fn fire(self)
@@ -416,7 +417,7 @@ bridge::WindowSize.height  field f64
 bridge::WindowSize.width  field f64
 bridge::behaviours  mod
 bridge::behaviours::Behaviour  enum Behaviour  #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-bridge::behaviours::Behaviour::Fixture  variant Fixture { event: EventKind, attr: String, value: String, capture: bool, cancel: bool, lease_ms: Option<u32> }
+bridge::behaviours::Behaviour::Fixture  variant Fixture { event: EventKind, attr: String, value: String, capture: bool, cancel: bool, focus: bool, lease_ms: Option<u32> }
 bridge::behaviours::Behaviour::declared  fn declared(&self) -> Declared
 bridge::behaviours::Behaviour::info  fn info(&self) -> Info
 bridge::behaviours::Behaviour::kind  fn kind(&self) -> &'static str
@@ -452,6 +453,8 @@ bridge::behaviours::StandDownReason::MissingKind  variant MissingKind
 bridge::behaviours::StandDownReason::Trap  variant Trap
 bridge::behaviours::StandDownReason::UnreadableRequest  variant UnreadableRequest
 bridge::behaviours::render_gen  fn render_gen() -> String
+bridge::boot  async fn boot() -> bool
+bridge::boot  use session::boot
 bridge::events  mod
 bridge::events::Receivers  struct Receivers  #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 bridge::events::Receivers.document  field bool
@@ -461,6 +464,8 @@ bridge::events::Receivers::letters  fn letters(self) -> String
 bridge::get  async fn get(target: impl Into<Target>, props: impl IntoIterator<Item = Prop>) -> Result<Props, BridgeError>
 bridge::is_unsupported  fn is_unsupported() -> bool
 bridge::is_unsupported  use transport::is_unsupported
+bridge::page_seen  fn page_seen() -> u64
+bridge::page_seen  use session::page_seen
 bridge::show_modal_measured  async fn show_modal_measured(target: impl Into<Target>, props: impl IntoIterator<Item = Prop>) -> Result<Props, BridgeError>
 bridge::show_popover_measured  async fn show_popover_measured(target: impl Into<Target>, props: impl IntoIterator<Item = Prop>) -> Result<Props, BridgeError>
 bridge::use_behaviour  fn use_behaviour<T: DeserializeOwned + 'static>(mut target: impl FnMut() -> Option<Target> + 'static, mut behaviour: impl FnMut() -> Behaviour + 'static, mut handler: impl FnMut(T) + 'static)
@@ -3633,9 +3638,14 @@ state_attrs::Flag::Uploading  variant Uploading
 state_attrs::Flag::name  const fn name(self) -> &'static str
 state_attrs::IntoFlag  trait IntoFlag
 state_attrs::IntoFlag::flag  fn flag(&self) -> bool
+state_attrs::OpenState  enum OpenState  #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+state_attrs::OpenState::Closed  variant Closed
+state_attrs::OpenState::Entering  variant Entering
+state_attrs::OpenState::Open  variant Open
 state_attrs::active  fn active(is_active: impl IntoFlag) -> Vec<Attribute>
 state_attrs::checked  fn checked(state: impl Into<Checked>) -> Vec<Attribute>
 state_attrs::open  fn open(is_open: impl IntoFlag) -> Vec<Attribute>
+state_attrs::open_state  fn open_state(state: OpenState) -> Vec<Attribute>
 state_attrs::panel_hidden  fn panel_hidden(is_active: impl IntoFlag) -> Vec<Attribute>  #[doc = " A tab panel: `data-hidden` while it is not the active one."]
 state_attrs::panel_open  fn panel_open(is_open: impl IntoFlag) -> Vec<Attribute>
 state_attrs::popup_open  fn popup_open(is_open: impl IntoFlag) -> Vec<Attribute>

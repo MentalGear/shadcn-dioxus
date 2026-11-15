@@ -1,7 +1,7 @@
 ---
 id: 520
 title: "A carousel drag release makes its destination current when the scroll settles, so the arrows and the indicators lag behind the pointer"
-status: "APPROVED 2026-11-14 (owner: \"do the cheap one\", of the two ways to register the slide earlier).…"
+status: "LANDED 2026-11-14 with the batch of that date (owner: \"do the cheap one\", of the two ways to…"
 size: "S."
 area: primitives
 js-grant: js_lit=22, js_file_bytes=2640 (the owner asked for the change on 2026-11-14; js_file_bytes stands for the total, which counts a js_lit unit as 120 bytes; measured: carousel/drag.rs js_lit 537 to 546, carousel/scroll.rs 530 to 543)
@@ -20,8 +20,8 @@ settle") and reaches the selection only through the settle after `scrollend` (`s
 
 ## Status / trigger
 
-APPROVED 2026-11-14 (owner: "do the cheap one", of the two ways to register the slide earlier). Built on
-`lane/carousel-arrows`.
+LANDED 2026-11-14 with the batch of that date (owner: "do the cheap one", of the two ways to register the slide
+earlier; built on `lane/carousel-arrows`).
 
 ## Size
 
@@ -33,7 +33,7 @@ S.
   once and the settle at the end of that scroll finds the same slide and reports nothing. A slide the track passes is
   never reported, because no settle runs while a release scroll is in flight.
 - **Not in this row.** Following the nearest slide during a free wheel or touch scroll (the costlier way). The two
-  scripts are legacy scripts of the carousel's port row ([464](./464-port-3-ca-carousel-rust-arms-next-to-the-frozen-legacy.md) owns their move to
+  scripts are legacy scripts of the carousel's port row ([464](../464-port-3-ca-carousel-rust-arms-next-to-the-frozen-legacy.md) owns their move to
   Rust); this row changes them under a `js-fix`.
 - **Proof.** `playwright/carousel-nav-opacity.spec.ts`: after a drag release the dragged-to indicator is current
   before the release scroll arrives; the cases for an arrow, two quick clicks, an indicator pick and RTL guard the

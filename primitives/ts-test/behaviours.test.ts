@@ -25,6 +25,7 @@ const fixture = (over: Record<string, unknown> = {}) => ({
   value: "on",
   capture: false,
   cancel: false,
+  focus: false,
   leaseMs: null,
   ...over,
 });

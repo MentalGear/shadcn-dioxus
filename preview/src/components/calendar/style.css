@@ -393,6 +393,17 @@ td:has(.dx-calendar-grid-cell[data-selection-end="true"]) {
     ) {
     border-radius: var(--dx-calendar-cell-radius);
     background-color: var(--dx-muted);
+}
+
+/* Today's ink. A disabled or unavailable today keeps the muted ink and the line-through of the rules
+   above: the state a user needs from the cell is "cannot be picked", and the fill alone says "today".
+   (The demo's unavailable ranges are anchored on today, so today is inside one on some days of the
+   month; `date-picker.spec.ts` pins this with a frozen clock.) */
+.dx-calendar-grid-cell[data-month="current"][data-today="true"]:not(
+        [data-selected],
+        [data-disabled],
+        [data-unavailable="true"]
+    ) {
     color: var(--dx-foreground);
 }
 

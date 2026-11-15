@@ -311,7 +311,7 @@ pub fn AlertDialogContent(props: AlertDialogContentProps) -> Element {
     // `showModal()`/`cancel`/`close` events already cover Escape, focus
     // trap, and focus restore.
     crate::use_dialog_close_sync(id, set_open);
-    crate::use_dialog_open_driver(id, open);
+    let open_state = crate::use_dialog_open_driver(id, open);
     // Escape is the dialog's own `cancel`, routed through state by `use_dialog_close_sync`; the
     // layer only keeps the dialog's place in the dismiss core's Escape order.
     crate::dismiss::use_dismiss(
@@ -338,7 +338,7 @@ pub fn AlertDialogContent(props: AlertDialogContentProps) -> Element {
             aria_describedby: ctx.describedby.clone(),
             // The dialog's own state: closing keeps it open (modal) while it animates out, so a
             // stylesheet keys the exit on `[data-closed]`. See `crate::use_dialog_open_driver`.
-            ..state_attrs::open(open()),
+            ..state_attrs::open_state(open_state()),
             "data-dx-overlay": crate::dialog::overlay_off(ctx.overlay),
         }),
     ]);

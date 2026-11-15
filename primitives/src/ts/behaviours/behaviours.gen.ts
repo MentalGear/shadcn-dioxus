@@ -14,6 +14,7 @@ export interface FixtureBehaviour {
   value: string;
   capture: boolean;
   cancel: boolean;
+  focus: boolean;
   leaseMs: number | null;
 }
 
@@ -25,11 +26,11 @@ export const DECLARED = {
 } as const;
 
 /** The hash of the kernel's kind table: the page refuses a kernel module whose `dx_kinds` differs. */
-export const KERNEL_HASH = 1923701098;
+export const KERNEL_HASH = 2649402274;
 
 /** The kernel's kind table in wire-index order: the keys of each kind's `Config`, `Snapshot` (the attribute reads) and `Event` (the event fields), from the kernel's input types. */
 export const KERNEL_KINDS = [
-  { kind: "fixture", config: ["event", "attr", "value", "cancel"], reads: ["data-dx-fixture-block"], fields: ["type"] },
+  { kind: "fixture", config: ["event", "attr", "value", "cancel", "focus"], reads: ["data-dx-fixture-block"], fields: ["type"] },
 ] as const;
 
 /** What a behaviour module registers: the event fields and attribute reads of its kernel kind. */

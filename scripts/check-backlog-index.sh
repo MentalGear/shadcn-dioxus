@@ -14,7 +14,11 @@
 #   - every relative link in dev-docs/**/*.md and the root CLAUDE.md/README.md resolves to a file (pure
 #     filesystem checks, no network).
 #
-# To change a row: edit its file, run scripts/backlog-index.sh, commit both.
+# It also runs scripts/backlog-close.py --check: no closed row may be named by the owner `row` column of a scripts/*.tsv table
+# or by an open row's `Depends on:` that does not say the row is settled (the check scripts/backlog-close.sh applies before it
+# moves a row), and the self-test of that script.
+#
+# To change a row: edit its file, run scripts/backlog-index.sh, commit both; to close one, scripts/backlog-close.sh <id>.
 #
 # Usage: scripts/check-backlog-index.sh
 # Exit status: 0 when clean, 1 on a violation.
@@ -22,5 +26,7 @@ set -uo pipefail
 cd "$(dirname "$0")/.."
 rc=0
 python3 -I scripts/backlog-index.py --check || rc=1
+python3 -I scripts/backlog-close.py --self-test >/dev/null 2>&1 || { python3 -I scripts/backlog-close.py --self-test; rc=1; }
+python3 -I scripts/backlog-close.py --check || rc=1
 python3 -I scripts/check-doc-links.py || rc=1
 exit $rc

@@ -16,8 +16,10 @@
 
 /* The panel fades and zooms with the same tokens (Nova's `fade-in-0 zoom-in-95`
  * / `fade-out-0 zoom-out-95`) and is visible only while `[open][data-open]`;
- * the exit is the move back to the base rule, played while the dialog is still a
- * modal in the top layer. Until `showModal()` runs (a mounted dialog's first frames)
+ * the entry and the exit are this one `transition` between the base rule and the open rule. The entry
+ * starts when `data-open` lands, a frame after `showModal()` rendered the dialog at the base rule
+ * (`use_dialog_open_driver`, `primitives/src/lib.rs`), so it needs no `@starting-style`, and the exit
+ * is played while the dialog is still a modal in the top layer. Until `showModal()` runs (a mounted dialog's first frames)
  * and after the final `close()`, `display: none` -- the UA rule this stylesheet's own
  * `display: flex` overrides -- keeps it from being rendered outside the top layer,
  * where its `position: fixed` box is resolved against, and clipped to, the nearest
@@ -26,11 +28,10 @@
  * and must stay visible. */
 dialog.dx-dialog {
   opacity: 0;
-  pointer-events: none;
-  transform: translate(-50%, -50%) scale(0.95); /* rtl-physical: the viewport-centering below */
+  scale: 0.95;
   transition:
     opacity var(--dx-overlay-duration) var(--dx-overlay-ease),
-    transform var(--dx-overlay-duration) var(--dx-overlay-ease);
+    scale var(--dx-overlay-duration) var(--dx-overlay-ease);
 }
 
 dialog.dx-dialog:not([open]) {
@@ -39,15 +40,13 @@ dialog.dx-dialog:not([open]) {
 
 dialog.dx-dialog[open][data-open] {
   opacity: 1;
-  pointer-events: auto;
-  transform: translate(-50%, -50%) scale(1); /* rtl-physical: the viewport-centering below */
+  scale: 1;
 }
 
-@starting-style {
-  dialog.dx-dialog[open][data-open] {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0.95); /* rtl-physical: the viewport-centering below */
-  }
+/* The exit is inert: a second click must not reach the fading panel. The entering frame (`data-entering`)
+ * takes pointer events, so a press on the first frame is not lost. */
+dialog.dx-dialog[data-closed] {
+  pointer-events: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -62,8 +61,8 @@ dialog.dx-dialog[open][data-open] {
   z-index: var(--dx-z-overlay-raised);
   top: 50%;
 
-  /* rtl-physical: viewport-centering, paired with `transform: translate(-50%,
-     -50%)` below -- see alert_dialog/style.css's identical note. */
+  /* rtl-physical: viewport-centering, paired with `translate: -50% -50%`
+     below -- see alert_dialog/style.css's identical note. */
   left: 50%;
   display: flex;
   width: 100%;
@@ -79,7 +78,7 @@ dialog.dx-dialog[open][data-open] {
   font-size: var(--dx-text-sm);
   gap: var(--dx-space-4);
   text-align: start;
-  transform: translate(-50%, -50%); /* rtl-physical: see comment above */
+  translate: -50% -50%; /* rtl-physical: see comment above */
 }
 
 .dx-dialog-title {

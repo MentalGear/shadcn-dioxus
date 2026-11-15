@@ -298,6 +298,12 @@ pub fn CarouselVirtualContent<T: Clone + PartialEq + 'static>(
         anchor.set(position);
         intended.set(position);
     });
+    // A destination announced before its scroll runs (a drag release): only `intended` moves,
+    // so the effect below does not turn the early selection into a second scroll; `anchor`, and
+    // the window keyed from it, move when the scroll has ended (`on_settle_position`).
+    let on_target_position = use_callback(move |position: isize| {
+        intended.set(position);
+    });
     use_carousel_scroll_tracking(
         id,
         ctx.orientation,
@@ -305,7 +311,7 @@ pub fn CarouselVirtualContent<T: Clone + PartialEq + 'static>(
         ctx.set_selected,
         ctx.count,
         ctx.visible_range,
-        Some(on_settle_position),
+        Some((on_settle_position, on_target_position)),
     );
     use_carousel_drag(id, ctx.orientation, ctx.align, props.draggable);
     // Where the band may engage (only a true end of the data, never a loop,

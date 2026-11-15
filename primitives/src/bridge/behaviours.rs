@@ -129,6 +129,9 @@ pub enum Behaviour {
         /// Cancel the event's default action (makes the listener non-passive).
         #[serde(default)]
         cancel: bool,
+        /// Also focus the host, without scrolling (the `focus` slot write).
+        #[serde(default)]
+        focus: bool,
         /// Fail-open lease in milliseconds, renewed while the session lives.
         #[serde(default)]
         lease_ms: Option<u32>,
@@ -205,6 +208,7 @@ impl Behaviour {
                     ("value", "string"),
                     ("capture", "boolean"),
                     ("cancel", "boolean"),
+                    ("focus", "boolean"),
                     ("leaseMs", "number | null"),
                 ],
             },
@@ -247,6 +251,7 @@ impl Behaviour {
             value: "on".into(),
             capture: false,
             cancel: false,
+            focus: false,
             lease_ms: None,
         }]
     }
@@ -468,6 +473,7 @@ mod tests {
             value: "y".into(),
             capture: true,
             cancel,
+            focus: false,
             lease_ms: None,
         };
         assert!(fixture(false).declared().passive);
@@ -484,6 +490,7 @@ mod tests {
             value: "y".into(),
             capture: true,
             cancel,
+            focus: false,
             lease_ms,
         };
         assert_eq!(
@@ -657,7 +664,7 @@ mod tests {
         assert_eq!(
             serde_json::to_value(Behaviour::samples().remove(0)).expect("serialises"),
             json!({"kind": "fixture", "event": "click", "attr": "data-dx-fixture", "value": "on",
-                   "capture": false, "cancel": false, "leaseMs": null})
+                   "capture": false, "cancel": false, "focus": false, "leaseMs": null})
         );
         assert!(serde_json::from_value::<Behaviour>(json!({"kind": "eval", "code": "x"})).is_err());
         assert!(serde_json::from_value::<Behaviour>(

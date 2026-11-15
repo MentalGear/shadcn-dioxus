@@ -404,7 +404,8 @@ pub fn ChartTooltip(props: ChartTooltipProps) -> Element {
         div {
             onmounted: move |evt: MountedEvent| mounted.set(Some(evt.data())),
             // Its own border-box size, for the flip/clamp decision above. A
-            // closed (`display: none`) tooltip reports 0x0: un-placed again.
+            // zero-sized box (a stylesheet that takes the element out of
+            // layout) un-places it; the closed -> open effect above does too.
             onresize: move |evt: ResizeEvent| {
                 if let Ok(size) = evt.data().get_border_box_size() {
                     let next = (size.width.ceil(), size.height.ceil());

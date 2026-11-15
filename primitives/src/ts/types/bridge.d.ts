@@ -37,6 +37,8 @@ interface DxDecision {
   stop?: boolean;
   /** Attributes to set on the host element. */
   attrs?: Record<string, string>;
+  /** Writes to native slots, by slot name; the page hands each to the slot's owner (`focus`: focus the host without scrolling). */
+  slots?: Record<string, unknown>;
   /** A message for Rust, sent after the event. */
   send?: unknown;
   /** Per-install state: merged into the `memory` the next `decide` of this install receives. */
@@ -61,6 +63,7 @@ type DxCommand =
   | { cmd: "listen"; target: DxTargetish; event: string; options?: { capture?: boolean; once?: boolean; publish?: DxPublish[] }; fields?: string[]; initial?: boolean }
   | { cmd: "observe"; target: DxTargetish; kind: "resize" | "intersection" | "mutation"; options?: DxFields }
   | { cmd: "media"; query: string }
+  | { cmd: "sub"; id: number }
   | { cmd: "sample"; target: DxTargetish; fields: DxSampleField[]; until: DxSampleUntil; onlyChanged?: boolean }
   | {
       cmd: "behaviour";
@@ -93,10 +96,10 @@ type DxSampleUntil =
 
 /** An op of a transaction (or of the pump). `epoch` makes a call or set droppable when stale. */
 type DxOp =
-  | { op: "call"; target: DxTargetish; method: string; args?: unknown[]; epoch?: DxEpoch | null }
+  | { op: "call"; target: DxTargetish; method: string; args?: unknown[]; epoch?: DxEpoch | null; basedOn?: number }
   | { op: "get"; target: DxTargetish; props: string[]; epoch?: DxEpoch | null }
   | { op: "set"; target: DxTargetish; name: string; value: string | null; epoch?: DxEpoch | null }
-  | { op: "write"; target: DxTargetish; slot: string; value: string | null; epoch?: DxEpoch | null };
+  | { op: "write"; target: DxTargetish; slot: string; value: string | null; epoch?: DxEpoch | null; basedOn?: number };
 /** `dropped`: an op of a newer epoch had already run on the target, so this one did nothing. A reply echoes the epoch it answers. */
 type DxOpResult = { ok: unknown; dropped?: true; epoch?: DxEpoch } | { err: string };
 
@@ -115,6 +118,8 @@ interface DxScope {
   ): () => void;
   cleanup(fn: () => void): void;
   send(message: unknown): void;
+  /** Reports a page-caused transition of `slot` on `el` to Rust and fences the slot at its sequence number. */
+  transitioned(el: object, slot: string): void;
   /** Ends the scope: every registration it made is undone, in reverse order. Idempotent. */
   dispose(): void;
   run(command: DxCommand): void;
@@ -142,6 +147,7 @@ interface DxBridge {
   channel(raw: DioxusChannel): DioxusChannel;
   scope(raw?: DioxusChannel): DxScope;
   serve(raw: DioxusChannel): Promise<void>;
+  inbound(raw: DioxusChannel): Promise<void>;
   pump(raw: DioxusChannel): Promise<void>;
   call(target: DxTargetish, method: string, args?: unknown[]): unknown;
   get(target: DxTargetish, props: string[]): Record<string, unknown>;

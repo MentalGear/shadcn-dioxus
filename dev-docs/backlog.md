@@ -29,7 +29,13 @@ proposing one is closed as out of scope (row 337 is the first).
 - **To add a row:** pick the next free id (the highest id in the two indexes, plus one), copy any row file, rename it
   `<NNN>-<slug>.md`, fill the front matter and the four sections.
 - **To update a row:** edit its sections (append dated notes to Detail, change Status / trigger when it lands). When it
-  lands, `git mv` it into `dev-docs/backlog/done/`.
+  lands, close it with `scripts/backlog-close.sh <id>... [--status "LANDED in <ref>"]`, never by `git mv`: it refuses,
+  naming file and line, while something still names the row (an owner-`row` column of a `scripts/*.tsv` allow or callers
+  table, derived from the table's header comment; an open row's `Depends on:` bullet that does not say the row is
+  settled, by a link into `done/` or `(landed)` after it; a `js-grant:` the ratchet still reads, unless
+  `--grant-spent`); otherwise it moves the row, repairs the links to and from it, writes a CLOSED status when the
+  row's own does not start with a closing word, and runs `scripts/backlog-index.sh`. `scripts/check-backlog-index.sh`
+  runs the same reference check, so a row moved by hand is caught too.
 - **Then run `scripts/backlog-index.sh`** (syncs `status`/`size`, rewrites both indexes) and commit the row file and
   the index files together. `scripts/check-backlog-index.sh` (a `run-gates.sh` gate) fails on a stale index, a missing
   front matter field, a duplicate id, a row in both sets, and a broken relative link under `dev-docs/`.
@@ -40,7 +46,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (74)
+## Open rows (76)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -72,7 +78,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [443](backlog/443-owner-measurement-kit-perf-recorder-and-impl-switch.md) | The owner's measurement kit for the row 434 ports: __dxPerf, bridge delay and spin, and the ?dx-impl legacy switch | BACKLOG. Filed 2026-10-26 from the row 434 step 3 adversarial board. The bridge-delay hook is… | M | tooling |
 | [444](backlog/444-gate-half-of-lane-3-0b-grants-bans-and-witness-presence.md) | Phase 0.1: the gate half of lane 3.0 (grant rows, sink and setter bans, FORBIDDEN_VERBS, gates over existing artefacts only) | LANDED in PR #167 (2026-11-07), phase 0.1's gates over the artefacts that exist: the grant rule and… | L | tooling |
 | [446](backlog/446-phase-0-6-witness-harness-and-the-first-witnesses.md) | Phase 0.6: the witness harness and the first witnesses | LANDED 2026-11-14 in one batch with row 509, on top of it, under the owner's grant of the same day.… | L | tests |
-| [447](backlog/447-phase-0-7-the-order-runtime.md) | Phase 0.7: the order runtime (inbound pump, per-slot epochs, vdom carrier, slot table, focus owner, one-shot scroll classifier) | APPROVED 2026-10-26 (owner: "okay for the plan"; scope 2, the recommended default, since no scope… | M | primitives |
+| [447](backlog/447-phase-0-7-the-order-runtime.md) | Phase 0.7: the order runtime (inbound pump, slot fence, slot table, focus owner, boot, scroll classifier spike) | LANDED 2026-11-14 with the batch of that date, as far as the row's file list allows; row 515 holds… | M | primitives |
 | [448](backlog/448-phase-0-3-proof-port-a-focus-trap-and-otpfilter.md) | Phase 0.3: proof port A (the native-arm focus trap's 3 eval sites, focus-trap.ts, and the otpFilter behaviour for S11) | The 3.DJ half is built (the native-arm focus trap is deleted) and the otpFilter half is open… | L | overlays |
 | [449](backlog/449-phase-0-4-proof-port-b-the-executor-and-popover-spreads.md) | Phase 0.4: proof port B (the reconciled-kinds executor, the popover hooks that return the attribute to spread, the owners' onbeforetoggle handlers) | APPROVED 2026-10-26 (owner: "okay for the plan"; scope 2, the recommended default, since no scope… | L | overlays |
 | [450](backlog/450-phase-0-5-dxbridgestats-and-the-latency-session.md) | Phase 0.5: __dxBridgeStats, a desktop smoke launch and the one latency session | APPROVED 2026-10-26 (owner: "okay for the plan"; scope 2, the recommended default, since no scope… | M | tooling |
@@ -113,10 +119,12 @@ proposing one is closed as out of scope (row 337 is the first).
 | [510](backlog/510-spec-selector-component-edges.md) | The spec selector has no component-to-component edge: a Button change selects none of its consumers' specs | LANDED in PR #175 (2026-11-12): the selector reads the component use graph from the sources. The… | S (one helper module of about 170… | tests |
 | [513](backlog/513-release-suite-reuse-across-spec-only-changes.md) | A spec-only fix after a red release suite re-runs the whole suite: reuse the results the changed files cannot affect | LANDED 2026-11-14 (approved by the owner the same day). It serves the owner's standing goal… | M (inferred): the key derivation, the… | tests |
 | [514](backlog/514-the-per-row-mounted-handle-has-no-owner.md) | The per-row `mounted` handle has no unconditional owner: keep it with a true reason, or replace it | BACKLOG. Trigger: the focus-write witness on a real set_focus site (row 446, open item), which… | S for the decision and the allow row.… | primitives |
-| [516](backlog/516-overlay-entry-motion-without-starting-style.md) | Overlay entry motion depends on @starting-style from display: none: dialogs, the scrim and every popover-based overlay snap in where an engine does not animate from it | APPROVED 2026-11-14. In progress on lane/overlay-entry-fade. | M (inferred): one shared recipe, the… | components |
+| [515](backlog/515-order-contract-consumers-the-find-in-page-port-and-the-gesture-epoch.md) | Order contract consumers: the find-in-page (beforematch) port, the gesture epoch and the contract details row 447 leaves unbuilt | Depends on row 447 (landed 2026-11-14). Not started. | M (inferred) | primitives |
 | [517](backlog/517-chart-tooltip-on-the-tooltip-layer.md) | Chart tooltips are confined to the chart box and get pushed around in small charts: build them on the Tooltip's content layer with a point anchor | APPROVED 2026-11-14. The tooltip escapes the chart box by default, hides on scroll where it cannot… | M (inferred). | primitives |
 | [518](backlog/518-suite-site-key-from-the-build-inputs.md) | An edit to a gate script, a rule file or CLAUDE.md re-runs the whole release suite: the site key covers the tree minus four prefixes, not the build's inputs | BACKLOG. Take it when a batch pays a full run for a change no build reads. | M (inferred). | tests |
 | [519](backlog/519-anchored-panel-recipe-one-hook.md) | Every non-menu overlay re-assembles the anchored panel recipe: one `top_layer::use_anchored_panel`, and the hover timers in their own module | APPROVED 2026-11-14 (owner: "I approve your recommendation for generalizing the components and… | M (inferred, 8 to 10 h), one lane… | primitives |
-| [520](backlog/520-carousel-drag-release-registers-at-release.md) | A carousel drag release makes its destination current when the scroll settles, so the arrows and the indicators lag behind the pointer | APPROVED 2026-11-14 (owner: "do the cheap one", of the two ways to register the slide earlier).… | S. | primitives |
+| [521](backlog/521-axe-scan-opens-the-docs-accordion-items.md) | The accessibility scan skips the closed docs accordion items: Usage notes, Component structure and Props reference are never inspected | BACKLOG. Small and independent; take it beside any lane. | S. | tests |
+| [522](backlog/522-padded-pie-inner-radius-follows-the-padding.md) | A padded pie with no inner radius ends its slices in tips at the centre: the inner circle has to grow with the padding to read as even gaps | BACKLOG (owner 2026-11-14: "for padding pie the inner circle must increase relative to segment… | S. | components |
+| [523](backlog/523-edge-and-floating-close-mid-entry-under-a-keyframe.md) | Sheet, Drawer and the modal Popover still enter with a keyframe: a close in the middle of that entry cancels it and the exit keyframe starts from the fully open pose | BACKLOG (found 2026-11-15). Not started. Small; it belongs with the HoverSurface / anchored-panel… | S. | overlays |
 
 <!-- END GENERATED -->
