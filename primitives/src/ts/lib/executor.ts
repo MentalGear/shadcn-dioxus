@@ -11,8 +11,8 @@
 //              a write the owner makes after it in the same effect pass (a focus moved into the shown panel)
 //   one writer the show and hide go through `apply` (the `show` / `hide` rows of APPLY) and nothing else shows or
 //              hides an element with a level; the transition the write itself causes is not reported
-//   reports    a transition the page caused (light dismiss, Escape) is reported as `{ n, open }` on the owner's
-//              session (`watch`, by the element's id) from its `toggle` task, stamped with the nonce applied, so Rust
+//   reports    a transition the page caused (light dismiss, Escape) is reported as `{ n, open }` on the session
+//              of the element's owner (`watch`, by the element's id) from its `toggle` task, stamped with the nonce applied, so Rust
 //              drops a report older than its newest level; two document capture listeners carry them while any
 //              session watches
 
@@ -76,7 +76,7 @@ export function createExecutor(W: Window, ports: ExecutorPorts) {
         else if (level === "closed" && shown && mode === "immediate") write(state, el, site, "hide");
       }
     },
-    /** Sends the page-caused transitions of the element `target` to the owner's session until it ends. */
+    /** Sends the page-caused transitions of the element `target` to the session of its owner until it ends. */
     watch(sc: DxScope, spec: Watch): void {
       if (!sessions.size) listening(true);
       sessions.set(spec.target, sc);
