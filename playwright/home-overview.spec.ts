@@ -13,7 +13,7 @@
  */
 import { test, expect } from "./fixtures";
 import { baseUrlOr } from "./base-url";
-import { gotoHydrated } from "./hydration";
+import { gotoHydrated, settleGalleryCards } from "./hydration";
 import { readAtRest } from "./animations";
 
 const BASE = baseUrlOr("http://127.0.0.1:8080");
@@ -49,7 +49,7 @@ test.describe("sidebar card controls (row 297)", () => {
 
 test.describe("component card divider (row 298)", () => {
   async function firstBody(page: import("@playwright/test").Page) {
-    await page.evaluate(() => document.documentElement.setAttribute("data-cv-settle", ""));
+    await settleGalleryCards(page);
     const body = page.locator(".dx-component-card-body").first();
     await body.scrollIntoViewIfNeeded();
     return body;

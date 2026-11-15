@@ -1,4 +1,4 @@
 # check-decision-kernel baseline (scripts/lib/ratchet.py): shrink-only per-file counts, regenerate with --update-baseline.
 #! columns: gzip_bytes
 # path	gzip_bytes
-primitives/src/kernel/decision-kernel.wasm	10931	# raised: row 447 the order runtime: the pump, the one inbound eval, the epoch rule and the focus owner (gzip_bytes 10815->10931)
+primitives/src/kernel/decision-kernel.wasm	12914	# raised: row 448 the otp-filter kind (gzip_bytes 10931->12914)

@@ -54,6 +54,7 @@
 //! `aria-hidden="true"` presentational layer and contribute nothing to the
 //! accessibility tree.
 
+use crate::bridge::{use_behaviour, Behaviour, EventKind, Target};
 use crate::state_attrs;
 use crate::{
     merge_attributes, use_controlled, use_dom_value_restore, use_form_reset_listener, use_id_or,
@@ -149,11 +150,13 @@ impl OtpPattern {
         out
     }
 
-    /// A JavaScript regular-expression source matching one REJECTED
-    /// character (`[^...]`), built from the same ranges as the HTML pattern.
-    fn js_reject_source(&self) -> String {
-        let html = self.html_pattern();
-        format!("[^{}]", &html[1..html.len() - 2])
+    /// The ranges as the decision kernel's `otp-filter` kind reads them: `(low, high)` character pairs,
+    /// concatenated (`"09"` for the digits), the same ranges as the HTML pattern.
+    fn ranges_wire(&self) -> String {
+        self.ranges()
+            .into_iter()
+            .flat_map(|(low, high)| [low, high])
+            .collect()
     }
 
     /// Whether `c` is an accepted character.
@@ -210,6 +213,29 @@ fn push_class_char(out: &mut String, c: char) {
         out.push('\\');
     }
     out.push(c);
+}
+
+/// The events the OTP filter is installed for, one install each (`beforeinput` cancels and writes, `input` filters an
+/// edit that carried no text, `compositionend` decides again from an input method's committed text).
+const OTP_FILTER_EVENTS: [EventKind; 3] = [
+    EventKind::Beforeinput,
+    EventKind::Input,
+    EventKind::Compositionend,
+];
+
+/// Installs the kernel's `otp-filter` for `event` on the control with this id, for the life of the component. The
+/// decision sends nothing to Rust: its effects are the cancel and the value write the page applies.
+fn use_otp_filter(id: Memo<String>, ranges: String, max_length: usize, event: EventKind) {
+    use_behaviour(
+        move || Some(Target::Id { id: id.cloned() }),
+        move || Behaviour::OtpFilter {
+            site: crate::site!("input_otp.filter"),
+            event,
+            ranges: ranges.clone(),
+            max: u32::try_from(max_length).unwrap_or(u32::MAX),
+        },
+        |_: ()| {},
+    );
 }
 
 #[derive(Clone, Copy)]
@@ -363,54 +389,20 @@ pub fn InputOtp(props: InputOtpProps) -> Element {
     let mut selection_start = use_signal(|| 0usize);
     let mut has_focus = use_signal(|| false);
     use_caret_sync(id, selection_start);
-    // The pattern and the length bound are applied by this one filter, to the
-    // text an edit would insert, before the browser applies it: the `<input>`
-    // carries no `maxlength`, because the browser trims a paste to `maxlength`
-    // before any filter sees it, which would drop accepted characters that
-    // follow a separator (row 474). A `beforeinput` that carries text is
-    // cancelled when the filtered, length-bounded text differs from it, and
-    // the accepted part is inserted over the selection instead; so a rejected
-    // character cannot replace a selected slot's character (click-to-slot), a
-    // keystroke into a full value is a no-op, and a paste keeps every accepted
-    // character that fits. The `input` listener is the same rule again for
-    // writes that carry no `beforeinput` text (autofill, undo): it filters the
-    // DOM value synchronously, in the capture phase, so rejected characters
-    // never reach the Rust handler, the slots or the next keystroke (no async
-    // write-back to race with fast typing), and keeps the caret after the
-    // accepted characters that preceded it.
-    let reject = props.pattern.js_reject_source();
-    crate::js_listener::use_js_listeners(move || {
-        Some(
-            crate::js_listener::JsListeners::install(
-                "const [id, source, max] = [await dioxus.recv(), await dioxus.recv(), await dioxus.recv()];
-                const el = document.getElementById(id);
-                if (!el) return;
-                let re; try { re = new RegExp(source, 'gv'); } catch (_) { re = new RegExp(source, 'gu'); }
-                const accept = (s, room) => Array.from(s.replace(re, '')).slice(0, Math.max(0, room)).join('');
-                listen(el, 'beforeinput', (e) => {
-                    if (typeof e.data !== 'string' || e.data === '') return;
-                    const [from, to] = [el.selectionStart, el.selectionEnd];
-                    const text = accept(e.data, max - (el.value.length - (to - from)));
-                    if (text === e.data) return;
-                    e.preventDefault();
-                    if (!text) return;
-                    el.setRangeText(text, from, to, 'end');
-                    el.dispatchEvent(new Event('input', { bubbles: true }));
-                }, true);
-                listen(el, 'input', () => {
-                    const raw = el.value;
-                    const filtered = accept(raw, max);
-                    if (filtered === raw) return;
-                    const kept = accept(raw.slice(0, el.selectionStart ?? raw.length), max).length;
-                    el.value = filtered;
-                    el.setSelectionRange(kept, kept);
-                }, true);",
-            )
-            .arg(id.cloned())
-            .arg(reject.clone())
-            .arg(max_length),
-        )
-    });
+    // The pattern and the length bound are applied by one decision (the kernel's `otp-filter`) to the text an edit
+    // would insert, before the browser applies it: the `<input>` carries no `maxlength`, because the browser trims a
+    // paste to `maxlength` before any filter sees it, which would drop accepted characters that follow a separator
+    // (row 474). A `beforeinput` that carries text is cancelled when the filtered, length-bounded text differs from
+    // it, and the accepted part is written over the selection instead; so a rejected character cannot replace a
+    // selected slot's character (click-to-slot), a keystroke into a full value is a no-op, and a paste keeps every
+    // accepted character that fits. The `input` and `compositionend` installs are the same rule again for writes
+    // that carry no `beforeinput` text (autofill, undo) and for an input method's committed text: the decision
+    // filters the DOM value synchronously, in the capture phase, so rejected characters never reach the Rust handler
+    // below, the slots or the next keystroke (no async write-back to race with fast typing), and the caret stays
+    // after the accepted characters that preceded it.
+    for event in OTP_FILTER_EVENTS {
+        use_otp_filter(id, props.pattern.ranges_wire(), max_length, event);
+    }
 
     let active_index = use_memo(move || {
         if !has_focus() || disabled() {
@@ -808,6 +800,13 @@ mod pattern_tests {
         assert_eq!(OtpPattern::Letters.filter("A1b2"), "Ab");
         assert_eq!(OtpPattern::Digits.inputmode(), OtpInputMode::Numeric);
         assert_eq!(OtpPattern::Letters.inputmode(), OtpInputMode::Text);
+    }
+
+    #[test]
+    fn the_kernel_reads_the_same_ranges_as_the_html_pattern() {
+        assert_eq!(OtpPattern::Digits.ranges_wire(), "09");
+        assert_eq!(OtpPattern::Alphanumeric.ranges_wire(), "AZaz09");
+        assert_eq!(OtpPattern::Letters.ranges_wire(), "AZaz");
     }
 
     #[test]

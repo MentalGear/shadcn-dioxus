@@ -301,7 +301,7 @@ import { test, expect } from "../fixtures";
 import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
-import { gotoHydrated } from "../hydration";
+import { gotoHydrated, settleGalleryCards } from "../hydration";
 import { baseUrlOr } from "../base-url";
 
 const NAV_TIMEOUT = 20 * 60 * 1000; // first run compiles the app
@@ -676,6 +676,9 @@ test.describe("hydration parity — SSG server markup vs. wasm client", () => {
     // above is a pure console/error check with no interaction, so it keeps
     // a plain `page.goto`.)
     await gotoHydrated(page, `${BASE}/`, { timeout: NAV_TIMEOUT });
+    // The click scrolls the trigger into view; the cards around it would otherwise take their real height on the
+    // next frame and move the trigger out from under the pointer (`settleGalleryCards`).
+    await settleGalleryCards(page);
 
     // The home page mounts every component's gallery card, so there is no single demo frame to scope to: the
     // dropdown menu's trigger and open content are selected by the component's own classes, inside ITS card --
