@@ -164,6 +164,7 @@ bridge::BridgeError::Unsupported  variant Unsupported
 bridge::Command  enum Command  #[derive(Clone, Debug, PartialEq, Serialize)]
 bridge::Command  use session::Command
 bridge::Command::Behaviour  variant Behaviour { target: Target, behaviour: Behaviour, declared: super::behaviours::Declared, epoch: Epoch }
+bridge::Command::Executor  variant Executor { target: String }
 bridge::Command::Listen  variant Listen { target: Target, event: EventKind, options: ListenOptions, fields: Vec<EventField>, initial: bool }
 bridge::Command::Media  variant Media { query: String }
 bridge::Command::Observe  variant Observe { target: Target, kind: ObserverKind, options: ObserveOptions }

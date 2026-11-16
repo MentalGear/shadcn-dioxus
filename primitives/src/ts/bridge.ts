@@ -25,6 +25,9 @@
 //                    event task
 //   transaction      several ops in one JS turn (a show and the read of its rects see one DOM state)
 //   behaviour        a NAMED behaviour from the registry (`ts/behaviours/<kind>.ts`), see below
+//   execute          applies the open levels Rust rendered (`data-dx-level`) in the calling turn, through the one
+//                    page executor (`lib/executor.ts`); a session's `executor` command reports the page's own
+//                    transitions back, stamped with the owner's nonce
 //   serve / pump     the loop a Rust `bridge::Session` runs, and the ordered write channel of a webview
 //
 // WHERE WORK GOES. An rsx handler decides synchronously on every renderer, so a target inside a Dioxus
@@ -64,6 +67,7 @@
 /// <reference path="./types/bridge.d.ts" />
 
 import { KERNEL_HASH, KERNEL_KINDS } from "./behaviours/behaviours.gen";
+import { createExecutor } from "./lib/executor";
 import { createKernel } from "./lib/kernel";
 
 type Recv = "w" | "d" | "e" | "we" | "wd" | "de" | "wde";
@@ -877,7 +881,7 @@ let applying: Readonly<{ site: string; effect: string }> | null = null;
  * are not rows). Every write goes through `applyEffect`, which names the site and the effect while it runs, so the witness
  * harness can drop or delay exactly that call and no other.
  */
-type Effect = "prevent" | "stop" | "attrs" | "slot";
+type Effect = "prevent" | "stop" | "attrs" | "slot" | "show" | "hide";
 type EffectRow = (target: Event | Element, name: string, value: unknown) => void;
 /**
  * The owners of the native slots a decision may write (its `slots` list), one row per slot; `effect` is the name the
@@ -908,6 +912,9 @@ const APPLY: Readonly<Record<Effect, EffectRow>> = Object.freeze({
   stop: (event) => (event as Event).stopPropagation(),
   attrs: (host, name, value) => (host as Element).setAttribute(name, value as string),
   slot: (host, name, arg) => own(SLOT_OWNERS, name)?.run(host as HTMLElement, arg),
+  // the page executor's writes (`lib/executor.ts`): the one show and the one hide of a registered element
+  show: (host) => (host as HTMLElement).showPopover(),
+  hide: (host) => (host as HTMLElement).hidePopover(),
 });
 
 function applyEffect(site: string, effect: Effect, target: Event | Element, name = "", value: unknown = ""): void {
@@ -1317,6 +1324,9 @@ function scope(raw?: DioxusChannel): Scope {
           case "sub":
             sub = command.id;
             break;
+          case "executor":
+            executor?.watch(s, command);
+            break;
         }
       } catch (error) {
         // a bad command is Rust's bug: say so in the console, keep serving the rest
@@ -1403,7 +1413,11 @@ const callPublic: DxBridge["call"] = (target, method, args) => {
   return value === STALE ? null : value;
 };
 
+/** The page executor, installed once with the bridge (`lib/executor.ts`). */
+let executor: ReturnType<typeof createExecutor> | null = null;
+
 if (!W.__dxBridge) {
+  executor = createExecutor(W, { apply: (site, effect, el) => applyEffect(site, effect, el), asRust });
   const bridge: DxBridge = {
     version: 3,
     channel,
@@ -1415,6 +1429,7 @@ if (!W.__dxBridge) {
     get,
     set: (target, name, value) => void set(target, name, value),
     transaction,
+    execute: () => executor?.execute(),
     behaviours,
     register,
     kernel,

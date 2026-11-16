@@ -1,0 +1,11 @@
+{
+  "site": "executor.popover",
+  "files": ["primitives/src/ts/lib/executor.ts", "primitives/src/bridge/executor.rs", "primitives/src/top_layer/popover_sync.rs"],
+  "effects": ["show"],
+  "page": { "route": "/component/dropdown_menu/" },
+  "host": "body",
+  "setup": [],
+  "event": { "kind": "click", "selector": "role=button[name=\"Open Menu\"s]" },
+  "eventType": "click",
+  "frames": 8
+}

@@ -137,6 +137,11 @@ pub(in crate::bridge) enum Program<'a> {
     /// The webview's one inbound channel: every frame any session's scope sends reaches Rust here, so a
     /// frame outlives the session that minted it.
     Inbound,
+    /// The page executor applies every newer rendered level (`bridge::executor`) in the eval's own turn, so a show
+    /// is ordered with the owner's other writes of the same effect pass (on the web an eval runs synchronously, a
+    /// message a microtask later).
+    #[cfg(not(feature = "native"))]
+    Execute,
     /// The body of a `js_listener` script, quarantined in [`legacy`](super::legacy) and gone with that
     /// module.
     Legacy(&'a str),
@@ -158,6 +163,8 @@ impl Program<'_> {
             Program::Serve => format!("{READY}await __dxB.serve(__dxB.channel(dioxus));"),
             Program::Pump => format!("{READY}await __dxB.pump(__dxB.channel(dioxus));"),
             Program::Inbound => format!("{READY}await __dxB.inbound(__dxB.channel(dioxus));"),
+            #[cfg(not(feature = "native"))]
+            Program::Execute => format!("{READY}__dxB.execute();"),
             Program::Legacy(body) => {
                 format!("{READY}await (async (dioxus) => {{\n{body}\n}})(__dxB.channel(dioxus));")
             }

@@ -36,7 +36,7 @@
 #    (`EVENTS`, `FIELD_GETTERS`, `METHODS`, `PROPS`), and there is no data language to interpret.
 #  * ONE EVAL SINK, CLOSED. Nothing under `primitives/src/bridge/` but `transport.rs` names `document::eval`, and
 #    `js_listener.rs` (which runs on the bridge's scope) does not either. The transport runs a closed `Program` enum
-#    (`Serve`, `Pump`, `Legacy`) with its arguments as data, and its functions are `pub(in crate::bridge)`: no
+#    (`Serve`, `Pump`, `Inbound`, `Execute`, `Legacy`, `Frozen`) with its arguments as data, and its functions are `pub(in crate::bridge)`: no
 #    `pub(crate)` or `pub` function but `is_unsupported`, no `request` or `pump` that takes script text. The one
 #    caller-composed script body is `Program::Legacy`, constructed only in `bridge/legacy.rs`, and `legacy::` is used
 #    only by `js_listener.rs`: both go when the last bespoke script is ported.
@@ -154,7 +154,7 @@ TRANSPORT_RS = "primitives/src/bridge/transport.rs"
 LEGACY_RS = "primitives/src/bridge/legacy.rs"
 MOD_RS = "primitives/src/bridge/mod.rs"
 JS_LISTENER_RS = "primitives/src/js_listener.rs"
-PROGRAM_VARIANTS = ["Serve", "Pump", "Inbound", "Legacy", "Frozen"]
+PROGRAM_VARIANTS = ["Serve", "Pump", "Inbound", "Execute", "Legacy", "Frozen"]
 # the three document::eval call shapes of the transport, as normalised argument text: the bridge script, a program's
 # script, and a behaviour module behind the ready handshake. Any other argument is a script text a caller composed.
 EVAL_ARGS = ["&bridge_script()", "&program.script()", '&format!("{READY}{js}")']

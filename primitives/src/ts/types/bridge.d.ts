@@ -71,6 +71,11 @@ type DxCommand =
       behaviour: { kind: string; [param: string]: unknown };
       declared: DxDeclared;
       epoch?: DxEpoch | null;
+    }
+  | {
+      /** Makes the session the reporter of the page-caused transitions of the element `target` (`lib/executor.ts`). */
+      cmd: "executor";
+      target: string;
     };
 
 /** What Rust declares about a behaviour's listener; the page never chooses any of it. */
@@ -153,6 +158,8 @@ interface DxBridge {
   get(target: DxTargetish, props: string[]): Record<string, unknown>;
   set(target: DxTargetish, name: string, value: string | null): void;
   transaction(ops: DxOp[]): DxOpResult[];
+  /** Applies the rendered executor levels (`data-dx-level`) in the calling turn (`lib/executor.ts`). */
+  execute(): void;
   /** The named behaviours loaded in this page, by kind. */
   behaviours: Record<string, DxBehaviourImpl<any>>;
   /** Called by a behaviour module as it is evaluated. */

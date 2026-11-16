@@ -451,6 +451,13 @@ pub enum Command {
         /// Install generation: older than one the target saw is dropped, equal renews.
         epoch: Epoch,
     },
+    /// Makes the session the reporter of the page executor for the element `target` (`ts/lib/executor.ts`, row
+    /// 449): a transition the page causes on it is sent to the session stamped with the nonce of the level the page
+    /// had applied. The levels themselves are the element's rendered `data-dx-level` (`bridge::executor`).
+    Executor {
+        /// The element's `id`.
+        target: String,
+    },
 }
 
 /// A `matchMedia` answer.

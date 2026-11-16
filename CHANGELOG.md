@@ -7,6 +7,10 @@ below are collected under "Unreleased" and move under a version heading at the f
 
 ### Changed
 
+- **Popovers, menus, tooltips, hover cards, select and combobox lists open through one page executor.** The open level
+  is decided in Rust and applied by the bridge's executor, which never reports its own show or hide back and stamps a
+  light dismiss or Escape with the command it answers, so a late browser event can no longer reopen a menu that was just
+  closed or close one that was just reopened, on a slow channel such as a desktop webview.
 - **Input OTP's character filter is one decision in Rust.** The pattern (`OtpPattern`) and the length bound are decided
   by the library's `otp-filter` behaviour for a keystroke, a paste, a replacement text, an autofill and a committed
   composition on web and desktop alike, instead of a script written into the page. An input method's composition is left
