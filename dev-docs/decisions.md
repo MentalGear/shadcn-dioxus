@@ -131,3 +131,16 @@ the line here is the pointer, so when a row's text and this line disagree, the r
   state plus a transition (the `<dialog>` is rendered a frame before `data-open`), not a keyframe: a close in the middle
   of a keyframe entry cancels it and snaps the panel shut, a transition reverses. The entering frame is its own state (`data-entering`), so a press on the first frame is not
   lost and the exit alone is inert (`data-closed` carries `pointer-events: none`).
+- The main loop merges its own batches and deploys them without asking once the full gates and the release suite are
+  green on the batch tree (owner 2026-11-13: "propose next batch, and when this is done pr & merge by you continue
+  with it"; 2026-11-14: "pr & merge when green"). It stops for the owner at a scope the owner names: "you can finish
+  phase 0, then wait and report" (2026-11-14); phase 0 finished on 2026-11-16, so the next lanes wait for the owner's
+  go ([`STATUS.md`](./STATUS.md), "Next").
+- A question about behaviour is answered from the code before a browser samples it (owner 2026-11-14: "before it
+  samples with playwright, check if it can solve it just from code").
+- Before an existing construction is changed, its reason is looked up (git history, the row, the comment) and either
+  kept or shown not to hold any more (owner 2026-11-14, on the overlays' fade-in from `display: none`: "make sure it
+  wasnt made like this for a reason before changing those").
+- Approved 2026-11-14 (owner: "I approve your recommendation for generalizing the components and tooltip as well"):
+  row 519 (landed), the `HoverSurface` follow-on (row [528](./backlog/528-hoversurface-tooltip-and-hovercard-as-one-surface.md))
+  and row [517](./backlog/517-chart-tooltip-on-the-tooltip-layer.md) (the chart tooltip on the `Tooltip`'s layer).

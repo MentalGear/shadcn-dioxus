@@ -55,8 +55,8 @@ row says otherwise, so a step runs as parallel lanes (one verifier per batch, `l
    Rows **519**, **521**, **522** and **525** landed in batch 6 (PR #191), row **448** (`otpFilter`) in batch 7 (PR
    #194) and row **449** (the page executor's popover kind; its modal kind moved to row 456) in batch 8 (PR #196), so
    **phase 0 is finished**.
-   **Next lanes, waiting for the owner's go** (owner 2026-11-15: "finish phase 0, then wait and report"): the
-   `HoverSurface` follow-on (Tooltip and HoverCard as one root, about 5 h, the first of
+   **Next lanes, waiting for the owner's go** (owner 2026-11-14: "finish phase 0, then wait and report"): row
+   **528** (`HoverSurface`: Tooltip and HoverCard as one surface, about 5 h, the first of
    [row 519](./backlog/done/519-anchored-panel-recipe-one-hook.md)'s "Further candidates"), with row **523** (an edge
    and floating close mid-entry) in the same lane, then row **517** (the chart tooltip on the real `Tooltip`, approved
    2026-11-14). After them, step 8's ports in yield order.
@@ -80,8 +80,9 @@ row says otherwise, so a step runs as parallel lanes (one verifier per batch, `l
    follows component-to-component edges); **445** (the legacy freeze, taken early because it only guards); the
    grant-key refusal (16 open rows named a JavaScript-volume column the gate no longer has; all converted to bytes).
 3. Row 436 is finished (PR #182): the delayed-task helper, per-window state and `menu_root::use_root_id`.
-4. Open elsewhere: **504** (the hydrated Textarea shows no value; a fix is built on `lane/textarea-ssr-504`, local
-   only, and needs the owner's call on a native-slot grant, see the row), **505**'s token-counting construction
+4. Open elsewhere: **504** (the hydrated Textarea shows no value; a fix was built on `lane/textarea-ssr-504`, which
+   was never pushed and is gone; the row's Detail has the findings to rebuild it, and the fix needs the owner's call on a
+   native-slot grant), **505**'s token-counting construction
    itself (the grant only covered the one readable-name revert), **371**'s remaining owner call (a D6 exception for
    `dioxus-icons`'s ~70 decorative-only demo icons vs. lifting those too), **152** (the prune continues on other
    files), **387** (the standing docs review), **507** (the standing comment-analysis backlog; pass 1's three
@@ -151,7 +152,7 @@ ports), its working form is [`js-interop.md`](./js-interop.md), and every item h
   [`research/overlay-layering-audit-2026-11-14.md`](./research/overlay-layering-audit-2026-11-14.md).
 - Decided 2026-11-14 (owner): the chart tooltip without a fade-in was Firefox; row 516's construction removes the
   dependency ([`decisions.md`](./decisions.md)).
-- Waits for the owner's go: the `HoverSurface` lane and row 517 (see "Next"). Optional, each the owner's call: row
+- Waits for the owner's go: row 528 (`HoverSurface`) and row 517 (see "Next"). Optional, each the owner's call: row
   **526** (a lane's browser run waits for the whole release suite) and row **527** (gallery cards move by their
   content-visibility estimate when a script scrolls one into view).
 - Settled by construction (main loop, 2026-11-18): no upstream request for `ToggleData` / `CancelData` payloads, since a

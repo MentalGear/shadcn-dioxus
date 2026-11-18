@@ -4,7 +4,7 @@ title: "A server-rendered Textarea shows no value: the JS-off page and the hydra
 status: "BACKLOG. Found by the first-paint fix lane (row 468's section \"First paint of a controlled…"
 size: "S"
 area: textarea
-updated: 2026-11-07
+updated: 2026-11-18
 ---
 
 # Row 504: a server-rendered Textarea shows no value
@@ -16,6 +16,10 @@ updated: 2026-11-07
 ## Status / trigger
 
 BACKLOG. Found by the first-paint fix lane (row 468's section "First paint of a controlled Textarea"), 2026-11-07.
+
+A fix was built on `lane/textarea-ssr-504` and never pushed; on 2026-11-18 the branch is on no remote and in no
+container this repository reaches, so a lane rebuilds it from the Detail below. It needs the owner's call on a native-slot
+grant before it merges.
 
 ## Size
 
