@@ -6,7 +6,7 @@ size: "L"
 area: overlays
 js-grant: js_file_bytes=440 (24 lines at 18.3 bundle bytes per source line, relocated lines, root doc section 5.4; the main loop's grant row at the merge base is the number the gate reads)
 adds: []
-updated: 2026-11-12
+updated: 2026-11-18
 ---
 
 # Row 452: Port 3.PL: placement (T1, T2, T8-T12, S1), the paint-safe gate and the boot probe
@@ -33,7 +33,9 @@ Re-scoped 2026-10-31 against the tree after [row 477](./477-anchored-overlays-pl
 - **Still valid:** the boot probe (Rust-rendered `popover=manual` nodes from first idle, a closed `documentElement.dataset` setter row, `html[data-dx-anchor]`), the paint-safe gate and its pending CSS and fail-open names, the per-surface list with `engine: always|fallback`, the conditional `data-dx-anchored`, and the move of the remaining JS strings (`PLACE_JS`, `ITEM_ALIGNED_JS`, the close-on-scroll script) into TS modules or Rust. The placement gate `scripts/check-anchored-placement.sh` (rule P) already exists and the port keeps it green.
 - **The old figure is withdrawn:** "removes about 755 lines, relocates 24 (27 per hour)" counted blocks that 477 deleted or merged. Re-measure the removed and relocated lines, and the yield, against the files when the row is taken.
 - **Files owned:** `top_layer/{anchor_fallback,scroll_clamp,styles,mod,attributes}.rs`, `select/components/list.rs`, `context_menu.rs` (the point-anchor call site only), the theme/engine CSS for anchoring and the gate, the popover/select/combobox component sheets. Must not touch `lib.rs`, `menu_sub.rs`, `navigation_menu.rs`, `modality.rs`; const names that `lib.rs` splices (`OPEN_FOCUS_JS`) stay stable.
-- **Depends on:** [row 449](./done/449-phase-0-4-proof-port-b-the-executor-and-popover-spreads.md) (landed) (the executor), [row 444](./444-gate-half-of-lane-3-0b-grants-bans-and-witness-presence.md), [row 445](./done/445-phase-0-2-the-legacy-freeze.md); a grant row.
+- **Depends on:** [row 449](./done/449-phase-0-4-proof-port-b-the-executor-and-popover-spreads.md) (landed) (the popover kind; this row builds the executor pieces the gate needs, see Detail), [row 444](./444-gate-half-of-lane-3-0b-grants-bans-and-witness-presence.md), [row 445](./done/445-phase-0-2-the-legacy-freeze.md); a grant row.
 - **Proof:** The boot-probe spec, a nested-submenu and a reopen x3 spec, the first-frame spec (this row's, not phase 0's), `g-latency`, top-layer and select specs on a release build, `playwright/anchored-placement.spec.ts`; Firefox and WebKit via [row 442](./442-desktop-cadence-harness-and-desktop-pass.md).
 - **Hours:** the plan's 28 h (inferred, a full-lane figure) predates 477; re-estimate when taken.
 - **Decision in Rust:** the logic this row moves is a pure Rust function over typed inputs; only reading and writing the page goes through the bridge ([`decisions.md`](../decisions.md), "Behaviour is decided in Rust").
+- **Taken over from row 449 (2026-11-18).** Row 449 built the executor's popover kind and none of its gate-facing parts. The plan puts these with the gate ("the watchdog belongs to the gate, not to the executor", section 2.2 of [`sync-js-root-2026-10-26.md`](../research/sync-js-root-2026-10-26.md)), so this row builds them: the watchdog, a page-side timer of the motion budget's length that clears a declared pending state the CSS fail-open would otherwise leave open (its witness `executor.watchdog` is `test.fixme` in `playwright/witness/executor-internals.spec.ts` and goes live here); the discovery of nodes that enter a declared pending state (the plan's boot-installed `pageObserver`; row 449 applies levels through an explicit `Program::Execute` after the render and installs no observer, so the discovery is new work here); and the stale `placed` removal. Row 449's Detail and `bridge/executor.rs` describe the executor these extend.
+
