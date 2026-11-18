@@ -134,8 +134,8 @@ the line here is the pointer, so when a row's text and this line disagree, the r
 - The main loop merges its own batches and deploys them without asking once the full gates and the release suite are
   green on the batch tree (owner 2026-11-13: "propose next batch, and when this is done pr & merge by you continue
   with it"; 2026-11-14: "pr & merge when green"). It stops for the owner at a scope the owner names: "you can finish
-  phase 0, then wait and report" (2026-11-14); phase 0 finished on 2026-11-16, so the next lanes wait for the owner's
-  go ([`STATUS.md`](./STATUS.md), "Next").
+  phase 0, then wait and report" (2026-11-14); every phase 0 row had landed by 2026-11-16, three in part with their
+  remainders assigned to later rows, so the next lanes wait for the owner's go ([`STATUS.md`](./STATUS.md), "Next").
 - A question about behaviour is answered from the code before a browser samples it (owner 2026-11-14: "before it
   samples with playwright, check if it can solve it just from code").
 - Before an existing construction is changed, its reason is looked up (git history, the row, the comment) and either

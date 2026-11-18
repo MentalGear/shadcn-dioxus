@@ -57,7 +57,7 @@ row says otherwise, so a step runs as parallel lanes (one verifier per batch, `l
    reuses a spec file's green result) is on main.
    Rows **519**, **521**, **522** and **525** landed in batch 6 (PR #191), row **448** (`otpFilter`) in batch 7 (PR
    #194) and row **449** (the page executor's popover kind; its modal kind moved to row 456) in batch 8 (PR #196), so
-   **phase 0 is finished**.
+   **every phase 0 row has landed, three of them in part** (step 7 below says what each leaves and where it went).
    **Next lanes, waiting for the owner's go** (owner 2026-11-14: "finish phase 0, then wait and report"): row
    **528** (`HoverSurface`: Tooltip and HoverCard as one surface, about 5 h, the first of
    [row 519](./backlog/done/519-anchored-panel-recipe-one-hook.md)'s "Further candidates"), with row **523** (an edge
@@ -104,9 +104,13 @@ ports), its working form is [`js-interop.md`](./js-interop.md), and every item h
    condition), **444** (gates), **445** (legacy freeze), **446** (witness harness), **447** (order runtime), **448**
    (proof port A), **449** (proof port B) and **450** (bridge stats); all landed between 2026-11-07 and 2026-11-16.
    Row 450 stays open for its desktop latency session, which waits for a machine with `webkit2gtk` (row 23).
-   Phase 0 is finished (2026-11-16): rows 448 and 449 are on main and closed. What they leave is in row **456** (the
-   executor's modal kind, inside the open-focus policy it ports), row **515** (the form-reset re-dispatch and the
-   `dropped` reply) and row **525** (the `prevent` witness waits for an rsx `onbeforeinput` on Dioxus 0.8).
+   Three items landed in part, and each remainder has a row. Item 0.4 (row 449) built the executor's popover kind only:
+   its modal kind and exit wait go to row **456** (they run inside the open-focus policy that row ports),
+   `indeterminate` and `defaultChecked` to row **458**, and the paint-safe gate's watchdog, the discovery of nodes that
+   enter a declared pending state and the stale `placed` removal to row **452**, which builds that gate (the plan,
+   section 2.2: "the watchdog belongs to the gate, not to the executor"). Item 0.5 (row 450) waits for a desktop
+   machine. Item 0.7 (row 447) leaves its consumers to row **515**. Row 448's `prevent` witness waits for an rsx
+   `onbeforeinput` on Dioxus 0.8 (row **525**).
 8. The ports, as ordinary rows by yield (lines of JavaScript removed per hour, highest first; a row whose dependencies
    have not landed waits, and each row names them): **451** (3.SC, built 2026-11-12) and **454** (3.OB, built
    2026-11-12; five legacy scripts left the baseline, with 451 the volume gate's total fell from 508,767 to 482,329),
