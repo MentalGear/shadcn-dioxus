@@ -4,7 +4,7 @@ title: "Sheet, Drawer and the modal Popover still enter with a keyframe: a close
 status: "BACKLOG (found 2026-11-15). Not started. Small; it belongs with the HoverSurface / anchored-panel…"
 size: "S."
 area: overlays
-updated: 2026-11-15
+updated: 2026-11-18
 ---
 
 # Row 523: an edge or floating overlay closed in the middle of its keyframe entry
@@ -23,7 +23,8 @@ slide. Found 2026-11-15 by the dialog lane, which did not touch it.
 ## Status / trigger
 
 BACKLOG (found 2026-11-15). Not started. Small; it belongs with the HoverSurface / anchored-panel generalisation
-(rows 517, 519), which touches the same recipes.
+(rows 517, 519), which touches the same recipes, and goes in row 528's lane: it waits for the owner's go with that row
+(`STATUS.md`, "Next").
 
 ## Size
 
