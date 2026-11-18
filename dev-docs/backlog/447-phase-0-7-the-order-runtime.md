@@ -13,7 +13,7 @@ updated: 2026-11-14
 
 ## Item
 
-The order contract's implementation in the bridge: one inbound pump for every page-to-Rust fact, the slot fence, the slot table, the focus owner, the bridge boot and the ready attribute, with the order specs and the scroll classifier spike. Items that need a consumer in a component file, and the contract details without one, are [row 515](./515-order-contract-consumers-the-find-in-page-port-and-the-gesture-epoch.md) and rows [448](./448-phase-0-3-proof-port-a-focus-trap-and-otpfilter.md) and [449](./449-phase-0-4-proof-port-b-the-executor-and-popover-spreads.md).
+The order contract's implementation in the bridge: one inbound pump for every page-to-Rust fact, the slot fence, the slot table, the focus owner, the bridge boot and the ready attribute, with the order specs and the scroll classifier spike. Items that need a consumer in a component file, and the contract details without one, are [row 515](./515-order-contract-consumers-the-find-in-page-port-and-the-gesture-epoch.md) and rows [448](./done/448-phase-0-3-proof-port-a-focus-trap-and-otpfilter.md) and [449](./done/449-phase-0-4-proof-port-b-the-executor-and-popover-spreads.md).
 
 Part of the [row 434](./434-javascript-in-typescript-modules-not-rust-strings.md) step 3 plan; source: [`sync-js-root-2026-10-26.md`](../research/sync-js-root-2026-10-26.md) section 5.4 (phase 0).
 

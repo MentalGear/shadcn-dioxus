@@ -4,7 +4,7 @@ title: "Code analyzer -> comment analysis: a standing backlog for what the tool'
 status: "OPEN, STANDING. Owner-requested 2026-11-11: run the comment analysis and record what can be learned…"
 size: "S per pass (a read of the Comments tab…"
 area: tooling
-updated: 2026-11-11
+updated: 2026-11-18
 ---
 
 # Row 507: code analyzer -> comment analysis
@@ -50,6 +50,14 @@ comment metrics on main `b78c231e` (`CARGO_TARGET_DIR=/home/user/tgt/codegraph s
   counts these as public. `check-rustdoc`, `check-props-docs.sh` and `check-slot-docs.sh` (which do resolve
   visibility) stay the authority on real documentation debt; M3 could subtract a struct's own non-pub visibility
   from its fields' count, if a future pass finds the false positives costly enough to fix.
+- **Follow-up 4, stale top-layer comments (found 2026-11-16, at row 449's landing):** the comments around the popover
+  hooks describe them as they were before rows 519 and 449. `top_layer/styles.rs`'s coverage list and its prepend
+  paragraph say three hooks prepend `TOP_LAYER_INK_STYLES_INJECT_JS`; only `use_dialog_panel_shown_while_mounted` and
+  `lib.rs`'s `use_dialog_open_driver` still do (the executor's level is applied by an eval created after the ink eval,
+  `popover_sync.rs`). The "Bug 1" / "Bug 2" and "`use_popover_sync` calls `hidePopover()`" citations in `tooltip.rs`,
+  `hover_card.rs`, `popover.rs`, `navbar.rs`, `navigation_menu.rs`, `select/components/list.rs`,
+  `combobox/components/list.rs`, `toast.rs`, `lib.rs` and `menu_root.rs` point at doc text that is gone. One pass over
+  those files against `popover_sync.rs` as it is now.
 
 ## Size
 

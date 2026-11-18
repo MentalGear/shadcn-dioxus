@@ -15,3 +15,9 @@ Read this before you run cargo or dx, build the SSG, start `dx serve`, or run Pl
   edit is served, and a new component directory needs `preview/build.rs` rewritten, not touched.
 - Functional specs may run on debug SSG builds; timing specs only on release
   ([`dev-loop.md`](../dev-docs/dev-loop.md), "Running tests").
+- **A background command stops at its time limit (2 h).** Run the release suite (about 62 min) and a full gate run (about
+  60 min) as two background commands, the suite first, never chained in one. A command killed at the limit leaves the
+  hold flag `$LANE_TGT/suite-running` set: remove it by hand once no suite runs (`pgrep -f run-suite.sh` prints nothing).
+- **Disk is a fixed allowance.** After a batch merges, remove its worktrees (`scripts/lane-worktree.sh remove`) and the
+  cargo targets under `$LANE_TGT` that no live worktree owns (a target's `.tree-owner` names its worktree). A gate that
+  fails with "No space left on device" has no verdict: free space and run it again.

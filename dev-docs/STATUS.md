@@ -4,13 +4,14 @@
 the page as stale and check `git log` and the flag files named here.** What each batch contained is in `git log` and the
 backlog row files, not here: this page says only what is deployed, what runs, what is next and what waits for the owner.
 
-Last updated: **2026-11-14**. Several sessions work in parallel; who holds what is on the `claims` branch (`CLAIMS.md`).
-Preview site: https://mentalgear.github.io/shadcn-dioxus/ serves main `8b4326ad` (PRs #177-#185; release suite 4142
-passed, 0 failed, 0 flaky, 22 skipped on that exact tree, the `@timing` cases deactivated per row 494). Check
+Last updated: **2026-11-18**. Several sessions work in parallel; who holds what is on the `claims` branch (`CLAIMS.md`).
+Preview site: https://mentalgear.github.io/shadcn-dioxus/ serves main `19d63c14`, built from `5b5adef1` (PRs #186-#197;
+release suite 4204 passed, 0 failed, 0 flaky, 19 skipped on that exact tree, the `@timing` cases deactivated per row 494). Check
 `git log origin/main -1` for the exact tip rather than trusting a SHA frozen here.
 
 Session `session_01MsL6RCeq7QSe81nNBiuKP1` owned merges and deploys through PR #173 and is archived; session
-`session_01MsL6RCa7c4QWmqNtUYQ8RE` merges and deploys the 2026-11-12 batches. A new
+`session_01MsL6RCa7c4QWmqNtUYQ8RE` merged and deployed the batches of 2026-11-12 to 2026-11-16 (through PR #197) and
+stopped there at the owner's word ("finish phase 0, then wait and report"). A new
 session reads this page, then takes the first open row of "Next" below; each row file under [`backlog/`](./backlog/)
 says what to build, which files, its proof and its size. The rules are [`../CLAUDE.md`](../CLAUDE.md) and
 [`lane-rules.md`](./lane-rules.md); the owner's decisions are [`decisions.md`](./decisions.md).
@@ -30,7 +31,7 @@ the next deploy first rebuilds it with `scripts/lane-target.sh warm-release` (a 
 ## Merged and deployed
 
 Merge queue batches 1-29 are on main (PRs #121-#155); PRs #156-#165 followed from session
-`session_01MsL6RCeq7QSe81nNBiuKP1` and are deployed (main `d040554a`, release suite 4159 passed, 0 failed). PRs #166-#168 are deployed (main `f38662dc`, deploy `85c05466`, release suite 4192 passed, 0 failed). PRs #170-#176 are deployed (main `edb71de0`, deploy `c34eda92`, release suite 4106 passed, 0 failed). PRs #177-#180 are deployed (main `3caa4f2c`, release suite 4108 passed, 0 failed). PR #182 is deployed (main `ce2cf865`, release suite 4108 passed, 0 failed). PR #185 is deployed (main `8b4326ad`, release suite 4142 passed, 0 failed). What each batch carried is in `git log` and the row files under
+`session_01MsL6RCeq7QSe81nNBiuKP1` and are deployed (main `d040554a`, release suite 4159 passed, 0 failed). PRs #166-#168 are deployed (main `f38662dc`, deploy `85c05466`, release suite 4192 passed, 0 failed). PRs #170-#176 are deployed (main `edb71de0`, deploy `c34eda92`, release suite 4106 passed, 0 failed). PRs #177-#180 are deployed (main `3caa4f2c`, release suite 4108 passed, 0 failed). PR #182 is deployed (main `ce2cf865`, release suite 4108 passed, 0 failed). PR #185 is deployed (main `8b4326ad`, release suite 4142 passed, 0 failed). PRs #186-#197 are deployed (main `19d63c14`, built from `5b5adef1`, release suite 4204 passed, 0 failed): row 513 (#187), batch 5 (rows 447, 450, 516, 520 and the owner's fixes of 2026-11-14; #189), batch 6 (rows 519, 521, 522, 525; #191), batch 7 (row 448's `otpFilter`; #194) and batch 8 (row 449's page executor; #196), each followed by its deploy PR. What each batch carried is in `git log` and the row files under
 [`backlog/done/`](./backlog/done/).
 
 ## Next
@@ -51,10 +52,14 @@ row says otherwise, so a step runs as parallel lanes (one verifier per batch, `l
    (overlay entry motion without `@starting-style`) and row **520** (a carousel drag release registers its slide at
    release). Row **515** holds what row 447 leaves to the rows that own the consumers. Row **513** (the release suite
    reuses a spec file's green result) is on main.
-   **Next lanes, in this order:** row **519** (one anchored-panel hook and the hover timers module; approved
-   2026-11-14, before row 449), then the HoverSurface follow-on it names, then rows **448** (`otpFilter`) and **449** in
-   parallel, then row **517** (the chart tooltip on the real `Tooltip`). Row **521** (the accessibility scan opens the
-   docs accordion items) is small and independent.
+   Rows **519**, **521**, **522** and **525** landed in batch 6 (PR #191), row **448** (`otpFilter`) in batch 7 (PR
+   #194) and row **449** (the page executor's popover kind; its modal kind moved to row 456) in batch 8 (PR #196), so
+   **phase 0 is finished**.
+   **Next lanes, waiting for the owner's go** (owner 2026-11-15: "finish phase 0, then wait and report"): the
+   `HoverSurface` follow-on (Tooltip and HoverCard as one root, about 5 h, the first of
+   [row 519](./backlog/done/519-anchored-panel-recipe-one-hook.md)'s "Further candidates"), with row **523** (an edge
+   and floating close mid-entry) in the same lane, then row **517** (the chart tooltip on the real `Tooltip`, approved
+   2026-11-14). After them, step 8's ports in yield order.
 2. Done, merged in PR #170 (2026-11-11): the deploy blockers of PR #168 (rows 468, 501); row **436**'s overlay and
    class groups (F1, F2, F4, F5, F6, F8, F9, F10, F11, F12), each reproduced red first (CHANGELOG.md has the
    user-visible ones: F1, F10, F11); **499** (safe triangle; CHANGELOG.md too); **152** slices 4-5; **371**'s
@@ -96,8 +101,9 @@ ports), its working form is [`js-interop.md`](./js-interop.md), and every item h
    (legacy freeze, landed 2026-11-12), **446** (witness harness),
    **447** (order runtime), **448** (proof port A), **449** (proof port B), **450** (bridge stats and the desktop latency
    session); about 111 h, nearly all one chain through `ts/bridge.ts`, so it runs mostly serially.
-   Row 448's first half (deleting the native-arm focus trap) is on main (PR #182); its second half is the `otpFilter`
-   behaviour.
+   Phase 0 is finished (2026-11-16): rows 448 and 449 are on main and closed. What they leave is in row **456** (the
+   executor's modal kind, inside the open-focus policy it ports), row **515** (the form-reset re-dispatch and the
+   `dropped` reply) and row **525** (the `prevent` witness waits for an rsx `onbeforeinput` on Dioxus 0.8).
 8. The ports, as ordinary rows by yield (lines of JavaScript removed per hour, highest first; a row whose dependencies
    have not landed waits, and each row names them): **451** (3.SC, built 2026-11-12) and **454** (3.OB, built
    2026-11-12; five legacy scripts left the baseline, with 451 the volume gate's total fell from 508,767 to 482,329),
@@ -143,8 +149,14 @@ ports), its working form is [`js-interop.md`](./js-interop.md), and every item h
   own module; before row 449), 517 (the chart tooltip on the `Tooltip`) and 520 (a carousel drag release registers its
   destination at the release) are approved. The audit behind 519:
   [`research/overlay-layering-audit-2026-11-14.md`](./research/overlay-layering-audit-2026-11-14.md).
-- Waits for the owner: which browser showed the chart tooltip without a fade-in (row 516 rests on documentation, not
-  on a reproduction).
+- Decided 2026-11-14 (owner): the chart tooltip without a fade-in was Firefox; row 516's construction removes the
+  dependency ([`decisions.md`](./decisions.md)).
+- Waits for the owner's go: the `HoverSurface` lane and row 517 (see "Next"). Optional, each the owner's call: row
+  **526** (a lane's browser run waits for the whole release suite) and row **527** (gallery cards move by their
+  content-visibility estimate when a script scrolls one into view).
+- Settled by construction (main loop, 2026-11-18): no upstream request for `ToggleData` / `CancelData` payloads, since a
+  payload cannot carry the ordering the nonce rule provides (row 525 has the argument); row 448's `prevent` witness is
+  admitted when Dioxus 0.8's `onbeforeinput` moves the cancel to rsx (row 525).
 - Row 508's verdict is `KERNEL`, so row 509 opens without a further decision. Loading the
   kernel inside the desktop webview stays unproven until a desktop build exists (row 23).
 

@@ -36,10 +36,10 @@ The owner asked on 2026-10-25 whether the library could target Blitz, the native
   `clippy-native` gate that lints the arm against the real dioxus-native renderer.
 - **What this row still builds, per behaviour.** A Blitz adapter: deliver the event from an rsx handler, call the
   behaviour's `decide`, apply the effects it returns through rsx and `MountedData`. Also a Rust arm for each kind the
-  page executor reconciles (row [449](./449-phase-0-4-proof-port-b-the-executor-and-popover-spreads.md)), and a
+  page executor reconciles (row [449](./done/449-phase-0-4-proof-port-b-the-executor-and-popover-spreads.md)), and a
   renderer-native answer for each bridge verb a component reads through (`get`, `call`, `listen`, `observe`); until
   one exists the transport answers "unsupported" and the feature degrades.
-- **The `feature = "native"` eval sites.** Row [448](./448-phase-0-3-proof-port-a-focus-trap-and-otpfilter.md) deleted the
+- **The `feature = "native"` eval sites.** Row [448](./done/448-phase-0-3-proof-port-a-focus-trap-and-otpfilter.md) deleted the
   three focus-trap evals in the native arms of `dialog.rs`, `alert_dialog.rs` and `popover.rs`; they did nothing on Blitz,
   where `document::eval` is unsupported. The Blitz modal overlays are a `div` with `aria-modal` and no focus trap, so a real
   Blitz focus trap is built here.

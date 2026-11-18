@@ -19,7 +19,7 @@ The Input OTP filter's `beforeinput` test requires `typeof e.data === 'string'` 
 
 **Source:** [`board-2026-10-26-r6/order-slots.md`](../../research/board-2026-10-26-r6/order-slots.md) finding 14 (the synthesis cites it as "order-slots 10"; the report numbers it 14; carried by [`board-2026-10-26-r6/SYNTHESIS.md`](../../research/board-2026-10-26-r6/SYNTHESIS.md), "Live defects found in today's code").
 
-Related to [row 434](../434-javascript-in-typescript-modules-not-rust-strings.md) but not part of it: the plan's `otpFilter` (proof port A, [row 448](../448-phase-0-3-proof-port-a-focus-trap-and-otpfilter.md)) subsumes this defect, and a local fix does not wait for the plan.
+Related to [row 434](../434-javascript-in-typescript-modules-not-rust-strings.md) but not part of it: the plan's `otpFilter` (proof port A, [row 448](./448-phase-0-3-proof-port-a-focus-trap-and-otpfilter.md)) subsumes this defect, and a local fix does not wait for the plan.
 
 ## Status / trigger
 

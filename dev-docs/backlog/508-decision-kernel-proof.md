@@ -67,6 +67,6 @@ S
 - **Files owned (branch only):** a new kernel crate, `primitives/src/ts/**`, `primitives/src/bridge/behaviours.rs`,
   the fixture's tests. **Must not touch:** gate scripts and their baselines, any component.
 - **Depends on:** [row 444](./444-gate-half-of-lane-3-0b-grants-bans-and-witness-presence.md) (landed).
-  **Blocks:** row 509; the `otpFilter` half of [row 448](./448-phase-0-3-proof-port-a-focus-trap-and-otpfilter.md);
+  **Blocks:** row 509; the `otpFilter` half of [row 448](./done/448-phase-0-3-proof-port-a-focus-trap-and-otpfilter.md) (landed);
   every row that adds a behaviour.
 - **Hours (inferred):** about 4 to 6, one Sonnet agent.

@@ -4,7 +4,7 @@ title: "Dioxus 0.8 readiness: the ledger of what the 0.8 alphas change for this 
 status: "BACKLOG (checked 2026-11-15). Research-gated: nothing is taken until 0.8 is stable. 0.7.10 is not…"
 size: "S (the ledger); the migration is sized…"
 area: build
-updated: 2026-11-15
+updated: 2026-11-18
 ---
 
 # Row 525: Dioxus 0.8 readiness ledger
@@ -37,16 +37,22 @@ What the alphas change, read from the release notes and docs.rs, with the consum
 `rg` over `primitives/src` and `preview/src` on 2026-11-15; the rest is inferred):
 
 - **`onbeforeinput` (alpha.1), cancellable, `BeforeInputData { input_type(), data(), is_composing(), value() }`.** The
-  event [row 448](./448-phase-0-3-proof-port-a-focus-trap-and-otpfilter.md) says is missing in 0.7.9, which is why its
+  event [row 448](./done/448-phase-0-3-proof-port-a-focus-trap-and-otpfilter.md) says is missing in 0.7.9, which is why its
   `otpFilter` witnesses are red by construction and its adapter is bridge-delivered. Row 448's kind takes exactly those
   fields plus the selection, so on 0.8 the rsx handler feeds `decide` directly and the adapter is deleted without a
-  kernel change. Also the IME half of [row 473](./473-bug-date-picker-segments-let-the-browser-edit-the-vdom-text-node.md).
+  kernel change. Row 448's `prevent` witness (`test.fixme`, green on Chromium because a bubble-phase cancel at the host
+  works as well) is admitted then: the witness compares the rsx cancel with the bridge's placement. Also the IME half of [row 473](./473-bug-date-picker-segments-let-the-browser-edit-the-vdom-text-node.md).
 - **Clipboard events expose `data_transfer()` and `files()`; `onselect` carries the selection (alpha.1).** A Rust path
   for the paste text the OTP and the date-picker segments read today through the bridge.
-- **`ToggleData` and `CancelData` stay opaque (alpha.3: `new`, `downcast` only).** [Row 449](./449-phase-0-4-proof-port-b-the-executor-and-popover-spreads.md)'s
+- **`ToggleData` and `CancelData` stay opaque (alpha.3: `new`, `downcast` only).** [Row 449](./done/449-phase-0-4-proof-port-b-the-executor-and-popover-spreads.md)'s
   finding that an rsx `onbeforetoggle` cannot carry the open state or an order number holds on 0.8 too; its per-element
-  nonce construction does not wait for upstream. An upstream change request (expose `new_state`/`old_state`) is the
-  owner's call.
+  nonce construction does not wait for upstream. **No upstream request (main loop, 2026-11-18, settled by
+  construction).** A `new_state` payload says which state the page reached, not whether the owner decided again since;
+  that ordering is what the nonce rule gives, and it is needed on any asynchronous channel (the desktop webview, the
+  delayed bridge of `executor-popover.spec.ts`), so a payload would delete nothing here. `CancelData` is empty by the
+  platform's own definition: `cancel` is a plain `Event`. The rendered level (`data-dx-level`) is also the form a
+  native renderer can apply itself, without the bridge, when Blitz implements the popover. The owner can still file
+  one as upstream hygiene.
 - **Comment-node placeholders and markers removed at runtime and during hydration (alpha.2).** Consumers: the
   hydration-parity oracle (`playwright/oracle/hydration-parity.spec.ts`) and `chart.spec.ts` read comment nodes; the SSG
   output and the `check-render-keys`/hydration gates may count them. Re-measure when 0.8 is stable.
