@@ -2,7 +2,7 @@
 id: 528
 title: "HoverSurface: Tooltip and HoverCard as one root, trigger and content, configured by one struct"
 status: "APPROVED 2026-11-14 (owner: \"I approve your recommendation for generalizing the components and…"
-size: "M: one new module beside tooltip.rs and…"
+size: "M: one new module…"
 area: overlays
 updated: 2026-11-18
 ---
@@ -30,7 +30,7 @@ phase 0, then wait and report").
 
 ## Size
 
-M: one new module beside `tooltip.rs` and `hover_card.rs`, the two components reduced to wrappers, no public API change
+M: one new module, `primitives/src/hover_surface.rs` (the name is a proposal; the lane may choose another), beside `tooltip.rs` and `hover_card.rs`, the two components reduced to wrappers, no public API change
 (`scripts/check-public-api.sh` stays unchanged), the install smoke for both components.
 
 ## Detail

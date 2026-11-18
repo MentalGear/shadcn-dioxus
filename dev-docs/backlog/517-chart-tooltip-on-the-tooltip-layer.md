@@ -4,7 +4,7 @@ title: "Chart tooltips are confined to the chart box and get pushed around in sm
 status: "APPROVED 2026-11-14. The tooltip escapes the chart box by default, hides on scroll where it cannot…"
 size: "M (inferred)."
 area: primitives
-updated: 2026-11-14
+updated: 2026-11-18
 ---
 
 # Row 517: the chart tooltip on the Tooltip's content layer
@@ -18,7 +18,7 @@ its container and whether the library's `Tooltip` can be used directly.
 
 ## Status / trigger
 
-APPROVED 2026-11-14. The tooltip escapes the chart box by default, hides on scroll where it cannot follow, and takes the `Tooltip`'s Escape scope. It follows rows 519 and 449, which shape the layer it sits on.
+APPROVED 2026-11-14. The tooltip escapes the chart box by default, hides on scroll where it cannot follow, and takes the `Tooltip`'s Escape scope. It follows rows 519 and 449, which shape the layer it sits on, and row [528](./528-hoversurface-tooltip-and-hovercard-as-one-surface.md) (`HoverSurface`), whose content half it builds on. It waits for the owner's go after row 528 (`STATUS.md`, "Next").
 
 ## Size
 

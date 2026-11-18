@@ -12,7 +12,8 @@ release suite 4204 passed, 0 failed, 0 flaky, 19 skipped on that exact tree, the
 Session `session_01MsL6RCeq7QSe81nNBiuKP1` owned merges and deploys through PR #173 and is archived; session
 `session_01MsL6RCa7c4QWmqNtUYQ8RE` merged and deployed the batches of 2026-11-12 to 2026-11-16 (through PR #197) and
 stopped there at the owner's word ("finish phase 0, then wait and report"). A new
-session reads this page, then takes the first open row of "Next" below; each row file under [`backlog/`](./backlog/)
+session reads this page, then takes the first open row of "Next" below; while "Next" says its lanes wait for the
+owner's go, the session reports what it found and waits for that go instead of starting them. Each row file under [`backlog/`](./backlog/)
 says what to build, which files, its proof and its size. The rules are [`../CLAUDE.md`](../CLAUDE.md) and
 [`lane-rules.md`](./lane-rules.md); the owner's decisions are [`decisions.md`](./decisions.md).
 
@@ -23,7 +24,9 @@ a fast-gated branch (`scripts/run-gates.sh --fast`) and a QUEUE row on the `clai
 batch of 4-5 into `queue/batch-N`, runs ONE full `scripts/run-gates.sh`, the release suite and
 `scripts/registry-install-smoke.sh` on the merged tree, opens and merges the PR, and deploys once
 (`scripts/deploy-preview.sh`, which runs the full Playwright suite on a release build). Procedure:
-[`lane-rules.md`](./lane-rules.md), "Merge queue".
+[`lane-rules.md`](./lane-rules.md), "Merge queue". Since 2026-11-12 the merging session has delegated its own lanes and
+assembled each `queue/batch-N` from their `lane/*` branches without QUEUE rows (PRs #186-#198); `CLAIMS.md` on the
+`claims` branch was last written on 2026-11-12 and holds no current lane.
 
 The no-base-path validation tree (`$LANE_TGT/release-template`) was removed on 2026-11-07 to free disk for lane builds;
 the next deploy first rebuilds it with `scripts/lane-target.sh warm-release` (a cold release build).
@@ -97,11 +100,10 @@ step: the decided plan is [`research/sync-js-root-2026-10-26.md`](./research/syn
 ports), its working form is [`js-interop.md`](./js-interop.md), and every item has a row:
 
 7. Phase 0, the construct and two proof ports: **508** (the decision-kernel proof: verdict `KERNEL`, 2026-11-12,
-   upheld by an adversarial review with one blocking condition) and **509** (the Rust decision contract, open, size L;
-   it carries that condition and comes before 448's `otpFilter` and every behaviour row), **444** (gates), **445**
-   (legacy freeze, landed 2026-11-12), **446** (witness harness),
-   **447** (order runtime), **448** (proof port A), **449** (proof port B), **450** (bridge stats and the desktop latency
-   session); about 111 h, nearly all one chain through `ts/bridge.ts`, so it runs mostly serially.
+   upheld by an adversarial review with one blocking condition) and **509** (the Rust decision contract, which carries that
+   condition), **444** (gates), **445** (legacy freeze), **446** (witness harness), **447** (order runtime), **448**
+   (proof port A), **449** (proof port B) and **450** (bridge stats); all landed between 2026-11-07 and 2026-11-16.
+   Row 450 stays open for its desktop latency session, which waits for a machine with `webkit2gtk` (row 23).
    Phase 0 is finished (2026-11-16): rows 448 and 449 are on main and closed. What they leave is in row **456** (the
    executor's modal kind, inside the open-focus policy it ports), row **515** (the form-reset re-dispatch and the
    `dropped` reply) and row **525** (the `prevent` witness waits for an rsx `onbeforeinput` on Dioxus 0.8).
@@ -136,8 +138,9 @@ ports), its working form is [`js-interop.md`](./js-interop.md), and every item h
   lock (rows 477, 479).
 - Enable private vulnerability reporting on the repository ([`SECURITY.md`](../SECURITY.md) names it).
 - Remote branch deletion: the owner said go (2026-10-26), but this environment's proxy refuses deletes; the owner runs
-  the command from their own machine (`/mnt/project-files/handoff/merged-remote-branches-2026-10-26.txt`, 262 merged
-  branches; the 30 unmerged ones are kept).
+  the command from their own machine (the list of 262 merged branches was written in an
+  earlier container to `/mnt/project-files/handoff/merged-remote-branches-2026-10-26.txt` and is not in the repository;
+  `git branch -r --merged origin/main` lists the merged branches again; the unmerged ones are kept).
 - CI back on (rows 4, 33): every workflow except `mutants.yml` is deleted, so reactivation means a new workflow that
   runs `scripts/run-gates.sh`.
 - Decided 2026-11-14 (owner: "ok"): the grant columns of rows 509 and 446 (in the rows' front matter) and recording
@@ -152,7 +155,8 @@ ports), its working form is [`js-interop.md`](./js-interop.md), and every item h
   [`research/overlay-layering-audit-2026-11-14.md`](./research/overlay-layering-audit-2026-11-14.md).
 - Decided 2026-11-14 (owner): the chart tooltip without a fade-in was Firefox; row 516's construction removes the
   dependency ([`decisions.md`](./decisions.md)).
-- Waits for the owner's go: row 528 (`HoverSurface`) and row 517 (see "Next"). Optional, each the owner's call: row
+- Waits for the owner's go to start (both approved 2026-11-14; the go lifts the run limit): row 528 (`HoverSurface`,
+  with row 523 in its lane) and then row 517 (see "Next"). Optional, each the owner's call: row
   **526** (a lane's browser run waits for the whole release suite) and row **527** (gallery cards move by their
   content-visibility estimate when a script scrolls one into view).
 - Settled by construction (main loop, 2026-11-18): no upstream request for `ToggleData` / `CancelData` payloads, since a
