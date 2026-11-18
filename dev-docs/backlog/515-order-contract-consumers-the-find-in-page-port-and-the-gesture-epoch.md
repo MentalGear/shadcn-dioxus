@@ -32,9 +32,9 @@ Items that live in this row:
 
 Items that move to another row (the row that already owns the files):
 
-- **The vdom carrier for popover open (`onbeforetoggle`)**: [row 449](./449-phase-0-4-proof-port-b-the-executor-and-popover-spreads.md) already owns the handler at its 13 call sites and the "dismiss then `onclick`" spec.
+- **The vdom carrier for popover open (`onbeforetoggle`)**: [row 449](./done/449-phase-0-4-proof-port-b-the-executor-and-popover-spreads.md) already owns the handler at its 13 call sites and the "dismiss then `onclick`" spec.
 - **The vdom carrier for dialog open (`oncancel`)**: row 449 (the executor's modal kind). The premise note finds `use_dialog_open_driver` in `lib.rs`, `dialog.rs` and `alert_dialog.rs` with no owner; row 449's file list takes them. Case: Escape on a modal then Enter on the refocused trigger.
-- **The value owner's `input` re-dispatch (reset, restoration, install-time level), the carrier `oninput`, the composition hold and the value-write effect**: [row 448](./448-phase-0-3-proof-port-a-focus-trap-and-otpfilter.md). Its `otpFilter` is the first value-write consumer (`input_otp.rs`, the paste defect of row 474). The kernel's `slots` effect (row 447) carries the `value` write as its second entry.
+- **The value owner's `input` re-dispatch (reset, restoration, install-time level), the carrier `oninput`, the composition hold and the value-write effect**: [row 448](./done/448-phase-0-3-proof-port-a-focus-trap-and-otpfilter.md). Its `otpFilter` is the first value-write consumer (`input_otp.rs`, the paste defect of row 474). The kernel's `slots` effect (row 447) carries the `value` write as its second entry.
 - **The `(scope, nonce)` identity and SSR-stable ids**: row 449 (the executor is keyed by them). Case: a dismissal made before the bridge installs survives hydration on an SSG page.
 - **The roving-focus carrier (`onfocusin`/`onfocusout`)**: the handlers exist (`tabs.rs`, `virtual_list.rs`, `date_picker/segment.rs`); the bridge now reports the same transitions. The writer side is [row 462](./462-port-roving-focus-78-set-focus-sites.md), conditional on its witness.
 

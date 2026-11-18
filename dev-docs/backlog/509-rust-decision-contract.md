@@ -193,7 +193,7 @@ pinned toolchain and merge driver, the in-place codec and the budget gates)
   [row 444](./444-gate-half-of-lane-3-0b-grants-bans-and-witness-presence.md) (landed), the owner's `allow` row for
   `ffi.rs` at the merge base. Shares `ts/bridge.ts` with rows 446, 447 and 449: it lands before them or after the
   `ts/lib` split, never beside them. **Blocks:** the `otpFilter` half of
-  [row 448](./448-phase-0-3-proof-port-a-focus-trap-and-otpfilter.md) and every row whose `adds:` names a behaviour.
+  [row 448](./done/448-phase-0-3-proof-port-a-focus-trap-and-otpfilter.md) and every row whose `adds:` names a behaviour.
 - **Proof, in build order (each line is checkable in the lane unless marked open):**
   1. a `Snapshot` field renamed in Rust and not regenerated is red under `cargo test` (drift of the generated adapter
      lists), and a kind removed from the kernel but left in `KINDS` is red in `check-decision-kernel`;

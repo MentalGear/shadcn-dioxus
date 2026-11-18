@@ -23,7 +23,7 @@ What a wrongly-armed app gets (read in source, not observed in a browser): modal
 
 ## Status / trigger
 
-DONE in PR #180 (2026-11-13). The full install smoke for `wasm32-unknown-unknown` ran on the merged batch tree `8cbb1a04`: 83 of 83 components installed, the app compiles and the feature-tree assertion passed. The construction below is built as written, in its first variant (`native = ["dioxus/native"]`), because a dioxus-native check fits the gates. [Row 448](../448-phase-0-3-proof-port-a-focus-trap-and-otpfilter.md)'s focus-trap deletion no longer waits for it, and [row 438](../438-blitz-native-renderer.md) inherits the opt-in, the assert and `NATIVE_ARM`. What the build found, measured on the lane's tree, is under "What landed" at the end.
+DONE in PR #180 (2026-11-13). The full install smoke for `wasm32-unknown-unknown` ran on the merged batch tree `8cbb1a04`: 83 of 83 components installed, the app compiles and the feature-tree assertion passed. The construction below is built as written, in its first variant (`native = ["dioxus/native"]`), because a dioxus-native check fits the gates. [Row 448](./448-phase-0-3-proof-port-a-focus-trap-and-otpfilter.md)'s focus-trap deletion no longer waits for it, and [row 438](../438-blitz-native-renderer.md) inherits the opt-in, the assert and `NATIVE_ARM`. What the build found, measured on the lane's tree, is under "What landed" at the end.
 
 ## Size
 
@@ -188,7 +188,7 @@ Chosen: the forward when experiment 2 fits; otherwise `native = []` with the ass
    - the 58 doc-comment mentions of the web arm;
    - the gates above.
 2. The manifests (preview, starter, attr-synth, carousel-lab), `ssr_parity.rs`, the install smoke, the primitives README feature table and the install docs. The docs need one sentence: browser engines need nothing, and a Blitz app enables `dioxus-primitives/native` alongside `dioxus/native`.
-3. [Row 448](../448-phase-0-3-proof-port-a-focus-trap-and-otpfilter.md)'s focus-trap deletion. The `not(web)` trap is then compiled only where dioxus launches Blitz and eval is `Unsupported`, so the deletion removes dead code by construction.
+3. [Row 448](./448-phase-0-3-proof-port-a-focus-trap-and-otpfilter.md)'s focus-trap deletion. The `not(web)` trap is then compiled only where dioxus launches Blitz and eval is `Unsupported`, so the deletion removes dead code by construction.
 4. [Row 438](../438-blitz-native-renderer.md) inherits the single `native` opt-in named after dioxus's own feature, the assert, `NATIVE_ARM`, and `#[cfg(feature = "native")]` as the spelling of the Blitz arm.
 
 Size: M (inferred). About 140 mechanical cfg edits, about 10 manifest and gate edits, one assert, and prose.
