@@ -374,3 +374,5 @@ strings, payloads). Use a generic User-Agent such as `shadcn-dioxus-research`.
 ## Report (<= 40 lines)
 What changed (files), the root cause or construction and which class it removes, the commands run with their results
 (pass/fail counts), commit hashes, and anything left open or any file outside your set you needed.
+A delegated lane's findings also go in a ledger of receipts, checked by `scripts/report-receipts.py`
+([`delegation-and-models`](../agent-rules/delegation-and-models.md)).

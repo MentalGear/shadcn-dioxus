@@ -27,6 +27,17 @@ Read this when you are about to delegate a task, brief a lane agent or choose a 
   the source before its first edit and, where one is false, stops and reports instead of working around it. Measured
   2026-11-12: a lane found row 451's missing bridge rows in under a minute this way, and row 448's "dead" sites were
   caught by a read-only check before a deletion lane was sent.
+- **A lane report's findings carry receipts, and a script checks them before the main loop relays anything** (owner
+  2026-11-19). A finding is one JSON line in a ledger beside the report: the claim, a verdict and its receipts. A
+  receipt is a `quote` (file, line, the text copied verbatim), a `count` (a ripgrep pattern, its globs and the
+  expected number) or a `run` (a log holding the exact command and its unedited output, for reproductions and
+  measurements). `scripts/report-receipts.py` confirms each quote in the checkout and re-runs each count; the main
+  loop reads the `run` logs. A claim whose receipt fails or is missing is relayed as opinion or dropped, never as a
+  finding. A claim about what a type holds or what a function does quotes the definition, not the call site. What a
+  receipt cannot show stays labelled as such: the inference drawn from a quoted line, how often a handler fires, a
+  grade. Asking a report to separate measured from inferred in prose does not hold this. Measured 2026-11-19: a report
+  filed "a pointermove handler deep-clones a Vec" under measured while the type holds an `Rc<[Sector]>`; a receipt
+  pass over a second report's 61 claims corrected 17 counts and refuted one.
 - **A brief names the lane's verification, and it is never the broad set.** Own-component specs by name in the lane;
   the broad selection once per batch on a release build ([`dev-docs/lane-rules.md`](../dev-docs/lane-rules.md), "One
   verifier per batch"). A new piece of tooling a lane could not run end to end is run once by the main loop before
