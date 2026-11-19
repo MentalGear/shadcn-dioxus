@@ -105,9 +105,11 @@ the line here is the pointer, so when a row's text and this line disagree, the r
 - A JS-volume ratchet raise is never paid for by shortening a readable name (the ratchets measure text, not code;
   row 505 proposes counting tokens so a rename or reformat stops mattering). A reversal of such a shortening is
   granted at face value through the normal grant row. 2026-11-11 (row [505](./backlog/505-js-lit-counts-lines-not-bytes.md), PR #169).
-- The code graph explorer (`scripts/codegraph/`, row 486) is correctly placed (it mirrors `playwright/`'s and
-  `preview/`'s own-pnpm-project convention, which the row itself chose deliberately) but was missing from the
-  `dev-docs/README.md` map; added. 2026-11-11.
+- The code graph explorer lives in its own repository, MentalGear/code-analyser (owner's request: "Would it make
+  sense to extract the code analyser into its own repo? If so, please do."); this repo keeps only its project config
+  `.codegraph/project.py` (the comment tokenizer `scripts/comment-scan.py`, the build lock, the component mapping,
+  pairing and spec edges) and the runner `scripts/codegraph.sh`. Supersedes the 2026-11-11 placement under
+  `scripts/codegraph/`. 2026-11-19 (row [486](./backlog/486-code-graph-explorer-tools-codegraph.md)).
 - The code analyzer's comment analysis gets its own standing backlog row, separate from row 486 (the tool itself),
   so each pass's findings and follow-ups keep one home. Pass 1 (owner-requested, `preview` out of scope) fixed two
   stale names in `primitives` (`SelectRoot` to `Select`, two invented Command methods to the real `set_open`) and

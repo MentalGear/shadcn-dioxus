@@ -125,7 +125,7 @@ crates.io APIs, 2026-10-31) and marked unverified.
 
 ## Prototype
 
-- **Sources:** [`scripts/codegraph/`](../../scripts/codegraph/).
+- **Sources:** MentalGear/code-analyser (the tool), run here by [`scripts/codegraph.sh`](../../scripts/codegraph.sh) with [`.codegraph/project.py`](../../.codegraph/project.py).
   - `build_graph.py`: SCIP plus the scans, written to `graph.json`.
   - `make_explorer.py`: inlines the graph into the template.
   - `explorer.template.html`: the page.

@@ -34,7 +34,6 @@ web-sys	cargo	0.3.106	keep	unsafe	lab	2026-11-06		carousel-lab only, never shipp
 @axe-core/playwright	npm	4.10.2	exception	none	dev	2026-11-06	2027-11-07	MPL-2.0 outside D5 licence class; test-only, never distributed; owner 2026-11-07
 @playwright/test	npm	1.60.0	keep	fs-network	dev	2026-11-06		e2e suite
 axe-playwright	npm	2.1.0	keep	none	dev	2026-11-06		axe route checks
-cytoscape	npm	3.34.3	keep	none	tool	2026-11-06		code-graph explorer page; owner-approved pin
 playwright	npm	1.60.0	keep	fs-network	dev	2026-11-06		browser install and inspect script
 stylelint	npm	16.26.1	keep	none	dev	2026-11-06		CSS gate
 stylelint-config-standard	npm	38.0.0	keep	none	dev	2026-11-06		base ruleset

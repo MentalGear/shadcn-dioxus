@@ -35,7 +35,7 @@ or phase number, so those headings and ids stay where they are.
 | [`motion.md`](./motion.md) | How animation works: tokens, reduced motion, compositor-only loops, visibility gating. Also on the site's `/docs`. |
 | [`js-interop.md`](./js-interop.md) | How Rust talks to the page: Rust first, the bridge in `primitives/src/bridge/` second, no JS in Rust strings; an "I want to ... use this" table, the deadline table that says where a decision goes (rsx handler, named behaviour, A, G, R), the bridge verbs, the desktop caveats, what is forbidden and which gate says so (`check-js-volume` and `check-bridge-behaviours` have landed; its landed vs planned table names the rest). Read before writing any interactive behaviour. |
 | [`guides/rust-conventions.md`](./guides/rust-conventions.md) | The short list of Rust conventions for primitives and components. |
-| [`../scripts/codegraph/README.md`](../scripts/codegraph/README.md) | The code graph explorer (row 486): a dependency graph and comment-quality metrics over the whole repo, as one self-contained `explorer.html`. Dev tool only, never shipped, not a gate; run it before an unfamiliar area's code-quality review or a cross-crate refactor. |
+| [`../.codegraph/project.py`](../.codegraph/project.py) | The code graph explorer (row 486; the tool is MentalGear/code-analyser, run by `scripts/codegraph.sh`, this file is the repo's project config): a dependency graph and comment-quality metrics over the whole repo, as one self-contained `explorer.html`. Dev tool only, never shipped, not a gate; run it before an unfamiliar area's code-quality review or a cross-crate refactor. |
 | [`guides/lifting-code.md`](./guides/lifting-code.md) | Licensing and provenance rules for porting code from forks and upstream libraries. |
 | [`supply-chain/README.md`](./supply-chain/README.md) | The supply-chain and dependency security playbook, written to be read and copied alone (threat model, controls table, adoption list); drift-gated by `scripts/check-supply-chain-doc.sh`. The root [`../SECURITY.md`](../SECURITY.md) is the reporting policy. |
 
@@ -63,7 +63,7 @@ or phase number, so those headings and ids stay where they are.
 | `round3-2026-10-05.md` | Round 3 evidence (listener inventory, VirtualList numbers, fonts, stylesheet delivery), cited by row 170 and `motion.md`. |
 | `collection-model-2026-10-22.md` | The shared collection model (rows 360-364). |
 | `shadcn-demo-parity-audit-2026-10-11.md` | Row 188, the owner's demo-parity audit. |
-| `code-graph-explorer-2026-10-31.md` | Row 486: the code graph explorer research (tools compared, measured SCIP and cargo-modules runs); the tool itself is `scripts/codegraph/`. |
+| `code-graph-explorer-2026-10-31.md` | Row 486: the code graph explorer research (tools compared, measured SCIP and cargo-modules runs); the tool itself is MentalGear/code-analyser, run by `scripts/codegraph.sh`. |
 | `overlay-layering-audit-2026-11-14.md` | The overlay layering audit: shared layers, the component-by-mechanic matrix, duplications, and the one restructuring proposed (row 519; chart tooltip, row 517). |
 | `radix-vs-base-ui-2026-10-28.md` | The Radix-versus-Base-UI scan of every component, the iPhone overlay root cause and the placement rule (rows 477-482, 296). |
 | `dependency-audit-2026-10-14.md`, `dependency-evaluation.md`, `dependency-scanners.md` | Rows 217 and 371 (what users compile and trust), behind the [supply-chain playbook](./supply-chain/README.md). |
