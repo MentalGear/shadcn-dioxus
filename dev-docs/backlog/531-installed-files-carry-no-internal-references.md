@@ -1,7 +1,7 @@
 ---
 id: 531
 title: "Installed component files carry no internal references (row numbers, dev-docs, backlog, scripts paths)"
-status: "BACKLOG, filed 2026-11-19. Not started. Pinning dioxus-primitives in every component.json is not…"
+status: "BACKLOG, filed 2026-11-19. Before the final review (row 383). Not started. Pinning…"
 size: "S-M: up to a few hundred lines to…"
 area: build
 updated: 2026-11-19
@@ -19,7 +19,7 @@ repository's docs or the row files) and add a gate over exactly the installed fi
 
 ## Status / trigger
 
-BACKLOG, filed 2026-11-19. Not started. Pinning `dioxus-primitives` in every `component.json` is not this row: all 83
+BACKLOG, filed 2026-11-19. Before the final review (row 383). Not started. Pinning `dioxus-primitives` in every `component.json` is not this row: all 83
 `component.json` carry the git dependency without a rev because `scripts/stamp-release-rev.sh` writes it at release time
 ([row 217](./done/217-dependency-audit-follow-ups-what-users-pay-for.md), landed); the committed tree is the development
 form.

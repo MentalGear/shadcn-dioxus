@@ -156,8 +156,16 @@ the line here is the pointer, so when a row's text and this line disagree, the r
   the other rules stay out, with the reasons in the note.
 - Steps 1 and 2 of the functional-core construction are approved as one row that takes over the gate half of rows 533
   and 537 (owner 2026-11-19: "yes for 1 and 2"): a generated `syn` item table read by the gates, and handler decisions as
-  pure outcome functions. Step 3, the code graph explorer reading the table, stays an open question inside the row; row
-  [542](./backlog/542-one-generated-item-table-read-by-the-gates.md), not scheduled.
+  pure outcome functions. Step 3, the code graph explorer reading the table, was approved later (next entry); row
+  [542](./backlog/542-one-generated-item-table-read-by-the-gates.md).
+- Step 3 of row 542 is approved in the form the row states (owner 2026-11-19: "ok"): typed facts stay with the compiler
+  index, syntactic facts come from this repository's item table and replace the explorer's regular-expression item scan.
+  It is built after the table passes its proof; the tool half is in `MentalGear/code-analyser`, a separate repository
+  (row [542](./backlog/542-one-generated-item-table-read-by-the-gates.md)).
+- The order of rows 529-542 is option A (owner 2026-11-19: "A"): rows 529 and 530 (the CLI fix and the transactional
+  install), 542's first lane, 532 and 533's kernel items join the next batch beside rows 528, 523 and 517; row 535 follows
+  port row 456; rows 536, 540, 541, 538, 539, 531 and the rest of 537 land before the final review (row 383); row 534 is
+  not scheduled. The lanes still wait for the owner's go ([`STATUS.md`](./STATUS.md), "Next").
 - The lightbox motion belongs in the library (owner 2026-11-19, asked "Does the effect belong in the library at all?":
   "yes"); row [535](./backlog/535-lightbox-fly-in-from-the-clicked-item.md), not scheduled.
 - The 2026-11-19 evaluation is documented in the repository (owner: "properly document all"): the note

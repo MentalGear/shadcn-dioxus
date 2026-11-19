@@ -1,7 +1,7 @@
 ---
 id: 542
 title: "One generated item table of the workspace, read by the gates; handler decisions as pure outcome functions"
-status: "BACKLOG, steps 1 and 2 approved by the owner 2026-11-19. Not started, not scheduled; the order in…"
+status: "BACKLOG, steps 1-3 approved by the owner 2026-11-19. Not started. The first lane (step 1 and the…"
 size: "S-M for the table and the first gate; S…"
 area: tooling
 updated: 2026-11-19
@@ -11,7 +11,7 @@ updated: 2026-11-19
 
 ## Item
 
-Two steps, approved by the owner 2026-11-19 ("yes for 1 and 2"):
+Three steps, approved by the owner 2026-11-19 (steps 1 and 2: "yes for 1 and 2"; step 3: "ok"):
 
 1. **The item table.** A `syn` binary in the existing workspace member `scripts/attr-spread-collision-checker` (it already
    parses Rust and `rsx!` and produces the public-API snapshot) writes one table of every function in the workspace: path,
@@ -23,13 +23,14 @@ Two steps, approved by the owner 2026-11-19 ("yes for 1 and 2"):
    The two calendar keyboard handlers go first: they duplicate each other (`RangeCalendar`'s `onkeydown`, about 60 lines,
    and `calendar/single.rs`) and only `horizontal_day_step` (`calendar/dates.rs:235`) has a unit test.
 
-Step 3, the code graph explorer reading the table, is not approved and nothing of it is built; it is the open question
-below.
+3. **The code graph explorer reads the table.** Approved after the table passes its proof; nothing of it is built. The
+   construction is the section below.
 
 ## Status / trigger
 
-BACKLOG, steps 1 and 2 approved by the owner 2026-11-19. Not started, not scheduled; the order in "Next" waits for the
-owner. Step 3 is an open question for the owner.
+BACKLOG, steps 1-3 approved by the owner 2026-11-19. Not started. The first lane (step 1 and the long-function count) is
+in the next batch (owner 2026-11-19, option A) and waits for the owner's go; step 2 follows the table's proof; step 3 is
+built after the table passes its proof.
 
 ## Size
 
@@ -77,10 +78,11 @@ sections 3 to 5. That note orders the work as four steps (table, gates, shell ru
 the note's steps 1 and 3, its step 2 (the gates) is the gate half taken over from rows 533 and 537 above, and step 3 here is
 the note's step 4.
 
-## Open question for the owner: the code graph explorer
+## Step 3, approved: the code graph explorer reads the table
 
-Step 3, not approved, nothing built. The explorer (`MentalGear/code-analyser`, a separate repository this session could
-only read) takes its edges from one `rust-analyzer scip` index. It finds items itself with regular expressions
+Approved by the owner 2026-11-19 ("ok"), on the condition that it is built after the item table passes its first-lane
+proof. The tool half is in `MentalGear/code-analyser`, a separate repository this session could only read. The explorer
+(`MentalGear/code-analyser`) takes its edges from one `rust-analyzer scip` index. It finds items itself with regular expressions
 (`comment_metrics.py:40-44`: `_PUB_ITEM = re.compile(r"^\s*pub\s+(?:(?:async|unsafe|const)\s+)*(fn|struct|enum|trait|const|static|type|mod)\s+(\w+)")`
 and `_ANY_ITEM = re.compile(...)`). It drops the index's occurrence ranges when it builds the graph (`build_graph.py:40-45`:
 the occurrence loop reads field 2, the symbol, and field 3, the roles, and keeps `d['occ'].append((sym,roles))`; the range
@@ -101,7 +103,7 @@ know it.**
 stays a dev tool and the gates carry the enforcement, so the value is moderate. It is worth doing only after the table has
 passed its first-lane proof. **Effort:** S in `MentalGear/code-analyser`, S here for the project hook (estimates).
 
-**What the owner decides.** [Row 486](./486-code-graph-explorer-tools-codegraph.md), line 83, reads "rust-analyzer is the
+**Row 486.** [Row 486](./486-code-graph-explorer-tools-codegraph.md), line 83, reads "rust-analyzer is the
 one analysis source. crabmap, Crabviz and every other young or little-used tool are out". By its wording that rules out
-young third-party analysis tools; whether a table from this repo's own checker counts against it is the owner's reading to
-make. Until then step 3 is not filed work.
+young third-party analysis tools; the owner approved this step in the form above, a table from this repository's own
+checker that adds no edges, on 2026-11-19.

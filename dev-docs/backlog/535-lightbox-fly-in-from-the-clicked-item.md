@@ -1,7 +1,7 @@
 ---
 id: 535
 title: "The dialog family gets a lightbox fly-in: the clicked item grows into the modal's media and shrinks back, proven on the photo wall"
-status: "BACKLOG, approved by the owner 2026-11-19 (\"yes\"). Not started, not scheduled; the order in \"Next\"…"
+status: "BACKLOG, approved by the owner 2026-11-19 (\"yes\"). Not started. After port row 456 (the order of…"
 size: "M (inferred): four S to M parts"
 area: primitives
 updated: 2026-11-19
@@ -18,7 +18,7 @@ effect belong in the library at all?": "yes"). The one construction is below.
 
 ## Status / trigger
 
-BACKLOG, approved by the owner 2026-11-19 ("yes"). Not started, not scheduled; the order in "Next" waits for the owner.
+BACKLOG, approved by the owner 2026-11-19 ("yes"). Not started. After port row 456 (the order of 2026-11-19, option A), which rewrites the exit path its close half builds on; waits for the owner's go.
 
 **Ordering evidence.** The close half builds on the dialog's exit path (`use_animated_open`, `primitives/src/lib.rs:897`),
 which open [row 456](./456-port-3-ov-overlay-core-escape-dismiss-open-focus.md) rewrites (it owns the exit wait and

@@ -1,7 +1,7 @@
 ---
 id: 529
 title: "The CLI validates component names and never deletes outside the components root"
-status: "BACKLOG, filed 2026-11-19. The first of rows 529-534 to do. Not started."
+status: "BACKLOG, filed 2026-11-19. Next batch, first of the new rows (a destructive bug); waits for the…"
 size: "S: one type, its three entry points and…"
 area: tooling
 updated: 2026-11-19
@@ -20,7 +20,7 @@ resolved target must be a strict child of the components root.
 
 ## Status / trigger
 
-BACKLOG, filed 2026-11-19. The first of rows 529-534 to do. Not started.
+BACKLOG, filed 2026-11-19. Next batch, first of the new rows (a destructive bug); waits for the owner's go. Not started.
 
 ## Size
 

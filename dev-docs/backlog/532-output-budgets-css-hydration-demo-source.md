@@ -1,7 +1,7 @@
 ---
 id: 532
 title: "Output budgets where none exist: CSS bytes per page and hydration time; an optional step that stops embedding demo source"
-status: "BACKLOG, filed 2026-11-19. Not started. The hydration budget needs a stable timing method on a…"
+status: "BACKLOG, filed 2026-11-19. Next batch; waits for the owner's go. Not started. The hydration budget…"
 size: "M: two budgets and their gates; the…"
 area: build
 updated: 2026-11-19
@@ -28,7 +28,7 @@ whether the saving is worth a runtime fetch of the source on the demo pages.
 
 ## Status / trigger
 
-BACKLOG, filed 2026-11-19. Not started. The hydration budget needs a stable timing method on a release build (the
+BACKLOG, filed 2026-11-19. Next batch; waits for the owner's go. Not started. The hydration budget needs a stable timing method on a release build (the
 `@timing` cases are deactivated, [row 494](./494-re-enable-the-timing-cases-after-the-rust-port.md)); until it exists the
 CSS budget goes first.
 

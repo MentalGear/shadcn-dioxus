@@ -23,10 +23,11 @@ gate (`scripts/report-receipts.py`), and filed rows 529-542 (535, a lightbox fly
 dialog family, is approved by the owner and not scheduled) with the note
 [`research/repo-evaluation-2026-11-19.md`](./research/repo-evaluation-2026-11-19.md) and its evidence directory. Its work is
 on branch `claude/sleepy-archimedes-f3i7ze` and is **not merged to main**. Row **529** (the CLI deletes outside the
-components root) is proposed as the first of the new rows because it is a destructive bug; the order of the new rows in
-"Next" waits for the owner. The same session evaluated a functional core and a graph as the single source of truth
+components root) is proposed as the first of the new rows because it is a destructive bug; the owner set the order of the new rows on
+2026-11-19 (option A, in "Next" below), no lane has started, and every lane waits for the owner's go. The same session evaluated a functional core and a graph as the single source of truth
 ([`research/functional-core-and-graph-ssot-2026-11-19.md`](./research/functional-core-and-graph-ssot-2026-11-19.md)); its
-steps 1 and 2 are row 542 (approved, not scheduled) and its step 3 is an open question in that row.
+steps 1 and 2 are row 542 (approved), and its step 3 (the code graph explorer reads the item table) is approved too, to be
+built after the table passes its proof (owner 2026-11-19: "ok").
 
 ## Merge queue
 
@@ -73,7 +74,13 @@ row says otherwise, so a step runs as parallel lanes (one verifier per batch, `l
    **528** (`HoverSurface`: Tooltip and HoverCard as one surface, about 5 h, the first of
    [row 519](./backlog/done/519-anchored-panel-recipe-one-hook.md)'s "Further candidates"), with row **523** (an edge
    and floating close mid-entry) in the same lane, then row **517** (the chart tooltip on the real `Tooltip`, approved
-   2026-11-14). After them, step 8's ports in yield order.
+   2026-11-14). The owner set the rest of the order on 2026-11-19 (option A, "A"): the same batch also takes row **529**
+   (the CLI deletes outside the components root; first of the new rows, because it is a destructive bug reachable from one
+   typed argument), row **530** (the transactional install, which changes the same functions as 529), row **542**'s first
+   lane (the item table and its first gate, the long-function count, with the owner's approval of 2026-11-19), row **532**
+   (output budgets) and row **533**'s kernel items (kernel lints and assertions); their file sets are disjoint from the
+   lanes above, so they run in parallel. These lanes still wait for the owner's go. After them, step 8's ports in yield
+   order.
 2. Done, merged in PR #170 (2026-11-11): the deploy blockers of PR #168 (rows 468, 501); row **436**'s overlay and
    class groups (F1, F2, F4, F5, F6, F8, F9, F10, F11, F12), each reproduced red first (CHANGELOG.md has the
    user-visible ones: F1, F10, F11); **499** (safe triangle; CHANGELOG.md too); **152** slices 4-5; **371**'s
@@ -125,7 +132,8 @@ ports), its working form is [`js-interop.md`](./js-interop.md), and every item h
 8. The ports, as ordinary rows by yield (lines of JavaScript removed per hour, highest first; a row whose dependencies
    have not landed waits, and each row names them): **451** (3.SC, built 2026-11-12) and **454** (3.OB, built
    2026-11-12; five legacy scripts left the baseline, with 451 the volume gate's total fell from 508,767 to 482,329),
-   then **452** (3.PL, 27/h), **453** (3.PV, 22/h), **455** (3.GS, 15/h), **456** (3.OV, 9/h), **457** (3.VS, 6/h),
+   then **452** (3.PL, 27/h), **453** (3.PV, 22/h), **455** (3.GS, 15/h), **456** (3.OV, 9/h; row **535**, the lightbox fly-in, follows it because its close half builds on the exit path that row
+   rewrites), **457** (3.VS, 6/h),
    **458** (3.FC, 5/h), **461** (3.PW) and **459** (3.SL, which closes a blocking-listener class rather than removing
    lines); **460** (3.HV) and **462** (roving focus) only if phase 0's witnesses call for them.
 9. The measured group, one port at a time with the old version switchable, the owner measuring on real devices after
@@ -136,6 +144,13 @@ ports), its working form is [`js-interop.md`](./js-interop.md), and every item h
 
 **Last**
 
+9a. Before the final review, in this order: rows **536** (generic components check value types at run time), **540**
+    (one controlled prop type), **541** (`use_previous` writes signals inside a memo), **538** (deny the allocation lints
+    after cleaning), **539** (hot-path allocation sites) and **531** (installed files carry no internal references), with
+    what stays in row **537** (the prose gate `check-history-comments` and the CI-freeze note; its parsed-Rust gates are
+    built in row 542). They edit many component files that the port rewrites, so mid-port they would conflict, and 536 and
+    540 change the public API. Row 542's step 2 (handler decisions as pure outcome functions, the two calendar handlers
+    first) and its step 3 follow the item table's proof.
 10. **383**, the final adversarial review of the finished library. Parked behind the plan: **438** (Blitz renderer).
 
 ## Owner inputs pending
@@ -144,6 +159,9 @@ ports), its working form is [`js-interop.md`](./js-interop.md), and every item h
   the adopted order: 412 (docs-site CSP meta tag), 413 (property tests and Miri), 414 (Kani/Aeneas proof spike), 415
   (GitHub Actions pinned to SHAs).
 - For the measured ports (row 443): which devices the owner has (Mac, iPhone and iOS version, Windows or Android).
+- Row **534** (overlay memory growth per open/close cycle) is not scheduled and comes last in every ordering; it starts
+  only when the owner asks or a measured page shows memory that matters (a soak over thousands of opens, a content-heavy
+  overlay).
 - Row 469: start or drop (pre-hydration typing: autofill, back/forward form restoration, fast typing on a slow phone).
 - iPhone re-tests: rows 28, 30, 295 and 305 (307 is closed; 296 is fixed by 477, landed and deployed, and closes with 477 after the owner's iPhone check).
 - Owner question from the Radix-versus-Base-UI scan (2026-10-28): (3) `as` (Radix `asChild` semantics, row 395) against
@@ -171,7 +189,8 @@ ports), its working form is [`js-interop.md`](./js-interop.md), and every item h
 - Decided 2026-11-14 (owner): the chart tooltip without a fade-in was Firefox; row 516's construction removes the
   dependency ([`decisions.md`](./decisions.md)).
 - Waits for the owner's go to start (both approved 2026-11-14; the go lifts the run limit): row 528 (`HoverSurface`,
-  with row 523 in its lane) and then row 517 (see "Next"). Optional, each the owner's call: row
+  with row 523 in its lane) and then row 517, with the batch of 2026-11-19 beside them (rows 529, 530, 542's first lane,
+  532, 533's kernel items; see "Next"). Optional, each the owner's call: row
   **526** (a lane's browser run waits for the whole release suite) and row **527** (gallery cards move by their
   content-visibility estimate when a script scrolls one into view).
 - Settled by construction (main loop, 2026-11-18): no upstream request for `ToggleData` / `CancelData` payloads, since a

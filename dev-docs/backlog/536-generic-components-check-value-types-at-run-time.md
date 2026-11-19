@@ -1,7 +1,7 @@
 ---
 id: 536
 title: "Generic components check their value type at run time: a mismatched option compiles and panics"
-status: "BACKLOG, filed 2026-11-19. Read, not run: the claim is reasoned from the definitions (ledger D-4)…"
+status: "BACKLOG, filed 2026-11-19. Before the final review (row 383); it changes the public API. Read, not…"
 size: "M: the context type, the five…"
 area: primitives
 updated: 2026-11-19
@@ -26,7 +26,7 @@ without the caller repeating it.
 
 ## Status / trigger
 
-BACKLOG, filed 2026-11-19. Read, not run: the claim is reasoned from the definitions (ledger D-4), no mismatched pair
+BACKLOG, filed 2026-11-19. Before the final review (row 383); it changes the public API. Read, not run: the claim is reasoned from the definitions (ledger D-4), no mismatched pair
 was built. Not started.
 
 ## Size

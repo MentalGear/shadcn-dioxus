@@ -1,7 +1,7 @@
 ---
 id: 537
 title: "The Rust-shape gates are text patterns: three reproduced bypasses and the construction behind them"
-status: "BACKLOG, filed 2026-11-19. Not started. check-js-listeners.sh matches only addEventListener\\s*\\(…"
+status: "BACKLOG, filed 2026-11-19. Not started. What stays here (the prose gate and the CI-freeze note)…"
 size: "M-L as filed (a syn checker for two…"
 area: tooling
 updated: 2026-11-19
@@ -30,7 +30,7 @@ its fix is a clearer rule, not a parser.
 
 ## Status / trigger
 
-BACKLOG, filed 2026-11-19. Not started. `check-js-listeners.sh` matches only `addEventListener\s*\(` (`ADD_RE`); its
+BACKLOG, filed 2026-11-19. Not started. What stays here (the prose gate and the CI-freeze note) goes before the final review (row 383); the parsed-Rust gates are built in row 542. `check-js-listeners.sh` matches only `addEventListener\s*\(` (`ADD_RE`); its
 bypass was read, not run. The workflows are `workflow_dispatch`-only (`scripts/run-gates.sh:3-4`, the CI freeze of
 [row 33](./033-3-browser-playwright-on-every-push-pr-sharded.md) and [row 4](./004-first-3-browser-ci-run-treat-as-calibration-not.md)),
 so no gate runs unless a person or lane runs it; a sounder gate is worth little until that is settled.

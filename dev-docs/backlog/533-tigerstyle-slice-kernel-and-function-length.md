@@ -1,7 +1,7 @@
 ---
 id: 533
 title: "The TigerStyle slice: kernel lints and assertions, and a shrink-only count of long non-component functions"
-status: "BACKLOG, filed 2026-11-19; the owner agreed to the slice. Not started. Items 1-4 need no grant…"
+status: "BACKLOG, filed 2026-11-19; the owner agreed to the slice. Next batch for its kernel items; waits…"
 size: "M: kernel items 1-4 are S; item 5 is S…"
 area: tooling
 updated: 2026-11-19
@@ -38,7 +38,7 @@ components (87 of 364 in primitives exceed 70), hence a script.
 
 ## Status / trigger
 
-BACKLOG, filed 2026-11-19; the owner agreed to the slice. Not started. Items 1-4 need no grant; item 5 waits for it.
+BACKLOG, filed 2026-11-19; the owner agreed to the slice. Next batch for its kernel items; waits for the owner's go. Not started. Items 1-4 need no grant; item 5 waits for it.
 
 **Taken over (2026-11-19).** The gate half, the shrink-only count of long non-component functions, is built by
 [row 542](./542-one-generated-item-table-read-by-the-gates.md) as the first consumer of its generated item table. This row

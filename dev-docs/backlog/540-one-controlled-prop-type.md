@@ -1,7 +1,7 @@
 ---
 id: 540
 title: "One Controlled<T> prop type instead of two encodings of controlled-versus-uncontrolled"
-status: "BACKLOG, filed 2026-11-19. Not started. The public API snapshot gate makes this a deliberate break…"
+status: "BACKLOG, filed 2026-11-19. Before the final review (row 383). Not started. The public API snapshot…"
 size: "M"
 area: primitives
 updated: 2026-11-19
@@ -18,7 +18,7 @@ form). Construction: one `Controlled<T>` prop type that every component takes an
 
 ## Status / trigger
 
-BACKLOG, filed 2026-11-19. Not started. The public API snapshot gate makes this a deliberate break, to be batched with
+BACKLOG, filed 2026-11-19. Before the final review (row 383). Not started. The public API snapshot gate makes this a deliberate break, to be batched with
 other prop changes.
 
 ## Size

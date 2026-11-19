@@ -1,7 +1,7 @@
 ---
 id: 539
 title: "Hot-path allocation sites in filtering and drag paths (low priority, prove before changing)"
-status: "BACKLOG, filed 2026-11-19, low priority. Start only with a measurement."
+status: "BACKLOG, filed 2026-11-19, low priority. Before the final review (row 383); start only with a…"
 size: "M"
 area: primitives
 updated: 2026-11-19
@@ -24,7 +24,7 @@ Sites that allocate per keystroke or per pointer move (read, not run; nothing wa
 
 ## Status / trigger
 
-BACKLOG, filed 2026-11-19, low priority. Start only with a measurement.
+BACKLOG, filed 2026-11-19, low priority. Before the final review (row 383); start only with a measurement.
 
 ## Size
 

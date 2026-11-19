@@ -1,7 +1,7 @@
 ---
 id: 530
 title: "`add` installs transactionally: stage, move into place, edit Cargo.toml and mod.rs last, save the lock on every exit"
-status: "BACKLOG, filed 2026-11-19. Starts after row 529, which changes the same functions. Not started."
+status: "BACKLOG, filed 2026-11-19. Next batch, waits for the owner's go. Starts after row 529, which…"
 size: "M: the install pipeline in add.rs, a…"
 area: tooling
 updated: 2026-11-19
@@ -24,7 +24,7 @@ the old).
 
 ## Status / trigger
 
-BACKLOG, filed 2026-11-19. Starts after [row 529](./529-cli-component-names-validated-no-delete-outside-root.md), which
+BACKLOG, filed 2026-11-19. Next batch, waits for the owner's go. Starts after [row 529](./529-cli-component-names-validated-no-delete-outside-root.md), which
 changes the same functions. Not started.
 
 ## Size

@@ -1,7 +1,7 @@
 ---
 id: 541
 title: "use_previous writes signals inside a memo: keep the previous value in a CopyValue or a render-local"
-status: "BACKLOG, filed 2026-11-19. Not started."
+status: "BACKLOG, filed 2026-11-19. Before the final review (row 383). Not started."
 size: "S"
 area: primitives
 updated: 2026-11-19
@@ -20,7 +20,7 @@ component body.
 
 ## Status / trigger
 
-BACKLOG, filed 2026-11-19. Not started.
+BACKLOG, filed 2026-11-19. Before the final review (row 383). Not started.
 
 ## Size
 

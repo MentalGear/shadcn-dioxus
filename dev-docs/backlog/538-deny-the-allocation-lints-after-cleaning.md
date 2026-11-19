@@ -1,7 +1,7 @@
 ---
 id: 538
 title: "Deny the allocation lints after cleaning: expect_fun_call now, then or_fun_call and redundant_clone; a take-attributes helper"
-status: "BACKLOG, filed 2026-11-19. Not started. The old optional item in row 355 (\"fix the real hits of…"
+status: "BACKLOG, filed 2026-11-19. Before the final review (row 383). Not started. The old optional item in…"
 size: "M: item 1 is XS, items 2-3 are S each…"
 area: tooling
 updated: 2026-11-19
@@ -27,7 +27,7 @@ module; 6 do not allocate and need a rewrite or an `#[expect]`; 8 are the combob
 
 ## Status / trigger
 
-BACKLOG, filed 2026-11-19. Not started. The old optional item in [row 355](./done/355-adopt-google-rust-style-guide-items.md)
+BACKLOG, filed 2026-11-19. Before the final review (row 383). Not started. The old optional item in [row 355](./done/355-adopt-google-rust-style-guide-items.md)
 ("fix the real hits of `redundant_clone` (~20)") is superseded by the counts here.
 
 ## Size
