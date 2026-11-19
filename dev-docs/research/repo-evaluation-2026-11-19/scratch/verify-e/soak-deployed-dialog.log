@@ -1,0 +1,9 @@
+node /tmp/claude-0/-home-user-shadcn-dioxus/2f9af3b0-3995-5f94-a96b-6c0dfde7973a/scratchpad/verify-e/soak.js https://mentalgear.github.io/shadcn-dioxus dialog 600 100 0
+{"cycle":0,"wasmMB":20.25,"heapMB":3.97,"nodes":6531,"qsaAll":3185,"listeners":107}
+{"cycle":100,"wasmMB":20.56,"heapMB":4.4,"nodes":6531,"qsaAll":3185,"listeners":107}
+{"cycle":200,"wasmMB":20.69,"heapMB":4.64,"nodes":6531,"qsaAll":3185,"listeners":107}
+{"cycle":300,"wasmMB":20.88,"heapMB":4.85,"nodes":6531,"qsaAll":3185,"listeners":107}
+{"cycle":400,"wasmMB":21.06,"heapMB":5.04,"nodes":6531,"qsaAll":3185,"listeners":107}
+{"cycle":500,"wasmMB":21.19,"heapMB":5.23,"nodes":6531,"qsaAll":3185,"listeners":107}
+{"cycle":600,"wasmMB":21.38,"heapMB":5.41,"nodes":6531,"qsaAll":3185,"listeners":107}
+done secs 169 timeouts {"open":0,"close":0} errs []

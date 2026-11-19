@@ -1,0 +1,3 @@
+cd /home/user/targets/verify-gates-wt && bash scripts/check-hooks-in-closures.sh   # hostile: hook via helper fn in use_memo; hook in if; hook in for
+check-hooks-in-closures: OK -- no hook called inside another hook's closure.
+exit=0

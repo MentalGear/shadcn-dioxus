@@ -176,3 +176,9 @@ open and measures time); `carousel` arrows-never-overflow (2 schemes x 6 widths)
 (the layout can depend on the hydrated width); the carousel pointer-drag tests (each pages the one carousel); the three `@timing`
 recorded flicks in `carousel-virtual-wheel` (deactivated). `playwright/durations.json` carries the five files scaled by the
 measured ratio (date-picker with the stalls removed) and the removed test counts.
+
+**Evidence 2026-11-19 (evaluation, ledger D-39 to D-42).** `waitForTimeout` appears 444 times in 109 `spec.ts` files (116
+files with helpers); `20 * 60 * 1000` appears 494 times in `playwright/` (463 in the exact `timeout: 20 * 60 * 1000`
+form); `page.clock` is called in 11 files, the `app-clock` helper imported by 6. Row 152a measured fixed sleeps at under
+2 % of test time, so the count is a flakiness and readability concern more than a speed one. Row 495 (done) replaced the
+sleeps of two specs; rows 493 and 494 own the `@timing` cases. Source: [`research/repo-evaluation-2026-11-19.md`](../research/repo-evaluation-2026-11-19.md), section 4.

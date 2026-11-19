@@ -1,0 +1,23 @@
+cd /home/user/shadcn-dioxus; git ls-files 'scripts/**/*.tsv' '*.tsv' | xargs wc -l; TODO grep
+   11 scripts/check-attr-spread-collision.baseline.tsv
+   11 scripts/check-attr-spread-collision.component-forward.baseline.tsv
+    3 scripts/check-bridge-behaviours.allow.tsv
+    2 scripts/check-comment-refs.baseline.tsv
+   31 scripts/check-cross-component-overrides.baseline.tsv
+    2 scripts/check-history-comments.baseline.tsv
+   12 scripts/check-hot-events.allow.tsv
+   48 scripts/check-hot-events.baseline.tsv
+   16 scripts/check-js-volume.allow.tsv
+   87 scripts/check-js-volume.baseline.tsv
+   25 scripts/check-native-slots.baseline.tsv
+    2 scripts/check-state-attributes.baseline.tsv
+   26 scripts/check-wrapper-props.allow.tsv
+   45 scripts/ts-scan/bridge.baseline.tsv
+  321 total
+--- TODO/FIXME/HACK/XXX in tracked .rs (word match)
+preview/src/site/block_demo.rs:16:// with its own TODO to abstract it as a utility class) -- inlined here as a
+preview/src/site/chrome.rs:174:                    // TODO: restore once the primitives crate is published
+--- allow/expect attributes in tracked .rs
+allow 62 expect 84
+allow-lines 62 expect-lines 84
+allow-in-cfg_attr 0

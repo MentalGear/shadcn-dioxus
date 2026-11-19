@@ -1,0 +1,17 @@
+node heapdiff.js http://127.0.0.1:8741/shadcn-dioxus/component/dialog/ 'main button:has-text("Show Dialog")' click 200  (control: no typing)
+objects growing >=0.5 per cycle over 200 cycles (count delta, type name):
+9600 native PerformanceMeasure
+9600 native PerformanceMark
+1002 native system / WeakCell
+811 object Object
+805 object Array
+803 native system / PropertyArray
+802 object system / Context / scope @63769
+400 object W
+243 native system / WeakArrayList
+200 object s
+200 object P
+200 object WeakRef
+200 object D
+146 native InteractionContentfulPaint
+146 native LargestContentfulPaint

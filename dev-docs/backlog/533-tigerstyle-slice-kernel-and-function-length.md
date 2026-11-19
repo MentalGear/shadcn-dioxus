@@ -66,3 +66,6 @@ M: kernel items 1-4 are S; item 5 is S plus the grant and a module rebuild; the 
   out of scope (87 of 364 in primitives, 83 in preview exceed 70); loop bounds in primitives (13 `loop`, 21 `while`) and
   assertion density outside the kernel stay unchecked.
 - Source: [`research/repo-evaluation-2026-11-19.md`](../research/repo-evaluation-2026-11-19.md), section 3.
+- **Cargo.toml comment (added 2026-11-19):** `Cargo.toml:23` says the one `unsafe_code` exception is
+  `preview/src/wasm_libc_shim.rs`; there are two: that file and `decision-kernel/src/ffi.rs:14-17` (`#![allow(unsafe_code, ..)]`
+  over the five `extern "C"` exports, with raw pointers at `:45` and `:56`). Fix the comment with item 1 (ledger D-19).

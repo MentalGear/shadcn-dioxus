@@ -1,0 +1,2 @@
+cmd: python3 (json.load each preview/src/components/*/component.json; re.fullmatch [a-z0-9_]+ on name)
+files 84 nonmatching 0

@@ -1,0 +1,9 @@
+python3 -I /tmp/claude-0/-home-user-shadcn-dioxus/2f9af3b0-3995-5f94-a96b-6c0dfde7973a/scratchpad/verify-ac/recount.py
+nodes 1556 comps 264 edges 13388 {'rs': 7077, 'ext': 4673, 'asset': 205, 'ts': 1275, 'test': 158}
+meta {'resolved_by_owner': 9545, 'resolved_by_module': 2160, 'scip_documents': 942, 'items_defined': 14633, 'unresolved_workspace_refs': 0, 'std_refs': 59954, 'item_level_edges': 25134}
+lib.rs fanin weight 3433
+node keys ['comp', 'id', 'items']
+files 1705
+cm totals {'code': 131924, 'com': 40229, 'doc': 31752, 'pubs': 2638, 'doced': 2001, 'fields': 2350, 'fdoced': 2184, 'todo': 2, 'hist': 0, 'js': 746, 'jscode': 2193, 'words': 333407, 'stale': 6, 'dup': 1404}
+pub doc coverage items+fields 0.8390136327185245 undocumented 803
+und 803 dup runs 322

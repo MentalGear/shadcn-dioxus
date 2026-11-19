@@ -1,0 +1,8 @@
+node axe2.js  [deployed; AxeBuilder vs manual axe.run]
+component/sidebar/ AxeBuilder [
+  'heading-order(1) h3[data-node-hydration="12416"]',
+  'landmark-unique(3) .dx-sidebar-desktop ; #main-content'
+]
+component/sidebar/ manual injection (main frame) [] iframes 3
+component/dialog/ AxeBuilder []
+component/dialog/ manual injection (main frame) [] iframes 0

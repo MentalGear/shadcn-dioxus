@@ -1,0 +1,9 @@
+cd /tmp/claude-0/-home-user-shadcn-dioxus/2f9af3b0-3995-5f94-a96b-6c0dfde7973a/scratchpad/verify-cli/p1 && /home/user/targets/verify-cli/debug/shadcn-dioxus remove -- ..   # before: src/main.rs present
+components
+main.rs
+Removed component '..'
+rc=0
+after:
+Cargo.toml
+src
+victim

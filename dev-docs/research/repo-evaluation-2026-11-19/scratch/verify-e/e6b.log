@@ -1,0 +1,4 @@
+bash /tmp/claude-0/-home-user-shadcn-dioxus/2f9af3b0-3995-5f94-a96b-6c0dfde7973a/scratchpad/verify-e/e6b.sh
+members 83 min 758 direction median 11992 max 99477 data_table sum 1340450
+components with dioxus-primitives dep 83 pinned (rev/tag/branch/version) 0 without it 0 []
+durations sum 12998.0 meta total 12998 files 297 max file 862

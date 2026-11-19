@@ -1,0 +1,29 @@
+cd /home/user/shadcn-dioxus && python3 -I /tmp/claude-0/-home-user-shadcn-dioxus/2f9af3b0-3995-5f94-a96b-6c0dfde7973a/scratchpad/verify-ac/scan2.py x
+cli                                           non   n=   97 max= 168 >70=   5 >100=4
+decision-kernel                               non   n=   39 max=  38 >70=   0 >100=0
+dioxus-attributes                             non   n=    3 max=  39 >70=   0 >100=0
+labs                                          comp  n=    1 max=  40 >70=   0 >100=0
+labs                                          non   n=    2 max=   7 >70=   0 >100=0
+playwright:oracle                             comp  n=   29 max=  26 >70=   0 >100=0
+playwright:oracle                             non   n=    3 max= 207 >70=   1 >100=1
+preview                                       comp  n= 1203 max= 962 >70=  83 >100=30
+preview                                       non   n=  615 max= 160 >70=  15 >100=8
+primitives                                    comp  n=  364 max= 513 >70=  87 >100=54
+primitives                                    non   n= 1553 max= 203 >70=  17 >100=7
+scripts:attr-spread-collision-checker         non   n=   57 max= 203 >70=   2 >100=2
+scripts:props-scan                            non   n=    1 max=  21 >70=   0 >100=0
+scripts:slot-scan                             non   n=    1 max=  36 >70=   0 >100=0
+scripts:wrapper-props                         non   n=   14 max= 110 >70=   3 >100=1
+templates                                     comp  n=    1 max=   8 >70=   0 >100=0
+templates                                     non   n=    1 max=   3 >70=   0 >100=0
+test-harness                                  comp  n=    2 max=  17 >70=   0 >100=0
+test-harness                                  non   n=    1 max=   3 >70=   0 >100=0
+non-component >70 all: 43
+non-comp >70 by crate {'cli': 5, 'decision-kernel': 0, 'dioxus-attributes': 0, 'labs': 0, 'playwright:oracle': 1, 'preview': 15, 'primitives': 17, 'scripts:attr-spread-collision-checker': 2, 'scripts:props-scan': 0, 'scripts:slot-scan': 0, 'scripts:wrapper-props': 3, 'templates': 0, 'test-harness': 0}
+testfiles excluded ['preview/src/chart_parity.rs', 'preview/src/chart_tooltip_parity.rs', 'preview/src/polar_parity.rs', 'preview/src/ssr_parity.rs', 'primitives/src/calendar/tests.rs', 'primitives/src/carousel/ssr_tests.rs', 'primitives/src/carousel/tests.rs', 'primitives/src/data_view/laws.rs', 'primitives/src/date_picker/tests/mod.rs', 'primitives/src/test_support.rs', 'primitives/src/top_layer/trigger_attributes_native_tests.rs', 'primitives/src/top_layer/viewport_tests.rs']
+assert-family/panic/unwrap/expect {'preview': {'unwrap': 26, 'expect': 11, 'panic': 2, 'assert': 8, 'unreachable': 1}, 'primitives': {'expect': 18, 'panic': 11, 'unreachable': 1, 'assert': 1}, 'scripts:attr-spread-collision-checker': {'expect': 2}, 'scripts:props-scan': {'panic': 1}, 'scripts:slot-scan': {'panic': 1}, 'scripts:wrapper-props': {'unwrap': 13, 'expect': 1}}
+fns {'cli': 97, 'decision-kernel': 39, 'dioxus-attributes': 3, 'labs': 3, 'playwright:oracle': 32, 'preview': 1818, 'primitives': 1917, 'scripts:attr-spread-collision-checker': 57, 'scripts:props-scan': 1, 'scripts:slot-scan': 1, 'scripts:wrapper-props': 14, 'templates': 2, 'test-harness': 3}
+[('primitives/src/lib.rs', 1)]
+primitives pub non-component fns 946 with assert-family 0
+decision-kernel pub non-component fns 20 with assert-family 0
+cli pub non-component fns 59 with assert-family 0

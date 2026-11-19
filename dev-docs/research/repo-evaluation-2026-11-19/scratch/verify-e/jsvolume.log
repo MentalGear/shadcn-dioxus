@@ -1,0 +1,11 @@
+bash scripts/check-js-volume.sh   (run from repo root; git status before/after below)
+0
+RATCHET RAISES (check-js-volume): inherited, 2 raise(s) the base already carries (merged earlier, not spent again):
+  primitives/src/js/bridge.js: # raised: row 449 the page executor's popover kind in the bridge bundle; popover_sync.rs loses its eval show script and toggle listener (js_file_bytes 31887->33475)
+  TOTAL (the base's own): #! total-raised: row 449 total=487932 the page executor's popover kind in the bridge bundle; popover_sync.rs loses its eval show script and toggle listener (total 487304->487932)
+check-js-volume: compared with the baseline at the base 0df1782e5d
+check-js-volume: OK (83 files carry JS: sink 88, js_lit 3462, js_file_bytes 72492, install 33, inline_script 7453 bytes, comment_eval 0, expect_disallowed 74; total js_lit*120 + js_file_bytes 487932; frozen: 115 scripts, 92 sink sites)
+check-js-volume: wrote scripts/check-js-volume.baseline.tsv (2 files)
+check-js-volume: wrote scripts/check-js-volume.freeze.tsv (1 scripts, 2 sink sites)
+check-js-volume --self-test: OK (132 scenarios)
+git status lines after: 0

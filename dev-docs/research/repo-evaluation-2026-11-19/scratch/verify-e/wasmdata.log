@@ -1,0 +1,21 @@
+python3 -I /tmp/claude-0/-home-user-shadcn-dioxus/2f9af3b0-3995-5f94-a96b-6c0dfde7973a/scratchpad/verify-e/wasmdata.py docs/assets/preview_bg-dxh92ee26ea6afb8ff3.wasm /tmp/claude-0/-home-user-shadcn-dioxus/2f9af3b0-3995-5f94-a96b-6c0dfde7973a/scratchpad/verify-e
+section type 1499 gz 
+section import 14258 gz 
+section function 21719 gz 
+section table 13 gz 
+section memory 4 gz 
+section global 8632 gz 
+section export 34492 gz 
+section element 40872 gz 
+section datacount 2 gz 
+section code 9999268 gz 2973256
+section data 10514719 gz 2695882
+section custom 5 gz 
+section custom 157 gz 
+segments 10221 total data bytes 10431617
+text runs>=40 total 5692041 of 10431617 non-text 4739576
+rust 229010
+css 2926235
+html 2108977
+other 427819
+rust gz 49049 css gz 622996

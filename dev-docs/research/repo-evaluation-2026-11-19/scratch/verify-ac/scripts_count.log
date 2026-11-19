@@ -1,0 +1,4 @@
+cd /home/user/shadcn-dioxus && ls -p scripts | grep -v / | wc -l; git ls-files scripts | wc -l; ls scripts/check-*.sh | wc -l
+180
+223
+110

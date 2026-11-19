@@ -1,0 +1,21 @@
+bash /tmp/claude-0/-home-user-shadcn-dioxus/2f9af3b0-3995-5f94-a96b-6c0dfde7973a/scratchpad/verify-e/sizes.sh
+raw 20635690
+gzip9 5734749
+brotli11 3477596
+--- js/css assets referenced by index.html
+assets/dx-components-all-dxh2beeace3f30c7b3a.css raw=294339 gz=42523
+assets/dx-components-theme-dxha567819254b471c3.css raw=51868 gz=7724
+assets/dx-effects-dxh64da9843a664b0c7.css raw=17197 gz=2011
+assets/main-dxhebcb15ebe1cd7fd6.css raw=37080 gz=7041
+assets/preview-dxhc3b5e3addbdccf34.js raw=59139 gz=13930
+assets/theme-presets-dxhd0245d86fab9d9f9.css raw=52780 gz=7548
+--- html pages
+102
+min 16757 median 269932 max 1403364 n 102
+16757 ./component/block/index.html
+1403364 ./component/message_scroller/index.html
+--- distinct css/js linked per page (count of distinct sets)
+      2 0ccfda99362aa5ef185246a09401b985  -
+      1 170a48433b440744da7567f21634e9ab  -
+     97 a894d5183b174832df14a65c447fa16c  -
+      1 dab9f75c144c2d8288a57327d24eee88  -

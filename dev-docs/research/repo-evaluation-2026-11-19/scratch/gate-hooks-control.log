@@ -1,0 +1,4 @@
+cd /home/user/targets/verify-gates-wt && bash scripts/check-hooks-in-closures.sh   # control: use_signal directly inside use_memo closure
+check-hooks-in-closures: found hook(s) called inside another hook's closure:
+primitives/src/zz_probe_h.rs:3: `use_signal(` is called inside the closure passed to `use_memo(` -- move it into the component body instead (dev-docs/backlog.md row 74)
+exit=1

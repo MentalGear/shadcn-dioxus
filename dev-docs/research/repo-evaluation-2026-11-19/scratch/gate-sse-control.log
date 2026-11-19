@@ -1,0 +1,4 @@
+cd /home/user/targets/verify-gates-wt && bash scripts/check-self-subscribing-effects.sh   # control: count() read then count.set
+check-self-subscribing-effects: found signal(s) read with tracked syntax and written in the same use_effect closure:
+primitives/src/zz_probe_ctl.rs:4: `count` is read with tracked syntax here and written at line 4 in the same use_effect closure -- read through `.peek()` instead unless the write is proven to end the effect's own re-entry (dev-docs/backlog.md row 73)
+exit=1

@@ -1,0 +1,10 @@
+bash /tmp/claude-0/-home-user-shadcn-dioxus/2f9af3b0-3995-5f94-a96b-6c0dfde7973a/scratchpad/verify-e/deployed.sh
+wasm status=200 size=20635690
+b41c4b21ef4a32ca97a03f674079b787c5d075a69cb03591928db9f04e840a11  dep.wasm
+b41c4b21ef4a32ca97a03f674079b787c5d075a69cb03591928db9f04e840a11  /home/user/shadcn-dioxus/docs/assets/preview_bg-dxh92ee26ea6afb8ff3.wasm
+content-type: application/wasm
+cache-control: max-age=600
+content-length: 20635690
+gz-negotiated size=5846847
+content-encoding: gzip
+deployed 200 pages 88 non-200 0 [] min/med/max 121320 292590 1403364

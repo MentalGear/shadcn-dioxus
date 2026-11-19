@@ -1,0 +1,11 @@
+node retain3.js http://127.0.0.1:8741/shadcn-dioxus combobox 300
+cycles 300 CDP nodes before/after 15877 10905 delta/cycle -16.6
+created while observing 7216 alive after GC 34 alive & detached 18
+6 DIV.dx-combobox-list|id=dxc-3789 <= cloneNode:true|DIV|cls=dx-combobox-option|slot=|role=option|hasParent=true
+6 DIV.dx-combobox-list|id=dxc-3789 <= createComment:placeholder|#8|hasParent=true
+1 DIV.dx-combobox-list|id=dxc-3789 <= createTextNode:Next.js|#3|hasParent=true
+1 DIV.dx-combobox-list|id=dxc-3789 <= createTextNode:Nuxt.js|#3|hasParent=true
+1 DIV.dx-combobox-list|id=dxc-3789 <= createTextNode:Remix|#3|hasParent=true
+1 DIV.dx-combobox-list|id=dxc-3789 <= createTextNode:Astro|#3|hasParent=true
+1 DIV.dx-combobox-list|id=dxc-3789 <= createTextNode:SolidStart|#3|hasParent=true
+1 DIV.dx-combobox-list|id=dxc-3789 <= createTextNode:Dioxus|#3|hasParent=true

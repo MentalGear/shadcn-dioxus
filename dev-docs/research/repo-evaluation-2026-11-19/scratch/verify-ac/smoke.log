@@ -1,0 +1,55 @@
+scripts/codegraph.sh smoke
+initial (select, component level) {"msg":"component level: 31 nodes, 78 edges (ego, radius 1, both)","nodes":35,"edges":78,"sw":1280,"cw":1280}
+ok   the page opens with a picked component "select"
+crate {"msg":"crate level: 6 nodes, 9 edges (ego, radius 1, both)","nodes":6,"edges":9,"sw":1280,"cw":1280}
+file {"msg":"file level: 54 nodes, 170 edges (ego, radius 1, both)","nodes":84,"edges":170,"sw":1280,"cw":1280}
+file, radius 2 {"msg":"file level: 450 nodes, 2400 edges (ego, radius 2, both) - raise min weight for clarity","nodes":450,"edges":2400,"sw":1280,"cw":1280}
+ok   the first pick seeds files {"files":22}
+ok   radius 1 view equals an independent breadth-first search {"page":71,"bfs":71}
+ok   radius 2 view lists the complete neighbourhood (equals an independent breadth-first search) {"page":972,"bfs":972,"radius1":71}
+meta {"resolved_by_owner":9545,"resolved_by_module":2160,"scip_documents":942,"items_defined":14633,"unresolved_workspace_refs":0,"std_refs":59954,"item_level_edges":25134} | paired components 108
+ok   totals: code and comment lines counted {"code":130488,"com":39893,"doc":31540}
+M4 history hits total 0 | M5 TODO total 2
+ok   status line names the index, its staleness and the metrics inputs ["graph: SCIP index of 0df1782e, key acb2584d8345, 614 s cold, built 2026-11-19 20:05 UTC","index up to date","comment metrics: working tree 0df1782e, key 1691b851845b, built 2026-11-19 20:05 UTC (independent of the index)"]
+ok   details panel shows the Comments table 
+ok   lens "comment ratio" recolours the nodes {"distinct":26}
+ok   lens "doc coverage" has a legend gradient 
+ok   lens "TODOs": banner when the view has none, else a hot node "0 TODO/FIXME/HACK/XXX in every node of this view."
+ok   status chip carries the history hit count "history-rule hits 0"
+ok   Comments table renders rows {"rows":25,"first":["preview/src/components/drawer/variants/main/mod.rs","101","0","0.00"]}
+ok   sparsest first: ratios ascend [0,0,0,0,0.01]
+ok   densest first: ratios descend [4.88,1.87,1.73,1.66,1.6]
+ok   path filter narrows the table (primitives/src/select) {"rows":9}
+ok   only-outliers filter keeps flagged rows {"rows":25}
+N1 stale candidates 6 | N2 js comment/code lines 743/2193 | N3 words 330314 | N4 repeated lines 1404 | N6 items 8826
+ok   N3: comment words counted 330314
+ok   N6: items rolled up 8826
+ok   lens "stale" shows a legend "0\n10+ candidates\nnone\ndense outlier\nsparse outlier\nstale-looking identifiers, in"
+ok   lens "dup" shows a legend "0 %\n30 %+ of comment lines repeated in another file\nno data\ndense outlier\nsparse"
+ok   lens "age" shows a legend "comments as new as the code\n45+ days older than the code\nno data\ndense outlier\ns"
+ok   Comments table lists items (rows: items) ["primitives/src/carousel/content.rs:55 fn CarouselContent","81","460","5.68"]
+ok   rank by stale: first row has stale candidates ["preview/src/components/top_layer/component.rs","1"]
+ok   rank by repeated lines: first row has repeats ["primitives/src/calendar/view.rs","110"]
+M6 file-level fences {"lo":0.007302503891918156,"hi":0.8975662976513212,"median":0.23668639053254437}
+M6 densest files [["primitives/src/carousel/content.rs",4.88],["primitives/src/dropdown_menu.rs",1.87],["primitives/src/menubar.rs",1.73],["primitives/src/context_menu.rs",1.66],["primitives/src/carousel/helpers.rs",1.6]]
+M6 sparsest files [["preview/src/components/drawer/variants/main/mod.rs",0],["preview/src/components/markdown/variants/streaming/mod.rs",0],["preview/src/dashboard/views/email_client/read_pane.rs",0],["preview/src/dashboard/views/email_client/sidebar.rs",0]]
+M6 outlier counts file/component/crate 28/4 14/0 0/0
+ok   pick "select" seeds preview/src/components/select/mod.rs, preview/src/components/select/component.rs, primitives/src/select/mod.rs {"files":22}
+ok   preview:area_chart pairs with primitives:chart ["primitives:chart"]
+ok   meta resolved_by_owner >= 5000 9545
+ok   meta resolved_by_module >= 500 2160
+ok   meta unresolved_workspace_refs <= 0 0
+ok   a module reference reaches preview/src/components/button/mod.rs {"edges":166}
+ok   primitives/src/lib.rs doc lines equal an independent line count {"page":394,"plain":394}
+ok   primitives/src/lib.rs: pub items counted, `pub mod x;` lines skipped {"pubs":6,"doced":6}
+ok   N1: no stale candidate in cli/src/add.rs, primitives/src/lib.rs, primitives/src/dialog.rs [0,0,0]
+ok   total stale >= 1 6
+ok   total js >= 1 743
+ok   total jscode >= 1 2193
+ok   total dup >= 1 1404
+ok   total stale <= 39 6
+ok   N6: at least 1001 items 8826
+ok   N6: item numbers for accordion in primitives/src/lib.rs {"kind":7,"name":"accordion","start":41,"end":41,"pub":1,"documented":0,"code":1,"com":0,"doc":0,"todo":0,"hist":0,"words":0}
+network attempts []
+errors []
+SMOKE PASSED 40/40 checks

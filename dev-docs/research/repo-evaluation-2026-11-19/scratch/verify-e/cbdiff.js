@@ -1,0 +1,20 @@
+// combobox: diff ALL attached nodes (elements, text, comments) and CDP node counter across N cycles
+const {chromium}=require('playwright');
+const [,,BASE,COMP='combobox',CYC='200']=process.argv;
+const snap=()=>{const out=[];const w=document.createTreeWalker(document,NodeFilter.SHOW_ALL);let n;while(n=w.nextNode()){const p=n.parentNode;
+ const pk=p&&p.nodeType===1?p.tagName+'#'+p.id+'.'+(p.getAttribute('class')||'').slice(0,50)+'['+(p.getAttribute('data-slot')||'')+']':'?';
+ let k;if(n.nodeType===1)k='EL '+n.tagName+'#'+n.id+'.'+(n.getAttribute('class')||'').slice(0,60);else if(n.nodeType===3)k='TEXT "'+n.data.slice(0,30).replace(/\n/g,'\\n')+'"';else k='NT'+n.nodeType+' '+(n.data||'').slice(0,30);
+ out.push(k+'  <= '+pk)}return out};
+(async()=>{const b=await chromium.launch();const ctx=await b.newContext({viewport:{width:1280,height:900}});const p=await ctx.newPage();
+ const cdp=await ctx.newCDPSession(p);await cdp.send('HeapProfiler.enable');
+ await p.goto(`${BASE}/component/${COMP}/`);await p.waitForSelector('html[data-hydrated=true]');
+ const t=p.locator('main input[role=combobox]').first();
+ const cyc=async()=>{await t.click();await p.keyboard.type('sv');await p.waitForTimeout(40);await p.keyboard.press('Control+a');await p.keyboard.press('Backspace');await p.keyboard.press('Escape');await p.waitForTimeout(40)};
+ const dc=async()=>{for(let g=0;g<3;g++){await cdp.send('HeapProfiler.collectGarbage');await p.waitForTimeout(250)};const c=await cdp.send('Memory.getDOMCounters');return c.nodes+'/'+c.jsEventListeners};
+ for(let i=0;i<5;i++)await cyc();
+ const a=await p.evaluate(snap);console.log('before: attached nodes (all types)',a.length,'CDP nodes/listeners',await dc());
+ for(let i=0;i<+CYC;i++)await cyc();
+ const z=await p.evaluate(snap);console.log('after',CYC,'cycles: attached nodes',z.length,'CDP nodes/listeners',await dc());
+ const m=new Map();for(const k of z)m.set(k,(m.get(k)||0)+1);for(const k of a)m.set(k,(m.get(k)||0)-1);
+ console.log('diff (count delta, node  <= parent):');for(const [k,v] of m)if(v)console.log(v,k);
+ await b.close()})();

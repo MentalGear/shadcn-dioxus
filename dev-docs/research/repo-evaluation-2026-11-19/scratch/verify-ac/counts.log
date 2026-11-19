@@ -1,0 +1,11 @@
+python3 -I /tmp/claude-0/-home-user-shadcn-dioxus/2f9af3b0-3995-5f94-a96b-6c0dfde7973a/scratchpad/verify-ac/counts.py   # reads occ.pkl produced by python3 -I /tmp/claude-0/-home-user-shadcn-dioxus/2f9af3b0-3995-5f94-a96b-6c0dfde7973a/scratchpad/verify-ac/probe.py from target-codegraph/index.scip
+{'to_string': 1514, 'format!': 752, 'Vec::clone': 319, 'vec!': 1483, 'Iterator::collect': 706, 'to_vec': 42, 'Option::clone': 137, 'String::clone': 412, 'Rc::clone': 46, 'to_owned': 56}
+format! occ 752 text-at-position mismatches 0
+grep format!( over all tracked .rs 758
+grep .clone() all tracked rs 1254
+primitives/src/questionnaire.rs grep .clone() 44 scip clone() occ any package 44 grep lines 41
+primitives/src/bridge/session.rs grep .clone() 29 scip clone() occ any package 29 grep lines 29
+primitives/src/questionnaire/model.rs grep .clone() 27 scip clone() occ any package 27 grep lines 27
+primitives/src/avatar.rs grep .clone() 27 scip clone() occ any package 27 grep lines 27
+primitives/src/tag_group.rs grep .clone() 25 scip clone() occ any package 25 grep lines 25
+[(701, 30, 'chart/components/pointer/impl#[HitTest][Clone]clone().'), (702, 65, 'chart/components/pointer/impl#[HitTest][Clone]clone().'), (708, 54, 'chart/components/pointer/impl#[HitTest][Clone]clone().')]

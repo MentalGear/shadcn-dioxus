@@ -1,0 +1,2 @@
+python3 -I (inline) over git ls-files '*.rs': .clone() count in text before first #[cfg(test)], excluding tests/, tests.rs, build.rs, crates primitives preview cli decision-kernel dioxus-attributes
+{'cli': [53, 2954], 'decision-kernel': [10, 850], 'dioxus-attributes': [1, 179], 'preview': [392, 64746], 'primitives': [576, 76636]} [1032, 145365] 7.1

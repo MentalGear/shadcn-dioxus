@@ -1,0 +1,6 @@
+git grep -n 'crate::' -- scripts/attr-spread-collision-checker/src/bin/public-api-snapshot.rs ; echo exit=$?
+scripts/attr-spread-collision-checker/src/bin/public-api-snapshot.rs:1058:        let out = snap(&[("lib.rs", "mod inner;\npub use inner::{Foo, bar as baz};\npub use inner::*;\npub use other_crate::Thing;"), ("inner.rs", "pub struct Foo { pub x: u8 }\npub fn bar() {}\npub fn glob_fn() {}\nfn private() {}")]);
+scripts/attr-spread-collision-checker/src/bin/public-api-snapshot.rs:1061:            "Foo  struct Foo\nFoo  use inner::Foo\nFoo.x  field u8\nThing  use other_crate::Thing\nbar  fn bar()\nbaz  fn bar()\nbaz  use inner::bar as baz\nglob_fn  fn glob_fn()"
+scripts/attr-spread-collision-checker/src/bin/public-api-snapshot.rs:1069:            "pub mod api { pub use crate::deep::Item; }\nmod deep { pub struct Item; }",
+scripts/attr-spread-collision-checker/src/bin/public-api-snapshot.rs:1073:            "api  mod\napi::Item  struct Item\napi::Item  use crate::deep::Item"
+exit=0

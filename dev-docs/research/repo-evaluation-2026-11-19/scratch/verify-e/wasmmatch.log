@@ -1,0 +1,49 @@
+python3 -I /tmp/claude-0/-home-user-shadcn-dioxus/2f9af3b0-3995-5f94-a96b-6c0dfde7973a/scratchpad/verify-e/wasmmatch.py docs/assets/preview_bg-dxh92ee26ea6afb8ff3.wasm
+rust component.rs + variants/*/mod.rs files embedded verbatim: 649 bytes 2049994 gzip(concat) 367758 | not found verbatim: 0 bytes 0
+css style.css/demo.css/theme.css files embedded verbatim: 85 bytes 763439 gzip(concat) 200977 | not found verbatim: 0 bytes 0
+rust component.rs + variants/*/mod.rs files embedded verbatim: 649 bytes 2049994 gzip(concat) 367758 | not found verbatim: 0 bytes 0
+css style.css/demo.css/theme.css files embedded verbatim: 85 bytes 763439 gzip(concat) 200977 | not found verbatim: 0 bytes 0
+--- multiplicity
+rust: total bytes counting copies 2049994 files with >1 copy 0
+css: total bytes counting copies 763439
+use dioxus::prelude 647
+use super::super::component 553
+use dioxus_primitives 404
+other preview/primitives .rs files verbatim files embedded verbatim: 0 bytes 0 gzip(concat) 8 | not found verbatim: 226 bytes 4187008
+rust component.rs + variants/*/mod.rs files embedded verbatim: 649 bytes 2049994 gzip(concat) 367758 | not found verbatim: 0 bytes 0
+css style.css/demo.css/theme.css files embedded verbatim: 85 bytes 763439 gzip(concat) 200977 | not found verbatim: 0 bytes 0
+--- multiplicity
+rust: total bytes counting copies 2049994 files with >1 copy 0
+css: total bytes counting copies 763439
+use dioxus::prelude 647
+use super::super::component 553
+use dioxus_primitives 404
+other preview/primitives .rs files verbatim files embedded verbatim: 0 bytes 0 gzip(concat) 8 | not found verbatim: 226 bytes 4187008
+--- residual after removing verbatim files
+data bytes 10441837 after removal 5261284
+residual printable runs>=40: 3287 bytes 2858561
+{'prose/other': 405648, 'css': 217694, 'html': 2105672, 'rustish': 129547}
+78787 b'virtual_gridA grid for large datasets that mounts only the cells in view: a data grid with rows and columns windowed, or a gallery of items wrapping into rows.<'
+77167 b'calendarA calendar grid component for selecting dates.<p>The Calendar component is used to display a calendar interface, allowing users to select dates. It prov'
+68736 b'An autocomplete input + popover for picking a value from a filterable list of options.<p>The Combobox component is an autocomplete input with a filterable popup'
+rust component.rs + variants/*/mod.rs files embedded verbatim: 649 bytes 2049994 gzip(concat) 367758 | not found verbatim: 0 bytes 0
+css style.css/demo.css/theme.css files embedded verbatim: 85 bytes 763439 gzip(concat) 200977 | not found verbatim: 0 bytes 0
+--- multiplicity
+rust: total bytes counting copies 2049994 files with >1 copy 0
+css: total bytes counting copies 763439
+use dioxus::prelude 647
+use super::super::component 553
+use dioxus_primitives 404
+other preview/primitives .rs files verbatim files embedded verbatim: 0 bytes 0 gzip(concat) 8 | not found verbatim: 226 bytes 4187008
+--- residual after removing verbatim files
+data bytes 10441837 after removal 5261284
+residual printable runs>=40: 3287 bytes 2858561
+{'prose/other': 405648, 'css': 217694, 'html': 2105672, 'rustish': 129547}
+78787 b'virtual_gridA grid for large datasets that mounts only the cells in view: a data grid with rows and columns windowed, or a gallery of items wrapping into rows.<'
+77167 b'calendarA calendar grid component for selecting dates.<p>The Calendar component is used to display a calendar interface, allowing users to select dates. It prov'
+68736 b'An autocomplete input + popover for picking a value from a filterable list of options.<p>The Combobox component is an autocomplete input with a filterable popup'
+--- OUT_DIR generated files
+.rs files 4 bytes 535163 embedded verbatim files 0 bytes 0
+description.txt files 84 bytes 7256 embedded verbatim files 84 bytes 7256
+docs_sections.rs files 84 bytes 2183751 embedded verbatim files 0 bytes 0
+notes.html files 447 bytes 66333 embedded verbatim files 447 bytes 66333

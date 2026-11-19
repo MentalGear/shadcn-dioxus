@@ -1,0 +1,2 @@
+python3 -I /tmp/claude-0/-home-user-shadcn-dioxus/2f9af3b0-3995-5f94-a96b-6c0dfde7973a/scratchpad/verify-b/cfg.py   (lines behind feature=native / feature=server cfg items, heuristic brace matching)
+{'native_pos': 576, 'native_neg': 1851, 'server': 88}

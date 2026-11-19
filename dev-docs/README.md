@@ -67,7 +67,8 @@ or phase number, so those headings and ids stay where they are.
 | `code-graph-explorer-2026-10-31.md` | Row 486: the code graph explorer research (tools compared, measured SCIP and cargo-modules runs); the tool itself is MentalGear/code-analyser, run by `scripts/codegraph.sh`. |
 | `overlay-layering-audit-2026-11-14.md` | The overlay layering audit: shared layers, the component-by-mechanic matrix, duplications, and the one restructuring proposed (row 519; chart tooltip, row 517). |
 | `radix-vs-base-ui-2026-10-28.md` | The Radix-versus-Base-UI scan of every component, the iPhone overlay root cause and the placement rule (rows 477-482, 296). |
-| `repo-evaluation-2026-11-19.md` | Rows 529-534: the 2026-11-19 evaluation (code-analyser, allocation audit, TigerStyle, built output, code quality), measured on `0df1782`. |
+| `repo-evaluation-2026-11-19.md` | Rows 529-541: the 2026-11-19 evaluation (code-analyser, allocation audit, TigerStyle, built output, code quality), measured on `0df1782`, with its corrections and smaller confirmed items. |
+| [`repo-evaluation-2026-11-19/`](./research/repo-evaluation-2026-11-19/README.md) | The evaluation's evidence: [`evidence.md`](./research/repo-evaluation-2026-11-19/evidence.md) (reproduction recipes), the six ledgers and the logs and scripts their receipts name. |
 | `dependency-audit-2026-10-14.md`, `dependency-evaluation.md`, `dependency-scanners.md` | Rows 217 and 371 (what users compile and trust), behind the [supply-chain playbook](./supply-chain/README.md). |
 
 ## Archive (`archive/`: finished, historical; check the date before acting on anything here)

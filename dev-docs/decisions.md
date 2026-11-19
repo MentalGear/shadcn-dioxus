@@ -146,3 +146,14 @@ the line here is the pointer, so when a row's text and this line disagree, the r
 - Approved 2026-11-14 (owner: "I approve your recommendation for generalizing the components and tooltip as well"):
   row 519 (landed), the `HoverSurface` follow-on (row [528](./backlog/528-hoversurface-tooltip-and-hovercard-as-one-surface.md))
   and row [517](./backlog/517-chart-tooltip-on-the-tooltip-layer.md) (the chart tooltip on the `Tooltip`'s layer).
+- The receipt rule is standing (owner 2026-11-19: "yes, make the receipt rule standing"): a delegated report's findings
+  carry receipts in a ledger and `scripts/report-receipts.py` checks them before the main loop relays anything
+  ([`agent-rules/delegation-and-models.md`](../agent-rules/delegation-and-models.md)).
+- The overlay memory growth is negligible and goes far off in the backlog (owner 2026-11-19: "this seems neglible. if you
+  concur, just record it far off in the backlog."); row [534](./backlog/534-overlay-memory-growth-per-cycle.md), not scheduled.
+- The TigerStyle slice is agreed (owner 2026-11-19: "I agree with your recommendations"): kernel lints and assertions and a
+  shrink-only count of long non-component functions, row [533](./backlog/533-tigerstyle-slice-kernel-and-function-length.md);
+  the other rules stay out, with the reasons in the note.
+- The 2026-11-19 evaluation is documented in the repository (owner: "properly document all"): the note
+  [`research/repo-evaluation-2026-11-19.md`](./research/repo-evaluation-2026-11-19.md) with its evidence directory
+  ([`research/repo-evaluation-2026-11-19/`](./research/repo-evaluation-2026-11-19/README.md)) and rows 529-534, 536-541.

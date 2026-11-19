@@ -1,0 +1,8 @@
+python3 -I /tmp/claude-0/-home-user-shadcn-dioxus/2f9af3b0-3995-5f94-a96b-6c0dfde7973a/scratchpad/verify-ac/edges2.py
+FROM scripts/attr-spread-collision-checker/src/bin/public-api-snapshot.rs
+  -> scripts/attr-spread-collision-checker/src/main.rs 1 rs
+  -> ext:proc-macro2 44 ext
+  -> ext:quote 4 ext
+  -> ext:syn 289 ext
+FROM primitives/src/sleep.rs
+  -> ext:tokio 6 ext

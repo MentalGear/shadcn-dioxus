@@ -1,0 +1,5 @@
+node perfmarks.js
+after load marks/measures [ 677, 677 ]
+after 20 dialog cycles [ 1637, 1637 ]
+[["\"new_maybe_sync\" dioxus_signals::signal ",350],["\"recompute\" dioxus_signals::memo ",50]]
+["t80000001","t1","t40000001"]

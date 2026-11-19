@@ -1,0 +1,7 @@
+node /tmp/claude-0/-home-user-shadcn-dioxus/2f9af3b0-3995-5f94-a96b-6c0dfde7973a/scratchpad/verify-e/e5.js https://mentalgear.github.io/shadcn-dioxus <6 pages>   [deployed; axe 4.10.3 from repo playwright/node_modules; CSS coverage via page.coverage]
+{"page":"home","hydrateMs":2270,"cls":0,"consoleBad":0,"bad":[],"unusedCssPct":"78.6","axe":["passes=58","axe 4.10.3"],"requests":23,"transferKB":5972}
+{"page":"component/button/","hydrateMs":1107,"cls":0,"consoleBad":0,"bad":[],"unusedCssPct":"89.2","axe":["passes=43","axe 4.10.3"],"requests":13,"transferKB":5888}
+{"page":"component/dialog/","hydrateMs":1078,"cls":0,"consoleBad":0,"bad":[],"unusedCssPct":"89.8","axe":["passes=43","axe 4.10.3"],"requests":13,"transferKB":5898}
+{"page":"component/combobox/","hydrateMs":1378,"cls":0,"consoleBad":0,"bad":[],"unusedCssPct":"88.8","axe":["passes=47","axe 4.10.3"],"requests":13,"transferKB":5915}
+{"page":"component/sidebar/","hydrateMs":1574,"cls":0,"consoleBad":0,"bad":[],"unusedCssPct":"92.2","axe":["passes=46","axe 4.10.3"],"requests":46,"transferKB":5974}
+{"page":"component/data_table/","hydrateMs":1372,"cls":0,"consoleBad":0,"bad":[],"unusedCssPct":"88.1","axe":["passes=51","axe 4.10.3"],"requests":13,"transferKB":5930}

@@ -8,6 +8,16 @@ lines; where a claim was only partly right, the verified figure is used, and whe
 All measurements were taken on commit `0df1782` (main at that time). Grades, estimates and severity calls are marked as
 opinion. **Nothing was profiled**: no figure here is a measured frequency or a measured cost of an allocation.
 
+**Evidence:** the reproduction recipe of every headline finding, the six ledgers, the logs and the small measuring scripts
+are in [`repo-evaluation-2026-11-19/`](./repo-evaluation-2026-11-19/README.md) (recipes in
+[`evidence.md`](./repo-evaluation-2026-11-19/evidence.md)).
+
+**Method.** Five reports (code-analyser, allocation audit, TigerStyle, code quality, built output), an independent
+verifier per report that re-derived each claim, receipts (a quote, a count or a logged run) checked by
+`scripts/report-receipts.py`, and the ledgers over the reports where they differ. Of 216 claims in the five ledgers:
+146 confirmed, 53 partly right, 12 refuted, 5 unverifiable; 8 are marked as opinion. Ledger F adds 8 facts about which
+rows already cover a topic.
+
 ## 1. The code-analyser tool
 
 MentalGear/code-analyser at `374bf4a`, run by `scripts/codegraph.sh`. The pipeline is `rust-analyzer scip` (`index.scip`),
@@ -57,7 +67,7 @@ loop, (3) an eager allocating argument such as `expect(&format!(..))`.
 |---|---|---|
 | (1) clones | Present only as one shallow systemic form | 1,032 `.clone()` in 145,365 non-test lines (7.1 per 1,000); 237 `props.attributes.clone()` in 83 files; 88 `redundant_clone` sites (77 production, 11 test); 15 `mem::take`, `swap` or `replace` repo-wide; 0 thread, tokio or channel uses; 74 bare `spawn(` calls |
 | (2) hot loops | Present in per-keystroke and per-drag-move paths, not in a game loop | the sites below |
-| (3) eager argument | Absent from library code | 0 `.expect(&`; all 195 `.expect(` take literals; 10 allocating `map_or(value.clone(), ..)` hits, all in preview demos (8 combobox variants, `message_scroller/variants/animation/mod.rs:163`, `site/blocks.rs:489`) |
+| (3) eager argument | Absent from library code | 0 `.expect(&`; all 195 counted `.expect(` take literals (the checker counts 196 on `0df1782`; the extra call was not inspected); 10 allocating `map_or(value.clone(), ..)` hits, all in preview demos (8 combobox variants, `message_scroller/variants/animation/mod.rs:163`, `site/blocks.rs:489`) |
 
 **Hot-path sites (read, not run).**
 - `combobox/context.rs:174-176,219` and `command.rs:129-151,743`: with a non-empty query each option evaluation allocates
@@ -157,8 +167,8 @@ TIGER_STYLE.md and four of tigerstyle.dev have no row.
 | Hydration (navigation start to `data-hydrated`) | deployed 1,078 to 1,574 ms on component pages, home 2,270 and 3,136 ms in two runs; local 401 to 1,222 ms | 6 pages |
 
 **Embedded text.** 649 Rust demo files (`component.rs` and `variants/*/mod.rs`) sit verbatim in the data section, one copy
-each, 2,049,994 B; 85 CSS files, 763,439 B (`code!` in `preview/src/components/mod.rs`). Zeroing the embedded source lowers
-gzip by 663,325 B (about 0.66 MB, 11.6 %) and brotli by 386,706 B. Another 2.1 MB of the data section is rendered docs
+each, 2,049,994 B; 85 CSS files, 763,439 B (`code!` in `preview/src/components/mod.rs`). Zeroing the embedded Rust and CSS
+sources together lowers gzip by 663,325 B (about 0.66 MB, 11.6 %) and brotli by 386,706 B. Another 2.1 MB of the data section is rendered docs
 HTML. The report's "4.22 MB of Rust source" is refuted (2.05 MB). `Cargo.toml:47` says `opt-level = "z"` for
 `[profile.release]`; the shipped wasm is built at `s` by the profile dx synthesises (static evidence: the literal in the
 dx 0.7.9 binary; no live rustc command line was captured).
@@ -201,7 +211,7 @@ signs are opinion):
 6. **Spec timing.** 444 `waitForTimeout` calls in 109 spec files; 494 `20 * 60 * 1000` navigation timeouts; the `app-clock`
    helper is imported by 6 files while 11 files use `page.clock`.
 
-**Corrected or refuted.** The Badge `"padding": true` attribute is read by CSS (`badge/style.css:43`, `.dx-badge[padding="true"]`).
+**Corrected or refuted** (the list of corrections is in "Corrections" below). The Badge `"padding": true` attribute is read by CSS (`badge/style.css:43`, `.dx-badge[padding="true"]`).
 `#[props(default = ReadSignal::new(Signal::new(..)))]` allocates one signal per props construction; `ReadSignal` fields are
 excluded from `PartialEq` and compared by their peeked values, so it costs one allocation per render and does not defeat
 memoization. `use_previous` writes signals inside a memo (`lib.rs:397-398`), and the memo re-runs once and stops: no loop
@@ -237,6 +247,68 @@ type panics, `use_previous`. Unverifiable: unwrap, expect and panic counts outsi
 | [533](../backlog/533-tigerstyle-slice-kernel-and-function-length.md) | The TigerStyle slice: kernel assertions and the function-length count | none |
 | [534](../backlog/534-overlay-memory-growth-per-cycle.md) | Memory growth per overlay cycle (not scheduled) | none |
 
-Findings without a row, left to the main loop: the 250 ms close hold, the runtime type panics, the three gate bypasses,
-the spec sleeps (rows 152, 493 and 495 cover other timing work), the `props.attributes.clone()` form and the lints of
-section 2.
+Rows 536 to 541 were filed in a second step from the findings that had none: [536](../backlog/536-generic-components-check-value-types-at-run-time.md)
+(runtime type panics in generic components, read not run), [537](../backlog/537-rust-shape-gates-are-text-patterns-and-have-bypasses.md)
+(the three gate bypasses and the class behind them), [538](../backlog/538-deny-the-allocation-lints-after-cleaning.md)
+(deny the allocation lints after cleaning; a take-attributes helper), [539](../backlog/539-hot-path-allocation-sites-low-priority.md)
+(hot-path allocation sites, low priority), [540](../backlog/540-one-controlled-prop-type.md) (one `Controlled<T>`) and
+[541](../backlog/541-use-previous-writes-signals-inside-a-memo.md) (`use_previous` writes inside a memo). Findings that an open row
+owns went into that row as dated evidence: the 250 ms close hold into [456](../backlog/456-port-3-ov-overlay-core-escape-dismiss-open-focus.md),
+the spec sleeps into [152](../backlog/152-test-suite-review-revisit-the-playwright-suite.md), the code-analyser pass into
+[507](../backlog/507-codegraph-comment-analysis-findings.md) and [486](../backlog/486-code-graph-explorer-tools-codegraph.md), the
+second `unsafe_code` exception into [533](../backlog/533-tigerstyle-slice-kernel-and-function-length.md).
+
+## Corrections
+
+What the first reports got wrong, and what the ledgers say is true.
+
+| First report | True |
+|---|---|
+| The chart pointermove deep-clones a `HitTest` (A-5c, B-21) | `HitTest::Sectors` holds an `Rc<[Sector]>`: a reference-count bump. The `spawn` per event at `pointer.rs:258` is real |
+| Badge passes a stray `"padding": true` (D-22) | `preview/src/components/badge/style.css:43` has `.dx-badge[padding="true"]` |
+| Default signals defeat memoization (D-18) | One allocation per props construction; `ReadSignal` fields are excluded from `PartialEq` and compared by peeked value, so memoization holds |
+| Unpinned `dioxus-primitives` in every `component.json` is a defect (E-27, D-27) | It is the development form; `scripts/stamp-release-rev.sh` pins it at release (row 217, done). The count is 83 of 83, not 79 |
+| Six of the long hooks are port targets (F-7) | Three: `use_dialog_open_driver` and `use_animated_open` (row 456), `use_scroll_lock` (row 459). `use_activity`, `bring_into_view` and `use_scroll_fade_runtime` wrap scripts that rows 451 and 454 already ported |
+| Primitives has 27 non-test assertions (C-9e) | 1 (the const assert at `lib.rs:27`); the report counted test-only module files as non-test. Preview has 8 |
+| Preview has 166 non-test unwraps (C-9m) | 26; the other 140 are in test-only parity files |
+| The kernel has 15 public functions (C-9g) | 20: the report's pattern missed the five `extern "C"` exports |
+| Kernel deny lints have 0 violations (C-11b) | 2 under `--all-targets` (`decision.rs:111`, `:129`, both in tests) until `decision-kernel/clippy.toml` gets the allow-in-tests switches |
+| gzip of the main wasm is 5.86 MB (E-2) | 5,734,749 B at `gzip -9`; Pages sends 5,846,847 B |
+| Brotli q11 is 3,505,145 B (E-3) | 3,477,596 B (the 39.3 % below gzip holds) |
+| Embedded Rust source is 4.22 MB (E-8) | 2.05 MB (2,049,994 B, 649 files) |
+| Removing embedded source saves 0.9 to 1.0 MB gzip (E-33) | About 0.66 MB (663,325 B) for the Rust and CSS sources together; 0.9 MB would also need the 2.1 MB of embedded rendered HTML gone |
+| Combobox leaks a DOM node per cycle (E-13) | Chromium's editing undo stack: the counter holds at 10,936 after about 330 cycles and a plain `<input>` grows 1.01 per cycle |
+| Wasm grows 5.7 KB (dialog) and 33 KB (combobox) per cycle (E-11, E-12) | 1.75 to 3.0 KB per cycle (dialog 1.75, combobox 2.96, dropdown menu 2.99); popover is flat for about 300 cycles. Not specific to dialog and combobox (E-15) |
+| `or_fun_call` 17 (B-24) | 19, of which 6 do not allocate; `redundant_clone` 88 with 11 in tests |
+| 494 `timeout: 20 * 60 * 1000` (D-40) | 494 occurrences of `20 * 60 * 1000`, 463 in the `timeout:` form |
+| `ReadSignal<Option<T>>` has 5 `value` fields (D-23) | 12 in primitives (and 16 `open`); `Option<ReadSignal<Option<T>>>` has 4 |
+| 83.9 % of public items documented (A-1g) | 75.9 % for items alone (2,001 of 2,638); 83.9 % counts fields too |
+| 119 gates, 110 check scripts (D-45) | 117 entries in `run-gates.sh` and 110 scripts at `0df1782` |
+| Installed files carry 139 `row NNN` lines (E-24) | 136 over exactly the installed files (256 files, 34,666 lines) |
+
+## Smaller confirmed items
+
+Confirmed or partly confirmed in ledger D and in neither a row nor the sections above; each is a place to look, not a
+decided change.
+
+- `use_id_or` (`primitives/src/lib.rs:216-222`): the effect copies the user's id into the generated id, so when the user id
+  goes back to `None` the memo returns the stale user id (D-20).
+- The chart detects hydration from an id prefix: `starts_with(CLIENT_ID_PREFIX)` at `primitives/src/chart/components/chart.rs:437`,
+  the prefix defined at `:1100` (D-21).
+- The menu-layer block is duplicated at `primitives/src/dropdown_menu.rs:278-301` and `context_menu.rs:247-270` (D-14).
+- 376 `document::Link` stylesheet links in the component files (412 across all preview component sources including variants) (D-15).
+- The typed downcast closure `as_ref::<T>()` is written 9 times in primitives (D-16).
+- Popover wrapper: `Root` merges class through `attributes!`, `Content` does `format!` on `props.class`
+  (`preview/src/components/popover/component.rs:9`, `:41`); ten primitives keep a `class: Option<String>` prop (D-25, D-26).
+- `checkbox/component.rs:7-22` is a 16-line comment above a 39-line component (D-30).
+- `use_combobox_root` takes nine parameters (`primitives/src/combobox/components/combobox.rs:108-118`) (D-33).
+- `should_apply_animation_result` is `a == b` under a 12-line doc (`primitives/src/lib.rs:880-895`) (D-34).
+- `dioxus-attributes/src/attribute_list.rs:16` and `:29` keep two `#[expect(dead_code)]` fields (D-36).
+- `playwright/dialog.spec.ts:8` is a test named `test`, and `:31-34` asserts that focus visits `body` inside a modal (D-43).
+- History in comments: `primitives/src/ts/bridge.ts:17` and `scripts/check-history-comments.sh:37` (D-57).
+- `DISMISS_JS` (`primitives/src/lib.rs:344-372`) is a 29-line script string whose only Rust test string-scans it
+  (`dismiss.rs:487`) (D-7).
+- `decision-kernel/src/kinds.rs:141-150` compares a compile-time hash with a runtime FNV fold of the same text; eight unit
+  tests read source text (D-60).
+- Comment share: primitives 32.1 % of non-blank lines, `carousel/content.rs` 83 %, the menus 62-65 % (D-35).
+- Component size: `Chart` 513 lines (`chart.rs:402`), `TopLayerFixture` 962 (D-32); covered as a count by row 533.

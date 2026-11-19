@@ -1,0 +1,17 @@
+python3 -I /tmp/claude-0/-home-user-shadcn-dioxus/2f9af3b0-3995-5f94-a96b-6c0dfde7973a/scratchpad/verify-b/p.py /tmp/claude-0/-home-user-shadcn-dioxus/2f9af3b0-3995-5f94-a96b-6c0dfde7973a/scratchpad/clippy-native.json /tmp/claude-0/-home-user-shadcn-dioxus/2f9af3b0-3995-5f94-a96b-6c0dfde7973a/scratchpad/verify-b/rows.json   (head, local-crate lines)
+clippy::expect_fun_call 0
+clippy::redundant_clone 88
+clippy::or_fun_call 19
+perf-ish []
+Counter({'primitives': 71, 'preview': 16, 'decision-kernel': 1})
+246
+('attr-spread-collision-checker', ('bin',), 'attr-spread-collision-checker') 2
+('attr-spread-collision-checker', ('bin',), 'public-api-snapshot') 2
+('cli', ('bin',), 'shadcn-dioxus') 2
+('decision-kernel', ('cdylib', 'rlib'), 'decision_kernel') 2
+('decision-kernel', ('test',), 'vectors') 1
+('dioxus-attributes', ('proc-macro',), 'dioxus_attributes') 3
+('preview', ('bin',), 'preview') 2
+('preview', ('custom-build',), 'build-script-build') 1
+('primitives', ('lib',), 'dioxus_primitives') 2
+('test-harness', ('bin',), 'test-harness') 2

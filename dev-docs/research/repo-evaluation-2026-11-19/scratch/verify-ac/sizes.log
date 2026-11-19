@@ -1,0 +1,5 @@
+ls -l target-codegraph/graph.json target-codegraph/comments.json target-codegraph/index.scip target-codegraph/explorer.html
+-rw-r--r-- 1 root root   639074 Nov 19 20:05 target-codegraph/comments.json
+-rw-r--r-- 1 root root  1527346 Nov 19 20:05 target-codegraph/explorer.html
+-rw-r--r-- 1 root root   407128 Nov 19 20:05 target-codegraph/graph.json
+-rw-r--r-- 1 root root 28465582 Nov 19 20:05 target-codegraph/index.scip

@@ -269,3 +269,11 @@ the choice.
   outside the allowlist; opened from `file:` it renders every level with no console errors and no network request,
   checked by hand in a browser.
 - The commit that lands the tool passes `scripts/run-gates.sh` as `ALL GREEN` (repo rule). The tool itself is not a gate.
+
+**Evaluation run 2026-11-19 (read-only; the tool is MentalGear/code-analyser at `374bf4a`).** 1,556 nodes, 264 components,
+13,388 edges, 0 unresolved workspace references, `smoke` 40 of 40, about 10.5 minutes wall (about 5 of them queued behind other lanes; the
+tool logs 331.7 s for SCIP). It needed `rustup component add rust-analyzer --toolchain 1.97.0`: `rust-toolchain.toml` lists
+only `clippy` and `rustfmt` and `scripts/session-setup.sh` never mentions `rust-analyzer`, so a fresh session fails with
+"Unknown binary 'rust-analyzer'". Add the component to the toolchain file and to the session setup. The accuracy findings
+are on [row 507](./507-codegraph-comment-analysis-findings.md); recipes in
+[`research/repo-evaluation-2026-11-19/evidence.md`](../research/repo-evaluation-2026-11-19/evidence.md), section 9.

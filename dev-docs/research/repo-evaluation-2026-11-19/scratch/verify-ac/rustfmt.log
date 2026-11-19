@@ -1,0 +1,2 @@
+cd /home/user/shadcn-dioxus && git ls-files | grep -iE 'rustfmt'; find . -name 'rustfmt.toml' -o -name '.rustfmt.toml' | grep -v node_modules; echo done
+done

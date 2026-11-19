@@ -1,0 +1,2 @@
+cd /home/user/shadcn-dioxus && git grep -c -E 'if let .* && let |&& let Some' -- '*.rs' | wc -l; echo; ls primitives preview > /dev/null
+0

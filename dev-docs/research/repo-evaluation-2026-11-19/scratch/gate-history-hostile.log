@@ -1,0 +1,3 @@
+cd /home/user/targets/verify-gates-wt && git add primitives/src/zz_probe_c.rs && bash scripts/check-history-comments.sh   # hostile: "We switched this from a script to the bridge." / "Earlier this returned None."
+check-history-comments: OK (0 baselined history lines in 0 files, none new)
+exit=0

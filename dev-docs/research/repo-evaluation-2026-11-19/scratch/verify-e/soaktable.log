@@ -1,0 +1,57 @@
+python3 -I /tmp/claude-0/-home-user-shadcn-dioxus/2f9af3b0-3995-5f94-a96b-6c0dfde7973a/scratchpad/verify-e/soaktable.py
+cycle  wasmMB heapMB(after GC) CDPnodes qsaAll listeners   [per log]
+== soak-local-dialog
+    0   20.25   3.91   6531   3185   107
+  100   20.56    4.4   6531   3185   107
+  300   20.88   4.86   6531   3185   107
+  500   21.19   5.17   6531   3185   107
+  700   21.56   5.59   6531   3185   107
+ 1000      22      6   6531   3185   107
+ 1300   22.56   6.53   6531   3185   107
+ 1500   22.94   6.86   6531   3185   107
+wasm slope KB/cycle all 1.75 first-half 1.82 second-half 1.77
+== soak-local-combobox
+    0   26.69   4.23  10605   5213   150
+  100   26.75   4.71  10705   5213   150
+  300   27.31   5.17  10905   5213   150
+  500   27.94   5.46  10936   5213   150
+  700    28.5   5.81  10936   5213   150
+ 1000   29.44   6.28  10936   5213   150
+ 1300   30.25   6.68  10936   5213   150
+ 1500   30.75   6.91  10936   5213   150
+wasm slope KB/cycle all 2.96 first-half 2.80 second-half 2.80
+== soak-local-popover
+    0   19.31   3.87   5232   2518   119
+  100   19.31   4.48   5232   2518   119
+  300   19.31   5.01   5232   2518   119
+  500   19.44   5.55   5232   2518   119
+wasm slope KB/cycle all 0.25 first-half 0.00 second-half 0.67
+== soak-local-dropdown_menu
+    0   21.38   4.06   9067   4393   128
+  100   21.56   4.43   9067   4393   128
+  300   22.13   4.66   9067   4393   128
+  500   22.81   4.81   9067   4393   128
+wasm slope KB/cycle all 2.99 first-half 2.63 second-half 3.48
+== soak-deployed-dialog
+    0   20.25   3.97   6531   3185   107
+  100   20.56    4.4   6531   3185   107
+  300   20.88   4.85   6531   3185   107
+  500   21.19   5.23   6531   3185   107
+  600   21.38   5.41   6531   3185   107
+wasm slope KB/cycle all 1.84 first-half 2.07 second-half 1.67
+== soak-deployed-combobox
+    0   26.69   4.15  10605   5213   150
+  100   26.75   4.66  10705   5213   150
+  300   27.38   5.03  10905   5213   150
+  400   27.56   5.18  10936   5213   150
+wasm slope KB/cycle all 2.43 first-half 1.59 second-half 2.87
+== soak-noperf-dialog
+    0   20.25   3.91   6531   3185   107
+  100   20.56   4.32   6531   3185   107
+  300   20.88   4.65   6531   3185   107
+  500   21.19   4.88   6531   3185   107
+  700   21.56   5.16   6531   3185   107
+ 1000      22   5.39   6531   3185   107
+ 1300    22.5   5.67   6531   3185   107
+ 1500   22.94   5.98   6531   3185   107
+wasm slope KB/cycle all 1.75 first-half 1.78 second-half 1.80

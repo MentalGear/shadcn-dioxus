@@ -1,0 +1,8 @@
+node /tmp/claude-0/-home-user-shadcn-dioxus/2f9af3b0-3995-5f94-a96b-6c0dfde7973a/scratchpad/verify-e/soak.js http://127.0.0.1:8741/shadcn-dioxus popover 500 100 0
+{"cycle":0,"wasmMB":19.31,"heapMB":3.87,"nodes":5232,"qsaAll":2518,"listeners":119}
+{"cycle":100,"wasmMB":19.31,"heapMB":4.48,"nodes":5232,"qsaAll":2518,"listeners":119}
+{"cycle":200,"wasmMB":19.31,"heapMB":4.75,"nodes":5232,"qsaAll":2518,"listeners":119}
+{"cycle":300,"wasmMB":19.31,"heapMB":5.01,"nodes":5232,"qsaAll":2518,"listeners":119}
+{"cycle":400,"wasmMB":19.38,"heapMB":5.25,"nodes":5232,"qsaAll":2518,"listeners":119}
+{"cycle":500,"wasmMB":19.44,"heapMB":5.55,"nodes":5232,"qsaAll":2518,"listeners":119}
+done secs 139 timeouts {"open":0,"close":0} errs []

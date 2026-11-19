@@ -1,0 +1,7 @@
+node /tmp/claude-0/-home-user-shadcn-dioxus/2f9af3b0-3995-5f94-a96b-6c0dfde7973a/scratchpad/verify-e/soak.js https://mentalgear.github.io/shadcn-dioxus combobox 400 100 0
+{"cycle":0,"wasmMB":26.69,"heapMB":4.15,"nodes":10605,"qsaAll":5213,"listeners":150}
+{"cycle":100,"wasmMB":26.75,"heapMB":4.66,"nodes":10705,"qsaAll":5213,"listeners":150}
+{"cycle":200,"wasmMB":27,"heapMB":4.83,"nodes":10805,"qsaAll":5213,"listeners":150}
+{"cycle":300,"wasmMB":27.38,"heapMB":5.03,"nodes":10905,"qsaAll":5213,"listeners":150}
+{"cycle":400,"wasmMB":27.56,"heapMB":5.18,"nodes":10936,"qsaAll":5213,"listeners":150}
+done secs 216 timeouts {"open":0,"close":0} errs []

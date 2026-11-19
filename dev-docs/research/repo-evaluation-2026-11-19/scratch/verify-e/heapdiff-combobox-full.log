@@ -1,0 +1,17 @@
+node heapdiff.js http://127.0.0.1:8741/shadcn-dioxus/component/combobox/ 'main input[role=combobox]' full 200
+objects growing >=0.5 per cycle over 200 cycles (count delta, type name):
+37906 native PerformanceMark
+37906 native PerformanceMeasure
+602 native blink::HeapVectorBacking<cppgc::internal::BasicMember<blink:
+600 native blink::UndoStep
+416 object Object
+400 native system / PropertyArray
+400 object system / Context / scope @61583
+400 native system / WeakCell
+400 native blink::InsertIntoTextNodeCommand
+294 native DOMRectReadOnly
+200 native Text
+200 native blink::RemoveNodeCommand
+200 native blink::DeleteFromTextNodeCommand
+200 native blink::AppendNodeCommand
+179 native system / WeakArrayList

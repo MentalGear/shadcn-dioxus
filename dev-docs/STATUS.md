@@ -4,7 +4,7 @@
 the page as stale and check `git log` and the flag files named here.** What each batch contained is in `git log` and the
 backlog row files, not here: this page says only what is deployed, what runs, what is next and what waits for the owner.
 
-Last updated: **2026-11-18**. Several sessions work in parallel; who holds what is on the `claims` branch (`CLAIMS.md`).
+Last updated: **2026-11-19**. Several sessions work in parallel; who holds what is on the `claims` branch (`CLAIMS.md`).
 Preview site: https://mentalgear.github.io/shadcn-dioxus/ serves main `19d63c14`, built from `5b5adef1` (PRs #186-#197;
 release suite 4204 passed, 0 failed, 0 flaky, 19 skipped on that exact tree, the `@timing` cases deactivated per row 494). Check
 `git log origin/main -1` for the exact tip rather than trusting a SHA frozen here.
@@ -16,6 +16,14 @@ session reads this page, then takes the first open row of "Next" below; while "N
 owner's go, the session reports what it found and waits for that go instead of starting them. Each row file under [`backlog/`](./backlog/)
 says what to build, which files, its proof and its size. The rules are [`../CLAUDE.md`](../CLAUDE.md) and
 [`lane-rules.md`](./lane-rules.md); the owner's decisions are [`decisions.md`](./decisions.md).
+
+Session `session_01MsL6RDL4Y2Pxs9N6sNdZF1` (2026-11-19) ran the repository evaluation (the code-analyser tool, the
+allocation audit, TigerStyle, the built output and the code quality), made the receipt rule standing with its checker and
+gate (`scripts/report-receipts.py`), and filed rows 529-534 and 536-541 with the note
+[`research/repo-evaluation-2026-11-19.md`](./research/repo-evaluation-2026-11-19.md) and its evidence directory. Its work is
+on branch `claude/sleepy-archimedes-f3i7ze` and is **not merged to main**. Row **529** (the CLI deletes outside the
+components root) is proposed as the first of the new rows because it is a destructive bug; the order of the new rows in
+"Next" waits for the owner.
 
 ## Merge queue
 

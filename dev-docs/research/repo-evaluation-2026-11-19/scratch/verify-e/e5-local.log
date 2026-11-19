@@ -1,0 +1,7 @@
+node /tmp/claude-0/-home-user-shadcn-dioxus/2f9af3b0-3995-5f94-a96b-6c0dfde7973a/scratchpad/verify-e/e5.js http://127.0.0.1:8741/shadcn-dioxus <6 pages>   [local docs/ build over localhost; axe here is main-frame only (see axe2.log)]
+{"page":"home","hydrateMs":901,"cls":0,"consoleBad":0,"bad":[],"unusedCssPct":"78.6","axe":["passes=58","axe 4.10.3"],"requests":23,"transferKB":21512}
+{"page":"component/button/","hydrateMs":401,"cls":0,"consoleBad":0,"bad":[],"unusedCssPct":"89.2","axe":["passes=43","axe 4.10.3"],"requests":13,"transferKB":20950}
+{"page":"component/dialog/","hydrateMs":551,"cls":0,"consoleBad":0,"bad":[],"unusedCssPct":"89.8","axe":["passes=43","axe 4.10.3"],"requests":13,"transferKB":21024}
+{"page":"component/combobox/","hydrateMs":495,"cls":0,"consoleBad":0,"bad":[],"unusedCssPct":"88.8","axe":["passes=47","axe 4.10.3"],"requests":13,"transferKB":21178}
+{"page":"component/sidebar/","hydrateMs":1222,"cls":0,"consoleBad":0,"bad":[],"unusedCssPct":"92.2","axe":["passes=46","axe 4.10.3"],"requests":46,"transferKB":81941}
+{"page":"component/data_table/","hydrateMs":581,"cls":0,"consoleBad":0,"bad":[],"unusedCssPct":"88.1","axe":["passes=51","axe 4.10.3"],"requests":13,"transferKB":21269}

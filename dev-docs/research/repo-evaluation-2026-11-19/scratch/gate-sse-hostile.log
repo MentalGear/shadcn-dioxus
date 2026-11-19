@@ -1,0 +1,3 @@
+cd /home/user/targets/verify-gates-wt && bash scripts/check-self-subscribing-effects.sh   # hostile: count.cloned() then count.set
+check-self-subscribing-effects: OK -- no signal read with tracked syntax is written in the same use_effect closure, and no use_effect calls a method that reads its own field with tracked syntax.
+exit=0

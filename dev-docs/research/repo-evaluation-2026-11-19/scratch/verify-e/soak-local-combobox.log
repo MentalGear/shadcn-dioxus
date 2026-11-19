@@ -1,0 +1,19 @@
+node /tmp/claude-0/-home-user-shadcn-dioxus/2f9af3b0-3995-5f94-a96b-6c0dfde7973a/scratchpad/verify-e/soak.js http://127.0.0.1:8741/shadcn-dioxus combobox 1500 100 1
+{"cycle":0,"wasmMB":26.69,"heapMB":4.23,"nodes":10605,"qsaAll":5213,"listeners":150}
+{"cycle":100,"wasmMB":26.75,"heapMB":4.71,"nodes":10705,"qsaAll":5213,"listeners":150}
+{"cycle":200,"wasmMB":27,"heapMB":4.96,"nodes":10805,"qsaAll":5213,"listeners":150}
+DIFF 200 cycles (key=tag|id|class|slot|parent, delta):
+{"cycle":300,"wasmMB":27.31,"heapMB":5.17,"nodes":10905,"qsaAll":5213,"listeners":150}
+{"cycle":400,"wasmMB":27.56,"heapMB":5.35,"nodes":10936,"qsaAll":5213,"listeners":150}
+{"cycle":500,"wasmMB":27.94,"heapMB":5.46,"nodes":10936,"qsaAll":5213,"listeners":150}
+{"cycle":600,"wasmMB":28.25,"heapMB":5.7,"nodes":10936,"qsaAll":5213,"listeners":150}
+{"cycle":700,"wasmMB":28.5,"heapMB":5.81,"nodes":10936,"qsaAll":5213,"listeners":150}
+{"cycle":800,"wasmMB":28.69,"heapMB":5.99,"nodes":10936,"qsaAll":5213,"listeners":150}
+{"cycle":900,"wasmMB":29.38,"heapMB":6.15,"nodes":10936,"qsaAll":5213,"listeners":150}
+{"cycle":1000,"wasmMB":29.44,"heapMB":6.28,"nodes":10936,"qsaAll":5213,"listeners":150}
+{"cycle":1100,"wasmMB":29.63,"heapMB":6.4,"nodes":10936,"qsaAll":5213,"listeners":150}
+{"cycle":1200,"wasmMB":30.13,"heapMB":6.53,"nodes":10936,"qsaAll":5213,"listeners":150}
+{"cycle":1300,"wasmMB":30.25,"heapMB":6.68,"nodes":10936,"qsaAll":5213,"listeners":150}
+{"cycle":1400,"wasmMB":30.5,"heapMB":6.79,"nodes":10936,"qsaAll":5213,"listeners":150}
+{"cycle":1500,"wasmMB":30.75,"heapMB":6.91,"nodes":10936,"qsaAll":5213,"listeners":150}
+done secs 807 timeouts {"open":0,"close":0} errs []

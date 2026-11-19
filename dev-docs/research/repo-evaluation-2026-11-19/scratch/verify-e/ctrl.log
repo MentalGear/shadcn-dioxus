@@ -1,0 +1,5 @@
+node ctrl.js
+PLAIN input click+type+ctrl-a+bksp+esc nodes 9 -> 160 per cycle 1.01
+combobox click only nodes 10544 -> 10602 per cycle 0.39
+combobox click+Escape+type sv (no clear) nodes 10544 -> 10740 per cycle 1.31
+combobox full (type, ctrl-a, bksp, esc) nodes 10544 -> 10752 per cycle 1.39

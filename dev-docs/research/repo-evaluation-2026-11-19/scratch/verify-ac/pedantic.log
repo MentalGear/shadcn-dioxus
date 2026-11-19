@@ -1,0 +1,2 @@
+cd /home/user/shadcn-dioxus && grep -n 'pedantic' Cargo.toml clippy.toml decision-kernel/clippy.toml scripts/run-gates.sh; echo exit=$?
+exit=1

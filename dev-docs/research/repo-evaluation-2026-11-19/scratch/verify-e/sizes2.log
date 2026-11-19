@@ -1,0 +1,14 @@
+bash /tmp/claude-0/-home-user-shadcn-dioxus/2f9af3b0-3995-5f94-a96b-6c0dfde7973a/scratchpad/verify-e/sizes2.sh
+zlib level 1 6677767
+zlib level 6 5761946
+zlib level 9 5731288
+--- nav-linked pages (hrefs in docs/index.html under /shadcn-dioxus/, non-asset)
+88
+nav pages present 88 raw min/med/max 121320 290818.5 1403364 gz min/med/max 16957 38965 110529
+--- all index.html under docs
+101
+./404.html
+--- total html
+33244043
+--- home page request list (static refs in index.html)
+25

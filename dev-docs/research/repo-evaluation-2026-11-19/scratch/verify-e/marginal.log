@@ -1,0 +1,4 @@
+python3 -I /tmp/claude-0/-home-user-shadcn-dioxus/2f9af3b0-3995-5f94-a96b-6c0dfde7973a/scratchpad/verify-e/marginal.py ; then node brotli q11 lgwin24 on original vs /tmp/zeroed.wasm
+zeroed rust bytes 2049994 css bytes 763439 same length True
+zlib9 original 5731288 zeroed 5067963 delta 663325
+brotli11 original 3477596 zeroed 3090890 delta 386706

@@ -1,0 +1,16 @@
+git ls-files '*.rs' | xargs grep -nE 'mem::(take|swap|replace)\('
+preview/props_scan.rs:459:                    parts.push(std::mem::take(&mut cur));
+preview/props_scan.rs:520:                parts.push(std::mem::take(&mut cur));
+preview/src/components/markdown/component.rs:296:    for node in std::mem::take(nodes) {
+primitives/src/bridge/transport.rs:408:        (std::mem::take(&mut channel.outbox), channel.eval)
+primitives/src/chart/engine/geometry.rs:87:                    runs.push(std::mem::take(&mut current));
+primitives/src/chart/engine/polar.rs:231:        std::mem::swap(&mut r0, &mut r1);
+primitives/src/navbar.rs:1250:        std::mem::take(&mut props.attributes),
+primitives/src/questionnaire.rs:459:        let effects = std::mem::take(&mut *queue.write());
+primitives/src/virtual/size_index.rs:170:        let measured = std::mem::take(&mut self.measured);
+primitives/src/virtual_grid.rs:281:        std::mem::take(&mut props.attributes),
+primitives/src/virtual_grid.rs:1154:        std::mem::take(&mut props.attributes),
+primitives/src/virtual_list.rs:432:                pin_in_flow(std::mem::take(&mut plan.items), pinned, plan.top_offset);
+scripts/wrapper-props/main.rs:177:                out.push(std::mem::take(&mut seg));
+scripts/wrapper-props/main.rs:286:                        attrs: std::mem::take(&mut pending),
+scripts/wrapper-props/main.rs:422:                segs.push(std::mem::take(&mut seg));

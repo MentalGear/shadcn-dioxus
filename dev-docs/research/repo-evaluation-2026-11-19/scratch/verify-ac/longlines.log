@@ -1,0 +1,9 @@
+cd /home/user/shadcn-dioxus && for c in primitives cli decision-kernel dioxus-attributes test-harness preview labs templates; do git ls-files "$c/**/*.rs" "$c/*.rs" | xargs awk 'length($0)>100{n++} END{print n+0}'; done  # order as listed
+1699
+111
+61
+0
+0
+2232
+4
+1

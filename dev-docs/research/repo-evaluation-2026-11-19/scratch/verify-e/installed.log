@@ -1,0 +1,42 @@
+bash /tmp/claude-0/-home-user-shadcn-dioxus/2f9af3b0-3995-5f94-a96b-6c0dfde7973a/scratchpad/verify-e/installed.sh
+installed files:
+256
+installed bytes:
+1340450
+installed lines:
+34666
+components with files:
+83
+file kinds:
+     83 css
+    173 rs
+== row [0-9]+
+lines: 136
+components: 50
+== dev-docs
+lines: 85
+components: 40
+== backlog
+lines: 86
+components: 38
+== scripts/
+lines: 61
+components: 37
+== dx_repo_lints
+lines: 13
+components: 3
+== comment lines (Rust //, CSS /* ... */ lines starting with * or /*)
+rs // lines: 3534
+css comment-ish lines (^\s*(/\*|\*)): 3346
+== python line count (splitlines) over the same set
+lines 34667
+== other jargon
+== playwright|\.spec\.ts
+lines: 50
+components: 19
+== primitives/src
+lines: 75
+components: 31
+== preview/src
+lines: 18
+components: 13

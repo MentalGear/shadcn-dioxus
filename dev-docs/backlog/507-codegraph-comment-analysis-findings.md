@@ -72,3 +72,14 @@ small decision, not sized here.
   specific metric across a whole crate rather than one file at a time).
 - Next pass: re-run after the Rust port's phase 0 (row 444) lands, since `primitives/src/ts/` and `primitives/src/js/`
   will have moved a great deal of code and the N4 duplication in the menu family may already be gone by construction.
+
+**Evaluation pass 2026-11-19 (this session could only read MentalGear/code-analyser at `374bf4a`; these are items for that
+repository).** Measured run and recipes: [`research/repo-evaluation-2026-11-19/evidence.md`](../research/repo-evaluation-2026-11-19/evidence.md), section 9.
+- Accuracy per metric (ledger A): undocumented public items genuine in 5 of 5 sampled (the headline 83.9 % counts items
+  plus fields; items alone are 2,001 of 2,638, 75.9 %); duplicated comment text genuine in 6 of 6 (3 of them rustdoc
+  example boilerplate); TODO 1 of 2 real; the stale-name heuristic (N1) 1 real of 6 (`top_layer/component.rs:45`, `DocsSidebar`).
+- A wrong edge for a package with two bin targets (`public-api-snapshot.rs` to `src/main.rs`: the targets share the symbol
+  `crate/`), and 20 duplicate-symbol warnings of the same class.
+- Blindness to `cfg(target_family = "wasm")` code (the host-cfg index misses `primitives/src/sleep.rs` to `gloo_timers`).
+- The index already holds every allocation call site with line and column (`format!` 752, `to_string` 1,514, `vec!` 1,483,
+  `collect` 706, `String::clone` 412); a ranking layer of about 50 lines is possible, detection stays with clippy.

@@ -1,0 +1,6 @@
+cd /tmp/claude-0/-home-user-shadcn-dioxus/2f9af3b0-3995-5f94-a96b-6c0dfde7973a/scratchpad/verify-cli/p4 && /home/user/targets/verify-cli/debug/shadcn-dioxus add --path /tmp/claude-0/-home-user-shadcn-dioxus/2f9af3b0-3995-5f94-a96b-6c0dfde7973a/scratchpad/verify-cli/reg --force --skip-cargo-add ../../victim   # registry component.json name is ../../victim
+SENTINEL
+Added component '../../victim'
+rc=0
+component.json
+mod.rs

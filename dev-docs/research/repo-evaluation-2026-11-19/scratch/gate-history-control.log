@@ -1,0 +1,8 @@
+cd /home/user/targets/verify-gates-wt && git add primitives/src/zz_probe_c.rs && bash scripts/check-history-comments.sh   # control: "Previously it returned nil"
+check-history-comments: comment lines that retell history (dates, SHAs, "used to", "previously", "no longer" ...)
+were ADDED. A comment says what the code is and why; history lives in the backlog row and is linked
+(`dev-docs/backlog.md row N`). Rewrite the line, or mark a deliberate one `history-ok: <reason>`.
+See dev-docs/history-in-comments.md.
+  primitives/src/zz_probe_c.rs: 0 -> 1  (new file)
+      primitives/src/zz_probe_c.rs:1 [previously] Previously it returned nil when the id was missing.
+exit=1
