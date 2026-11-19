@@ -67,7 +67,7 @@ small decision, not sized here.
 ## Detail
 
 - How to run a pass: `CARGO_TARGET_DIR=/home/user/tgt/codegraph LANE_SLOTS=1 scripts/codegraph.sh --blame` (the tool
-  is a checkout of MentalGear/code-analyser at `$CODEGRAPH_HOME` or `../code-analyser`), then
+  is a checkout of MentalGear/code-analyser at `$CODEGRAPH_HOME` or beside the main checkout of this repo), then
   open `target-codegraph/explorer.html`'s Comments tab (or script over `comments.json`, as this pass did, for a
   specific metric across a whole crate rather than one file at a time).
 - Next pass: re-run after the Rust port's phase 0 (row 444) lands, since `primitives/src/ts/` and `primitives/src/js/`

@@ -25,7 +25,7 @@ optional (Detail, Scope, Optional).
 
 MOVED to its own repository, MentalGear/code-analyser (2026-11-19, the owner's request), and still BUILT: run it here
 with `CARGO_TARGET_DIR=<abs dir> LANE_SLOTS=1 scripts/codegraph.sh [--force] [--blame]` (the tool is found at
-`$CODEGRAPH_HOME`, else in a sibling `../code-analyser` checkout; `scripts/codegraph.sh smoke` runs its smoke test). What
+`$CODEGRAPH_HOME`, else in a `code-analyser` checkout beside the main checkout of this repo; `scripts/codegraph.sh smoke` runs its smoke test). What
 is specific to this repo stays here as `.codegraph/project.py`: `scripts/comment-scan.py` as the comment tokenizer (the
 gates and the metrics read comments the same way), the `scripts/lane-lock.sh` prefix of the SCIP run, the TS roots, the
 component mapping, the themed `mod.rs` nodes, the pairing through `component.json`, the spec edges and the smoke

@@ -10,6 +10,8 @@ TOKENIZER = "scripts/comment-scan.py"
 LOCK = ["scripts/lane-lock.sh", "--label", "codegraph-scip", "--"]
 # the files the hooks below read as text: component.json marks a themed component, its .rs files hold the pairing paths
 KEY_INPUTS = ["preview/src/components/*/component.json", "preview/src/components/*.rs"]
+# the libraries this repo ports or cites, so N1 does not flag the names a comment quotes from them
+UPSTREAM = r"Base UI|Radix|radix-ui|Sonner|shadcn|React|react-[a-z-]+|MUI|Floating UI|Headless|Recharts|Vaul|cmdk|[Ee]mbla"
 TS_ROOTS = ["primitives/src/ts", "playwright", "primitives/ts-test"]
 PAGE = {
     "title": "shadcn-dioxus",

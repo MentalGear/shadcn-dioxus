@@ -6,11 +6,13 @@
 #   CARGO_TARGET_DIR=<absolute isolated dir> LANE_SLOTS=1 scripts/codegraph.sh [--force] [--blame] [--out DIR]
 #   scripts/codegraph.sh smoke [path/to/explorer.html]     the tool's smoke.js on the built page
 #
-# The tool is found at $CODEGRAPH_HOME, else in a sibling checkout ../code-analyser. Output: target-codegraph/
+# The tool is found at $CODEGRAPH_HOME, else in a checkout code-analyser/ beside the main checkout of this repo (the
+# same place from a lane worktree). Output: target-codegraph/
 # (git-ignored through target-*/); open target-codegraph/explorer.html from disk.
 set -euo pipefail
 repo="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-home="${CODEGRAPH_HOME:-$(cd "$repo/.." && pwd)/code-analyser}"
+main="$(cd "$(git -C "$repo" rev-parse --path-format=absolute --git-common-dir)/.." && pwd)"
+home="${CODEGRAPH_HOME:-$(dirname "$main")/code-analyser}"
 if [ ! -x "$home/run.sh" ]; then
   echo "codegraph: the tool is not at $home" >&2
   echo "  get it: git clone https://github.com/MentalGear/code-analyser \"$home\"" >&2
