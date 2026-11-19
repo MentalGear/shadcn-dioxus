@@ -46,7 +46,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (88)
+## Open rows (89)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -132,6 +132,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [532](backlog/532-output-budgets-css-hydration-demo-source.md) | Output budgets where none exist: CSS bytes per page and hydration time; an optional step that stops embedding demo source | BACKLOG, filed 2026-11-19. Not started. The hydration budget needs a stable timing method on a… | M: two budgets and their gates; the… | build |
 | [533](backlog/533-tigerstyle-slice-kernel-and-function-length.md) | The TigerStyle slice: kernel lints and assertions, and a shrink-only count of long non-component functions | BACKLOG, filed 2026-11-19; the owner agreed to the slice. Not started. Items 1-4 need no grant… | M: kernel items 1-4 are S; item 5 is S… | tooling |
 | [534](backlog/534-overlay-memory-growth-per-cycle.md) | Wasm memory growth per overlay open/close cycle: find the cause, gate the preview's logger feature | BACKLOG, NOT SCHEDULED, last in every ordering (it has the highest id of rows 529-534 and no… | S for the diagnosis (a soak harness… | primitives |
+| [535](backlog/535-lightbox-fly-in-from-the-clicked-item.md) | Whether the dialog family gets a lightbox fly-in: the clicked item grows into the modal's media and shrinks back, proven on the photo wall | BACKLOG, a question for the owner, not scheduled. Nothing started. | M (inferred): four S to M parts | primitives |
 | [536](backlog/536-generic-components-check-value-types-at-run-time.md) | Generic components check their value type at run time: a mismatched option compiles and panics | BACKLOG, filed 2026-11-19. Read, not run: the claim is reasoned from the definitions (ledger D-4)… | M: the context type, the five… | primitives |
 | [537](backlog/537-rust-shape-gates-are-text-patterns-and-have-bypasses.md) | The Rust-shape gates are text patterns: three reproduced bypasses and the construction behind them | BACKLOG, filed 2026-11-19. Not started. check-js-listeners.sh matches only addEventListener\s*\(… | M-L: a syn checker for two gates is M… | tooling |
 | [538](backlog/538-deny-the-allocation-lints-after-cleaning.md) | Deny the allocation lints after cleaning: expect_fun_call now, then or_fun_call and redundant_clone; a take-attributes helper | BACKLOG, filed 2026-11-19. Not started. The old optional item in row 355 ("fix the real hits of… | M: item 1 is XS, items 2-3 are S each… | tooling |

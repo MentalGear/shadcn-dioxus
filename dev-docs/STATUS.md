@@ -19,11 +19,14 @@ says what to build, which files, its proof and its size. The rules are [`../CLAU
 
 Session `session_01MsL6RDL4Y2Pxs9N6sNdZF1` (2026-11-19) ran the repository evaluation (the code-analyser tool, the
 allocation audit, TigerStyle, the built output and the code quality), made the receipt rule standing with its checker and
-gate (`scripts/report-receipts.py`), and filed rows 529-534 and 536-541 with the note
+gate (`scripts/report-receipts.py`), and filed rows 529-541 (535 is a question for the owner: a lightbox fly-in for the
+dialog family) with the note
 [`research/repo-evaluation-2026-11-19.md`](./research/repo-evaluation-2026-11-19.md) and its evidence directory. Its work is
 on branch `claude/sleepy-archimedes-f3i7ze` and is **not merged to main**. Row **529** (the CLI deletes outside the
 components root) is proposed as the first of the new rows because it is a destructive bug; the order of the new rows in
-"Next" waits for the owner.
+"Next" waits for the owner. The same session evaluated a functional core and a graph as the single source of truth
+([`research/functional-core-and-graph-ssot-2026-11-19.md`](./research/functional-core-and-graph-ssot-2026-11-19.md)); what
+it puts forward is not filed as a row and waits for the owner.
 
 ## Merge queue
 
