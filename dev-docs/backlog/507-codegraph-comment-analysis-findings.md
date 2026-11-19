@@ -4,7 +4,7 @@ title: "Code analyzer -> comment analysis: a standing backlog for what the tool'
 status: "OPEN, STANDING. Owner-requested 2026-11-11: run the comment analysis and record what can be learned…"
 size: "S per pass (a read of the Comments tab…"
 area: tooling
-updated: 2026-11-18
+updated: 2026-11-19
 ---
 
 # Row 507: code analyzer -> comment analysis
@@ -12,7 +12,7 @@ updated: 2026-11-18
 ## Item
 
 The code graph explorer's comment metrics (row [486](./486-code-graph-explorer-tools-codegraph.md), M1-M6 and N1-N6,
-`scripts/codegraph/`) are a dev tool, not a gate: nothing runs them automatically, so what they find only turns into
+MentalGear/code-analyser, run here by `scripts/codegraph.sh`) are a dev tool, not a gate: nothing runs them automatically, so what they find only turns into
 a fix when someone reads the Comments tab and acts on it. This row is that standing backlog: each pass records what
 it found and fixed, and what it found but left for later, so the next pass (or the Rust port, when it reaches the
 code N4 points at) has a starting point instead of re-discovering the same things.
@@ -66,7 +66,8 @@ small decision, not sized here.
 
 ## Detail
 
-- How to run a pass: `CARGO_TARGET_DIR=/home/user/tgt/codegraph LANE_SLOTS=1 scripts/codegraph/run.sh --blame`, then
+- How to run a pass: `CARGO_TARGET_DIR=/home/user/tgt/codegraph LANE_SLOTS=1 scripts/codegraph.sh --blame` (the tool
+  is a checkout of MentalGear/code-analyser at `$CODEGRAPH_HOME` or beside the main checkout of this repo), then
   open `target-codegraph/explorer.html`'s Comments tab (or script over `comments.json`, as this pass did, for a
   specific metric across a whole crate rather than one file at a time).
 - Next pass: re-run after the Rust port's phase 0 (row 444) lands, since `primitives/src/ts/` and `primitives/src/js/`

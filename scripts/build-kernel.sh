@@ -39,7 +39,14 @@ cd "$root"
 locked=(--locked)
 [ "$root" = "$here" ] || locked=()
 
-env -u RUSTFLAGS -u CARGO_ENCODED_RUSTFLAGS -u RUSTC_WRAPPER CARGO_INCREMENTAL=0 \
+# The panic paths of inlined std code are `/rustc/<commit>/library/...` in the shipped rlibs, but rustc rewrites them to
+# the local sources when the `rust-src` component is installed (rust-analyzer installs it), so the module's bytes would
+# depend on which components the machine has. The remap writes them back to the shipped form either way.
+sysroot="$(rustc --print sysroot)"
+commit="$(rustc -vV | sed -n 's/^commit-hash: //p')"
+[ -n "$commit" ] || { echo "build-kernel: rustc -vV names no commit-hash" >&2; exit 1; }
+env -u RUSTFLAGS -u RUSTC_WRAPPER CARGO_INCREMENTAL=0 \
+  CARGO_ENCODED_RUSTFLAGS="--remap-path-prefix=$sysroot/lib/rustlib/src/rust=/rustc/$commit" \
   cargo build "${locked[@]}" -p decision-kernel --profile kernel --target wasm32-unknown-unknown >&2
 built="$CARGO_TARGET_DIR/wasm32-unknown-unknown/kernel/decision_kernel.wasm"
 [ -f "$built" ] || { echo "build-kernel: $built was not produced" >&2; exit 1; }

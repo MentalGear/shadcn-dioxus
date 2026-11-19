@@ -1,10 +1,10 @@
 ---
 id: 486
-title: "Code graph explorer: SCIP-derived graph with a granularity slider (scripts/codegraph)"
-status: "BUILT, minimal scope (2026-11-03): scripts/codegraph/ (run.sh, build_graph.py, make_explorer.py…"
+title: "Code graph explorer: SCIP-derived graph with a granularity slider (MentalGear/code-analyser)"
+status: "MOVED to its own repository, MentalGear/code-analyser (2026-11-19, the owner's request), and still…"
 size: "S-M for the minimal scope; the rest is…"
 area: tooling
-updated: 2026-11-07
+updated: 2026-11-19
 ---
 
 # Row 486: Code graph explorer
@@ -15,12 +15,28 @@ An explorer that shows the codebase as a graph: pick a component, see its shared
 dependents, and set the granularity with a slider (crate, component, file, item). It is a repo tool, so every dependency
 it uses passes the dependency rule below and every security requirement below holds before it lands.
 
-**Dev tool only (owner decision 2026-11-02).** The explorer is a developer tool that lives in the repo under
-`scripts/codegraph/`, like `scripts/run-gates.sh`. It is never shipped: not part of the CLI, not in the component registry
-or any `component.json`, not installable by users, and not in `run-gates.sh`. The item granularity of the slider is
+**Dev tool only (owner decision 2026-11-02).** The explorer is a developer tool in its own repository,
+MentalGear/code-analyser, run on this repo by `scripts/codegraph.sh` with the project config `.codegraph/project.py`.
+It is never shipped: not part of the CLI, not in the component registry or any `component.json`, not installable by
+users, and not in `run-gates.sh`. The item granularity of the slider is
 optional (Detail, Scope, Optional).
 
 ## Status / trigger
+
+MOVED to its own repository, MentalGear/code-analyser (2026-11-19, the owner's request), and still BUILT: run it here
+with `CARGO_TARGET_DIR=<abs dir> LANE_SLOTS=1 scripts/codegraph.sh [--force] [--blame]` (the tool is found at
+`$CODEGRAPH_HOME`, else in a `code-analyser` checkout beside the main checkout of this repo; `scripts/codegraph.sh smoke` runs its smoke test). What
+is specific to this repo stays here as `.codegraph/project.py`: `scripts/comment-scan.py` as the comment tokenizer (the
+gates and the metrics read comments the same way), the `scripts/lane-lock.sh` prefix of the SCIP run, the TS roots, the
+component mapping, the themed `mod.rs` nodes, the pairing through `component.json`, the spec edges and the smoke
+expectations. Proof on main `20a8718a` with one shared index: `comments.json` identical as parsed JSON; `graph.json`
+identical except for `decision-kernel`, which the tool now reads as a workspace crate from the index (the hard-coded crate
+set in this repo missed it, so its macro and module references were an external `ext:decision-kernel` node: 1 node and
+8 edges fewer, 10 edges heavier); smoke 40 of 40. The supply-chain register no longer lists Cytoscape (it is the tool's
+dependency, pinned in that repository with the same pnpm hardening). The paths `scripts/codegraph/...` below name the
+tool's files while it lived here; in code-analyser they sit at the repository root. The move supersedes the placement
+decision of 2026-11-11 (the tool was correctly placed in `scripts/codegraph/`, mirroring the own-pnpm-project convention
+of `playwright/` and `preview/`).
 
 BUILT, minimal scope (2026-11-03): `scripts/codegraph/` (`run.sh`, `build_graph.py`, `make_explorer.py`,
 `explorer.template.html`, `smoke.js`, a pnpm folder with Cytoscape.js 3.34.3, `README.md`). Delivery route: the preferred
@@ -60,7 +76,8 @@ list of findings and follow-ups has one home across passes.
 
 Researched 2026-10-29 and 2026-10-31 at the owner's request; a prototype exists. The research, the tool comparison and the
 measured numbers are in [`research/code-graph-explorer-2026-10-31.md`](../research/code-graph-explorer-2026-10-31.md), and
-the tool is in [`scripts/codegraph/`](../../scripts/codegraph/) (the prototype sources moved there).
+the tool is MentalGear/code-analyser (the prototype sources moved to `scripts/codegraph/` and from there to that
+repository).
 
 Owner decisions 2026-10-31:
 1. rust-analyzer is the one analysis source. crabmap, Crabviz and every other young or little-used tool are out of the
@@ -236,7 +253,7 @@ Playbook: [`supply-chain/README.md`](../supply-chain/README.md). Control ids are
 - **`check-codegraph-deps` gate (S9)**, a proposal only; the owner decides whether it exists.
 
 **Keep in mind (JS volume):** the explorer page is JavaScript in tracked HTML. `check-js-volume.sh` excludes `scripts/`
-(like `playwright/` and `dev-docs/`), so the tool lives under `scripts/codegraph/` and the page is dev tooling that
+(like `playwright/` and `dev-docs/`), so the tool lived under `scripts/codegraph/` and the page is dev tooling that
 ships nowhere and touches nothing in `primitives/` or `preview/`, which is what the bridge rule in
 [`js-interop.md`](../js-interop.md) governs. A top-level `tools/` would be inside the gate's universe and needs a
 visible `--update-baseline --allow-raise "row 486 ..."`; the volume rule says it can only shrink, so the excluded path is
