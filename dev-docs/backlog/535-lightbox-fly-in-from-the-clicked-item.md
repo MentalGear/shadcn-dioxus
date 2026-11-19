@@ -1,7 +1,7 @@
 ---
 id: 535
-title: "Whether the dialog family gets a lightbox fly-in: the clicked item grows into the modal's media and shrinks back, proven on the photo wall"
-status: "BACKLOG, a question for the owner, not scheduled. Nothing started."
+title: "The dialog family gets a lightbox fly-in: the clicked item grows into the modal's media and shrinks back, proven on the photo wall"
+status: "BACKLOG, approved by the owner 2026-11-19 (\"yes\"). Not started, not scheduled; the order in \"Next\"…"
 size: "M (inferred): four S to M parts"
 area: primitives
 updated: 2026-11-19
@@ -11,14 +11,19 @@ updated: 2026-11-19
 
 ## Item
 
-Should the modal dialog family offer a lightbox motion: the clicked item (a photo in the virtual grid) appears to grow
-into the media inside the open dialog, and on close the media shrinks back to the item? Today the dialog fades and scales
-from 0.95 around its own centre, whatever was clicked. The one construction is below; the owner decides whether the
-effect belongs in the library at all.
+The modal dialog family offers a lightbox motion: the clicked item (a photo in the virtual grid) appears to grow into
+the media inside the open dialog, and on close the media shrinks back to the item. Today the dialog fades and scales from
+0.95 around its own centre, whatever was clicked. The effect belongs in the library (owner 2026-11-19, asked "Does the
+effect belong in the library at all?": "yes"). The one construction is below.
 
 ## Status / trigger
 
-BACKLOG, a question for the owner, not scheduled. Nothing started.
+BACKLOG, approved by the owner 2026-11-19 ("yes"). Not started, not scheduled; the order in "Next" waits for the owner.
+
+**Ordering evidence.** The close half builds on the dialog's exit path (`use_animated_open`, `primitives/src/lib.rs:897`),
+which open [row 456](./456-port-3-ov-overlay-core-escape-dismiss-open-focus.md) rewrites (it owns the exit wait and
+`use_animated_open`'s two placements). The row is best built after 456 lands, or with its exit half waiting for it; the
+order is the owner's.
 
 ## Size
 
@@ -29,7 +34,7 @@ M (inferred): four S to M parts
 **Size parts.** Rect math and media-pose recipe (S), theme recipe (S), photo-wall wiring (S), specs (S to M).
 
 **Prior art.** No existing row or note covers a shared-element transition, a lightbox, a zoom or hero transition, FLIP or
-the View Transitions API (searched `dev-docs/backlog/`, its `done/` and `dev-docs/research/`, 2026-11-19). Start only on a yes.
+the View Transitions API (searched `dev-docs/backlog/`, its `done/` and `dev-docs/research/`, 2026-11-19). The owner said yes 2026-11-19.
 
 **The demo the owner means.** `preview/src/components/virtual_grid/variants/photo_wall/mod.rs`: the 90,000-photo wall in
 two layouts (the two-axis `VirtualGrid` of 128 px cells, `mod.rs:379`; `VirtualJustifiedGrid`, `mod.rs:354`).
@@ -44,8 +49,8 @@ Clicking a cell, or Enter or Space on the focused one, calls `open_photo(index)`
   (`dialog/style.css:52`, `dx-components-theme.css:969`), so the effect is absent under it. Rust first: nothing here
   needs a browser API the bridge lacks (below). No new `@starting-style` (row 516 removed it, `primitives/src/lib.rs:629`).
 - *Settled by evidence.* A View Transition is the wrong mechanism here (below); FLIP as one CSS transition is cheaper.
-- *Left for the owner.* Whether the library wants the effect and its residue, and whether it ships as a primitive
-  capability or stays a documented recipe in the photo-wall demo only.
+- *Answered by the owner.* The library wants the effect (2026-11-19, "yes"). Left for the build: whether it ships as a
+  primitive capability, as the construction below has it, or stays a documented recipe in the photo-wall demo only.
 
 **Today's motion, read from the source.** `use_dialog_open_driver` (`primitives/src/lib.rs:629`) returns
 `Closed`, `Entering` (the first rendered frame, a frame before `data-open`) and `Open`; the panel's entry is a

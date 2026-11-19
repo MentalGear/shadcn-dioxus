@@ -154,6 +154,12 @@ the line here is the pointer, so when a row's text and this line disagree, the r
 - The TigerStyle slice is agreed (owner 2026-11-19: "I agree with your recommendations"): kernel lints and assertions and a
   shrink-only count of long non-component functions, row [533](./backlog/533-tigerstyle-slice-kernel-and-function-length.md);
   the other rules stay out, with the reasons in the note.
+- Steps 1 and 2 of the functional-core construction are approved as one row that takes over the gate half of rows 533
+  and 537 (owner 2026-11-19: "yes for 1 and 2"): a generated `syn` item table read by the gates, and handler decisions as
+  pure outcome functions. Step 3, the code graph explorer reading the table, stays an open question inside the row; row
+  [542](./backlog/542-one-generated-item-table-read-by-the-gates.md), not scheduled.
+- The lightbox motion belongs in the library (owner 2026-11-19, asked "Does the effect belong in the library at all?":
+  "yes"); row [535](./backlog/535-lightbox-fly-in-from-the-clicked-item.md), not scheduled.
 - The 2026-11-19 evaluation is documented in the repository (owner: "properly document all"): the note
   [`research/repo-evaluation-2026-11-19.md`](./research/repo-evaluation-2026-11-19.md) with its evidence directory
   ([`research/repo-evaluation-2026-11-19/`](./research/repo-evaluation-2026-11-19/README.md)) and rows 529-534, 536-541.

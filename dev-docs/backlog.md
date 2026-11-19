@@ -46,7 +46,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (89)
+## Open rows (90)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -132,12 +132,13 @@ proposing one is closed as out of scope (row 337 is the first).
 | [532](backlog/532-output-budgets-css-hydration-demo-source.md) | Output budgets where none exist: CSS bytes per page and hydration time; an optional step that stops embedding demo source | BACKLOG, filed 2026-11-19. Not started. The hydration budget needs a stable timing method on a… | M: two budgets and their gates; the… | build |
 | [533](backlog/533-tigerstyle-slice-kernel-and-function-length.md) | The TigerStyle slice: kernel lints and assertions, and a shrink-only count of long non-component functions | BACKLOG, filed 2026-11-19; the owner agreed to the slice. Not started. Items 1-4 need no grant… | M: kernel items 1-4 are S; item 5 is S… | tooling |
 | [534](backlog/534-overlay-memory-growth-per-cycle.md) | Wasm memory growth per overlay open/close cycle: find the cause, gate the preview's logger feature | BACKLOG, NOT SCHEDULED, last in every ordering (it has the highest id of rows 529-534 and no… | S for the diagnosis (a soak harness… | primitives |
-| [535](backlog/535-lightbox-fly-in-from-the-clicked-item.md) | Whether the dialog family gets a lightbox fly-in: the clicked item grows into the modal's media and shrinks back, proven on the photo wall | BACKLOG, a question for the owner, not scheduled. Nothing started. | M (inferred): four S to M parts | primitives |
+| [535](backlog/535-lightbox-fly-in-from-the-clicked-item.md) | The dialog family gets a lightbox fly-in: the clicked item grows into the modal's media and shrinks back, proven on the photo wall | BACKLOG, approved by the owner 2026-11-19 ("yes"). Not started, not scheduled; the order in "Next"… | M (inferred): four S to M parts | primitives |
 | [536](backlog/536-generic-components-check-value-types-at-run-time.md) | Generic components check their value type at run time: a mismatched option compiles and panics | BACKLOG, filed 2026-11-19. Read, not run: the claim is reasoned from the definitions (ledger D-4)… | M: the context type, the five… | primitives |
-| [537](backlog/537-rust-shape-gates-are-text-patterns-and-have-bypasses.md) | The Rust-shape gates are text patterns: three reproduced bypasses and the construction behind them | BACKLOG, filed 2026-11-19. Not started. check-js-listeners.sh matches only addEventListener\s*\(… | M-L: a syn checker for two gates is M… | tooling |
+| [537](backlog/537-rust-shape-gates-are-text-patterns-and-have-bypasses.md) | The Rust-shape gates are text patterns: three reproduced bypasses and the construction behind them | BACKLOG, filed 2026-11-19. Not started. check-js-listeners.sh matches only addEventListener\s*\(… | M-L as filed (a syn checker for two… | tooling |
 | [538](backlog/538-deny-the-allocation-lints-after-cleaning.md) | Deny the allocation lints after cleaning: expect_fun_call now, then or_fun_call and redundant_clone; a take-attributes helper | BACKLOG, filed 2026-11-19. Not started. The old optional item in row 355 ("fix the real hits of… | M: item 1 is XS, items 2-3 are S each… | tooling |
 | [539](backlog/539-hot-path-allocation-sites-low-priority.md) | Hot-path allocation sites in filtering and drag paths (low priority, prove before changing) | BACKLOG, filed 2026-11-19, low priority. Start only with a measurement. | M | primitives |
 | [540](backlog/540-one-controlled-prop-type.md) | One Controlled&lt;T&gt; prop type instead of two encodings of controlled-versus-uncontrolled | BACKLOG, filed 2026-11-19. Not started. The public API snapshot gate makes this a deliberate break… | M | primitives |
 | [541](backlog/541-use-previous-writes-signals-inside-a-memo.md) | use_previous writes signals inside a memo: keep the previous value in a CopyValue or a render-local | BACKLOG, filed 2026-11-19. Not started. | S | primitives |
+| [542](backlog/542-one-generated-item-table-read-by-the-gates.md) | One generated item table of the workspace, read by the gates; handler decisions as pure outcome functions | BACKLOG, steps 1 and 2 approved by the owner 2026-11-19. Not started, not scheduled; the order in… | S-M for the table and the first gate; S… | tooling |
 
 <!-- END GENERATED -->

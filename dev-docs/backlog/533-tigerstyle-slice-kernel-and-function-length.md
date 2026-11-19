@@ -40,9 +40,13 @@ components (87 of 364 in primitives exceed 70), hence a script.
 
 BACKLOG, filed 2026-11-19; the owner agreed to the slice. Not started. Items 1-4 need no grant; item 5 waits for it.
 
+**Taken over (2026-11-19).** The gate half, the shrink-only count of long non-component functions, is built by
+[row 542](./542-one-generated-item-table-read-by-the-gates.md) as the first consumer of its generated item table. This row
+keeps the kernel lints, the assertions, the const assertions and the `dx_input` cap (items 1-5).
+
 ## Size
 
-M: kernel items 1-4 are S; item 5 is S plus the grant and a module rebuild; the gate is S-M.
+M: kernel items 1-4 are S; item 5 is S plus the grant and a module rebuild; the gate is S-M and is built in row 542.
 
 ## Detail
 

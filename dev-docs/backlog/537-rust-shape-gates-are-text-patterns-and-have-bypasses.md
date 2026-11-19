@@ -2,7 +2,7 @@
 id: 537
 title: "The Rust-shape gates are text patterns: three reproduced bypasses and the construction behind them"
 status: "BACKLOG, filed 2026-11-19. Not started. check-js-listeners.sh matches only addEventListener\\s*\\(…"
-size: "M-L: a syn checker for two gates is M…"
+size: "M-L as filed (a syn checker for two…"
 area: tooling
 updated: 2026-11-19
 ---
@@ -35,9 +35,13 @@ bypass was read, not run. The workflows are `workflow_dispatch`-only (`scripts/r
 [row 33](./033-3-browser-playwright-on-every-push-pr-sharded.md) and [row 4](./004-first-3-browser-ci-run-treat-as-calibration-not.md)),
 so no gate runs unless a person or lane runs it; a sounder gate is worth little until that is settled.
 
+**Taken over (2026-11-19).** The `syn` checker for the Rust-shape gates (`check-self-subscribing-effects`,
+`check-hooks-in-closures`) is built by [row 542](./542-one-generated-item-table-read-by-the-gates.md) as consumers of its
+generated item table. This row keeps `check-history-comments`, which reads prose, and the CI-freeze note.
+
 ## Size
 
-M-L: a `syn` checker for two gates is M; folding the others in is a larger step.
+M-L as filed (a `syn` checker for two gates is M; folding the others in is a larger step). The checker is now built in row 542, so what stays here is the history gate's clearer rule and the CI-freeze note, an S estimate.
 
 ## Detail
 
