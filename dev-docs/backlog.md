@@ -46,7 +46,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (76)
+## Open rows (82)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -126,5 +126,11 @@ proposing one is closed as out of scope (row 337 is the first).
 | [526](backlog/526-lane-browser-runs-wait-for-the-whole-release-suite.md) | A lane's browser run waits for the whole release suite: the suite yields between its chunks to one bounded lane run | BACKLOG (found 2026-11-15). Not started. The owner's call: it changes the release-suite procedure… | M: the yield point in run-suite.sh, the… | tests |
 | [527](backlog/527-gallery-cards-move-by-their-content-visibility-estimate.md) | Gallery cards move by their content-visibility estimate when a script scrolls one into view | BACKLOG (found 2026-11-15). Not started. The owner's call: tests already settle the cards, so this… | S: the measured table and its writer… | components |
 | [528](backlog/528-hoversurface-tooltip-and-hovercard-as-one-surface.md) | HoverSurface: Tooltip and HoverCard as one root, trigger and content, configured by one struct | APPROVED 2026-11-14 (owner: "I approve your recommendation for generalizing the components and… | M: one new module… | overlays |
+| [529](backlog/529-cli-component-names-validated-no-delete-outside-root.md) | The CLI validates component names and never deletes outside the components root | BACKLOG, filed 2026-11-19. The first of rows 529-534 to do. Not started. | S: one type, its three entry points and… | tooling |
+| [530](backlog/530-add-installs-transactionally.md) | `add` installs transactionally: stage, move into place, edit Cargo.toml and mod.rs last, save the lock on every exit | BACKLOG, filed 2026-11-19. Starts after row 529, which changes the same functions. Not started. | M: the install pipeline in add.rs, a… | tooling |
+| [531](backlog/531-installed-files-carry-no-internal-references.md) | Installed component files carry no internal references (row numbers, dev-docs, backlog, scripts paths) | BACKLOG, filed 2026-11-19. Not started. Pinning dioxus-primitives in every component.json is not… | S-M: up to a few hundred lines to… | build |
+| [532](backlog/532-output-budgets-css-hydration-demo-source.md) | Output budgets where none exist: CSS bytes per page and hydration time; an optional step that stops embedding demo source | BACKLOG, filed 2026-11-19. Not started. The hydration budget needs a stable timing method on a… | M: two budgets and their gates; the… | build |
+| [533](backlog/533-tigerstyle-slice-kernel-and-function-length.md) | The TigerStyle slice: kernel lints and assertions, and a shrink-only count of long non-component functions | BACKLOG, filed 2026-11-19; the owner agreed to the slice. Not started. Items 1-4 need no grant… | M: kernel items 1-4 are S; item 5 is S… | tooling |
+| [534](backlog/534-overlay-memory-growth-per-cycle.md) | Wasm memory growth per overlay open/close cycle: find the cause, gate the preview's logger feature | BACKLOG, NOT SCHEDULED, last in every ordering (it has the highest id of rows 529-534 and no… | S for the diagnosis (a soak harness… | primitives |
 
 <!-- END GENERATED -->
