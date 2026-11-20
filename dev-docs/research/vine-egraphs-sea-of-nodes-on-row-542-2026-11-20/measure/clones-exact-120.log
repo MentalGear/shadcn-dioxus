@@ -1,0 +1,26 @@
+python3 -I /tmp/claude-0/-home-user/2f9af3b0-3995-5f94-a96b-6c0dfde7973a/scratchpad/tech/measure/clones.py /home/user/shadcn-dioxus/.claude/worktrees/agent-aaf9e0dd6dc00a8ca exact 120 primitives/src  # at 642f304
+mode=exact window=40 min_tokens=120 files=201 tokens=281715 seconds=2.2
+clone pairs (maximal runs >= 120 tokens): 21
+  across two files: 9; inside one file: 12
+  distinct source lines covered: 1243
+   270 tok  primitives/src/calendar/range.rs:60-129  ~  primitives/src/calendar/single.rs:13-84
+   249 tok  primitives/src/checkbox.rs:164-208  ~  primitives/src/switch.rs:119-163
+   236 tok  primitives/src/date_picker/picker.rs:30-135  ~  primitives/src/date_picker/picker.rs:236-341
+   230 tok  primitives/src/combobox/components/combobox.rs:49-104  ~  primitives/src/combobox/multi.rs:51-104
+   219 tok  primitives/src/calendar/range.rs:272-309  ~  primitives/src/calendar/single.rs:209-246
+   173 tok  primitives/src/calendar/single.rs:16-55  ~  primitives/src/date_picker/popover.rs:144-178
+   173 tok  primitives/src/calendar/range.rs:63-102  ~  primitives/src/date_picker/popover.rs:144-178
+   171 tok  primitives/src/tag_group.rs:382-419  ~  primitives/src/tag_group.rs:431-492
+   159 tok  primitives/src/date_picker/input.rs:5-29  ~  primitives/src/date_picker/input.rs:29-53
+   150 tok  primitives/src/calendar/range.rs:249-267  ~  primitives/src/calendar/single.rs:191-209
+   150 tok  primitives/src/calendar/day.rs:465-495  ~  primitives/src/calendar/day.rs:574-601
+   147 tok  primitives/src/date_picker/input.rs:31-52  ~  primitives/src/date_picker/input.rs:121-145
+   147 tok  primitives/src/date_picker/input.rs:7-28  ~  primitives/src/date_picker/input.rs:121-145
+   139 tok  primitives/src/command.rs:792-808  ~  primitives/src/select/components/option.rs:160-177
+   137 tok  primitives/src/dialog.rs:417-457  ~  primitives/src/dialog.rs:479-518
+   137 tok  primitives/src/alert_dialog.rs:597-625  ~  primitives/src/alert_dialog.rs:680-709
+   134 tok  primitives/src/date_picker/input.rs:29-47  ~  primitives/src/date_picker/input.rs:367-388
+   134 tok  primitives/src/date_picker/input.rs:5-23  ~  primitives/src/date_picker/input.rs:367-388
+   133 tok  primitives/src/date_picker/input.rs:121-141  ~  primitives/src/date_picker/input.rs:369-388
+   124 tok  primitives/src/context_menu.rs:243-279  ~  primitives/src/dropdown_menu.rs:272-312
+   120 tok  primitives/src/color_picker.rs:487-504  ~  primitives/src/color_picker.rs:558-572

@@ -27,7 +27,11 @@ components root) is proposed as the first of the new rows because it is a destru
 2026-11-19 (option A, in "Next" below), no lane has started, and every lane waits for the owner's go. The same session evaluated a functional core and a graph as the single source of truth
 ([`research/functional-core-and-graph-ssot-2026-11-19.md`](./research/functional-core-and-graph-ssot-2026-11-19.md)); its
 steps 1 and 2 are row 542 (approved), and its step 3 (the code graph explorer reads the item table) is approved too, to be
-built after the table passes its proof (owner 2026-11-19: "ok").
+built after the table passes its proof (owner 2026-11-19: "ok"). On 2026-11-20 the owner held the batch ("Not yet") for an evaluation of the Vine
+language, Program Expression Graphs, e-graphs and the sea of nodes on top of row 542
+([`research/vine-egraphs-sea-of-nodes-on-row-542-2026-11-20.md`](./research/vine-egraphs-sea-of-nodes-on-row-542-2026-11-20.md)):
+it adopts none of them, leaves row 542 and the order as they are, and puts two additions to row 542 forward that wait
+for the owner.
 
 ## Merge queue
 

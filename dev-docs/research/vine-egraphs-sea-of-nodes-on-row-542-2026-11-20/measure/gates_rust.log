@@ -1,0 +1,82 @@
+python3 -I /tmp/claude-0/-home-user/2f9af3b0-3995-5f94-a96b-6c0dfde7973a/scratchpad/tech/measure/gates_rust.py /home/user/shadcn-dioxus/.claude/worktrees/agent-aaf9e0dd6dc00a8ca  # at 642f304
+gate entries that are check scripts: 111
+of them embed python in a heredoc: 71
+read Rust source: 75
+  through the syn member: 3 ['check-attr-spread-collision', 'check-public-api', 'check-gate-reuse']
+  as text patterns: 72
+     check-preview-composition
+     check-cfg-axis
+     check-constant-signal
+     check-id-interpolation
+     check-hooks-in-closures
+     check-self-subscribing-effects
+     check-component-call
+     check-test-harness-controlled
+     check-direction-keys
+     check-state-attributes
+     check-render-keys
+     check-render-clock
+     check-collection-derive
+     check-raw-text-interpolation
+     check-dynamic-style-shorthand
+     check-as-child
+     check-wrapper-props
+     check-wrapper-spread
+     check-uncleared-intervals
+     check-blocking-scroll-listeners
+     check-js-listeners
+     check-bridge-behaviours
+     check-decision-kernel
+     check-js-volume
+     check-ratchet-grant
+     check-native-slots
+     check-hot-events
+     check-motion-gating
+     check-infinite-animations
+     check-open-focus
+     check-unawaited-focus
+     check-theme-mode-writer
+     check-dx-class-prefix
+     check-cross-component-overrides
+     check-css-vars-defined
+     check-anchored-keyframes
+     check-anchor-marker
+     check-anchored-placement
+     check-theme-baseline
+     check-cursor-baseline
+     check-component-root-reset
+     check-destructive-text
+     check-hover-media
+     check-scroll-behavior
+     check-demo-wrapper-width
+     check-eager-head-document
+     check-css-delivery
+     check-internal-hrefs
+     check-demo-forms
+     check-demo-remote-assets
+     check-docs-own-components
+     check-props-docs
+     check-slot-docs
+     check-virtual-docs-parity
+     check-component-manifests
+     check-component-catalog
+     check-installed-paths
+     check-registry-url
+     check-cargo-dep-versions
+     check-markdown-parser
+     check-js-bundle
+     check-spec-viewport-bound
+     check-spec-at-rest
+     check-spec-goto-hydrated
+     check-demo-text-locators
+     check-backlog-index
+     check-history-comments
+     check-comment-refs
+     check-history-names
+     check-gates-doc
+     check-merge-drivers
+     check-rustdoc
+text-pattern gates whose patterns name Rust syntax (Rust-shape): 61
+    check-cfg-axis check-constant-signal check-id-interpolation check-hooks-in-closures check-self-subscribing-effects check-component-call check-test-harness-controlled check-direction-keys check-state-attributes check-render-keys check-render-clock check-collection-derive check-raw-text-interpolation check-dynamic-style-shorthand check-wrapper-spread check-uncleared-intervals check-blocking-scroll-listeners check-js-listeners check-bridge-behaviours check-decision-kernel check-js-volume check-ratchet-grant check-native-slots check-hot-events check-open-focus check-unawaited-focus check-theme-mode-writer check-dx-class-prefix check-cross-component-overrides check-css-vars-defined check-anchor-marker check-anchored-placement check-theme-baseline check-cursor-baseline check-component-root-reset check-destructive-text check-demo-wrapper-width check-eager-head-document check-demo-forms check-demo-remote-assets check-docs-own-components check-props-docs check-slot-docs check-virtual-docs-parity check-component-manifests check-component-catalog check-installed-paths check-registry-url check-cargo-dep-versions check-markdown-parser check-spec-viewport-bound check-spec-at-rest check-spec-goto-hydrated check-demo-text-locators check-backlog-index check-history-comments check-comment-refs check-history-names check-gates-doc check-merge-drivers check-rustdoc
+text-pattern gates reading .rs for other facts (paths, strings, CSS classes, docs): 11
+    check-preview-composition check-as-child check-wrapper-props check-motion-gating check-infinite-animations check-anchored-keyframes check-hover-media check-scroll-behavior check-css-delivery check-internal-hrefs check-js-bundle
