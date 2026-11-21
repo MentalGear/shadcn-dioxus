@@ -124,9 +124,10 @@ The dialog panel's overflow could clip a media that starts outside it (to check;
 keyboard band, `dialog/style.css:166`). A second image during the flight is a cost with large photos. Firefox, Safari and the
 desktop webview are unrun here (row 153). The row 516 lesson applies: a close mid-entry must reverse, never snap.
 
-**Proof.** Extend the photo wall demo only (`photo_wall/mod.rs`, the `Dialog` at `:469`), with specs in `playwright/`:
-open from an item (the media's first frame is at the item's rect, the last at the dialog's); close back to it; close after
-scrolling the source out of the window (plain exit, no flight to a stale rect); `prefers-reduced-motion: reduce` (no
-translate or scale transition on the media); rapid open and close (reversal, no snap, one image); keyboard open (Enter on
-the focused cell). The timing specs run on a release build only (`agent-rules/build-and-fast-loop.md`); the install smoke
+**Proof.** This row's lane proves the capability on a dialog demo with one source item, with specs in `playwright/`:
+open from the item (the media's first frame is at the item's rect, the last at the dialog's); close back to it; a source
+removed while the dialog is open (plain exit, no flight to a stale rect); `prefers-reduced-motion: reduce` (no translate
+or scale transition on the media); rapid open and close (reversal, no snap, one image). The photo wall cases (close after
+scrolling the source out of the window, keyboard open with Enter on the focused cell) are written in row 543's lane,
+which owns `photo_wall/mod.rs`. The timing specs run on a release build only (`agent-rules/build-and-fast-loop.md`); the install smoke
 runs if `DialogContent` or its `style.css` change (`registry-install-smoke: OK -- N/N`).
