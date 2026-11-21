@@ -19,8 +19,8 @@ says what to build, which files, its proof and its size. The rules are [`../CLAU
 
 Session `session_01MsL6RDL4Y2Pxs9N6sNdZF1` (2026-11-19) ran the repository evaluation (the code-analyser tool, the
 allocation audit, TigerStyle, the built output and the code quality), made the receipt rule standing with its checker and
-gate (`scripts/report-receipts.py`), and filed rows 529-542 (535, a lightbox fly-in for the
-dialog family, is approved by the owner and not scheduled) with the note
+gate (`scripts/report-receipts.py`), and filed rows 529-543 (535, a lightbox fly-in for the
+dialog family, is approved by the owner and not scheduled; 543, a Lightbox component built on it, was approved 2026-11-21 and is not scheduled) with the note
 [`research/repo-evaluation-2026-11-19.md`](./research/repo-evaluation-2026-11-19.md) and its evidence directory. Its work is
 on branch `claude/sleepy-archimedes-f3i7ze` and is **not merged to main**. Row **529** (the CLI deletes outside the
 components root) is proposed as the first of the new rows because it is a destructive bug; the owner set the order of the new rows on
@@ -137,7 +137,7 @@ ports), its working form is [`js-interop.md`](./js-interop.md), and every item h
    have not landed waits, and each row names them): **451** (3.SC, built 2026-11-12) and **454** (3.OB, built
    2026-11-12; five legacy scripts left the baseline, with 451 the volume gate's total fell from 508,767 to 482,329),
    then **452** (3.PL, 27/h), **453** (3.PV, 22/h), **455** (3.GS, 15/h), **456** (3.OV, 9/h; row **535**, the lightbox fly-in, follows it because its close half builds on the exit path that row
-   rewrites), **457** (3.VS, 6/h),
+   rewrites, and row **543**, the Lightbox component, follows 535), **457** (3.VS, 6/h),
    **458** (3.FC, 5/h), **461** (3.PW) and **459** (3.SL, which closes a blocking-listener class rather than removing
    lines); **460** (3.HV) and **462** (roving focus) only if phase 0's witnesses call for them.
 9. The measured group, one port at a time with the old version switchable, the owner measuring on real devices after

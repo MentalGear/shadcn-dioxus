@@ -25,6 +25,8 @@ which open [row 456](./456-port-3-ov-overlay-core-escape-dismiss-open-focus.md) 
 `use_animated_open`'s two placements). The row is best built after 456 lands, or with its exit half waiting for it; the
 order is the owner's.
 
+Row [543](./543-lightbox-component-slider-in-a-modal.md) (the Lightbox component) is this row's first consumer, and the photo wall proof is shared: row 543 owns the photo wall change (`photo_wall/mod.rs`, `virtual-grid-photo-wall.spec.ts`) because the Lightbox replaces its dialog, so this row's lane ends at the capability and its photo wall specs are written in 543's lane.
+
 ## Size
 
 M (inferred): four S to M parts

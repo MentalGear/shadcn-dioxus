@@ -168,6 +168,10 @@ the line here is the pointer, so when a row's text and this line disagree, the r
   not scheduled. The lanes still wait for the owner's go ([`STATUS.md`](./STATUS.md), "Next").
 - The lightbox motion belongs in the library (owner 2026-11-19, asked "Does the effect belong in the library at all?":
   "yes"); row [535](./backlog/535-lightbox-fly-in-from-the-clicked-item.md), not scheduled.
+- The library gets a Lightbox component as a composition of Dialog and Carousel with the fly-in of row 535 (owner
+  2026-11-21, asked "should we also add a lightbox component ? basically just a slider in a modal with the optional fly-in /
+  out activated and a data input for the content of the lightbox ?"; zoom and a thumbnail strip are non-goals of its first
+  version: "ok"); row [543](./backlog/543-lightbox-component-slider-in-a-modal.md), after row 535, not scheduled.
 - The 2026-11-19 evaluation is documented in the repository (owner: "properly document all"): the note
   [`research/repo-evaluation-2026-11-19.md`](./research/repo-evaluation-2026-11-19.md) with its evidence directory
   ([`research/repo-evaluation-2026-11-19/`](./research/repo-evaluation-2026-11-19/README.md)) and rows 529-534, 536-541.

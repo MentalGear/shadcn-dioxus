@@ -46,7 +46,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (90)
+## Open rows (91)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -140,5 +140,6 @@ proposing one is closed as out of scope (row 337 is the first).
 | [540](backlog/540-one-controlled-prop-type.md) | One Controlled&lt;T&gt; prop type instead of two encodings of controlled-versus-uncontrolled | BACKLOG, filed 2026-11-19. Before the final review (row 383). Not started. The public API snapshot… | M | primitives |
 | [541](backlog/541-use-previous-writes-signals-inside-a-memo.md) | use_previous writes signals inside a memo: keep the previous value in a CopyValue or a render-local | BACKLOG, filed 2026-11-19. Before the final review (row 383). Not started. | S | primitives |
 | [542](backlog/542-one-generated-item-table-read-by-the-gates.md) | One generated item table of the workspace, read by the gates; handler decisions as pure outcome functions | BACKLOG, steps 1-3 approved by the owner 2026-11-19. Not started. The first lane (step 1 and the… | S-M for the table and the first gate; S… | tooling |
+| [543](backlog/543-lightbox-component-slider-in-a-modal.md) | A Lightbox component: a Dialog around a Carousel, with the fly-in of row 535, fed by a list of items | BACKLOG, approved by the owner 2026-11-21: "ok". Not started. After row 535 (the fly-in… | M (estimate): the generic composition… | components |
 
 <!-- END GENERATED -->
